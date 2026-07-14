@@ -27,4 +27,27 @@ describe("PlannerSidebar", () => {
     expect(screen.getByText("Calendar list")).toBeTruthy();
     expect(screen.getByText("Sidebar actions")).toBeTruthy();
   });
+
+  it("shows event details only while the parent says they are open", () => {
+    const { rerender } = render(
+      <PlannerSidebar
+        {...sidebarProps}
+        eventDetails={<div>Event details</div>}
+      />,
+    );
+
+    expect(screen.queryByText("Event details")).toBeNull();
+    expect(screen.getByText("Calendar picker")).toBeTruthy();
+
+    rerender(
+      <PlannerSidebar
+        {...sidebarProps}
+        eventDetails={<div>Event details</div>}
+        isEventDetailsOpen
+      />,
+    );
+
+    expect(screen.getByText("Event details")).toBeTruthy();
+    expect(screen.queryByText("Calendar picker")).toBeNull();
+  });
 });

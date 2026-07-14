@@ -137,6 +137,7 @@ export const DayViewContent = memo(() => {
         <PlannerSidebar
           calendarDate={dateInView}
           eventDetails={<SidebarEventDetails />}
+          isEventDetailsOpen={isEventDetailsOpen}
           isShortcutsOpen={isShortcutsOpen}
           onCloseShortcuts={closeShortcuts}
           onToggleShortcuts={toggleShortcuts}
