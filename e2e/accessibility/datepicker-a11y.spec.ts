@@ -1,5 +1,5 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, test } from "@playwright/test";
+import { expectNoAxeViolations } from "../utils/axe-assertion";
 import {
   ensureSidebarOpen,
   prepareCalendarPage,
@@ -17,10 +17,14 @@ test("sidebar datepicker meets baseline accessibility and contrast checks", asyn
   const monthPicker = sidebar.getByRole("group", { name: "Date navigation" });
   await expect(monthPicker).toBeVisible();
 
-  const scanResults = await new AxeBuilder({ page })
-    .include("#sidebar")
-    .analyze();
-  expect(scanResults.violations).toEqual([]);
+  // Scoped to #sidebar (not a whole-page scan): this test owns the
+  // datepicker's targeted contrast regression below, and scoping keeps that
+  // pairing - the axe pass and the per-date contrast check - about the same
+  // element on every run.
+  await expectNoAxeViolations(page, {
+    include: "#sidebar",
+    checkpoint: "sidebar datepicker",
+  });
 
   const days = monthPicker.locator(
     ".react-datepicker__day:not(.react-datepicker__day--disabled)",

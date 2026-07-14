@@ -8,7 +8,8 @@ export const WeekGridScrollArea: FC<PropsWithChildren> = ({ children }) => {
         className="h-full w-full overflow-x-auto overflow-y-hidden [overscroll-behavior-x:contain] [scrollbar-width:none] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--compass-color-accent-primary)] focus-visible:[outline-offset:-1px] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:h-0 [&::-webkit-scrollbar]:w-0"
         aria-label="Week calendar horizontal scroll area"
         id={ID_WEEK_GRID_SCROLLER}
-        tabIndex={-1}
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: WCAG 2.1.1 requires a scrollable region to be keyboard-focusable (axe's scrollable-region-focusable rule); the focus-visible outline above was already styled for this, tabIndex={-1} just made it unreachable by Tab.
+        tabIndex={0}
       >
         {children}
       </section>

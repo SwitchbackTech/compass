@@ -19,6 +19,24 @@ const TestMenuItem = () => {
 };
 
 describe("ActionsMenu", () => {
+  it("exposes the trigger as a real button with aria-expanded reflecting open state", async () => {
+    const user = userEvent.setup();
+
+    renderMenu(
+      <ActionsMenu bgColor="#fff">{() => <TestMenuItem />}</ActionsMenu>,
+    );
+
+    const trigger = screen.getByRole("button", { name: "Open actions menu" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
   it("keeps mouse hover from stealing focus from the editor action trigger", async () => {
     const user = userEvent.setup();
 

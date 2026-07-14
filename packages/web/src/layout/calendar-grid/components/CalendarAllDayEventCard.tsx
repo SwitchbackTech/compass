@@ -13,6 +13,7 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
+import { darken } from "@web/common/styles/color.utils";
 import { EVENT_COLOR, EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
@@ -61,10 +62,15 @@ const CalendarAllDayEventCardBase = (
   const isRecurring = isRecurringEvent(event);
   const showRepeatIcon =
     isRecurring && !isPlaceholder && position.width >= REPEAT_ICON_MIN_WIDTH;
-  const hoverBgColor = !isPlaceholder ? hoverColor : baseColor;
+  // A `brightness()` filter would scale the title text toward black right
+  // along with the fill, which is what let past events fall below the 4.5:1
+  // contrast minimum. Darkening only the fill keeps the (fixed) title color's
+  // contrast ratio intact.
+  const bgColor = isInPast ? darken(baseColor, 5) : baseColor;
+  const hoverBgColor = !isPlaceholder ? hoverColor : bgColor;
 
   const eventStyle = {
-    "--event-bg": baseColor,
+    "--event-bg": bgColor,
     "--event-hover-bg": hoverBgColor,
     height: position.height,
     left: position.left,
@@ -72,7 +78,6 @@ const CalendarAllDayEventCardBase = (
     top: position.top,
     width: position.width,
     zIndex: position.zIndex ?? ZIndex.LAYER_1,
-    filter: isInPast ? "brightness(0.7)" : "brightness(1)",
   } as CSSProperties;
 
   const showResizeCursor = !isPlaceholder;
@@ -145,7 +150,7 @@ const CalendarAllDayEventCardBase = (
           "pr-3.5": showRepeatIcon,
         })}
       >
-        <span className="relative min-w-0 truncate text-xs">
+        <span className="relative min-w-0 truncate text-text-dark text-xs">
           {event.title}
           <SpaceCharacter />
         </span>

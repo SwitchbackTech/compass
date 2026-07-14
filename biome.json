@@ -21,19 +21,19 @@
     "rules": {
       "recommended": true,
       "a11y": {
-        "noNoninteractiveElementToInteractiveRole": "warn",
         "noNoninteractiveTabindex": "warn",
-        "noPositiveTabindex": "warn",
         "noRedundantRoles": "warn",
         "noStaticElementInteractions": "warn",
-        "noSvgWithoutTitle": "warn",
-        "useAriaPropsForRole": "warn",
         "useAriaPropsSupportedByRole": "warn",
-        "useButtonType": "warn",
-        "useFocusableInteractive": "warn",
-        "useHtmlLang": "warn",
         "useSemanticElements": "warn",
-        "useValidAriaRole": "warn"
+        "noNoninteractiveElementToInteractiveRole": "error",
+        "noPositiveTabindex": "error",
+        "noSvgWithoutTitle": "error",
+        "useAriaPropsForRole": "error",
+        "useButtonType": "error",
+        "useFocusableInteractive": "error",
+        "useHtmlLang": "error",
+        "useValidAriaRole": "error"
       },
       "correctness": {
         "noUnreachable": "warn",

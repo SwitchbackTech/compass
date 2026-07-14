@@ -88,7 +88,10 @@ describe("CalendarEventCard", () => {
     render(
       <CalendarTimedEventCard
         displayMode="saved"
-        event={createEvent()}
+        event={createEvent({
+          startDate: "2099-01-15T09:00:00.000Z",
+          endDate: "2099-01-15T10:00:00.000Z",
+        })}
         isSelected={true}
         motionMode="idle"
         position={position}

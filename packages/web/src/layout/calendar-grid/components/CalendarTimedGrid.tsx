@@ -59,7 +59,8 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
       className="c-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px]"
       id={timedGridId}
       ref={timedGridRef}
-      tabIndex={-1}
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: WCAG 2.1.1 requires a scrollable region to be keyboard-focusable (axe's scrollable-region-focusable rule); tabIndex={-1} previously made a mouse click the only way in, and the app's arrow-key shortcuts (useWeekShortcuts) only activate once this is focused.
+      tabIndex={0}
     >
       <CalendarTimeColumn />
       <div
