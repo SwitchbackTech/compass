@@ -24,19 +24,12 @@ export const SaveSection: React.FC<Props> = ({
     <div className="flex items-center justify-end gap-3 border-border-primary border-t px-4 py-3">
       {onCancel && (
         <TooltipWrapper onClick={onCancel} description={cancelText}>
-          <Btn role="button" tabIndex={0} title={cancelText}>
-            {cancelText}
-          </Btn>
+          <Btn title={cancelText}>{cancelText}</Btn>
         </TooltipWrapper>
       )}
 
       <TooltipWrapper onClick={onSave} shortcut={["Mod", "Enter"]}>
-        <SaveButton
-          minWidth={110}
-          role="button"
-          tabIndex={0}
-          aria-keyshortcuts="Meta+Enter"
-        >
+        <SaveButton minWidth={110} aria-keyshortcuts="Meta+Enter">
           {saveText}
         </SaveButton>
       </TooltipWrapper>

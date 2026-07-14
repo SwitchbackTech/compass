@@ -67,7 +67,7 @@ export function ResizableSidebarPanel({ children, isOpen }: Props) {
           className={classNames(
             "absolute inset-y-1 left-0 w-px rounded-full bg-grid-line-primary transition-[width,background-color] duration-200 ease-out motion-reduce:transition-none",
             "group-hover:w-0.5 group-hover:bg-text-lighter/60",
-            "group-focus-visible:w-0.5 group-focus-visible:bg-text-lighter/60",
+            "group-focus-visible:w-1 group-focus-visible:bg-accent-primary",
             { "w-0.5 bg-text-lighter/60": isResizing },
           )}
         />
