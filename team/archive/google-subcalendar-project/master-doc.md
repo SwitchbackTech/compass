@@ -1,5 +1,10 @@
 # Google sub-calendars v1 master plan
 
+Operator execution now lives in the
+[Google sub-calendar big-bang deployment runbook](../../architect/google-subcalendar-big-bang-runbook.md).
+That runbook is staging-only until its evidence gate is complete; production
+remains locked.
+
 This directory replaces GitHub Project 6, **Google Subcalendars**, as the
 implementation source of truth. The project query
 `org:SwitchbackTech project:SwitchbackTech/6` returned 25 cards on 2026-07-10:
@@ -9,6 +14,11 @@ All 12 issues that were open in Project 6 were closed as `not planned` on
 2026-07-10 because Compass no longer uses GitHub issues for this work. Closure
 does not mean implementation is complete. `00-project-ledger.md` preserves the
 requirements, and the checkboxes in these files are the only progress tracker.
+
+Current rollout correction (2026-07-14): packets `01`–`08` are merged and
+staging is already collection-cut-over; production remains on the legacy
+collection. Later releases retired Someday and priority behavior. The master
+operator sequence, including those removals, is the linked big-bang runbook.
 
 ## v1 outcome
 
@@ -250,6 +260,7 @@ only by appending a dated decision and updating every affected plan.
 | A43 | (2026-07-12) Raw Google wire data stays typed via the `calendar_v3` `.d.ts` re-exports, not parsed with Zod; strictness applies at Compass's own mappers and record/contract schemas. Packet 09 step 2's "parse representative Google responses with shared Zod" is satisfied by mapper tests over the shared fixtures plus strict parsing of every Compass boundary.     | Zod-modeling Google's full resource surface duplicates a vendor contract we do not own and violates "keep optionality at the edges: untrusted Google responses"; the mapper is the validation boundary. Packet 09, PR #2068.                                                 |
 | A44 | (2026-07-12) V1 observability is structured logs (import summaries, watch repair actions, retry attempts/outcomes, maintenance tallies) — no metrics/counter subsystem ships in v1; the ops counters in packet 09's list derive from log aggregation.                                                                                                                     | The repo has zero metrics infrastructure; adding one for the release would be a speculative subsystem against the complexity guardrails, and every listed counter already exists as a structured log line. Packet 09, PR #2069.                                              |
 | A45 | (2026-07-13) A series base is metadata-only: it never renders as a grid card. `materializeSeriesInstances` materializes every occurrence, including the one at the base's own start; the web view-model drops `recurrence.kind === "series"` events from grid rendering. `analyzeReplace`/`analyzeDelete` collapse a `thisAndFollowing` scope targeting the series' earliest occurrence to `"all"`. `GoogleEventSync` matches an unlinked occurrence by `(seriesId, original position)` before inserting, so a Compass-created series' Google echo adopts its already-materialized local occurrences instead of duplicating them. | The runtime-cutover base-is-the-first-occurrence model (A17) collided with the Google import path, which always saves the base AND every Google-reported instance including the first — producing a duplicate card on day one, and (for Compass-created series) a full duplicate set once the series echoed back from Google's webhook. Fixed on `claude/google-calendar-duplicate-events-476653`; a one-off repair migration (`2026.07.13T12.00.00.recurring-series-first-occurrence-repair`) heals data written before this fix. |
+| A46 | (2026-07-14) The big-bang cutover has a hard migration boundary: run through `event-record-backfill`, rename collections, then run recurring-series and priority repairs against the final active `event`. Staging must complete repair, acceptance, rollback, and a second forward run before production is unlocked. | Post-cutover migrations target the collection named `event`; running them before the rename either silently no-ops on legacy rows or conflicts with the legacy validator. The staging priority-sync failure exposed this stale assumption. |
 
 ## Complexity guardrails
 

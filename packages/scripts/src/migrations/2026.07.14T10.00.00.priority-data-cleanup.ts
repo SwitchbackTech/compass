@@ -1,8 +1,8 @@
-import { IS_DEV } from "@backend/common/constants/config.constants";
-import mongoService from "@backend/common/services/mongo.service";
+import { type MigrationContext } from "@scripts/common/cli.types";
 import { type Document } from "mongodb";
 import { type MigrationParams, type RunnableMigration } from "umzug";
-import { type MigrationContext } from "@scripts/common/cli.types";
+import { IS_DEV } from "@backend/common/constants/config.constants";
+import mongoService from "@backend/common/services/mongo.service";
 
 // The standalone priority-CRUD collection was never exposed via
 // `Collections` after the feature was removed; its name is reconstructed
@@ -47,7 +47,9 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       .hasNext();
     if (priorityCollectionExists) {
       await mongoService.db.collection(priorityCollectionName).drop();
-      logger.info(`Priority cleanup: dropped collection "${priorityCollectionName}"`);
+      logger.info(
+        `Priority cleanup: dropped collection "${priorityCollectionName}"`,
+      );
     } else {
       logger.info(
         `Priority cleanup: collection "${priorityCollectionName}" already absent`,

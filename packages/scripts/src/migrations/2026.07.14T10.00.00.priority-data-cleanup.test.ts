@@ -36,7 +36,9 @@ describe("2026.07.14T10.00.00.priority-data-cleanup", () => {
   });
 
   it("unsets the priority field from event documents that still carry it", async () => {
-    const events = mongoService.db.collection(mongoService.event.collectionName);
+    const events = mongoService.db.collection(
+      mongoService.event.collectionName,
+    );
     await events.insertMany([
       { _id: new ObjectId(), title: "Standup", priority: "work" },
       { _id: new ObjectId(), title: "Focus block", priority: "unassigned" },
@@ -58,7 +60,9 @@ describe("2026.07.14T10.00.00.priority-data-cleanup", () => {
   });
 
   it("leaves event documents without a priority field untouched", async () => {
-    const events = mongoService.db.collection(mongoService.event.collectionName);
+    const events = mongoService.db.collection(
+      mongoService.event.collectionName,
+    );
     const id = new ObjectId();
     await events.insertOne({ _id: id, title: "No priority here" });
 
@@ -82,7 +86,9 @@ describe("2026.07.14T10.00.00.priority-data-cleanup", () => {
   });
 
   it("is idempotent: rerunning after a clean run makes no further changes", async () => {
-    const events = mongoService.db.collection(mongoService.event.collectionName);
+    const events = mongoService.db.collection(
+      mongoService.event.collectionName,
+    );
     await events.insertOne({
       _id: new ObjectId(),
       title: "Standup",

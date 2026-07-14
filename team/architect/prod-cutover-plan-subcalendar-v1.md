@@ -1,5 +1,11 @@
 # Sub-calendar v1 — Safe production cutover plan
 
+> Superseded for execution by the
+> [Google sub-calendar big-bang deployment runbook](./google-subcalendar-big-bang-runbook.md).
+> This file preserves the original production analysis. Its single unbounded
+> pre-rename `migrate up` sequence predates post-cutover repair migrations and
+> must not be used as the live command list.
+
 _Architect deliverable, 2026-07-13. Verified against `origin/main` @ `2c08e9f2e`._
 
 ## Context
