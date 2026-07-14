@@ -1,4 +1,5 @@
 import { loadCompassConfig } from "@core/config/compass.config";
+import { copyStaticAssets } from "./copy-static-assets";
 import { postcssPlugin } from "./plugins/postcss.plugin";
 import { watch } from "node:fs";
 import path from "node:path";
@@ -65,11 +66,7 @@ async function build() {
     return false;
   }
 
-  // Copy unhashed so the og:image meta tag can reference a stable URL.
-  await Bun.write(
-    path.join(OUTDIR, "og-image.png"),
-    Bun.file(path.resolve(import.meta.dir, "src/assets/png/og-image.png")),
-  );
+  await copyStaticAssets(OUTDIR);
 
   return true;
 }

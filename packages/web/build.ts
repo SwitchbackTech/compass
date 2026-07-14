@@ -1,4 +1,5 @@
 import { loadCompassConfig } from "@core/config/compass.config";
+import { copyStaticAssets } from "./copy-static-assets";
 import { postcssPlugin } from "./plugins/postcss.plugin";
 import { execSync } from "node:child_process";
 import path from "node:path";
@@ -79,11 +80,7 @@ await Bun.write(
   JSON.stringify({ version: BUILD_VERSION }, null, 2),
 );
 
-// Copy unhashed so the og:image meta tag can reference a stable URL.
-await Bun.write(
-  path.join(OUTDIR, "og-image.png"),
-  Bun.file(path.resolve(import.meta.dir, "src/assets/png/og-image.png")),
-);
+await copyStaticAssets(OUTDIR);
 
 // biome-ignore lint/suspicious/noConsole: Preserve build progress output.
 console.log(`Build complete → ${OUTDIR}`);
