@@ -2,6 +2,7 @@ import { memo, useCallback, useMemo, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
+import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { SidebarEventDetails } from "@web/components/PlannerSidebar/EventDetails/SidebarEventDetails";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
@@ -20,16 +21,11 @@ import {
 import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
 import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
 import { Header } from "@web/views/Day/components/Header/Header";
-import { emitDayViewCommand } from "@web/views/Day/day-view-bus";
-import { getDayCmdTasks } from "@web/views/Day/getDayCmdTasks";
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
-import {
-  focusFirstDayCalendarEvent,
-  openEventFormEditEvent,
-} from "@web/views/Day/interaction/dayCalendarFocus.util";
+import { focusFirstDayCalendarEvent } from "@web/views/Day/interaction/dayCalendarFocus.util";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 
 export const DayViewContent = memo(() => {
@@ -93,24 +89,23 @@ export const DayViewContent = memo(() => {
     const isViewingToday = dateInView.isSame(today, "day");
 
     if (isViewingToday) {
-      emitDayViewCommand("SCROLL_TO_NOW_LINE");
+      emitViewCommand("SCROLL_TO_NOW_LINE");
     } else {
       navigateToToday();
     }
   }, [dateInView, navigateToToday]);
 
   const handleCreateTimedEvent = useCallback(() => {
-    emitDayViewCommand("CREATE_TIMED_DRAFT");
+    emitViewCommand("CREATE_TIMED_DRAFT");
   }, []);
 
   const handleCreateAllDayEvent = useCallback(() => {
-    emitDayViewCommand("CREATE_ALLDAY_DRAFT");
+    emitViewCommand("CREATE_ALLDAY_DRAFT");
   }, []);
 
   useDayViewShortcuts({
     onCreateTimedEvent: handleCreateTimedEvent,
     onCreateAllDayEvent: handleCreateAllDayEvent,
-    onEditEvent: openEventFormEditEvent,
     onFocusSidebar: handleFocusSidebar,
     onFocusCalendar: focusFirstDayCalendarEvent,
     onNextDay: navigateToNextDay,
@@ -125,7 +120,6 @@ export const DayViewContent = memo(() => {
         today={dayjs()}
         onGoToToday={handleGoToToday}
         onShowShortcuts={toggleShortcuts}
-        commonTasks={getDayCmdTasks()}
         placeholder="Try: 'week', 'today', 'bug', or 'feedback'"
       />
       <Dedication />

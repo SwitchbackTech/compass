@@ -4,6 +4,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
 import { renderWithStore } from "@web/__tests__/render-with-store";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
   undoHistoryActions,
   useUndoHistoryStore,
@@ -12,7 +13,6 @@ import {
   selectIsCmdPaletteOpen,
   useSettingsStore,
 } from "@web/settings/settings.store";
-import { type CommandItem } from "./command-palette.types";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockNavigate = mock();
@@ -62,25 +62,6 @@ const { CommandPalette, filterSections } = await import("./CommandPalette");
 
 const onGoToToday = mock();
 const onShowShortcuts = mock();
-const taskAlphaClick = mock();
-const taskDisabledClick = mock();
-
-const buildTasks = (): CommandItem[] => [
-  {
-    id: "task-alpha",
-    label: "Task Alpha",
-    icon: PlusIcon,
-    onClick: taskAlphaClick,
-  },
-  {
-    id: "task-disabled",
-    label: "Task Disabled",
-    icon: PlusIcon,
-    disabled: true,
-    onClick: taskDisabledClick,
-  },
-  { id: "task-gamma", label: "Task Gamma", icon: PlusIcon },
-];
 
 const renderPalette = () =>
   renderWithStore(
@@ -89,7 +70,6 @@ const renderPalette = () =>
       today={dayjs("2026-07-07")}
       onGoToToday={onGoToToday}
       onShowShortcuts={onShowShortcuts}
-      commonTasks={buildTasks()}
       placeholder="Try: 'create', 'bug', or 'code'"
     />,
     { settings: { isCmdPaletteOpen: true } },
@@ -113,8 +93,6 @@ describe("CommandPalette", () => {
     mockNavigate.mockClear();
     onGoToToday.mockClear();
     onShowShortcuts.mockClear();
-    taskAlphaClick.mockClear();
-    taskDisabledClick.mockClear();
   });
 
   it("renders all sections with items and focuses the input on mount", () => {
@@ -128,7 +106,8 @@ describe("CommandPalette", () => {
     // Week view hides its own nav item and surfaces the Day + Today entries.
     expect(screen.getByText("Go to Day")).toBeInTheDocument();
     expect(screen.getByText(/Go to Today/)).toBeInTheDocument();
-    expect(screen.getByText("Task Alpha")).toBeInTheDocument();
+    expect(screen.getByText("Create event")).toBeInTheDocument();
+    expect(screen.getByText("Create all-day event")).toBeInTheDocument();
     // Settings surfaces the (stubbed) Google item.
     expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
     expect(screen.getByText("Report Bug")).toBeInTheDocument();
@@ -141,9 +120,10 @@ describe("CommandPalette", () => {
   it("filters case-insensitively, dropping empty sections, and shows a no-results row", () => {
     renderPalette();
 
-    fireEvent.change(getInput(), { target: { value: "task alpha" } });
+    fireEvent.change(getInput(), { target: { value: "create event" } });
 
-    expect(screen.getByText("Task Alpha")).toBeInTheDocument();
+    expect(screen.getByText("Create event")).toBeInTheDocument();
+    expect(screen.queryByText("Create all-day event")).not.toBeInTheDocument();
     expect(screen.queryByText("Navigation")).not.toBeInTheDocument();
     expect(screen.queryByText("Settings")).not.toBeInTheDocument();
     expect(
@@ -158,8 +138,10 @@ describe("CommandPalette", () => {
     const { container } = renderPalette();
     const input = getInput();
 
-    // Disabled rows render as disabled buttons.
-    expect(screen.getByText("Task Disabled").closest("button")).toBeDisabled();
+    // The Undo row renders as a disabled button when there's no history.
+    expect(
+      screen.getByText("Undo last change").closest("button"),
+    ).toBeDisabled();
 
     // First option active by default; ArrowUp wraps to the last (Version) row.
     expect(activeRowText(container)).toBe("Go to Day");
@@ -169,25 +151,33 @@ describe("CommandPalette", () => {
     fireEvent.keyDown(input, { key: "ArrowDown" });
     expect(activeRowText(container)).toBe("Go to Day");
 
-    // Walk down to Task Alpha, then the next ArrowDown skips the disabled row.
+    // Walk down to "Create all-day event", then the next ArrowDown skips the
+    // disabled Undo row and lands on the (stubbed, always-first) Google item.
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Today
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Show Shortcuts
-    fireEvent.keyDown(input, { key: "ArrowDown" }); // Task Alpha
-    expect(activeRowText(container)).toBe("Task Alpha");
-    fireEvent.keyDown(input, { key: "ArrowDown" }); // skips Task Disabled
-    expect(activeRowText(container)).toBe("Task Gamma");
+    fireEvent.keyDown(input, { key: "ArrowDown" }); // Create event
+    fireEvent.keyDown(input, { key: "ArrowDown" }); // Create all-day event
+    expect(activeRowText(container)).toBe("Create all-day event");
+    fireEvent.keyDown(input, { key: "ArrowDown" }); // skips Undo last change
+    expect(activeRowText(container)).toBe("Connect Google Calendar");
   });
 
-  it("runs the active item's onClick and closes on Enter", () => {
+  it("runs the active item's onClick and closes on Enter", async () => {
+    const onCreateTimedDraft = mock();
+    const unsubscribe = onViewCommand("CREATE_TIMED_DRAFT", onCreateTimedDraft);
     renderPalette();
     const input = getInput();
 
-    // Isolate the spy task so it becomes the sole (active) option.
-    fireEvent.change(input, { target: { value: "Task Alpha" } });
+    // Isolate "Create event" so it becomes the sole (active) option.
+    fireEvent.change(input, { target: { value: "Create event" } });
     fireEvent.keyDown(input, { key: "Enter" });
 
-    expect(taskAlphaClick).toHaveBeenCalledTimes(1);
+    // The click defers the emit to a microtask so the palette can unmount first.
+    await waitFor(() => {
+      expect(onCreateTimedDraft).toHaveBeenCalledTimes(1);
+    });
     expect(isOpen()).toBe(false);
+    unsubscribe();
   });
 
   it("resets the active option to the first after typing", () => {

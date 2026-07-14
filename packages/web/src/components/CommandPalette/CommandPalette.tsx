@@ -11,6 +11,7 @@ import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useRef, useState } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { eventCommandPaletteItems } from "@web/common/constants/event.cmd.constants";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { getNavigationCommandItems } from "@web/common/constants/navigation.cmd.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
@@ -29,14 +30,13 @@ import {
   VIEW_SHORTCUTS,
   type ViewName,
 } from "@web/shortcuts/shortcuts.constants";
-import { type CommandItem, type CommandSection } from "./command-palette.types";
+import { type CommandSection } from "./command-palette.types";
 
 interface CommandPaletteProps {
   currentView: ViewName;
   today: Dayjs;
   onGoToToday: () => void;
   onShowShortcuts: () => void;
-  commonTasks: CommandItem[];
   placeholder: string;
 }
 
@@ -66,7 +66,6 @@ export const CommandPalette = ({
   today,
   onGoToToday,
   onShowShortcuts,
-  commonTasks,
   placeholder,
 }: CommandPaletteProps) => {
   const open = useSettingsStore(selectIsCmdPaletteOpen);
@@ -114,7 +113,7 @@ export const CommandPalette = ({
       id: "general",
       heading: "Common Tasks",
       items: [
-        ...commonTasks,
+        ...eventCommandPaletteItems,
         {
           id: "undo-last-change",
           label: "Undo last change",
@@ -225,11 +224,9 @@ export const CommandPalette = ({
                       ref(node: HTMLElement | null) {
                         listRef.current[index] = node;
                       },
-                      onClick(event) {
+                      onClick() {
                         if (item.disabled) return;
-                        // Pass the real event so handlers keyed off the
-                        // clicked row (Week's onEventTargetVisibility) work.
-                        item.onClick?.(event);
+                        item.onClick?.();
                         close();
                       },
                     });

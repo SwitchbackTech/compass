@@ -14,6 +14,7 @@ import {
   Categories_Event,
   type GridEvent,
 } from "@web/common/types/web.event.types";
+import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { getDraftTimes } from "@web/common/utils/draft/draft.util";
 import {
   addId,
@@ -37,7 +38,6 @@ import { CalendarGrid } from "@web/layout/calendar-grid/components/CalendarGrid"
 import { useAllDayDraftCreation } from "@web/layout/calendar-grid/hooks/useAllDayDraftCreation";
 import { useCalendarDateCalcs } from "@web/layout/calendar-grid/hooks/useCalendarDateCalcs";
 import { useCalendarGridLayout } from "@web/layout/calendar-grid/hooks/useCalendarGridLayout";
-import { onDayViewCommand } from "@web/views/Day/day-view-bus";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDayEventNudgeShortcuts } from "@web/views/Day/hooks/shortcuts/useDayEventNudgeShortcuts";
@@ -228,11 +228,11 @@ export function DayCalendarGrid() {
       createTimedDraftRef.current();
     };
 
-    const unsubscribeCreateAllDayDraft = onDayViewCommand(
+    const unsubscribeCreateAllDayDraft = onViewCommand(
       "CREATE_ALLDAY_DRAFT",
       handleCreateAllDayDraft,
     );
-    const unsubscribeCreateTimedDraft = onDayViewCommand(
+    const unsubscribeCreateTimedDraft = onViewCommand(
       "CREATE_TIMED_DRAFT",
       handleCreateTimedDraft,
     );

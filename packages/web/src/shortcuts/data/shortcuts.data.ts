@@ -40,16 +40,10 @@ const getNavigateShortcuts = ({
   },
 ];
 
-const getCreateShortcuts = (view: ShortcutMenuView): Shortcut[] =>
-  view === "day"
-    ? [
-        { keys: ["c"], label: "Create timed event" },
-        { keys: ["a"], label: "Create all-day event" },
-      ]
-    : [
-        { keys: ["c"], label: "Create timed event" },
-        { keys: ["a"], label: "Create all-day event" },
-      ];
+const getCreateShortcuts = (): Shortcut[] => [
+  { keys: ["c"], label: "Create timed event" },
+  { keys: ["a"], label: "Create all-day event" },
+];
 
 const getFocusShortcuts = (view: ShortcutMenuView): Shortcut[] =>
   view === "day"
@@ -65,7 +59,6 @@ const getFocusShortcuts = (view: ShortcutMenuView): Shortcut[] =>
 const getEditShortcuts = (view: ShortcutMenuView): Shortcut[] =>
   view === "day"
     ? [
-        { keys: ["m"], label: "Edit event" },
         {
           keys: ["Shift", "ArrowUp"],
           label: "Move event 15 min earlier",
@@ -76,7 +69,6 @@ const getEditShortcuts = (view: ShortcutMenuView): Shortcut[] =>
         },
       ]
     : [
-        { keys: ["m"], label: "Edit calendar event" },
         { keys: ["Delete"], label: "Delete calendar event" },
         { keys: ["Arrow keys"], label: "Move draft event" },
         {
@@ -110,7 +102,7 @@ export const getShortcutMenuSections = (
       title: "Navigate",
       shortcuts: getNavigateShortcuts(config),
     },
-    { id: "create", title: "Create", shortcuts: getCreateShortcuts(view) },
+    { id: "create", title: "Create", shortcuts: getCreateShortcuts() },
     { id: "focus", title: "Focus", shortcuts: getFocusShortcuts(view) },
     { id: "edit", title: "Edit", shortcuts: getEditShortcuts(view) },
     { id: "other", title: "Other", shortcuts: getOtherShortcuts() },

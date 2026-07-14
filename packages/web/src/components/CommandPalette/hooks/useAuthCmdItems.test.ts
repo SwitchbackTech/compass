@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react";
-import { act, type MouseEvent } from "react";
+import { act } from "react";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenModal = mock();
@@ -93,10 +93,9 @@ describe("useAuthCmdItems", () => {
     const signUpItem = result.current.find((item) => item.id === "sign-up");
     const logInItem = result.current.find((item) => item.id === "log-in");
 
-    const mockEvent = {} as MouseEvent<HTMLButtonElement>;
     act(() => {
-      signUpItem?.onClick?.(mockEvent);
-      logInItem?.onClick?.(mockEvent);
+      signUpItem?.onClick?.();
+      logInItem?.onClick?.();
     });
 
     expect(mockOpenModal).toHaveBeenNthCalledWith(1, "signUp");

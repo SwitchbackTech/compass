@@ -6,6 +6,7 @@ import {
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
+import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
   createAlldayDraft,
   createTimedDraft,
@@ -75,9 +76,8 @@ export const useWeekShortcuts = ({
   const mutations = useEventMutations();
   const { delete: deleteEvent } = mutations;
   // Read-only (unwritable calendar or busy content) events can be inspected
-  // (the "M" edit shortcut still opens the read-only form) but never
-  // mutated - delete and nudge/move below gate on this before touching the
-  // store (packet 08 step 8).
+  // but never mutated - delete and nudge/move below gate on this before
+  // touching the store (packet 08 step 8).
   const calendarLookup = useCalendarLookup();
   const {
     actions: { repositionDraftByKeyboard },
@@ -139,6 +139,36 @@ export const useWeekShortcuts = ({
     void createTimedDraft(isCurrentWeek, startOfView, "createShortcut");
   }, [isCurrentWeek, startOfView]);
 
+  const createAllDayDraftEventRef = useRef(createAllDayDraftEvent);
+  const createTimedDraftEventRef = useRef(createTimedDraftEvent);
+
+  useEffect(() => {
+    createAllDayDraftEventRef.current = createAllDayDraftEvent;
+  }, [createAllDayDraftEvent]);
+
+  useEffect(() => {
+    createTimedDraftEventRef.current = createTimedDraftEvent;
+  }, [createTimedDraftEvent]);
+
+  // The command palette's create-event rows emit these same commands
+  // (event.cmd.constants.ts) so the "C"/"A" keys and the palette rows run
+  // identical code.
+  useEffect(() => {
+    const unsubscribeCreateAllDayDraft = onViewCommand(
+      "CREATE_ALLDAY_DRAFT",
+      () => createAllDayDraftEventRef.current(),
+    );
+    const unsubscribeCreateTimedDraft = onViewCommand(
+      "CREATE_TIMED_DRAFT",
+      () => createTimedDraftEventRef.current(),
+    );
+
+    return () => {
+      unsubscribeCreateAllDayDraft();
+      unsubscribeCreateTimedDraft();
+    };
+  }, []);
+
   const focusSidebar = useCallback(() => {
     if (!isSidebarOpen) {
       viewActions.toggleSidebar();
@@ -184,24 +214,6 @@ export const useWeekShortcuts = ({
 
     return { event, target };
   }, [findCalendarEventForTarget]);
-
-  const editTargetedCalendarEvent = useCallback(() => {
-    const resolvedTarget = getTargetedCalendarEvent();
-    if (!resolvedTarget) return;
-
-    const { event } = resolvedTarget;
-
-    const sourceEvent = event._id ? entities[event._id as EventId] : undefined;
-    const draft = sourceEvent ? editGridEventDraft(sourceEvent) : null;
-
-    if (!draft) return;
-
-    // dragOffset (the cursor-to-event pixel offset a subsequent drag needs)
-    // lives in useDraftState's sibling state, populated by
-    // GridDraft.tsx's handleDrag the moment a drag actually starts — the
-    // "M"-then-drag continuation this closes needs no position data here.
-    draftActions.startGridDraft({ activity: "keyboardEdit", draft });
-  }, [entities, getTargetedCalendarEvent]);
 
   const deleteTargetedCalendarEvent = useCallback(
     (keyboardEvent: KeyboardEvent) => {
@@ -336,7 +348,6 @@ export const useWeekShortcuts = ({
   useAppShortcutUp("C", createTimedDraftEvent);
   useAppShortcutUp("U", focusSidebar);
   useAppShortcutUp("I", focusFirstCalendarEvent);
-  useAppShortcutUp("M", editTargetedCalendarEvent);
   useAppShortcut("Delete", deleteTargetedCalendarEvent, {
     ignoreInputs: false,
   });
