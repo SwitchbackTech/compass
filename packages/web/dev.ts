@@ -1,4 +1,5 @@
 import { loadCompassConfig } from "@core/config/compass.config";
+import { copyStaticAssets } from "./copy-static-assets";
 import { postcssPlugin } from "./plugins/postcss.plugin";
 import { watch } from "node:fs";
 import path from "node:path";
@@ -64,6 +65,9 @@ async function build() {
     for (const message of result.logs) console.error(message);
     return false;
   }
+
+  await copyStaticAssets(OUTDIR);
+
   return true;
 }
 // biome-ignore lint/suspicious/noConsole: Preserve dev-server progress output.
