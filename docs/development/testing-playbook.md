@@ -312,6 +312,120 @@ Use them for:
 - integration between auth, UI, and persistence
 - regressions that unit tests cannot model cleanly
 
+### Accessibility Testing
+
+Compass targets WCAG 2.2 Level AA. Use native HTML first and the WAI-ARIA
+Authoring Practices Guide when a complex widget needs ARIA roles, states, or
+keyboard behavior. ARIA is implementation guidance, not a substitute for
+meeting WCAG or testing the resulting experience.
+
+Accessibility coverage is layered because no single tool can establish WCAG
+conformance:
+
+| Layer | What it protects | When it runs |
+| --- | --- | --- |
+| Biome accessibility rules | Invalid or risky JSX and ARIA patterns | Editor, `bun run lint`, and CI |
+| React Testing Library | Roles, accessible names, state, focus, and keyboard behavior | Focused web tests and `bun run test:web` |
+| Playwright with axe | Automatically detectable issues in realistic rendered states | `bun run test:a11y`, `bun run verify web`, and E2E CI |
+| Targeted browser assertions | Regressions generic rules cannot reliably model, such as transient contrast or focus behavior | The relevant E2E regression test |
+| Manual review | Keyboard usability, zoom/reflow, screen-reader experience, and other judgment-based WCAG criteria | Major UI changes and periodic audits |
+
+#### How Axe Coverage Works
+
+`AxeBuilder.analyze()` scans the rendered DOM once, in its current state. With
+no `include`, it scans the page. An `include` limits the scan to that region.
+It does not observe later changes or automatically discover closed dialogs,
+collapsed menus, alternate routes, hover/focus styles, or validation states.
+Reveal or activate those states before scanning them.
+
+Do not add a bespoke axe test for every component or automatically scan the
+arbitrary final state of every E2E test. Instead, keep a small accessibility
+smoke suite covering representative pages and important states. Add a new
+checkpoint when a change introduces:
+
+- a major route or substantially different page layout
+- a dialog, menu, popover, disclosure, or other initially hidden region
+- a form validation or error state
+- a complex widget with custom keyboard or ARIA behavior
+- a UI state not already rendered by an existing accessibility test
+
+Use one shared assertion helper for the standard axe configuration and failure
+formatting. A checkpoint should normally scan the whole page. Limit the scan to
+a region only when the test intentionally owns that region and document why.
+Treat `violations` as failures and review `incomplete` results: incomplete means
+axe could not make a reliable automated decision and requires human judgment.
+
+#### When To Add A Targeted Regression Test
+
+Keep focused browser assertions when the failure depends on a state or visual
+composition that a general scan may not evaluate reliably. Examples include:
+
+- hover, focus, selected, disabled, and error-state contrast
+- text rendered over pseudo-elements, gradients, images, or overlays
+- focus placement and focus return around dialogs
+- arrow-key, Home/End, Escape, and roving-tabindex behavior
+- live-region announcements
+- reduced-motion, forced-colors, or high-contrast behavior
+
+The datepicker contrast test in `e2e/accessibility` is this kind of regression
+test: it checks every enabled date in default and hover states and accounts for
+the selected-date pseudo-element. It complements the axe scan rather than
+serving as a pattern to copy for every control.
+
+#### Component Test Expectations
+
+Accessibility behavior belongs in the component's normal behavior tests. Use
+role and accessible-name queries and drive the UI as a user would:
+
+```tsx
+const nextMonth = screen.getByRole("button", { name: "Next month" });
+
+await user.click(nextMonth);
+await user.tab();
+await user.keyboard("{ArrowRight}");
+```
+
+Test meaningful outcomes such as focus movement, updated `aria-expanded` or
+`aria-selected` state, connected errors/descriptions, and keyboard operation.
+A successful `getByRole` query is useful pressure toward semantic markup, but
+it is not an accessibility audit by itself.
+
+#### Manual Review
+
+For a major UI change, verify the affected flow with:
+
+- keyboard-only navigation, including visible focus and a logical focus order
+- browser zoom and reflow at 200% and 400%
+- VoiceOver on macOS for names, roles, state changes, and announcements
+- reduced-motion and forced-colors/high-contrast settings when relevant
+- a free browser audit such as Accessibility Insights for Web
+
+Record the states reviewed in the PR. Automated checks passing means no tested
+automated violation was found; it does not mean the page conforms to every WCAG
+success criterion.
+
+#### Workflow For UI Changes
+
+1. Prefer semantic HTML and shared semantic color tokens while implementing.
+2. Add role/name and keyboard coverage to the affected component tests.
+3. Reuse an existing axe checkpoint when it already renders the changed state;
+   otherwise add the smallest representative checkpoint.
+4. Add a targeted browser regression only for behavior the general scan does
+   not protect.
+5. Run `bun run test:web`, `bun run lint`, and `bun run verify web`.
+6. For major UI changes, complete and document the relevant manual checks.
+
+Browser-based accessibility checks are appropriate for CI and pre-push
+verification. Keep commit hooks limited to fast static checks so normal commits
+do not need to start a browser.
+
+References:
+
+- [WCAG 2 overview](https://www.w3.org/WAI/standards-guidelines/wcag/)
+- [WAI-ARIA Authoring Practices Guide](https://www.w3.org/WAI/ARIA/apg/)
+- [Playwright accessibility testing](https://playwright.dev/docs/accessibility-testing)
+- [Accessibility Insights for Web](https://accessibilityinsights.io/docs/web/overview/)
+
 ### CI-Only Flakiness From Worker Contention
 
 `test-e2e.yml` runs in a container-limited GitHub Actions runner. Two
