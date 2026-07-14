@@ -405,6 +405,11 @@
   @apply select-none rounded-xs border-0 shadow-[0_4px_4px_var(--color-shadow-default)];
   background-color: var(--date-picker-bg);
   font-size: 11px;
+  --date-picker-hover-bg: color-mix(
+    in srgb,
+    var(--date-picker-bg) 82%,
+    var(--compass-color-fg-primary)
+  );
 
   &[data-view="sidebar"] {
     background-color: transparent;
@@ -485,8 +490,8 @@
   }
 
   & .react-datepicker__day:hover {
-    background-color: var(--compass-color-fg-primary);
-    color: var(--compass-color-text-dark);
+    background-color: var(--date-picker-hover-bg);
+    color: inherit;
   }
 
   & .react-datepicker__day-names {
@@ -498,7 +503,7 @@
   }
 
   & .react-datepicker__day--selected {
-    background-color: var(--compass-color-accent-primary);
+    background-color: var(--compass-color-accent-primary-shadow);
     color: var(--compass-color-text-lighter);
   }
 
@@ -516,7 +521,7 @@
   }
 
   & .react-datepicker__day--today:hover {
-    color: var(--compass-color-text-dark);
+    color: inherit;
   }
 
   & .react-datepicker__day--keyboard-selected {
@@ -740,11 +745,7 @@
     position: absolute;
     inset: 0 -3px;
     border-radius: var(--radius-default);
-    background: color-mix(
-      in srgb,
-      var(--compass-color-panel-scrollbar-active) 50%,
-      transparent
-    );
+    background: var(--date-picker-hover-bg);
     content: "";
   }
   &
