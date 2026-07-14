@@ -232,14 +232,15 @@ export const inspectGoogleWatchState = async (
     if (record.access === "freeBusyReader") continue;
 
     const gCalendarId = record.source.calendarId;
-    eventCapableCalendarIds.push(gCalendarId);
-
-    const hasSyncToken = eventSyncs.some(
-      (entry) =>
-        entry.gCalendarId === gCalendarId && Boolean(entry.nextSyncToken),
+    const eventSync = eventSyncs.find(
+      (entry) => entry.gCalendarId === gCalendarId,
     );
+    const hasSyncToken = Boolean(eventSync?.nextSyncToken);
 
     if (!hasSyncToken) incompleteCalendarIds.push(gCalendarId);
+    if (eventSync?.watchSupported !== false) {
+      eventCapableCalendarIds.push(gCalendarId);
+    }
   }
 
   if (incompleteCalendarIds.length > 0) {

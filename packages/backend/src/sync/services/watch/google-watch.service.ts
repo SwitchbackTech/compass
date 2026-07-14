@@ -22,6 +22,7 @@ import {
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import {
   getGoogleErrorStatus,
+  isGoogleWatchUnsupported,
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
@@ -29,7 +30,10 @@ import { sseServer } from "@backend/servers/sse/sse.server";
 import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
 import { GCalEventsNotificationHandler } from "@backend/sync/services/notify/handler/gcal-events.notification.handler";
 import { type NotificationOutcome } from "@backend/sync/services/notify/notification.outcome";
-import { getSync } from "@backend/sync/services/records/sync-records.repository";
+import {
+  getSync,
+  updateSync,
+} from "@backend/sync/services/records/sync-records.repository";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
 import { isWatchingGoogleResource } from "@backend/sync/services/watch/google-watch-state";
 import { getChannelExpiration } from "@backend/sync/services/watch/google-watch-timing";
@@ -379,8 +383,27 @@ async function startEventWatch(
         throw error;
       });
 
+    await updateSync(Resource_Sync.EVENTS, user, params.gCalendarId, {
+      watchSupported: true,
+    });
+
     return watch;
   } catch (err) {
+    if (isGoogleWatchUnsupported(err)) {
+      await updateSync(Resource_Sync.EVENTS, user, params.gCalendarId, {
+        watchSupported: false,
+      }).catch((metadataError) => {
+        logger.error(
+          `Failed to record unsupported events watch for user: ${user}`,
+          metadataError,
+        );
+      });
+      logger.info(
+        `Events watch is not supported for a Google calendar (user: ${user})`,
+      );
+      return { acknowledged: false };
+    }
+
     logger.error(`Error starting events watch for user: ${user}`, err);
 
     return { acknowledged: false };

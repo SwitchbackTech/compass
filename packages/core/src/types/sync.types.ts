@@ -21,6 +21,8 @@ export interface SyncDetails {
   nextSyncToken: string;
   nextPageToken?: string;
   lastSyncedAt?: Date;
+  /** False when Google explicitly rejects push watches for this resource. */
+  watchSupported?: boolean;
 }
 
 export enum Resource_Sync {

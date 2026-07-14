@@ -420,6 +420,22 @@ describe("inspectGoogleWatchState", () => {
     expect(result.expectedWatchCalendarIds).toEqual([Resource_Sync.CALENDAR]);
   });
 
+  it("case 6d: excludes a synced calendar whose resource rejects push watches", async () => {
+    const { user, userId } = await seedHealthyUser(0);
+    const gCalendarId = faker.string.uuid();
+    await seedActiveGoogleCalendar(user._id, gCalendarId);
+    await updateSync(Resource_Sync.EVENTS, userId, gCalendarId, {
+      nextSyncToken: faker.string.alphanumeric(16),
+      watchSupported: false,
+    });
+
+    const result = await inspectGoogleWatchState(userId);
+
+    expect(result.status).toBe(GoogleWatchStateStatus.HEALTHY);
+    expect(result.expectedWatchCalendarIds).toEqual([Resource_Sync.CALENDAR]);
+    expect(result.incompleteCalendarIds).toEqual([]);
+  });
+
   it("case 7: a freeBusyReader calendar's lingering watch is stale, and the calendar is excluded from the expected set", async () => {
     const { user, userId } = await seedHealthyUser(0);
     const gCalendarId = faker.string.uuid();
