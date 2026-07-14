@@ -1,6 +1,6 @@
 import { Origin } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleGridEvent,
@@ -21,9 +21,9 @@ import { type NormalizedEventQueryData } from "./event.query.types";
 export const BUSY_EVENT_TITLE = "Busy";
 
 // The grid renderer (assembleGridEvent) still consumes the legacy
-// LegacyEvent shape. This mirrors the mapping event.legacy-bridge.ts uses,
+// CompassEvent shape. This mirrors the mapping event.legacy-bridge.ts uses,
 // scoped to scheduled (timed/allDay) events.
-const scheduledEventToSchemaEvent = (event: Event): LegacyEvent => {
+const scheduledEventToSchemaEvent = (event: Event): CompassEvent => {
   const { schedule } = event;
   return {
     _id: event.id,
@@ -49,7 +49,7 @@ const eventsFrom = (data?: NormalizedEventQueryData): Event[] =>
   data?.ids.flatMap((id) => (data.entities[id] ? [data.entities[id]] : [])) ??
   [];
 
-// assembleGridEvent/hasEventDates still operate on the legacy LegacyEvent
+// assembleGridEvent/hasEventDates still operate on the legacy CompassEvent
 // shape; bridged via scheduledEventToSchemaEvent above. A cache entry with a
 // missing/malformed `schedule` is a bug upstream (normalizeEventList/query
 // seeding), not a case to silently swallow — but it must not crash this
@@ -69,8 +69,8 @@ const isValidScheduledEvent = (event: Event): boolean => {
 };
 
 // Re-attaches calendarId + isBusy onto the GridEvent produced by the
-// Event -> LegacyEvent -> GridEvent bridge above. scheduledEventToSchemaEvent
-// returns the legacy, hand-written core `LegacyEvent` shape (event.types.ts),
+// Event -> CompassEvent -> GridEvent bridge above. scheduledEventToSchemaEvent
+// returns the legacy, hand-written core `CompassEvent` shape (event.types.ts),
 // which has neither field, so the bridge itself can't carry them through
 // without widening that shared type (used by 10+ unrelated consumers). Joining
 // back by event id after assembleGridEvent keeps the bridge untouched and scopes

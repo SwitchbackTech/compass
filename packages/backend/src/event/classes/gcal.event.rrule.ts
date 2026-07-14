@@ -8,7 +8,7 @@ import {
   type gSchema$EventBase,
   type gSchema$EventInstance,
 } from "@core/types/gcal";
-import { type InstanceEvent } from "@core/types/legacy-event.contracts";
+import { type InstanceEvent } from "@core/types/compass-event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { diffRRuleOptions } from "@core/util/event/event.util";
 import {

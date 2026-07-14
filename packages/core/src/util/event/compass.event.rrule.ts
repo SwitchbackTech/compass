@@ -7,7 +7,7 @@ import { type CalendarProvider } from "@core/types/calendar.types";
 import {
   type BaseEvent,
   type InstanceEvent,
-} from "@core/types/legacy-event.contracts";
+} from "@core/types/compass-event.contracts";
 import { type WithObjectId } from "@core/types/type.utils";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {

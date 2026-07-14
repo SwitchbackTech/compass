@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
-import { ValidatedLegacyEventSchema } from "@core/types/legacy-event.contracts";
+import { ValidatedCompassEventSchema } from "@core/types/compass-event.contracts";
 import { type SelectOption } from "@web/common/types/component.types";
 
 /** Event category, based on its display type */
@@ -16,7 +16,7 @@ export enum RecurringEventUpdateScope {
   ALL_EVENTS = "All Events",
 }
 
-const WebEventSchema = ValidatedLegacyEventSchema.extend({
+const WebEventSchema = ValidatedCompassEventSchema.extend({
   recurrence: z
     .object({
       rule: z.array(z.string()).nullable().optional(),

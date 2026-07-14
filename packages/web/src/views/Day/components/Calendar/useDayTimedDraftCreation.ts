@@ -5,7 +5,7 @@ import {
   useRef,
 } from "react";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import {
   Categories_Event,
   type GridEvent,
@@ -38,7 +38,7 @@ export const useDayTimedDraftCreation = ({
   onOpenEvent,
 }: {
   dateCalcs: CalendarDateCalcs;
-  draft: LegacyEvent | null;
+  draft: CompassEvent | null;
   onOpenEvent: (event: GridEvent) => void;
 }) => {
   const timedDraftCreationGestureRef = useRef<TimedDraftCreationGesture | null>(

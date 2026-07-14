@@ -13,7 +13,7 @@ import {
   useState,
 } from "react";
 import { type CalendarId } from "@core/types/domain-primitives";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
   isEventReadOnly,
@@ -143,9 +143,9 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
     isExistingEvent,
     ...props
   }) => {
-    // LegacyEvent-shaped projection of the canonical draft, for the
+    // CompassEvent-shaped projection of the canonical draft, for the
     // still-unconverted DatePickers field-patch API and RecurrenceSection's
-    // LegacyEvent contract — see grid-event-draft.adapter.ts's
+    // CompassEvent contract — see grid-event-draft.adapter.ts's
     // gridEventDraftToSchemaEvent doc comment.
     const event = useMemo(() => gridEventDraftToSchemaEvent(draft), [draft]);
     const { title } = event;
@@ -279,12 +279,12 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
       [setLatestDraft],
     );
 
-    // LegacyEvent-shaped writer for the still-unconverted DatePickers
+    // CompassEvent-shaped writer for the still-unconverted DatePickers
     // field-patch API and RecurrenceSection's setEvent contract: merges the
-    // patch onto the current draft's LegacyEvent projection, then
+    // patch onto the current draft's CompassEvent projection, then
     // reapplies it onto the canonical GridEventDraft.
     const setLatestEvent = useCallback(
-      (nextEvent: SetStateAction<LegacyEvent | null>) => {
+      (nextEvent: SetStateAction<CompassEvent | null>) => {
         const currentEvent = gridEventDraftToSchemaEvent(
           latestDraftRef.current,
         );

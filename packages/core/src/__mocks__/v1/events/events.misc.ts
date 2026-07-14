@@ -1,6 +1,6 @@
 import { ObjectId } from "bson";
 import { Origin } from "@core/constants/core.constants";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 
 /**
  * Assortment of events with no direct relation to another
@@ -8,7 +8,7 @@ import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 
 const USER = new ObjectId().toString();
 
-export const CHILL_ALL_DAY: LegacyEvent = {
+export const CHILL_ALL_DAY: CompassEvent = {
   _id: new ObjectId().toString(),
   gEventId: "6csjad336cs3ibb469imcb9kc9gj6bb26ss30bb56kojgoj464o66ohh60",
   user: USER,
@@ -19,7 +19,7 @@ export const CHILL_ALL_DAY: LegacyEvent = {
   startDate: "2022-09-23",
   endDate: "2022-09-24",
 };
-export const CLIMB: LegacyEvent = {
+export const CLIMB: CompassEvent = {
   _id: new ObjectId().toString(),
   gEventId: "ccq34eb261j3ab9jckpj6b9kcos6cbb26pi38b9pc5i64e9mcgp3ao9p6o",
   user: USER,
@@ -31,7 +31,7 @@ export const CLIMB: LegacyEvent = {
   endDate: "2022-03-01T19:00:00-06:00",
 };
 
-export const EUROPE_TRIP: LegacyEvent = {
+export const EUROPE_TRIP: CompassEvent = {
   _id: new ObjectId().toString(),
   user: USER,
   origin: Origin.COMPASS,
@@ -41,7 +41,7 @@ export const EUROPE_TRIP: LegacyEvent = {
   endDate: "2025-12-10T00:00:00-00:00",
   order: 2,
 };
-export const LEARN_CHINESE: LegacyEvent = {
+export const LEARN_CHINESE: CompassEvent = {
   _id: new ObjectId().toString(),
   description: "",
   origin: Origin.COMPASS,
@@ -51,7 +51,7 @@ export const LEARN_CHINESE: LegacyEvent = {
   endDate: "2025-06-09",
   order: 1,
 };
-export const MARCH_1: LegacyEvent = {
+export const MARCH_1: CompassEvent = {
   _id: new ObjectId().toString(),
   gEventId: "2ip0l4k0kqhg22cagtmrlml5mn",
   user: USER,
@@ -62,7 +62,7 @@ export const MARCH_1: LegacyEvent = {
   startDate: "2022-03-01",
   endDate: "2022-03-02",
 };
-export const GROCERIES: LegacyEvent = {
+export const GROCERIES: CompassEvent = {
   _id: new ObjectId().toString(),
   gEventId: "pihjll1k75s1g9019ru6tkb97c",
   user: USER,
@@ -73,7 +73,7 @@ export const GROCERIES: LegacyEvent = {
   startDate: "2022-02-21T11:45:00-06:00",
   endDate: "2022-02-21T12:45:00-06:00",
 };
-export const MULTI_WEEK: LegacyEvent = {
+export const MULTI_WEEK: CompassEvent = {
   _id: new ObjectId().toString(),
   gEventId: "1k2rgneltn79cbchccut08alqs",
   user: USER,
@@ -84,7 +84,7 @@ export const MULTI_WEEK: LegacyEvent = {
   startDate: "2022-09-01T00:00:00-06:00",
   endDate: "2022-09-22T00:00:00-06:00",
 };
-export const TY_TIM: LegacyEvent = {
+export const TY_TIM: CompassEvent = {
   _id: new ObjectId().toString(),
   gEventId: "726v6dgnasekgmv5hc1jifpumm",
   user: USER,

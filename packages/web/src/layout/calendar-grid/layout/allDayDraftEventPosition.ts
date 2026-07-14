@@ -1,4 +1,4 @@
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleGridEvent,
@@ -10,7 +10,7 @@ export const positionAllDayDraftEvent = ({
   draft,
   events,
 }: {
-  draft: LegacyEvent | null;
+  draft: CompassEvent | null;
   events: GridEvent[];
 }): {
   activeDraftEvent: GridEvent | null;

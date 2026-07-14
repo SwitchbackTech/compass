@@ -2,7 +2,7 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import {
@@ -162,7 +162,7 @@ export function timedGridSchedule(start: Date, end: Date): GridScheduleDraft {
 // Mirrors event.legacy-bridge.ts's legacyRecurrenceFromEvent, duplicated
 // locally so this adapter doesn't depend on the bridge file being dissolved
 // (see event.view-model.ts's prior conversion for the same pattern).
-function legacyRecurrenceFromEvent(event: Event): LegacyEvent["recurrence"] {
+function legacyRecurrenceFromEvent(event: Event): CompassEvent["recurrence"] {
   return event.recurrence.kind === "series"
     ? { rule: [...event.recurrence.rules], eventId: event.id }
     : event.recurrence.kind === "occurrence"
@@ -173,10 +173,10 @@ function legacyRecurrenceFromEvent(event: Event): LegacyEvent["recurrence"] {
 // Reflects the draft's *live* recurrence edit (e.g. from RecurrenceSection's
 // toggle, mid-form), not just the source event's original recurrence — a
 // user editing recurrence on an existing draft must see that edit echoed
-// back through the LegacyEvent projection the form renders from.
+// back through the CompassEvent projection the form renders from.
 function legacyRecurrenceFromDraft(
   draft: GridEventDraft,
-): LegacyEvent["recurrence"] {
+): CompassEvent["recurrence"] {
   const { recurrence } = draft.values;
 
   if (draft.kind === "edit" && recurrence.kind === "preserve") {
@@ -199,15 +199,15 @@ function legacyRecurrenceFromDraft(
 }
 
 // TODO(packet-03-phase-3c): remove once remaining grid consumers no longer
-// require LegacyEvent. Keeping this projection beside the GridEventDraft
+// require CompassEvent. Keeping this projection beside the GridEventDraft
 // adapter lets the draft store expose one canonical grid draft without a
 // second store while legacy consumers are migrated incrementally.
 //
 // Return type is widened (rather than adding calendarId/isBusy to the shared,
-// hand-written core `LegacyEvent` interface, which 10+ unrelated consumers
+// hand-written core `CompassEvent` interface, which 10+ unrelated consumers
 // also use) so the calendar-colored card accent/label stays correct on a
 // dragging/resizing existing-event placeholder (draft.store.ts stores this
-// projection for that display path) without touching LegacyEvent itself.
+// projection for that display path) without touching CompassEvent itself.
 // isBusy is derived straight from the edit draft's real source event (never
 // from `values.title`, which stays "" for a busy source - see
 // editGridEventDraft) - it's what lets the right-click context menu
@@ -216,7 +216,7 @@ function legacyRecurrenceFromDraft(
 // step 8).
 export function gridEventDraftToSchemaEvent(
   draft: GridEventDraft,
-): LegacyEvent & { calendarId?: CalendarId; isBusy?: boolean } {
+): CompassEvent & { calendarId?: CalendarId; isBusy?: boolean } {
   const { schedule } = draft.values;
 
   return {
@@ -240,12 +240,12 @@ export function gridEventDraftToSchemaEvent(
 
 // The reverse direction of gridEventDraftToSchemaEvent, scoped to the one
 // boundary that needs it: EventForm/RecurrenceSection write back into a
-// legacy LegacyEvent-shaped `setEvent`, which this reapplies onto the
+// legacy CompassEvent-shaped `setEvent`, which this reapplies onto the
 // canonical GridEventDraft (preserving `kind`/`source`/`clientId`, which a
-// LegacyEvent patch has no way to express).
+// CompassEvent patch has no way to express).
 export function applySchemaEventPatchToGridDraft(
   current: GridEventDraft,
-  patch: LegacyEvent,
+  patch: CompassEvent,
 ): GridEventDraft {
   const rule = patch.recurrence?.rule;
   const recurrence =

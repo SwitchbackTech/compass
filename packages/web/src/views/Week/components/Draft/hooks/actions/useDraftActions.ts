@@ -665,7 +665,7 @@ export const useDraftActions = (
       // Rare fallback: a "gridClick" activity started via
       // draftActions.startGridClick (a source event not yet in the query
       // cache), which has no GridEventDraft to hand off. Build a default
-      // from the legacy LegacyEvent mirror's dates instead.
+      // from the legacy CompassEvent mirror's dates instead.
       const startDate = draftFromStore?.startDate;
       const endDate = draftFromStore?.endDate;
       const isAllDay = eventType === Categories_Event.ALLDAY;

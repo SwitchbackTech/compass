@@ -1,4 +1,4 @@
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -15,7 +15,7 @@ export const addVisibleDraftEvent = ({
   isAllDay,
   visibleDates,
 }: {
-  draft: LegacyEvent | null;
+  draft: CompassEvent | null;
   events: GridEvent[];
   isAllDay: boolean;
   visibleDates: CalendarGridVisibleDate[];
@@ -55,7 +55,7 @@ export const getCalendarEventIdSet = (events: GridEvent[]) =>
 
 export const isDraftOnlyEvent = (
   event: GridEvent,
-  draft: LegacyEvent | null,
+  draft: CompassEvent | null,
   savedEventIds: Set<string>,
 ) =>
   Boolean(
@@ -64,7 +64,7 @@ export const isDraftOnlyEvent = (
 
 export const isActiveDraftEvent = (
   event: GridEvent,
-  draft: LegacyEvent | null,
+  draft: CompassEvent | null,
   savedEventIds: Set<string>,
 ) =>
   Boolean(

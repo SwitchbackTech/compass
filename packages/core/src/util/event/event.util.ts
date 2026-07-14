@@ -3,21 +3,21 @@ import { type ParsedOptions } from "rrule/dist/esm/types";
 import {
   type BaseEvent,
   type InstanceEvent,
-  type LegacyEvent,
-} from "@core/types/legacy-event.contracts";
+  type CompassEvent,
+} from "@core/types/compass-event.contracts";
 import { type UserMetadata } from "@core/types/user.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 
 /** Event utilities for Compass events */
 
-export const categorizeEvents = (events: Array<LegacyEvent>) => {
+export const categorizeEvents = (events: Array<CompassEvent>) => {
   const baseEvents = events.filter(isBase) as BaseEvent[];
   const instances = events.filter(isInstance) as InstanceEvent[];
   const standaloneEvents = events.filter(isRegularEvent);
   return { baseEvents, instances, standaloneEvents };
 };
 
-export const isAllDay = (event: Pick<LegacyEvent, "startDate" | "endDate">) =>
+export const isAllDay = (event: Pick<CompassEvent, "startDate" | "endDate">) =>
   event !== undefined &&
   // 'YYYY-MM-DD' has 10 chars
   event.startDate?.length === 10 &&
@@ -28,7 +28,7 @@ export const isAllDay = (event: Pick<LegacyEvent, "startDate" | "endDate">) =>
  * @param event
  * @returns
  */
-export const isBase = (event: Pick<LegacyEvent, "recurrence">): boolean => {
+export const isBase = (event: Pick<CompassEvent, "recurrence">): boolean => {
   return (
     "recurrence" in event &&
     event.recurrence !== undefined &&
@@ -43,7 +43,7 @@ export const isBase = (event: Pick<LegacyEvent, "recurrence">): boolean => {
  * @returns
  */
 export const isInstance = (
-  event: Pick<LegacyEvent, "recurrence" | "gRecurringEventId">,
+  event: Pick<CompassEvent, "recurrence" | "gRecurringEventId">,
 ): boolean => {
   return (
     "recurrence" in event &&
@@ -54,7 +54,7 @@ export const isInstance = (
 };
 
 export const isRegularEvent = (
-  event: Pick<LegacyEvent, "recurrence">,
+  event: Pick<CompassEvent, "recurrence">,
 ): boolean => !isInstance(event) && !isBase(event);
 
 /**
@@ -62,7 +62,7 @@ export const isRegularEvent = (
  * (has a series `eventId`) or a base with recurrence rules.
  */
 export const isRecurringEvent = (
-  event: Pick<LegacyEvent, "recurrence">,
+  event: Pick<CompassEvent, "recurrence">,
 ): boolean =>
   Boolean(event.recurrence?.eventId || event.recurrence?.rule?.length);
 
@@ -93,7 +93,7 @@ export const shouldDoIncrementalGCalSync = (
 };
 
 export const getCompassEventDateFormat = (
-  date: Exclude<LegacyEvent["startDate"], undefined>,
+  date: Exclude<CompassEvent["startDate"], undefined>,
 ): string => {
   const allday = isAllDay({ startDate: date, endDate: date });
   const { YEAR_MONTH_DAY_FORMAT, RFC3339_OFFSET } = dayjs.DateFormat;
@@ -103,7 +103,7 @@ export const getCompassEventDateFormat = (
 };
 
 export const parseCompassEventDate = (
-  date: Exclude<LegacyEvent["startDate"], undefined>,
+  date: Exclude<CompassEvent["startDate"], undefined>,
 ): Dayjs => {
   if (!date) throw new Error("`date` or `dateTime` must be defined");
 

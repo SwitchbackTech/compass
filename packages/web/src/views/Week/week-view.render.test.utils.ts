@@ -1,7 +1,7 @@
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 
-export const freshenEventStartEndDate = (event: LegacyEvent): LegacyEvent => {
+export const freshenEventStartEndDate = (event: CompassEvent): CompassEvent => {
   // Set event to start on the current week's Thursday at 11am and end at 12pm (timed event)
   const now = dayjs();
   const startOfWeek = now.startOf("week"); // Sunday

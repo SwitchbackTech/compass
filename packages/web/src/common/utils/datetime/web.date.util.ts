@@ -9,7 +9,7 @@ import {
   type EventSchedule,
   EventScheduleSchema,
 } from "@core/types/event.contracts";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
@@ -295,12 +295,12 @@ export const computeCurrentEventDateRange = (
   to: {
     duration: "week" | "month";
   },
-  event: LegacyEvent,
+  event: CompassEvent,
   weekViewRange: {
     startDate: string;
     endDate: string;
   },
-): LegacyEvent => {
+): CompassEvent => {
   const reference = dayjs(weekViewRange.startDate);
 
   let start: Dayjs;
@@ -327,8 +327,8 @@ export const computeRelativeEventDateRange = (
     direction: "prev" | "next";
     duration: "week" | "month";
   },
-  event: LegacyEvent,
-): LegacyEvent => {
+  event: CompassEvent,
+): CompassEvent => {
   const reference = dayjs(event.startDate);
 
   let start: Dayjs;

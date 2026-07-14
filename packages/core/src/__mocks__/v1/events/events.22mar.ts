@@ -1,9 +1,9 @@
 import { ObjectId } from "bson";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type WithObjectId } from "@core/types/type.utils";
 
 const allDayEventsThatShouldMatch: Array<
-  WithObjectId<Omit<LegacyEvent, "_id">>
+  WithObjectId<Omit<CompassEvent, "_id">>
 > =
   // ordered by start date
   [
@@ -41,7 +41,7 @@ const allDayEventsThatShouldMatch: Array<
   ];
 
 const allDayEventsThatShouldNotMatch: Array<
-  WithObjectId<Omit<LegacyEvent, "_id">>
+  WithObjectId<Omit<CompassEvent, "_id">>
 > = [
   {
     _id: new ObjectId(),
@@ -77,7 +77,7 @@ const allDayEventsThatShouldNotMatch: Array<
   },
 ];
 
-export const mockEventSetMar22: Array<Omit<LegacyEvent, "_id">> = [
+export const mockEventSetMar22: Array<Omit<CompassEvent, "_id">> = [
   ...allDayEventsThatShouldMatch,
   ...allDayEventsThatShouldNotMatch,
 ];

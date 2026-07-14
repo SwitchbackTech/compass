@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import {
   isEventReadOnly,
   resolveCalendarCardIdentity,
@@ -29,7 +29,7 @@ import {
 
 interface DayEventsProps {
   getCalendarColumnIndex: (event: GridEvent) => number;
-  draft: LegacyEvent | null;
+  draft: CompassEvent | null;
   events: GridEvent[];
   measurements: CalendarGridMeasurements;
   onOpenEvent: (event: GridEvent) => void;

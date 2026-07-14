@@ -7,11 +7,12 @@ import { CalendarProvider } from "@core/types/calendar.types";
 import { type gSchema$Event, type WithGcalId } from "@core/types/gcal";
 import {
   type BaseEvent,
+  type CompassEvent,
   type InstanceEvent,
-  type LegacyEvent,
   type StandaloneEvent,
-  type ValidatedLegacyEvent,
-} from "@core/types/legacy-event.contracts";
+  type ValidatedCompassEvent,
+  ValidatedCompassEventSchema,
+} from "@core/types/compass-event.contracts";
 import {
   type WithId,
   type WithObjectId,
@@ -24,14 +25,13 @@ import {
   parseCompassEventDate,
 } from "@core/util/event/event.util";
 import { isCancelledGCalEvent } from "@core/util/event/gcal.event.util";
-import { validateEvent } from "@core/validators/event.validator";
 
 export namespace MapEvent {
   export const toCompass = (
     userId: string,
     events: gSchema$Event[],
     origin?: Origin,
-  ): ValidatedLegacyEvent[] => {
+  ): ValidatedCompassEvent[] => {
     const mapped = events
       .filter((event) => !isCancelledGCalEvent(event))
       .map((e: gSchema$Event) => gEventToCompassEvent(e, userId, origin));
@@ -40,9 +40,9 @@ export namespace MapEvent {
   };
 
   export const removeProviderData = (
-    event: WithObjectId<Omit<LegacyEvent, "_id">> | LegacyEvent,
+    event: WithObjectId<Omit<CompassEvent, "_id">> | CompassEvent,
   ): Omit<
-    WithObjectId<Omit<LegacyEvent, "_id">> | LegacyEvent,
+    WithObjectId<Omit<CompassEvent, "_id">> | CompassEvent,
     "gEventId" | "gRecurringEventId"
   > => {
     const {
@@ -60,9 +60,9 @@ export namespace MapEvent {
   };
 
   export const removeIdentifyingData = (
-    event: WithObjectId<Omit<LegacyEvent, "_id">> | LegacyEvent,
+    event: WithObjectId<Omit<CompassEvent, "_id">> | CompassEvent,
   ): Omit<
-    LegacyEvent,
+    CompassEvent,
     | "_id"
     | "gEventId"
     | "gRecurringEventId"
@@ -81,7 +81,7 @@ export namespace MapEvent {
   };
 
   export const toGcal = (
-    event: LegacyEvent,
+    event: CompassEvent,
     { status = "confirmed" }: Pick<gSchema$Event, "status"> = {},
   ): gSchema$Event => {
     const timeZone = dayjs.tz.guess();
@@ -116,7 +116,7 @@ export namespace MapEvent {
   export const toGcalInstanceProviderData = (
     instance: Omit<InstanceEvent, "_id">,
     base?: Omit<BaseEvent, "_id">,
-  ): Pick<LegacyEvent, "gEventId" | "gRecurringEventId"> => {
+  ): Pick<CompassEvent, "gEventId" | "gRecurringEventId"> => {
     const { gEventId: _gEventId } = instance;
     const { gRecurringEventId: _gRecurringEventId = base?.gEventId } = instance;
     const gRecurringEventId = _gRecurringEventId ?? instance.recurrence.eventId;
@@ -132,7 +132,7 @@ export namespace MapEvent {
     base:
       | WithObjectId<Omit<BaseEvent | StandaloneEvent, "_id">>
       | WithId<Omit<BaseEvent | StandaloneEvent, "_id">>,
-  ): Pick<LegacyEvent, "gEventId"> => {
+  ): Pick<CompassEvent, "gEventId"> => {
     const gEventId = base.gEventId ?? base._id.toString();
 
     return { gEventId };
@@ -140,8 +140,8 @@ export namespace MapEvent {
 
   export const toProviderData = (
     event:
-      | WithObjectId<Omit<LegacyEvent, "_id" | "recurrence">>
-      | WithId<Omit<LegacyEvent, "_id" | "recurrence">>,
+      | WithObjectId<Omit<CompassEvent, "_id" | "recurrence">>
+      | WithId<Omit<CompassEvent, "_id" | "recurrence">>,
     provider?: CalendarProvider,
     base?:
       | WithObjectId<Omit<BaseEvent, "_id">>
@@ -183,7 +183,7 @@ export const gEventToCompassEvent = (
   gEvent: gSchema$Event,
   userId: string,
   origin?: Origin,
-): WithoutId<ValidatedLegacyEvent> => {
+): WithoutId<ValidatedCompassEvent> => {
   if (!gEvent.id) {
     throw new BaseError(
       "Bad Google Event Id",
@@ -217,7 +217,7 @@ export const gEventToCompassEvent = (
   const _origin =
     event.extendedProperties?.private?.["origin"] ?? origin ?? Origin.GOOGLE;
 
-  const compassEvent: LegacyEvent = {
+  const compassEvent: CompassEvent = {
     gEventId,
     user: userId,
     origin: _origin as Origin,
@@ -238,7 +238,7 @@ export const gEventToCompassEvent = (
 
   if (gRecurringEventId) compassEvent.gRecurringEventId = gRecurringEventId;
 
-  const validatedCompassEvent = validateEvent(compassEvent);
+  const validatedCompassEvent = ValidatedCompassEventSchema.parse(compassEvent);
 
   return validatedCompassEvent;
 };

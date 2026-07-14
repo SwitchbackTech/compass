@@ -3,8 +3,8 @@ import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
 import {
   type BaseEvent,
-  type LegacyEvent,
-} from "@core/types/legacy-event.contracts";
+  type CompassEvent,
+} from "@core/types/compass-event.contracts";
 import { type WithId } from "@core/types/type.utils";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
@@ -42,12 +42,12 @@ export const addId = (event: GridEvent): WithId<GridEvent> => {
   return _event;
 };
 
-export type EventWithDates = LegacyEvent & {
+export type EventWithDates = CompassEvent & {
   startDate: string;
   endDate: string;
 };
 
-export const hasEventDates = (event: LegacyEvent): event is EventWithDates =>
+export const hasEventDates = (event: CompassEvent): event is EventWithDates =>
   typeof event.startDate === "string" && typeof event.endDate === "string";
 
 export const assembleWebEvent = (event: EventWithDates): WebEvent => ({
@@ -63,13 +63,13 @@ export const assembleDefaultEvent = async (
   draftType?: Categories_Event | null,
   startDate?: string,
   endDate?: string,
-): Promise<LegacyEvent | GridEvent> => {
+): Promise<CompassEvent | GridEvent> => {
   const userId = await getUserId();
   const baseEvent = _assembleBaseEvent(userId, {});
 
   switch (draftType) {
     case Categories_Event.ALLDAY: {
-      const defaultAllday: LegacyEvent = {
+      const defaultAllday: CompassEvent = {
         ...baseEvent,
         isAllDay: true,
         startDate,
@@ -120,7 +120,7 @@ export const getEventDragOffset = (
   };
 };
 
-export const getCategory = (event: LegacyEvent) => {
+export const getCategory = (event: CompassEvent) => {
   if (event?.isAllDay) {
     return Categories_Event.ALLDAY;
   }
@@ -221,8 +221,8 @@ export const isEventInRange = (
 
 const _assembleBaseEvent = (
   userId: string,
-  event: Partial<LegacyEvent>,
-): LegacyEvent => {
+  event: Partial<CompassEvent>,
+): CompassEvent => {
   const baseEvent = {
     _id: event._id,
     title: event.title ?? "",
@@ -237,15 +237,15 @@ const _assembleBaseEvent = (
   return baseEvent;
 };
 
-export function compareEventsByTitle(a: LegacyEvent, b: LegacyEvent) {
+export function compareEventsByTitle(a: CompassEvent, b: CompassEvent) {
   return (a.title ?? "").localeCompare(b.title ?? "");
 }
 
-export function compareEventsById(prev: LegacyEvent, next: LegacyEvent) {
+export function compareEventsById(prev: CompassEvent, next: CompassEvent) {
   return prev._id?.localeCompare(next._id ?? "") ?? 0;
 }
 
-export function compareEventsByStartDate(prev: LegacyEvent, next: LegacyEvent) {
+export function compareEventsByStartDate(prev: CompassEvent, next: CompassEvent) {
   const prevStart = dayjs(prev.startDate);
   const nextStart = dayjs(next.startDate);
   const before = prevStart.isBefore(nextStart);

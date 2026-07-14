@@ -8,7 +8,7 @@ import {
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
   Categories_Event,
@@ -171,7 +171,7 @@ export function DayCalendarGrid() {
   // Schedule-agnostic: opens the floating form for a freshly-built draft event,
   // whether all-day or timed (openEventFormForEvent branches on isAllDay).
   const openDraftEventForm = useCallback(
-    (event: LegacyEvent) => {
+    (event: CompassEvent) => {
       if (!hasEventDates(event)) {
         return;
       }
