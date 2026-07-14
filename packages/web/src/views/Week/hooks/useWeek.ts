@@ -119,9 +119,15 @@ export const useWeek = (
   };
 
   const goToToday = () => {
+    const navigationSource = navigationSourceRef.current;
     navigationSourceRef.current = "manual";
     if (!isCurrentWeek) {
-      setAnchor(today.startOf("week"));
+      const todayWindowStart = today.startOf("week");
+      const shiftedWindowOffset =
+        navigationSource === "day-shift"
+          ? start.diff(start.startOf("week"), "day")
+          : 0;
+      setAnchor(todayWindowStart.add(shiftedWindowOffset, "day"));
     }
   };
 
