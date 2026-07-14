@@ -20,7 +20,10 @@ import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import { googleCalendarListService } from "@backend/sync/services/calendarlist/google-calendarlist.service";
 import { seedGoogleCalendar } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
-import { updateSync } from "@backend/sync/services/records/sync-records.repository";
+import {
+  getSync,
+  updateSync,
+} from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
 import {
@@ -620,6 +623,61 @@ describe("googleWatchService", () => {
       expect(inspection.status).toBe(GoogleWatchStateStatus.REPAIR_REQUIRED);
       expect(inspection.reason).toBe("WATCHES_MISSING");
       expect(inspection.missingWatchCalendarIds).toContain(failingGCalId);
+    });
+
+    it("records an unsupported event resource without making watch health fail", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const context = await createGoogleRequestContext(userId);
+      const gCalendarId = faker.string.uuid();
+
+      await seedGoogleCalendar(user._id, {
+        isPrimary: true,
+        source: { provider: "google", calendarId: gCalendarId, etag: "etag-1" },
+      });
+      await updateSync(Resource_Sync.CALENDAR, userId, Resource_Sync.CALENDAR, {
+        nextSyncToken: faker.string.alphanumeric(16),
+      });
+      await updateSync(Resource_Sync.EVENTS, userId, gCalendarId, {
+        nextSyncToken: faker.string.alphanumeric(16),
+      });
+
+      jest.spyOn(gcalService, "watchCalendars").mockResolvedValue({
+        watch: {
+          resourceId: "resource-calendarlist",
+          expiration: String(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+      const unsupported = createGoogleError({
+        code: "400",
+        responseStatus: 400,
+      });
+      if (unsupported.response) {
+        unsupported.response.data = {
+          error: {
+            code: 400,
+            message: "Push notifications are not supported by this resource.",
+            errors: [{ reason: "pushNotSupportedForRequestedResource" }],
+          },
+        };
+      }
+      jest.spyOn(gcalService, "watchEvents").mockRejectedValue(unsupported);
+
+      await googleWatchService.startGoogleWatches(
+        userId,
+        [{ gCalendarId: Resource_Sync.CALENDAR }, { gCalendarId }],
+        context,
+      );
+
+      const sync = await getSync({ userId });
+      expect(
+        sync?.google?.events.find((entry) => entry.gCalendarId === gCalendarId)
+          ?.watchSupported,
+      ).toBe(false);
+      expect(await inspectGoogleWatchState(userId)).toMatchObject({
+        status: GoogleWatchStateStatus.HEALTHY,
+        reason: "WATCHES_HEALTHY",
+      });
     });
 
     it("contains a calendarlist-watch failure: event watches still start, and the inspector reports WATCHES_MISSING for the calendar list", async () => {

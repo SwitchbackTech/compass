@@ -152,6 +152,14 @@ export const isGoogleRepairQuotaError = (e: unknown): boolean => {
   );
 };
 
+export const isGoogleWatchUnsupported = (e: unknown): boolean => {
+  if (getGoogleErrorStatus(e) !== 400) return false;
+
+  const googleError = getGoogleApiError(e);
+  const reasons = googleError?.errors?.map(({ reason }) => reason) ?? [];
+  return reasons.includes("pushNotSupportedForRequestedResource");
+};
+
 export const isInvalidValue = (e: GaxiosError) => {
   return e.message === "Invalid Value";
 };

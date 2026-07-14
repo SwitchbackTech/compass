@@ -42,8 +42,9 @@ export const isGoogleCalendarSyncHealthy = async (
     return false;
   }
 
-  return eventSyncs.every(({ gCalendarId }) =>
-    activeWatchCalendarIds.has(gCalendarId),
+  return eventSyncs.every(
+    ({ gCalendarId, watchSupported }) =>
+      watchSupported === false || activeWatchCalendarIds.has(gCalendarId),
   );
 };
 

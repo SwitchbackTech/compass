@@ -73,4 +73,15 @@ describe("googleSyncHealth", () => {
 
     await expect(isGoogleCalendarSyncHealthy(userId)).resolves.toBe(false);
   });
+
+  it("does not require a watch for a synced resource that rejects push", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const userId = user._id.toString();
+    await updateSync(Resource_Sync.EVENTS, userId, "public-holidays", {
+      nextSyncToken: "holiday-token",
+      watchSupported: false,
+    });
+
+    await expect(isGoogleCalendarSyncHealthy(userId)).resolves.toBe(true);
+  });
 });

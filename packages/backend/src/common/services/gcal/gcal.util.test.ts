@@ -8,6 +8,7 @@ import {
   isFullSyncRequired,
   isGoogleError,
   isGoogleRepairQuotaError,
+  isGoogleWatchUnsupported,
   isInvalidGoogleToken,
   isInvalidValue,
 } from "./gcal.utils";
@@ -85,6 +86,28 @@ describe("Google Error Parsing", () => {
     expect(isGoogleRepairQuotaError(createGoogleError({ code: "500" }))).toBe(
       false,
     );
+  });
+  it("recognizes resources that do not support push watches", () => {
+    const unsupported = createGoogleError({
+      code: "400",
+      responseStatus: 400,
+    });
+    if (unsupported.response) {
+      unsupported.response.data = {
+        error: {
+          code: 400,
+          message: "Push notifications are not supported by this resource.",
+          errors: [{ reason: "pushNotSupportedForRequestedResource" }],
+        },
+      };
+    }
+
+    expect(isGoogleWatchUnsupported(unsupported)).toBe(true);
+    expect(
+      isGoogleWatchUnsupported(
+        createGoogleError({ code: "500", responseStatus: 500 }),
+      ),
+    ).toBe(false);
   });
 });
 
