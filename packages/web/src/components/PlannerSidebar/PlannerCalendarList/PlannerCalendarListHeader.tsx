@@ -23,12 +23,9 @@ const TOOLTIP_ACTION_BUTTON_CLASSNAME =
 const HEADING_CLASSNAME =
   "mb-2 flex min-w-0 font-semibold text-sm leading-none";
 
-// Shared by every account-label trigger (button or span) so the header's
-// email/temporary-account text stays keyboard-focusable and reset the same way.
-const TRIGGER_FOCUS_CLASSNAME =
-  "min-w-0 truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary";
-const TRIGGER_BUTTON_RESET_CLASSNAME =
-  "appearance-none border-0 bg-transparent p-0 text-left font-semibold";
+// Keeps the temporary-account label keyboard-focusable while looking like plain text.
+const TEMPORARY_ACCOUNT_TRIGGER_CLASSNAME =
+  "min-w-0 truncate appearance-none border-0 bg-transparent p-0 text-left font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary";
 
 /**
  * The calendar list's heading is the account identity (email, or the
@@ -64,8 +61,7 @@ const TemporaryAccountHeader: FC = () => {
         <TooltipTrigger asChild>
           <button
             className={classNames(
-              TRIGGER_FOCUS_CLASSNAME,
-              TRIGGER_BUTTON_RESET_CLASSNAME,
+              TEMPORARY_ACCOUNT_TRIGGER_CLASSNAME,
               isDirty ? "c-sync-text-wave" : "text-text-lighter",
             )}
             onClick={handleOpenSignUp}

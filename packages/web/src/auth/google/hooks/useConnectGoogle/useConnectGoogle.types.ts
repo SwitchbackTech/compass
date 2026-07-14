@@ -9,14 +9,11 @@ export type GoogleUiConfig = {
   commandAction: {
     label: string;
     icon: CommandActionIcon;
-    isDisabled: boolean;
-    onSelect?: () => void;
+    onSelect: () => void;
   } | null;
 };
 
 export type UseConnectGoogleResult = GoogleUiConfig & {
   isAvailable: boolean;
   state: GoogleUiState;
-  onRepairGoogle: () => void;
-  onOpenGoogleAuth: () => void;
 };

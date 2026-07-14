@@ -24,7 +24,6 @@ export const getGoogleConnectionConfig = (
         commandAction: {
           label: "Connect Google Calendar",
           icon: COMMAND_ICON,
-          isDisabled: false,
           onSelect: onConnectGoogle,
         },
       };
@@ -33,7 +32,6 @@ export const getGoogleConnectionConfig = (
         commandAction: {
           label: "Reconnect Google Calendar",
           icon: COMMAND_ICON,
-          isDisabled: false,
           onSelect: onConnectGoogle,
         },
       };
@@ -42,7 +40,6 @@ export const getGoogleConnectionConfig = (
         commandAction: {
           label: "Sync Google Calendar",
           icon: COMMAND_ICON,
-          isDisabled: false,
           onSelect: onRepairGoogle,
         },
       };

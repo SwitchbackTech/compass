@@ -20,7 +20,6 @@ export const useCalendarSyncCmdItems = (): {
             id: "connect-google-calendar",
             label: commandAction.label,
             icon: commandAction.icon,
-            disabled: commandAction.isDisabled,
             onClick: commandAction.onSelect,
           },
         ]
