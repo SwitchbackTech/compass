@@ -239,6 +239,11 @@ This section is a reference plan, not current authorization.
 
 ### Production go/no-go
 
+The operator-facing version of this gate — with tag/backup/window/rollback-owner
+boxes to tick, an abort rule, and a sign-off block — is
+[`prod-go-no-go-checklist.md`](./prod-go-no-go-checklist.md). Fill that in; the
+bullets below are its summary.
+
 - Every staging evidence cell above is complete.
 - Packet `09` is marked complete in the project master plan.
 - The exact release tag passed staging and its images exist.
