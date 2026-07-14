@@ -179,6 +179,24 @@ describe("useWeek", () => {
     });
   });
 
+  it("preserves a shifted window when returning to today", () => {
+    mockParams.dateString = "2026-01-01";
+    const today = dayjs("2026-05-20", DATE_FORMAT);
+    const { rerender, result } = renderHook(() => useWeek(today));
+
+    act(() => result.current.util.shiftViewByDay(1));
+    mockParams.dateString = "2026-01-02";
+    rerender();
+    mockNavigate.mockClear();
+
+    act(() => result.current.util.goToToday());
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: "/week/$dateString",
+      params: { dateString: "2026-05-22" },
+    });
+  });
+
   it("does not navigate on goToToday when already viewing today's week", () => {
     mockParams.dateString = "2026-05-20";
     const today = dayjs("2026-05-20", DATE_FORMAT);
