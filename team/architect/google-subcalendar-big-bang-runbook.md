@@ -1,6 +1,7 @@
 # Google sub-calendar big-bang deployment runbook
 
-Status: **staging recovery is ready to rehearse; production is locked**.
+Status: **staging validator recovery and full-sync acceptance are complete;
+production is locked**.
 
 This is the master operator runbook for landing the work from
 [`google-subcalendar-project`](../archive/google-subcalendar-project/master-doc.md)
@@ -196,20 +197,41 @@ content or credentials.
 | --- | --- | --- |
 | Preflight state captured | 2026-07-14: cut over; 50,500 active rows; 9 migration records | 2026-07-14: cut over; 1 active row; 9 migration records |
 | Backup restore checked | 2026-07-14: 103,940 documents restored to scratch DB; 0 failures | 2026-07-14: 17 documents restored to scratch DB; 0 failures |
-| Validator repair migrated | pending | pending |
-| Google sync code `121` absent | pending | pending |
+| Validator repair migrated | 2026-07-14, `v1.0.207`: 12 ledger records; strict validator valid; `priority` absent; 50,396 active rows | 2026-07-14, `v1.0.207`: 12 ledger records; strict validator valid; `priority` absent; 0 active rows |
+| Google sync code `121` absent | 2026-07-14, `v1.0.211`: designated account full resync passed with 0 invalid rows and no code `121` | Not applicable: no Google account is configured on this target; service health and logs passed |
 | 12-step acceptance passed | pending | pending |
 | Rollback and second forward run passed | pending | pending |
-| Operator/date/release tag | pending | pending |
+| Operator/date/release tag | Codex / 2026-07-14 / `v1.0.211` | Codex / 2026-07-14 / `v1.0.211` |
 
 Production remains locked while any cell is pending.
+
+### Recorded staging rehearsal — 2026-07-14
 
 The first `v1.0.205` rehearsal stopped safely before backend restart. It exposed
 two pre-existing active-data leaks: 104 cloud and 1 self-hosted Someday rows,
 all matched by `_id` in `event_legacy_v1`. It also proved the priority validator
 repair must precede the recurring-series repair. Release `v1.0.205` must not be
-used for another migration attempt; use the corrective release containing the
-`11.59` repair.
+used for another migration attempt.
+
+The corrective releases were applied in this order:
+
+| Release | Change | Staging evidence |
+| --- | --- | --- |
+| `v1.0.207` / [PR #2107](https://github.com/SwitchbackTech/compass-calendar/pull/2107) | Put the `11.59` validator repair before recurring repair; remove only archived Someday leaks; restore the final strict schema | Both backups restored into scratch databases with zero failures. Both targets reached 12 migration records, zero `priority` fields, zero active Someday rows, and `db.event.validate({ full: true }).valid === true`. |
+| `v1.0.209` / [PR #2109](https://github.com/SwitchbackTech/compass-calendar/pull/2109) | Batch standalone Google event lookup and persistence | The 317-event Holidays calendar improved from about 84 seconds to 1.81 seconds. |
+| `v1.0.210` / [PR #2110](https://github.com/SwitchbackTech/compass-calendar/pull/2110) | Stream and batch recurring Google instances | The 143-event Family calendar improved from 56.69 seconds to 2.59 seconds; the 2,745-event primary calendar completed in 17.81 seconds instead of about 17 minutes 21 seconds. All three reported zero invalid events. |
+| `v1.0.211` / [PR #2111](https://github.com/SwitchbackTech/compass-calendar/pull/2111) | Record calendars for which Google explicitly does not support push watches, and exclude only those calendars from watch-health expectations | A fresh forced resync completed Holidays in 2.64 seconds, Family in 2.68 seconds, and primary in 16.98 seconds. It saved 317, 143, and 2,742 events respectively, with zero invalid rows and no Mongo code `121`. The Holidays watch rejection was informational, required watches initialized, and the signed-in UI settled to `Up-to-date`. |
+
+Both staging deployments ran `v1.0.211` with healthy backend, Mongo, and
+SuperTokens containers after acceptance. Cloud logs contained no `Document
+failed validation`, code `121`, `Re-sync failed`, `ERRORED`, fatal, or unhandled
+entries after the acceptance start time. Self-hosted staging has no configured
+Google account, so direct Google acceptance there is not applicable; do not
+misread that as evidence for a production Google sync.
+
+Production remains locked because the complete packet `09` manual acceptance,
+watch-renewal soak, and rollback/second-forward rehearsal are still pending.
+Release `v1.0.205` must not be used for another migration attempt.
 
 ## Future Phase P — production big-bang cutover
 
