@@ -13,32 +13,33 @@ interface ShortcutMenuConfig {
 const getNavigateShortcuts = ({
   view,
   isViewingCurrentPeriod,
-}: ShortcutMenuConfig): Shortcut[] => [
-  { keys: ["j"], label: `Previous ${view}` },
-  { keys: ["k"], label: `Next ${view}` },
-  ...(view === "week"
-    ? [
-        { keys: ["Shift", "j"], label: "Shift view back one day" },
-        { keys: ["Shift", "k"], label: "Shift view forward one day" },
-      ]
-    : []),
-  {
-    keys: ["t"],
-    label: isViewingCurrentPeriod
-      ? "Scroll to now"
-      : view === "day"
-        ? "Go to today"
-        : "Go to current week",
-  },
-  {
-    keys: [VIEW_SHORTCUTS.day.key],
-    label: `Go to ${VIEW_SHORTCUTS.day.label} view`,
-  },
-  {
-    keys: [VIEW_SHORTCUTS.week.key],
-    label: `Go to ${VIEW_SHORTCUTS.week.label} view`,
-  },
-];
+}: ShortcutMenuConfig): Shortcut[] => {
+  const alternateView =
+    view === "day" ? VIEW_SHORTCUTS.week : VIEW_SHORTCUTS.day;
+
+  return [
+    { keys: ["j"], label: `Previous ${view}` },
+    { keys: ["k"], label: `Next ${view}` },
+    ...(view === "week"
+      ? [
+          { keys: ["Shift", "j"], label: "Shift view back one day" },
+          { keys: ["Shift", "k"], label: "Shift view forward one day" },
+        ]
+      : []),
+    {
+      keys: ["t"],
+      label: isViewingCurrentPeriod
+        ? "Scroll to now"
+        : view === "day"
+          ? "Go to today"
+          : "Go to current week",
+    },
+    {
+      keys: [alternateView.key],
+      label: `Go to ${alternateView.label} view`,
+    },
+  ];
+};
 
 const getCreateShortcuts = (): Shortcut[] => [
   { keys: ["c"], label: "Create timed event" },
