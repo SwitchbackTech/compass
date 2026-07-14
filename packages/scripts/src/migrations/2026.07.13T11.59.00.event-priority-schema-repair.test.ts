@@ -1,6 +1,6 @@
 import { MigratorType } from "@scripts/common/cli.types";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
-import Migration from "@scripts/migrations/2026.07.14T09.59.00.event-priority-schema-repair";
+import Migration from "@scripts/migrations/2026.07.13T11.59.00.event-priority-schema-repair";
 import { type Document, ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import {
@@ -14,7 +14,7 @@ import {
   EventRecordSchema,
 } from "@backend/event/event.record";
 
-describe("2026.07.14T09.59.00.event-priority-schema-repair", () => {
+describe("2026.07.13T11.59.00.event-priority-schema-repair", () => {
   const migration = new Migration();
   const collectionName = () => mongoService.event.collectionName;
   const events = () =>
@@ -67,6 +67,10 @@ describe("2026.07.14T09.59.00.event-priority-schema-repair", () => {
   beforeAll(setupTestDb);
   afterEach(async () => {
     await events()
+      .drop()
+      .catch(() => undefined);
+    await mongoService.db
+      .collection(`${collectionName()}_legacy_v1`)
       .drop()
       .catch(() => undefined);
     await cleanupCollections();
@@ -134,5 +138,51 @@ describe("2026.07.14T09.59.00.event-priority-schema-repair", () => {
     expect(await events().countDocuments({ priority: { $exists: true } })).toBe(
       0,
     );
+  });
+
+  it("removes leaked Someday data only when the legacy archive preserves it", async () => {
+    await createCollectionWithStaleValidator();
+    const leakedSomeday = {
+      ...eventRecord(),
+      schedule: {
+        kind: "someday",
+        period: "week",
+        anchorDate: "2026-07-14",
+        sortOrder: 0,
+      },
+      priority: "work",
+    };
+    await events().insertOne(leakedSomeday as never, {
+      bypassDocumentValidation: true,
+    });
+    await mongoService.db
+      .collection(`${collectionName()}_legacy_v1`)
+      .insertOne({ _id: leakedSomeday._id });
+
+    await migration.up(migrationContext);
+
+    expect(await events().findOne({ _id: leakedSomeday._id })).toBeNull();
+  });
+
+  it("keeps an unarchived Someday leak and fails closed", async () => {
+    await createCollectionWithStaleValidator();
+    const leakedSomeday = {
+      ...eventRecord(),
+      schedule: {
+        kind: "someday",
+        period: "week",
+        anchorDate: "2026-07-14",
+        sortOrder: 0,
+      },
+      priority: "work",
+    };
+    await events().insertOne(leakedSomeday as never, {
+      bypassDocumentValidation: true,
+    });
+
+    await expect(migration.up(migrationContext)).rejects.toThrow(
+      /only 0 are preserved in the legacy archive/,
+    );
+    expect(await events().findOne({ _id: leakedSomeday._id })).not.toBeNull();
   });
 });

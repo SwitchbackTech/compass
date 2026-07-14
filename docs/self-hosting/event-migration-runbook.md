@@ -199,7 +199,7 @@ promptly or not at all.
 - Dev databases use the `_dev.` collection prefix; the commands above show
   production names.
 - Priority removal now has an ordered pair of post-cutover migrations.
-  `event-priority-schema-repair` (`2026.07.14T09.59.00`) reapplies the current
+  `event-priority-schema-repair` (`2026.07.13T11.59.00`) reapplies the current
   strict `EventRecordSchema` to the active final `event` collection and removes
   stale `priority` fields. It must run before `priority-data-cleanup`
   (`2026.07.14T10.00.00`), which also drops the orphaned standalone `priority`
