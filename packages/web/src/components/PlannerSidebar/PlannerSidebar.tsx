@@ -6,7 +6,6 @@ import {
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { PlannerAccountSummary } from "./PlannerAccountSummary/PlannerAccountSummary";
 import { PlannerCalendarList } from "./PlannerCalendarList/PlannerCalendarList";
 import { PlannerMonthPicker } from "./PlannerMonthPicker/PlannerMonthPicker";
 import { PlannerSidebarActions } from "./PlannerSidebarActions/PlannerSidebarActions";
@@ -31,7 +30,6 @@ export interface PlannerSidebarProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 type PlannerSidebarDependencies = {
-  PlannerAccountSummary: typeof PlannerAccountSummary;
   PlannerCalendarList: typeof PlannerCalendarList;
   PlannerMonthPicker: typeof PlannerMonthPicker;
   PlannerSidebarActions: typeof PlannerSidebarActions;
@@ -39,7 +37,6 @@ type PlannerSidebarDependencies = {
 };
 
 export function createPlannerSidebar({
-  PlannerAccountSummary: PlannerAccountSummaryComponent,
   PlannerCalendarList: PlannerCalendarListComponent,
   PlannerMonthPicker: PlannerMonthPickerComponent,
   PlannerSidebarActions: PlannerSidebarActionsComponent,
@@ -87,8 +84,6 @@ export function createPlannerSidebar({
           </div>
         )}
 
-        <PlannerAccountSummaryComponent />
-
         <PlannerSidebarActionsComponent
           isShortcutsOpen={isShortcutsOpen}
           onToggleShortcuts={onToggleShortcuts}
@@ -106,7 +101,6 @@ export function createPlannerSidebar({
 }
 
 export const PlannerSidebar = createPlannerSidebar({
-  PlannerAccountSummary,
   PlannerCalendarList,
   PlannerMonthPicker,
   PlannerSidebarActions,
