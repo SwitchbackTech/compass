@@ -1,7 +1,7 @@
 import { render, waitFor } from "@testing-library/react";
 import { act } from "react";
-import { type ServerMessage } from "@core/types/server-message.contracts";
 import { type UserMetadata } from "@core/types/user.types";
+import { createFakeServerMessageBus } from "@web/__tests__/utils/sse-message-bus.test.util";
 import {
   getGoogleSyncIndicatorOverride,
   resetGoogleSyncUIStateForTests,
@@ -19,25 +19,11 @@ const mockInvalidateEventQueries = mock();
 const mockShowErrorToast = mock();
 const refreshUserMetadata = mock().mockResolvedValue(undefined);
 
-// Mirrors sse.client's listener-set convention: subscribers key by the
-// message's own `type` and receive the already-parsed ServerMessage (B10).
-const listenersByType = new Map<
-  ServerMessage["type"],
-  Set<(message: ServerMessage) => void>
->();
-function onServerMessage<T extends ServerMessage["type"]>(
-  type: T,
-  handler: (message: Extract<ServerMessage, { type: T }>) => void,
-): () => void {
-  let listeners = listenersByType.get(type);
-  if (!listeners) {
-    listeners = new Set();
-    listenersByType.set(type, listeners);
-  }
-  const listener = (message: ServerMessage) => handler(message as never);
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
+const {
+  onServerMessage,
+  emit: fireMessage,
+  clear,
+} = createFakeServerMessageBus();
 
 const useGcalSSE = createUseGcalSSE({
   handleGoogleRevoked: mockHandleGoogleRevoked,
@@ -53,12 +39,6 @@ const HookHost = () => {
   return null;
 };
 
-const fireMessage = (message: ServerMessage) => {
-  for (const listener of listenersByType.get(message.type) ?? []) {
-    listener(message);
-  }
-};
-
 const fireUserMetadata = (metadata: UserMetadata) => {
   fireMessage({
     type: "userMetadataChanged",
@@ -68,7 +48,7 @@ const fireUserMetadata = (metadata: UserMetadata) => {
 
 describe("useGcalSSE", () => {
   beforeEach(() => {
-    listenersByType.clear();
+    clear();
     mockHandleGoogleRevoked.mockClear();
     mockInvalidateEventQueries.mockClear();
     mockShowErrorToast.mockClear();

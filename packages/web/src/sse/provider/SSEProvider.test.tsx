@@ -1,5 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { render, waitFor } from "@testing-library/react";
+import { createFakeServerMessageBus } from "@web/__tests__/utils/sse-message-bus.test.util";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -18,27 +19,12 @@ mock.module("@web/auth/compass/user/hooks/useUser", () => ({
 mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
   refreshUserMetadata: mock().mockResolvedValue(undefined),
 }));
-mock.module("../client/sse.client", () => {
-  const listenersByType = new Map<string, Set<(message: unknown) => void>>();
-  const onServerMessage = (
-    type: string,
-    handler: (message: unknown) => void,
-  ) => {
-    let listeners = listenersByType.get(type);
-    if (!listeners) {
-      listeners = new Set();
-      listenersByType.set(type, listeners);
-    }
-    listeners.add(handler);
-    return () => listeners.delete(handler);
-  };
-  return {
-    openStream,
-    closeStream,
-    getStream,
-    onServerMessage,
-  };
-});
+mock.module("../client/sse.client", () => ({
+  openStream,
+  closeStream,
+  getStream,
+  onServerMessage: createFakeServerMessageBus().onServerMessage,
+}));
 
 const { default: SSEProvider } =
   require("./SSEProvider") as typeof import("./SSEProvider");
