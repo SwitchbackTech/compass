@@ -32,10 +32,10 @@ SuperTokens.init({
     EmailVerification.init(),
     Session.init({
       postAPIHook: async (context) => {
-        session.emit(context.action, context);
+        session.emit(context);
       },
       onHandleEvent: (event) => {
-        session.emit(event.action, event);
+        session.emit(event);
       },
     }),
   ],

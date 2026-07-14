@@ -10,7 +10,6 @@ import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CompassRefsProvider } from "@web/common/refs/compass-refs";
-import { PointerPositionProvider } from "@web/common/pointer/pointer-position";
 import { queryClient as defaultQueryClient } from "@web/api/query-client";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
@@ -42,27 +41,25 @@ export const CompassRequiredProviders = ({
           <GoogleOAuthProvider
             clientId={ENV_WEB.GOOGLE_CLIENT_ID || "google-not-configured"}
           >
-            <PointerPositionProvider>
-              <IconProvider>
-                <LogoutConfirmationProvider>
-                  {children}
-                  <ToastContainer
-                    position="bottom-left"
-                    autoClose={5000}
-                    hideProgressBar={false}
-                    newestOnTop={false}
-                    closeOnClick
-                    rtl={false}
-                    pauseOnFocusLoss
-                    draggable
-                    pauseOnHover
-                    theme="dark"
-                    limit={1}
-                    transition={Slide}
-                  />
-                </LogoutConfirmationProvider>
-              </IconProvider>
-            </PointerPositionProvider>
+            <IconProvider>
+              <LogoutConfirmationProvider>
+                {children}
+                <ToastContainer
+                  position="bottom-left"
+                  autoClose={5000}
+                  hideProgressBar={false}
+                  newestOnTop={false}
+                  closeOnClick
+                  rtl={false}
+                  pauseOnFocusLoss
+                  draggable
+                  pauseOnHover
+                  theme="dark"
+                  limit={1}
+                  transition={Slide}
+                />
+              </LogoutConfirmationProvider>
+            </IconProvider>
           </GoogleOAuthProvider>
         </SessionProvider>
       </CompassRefsProvider>

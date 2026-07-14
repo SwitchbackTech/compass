@@ -1,10 +1,7 @@
 import { type RefObject, useCallback, useEffect, useRef } from "react";
-import {
-  CompassDOMEvents,
-  compassEventEmitter,
-} from "@web/common/utils/dom/event-emitter.util";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 import { CALENDAR_TIMED_VISIBLE_HOURS } from "@web/layout/calendar-grid/calendarGrid.constants";
+import { onDayViewCommand } from "@web/views/Day/day-view-bus";
 
 export const useDayCalendarScrollToNow = (
   mainGridRef: RefObject<HTMLElement | null>,
@@ -32,15 +29,6 @@ export const useDayCalendarScrollToNow = (
 
   useEffect(() => {
     const handleScrollToNow = () => scrollToNowRef.current();
-    compassEventEmitter.on(
-      CompassDOMEvents.SCROLL_TO_NOW_LINE,
-      handleScrollToNow,
-    );
-    return () => {
-      compassEventEmitter.off(
-        CompassDOMEvents.SCROLL_TO_NOW_LINE,
-        handleScrollToNow,
-      );
-    };
+    return onDayViewCommand("SCROLL_TO_NOW_LINE", handleScrollToNow);
   }, []);
 };

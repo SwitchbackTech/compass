@@ -14,9 +14,9 @@ import {
   toNormalizedEventQueryData,
 } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { ID_EVENT_FORM, ID_SIDEBAR } from "@web/common/constants/web.constants";
-import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { useDraftStore } from "@web/events/stores/draft.store";

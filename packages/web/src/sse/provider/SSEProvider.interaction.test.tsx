@@ -1,8 +1,7 @@
 import { render, waitFor } from "@testing-library/react";
-import { EventEmitter2 } from "eventemitter2";
 import { act } from "react";
-import { type ServerMessage } from "@core/types/server-message.contracts";
 import { type UserMetadata } from "@core/types/user.types";
+import { createFakeServerMessageBus } from "@web/__tests__/utils/sse-message-bus.test.util";
 import {
   getGoogleSyncIndicatorOverride,
   resetGoogleSyncUIStateForTests,
@@ -19,26 +18,25 @@ const mockHandleGoogleRevoked = mock();
 const mockInvalidateEventQueries = mock();
 const mockShowErrorToast = mock();
 const refreshUserMetadata = mock().mockResolvedValue(undefined);
-const sseEmitter = new EventEmitter2({ maxListeners: 20 });
+
+const {
+  onServerMessage,
+  emit: fireMessage,
+  clear,
+} = createFakeServerMessageBus();
 
 const useGcalSSE = createUseGcalSSE({
   handleGoogleRevoked: mockHandleGoogleRevoked,
   invalidateEventQueries: mockInvalidateEventQueries,
+  onServerMessage,
   refreshUserMetadata,
   setUserMetadata: userMetadataActions.set,
   showErrorToast: mockShowErrorToast,
-  sseEmitter,
 });
 
 const HookHost = () => {
   useGcalSSE();
   return null;
-};
-
-// Mirrors sse.client's emit convention: listeners subscribe by the message's
-// own `type` and receive the already-parsed ServerMessage (B10).
-const fireMessage = (message: ServerMessage) => {
-  sseEmitter.emit(message.type, message);
 };
 
 const fireUserMetadata = (metadata: UserMetadata) => {
@@ -50,7 +48,7 @@ const fireUserMetadata = (metadata: UserMetadata) => {
 
 describe("useGcalSSE", () => {
   beforeEach(() => {
-    sseEmitter.removeAllListeners();
+    clear();
     mockHandleGoogleRevoked.mockClear();
     mockInvalidateEventQueries.mockClear();
     mockShowErrorToast.mockClear();

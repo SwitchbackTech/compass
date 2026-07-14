@@ -4,7 +4,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
 import { type ReplaceEventInput } from "@core/types/event-command.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
-import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import {
   undoHistoryActions,
   useUndoHistoryStore,
