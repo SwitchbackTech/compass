@@ -16,6 +16,7 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import { dayCalendarEventRegistry } from "@web/views/Day/interaction/registry/dayCalendarEventRegistry";
 import { useDayEventNudgeShortcuts } from "./useDayEventNudgeShortcuts";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
@@ -79,10 +80,35 @@ const renderNudgeShortcuts = () => {
     }),
     toNormalizedEventQueryData([timedEventContract]),
   );
-  renderHook(() => useDayEventNudgeShortcuts({ timedEvents: [timedEvent] }), {
-    events: [timedEventContract],
-    queryClient,
-  });
+  const repository: EventRepository = {
+    list: async () => [],
+    getById: async () => timedEventContract,
+    create: async () => timedEventContract,
+    replace: async (id, input) => ({
+      ...timedEventContract,
+      id,
+      content: input.content,
+      schedule: input.schedule,
+    }),
+    delete: async () => {},
+  };
+  const dependencies = {
+    source: "local" as const,
+    repository,
+    markWrite: async () => {},
+    reportError: () => {},
+  };
+  renderHook(
+    () =>
+      useDayEventNudgeShortcuts({
+        dependencies,
+        timedEvents: [timedEvent],
+      }),
+    {
+      events: [timedEventContract],
+      queryClient,
+    },
+  );
   return { queryClient };
 };
 

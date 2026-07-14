@@ -19,7 +19,7 @@ import { type CalendarGridVisibleDate } from "@web/layout/calendar-grid/types/ca
 
 interface CalendarAllDayRowProps {
   allDayColumnsRef: RefCallback<HTMLDivElement>;
-  allDayRowRef: RefCallback<HTMLDivElement>;
+  allDayRowRef: RefCallback<HTMLElement>;
   columnsId?: string;
   eventsLayer: ReactNode;
   gridOffsetTopPx?: number;
@@ -48,12 +48,11 @@ export const CalendarAllDayRow: FC<CalendarAllDayRowProps> = ({
   rowId = ID_GRID_ALLDAY_ROW,
   visibleDates,
 }) => (
-  <div
+  <section
     className="relative flex w-full shrink-0 items-start bg-bg-primary"
     aria-label="All-day events"
     id={rowId}
     ref={allDayRowRef}
-    role="region"
     onMouseDown={onMouseDown}
     style={{
       height: `calc(${getAllDayRowHeight(gridOffsetTopPx)} * 2 + ${rowsCount * 2 || 1} * ${getAllDayRowHeight(gridOffsetTopPx)})`,
@@ -71,15 +70,21 @@ export const CalendarAllDayRow: FC<CalendarAllDayRowProps> = ({
         } as CSSVariables
       }
     >
-      {visibleDates.map(({ date, key, surfaceLabel }) => (
-        <div
-          className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-grid-line-primary border-l"
-          aria-label={surfaceLabel ?? date.format("dddd, MMMM D, YYYY")}
-          key={key}
-          role="columnheader"
-        />
-      ))}
+      <table className="contents">
+        <thead className="contents">
+          <tr className="contents">
+            {visibleDates.map(({ date, key, surfaceLabel }) => (
+              <th
+                className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-grid-line-primary border-l"
+                aria-label={surfaceLabel ?? date.format("dddd, MMMM D, YYYY")}
+                key={key}
+                scope="col"
+              />
+            ))}
+          </tr>
+        </thead>
+      </table>
     </div>
     {eventsLayer}
-  </div>
+  </section>
 );

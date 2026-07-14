@@ -2,9 +2,12 @@ import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
+import { type EventId } from "@core/types/domain-primitives";
+import { type Event } from "@core/types/event.contracts";
 import { type ReplaceEventInput } from "@core/types/event-command.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
+import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import {
   undoHistoryActions,
   useUndoHistoryStore,
@@ -38,16 +41,45 @@ const editMutations = (queryClient: QueryClient) =>
       return input.content.kind === "details" ? input.content.title : null;
     });
 
+const replaceMutationsSettled = (queryClient: QueryClient) =>
+  queryClient
+    .getMutationCache()
+    .getAll()
+    .filter((mutation) => mutation.options.mutationKey?.[2] === "replace")
+    .every((mutation) => mutation.state.status === "success");
+
 const setup = () => {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
   });
+  const repository: EventRepository = {
+    list: async () => [],
+    getById: async () => {
+      throw new Error("not implemented in test fake");
+    },
+    create: async (input) => ({ ...before, id: input.id as EventId }),
+    replace: async (id: EventId, input): Promise<Event> => ({
+      ...before,
+      id,
+      content: input.content,
+      schedule: input.schedule,
+    }),
+    delete: async () => {},
+  };
+  const dependencies = {
+    source: "local" as const,
+    repository,
+    markWrite: async () => {},
+    reportError: () => {},
+  };
   const wrapper = ({ children }: PropsWithChildren) => (
     <QueryClientProvider client={queryClient}>
       <HotkeysProvider>{children}</HotkeysProvider>
     </QueryClientProvider>
   );
-  const hook = renderHook(() => useUndoRedoShortcuts(), { wrapper });
+  const hook = renderHook(() => useUndoRedoShortcuts(dependencies), {
+    wrapper,
+  });
   return { hook, queryClient };
 };
 
@@ -62,14 +94,14 @@ describe("useUndoRedoShortcuts", () => {
 
   it("undoes the last change on Mod+Z", async () => {
     const { queryClient } = setup();
-    undoHistoryActions.record(editEntry);
+    act(() => undoHistoryActions.record(editEntry));
 
     act(() => {
       pressKey("z", { keyDownInit: { ctrlKey: true } });
     });
-
     await waitFor(() => {
       expect(editMutations(queryClient)).toEqual(["Before"]);
+      expect(replaceMutationsSettled(queryClient)).toBe(true);
     });
     expect(useUndoHistoryStore.getState().past).toHaveLength(0);
     expect(useUndoHistoryStore.getState().future).toHaveLength(1);
@@ -77,20 +109,21 @@ describe("useUndoRedoShortcuts", () => {
 
   it("redoes on Mod+Shift+Z without also undoing", async () => {
     const { queryClient } = setup();
-    undoHistoryActions.record(editEntry);
+    act(() => undoHistoryActions.record(editEntry));
     act(() => {
       pressKey("z", { keyDownInit: { ctrlKey: true } });
     });
     await waitFor(() => {
       expect(editMutations(queryClient)).toEqual(["Before"]);
+      expect(replaceMutationsSettled(queryClient)).toBe(true);
     });
 
     act(() => {
       pressKey("z", { keyDownInit: { ctrlKey: true, shiftKey: true } });
     });
-
     await waitFor(() => {
       expect(editMutations(queryClient)).toEqual(["Before", "After"]);
+      expect(replaceMutationsSettled(queryClient)).toBe(true);
     });
     expect(useUndoHistoryStore.getState().past).toHaveLength(1);
     expect(useUndoHistoryStore.getState().future).toHaveLength(0);
@@ -98,7 +131,7 @@ describe("useUndoRedoShortcuts", () => {
 
   it("does not fire inside text inputs, preserving native text undo", () => {
     const { queryClient } = setup();
-    undoHistoryActions.record(editEntry);
+    act(() => undoHistoryActions.record(editEntry));
     const input = document.createElement("input");
     document.body.appendChild(input);
     input.focus();

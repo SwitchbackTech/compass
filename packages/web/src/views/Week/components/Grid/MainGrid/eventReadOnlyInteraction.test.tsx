@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { type PropsWithChildren, useState } from "react";
+import { act, type PropsWithChildren, useState } from "react";
 import {
   type Calendar,
   getCalendarCapabilities,
@@ -256,12 +256,14 @@ describe("Week grid read-only interaction gate", () => {
     renderMainGridEvents();
 
     const card = screen.getByRole("button", { name: /inspect me/i });
-    fireEvent.mouseDown(card, { button: 0, buttons: 1 });
+    act(() => {
+      fireEvent.mouseDown(card, { button: 0, buttons: 1 });
+    });
 
     expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
     expect(useDraftStore.getState().event?._id).toBe(event.id);
 
-    draftActions.discard();
+    act(() => draftActions.discard());
   });
 
   it("treats a busy timed event as read-only, and renders 'Busy' as its title, even on a writable calendar", () => {

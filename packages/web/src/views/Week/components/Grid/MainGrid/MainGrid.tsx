@@ -1,4 +1,10 @@
-import { type FC, type MutableRefObject, type ReactNode, useMemo } from "react";
+import {
+  type FC,
+  type MutableRefObject,
+  type ReactNode,
+  type RefCallback,
+  useMemo,
+} from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { type Ref_Callback } from "@web/common/types/util.types";
@@ -14,8 +20,8 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 interface Props {
   children?: (props: MainGridRenderProps) => ReactNode;
   dateCalcs: DateCalcs;
-  mainGridElementRef: Ref_Callback;
-  mainGridRef: MutableRefObject<HTMLDivElement | null>;
+  mainGridElementRef: RefCallback<HTMLElement>;
+  mainGridRef: MutableRefObject<HTMLElement | null>;
   measurements: Measurements_Grid;
   today: Dayjs;
   timedColumnsElementRef: Ref_Callback;
@@ -112,7 +118,7 @@ const MainGridChildren: FC<MainGridChildrenProps> = ({
 };
 
 interface MainGridCalendarProps {
-  mainGridElementRef: Ref_Callback;
+  mainGridElementRef: RefCallback<HTMLElement>;
   measurements: Measurements_Grid;
   onTimedMouseDown: ReturnType<
     typeof useTimedGridDraftCreation

@@ -1,3 +1,4 @@
+import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { useUndoRedo } from "@web/events/mutations/useUndoRedo";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
@@ -9,8 +10,10 @@ import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
  * `ignoreInputs: true` is load-bearing: Meta/Ctrl combos fire inside text
  * fields by default, and Mod+Z there must stay native text undo.
  */
-export function useUndoRedoShortcuts() {
-  const { undo, redo } = useUndoRedo();
+export function useUndoRedoShortcuts(
+  dependencies: EventMutationDependencies = {},
+) {
+  const { undo, redo } = useUndoRedo(dependencies);
 
   useAppShortcut(
     "Mod+Z",

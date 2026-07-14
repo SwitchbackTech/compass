@@ -4,7 +4,7 @@ import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { WEEK_TIMED_VISIBLE_HOURS } from "@web/views/Week/layout.constants";
 
 export const useScroll = (
-  timedGridRef: MutableRefObject<HTMLDivElement | null>,
+  timedGridRef: MutableRefObject<HTMLElement | null>,
 ) => {
   const scrollToNow = useCallback(() => {
     const gridRowHeight =

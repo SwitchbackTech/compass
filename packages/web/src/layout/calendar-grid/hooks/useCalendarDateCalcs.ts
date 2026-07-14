@@ -14,7 +14,7 @@ import {
 
 export const useCalendarDateCalcs = (
   measurements: CalendarGridMeasurements,
-  mainGridRef: MutableRefObject<HTMLDivElement | null>,
+  mainGridRef: MutableRefObject<HTMLElement | null>,
   visibleDates: CalendarGridVisibleDate[],
 ) => {
   const getVisibleDateIndexByX = (x: number) => {

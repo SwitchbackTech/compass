@@ -1,6 +1,7 @@
 import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { act } from "react";
 import {
   type Calendar,
   getCalendarCapabilities,
@@ -96,7 +97,7 @@ describe("EventForm calendar selection", () => {
     await user.click(await screen.findByRole("option", { name: "Team" }));
 
     const titleField = screen.getByPlaceholderText("Title");
-    titleField.focus();
+    act(() => titleField.focus());
     await user.type(titleField, "Plan launch");
     await user.keyboard("{Enter}");
 

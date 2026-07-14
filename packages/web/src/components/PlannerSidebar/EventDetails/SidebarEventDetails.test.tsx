@@ -1,4 +1,5 @@
 import { HotkeyManager } from "@tanstack/react-hotkeys";
+import { act } from "react";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import {
@@ -120,7 +121,7 @@ describe("SidebarEventDetails", () => {
 
     // A real keyboard user moves focus off the title text field before
     // Delete deletes the event, rather than editing the title text.
-    titleField.blur();
+    act(() => titleField.blur());
 
     fireEvent.keyDown(screen.getByRole("form"), {
       bubbles: true,
@@ -182,7 +183,7 @@ describe("SidebarEventDetails", () => {
     render(<SidebarEventDetails />, { queryClient });
 
     const titleField = await screen.findByPlaceholderText("Title");
-    titleField.blur();
+    act(() => titleField.blur());
     fireEvent.keyDown(screen.getByRole("form"), { key: "Delete" });
 
     expect(

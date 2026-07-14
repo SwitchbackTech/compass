@@ -6,6 +6,8 @@ import { renderWithStore } from "@web/__tests__/render-with-store";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type SyncStatus } from "@web/calendars/sync-status.types";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
+import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
+import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import {
   undoHistoryActions,
   useUndoHistoryStore,
@@ -71,7 +73,7 @@ const { CommandPalette, filterSections } = await import("./CommandPalette");
 const onGoToToday = mock();
 const onShowShortcuts = mock();
 
-const renderPalette = () =>
+const renderPalette = (mutationDependencies?: EventMutationDependencies) =>
   renderWithStore(
     <CommandPalette
       currentView="week"
@@ -79,6 +81,7 @@ const renderPalette = () =>
       onGoToToday={onGoToToday}
       onShowShortcuts={onShowShortcuts}
       placeholder="Try: 'create', 'bug', or 'code'"
+      mutationDependencies={mutationDependencies}
     />,
     { settings: { isCmdPaletteOpen: true } },
   );
@@ -248,7 +251,24 @@ describe("CommandPalette", () => {
         content: { kind: "details", title: "After", description: "" },
       },
     });
-    renderPalette();
+    const repository: EventRepository = {
+      list: async () => [],
+      getById: async () => before,
+      create: async () => before,
+      replace: async (id, input) => ({
+        ...before,
+        id,
+        content: input.content,
+        schedule: input.schedule,
+      }),
+      delete: async () => {},
+    };
+    renderPalette({
+      source: "local",
+      repository,
+      markWrite: async () => {},
+      reportError: () => {},
+    });
 
     const row = screen.getByText("Undo last change").closest("button");
     expect(row).not.toBeDisabled();
