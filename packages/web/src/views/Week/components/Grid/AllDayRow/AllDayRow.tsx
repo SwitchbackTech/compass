@@ -6,7 +6,6 @@ import {
   useMemo,
 } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { type Ref_Callback } from "@web/common/types/util.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
@@ -21,7 +20,7 @@ import { AllDayEvents } from "./AllDayEvents";
 interface Props {
   children?: (props: AllDayRowRenderProps) => ReactNode;
   dateCalcs: DateCalcs;
-  allDayRef: Ref_Callback;
+  allDayRef: RefCallback<HTMLDivElement>;
   allDayRowRef: RefCallback<HTMLElement>;
   measurements: Measurements_Grid;
   weekProps: WeekProps;
@@ -115,7 +114,7 @@ const AllDayRowChildren: FC<AllDayRowChildrenProps> = ({
 };
 
 interface AllDayRowCalendarProps {
-  allDayRef: Ref_Callback;
+  allDayRef: RefCallback<HTMLDivElement>;
   allDayRowRef: RefCallback<HTMLElement>;
   allDayRowsCount: number;
   measurements: Measurements_Grid;

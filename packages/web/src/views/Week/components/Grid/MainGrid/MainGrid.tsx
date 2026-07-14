@@ -7,7 +7,6 @@ import {
 } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { type Ref_Callback } from "@web/common/types/util.types";
 import { CalendarTimedGrid } from "@web/layout/calendar-grid/components/CalendarTimedGrid";
 import { MainGridBusyPeriods } from "@web/views/Week/components/Grid/MainGrid/MainGridBusyPeriods";
 import { MainGridEvents } from "@web/views/Week/components/Grid/MainGrid/MainGridEvents";
@@ -24,7 +23,7 @@ interface Props {
   mainGridRef: MutableRefObject<HTMLElement | null>;
   measurements: Measurements_Grid;
   today: Dayjs;
-  timedColumnsElementRef: Ref_Callback;
+  timedColumnsElementRef: RefCallback<HTMLDivElement>;
   weekProps: WeekProps;
 }
 
@@ -123,7 +122,7 @@ interface MainGridCalendarProps {
   onTimedMouseDown: ReturnType<
     typeof useTimedGridDraftCreation
   >["startTimedDraftCreation"];
-  timedColumnsElementRef: Ref_Callback;
+  timedColumnsElementRef: RefCallback<HTMLDivElement>;
   today: Dayjs;
   weekDays: Dayjs[];
   weekProps: WeekProps;
