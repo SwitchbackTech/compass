@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react";
-import { act, type MouseEvent } from "react";
+import { act } from "react";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenLogoutConfirmation = mock();
@@ -49,7 +49,7 @@ describe("useLogoutCmdItems", () => {
     const logoutItem = result.current[0];
 
     act(() => {
-      logoutItem.onClick?.({} as MouseEvent<HTMLButtonElement>);
+      logoutItem.onClick?.();
     });
 
     expect(mockOpenLogoutConfirmation).toHaveBeenCalledTimes(1);

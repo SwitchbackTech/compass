@@ -1,7 +1,7 @@
 import { type RefObject, useCallback, useEffect, useRef } from "react";
+import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 import { CALENDAR_TIMED_VISIBLE_HOURS } from "@web/layout/calendar-grid/calendarGrid.constants";
-import { onDayViewCommand } from "@web/views/Day/day-view-bus";
 
 export const useDayCalendarScrollToNow = (
   mainGridRef: RefObject<HTMLElement | null>,
@@ -29,6 +29,6 @@ export const useDayCalendarScrollToNow = (
 
   useEffect(() => {
     const handleScrollToNow = () => scrollToNowRef.current();
-    return onDayViewCommand("SCROLL_TO_NOW_LINE", handleScrollToNow);
+    return onViewCommand("SCROLL_TO_NOW_LINE", handleScrollToNow);
   }, []);
 };

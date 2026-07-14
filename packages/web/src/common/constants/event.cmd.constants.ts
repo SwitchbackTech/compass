@@ -1,0 +1,28 @@
+import { PlusIcon } from "@phosphor-icons/react";
+import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
+import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
+
+/**
+ * View-agnostic "Common Tasks" for the command palette. Emitting a view
+ * command (rather than calling a view-specific function) is what lets this
+ * list work identically for Week and Day: each view already has a
+ * shortcut-driven listener for these commands. `queueMicrotask` defers the
+ * emit until after the palette unmounts, so draft-creation focus/measurement
+ * doesn't fight the closing modal.
+ */
+export const eventCommandPaletteItems: CommandItem[] = [
+  {
+    id: "create-event",
+    label: "Create event",
+    icon: PlusIcon,
+    shortcut: "c",
+    onClick: () => queueMicrotask(() => emitViewCommand("CREATE_TIMED_DRAFT")),
+  },
+  {
+    id: "create-allday-event",
+    label: "Create all-day event",
+    icon: PlusIcon,
+    shortcut: "a",
+    onClick: () => queueMicrotask(() => emitViewCommand("CREATE_ALLDAY_DRAFT")),
+  },
+];

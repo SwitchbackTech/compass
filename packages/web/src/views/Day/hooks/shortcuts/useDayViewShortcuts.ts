@@ -7,7 +7,6 @@ interface KeyboardShortcutsConfig {
   // Event management
   onCreateTimedEvent?: () => void;
   onCreateAllDayEvent?: () => void;
-  onEditEvent?: () => void;
 
   // Focus
   onFocusSidebar?: () => void;
@@ -32,7 +31,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   const {
     onCreateTimedEvent,
     onCreateAllDayEvent,
-    onEditEvent,
     onFocusSidebar,
     onFocusCalendar,
     onNextDay,
@@ -79,9 +77,5 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   // Calendar shortcuts
   useAppShortcutUp("I", () => {
     onFocusCalendar?.();
-  });
-
-  useAppShortcutUp("M", () => {
-    onEditEvent?.();
   });
 }

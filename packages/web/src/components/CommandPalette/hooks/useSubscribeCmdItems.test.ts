@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { act, type MouseEvent } from "react";
+import { act } from "react";
 import {
   userMetadataActions,
   useUserMetadataStore,
@@ -124,9 +124,8 @@ describe("useSubscribeCmdItems", () => {
       (item) => item.id === "subscribe-to-updates",
     );
 
-    const mockEvent = {} as MouseEvent<HTMLButtonElement>;
     await act(async () => {
-      item?.onClick?.(mockEvent);
+      item?.onClick?.();
     });
 
     await waitFor(() => {
@@ -150,9 +149,8 @@ describe("useSubscribeCmdItems", () => {
       (item) => item.id === "subscribe-to-updates",
     );
 
-    const mockEvent = {} as MouseEvent<HTMLButtonElement>;
     await act(async () => {
-      item?.onClick?.(mockEvent);
+      item?.onClick?.();
     });
 
     await waitFor(() => {

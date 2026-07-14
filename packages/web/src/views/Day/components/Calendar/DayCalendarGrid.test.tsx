@@ -20,6 +20,7 @@ import {
   DATA_CALENDAR_TIMED_GRID_ROW,
   ZIndex,
 } from "@web/common/constants/web.constants";
+import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   draftActions,
@@ -28,7 +29,6 @@ import {
 } from "@web/events/stores/draft.store";
 import { CALENDAR_TIMED_EVENT_FAN_INDENT } from "@web/layout/calendar-grid/calendarGrid.constants";
 import { type CalendarGridMeasurements } from "@web/layout/calendar-grid/types/calendarGrid.types";
-import { emitDayViewCommand } from "@web/views/Day/day-view-bus";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
@@ -838,7 +838,7 @@ describe("DayCalendarGrid", () => {
     renderDayCalendarGrid();
     scroll.mockClear();
 
-    emitDayViewCommand("SCROLL_TO_NOW_LINE");
+    emitViewCommand("SCROLL_TO_NOW_LINE");
 
     expect(scroll).toHaveBeenCalledWith(
       expect.objectContaining({

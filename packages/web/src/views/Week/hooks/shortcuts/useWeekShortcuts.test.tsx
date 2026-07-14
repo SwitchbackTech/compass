@@ -17,6 +17,7 @@ import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { ID_EVENT_FORM, ID_SIDEBAR } from "@web/common/constants/web.constants";
+import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { useDraftStore } from "@web/events/stores/draft.store";
@@ -241,102 +242,6 @@ describe("useWeekShortcuts calendar event targeting", () => {
     await waitFor(() => {
       expect(document.activeElement).toBe(button);
     });
-  });
-
-  it("edits the focused calendar event with M", async () => {
-    const button = addCalendarTarget();
-    button.focus();
-
-    renderShortcuts();
-    pressKey("M");
-
-    await waitFor(() => {
-      expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
-    });
-    expect(useDraftStore.getState().event?._id).toBe(EVENT_1_ID);
-    // The canonical GridEventDraft must be populated too — this is what
-    // lets a subsequent drag continue the keyboard-opened edit (the
-    // "M"-then-drag gap this conversion closes).
-    const gridDraft = useDraftStore.getState().gridDraft;
-    expect(gridDraft?.kind).toBe("edit");
-    expect(gridDraft?.kind === "edit" && gridDraft.source.id).toBe(EVENT_1_ID);
-  });
-
-  it("edits the prepared all-day calendar event with M", async () => {
-    const button = addCalendarTarget(editableAllDayEvent.id, "all-day");
-    button.focus();
-
-    renderShortcuts({ includeAllDayEvent: true });
-    pressKey("M");
-
-    await waitFor(() => {
-      expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
-    });
-    expect(useDraftStore.getState().event?._id).toBe(ALL_DAY_EVENT_1_ID);
-    const gridDraft = useDraftStore.getState().gridDraft;
-    expect(gridDraft?.kind).toBe("edit");
-    expect(gridDraft?.kind === "edit" && gridDraft.source.id).toBe(
-      ALL_DAY_EVENT_1_ID,
-    );
-  });
-
-  it("edits the hovered calendar event with M when no event is focused", async () => {
-    const button = addCalendarTarget();
-    setHoveredCalendarEventTarget(button);
-
-    renderShortcuts();
-    pressKey("M");
-
-    await waitFor(() => {
-      expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
-    });
-    expect(useDraftStore.getState().event?._id).toBe(EVENT_1_ID);
-  });
-
-  it("edits pending calendar events with M", async () => {
-    pendingEventIds = [EVENT_1_ID];
-    const button = addCalendarTarget();
-    button.focus();
-
-    renderShortcuts();
-    pressKey("M");
-
-    await waitFor(() => {
-      expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
-    });
-    expect(useDraftStore.getState().event?._id).toBe(EVENT_1_ID);
-  });
-
-  it("edits an event loaded after shortcuts are registered", async () => {
-    const button = addCalendarTarget();
-    button.focus();
-
-    const { queryClient } = renderShortcuts({
-      includeEditableEvent: false,
-    });
-    await act(async () => {
-      await queryClient.cancelQueries({ queryKey: ["events", "week"] });
-      queryClient.setQueriesData(
-        { queryKey: ["events", "week"] },
-        {
-          ids: [editableEvent.id],
-          entities: { [editableEvent.id]: editableEvent },
-        },
-      );
-    });
-    await waitFor(() => {
-      expect(
-        queryClient
-          .getQueriesData<{ ids: string[] }>({ queryKey: ["events", "week"] })
-          .some(([, data]) => data?.ids.includes(editableEvent.id)),
-      ).toBe(true);
-    });
-    pressKey("M");
-
-    await waitFor(() => {
-      expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
-    });
-    expect(useDraftStore.getState().event?._id).toBe(EVENT_1_ID);
   });
 
   it("moves the active shortcut-created draft with arrow keys", () => {
@@ -686,5 +591,34 @@ describe("useWeekShortcuts sidebar focus", () => {
         .getAll()
         .some((mutation) => mutation.options.mutationKey?.[2] === "delete"),
     ).toBe(false);
+  });
+});
+
+// The command palette's "Create event"/"Create all-day event" rows emit
+// these same view commands (event.cmd.constants.ts) instead of calling Week
+// code directly - this is what lets one shared list serve every view.
+describe("useWeekShortcuts view command bus", () => {
+  it("starts a timed createShortcut draft when CREATE_TIMED_DRAFT is emitted", async () => {
+    renderShortcuts();
+
+    act(() => {
+      emitViewCommand("CREATE_TIMED_DRAFT");
+    });
+
+    await waitFor(() => {
+      expect(useDraftStore.getState().status?.activity).toBe("createShortcut");
+    });
+  });
+
+  it("starts an all-day createShortcut draft when CREATE_ALLDAY_DRAFT is emitted", async () => {
+    renderShortcuts();
+
+    act(() => {
+      emitViewCommand("CREATE_ALLDAY_DRAFT");
+    });
+
+    await waitFor(() => {
+      expect(useDraftStore.getState().status?.activity).toBe("createShortcut");
+    });
   });
 });

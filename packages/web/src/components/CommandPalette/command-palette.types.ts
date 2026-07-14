@@ -1,16 +1,10 @@
 import { type Icon } from "@phosphor-icons/react";
-import { type MouseEvent } from "react";
 
 export interface CommandItem {
   id: string;
   label: string;
   icon: Icon;
-  /**
-   * Receives the row's click event so callers can key off the clicked DOM
-   * node (e.g. Week's `onEventTargetVisibility`, which defers draft creation
-   * until the palette row unmounts). Most handlers ignore it.
-   */
-  onClick?: (event: MouseEvent<HTMLElement>) => void;
+  onClick?: () => void;
   href?: string;
   target?: "_blank";
   disabled?: boolean;

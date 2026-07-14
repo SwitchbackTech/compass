@@ -37,7 +37,6 @@ import { useDayShiftTransition } from "@web/views/Week/hooks/useDayShiftTransiti
 import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerSidebarCalendarDate";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
-import { useWeekCmdTasks } from "@web/views/Week/hooks/useWeekCmdTasks";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 
 export const WeekView = () => {
@@ -102,12 +101,6 @@ export const WeekView = () => {
     scrollUtil,
   };
 
-  const weekCmdTasks = useWeekCmdTasks({
-    isCurrentWeek,
-    startOfView: weekProps.component.startOfView,
-    endOfView: weekProps.component.endOfView,
-  });
-
   const goToTodayViaCmd = useCallback(() => {
     scrollUtil.scrollToNow();
     if (isEventFormOpen()) draftActions.discard();
@@ -146,7 +139,6 @@ export const WeekView = () => {
         today={today}
         onGoToToday={goToTodayViaCmd}
         onShowShortcuts={toggleShortcuts}
-        commonTasks={weekCmdTasks}
         placeholder="Try: 'create', 'bug', or 'feedback'"
       />
       <Dedication />

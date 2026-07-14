@@ -50,9 +50,9 @@ describe("getNavigationCommandItems", () => {
       today,
     });
 
-    items.find((item) => item.id === "go-to-week")?.onClick?.({} as never);
-    items.find((item) => item.id === "today")?.onClick?.({} as never);
-    items.find((item) => item.id === "show-shortcuts")?.onClick?.({} as never);
+    items.find((item) => item.id === "go-to-week")?.onClick?.();
+    items.find((item) => item.id === "today")?.onClick?.();
+    items.find((item) => item.id === "show-shortcuts")?.onClick?.();
 
     expect(navigatedViews).toEqual(["week"]);
     expect(didGoToToday).toBe(true);
