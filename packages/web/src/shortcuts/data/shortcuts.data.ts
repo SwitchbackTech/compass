@@ -30,14 +30,12 @@ const getNavigateShortcuts = ({
         ? "Go to today"
         : "Go to current week",
   },
-  {
-    keys: [VIEW_SHORTCUTS.day.key],
-    label: `Go to ${VIEW_SHORTCUTS.day.label} view`,
-  },
-  {
-    keys: [VIEW_SHORTCUTS.week.key],
-    label: `Go to ${VIEW_SHORTCUTS.week.label} view`,
-  },
+  ...(view === "week"
+    ? [{ keys: [VIEW_SHORTCUTS.day.key], label: `Go to ${VIEW_SHORTCUTS.day.label} view` }]
+    : []),
+  ...(view === "day"
+    ? [{ keys: [VIEW_SHORTCUTS.week.key], label: `Go to ${VIEW_SHORTCUTS.week.label} view` }]
+    : []),
 ];
 
 const getCreateShortcuts = (): Shortcut[] => [

@@ -34,7 +34,20 @@ describe("shortcuts.data", () => {
         keys: ["d"],
         label: "Go to Day view",
       });
-      expect(navigate.shortcuts).toContainEqual({
+      expect(navigate.shortcuts).not.toContainEqual({
+        keys: ["w"],
+        label: "Go to Week view",
+      });
+
+      const [dayNavigate] = getShortcutMenuSections({
+        view: "day",
+        isViewingCurrentPeriod: false,
+      });
+      expect(dayNavigate.shortcuts).not.toContainEqual({
+        keys: ["d"],
+        label: "Go to Day view",
+      });
+      expect(dayNavigate.shortcuts).toContainEqual({
         keys: ["w"],
         label: "Go to Week view",
       });
