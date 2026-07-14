@@ -49,7 +49,7 @@ export const CalendarAllDayRow: FC<CalendarAllDayRowProps> = ({
   visibleDates,
 }) => (
   <div
-    className="relative flex w-full shrink-0 items-start bg-bg-secondary"
+    className="relative flex w-full shrink-0 items-start bg-bg-primary"
     aria-label="All-day events"
     id={rowId}
     ref={allDayRowRef}
