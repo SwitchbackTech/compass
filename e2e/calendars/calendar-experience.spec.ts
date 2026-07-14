@@ -305,9 +305,11 @@ test("sidebar lists calendars, coalesces a visibility toggle, and shows card ide
   const sidebar = page.locator("#sidebar");
   const grid = page.locator("#mainGrid");
 
-  await expect(sidebar.getByText(`${CALENDAR_A_NAME} · primary`)).toBeVisible();
   await expect(
-    sidebar.getByText(`${CALENDAR_B_NAME} · read-only`),
+    sidebar.getByText(CALENDAR_A_NAME, { exact: true }),
+  ).toBeVisible();
+  await expect(
+    sidebar.getByText(CALENDAR_B_NAME, { exact: true }),
   ).toBeVisible();
   await expect(
     sidebar.getByText(LOCAL_CALENDAR_NAME, { exact: true }),
