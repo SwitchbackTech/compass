@@ -3,14 +3,14 @@ import { execSync } from "node:child_process";
 /**
  * Smart verify script for AI coding loops.
  * Detects which packages changed via git diff and runs the minimum
- * necessary test suites plus type-check.
+ * necessary test suites plus type-check and lint.
  *
  * Test execution is delegated to the root `test:<project>` package.json scripts.
  *
  * Usage:
  *   bun run verify              — auto-detect from git diff
- *   bun run verify web          — run web suite + type-check
- *   bun run verify core web     — run specific suites + type-check
+ *   bun run verify web          — run web suite + type-check + lint
+ *   bun run verify core web     — run specific suites + type-check + lint
  */
 
 type BunRuntime = {
@@ -109,6 +109,48 @@ function runTypeCheck(): boolean {
   return result.exitCode === 0;
 }
 
+function runLint(): boolean {
+  console.log("\n→ lint");
+  const result = bunRuntime.spawnSync({
+    cmd: ["bun", "run", "lint"],
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      TZ: process.env["TZ"] ?? "Etc/UTC",
+    },
+    stderr: "inherit",
+    stdin: "inherit",
+    stdout: "inherit",
+  });
+  return result.exitCode === 0;
+}
+
+function runA11y(): boolean {
+  console.log("\n→ test:a11y");
+  const result = bunRuntime.spawnSync({
+    cmd: ["bun", "run", "test:a11y"],
+    cwd: process.cwd(),
+    env: {
+      ...process.env,
+      TZ: process.env["TZ"] ?? "Etc/UTC",
+    },
+    stderr: "inherit",
+    stdin: "inherit",
+    stdout: "inherit",
+  });
+  return result.exitCode === 0;
+}
+
+function describeChecks(packagesToRun: Package[]): string {
+  const checks = [...packagesToRun, "type-check", "lint"];
+
+  if (packagesToRun.includes("web")) {
+    checks.push("test:a11y");
+  }
+
+  return checks.join(" → ");
+}
+
 function main() {
   const args = process.argv.slice(2);
 
@@ -123,18 +165,18 @@ function main() {
       process.exit(1);
     }
     packagesToRun = args as Package[];
-    console.log(`Running: ${packagesToRun.join(" → ")} → type-check`);
+    console.log(`Running: ${describeChecks(packagesToRun)}`);
   } else {
     packagesToRun = getChangedPackages();
 
     if (packagesToRun.length === 0) {
       console.log(
-        "No changed packages detected — falling back to: core → web → type-check",
+        "No changed packages detected — falling back to: core → web → type-check → lint → test:a11y",
       );
       packagesToRun = ["core", "web"];
     } else {
       console.log(
-        `Detected changes in: ${packagesToRun.join(", ")}\nRunning: ${packagesToRun.join(" → ")} → type-check`,
+        `Detected changes in: ${packagesToRun.join(", ")}\nRunning: ${describeChecks(packagesToRun)}`,
       );
     }
   }
@@ -149,6 +191,14 @@ function main() {
 
   if (!runTypeCheck()) {
     failed.push("type-check");
+  }
+
+  if (!runLint()) {
+    failed.push("lint");
+  }
+
+  if (packagesToRun.includes("web") && !runA11y()) {
+    failed.push("test:a11y");
   }
 
   if (failed.length > 0) {
