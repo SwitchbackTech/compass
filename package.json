@@ -28,6 +28,7 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "test": "bun test:core && bun test:web && bun test:backend && bun test:scripts",
+    "test:a11y": "bunx playwright test e2e/accessibility",
     "test:e2e": "bunx playwright test",
     "test:backend": "./node_modules/.bin/jest --selectProjects backend",
     "test:core": "bun test packages/core/src --preload packages/scripts/src/testing/core.preload.ts",
@@ -46,6 +47,7 @@
     "tslib": "^2.4.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@babel/core": "^7.15.5",
     "@babel/preset-env": "^7.16.0",
     "@babel/preset-react": "^7.16.7",

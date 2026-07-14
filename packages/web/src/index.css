@@ -410,6 +410,9 @@
     var(--date-picker-bg) 82%,
     var(--compass-color-fg-primary)
   );
+  --date-picker-hover-text: var(--compass-color-text-lighter);
+  --date-picker-selected-bg: var(--compass-color-accent-primary);
+  --date-picker-selected-text: var(--compass-color-text-dark);
 
   &[data-view="sidebar"] {
     background-color: transparent;
@@ -491,7 +494,7 @@
 
   & .react-datepicker__day:hover {
     background-color: var(--date-picker-hover-bg);
-    color: inherit;
+    color: var(--date-picker-hover-text);
   }
 
   & .react-datepicker__day-names {
@@ -503,8 +506,8 @@
   }
 
   & .react-datepicker__day--selected {
-    background-color: var(--compass-color-accent-primary-shadow);
-    color: var(--compass-color-text-lighter);
+    background-color: var(--date-picker-selected-bg);
+    color: var(--date-picker-selected-text);
   }
 
   & .react-datepicker__day--today:not(.react-datepicker__day--selected) {
@@ -521,7 +524,8 @@
   }
 
   & .react-datepicker__day--today:hover {
-    color: inherit;
+    color: var(--date-picker-hover-text);
+    text-decoration-color: var(--date-picker-hover-text);
   }
 
   & .react-datepicker__day--keyboard-selected {
@@ -719,7 +723,7 @@
  * after c-date-picker, it wins on source order, so the !important hacks the
  * @utility form needed are no longer required.
  */
-.c-month-picker {
+.c-month-picker .c-date-picker {
   & .react-datepicker__month-container,
   & .react-datepicker__month {
     overflow: visible;
@@ -728,14 +732,18 @@
     position: relative;
     isolation: isolate;
     background: transparent;
-    color: var(--compass-color-text-lighter);
+    color: var(--date-picker-selected-text);
+  }
+  & .react-datepicker__day--selected:hover {
+    background: transparent;
+    color: var(--date-picker-selected-text);
   }
   & .react-datepicker__day--selected::before {
     position: absolute;
     inset: -2px;
     z-index: -1;
     border-radius: var(--radius-default);
-    background: var(--compass-color-accent-primary-shadow);
+    background: var(--date-picker-selected-bg);
     content: "";
   }
   & .react-datepicker__week:has(.react-datepicker__day--selected) {
