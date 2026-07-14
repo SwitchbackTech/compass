@@ -120,7 +120,7 @@ export const CalendarSelect = ({ value, onChange }: CalendarSelectProps) => {
     : "Calendar";
 
   return (
-    <div className="relative my-1.5">
+    <div className="relative">
       <button
         ref={refs.setReference}
         {...getReferenceProps()}

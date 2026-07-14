@@ -4,6 +4,7 @@ import type React from "react";
 import {
   type KeyboardEvent,
   memo,
+  type ReactNode,
   type SetStateAction,
   useCallback,
   useEffect,
@@ -19,11 +20,7 @@ import {
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
-import { darken } from "@web/common/styles/color.utils";
-import {
-  EVENT_COLOR,
-  EVENT_HOVER_COLOR,
-} from "@web/common/styles/theme.util";
+import { EVENT_COLOR } from "@web/common/styles/theme.util";
 import { type SelectOption } from "@web/common/types/component.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
 import {
@@ -62,6 +59,16 @@ const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
   enabled: true,
   ignoreInputs: false,
 } as const;
+
+/**
+ * Subtle raised surface grouping related fields on the sidebar's translucent
+ * panel background — same recipe as CommandPalette rows / c-button-secondary.
+ */
+const FormCard = ({ children }: { children: ReactNode }) => (
+  <div className="flex flex-col gap-2.5 rounded-md bg-panel-badge-bg p-3">
+    {children}
+  </div>
+);
 
 interface EventFormDateTimeState {
   displayEndDate: Date;
@@ -410,12 +417,10 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
     };
 
     const dateTimeSectionProps = {
-      bgColor: EVENT_COLOR,
       displayEndDate,
       draft,
       category,
       endTime,
-      inputColor: EVENT_HOVER_COLOR,
       isEndDatePickerOpen,
       isStartDatePickerOpen,
       onSetEventField,
@@ -515,76 +520,87 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
           e.stopPropagation();
         }}
       >
-        <TitleActionsRow
-          title={
-            <Focusable
-              Component="input"
-              className={classNames(
-                INPUT_RESET_CLASSNAME,
-                // w-full: an input's intrinsic size-attribute width would
-                // overflow the sidebar-width form and force horizontal scroll
-                "w-full bg-transparent font-semibold text-2xl transition-all duration-300",
-              )}
-              autoFocus
-              disabled={isReadOnly}
-              onChange={onChangeEventTextField("title")}
-              onKeyDown={handleTitleKeyDown}
-              placeholder="Title"
-              name="Event Title"
-              ref={titleInputRef}
-              underlineColor={EVENT_COLOR}
-              value={displayTitle}
-              withUnderline
-            />
-          }
-          actions={
-            <EventActionMenu
-              bgColor={darken(EVENT_COLOR)}
-              isExistingEvent={isExistingEvent}
-              isReadOnly={isReadOnly}
-              onDuplicate={onDuplicateEvent}
-              onDelete={onDeleteEvent}
-            />
-          }
-        />
+        {/* Scrollable body; the save footer below stays pinned. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 [scrollbar-gutter:stable]">
+          <TitleActionsRow
+            title={
+              <Focusable
+                Component="input"
+                className={classNames(
+                  INPUT_RESET_CLASSNAME,
+                  // w-full: an input's intrinsic size-attribute width would
+                  // overflow the sidebar-width form and force horizontal scroll
+                  "w-full bg-transparent font-semibold text-2xl",
+                )}
+                autoFocus
+                disabled={isReadOnly}
+                onChange={onChangeEventTextField("title")}
+                onKeyDown={handleTitleKeyDown}
+                placeholder="Title"
+                name="Event Title"
+                ref={titleInputRef}
+                underlineColor={EVENT_COLOR}
+                value={displayTitle}
+                withUnderline
+              />
+            }
+            actions={
+              <EventActionMenu
+                bgColor="var(--color-menu-bg)"
+                isExistingEvent={isExistingEvent}
+                isReadOnly={isReadOnly}
+                onDuplicate={onDuplicateEvent}
+                onDelete={onDeleteEvent}
+              />
+            }
+          />
 
-        {/* Same fieldset mechanism as the title above, covering
-            calendar/date/recurrence/description in one wrapper. */}
-        <fieldset className="contents" disabled={isReadOnly}>
-          {draft.kind === "create" ? (
-            <CalendarSelect
-              onChange={onSelectCalendar}
-              value={draft.values.calendarId}
-            />
-          ) : (
-            <p className="my-1.5 text-text-light text-xs">
-              Calendar: {originalCalendarName}
+          {/* Same fieldset mechanism as the title above, covering
+              date/recurrence/calendar/description in one wrapper. Its
+              display: contents keeps the cards direct flex items of the
+              gap-3 body. */}
+          <fieldset className="contents" disabled={isReadOnly}>
+            <FormCard>
+              <DateControlsSection
+                dateTimeSectionProps={dateTimeSectionProps}
+                eventCategory={category}
+              />
+
+              <RecurrenceSection {...recurrenceSectionProps} />
+            </FormCard>
+
+            <FormCard>
+              {draft.kind === "create" ? (
+                <CalendarSelect
+                  onChange={onSelectCalendar}
+                  value={draft.values.calendarId}
+                />
+              ) : (
+                <p className="text-text-light text-xs">
+                  Calendar: {originalCalendarName}
+                </p>
+              )}
+            </FormCard>
+
+            <FormCard>
+              <Textarea
+                underlineColor={EVENT_COLOR}
+                onChange={onChangeEventTextField("description")}
+                onKeyDown={handleIgnoredKeys}
+                placeholder="Description"
+                ref={descriptionRef}
+                value={event.description || ""}
+                className="relative max-h-45 w-full overflow-y-auto border-hidden bg-transparent"
+              />
+            </FormCard>
+          </fieldset>
+
+          {isReadOnly && (
+            <p role="note" className="text-text-light text-xs">
+              Read-only — you don't have permission to edit this event.
             </p>
           )}
-
-          <DateControlsSection
-            dateTimeSectionProps={dateTimeSectionProps}
-            eventCategory={category}
-          />
-
-          <RecurrenceSection {...recurrenceSectionProps} />
-
-          <Textarea
-            underlineColor={EVENT_COLOR}
-            onChange={onChangeEventTextField("description")}
-            onKeyDown={handleIgnoredKeys}
-            placeholder="Description"
-            ref={descriptionRef}
-            value={event.description || ""}
-            className="relative max-h-45 w-full overflow-y-auto border-hidden bg-transparent transition-all duration-300 hover:bg-border-primary hover:brightness-90"
-          />
-        </fieldset>
-
-        {isReadOnly && (
-          <p role="note" className="my-1.5 text-text-light text-xs">
-            Read-only — you don't have permission to edit this event.
-          </p>
-        )}
+        </div>
 
         {!isReadOnly && <SaveSection onSubmit={onSubmitForm} />}
       </EventFormShell>

@@ -625,10 +625,10 @@
 
 @utility c-recurrence-toggle {
   @apply inline-flex items-center gap-1 rounded-sm border border-transparent bg-transparent px-2 py-0.5 transition-all duration-300;
-  color: var(--compass-color-text-dark);
+  color: var(--compass-color-text-light);
   font-size: var(--font-size-m);
   &[data-repeat="false"] {
-    color: var(--compass-color-text-dark-placeholder);
+    color: var(--compass-color-text-light-inactive);
     opacity: 0.85;
   }
   &[data-disabled="true"] {
@@ -636,10 +636,10 @@
     opacity: 0.7;
   }
   &:not([data-disabled="true"]):hover {
-    background: var(--compass-color-border-primary);
+    background: hsl(0 0 100 / 12%);
   }
   &:focus-visible {
-    box-shadow: 0 0 0 2px var(--compass-color-border-primary-dark);
+    box-shadow: 0 0 0 2px var(--compass-color-accent-primary);
   }
   & svg {
     margin-right: 0.25rem;
@@ -660,36 +660,35 @@
   }
   & .timepicker__option--is-selected,
   & .timepicker__option--is-focused {
-    background: var(--time-picker-bg);
-    color: black;
-    filter: brightness(140%);
+    background: hsl(0 0 100 / 10%);
+    color: var(--compass-color-text-lighter);
   }
   & .timepicker__control {
     min-height: 38px;
     border: 0;
     border-radius: var(--compass-radius);
-    background: var(--time-picker-bg);
+    background: var(--color-panel-badge-bg);
     box-shadow: none;
     transition: var(--compass-transition-default);
   }
   & .timepicker__control:hover {
-    filter: brightness(90%);
+    background: hsl(0 0 100 / 12%);
   }
   & .timepicker__control--is-focused {
-    box-shadow: 0 0 0 2px var(--compass-color-border-primary-dark);
+    box-shadow: 0 0 0 2px var(--compass-color-accent-primary);
   }
   & .timepicker__value-container {
     height: 100%;
     padding: 0 8px;
   }
   & .timepicker__single-value {
-    color: var(--compass-color-text-dark);
+    color: var(--compass-color-text-lighter);
   }
   & .timepicker__menu {
     min-width: 150px;
+    border: 1px solid var(--color-border-primary);
     border-radius: 2px;
-    background: var(--time-picker-bg);
-    filter: brightness(87%);
+    background: var(--compass-color-bg-secondary);
   }
   & .timepicker__menu-list {
     padding: 0;
@@ -701,10 +700,10 @@
   }
   & .timepicker__menu-list::-webkit-scrollbar-thumb {
     border-radius: var(--compass-radius);
-    background: var(--time-picker-scrollbar);
+    background: var(--color-panel-scrollbar);
   }
   & .timepicker__menu-list::-webkit-scrollbar-thumb:hover {
-    background: var(--time-picker-scrollbar-hover);
+    background: var(--color-panel-scrollbar-active);
     transition: background-color 0.2s;
   }
 }

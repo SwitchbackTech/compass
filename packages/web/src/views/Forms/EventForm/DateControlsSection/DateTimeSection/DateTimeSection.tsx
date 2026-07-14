@@ -7,12 +7,10 @@ import { TimePickers } from "@web/views/Forms/EventForm/DateControlsSection/Date
 import { type SetEventFormField } from "@web/views/Forms/EventForm/types";
 
 export interface Props {
-  bgColor: string;
   category: Categories_Event;
   displayEndDate: Date;
   draft: GridEventDraft;
   endTime: SelectOption<string>;
-  inputColor?: string;
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
   onSetEventField: SetEventFormField;
@@ -30,11 +28,9 @@ export interface Props {
 }
 
 export const DateTimeSection: FC<Props> = ({
-  bgColor,
   category,
   displayEndDate,
   draft,
-  inputColor,
   isEndDatePickerOpen,
   isStartDatePickerOpen,
   selectedEndDate,
@@ -55,9 +51,7 @@ export const DateTimeSection: FC<Props> = ({
     <div className="flex items-center gap-2" role="tablist">
       {category === Categories_Event.ALLDAY && (
         <DatePickers
-          bgColor={bgColor}
           displayEndDate={displayEndDate}
-          inputColor={inputColor}
           isEndDatePickerOpen={isEndDatePickerOpen}
           isStartDatePickerOpen={isStartDatePickerOpen}
           selectedEndDate={selectedEndDate}
@@ -73,7 +67,6 @@ export const DateTimeSection: FC<Props> = ({
 
       {category === Categories_Event.TIMED && (
         <TimePickers
-          bgColor={bgColor}
           draft={draft}
           endTime={endTime}
           setStartTime={setStartTime}

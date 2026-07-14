@@ -1,13 +1,10 @@
 import type React from "react";
 import { useRef } from "react";
 import ReactSelect, { type Props as RSProps } from "react-select";
-import { darken } from "@web/common/styles/color.utils";
-import { type CSSVariables } from "@web/common/styles/css.types";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type Option_Time } from "@web/common/types/util.types";
 
 export interface Props extends Omit<RSProps, "onChange" | "value"> {
-  bgColor: string;
   isMenuOpen: boolean;
   onChange: (option: SelectOption<string>) => void;
   options?: Option_Time[];
@@ -17,7 +14,6 @@ export interface Props extends Omit<RSProps, "onChange" | "value"> {
 }
 
 export const TimePicker = ({
-  bgColor,
   isMenuOpen,
   onChange: _onChange,
   options,
@@ -31,17 +27,7 @@ export const TimePicker = ({
   let scrollTimer: number;
 
   return (
-    <div
-      ref={containerRef}
-      className="c-time-picker"
-      style={
-        {
-          "--time-picker-bg": bgColor,
-          "--time-picker-scrollbar": darken(bgColor, 40),
-          "--time-picker-scrollbar-hover": darken(bgColor, 80),
-        } as CSSVariables
-      }
-    >
+    <div ref={containerRef} className="c-time-picker">
       <ReactSelect
         {...props}
         className={selectClassName}
