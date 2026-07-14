@@ -45,12 +45,13 @@ the automated work from packet `09`, plus these database migrations in order:
 | 1 | `2026.07.10T21.00.00.calendar-record-migration` | live `calendar` |
 | 2 | `2026.07.10T21.30.00.event-record-backfill` | legacy `event` → inactive `event_new` |
 | rename | `event` → `event_legacy_v1`; `event_new` → `event` | physical collections |
-| 3 | `2026.07.13T12.00.00.recurring-series-first-occurrence-repair` | final active `event` |
-| 4 | `2026.07.14T09.59.00.event-priority-schema-repair` | final active `event` validator and rows |
+| 3 | `2026.07.13T11.59.00.event-priority-schema-repair` | final active `event` validator and rows |
+| 4 | `2026.07.13T12.00.00.recurring-series-first-occurrence-repair` | final active `event` |
 | 5 | `2026.07.14T10.00.00.priority-data-cleanup` | active `event` hygiene and orphaned `priority` collection |
 
-The `09.59` timestamp is intentional: the validator must stop requiring
-`priority` before the `10.00` cleanup attempts to unset that field.
+The `11.59` timestamp is intentional: the validator must stop requiring
+`priority` before the recurring repair inserts rows without that removed field
+and before the `10.00` cleanup attempts to unset it.
 
 ## Environment state matrix
 
@@ -120,9 +121,8 @@ This phase is the only write procedure currently approved.
    either is pending while the active `event` is already calendar-owned, stop;
    the ledger and physical state disagree.
 4. Confirm the pending list includes
-   `2026.07.14T09.59.00.event-priority-schema-repair` before
-   `2026.07.14T10.00.00.priority-data-cleanup`. The recurring-series repair may
-   also be pending.
+   `2026.07.13T11.59.00.event-priority-schema-repair` before the recurring-series
+   repair and `2026.07.14T10.00.00.priority-data-cleanup`.
 5. Run the remaining migrations:
 
    ```bash
@@ -145,6 +145,11 @@ This phase is the only write procedure currently approved.
    Required result: validation is `strict`; `priority` is absent from both the
    required list and properties; the count is zero; collection validation is
    valid.
+
+   The schema repair also removes any active `schedule.kind: "someday"` row
+   leaked by an earlier cutover, but fails closed unless every removed `_id` is
+   present in `event_legacy_v1`. Someday data remains recoverable only from that
+   archive, as established by the event migration runbook.
 8. Deploy or rerun **Deploy staging** for the same release tag. This restarts
    the backend and runs the standard environment health check.
 
@@ -189,8 +194,8 @@ content or credentials.
 
 | Evidence | staging-cloud | staging-selfhosted |
 | --- | --- | --- |
-| Preflight state captured | pending | pending |
-| Backup restore checked | pending | pending |
+| Preflight state captured | 2026-07-14: cut over; 50,500 active rows; 9 migration records | 2026-07-14: cut over; 1 active row; 9 migration records |
+| Backup restore checked | 2026-07-14: 103,940 documents restored to scratch DB; 0 failures | 2026-07-14: 17 documents restored to scratch DB; 0 failures |
 | Validator repair migrated | pending | pending |
 | Google sync code `121` absent | pending | pending |
 | 12-step acceptance passed | pending | pending |
@@ -198,6 +203,13 @@ content or credentials.
 | Operator/date/release tag | pending | pending |
 
 Production remains locked while any cell is pending.
+
+The first `v1.0.205` rehearsal stopped safely before backend restart. It exposed
+two pre-existing active-data leaks: 104 cloud and 1 self-hosted Someday rows,
+all matched by `_id` in `event_legacy_v1`. It also proved the priority validator
+repair must precede the recurring-series repair. Release `v1.0.205` must not be
+used for another migration attempt; use the corrective release containing the
+`11.59` repair.
 
 ## Future Phase P — production big-bang cutover
 
