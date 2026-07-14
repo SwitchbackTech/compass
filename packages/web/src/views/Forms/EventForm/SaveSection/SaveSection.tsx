@@ -19,15 +19,12 @@ export const SaveSection: React.FC<Props> = ({
   const onSave = useCallback(() => _onSubmit(), [_onSubmit]);
 
   return (
-    <div className="flex items-start justify-end pt-[18px]">
+    // Pinned footer bar: EventForm renders this outside its scrollable body,
+    // so it stays visible while the fields scroll.
+    <div className="flex items-center justify-end gap-3 border-border-primary border-t px-4 py-3">
       {onCancel && (
         <TooltipWrapper onClick={onCancel} description={cancelText}>
-          <Btn
-            role="button"
-            tabIndex={0}
-            title={cancelText}
-            style={{ marginRight: 18 }}
-          >
+          <Btn role="button" tabIndex={0} title={cancelText}>
             {cancelText}
           </Btn>
         </TooltipWrapper>

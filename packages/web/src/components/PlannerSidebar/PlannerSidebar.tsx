@@ -69,9 +69,11 @@ export function createPlannerSidebar({
         id={ID_SIDEBAR}
       >
         {showEventDetails ? (
+          // Scrolling and horizontal padding live inside the event form so
+          // its pinned save footer can span the sidebar's full width.
           <section
             aria-label="Event details"
-            className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-5 [scrollbar-gutter:stable]"
+            className="flex min-h-0 flex-1 flex-col"
           >
             {eventDetails}
           </section>

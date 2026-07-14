@@ -55,7 +55,7 @@ mock.module("@web/views/Forms/EventForm/EventActionMenu", () => ({
 }));
 
 mock.module("@web/views/Forms/EventForm/SaveSection", () => ({
-  SaveSection: () => null,
+  SaveSection: () => <button type="button">Save</button>,
 }));
 
 const { EventForm } = require("./EventForm") as typeof import("./EventForm");
@@ -181,6 +181,35 @@ describe("EventForm", () => {
     expect(actions.parentElement).toHaveClass("shrink-0");
     expect(row?.firstElementChild?.contains(title)).toBe(true);
     expect(row?.lastElementChild?.contains(actions)).toBe(true);
+  });
+
+  it("renders as a transparent sidebar column with the save footer after the fields", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft({ description: "Plan the launch" })}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    // Regression guard for the old floating-card look: the form root used to
+    // paint an opaque `--event-form-bg` tint over the sidebar background.
+    const form = screen.getByRole("form");
+    expect(form.style.getPropertyValue("--event-form-bg")).toBe("");
+
+    // The save footer is pinned outside the scrollable field body, so it must
+    // follow the description in DOM order.
+    const description = screen.getByPlaceholderText("Description");
+    const save = screen.getByRole("button", { name: "Save" });
+    expect(
+      description.compareDocumentPosition(save) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("duplicates the event with Mod+D while the title field is focused", async () => {

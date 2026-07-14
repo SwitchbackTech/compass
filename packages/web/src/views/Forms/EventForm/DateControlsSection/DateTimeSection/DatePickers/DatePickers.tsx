@@ -2,7 +2,6 @@ import type React from "react";
 import { type FC } from "react";
 import { MONTH_DAY_YEAR } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
-import { darken } from "@web/common/styles/color.utils";
 import { dateIsValid } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentDate } from "@web/common/utils/datetime/web.datetime.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
@@ -14,9 +13,7 @@ const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
 };
 
 interface Props {
-  bgColor: string;
   displayEndDate: Date;
-  inputColor?: string;
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
   selectedEndDate: Date;
@@ -30,9 +27,7 @@ interface Props {
 }
 
 export const DatePickers: FC<Props> = ({
-  bgColor,
   displayEndDate,
-  inputColor,
   isEndDatePickerOpen,
   isStartDatePickerOpen,
   selectedEndDate,
@@ -182,9 +177,7 @@ export const DatePickers: FC<Props> = ({
         {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
         <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
           <DatePicker
-            bgColor={darken(bgColor, 15)}
             calendarClassName="startDatePicker"
-            inputColor={inputColor}
             isOpen={isStartDatePickerOpen}
             monthTextClassName="text-base"
             onCalendarClose={closeStartDatePicker}
@@ -211,9 +204,7 @@ export const DatePickers: FC<Props> = ({
         {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
         <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
           <DatePicker
-            bgColor={darken(bgColor, 15)}
             calendarClassName="endDatePicker"
-            inputColor={inputColor}
             isOpen={isEndDatePickerOpen}
             monthTextClassName="text-base"
             onCalendarClose={closeEndDatePicker}

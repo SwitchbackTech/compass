@@ -18,7 +18,6 @@ function Harness() {
   return (
     <div>
       <TimePicker
-        bgColor="#000"
         inputId="startTimePicker"
         isMenuOpen={isMenuOpen}
         onChange={setValue}

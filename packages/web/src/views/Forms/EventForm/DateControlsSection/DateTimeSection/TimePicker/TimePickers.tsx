@@ -13,7 +13,6 @@ import { replaceGridDraftSchedule } from "@web/events/grid-event-draft.adapter";
 import { TimePicker } from "./TimePicker";
 
 interface Props {
-  bgColor: string;
   draft: GridEventDraft;
   endTime: SelectOption<string>;
   selectedEndDate: Date;
@@ -25,7 +24,6 @@ interface Props {
 }
 
 export const TimePickers: FC<Props> = ({
-  bgColor,
   draft,
   endTime,
   selectedEndDate,
@@ -133,7 +131,6 @@ export const TimePickers: FC<Props> = ({
   return (
     <div className="flex items-center">
       <TimePicker
-        bgColor={bgColor}
         inputId="startTimePicker"
         isMenuOpen={isStartMenuOpen}
         onChange={onStartSelected}
@@ -144,7 +141,6 @@ export const TimePickers: FC<Props> = ({
       />
       -
       <TimePicker
-        bgColor={bgColor}
         inputId="endTimePicker"
         isMenuOpen={isEndMenuOpen}
         onChange={onEndSelected}
