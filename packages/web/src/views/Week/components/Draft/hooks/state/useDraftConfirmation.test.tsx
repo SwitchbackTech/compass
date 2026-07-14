@@ -4,8 +4,8 @@ import { ObjectId } from "bson";
 import { type PropsWithChildren } from "react";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
-import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import {
   type EditEventRecurrenceDraft,
   type GridEventDraft,

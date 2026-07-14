@@ -1,8 +1,6 @@
 import { useCallback, useState } from "react";
-import {
-  RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
 import {
   OverlayPanel,
@@ -54,7 +52,7 @@ export function RecurrenceScopeDialog() {
 }
 
 interface RecurringEventUpdateScopeDialogContentProps {
-  draft: Schema_Event | null;
+  draft: LegacyEvent | null;
   onUpdateScopeChange: (applyTo: RecurringEventUpdateScope) => void;
   recurrenceChanged?: boolean;
   setRecurrenceUpdateScopeDialogOpen: (isOpen: boolean) => void;

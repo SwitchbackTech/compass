@@ -5,8 +5,11 @@ import {
   useRef,
 } from "react";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import {
+  Categories_Event,
+  type GridEvent,
+} from "@web/common/types/web.event.types";
 import {
   addId,
   assembleDefaultEvent,
@@ -35,8 +38,8 @@ export const useDayTimedDraftCreation = ({
   onOpenEvent,
 }: {
   dateCalcs: CalendarDateCalcs;
-  draft: Schema_Event | null;
-  onOpenEvent: (event: Schema_GridEvent) => void;
+  draft: LegacyEvent | null;
+  onOpenEvent: (event: GridEvent) => void;
 }) => {
   const timedDraftCreationGestureRef = useRef<TimedDraftCreationGesture | null>(
     null,
@@ -86,7 +89,7 @@ export const useDayTimedDraftCreation = ({
         Categories_Event.TIMED,
         startDate.format(),
         minimumEndDate.format(),
-      ).then((nextEvent) => addId(nextEvent as Schema_GridEvent));
+      ).then((nextEvent) => addId(nextEvent as GridEvent));
       let hasMoved = false;
       let isCancelled = false;
       let isFinished = false;

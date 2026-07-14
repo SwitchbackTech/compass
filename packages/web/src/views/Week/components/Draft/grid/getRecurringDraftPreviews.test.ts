@@ -1,15 +1,13 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { getRecurringDraftPreviews } from "./getRecurringDraftPreviews";
 import { describe, expect, test } from "bun:test";
 
 const startOfView = dayjs("2026-07-05T00:00:00.000Z"); // Sun
 const endOfView = dayjs("2026-07-11T23:59:59.999Z"); // Sat
 
-const timedDraft = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent =>
+const timedDraft = (overrides: Partial<GridEvent> = {}): GridEvent =>
   ({
     isAllDay: false,
     // Wednesday 10:00–11:00
@@ -17,7 +15,7 @@ const timedDraft = (
     endDate: "2026-07-08T11:00:00.000Z",
     title: "Standup",
     ...overrides,
-  }) as Schema_GridEvent;
+  }) as GridEvent;
 
 const dayKey = (date?: string) => dayjs(date).format(YEAR_MONTH_DAY_FORMAT);
 

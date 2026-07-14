@@ -1,4 +1,4 @@
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { type FloatingDraftEventMount } from "@web/interaction/CalendarInteractionAdapter";
 import { createDraftEventClone } from "@web/interaction/dom/clone/createDraftEventClone";
@@ -25,7 +25,7 @@ export const getCalendarResizeHandleEdge = (
 
 export const updateCalendarDraftEventTimeLabel = (
   node: HTMLElement,
-  event: Schema_GridEvent,
+  event: GridEvent,
 ) => {
   if (!event.startDate || !event.endDate) {
     return;

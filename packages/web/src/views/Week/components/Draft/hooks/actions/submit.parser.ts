@@ -1,15 +1,15 @@
 import { Origin } from "@core/constants/core.constants";
 import {
-  type Schema_GridEvent,
-  type Schema_WebEvent,
+  type GridEvent,
+  type WebEvent,
 } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";
 
 export class OnSubmitParser {
-  private readonly event: Schema_GridEvent;
+  private readonly event: GridEvent;
 
-  constructor(event: Schema_GridEvent) {
+  constructor(event: GridEvent) {
     this.event = event;
   }
 
@@ -19,9 +19,9 @@ export class OnSubmitParser {
 }
 
 export const prepEventBeforeSubmit = (
-  draft: Schema_GridEvent,
+  draft: GridEvent,
   userId: string,
-): Schema_WebEvent => {
+): WebEvent => {
   if (!draft.startDate || !draft.endDate) {
     throw new Error("Event requires startDate and endDate");
   }
@@ -34,7 +34,7 @@ export const prepEventBeforeSubmit = (
 
   if (draft.recurrence) {
     Object.assign(_event, {
-      recurrence: draft.recurrence as Schema_WebEvent["recurrence"],
+      recurrence: draft.recurrence as WebEvent["recurrence"],
     });
   }
 

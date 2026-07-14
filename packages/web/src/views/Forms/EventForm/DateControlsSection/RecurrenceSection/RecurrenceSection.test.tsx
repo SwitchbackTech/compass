@@ -2,13 +2,13 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useCallback, useState } from "react";
 import { Origin } from "@core/constants/core.constants";
-import { type Schema_Event } from "@core/types/event.types";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { createRecurrenceSection } from "./RecurrenceSection";
 import { describe, expect, it, mock } from "bun:test";
 
-const baseEvent = (): Schema_GridEvent =>
+const baseEvent = (): GridEvent =>
   assembleGridEvent({
     _id: "event-1",
     title: "Test Event",
@@ -34,7 +34,7 @@ function renderRecurrenceSection({
   });
 
   function Harness() {
-    const [event, setEvent] = useState<Schema_Event | null>(baseEvent());
+    const [event, setEvent] = useState<LegacyEvent | null>(baseEvent());
     const handleSetEvent = useCallback<typeof setEvent>((nextEvent) => {
       setEventSpy(nextEvent);
       setEvent(nextEvent);

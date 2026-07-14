@@ -1,4 +1,4 @@
-import { type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 
@@ -10,8 +10,8 @@ export class DirtyParser {
    * Private Static method to check if the recurrence rules have changed
    */
   private static isRuleDifferent(
-    curr: Schema_Event,
-    orig: Schema_Event,
+    curr: LegacyEvent,
+    orig: LegacyEvent,
   ): boolean {
     const oldRecurrence = orig?.recurrence?.rule ?? [];
     const newRecurrence = curr?.recurrence?.rule ?? [];
@@ -33,8 +33,8 @@ export class DirtyParser {
    * Private Static method to check if start or end dates have changed
    */
   private static isDateDifferent(
-    curr: Schema_Event,
-    orig: Schema_Event,
+    curr: LegacyEvent,
+    orig: LegacyEvent,
   ): boolean {
     const oldStartDate = orig?.startDate;
     const newStartDate = curr?.startDate;
@@ -48,8 +48,8 @@ export class DirtyParser {
    * Public Static method to check if recurrence has changed
    */
   public static recurrenceChanged(
-    curr: Schema_Event,
-    orig: Schema_Event,
+    curr: LegacyEvent,
+    orig: LegacyEvent,
   ): boolean {
     return (
       DirtyParser.isDateDifferent(curr, orig) ||
@@ -60,7 +60,7 @@ export class DirtyParser {
   /**
    * Static method to check if the curr event has been modified
    */
-  static isEventDirty(curr: Schema_Event, orig: Schema_Event): boolean {
+  static isEventDirty(curr: LegacyEvent, orig: LegacyEvent): boolean {
     // Compare relevant fields that can change in the form
     const fieldsToCompare = [
       "title",
@@ -85,7 +85,7 @@ export class DirtyParser {
    * GridEventDraft-comparable dirty check for an in-progress edit: rebuilds
    * the pristine draft the edit started from (via editGridEventDraft on the
    * same source/scope) and compares against it field-by-field, rather than
-   * against Schema_Event fields. Recurrence is compared by kind only (not by
+   * against LegacyEvent fields. Recurrence is compared by kind only (not by
    * rule-array equality like isEventDirty does) — an edit draft's recurrence
    * starts at "preserve" and only ever changes kind when the user explicitly
    * toggles it, so a kind mismatch is a reliable-enough dirty signal for

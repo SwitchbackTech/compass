@@ -3,7 +3,7 @@ import { act } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { CalendarIdSchema, EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
-import { type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
   cleanup,
@@ -158,12 +158,12 @@ const makeCalendar = (
 // ObjectId as its actual `_id`; tests that need to assert on "which event"
 // read `event._id` back off the returned fixture, never a literal.
 const createTimedEvent = (
-  overrides: Partial<Schema_Event> & {
+  overrides: Partial<LegacyEvent> & {
     _id: string;
     startDate: string;
     endDate: string;
   },
-): Schema_Event =>
+): LegacyEvent =>
   ({
     isAllDay: false,
     recurrence: undefined,
@@ -171,15 +171,15 @@ const createTimedEvent = (
     user: "user",
     ...overrides,
     _id: createObjectIdString(),
-  }) as Schema_Event;
+  }) as LegacyEvent;
 
 const createAllDayEvent = (
-  overrides: Partial<Schema_Event> & {
+  overrides: Partial<LegacyEvent> & {
     _id: string;
     startDate: string;
     endDate: string;
   },
-): Schema_Event =>
+): LegacyEvent =>
   ({
     isAllDay: true,
     recurrence: undefined,
@@ -187,16 +187,16 @@ const createAllDayEvent = (
     user: "user",
     ...overrides,
     _id: createObjectIdString(),
-  }) as Schema_Event;
+  }) as LegacyEvent;
 
 // DateTimeSchema requires an explicit offset; fixture timestamps above are
 // written offset-free (browser-local style), so normalize to UTC here.
 const withOffset = (dateTime: string) =>
   /[Zz]|[+-]\d\d:\d\d$/.test(dateTime) ? dateTime : `${dateTime}Z`;
 
-// The query cache (unlike draft.store.ts, still legacy Schema_Event-shaped
+// The query cache (unlike draft.store.ts, still legacy LegacyEvent-shaped
 // per its own TODO) requires strict-contract `Event`s.
-const toStrictEvent = (event: Schema_Event): Event =>
+const toStrictEvent = (event: LegacyEvent): Event =>
   createMockEvent({
     id: EventIdSchema.parse(event._id!),
     content: {
@@ -218,7 +218,7 @@ const toStrictEvent = (event: Schema_Event): Event =>
         }),
   });
 
-const setDayEvents = (events: Schema_Event[]) => {
+const setDayEvents = (events: LegacyEvent[]) => {
   seededEvents = events.map(toStrictEvent);
 };
 
@@ -248,7 +248,7 @@ const getTimedSlot = (index = 0) => {
 const getAllDayRegion = () =>
   screen.getByRole("region", { name: "All-day events" });
 
-const setDraftEvent = (event: Schema_Event) => {
+const setDraftEvent = (event: LegacyEvent) => {
   draftActions.startGridClick(event);
 };
 

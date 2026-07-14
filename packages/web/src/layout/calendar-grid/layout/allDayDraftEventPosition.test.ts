@@ -1,12 +1,10 @@
 import { Origin } from "@core/constants/core.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { positionAllDayDraftEvent } from "./allDayDraftEventPosition";
 import { describe, expect, it } from "bun:test";
 
-const createAllDayEvent = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent => ({
+const createAllDayEvent = (overrides: Partial<GridEvent> = {}): GridEvent => ({
   _id: "event-1",
   endDate: "2026-05-26",
   isAllDay: true,

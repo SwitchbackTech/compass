@@ -1,6 +1,6 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   CALENDAR_DECK_INDENT,
   CALENDAR_DECK_MIN_WIDTH,
@@ -19,7 +19,7 @@ export interface CalendarTimedDeckLayout {
 
 export interface CalendarTimedEventLayoutItem {
   deckLayout: CalendarTimedDeckLayout | null;
-  event: Schema_GridEvent;
+  event: GridEvent;
 }
 
 interface DeckCandidate {
@@ -30,7 +30,7 @@ interface DeckCandidate {
 }
 
 export const createCalendarTimedEventLayout = (
-  events: Schema_GridEvent[],
+  events: GridEvent[],
 ): CalendarTimedEventLayoutItem[] => {
   const items: CalendarTimedEventLayoutItem[] = events.map((event) => ({
     deckLayout: null,

@@ -1,5 +1,5 @@
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   CALENDAR_DAY_COLUMN_MIN_USABLE_WIDTH,
   CALENDAR_GRID_MARGIN_LEFT,
@@ -57,7 +57,7 @@ export const anchorDateForWindowOffset = ({
 }) =>
   weekStart.add(windowOffset + Math.floor((visibleDayCount - 1) / 2), "day");
 
-type EventDates = Pick<Schema_GridEvent, "startDate" | "endDate">;
+type EventDates = Pick<GridEvent, "startDate" | "endDate">;
 
 /**
  * Timed events render in the column of their start date (mirrors

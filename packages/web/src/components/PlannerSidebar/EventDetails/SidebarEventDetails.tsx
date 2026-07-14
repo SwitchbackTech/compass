@@ -4,7 +4,7 @@ import {
   useCallback,
   useState,
 } from "react";
-import { type RecurringEventUpdateScope } from "@core/types/event.types";
+import { type RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { useEventById } from "@web/events/queries/useEventById";

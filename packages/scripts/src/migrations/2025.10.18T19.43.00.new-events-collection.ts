@@ -1,7 +1,7 @@
 import { type MigrationContext } from "@scripts/common/cli.types";
+import { type EventNew, EventNewSchema } from "@scripts/common/event-new.types";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import { type RunnableMigration } from "umzug";
-import { EventSchema, type Schema_Event } from "@core/types/event_new.types";
 import mongoService from "@backend/common/services/mongo.service";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
@@ -10,8 +10,8 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
   async up(): Promise<void> {
     const collectionName = `${mongoService.event.collectionName}_new`;
-    const collection = mongoService.db.collection<Schema_Event>(collectionName);
-    const $jsonSchema = zodToMongoSchema(EventSchema);
+    const collection = mongoService.db.collection<EventNew>(collectionName);
+    const $jsonSchema = zodToMongoSchema(EventNewSchema);
 
     await mongoService.db.createCollection(collectionName, {
       validator: { $jsonSchema },
@@ -64,7 +64,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
   async down(): Promise<void> {
     const collectionName = `${mongoService.event.collectionName}_new`;
-    const collection = mongoService.db.collection<Schema_Event>(collectionName);
+    const collection = mongoService.db.collection<EventNew>(collectionName);
 
     await collection.drop();
   }

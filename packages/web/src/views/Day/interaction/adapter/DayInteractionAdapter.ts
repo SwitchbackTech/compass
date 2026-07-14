@@ -5,7 +5,7 @@ import {
   ID_GRID_COLUMNS_TIMED,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { type CalendarInteractionAdapter } from "@web/interaction/CalendarInteractionAdapter";
 import {
   type CalendarInteractionCancellationTargets,
@@ -726,10 +726,10 @@ const commitAllDayResizeInteraction = (
 };
 
 const timedDragVisualToDayGridEvent = (
-  event: Schema_GridEvent,
+  event: GridEvent,
   visual: TimedDragVisual,
   visibleDate: Dayjs,
-): Schema_GridEvent => ({
+): GridEvent => ({
   ...event,
   isAllDay: false,
   endDate: visibleDate
@@ -743,10 +743,10 @@ const timedDragVisualToDayGridEvent = (
 });
 
 const timedResizeVisualToDayGridEvent = (
-  event: Schema_GridEvent,
+  event: GridEvent,
   visual: TimedResizeVisual,
   visibleDate: Dayjs,
-): Schema_GridEvent => ({
+): GridEvent => ({
   ...event,
   isAllDay: false,
   endDate: visibleDate
@@ -760,9 +760,9 @@ const timedResizeVisualToDayGridEvent = (
 });
 
 const allDayVisualToDayGridEvent = (
-  event: Schema_GridEvent,
+  event: GridEvent,
   visibleDate: Dayjs,
-): Schema_GridEvent => ({
+): GridEvent => ({
   ...event,
   isAllDay: true,
   endDate: visibleDate.add(1, "day").format(YEAR_MONTH_DAY_FORMAT),

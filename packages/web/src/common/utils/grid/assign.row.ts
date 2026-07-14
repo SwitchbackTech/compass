@@ -1,5 +1,5 @@
 import dayjs from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { type EventWithDates } from "@web/common/utils/event/event.util";
 import { assignEventToRow } from "./grid.util";
 
@@ -7,14 +7,14 @@ export const assignEventsToRow = (
   allDayEvents: EventWithDates[],
 ): {
   rowsCount: number;
-  allDayEvents: Schema_GridEvent[];
+  allDayEvents: GridEvent[];
 } => {
   const rows: number[][] = [];
   // makes copy of all event objects to allow for adding a 'row' field
   // can likely be optimized using immer's `produce` and `draft`
   const orderedAllDayEvents = allDayEvents?.map((e) => ({
     ...e,
-  })) as Schema_GridEvent[];
+  })) as GridEvent[];
 
   orderedAllDayEvents?.forEach((event, i) => {
     const eventDays = _getEventDayNumbers(event);

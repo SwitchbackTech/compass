@@ -1,10 +1,10 @@
 import { faker } from "@faker-js/faker";
+import { type EventNew, EventNewSchema } from "@scripts/common/event-new.types";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import Migration from "@scripts/migrations/2025.10.18T19.43.00.new-events-collection";
 import { ObjectId } from "mongodb";
 import { Origin } from "@core/constants/core.constants";
-import { CalendarProvider } from "@core/types/event.types";
-import { EventSchema, type Schema_Event } from "@core/types/event_new.types";
+import { CalendarProvider } from "@core/types/calendar.types";
 import dayjs from "@core/util/date/dayjs";
 import {
   cleanupCollections,
@@ -18,7 +18,7 @@ import mongoService from "@backend/common/services/mongo.service";
 describe("2025.10.18T19.43.00.new-events-collection", () => {
   const collectionName = `${Collections.EVENT}_new`;
   const newEventCollection = () => mongoService.db.collection(collectionName);
-  const $jsonSchema = zodToMongoSchema(EventSchema);
+  const $jsonSchema = zodToMongoSchema(EventNewSchema);
 
   beforeAll(setupTestDb);
   afterAll(cleanupTestDb);
@@ -88,9 +88,7 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
     );
   }
 
-  function generateEvent(
-    metadata?: Schema_Event["metadata"][number],
-  ): Schema_Event {
+  function generateEvent(metadata?: EventNew["metadata"][number]): EventNew {
     return {
       _id: new ObjectId(),
       calendar: new ObjectId(),
@@ -130,7 +128,7 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
     it("rejects events with missing calendar field", async () => {
       const eventWithoutCalendar = generateEvent();
 
-      delete (eventWithoutCalendar as Partial<Schema_Event>).calendar;
+      delete (eventWithoutCalendar as Partial<EventNew>).calendar;
 
       await expect(
         newEventCollection().insertOne(eventWithoutCalendar),
@@ -140,7 +138,7 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
     it("rejects events with missing startDate field", async () => {
       const eventWithoutStartDate = generateEvent();
 
-      delete (eventWithoutStartDate as Partial<Schema_Event>).startDate;
+      delete (eventWithoutStartDate as Partial<EventNew>).startDate;
 
       await expect(
         newEventCollection().insertOne(eventWithoutStartDate),
@@ -150,7 +148,7 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
     it("rejects events with missing endDate field", async () => {
       const eventWithoutEndDate = generateEvent();
 
-      delete (eventWithoutEndDate as Partial<Schema_Event>).endDate;
+      delete (eventWithoutEndDate as Partial<EventNew>).endDate;
 
       await expect(
         newEventCollection().insertOne(eventWithoutEndDate),
@@ -160,7 +158,7 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
     it("rejects events with missing origin field", async () => {
       const eventWithoutOrigin = generateEvent();
 
-      delete (eventWithoutOrigin as Partial<Schema_Event>).origin;
+      delete (eventWithoutOrigin as Partial<EventNew>).origin;
 
       await expect(
         newEventCollection().insertOne(eventWithoutOrigin),
@@ -226,7 +224,7 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
           const metadata = {
             provider: CalendarProvider.GOOGLE,
             gRecurringEventId,
-          } as Schema_Event["metadata"][number];
+          } as EventNew["metadata"][number];
 
           const eventWithInvalidMetadata = generateEvent(metadata);
 
@@ -242,7 +240,7 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
             provider: CalendarProvider.GOOGLE,
             gEventId,
             gRecurringEventId: null,
-          } as Schema_Event["metadata"][number];
+          } as EventNew["metadata"][number];
 
           const eventWithInvalidMetadata = generateEvent(metadata);
 

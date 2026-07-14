@@ -1,16 +1,16 @@
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { type Schema_WebEvent } from "@web/common/types/web.event.types";
+import { type WebEvent } from "@web/common/types/web.event.types";
 import { type WeekNavigationSource } from "@web/views/Week/hooks/useWeek";
 
 export class EventInViewParser {
-  private readonly event: Schema_WebEvent;
+  private readonly event: WebEvent;
   private readonly startOfView: Dayjs;
   private readonly endOfView: Dayjs;
   private readonly isStartInView: boolean;
   private readonly isEndInView: boolean;
   private readonly isSpanningView: boolean;
 
-  constructor(event: Schema_WebEvent, startOfView: Dayjs, endOfView: Dayjs) {
+  constructor(event: WebEvent, startOfView: Dayjs, endOfView: Dayjs) {
     this.event = event;
     this.startOfView = startOfView;
     this.endOfView = endOfView;

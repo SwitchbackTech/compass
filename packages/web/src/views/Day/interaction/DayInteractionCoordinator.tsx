@@ -1,6 +1,6 @@
 import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import {
   draftActions,
@@ -19,14 +19,14 @@ import {
 } from "./adapter/DayInteractionAdapter";
 
 interface Props extends PropsWithChildren {
-  allDayEvents?: Schema_GridEvent[];
+  allDayEvents?: GridEvent[];
   dateInView: Dayjs;
   getLayoutSources: () => CalendarLayoutCacheSources;
-  onOpenEvent: (event: Schema_GridEvent) => void;
-  timedEvents?: Schema_GridEvent[];
+  onOpenEvent: (event: GridEvent) => void;
+  timedEvents?: GridEvent[];
 }
 
-const EMPTY_GRID_EVENTS: Schema_GridEvent[] = [];
+const EMPTY_GRID_EVENTS: GridEvent[] = [];
 
 export const DayInteractionCoordinator: FC<Props> = ({
   allDayEvents = EMPTY_GRID_EVENTS,
@@ -64,7 +64,7 @@ export const DayInteractionCoordinator: FC<Props> = ({
 
   layoutSourcesRef.current = getLayoutSources;
 
-  const openDayCalendarEvent = (event: Schema_GridEvent) => {
+  const openDayCalendarEvent = (event: GridEvent) => {
     if (!event._id) {
       return;
     }
@@ -112,8 +112,8 @@ export const DayInteractionCoordinator: FC<Props> = ({
   );
 };
 
-const mapEventsById = (events: Schema_GridEvent[]) => {
-  const eventsById = new Map<string, Schema_GridEvent>();
+const mapEventsById = (events: GridEvent[]) => {
+  const eventsById = new Map<string, GridEvent>();
 
   for (const event of events) {
     if (event._id) {

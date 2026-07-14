@@ -8,9 +8,12 @@ import {
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import dayjs from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  Categories_Event,
+  type GridEvent,
+} from "@web/common/types/web.event.types";
 import { getDraftTimes } from "@web/common/utils/draft/draft.util";
 import {
   addId,
@@ -103,7 +106,7 @@ export function DayCalendarGrid() {
   useDayCalendarScrollToNow(gridRefs.mainGridRef);
 
   const openEventFormForEvent = useCallback(
-    (event: Schema_GridEvent) => {
+    (event: GridEvent) => {
       if (!event._id) {
         return;
       }
@@ -137,12 +140,12 @@ export function DayCalendarGrid() {
     [dayEvents],
   );
 
-  // timedEvents/allDayEvents are the same Schema_GridEvent objects the grid
+  // timedEvents/allDayEvents are the same GridEvent objects the grid
   // layers render from (assembled once in event.view-model.ts), so the
   // context menu/right-click lookup reuses them directly instead of
-  // re-deriving a fresh Schema_GridEvent from `dayEvents` (Event[]).
+  // re-deriving a fresh GridEvent from `dayEvents` (Event[]).
   const dayGridEventsById = useMemo(() => {
-    const map = new Map<string, Schema_GridEvent>();
+    const map = new Map<string, GridEvent>();
     for (const gridEvent of [
       ...displayedTimedEvents,
       ...displayedAllDayEvents,
@@ -153,7 +156,7 @@ export function DayCalendarGrid() {
   }, [displayedAllDayEvents, displayedTimedEvents]);
 
   const getDayEventById = useCallback(
-    (eventId: string): Schema_GridEvent | null =>
+    (eventId: string): GridEvent | null =>
       dayGridEventsById.get(eventId) ?? null,
     [dayGridEventsById],
   );
@@ -168,7 +171,7 @@ export function DayCalendarGrid() {
   // Schedule-agnostic: opens the floating form for a freshly-built draft event,
   // whether all-day or timed (openEventFormForEvent branches on isAllDay).
   const openDraftEventForm = useCallback(
-    (event: Schema_Event) => {
+    (event: LegacyEvent) => {
       if (!hasEventDates(event)) {
         return;
       }

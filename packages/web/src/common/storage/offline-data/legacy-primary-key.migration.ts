@@ -1,5 +1,5 @@
 import Dexie, { type Table } from "dexie";
-import { type Event_Core } from "@core/types/event.types";
+import { type ValidatedLegacyEvent } from "@core/types/legacy-event.contracts";
 import { type MigrationRecord, type StoredTask } from "./offline-data.store";
 
 const DB_NAME = "compass-local";
@@ -29,7 +29,7 @@ type LegacyStoredTask = Omit<StoredTask, "_id"> & { id: string };
  * @internal Exported for testing
  */
 export class LegacyCompassDB extends Dexie {
-  events!: Table<Event_Core, string>;
+  events!: Table<ValidatedLegacyEvent, string>;
   tasks!: Table<LegacyStoredTask, string>;
   _migrations!: Table<MigrationRecord, string>;
 
@@ -56,7 +56,7 @@ function legacyTaskToStoredTask(legacy: LegacyStoredTask): StoredTask {
 }
 
 export interface LegacyMigrationResult {
-  events: Event_Core[];
+  events: ValidatedLegacyEvent[];
   tasks: StoredTask[];
   migrations: MigrationRecord[];
 }

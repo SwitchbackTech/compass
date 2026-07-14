@@ -5,7 +5,7 @@ import {
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
@@ -23,7 +23,7 @@ export interface ContextMenuItemsActions {
 }
 
 interface ContextMenuItemsProps {
-  event: Schema_GridEvent;
+  event: GridEvent;
   close: () => void;
 }
 
@@ -99,7 +99,7 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   // The right-click flow (GridContextMenuWrapper.tsx) already builds a
   // GridEventDraft via editGridEventDraft and pushes it into the store, so
   // this reads that canonical draft rather than re-deriving one from
-  // `event` (a Schema_GridEvent render projection with no strict source).
+  // `event` (a GridEvent render projection with no strict source).
   const gridDraft = useDraftStore(selectGridDraft);
 
   const menuActions: ContextMenuItemsActions = {

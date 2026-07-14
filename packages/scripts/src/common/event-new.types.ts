@@ -1,6 +1,6 @@
 import z from "zod/v4";
 import { Origin } from "@core/constants/core.constants";
-import { CalendarProvider } from "@core/types/event.types";
+import { CalendarProvider } from "@core/types/calendar.types";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 
 export const GoogleStandaloneEventMetadataSchema = z.object({
@@ -43,7 +43,7 @@ const RecurrenceSchema = z.union([
   RecurrenceBaseSchema,
 ]);
 
-export const EventSchema = z.object({
+export const EventNewSchema = z.object({
   _id: zObjectId,
   calendar: zObjectId,
   // Own schema (not the shared, non-empty StringV4Schema) so titleless
@@ -59,4 +59,4 @@ export const EventSchema = z.object({
   metadata: z.array(EventMetadataSchema).nonempty(),
 });
 
-export type Schema_Event = z.infer<typeof EventSchema>;
+export type EventNew = z.infer<typeof EventNewSchema>;

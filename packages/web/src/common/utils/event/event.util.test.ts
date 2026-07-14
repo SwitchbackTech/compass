@@ -1,7 +1,7 @@
 import { ObjectId } from "bson";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   addId,
   isEventInRange,
@@ -78,7 +78,7 @@ describe("addId", () => {
     const event = {
       ...createMockStandaloneEvent(),
       _id: "existing-id",
-    } as Schema_GridEvent;
+    } as GridEvent;
     const result = addId(event);
 
     expect(result._id).toBeDefined();

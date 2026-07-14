@@ -12,7 +12,7 @@ import {
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
   draftActions,
@@ -26,7 +26,7 @@ import "@testing-library/jest-dom";
 
 const TIMED_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
 
-const timedEvent: Schema_GridEvent = {
+const timedEvent: GridEvent = {
   _id: TIMED_EVENT_ID,
   endDate: "2026-05-20T10:00:00.000",
   isAllDay: false,
@@ -139,7 +139,7 @@ const installFrameScheduler = () => {
   return { flushFrame };
 };
 
-const openFloatingForm = (event: Schema_GridEvent) => {
+const openFloatingForm = (event: GridEvent) => {
   act(() => {
     draftActions.startGridClick(event);
     draftActions.setFormOpen(true);

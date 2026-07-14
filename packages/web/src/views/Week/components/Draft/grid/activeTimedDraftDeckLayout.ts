@@ -1,13 +1,13 @@
 import dayjs from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   type CalendarTimedDeckLayout,
   createCalendarTimedEventLayout,
 } from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
 
 export const getActiveTimedDraftDeckLayout = (
-  draft: Schema_GridEvent | null,
-  timedEvents: Schema_GridEvent[],
+  draft: GridEvent | null,
+  timedEvents: GridEvent[],
 ): CalendarTimedDeckLayout | null => {
   if (!draft?._id || draft.isAllDay) {
     return null;

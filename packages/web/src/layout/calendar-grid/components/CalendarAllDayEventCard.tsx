@@ -14,7 +14,7 @@ import {
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { EVENT_COLOR, EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE } from "@web/layout/calendar-grid/interaction/calendarInteractionDom";
 import { type CalendarEventPosition } from "@web/layout/calendar-grid/types/calendarGrid.types";
@@ -25,15 +25,15 @@ const REPEAT_ICON_MIN_WIDTH = 60;
 export interface CalendarAllDayEventCardProps {
   /** Resolved by a list-level useCalendarLookup call, not fetched here. */
   calendarIdentity?: CalendarCardIdentity | null;
-  event: Schema_GridEvent;
+  event: GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
   isPlaceholder: boolean;
-  onEventKeyDown?: (event: Schema_GridEvent) => void;
-  onEventMouseDown?: (e: MouseEvent, event: Schema_GridEvent) => void;
+  onEventKeyDown?: (event: GridEvent) => void;
+  onEventMouseDown?: (e: MouseEvent, event: GridEvent) => void;
   onMouseEnter?: (e: MouseEvent<HTMLDivElement>) => void;
   onMouseLeave?: (e: MouseEvent<HTMLDivElement>) => void;
   onScalerMouseDown?: (
-    event: Schema_GridEvent,
+    event: GridEvent,
     e: MouseEvent,
     dateToChange: "startDate" | "endDate",
   ) => void;

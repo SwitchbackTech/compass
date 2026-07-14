@@ -1,4 +1,4 @@
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { nudgeEventFromKeyboard } from "@web/common/utils/event/event-nudge-shortcut.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
@@ -13,7 +13,7 @@ import { getFocusedDayCalendarEventTarget } from "@web/views/Day/interaction/tar
 export function useDayEventNudgeShortcuts({
   timedEvents,
 }: {
-  timedEvents: Schema_GridEvent[];
+  timedEvents: GridEvent[];
 }) {
   const updateEvent = useUpdateEvent();
 

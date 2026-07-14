@@ -19,8 +19,7 @@
     "allowSyntheticDefaultImports": true,
     "paths": {
       "@web/*": ["./src/*"],
-      "@core/*": ["../core/src/*"],
-      "@backend/*": ["../backend/src/*"]
+      "@core/*": ["../core/src/*"]
     }
   }
 }

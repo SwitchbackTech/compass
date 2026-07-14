@@ -3,12 +3,12 @@ import { type Options, RRule, type RRuleStrOptions, rrulestr } from "rrule";
 import { type ParsedOptions } from "rrule/dist/esm/types";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
+import { type CalendarProvider } from "@core/types/calendar.types";
 import {
-  type CalendarProvider,
-  type Schema_Event_Recur_Base,
-  type Schema_Event_Recur_Instance,
-  type WithMongoId,
-} from "@core/types/event.types";
+  type BaseEvent,
+  type InstanceEvent,
+} from "@core/types/legacy-event.contracts";
+import { type WithObjectId } from "@core/types/type.utils";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   diffRRuleOptions,
@@ -17,7 +17,7 @@ import {
 } from "@core/util/event/event.util";
 
 export class CompassEventRRule extends RRule {
-  #event: WithMongoId<Omit<Schema_Event_Recur_Base, "_id">>;
+  #event: WithObjectId<Omit<BaseEvent, "_id">>;
   #dateFormat: string;
   #durationMs!: number;
   #startDate!: Dayjs;
@@ -26,7 +26,7 @@ export class CompassEventRRule extends RRule {
 
   constructor(
     event: Pick<
-      WithMongoId<Omit<Schema_Event_Recur_Base, "_id">>,
+      WithObjectId<Omit<BaseEvent, "_id">>,
       "startDate" | "endDate" | "_id" | "recurrence"
     >,
     options: Partial<Options> = {},
@@ -42,7 +42,7 @@ export class CompassEventRRule extends RRule {
   }
 
   static #initOptions(
-    event: WithMongoId<Omit<Schema_Event_Recur_Base, "_id">>,
+    event: WithObjectId<Omit<BaseEvent, "_id">>,
     _options: Partial<Options> = {},
   ): Partial<Options> {
     const startDate = parseCompassEventDate(event.startDate!);
@@ -121,9 +121,7 @@ export class CompassEventRRule extends RRule {
     return rDates.concat(dates);
   }
 
-  base(
-    provider?: CalendarProvider,
-  ): WithMongoId<Omit<Schema_Event_Recur_Base, "_id">> {
+  base(provider?: CalendarProvider): WithObjectId<Omit<BaseEvent, "_id">> {
     const _id = this.#event._id ?? new ObjectId();
     const recurrence = { rule: this.toRecurrence() };
     const event = { ...this.#event, _id, recurrence };
@@ -141,7 +139,7 @@ export class CompassEventRRule extends RRule {
    */
   instances(
     provider?: CalendarProvider,
-  ): WithMongoId<Omit<Schema_Event_Recur_Instance, "_id">>[] {
+  ): WithObjectId<Omit<InstanceEvent, "_id">>[] {
     const base = this.base();
     const baseData = MapEvent.removeIdentifyingData(base);
     const baseEventId = base._id.toString();

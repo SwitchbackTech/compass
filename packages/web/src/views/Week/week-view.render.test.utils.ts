@@ -1,7 +1,7 @@
-import { type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 
-export const freshenEventStartEndDate = (event: Schema_Event): Schema_Event => {
+export const freshenEventStartEndDate = (event: LegacyEvent): LegacyEvent => {
   // Set event to start on the current week's Thursday at 11am and end at 12pm (timed event)
   const now = dayjs();
   const startOfWeek = now.startOf("week"); // Sunday

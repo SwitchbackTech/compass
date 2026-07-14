@@ -12,7 +12,7 @@ import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-tes
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { createCompassQueryClient } from "@web/api/query-client";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
@@ -25,7 +25,7 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 // the mutation silently no-ops.
 const TIMED_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
 
-const timedEvent: Schema_GridEvent = {
+const timedEvent: GridEvent = {
   _id: TIMED_EVENT_ID,
   endDate: "2026-05-20T10:00:00.000",
   isAllDay: false,

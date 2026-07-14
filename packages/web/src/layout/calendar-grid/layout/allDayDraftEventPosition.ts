@@ -1,5 +1,5 @@
-import { type Schema_Event } from "@core/types/event.types";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleGridEvent,
   hasEventDates,
@@ -10,11 +10,11 @@ export const positionAllDayDraftEvent = ({
   draft,
   events,
 }: {
-  draft: Schema_Event | null;
-  events: Schema_GridEvent[];
+  draft: LegacyEvent | null;
+  events: GridEvent[];
 }): {
-  activeDraftEvent: Schema_GridEvent | null;
-  events: Schema_GridEvent[];
+  activeDraftEvent: GridEvent | null;
+  events: GridEvent[];
 } => {
   if (!draft?.isAllDay || !hasEventDates(draft)) {
     return { activeDraftEvent: null, events };

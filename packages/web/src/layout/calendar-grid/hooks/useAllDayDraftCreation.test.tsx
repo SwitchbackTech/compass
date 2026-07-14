@@ -6,7 +6,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { useEffect } from "react";
-import { type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { useAllDayDraftCreation } from "./useAllDayDraftCreation";
@@ -16,7 +16,7 @@ mock.module("@web/auth/compass/session/session.util", () => ({
   getUserId: mock().mockResolvedValue("user"),
 }));
 
-const existingDraft: Schema_Event = {
+const existingDraft: LegacyEvent = {
   _id: "existing-draft",
   endDate: "2026-05-21",
   isAllDay: true,
@@ -30,7 +30,7 @@ const renderHarness = ({
   onCreateGridDraft = mock(),
   onParentMouseDown = mock(),
 }: {
-  draft?: Schema_Event | null;
+  draft?: LegacyEvent | null;
   onCreateGridDraft?: (draft: GridEventDraft) => void;
   onParentMouseDown?: () => void;
 } = {}) => {

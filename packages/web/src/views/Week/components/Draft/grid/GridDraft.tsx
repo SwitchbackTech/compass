@@ -1,8 +1,11 @@
 import { type FC, type MouseEvent } from "react";
 import { Origin } from "@core/constants/core.constants";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  Categories_Event,
+  type GridEvent as GridEventEntity,
+} from "@web/common/types/web.event.types";
 import {
   getEventDragOffset,
   gridEventDefaultPosition,
@@ -18,10 +21,10 @@ import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 
 interface Props {
-  activeAllDayDraftEvent?: Schema_GridEvent | null;
+  activeAllDayDraftEvent?: GridEventEntity | null;
   deckLayout?: CalendarTimedDeckLayout | null;
   measurements: Measurements_Grid;
-  recurringPreviews?: readonly Schema_GridEvent[];
+  recurringPreviews?: readonly GridEventEntity[];
   weekProps: WeekProps;
 }
 
@@ -39,23 +42,23 @@ export const GridDraft: FC<Props> = ({
   const { setDragOffset, setDateBeingChanged, setIsResizing } = setters;
   const { draft, dragOffset, isDragging, isResizing } = state;
 
-  // Schema_GridEvent-shaped projection of the canonical GridEventDraft, for
+  // GridEvent-shaped projection of the canonical GridEventDraft, for
   // the still-unconverted renderer components (GridEvent/AllDayEventMemo)
   // and the forms cluster (EventForm/RecurrenceSection) — see
   // grid-event-draft.adapter.ts's gridEventDraftToSchemaEvent doc comment.
-  const draftSchemaEvent: Schema_Event | null = draft
+  const draftSchemaEvent: LegacyEvent | null = draft
     ? gridEventDraftToSchemaEvent(draft)
     : null;
-  const draftAsGridEvent: Schema_GridEvent | null = draftSchemaEvent
+  const draftAsGridEvent: GridEventEntity | null = draftSchemaEvent
     ? ({
         ...draftSchemaEvent,
         origin: draftSchemaEvent.origin ?? Origin.COMPASS,
         user: draftSchemaEvent.user ?? "",
         position: { ...gridEventDefaultPosition, dragOffset },
-      } as Schema_GridEvent)
+      } as GridEventEntity)
     : null;
 
-  const handleDrag = (_: Schema_GridEvent, moveEvent: PartialMouseEvent) => {
+  const handleDrag = (_: GridEventEntity, moveEvent: PartialMouseEvent) => {
     if (!draft) return; // TS Guard
 
     setDragOffset(getEventDragOffset(draftAsGridEvent ?? undefined, moveEvent));
@@ -101,12 +104,12 @@ export const GridDraft: FC<Props> = ({
           key={`draft-${draftAsGridEvent._id}`}
           measurements={measurements}
           onKeyDown={focusEventFormTitle}
-          onMouseDown={(e: MouseEvent, event: Schema_GridEvent) => {
+          onMouseDown={(e: MouseEvent, event: GridEventEntity) => {
             e.preventDefault();
             onMouseDown(e, event);
           }}
           onScalerMouseDown={(
-            _event: Schema_GridEvent,
+            _event: GridEventEntity,
             e: MouseEvent,
             dateToChange: "startDate" | "endDate",
           ) => {
@@ -125,13 +128,13 @@ export const GridDraft: FC<Props> = ({
           key={`draft-${draftAsGridEvent._id}`}
           measurements={measurements}
           motionMode={motionMode}
-          onEventMouseDown={(event: Schema_GridEvent, e: MouseEvent) => {
+          onEventMouseDown={(event: GridEventEntity, e: MouseEvent) => {
             e.preventDefault();
             onMouseDown(e, event);
           }}
           onEventKeyDown={focusEventFormTitle}
           onScalerMouseDown={(
-            _event: Schema_GridEvent,
+            _event: GridEventEntity,
             e: MouseEvent,
             dateToChange: "startDate" | "endDate",
           ) => {
