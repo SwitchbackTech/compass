@@ -56,7 +56,6 @@ Use `codex-simplify-code` on the diff from the base branch. Reduce duplication, 
 
 - Make a separate lower-case conventional commit only if simplification changes files.
 - Revalidate user-visible behavior after behavior-adjacent cleanup.
-- For React changes, run `react-doctor`; for UI changes, use `codex-a11y-audit` when warranted.
 - Capture what changed, or that no simplification opportunity existed, and justify any retained or new `useEffect`, `useRef`, or `useState` for the PR.
 
 ## 6. Final local gate
