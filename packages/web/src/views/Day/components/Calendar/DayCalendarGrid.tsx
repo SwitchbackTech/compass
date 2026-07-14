@@ -22,7 +22,6 @@ import {
   assembleGridEvent,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
-import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
   createGridEventDraft,
@@ -35,7 +34,6 @@ import {
   selectDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { CALENDAR_TIMED_VISIBLE_HOURS } from "@web/layout/calendar-grid/calendarGrid.constants";
 import { CalendarGrid } from "@web/layout/calendar-grid/components/CalendarGrid";
 import { useAllDayDraftCreation } from "@web/layout/calendar-grid/hooks/useAllDayDraftCreation";
 import { useCalendarDateCalcs } from "@web/layout/calendar-grid/hooks/useCalendarDateCalcs";
@@ -52,6 +50,7 @@ import {
   DayCalendarTimedEventsLayer,
 } from "./DayCalendarEventLayers";
 import { useDayCalendarColumns } from "./useDayCalendarColumns";
+import { useDayCalendarScrollToNow } from "./useDayCalendarScrollToNow";
 import { useDayTimedDraftCreation } from "./useDayTimedDraftCreation";
 
 export const canCreateDraftOnCalendar = (
@@ -104,53 +103,7 @@ export function DayCalendarGrid() {
     [gridRefs.allDayColumnsRef, gridRefs.mainGridRef, gridRefs.timedColumnsRef],
   );
 
-  const scrollToNow = useCallback(() => {
-    const timedGrid = gridRefs.mainGridRef.current;
-
-    if (!timedGrid) {
-      return;
-    }
-
-    const gridRowHeight = timedGrid.clientHeight / CALENDAR_TIMED_VISIBLE_HOURS;
-    const minuteHeight = gridRowHeight / 60;
-    const top = getCurrentMinute() * minuteHeight - 150;
-
-    timedGrid.scroll({
-      behavior: "smooth",
-      top,
-    });
-  }, [gridRefs.mainGridRef]);
-  const scrollToNowRef = useRef(scrollToNow);
-
-  useEffect(() => {
-    if (!gridRefs.mainGridRef.current) {
-      return;
-    }
-
-    scrollToNow();
-  }, [gridRefs.mainGridRef, scrollToNow]);
-
-  useEffect(() => {
-    scrollToNowRef.current = scrollToNow;
-  }, [scrollToNow]);
-
-  useEffect(() => {
-    const handleScrollToNowLine = () => {
-      scrollToNowRef.current();
-    };
-
-    compassEventEmitter.on(
-      CompassDOMEvents.SCROLL_TO_NOW_LINE,
-      handleScrollToNowLine,
-    );
-
-    return () => {
-      compassEventEmitter.off(
-        CompassDOMEvents.SCROLL_TO_NOW_LINE,
-        handleScrollToNowLine,
-      );
-    };
-  }, []);
+  useDayCalendarScrollToNow(gridRefs.mainGridRef);
 
   const openEventFormForEvent = useCallback(
     (event: Schema_GridEvent) => {
