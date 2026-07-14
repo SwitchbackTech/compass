@@ -36,7 +36,6 @@ describe("CompassToGoogleEventPropagation - scope 'this' - standalone event", ()
       timeZone: "America/Denver" as never,
     },
     recurrence: { kind: "single" as const },
-    priority: "unassigned" as const,
   });
 
   it("creates a Google event and persists the returned externalReference", async () => {
@@ -82,7 +81,6 @@ describe("CompassToGoogleEventPropagation - scope 'this' - standalone event", ()
       content: { kind: "details", title: "Standup (moved)", description: "" },
       schedule: createInput(calendar._id.toHexString()).schedule,
       recurrence: { kind: "preserve" },
-      priority: "unassigned",
       scope: "this",
     });
 
@@ -140,7 +138,6 @@ describe("CompassToGoogleEventPropagation - scope 'this' - standalone event", ()
       kind: "range",
       start: "2026-07-14T00:00:00Z",
       end: "2026-07-15T00:00:00Z",
-      priorities: [],
     });
     expect(created).toBeDefined();
     expect(created!.externalReference).toBeNull();
@@ -167,7 +164,6 @@ describe("CompassToGoogleEventPropagation - scope 'this' - standalone event", ()
       content: { kind: "details", title: "Renamed", description: "" },
       schedule: createInput(calendar._id.toHexString()).schedule,
       recurrence: { kind: "preserve" },
-      priority: "unassigned",
       scope: "this",
     });
     await eventService.delete(user._id.toString(), created._id.toHexString(), {

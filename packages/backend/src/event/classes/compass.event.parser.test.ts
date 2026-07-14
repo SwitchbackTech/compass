@@ -19,7 +19,6 @@ const buildEvent = (overrides: Partial<EventRecord> = {}): EventRecord => ({
     timeZone: "America/Denver",
   },
   recurrence: { kind: "single" },
-  priority: "unassigned",
   externalReference: null,
   createdAt: now,
   updatedAt: null,
@@ -37,7 +36,6 @@ const replaceInput = (
     timeZone: "America/Denver",
   },
   recurrence: { kind: "preserve" as const },
-  priority: "unassigned" as const,
   scope: "this" as const,
   ...overrides,
 });

@@ -2,7 +2,7 @@ import { type MigrationContext } from "@scripts/common/cli.types";
 import { type AnyBulkWriteOperation, ObjectId } from "mongodb";
 import { type MigrationParams, type RunnableMigration } from "umzug";
 import { z } from "zod/v4";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { CalendarProvider } from "@core/types/event.types";
 import {
   EventSchema,
@@ -28,7 +28,6 @@ export default class Migration implements RunnableMigration<MigrationContext> {
     gEventId: z.string().optional(),
     gRecurringEventId: z.string().optional(),
     origin: z.enum(Origin),
-    priority: z.enum(Priorities),
     recurrence: z
       .object({
         rule: z.array(z.string()).nonempty().optional(),

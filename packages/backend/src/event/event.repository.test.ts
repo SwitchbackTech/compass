@@ -20,7 +20,6 @@ const buildEvent = (overrides: Partial<EventRecord> = {}): EventRecord => ({
     timeZone: "America/Denver",
   },
   recurrence: { kind: "single" },
-  priority: "unassigned",
   externalReference: null,
   createdAt: new Date(),
   updatedAt: null,
@@ -50,7 +49,6 @@ describe("EventRepository", () => {
           kind: "range",
           start: "2026-07-14T00:00:00Z",
           end: "2026-07-15T00:00:00Z",
-          priorities: [],
         },
         [calendarId],
       );
@@ -71,7 +69,6 @@ describe("EventRepository", () => {
           kind: "range",
           start: "2026-07-14T00:00:00Z",
           end: "2026-07-15T00:00:00Z",
-          priorities: [],
         },
         [calendarId],
       );
@@ -95,7 +92,6 @@ describe("EventRepository", () => {
           kind: "range",
           start: "2026-07-14T00:00:00Z",
           end: "2026-07-15T00:00:00Z",
-          priorities: [],
         },
         [calendarId],
       );
@@ -115,7 +111,6 @@ describe("EventRepository", () => {
           kind: "range",
           start: "2026-07-14T00:00:00Z",
           end: "2026-07-15T00:00:00Z",
-          priorities: [],
         },
         [calendarId],
       );
@@ -139,7 +134,6 @@ describe("EventRepository", () => {
           kind: "range",
           start: "2026-07-14T00:00:00Z",
           end: "2026-07-15T00:00:00Z",
-          priorities: [],
         },
         [calendarId],
       );
@@ -163,7 +157,6 @@ describe("EventRepository", () => {
           kind: "range",
           start: "2026-07-14T00:00:00Z",
           end: "2026-07-15T00:00:00Z",
-          priorities: [],
         },
         [calendarId],
       );
@@ -182,7 +175,6 @@ describe("EventRepository", () => {
           kind: "range",
           start: "2026-07-14T00:00:00Z",
           end: "2026-07-15T00:00:00Z",
-          priorities: [],
         },
         [calendarId],
       );
@@ -203,47 +195,11 @@ describe("EventRepository", () => {
           kind: "range",
           start: "2026-07-14T00:00:00Z",
           end: "2026-07-15T00:00:00Z",
-          priorities: [],
         },
         [calendarId],
       );
 
       expect(results).toHaveLength(0);
-    });
-
-    it("filters both timed and all-day branches by priority", async () => {
-      const timedSelf = buildEvent({ priority: "self" });
-      const timedWork = buildEvent({ priority: "work" });
-      const allDaySelf = buildEvent({
-        priority: "self",
-        schedule: { kind: "allDay", start: "2026-07-14", end: "2026-07-15" },
-      });
-      const allDayWork = buildEvent({
-        priority: "work",
-        schedule: { kind: "allDay", start: "2026-07-14", end: "2026-07-15" },
-      });
-      await eventRepository.insertMany([
-        timedSelf,
-        timedWork,
-        allDaySelf,
-        allDayWork,
-      ]);
-
-      const results = await eventRepository.list(
-        {
-          kind: "range",
-          start: "2026-07-14T00:00:00Z",
-          end: "2026-07-15T00:00:00Z",
-          priorities: ["self"],
-        },
-        [calendarId],
-      );
-
-      const ids = results.map((e) => e._id.toHexString());
-      expect(ids).toContain(timedSelf._id.toHexString());
-      expect(ids).toContain(allDaySelf._id.toHexString());
-      expect(ids).not.toContain(timedWork._id.toHexString());
-      expect(ids).not.toContain(allDayWork._id.toHexString());
     });
 
     it("treats different UTC-offset representations of the same instant identically", async () => {
@@ -262,7 +218,6 @@ describe("EventRepository", () => {
           kind: "range",
           start: "2026-07-14T00:00:00Z",
           end: "2026-07-15T00:00:00Z",
-          priorities: [],
         },
         [calendarId],
       );
@@ -271,7 +226,6 @@ describe("EventRepository", () => {
           kind: "range",
           start: "2026-07-13T18:00:00-06:00",
           end: "2026-07-14T18:00:00-06:00",
-          priorities: [],
         },
         [calendarId],
       );

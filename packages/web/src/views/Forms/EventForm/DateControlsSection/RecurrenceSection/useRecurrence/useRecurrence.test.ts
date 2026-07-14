@@ -1,7 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { Frequency } from "rrule";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { useRecurrence } from "./useRecurrence";
@@ -15,7 +15,6 @@ describe("useRecurrence hook", () => {
       description: "desc",
       startDate: new Date().toISOString(),
       endDate: new Date(Date.now() + 3600000).toISOString(),
-      priority: Priorities.UNASSIGNED,
       origin: Origin.COMPASS,
       user: "user1",
     });

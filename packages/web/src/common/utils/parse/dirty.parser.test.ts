@@ -1,5 +1,4 @@
 import { faker } from "@faker-js/faker";
-import { Priorities } from "@core/constants/core.constants";
 import {
   createMockBaseEvent,
   createMockStandaloneEvent,
@@ -40,15 +39,6 @@ describe("WebEventParser", () => {
     const originalEvent = createMockStandaloneEvent() as Schema_WebEvent;
     const endDate = faker.date.future().toISOString();
     const draftEvent = { ...originalEvent, endDate };
-
-    expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(true);
-  });
-
-  it("should return true when priority has changed", () => {
-    const originalEvent = createMockStandaloneEvent({
-      priority: Priorities.WORK,
-    }) as Schema_WebEvent;
-    const draftEvent = { ...originalEvent, priority: Priorities.SELF };
 
     expect(DirtyParser.isEventDirty(draftEvent, originalEvent)).toBe(true);
   });

@@ -24,19 +24,6 @@ export enum Origin {
   UNSURE = "unsure",
 }
 
-export type Priority =
-  | Priorities.UNASSIGNED
-  | Priorities.WORK
-  | Priorities.SELF
-  | Priorities.RELATIONS;
-
-export enum Priorities {
-  UNASSIGNED = "unassigned",
-  WORK = "work",
-  SELF = "self",
-  RELATIONS = "relationships",
-}
-
 export const RRULE_COUNT_WEEKS = 12;
 export const RRULE_COUNT_MONTHS = 3;
 export const RRULE_WEEK_START = "SU";

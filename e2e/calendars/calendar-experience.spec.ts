@@ -120,7 +120,6 @@ function buildEvent(
       timeZone: TIME_ZONE,
     },
     recurrence: { kind: "single" },
-    priority: "unassigned",
     createdAt: toOffsetDateTime(new Date()),
     updatedAt: null,
   };

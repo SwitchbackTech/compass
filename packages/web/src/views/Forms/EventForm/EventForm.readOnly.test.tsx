@@ -87,11 +87,10 @@ describe("EventForm read-only gate", () => {
 
     expect(screen.getByPlaceholderText("Title")).toBeDisabled();
     expect(screen.getByPlaceholderText("Description")).toBeDisabled();
-    // The priority/date/recurrence/description block is wrapped in a native
+    // The date/recurrence/description block is wrapped in a native
     // <fieldset disabled>, which auto-disables every native control it
     // contains (see EventForm.tsx) - checked on the fieldset itself rather
-    // than a specific child so this doesn't couple to PrioritySection's
-    // internals.
+    // than a specific child so this doesn't couple to internal structure.
     const fieldsets = container.querySelectorAll("fieldset");
     expect(fieldsets.length).toBeGreaterThan(0);
     for (const fieldset of fieldsets) {

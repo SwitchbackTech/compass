@@ -55,7 +55,6 @@ describe("RemoteEventRepository", () => {
         content: event.content as CreateEventInput["content"],
         schedule: event.schedule,
         recurrence: { kind: "single" as const },
-        priority: event.priority,
       };
 
       api.create.mockResolvedValue(event);
@@ -73,7 +72,6 @@ describe("RemoteEventRepository", () => {
         content: event.content as CreateEventInput["content"],
         schedule: event.schedule,
         recurrence: { kind: "single" as const },
-        priority: event.priority,
       };
 
       api.create.mockRejectedValue(createBackendUnavailableError());
@@ -95,7 +93,6 @@ describe("RemoteEventRepository", () => {
         kind: "range" as const,
         start: "2024-01-01T00:00:00.000Z",
         end: "2024-01-31T00:00:00.000Z",
-        priorities: [],
       } as unknown as EventListQuery;
       const result = await repository.list(query);
 
@@ -109,7 +106,6 @@ describe("RemoteEventRepository", () => {
         kind: "range" as const,
         start: "2024-01-01T00:00:00.000Z",
         end: "2024-01-31T00:00:00.000Z",
-        priorities: [],
       } as unknown as EventListQuery;
 
       api.list.mockRejectedValue(createBackendUnavailableError());

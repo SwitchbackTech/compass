@@ -23,7 +23,6 @@ export async function fetchDayEvents(
     kind: "range",
     start: payload.startDate,
     end: payload.endDate,
-    priorities: [],
   });
 
   const events = await repository.list(query);

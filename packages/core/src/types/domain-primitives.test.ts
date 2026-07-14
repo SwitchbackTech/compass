@@ -1,11 +1,9 @@
 import { faker } from "@faker-js/faker";
-import { Priorities } from "@core/constants/core.constants";
 import {
   CalendarIdSchema,
   DateOnlySchema,
   DateTimeSchema,
   EventIdSchema,
-  PrioritySchema,
   RRuleSchema,
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
@@ -106,18 +104,6 @@ describe("Domain Primitives", () => {
 
     it("accepts a non-empty array of rule lines", () => {
       expect(RRuleSchema.safeParse(["RRULE:FREQ=WEEKLY"]).success).toBe(true);
-    });
-  });
-
-  describe("PrioritySchema", () => {
-    it("accepts every priority enum value", () => {
-      for (const priority of Object.values(Priorities)) {
-        expect(PrioritySchema.safeParse(priority).success).toBe(true);
-      }
-    });
-
-    it("rejects an unrecognized priority", () => {
-      expect(PrioritySchema.safeParse("other").success).toBe(false);
     });
   });
 });

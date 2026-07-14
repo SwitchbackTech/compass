@@ -36,8 +36,7 @@ const assertBoundedAvailabilityRange = (query: AvailabilityQuery) => {
   }
 };
 
-// calendarIds travels as a single comma-separated query param (mirrors
-// EventListQuery's `priorities`, see event.controller.ts's parseListQuery) -
+// calendarIds travels as a single comma-separated query param -
 // the web api client (availability.api.ts) must format requests this way.
 const parseAvailabilityQuery = (query: SessionRequest["query"]) => {
   const calendarIdsParam = query["calendarIds"];

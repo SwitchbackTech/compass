@@ -1,5 +1,4 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { Priorities } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
@@ -23,7 +22,6 @@ const sourceEvent: Event = {
     timeZone: "UTC",
   },
   recurrence: { kind: "single" },
-  priority: Priorities.UNASSIGNED,
   createdAt: "2024-01-01T00:00:00.000Z",
   updatedAt: null,
 } as unknown as Event;

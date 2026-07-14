@@ -12,9 +12,9 @@ export interface AvailabilityQueryParams {
 }
 
 // calendarIds travels as a single comma-separated query param (mirrors
-// EventApi's `priorities` - see event.api.ts's buildListQueryString). The
-// backend (calendar.controller.ts's parseAvailabilityQuery) parses the exact
-// same format.
+// event.api.ts's buildListQueryString). The backend
+// (calendar.controller.ts's parseAvailabilityQuery) parses the exact same
+// format.
 const AvailabilityApi = {
   query: async ({
     calendarIds,

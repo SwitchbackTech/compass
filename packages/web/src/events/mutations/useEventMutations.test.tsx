@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { act, type PropsWithChildren } from "react";
-import { Priorities } from "@core/constants/core.constants";
 import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import {
@@ -148,7 +147,6 @@ const replacePayload = (
       "2026-07-02T17:00:00.000Z",
     ),
     recurrence: { kind: "preserve" as const },
-    priority: Priorities.UNASSIGNED,
     scope: "this" as const,
     ...overrides,
   },
@@ -315,7 +313,6 @@ describe("useEventMutations", () => {
         },
         schedule: created.schedule as never,
         recurrence: { kind: "single" },
-        priority: created.priority,
       }),
     );
 
@@ -615,7 +612,6 @@ describe("useEventMutations", () => {
         },
         schedule: created.schedule as never,
         recurrence: { kind: "single" },
-        priority: created.priority,
       }),
     );
     await waitFor(() => {
@@ -665,7 +661,6 @@ describe("useEventMutations", () => {
         },
         schedule: created.schedule as never,
         recurrence: { kind: "single" },
-        priority: created.priority,
       }),
     );
     await waitFor(() => {
@@ -704,7 +699,6 @@ describe("useEventMutations", () => {
         },
         schedule: created.schedule as never,
         recurrence: { kind: "single" },
-        priority: created.priority,
       }),
     );
     await waitFor(() => {
@@ -960,7 +954,6 @@ describe("undo history recording", () => {
         },
         schedule: original.schedule as never,
         recurrence: { kind: "single" },
-        priority: original.priority,
       }),
     );
 
@@ -1005,7 +998,6 @@ describe("undo history recording", () => {
         },
         schedule: original.schedule as never,
         recurrence: { kind: "single" },
-        priority: original.priority,
       }),
     );
     act(() => context.pending.rejectNext(new Error("delete failed")));

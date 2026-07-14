@@ -56,8 +56,8 @@ recorded reasoning instead of rediscovering it:
   manages sharing/ACLs on a provider calendar (A1, A15). Calendar lifecycle
   stays server-owned and Google-authoritative in v1.
 - **Per-event Google colors.** Compass models calendar identity as an
-  accent/marker plus text label, while an event card's fill stays
-  priority-driven (A9) — there is no per-event color field in
+  accent/marker plus text label, while an event card's fill stays a single
+  flat neutral color (A9) — there is no per-event color field in
   `event.contracts.ts` anywhere, so Google's per-event `colorId` overrides are
   neither imported nor exposed. Surfacing them would need a second color
   dimension on the card that A9 deliberately avoided.
@@ -74,7 +74,6 @@ Important event fields:
 - `startDate`, `endDate`: ISO datetime or date strings
 - `isAllDay`: display semantics
 - `origin`: where the event came from
-- `priority`: shared priority enum
 - `gEventId`: Google event id when synced
 - `gRecurringEventId`: Google recurring parent id when relevant
 - `recurrence.rule`: RRULE array for recurring bases

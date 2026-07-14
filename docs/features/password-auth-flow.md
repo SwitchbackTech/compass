@@ -387,7 +387,6 @@ temporary recipe user id.
 - keeps an existing Google payload unless a new one is provided
 - keeps the original `signedUpAt` on updates
 - updates `lastLoggedInAt`
-- creates default priorities only for a new Compass user
 
 For repeated auth on the same user or same normalized email, this writes to the
 existing Compass user instead of creating a duplicate record.

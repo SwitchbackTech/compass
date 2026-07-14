@@ -14,13 +14,12 @@ type ProjectRecurringEditInput = {
   seriesEvents: readonly Event[];
 };
 
-// Instances keep their own `occurrence` recurrence pointer; only content and
-// priority propagate from the edit. The series base (and a standalone
-// "single" edited into a series) take the edited recurrence itself.
+// Instances keep their own `occurrence` recurrence pointer; only content
+// propagates from the edit. The series base (and a standalone "single"
+// edited into a series) take the edited recurrence itself.
 const seriesPatch = (event: Event, edited: Event): Event => ({
   ...event,
   content: edited.content,
-  priority: edited.priority,
   recurrence:
     event.recurrence.kind === "occurrence"
       ? event.recurrence

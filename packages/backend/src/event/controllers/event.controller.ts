@@ -18,16 +18,10 @@ const send = (res: Response, e: unknown) => {
 };
 
 const parseListQuery = (query: Request["query"]): EventListQuery => {
-  const priorities =
-    typeof query["priorities"] === "string" && query["priorities"].length > 0
-      ? query["priorities"].split(",")
-      : [];
-
   return EventListQuerySchema.parse({
     kind: "range",
     start: query["start"],
     end: query["end"],
-    priorities,
   });
 };
 

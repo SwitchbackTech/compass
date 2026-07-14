@@ -22,7 +22,6 @@ const createAllDayEvent = (
       top: 900,
       width: 100,
     },
-    priority: "none",
     row: 1,
     startDate: "2026-05-13",
     title: "All-day event",

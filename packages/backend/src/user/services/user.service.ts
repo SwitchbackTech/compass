@@ -19,7 +19,6 @@ import { UserError } from "@backend/common/errors/user/user.errors";
 import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
-import priorityService from "@backend/priority/services/priority.service";
 import syncRecords from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
@@ -159,10 +158,6 @@ class UserService {
       { upsert: true, session },
     );
 
-    if (isNewUser) {
-      await priorityService.createDefaultPriorities(userId.toString(), session);
-    }
-
     return {
       user: {
         ...nextUser,
@@ -188,9 +183,6 @@ class UserService {
       if (!user) {
         logger.warn(`User(${userId}) not found while deleting compass data`);
       }
-
-      const priorities = await priorityService.deleteAllByUser(userId, session);
-      summary.priorities = priorities.deletedCount;
 
       const calendars = await calendarService.deleteAllByUser(userId, session);
       summary.calendars = calendars.deletedCount;
@@ -247,8 +239,6 @@ class UserService {
     session?: ClientSession,
   ) => {
     const cUser = await this.createUser(gUser, gRefreshToken, userId, session);
-
-    await priorityService.createDefaultPriorities(cUser.userId, session);
 
     return cUser;
   };

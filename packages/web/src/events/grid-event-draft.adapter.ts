@@ -1,4 +1,3 @@
-import { Priorities } from "@core/constants/core.constants";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
@@ -52,7 +51,6 @@ export function createGridEventDraft(
       title: "",
       description: "",
       schedule,
-      priority: Priorities.UNASSIGNED,
       calendarId,
       recurrence: { kind: "single" },
     },
@@ -74,7 +72,6 @@ export function editGridEventDraft(
       description:
         event.content.kind === "details" ? event.content.description : "",
       schedule,
-      priority: event.priority,
       calendarId: event.calendarId,
       recurrence: { kind: "preserve" },
       scope,
@@ -115,7 +112,6 @@ export function duplicateGridEventDraft(
       description:
         event.content.kind === "details" ? event.content.description : "",
       schedule,
-      priority: event.priority,
       calendarId,
       recurrence: { kind: "single" },
     },
@@ -233,7 +229,6 @@ export function gridEventDraftToSchemaEvent(
         : dayjs(schedule.end).format(),
     isAllDay: schedule.kind === "allDay",
     isBusy: draft.kind === "edit" && draft.source.content.kind === "busy",
-    priority: draft.values.priority ?? Priorities.UNASSIGNED,
     recurrence: legacyRecurrenceFromDraft(draft),
     startDate:
       schedule.kind === "allDay"
@@ -286,7 +281,6 @@ export function applySchemaEventPatchToGridDraft(
     title: patch.title ?? "",
     description: patch.description ?? "",
     schedule: scheduleDates,
-    priority: patch.priority ?? current.values.priority,
   };
 
   if (current.kind === "create") {

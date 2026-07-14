@@ -1,6 +1,5 @@
 import { ObjectId } from "bson";
 import { useCallback } from "react";
-import { Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import {
@@ -424,13 +423,7 @@ export const useDraftActions = (
 
         const nextDraft = replaceGridDraftSchedule(draft, schedule);
 
-        setDraft({
-          ...nextDraft,
-          values: {
-            ...nextDraft.values,
-            priority: nextDraft.values.priority || Priorities.UNASSIGNED,
-          },
-        } as GridEventDraft);
+        setDraft(nextDraft);
       };
       if (!isDragging) {
         devAlert("not dragging (anymore?)");
@@ -585,15 +578,7 @@ export const useDraftActions = (
         setDraft((_draft) => {
           if (!_draft) return _draft;
 
-          const withSchedule = replaceGridDraftSchedule(_draft, schedule);
-
-          return {
-            ...withSchedule,
-            values: {
-              ...withSchedule.values,
-              priority: draft.values.priority,
-            },
-          } as GridEventDraft;
+          return replaceGridDraftSchedule(_draft, schedule);
         });
 
         return justFlipped;

@@ -1,7 +1,6 @@
 import { z } from "zod/v4";
 import {
   DateOnlySchema,
-  PrioritySchema,
   RRuleSchema,
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
@@ -71,7 +70,6 @@ export const EventRecordSchema = z.strictObject({
   content: EventContentSchema,
   schedule: EventScheduleRecordSchema,
   recurrence: EventRecurrenceRecordSchema,
-  priority: PrioritySchema,
   externalReference: ExternalEventReferenceSchema.nullable(),
   createdAt: z.date(),
   updatedAt: z.date().nullable(),

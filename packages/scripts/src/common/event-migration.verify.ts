@@ -62,7 +62,6 @@ const projectionOf = (record: EventRecord): string =>
             seriesId: record.recurrence.seriesId.toHexString(),
           }
         : record.recurrence,
-    priority: record.priority,
     externalReference: record.externalReference,
   });
 

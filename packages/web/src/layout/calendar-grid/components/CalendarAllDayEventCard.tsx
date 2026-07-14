@@ -6,7 +6,6 @@ import {
   type KeyboardEvent,
   type MouseEvent,
 } from "react";
-import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { isRecurringEvent } from "@core/util/event/event.util";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
@@ -14,10 +13,7 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import {
-  gridColorByPriority,
-  gridHoverColorByPriority,
-} from "@web/common/styles/theme.util";
+import { EVENT_COLOR, EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE } from "@web/layout/calendar-grid/interaction/calendarInteractionDom";
@@ -59,9 +55,8 @@ const CalendarAllDayEventCardBase = (
   }: CalendarAllDayEventCardProps,
   ref: ForwardedRef<HTMLDivElement>,
 ) => {
-  const priority = event.priority || Priorities.UNASSIGNED;
-  const baseColor = gridColorByPriority[priority];
-  const hoverColor = gridHoverColorByPriority[priority];
+  const baseColor = EVENT_COLOR;
+  const hoverColor = EVENT_HOVER_COLOR;
   const isInPast = dayjs().isAfter(dayjs(event.endDate));
   const isRecurring = isRecurringEvent(event);
   const showRepeatIcon =
@@ -94,7 +89,7 @@ const CalendarAllDayEventCardBase = (
     ...placement,
   });
   const baseAccessibleLabel = `${isRecurring ? "Recurring " : ""}All-day event: ${event.title || "Untitled event"}`;
-  // Priority remains the card's fill; the accent + this suffix are the only
+  // Fill stays a flat neutral color; the accent + this suffix are the only
   // calendar signal, and the name (never color alone) is what makes it
   // accessible (A9).
   const accessibleLabel = calendarIdentity

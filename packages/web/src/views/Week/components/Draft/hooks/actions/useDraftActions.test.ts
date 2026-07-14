@@ -1,6 +1,5 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
-import { Priorities } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -38,7 +37,6 @@ const sourceEvent: Event = {
     timeZone: "UTC",
   },
   recurrence: { kind: "single" },
-  priority: Priorities.UNASSIGNED,
   createdAt: "2024-01-01T00:00:00.000Z",
   updatedAt: null,
 } as unknown as Event;

@@ -1,5 +1,5 @@
 import { ObjectId } from "bson";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import { EventInViewParser } from "./view.parser";
@@ -14,7 +14,6 @@ describe("EventInViewParser", () => {
     endDate: "2024-01-15T11:00:00Z",
     isAllDay: false,
     origin: Origin.COMPASS,
-    priority: Priorities.RELATIONS,
     user: new ObjectId().toString(),
     ...overrides,
   });

@@ -1,7 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
-import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { FloatingDraftEvent } from "@web/interaction/dom/draft-event/FloatingDraftEvent";
 import { createCalendarInteractionDraftEventMount } from "@web/layout/calendar-grid/interaction/calendarInteractionDom";
@@ -120,12 +118,6 @@ const createAllDayEvent = (
   }) as Schema_GridEvent;
 
 const renderWithStore = (children: React.ReactNode) => render(children);
-
-const _expectEventBgToUseHoverColor = (element: HTMLElement) => {
-  expect(element.style.getPropertyValue("--event-bg")).toBe(
-    gridHoverColorByPriority[Priorities.UNASSIGNED],
-  );
-};
 
 beforeEach(() => {
   setSystemTime(TEST_NOW);

@@ -1,6 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { act, type PropsWithChildren, useState } from "react";
-import { Priorities } from "@core/constants/core.constants";
+import { type PropsWithChildren, useState } from "react";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
@@ -22,9 +21,8 @@ import {
   ID_GRID_COLUMNS_TIMED,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import { gridColorByPriority } from "@web/common/styles/theme.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
-import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
+import { useDraftStore } from "@web/events/stores/draft.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import {
@@ -556,44 +554,6 @@ describe("Week calendar accessibility", () => {
     expect(getHoveredCalendarEventTarget()).toBeNull();
   });
 
-  it("updates the timed placeholder color when the active draft priority changes", async () => {
-    const savedEvent = createSavedEvent({
-      _id: "priority-event",
-      title: "Priority event",
-    });
-    seedGrid([savedEvent], savedEvent);
-
-    render(
-      <Provider>
-        <MainGridEvents
-          measurements={measurements}
-          weekProps={createWeekProps()}
-        />
-      </Provider>,
-    );
-
-    const eventButton = screen.getByRole("button", {
-      name: /priority event/i,
-    });
-
-    expect(eventButton.style.getPropertyValue("--event-bg")).toBe(
-      gridColorByPriority[Priorities.UNASSIGNED],
-    );
-
-    act(() => {
-      draftActions.setEvent({
-        ...savedEvent,
-        priority: Priorities.WORK,
-      });
-    });
-
-    await waitFor(() => {
-      expect(eventButton.style.getPropertyValue("--event-bg")).toBe(
-        gridColorByPriority[Priorities.WORK],
-      );
-    });
-  });
-
   it("gives all-day events an all-day accessible name and target type", () => {
     const event = createSavedEvent({
       endDate: "2024-01-16T00:00:00.000Z",
@@ -624,49 +584,6 @@ describe("Week calendar accessibility", () => {
     expect(
       eventButton.getAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE),
     ).toBe("all-day");
-  });
-
-  it("updates the all-day placeholder color when the active draft priority changes", async () => {
-    const savedEvent = createSavedEvent({
-      _id: "all-day-priority-event",
-      isAllDay: true,
-      startDate: "2024-01-15T00:00:00.000Z",
-      endDate: "2024-01-16T00:00:00.000Z",
-      title: "All-day priority event",
-    });
-    seedGrid([savedEvent], savedEvent);
-
-    render(
-      <Provider>
-        <AllDayEvents
-          endOfView={startOfView.endOf("week")}
-          measurements={measurements}
-          startOfView={startOfView}
-          weekDays={weekDaysInView}
-        />
-      </Provider>,
-    );
-
-    const eventButton = screen.getByRole("button", {
-      name: /all-day event: all-day priority event/i,
-    });
-
-    expect(eventButton.style.getPropertyValue("--event-bg")).toBe(
-      gridColorByPriority[Priorities.UNASSIGNED],
-    );
-
-    act(() => {
-      draftActions.setEvent({
-        ...savedEvent,
-        priority: Priorities.RELATIONS,
-      });
-    });
-
-    await waitFor(() => {
-      expect(eventButton.style.getPropertyValue("--event-bg")).toBe(
-        gridColorByPriority[Priorities.RELATIONS],
-      );
-    });
   });
 
   it("keeps full-week all-day events spanning seven columns", () => {

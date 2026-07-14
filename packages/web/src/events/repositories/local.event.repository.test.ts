@@ -1,4 +1,3 @@
-import { Priorities } from "@core/constants/core.constants";
 import {
   DateTimeSchema,
   type EventId,
@@ -33,7 +32,6 @@ describe("LocalEventRepository", () => {
       content: { kind: "details", title: "Renamed sample", description: "" },
       schedule: existing.event.schedule,
       recurrence: { kind: "preserve" },
-      priority: existing.event.priority,
       scope: "this",
     });
 
@@ -53,7 +51,6 @@ describe("LocalEventRepository", () => {
           timeZone: TimeZoneSchema.parse("America/Chicago"),
         },
         recurrence: { kind: "single" },
-        priority: Priorities.UNASSIGNED,
         scope: "this",
       }),
     ).rejects.toThrow();

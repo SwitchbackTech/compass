@@ -175,10 +175,6 @@ function toFieldErrors(error: z.ZodError): Record<string, string> {
 export function parseEventDraft(draft: EventDraft): ParseEventDraftResult {
   const fieldErrors: Record<string, string> = {};
 
-  if (draft.values.priority === null) {
-    fieldErrors.priority = "Priority is required";
-  }
-
   if (draft.mode === "create" && draft.values.calendarId === null) {
     fieldErrors.calendarId = "Calendar is required";
   }
@@ -212,7 +208,6 @@ export function parseEventDraft(draft: EventDraft): ParseEventDraftResult {
       content,
       schedule,
       recurrence,
-      priority: draft.values.priority,
     };
 
     const parsed = CreateEventInputSchema.safeParse(candidate);
@@ -229,7 +224,6 @@ export function parseEventDraft(draft: EventDraft): ParseEventDraftResult {
     content,
     schedule,
     recurrence,
-    priority: editDraft.values.priority,
     scope: editDraft.values.scope,
   };
 

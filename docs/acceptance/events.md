@@ -9,7 +9,6 @@ Use this guide to validate:
 - creating timed events on the calendar grid
 - creating all-day events
 - editing events via the form
-- changing event priority via the right-click context menu
 - deleting standalone events
 - dragging events to a new time slot
 - resizing events
@@ -102,37 +101,16 @@ Right-clicking an event and selecting Edit (or clicking the event directly) open
 2. Right-click the event and select Edit (or click the event).
 3. Change the title.
 4. Change the start time.
-5. Change the priority to a different value.
-6. Submit the form.
+5. Submit the form.
 
 ### Expected Results
 
-- The event block on the grid updates immediately to reflect the new title, time, and priority color.
+- The event block on the grid updates immediately to reflect the new title and time.
 - Changes persist after a page reload.
 
 ---
 
-## Scenario 4: Change Event Priority Via Right-Click Context Menu
-
-### UX
-
-Right-clicking an event opens a context menu with a quick priority picker. This is faster than opening the full form.
-
-### Steps
-
-1. Right-click a timed event on the grid.
-2. Select a different priority from the context menu (Work, Self, or Relations).
-3. Click elsewhere to close the menu.
-
-### Expected Results
-
-- The event block color updates immediately to match the new priority.
-- No full form is required.
-- The priority change persists after a page reload.
-
----
-
-## Scenario 5: Delete A Standalone Event
+## Scenario 4: Delete A Standalone Event
 
 ### UX
 
@@ -151,7 +129,7 @@ Deleting a standalone event (non-recurring) removes it immediately. No scope dia
 
 ---
 
-## Scenario 6: Drag An Event To A New Time Slot
+## Scenario 5: Drag An Event To A New Time Slot
 
 ### UX
 
@@ -174,7 +152,7 @@ Users can click-hold and drag an event block to a new time or date. The event sn
 
 ---
 
-## Scenario 7: Resize An Event
+## Scenario 6: Resize An Event
 
 ### UX
 
@@ -197,7 +175,7 @@ Hovering near the top or bottom edge of an event reveals a resize cursor. Draggi
 
 ---
 
-## Scenario 8: Duplicate An Event (Cmd+D)
+## Scenario 7: Duplicate An Event (Cmd+D)
 
 ### UX
 
@@ -211,13 +189,13 @@ With an event form open, pressing Cmd+D (Mac) or Ctrl+D (Windows) creates a copy
 
 ### Expected Results
 
-- A new event appears on the grid with the same title, time, priority, and description as the original.
+- A new event appears on the grid with the same title, time, and description as the original.
 - Both the original and the duplicate are present on the grid.
 - The duplicate persists after a page reload.
 
 ---
 
-## Scenario 9: Undo An Event Deletion (Cmd+Z / Ctrl+Z)
+## Scenario 8: Undo An Event Deletion (Cmd+Z / Ctrl+Z)
 
 ### UX
 
@@ -248,7 +226,7 @@ blocked.
 
 ---
 
-## Scenario 10: Create An Event On A Specific Calendar
+## Scenario 9: Create An Event On A Specific Calendar
 
 ### UX
 
@@ -279,11 +257,11 @@ operable.
 
 ---
 
-## Scenario 11: Duplicating An Event Defaults To Its Source Calendar
+## Scenario 10: Duplicating An Event Defaults To Its Source Calendar
 
 ### UX
 
-Cmd+D (see Scenario 8) creates a copy on the same calendar as the
+Cmd+D (see Scenario 7) creates a copy on the same calendar as the
 original, as long as that calendar is still writable.
 
 ### Steps
@@ -302,7 +280,7 @@ original, as long as that calendar is still writable.
 
 ---
 
-## Scenario 12: Editing Shows The Calendar As Read-Only Text
+## Scenario 11: Editing Shows The Calendar As Read-Only Text
 
 ### UX
 
@@ -323,7 +301,7 @@ form — moving an event to a different calendar is out of scope for v1 (A6).
 
 ---
 
-## Scenario 13: Read-Only Calendar Events Are Inspectable But Never Editable
+## Scenario 12: Read-Only Calendar Events Are Inspectable But Never Editable
 
 ### UX
 
@@ -345,7 +323,7 @@ action is unavailable.
   no Save button appears, and a note reads "Read-only — you don't have
   permission to edit this event."
 - The right-click context menu shows "View" (not "Edit"), "Duplicate", and
-  no Delete option or priority-color picker.
+  no Delete option.
 - The event cannot be picked up and dragged to a new time or day; no drag
   preview appears.
 - No resize cursor or resize handle appears at the event's edges.
@@ -355,7 +333,7 @@ action is unavailable.
 
 ---
 
-## Scenario 14: Busy Private Events Show No Details
+## Scenario 13: Busy Private Events Show No Details
 
 ### UX
 
@@ -375,7 +353,7 @@ title, description, or attendees.
 - The event displays with the title "Busy" on the grid and in its form,
   regardless of the event's real Google title.
 - No description, location, or attendee details are shown anywhere.
-- The event is read-only the same way Scenario 13 describes. (Busy content
+- The event is read-only the same way Scenario 12 describes. (Busy content
   forces read-only even on a calendar you can otherwise write to — the
   redaction is per-event, not just per-calendar.)
 
@@ -389,13 +367,12 @@ If time is limited, run these checks before shipping event-related changes:
 2. Submitting a new event places it on the grid and it survives a page reload.
 3. All-day events appear in the all-day row, not the hourly grid.
 4. Editing an event updates the grid block immediately.
-5. Right-click priority change updates the event color without opening the full form.
-6. Deleting a standalone event shows no scope dialog.
-7. Dragging an event to a new slot moves it and persists after reload.
-8. Resizing an event updates the duration and persists after reload.
-9. Cmd+D duplicates an event with the same properties.
-10. Cmd+Z / Ctrl+Z after deletion restores the event.
-11. A new/duplicate event form offers only writable calendars, defaulting to
+5. Deleting a standalone event shows no scope dialog.
+6. Dragging an event to a new slot moves it and persists after reload.
+7. Resizing an event updates the duration and persists after reload.
+8. Cmd+D duplicates an event with the same properties.
+9. Cmd+Z / Ctrl+Z after deletion restores the event.
+10. A new/duplicate event form offers only writable calendars, defaulting to
     primary; an existing event's form shows its calendar as read-only text.
-12. Read-only calendar events can be inspected (`M` / context-menu "View")
+11. Read-only calendar events can be inspected (`M` / context-menu "View")
     but never dragged, resized, or deleted.

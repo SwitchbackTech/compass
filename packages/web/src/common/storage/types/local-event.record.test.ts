@@ -1,5 +1,4 @@
 import { faker } from "@faker-js/faker";
-import { Priorities } from "@core/constants/core.constants";
 import { EventSchema } from "@core/types/event.contracts";
 import { LocalEventRecordSchema } from "@web/common/storage/types/local-event.record";
 
@@ -17,7 +16,6 @@ const validEvent = () => {
       timeZone: "America/Denver",
     },
     recurrence: { kind: "single" },
-    priority: Priorities.UNASSIGNED,
     createdAt: "2026-07-14T09:00:00-06:00",
     updatedAt: null,
   });

@@ -1,5 +1,4 @@
 import { faker } from "@faker-js/faker";
-import { Priorities } from "@core/constants/core.constants";
 import {
   AvailabilityQuerySchema,
   CreateEventInputSchema,
@@ -27,7 +26,6 @@ describe("Event Command Contracts", () => {
       content,
       schedule: timedSchedule,
       recurrence: { kind: "single" },
-      priority: Priorities.UNASSIGNED,
     });
 
     it("parses without an id", () => {
@@ -74,7 +72,6 @@ describe("Event Command Contracts", () => {
       content,
       schedule: timedSchedule,
       recurrence: { kind: "preserve" },
-      priority: Priorities.WORK,
       scope: "this",
       ...overrides,
     });
@@ -141,18 +138,6 @@ describe("Event Command Contracts", () => {
         kind: "range",
         start: "2026-07-14T00:00:00Z",
         end: "2026-07-21T00:00:00Z",
-        priorities: [Priorities.WORK],
-      };
-
-      expect(EventListQuerySchema.safeParse(query).success).toBe(true);
-    });
-
-    it("accepts an empty priorities array (means all priorities)", () => {
-      const query = {
-        kind: "range",
-        start: "2026-07-14T00:00:00Z",
-        end: "2026-07-21T00:00:00Z",
-        priorities: [],
       };
 
       expect(EventListQuerySchema.safeParse(query).success).toBe(true);
@@ -163,7 +148,6 @@ describe("Event Command Contracts", () => {
         kind: "range",
         start: "2026-07-21T00:00:00Z",
         end: "2026-07-14T00:00:00Z",
-        priorities: [],
       };
 
       expect(EventListQuerySchema.safeParse(query).success).toBe(false);

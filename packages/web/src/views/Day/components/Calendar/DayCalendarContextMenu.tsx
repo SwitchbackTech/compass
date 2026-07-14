@@ -11,12 +11,10 @@ import {
   useMemo,
   useState,
 } from "react";
-import { type Priorities } from "@core/constants/core.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getCalendarEventIdFromElement } from "@web/common/utils/event/event.util";
 import { ContextMenu } from "@web/components/ContextMenu/ContextMenu";
 import { type ContextMenuItemsActions } from "@web/components/ContextMenu/ContextMenuItems";
-import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 
@@ -33,7 +31,6 @@ export const useDayCalendarContextMenu = ({
   const contextMenuEventId = contextMenuEvent?._id ?? "";
   const duplicateContextMenuEvent = useDuplicateEvent(contextMenuEventId);
   const deleteContextMenuEvent = useDeleteEvent(contextMenuEventId);
-  const updateEvent = useUpdateEvent();
 
   const { context, refs, x, y } = useFloating({
     placement: "right-start",
@@ -98,20 +95,12 @@ export const useDayCalendarContextMenu = ({
 
         onOpenEvent(contextMenuEvent);
       },
-      editPriority: (priority: Priorities) => {
-        if (!contextMenuEvent) {
-          return;
-        }
-
-        updateEvent({ event: { ...contextMenuEvent, priority } }, true);
-      },
     }),
     [
       contextMenuEvent,
       deleteContextMenuEvent,
       duplicateContextMenuEvent,
       onOpenEvent,
-      updateEvent,
     ],
   );
 

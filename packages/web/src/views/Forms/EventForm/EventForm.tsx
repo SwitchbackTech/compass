@@ -11,7 +11,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { Priorities } from "@core/constants/core.constants";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -22,8 +21,8 @@ import {
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { darken } from "@web/common/styles/color.utils";
 import {
-  colorByPriority,
-  hoverColorByPriority,
+  EVENT_COLOR,
+  EVENT_HOVER_COLOR,
 } from "@web/common/styles/theme.util";
 import { type SelectOption } from "@web/common/types/component.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
@@ -50,7 +49,6 @@ import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSect
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
 import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
-import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
@@ -138,13 +136,11 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
     ...props
   }) => {
     // Schema_Event-shaped projection of the canonical draft, for the
-    // still-unconverted DatePickers/PrioritySection field-patch API and
-    // RecurrenceSection's Schema_Event contract — see
-    // grid-event-draft.adapter.ts's gridEventDraftToSchemaEvent doc comment.
+    // still-unconverted DatePickers field-patch API and RecurrenceSection's
+    // Schema_Event contract — see grid-event-draft.adapter.ts's
+    // gridEventDraftToSchemaEvent doc comment.
     const event = useMemo(() => gridEventDraftToSchemaEvent(draft), [draft]);
     const { title } = event;
-    const priority = event.priority || Priorities.UNASSIGNED;
-    const priorityColor = colorByPriority[priority];
     const category =
       draft.values.schedule.kind === "allDay"
         ? Categories_Event.ALLDAY
@@ -275,10 +271,10 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
       [setLatestDraft],
     );
 
-    // Schema_Event-shaped writer for the still-unconverted DatePickers/
-    // PrioritySection field-patch API and RecurrenceSection's setEvent
-    // contract: merges the patch onto the current draft's Schema_Event
-    // projection, then reapplies it onto the canonical GridEventDraft.
+    // Schema_Event-shaped writer for the still-unconverted DatePickers
+    // field-patch API and RecurrenceSection's setEvent contract: merges the
+    // patch onto the current draft's Schema_Event projection, then
+    // reapplies it onto the canonical GridEventDraft.
     const setLatestEvent = useCallback(
       (nextEvent: SetStateAction<Schema_Event | null>) => {
         const currentEvent = gridEventDraftToSchemaEvent(
@@ -403,15 +399,7 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
           : { kind: "timed", start, end, timeZone: schedule.timeZone },
       );
 
-      const finalDraft: GridEventDraft = {
-        ...withSchedule,
-        values: {
-          ...withSchedule.values,
-          priority: withSchedule.values.priority || Priorities.UNASSIGNED,
-        },
-      } as GridEventDraft;
-
-      onSubmit(finalDraft);
+      onSubmit(withSchedule);
     };
 
     const onSetEventField: SetEventFormField = (field) => {
@@ -422,12 +410,12 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
     };
 
     const dateTimeSectionProps = {
-      bgColor: priorityColor,
+      bgColor: EVENT_COLOR,
       displayEndDate,
       draft,
       category,
       endTime,
-      inputColor: hoverColorByPriority[priority],
+      inputColor: EVENT_HOVER_COLOR,
       isEndDatePickerOpen,
       isStartDatePickerOpen,
       onSetEventField,
@@ -445,7 +433,7 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
     };
 
     const recurrenceSectionProps = {
-      bgColor: priorityColor,
+      bgColor: EVENT_COLOR,
       event,
       setEvent: setLatestEvent,
     };
@@ -513,7 +501,6 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
     return (
       <EventFormShell
         {...props}
-        priority={priority}
         name={ID_EVENT_FORM}
         onMouseUp={() => {
           if (isStartDatePickerOpen) {
@@ -545,14 +532,14 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
               placeholder="Title"
               name="Event Title"
               ref={titleInputRef}
-              underlineColor={priorityColor}
+              underlineColor={EVENT_COLOR}
               value={displayTitle}
               withUnderline
             />
           }
           actions={
             <EventActionMenu
-              bgColor={darken(priorityColor)}
+              bgColor={darken(EVENT_COLOR)}
               isExistingEvent={isExistingEvent}
               isReadOnly={isReadOnly}
               onDuplicate={onDuplicateEvent}
@@ -561,14 +548,9 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
           }
         />
 
-        {/* Same fieldset mechanism as the title above, covering priority/
+        {/* Same fieldset mechanism as the title above, covering
             calendar/date/recurrence/description in one wrapper. */}
         <fieldset className="contents" disabled={isReadOnly}>
-          <PrioritySection
-            onSetEventField={onSetEventField}
-            priority={priority}
-          />
-
           {draft.kind === "create" ? (
             <CalendarSelect
               onChange={onSelectCalendar}
@@ -588,7 +570,7 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
           <RecurrenceSection {...recurrenceSectionProps} />
 
           <Textarea
-            underlineColor={priorityColor}
+            underlineColor={EVENT_COLOR}
             onChange={onChangeEventTextField("description")}
             onKeyDown={handleIgnoredKeys}
             placeholder="Description"
@@ -604,9 +586,7 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
           </p>
         )}
 
-        {!isReadOnly && (
-          <SaveSection priority={priority} onSubmit={onSubmitForm} />
-        )}
+        {!isReadOnly && <SaveSection onSubmit={onSubmitForm} />}
       </EventFormShell>
     );
   },

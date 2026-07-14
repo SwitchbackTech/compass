@@ -1,7 +1,7 @@
 import Migration from "@scripts/migrations/2025.10.18T20.01.14.migrate-events-to-new-events-collection";
 import { ObjectId } from "mongodb";
 import { type z } from "zod/v4";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import calendarService from "@backend/calendar/services/calendar.service";
@@ -54,7 +54,6 @@ export class EventDriver {
             endDate: gcalEvent.end?.dateTime ?? gcalEvent.end!.date!,
             isAllDay: !!gcalEvent.start?.date,
             origin: Origin.GOOGLE,
-            priority: Priorities.UNASSIGNED,
           };
 
           if (gcalEvent.description) {

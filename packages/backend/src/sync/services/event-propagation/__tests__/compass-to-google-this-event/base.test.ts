@@ -54,7 +54,6 @@ describe("CompassToGoogleEventPropagation - series base", () => {
       kind: "series" as const,
       rules: ["RRULE:FREQ=WEEKLY;COUNT=5"] as never,
     },
-    priority: "unassigned" as const,
   });
 
   it("creates exactly one Google event for a new series (the base, not each materialized instance)", async () => {
@@ -123,7 +122,6 @@ describe("CompassToGoogleEventPropagation - series base", () => {
       },
       schedule: seriesInput(calendar._id.toHexString()).schedule,
       recurrence: { kind: "preserve" },
-      priority: "unassigned",
       scope: "all",
     });
 

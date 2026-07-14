@@ -1,5 +1,5 @@
 import { ObjectId } from "bson";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { type Schema_GridEvent } from "../types/web.event.types";
 import { validateGridEvent } from "./grid.event.validator";
 
@@ -10,7 +10,6 @@ describe("validateGridEvent", () => {
       startDate: "2023-01-01",
       endDate: "2023-01-02",
       origin: Origin.COMPASS,
-      priority: Priorities.RELATIONS,
       user: "user123",
       unexpectedProperty: "unexpectedValue",
       position: {
@@ -37,7 +36,6 @@ describe("validateGridEvent", () => {
       row: 10,
       startDate: "2023-01-01",
       origin: Origin.COMPASS,
-      priority: Priorities.RELATIONS,
       user: "user123",
       position: {
         dragOffset: { y: 0, x: 0 },
@@ -59,7 +57,6 @@ describe("validateGridEvent", () => {
       startDate: "2022-10-22",
       endDate: "2023-01-02",
       origin: Origin.UNSURE,
-      priority: Priorities.SELF,
       user: "user1",
       hasFlipped: "true" as unknown as boolean, // invalid
       position: {

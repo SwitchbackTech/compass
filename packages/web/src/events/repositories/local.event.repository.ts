@@ -67,7 +67,6 @@ export class LocalEventRepository implements EventRepository {
         input.recurrence.kind === "series"
           ? { kind: "series", rules: input.recurrence.rules }
           : { kind: "single" },
-      priority: input.priority,
       createdAt: now,
       updatedAt: null,
     };
@@ -93,7 +92,6 @@ export class LocalEventRepository implements EventRepository {
       content: input.content,
       schedule: input.schedule,
       recurrence,
-      priority: input.priority,
       updatedAt: nowDateTime(),
     };
 

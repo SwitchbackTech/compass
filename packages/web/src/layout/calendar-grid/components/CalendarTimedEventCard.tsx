@@ -7,7 +7,6 @@ import {
   type MouseEvent,
   useMemo,
 } from "react";
-import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { isRecurringEvent } from "@core/util/event/event.util";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
@@ -16,10 +15,7 @@ import {
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { brighten, darken } from "@web/common/styles/color.utils";
-import {
-  gridColorByPriority,
-  gridHoverColorByPriority,
-} from "@web/common/styles/theme.util";
+import { EVENT_COLOR, EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
@@ -114,10 +110,9 @@ const CalendarTimedEventCardBase = (
   const isWideEnoughForTimeLabel =
     position.width >= CALENDAR_MIN_EVENT_WIDTH_FOR_TIME_LABEL;
 
-  const priority = event.priority || Priorities.UNASSIGNED;
-  const baseColor = gridColorByPriority[priority];
+  const baseColor = EVENT_COLOR;
   const draftColor = darken(baseColor, 18);
-  const hoverColor = gridHoverColorByPriority[priority];
+  const hoverColor = EVENT_HOVER_COLOR;
   const selectedBoxShadow = "0 0 0 1px rgba(255,255,255,0.55)";
 
   const bgColor = (() => {
@@ -193,7 +188,7 @@ const CalendarTimedEventCardBase = (
   const baseAccessibleLabel = event.isAllDay
     ? `${recurringPrefix}All-day event: ${eventTitle}`
     : `${recurringPrefix}Timed event: ${eventTitle}, ${timeRange ?? "time not set"}`;
-  // Priority remains the card's fill; the accent + this suffix are the only
+  // Fill stays a flat neutral color; the accent + this suffix are the only
   // calendar signal, and the name (never color alone) is what makes it
   // accessible (A9).
   const accessibleLabel = calendarIdentity

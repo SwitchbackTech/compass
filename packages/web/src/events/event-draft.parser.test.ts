@@ -1,5 +1,4 @@
 import { faker } from "@faker-js/faker";
-import { Priorities } from "@core/constants/core.constants";
 import {
   type CalendarId,
   CalendarIdSchema,
@@ -46,7 +45,6 @@ const newFormValues = (
   title: "Standup",
   description: "",
   schedule: timedSchedule(),
-  priority: Priorities.UNASSIGNED,
   calendarId: calendarId(),
   recurrence: { kind: "single" },
   ...overrides,
@@ -67,7 +65,6 @@ const editFormValues = (
   title: "Standup",
   description: "",
   schedule: timedSchedule(),
-  priority: Priorities.UNASSIGNED,
   calendarId: calendarId(),
   recurrence: { kind: "preserve" },
   scope: "this",
@@ -227,14 +224,6 @@ describe("parseEventDraft", () => {
       expect(result.fieldErrors.end).toBeDefined();
     });
 
-    it("reports a null priority", () => {
-      const result = parseEventDraft(newDraft({ priority: null }));
-
-      expect(result.ok).toBe(false);
-      if (result.ok) throw new Error("expected failure");
-      expect(result.fieldErrors.priority).toBeDefined();
-    });
-
     it("reports a null calendarId on create", () => {
       const result = parseEventDraft(newDraft({ calendarId: null }));
 
@@ -257,7 +246,6 @@ describe("parseEventDraft", () => {
       const result = parseEventDraft(
         newDraft({
           calendarId: null,
-          priority: null,
           schedule: timedSchedule({ start: null, timeZone: null }),
         }),
       );
@@ -265,7 +253,6 @@ describe("parseEventDraft", () => {
       expect(result.ok).toBe(false);
       if (result.ok) throw new Error("expected failure");
       expect(result.fieldErrors.calendarId).toBeDefined();
-      expect(result.fieldErrors.priority).toBeDefined();
       expect(result.fieldErrors.start).toBeDefined();
       expect(result.fieldErrors.timeZone).toBeDefined();
     });

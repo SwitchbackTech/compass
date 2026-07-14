@@ -1,5 +1,4 @@
 import { ObjectId } from "bson";
-import { Priorities } from "@core/constants/core.constants";
 import { type CalendarId, EventIdSchema } from "@core/types/domain-primitives";
 import { type EventRecurrence } from "@core/types/event.contracts";
 import { type Event_Core } from "@core/types/event.types";
@@ -127,7 +126,6 @@ export function transformLegacyEventToLocalRecord(
       },
       schedule,
       recurrence: resolveRecurrence(legacy),
-      priority: legacy.priority ?? Priorities.UNASSIGNED,
       createdAt: resolveCreatedAt(id.data),
       updatedAt: resolveUpdatedAt(legacy),
     },

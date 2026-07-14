@@ -1,4 +1,4 @@
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { CalendarIdSchema, type EventId } from "@core/types/domain-primitives";
 import { type Event_Core } from "@core/types/event.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
@@ -28,7 +28,6 @@ const baseLegacy = (
   startDate: "2026-05-05T09:00:00.000-05:00",
   endDate: "2026-05-05T10:00:00.000-05:00",
   origin: Origin.COMPASS,
-  priority: Priorities.WORK,
   user: "unauthenticated",
   ...overrides,
 });

@@ -1,7 +1,5 @@
 import { ObjectId } from "mongodb";
 import { z } from "zod/v4";
-import { Priorities } from "@core/constants/core.constants";
-import { PrioritySchema } from "@core/types/domain-primitives";
 import {
   type EventRecord,
   EventRecordSchema,
@@ -63,7 +61,6 @@ const LegacyEventRawSchema = z.object({
   gEventId: z.string().optional(),
   gRecurringEventId: z.string().optional(),
   order: z.number().optional(),
-  priority: z.string().optional(),
   recurrence: LegacyRecurrenceRawSchema.optional(),
   updatedAt: z.union([z.date(), z.string()]).optional(),
 });
@@ -111,11 +108,6 @@ const fail = (
   legacyId: string | null,
   reason: LegacyEventTransformReason,
 ): FailResult => ({ ok: false, legacyId, reason });
-
-const resolvePriority = (priority: string | undefined) => {
-  const result = PrioritySchema.safeParse(priority);
-  return result.success ? result.data : Priorities.UNASSIGNED;
-};
 
 const resolveExternalReference = (
   data: LegacyEventRaw,
@@ -246,7 +238,6 @@ const buildTimed = (
       timeZone: calendarTimeZone ?? "UTC",
     },
     recurrence: recurrenceResult.recurrence,
-    priority: resolvePriority(data.priority),
     externalReference: resolveExternalReference(data),
     createdAt: _id.getTimestamp(),
     updatedAt: resolveUpdatedAt(data.updatedAt),
@@ -280,7 +271,6 @@ const buildAllDay = (
     content: buildContent(data),
     schedule: { kind: "allDay" as const, start: data.startDate, end },
     recurrence: recurrenceResult.recurrence,
-    priority: resolvePriority(data.priority),
     externalReference: resolveExternalReference(data),
     createdAt: _id.getTimestamp(),
     updatedAt: resolveUpdatedAt(data.updatedAt),

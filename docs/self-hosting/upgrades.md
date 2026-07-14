@@ -63,6 +63,13 @@ restore](./backup-and-restore.md). Migrations here are written to be
 additive and non-destructive (`packages/scripts/src/migrations/`), but the
 backup is still the only rollback if one behaves unexpectedly.
 
+One current migration is cleanup rather than additive: `priority-data-cleanup`
+(`2026.07.14T10.00.00`) removes the now-dead `priority` field left over from
+the removed priority-tagging feature and drops its orphaned collection. It's
+routine (no cutover, no coordination with the sub-calendar v1 work below) —
+run it like any other pending migration; see [Event migration
+runbook](./event-migration-runbook.md#notes) for detail.
+
 ## The sub-calendar v1 cutover (one-time, special-cased)
 
 One upgrade is not a normal image update: the sub-calendar v1 release moves

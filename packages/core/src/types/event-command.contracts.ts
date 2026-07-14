@@ -3,7 +3,6 @@ import {
   CalendarIdSchema,
   DateTimeSchema,
   EventIdSchema,
-  PrioritySchema,
   RRuleSchema,
 } from "@core/types/domain-primitives";
 import {
@@ -42,7 +41,6 @@ export const CreateEventInputSchema = z.strictObject({
   content: EditableContentSchema,
   schedule: EventScheduleSchema,
   recurrence: EditableRecurrenceSchema,
-  priority: PrioritySchema,
 });
 export type CreateEventInput = z.infer<typeof CreateEventInputSchema>;
 
@@ -50,7 +48,6 @@ export const ReplaceEventInputSchema = z.strictObject({
   content: EditableContentSchema,
   schedule: EventScheduleSchema,
   recurrence: RecurrenceEditSchema,
-  priority: PrioritySchema,
   scope: RecurrenceScopeSchema,
 });
 export type ReplaceEventInput = z.infer<typeof ReplaceEventInputSchema>;
@@ -65,7 +62,6 @@ export const EventListQuerySchema = z
     kind: z.literal("range"),
     start: DateTimeSchema,
     end: DateTimeSchema,
-    priorities: z.array(PrioritySchema),
   })
   .refine(({ start, end }) => Date.parse(end) > Date.parse(start), {
     message: "Range end must be after start",

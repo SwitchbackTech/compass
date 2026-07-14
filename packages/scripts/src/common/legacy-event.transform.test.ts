@@ -3,7 +3,6 @@ import {
   transformLegacyEvent,
 } from "@scripts/common/legacy-event.transform";
 import { ObjectId } from "mongodb";
-import { Priorities } from "@core/constants/core.constants";
 
 const localCalendarId = new ObjectId();
 const primaryGoogleCalendarId = new ObjectId();
@@ -410,38 +409,6 @@ describe("transformLegacyEvent", () => {
           description: "",
         });
       }
-    });
-  });
-
-  describe("priority", () => {
-    it("defaults an invalid legacy priority to unassigned", () => {
-      const _id = new ObjectId();
-      const result = transformLegacyEvent(
-        {
-          _id,
-          startDate: "2026-01-01",
-          endDate: "2026-01-01",
-          priority: "not-a-priority",
-        },
-        baseContext(),
-      );
-      expect(result.ok).toBe(true);
-      if (result.ok) expect(result.record.priority).toBe(Priorities.UNASSIGNED);
-    });
-
-    it("keeps a valid legacy priority", () => {
-      const _id = new ObjectId();
-      const result = transformLegacyEvent(
-        {
-          _id,
-          startDate: "2026-01-01",
-          endDate: "2026-01-01",
-          priority: "work",
-        },
-        baseContext(),
-      );
-      expect(result.ok).toBe(true);
-      if (result.ok) expect(result.record.priority).toBe(Priorities.WORK);
     });
   });
 

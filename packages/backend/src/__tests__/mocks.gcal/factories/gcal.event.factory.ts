@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type Options, RRule } from "rrule";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import {
   type gSchema$Event,
   type gSchema$EventBase,
@@ -56,7 +56,6 @@ const mockGcalCoreEvent = (): WithGcalId<
     extendedProperties: {
       private: {
         origin: Origin.GOOGLE_IMPORT,
-        priority: Priorities.UNASSIGNED,
       },
     },
     reminders: {
@@ -136,7 +135,6 @@ export const mockRegularGcalEvent = (
     extendedProperties: {
       private: {
         origin: Origin.GOOGLE_IMPORT,
-        priority: Priorities.UNASSIGNED,
       },
     },
     ...overrides,

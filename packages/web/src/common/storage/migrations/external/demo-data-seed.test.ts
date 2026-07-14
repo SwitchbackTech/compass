@@ -1,7 +1,6 @@
 /**
  * Tests for the demo data seed migration.
  */
-import { Priorities } from "@core/constants/core.constants";
 import { EventSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { createMockOfflineDataStore } from "@web/__tests__/utils/storage/mock-offline-data-store.util";
@@ -61,20 +60,6 @@ describe("demoDataSeedMigration", () => {
         event.schedule.start.startsWith(today),
     );
     expect(todayEvents.length).toBeGreaterThan(0);
-  });
-
-  it("creates events with all four priorities", async () => {
-    const store = createMockOfflineDataStore();
-
-    await demoDataSeedMigration.migrate(store);
-
-    const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
-    const priorities = new Set(eventsCall.map(({ event }) => event.priority));
-
-    expect(priorities.has(Priorities.WORK)).toBe(true);
-    expect(priorities.has(Priorities.SELF)).toBe(true);
-    expect(priorities.has(Priorities.RELATIONS)).toBe(true);
-    expect(priorities.has(Priorities.UNASSIGNED)).toBe(true);
   });
 
   it("creates an all-day event for today", async () => {

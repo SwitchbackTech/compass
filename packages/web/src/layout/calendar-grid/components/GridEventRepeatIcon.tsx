@@ -8,8 +8,8 @@ interface Props {
 /**
  * The recurrence indicator shared by the timed and all-day grid cards: a small
  * repeat glyph pinned to the card's bottom-right, tinted a darker shade of the
- * event's priority color so it complements the card instead of a loud fixed
- * white. Keeping it in one place stops the two cards from drifting apart.
+ * event color so it complements the card instead of a loud fixed white.
+ * Keeping it in one place stops the two cards from drifting apart.
  * Decorative — the recurring state is announced via each card's aria-label.
  */
 export const GridEventRepeatIcon = ({ baseColor }: Props) => (

@@ -90,10 +90,9 @@ Use this document to find the first files to inspect for common Compass changes.
 - Google import internals: `packages/backend/src/sync/services/import`
 - Google/Compass event propagation: `packages/backend/src/sync/services/event-propagation`
 
-## Users / Metadata / Priority
+## Users / Metadata
 
 - User queries/services: `packages/backend/src/user`
-- Priority feature: `packages/backend/src/priority`
 - User metadata service: `packages/backend/src/user/services/user-metadata.service.ts`
 - Mobile waitlist gate (web-only external link): `packages/web/src/components/MobileGate/MobileGate.tsx`
 

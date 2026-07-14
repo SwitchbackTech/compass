@@ -18,9 +18,6 @@ function buildListQueryString(query: EventListQuery): string {
   params.set("kind", query.kind);
   params.set("start", query.start);
   params.set("end", query.end);
-  if (query.priorities.length > 0) {
-    params.set("priorities", query.priorities.join(","));
-  }
 
   return params.toString();
 }

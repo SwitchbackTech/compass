@@ -1,5 +1,4 @@
 import { faker } from "@faker-js/faker";
-import { Priorities } from "@core/constants/core.constants";
 import {
   BusyPeriodSchema,
   EditableRecurrenceSchema,
@@ -30,7 +29,6 @@ const baseEvent = (overrides: Record<string, unknown> = {}) => ({
   content: { kind: "details", title: "Standup", description: "Daily sync" },
   schedule: timedSchedule,
   recurrence: singleRecurrence,
-  priority: Priorities.UNASSIGNED,
   createdAt: "2026-07-01T00:00:00Z",
   updatedAt: null,
   ...overrides,

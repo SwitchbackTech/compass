@@ -1,4 +1,4 @@
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
@@ -26,7 +26,6 @@ const createTimedEvent = (
 ): Schema_GridEvent => ({
   isAllDay: false,
   origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
   recurrence: undefined,
   title: overrides._id,
   user: "user",

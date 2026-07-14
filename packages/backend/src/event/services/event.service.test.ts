@@ -54,7 +54,6 @@ describe("EventService (local calendar)", () => {
         timeZone: "America/Denver",
       },
       recurrence: { kind: "single" },
-      priority: "unassigned",
     });
 
     expect(created.content).toEqual({
@@ -86,7 +85,6 @@ describe("EventService (local calendar)", () => {
         timeZone: "America/Denver" as never,
       },
       recurrence: { kind: "single" as const },
-      priority: "unassigned" as const,
     };
 
     await eventService.create(user._id.toString(), input);
@@ -110,7 +108,6 @@ describe("EventService (local calendar)", () => {
         timeZone: "America/Denver",
       },
       recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
-      priority: "unassigned",
     });
 
     const instances = await mongoService.event
@@ -134,7 +131,6 @@ describe("EventService (local calendar)", () => {
         timeZone: "America/Denver",
       },
       recurrence: { kind: "single" },
-      priority: "unassigned",
     });
 
     await eventService.delete(user._id.toString(), created._id.toHexString(), {
@@ -160,14 +156,12 @@ describe("EventService (local calendar)", () => {
         timeZone: "America/Denver",
       },
       recurrence: { kind: "single" },
-      priority: "unassigned",
     });
 
     const results = await eventService.readAll(user._id.toString(), {
       kind: "range",
       start: "2026-07-14T00:00:00Z",
       end: "2026-07-15T00:00:00Z",
-      priorities: [],
     });
 
     expect(results.map((e) => e._id.toHexString())).toContain(
@@ -189,7 +183,6 @@ describe("EventService (local calendar)", () => {
         timeZone: "America/Denver",
       },
       recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
-      priority: "unassigned",
     });
 
     await expect(
@@ -213,7 +206,6 @@ describe("EventService (local calendar)", () => {
         timeZone: "America/Denver",
       },
       recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
-      priority: "unassigned",
     });
 
     const before = await mongoService.event
@@ -247,7 +239,6 @@ describe("EventService (local calendar)", () => {
         timeZone: "America/Denver",
       },
       recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
-      priority: "unassigned",
     });
 
     const instances = await mongoService.event
@@ -294,7 +285,6 @@ describe("EventService (calendar write-capability enforcement)", () => {
       timeZone: "America/Denver" as never,
     },
     recurrence: { kind: "single" as const },
-    priority: "unassigned" as const,
   });
 
   const replaceInput = () => ({
@@ -306,7 +296,6 @@ describe("EventService (calendar write-capability enforcement)", () => {
       timeZone: "America/Denver" as never,
     },
     recurrence: { kind: "single" as const },
-    priority: "unassigned" as const,
     scope: "this" as const,
   });
 
@@ -516,7 +505,6 @@ describe("EventService (series-calendar consistency guard, step 7)", () => {
           timeZone: "America/Denver" as never,
         },
         recurrence: { kind: "preserve" },
-        priority: "unassigned",
         scope: "all",
       }),
     ).rejects.toMatchObject({ mutationCode: "RECURRENCE_CONFLICT" });
@@ -553,7 +541,6 @@ describe("EventService (SSE suppression for invisible calendars, step 9)", () =>
         timeZone: "America/Denver",
       },
       recurrence: { kind: "single" },
-      priority: "unassigned",
     });
 
     expect(publishSpy).not.toHaveBeenCalled();
@@ -574,7 +561,6 @@ describe("EventService (SSE suppression for invisible calendars, step 9)", () =>
         timeZone: "America/Denver",
       },
       recurrence: { kind: "single" },
-      priority: "unassigned",
     });
 
     expect(publishSpy).toHaveBeenCalledWith(
@@ -601,7 +587,6 @@ describe("EventService (SSE suppression for invisible calendars, step 9)", () =>
         timeZone: "America/Denver",
       },
       recurrence: { kind: "single" },
-      priority: "unassigned",
     });
 
     // Simulate the notify() visibility lookup racing a calendar record that
@@ -668,7 +653,6 @@ describe("EventService (visibility filtering for list reads, packet 08)", () => 
         timeZone: "America/Denver",
       },
       recurrence: { kind: "single" },
-      priority: "unassigned",
     });
     const hiddenEvent = await eventService.create(user._id.toString(), {
       calendarId: hidden._id.toHexString() as never,
@@ -680,14 +664,12 @@ describe("EventService (visibility filtering for list reads, packet 08)", () => 
         timeZone: "America/Denver",
       },
       recurrence: { kind: "single" },
-      priority: "unassigned",
     });
 
     const results = await eventService.readAll(user._id.toString(), {
       kind: "range",
       start: "2026-07-14T00:00:00Z",
       end: "2026-07-15T00:00:00Z",
-      priorities: [],
     });
     const resultIds = results.map((e) => e._id.toHexString());
 
@@ -709,7 +691,6 @@ describe("EventService (visibility filtering for list reads, packet 08)", () => 
         timeZone: "America/Denver",
       },
       recurrence: { kind: "single" },
-      priority: "unassigned",
     });
 
     await mongoService.calendar.updateOne(
@@ -729,7 +710,6 @@ describe("EventService (visibility filtering for list reads, packet 08)", () => 
           timeZone: "America/Denver" as never,
         },
         recurrence: { kind: "preserve" },
-        priority: "unassigned",
         scope: "all",
       },
     );

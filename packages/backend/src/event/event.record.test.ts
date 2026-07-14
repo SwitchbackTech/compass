@@ -5,7 +5,6 @@ import { EventRecordSchema } from "@backend/event/event.record";
 const baseFields = () => ({
   _id: new ObjectId(),
   calendarId: new ObjectId(),
-  priority: "unassigned" as const,
   externalReference: null,
   createdAt: new Date(),
   updatedAt: null,

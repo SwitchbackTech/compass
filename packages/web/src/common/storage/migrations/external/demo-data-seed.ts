@@ -1,4 +1,3 @@
-import { Priorities } from "@core/constants/core.constants";
 import { DateTimeSchema, EventIdSchema } from "@core/types/domain-primitives";
 import {
   type Event,
@@ -22,7 +21,6 @@ import { type ExternalMigration } from "../migration.types";
 function createEventRecord(overrides: {
   title: string;
   description?: string;
-  priority?: Event["priority"];
   schedule:
     | { kind: "timed"; start: string; end: string; timeZone: string }
     | { kind: "allDay"; start: string; end: string };
@@ -41,7 +39,6 @@ function createEventRecord(overrides: {
     content,
     schedule: EventScheduleSchema.parse(overrides.schedule),
     recurrence: { kind: "single" },
-    priority: overrides.priority ?? Priorities.UNASSIGNED,
     createdAt: now,
     updatedAt: null,
   };
@@ -69,7 +66,6 @@ function generateDemoData() {
       title: "Morning standup",
       description:
         "Let's be honest. No one here has actually done anything. You are just making things up as you go. And yet, all of you sit here, pretending as if we are making progress. It seems, my dear team, that the only thing we do efficiently is exceed the stand up time.",
-      priority: Priorities.WORK,
       schedule: {
         kind: "timed",
         start: todayAt(9, 0),
@@ -80,7 +76,6 @@ function generateDemoData() {
     createEventRecord({
       title: "Try Compass",
       description: `Welcome! Explore your calendar. When ready to bring in Google events, select 'Connect Google Calendar' from the command palette (${modKey}+K)`,
-      priority: Priorities.UNASSIGNED,
       schedule: {
         kind: "timed",
         start: todayAt(10, 0),
@@ -91,7 +86,6 @@ function generateDemoData() {
     createEventRecord({
       title: "Exercise",
       description: "I'm sorry for what I said during burpees.",
-      priority: Priorities.SELF,
       schedule: {
         kind: "timed",
         start: todayAt(12, 0),
@@ -102,7 +96,6 @@ function generateDemoData() {
     createEventRecord({
       title: "Call a friend",
       description: "Of all possessions, a friend is the most precious.",
-      priority: Priorities.RELATIONS,
       schedule: {
         kind: "timed",
         start: todayAt(17, 0),
@@ -114,7 +107,6 @@ function generateDemoData() {
       title: "Deep work day",
       description:
         "The ability to perform deep work is becoming increasingly rare at exactly the same time it is becoming increasingly valuable in our economy. As a consequence, the few who cultivate this skill, and then make it the core of their working life, will thrive.",
-      priority: Priorities.WORK,
       schedule: {
         kind: "allDay",
         start: today,
@@ -125,7 +117,6 @@ function generateDemoData() {
     createEventRecord({
       title: "Peek at your week",
       description: `Press '${VIEW_SHORTCUTS.week.key}' to switch to Week view and see the whole week at a glance.`,
-      priority: Priorities.SELF,
       schedule: {
         kind: "timed",
         start: todayAt(14, 0),
@@ -136,7 +127,6 @@ function generateDemoData() {
     createEventRecord({
       title: "Create your daily plan",
       description: "Block time for what matters most, then let the day flow.",
-      priority: Priorities.WORK,
       schedule: {
         kind: "timed",
         start: todayAt(15, 0),

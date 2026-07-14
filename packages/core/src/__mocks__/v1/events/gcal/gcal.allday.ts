@@ -28,7 +28,6 @@ export const allday = [
     sequence: 0,
     private: {
       origin: "googleimport",
-      priority: "relationships",
     },
 
     reminders: {

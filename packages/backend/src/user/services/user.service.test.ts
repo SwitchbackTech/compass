@@ -18,7 +18,6 @@ import { UserError } from "@backend/common/errors/user/user.errors";
 import * as supertokensMiddleware from "@backend/common/middleware/supertokens.middleware";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
-import priorityService from "@backend/priority/services/priority.service";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import userService from "@backend/user/services/user.service";
@@ -145,7 +144,7 @@ describe("UserService", () => {
   });
 
   describe("upsertUserFromAuth", () => {
-    it("creates a password user with normalized fields and default priorities", async () => {
+    it("creates a password user with normalized fields", async () => {
       const userId = mongoService.objectId().toString();
 
       const result = await userService.upsertUserFromAuth({
@@ -169,11 +168,6 @@ describe("UserService", () => {
         _id: mongoService.objectId(userId),
       });
       expect(storedUser?.google).toBeUndefined();
-
-      const priorities = await mongoService.priority
-        .find({ user: userId })
-        .toArray();
-      expect(priorities.length).toBeGreaterThan(0);
     });
 
     it("updates an existing user without removing stored Google data", async () => {
@@ -257,7 +251,6 @@ describe("UserService", () => {
       expect(storedUser).toBeDefined();
       expect(storedUser).not.toBeNull();
 
-      await priorityService.createDefaultPriorities(userId);
       await GoogleSyncDriver.createHealthyGoogleSync(storedUser!, true);
       await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
 
@@ -266,7 +259,6 @@ describe("UserService", () => {
 
       expect(summary).toEqual(
         expect.objectContaining({
-          priorities: expect.any(Number) as number,
           calendars: expect.any(Number) as number,
           events: expect.any(Number) as number,
           syncs: expect.any(Number) as number,
@@ -331,7 +323,6 @@ describe("UserService", () => {
       });
       expect(summary).toEqual(
         expect.objectContaining({
-          priorities: expect.any(Number) as number,
           sessions: 2,
           superTokensUsers: 1,
           superTokensMappings: 1,
@@ -508,7 +499,7 @@ describe("UserService", () => {
   });
 
   describe("initUserData", () => {
-    it("creates the compass user with default priorities", async () => {
+    it("creates the compass user", async () => {
       const gUser = UserDriver.generateGoogleUser();
 
       EmailDriver.mockEmailServiceResponse();
@@ -523,11 +514,6 @@ describe("UserService", () => {
       });
 
       expect(storedUser).toBeTruthy();
-
-      const priorities = await mongoService.priority
-        .find({ user: userId })
-        .toArray();
-      expect(priorities.length).toBeGreaterThan(0);
     });
   });
 

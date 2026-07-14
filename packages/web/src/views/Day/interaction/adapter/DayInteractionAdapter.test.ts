@@ -1,4 +1,4 @@
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -34,7 +34,6 @@ const timedEvent: Schema_GridEvent = {
   isAllDay: false,
   origin: Origin.COMPASS,
   position: gridEventDefaultPosition,
-  priority: Priorities.UNASSIGNED,
   startDate: "2026-05-18T09:00:00.000",
   title: "Timed event",
   user: "user-1",
@@ -46,7 +45,6 @@ const allDayEvent: Schema_GridEvent = {
   isAllDay: true,
   origin: Origin.COMPASS,
   position: gridEventDefaultPosition,
-  priority: Priorities.UNASSIGNED,
   row: 1,
   startDate: "2026-05-20",
   title: "All-day event",

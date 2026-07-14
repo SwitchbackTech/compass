@@ -1,4 +1,4 @@
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
 import {
@@ -55,7 +55,6 @@ export const assembleWebEvent = (event: EventWithDates): Schema_WebEvent => ({
   startDate: event.startDate,
   endDate: event.endDate,
   origin: event.origin ?? Origin.COMPASS,
-  priority: event.priority ?? Priorities.UNASSIGNED,
   user: event.user ?? "",
   recurrence: event.recurrence as Schema_WebEvent["recurrence"],
 });
@@ -66,9 +65,7 @@ export const assembleDefaultEvent = async (
   endDate?: string,
 ): Promise<Schema_Event | Schema_GridEvent> => {
   const userId = await getUserId();
-  const baseEvent = _assembleBaseEvent(userId, {
-    priority: Priorities.UNASSIGNED,
-  });
+  const baseEvent = _assembleBaseEvent(userId, {});
 
   switch (draftType) {
     case Categories_Event.ALLDAY: {
@@ -89,7 +86,6 @@ export const assembleDefaultEvent = async (
         endDate: endDate!,
         position: gridEventDefaultPosition,
         origin: baseEvent.origin ?? Origin.COMPASS,
-        priority: baseEvent.priority ?? Priorities.UNASSIGNED,
         user: baseEvent.user!,
         recurrence:
           baseEvent.recurrence as Schema_Event_Recur_Base["recurrence"],
@@ -237,7 +233,6 @@ const _assembleBaseEvent = (
     user: userId,
     isAllDay: event.isAllDay ?? false,
     origin: event.origin ?? Origin.COMPASS,
-    priority: event.priority ?? Priorities.UNASSIGNED,
   };
 
   return baseEvent;

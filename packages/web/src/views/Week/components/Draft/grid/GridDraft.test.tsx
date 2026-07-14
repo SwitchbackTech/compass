@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
@@ -56,7 +56,6 @@ const createSchemaGridEvent = (
   isAllDay: false,
   origin: Origin.COMPASS,
   position: gridEventDefaultPosition,
-  priority: Priorities.UNASSIGNED,
   startDate: "2026-05-26T14:00:00.000Z",
   title: "Planning",
   user: "user-1",

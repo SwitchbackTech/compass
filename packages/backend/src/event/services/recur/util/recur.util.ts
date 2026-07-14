@@ -72,7 +72,6 @@ export const materializeSeriesInstances = (
     content: base.content,
     schedule: shiftSchedule(base.schedule, date.getTime() - anchor.getTime()),
     recurrence: { kind: "occurrence", seriesId: base._id },
-    priority: base.priority,
     externalReference: null,
     createdAt: base.createdAt,
     updatedAt: base.updatedAt,

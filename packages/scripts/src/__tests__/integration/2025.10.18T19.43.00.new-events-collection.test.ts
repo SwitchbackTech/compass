@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import Migration from "@scripts/migrations/2025.10.18T19.43.00.new-events-collection";
 import { ObjectId } from "mongodb";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { CalendarProvider } from "@core/types/event.types";
 import { EventSchema, type Schema_Event } from "@core/types/event_new.types";
 import dayjs from "@core/util/date/dayjs";
@@ -99,7 +99,6 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
       startDate: faker.date.future(),
       endDate: faker.date.future(),
       origin: Origin.COMPASS,
-      priority: Priorities.SELF,
       createdAt: faker.date.recent(),
       metadata: [metadata ?? { provider: CalendarProvider.COMPASS }],
     };
@@ -165,16 +164,6 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
 
       await expect(
         newEventCollection().insertOne(eventWithoutOrigin),
-      ).rejects.toThrow(/Document failed validation/);
-    });
-
-    it("rejects events with missing priority field", async () => {
-      const eventWithoutPriority = generateEvent();
-
-      delete (eventWithoutPriority as Partial<Schema_Event>).priority;
-
-      await expect(
-        newEventCollection().insertOne(eventWithoutPriority),
       ).rejects.toThrow(/Document failed validation/);
     });
 

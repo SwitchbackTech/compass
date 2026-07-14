@@ -25,7 +25,6 @@ Backend routes are registered from
 | Config | `packages/backend/src/config/config.routes.config.ts` | Public runtime config used by the web app. |
 | Auth | `packages/backend/src/auth/auth.routes.config.ts` | Compass-owned auth helpers and authenticated Google connect. SuperTokens also mounts recipe routes under `/api`. |
 | User | `packages/backend/src/user/user.routes.config.ts` | Profile and metadata for the active session. |
-| Priority | `packages/backend/src/priority/priority.routes.config.ts` | Priority CRUD for authenticated users. |
 | Events | `packages/backend/src/event/event.routes.config.ts` | Event CRUD and reorder/delete helpers. |
 | Event stream | `packages/backend/src/events/events.routes.config.ts` | Authenticated SSE stream at `GET /api/events/stream`. |
 | Sync | `packages/backend/src/sync/sync.routes.config.ts` | Google import, maintenance, debug, and notification routes. |

@@ -175,13 +175,6 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
     const allDayEnd = query.end.slice(0, 10);
 
     return all.filter(({ event }) => {
-      if (
-        query.priorities.length > 0 &&
-        !query.priorities.includes(event.priority)
-      ) {
-        return false;
-      }
-
       if (event.schedule.kind === "timed") {
         return (
           Date.parse(event.schedule.start) < end &&
