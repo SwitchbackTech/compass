@@ -112,7 +112,9 @@ historical. Two legacy-adapter callers remain outside this scope:
 
 Every one of the 6 phases found and fixed at least one real, previously
 undetected bug — not just mechanical type errors. Most notably: `Date
-#toISOString()`/`new Date("YYYY-MM-DD")` producing UTC-anchored strings that
+
+# toISOString()`/`new Date("YYYY-MM-DD")` producing UTC-anchored strings that
+
 `_getTimeLabel`/`parseEventDraft` silently misinterpret as local time (or, in
 the someday case, as landing in the wrong week/month bucket) in any non-UTC
 browser timezone — CI runs with `TZ=UTC`, where this class of bug is
@@ -192,7 +194,7 @@ provider id or reintroduce `event.user` for convenient queries.
    references and resolved calendar metadata instead of top-level `gEventId`,
    `gRecurringEventId`, and `user` fields.
 6. Refactor Google import, backfill, sync activity, user deletion, revoked-token
-   pruning, test drivers, and seeders. A Google prune must remove only Google
+   pruning, test drivers. A Google prune must remove only Google
    provider data, never the Compass-local calendar/events.
 7. Replace the HTTP event shape with the strict `Event`, command, response, and
    SSE contracts from `01`. Map at the boundary without leaking Mongo Dates or
