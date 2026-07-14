@@ -8,8 +8,8 @@ import { type CSSVariables } from "@web/common/styles/css.types";
 import { theme } from "@web/common/styles/theme";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
-import { ChevronLeftIcon } from "@web/views/Day/components/Icons/ChevronLeftIcon";
-import { ChevronRightIcon } from "@web/views/Day/components/Icons/ChevronRightIcon";
+import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
+import { ChevronRightIcon } from "@web/components/Icons/ChevronRightIcon";
 import { Focusable, INPUT_RESET_CLASSNAME } from "../Focusable/Focusable";
 
 export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
