@@ -6,9 +6,13 @@ import {
   getOfflineDataStore,
 } from "@web/common/storage/offline-data/offline-data.store.registry";
 
+const SOMEDAY_EVENTS_NOTICE =
+  "Someday events aren't included in this file. If you had any, they'll be emailed to you separately by tyler@switchback.tech.";
+
 interface CompassDataExport {
   exportedAt: string;
   version: 1;
+  message: string;
   tasks: unknown[];
   events: unknown[];
 }
@@ -44,6 +48,7 @@ export function createCollectExportData({
     return {
       exportedAt: new Date().toISOString(),
       version: 1,
+      message: SOMEDAY_EVENTS_NOTICE,
       tasks,
       events: events.filter((record) => !record.isDemo),
     };
