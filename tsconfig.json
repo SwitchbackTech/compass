@@ -56,12 +56,9 @@
     "noPropertyAccessFromIndexSignature": true /* Require undeclared properties from index signatures to use element accesses. */,
 
     /* Module Resolution Options */
-    "moduleResolution": "node" /* Specify module resolution strategy. */,
-    // "baseUrl": "./packages" /* Base directory to resolve non-absolute module names. */,
-    "baseUrl": "./" /* Base directory to resolve non-absolute module names. */,
-    "ignoreDeprecations": "6.0",
+    "moduleResolution": "bundler" /* Specify module resolution strategy. */,
     "paths": {
-      /* A series of entries which re-map imports to lookup locations relative to the 'baseUrl'. */
+      /* A series of entries which re-map imports to lookup locations relative to this config. */
       /* include all packages so cross-imports work */
       "@core/*": ["./packages/core/src/*"],
       "@web/*": ["./packages/web/src/*"],
