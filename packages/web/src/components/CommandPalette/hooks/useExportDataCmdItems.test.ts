@@ -7,11 +7,6 @@ mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
 }));
 
-const mockUseUser = mock();
-mock.module("@web/auth/compass/user/hooks/useUser", () => ({
-  useUser: mockUseUser,
-}));
-
 // Same fragility as useSubscribeCmdItems.test.ts: react-toastify's binding
 // is process-wide and shared across suites, so mock the two util modules
 // useExportDataCmdItems.ts imports directly instead.
@@ -51,7 +46,7 @@ afterAll(() => {
 });
 
 // CommandPalette.tsx statically imports the default-wired useExportDataCmdItems;
-// cache-bust so this file's useSession/useUser mocks apply, matching
+// cache-bust so this file's useSession mock applies, matching
 // useSubscribeCmdItems.test.ts. runExportMyData is injected directly via
 // createUseExportDataCmdItems below instead of mock.module — that
 // dependency's module is also imported for real by
@@ -80,13 +75,11 @@ describe("useExportDataCmdItems", () => {
 
   beforeEach(() => {
     mockUseSession.mockClear();
-    mockUseUser.mockClear();
     mockRunExportMyData.mockClear();
     mockShowStatusToast.mockClear();
     mockShowErrorToast.mockClear();
 
     mockUseSession.mockReturnValue({ authenticated: true });
-    mockUseUser.mockReturnValue({ email: "user@example.com" });
     mockRunExportMyData.mockResolvedValue(undefined);
   });
 
@@ -99,16 +92,7 @@ describe("useExportDataCmdItems", () => {
     expect(result.current).toEqual([]);
   });
 
-  it("returns no items when signed in but email is missing", async () => {
-    mockUseUser.mockReturnValue({ email: undefined });
-    const useExportDataCmdItems = await buildHook();
-
-    const { result } = renderHook(() => useExportDataCmdItems());
-
-    expect(result.current).toEqual([]);
-  });
-
-  it("runs the export with the user's email and shows a success toast", async () => {
+  it("runs the export and shows a success toast", async () => {
     const useExportDataCmdItems = await buildHook();
 
     const { result } = renderHook(() => useExportDataCmdItems());
@@ -125,7 +109,7 @@ describe("useExportDataCmdItems", () => {
       );
     });
 
-    expect(mockRunExportMyData).toHaveBeenCalledWith("user@example.com");
+    expect(mockRunExportMyData).toHaveBeenCalledTimes(1);
     expect(mockShowErrorToast).not.toHaveBeenCalled();
   });
 

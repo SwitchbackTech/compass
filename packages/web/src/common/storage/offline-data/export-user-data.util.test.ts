@@ -6,9 +6,8 @@ import {
   createCollectExportData,
   createRunExportMyData,
   getExportFilename,
-  notifyExport,
 } from "./export-user-data.util";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const ensureOfflineDataStoreReady = mock();
 const getAllTasks = mock();
@@ -50,10 +49,11 @@ describe("collectExportData", () => {
     expect(typeof result.exportedAt).toBe("string");
   });
 
-  it("includes a message explaining someday events arrive separately by email", async () => {
+  it("includes a message inviting pre-cutoff signups to email for their someday events", async () => {
     const result = await collectExportData();
 
     expect(result.message).toContain("tyler@switchback.tech");
+    expect(result.message).toContain("July 15, 2026");
     expect(result.message.toLowerCase()).toContain("someday");
   });
 
@@ -91,61 +91,16 @@ describe("clearExportedTasks", () => {
   });
 });
 
-describe("notifyExport", () => {
-  // Assigned in beforeEach/restored in afterEach (not module scope) so this
-  // reliably wins against MSW's global fetch patching — matches
-  // useVersionCheck.test.ts's pattern for mocking a raw external fetch call.
-  const mockFetch = mock();
-  const originalFetch = globalThis.fetch;
-
-  beforeEach(() => {
-    mockFetch.mockClear();
-    mockFetch.mockResolvedValue({ ok: true });
-    globalThis.fetch = mockFetch as unknown as typeof fetch;
-  });
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
-  });
-
-  it("posts the user's email to the webhook", async () => {
-    notifyExport("user@example.com");
-
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-    const [url, requestInit] = mockFetch.mock.calls[0];
-    expect(url).toContain("discord.com/api/webhooks");
-    expect(requestInit.method).toBe("POST");
-    expect(JSON.parse(requestInit.body as string).content).toContain(
-      "user@example.com",
-    );
-
-    // Let notifyExport's internal .catch() chain settle before the test ends
-    // so its resolution doesn't bleed into the next test.
-    await Promise.resolve();
-    await Promise.resolve();
-  });
-
-  // A rejected-fetch case isn't covered here directly (mocking a raw fetch
-  // reliably across bun test files fighting MSW's global patching proved too
-  // flaky to justify) — notifyExport's implementation is a trivial
-  // `fetch(...).catch(() => {})`, and useExportDataCmdItems.test.ts's "still
-  // exports and clears tasks even when the webhook notification throws"
-  // covers the behavior that actually matters: a failing notification must
-  // never break the export.
-});
-
 describe("runExportMyData", () => {
   const mockCollectExportData = mock();
   const mockDownloadAsJsonFile = mock();
   const mockClearExportedTasks = mock();
-  const mockNotifyExport = mock();
   const mockGetExportFilename = mock();
 
   const runExportMyData = createRunExportMyData({
     collectExportData: mockCollectExportData,
     downloadAsJsonFile: mockDownloadAsJsonFile,
     clearExportedTasks: mockClearExportedTasks,
-    notifyExport: mockNotifyExport,
     getExportFilename: mockGetExportFilename,
   });
 
@@ -153,7 +108,6 @@ describe("runExportMyData", () => {
     mockCollectExportData.mockClear();
     mockDownloadAsJsonFile.mockClear();
     mockClearExportedTasks.mockClear();
-    mockNotifyExport.mockClear();
     mockGetExportFilename.mockClear();
 
     mockCollectExportData.mockResolvedValue({
@@ -166,35 +120,30 @@ describe("runExportMyData", () => {
     mockGetExportFilename.mockReturnValue("compass-export-2026-07-15.json");
   });
 
-  it("downloads the export, notifies the webhook with the user's email, then clears tasks", async () => {
-    await runExportMyData("user@example.com");
+  it("downloads the export, then clears tasks", async () => {
+    await runExportMyData();
 
     expect(mockDownloadAsJsonFile).toHaveBeenCalledWith(
       expect.objectContaining({ version: 1 }),
       "compass-export-2026-07-15.json",
     );
-    expect(mockNotifyExport).toHaveBeenCalledWith("user@example.com");
     expect(mockClearExportedTasks).toHaveBeenCalledTimes(1);
   });
 
-  it("rejects and skips download/notify/clear when collecting export data fails", async () => {
+  it("rejects and skips download/clear when collecting export data fails", async () => {
     mockCollectExportData.mockRejectedValue(new Error("dexie is closed"));
 
-    await expect(runExportMyData("user@example.com")).rejects.toThrow(
-      "dexie is closed",
-    );
+    await expect(runExportMyData()).rejects.toThrow("dexie is closed");
 
     expect(mockDownloadAsJsonFile).not.toHaveBeenCalled();
-    expect(mockNotifyExport).not.toHaveBeenCalled();
     expect(mockClearExportedTasks).not.toHaveBeenCalled();
   });
 
   it("resolves even when clearing the tasks table fails after a successful download", async () => {
     mockClearExportedTasks.mockRejectedValue(new Error("write conflict"));
 
-    await expect(runExportMyData("user@example.com")).resolves.toBeUndefined();
+    await expect(runExportMyData()).resolves.toBeUndefined();
 
     expect(mockDownloadAsJsonFile).toHaveBeenCalledTimes(1);
-    expect(mockNotifyExport).toHaveBeenCalledWith("user@example.com");
   });
 });

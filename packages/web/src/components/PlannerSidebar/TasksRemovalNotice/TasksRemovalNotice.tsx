@@ -1,7 +1,6 @@
 import { XIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import { useSession } from "@web/auth/compass/session/useSession";
-import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { EXPORT_MY_DATA_TOAST_ID } from "@web/common/constants/toast.constants";
 import { runExportMyData } from "@web/common/storage/offline-data/export-user-data.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
@@ -26,24 +25,21 @@ export function createTasksRemovalNotice({
   return function TasksRemovalNotice() {
     const { visible, dismiss } = useTasksRemovalNotice();
     const { authenticated } = useSession();
-    const { email } = useUser();
     const [exportStatus, setExportStatus] = useState<ExportStatus>("idle");
     // A ref, not just exportStatus: two clicks in the same synchronous event
     // batch both read state before React flushes the first setExportStatus,
     // so state alone can't block the second click.
     const isExportingRef = useRef(false);
 
-    // Signed-in only, matching the command palette's export item: useUser()'s
-    // email can still resolve to a last-known cached value for a brief
-    // window right after sign-out, and notifyExport must never fire then.
-    if (!visible || !authenticated || !email) return null;
+    // Signed-in only, matching the command palette's export item.
+    if (!visible || !authenticated) return null;
 
     const handleExport = () => {
       if (isExportingRef.current) return;
       isExportingRef.current = true;
       setExportStatus("exporting");
 
-      runExportMyData(email)
+      runExportMyData()
         .then(() => {
           showStatusToast(EXPORT_MY_DATA_TOAST_ID, "Data exported");
           // A successful export is a one-shot action, like the command
@@ -67,8 +63,9 @@ export function createTasksRemovalNotice({
         <div className="flex items-start justify-between gap-2">
           <p className="text-text-lighter leading-relaxed">
             Tasks and Someday were removed from Compass. Your old task data is
-            still saved locally — export it below before it's cleared. Someday
-            events will be emailed to you separately.
+            still saved locally — export it below before it's cleared. If you
+            signed up before July 15, 2026 and want your Someday events, email
+            tyler@switchback.tech.
           </p>
           <button
             aria-label="Dismiss"
