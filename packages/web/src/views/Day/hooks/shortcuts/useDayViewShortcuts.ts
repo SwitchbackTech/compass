@@ -16,9 +16,6 @@ interface KeyboardShortcutsConfig {
   onNextDay?: () => void;
   onPrevDay?: () => void;
   onGoToToday?: () => void;
-
-  // General
-  onEscape?: () => void;
 }
 
 /**
@@ -36,7 +33,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onNextDay,
     onPrevDay,
     onGoToToday,
-    onEscape,
   } = config;
 
   useAppShortcutUp("J", () => {
@@ -63,16 +59,12 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onCreateAllDayEvent?.();
   });
 
-  useAppShortcut(
-    "Escape",
-    () => {
-      onEscape?.();
-    },
-    {
-      ignoreInputs: false,
-      blurOnTrigger: true,
-    },
-  );
+  // No handler body: this registration exists only for blurOnTrigger, which
+  // blurs the focused element on Escape regardless of the callback.
+  useAppShortcut("Escape", () => {}, {
+    ignoreInputs: false,
+    blurOnTrigger: true,
+  });
 
   // Calendar shortcuts
   useAppShortcutUp("I", () => {
