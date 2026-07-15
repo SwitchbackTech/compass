@@ -49,6 +49,13 @@ describe("collectExportData", () => {
     expect(typeof result.exportedAt).toBe("string");
   });
 
+  it("includes a message explaining someday events arrive separately by email", async () => {
+    const result = await collectExportData();
+
+    expect(result.message).toContain("tyler@switchback.tech");
+    expect(result.message.toLowerCase()).toContain("someday");
+  });
+
   it("omits _migrations entirely (only tasks/events are read)", async () => {
     await collectExportData();
 
