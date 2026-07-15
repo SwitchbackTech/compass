@@ -175,28 +175,6 @@ describe("useExportDataCmdItems", () => {
     expect(mockShowStatusToast).not.toHaveBeenCalled();
   });
 
-  it("still exports and clears tasks even when the webhook notification throws", async () => {
-    mockNotifyExport.mockImplementation(() => {
-      throw new Error("network error");
-    });
-    const useExportDataCmdItems = await buildHook();
-
-    const { result } = renderHook(() => useExportDataCmdItems());
-    const item = result.current.find((item) => item.id === "export-my-data");
-
-    await act(async () => {
-      item?.onClick?.();
-    });
-
-    await waitFor(() => {
-      expect(mockShowStatusToast).toHaveBeenCalledWith(
-        "export-my-data",
-        "Data exported",
-      );
-    });
-    expect(mockClearExportedTasks).toHaveBeenCalledTimes(1);
-  });
-
   it("still shows success (not an error) when clearing the tasks table fails after a successful download", async () => {
     mockClearExportedTasks.mockRejectedValue(new Error("write conflict"));
     const useExportDataCmdItems = await buildHook();

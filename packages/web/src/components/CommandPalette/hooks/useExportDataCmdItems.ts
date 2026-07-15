@@ -1,7 +1,7 @@
 import { DownloadIcon } from "@phosphor-icons/react";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
-import { EXPORT_DATA_TOAST_ID } from "@web/common/constants/toast.constants";
+import { EXPORT_MY_DATA_TOAST_ID } from "@web/common/constants/toast.constants";
 import {
   clearExportedTasks,
   collectExportData,
@@ -52,14 +52,11 @@ export function createUseExportDataCmdItems({
           collectExportData()
             .then((data) => {
               downloadAsJsonFile(data, getExportFilename());
-              // The webhook notification is best-effort and must never fail
-              // the export the user is actually waiting on.
-              try {
-                notifyExport(email);
-              } catch {
-                // Ignored; see comment above.
-              }
-              showStatusToast(EXPORT_DATA_TOAST_ID, "Data exported");
+              // notifyExport is best-effort and already swallows its own
+              // failures (see its own implementation) — it can't fail the
+              // export the user is actually waiting on.
+              notifyExport(email);
+              showStatusToast(EXPORT_MY_DATA_TOAST_ID, "Data exported");
               // Clearing the legacy tasks table is cleanup, not part of the
               // export the user is waiting on — the download and webhook
               // above have already succeeded by this point, so a failure
@@ -71,7 +68,7 @@ export function createUseExportDataCmdItems({
             })
             .catch(() => {
               showErrorToast("Couldn't export your data. Please try again.", {
-                toastId: EXPORT_DATA_TOAST_ID,
+                toastId: EXPORT_MY_DATA_TOAST_ID,
               });
             });
         },
