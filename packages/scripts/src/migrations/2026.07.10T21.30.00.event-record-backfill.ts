@@ -154,7 +154,10 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         { projection: { _id: 1 }, batchSize: MONGO_BATCH_SIZE },
       );
       for await (const base of baseCursor) {
-        baseIds.add((base._id as unknown as ObjectId).toHexString());
+        // Legacy rows may carry a string _id (hex) instead of an ObjectId --
+        // the transform tolerates both, so this scan must too.
+        const baseId = base._id as unknown as ObjectId | string;
+        baseIds.add(typeof baseId === "string" ? baseId : baseId.toHexString());
       }
       legacyBaseIdsByUser.set(userIdHex, baseIds);
 
