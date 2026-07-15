@@ -20,7 +20,7 @@ export const TodayButton = ({
       >
         <button
           type="button"
-          className="flex h-6 w-6 items-center justify-center rounded-full text-text-lighter transition-colors hover:bg-text-lighter/20 focus:bg-text-lighter/20 focus:outline-none focus:ring-2 focus:ring-text-lighter/50"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-text-lighter transition-colors hover:bg-text-lighter/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
           aria-label="Go to today"
         >
           <CircleIcon />

@@ -385,7 +385,7 @@
 }
 
 @utility c-context-menu-item {
-  @apply flex w-full cursor-pointer appearance-none items-center gap-2 whitespace-nowrap border-0 bg-transparent px-3 py-2.5 text-left text-[14px] text-menu-text select-none hover:bg-(--menu-item-hover) disabled:cursor-wait disabled:opacity-50;
+  @apply c-focus-ring flex w-full cursor-pointer appearance-none items-center gap-2 whitespace-nowrap border-0 bg-transparent px-3 py-2.5 text-left text-[14px] text-menu-text select-none hover:bg-(--menu-item-hover) focus-visible:bg-(--menu-item-hover) disabled:cursor-wait disabled:opacity-50;
 }
 
 @utility c-not-found {
@@ -500,6 +500,11 @@
     color: var(--date-picker-hover-text);
   }
 
+  & .react-datepicker__day:focus-visible {
+    outline: 2px solid var(--compass-color-accent-primary);
+    outline-offset: 1px;
+  }
+
   & .react-datepicker__day-names {
     display: flex;
     width: 100%;
@@ -569,10 +574,6 @@
 
 @utility c-scroll {
   @layer components {
-    :focus-visible {
-      outline: none;
-    }
-
     /* scrollbar styling */
     /* biome-ignore lint/style/noDescendingSpecificity: Keep the scrollbar pseudo-elements grouped inside this utility. */
     &::-webkit-scrollbar {

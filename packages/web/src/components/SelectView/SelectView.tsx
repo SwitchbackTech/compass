@@ -177,7 +177,7 @@ export const SelectView = ({
                 aria-selected={isSelected}
                 tabIndex={isActive ? 0 : -1}
                 className={classNames(
-                  "flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm transition-colors",
+                  "c-focus-ring flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm transition-colors",
                   isSelected ? "text-accent-primary" : "text-text-light",
                   isActive ? "bg-text-lighter/10" : "hover:bg-text-lighter/10",
                 )}
