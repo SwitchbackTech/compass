@@ -1,6 +1,32 @@
+import { logs, SeverityNumber } from "@opentelemetry/api-logs";
 import { type TransformableInfo } from "logform";
 import * as winston from "winston";
 import { MB_50 } from "@core/constants/core.constants";
+
+const otelLogger = logs.getLogger("compass");
+
+const severityNumbers: Record<string, SeverityNumber> = {
+  debug: SeverityNumber.DEBUG,
+  info: SeverityNumber.INFO,
+  warn: SeverityNumber.WARN,
+  error: SeverityNumber.ERROR,
+};
+
+const emitOpenTelemetryLog = (info: TransformableInfo) => {
+  otelLogger.emit({
+    severityText: info.level,
+    severityNumber: severityNumbers[info.level],
+    body: String(info.message),
+    attributes: {
+      namespace: String(info["namespace"] || ""),
+    },
+  });
+};
+
+const openTelemetryFormat = winston.format((info) => {
+  emitOpenTelemetryLog(info);
+  return info;
+});
 
 const consoleFormat = winston.format.combine(
   winston.format.splat(),
@@ -38,6 +64,7 @@ export const Logger = (namespace?: string, logFile?: string) => {
   if (!namespace) {
     return winston.createLogger({
       level: process.env["LOG_LEVEL"],
+      format: openTelemetryFormat(),
       transports: transports(),
     });
   }
@@ -45,6 +72,7 @@ export const Logger = (namespace?: string, logFile?: string) => {
   if (logFile) {
     const secondaryLogger = winston.createLogger({
       level: process.env["LOG_LEVEL"],
+      format: openTelemetryFormat(),
       transports: transports(logFile),
     });
     return secondaryLogger.child({ namespace });
@@ -52,6 +80,7 @@ export const Logger = (namespace?: string, logFile?: string) => {
 
   const primaryLogger = winston.createLogger({
     level: process.env["LOG_LEVEL"],
+    format: openTelemetryFormat(),
     transports: transports(),
   });
 

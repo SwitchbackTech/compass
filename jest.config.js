@@ -7,6 +7,7 @@
 /** @type { Exclude<Exclude<import("jest").Config["projects"], undefined>[number], string>} */
 const backendProject = {
   displayName: "backend",
+  roots: ["<rootDir>/packages/backend"],
   moduleNameMapper: {
     "^@core(/(.*)$)?": "<rootDir>/packages/core/src/$1",
     "^@backend/auth(/(.*)$)?": "<rootDir>/packages/backend/src/auth/$1",
@@ -40,6 +41,7 @@ const backendProject = {
 /** @type { Exclude<Exclude<import("jest").Config["projects"], undefined>[number], string>} */
 const coreProject = {
   displayName: "core",
+  roots: ["<rootDir>/packages/core"],
   moduleNameMapper: {
     "^@core(/(.*)$)?": "<rootDir>/packages/core/src/$1",
   },
@@ -54,6 +56,7 @@ const coreProject = {
 /** @type { Exclude<Exclude<import("jest").Config["projects"], undefined>[number], string>} */
 const scriptsProject = {
   displayName: "scripts",
+  roots: ["<rootDir>/packages/scripts"],
   moduleNameMapper: {
     ...backendProject.moduleNameMapper,
     "^@scripts(/(.*)$)?": "<rootDir>/packages/scripts/src/$1",

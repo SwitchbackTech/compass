@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { ObjectId } from "mongodb";
-import { RRule } from "rrule";
+import { RRule, rrulestr } from "rrule";
 import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { type gSchema$EventBase } from "@core/types/gcal";
@@ -88,13 +88,12 @@ describe("GcalEventRRule: ", () => {
 
   describe("diffOptions", () => {
     it("should return the differences between two rrule options", () => {
-      const until = dayjs();
+      const until = dayjs("2026-01-01T00:00:00.000Z");
       const untilRule = `UNTIL=${until.toRRuleDTSTARTString()}`;
       const rule = [`RRULE:FREQ=DAILY;COUNT=10;BYDAY=MO,WE,FR;${untilRule}`];
       const baseEvent = { ...mockRecurringGcalBaseEvent(), recurrence: rule };
       const rrule = new GcalEventRRule(baseEvent);
-      const untilFormat = dayjs.DateFormat.RFC5545;
-      const nextUntil = dayjs(until.toRRuleDTSTARTString(), untilFormat);
+      const nextUntil = dayjs(rrulestr(rule[0]).options.until);
 
       const rruleA = new GcalEventRRule(
         { ...baseEvent, recurrence: [] },

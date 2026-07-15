@@ -3,6 +3,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import { initExpressServer } from "@backend/servers/express/express.server";
 import { warnIfWebhookNotPublicHttps } from "@backend/sync/services/watch/google-watch-config";
 import { logger } from "./init"; //must be first import
+import { stopPostHogLogs } from "./logging/posthog-logs";
 import { createServer, type Server } from "node:http";
 
 const app = initExpressServer();
@@ -43,6 +44,7 @@ async function gracefulShutdown(): Promise<void> {
   try {
     await closeHttpServer();
     await mongoService.stop();
+    await stopPostHogLogs();
   } catch (error) {
     logger.error("Problems encountered while shutting down", error);
   }

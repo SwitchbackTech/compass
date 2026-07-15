@@ -33,6 +33,8 @@ const ConfigSchema = z
     SUPERTOKENS_KEY: z.string().nonempty(),
     TOKEN_GCAL_NOTIFICATION: z.string().default(""),
     TOKEN_COMPASS_SYNC: z.string().nonempty(),
+    POSTHOG_KEY: z.string().nonempty().optional(),
+    POSTHOG_HOST: z.string().url().optional(),
   })
   .strict()
   .superRefine((env, context) => {
@@ -104,6 +106,8 @@ function parseRawConfig(config: CompassConfig): Config {
     SUPERTOKENS_KEY: config.supertokens.key,
     TOKEN_GCAL_NOTIFICATION: nonEmpty(config.google?.notificationToken) ?? "",
     TOKEN_COMPASS_SYNC: config.backend.compassToken,
+    POSTHOG_KEY: nonEmpty(config.posthog?.key),
+    POSTHOG_HOST: nonEmpty(config.posthog?.host) || "https://us.i.posthog.com",
   });
 }
 
@@ -131,6 +135,8 @@ export function parseConfigFromEnv(
     SUPERTOKENS_KEY: rawEnv["SUPERTOKENS_KEY"],
     TOKEN_GCAL_NOTIFICATION: rawEnv["TOKEN_GCAL_NOTIFICATION"],
     TOKEN_COMPASS_SYNC: rawEnv["TOKEN_COMPASS_SYNC"],
+    POSTHOG_KEY: rawEnv["POSTHOG_KEY"],
+    POSTHOG_HOST: rawEnv["POSTHOG_HOST"] || "https://us.i.posthog.com",
   });
 }
 
