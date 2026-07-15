@@ -1,7 +1,12 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { act } from "react";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { createTasksRemovalNotice } from "./TasksRemovalNotice";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
+// Matches useExportDataCmdItems.test.ts's convention: useSession/useUser are
+// auth hooks with no injection seam of their own, so they're mock.module'd;
+// everything else this component depends on is a plain function, injected
+// via createTasksRemovalNotice below — no mock.module, no cache-busting.
 const mockUseSession = mock();
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
@@ -12,95 +17,20 @@ mock.module("@web/auth/compass/user/hooks/useUser", () => ({
   useUser: mockUseUser,
 }));
 
-// This module is also imported for real by useTasksRemovalNotice.test.ts, and
-// bun:test's mock.module is process-wide and order-dependent — wrap the real
-// exports instead of replacing the module outright, so that file's import of
-// createUseTasksRemovalNotice still resolves once this suite's mock is off.
-const actualUseTasksRemovalNoticeModule = await import(
-  "./useTasksRemovalNotice"
-);
-const mockUseTasksRemovalNotice = mock();
-let isUseTasksRemovalNoticeMocked = true;
-
-mock.module("./useTasksRemovalNotice", () => ({
-  ...actualUseTasksRemovalNoticeModule,
-  useTasksRemovalNotice: (
-    ...args: Parameters<
-      typeof actualUseTasksRemovalNoticeModule.useTasksRemovalNotice
-    >
-  ) =>
-    isUseTasksRemovalNoticeMocked
-      ? mockUseTasksRemovalNotice(...args)
-      : actualUseTasksRemovalNoticeModule.useTasksRemovalNotice(...args),
-}));
-
-// Same fragility as useExportDataCmdItems.test.ts: these modules are also
-// imported for real by other test files (export-user-data.util.test.ts,
-// status-toast/error-toast consumers elsewhere), and bun:test's mock.module
-// is process-wide and order-dependent — wrap the real export instead of
-// replacing it outright, and only swap in the mock while this suite runs.
-const actualRunExportMyData = (
-  await import("@web/common/storage/offline-data/export-user-data.util")
-).runExportMyData;
-const mockRunExportMyData = mock();
-let isRunExportMyDataMocked = true;
-
-mock.module(
-  "@web/common/storage/offline-data/export-user-data.util",
-  () => ({
-    runExportMyData: (...args: Parameters<typeof actualRunExportMyData>) =>
-      isRunExportMyDataMocked
-        ? mockRunExportMyData(...args)
-        : actualRunExportMyData(...args),
-  }),
-);
-
-const actualShowStatusToast = (
-  await import("@web/common/utils/toast/status-toast.util")
-).showStatusToast;
-const mockShowStatusToast = mock();
-let isStatusToastMocked = true;
-
-mock.module("@web/common/utils/toast/status-toast.util", () => ({
-  showStatusToast: (...args: Parameters<typeof actualShowStatusToast>) =>
-    isStatusToastMocked
-      ? mockShowStatusToast(...args)
-      : actualShowStatusToast(...args),
-}));
-
-const actualShowErrorToast = (
-  await import("@web/common/utils/toast/error-toast.util")
-).showErrorToast;
-const mockShowErrorToast = mock();
-let isErrorToastMocked = true;
-
-mock.module("@web/common/utils/toast/error-toast.util", () => ({
-  showErrorToast: (...args: Parameters<typeof actualShowErrorToast>) =>
-    isErrorToastMocked
-      ? mockShowErrorToast(...args)
-      : actualShowErrorToast(...args),
-}));
-
-afterAll(() => {
-  isUseTasksRemovalNoticeMocked = false;
-  isRunExportMyDataMocked = false;
-  isStatusToastMocked = false;
-  isErrorToastMocked = false;
-});
-
-// This file statically imports TasksRemovalNotice via PlannerSidebar.tsx
-// elsewhere; cache-bust so this file's mocks apply, matching
-// useExportDataCmdItems.test.ts.
-async function importComponent() {
-  const moduleUrl = new URL(
-    `./TasksRemovalNotice.tsx?test=${Math.random().toString(36).slice(2)}`,
-    import.meta.url,
-  );
-
-  return (await import(moduleUrl.href)) as typeof import("./TasksRemovalNotice");
-}
-
 describe("TasksRemovalNotice", () => {
+  const mockUseTasksRemovalNotice = mock();
+  const mockRunExportMyData = mock();
+  const mockShowStatusToast = mock();
+  const mockShowErrorToast = mock();
+
+  const buildComponent = () =>
+    createTasksRemovalNotice({
+      useTasksRemovalNotice: mockUseTasksRemovalNotice,
+      runExportMyData: mockRunExportMyData,
+      showStatusToast: mockShowStatusToast,
+      showErrorToast: mockShowErrorToast,
+    });
+
   beforeEach(() => {
     mockUseSession.mockClear();
     mockUseUser.mockClear();
@@ -118,52 +48,53 @@ describe("TasksRemovalNotice", () => {
     mockRunExportMyData.mockResolvedValue(undefined);
   });
 
-  it("renders nothing when not visible", async () => {
-    mockUseTasksRemovalNotice.mockReturnValue({ visible: false, dismiss: mock() });
-    const { TasksRemovalNotice } = await importComponent();
+  it("renders nothing when not visible", () => {
+    mockUseTasksRemovalNotice.mockReturnValue({
+      visible: false,
+      dismiss: mock(),
+    });
+    const TasksRemovalNotice = buildComponent();
 
     const { container } = render(<TasksRemovalNotice />);
 
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders nothing when visible but there's no email", async () => {
+  it("renders nothing when visible but there's no email", () => {
     mockUseUser.mockReturnValue({ email: undefined });
-    const { TasksRemovalNotice } = await importComponent();
+    const TasksRemovalNotice = buildComponent();
 
     const { container } = render(<TasksRemovalNotice />);
 
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders nothing when visible with an email but not authenticated (e.g. a stale cached email right after sign-out)", async () => {
+  it("renders nothing when visible with an email but not authenticated (e.g. a stale cached email right after sign-out)", () => {
     mockUseSession.mockReturnValue({ authenticated: false });
-    const { TasksRemovalNotice } = await importComponent();
+    const TasksRemovalNotice = buildComponent();
 
     const { container } = render(<TasksRemovalNotice />);
 
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders the card with the export CTA and a dismiss control", async () => {
-    const { TasksRemovalNotice } = await importComponent();
+  it("renders the card with the export CTA and a dismiss control", () => {
+    const TasksRemovalNotice = buildComponent();
 
     render(<TasksRemovalNotice />);
 
     expect(screen.getByText(/tasks and someday were removed/i)).toBeTruthy();
-    expect(
-      screen.getByRole("button", { name: "Export my data" }),
-    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Export my data" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Dismiss" })).toBeTruthy();
   });
 
-  it("calls dismiss when the dismiss control is clicked", async () => {
+  it("calls dismiss when the dismiss control is clicked", () => {
     const mockDismiss = mock();
     mockUseTasksRemovalNotice.mockReturnValue({
       visible: true,
       dismiss: mockDismiss,
     });
-    const { TasksRemovalNotice } = await importComponent();
+    const TasksRemovalNotice = buildComponent();
 
     render(<TasksRemovalNotice />);
     screen.getByRole("button", { name: "Dismiss" }).click();
@@ -177,7 +108,7 @@ describe("TasksRemovalNotice", () => {
       visible: true,
       dismiss: mockDismiss,
     });
-    const { TasksRemovalNotice } = await importComponent();
+    const TasksRemovalNotice = buildComponent();
 
     render(<TasksRemovalNotice />);
     await act(async () => {
@@ -203,7 +134,7 @@ describe("TasksRemovalNotice", () => {
         resolveExport = resolve;
       }),
     );
-    const { TasksRemovalNotice } = await importComponent();
+    const TasksRemovalNotice = buildComponent();
 
     render(<TasksRemovalNotice />);
     const exportButton = screen.getByRole("button", { name: "Export my data" });
@@ -227,7 +158,7 @@ describe("TasksRemovalNotice", () => {
       visible: true,
       dismiss: mockDismiss,
     });
-    const { TasksRemovalNotice } = await importComponent();
+    const TasksRemovalNotice = buildComponent();
 
     render(<TasksRemovalNotice />);
     await act(async () => {
@@ -242,8 +173,6 @@ describe("TasksRemovalNotice", () => {
     });
 
     expect(mockDismiss).not.toHaveBeenCalled();
-    expect(
-      screen.getByText("Couldn't export your data."),
-    ).toBeTruthy();
+    expect(screen.getByText("Couldn't export your data.")).toBeTruthy();
   });
 });

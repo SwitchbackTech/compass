@@ -192,9 +192,7 @@ describe("runExportMyData", () => {
   it("resolves even when clearing the tasks table fails after a successful download", async () => {
     mockClearExportedTasks.mockRejectedValue(new Error("write conflict"));
 
-    await expect(
-      runExportMyData("user@example.com"),
-    ).resolves.toBeUndefined();
+    await expect(runExportMyData("user@example.com")).resolves.toBeUndefined();
 
     expect(mockDownloadAsJsonFile).toHaveBeenCalledTimes(1);
     expect(mockNotifyExport).toHaveBeenCalledWith("user@example.com");
