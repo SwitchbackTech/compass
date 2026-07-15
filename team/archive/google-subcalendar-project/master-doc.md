@@ -95,11 +95,12 @@ unfinished.
       identity, selection, and read-only UX. Shipped in PRs #2062, #2063,
       #2064, #2065, #2066 (one known follow-up: read-only card left-click
       open race, see the packet's exit criteria).
-- [ ] 09. [V1 release hardening](./09-v1-release-hardening.md) — prove migration,
+- [x] 09. [V1 release hardening](./09-v1-release-hardening.md) — prove migration,
       reliability, performance, accessibility, and rollback. Automated gate,
       benchmarks, observability, and docs shipped in PRs #2068, #2069,
-      #2070; the box stays open until the PO-gated staging rehearsal and
-      manual acceptance pass (see the packet's "Remaining PO-gated work").
+      #2070. Closed 2026-07-15: manual acceptance founder-validated on staging
+      (`v1.0.235`); the S3 rollback rehearsal was waived by founder decision
+      (waiver recorded in the big-bang runbook's staging evidence gate).
 
 ## Progress rules for agents
 

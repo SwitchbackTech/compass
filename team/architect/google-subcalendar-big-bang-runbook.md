@@ -1,7 +1,9 @@
 # Google sub-calendar big-bang deployment runbook
 
-Status: **staging validator recovery and full-sync acceptance are complete;
-production is locked**.
+Status: **staging complete; production gate opened by the founder on
+2026-07-15**. Execution of Phase P is planned and logged in
+[`prod-cutover-execution-2026-07-15.md`](./prod-cutover-execution-2026-07-15.md);
+the operator gate is [`prod-go-no-go-checklist.md`](./prod-go-no-go-checklist.md).
 
 This is the master operator runbook for landing the work from
 [`google-subcalendar-project`](../archive/google-subcalendar-project/master-doc.md)
@@ -199,11 +201,18 @@ content or credentials.
 | Backup restore checked | 2026-07-14: 103,940 documents restored to scratch DB; 0 failures | 2026-07-14: 17 documents restored to scratch DB; 0 failures |
 | Validator repair migrated | 2026-07-14, `v1.0.207`: 12 ledger records; strict validator valid; `priority` absent; 50,396 active rows | 2026-07-14, `v1.0.207`: 12 ledger records; strict validator valid; `priority` absent; 0 active rows |
 | Google sync code `121` absent | 2026-07-14, `v1.0.211`: designated account full resync passed with 0 invalid rows and no code `121` | Not applicable: no Google account is configured on this target; service health and logs passed |
-| 12-step acceptance passed | pending | pending |
-| Rollback and second forward run passed | pending | pending |
-| Operator/date/release tag | Codex / 2026-07-14 / `v1.0.211` | Codex / 2026-07-14 / `v1.0.211` |
+| 12-step acceptance passed | 2026-07-15: founder-validated on staging (running `v1.0.235`) through real use of the signed-in app, including Google multi-calendar sync | Not applicable: no Google account on this target; service health passed |
+| Rollback and second forward run passed | **Waived by founder, 2026-07-15** — see waiver below | **Waived by founder, 2026-07-15** — see waiver below |
+| Operator/date/release tag | Codex / 2026-07-14 / `v1.0.211`; founder / 2026-07-15 / `v1.0.235` | Codex / 2026-07-14 / `v1.0.211` |
 
-Production remains locked while any cell is pending.
+**Founder waiver (2026-07-15):** the Phase S3 staging rollback + second-forward-run
+rehearsal is waived. Rationale: the forward path was effectively rehearsed twice on
+staging during the `v1.0.205` → `v1.0.207` recovery (both targets converged cleanly on
+the second forward run), and staging has run the cut-over schema in real use since
+2026-07-14. The rollback path (backup restore + reverse rename) therefore remains
+**untested end-to-end**; this is an accepted risk, compensated by treating the
+production abort rules as hard stops and by the pre-window dry-run rehearsal of the
+full forward sequence on a restored copy of production data (see the execution plan).
 
 ### Recorded staging rehearsal — 2026-07-14
 
@@ -229,13 +238,16 @@ entries after the acceptance start time. Self-hosted staging has no configured
 Google account, so direct Google acceptance there is not applicable; do not
 misread that as evidence for a production Google sync.
 
-Production remains locked because the complete packet `09` manual acceptance,
-watch-renewal soak, and rollback/second-forward rehearsal are still pending.
-Release `v1.0.205` must not be used for another migration attempt.
+The gate closed on 2026-07-15: the founder validated acceptance on staging
+(`v1.0.235`) and waived the rollback/second-forward rehearsal (see the waiver in
+the evidence table). Release `v1.0.205` must not be used for another migration
+attempt.
 
-## Future Phase P — production big-bang cutover
+## Phase P — production big-bang cutover
 
-This section is a reference plan, not current authorization.
+Authorized by the founder on 2026-07-15. The operator-facing execution plan,
+including production-specific preflight findings and the data-policy pre-clean,
+is [`prod-cutover-execution-2026-07-15.md`](./prod-cutover-execution-2026-07-15.md).
 
 ### Production go/no-go
 
@@ -284,9 +296,10 @@ bullets below are its summary.
 7. Deploy the selected tag with **Deploy production**, resume service, and run
    the Phase S2 smoke plus production health checks.
 
-If the installed Umzug CLI does not accept `up --to`, stop during rehearsal and
-resolve the exact supported syntax. Do not replace the boundary with an
-unbounded pre-rename `migrate up`.
+Resolved 2026-07-15: the CLI is Umzug `3.8.2`'s standard CLI and `up --to <name>`
+is supported (applies every pending migration up to and including the named one).
+Verified against production with `migrate pending`. Do not replace the boundary
+with an unbounded pre-rename `migrate up`.
 
 ### Production rollback
 

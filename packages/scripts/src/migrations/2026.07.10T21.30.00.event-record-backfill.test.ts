@@ -299,6 +299,39 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
       );
     });
 
+    it("migrates a series whose legacy base has a string _id (anomalous prod rows)", async () => {
+      const user = await UserDriver.createUser({ withGoogle: false });
+      await insertLocalCalendar(user._id);
+      const userIdHex = user._id.toHexString();
+
+      // Some production rows carry a hex string _id instead of an ObjectId;
+      // the transform accepts both, and the series-base scan must too.
+      const stringBaseId = new ObjectId().toHexString();
+      const seriesBase = legacyEvent(userIdHex, {
+        _id: stringBaseId,
+        title: "String-id series base",
+        recurrence: { rule: ["FREQ=WEEKLY;COUNT=3"] },
+      });
+      const occurrence = legacyEvent(userIdHex, {
+        title: "Occurrence of string-id base",
+        recurrence: { eventId: stringBaseId },
+      });
+
+      await legacyCollection().insertMany([seriesBase, occurrence]);
+
+      await migration.up(migrationContext);
+
+      const docs = await destinationCollection().find({}).toArray();
+      expect(docs).toHaveLength(2);
+      const base = docs.find((d) => d["recurrence"]?.["kind"] === "series");
+      const occ = docs.find((d) => d["recurrence"]?.["kind"] === "occurrence");
+      expect(base?.["_id"]).toBeInstanceOf(ObjectId);
+      expect((base?.["_id"] as ObjectId).toHexString()).toBe(stringBaseId);
+      expect(
+        (occ?.["recurrence"]?.["seriesId"] as ObjectId).toHexString(),
+      ).toBe(stringBaseId);
+    });
+
     it("excludes a mix of someday events, migrates timed/allDay, reports the excluded count, and verifies cleanly", async () => {
       // Regression for the Someday-removal cutover: legacy someday events are
       // counted and dropped rather than migrated, the timed/allDay events for
