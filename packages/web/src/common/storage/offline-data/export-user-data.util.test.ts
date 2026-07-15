@@ -4,6 +4,7 @@ import { createMockLocalEventRecord } from "@web/__tests__/utils/factories/event
 import {
   createClearExportedTasks,
   createCollectExportData,
+  createRunExportMyData,
   getExportFilename,
   notifyExport,
 } from "./export-user-data.util";
@@ -131,4 +132,69 @@ describe("notifyExport", () => {
   // exports and clears tasks even when the webhook notification throws"
   // covers the behavior that actually matters: a failing notification must
   // never break the export.
+});
+
+describe("runExportMyData", () => {
+  const mockCollectExportData = mock();
+  const mockDownloadAsJsonFile = mock();
+  const mockClearExportedTasks = mock();
+  const mockNotifyExport = mock();
+  const mockGetExportFilename = mock();
+
+  const runExportMyData = createRunExportMyData({
+    collectExportData: mockCollectExportData,
+    downloadAsJsonFile: mockDownloadAsJsonFile,
+    clearExportedTasks: mockClearExportedTasks,
+    notifyExport: mockNotifyExport,
+    getExportFilename: mockGetExportFilename,
+  });
+
+  beforeEach(() => {
+    mockCollectExportData.mockClear();
+    mockDownloadAsJsonFile.mockClear();
+    mockClearExportedTasks.mockClear();
+    mockNotifyExport.mockClear();
+    mockGetExportFilename.mockClear();
+
+    mockCollectExportData.mockResolvedValue({
+      exportedAt: "2026-07-15T00:00:00.000Z",
+      version: 1,
+      tasks: [],
+      events: [],
+    });
+    mockClearExportedTasks.mockResolvedValue(undefined);
+    mockGetExportFilename.mockReturnValue("compass-export-2026-07-15.json");
+  });
+
+  it("downloads the export, notifies the webhook with the user's email, then clears tasks", async () => {
+    await runExportMyData("user@example.com");
+
+    expect(mockDownloadAsJsonFile).toHaveBeenCalledWith(
+      expect.objectContaining({ version: 1 }),
+      "compass-export-2026-07-15.json",
+    );
+    expect(mockNotifyExport).toHaveBeenCalledWith("user@example.com");
+    expect(mockClearExportedTasks).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects and skips download/notify/clear when collecting export data fails", async () => {
+    mockCollectExportData.mockRejectedValue(new Error("dexie is closed"));
+
+    await expect(runExportMyData("user@example.com")).rejects.toThrow(
+      "dexie is closed",
+    );
+
+    expect(mockDownloadAsJsonFile).not.toHaveBeenCalled();
+    expect(mockNotifyExport).not.toHaveBeenCalled();
+    expect(mockClearExportedTasks).not.toHaveBeenCalled();
+  });
+
+  it("resolves even when clearing the tasks table fails after a successful download", async () => {
+    mockClearExportedTasks.mockRejectedValue(new Error("write conflict"));
+
+    await expect(runExportMyData("user@example.com")).resolves.toBeUndefined();
+
+    expect(mockDownloadAsJsonFile).toHaveBeenCalledTimes(1);
+    expect(mockNotifyExport).toHaveBeenCalledWith("user@example.com");
+  });
 });

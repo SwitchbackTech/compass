@@ -6,6 +6,7 @@ import { PlannerCalendarList } from "./PlannerCalendarList/PlannerCalendarList";
 import { PlannerMonthPicker } from "./PlannerMonthPicker/PlannerMonthPicker";
 import { PlannerSidebarActions } from "./PlannerSidebarActions/PlannerSidebarActions";
 import { ShortcutsOverlay } from "./ShortcutsOverlay/ShortcutsOverlay";
+import { TasksRemovalNotice } from "./TasksRemovalNotice/TasksRemovalNotice";
 
 export interface PlannerSidebarProps extends HTMLAttributes<HTMLDivElement> {
   calendarDate: Dayjs;
@@ -31,6 +32,7 @@ type PlannerSidebarDependencies = {
   PlannerMonthPicker: typeof PlannerMonthPicker;
   PlannerSidebarActions: typeof PlannerSidebarActions;
   ShortcutsOverlay: typeof ShortcutsOverlay;
+  TasksRemovalNotice: typeof TasksRemovalNotice;
 };
 
 export function createPlannerSidebar({
@@ -38,6 +40,7 @@ export function createPlannerSidebar({
   PlannerMonthPicker: PlannerMonthPickerComponent,
   PlannerSidebarActions: PlannerSidebarActionsComponent,
   ShortcutsOverlay: ShortcutsOverlayComponent,
+  TasksRemovalNotice: TasksRemovalNoticeComponent,
 }: PlannerSidebarDependencies) {
   return function PlannerSidebar({
     calendarDate,
@@ -80,6 +83,7 @@ export function createPlannerSidebar({
               selectedDate={calendarDate}
             />
             <PlannerCalendarListComponent />
+            <TasksRemovalNoticeComponent />
           </div>
         )}
 
@@ -104,4 +108,5 @@ export const PlannerSidebar = createPlannerSidebar({
   PlannerMonthPicker,
   PlannerSidebarActions,
   ShortcutsOverlay,
+  TasksRemovalNotice,
 });

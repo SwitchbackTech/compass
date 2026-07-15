@@ -96,6 +96,12 @@ export interface OfflineDataStore {
   getAllTasks(): Promise<StoredTask[]>;
 
   /**
+   * Cheap existence check for the retained legacy tasks table, without
+   * reading every row.
+   */
+  getTaskCount(): Promise<number>;
+
+  /**
    * Clear all rows from the retained legacy tasks table.
    */
   clearAllTasks(): Promise<void>;

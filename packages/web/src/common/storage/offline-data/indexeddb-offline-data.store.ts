@@ -220,6 +220,10 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
     return this.db.tasks.toArray();
   }
 
+  async getTaskCount(): Promise<number> {
+    return this.db.tasks.count();
+  }
+
   async clearAllTasks(): Promise<void> {
     await this.db.tasks.clear();
   }
