@@ -2,23 +2,13 @@ import { DownloadIcon } from "@phosphor-icons/react";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { EXPORT_MY_DATA_TOAST_ID } from "@web/common/constants/toast.constants";
-import {
-  clearExportedTasks,
-  collectExportData,
-  downloadAsJsonFile,
-  getExportFilename,
-  notifyExport,
-} from "@web/common/storage/offline-data/export-user-data.util";
+import { runExportMyData } from "@web/common/storage/offline-data/export-user-data.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 
 type ExportDataDependencies = {
-  collectExportData: typeof collectExportData;
-  downloadAsJsonFile: typeof downloadAsJsonFile;
-  clearExportedTasks: typeof clearExportedTasks;
-  notifyExport: typeof notifyExport;
-  getExportFilename: typeof getExportFilename;
+  runExportMyData: typeof runExportMyData;
 };
 
 /**
@@ -29,11 +19,7 @@ type ExportDataDependencies = {
  * locate a user's someday events, which only signed-in users have.
  */
 export function createUseExportDataCmdItems({
-  collectExportData,
-  downloadAsJsonFile,
-  clearExportedTasks,
-  notifyExport,
-  getExportFilename,
+  runExportMyData,
 }: ExportDataDependencies) {
   return function useExportDataCmdItems(): CommandItem[] {
     const { authenticated } = useSession();
@@ -49,22 +35,9 @@ export function createUseExportDataCmdItems({
         label: "Export my data",
         icon: DownloadIcon,
         onClick: () => {
-          collectExportData()
-            .then((data) => {
-              downloadAsJsonFile(data, getExportFilename());
-              // notifyExport is best-effort and already swallows its own
-              // failures (see its own implementation) — it can't fail the
-              // export the user is actually waiting on.
-              notifyExport(email);
+          runExportMyData(email)
+            .then(() => {
               showStatusToast(EXPORT_MY_DATA_TOAST_ID, "Data exported");
-              // Clearing the legacy tasks table is cleanup, not part of the
-              // export the user is waiting on — the download and webhook
-              // above have already succeeded by this point, so a failure
-              // here must not surface as an export failure (which would
-              // wrongly invite the user to retry and re-download/re-notify).
-              clearExportedTasks().catch(() => {
-                // Ignored; the table is retried on the user's next export.
-              });
             })
             .catch(() => {
               showErrorToast("Couldn't export your data. Please try again.", {
@@ -78,9 +51,5 @@ export function createUseExportDataCmdItems({
 }
 
 export const useExportDataCmdItems = createUseExportDataCmdItems({
-  collectExportData,
-  downloadAsJsonFile,
-  clearExportedTasks,
-  notifyExport,
-  getExportFilename,
+  runExportMyData,
 });

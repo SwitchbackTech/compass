@@ -72,4 +72,35 @@ describe("IndexedDbOfflineDataStore (real Dexie + fake-indexeddb)", () => {
 
     store.close();
   });
+
+  it("counts tasks via getTaskCount without reading every row", async () => {
+    const store = new IndexedDbOfflineDataStore();
+    await store.initialize();
+
+    expect(await store.getTaskCount()).toBe(0);
+
+    const recoveryDb = new Dexie("compass-local");
+    recoveryDb.version(4).stores({
+      tasks: "_id, dateKey, status, order",
+    });
+    await recoveryDb.open();
+    await recoveryDb.table<StoredTask, string>("tasks").put({
+      _id: "task-1",
+      dateKey: "2026-07-07",
+      title: "Recover me",
+      status: "todo",
+      order: 0,
+      createdAt: "2026-07-07T00:00:00.000Z",
+      user: "local",
+    });
+    recoveryDb.close();
+
+    expect(await store.getTaskCount()).toBe(1);
+
+    await store.clearAllTasks();
+
+    expect(await store.getTaskCount()).toBe(0);
+
+    store.close();
+  });
 });

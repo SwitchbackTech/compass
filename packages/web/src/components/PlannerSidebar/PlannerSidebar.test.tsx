@@ -8,6 +8,7 @@ const PlannerSidebar = createPlannerSidebar({
   PlannerMonthPicker: () => <div>Calendar picker</div>,
   PlannerSidebarActions: () => <div>Sidebar actions</div>,
   ShortcutsOverlay: () => null,
+  TasksRemovalNotice: () => null,
 });
 
 const sidebarProps = {

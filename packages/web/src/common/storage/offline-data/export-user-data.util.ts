@@ -117,3 +117,47 @@ export const collectExportData = createCollectExportData({
 export const clearExportedTasks = createClearExportedTasks({
   getOfflineDataStore,
 });
+
+type RunExportMyDataDependencies = {
+  collectExportData: typeof collectExportData;
+  downloadAsJsonFile: typeof downloadAsJsonFile;
+  clearExportedTasks: typeof clearExportedTasks;
+  notifyExport: typeof notifyExport;
+  getExportFilename: typeof getExportFilename;
+};
+
+export function createRunExportMyData({
+  collectExportData,
+  downloadAsJsonFile,
+  clearExportedTasks,
+  notifyExport,
+  getExportFilename,
+}: RunExportMyDataDependencies) {
+  /**
+   * Collect -> download -> notify -> clear, shared by every surface that
+   * triggers "export my data" (command palette, sidebar notice). Callers own
+   * presentation (toasts, inline loading state) - this only resolves/rejects.
+   */
+  return async function runExportMyData(email: string): Promise<void> {
+    const data = await collectExportData();
+    downloadAsJsonFile(data, getExportFilename());
+    // notifyExport is best-effort and already swallows its own failures (see
+    // its own implementation) — it can't fail the export the user is waiting on.
+    notifyExport(email);
+    // Clearing the legacy tasks table is cleanup, not part of the export the
+    // user is waiting on — the download and webhook above have already
+    // succeeded by this point, so a failure here must not surface as an
+    // export failure (which would wrongly invite the user to retry).
+    clearExportedTasks().catch(() => {
+      // Ignored; the table is retried on the user's next export.
+    });
+  };
+}
+
+export const runExportMyData = createRunExportMyData({
+  collectExportData,
+  downloadAsJsonFile,
+  clearExportedTasks,
+  notifyExport,
+  getExportFilename,
+});
