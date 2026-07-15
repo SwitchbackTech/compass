@@ -31,7 +31,7 @@
     "test:a11y": "bunx playwright test e2e/accessibility",
     "test:e2e": "bunx playwright test",
     "test:backend": "./node_modules/.bin/jest --selectProjects backend",
-    "test:core": "bun test packages/core/src --preload packages/scripts/src/testing/core.preload.ts",
+    "test:core": "bun test packages/core/src --preload ./packages/scripts/src/testing/core.preload.ts",
     "test:web": "bun test --cwd packages/web",
     "test:scripts": "./node_modules/.bin/jest scripts",
     "type-check": "bunx typescript@7.0.2 --noEmit && bunx typescript@7.0.2 -p packages/web/tsconfig.app.json --noEmit && bun run type-check:web-tests",
