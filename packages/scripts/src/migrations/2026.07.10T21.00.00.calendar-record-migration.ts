@@ -4,7 +4,7 @@ import {
   transformLegacyCalendar,
 } from "@scripts/common/legacy-calendar.transform";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
-import { type Document } from "mongodb";
+import { type AnyBulkWriteOperation, type Document } from "mongodb";
 import { type MigrationParams, type RunnableMigration } from "umzug";
 import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
@@ -76,6 +76,11 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       let migrated = 0;
       let alreadyMigrated = 0;
 
+      // Writes are batched into bulkWrite calls: per-document round trips
+      // inside one transaction exceed the 60s transaction lifetime on
+      // throttled shared-tier clusters (observed on production Atlas).
+      const replaceOps: AnyBulkWriteOperation<Document>[] = [];
+
       for await (const doc of cursor) {
         scanned += 1;
 
@@ -99,10 +104,22 @@ export default class Migration implements RunnableMigration<MigrationContext> {
           continue;
         }
 
-        await collection.replaceOne({ _id: result.record._id }, result.record, {
-          session,
+        replaceOps.push({
+          replaceOne: {
+            filter: { _id: result.record._id },
+            replacement: result.record as Document,
+          },
         });
         migrated += 1;
+      }
+
+      if (failures.length === 0 && replaceOps.length > 0) {
+        for (let i = 0; i < replaceOps.length; i += MONGO_BATCH_SIZE) {
+          await collection.bulkWrite(
+            replaceOps.slice(i, i + MONGO_BATCH_SIZE),
+            { session, ordered: true },
+          );
+        }
       }
 
       if (failures.length > 0) {
@@ -115,24 +132,35 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       }
 
       // Every user gets exactly one Compass-local calendar (idempotent: skip
-      // users that already have one, e.g. on a rerun).
+      // users that already have one, e.g. on a rerun). One query for the
+      // existing set + one insertMany, for the same shared-tier reason.
       const now = new Date();
+      const existingLocalUserIds = new Set(
+        (
+          await collection
+            .find(
+              { "source.provider": "local" },
+              { projection: { userId: 1 }, session },
+            )
+            .toArray()
+        ).map((c) => String(c["userId"])),
+      );
+
+      const localCalendarsToInsert = [];
       const userCursor = mongoService.user.find(
         {},
         { session, batchSize: MONGO_BATCH_SIZE },
       );
+      for await (const user of userCursor) {
+        if (existingLocalUserIds.has(String(user._id))) continue;
+        localCalendarsToInsert.push(buildLocalCalendarRecord(user._id, now));
+      }
 
       let localCalendarsCreated = 0;
-      for await (const user of userCursor) {
-        const existingLocal = await collection.findOne(
-          { userId: user._id, "source.provider": "local" },
-          { session },
-        );
-        if (existingLocal) continue;
-
-        const localCalendar = buildLocalCalendarRecord(user._id, now);
-        await collection.insertOne(localCalendar, { session });
-        localCalendarsCreated += 1;
+      for (let i = 0; i < localCalendarsToInsert.length; i += MONGO_BATCH_SIZE) {
+        const batch = localCalendarsToInsert.slice(i, i + MONGO_BATCH_SIZE);
+        await collection.insertMany(batch, { session });
+        localCalendarsCreated += batch.length;
       }
 
       await session.commitTransaction();

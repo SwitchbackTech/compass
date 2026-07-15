@@ -57,12 +57,12 @@ gets deployed and what the rollback is measured against.
       from staging `/version.json`; the dry-run rehearsal exposed a backfill crash
       on prod's string-`_id` rows, and the founder approved shipping the one-line
       fix as a new tag — runtime code stays byte-identical to the validated
-      `v1.0.235`; the delta is docs, the migration fix, and its test). Record the
-      final tag here once cut: `v_______`
-- [ ] Backend, mongo, and web images for the final tag exist on Docker Hub
-      (`release-on-main` builds them on merge; confirm before GATE 4).
-- [ ] `Test` and `Release on main` are green for the final tag's exact SHA, and
-      the staging auto-deploy + health check for it pass before the prod window.
+      `v1.0.235`; the delta is docs, the migration fix, and its test). Final tag:
+      **`v1.0.236`** (cut 2026-07-15 from PR #2144 merge `c6967be9b`).
+- [x] Backend, mongo, and web images for `1.0.236` exist on Docker Hub
+      (verified 2026-07-15 via the Docker Hub API).
+- [x] `Test`, `Release on main`, and `CodeQL` are green for `c6967be9b`, and
+      staging auto-updated to `1.0.236` with `/api/health` 200 before the window.
 - [x] **Previous production tag recorded: `v1.0.97`** — read from
       `https://compasscalendar.com/version.json` on 2026-07-15. This is the rollback
       deploy target.
@@ -73,12 +73,14 @@ The `calendar` migration is an **in-place rewrite with no programmatic reverse**
 backup is not a precaution here; it is the rollback mechanism. The `event` path is
 safer (legacy is retained as `event_legacy_v1`), but `calendar` has no such net.
 
-- [ ] Managed-provider **snapshot** of the prod cluster (Atlas `production1`)
-      triggered by the founder and confirmed complete. (Prod uses external managed
+- [x] Managed-provider **snapshot** of the prod Atlas cluster triggered by the
+      founder — confirmed at GATE 1, 2026-07-15. (Prod uses external managed
       MongoDB — the volume-tar procedure in `backup-and-restore.md` is self-host
-      only and is **not** the prod backup.) *In-window step.*
-- [ ] Fresh in-window `mongodump --gzip --db prod_calendar` completed after the
-      backend stops; counts recorded here: `_______`
+      only and is **not** the prod backup.)
+- [x] Fresh in-window `mongodump --gzip --db prod_calendar` completed 2026-07-15
+      15:18 local: **996,660 documents, 0 errors**, all 9 collections;
+      restore-checked into a scratch DB with exact count matches
+      (989,268 events / 941 users / 908 calendars / 915 sync).
 - [x] **Restore-tested**: the 2026-07-15 preflight dump (996,660 docs, all 9
       collections) was restored into a local Mongo 8.0 replica set with 0 failures
       and exact count matches — and then used as the dry-run rehearsal target.
@@ -143,8 +145,12 @@ No production action begins until every box above is ticked and both signatures 
 
 | Role | Name | Date | Go / No-Go |
 | --- | --- | --- | --- |
-| Rollback owner | | | |
-| Founder | | | |
+| Rollback owner | Tyler | 2026-07-15 | Go (GATE 4 confirmation) |
+| Founder | Tyler | 2026-07-15 | Go (GATE 4 confirmation) |
+
+**Executed 2026-07-15.** Deploy run 29455264833 green; see
+[`prod-cutover-execution-2026-07-15.md`](./prod-cutover-execution-2026-07-15.md)
+for the full live log and outcome.
 
 **Retain `event_legacy_v1` after a successful cutover.** It is the rollback source and
 must not be dropped in v1.
