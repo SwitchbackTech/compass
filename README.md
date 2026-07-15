@@ -4,25 +4,21 @@ A simple app that helps you manage your time.
 
 ## Why Try Compass?
 
-It'll help you get things done:
+### You'll get more done:
 
-- **Plan faster**: Organize your Month → Week → Day in minutes.
-- **Keyboard-first**: Shortcuts and command palette for lightning-fast planning.
-- **No bloat**: A clean UI that does a few things well.
+- The **first-class shortcuts** will make it a breeze to stay on top of your schedule.
+- The **minimal UI** will help you focus on what matters: your events.
+- The **Google Calendar two-way sync** will ensure you don't miss anything.
 
-It'll be around for the long-term:
+### It'll be around for the long-term:
 
-- **Bootstrapped**: VC-backed teams think in terms of months and funding rounds. We think in terms of decades and profit. We don't need to make $1B in 5 years or impress investors. As long as we keep users like you happy, we'll be fine.
-- **Vision**: We have [an ambitious vision](https://alpaca-ty.notion.site/about-us) and a practical roadmap that'll keep us busy for a long time.
+- **We're bootstrapped.** While VC-backed teams think in terms of months and funding rounds, we think in terms of decades and profit. We don't need to make $1B in 5 years or sell your data to an acquirer. As long as we keep users like you happy, we'll be fine.
+- **We have a plan**: Our long-term [vision](https://alpaca-ty.notion.site/about-us) will keep us busy for generations. Our practical roadmap and focus on profitability will keep our feet on the ground along the way.
+
+### It'll help others
+We donate 10% of revenue to support mental health programs in our home city of Bozeman, Montana. Your support helps us help others in need.
 
 ## Features
-
-### The Unique Stuff
-
-- **Day Mode**: See your tasks and events side-by-side
-- **One-Click Adjustments**: Move events forwards or back effortlessly
-
-### The Essentials
 
 - Recurring events
 - Command palette
@@ -31,11 +27,11 @@ It'll be around for the long-term:
 - Google Calendar sync
 - User sessions
 
-### The Limitations
+## The Limitations
 
 Things we don't support (yet):
 
-- Subcalendar sync (only primary calendar)
+- Outlook or iCal
 - Sharing, reminders, locations
 - Mobile app
 
