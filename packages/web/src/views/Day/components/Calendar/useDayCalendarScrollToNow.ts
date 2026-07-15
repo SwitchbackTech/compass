@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useEffect, useRef } from "react";
+import { type RefObject, useCallback, useEffect } from "react";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 import { CALENDAR_TIMED_VISIBLE_HOURS } from "@web/layout/calendar-grid/calendarGrid.constants";
@@ -17,18 +17,15 @@ export const useDayCalendarScrollToNow = (
       top: getCurrentMinute() * minuteHeight - 150,
     });
   }, [mainGridRef]);
-  const scrollToNowRef = useRef(scrollToNow);
 
   useEffect(() => {
     if (mainGridRef.current) scrollToNow();
   }, [mainGridRef, scrollToNow]);
 
-  useEffect(() => {
-    scrollToNowRef.current = scrollToNow;
-  }, [scrollToNow]);
-
-  useEffect(() => {
-    const handleScrollToNow = () => scrollToNowRef.current();
-    return onViewCommand("SCROLL_TO_NOW_LINE", handleScrollToNow);
-  }, []);
+  // scrollToNow is stable (depends only on the stable mainGridRef), and
+  // onViewCommand returns its own unsubscribe, so subscribe directly.
+  useEffect(
+    () => onViewCommand("SCROLL_TO_NOW_LINE", scrollToNow),
+    [scrollToNow],
+  );
 };

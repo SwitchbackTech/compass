@@ -1,7 +1,7 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { act, createRef, type SetStateAction, useState } from "react";
+import { act, type SetStateAction, useState } from "react";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { renderWithStore } from "@web/__tests__/render-with-store";
@@ -585,25 +585,5 @@ describe("EventForm", () => {
     await user.keyboard("{Enter}");
 
     expect(onSubmit).not.toHaveBeenCalled();
-  });
-
-  it("exposes the title input ref to the parent", () => {
-    const titleInputRef = createRef<HTMLInputElement>();
-
-    renderWithStore(
-      <EventForm
-        draft={createEditDraft()}
-        isDraft={true}
-        isExistingEvent={false}
-        onClose={mock()}
-        onDelete={mock()}
-        onDuplicate={mock()}
-        onSubmit={mock()}
-        setDraft={mock()}
-        titleInputRef={titleInputRef}
-      />,
-    );
-
-    expect(titleInputRef.current).toBe(screen.getByPlaceholderText("Title"));
   });
 });

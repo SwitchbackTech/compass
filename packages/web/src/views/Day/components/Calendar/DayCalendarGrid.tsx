@@ -3,7 +3,6 @@ import {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
 } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Calendar } from "@core/types/calendar.contracts";
@@ -193,11 +192,6 @@ export function DayCalendarGrid() {
       openDraftEventForm,
     );
   }, [dateInView, draft, openDraftEventForm]);
-  const createAllDayDraftRef = useRef(createAllDayDraftFromShortcut);
-
-  useEffect(() => {
-    createAllDayDraftRef.current = createAllDayDraftFromShortcut;
-  }, [createAllDayDraftFromShortcut]);
 
   // "c" shortcut: create a timed draft on the day in view, defaulting to the
   // next quarter-hour (or the current time when viewing today), mirroring the
@@ -214,34 +208,18 @@ export function DayCalendarGrid() {
       openDraftEventForm,
     );
   }, [dateInView, draft, openDraftEventForm]);
-  const createTimedDraftRef = useRef(createTimedDraftFromShortcut);
 
-  useEffect(() => {
-    createTimedDraftRef.current = createTimedDraftFromShortcut;
-  }, [createTimedDraftFromShortcut]);
-
-  useEffect(() => {
-    const handleCreateAllDayDraft = () => {
-      createAllDayDraftRef.current();
-    };
-    const handleCreateTimedDraft = () => {
-      createTimedDraftRef.current();
-    };
-
-    const unsubscribeCreateAllDayDraft = onViewCommand(
-      "CREATE_ALLDAY_DRAFT",
-      handleCreateAllDayDraft,
-    );
-    const unsubscribeCreateTimedDraft = onViewCommand(
-      "CREATE_TIMED_DRAFT",
-      handleCreateTimedDraft,
-    );
-
-    return () => {
-      unsubscribeCreateAllDayDraft();
-      unsubscribeCreateTimedDraft();
-    };
-  }, []);
+  // onViewCommand returns its own unsubscribe and emitViewCommand reads the
+  // listener set at emit time, so re-subscribing when the handler identity
+  // changes is safe — no latest-ref mirror needed.
+  useEffect(
+    () => onViewCommand("CREATE_ALLDAY_DRAFT", createAllDayDraftFromShortcut),
+    [createAllDayDraftFromShortcut],
+  );
+  useEffect(
+    () => onViewCommand("CREATE_TIMED_DRAFT", createTimedDraftFromShortcut),
+    [createTimedDraftFromShortcut],
+  );
   const onAllDayMouseDown = useAllDayDraftCreation({
     getStartDate: getAllDayDraftStartDate,
     onCreateDraft: openDraftEventForm,

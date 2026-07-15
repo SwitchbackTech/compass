@@ -130,7 +130,7 @@ const handleEventFormDelete = ({
   onDelete();
 };
 
-export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
+export const EventForm: React.FC<GridEventFormProps> = memo(
   ({
     draft,
     onClose: _onClose,
@@ -138,7 +138,6 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
     onSubmit,
     onDuplicate,
     setDraft,
-    titleInputRef,
     isDraft,
     isExistingEvent,
     ...props
@@ -187,7 +186,6 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
       () => createDateTimeState(eventStartDate, eventEndDate),
     );
 
-    const descriptionRef = useRef<HTMLTextAreaElement>(null);
     const currentDateTimeState = useMemo(
       () => resolveDateTimeState(dateTimeState, eventStartDate, eventEndDate),
       [dateTimeState, eventEndDate, eventStartDate],
@@ -539,7 +537,6 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
                 onKeyDown={handleTitleKeyDown}
                 placeholder="Title"
                 name="Event Title"
-                ref={titleInputRef}
                 underlineColor={EVENT_COLOR}
                 value={displayTitle}
                 withUnderline
@@ -589,7 +586,6 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
                 onChange={onChangeEventTextField("description")}
                 onKeyDown={handleIgnoredKeys}
                 placeholder="Description"
-                ref={descriptionRef}
                 value={event.description || ""}
                 className="relative max-h-45 w-full overflow-y-auto border-hidden bg-transparent"
               />
