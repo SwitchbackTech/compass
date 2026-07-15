@@ -157,7 +157,11 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       }
 
       let localCalendarsCreated = 0;
-      for (let i = 0; i < localCalendarsToInsert.length; i += MONGO_BATCH_SIZE) {
+      for (
+        let i = 0;
+        i < localCalendarsToInsert.length;
+        i += MONGO_BATCH_SIZE
+      ) {
         const batch = localCalendarsToInsert.slice(i, i + MONGO_BATCH_SIZE);
         await collection.insertMany(batch, { session });
         localCalendarsCreated += batch.length;
