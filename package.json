@@ -34,8 +34,8 @@
     "test:core": "bun test packages/core/src --preload packages/scripts/src/testing/core.preload.ts",
     "test:web": "bun test --cwd packages/web",
     "test:scripts": "./node_modules/.bin/jest scripts",
-    "type-check": "bunx typescript@6.0.3 --noEmit && bunx typescript@6.0.3 -p packages/web/tsconfig.app.json --noEmit && bun run type-check:web-tests",
-    "type-check:web-tests": "bunx typescript@6.0.3 -p packages/web/tsconfig.test.json --noEmit",
+    "type-check": "bunx typescript@7.0.2 --noEmit && bunx typescript@7.0.2 -p packages/web/tsconfig.app.json --noEmit && bun run type-check:web-tests",
+    "type-check:web-tests": "bunx typescript@7.0.2 -p packages/web/tsconfig.test.json --noEmit",
     "verify": "bun packages/scripts/src/testing/verify.ts",
     "build:backend": "bun packages/scripts/src/commands/build.backend.ts",
     "build:web": "cd packages/web && bun run build.ts"
@@ -58,16 +58,16 @@
     "@types/node-fetch": "^2.6.13",
     "axe-core": "^4.12.1",
     "jest": "^29.0.3",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
   "resolutions": {
     "glob": "^13.0.6",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "onetime": "^5.1.2"
   },
   "overrides": {
     "glob": "^13.0.6",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "onetime": "^5.1.2"
   },
   "workspaces": [

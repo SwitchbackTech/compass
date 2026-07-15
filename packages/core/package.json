@@ -7,7 +7,7 @@
   "main": "",
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   },
   "dependencies": {
     "@opentelemetry/api-logs": "^0.220.0",
