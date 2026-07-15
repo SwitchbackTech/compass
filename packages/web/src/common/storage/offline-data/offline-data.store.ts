@@ -15,9 +15,9 @@ export interface MigrationRecord {
  *
  * The Tasks feature was removed (2026-07), but existing rows are retained in
  * IndexedDB so users can recover them on their own. This minimal row type
- * exists only so the Dexie schema-upgrade path (see legacy-primary-key.
- * migration.ts) can read and re-insert those rows without data loss. Nothing
- * in the app reads or writes tasks anymore.
+ * exists so the Dexie schema-upgrade path (see legacy-primary-key.
+ * migration.ts) can read and re-insert those rows without data loss, and so
+ * the "Export my data" command can surface them before the table is cleared.
  */
 export interface StoredTask {
   _id: string;
@@ -87,6 +87,18 @@ export interface OfflineDataStore {
    * Clear all events from storage.
    */
   clearAllEvents(): Promise<void>;
+
+  // ─── Task Recovery ─────────────────────────────────────────────────────────
+
+  /**
+   * Get all rows from the retained (read-only) legacy tasks table.
+   */
+  getAllTasks(): Promise<StoredTask[]>;
+
+  /**
+   * Clear all rows from the retained legacy tasks table.
+   */
+  clearAllTasks(): Promise<void>;
 
   // ─── Migration Tracking ────────────────────────────────────────────────────
 
