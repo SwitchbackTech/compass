@@ -56,13 +56,14 @@ describe("CalendarController availability", () => {
     await calendarController.availability(req, res);
 
     expect(getAvailabilitySpy).toHaveBeenCalledWith(
-      expect.any(ObjectId),
+      expect.anything(),
       expect.objectContaining({
         calendarIds: ["507f1f77bcf86cd799439012", "507f1f77bcf86cd799439013"],
         start: "2024-01-15T00:00:00.000Z",
         end: "2024-01-16T00:00:00.000Z",
       }),
     );
+    expect(String(getAvailabilitySpy.mock.calls[0]?.[0])).toBe(userId);
     expect(res.promise).toHaveBeenCalledWith(availabilityResponse);
     // Packet 09 step 2: pin the response-boundary shape of GET
     // /api/calendars/availability against the shared core schema.
@@ -138,7 +139,8 @@ describe("CalendarController list", () => {
 
     await calendarController.list(req, res);
 
-    expect(listSpy).toHaveBeenCalledWith(expect.any(ObjectId));
+    expect(listSpy).toHaveBeenCalledWith(expect.anything());
+    expect(String(listSpy.mock.calls[0]?.[0])).toBe(userId);
     expect(promise).toHaveBeenCalledTimes(1);
 
     const sentBody = promise.mock.calls[0]?.[0];

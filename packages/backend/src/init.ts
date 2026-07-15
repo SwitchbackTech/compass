@@ -22,5 +22,8 @@ if (isBuildRuntime) {
 }
 
 import { Logger } from "@core/logger/winston.logger";
+import { startPostHogLogs } from "./logging/posthog-logs";
+
+startPostHogLogs();
 
 export const logger = Logger("app:root");
