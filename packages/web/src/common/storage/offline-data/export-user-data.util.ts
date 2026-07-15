@@ -7,7 +7,7 @@ import {
 } from "@web/common/storage/offline-data/offline-data.store.registry";
 
 const SOMEDAY_EVENTS_NOTICE =
-  "Someday events aren't included in this file. If you had any, they'll be emailed to you separately by tyler@switchback.tech.";
+  "Someday events aren't included in this file. If you signed up before July 15, 2026 and want your Someday events, email tyler@switchback.tech. If you signed up after that date, you never had Someday events, so no action is needed.";
 
 interface CompassDataExport {
   exportedAt: string;
@@ -89,26 +89,6 @@ export function getExportFilename(date = new Date()): string {
   return `compass-export-${dateKey}.json`;
 }
 
-// Public by necessity: this fires from the browser. Rotate the URL in the
-// Discord channel settings if it's ever spammed or leaked in ways that matter.
-const EXPORT_NOTIFY_WEBHOOK_URL =
-  "https://discord.com/api/webhooks/1526960288878952685/5OP3VrtAAdllsUlmPZ1N9f4tox6xTq5PWSmCH8aoUcd0oJDcdyj52XisVE_1blxH0Qb-";
-
-/**
- * Best-effort notification so a someday-events export can be handled by
- * hand; failure here must never block or fail the data export itself.
- */
-export function notifyExport(email: string): void {
-  fetch(EXPORT_NOTIFY_WEBHOOK_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content: `Compass data export: ${email}` }),
-  }).catch(() => {
-    // Best-effort notification only; the export itself must not fail if
-    // Discord is unreachable.
-  });
-}
-
 export const collectExportData = createCollectExportData({
   ensureOfflineDataStoreReady,
   getOfflineDataStore,
@@ -122,7 +102,6 @@ type RunExportMyDataDependencies = {
   collectExportData: typeof collectExportData;
   downloadAsJsonFile: typeof downloadAsJsonFile;
   clearExportedTasks: typeof clearExportedTasks;
-  notifyExport: typeof notifyExport;
   getExportFilename: typeof getExportFilename;
 };
 
@@ -130,24 +109,20 @@ export function createRunExportMyData({
   collectExportData,
   downloadAsJsonFile,
   clearExportedTasks,
-  notifyExport,
   getExportFilename,
 }: RunExportMyDataDependencies) {
   /**
-   * Collect -> download -> notify -> clear, shared by every surface that
-   * triggers "export my data" (command palette, sidebar notice). Callers own
+   * Collect -> download -> clear, shared by every surface that triggers
+   * "export my data" (command palette, sidebar notice). Callers own
    * presentation (toasts, inline loading state) - this only resolves/rejects.
    */
-  return async function runExportMyData(email: string): Promise<void> {
+  return async function runExportMyData(): Promise<void> {
     const data = await collectExportData();
     downloadAsJsonFile(data, getExportFilename());
-    // notifyExport is best-effort and already swallows its own failures (see
-    // its own implementation) — it can't fail the export the user is waiting on.
-    notifyExport(email);
     // Clearing the legacy tasks table is cleanup, not part of the export the
-    // user is waiting on — the download and webhook above have already
-    // succeeded by this point, so a failure here must not surface as an
-    // export failure (which would wrongly invite the user to retry).
+    // user is waiting on — the download above has already succeeded by this
+    // point, so a failure here must not surface as an export failure (which
+    // would wrongly invite the user to retry).
     clearExportedTasks().catch(() => {
       // Ignored; the table is retried on the user's next export.
     });
@@ -158,6 +133,5 @@ export const runExportMyData = createRunExportMyData({
   collectExportData,
   downloadAsJsonFile,
   clearExportedTasks,
-  notifyExport,
   getExportFilename,
 });

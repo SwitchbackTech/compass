@@ -3,18 +3,13 @@ import { act } from "react";
 import { createTasksRemovalNotice } from "./TasksRemovalNotice";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Matches useExportDataCmdItems.test.ts's convention: useSession/useUser are
-// auth hooks with no injection seam of their own, so they're mock.module'd;
-// everything else this component depends on is a plain function, injected
-// via createTasksRemovalNotice below — no mock.module, no cache-busting.
+// Matches useExportDataCmdItems.test.ts's convention: useSession is an auth
+// hook with no injection seam of its own, so it's mock.module'd; everything
+// else this component depends on is a plain function, injected via
+// createTasksRemovalNotice below — no mock.module, no cache-busting.
 const mockUseSession = mock();
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
-}));
-
-const mockUseUser = mock();
-mock.module("@web/auth/compass/user/hooks/useUser", () => ({
-  useUser: mockUseUser,
 }));
 
 describe("TasksRemovalNotice", () => {
@@ -33,14 +28,12 @@ describe("TasksRemovalNotice", () => {
 
   beforeEach(() => {
     mockUseSession.mockClear();
-    mockUseUser.mockClear();
     mockUseTasksRemovalNotice.mockClear();
     mockRunExportMyData.mockClear();
     mockShowStatusToast.mockClear();
     mockShowErrorToast.mockClear();
 
     mockUseSession.mockReturnValue({ authenticated: true });
-    mockUseUser.mockReturnValue({ email: "user@example.com" });
     mockUseTasksRemovalNotice.mockReturnValue({
       visible: true,
       dismiss: mock(),
@@ -60,16 +53,7 @@ describe("TasksRemovalNotice", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("renders nothing when visible but there's no email", () => {
-    mockUseUser.mockReturnValue({ email: undefined });
-    const TasksRemovalNotice = buildComponent();
-
-    const { container } = render(<TasksRemovalNotice />);
-
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it("renders nothing when visible with an email but not authenticated (e.g. a stale cached email right after sign-out)", () => {
+  it("renders nothing when visible but not authenticated", () => {
     mockUseSession.mockReturnValue({ authenticated: false });
     const TasksRemovalNotice = buildComponent();
 
@@ -122,7 +106,7 @@ describe("TasksRemovalNotice", () => {
       );
     });
 
-    expect(mockRunExportMyData).toHaveBeenCalledWith("user@example.com");
+    expect(mockRunExportMyData).toHaveBeenCalledTimes(1);
     expect(mockDismiss).toHaveBeenCalledTimes(1);
     expect(mockShowErrorToast).not.toHaveBeenCalled();
   });
