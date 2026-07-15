@@ -168,11 +168,17 @@ export const verifyEventMigration = async (
   const destinationIds = new Set<string>();
   const calendarIdCache = new Map<string, boolean>();
   const seriesIds: string[] = [];
+  const providerIdCounts = new Map<string, number>();
 
   for await (const record of destinationCursor) {
     destinationCategoryCounts[record.schedule.kind] += 1;
     destinationIds.add(record._id.toHexString());
     destinationHash.add(projectionOf(record));
+
+    if (record.externalReference?.eventId) {
+      const key = `${record.calendarId.toHexString()}|${record.externalReference.eventId}`;
+      providerIdCounts.set(key, (providerIdCounts.get(key) ?? 0) + 1);
+    }
 
     if (record.recurrence.kind === "series") seriesCount += 1;
     if (record.recurrence.kind === "occurrence") {
@@ -205,30 +211,17 @@ export const verifyEventMigration = async (
 
   // Duplicate provider ids on the destination: the unique partial index
   // should make this structurally impossible, but assert it directly so a
-  // regression in the index definition itself is caught here too.
-  const duplicateProviderIds = await destinationCollection
-    .aggregate<{
-      _id: { calendarId: ObjectId; eventId: string };
-      count: number;
-    }>([
-      { $match: { "externalReference.eventId": { $exists: true, $ne: null } } },
-      {
-        $group: {
-          _id: {
-            calendarId: "$calendarId",
-            eventId: "$externalReference.eventId",
-          },
-          count: { $sum: 1 },
-        },
-      },
-      { $match: { count: { $gt: 1 } } },
-    ])
-    .toArray();
-
-  for (const dup of duplicateProviderIds) {
-    mismatches.push(
-      `duplicate externalReference.eventId ${dup._id.eventId} on calendar ${dup._id.calendarId.toHexString()}`,
-    );
+  // regression in the index definition itself is caught here too. Counted
+  // client-side from the streaming scan above -- a server-side $group over
+  // the full collection exceeds the memory limit on throttled shared-tier
+  // clusters, which also forbid disk spilling (observed on production Atlas).
+  for (const [key, count] of providerIdCounts) {
+    if (count > 1) {
+      const [calendarId, eventId] = key.split("|");
+      mismatches.push(
+        `duplicate externalReference.eventId ${eventId} on calendar ${calendarId}`,
+      );
+    }
   }
 
   // Fail closed: every legacy record must be accounted for as migrated,

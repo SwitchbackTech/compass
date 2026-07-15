@@ -283,3 +283,51 @@ Abort to rollback, without debate, if any of these occur:
 | 14:53 | Run 5 (after cascade delete) | **failed=0; verification PASSED** (817,639 destination rows; categories exact) |
 | 14:55 | Rename + `migrate up` (3 repairs) + strict-validator checks | All green in 8 s; 12 ledger records; validate full valid |
 | 15:0x | Founder approvals | 168k deletion approved; fix ships as new tag via PR; token reset for 165 affected users |
+| 15:1x | PR #2144 merged (`c6967be9b`); `v1.0.236` cut; staging auto-updated | CI green; images verified; staging `/api/health` 200 on `1.0.236` |
+| 15:17 | **GATE 1 confirmed by founder** (Atlas snapshot triggered) | Window open |
+| 15:18 | Formal in-window `mongodump` + restore-check | 996,660 docs, 0 errors; counts exact; prod write-quiet (event count unchanged since preflight dump) |
+| 15:19 | **GATE 2 confirmed**; backend stopped; 0 active write ops | Downtime start |
+| 15:20 | Ledger-mark 2025.10.18 pair; pre-clean | 167,878 + 137 deleted; 821,253 remaining — exact match to rehearsal |
+| 15:22 | Calendar migration attempt 1 (from admin machine) | **Transaction aborted at ~60 s** — Atlas shared-tier transaction lifetime limit; rolled back atomically (documented sharp edge: validator left relaxed, repaired by the rerun) |
+| 15:28 | Attempt 2 from the prod VPS (bun 1.2.18 + tag checkout) | Same abort — shared-tier op throttling, not client RTT |
+| 15:30 | Founder approved batch-patch path | Migration rewritten to bulkWrite/insertMany batches (~5 round trips instead of ~2,800); 150 tests + full local prod-copy validation green |
+| 15:35 | Prod run 3 (patched, from VPS) | **Calendar migration committed**: scanned=908 migrated=908 localCalendarsCreated=941. Backfill scan `failed=0`, then the **verifier crashed**: `$group` exceeds shared-tier memory; tier forbids disk spilling |
+| 15:50 | Verifier patched (duplicate check moved into the existing client-side streaming scan); tests + full local revalidation green | Both patches to ship as PR after the window |
+| 16:13 | Prod run 4: backfill + patched verifier | **Verification PASSED on prod**: legacy 821,253 → destination 817,639; excludedSomeday 3,614; categories exact; series 9,898 / occurrences 632,035 |
+| 16:15 | Pre-rename state checks + sync-token reset | `event_new` strict, 0 someday, final indexes; `calendar` strict, 1,849 userId-shaped; ledger 9; tokens nulled for 153 sync docs (165 affected users; 12 have no sync record) |
+| 16:14 | **GATE 3 confirmed**; collections renamed | active `event` = 817,639; `event_legacy_v1` = 821,253 retained |
+| 16:23 | Post-cutover repairs (3 migrations, from VPS) | All green in 7m44s: 0 someday leaks, validator updated; seriesScanned=9898, 0 dupes, 0 backfills; `priority` collection dropped |
+| 16:24 | Strict-validator checks on prod | validation `strict`; `priority` absent; 0 priority fields; 0 someday; `validate({full:true}).valid=true`; **12 unique ledger records** — identical to staging |
+| 16:26 | **GATE 4 confirmed (founder sign-off)**; `Deploy production` dispatched with `v1.0.236` | Run 29455264833 |
+| 16:45 | Deploy + automated health check **green**; backend restarted | `/version.json`=1.0.236; `/api/health` 200 — **downtime ended (~86 min total)** |
+| 16:47 | Backend log scan | 0 occurrences of code 121 / validation failure / ERRORED / fatal / unhandled |
+| 16:49 | `maintain-all` called (200) | `resynced:3, pruned:2` — server-side full re-imports ran for the currently-connected affected users; the rest repair automatically at next sign-in (`RECONNECT_REPAIR`) |
+| 16:50 | Post-resync check | Active `event` grew 817,639 → **888,524** (+70,885 re-imported, correctly shaped, zero validation errors); logs clean |
+
+## Outcome
+
+**Cutover complete 2026-07-15 ~16:50 local.** Production runs `v1.0.236` on the
+calendar-owned event model. Total backend downtime ≈ 86 minutes (planned 20–30;
+overrun entirely due to two shared-tier surprises below). No abort line was
+crossed; every deviation was founder-approved in-window.
+
+**Deviations from plan, both patched + validated on a full prod copy before
+rerunning, shipping as a follow-up PR:**
+1. Calendar migration rewritten to batched writes — the shared tier's op
+   throttling pushed its ~2,800 sequential in-transaction round trips past
+   Mongo's 60 s transaction lifetime (aborted twice, identically, from two
+   client locations; rolled back atomically each time).
+2. Verifier's duplicate-provider-id check moved from a server-side `$group`
+   (exceeds shared-tier memory; tier forbids disk spilling) into the existing
+   client-side streaming scan.
+
+**Follow-ups:**
+- [ ] PR the two migration patches from the VPS checkout back to `main`.
+- [ ] Watch logs/Discord over the next hours; spot-check affected users as they
+  sign in (each should trigger a full Google re-import).
+- [ ] Founder signed-in smoke on prod (create/edit/delete timed + all-day,
+  calendar visibility toggles, Google-side change reconciles).
+- [ ] Keep `event_legacy_v1`, both dumps, and the Atlas snapshot until a future
+  release explicitly retires them.
+- [ ] Remove the VPS `~/cutover-checkout` and local rehearsal container once the
+  follow-up PR merges (details in operator notes).
