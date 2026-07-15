@@ -25,6 +25,8 @@ export function createMockOfflineDataStore(): MockedOfflineDataStore {
     putEvents: mock().mockResolvedValue(undefined),
     deleteEvent: mock().mockResolvedValue(undefined),
     clearAllEvents: mock().mockResolvedValue(undefined),
+    getAllTasks: mock().mockResolvedValue([]),
+    clearAllTasks: mock().mockResolvedValue(undefined),
     getMigrationRecords: mock().mockResolvedValue([]),
     setMigrationRecord: mock().mockResolvedValue(undefined),
   };

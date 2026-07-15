@@ -24,7 +24,7 @@ class CompassDB extends Dexie {
   events!: Table<LocalEventRecord, string>;
   // The Tasks feature was removed (2026-07). This table is intentionally kept
   // in the version chain so existing task rows are preserved (never dropped)
-  // and users can recover their data. Nothing reads or writes it anymore.
+  // and users can recover their data via the "Export my data" command.
   tasks!: Table<StoredTask, string>;
   _migrations!: Table<MigrationRecord, string>;
 
@@ -212,6 +212,16 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
 
   async clearAllEvents(): Promise<void> {
     await this.db.events.clear();
+  }
+
+  // ─── Task Recovery ─────────────────────────────────────────────────────────
+
+  async getAllTasks(): Promise<StoredTask[]> {
+    return this.db.tasks.toArray();
+  }
+
+  async clearAllTasks(): Promise<void> {
+    await this.db.tasks.clear();
   }
 
   // ─── Migration Tracking ────────────────────────────────────────────────────

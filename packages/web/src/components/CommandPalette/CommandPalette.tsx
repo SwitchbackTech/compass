@@ -18,6 +18,7 @@ import { getNavigationCommandItems } from "@web/common/constants/navigation.cmd.
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
 import { useCalendarSyncCmdItems } from "@web/components/CommandPalette/hooks/useCalendarSyncCmdItems";
+import { useExportDataCmdItems } from "@web/components/CommandPalette/hooks/useExportDataCmdItems";
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
 import { useSubscribeCmdItems } from "@web/components/CommandPalette/hooks/useSubscribeCmdItems";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
@@ -83,6 +84,7 @@ export const CommandPalette = ({
   const navigate = useNavigate();
   const { items: calendarCmdItems, syncStatus } = useCalendarSyncCmdItems();
   const subscribeCmdItems = useSubscribeCmdItems();
+  const exportDataCmdItems = useExportDataCmdItems();
   const authCmdItems = useAuthCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
   const { undo, canUndo } = useUndoRedo(mutationDependencies);
@@ -143,6 +145,7 @@ export const CommandPalette = ({
       items: [
         ...calendarCmdItems,
         ...subscribeCmdItems,
+        ...exportDataCmdItems,
         ...authCmdItems,
         ...logoutCmdItems,
       ],

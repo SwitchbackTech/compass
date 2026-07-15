@@ -68,6 +68,17 @@ mock.module(
   }),
 );
 
+// useExportDataCmdItems calls useUser(), which throws outside a
+// UserProvider — this render tree doesn't have one (see renderWithStore).
+// Mock useUser itself (not the hook module) so the real hook runs: it
+// naturally contributes no item since email is undefined here, matching
+// the "don't stub a hook with its own dedicated test file" rule above —
+// stubbing the hook module directly broke useExportDataCmdItems.test.ts's
+// cache-busted import of that same specifier when both ran in one process.
+mock.module("@web/auth/compass/user/hooks/useUser", () => ({
+  useUser: () => ({}),
+}));
+
 const { CommandPalette, filterSections } = await import("./CommandPalette");
 
 const onGoToToday = mock();
