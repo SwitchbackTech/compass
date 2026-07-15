@@ -29,6 +29,22 @@ const logger = Logger("app:google-calendarlist.service");
 type ReconcileResult = { outcome: "RECONCILED" | "IGNORED" };
 
 /**
+ * The set of Google calendar ids whose event import has completed at least
+ * one full pass, i.e. holds a nextSyncToken. An import left mid-checkpoint
+ * carries only a nextPageToken, so it is deliberately excluded here and will
+ * resume from that checkpoint rather than being treated as already imported.
+ */
+function importedGCalIds(
+  sync: Awaited<ReturnType<typeof getSync>>,
+): Set<string> {
+  return new Set(
+    (sync?.google?.events ?? [])
+      .filter((entry) => entry.nextSyncToken)
+      .map((entry) => entry.gCalendarId),
+  );
+}
+
+/**
  * Per-user serialization: concurrent webhook deliveries for the same user
  * must not race each other (e.g. double-importing a newly-added calendar or
  * double-starting a watch). A call for a user whose reconcile is already in
@@ -123,14 +139,7 @@ async function runReconcile(
   // re-checking after each write) keeps every entry in this delta judged
   // against the same state, and correctly reflects an earlier run's
   // completed import when this call is itself a duplicate/retried delivery.
-  // Only entries holding a nextSyncToken count: a mid-failed import leaves
-  // an entry with just a nextPageToken checkpoint, and importAllEvents must
-  // run again to resume it from that checkpoint.
-  const alreadyImportedGCalIds = new Set(
-    (sync?.google?.events ?? [])
-      .filter((entry) => entry.nextSyncToken)
-      .map((entry) => entry.gCalendarId),
-  );
+  const alreadyImportedGCalIds = importedGCalIds(sync);
 
   const affectedHexIds = new Set<string>();
   const eventsChangedHexIds = new Set<string>();
@@ -273,15 +282,8 @@ async function reconcileFromFullList(
     upserts.map((entry) => entry.id).filter((id): id is string => !!id),
   );
 
-  // Same rationale as runReconcile's alreadyImportedGCalIds: only entries
-  // holding a nextSyncToken count as "already imported", so an import left
-  // mid-checkpoint by an earlier run resumes instead of being skipped.
   const sync = await getSync({ userId });
-  const alreadyImportedGCalIds = new Set(
-    (sync?.google?.events ?? [])
-      .filter((entry) => entry.nextSyncToken)
-      .map((entry) => entry.gCalendarId),
-  );
+  const alreadyImportedGCalIds = importedGCalIds(sync);
 
   const userObjectId = new ObjectId(userId);
   const staleRows = await mongoService.calendar
@@ -343,6 +345,23 @@ async function reconcileFromFullList(
 }
 
 /**
+ * Tears down the event machinery a Google calendar accumulates while it is
+ * event-capable: its watch, its events sync entry, and its imported events.
+ * Shared by a full removal (the calendar row is archived) and an access
+ * downgrade to freeBusyReader (the row stays, but stops carrying events).
+ */
+async function tearDownEventMachinery(
+  userId: string,
+  gCalendarId: string,
+  calendarObjectId: ObjectId,
+  context: GoogleRequestContext,
+): Promise<void> {
+  await stopWatchIfPresent(userId, gCalendarId, context);
+  await removeSyncEntry(Resource_Sync.EVENTS, userId, gCalendarId);
+  await eventRepository.deleteByCalendarIds([calendarObjectId]);
+}
+
+/**
  * Archives one Google calendar row and tears down everything that depends
  * on it being live: its watch, its events sync entry, and its events.
  * Shared by the delta path (an entry flagged deleted/hidden) and the
@@ -358,9 +377,7 @@ async function teardownRemovedCalendar(
   const row = await calendarService.archiveGoogleCalendar(userId, gCalendarId);
   if (!row) return null;
 
-  await stopWatchIfPresent(userId, gCalendarId, context);
-  await removeSyncEntry(Resource_Sync.EVENTS, userId, gCalendarId);
-  await eventRepository.deleteByCalendarIds([row._id]);
+  await tearDownEventMachinery(userId, gCalendarId, row._id, context);
 
   return { hexId: row._id.toHexString(), isVisible: row.isVisible };
 }
@@ -396,9 +413,7 @@ async function applyUpsertedRecords(
     if (record.access === "freeBusyReader") {
       // A7: freeBusyReader calendars never manufacture event records - tear
       // down anything left behind by a prior, more-permissive role.
-      await stopWatchIfPresent(userId, gCalendarId, context);
-      await removeSyncEntry(Resource_Sync.EVENTS, userId, gCalendarId);
-      await eventRepository.deleteByCalendarIds([record._id]);
+      await tearDownEventMachinery(userId, gCalendarId, record._id, context);
       continue;
     }
 

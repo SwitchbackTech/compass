@@ -54,6 +54,26 @@ const addStats = (
   totalInvalid: stats.totalInvalid + delta.invalid,
 });
 
+type GoogleCalendarRecord = CalendarRecord & {
+  source: Extract<CalendarRecord["source"], { provider: "google" }>;
+};
+
+/**
+ * Every import path operates on exactly one Google calendar, so each entry
+ * point narrows its CalendarRecord to the Google-sourced variant up front.
+ */
+function assertGoogleCalendar(
+  calendar: CalendarRecord,
+  method: string,
+): asserts calendar is GoogleCalendarRecord {
+  if (calendar.source.provider !== "google") {
+    throw error(
+      GcalError.Unsure,
+      `${method} requires a Google-sourced calendar`,
+    );
+  }
+}
+
 /**
  * Imports Google Calendar events onto their owning CalendarRecord (B8).
  * Callers resolve a Google CalendarRecord (any owner/writer/reader calendar,
@@ -84,12 +104,7 @@ export class SyncImport {
     calendar: CalendarRecord,
     perPage = DEFAULT_GCAL_EVENTS_PER_PAGE,
   ): Promise<ImportStats & { nextSyncToken: string }> {
-    if (calendar.source.provider !== "google") {
-      throw error(
-        GcalError.Unsure,
-        "importAllEvents requires a Google-sourced calendar",
-      );
-    }
+    assertGoogleCalendar(calendar, "importAllEvents");
 
     logger.info(
       `Starting importAllEvents for user ${userId}, calendar ${calendar.source.calendarId}.`,
@@ -171,12 +186,7 @@ export class SyncImport {
     calendar: CalendarRecord,
     perPage = DEFAULT_GCAL_EVENTS_PER_PAGE,
   ): Promise<ImportStats> {
-    if (calendar.source.provider !== "google") {
-      throw error(
-        GcalError.Unsure,
-        "importLatestEvents requires a Google-sourced calendar",
-      );
-    }
+    assertGoogleCalendar(calendar, "importLatestEvents");
 
     const gCalendarId = calendar.source.calendarId;
     const sync = await getSync({ userId });
@@ -208,12 +218,7 @@ export class SyncImport {
     initialSyncToken: string,
     perPage = DEFAULT_GCAL_EVENTS_PER_PAGE,
   ): Promise<ImportStats> {
-    if (calendar.source.provider !== "google") {
-      throw error(
-        GcalError.Unsure,
-        "importEventsByCalendar requires a Google-sourced calendar",
-      );
-    }
+    assertGoogleCalendar(calendar, "importEventsByCalendar");
 
     const sync = new GoogleEventSync(this.context, calendar);
 
