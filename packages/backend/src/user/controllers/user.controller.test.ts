@@ -8,7 +8,16 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
+import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import { UserError } from "@backend/common/errors/user/user.errors";
+import mongoService from "@backend/common/services/mongo.service";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
+
+// Keep the real revoke from making a live call to Google during tests.
+jest.mock("@backend/auth/services/google/google.revoke.service", () => ({
+  revokeGoogleGrant: jest.fn().mockResolvedValue(true),
+}));
 
 describe("UserController", () => {
   const baseDriver = new BaseDriver();
@@ -17,6 +26,49 @@ describe("UserController", () => {
   beforeAll(setupTestDb);
   beforeEach(cleanupCollections);
   afterAll(cleanupTestDb);
+
+  describe("deleteAccount", () => {
+    // Deletion reaches for a SuperTokens core and Google, neither of which
+    // exists here. The delete-and-revoke logic itself is covered in
+    // user.service.test.ts; this is about the route and where userId comes from.
+    beforeEach(() => {
+      jest
+        .spyOn(compassAuthService, "revokeSessionsByUser")
+        .mockResolvedValue({ sessionsRevoked: 0 });
+      jest
+        .spyOn(supertokensUserCleanupService, "resolveByExternalUserId")
+        .mockResolvedValue({ externalUserIds: [], superTokensUserIds: [] });
+      jest
+        .spyOn(supertokensUserCleanupService, "cleanupResolvedTarget")
+        .mockResolvedValue({
+          superTokensUsers: 0,
+          superTokensMappings: 0,
+          superTokensMetadata: 0,
+        });
+      jest.spyOn(googleWatchService, "stopWatches").mockResolvedValue([]);
+    });
+    afterEach(() => jest.restoreAllMocks());
+
+    it("should delete the account of the user in the session", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+
+      const response = await userDriver.deleteAccount(
+        { userId: user._id.toString() },
+        Status.OK,
+      );
+
+      expect(response.body).toEqual(expect.objectContaining({ user: 1 }));
+      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
+    });
+
+    it("should not delete anyone when there is no session", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+
+      await userDriver.deleteAccount(undefined, Status.INTERNAL_SERVER);
+
+      expect(await mongoService.user.findOne({ _id: user._id })).not.toBeNull();
+    });
+  });
 
   describe("getProfile", () => {
     it("should get a user's profile", async () => {

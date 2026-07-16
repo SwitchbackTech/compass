@@ -1,4 +1,5 @@
 import { type CalendarInteractionPoint } from "@web/interaction/CalendarInteractionSession";
+import { allDayDragVisualToTimedGridEvent } from "@web/layout/calendar-grid/interaction/commit/crossRowVisualToGridEvent";
 import {
   createAllDayDragVisual,
   updateAllDayDragVisual,
@@ -49,28 +50,46 @@ export const createAllDayDragInteractionVisual = ({
 export const updateAllDayDragInteractionVisual = ({
   layout,
   pointer,
+  target,
   visual,
 }: {
   layout: WeekLayoutCache;
   pointer: VisualPoint;
+  target: WeekAllDayDragTarget;
   visual: AllDayDragVisual;
-}) =>
-  updateAllDayDragVisual(visual, {
+}) => {
+  const nextVisual = updateAllDayDragVisual(visual, {
     layout,
     pointer,
   });
+
+  return {
+    // Only the timed row has times worth previewing on the ghost; an all-day
+    // ghost stays label-less, as it was before cross-row drops existed.
+    event:
+      nextVisual.row === "timed"
+        ? allDayDragVisualToTimedGridEvent(target.event, nextVisual)
+        : null,
+    visual: nextVisual,
+  };
+};
 
 export const commitAllDayDragInteraction = (
   target: WeekAllDayDragTarget,
   visual: AllDayDragVisual,
 ): WeekAllDayDragCommitResult => {
-  const movedEvent = allDayDragVisualToGridEvent(target.event, visual);
+  // A drop in the timed grid is always a change, even onto the same day: the
+  // event gains a time of day it never had.
+  const isCrossRow = visual.row === "timed";
+  const movedEvent = isCrossRow
+    ? allDayDragVisualToTimedGridEvent(target.event, visual)
+    : allDayDragVisualToGridEvent(target.event, visual);
 
   return {
     event: movedEvent,
     eventId: target.event._id!,
     hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
-    hasMoved: hasAllDayDragVisualMoved(visual),
+    hasMoved: isCrossRow || hasAllDayDragVisualMoved(visual),
     type: "allDayDragEnd",
   };
 };

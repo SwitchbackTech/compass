@@ -107,7 +107,6 @@ Use this document to find the first files to inspect for common Compass changes.
 
 - CLI entrypoint: `packages/scripts/src/cli.ts`
 - Build command: `packages/scripts/src/commands/build.ts`
-- Delete command: `packages/scripts/src/commands/delete.ts`
 - Migration command: `packages/scripts/src/commands/migrate.ts`
 - Migrations: `packages/scripts/src/migrations`
 

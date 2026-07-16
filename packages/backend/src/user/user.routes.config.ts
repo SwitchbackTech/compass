@@ -30,6 +30,24 @@ export class UserRoutes extends CommonRoutesConfig {
       .get(userController.getProfile);
 
     /**
+     * DELETE /api/user
+     * Deletes the current user's Compass account: all Compass data, their auth
+     * identity, and their Google OAuth grant. Their Google Calendar data is
+     * left untouched.
+     *
+     * The user is always taken from the session, so a caller can only ever
+     * delete themselves.
+     *
+     * @auth Required - Supertokens session
+     * @returns {Object} Summary of what was deleted
+     * @throws {401} Unauthorized - Invalid or missing session
+     */
+    this.app
+      .route(`/api/user`)
+      .all(verifySession())
+      .delete(userController.deleteAccount);
+
+    /**
      * GET /api/user/metadata
      * Retrieves user metadata (preferences, settings, etc.)
      *

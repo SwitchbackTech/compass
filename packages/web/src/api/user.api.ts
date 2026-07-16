@@ -2,6 +2,10 @@ import { type UserMetadata, type UserProfile } from "@core/types/user.types";
 import { BaseApi } from "@web/api/base/base.api";
 
 const UserApi = {
+  async deleteAccount(): Promise<void> {
+    await BaseApi.delete(`/user`);
+  },
+
   async getProfile(): Promise<UserProfile> {
     const response = await BaseApi.get<UserProfile>(`/user/profile`);
     return response.data;

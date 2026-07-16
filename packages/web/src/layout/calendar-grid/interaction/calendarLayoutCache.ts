@@ -1,3 +1,5 @@
+import { type CalendarDragRow } from "./model/TimedDragVisual";
+
 export interface CalendarLayoutCacheSources {
   allDayColumnsElement?: HTMLElement | null;
   mainGridElement?: HTMLElement | null;
@@ -46,6 +48,13 @@ export interface SmartScrollCache {
 }
 
 export interface CalendarLayoutCache {
+  /**
+   * The *other* row's geometry, so a drag can hit-test the pointer against both
+   * rows every frame and drop across them. Built for drags only (see
+   * buildDragCalendarLayoutCache); resizes stay within one row and leave it
+   * unset, as do layouts where the other row isn't on screen.
+   */
+  crossRow?: CalendarLayoutCache;
   dayColumns: CalendarDayColumnCache[];
   edgeNavigation: CalendarEdgeNavigationCache;
   pixelsPerMinute: number;
@@ -139,6 +148,24 @@ export const buildAllDayCalendarLayoutCache = ({
     pixelsPerMinute: 1,
     snapMinutes,
   };
+};
+
+/**
+ * Pairs the drag's own row geometry (primary, so every existing same-row
+ * consumer reads it unchanged) with the other row's on `crossRow`. Returns null
+ * only when the drag's own row is missing — a missing *other* row just leaves
+ * `crossRow` unset, which keeps the drag on its same-row path.
+ */
+export const buildDragCalendarLayoutCache = (
+  options: CalendarLayoutCacheOptions & CalendarLayoutCacheSources,
+  sourceRow: CalendarDragRow,
+): CalendarLayoutCache | null => {
+  const allDay = buildAllDayCalendarLayoutCache(options);
+  const timed = buildTimedCalendarLayoutCache(options);
+  const [primary, crossRow] =
+    sourceRow === "allDay" ? [allDay, timed] : [timed, allDay];
+
+  return primary ? { ...primary, crossRow: crossRow ?? undefined } : null;
 };
 
 export function buildCalendarDayColumns(

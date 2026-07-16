@@ -2,6 +2,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type CalendarInteractionPoint } from "@web/interaction/CalendarInteractionSession";
 import { getLocalMinutes } from "@web/layout/calendar-grid/interaction/calendarInteractionDate";
+import { timedDragVisualToAllDayGridEvent } from "@web/layout/calendar-grid/interaction/commit/crossRowVisualToGridEvent";
 import {
   createTimedDragVisual,
   updateTimedDragVisual,
@@ -79,7 +80,12 @@ export const updateTimedDragInteractionVisual = ({
   });
 
   return {
-    event: timedDragVisualToGridEvent(target.event, nextVisual),
+    // Null over the all-day row: the ghost is about to lose its times, so there
+    // is nothing to preview.
+    event:
+      nextVisual.row === "allDay"
+        ? null
+        : timedDragVisualToGridEvent(target.event, nextVisual),
     visual: nextVisual,
   };
 };
@@ -88,13 +94,18 @@ export const commitTimedDragInteraction = (
   target: WeekTimedDragTarget,
   visual: TimedDragVisual,
 ): WeekTimedDragCommitResult => {
-  const movedEvent = timedDragVisualToGridEvent(target.event, visual);
+  // A drop in the all-day row is always a change, even onto the same day: the
+  // event loses its time of day.
+  const isCrossRow = visual.row === "allDay";
+  const movedEvent = isCrossRow
+    ? timedDragVisualToAllDayGridEvent(target.event, visual)
+    : timedDragVisualToGridEvent(target.event, visual);
 
   return {
     event: movedEvent,
     eventId: target.event._id!,
     hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
-    hasMoved: hasTimedDragVisualMoved(visual),
+    hasMoved: isCrossRow || hasTimedDragVisualMoved(visual),
     type: "timedDragEnd",
   };
 };

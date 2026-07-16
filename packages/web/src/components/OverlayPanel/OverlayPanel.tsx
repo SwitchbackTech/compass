@@ -181,7 +181,7 @@ export const OverlayPanelActions = ({
 
 interface OverlayPanelActionButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "destructive";
 }
 
 export const OverlayPanelActionButton = ({
@@ -194,9 +194,12 @@ export const OverlayPanelActionButton = ({
   <button
     className={clsx(
       "h-11 rounded px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-panel-bg disabled:pointer-events-none disabled:opacity-50",
-      variant === "primary"
-        ? "bg-accent-primary text-text-dark transition hover:brightness-110"
-        : "border border-border-primary bg-panel-badge-bg text-text-lighter transition-colors hover:bg-panel-bg",
+      variant === "primary" &&
+        "bg-accent-primary text-text-dark transition hover:brightness-110",
+      variant === "destructive" &&
+        "bg-status-error text-text-dark transition hover:brightness-110",
+      variant === "secondary" &&
+        "border border-border-primary bg-panel-badge-bg text-text-lighter transition-colors hover:bg-panel-bg",
       className,
     )}
     type={type}

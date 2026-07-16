@@ -11,6 +11,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
+import { revokeGoogleGrant } from "@backend/auth/services/google/google.revoke.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import calendarService from "@backend/calendar/services/calendar.service";
@@ -23,6 +24,15 @@ import { googleWatchService } from "@backend/sync/services/watch/google-watch.se
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
+
+// Keep the real revoke from making a live call to Google during tests.
+jest.mock("@backend/auth/services/google/google.revoke.service", () => ({
+  revokeGoogleGrant: jest.fn().mockResolvedValue(true),
+}));
+
+const mockRevokeGoogleGrant = revokeGoogleGrant as jest.MockedFunction<
+  typeof revokeGoogleGrant
+>;
 
 const createSupertokensUser = (userId: string, recipeUserIds: string[]) => ({
   id: userId,
@@ -239,6 +249,43 @@ describe("UserService", () => {
       expect(findOneSpy.mock.calls).toEqual([
         [{ email: normalizedEmail }, { session: undefined }],
       ]);
+    });
+  });
+
+  describe("deleteAccount", () => {
+    beforeEach(() => {
+      mockRevokeGoogleGrant.mockClear();
+      jest.spyOn(googleWatchService, "stopWatches").mockResolvedValue([]);
+    });
+
+    it("deletes the user and revokes their stored Google grant", async () => {
+      const user = await UserDriver.createUser();
+
+      const summary = await userService.deleteAccount(user._id.toString());
+
+      expect(summary).toEqual(expect.objectContaining({ user: 1 }));
+      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
+      expect(mockRevokeGoogleGrant).toHaveBeenCalledWith(
+        user.google?.gRefreshToken,
+      );
+    });
+
+    it("skips the revoke when the user has no stored Google grant", async () => {
+      const user = await UserDriver.createUser({ withGoogle: false });
+
+      await userService.deleteAccount(user._id.toString());
+
+      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
+      expect(mockRevokeGoogleGrant).not.toHaveBeenCalled();
+    });
+
+    it("still deletes the account when revoking the Google grant fails", async () => {
+      mockRevokeGoogleGrant.mockResolvedValueOnce(false);
+      const user = await UserDriver.createUser();
+
+      await userService.deleteAccount(user._id.toString());
+
+      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
     });
   });
 

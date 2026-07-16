@@ -10,8 +10,14 @@ import {
   getCalendarResizeHandleEdge,
   updateCalendarDraftEventTimeLabel,
 } from "@web/layout/calendar-grid/interaction/calendarInteractionDom";
+import { hideCalendarDraftEventTimeLabel } from "@web/layout/calendar-grid/interaction/crossRowDraftEventDom";
+import {
+  getCalendarDragRowLayouts,
+  resolveCalendarDragRow,
+} from "@web/layout/calendar-grid/interaction/math/crossRowDrag";
 import { getSmartScrollFrame } from "@web/layout/calendar-grid/interaction/math/smartScroll";
 import {
+  type CrossRowSize,
   type VisualPoint,
   type VisualRect,
 } from "@web/layout/calendar-grid/interaction/model/TimedDragVisual";
@@ -26,6 +32,7 @@ import {
 import { setWeekInteractionMotionActive } from "../state/weekInteractionMotionState";
 import {
   buildAllDayWeekLayoutCache,
+  buildDragWeekLayoutCache,
   buildTimedWeekLayoutCache,
   type WeekLayoutCache,
   type WeekLayoutCacheInput,
@@ -343,23 +350,33 @@ export const createWeekInteractionAdapter = ({
         }
 
         if (visual.type === "allDayDrag") {
+          if (target.type !== "allDayDrag") {
+            throw new Error("Mismatched Week interaction target");
+          }
+
           const nextEdgeNavigation = updateEdgeNavigation(
             visual,
             pointer,
             timestamp,
           );
-          const nextVisual = updateAllDayDragInteractionVisual({
+          const next = updateAllDayDragInteractionVisual({
             layout,
             pointer,
+            target,
             visual: nextEdgeNavigation.visual,
           });
 
           return {
             draftEvent: {
-              transform: nextVisual.transform,
+              ...getDraftEventSize(next.visual),
+              mutate: (node) =>
+                next.event
+                  ? updateCalendarDraftEventTimeLabel(node, next.event)
+                  : undefined,
+              transform: next.visual.transform,
             },
             shouldContinue: nextEdgeNavigation.isDwellActive,
-            visual: nextVisual,
+            visual: next.visual,
           };
         }
 
@@ -410,7 +427,12 @@ export const createWeekInteractionAdapter = ({
           throw new Error("Mismatched Week interaction target");
         }
 
-        const smartScroll = applySmartScroll(pointer);
+        // Suppressed while the pointer is over the all-day row: the timed grid
+        // isn't the drop target any more, so nudging its scroll would just yank
+        // the view around behind the ghost.
+        const smartScroll = isPointerOverAllDayRow(pointer)
+          ? { isScrolling: false, scrollDeltaPx: 0 }
+          : applySmartScroll(pointer);
         const nextEdgeNavigation = updateEdgeNavigation(
           visual,
           pointer,
@@ -426,8 +448,11 @@ export const createWeekInteractionAdapter = ({
 
         return {
           draftEvent: {
+            ...getDraftEventSize(next.visual),
             mutate: (node) =>
-              updateCalendarDraftEventTimeLabel(node, next.event),
+              next.event
+                ? updateCalendarDraftEventTimeLabel(node, next.event)
+                : hideCalendarDraftEventTimeLabel(node),
             transform: next.visual.transform,
           },
           shouldContinue:
@@ -597,6 +622,23 @@ export const createWeekInteractionAdapter = ({
     return registered?.eventType === eventType ? registered : null;
   }
 
+  function isPointerOverAllDayRow(pointer: VisualPoint) {
+    if (!layout) {
+      return false;
+    }
+
+    const { allDay, timed } = getCalendarDragRowLayouts(layout, "timed");
+
+    return (
+      resolveCalendarDragRow({
+        allDay,
+        pointerY: pointer.y,
+        sourceRow: "timed",
+        timed,
+      }) === "allDay"
+    );
+  }
+
   function applySmartScroll(pointer: VisualPoint) {
     if (!layout?.smartScroll || scrollTop === null) {
       return { isScrolling: false, scrollDeltaPx: 0 };
@@ -743,13 +785,35 @@ const getInteractionCursor = (target: WeekInteractionTarget) => {
   }
 };
 
+// Drags cache both rows so they can be dropped across them; resizes stay within
+// one row and only need their own.
 const buildWeekLayoutCacheForTarget = (
   target: WeekInteractionTarget,
   input: WeekLayoutCacheInput,
-) =>
-  isAllDayTarget(target)
+) => {
+  if (isDragTarget(target)) {
+    return buildDragWeekLayoutCache(
+      input,
+      target.type === "allDayDrag" ? "allDay" : "timed",
+    );
+  }
+
+  return isAllDayTarget(target)
     ? buildAllDayWeekLayoutCache(input)
     : buildTimedWeekLayoutCache(input);
+};
+
+// Always explicit for drags: the clone keeps whatever size it was last given,
+// so returning to the drag's own row has to actively restore the source card's
+// box rather than just stop overriding it.
+const getDraftEventSize = (visual: {
+  crossRowSize: CrossRowSize;
+  sourceRect: VisualRect;
+}) =>
+  visual.crossRowSize ?? {
+    height: visual.sourceRect.height,
+    width: visual.sourceRect.width,
+  };
 
 const isEligibleWeekPointerDown = isEligibleCalendarInteractionPointerDown;
 
