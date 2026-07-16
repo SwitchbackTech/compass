@@ -24,8 +24,9 @@ early is safe; the app keeps serving from legacy data.
 
 ## Rollout strategy (sub-calendar v1)
 
-The v1 rollout is staging-first (decision A36 in
-`team/archive/google-subcalendar-project/master-doc.md`):
+The v1 rollout is staging-first (decision A36 in the project's
+[master doc](https://github.com/SwitchbackTech/compass-calendar/blob/90696e1dd9b279f7f1c56be0cef93b8b9c5787fe/team/archive/google-subcalendar-project/master-doc.md),
+archived after v1 shipped to production — see `compass-calendar-internal/projects/google-subcalendars/master-doc.md`):
 
 1. **Staging cuts over now.** Run the full procedure below (migrate → verify →
    pause → rename → deploy) against staging when the runtime-cutover release

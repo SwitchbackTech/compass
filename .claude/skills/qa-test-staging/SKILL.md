@@ -84,16 +84,13 @@ Standard flows (the golden paths; adapt if the app's shell has changed):
 
 1. **Load + auth** — staging loads on the day view, toolbar shows the test
    account (already confirmed in step 1).
-2. **Task list** — create a task, edit its text, toggle it complete, and
-   confirm each change renders. Reload and confirm it persisted — this
-   reload check is what proves the authed remote-storage write actually
-   landed, not just that an optimistic UI updated. (Storage rules: authed
-   users persist remotely.)
-3. **Calendar events** — create a timed event, move/resize it, open it and
+2. **Calendar events** — create a timed event, move/resize it, open it and
    confirm the detail renders; switch Day ↔ Week view and confirm events
-   show in both.
-4. **Navigation** — previous/next day and month, and the date picker jump.
-5. **Command palette + shortcuts** — open the command palette and the
+   show in both. Reload and confirm it persisted — this reload check is what
+   proves the authed remote-storage write actually landed, not just that an
+   optimistic UI updated. (Storage rules: authed users persist remotely.)
+3. **Navigation** — previous/next day and month, and the date picker jump.
+4. **Command palette + shortcuts** — open the command palette and the
    shortcuts panel; run one palette action (e.g. create event) end to end.
 
 As you go, after each flow check `read_console_messages` and
