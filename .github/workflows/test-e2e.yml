@@ -6,7 +6,6 @@ on:
       - main
     paths-ignore:
       - ".gitignore"
-      - "team/**"
       - "**/*.md"
       - "docs/**"
 
