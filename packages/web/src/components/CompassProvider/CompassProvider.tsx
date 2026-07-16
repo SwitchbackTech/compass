@@ -11,6 +11,7 @@ import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CompassRefsProvider } from "@web/common/refs/compass-refs";
 import { queryClient as defaultQueryClient } from "@web/api/query-client";
+import { DeleteAccountConfirmationProvider } from "@web/components/DeleteAccountConfirmation/DeleteAccountConfirmationProvider";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
 import { useGlobalShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
@@ -43,7 +44,9 @@ export const CompassRequiredProviders = ({
           >
             <IconProvider>
               <LogoutConfirmationProvider>
-                {children}
+                <DeleteAccountConfirmationProvider>
+                  {children}
+                </DeleteAccountConfirmationProvider>
                 <ToastContainer
                   position="bottom-left"
                   autoClose={5000}

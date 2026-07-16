@@ -18,6 +18,7 @@ import { getNavigationCommandItems } from "@web/common/constants/navigation.cmd.
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
 import { useCalendarSyncCmdItems } from "@web/components/CommandPalette/hooks/useCalendarSyncCmdItems";
+import { useDeleteAccountCmdItems } from "@web/components/CommandPalette/hooks/useDeleteAccountCmdItems";
 import { useExportDataCmdItems } from "@web/components/CommandPalette/hooks/useExportDataCmdItems";
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
 import { useSubscribeCmdItems } from "@web/components/CommandPalette/hooks/useSubscribeCmdItems";
@@ -87,6 +88,7 @@ export const CommandPalette = ({
   const exportDataCmdItems = useExportDataCmdItems();
   const authCmdItems = useAuthCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
+  const deleteAccountCmdItems = useDeleteAccountCmdItems();
   const { undo, canUndo } = useUndoRedo(mutationDependencies);
 
   const [search, setSearch] = useState("");
@@ -148,6 +150,7 @@ export const CommandPalette = ({
         ...exportDataCmdItems,
         ...authCmdItems,
         ...logoutCmdItems,
+        ...deleteAccountCmdItems,
       ],
     },
     ...moreCommandPaletteItems,

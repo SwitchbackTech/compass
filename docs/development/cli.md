@@ -14,10 +14,16 @@ Primary file:
 
 | Command | Implementation | Notes |
 | --- | --- | --- |
-| `bun run cli delete --user <id-or-email> --force` | `packages/scripts/src/commands/delete.ts` | Full user purge logic for Compass Mongo data, SuperTokens auth identities, user-id mappings, and SuperTokens metadata. Browser cleanup for cookies, localStorage, and IndexedDB is separate. |
 | `bun run cli migrate <umzug-subcommand>` | `packages/scripts/src/commands/migrate.ts` | Runs wrapped Umzug subcommands: `pending`, `executed`, `up`, `down`, and `create`. Inspect `bun run cli migrate --help` before bounded execution. |
 | `bun run cli migrate pending` | `packages/scripts/src/commands/migrate.ts` | Lists pending migrations. |
 | `bun run cli migrate executed` | `packages/scripts/src/commands/migrate.ts` | Lists executed migrations. |
+
+## Deleting An Account
+
+There is no longer a `cli delete` command. Users delete their own account from
+the app: open the command palette and run **Delete account** (Settings), which
+calls `DELETE /api/user`. That purges their Compass data and SuperTokens auth
+state, revokes their Google grant, and clears their browser storage.
 
 ## Migration Internals
 

@@ -65,15 +65,11 @@ Sometimes MongoDB is successfully connected when you run `bun run dev:backend` b
 
 ### Mismatch User Id
 
-When you encounter a mismatch user id, the user in your mongo collection is not the one being captured. This could be because you have duplicate users in your database. In order to fix this you need to clear your user data using the CLI delete command:
+When you encounter a mismatch user id, the user in your mongo collection is not the one being captured. This could be because you have duplicate users in your database. To fix it, clear your user data by deleting the account from the app: open the command palette and run **Delete account** (Settings).
 
-```bash
-bun run cli delete -u <email>
-```
+That removes both Compass data and SuperTokens auth state, revokes the Google grant, and clears local browser storage. Signing in again gives you a clean user record.
 
-The delete flow removes both Compass data and SuperTokens auth state. The browser cleanup screen only clears local browser storage after the server-side purge is complete.
-
-See [CLI And Maintenance Commands](./cli.md) for the current delete flow.
+See [CLI And Maintenance Commands](./cli.md).
 
 ### Invalid domain name
 

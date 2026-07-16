@@ -12,6 +12,7 @@ import {
   type UserProfile,
 } from "@core/types/user.types";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
+import { revokeGoogleGrant } from "@backend/auth/services/google/google.revoke.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
@@ -230,6 +231,32 @@ class UserService {
       );
 
     return { ...summary, ...authSummary };
+  };
+
+  /**
+   * Deletes everything Compass knows about a user and revokes their Google
+   * grant. Their Google Calendar data itself is never touched.
+   *
+   * Order matters: the refresh token has to be read before the delete
+   * transaction removes the user doc, and the grant can only be revoked after
+   * the delete stops their watches (stopping a watch needs a working grant).
+   */
+  deleteAccount = async (userId: string): Promise<Summary_Delete> => {
+    const user = await mongoService.user.findOne({
+      _id: zObjectId.parse(userId),
+    });
+    const gRefreshToken = user?.google?.gRefreshToken;
+
+    const summary = await this.deleteCompassDataForUser(
+      userId,
+      Boolean(gRefreshToken),
+    );
+
+    if (gRefreshToken) {
+      await revokeGoogleGrant(gRefreshToken);
+    }
+
+    return summary;
   };
 
   initUserData = async (

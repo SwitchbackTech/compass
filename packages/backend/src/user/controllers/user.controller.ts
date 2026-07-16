@@ -6,6 +6,7 @@ import { type UserMetadata, type UserProfile } from "@core/types/user.types";
 import { type SReqBody } from "@backend/common/types/express.types";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
+import { type Summary_Delete } from "@backend/user/types/user.types";
 
 class UserController {
   getProfile = async (
@@ -25,6 +26,25 @@ class UserController {
       res.status(Status.INTERNAL_SERVER).send();
     }
   };
+  deleteAccount = async (
+    req: Request<never, Summary_Delete, never, never>,
+    res: Response<Summary_Delete>,
+  ) => {
+    try {
+      // Session-derived only: a user may never delete anyone but themselves.
+      const user = zObjectId.parse(req.session?.getUserId());
+      const summary = await userService.deleteAccount(user.toString());
+
+      res.status(Status.OK).json(summary);
+    } catch (e) {
+      if (e instanceof BaseError) {
+        res.status(e.statusCode).send();
+        return;
+      }
+      res.status(Status.INTERNAL_SERVER).send();
+    }
+  };
+
   getMetadata = async (
     req: Request<never, UserMetadata, never, never>,
     res: Response<UserMetadata>,
