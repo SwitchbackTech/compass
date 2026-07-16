@@ -21,12 +21,14 @@ import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
 import {
   CALENDAR_GRID_EVENT_TIME_LABEL_FONT_SIZE,
+  CALENDAR_GRID_EVENT_TIME_LABEL_LINE_HEIGHT,
   CALENDAR_GRID_EVENT_TIME_LABEL_OPACITY,
   CALENDAR_GRID_EVENT_TITLE_LINE_HEIGHT,
   CALENDAR_MIN_EVENT_HEIGHT_FOR_TIME_LABEL,
   CALENDAR_MIN_EVENT_WIDTH_FOR_TIME_LABEL,
 } from "@web/layout/calendar-grid/calendarGrid.constants";
 import {
+  CALENDAR_EVENT_CONTENT_ATTRIBUTE,
   CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE,
   CALENDAR_EVENT_TIME_LABEL_ATTRIBUTE,
 } from "@web/layout/calendar-grid/interaction/calendarInteractionDom";
@@ -101,14 +103,24 @@ const CalendarTimedEventCardBase = (
     durationMinutes >= REPEAT_ICON_MIN_DURATION_MINUTES &&
     position.width >= REPEAT_ICON_MIN_WIDTH;
 
-  const lineClamp = useMemo(
-    () => getLineClamp(position.height),
-    [position.height],
-  );
-  const isTallEnoughForTimeLabel =
-    position.height >= CALENDAR_MIN_EVENT_HEIGHT_FOR_TIME_LABEL;
-  const isWideEnoughForTimeLabel =
+  const showTimeLabel =
+    !event.isAllDay &&
+    (isDraft || !isInPast) &&
+    position.height >= CALENDAR_MIN_EVENT_HEIGHT_FOR_TIME_LABEL &&
     position.width >= CALENDAR_MIN_EVENT_WIDTH_FOR_TIME_LABEL;
+
+  // Clamp the title against the height the label leaves behind, not the whole
+  // card. Clamping against the full height lets a wrapping title occupy every
+  // line the card has and shove the label past the card's clipped edge.
+  const lineClamp = useMemo(
+    () =>
+      getLineClamp(
+        showTimeLabel
+          ? position.height - CALENDAR_GRID_EVENT_TIME_LABEL_LINE_HEIGHT
+          : position.height,
+      ),
+    [position.height, showTimeLabel],
+  );
 
   const baseColor = EVENT_COLOR;
   const draftColor = darken(baseColor, 18);
@@ -256,23 +268,24 @@ const CalendarTimedEventCardBase = (
           style={{ backgroundColor: calendarIdentity.backgroundColor }}
         />
       )}
-      <div className="flex flex-col flex-wrap items-start">
+      <div
+        className="flex flex-col flex-wrap items-start"
+        {...{ [CALENDAR_EVENT_CONTENT_ATTRIBUTE]: "true" }}
+      >
         <span className={titleColorClassName} style={titleStyle}>
           {event.title}
         </span>
         {!event.isAllDay && (
           <>
-            {(isDraft || !isInPast) &&
-              isTallEnoughForTimeLabel &&
-              isWideEnoughForTimeLabel && (
-                <span
-                  className="relative"
-                  {...{ [CALENDAR_EVENT_TIME_LABEL_ATTRIBUTE]: "true" }}
-                  style={{ ...timeLabelStyle, zIndex: ZIndex.LAYER_3 }}
-                >
-                  {timeRange}
-                </span>
-              )}
+            {showTimeLabel && (
+              <span
+                className="relative"
+                {...{ [CALENDAR_EVENT_TIME_LABEL_ATTRIBUTE]: "true" }}
+                style={{ ...timeLabelStyle, zIndex: ZIndex.LAYER_3 }}
+              >
+                {timeRange}
+              </span>
+            )}
             {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
             <div
               aria-hidden="true"
