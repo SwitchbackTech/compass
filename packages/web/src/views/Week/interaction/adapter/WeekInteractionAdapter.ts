@@ -8,9 +8,9 @@ import { isEligibleCalendarInteractionPointerDown } from "@web/interaction/calen
 import {
   createCalendarInteractionDraftEventMount,
   getCalendarResizeHandleEdge,
+  hideCalendarDraftEventTimeLabel,
   updateCalendarDraftEventTimeLabel,
 } from "@web/layout/calendar-grid/interaction/calendarInteractionDom";
-import { hideCalendarDraftEventTimeLabel } from "@web/layout/calendar-grid/interaction/crossRowDraftEventDom";
 import {
   getCalendarDragRowLayouts,
   resolveCalendarDragRow,
