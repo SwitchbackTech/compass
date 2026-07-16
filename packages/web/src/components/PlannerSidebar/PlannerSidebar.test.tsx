@@ -9,6 +9,7 @@ const PlannerSidebar = createPlannerSidebar({
   PlannerSidebarActions: () => <div>Sidebar actions</div>,
   ShortcutsOverlay: () => null,
   TasksRemovalNotice: () => null,
+  UpNextCard: () => <div>Up next</div>,
 });
 
 const sidebarProps = {
