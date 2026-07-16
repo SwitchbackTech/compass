@@ -5,14 +5,17 @@ import {
 } from "@web/common/constants/web.constants";
 import {
   buildAllDayCalendarLayoutCache,
+  buildDragCalendarLayoutCache,
   buildTimedCalendarLayoutCache,
   type CalendarDayColumnCache,
   type CalendarEdgeNavigationCache,
   type CalendarLayoutCache,
+  type CalendarLayoutCacheOptions,
   type CalendarLayoutCacheSources,
   getNearestDayColumn,
   type SmartScrollCache,
 } from "@web/layout/calendar-grid/interaction/calendarLayoutCache";
+import { type CalendarDragRow } from "@web/layout/calendar-grid/interaction/model/TimedDragVisual";
 import {
   GRID_TIME_STEP,
   WEEK_TIMED_VISIBLE_HOURS,
@@ -41,31 +44,36 @@ export type WeekLayoutCache = CalendarLayoutCache;
 export type { SmartScrollCache };
 export { getNearestDayColumn };
 
+const weekLayoutCacheOptions = (
+  sources: WeekLayoutCacheInput,
+): CalendarLayoutCacheOptions & WeekLayoutCacheSources => ({
+  ...sources,
+  allDayColumnsElementId: ID_ALLDAY_COLUMNS,
+  edgeThresholdPx: WEEK_EDGE_NAVIGATION_THRESHOLD_PX,
+  mainGridElementId: ID_GRID_MAIN,
+  smartScroll: {
+    bottomInsetPx: SMART_SCROLL_BOTTOM_INSET_PX,
+    speedPx: SMART_SCROLL_SPEED_PX,
+  },
+  snapMinutes: GRID_TIME_STEP,
+  timedColumnsElementId: ID_GRID_COLUMNS_TIMED,
+  timedVisibleHours: WEEK_TIMED_VISIBLE_HOURS,
+  visibleDates: sources.visibleDays,
+});
+
 export const buildTimedWeekLayoutCache = (
   sources: WeekLayoutCacheInput,
 ): WeekLayoutCache | null =>
-  buildTimedCalendarLayoutCache({
-    ...sources,
-    edgeThresholdPx: WEEK_EDGE_NAVIGATION_THRESHOLD_PX,
-    mainGridElementId: ID_GRID_MAIN,
-    smartScroll: {
-      bottomInsetPx: SMART_SCROLL_BOTTOM_INSET_PX,
-      speedPx: SMART_SCROLL_SPEED_PX,
-    },
-    snapMinutes: GRID_TIME_STEP,
-    timedColumnsElementId: ID_GRID_COLUMNS_TIMED,
-    timedVisibleHours: WEEK_TIMED_VISIBLE_HOURS,
-    visibleDates: sources.visibleDays,
-  });
+  buildTimedCalendarLayoutCache(weekLayoutCacheOptions(sources));
 
 export const buildAllDayWeekLayoutCache = (
   sources: WeekLayoutCacheInput,
 ): WeekLayoutCache | null =>
-  buildAllDayCalendarLayoutCache({
-    ...sources,
-    allDayColumnsElementId: ID_ALLDAY_COLUMNS,
-    edgeThresholdPx: WEEK_EDGE_NAVIGATION_THRESHOLD_PX,
-    snapMinutes: GRID_TIME_STEP,
-    timedVisibleHours: WEEK_TIMED_VISIBLE_HOURS,
-    visibleDates: sources.visibleDays,
-  });
+  buildAllDayCalendarLayoutCache(weekLayoutCacheOptions(sources));
+
+/** Both rows at once, so a drag can be dropped across them. */
+export const buildDragWeekLayoutCache = (
+  sources: WeekLayoutCacheInput,
+  sourceRow: CalendarDragRow,
+): WeekLayoutCache | null =>
+  buildDragCalendarLayoutCache(weekLayoutCacheOptions(sources), sourceRow);

@@ -1,4 +1,9 @@
-import { type VisualPoint, type VisualRect } from "./TimedDragVisual";
+import {
+  type CalendarDragRow,
+  type CrossRowSize,
+  type VisualPoint,
+  type VisualRect,
+} from "./TimedDragVisual";
 
 /**
  * Day indices are window-relative (0..N-1 over the rendered columns) and stay
@@ -7,7 +12,15 @@ import { type VisualPoint, type VisualRect } from "./TimedDragVisual";
  * cache columns, so they track mid-drag week navigation automatically.
  */
 export interface AllDayDragVisual {
-  /** Local YYYY-MM-DD date of the column currently under the drag. */
+  crossRowSize: CrossRowSize;
+  /**
+   * Local YYYY-MM-DD date of the column the ghost is snapped to. How the commit
+   * reads it depends on `row`: an all-day drop applies it as a *delta* from
+   * `initialDayDate` (the span may be window-clamped, so the initial column is
+   * not necessarily the event's own start), while a timed drop applies it
+   * absolutely, because the converted block lands on the column it was dropped
+   * on and has no meaningful offset from where the span started.
+   */
   dayDate: string;
   dayIndex: number;
   eventId: string;
@@ -15,7 +28,14 @@ export interface AllDayDragVisual {
   initialDayDate: string;
   initialDayIndex: number;
   pointerStart: VisualPoint;
+  /**
+   * Row the pointer is over, re-resolved every frame. "timed" means releasing
+   * here converts the event to a timed one.
+   */
+  row: CalendarDragRow;
   sourceRect: VisualRect;
+  /** Snapped start-of-day minutes for the converted block; null unless `row` is "timed". */
+  timedStartMinutes: number | null;
   transform: VisualPoint;
   type: "allDayDrag";
 }

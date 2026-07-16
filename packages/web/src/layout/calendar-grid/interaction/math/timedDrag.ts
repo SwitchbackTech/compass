@@ -4,6 +4,11 @@ import {
   type VisualPoint,
   type VisualRect,
 } from "../model/TimedDragVisual";
+import {
+  getCalendarDragRowLayouts,
+  getCrossRowAllDayPlacement,
+  resolveCalendarDragRow,
+} from "./crossRowDrag";
 import { resolveDragColumn } from "./resolveDragColumn";
 import { clamp, snapToStep } from "./snap";
 
@@ -34,6 +39,7 @@ export const createTimedDragVisual = ({
   sourceRect,
   startMinutes,
 }: CreateTimedDragVisualInput): TimedDragVisual => ({
+  crossRowSize: null,
   dayDate,
   dayIndex,
   durationMinutes: endMinutes - startMinutes,
@@ -44,6 +50,7 @@ export const createTimedDragVisual = ({
   initialEndMinutes: endMinutes,
   initialStartMinutes: startMinutes,
   pointerStart,
+  row: "timed",
   sourceRect,
   startMinutes,
   transform: { x: 0, y: 0 },
@@ -54,6 +61,34 @@ export const updateTimedDragVisual = (
   visual: TimedDragVisual,
   { layout, pointer, scrollDeltaPx = 0 }: UpdateTimedDragVisualInput,
 ): TimedDragVisual => {
+  const { allDay, timed } = getCalendarDragRowLayouts(layout, "timed");
+  const row = resolveCalendarDragRow({
+    allDay,
+    pointerY: pointer.y,
+    sourceRow: "timed",
+    timed,
+  });
+
+  // Over the all-day row the ghost becomes an all-day chip on the drop column.
+  // startMinutes/endMinutes keep their last in-grid values and are ignored by
+  // the commit, which reads `row` and discards the time of day.
+  if (row === "allDay" && allDay) {
+    const placement = getCrossRowAllDayPlacement({
+      layout: allDay,
+      pointer,
+      sourceRect: visual.sourceRect,
+    });
+
+    return {
+      ...visual,
+      crossRowSize: { height: placement.height, width: placement.width },
+      dayDate: placement.column?.date ?? visual.dayDate,
+      dayIndex: placement.column?.index ?? visual.dayIndex,
+      row: "allDay",
+      transform: placement.transform,
+    };
+  }
+
   const deltaX = pointer.x - visual.pointerStart.x;
   const deltaY = pointer.y - visual.pointerStart.y;
   const deltaMinutes = snapToStep(
@@ -76,9 +111,11 @@ export const updateTimedDragVisual = (
 
   return {
     ...visual,
+    crossRowSize: null,
     dayDate: nextColumn?.date ?? visual.dayDate,
     dayIndex: nextColumn?.index ?? visual.initialDayIndex,
     endMinutes: verticalPlacement.startMinutes + visual.durationMinutes,
+    row: "timed",
     startMinutes: verticalPlacement.startMinutes,
     transform: {
       x: transformX,
