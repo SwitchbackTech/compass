@@ -22,6 +22,7 @@ export const BackendDownView = () => {
   }, []);
 
   const handleRetry = async () => {
+    if (isChecking) return;
     setIsChecking(true);
     await checkBackend();
     setIsChecking(false);
@@ -46,11 +47,14 @@ export const BackendDownView = () => {
         back.
       </p>
 
+      {/* aria-disabled + re-entry guard instead of `disabled`: disabling a
+          focused button ejects keyboard focus to <body>, so every retry would
+          cost a keyboard user a full re-Tab back to the button. */}
       <button
         type="button"
         onClick={handleRetry}
-        disabled={isChecking}
-        className="mt-5 cursor-pointer rounded border-2 border-border-primary bg-fg-primary-dark px-4 py-2 font-semibold text-[16px] text-text-lighter transition-all duration-200 ease-in-out hover:brightness-120 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-70"
+        aria-disabled={isChecking}
+        className="mt-5 cursor-pointer rounded border-2 border-border-primary bg-fg-primary-dark px-4 py-2 font-semibold text-[16px] text-text-lighter transition-all duration-200 ease-in-out hover:brightness-120 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2 aria-disabled:cursor-wait aria-disabled:opacity-70"
       >
         {isChecking ? "Scanning the horizon..." : "Try again"}
       </button>
