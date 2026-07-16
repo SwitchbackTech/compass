@@ -62,10 +62,8 @@ export function createTasksRemovalNotice({
       >
         <div className="flex items-start justify-between gap-2">
           <p className="text-text-lighter leading-relaxed">
-            Tasks and Someday were removed from Compass. Your old task data is
-            still saved locally — export it below before it's cleared. If you
-            signed up before July 15, 2026 and want your Someday events, email
-            tyler@switchback.tech.
+            We simplified things by removing tasks and someday. Don't worry, you
+            can still get that data back.
           </p>
           <button
             aria-label="Dismiss"

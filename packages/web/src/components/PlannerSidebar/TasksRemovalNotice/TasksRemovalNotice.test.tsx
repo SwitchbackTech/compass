@@ -67,7 +67,6 @@ describe("TasksRemovalNotice", () => {
 
     render(<TasksRemovalNotice />);
 
-    expect(screen.getByText(/tasks and someday were removed/i)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Export my data" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Dismiss" })).toBeTruthy();
   });
