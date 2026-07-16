@@ -4,6 +4,7 @@ import {
   type ReactNode,
 } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader/AbsoluteOverflowLoader";
 import {
   type CalendarGridRefs,
   type CalendarGridVisibleDate,
@@ -16,6 +17,8 @@ export interface CalendarGridProps {
   allDayGridOffsetTopPx?: number;
   allDayRowsCount?: number;
   gridRefs: CalendarGridRefs;
+  /** First load only. Background refetches keep the grid interactive. */
+  isLoadingEvents?: boolean;
   onAllDayMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
   onTimedMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
   timedEventsLayer: ReactNode;
@@ -28,6 +31,7 @@ export const CalendarGrid: FC<CalendarGridProps> = ({
   allDayGridOffsetTopPx = 0,
   allDayRowsCount = 0,
   gridRefs,
+  isLoadingEvents = false,
   onAllDayMouseDown,
   onTimedMouseDown,
   timedEventsLayer,
@@ -52,5 +56,12 @@ export const CalendarGrid: FC<CalendarGridProps> = ({
       today={today}
       visibleDates={visibleDates}
     />
+    {isLoadingEvents && (
+      <AbsoluteOverflowLoader
+        aria-label="Loading events"
+        className="[&>div]:my-0"
+        role="status"
+      />
+    )}
   </div>
 );

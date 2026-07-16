@@ -1,6 +1,7 @@
 import { type FC } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { useWeekEventsQueryStatus } from "@web/events/queries/useWeekEventsQuery";
 import { CalendarGrid } from "@web/layout/calendar-grid/components/CalendarGrid";
 import { AllDayRow } from "@web/views/Week/components/Grid/AllDayRow/AllDayRow";
 import { EdgeNavigationIndicators } from "@web/views/Week/components/Grid/MainGrid/EdgeNavigationIndicators/EdgeNavigationIndicators";
@@ -30,6 +31,12 @@ export const Grid: FC<Props> = ({
   weekProps,
 }) => {
   const { allDayRef, allDayRowRef, mainGridElementRef, mainGridRef } = gridRefs;
+  // Subscribes to the same cache entry the event layers read, so this reports
+  // their load without issuing a second fetch.
+  const { isPending: isLoadingEvents } = useWeekEventsQueryStatus({
+    startOfView: weekProps.component.startOfView,
+    endOfView: weekProps.component.endOfView,
+  });
 
   useDragEdgeNavigation(mainGridRef, weekProps);
 
@@ -72,6 +79,7 @@ export const Grid: FC<Props> = ({
                 allDayGridOffsetTopPx={GRID_Y_START}
                 allDayRowsCount={allDayRowsCount}
                 gridRefs={gridRefs}
+                isLoadingEvents={isLoadingEvents}
                 onAllDayMouseDown={onAllDayMouseDown}
                 onTimedMouseDown={onTimedMouseDown}
                 timedEventsLayer={timedEventsLayer}
