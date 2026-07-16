@@ -32,13 +32,53 @@ describe("mapEventRecord", () => {
     expect(event.id).toBe(record._id.toHexString());
     expect(event.calendarId).toBe(record.calendarId.toHexString());
     if (event.schedule.kind === "timed") {
-      expect(event.schedule.start).toBe(record.schedule.start.toISOString());
-      expect(event.schedule.end).toBe(record.schedule.end.toISOString());
+      // America/Denver is UTC-6 in July (MDT), so the wire string should
+      // carry that offset instead of a bare "Z", while still representing
+      // the same instant as the stored UTC Date.
+      expect(event.schedule.start).toBe("2026-07-14T09:00:00.000-06:00");
+      expect(event.schedule.end).toBe("2026-07-14T10:00:00.000-06:00");
+      expect(new Date(event.schedule.start).getTime()).toBe(
+        record.schedule.start.getTime(),
+      );
+      expect(new Date(event.schedule.end).getTime()).toBe(
+        record.schedule.end.getTime(),
+      );
     } else {
       throw new Error("expected timed schedule");
     }
     expect(event.createdAt).toBe(record.createdAt.toISOString());
     expect(event.updatedAt).toBeNull();
+  });
+
+  it("falls back to a UTC offset instead of throwing when a legacy record has an invalid timeZone", () => {
+    // Un-migrated/corrupt records can carry a timeZone that isn't a
+    // recognized IANA zone; dayjs.tz() throws on this rather than silently
+    // falling back, so the mapper must guard it itself. `as EventRecord`
+    // bypasses the branded TimeZone type to simulate that bad data.
+    const record = {
+      ...buildRecord(),
+      schedule: {
+        kind: "timed",
+        start: new Date("2026-07-14T15:00:00.000Z"),
+        end: new Date("2026-07-14T16:00:00.000Z"),
+        timeZone: "",
+      },
+    } as EventRecord;
+
+    let event: ReturnType<typeof mapEventRecord> | undefined;
+    expect(() => {
+      event = mapEventRecord(record);
+    }).not.toThrow();
+    if (event?.schedule.kind === "timed") {
+      expect(event.schedule.start).toBe(
+        (record.schedule as { start: Date }).start.toISOString(),
+      );
+      expect(event.schedule.end).toBe(
+        (record.schedule as { end: Date }).end.toISOString(),
+      );
+    } else {
+      throw new Error("expected timed schedule");
+    }
   });
 
   it("maps an all-day event unchanged", () => {
