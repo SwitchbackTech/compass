@@ -260,8 +260,11 @@ describe("Week grid read-only interaction gate", () => {
       fireEvent.mouseDown(card, { button: 0, buttons: 1 });
     });
 
-    expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
-    expect(useDraftStore.getState().event?._id).toBe(event.id);
+    // Assert the draft the form actually renders from, not just that some
+    // draft activity started: opening the form without a `gridDraft` is what
+    // used to blank the sidebar.
+    expect(useDraftStore.getState().status?.activity).toBe("gridClick");
+    expect(useDraftStore.getState().gridDraft?.source?.id).toBe(event.id);
 
     act(() => draftActions.discard());
   });
