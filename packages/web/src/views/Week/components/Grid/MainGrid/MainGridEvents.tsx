@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   type CalendarCardIdentity,
   isEventReadOnly,
@@ -10,6 +10,7 @@ import {
   Categories_Event,
   type GridEvent,
 } from "@web/common/types/web.event.types";
+import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import {
   draftActions,
@@ -37,7 +38,11 @@ interface Props {
 
 export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const draft = useDraftStore(selectDraft);
-  const { isPending: isLoadingWeekView, timedEvents } = useWeekEventViewModel({
+  const {
+    events: weekEvents,
+    isPending: isLoadingWeekView,
+    timedEvents,
+  } = useWeekEventViewModel({
     startOfView: weekProps.component.startOfView,
     endOfView: weekProps.component.endOfView,
   });
@@ -94,6 +99,25 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     });
   };
 
+  // Read-only cards can't be repositioned, so they don't need the
+  // keyboardEdit path above - and must not use it: `start` leaves `gridDraft`
+  // null, which opens the sidebar form with nothing to render.
+  const openReadOnlyDetails = useCallback(
+    (event: GridEvent) => {
+      const sourceEvent = weekEvents.find(
+        (candidate) => candidate.id === event._id,
+      );
+      const draft = sourceEvent ? editGridEventDraft(sourceEvent) : null;
+      if (!draft) {
+        return;
+      }
+
+      draftActions.startGridDraft({ activity: "gridClick", draft });
+      draftActions.setFormOpen(true);
+    },
+    [weekEvents],
+  );
+
   return (
     <div id={ID_GRID_EVENTS_TIMED}>
       {!isLoadingWeekView &&
@@ -124,6 +148,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
                 key={`initial-${event._id}`}
                 measurements={measurements}
                 onEventKeyDown={handleKeyDown}
+                onOpenReadOnlyDetails={openReadOnlyDetails}
                 weekProps={weekProps}
               />
             );
@@ -141,6 +166,7 @@ interface MainGridEventItemProps {
   isReadOnly: boolean;
   measurements: Measurements_Grid;
   onEventKeyDown: (event: GridEvent) => void;
+  onOpenReadOnlyDetails: (event: GridEvent) => void;
   weekProps: WeekProps;
 }
 
@@ -152,6 +178,7 @@ const MainGridEventItem = ({
   isReadOnly,
   measurements,
   onEventKeyDown,
+  onOpenReadOnlyDetails,
   weekProps,
 }: MainGridEventItemProps) => {
   // Read-only events never register as an interaction target below, so the
@@ -179,11 +206,11 @@ const MainGridEventItem = ({
   // Being unregistered above also means the interaction engine's own click
   // resolution never fires, so a read-only card would otherwise stop being
   // clickable - events must stay inspectable even when they can't be
-  // mutated. Wiring the click straight to the same "open" action the
-  // keyboard path uses bypasses the engine entirely for this card, so it
-  // never becomes a drag/resize target no matter how the pointer moves.
+  // mutated. Wiring the click straight to an "open" action bypasses the
+  // engine entirely for this card, so it never becomes a drag/resize target
+  // no matter how the pointer moves.
   const onEventMouseDown = isReadOnly
-    ? (clickedEvent: GridEvent) => onEventKeyDown(clickedEvent)
+    ? (clickedEvent: GridEvent) => onOpenReadOnlyDetails(clickedEvent)
     : undefined;
 
   return (
@@ -194,7 +221,7 @@ const MainGridEventItem = ({
       event={event}
       interactionAttributes={interactionAttributes}
       measurements={measurements}
-      onEventKeyDown={onEventKeyDown}
+      onEventKeyDown={isReadOnly ? onOpenReadOnlyDetails : onEventKeyDown}
       onEventMouseDown={onEventMouseDown}
       ref={registrationRef}
       weekProps={weekProps}

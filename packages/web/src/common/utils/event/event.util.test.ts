@@ -1,5 +1,7 @@
 import { ObjectId } from "bson";
+import { Status } from "@core/errors/status.codes";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { type ApiError, type ApiResponse } from "@web/api/api.types";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -40,8 +42,11 @@ describe("handleError", () => {
   });
 
   it("logs once and does not reload on a server error", () => {
-    const error = new Error("Request failed with status 500");
+    // Carries a `response` like a real 500 from `createApiError`: backend
+    // availability is judged on the response status, not the message text.
+    const error = new Error("Request failed with status 500") as ApiError;
     error.name = "ApiError";
+    error.response = { status: Status.INTERNAL_SERVER } as ApiResponse<unknown>;
 
     handleError(error);
 

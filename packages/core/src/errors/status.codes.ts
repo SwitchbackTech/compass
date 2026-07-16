@@ -17,6 +17,7 @@ export enum Status {
   /* 5xx - Server Error */
   INTERNAL_SERVER = 500,
   NOT_IMPLEMENTED = 501,
+  BAD_GATEWAY = 502,
   SERVICE_UNAVAILABLE = 503,
   GATEWAY_TIMEOUT = 504,
 

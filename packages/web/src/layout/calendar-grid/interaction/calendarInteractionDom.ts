@@ -2,7 +2,13 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { type FloatingDraftEventMount } from "@web/interaction/CalendarInteractionAdapter";
 import { createDraftEventClone } from "@web/interaction/dom/clone/createDraftEventClone";
+import {
+  CALENDAR_GRID_EVENT_TIME_LABEL_FONT_SIZE,
+  CALENDAR_GRID_EVENT_TIME_LABEL_OPACITY,
+} from "@web/layout/calendar-grid/calendarGrid.constants";
 
+export const CALENDAR_EVENT_CONTENT_ATTRIBUTE = "data-calendar-event-content";
+export const CALENDAR_EVENT_CONTENT_SELECTOR = `[${CALENDAR_EVENT_CONTENT_ATTRIBUTE}='true']`;
 export const CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE =
   "data-calendar-event-resize-handle";
 export const CALENDAR_EVENT_TIME_LABEL_ATTRIBUTE =
@@ -82,7 +88,9 @@ const getOrCreateCalendarDraftEventTimeLabel = (node: HTMLElement) => {
   const label = document.createElement("span");
 
   label.setAttribute(CALENDAR_EVENT_TIME_LABEL_ATTRIBUTE, "true");
-  label.style.fontSize = "0.563rem";
+  label.style.fontSize = CALENDAR_GRID_EVENT_TIME_LABEL_FONT_SIZE;
+  label.style.opacity = CALENDAR_GRID_EVENT_TIME_LABEL_OPACITY;
+  label.style.whiteSpace = "nowrap";
   label.style.position = "relative";
   label.style.zIndex = "3";
 
@@ -94,15 +102,12 @@ const getOrCreateCalendarDraftEventTimeLabel = (node: HTMLElement) => {
   return label;
 };
 
-const getDraftEventTimeLabelParent = (node: HTMLElement) => {
-  const firstChild = node.firstElementChild;
-
-  if (firstChild instanceof HTMLElement && firstChild.tagName !== "SPAN") {
-    return firstChild;
-  }
-
-  return node;
-};
+// Match on the content container explicitly. Selecting it by "first child that
+// isn't a SPAN" instead lands on the calendar accent bar, a 3px-wide absolutely
+// positioned div, whenever the event carries a calendar identity — which
+// renders the label squished against the card's left edge.
+const getDraftEventTimeLabelParent = (node: HTMLElement) =>
+  node.querySelector<HTMLElement>(CALENDAR_EVENT_CONTENT_SELECTOR) ?? node;
 
 const getFirstDirectResizeHandle = (node: HTMLElement) => {
   for (const child of node.children) {

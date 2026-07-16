@@ -8,6 +8,9 @@ export const CALENDAR_EVENT_PADDING_RIGHT = 10;
 export const CALENDAR_TIMED_EVENT_COLUMN_INSET = 5;
 export const CALENDAR_GRID_EVENT_TIME_LABEL_FONT_SIZE = "11px";
 export const CALENDAR_GRID_EVENT_TIME_LABEL_OPACITY = "0.78";
+// Line box the 11px time label occupies. The title's line clamp subtracts this
+// so the label keeps its row instead of being pushed past the card's clipped edge.
+export const CALENDAR_GRID_EVENT_TIME_LABEL_LINE_HEIGHT = 13;
 export const CALENDAR_GRID_EVENT_TITLE_LINE_HEIGHT = "16px";
 export const CALENDAR_MIN_EVENT_HEIGHT_FOR_TIME_LABEL = 36;
 export const CALENDAR_MIN_EVENT_WIDTH_FOR_TIME_LABEL = 90;

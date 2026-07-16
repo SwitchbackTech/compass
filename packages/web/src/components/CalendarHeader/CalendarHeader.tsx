@@ -25,8 +25,9 @@ interface Props {
 }
 
 /**
- * Shared header for the Day and Week views: a left-aligned heading and a
- * right-aligned control cluster (view switcher, today, prev/next).
+ * Shared header for the Day and Week views: a left-aligned heading with the
+ * prev/next arrows beside it, and a right-aligned control cluster (today, view
+ * switcher).
  * Owns the heading markup, sidebar-toggle state, and the control layout so both
  * views stay consistent without re-wiring these concerns per caller.
  */
@@ -42,7 +43,7 @@ export const CalendarHeader: FC<Props> = ({
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
 
   return (
-    <div className="flex h-12 w-full shrink-0 items-center text-text-light">
+    <div className="flex h-12 w-full shrink-0 items-center gap-3 text-text-light">
       {!isSidebarOpen ? (
         <TooltipWrapper
           description="Open sidebar"
@@ -59,18 +60,19 @@ export const CalendarHeader: FC<Props> = ({
         </TooltipWrapper>
       ) : null}
 
-      <h1 className="pl-8 text-text-lighter" aria-live="polite">
+      <h1 className="text-text-lighter" aria-live="polite">
         <span className="relative text-xl">{label}</span>
       </h1>
 
+      <TooltipWrapper shortcut="J">
+        <ArrowButton direction="left" label={prevLabel} onClick={onPrev} />
+      </TooltipWrapper>
+      <TooltipWrapper shortcut="K">
+        <ArrowButton direction="right" label={nextLabel} onClick={onNext} />
+      </TooltipWrapper>
+
       <div className="z-2 ml-auto flex items-center gap-3 pr-5">
         <TodayButton navigateToToday={onToday} isToday={isToday} />
-        <TooltipWrapper shortcut="J">
-          <ArrowButton direction="left" label={prevLabel} onClick={onPrev} />
-        </TooltipWrapper>
-        <TooltipWrapper shortcut="K">
-          <ArrowButton direction="right" label={nextLabel} onClick={onNext} />
-        </TooltipWrapper>
         <SelectView />
       </div>
     </div>
