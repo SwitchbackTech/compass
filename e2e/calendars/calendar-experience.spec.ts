@@ -463,6 +463,17 @@ test("a read-only event blocks a drag attempt", async ({ page }) => {
     .last();
 
   await card.scrollIntoViewIfNeeded();
+
+  // isEventReadOnly (useCalendarLookup.ts) fails OPEN as writable until the
+  // authenticated calendars query resolves, so the card can briefly render
+  // interactive right after setupCalendarExperiencePage returns (its own
+  // wait only confirms the sidebar reflects the refetch, not this card's
+  // next render). Wait for the read-only gate's actual DOM signal - the
+  // absence of the interaction-registry id attribute
+  // (WEEK_INTERACTION_EVENT_ID_ATTRIBUTE in weekEventRegistry.ts) - before
+  // dragging, so the drag itself isn't racing that same settling window.
+  await expect(card).not.toHaveAttribute("data-week-interaction-event-id");
+
   const box = await card.boundingBox();
   if (!box) {
     throw new Error("Expected the read-only event card to be visible.");
