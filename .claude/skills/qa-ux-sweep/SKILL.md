@@ -37,9 +37,9 @@ this skill was invoked:
   established) — `git diff START..END --stat`.
 
 Map the changed file paths under `packages/web/src` to the routes/flows they
-affect — e.g. `WeekView/*` → open week view and exercise it; `Someday/*` →
-open the someday list; a shared component (`Button`, `Tooltip`, a hook) →
-check every surface that renders it, not just one. If a diff touches only
+affect — e.g. `WeekView/*` → open week view and exercise it; a shared
+component (`Button`, `Tooltip`, a hook) → check every surface that renders
+it, not just one. If a diff touches only
 non-UI code (backend, core schema, scripts, tests), say so and skip the
 browser walkthrough entirely — there's nothing to explore.
 
@@ -66,8 +66,8 @@ read the DOM, actually operate it with `computer` and confirm with
 - **Keyboard-only pass**: `Tab`/`Shift+Tab` through the surface. Is every
   interactive element reachable? Is the focus order sane (matches visual/DOM
   order)? Is there always a visible focus ring? Can every mouse-only action
-  (drag to create/resize an event, drag-reorder a someday item) also be done
-  from the keyboard, or does it have no equivalent at all?
+  (drag to create/resize/move an event) also be done from the keyboard, or
+  does it have no equivalent at all?
 - **Accessible names**: for icon-only buttons, custom controls, and anything
   that isn't a native `<label>`-connected input, check `read_page`'s
   accessible-name output. Borrow the exact checklist from `qa-a11y-audit`

@@ -36,9 +36,12 @@ legacy types are deleted.
 ## Deferred Beyond V1
 
 These are scoped out of the sub-calendar v1 contracts above, not overlooked.
-Each line names the decision in `team/archive/google-subcalendar-project/master-doc.md`'s assumption
-log that anchors the carve-out, so a future v2 effort starts from the
-recorded reasoning instead of rediscovering it:
+Each line names the decision in the project's
+[master doc](https://github.com/SwitchbackTech/compass-calendar/blob/90696e1dd9b279f7f1c56be0cef93b8b9c5787fe/team/archive/google-subcalendar-project/master-doc.md)'s
+assumption log (archived after v1 shipped — see
+`compass-calendar-internal/projects/google-subcalendars/master-doc.md`) that anchors
+the carve-out, so a future v2 effort starts from the recorded reasoning instead of
+rediscovering it:
 
 - **Cross-calendar event moves.** An existing event's `calendarId` is
   immutable once created (A6) — creating and duplicating pick a calendar,

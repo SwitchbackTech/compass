@@ -86,7 +86,9 @@ are tuned. No index changes in this phase.
 
 ## Regression rule
 
-Per `team/archive/google-subcalendar-project/09-v1-release-hardening.md` step 5: investigate any
+Per the v1 release-hardening packet's
+[step 5](https://github.com/SwitchbackTech/compass-calendar/blob/90696e1dd9b279f7f1c56be0cef93b8b9c5787fe/team/archive/google-subcalendar-project/09-v1-release-hardening.md)
+(archived after v1 shipped — see `compass-calendar-internal/projects/google-subcalendars/09-v1-release-hardening.md`): investigate any
 p95 query or render regression over 20% from the numbers recorded above.
 Re-run both suites after touching the import/sync path or
 `event.repository.ts`'s read paths, compare against this file, and update

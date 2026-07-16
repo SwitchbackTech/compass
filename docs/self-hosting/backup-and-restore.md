@@ -345,9 +345,12 @@ section does not repeat that material.
 This documents the REHEARSED procedure the release runbook requires
 operators to exercise on staging before it is ever run for real. Per
 decision A36, the production cutover runs exactly once, manually, only after
-every gate in `team/archive/google-subcalendar-project/09-v1-release-hardening.md` passes on
-staging — do not run these commands against production outside that single
-planned window.
+every gate in the v1 release-hardening packet
+(archived after v1 shipped to production — see
+`compass-calendar-internal/projects/google-subcalendars/09-v1-release-hardening.md`,
+or the [pre-archive version](https://github.com/SwitchbackTech/compass-calendar/blob/90696e1dd9b279f7f1c56be0cef93b8b9c5787fe/team/archive/google-subcalendar-project/09-v1-release-hardening.md))
+passes on staging — do not run these commands against production outside that
+single planned window.
 
 ### Before cutover: dump the affected collections
 
