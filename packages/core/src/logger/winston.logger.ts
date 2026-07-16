@@ -42,47 +42,20 @@ const consoleFormat = winston.format.combine(
   }),
 );
 
-const transports = (logFileName?: string) => {
-  const fileTransport = new winston.transports.File({
-    filename: logFileName ? logFileName : "logs/app.log",
-    level: process.env["LOG_LEVEL"],
-    maxsize: MB_50,
-    maxFiles: 1,
-  });
-  const consoleTransport = new winston.transports.Console({
-    format: consoleFormat,
-  });
-
-  if (logFileName) {
-    return [fileTransport];
-  } else {
-    return [fileTransport, consoleTransport];
-  }
-};
-
-export const Logger = (namespace?: string, logFile?: string) => {
-  if (!namespace) {
-    return winston.createLogger({
-      level: process.env["LOG_LEVEL"],
-      format: openTelemetryFormat(),
-      transports: transports(),
-    });
-  }
-
-  if (logFile) {
-    const secondaryLogger = winston.createLogger({
-      level: process.env["LOG_LEVEL"],
-      format: openTelemetryFormat(),
-      transports: transports(logFile),
-    });
-    return secondaryLogger.child({ namespace });
-  }
-
-  const primaryLogger = winston.createLogger({
+export const Logger = (namespace?: string) => {
+  const logger = winston.createLogger({
     level: process.env["LOG_LEVEL"],
     format: openTelemetryFormat(),
-    transports: transports(),
+    transports: [
+      new winston.transports.File({
+        filename: "logs/app.log",
+        level: process.env["LOG_LEVEL"],
+        maxsize: MB_50,
+        maxFiles: 1,
+      }),
+      new winston.transports.Console({ format: consoleFormat }),
+    ],
   });
 
-  return primaryLogger.child({ namespace });
+  return namespace ? logger.child({ namespace }) : logger;
 };

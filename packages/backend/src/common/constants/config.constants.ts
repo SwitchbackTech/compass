@@ -13,6 +13,8 @@ import {
 
 const logger = Logger("app:constants");
 
+const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
+
 const ConfigSchema = z
   .object({
     BASEURL: z.string().nonempty(),
@@ -107,7 +109,7 @@ function parseRawConfig(config: CompassConfig): Config {
     TOKEN_GCAL_NOTIFICATION: nonEmpty(config.google?.notificationToken) ?? "",
     TOKEN_COMPASS_SYNC: config.backend.compassToken,
     POSTHOG_KEY: nonEmpty(config.posthog?.key),
-    POSTHOG_HOST: nonEmpty(config.posthog?.host) || "https://us.i.posthog.com",
+    POSTHOG_HOST: nonEmpty(config.posthog?.host) || DEFAULT_POSTHOG_HOST,
   });
 }
 
@@ -136,7 +138,7 @@ export function parseConfigFromEnv(
     TOKEN_GCAL_NOTIFICATION: rawEnv["TOKEN_GCAL_NOTIFICATION"],
     TOKEN_COMPASS_SYNC: rawEnv["TOKEN_COMPASS_SYNC"],
     POSTHOG_KEY: rawEnv["POSTHOG_KEY"],
-    POSTHOG_HOST: rawEnv["POSTHOG_HOST"] || "https://us.i.posthog.com",
+    POSTHOG_HOST: rawEnv["POSTHOG_HOST"] || DEFAULT_POSTHOG_HOST,
   });
 }
 
