@@ -57,9 +57,12 @@ export const CalendarGrid: FC<CalendarGridProps> = ({
       visibleDates={visibleDates}
     />
     {isLoadingEvents && (
+      // pointer-events-none: the loader is informational and covers the whole
+      // grid, so without it the overlay swallows the mousedown that
+      // drag-creates an event for as long as the first fetch runs.
       <AbsoluteOverflowLoader
         aria-label="Loading events"
-        className="[&>div]:my-0"
+        className="pointer-events-none [&>div]:my-0"
         role="status"
       />
     )}
