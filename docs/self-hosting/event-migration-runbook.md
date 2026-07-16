@@ -1,8 +1,9 @@
 # Event migration runbook (sub-calendar v1)
 
-> For Compass-operated staging and the eventual coordinated production release,
-> use the
-> [Google sub-calendar big-bang deployment runbook](../../team/architect/google-subcalendar-big-bang-runbook.md).
+> Compass-operated staging and the coordinated production release used the
+> [Google sub-calendar big-bang deployment runbook](https://github.com/SwitchbackTech/compass-calendar/blob/90696e1dd9b279f7f1c56be0cef93b8b9c5787fe/team/architect/google-subcalendar-big-bang-runbook.md)
+> (archived after v1 shipped to production on 2026-07-15 — see
+> `compass-calendar-internal/projects/google-subcalendars/google-subcalendar-big-bang-runbook.md`).
 > It splits pre-rename migrations from post-cutover repairs; an unbounded
 > pre-rename `migrate up` is no longer safe.
 

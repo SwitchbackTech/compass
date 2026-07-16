@@ -6,13 +6,11 @@ on:
       - main
     paths-ignore:
       - ".gitignore"
-      - "team/**"
       - "**/*.md"
       - "docs/**"
   push:
     paths-ignore:
       - ".gitignore"
-      - "team/**"
       - "**/*.md"
       - "docs/**"
 
