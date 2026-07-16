@@ -1,5 +1,4 @@
 import { ObjectId } from "mongodb";
-import dayjs from "@core/util/date/dayjs";
 import {
   type CalendarId,
   type DateTime,
@@ -7,6 +6,7 @@ import {
 } from "@core/types/domain-primitives";
 import { type Event, type EventSchedule } from "@core/types/event.contracts";
 import { type CreateEventInput } from "@core/types/event-command.contracts";
+import dayjs from "@core/util/date/dayjs";
 import {
   type EventRecord,
   type EventScheduleRecord,

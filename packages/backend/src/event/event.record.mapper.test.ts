@@ -55,14 +55,11 @@ describe("mapEventRecord", () => {
     // recognized IANA zone; dayjs.tz() throws on this rather than silently
     // falling back, so the mapper must guard it itself. `as EventRecord`
     // bypasses the branded TimeZone type to simulate that bad data.
+    const start = new Date("2026-07-14T15:00:00.000Z");
+    const end = new Date("2026-07-14T16:00:00.000Z");
     const record = {
       ...buildRecord(),
-      schedule: {
-        kind: "timed",
-        start: new Date("2026-07-14T15:00:00.000Z"),
-        end: new Date("2026-07-14T16:00:00.000Z"),
-        timeZone: "",
-      },
+      schedule: { kind: "timed", start, end, timeZone: "" },
     } as EventRecord;
 
     let event: ReturnType<typeof mapEventRecord> | undefined;
@@ -70,12 +67,8 @@ describe("mapEventRecord", () => {
       event = mapEventRecord(record);
     }).not.toThrow();
     if (event?.schedule.kind === "timed") {
-      expect(event.schedule.start).toBe(
-        (record.schedule as { start: Date }).start.toISOString(),
-      );
-      expect(event.schedule.end).toBe(
-        (record.schedule as { end: Date }).end.toISOString(),
-      );
+      expect(event.schedule.start).toBe(start.toISOString());
+      expect(event.schedule.end).toBe(end.toISOString());
     } else {
       throw new Error("expected timed schedule");
     }
