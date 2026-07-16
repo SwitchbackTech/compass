@@ -245,6 +245,29 @@ describe("Week grid read-only interaction gate", () => {
     expect(card).not.toHaveAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE);
   });
 
+  it("still opens a read-only all-day event for inspection on click", () => {
+    const readOnlyCalendar = makeCalendar();
+    seededCalendars = [readOnlyCalendar];
+    const event = createAllDayEvent(readOnlyCalendar.id);
+    seededEvents = [event];
+
+    renderAllDayEvents();
+
+    const card = screen.getByRole("button", {
+      name: /all-day event: team holiday/i,
+    });
+    act(() => {
+      fireEvent.mouseDown(card, { button: 0, buttons: 1 });
+    });
+
+    // Assert the draft the form renders from - opening the form without a
+    // `gridDraft` is what used to blank the sidebar.
+    expect(useDraftStore.getState().status?.activity).toBe("gridClick");
+    expect(useDraftStore.getState().gridDraft?.source?.id).toBe(event.id);
+
+    act(() => draftActions.discard());
+  });
+
   it("still opens a read-only timed event for inspection on click", () => {
     const readOnlyCalendar = makeCalendar();
     seededCalendars = [readOnlyCalendar];
