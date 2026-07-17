@@ -6,9 +6,8 @@ Compass supports a meaningful local-first path for unauthenticated users and res
 
 Compass uses two intentionally separate storage abstractions:
 
-- `OfflineDataStore` owns asynchronous event and migration-record data (plus a
-  retained, read-only legacy `tasks` table — see below). Its current
-  implementation is `IndexedDbOfflineDataStore`.
+- `OfflineDataStore` owns asynchronous event and migration-record data. Its
+  current implementation is `IndexedDbOfflineDataStore`.
 - `BrowserKeyValueStore` owns synchronous browser key-value state backed by
   `localStorage` or `sessionStorage`.
 
@@ -48,32 +47,28 @@ Current database name:
 Current table groups:
 
 - `events`
-- `tasks` — retained read-only for recovery; the Tasks feature was removed
-  (2026-07) and there is no live task-creation or task-editing path anymore
 - `_migrations`
 
 The IndexedDB store keeps:
 
 - events keyed by `_id`
-- tasks keyed by `_id` and associated to a `dateKey` (legacy rows only, see
-  `StoredTask` in `offline-data.store.ts`)
 - migration completion records in `_migrations`
 
-## Legacy Primary-Key Migration
+## Schema Upgrade Recovery
 
 File:
 
 - `packages/web/src/common/storage/offline-data/legacy-primary-key.migration.ts`
 
-There is explicit support for an older task schema that used `id` instead of `_id`. This exists purely so the retained legacy `tasks` rows (see Tasks below) survive a Dexie schema upgrade without data loss.
+Handles a Dexie `UpgradeError` when a table's primary key changes shape in-place (the schema change Dexie can't apply automatically).
 
 Recovery strategy:
 
-1. detect the Dexie upgrade error
-2. read legacy records through a legacy Dexie schema
+1. detect the Dexie upgrade error (`isPrimaryKeyUpgradeError`)
+2. read existing records through a matching legacy Dexie schema
 3. delete the old database
 4. reopen using the current schema
-5. reinsert events and legacy tasks
+5. reinsert the recovered records
 
 ## Data Migrations
 
@@ -123,16 +118,6 @@ Event operations:
 - query overlapping date ranges
 - put one or many events
 - delete by event id
-
-## Legacy Task Recovery
-
-The only remaining task-shaped operations are read-only, for recovering data a user had before the feature was removed:
-
-- `getAllTasks()` — read every retained legacy task row
-- `getTaskCount()` — cheap existence check without reading every row
-- `clearAllTasks()` — clear the retained legacy table
-
-There is no create/update/reorder/move path for tasks anymore.
 
 ## When To Add A Migration
 
