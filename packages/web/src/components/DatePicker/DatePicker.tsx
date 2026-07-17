@@ -116,7 +116,12 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
           >
             <div
               className={classNames(
-                "min-w-0 flex-1 items-start",
+                "min-w-0 items-start",
+                // Grid pickers grow the label so the arrows sit at the right
+                // edge. The sidebar keeps the label at intrinsic width so the
+                // month label and nav arrows read as one group on the left,
+                // clearly separate from the sidebar-close control.
+                view !== "sidebar" && "flex-1",
                 monthContainerClassName,
               )}
             >
