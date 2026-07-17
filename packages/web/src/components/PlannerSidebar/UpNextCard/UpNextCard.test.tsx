@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
@@ -11,6 +12,7 @@ import {
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { formatStartsIn, UpNextCard } from "./UpNextCard";
+import { useUpNextEventShortcut } from "./useUpNextEvent";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 
@@ -79,6 +81,7 @@ describe("UpNextCard", () => {
     expect(screen.getByText("Soon Event")).toBeInTheDocument();
     expect(screen.getByText("Starts in 30 minutes")).toBeInTheDocument();
     expect(screen.queryByText("Later Event")).toBeNull();
+    expect(screen.getByText("N")).toBeInTheDocument();
   });
 
   it("renders nothing when today has no upcoming timed events", () => {
@@ -119,5 +122,44 @@ describe("UpNextCard", () => {
         EventIdSchema.parse(SOON_EVENT_ID),
       );
     });
+  });
+});
+
+describe("useUpNextEventShortcut", () => {
+  it("opens the next event form with n", async () => {
+    const user = userEvent.setup();
+    const ShortcutHarness = () => {
+      useUpNextEventShortcut();
+      return null;
+    };
+
+    render(<ShortcutHarness />, {
+      events: [timedEvent(SOON_EVENT_ID, "Soon Event", 30)],
+    });
+
+    await user.keyboard("n");
+
+    await waitFor(() => {
+      const state = useDraftStore.getState();
+      expect(state.status?.isFormOpen).toBe(true);
+      expect(state.status?.activity).toBe("keyboardEdit");
+      expect(state.gridDraft?.source?.id).toBe(
+        EventIdSchema.parse(SOON_EVENT_ID),
+      );
+    });
+  });
+
+  it("does nothing when there is no upcoming event", async () => {
+    const user = userEvent.setup();
+    const ShortcutHarness = () => {
+      useUpNextEventShortcut();
+      return null;
+    };
+
+    render(<ShortcutHarness />, { events: [] });
+
+    await user.keyboard("n");
+
+    expect(useDraftStore.getState().status?.isFormOpen).toBe(false);
   });
 });

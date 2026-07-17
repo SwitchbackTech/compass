@@ -10,6 +10,8 @@ export const ROOT_ROUTES = {
   DAY_DATE: "/day/$dateString",
 } as const;
 
+export const DEFAULT_CALENDAR_ROUTE = ROOT_ROUTES.WEEK;
+
 // TanStack route *ids* (used for useMatch/useParams `from`), which diverge
 // from the URL-shaped ROOT_ROUTES above under the pathless "authenticated"
 // layout route. Kept as literals rather than importing the route objects

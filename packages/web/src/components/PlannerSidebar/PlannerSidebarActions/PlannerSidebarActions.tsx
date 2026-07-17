@@ -3,6 +3,8 @@ import {
   CommandIcon,
   KeyboardIcon,
 } from "@phosphor-icons/react";
+import { getGoogleSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
 import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
 import { useVersionCheck } from "@web/components/PlannerSidebar/PlannerSidebarActions/useVersionCheck";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
@@ -23,6 +25,9 @@ export const PlannerSidebarActions = ({
 }: Props) => {
   const isCmdPaletteOpen = useSettingsStore(selectIsCmdPaletteOpen);
   const { isUpdateAvailable } = useVersionCheck();
+  const googleState = useGoogleUiState();
+  const isCalendarSyncing =
+    getGoogleSyncStatus(googleState)?.variant === "syncing";
 
   const handleUpdateReload = () => {
     reloadLocation();
@@ -69,15 +74,29 @@ export const PlannerSidebarActions = ({
           onClick={toggleCmdPalette}
         >
           <button
-            aria-label="Open command palette"
+            aria-label={
+              isCalendarSyncing
+                ? "Open command palette, calendar syncing"
+                : "Open command palette"
+            }
             className="flex size-9 items-center justify-center rounded-default text-text-light-inactive transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             type="button"
           >
-            <CommandIcon
-              aria-hidden="true"
-              size={16}
-              weight={isCmdPaletteOpen ? "fill" : "regular"}
-            />
+            <span className="relative flex size-4 items-center justify-center">
+              <CommandIcon
+                aria-hidden="true"
+                size={16}
+                weight={isCmdPaletteOpen ? "fill" : "regular"}
+              />
+              {isCalendarSyncing ? (
+                <CommandIcon
+                  aria-hidden="true"
+                  className="c-sync-icon-wave absolute inset-0 text-text-lighter"
+                  size={16}
+                  weight={isCmdPaletteOpen ? "fill" : "regular"}
+                />
+              ) : null}
+            </span>
           </button>
         </TooltipWrapper>
 

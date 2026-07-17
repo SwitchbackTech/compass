@@ -1,4 +1,5 @@
 import { type GoogleAuthCodeRequest } from "@core/types/auth.types";
+import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
 import { GOOGLE_AUTH_CALLBACK_PATH } from "./google-authorization.constants";
 
 export function buildGoogleAuthCallbackUrl(origin = window.location.origin) {
@@ -13,11 +14,11 @@ export function getSafeGoogleAuthReturnPath(
     const url = new URL(href, origin);
 
     if (url.origin !== origin) {
-      return "/day";
+      return DEFAULT_CALENDAR_ROUTE;
     }
 
     if (url.pathname === GOOGLE_AUTH_CALLBACK_PATH) {
-      return "/day";
+      return DEFAULT_CALENDAR_ROUTE;
     }
 
     // Drop the transient auth-modal params so the OAuth round-trip doesn't
@@ -28,7 +29,7 @@ export function getSafeGoogleAuthReturnPath(
 
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
-    return "/day";
+    return DEFAULT_CALENDAR_ROUTE;
   }
 }
 

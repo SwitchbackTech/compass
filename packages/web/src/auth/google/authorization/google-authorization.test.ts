@@ -197,7 +197,7 @@ describe("completeGoogleAuthorization", () => {
     ).resolves.toEqual({
       status: "failed",
       message: "We couldn't connect your Google account. Please try again.",
-      returnPath: "/day",
+      returnPath: "/week",
     });
 
     expect(deps.authApi.loginOrSignup).not.toHaveBeenCalled();

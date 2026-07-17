@@ -1,7 +1,10 @@
 import { redirect } from "@tanstack/react-router";
 import { zYearMonthDayString } from "@core/types/type.utils";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
+import {
+  DEFAULT_CALENDAR_ROUTE,
+  ROOT_ROUTES,
+} from "@web/common/constants/routes";
 
 export interface DayLoaderData {
   // Local-mode, not UTC: dayEventQueryRange formats this to build the day's
@@ -41,6 +44,13 @@ export function redirectToToday(
   throw redirect({
     to,
     params: { dateString },
+    search: (prev: Record<string, unknown>) => prev,
+  });
+}
+
+export function redirectToDefaultCalendar(): never {
+  throw redirect({
+    to: DEFAULT_CALENDAR_ROUTE,
     search: (prev: Record<string, unknown>) => prev,
   });
 }

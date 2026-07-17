@@ -1,6 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
-import { afterAll, describe, expect, it, mock } from "bun:test";
+import {
+  resetGoogleSyncUIStateForTests,
+  setSyncingSyncIndicatorOverride,
+} from "@web/auth/google/state/google.sync.state";
+import { afterAll, afterEach, describe, expect, it, mock } from "bun:test";
 
 // mock.module is process-wide and not reliably restorable, so the real hook
 // is captured up front and a flag (flipped off in afterAll) decides which
@@ -28,10 +32,33 @@ afterAll(() => {
   isVersionCheckMocked = false;
 });
 
+afterEach(() => {
+  act(() => resetGoogleSyncUIStateForTests());
+});
+
 const { PlannerSidebarActions } =
   require("@web/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions") as typeof import("@web/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions");
 
 describe("PlannerSidebarActions", () => {
+  it("shimmers the command palette icon while Google Calendar is syncing", () => {
+    const { wrapper } = createStoreWrapper();
+    setSyncingSyncIndicatorOverride();
+
+    render(
+      <PlannerSidebarActions
+        isShortcutsOpen={false}
+        onToggleShortcuts={mock()}
+      />,
+      { wrapper },
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: "Open command palette, calendar syncing",
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("does not render the background import spinner in the sidebar", () => {
     const { wrapper } = createStoreWrapper();
 
@@ -48,6 +75,9 @@ describe("PlannerSidebarActions", () => {
         name: "Syncing Google Calendar in the background.",
       }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Open command palette" }),
+    ).toBeInTheDocument();
   });
 
   it("labels the shortcuts button as a close action when shortcuts are open", () => {

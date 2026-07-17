@@ -130,6 +130,6 @@ describe("completeGoogleAuthCallback", () => {
     expect(mockShowErrorToast).toHaveBeenCalledWith(
       "We couldn't connect your Google account. Please try again.",
     );
-    expect(navigate).toHaveBeenCalledWith("/day", { replace: true });
+    expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
   });
 });
