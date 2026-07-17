@@ -393,8 +393,8 @@ at the call site. Unexplained `incomplete` results seen in this suite today
 are `color-contrast` (axe cannot compute a background across an
 absolutely-positioned overlap or a CSS gradient, and cannot reliably sample
 single-character date-cell text) - these are exactly the states the
-datepicker's targeted contrast test, daily staging use, and periodic
-accessibility audits already cover.
+datepicker's targeted contrast test covers or periodic accessibility audits
+must inspect.
 
 #### Representative Checkpoints
 
