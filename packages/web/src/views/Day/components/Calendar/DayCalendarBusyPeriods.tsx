@@ -10,6 +10,7 @@ import {
   type GridMeasurements,
   type GridVisibleDate,
 } from "@web/grid/types/grid.types";
+import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 
 const ID_GRID_BUSY_PERIODS = "busyPeriods";
 
@@ -23,10 +24,9 @@ interface Props {
 /**
  * Day-grid counterpart to MainGridBusyPeriods (packet 08 phase 4; A7):
  * renders freeBusyReader calendars' busy time as inert decoration in the day
- * timed grid, mounted beside DayCalendarTimedEventsLayer. Matches
- * DayCalendarGrid's own event-range convention
- * (dateInView.startOf/endOf("day").utc(true).format()) so the availability
- * range agrees with the day events query. Renders nothing while the
+ * timed grid, mounted beside DayCalendarTimedEventsLayer. Shares
+ * dayEventQueryRange with the day events query so the availability range
+ * agrees with the events drawn beneath it. Renders nothing while the
  * availability query is loading/errored/disabled.
  */
 export const DayCalendarBusyPeriodsLayer = ({
@@ -35,15 +35,11 @@ export const DayCalendarBusyPeriodsLayer = ({
   measurements,
   visibleDates,
 }: Props) => {
-  const start = useMemo(
-    () => dateInView.startOf("day").utc(true).format(),
+  const { startDate, endDate } = useMemo(
+    () => dayEventQueryRange(dateInView),
     [dateInView],
   );
-  const end = useMemo(
-    () => dateInView.endOf("day").utc(true).format(),
-    [dateInView],
-  );
-  const { data } = useAvailabilityQuery({ start, end });
+  const { data } = useAvailabilityQuery({ start: startDate, end: endDate });
   const calendarLookup = useCalendarLookup();
   const segments = useMemo(
     () => splitBusyPeriodsByDay(data?.busyPeriods ?? [], visibleDates),
