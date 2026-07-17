@@ -124,7 +124,7 @@ describe("ContextMenuItems", () => {
 
     renderWithTheme(<ContextMenuItems event={event} close={mockClose} />);
 
-    const editButton = screen.getByRole("button", { name: "Edit" });
+    const editButton = screen.getByRole("menuitem", { name: "Edit" });
     await user.click(editButton);
 
     expect(mockSetDraft).toHaveBeenCalled();
@@ -143,7 +143,7 @@ describe("ContextMenuItems", () => {
       pendingEventIds: ["pending-event-1"],
     });
 
-    const deleteButton = screen.getByRole("button", { name: "Delete" });
+    const deleteButton = screen.getByRole("menuitem", { name: "Delete" });
     expect(deleteButton).not.toBeDisabled();
     await user.click(deleteButton);
 
@@ -163,7 +163,7 @@ describe("ContextMenuItems", () => {
       pendingEventIds: ["pending-event-1"],
     });
 
-    const editButton = screen.getByRole("button", { name: "Edit" });
+    const editButton = screen.getByRole("menuitem", { name: "Edit" });
     await user.click(editButton);
 
     expect(mockSetDraft).toHaveBeenCalled();
@@ -182,7 +182,7 @@ describe("ContextMenuItems", () => {
       pendingEventIds: ["pending-event-1"],
     });
 
-    const duplicateButton = screen.getByRole("button", { name: "Duplicate" });
+    const duplicateButton = screen.getByRole("menuitem", { name: "Duplicate" });
     await user.click(duplicateButton);
 
     expect(mockDuplicateEvent).toHaveBeenCalled();
@@ -199,7 +199,7 @@ describe("ContextMenuItems", () => {
       pendingEventIds: ["pending-event-1"],
     });
 
-    const deleteButton = screen.getByRole("button", { name: "Delete" });
+    const deleteButton = screen.getByRole("menuitem", { name: "Delete" });
     expect(deleteButton).not.toBeDisabled();
     expect(deleteButton).not.toHaveStyle({ cursor: "wait" });
   });
@@ -243,15 +243,15 @@ describe("ContextMenuItems read-only gate", () => {
       calendars: [readOnlyCalendar],
     });
 
-    expect(screen.getByRole("button", { name: "View" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "View" })).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Edit" }),
+      screen.queryByRole("menuitem", { name: "Edit" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Duplicate" }),
+      screen.getByRole("menuitem", { name: "Duplicate" }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Delete" }),
+      screen.queryByRole("menuitem", { name: "Delete" }),
     ).not.toBeInTheDocument();
   });
 
@@ -271,9 +271,9 @@ describe("ContextMenuItems read-only gate", () => {
       calendars: [writableCalendar],
     });
 
-    expect(screen.getByRole("button", { name: "View" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "View" })).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Delete" }),
+      screen.queryByRole("menuitem", { name: "Delete" }),
     ).not.toBeInTheDocument();
   });
 
@@ -292,7 +292,9 @@ describe("ContextMenuItems read-only gate", () => {
       calendars: [writableCalendar],
     });
 
-    expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Edit" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", { name: "Delete" }),
+    ).toBeInTheDocument();
   });
 });
