@@ -71,7 +71,7 @@ describe("WelcomeModal", () => {
     ).toBeTruthy();
     expect(
       screen.getByText(
-        /A small, but mighty calendar\/todo app\. Built for busy minimalists/,
+        /A small, but mighty calendar app\. Built for busy minimalists/,
       ),
     ).toBeTruthy();
     expect(screen.getByRole("img", { name: /pixel pirate/i })).toBeTruthy();
