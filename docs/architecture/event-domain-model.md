@@ -139,16 +139,6 @@ The web generates a real Mongo `ObjectId` client-side (`createObjectIdString()`)
 
 Do not assume every incoming `id` is already a durable Mongo id.
 
-## Tasks (removed)
-
-The Tasks and Someday features were removed from the app in 2026-07 (v1.0.194).
-`StoredTask` and the read-only legacy `tasks` IndexedDB table are retained in
-`packages/web/src/common/storage/offline-data/offline-data.store.ts` for
-one-time data recovery only (`getAllTasks`/`getTaskCount`/`clearAllTasks`) —
-there is no live task-creation or task-editing path anywhere in the app. See
-`packages/web/src/components/PlannerSidebar/TasksRemovalNotice` for the
-user-facing removal notice.
-
 ## Invariants To Preserve
 
 - Every persisted event must have a stable Compass `id`.

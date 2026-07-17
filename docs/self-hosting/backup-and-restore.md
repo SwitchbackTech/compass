@@ -29,7 +29,6 @@ Browser IndexedDB data is not included in Docker volume backups. That means:
 
 - anonymous events created before signup
 - any pre-signup local data not yet copied to the backend
-- leftover data from the removed Tasks feature, retained read-only for recovery
 
 There's no repo-supported export for browser-only data yet.
 
