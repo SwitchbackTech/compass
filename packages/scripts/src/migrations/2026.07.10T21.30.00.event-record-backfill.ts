@@ -2,8 +2,8 @@ import { type MigrationContext } from "@scripts/common/cli.types";
 import {
   type EventMigrationVerifyDeps,
   verifyEventMigration,
-} from "@scripts/common/event-migration.verify";
-import { transformLegacyEvent } from "@scripts/common/legacy-event.transform";
+} from "@scripts/common/migration-support/event-migration.verify";
+import { transformLegacyEvent } from "@scripts/common/migration-support/legacy-event.transform";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import {
   type AnyBulkWriteOperation,

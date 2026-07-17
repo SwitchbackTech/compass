@@ -1,16 +1,9 @@
 import dayjs from "@core/util/date/dayjs";
 import { Categories_Event } from "@web/common/types/web.event.types";
 import { useDraftStore } from "@web/events/stores/draft.store";
-import { afterAll, describe, expect, it, mock, setSystemTime } from "bun:test";
-
-mock.module("@web/auth/compass/session/session.util", () => ({
-  getUserId: mock().mockResolvedValue("mock-user-id"),
-}));
-
-const { assembleDefaultEvent } =
-  require("../event/event.util") as typeof import("../event/event.util");
-const { createAlldayDraft, createTimedDraft } =
-  require("./draft.util") as typeof import("./draft.util");
+import { assembleDefaultEvent } from "../event/event.util";
+import { createAlldayDraft, createTimedDraft } from "./draft.util";
+import { afterAll, describe, expect, it, setSystemTime } from "bun:test";
 
 const expectSameTime = (actual: string, expected: string) => {
   expect(dayjs(actual).isSame(dayjs(expected))).toBe(true);

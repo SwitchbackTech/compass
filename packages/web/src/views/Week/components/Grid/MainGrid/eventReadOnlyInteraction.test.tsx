@@ -27,7 +27,7 @@ import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout
 import {
   WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
   weekEventRegistry,
-} from "@web/views/Week/interaction/registry/weekEventRegistry";
+} from "@web/views/Week/interaction/registry/week-event.registry";
 import { AllDayEvents } from "../AllDayRow/AllDayEvents";
 import { MainGridEvents } from "./MainGridEvents";
 import { afterEach, describe, expect, it, mock } from "bun:test";

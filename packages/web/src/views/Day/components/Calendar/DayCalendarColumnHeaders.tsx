@@ -1,5 +1,5 @@
 import { type Calendar } from "@core/types/calendar.contracts";
-import { CALENDAR_GRID_MARGIN_LEFT } from "@web/layout/calendar-grid/calendarGrid.constants";
+import { GRID_MARGIN_LEFT } from "@web/grid/grid.constants";
 
 export const DayCalendarColumnHeaders = ({
   calendars,
@@ -11,7 +11,7 @@ export const DayCalendarColumnHeaders = ({
     className="grid min-h-12 shrink-0 bg-bg-primary"
     style={{
       gridTemplateColumns: `repeat(${calendars.length}, minmax(0, 1fr))`,
-      marginLeft: CALENDAR_GRID_MARGIN_LEFT,
+      marginLeft: GRID_MARGIN_LEFT,
     }}
   >
     {calendars.map((calendar) => (

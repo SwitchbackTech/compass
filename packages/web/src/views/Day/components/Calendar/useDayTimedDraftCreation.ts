@@ -19,12 +19,12 @@ import {
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
+import { DRAFT_DURATION_MIN } from "@web/grid/grid.constants";
+import { type GridCoordinates } from "@web/grid/hooks/useGridCoordinates";
 import {
-  hasExceededCalendarInteractionMoveThreshold,
-  isEligibleCalendarInteractionPointerDown,
-} from "@web/interaction/calendarInteractionPointer";
-import { CALENDAR_DRAFT_DURATION_MIN } from "@web/layout/calendar-grid/calendarGrid.constants";
-import { type CalendarDateCalcs } from "@web/layout/calendar-grid/hooks/useCalendarDateCalcs";
+  hasExceededInteractionMoveThreshold,
+  isEligibleInteractionPointerDown,
+} from "@web/interaction/interaction.pointer";
 
 const TIMED_DRAFT_CREATE_MOVE_THRESHOLD_PX = 4;
 
@@ -37,7 +37,7 @@ export const useDayTimedDraftCreation = ({
   draft,
   onOpenEvent,
 }: {
-  dateCalcs: CalendarDateCalcs;
+  dateCalcs: GridCoordinates;
   draft: CompassEvent | null;
   onOpenEvent: (event: GridEvent) => void;
 }) => {
@@ -58,7 +58,7 @@ export const useDayTimedDraftCreation = ({
       calendarId: CalendarId | null = null,
     ) => {
       if (
-        !isEligibleCalendarInteractionPointerDown({
+        !isEligibleInteractionPointerDown({
           altKey: event.altKey,
           button: event.button,
           ctrlKey: event.ctrlKey,
@@ -81,10 +81,7 @@ export const useDayTimedDraftCreation = ({
 
       const pointerStart = getPointerPoint(event);
       const startDate = dateCalcs.getDateByXY(event.clientX, event.clientY);
-      const minimumEndDate = startDate.add(
-        CALENDAR_DRAFT_DURATION_MIN,
-        "minutes",
-      );
+      const minimumEndDate = startDate.add(DRAFT_DURATION_MIN, "minutes");
       const draftEvent = assembleDefaultEvent(
         Categories_Event.TIMED,
         startDate.format(),
@@ -202,7 +199,7 @@ export const useDayTimedDraftCreation = ({
 
         if (
           !hasMoved &&
-          !hasExceededCalendarInteractionMoveThreshold(
+          !hasExceededInteractionMoveThreshold(
             getPointerPoint(mouseEvent),
             pointerStart,
             TIMED_DRAFT_CREATE_MOVE_THRESHOLD_PX,

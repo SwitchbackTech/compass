@@ -20,7 +20,7 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { DayInteractionCoordinator } from "./DayInteractionCoordinator";
-import { dayCalendarEventRegistry } from "./registry/dayCalendarEventRegistry";
+import { dayEventRegistry } from "./registry/day-event.registry";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 
@@ -89,7 +89,7 @@ const TestTimedEventTarget: FC = () => {
       top: 160,
       width: 320,
     });
-    dayCalendarEventRegistry.register({
+    dayEventRegistry.register({
       element: node,
       eventId: timedEvent._id!,
       eventType: "timed",
@@ -182,7 +182,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  dayCalendarEventRegistry.clear();
+  dayEventRegistry.clear();
   document.body.innerHTML = "";
   globalThis.requestAnimationFrame = originalRequestAnimationFrame;
   globalThis.cancelAnimationFrame = originalCancelAnimationFrame;

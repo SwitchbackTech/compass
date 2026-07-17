@@ -27,7 +27,7 @@ import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { useDraftStore } from "@web/events/stores/draft.store";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
-import { WEEK_INTERACTION_EVENT_ID_ATTRIBUTE } from "@web/views/Week/interaction/registry/weekEventRegistry";
+import { WEEK_INTERACTION_EVENT_ID_ATTRIBUTE } from "@web/views/Week/interaction/registry/week-event.registry";
 import { MainGridBusyPeriods } from "./MainGridBusyPeriods";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 

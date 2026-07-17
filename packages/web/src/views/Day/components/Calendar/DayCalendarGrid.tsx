@@ -33,10 +33,10 @@ import {
   selectDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { CalendarGrid } from "@web/layout/calendar-grid/components/CalendarGrid";
-import { useAllDayDraftCreation } from "@web/layout/calendar-grid/hooks/useAllDayDraftCreation";
-import { useCalendarDateCalcs } from "@web/layout/calendar-grid/hooks/useCalendarDateCalcs";
-import { useCalendarGridLayout } from "@web/layout/calendar-grid/hooks/useCalendarGridLayout";
+import { EventGrid } from "@web/grid/components/EventGrid";
+import { useAllDayDraftCreation } from "@web/grid/hooks/useAllDayDraftCreation";
+import { useGridCoordinates } from "@web/grid/hooks/useGridCoordinates";
+import { useGridMeasurements } from "@web/grid/hooks/useGridMeasurements";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDayEventNudgeShortcuts } from "@web/views/Day/hooks/shortcuts/useDayEventNudgeShortcuts";
@@ -82,11 +82,11 @@ export function DayCalendarGrid() {
     getCalendarColumnIndex,
     visibleDates,
   } = useDayCalendarColumns({ allDayEvents, dateInView, timedEvents });
-  const { gridRefs, measurements } = useCalendarGridLayout({
+  const { gridRefs, measurements } = useGridMeasurements({
     isInteractionMotionActive: isDayInteractionMotionActive,
     visibleDateCount: visibleDates.length,
   });
-  const dateCalcs = useCalendarDateCalcs(
+  const dateCalcs = useGridCoordinates(
     measurements,
     gridRefs.mainGridRef,
     visibleDates,
@@ -335,7 +335,7 @@ export function DayCalendarGrid() {
         {displayedCalendars.length > 0 ? (
           <DayCalendarColumnHeaders calendars={displayedCalendars} />
         ) : null}
-        <CalendarGrid
+        <EventGrid
           allDayEventsLayer={allDayEventsLayer}
           allDayRowsCount={allDayRowsCount}
           gridRefs={gridRefs}

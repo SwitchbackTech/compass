@@ -13,7 +13,7 @@ import {
   selectDraftCategory,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { positionAllDayDraftEvent } from "@web/layout/calendar-grid/layout/allDayDraftEventPosition";
+import { positionAllDayDraftEvent } from "@web/grid/layout/all-day-draft.position";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { useDraftContext } from "./context/useDraftContext";

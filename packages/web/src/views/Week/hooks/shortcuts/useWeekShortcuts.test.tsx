@@ -23,11 +23,11 @@ import { type GridEventDraft } from "@web/events/event-draft.types";
 import { useDraftStore } from "@web/events/stores/draft.store";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
-import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
+import { weekEventRegistry } from "@web/views/Week/interaction/registry/week-event.registry";
 import {
-  clearHoveredCalendarEventTarget,
-  setHoveredCalendarEventTarget,
-} from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
+  clearHoveredGridEventTarget,
+  setHoveredGridEventTarget,
+} from "@web/views/Week/interaction/targeting/week-event.targeting";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Fixed 24-hex-char ids so fixtures satisfy EventIdSchema (real ObjectId
@@ -118,7 +118,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  clearHoveredCalendarEventTarget();
+  clearHoveredGridEventTarget();
   cleanup();
   document.body.innerHTML = "";
   pendingEventIds = [];
@@ -316,7 +316,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
 
   it("deletes the hovered calendar event with Delete when no event is focused", () => {
     const button = addCalendarTarget();
-    setHoveredCalendarEventTarget(button);
+    setHoveredGridEventTarget(button);
 
     const { queryClient } = renderShortcuts();
     pressKey("Delete");
@@ -539,7 +539,7 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
 
   it("does not move hovered-but-unfocused events", () => {
     const button = addCalendarTarget();
-    setHoveredCalendarEventTarget(button);
+    setHoveredGridEventTarget(button);
 
     renderShortcuts();
     pressKey("ArrowRight", shiftKey);

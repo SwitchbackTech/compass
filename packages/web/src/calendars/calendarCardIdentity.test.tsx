@@ -15,8 +15,8 @@ import {
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
-import { CalendarAllDayEventCard } from "@web/layout/calendar-grid/components/CalendarAllDayEventCard";
-import { CalendarTimedEventCard } from "@web/layout/calendar-grid/components/CalendarTimedEventCard";
+import { AllDayEventCard } from "@web/grid/components/AllDayEventCard";
+import { TimedEventCard } from "@web/grid/components/TimedEventCard";
 import { describe, expect, it } from "bun:test";
 
 // This suite exercises the real useCalendarLookup -> resolveCalendarCardIdentity
@@ -68,7 +68,7 @@ function TimedCardWithResolvedIdentity({ event }: { event: GridEvent }) {
   );
 
   return (
-    <CalendarTimedEventCard
+    <TimedEventCard
       calendarIdentity={calendarIdentity}
       displayMode="saved"
       event={event}
@@ -86,7 +86,7 @@ function AllDayCardWithResolvedIdentity({ event }: { event: GridEvent }) {
   );
 
   return (
-    <CalendarAllDayEventCard
+    <AllDayEventCard
       calendarIdentity={calendarIdentity}
       event={event}
       isPlaceholder={false}

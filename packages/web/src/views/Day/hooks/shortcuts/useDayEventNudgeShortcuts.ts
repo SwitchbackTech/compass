@@ -5,7 +5,7 @@ import { type EventMutationDependencies } from "@web/events/mutations/useEventMu
 import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import { draftActions } from "@web/events/stores/draft.store";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
-import { getFocusedDayCalendarEventTarget } from "@web/views/Day/interaction/targeting/dayCalendarEventTargeting";
+import { getFocusedDayGridEventTarget } from "@web/views/Day/interaction/targeting/day-event.targeting";
 
 /**
  * Shift+ArrowUp/Down moves the focused timed calendar event by 15 minutes.
@@ -25,7 +25,7 @@ export function useDayEventNudgeShortcuts({
   const nudgeFocusedEvent = (keyboardEvent: KeyboardEvent) => {
     if (isEventFormOpen()) return;
 
-    const target = getFocusedDayCalendarEventTarget();
+    const target = getFocusedDayGridEventTarget();
     if (!target || target.eventType !== "timed") return;
 
     const event = timedEvents.find(

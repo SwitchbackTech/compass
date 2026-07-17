@@ -1,7 +1,7 @@
 import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
-import { lockGlobalCursor } from "@web/interaction/dom/cursor/globalCursorLock";
+import { lockGlobalCursor } from "@web/interaction/dom/cursor.lock";
 
 export interface Status_Drag {
   durationMin: number;

@@ -10,12 +10,12 @@ import {
   selectIsDrafting,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import { DRAFT_DURATION_MIN } from "@web/grid/grid.constants";
 import {
-  hasExceededCalendarInteractionMoveThreshold,
-  isEligibleCalendarInteractionPointerDown,
-} from "@web/interaction/calendarInteractionPointer";
+  hasExceededInteractionMoveThreshold,
+  isEligibleInteractionPointerDown,
+} from "@web/interaction/interaction.pointer";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
-import { DRAFT_DURATION_MIN } from "@web/views/Week/layout.constants";
 import { type WeekProps } from "../useWeek";
 import { type DateCalcs } from "./useDateCalcs";
 
@@ -49,7 +49,7 @@ export const useTimedGridDraftCreation = ({
     }
 
     if (
-      !isEligibleCalendarInteractionPointerDown({
+      !isEligibleInteractionPointerDown({
         altKey: event.altKey,
         button: event.button,
         ctrlKey: event.ctrlKey,
@@ -177,7 +177,7 @@ export const useTimedGridDraftCreation = ({
 
       if (
         !hasMoved &&
-        !hasExceededCalendarInteractionMoveThreshold(
+        !hasExceededInteractionMoveThreshold(
           getPointerPoint(mouseEvent),
           pointerStart,
           TIMED_DRAFT_CREATE_MOVE_THRESHOLD_PX,

@@ -19,7 +19,7 @@ import {
   type SelectedDates,
 } from "@web/common/types/web.event.types";
 import { roundToNext } from "@web/common/utils/round/round.util";
-import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
+import { GRID_TIME_STEP } from "@web/grid/grid.constants";
 
 export const dateIsValid = (date: string) => {
   const notNaN = !Number.isNaN(new Date(date).getTime());

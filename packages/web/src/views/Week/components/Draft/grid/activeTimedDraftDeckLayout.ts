@@ -1,14 +1,14 @@
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
-  type CalendarTimedDeckLayout,
-  createCalendarTimedEventLayout,
-} from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
+  createTimedEventLayout,
+  type TimedDeckLayout,
+} from "@web/grid/layout/timed-deck.layout";
 
 export const getActiveTimedDraftDeckLayout = (
   draft: GridEvent | null,
   timedEvents: GridEvent[],
-): CalendarTimedDeckLayout | null => {
+): TimedDeckLayout | null => {
   if (!draft?._id || draft.isAllDay) {
     return null;
   }
@@ -25,7 +25,7 @@ export const getActiveTimedDraftDeckLayout = (
   );
 
   return (
-    createCalendarTimedEventLayout(draftDayEvents).find(
+    createTimedEventLayout(draftDayEvents).find(
       ({ event }) => event._id === draft._id,
     )?.deckLayout ?? null
   );

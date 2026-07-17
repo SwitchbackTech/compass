@@ -17,7 +17,7 @@ import {
 } from "@web/calendars/availability.query";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
-import { type CalendarGridMeasurements } from "@web/layout/calendar-grid/types/calendarGrid.types";
+import { type GridMeasurements } from "@web/grid/types/grid.types";
 import { DayCalendarBusyPeriodsLayer } from "./DayCalendarBusyPeriods";
 import { afterEach, describe, expect, it } from "bun:test";
 
@@ -42,7 +42,7 @@ const measurements = {
     x: 0,
     y: 0,
   },
-} satisfies CalendarGridMeasurements;
+} satisfies GridMeasurements;
 
 // useState initializer, matching MainGridBusyPeriods.test.tsx's Provider -
 // seeding in the render body would rebuild an empty client on every

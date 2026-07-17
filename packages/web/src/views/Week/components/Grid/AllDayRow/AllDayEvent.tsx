@@ -2,14 +2,14 @@ import { type ForwardedRef, forwardRef, type MouseEvent, memo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import { CalendarAllDayEventCard } from "@web/layout/calendar-grid/components/CalendarAllDayEventCard";
-import { getCalendarAllDayEventPosition } from "@web/layout/calendar-grid/layout/calendarEventPosition";
+import { AllDayEventCard } from "@web/grid/components/AllDayEventCard";
+import { getAllDayEventPosition } from "@web/grid/layout/event.position";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
-  clearHoveredCalendarEventTarget,
-  setHoveredCalendarEventTarget,
-} from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
+  clearHoveredGridEventTarget,
+  setHoveredGridEventTarget,
+} from "@web/views/Week/interaction/targeting/week-event.targeting";
 
 interface Props {
   calendarIdentity?: CalendarCardIdentity | null;
@@ -47,7 +47,7 @@ const AllDayEventBase = (
     date,
     key: date.format(YEAR_MONTH_DAY_FORMAT),
   }));
-  const position = getCalendarAllDayEventPosition(event, {
+  const position = getAllDayEventPosition(event, {
     isDraft: false,
     measurements,
     visibleDates,
@@ -64,7 +64,7 @@ const AllDayEventBase = (
   };
 
   return (
-    <CalendarAllDayEventCard
+    <AllDayEventCard
       calendarIdentity={calendarIdentity}
       event={event}
       interactionAttributes={interactionAttributes}
@@ -74,10 +74,10 @@ const AllDayEventBase = (
       onMouseEnter={(e: MouseEvent<HTMLDivElement>) => {
         if (!shouldTrackCalendarHover) return;
 
-        setHoveredCalendarEventTarget(e.currentTarget);
+        setHoveredGridEventTarget(e.currentTarget);
       }}
       onMouseLeave={(e: MouseEvent<HTMLDivElement>) => {
-        clearHoveredCalendarEventTarget(e.currentTarget);
+        clearHoveredGridEventTarget(e.currentTarget);
       }}
       onScalerMouseDown={onScalerMouseDown}
       position={position}

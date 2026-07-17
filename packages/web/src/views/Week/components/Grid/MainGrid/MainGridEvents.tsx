@@ -19,15 +19,15 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import {
-  type CalendarTimedDeckLayout,
-  createCalendarTimedEventLayout,
-} from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
+  createTimedEventLayout,
+  type TimedDeckLayout,
+} from "@web/grid/layout/timed-deck.layout";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
   getWeekInteractionTargetAttributes,
   useWeekEventRegistrationRef,
-} from "@web/views/Week/interaction/registry/weekEventRegistry";
+} from "@web/views/Week/interaction/registry/week-event.registry";
 import { isTimedEventInVisibleDays } from "@web/views/Week/util/week-window.util";
 import { GridEventMemo } from "../../Event/Grid/GridEvent/GridEvent";
 
@@ -58,7 +58,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     [timedEvents, weekDays],
   );
   const timedEventItems = useMemo(
-    () => createCalendarTimedEventLayout(visibleTimedEvents),
+    () => createTimedEventLayout(visibleTimedEvents),
     [visibleTimedEvents],
   );
   // Resolved once per event here (not inside each card) and kept referentially
@@ -160,7 +160,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 
 interface MainGridEventItemProps {
   calendarIdentity: CalendarCardIdentity | null;
-  deckLayout: CalendarTimedDeckLayout | null;
+  deckLayout: TimedDeckLayout | null;
   event: GridEvent;
   isPlaceholder: boolean;
   isReadOnly: boolean;

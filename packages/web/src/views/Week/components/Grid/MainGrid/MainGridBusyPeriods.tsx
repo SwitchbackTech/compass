@@ -6,10 +6,10 @@ import {
   getTimesLabel,
   toUTCOffset,
 } from "@web/common/utils/datetime/web.date.util";
-import { CalendarBusyPeriodBlock } from "@web/layout/calendar-grid/components/CalendarBusyPeriodBlock";
-import { splitBusyPeriodsByDay } from "@web/layout/calendar-grid/layout/calendarBusyPeriodLayout";
-import { getCalendarBusyPeriodPosition } from "@web/layout/calendar-grid/layout/calendarEventPosition";
-import { type CalendarGridVisibleDate } from "@web/layout/calendar-grid/types/calendarGrid.types";
+import { BusyPeriodBlock } from "@web/grid/components/BusyPeriodBlock";
+import { splitBusyPeriodsByDay } from "@web/grid/layout/busy-period.layout";
+import { getBusyPeriodPosition } from "@web/grid/layout/event.position";
+import { type GridVisibleDate } from "@web/grid/types/grid.types";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 
@@ -42,7 +42,7 @@ export const MainGridBusyPeriods = ({ measurements, weekProps }: Props) => {
   );
   const { data } = useAvailabilityQuery({ start, end });
   const calendarLookup = useCalendarLookup();
-  const visibleDates: CalendarGridVisibleDate[] = useMemo(
+  const visibleDates: GridVisibleDate[] = useMemo(
     () =>
       component.weekDays.map((date) => ({
         date,
@@ -58,7 +58,7 @@ export const MainGridBusyPeriods = ({ measurements, weekProps }: Props) => {
   return (
     <div id={ID_GRID_BUSY_PERIODS}>
       {segments.map((segment) => {
-        const position = getCalendarBusyPeriodPosition(segment, {
+        const position = getBusyPeriodPosition(segment, {
           measurements,
           visibleDates,
         });
@@ -66,7 +66,7 @@ export const MainGridBusyPeriods = ({ measurements, weekProps }: Props) => {
           calendarLookup.get(segment.calendarId)?.name ?? "Calendar";
 
         return (
-          <CalendarBusyPeriodBlock
+          <BusyPeriodBlock
             ariaLabel={`Busy, ${calendarName} calendar, ${getTimesLabel(segment.start, segment.end)}`}
             key={segment.key}
             position={position}

@@ -3,29 +3,29 @@ import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import { CalendarAllDayEventCard } from "@web/layout/calendar-grid/components/CalendarAllDayEventCard";
-import { CalendarTimedEventCard } from "@web/layout/calendar-grid/components/CalendarTimedEventCard";
+import { AllDayEventCard } from "@web/grid/components/AllDayEventCard";
+import { TimedEventCard } from "@web/grid/components/TimedEventCard";
 import {
-  getCalendarAllDayEventPosition,
-  getCalendarTimedEventPosition,
-} from "@web/layout/calendar-grid/layout/calendarEventPosition";
+  getAllDayEventPosition,
+  getTimedEventPosition,
+} from "@web/grid/layout/event.position";
 import {
-  applyCalendarTimedEventDisplayPosition,
-  type CalendarTimedDeckLayout,
-} from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
+  applyTimedEventDisplayPosition,
+  type TimedDeckLayout,
+} from "@web/grid/layout/timed-deck.layout";
 import {
-  type CalendarGridMeasurements,
-  type CalendarGridVisibleDate,
-} from "@web/layout/calendar-grid/types/calendarGrid.types";
+  type GridMeasurements,
+  type GridVisibleDate,
+} from "@web/grid/types/grid.types";
 import {
   type DayInteractionEventType,
-  dayCalendarEventRegistry,
+  dayEventRegistry,
   getDayInteractionTargetAttributes,
-} from "@web/views/Day/interaction/registry/dayCalendarEventRegistry";
+} from "@web/views/Day/interaction/registry/day-event.registry";
 import {
-  clearHoveredDayCalendarEventTarget,
-  setHoveredDayCalendarEventTarget,
-} from "@web/views/Day/interaction/targeting/dayCalendarEventTargeting";
+  clearHoveredDayGridEventTarget,
+  setHoveredDayGridEventTarget,
+} from "@web/views/Day/interaction/targeting/day-event.targeting";
 
 interface DayEventCardProps {
   calendarIdentity?: CalendarCardIdentity | null;
@@ -34,13 +34,13 @@ interface DayEventCardProps {
   isActiveDraft: boolean;
   isPlaceholder: boolean;
   isReadOnly: boolean;
-  measurements: CalendarGridMeasurements;
+  measurements: GridMeasurements;
   onOpenEvent: (event: GridEvent) => void;
-  visibleDates: CalendarGridVisibleDate[];
+  visibleDates: GridVisibleDate[];
 }
 
 interface DayTimedEventCardProps extends DayEventCardProps {
-  deckLayout: CalendarTimedDeckLayout | null;
+  deckLayout: TimedDeckLayout | null;
 }
 
 export const DayAllDayCalendarEvent = ({
@@ -83,7 +83,7 @@ export const DayAllDayCalendarEvent = ({
         onOpenEvent(clickedEvent)
     : undefined;
 
-  const position = getCalendarAllDayEventPosition(event, {
+  const position = getAllDayEventPosition(event, {
     columnIndex,
     isDraft: isPlaceholder,
     measurements,
@@ -91,7 +91,7 @@ export const DayAllDayCalendarEvent = ({
   });
 
   return (
-    <CalendarAllDayEventCard
+    <AllDayEventCard
       calendarIdentity={calendarIdentity}
       event={event}
       interactionAttributes={interactionAttributes}
@@ -101,10 +101,10 @@ export const DayAllDayCalendarEvent = ({
       onMouseEnter={(mouseEvent) => {
         if (!isRegistered) return;
 
-        setHoveredDayCalendarEventTarget(mouseEvent.currentTarget);
+        setHoveredDayGridEventTarget(mouseEvent.currentTarget);
       }}
       onMouseLeave={(mouseEvent) => {
-        clearHoveredDayCalendarEventTarget(mouseEvent.currentTarget);
+        clearHoveredDayGridEventTarget(mouseEvent.currentTarget);
       }}
       position={{
         ...position,
@@ -181,7 +181,7 @@ export const DayTimedCalendarEvent = ({
     : (position.zIndex ?? ZIndex.LAYER_1);
 
   return (
-    <CalendarTimedEventCard
+    <TimedEventCard
       boxShadow={deckBoxShadow}
       calendarIdentity={calendarIdentity}
       displayMode={isPlaceholder ? "placeholder" : "saved"}
@@ -196,10 +196,10 @@ export const DayTimedCalendarEvent = ({
       onMouseEnter={(mouseEvent) => {
         if (!isRegistered) return;
 
-        setHoveredDayCalendarEventTarget(mouseEvent.currentTarget);
+        setHoveredDayGridEventTarget(mouseEvent.currentTarget);
       }}
       onMouseLeave={(mouseEvent) => {
-        clearHoveredDayCalendarEventTarget(mouseEvent.currentTarget);
+        clearHoveredDayGridEventTarget(mouseEvent.currentTarget);
       }}
       position={{ ...position, zIndex }}
       ref={registrationRef}
@@ -216,20 +216,20 @@ const getDayTimedEventPosition = ({
   visibleDates,
 }: {
   columnIndex: number;
-  deckLayout: CalendarTimedDeckLayout | null;
+  deckLayout: TimedDeckLayout | null;
   event: GridEvent;
   isPlaceholder: boolean;
-  measurements: CalendarGridMeasurements;
-  visibleDates: CalendarGridVisibleDate[];
+  measurements: GridMeasurements;
+  visibleDates: GridVisibleDate[];
 }) => {
-  const position = getCalendarTimedEventPosition(event, {
+  const position = getTimedEventPosition(event, {
     columnIndex,
     isDraft: isPlaceholder,
     measurements,
     visibleDates,
   });
 
-  return applyCalendarTimedEventDisplayPosition(position, deckLayout);
+  return applyTimedEventDisplayPosition(position, deckLayout);
 };
 
 const useDayEventRegistrationRef = ({
@@ -252,7 +252,7 @@ const useDayEventRegistrationRef = ({
         return;
       }
 
-      unregisterRef.current = dayCalendarEventRegistry.register({
+      unregisterRef.current = dayEventRegistry.register({
         element: node,
         eventId,
         eventType,

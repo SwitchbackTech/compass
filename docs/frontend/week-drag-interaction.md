@@ -36,15 +36,15 @@ flowchart LR
 
 Files:
 
-- `packages/web/src/layout/calendar-grid/interaction/calendarLayoutCache.ts` —
-  `buildCalendarDayColumns` stamps each column with its date.
-- `packages/web/src/views/Week/interaction/adapter/geometry/weekLayoutCache.ts` —
+- `packages/web/src/grid/interaction/layout.cache.ts` —
+  `buildDayColumns` stamps each column with its date.
+- `packages/web/src/views/Week/interaction/adapter/geometry/week-layout.cache.ts` —
   builds the week's timed/all-day caches from `visibleDays: string[]`.
 - `packages/web/src/views/Week/interaction/WeekInteractionCoordinator.tsx` —
   supplies `getVisibleDays()` on the runtime from
   `weekProps.component.weekDays`.
-- `packages/web/src/layout/calendar-grid/interaction/model/TimedDragVisual.ts`,
-  `AllDayDragVisual.ts` — visuals track `dayDate` / `initialDayDate` instead of
+- `packages/web/src/grid/interaction/types/timed-drag.types.ts`,
+  `all-day-drag.types.ts` — visuals track `dayDate` / `initialDayDate` instead of
   a day-index-plus-offset pair.
 
 Commit math differs by event type:
@@ -85,8 +85,8 @@ sequenceDiagram
 
 ## updateVisual Must Be Idempotent
 
-`CalendarInteractionEngine.handlePointerUp`
-(`packages/web/src/interaction/CalendarInteractionEngine.ts`)
+`InteractionEngine.handlePointerUp`
+(`packages/web/src/interaction/interaction.engine.ts`)
 recomputes the visual by calling `adapter.updateVisual` with the release
 pointer, then commits *that* result — it does not commit whatever the last
 `requestAnimationFrame` produced. In effect, `updateVisual` runs once during
@@ -98,8 +98,8 @@ application with an unchanged pointer.
 
 Any flip/branch logic inside an `updateVisual` math function must branch on
 an **immutable** field captured at grab time (e.g. `initialEdge` in
-`packages/web/src/layout/calendar-grid/interaction/math/timedResize.ts` and
-`allDayResize.ts`) — never on a field the function itself overwrites (e.g. a
+`packages/web/src/grid/interaction/math/timed.resize.ts` and
+`all-day.resize.ts`) — never on a field the function itself overwrites (e.g. a
 mutated `activeEdge`). Branching on a mutated field diverges on the second
 pass: the first call flips the edge and updates the field, so the second call
 sees the *new* value and can flip again or compute a different result,

@@ -11,23 +11,23 @@ import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { type GridEvent as GridEventEntity } from "@web/common/types/web.event.types";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
-import { CalendarTimedEventCard } from "@web/layout/calendar-grid/components/CalendarTimedEventCard";
-import { getCalendarTimedEventPosition } from "@web/layout/calendar-grid/layout/calendarEventPosition";
+import { TimedEventCard } from "@web/grid/components/TimedEventCard";
+import { getTimedEventPosition } from "@web/grid/layout/event.position";
 import {
-  applyCalendarTimedEventDisplayPosition,
-  type CalendarTimedDeckLayout,
-} from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
+  applyTimedEventDisplayPosition,
+  type TimedDeckLayout,
+} from "@web/grid/layout/timed-deck.layout";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
+import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 import {
-  clearHoveredCalendarEventTarget,
-  setHoveredCalendarEventTarget,
-} from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
+  clearHoveredGridEventTarget,
+  setHoveredGridEventTarget,
+} from "@web/views/Week/interaction/targeting/week-event.targeting";
 
 interface Props {
   calendarIdentity?: CalendarCardIdentity | null;
-  deckLayout?: CalendarTimedDeckLayout | null;
+  deckLayout?: TimedDeckLayout | null;
   displayMode: GridEventDisplayMode;
   event: GridEventEntity;
   interactionAttributes?: Record<string, string | undefined>;
@@ -89,14 +89,14 @@ const GridEventBase = (
     key: date.format(YEAR_MONTH_DAY_FORMAT),
   }));
   const shouldUseDraftSizing = isDraft && !deckLayout;
-  const basePosition = getCalendarTimedEventPosition(event, {
+  const basePosition = getTimedEventPosition(event, {
     isDraft: shouldUseDraftSizing,
     measurements,
     visibleDates,
   });
   const position = shouldUseDraftSizing
     ? basePosition
-    : applyCalendarTimedEventDisplayPosition(basePosition, deckLayout);
+    : applyTimedEventDisplayPosition(basePosition, deckLayout);
 
   const shouldFloatAboveDeck = isDragging || isResizing || (isDraft && !isDeck);
   const zIndex = shouldFloatAboveDeck
@@ -135,7 +135,7 @@ const GridEventBase = (
   };
 
   return (
-    <CalendarTimedEventCard
+    <TimedEventCard
       onBlur={isDeck ? () => setIsFocused(false) : undefined}
       boxShadow={deckBoxShadow}
       calendarIdentity={calendarIdentity}
@@ -149,10 +149,10 @@ const GridEventBase = (
       onMouseEnter={(e: MouseEvent<HTMLDivElement>) => {
         if (!shouldTrackCalendarHover) return;
 
-        setHoveredCalendarEventTarget(e.currentTarget);
+        setHoveredGridEventTarget(e.currentTarget);
       }}
       onMouseLeave={(e: MouseEvent<HTMLDivElement>) => {
-        clearHoveredCalendarEventTarget(e.currentTarget);
+        clearHoveredGridEventTarget(e.currentTarget);
       }}
       onScalerMouseDown={onScalerMouseDown}
       position={{ ...position, zIndex }}

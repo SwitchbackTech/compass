@@ -1,9 +1,9 @@
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
-  CALENDAR_DAY_COLUMN_MIN_USABLE_WIDTH,
-  CALENDAR_GRID_MARGIN_LEFT,
-} from "@web/layout/calendar-grid/calendarGrid.constants";
+  DAY_COLUMN_MIN_USABLE_WIDTH,
+  GRID_MARGIN_LEFT,
+} from "@web/grid/grid.constants";
 
 export const WEEK_DAY_COUNT = 7;
 
@@ -15,10 +15,7 @@ export const WEEK_DAY_COUNT = 7;
 export const computeVisibleDayCount = (trackWidth: number) =>
   Math.min(
     Math.max(
-      Math.floor(
-        (trackWidth - CALENDAR_GRID_MARGIN_LEFT) /
-          CALENDAR_DAY_COLUMN_MIN_USABLE_WIDTH,
-      ),
+      Math.floor((trackWidth - GRID_MARGIN_LEFT) / DAY_COLUMN_MIN_USABLE_WIDTH),
       1,
     ),
     WEEK_DAY_COUNT,
@@ -61,7 +58,7 @@ type EventDates = Pick<GridEvent, "startDate" | "endDate">;
 
 /**
  * Timed events render in the column of their start date (mirrors
- * getCalendarTimedEventPosition), so visibility is start-date membership.
+ * getTimedEventPosition), so visibility is start-date membership.
  */
 export const isTimedEventInVisibleDays = (
   event: EventDates,
@@ -73,7 +70,7 @@ export const isTimedEventInVisibleDays = (
 
 /**
  * All-day events store an exclusive end date; an event is visible when its
- * inclusive span overlaps the window (mirrors getCalendarAllDayEventPosition,
+ * inclusive span overlaps the window (mirrors getAllDayEventPosition,
  * which clamps the span to the visible dates).
  */
 export const isAllDayEventInVisibleDays = (

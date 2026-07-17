@@ -25,7 +25,7 @@ import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
-import { focusFirstDayCalendarEvent } from "@web/views/Day/interaction/dayCalendarFocus.util";
+import { focusFirstDayCalendarEvent } from "@web/views/Day/interaction/day-event.focus";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 
 export const DayViewContent = memo(() => {

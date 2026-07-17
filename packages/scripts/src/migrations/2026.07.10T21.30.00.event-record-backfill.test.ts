@@ -1,5 +1,5 @@
 import { MigratorType } from "@scripts/common/cli.types";
-import { verifyEventMigration } from "@scripts/common/event-migration.verify";
+import { verifyEventMigration } from "@scripts/common/migration-support/event-migration.verify";
 import NewEventsCollectionMigration from "@scripts/migrations/2025.10.18T19.43.00.new-events-collection";
 import CalendarRecordMigration from "@scripts/migrations/2026.07.10T21.00.00.calendar-record-migration";
 import Migration from "@scripts/migrations/2026.07.10T21.30.00.event-record-backfill";

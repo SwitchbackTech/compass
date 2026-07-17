@@ -22,7 +22,7 @@ export function formatStartsIn(start: Dayjs, now: Dayjs): string {
 
 /**
  * Re-renders once a minute so the countdown copy stays current, mirroring the
- * grid's now-line ticker (CalendarTimedGrid.tsx). Crossing midnight also rolls
+ * grid's now-line ticker (TimedGrid.tsx). Crossing midnight also rolls
  * the day query below onto the new day for free.
  */
 function useMinuteTick(): Dayjs {

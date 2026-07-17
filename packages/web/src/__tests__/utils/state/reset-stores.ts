@@ -26,7 +26,7 @@ import {
   initialSettingsState,
   useSettingsStore,
 } from "@web/settings/settings.store";
-import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
+import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 
 type StoreReset = () => void;
 

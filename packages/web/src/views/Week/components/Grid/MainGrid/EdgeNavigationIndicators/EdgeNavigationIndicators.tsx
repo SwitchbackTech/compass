@@ -1,7 +1,7 @@
 import { type FC } from "react";
 import { type CSSVariables } from "@web/common/styles/css.types";
-import { useWeekInteractionEdgeNavigationState } from "@web/views/Week/interaction/state/weekInteractionEdgeNavigationState";
-import { GRID_MARGIN_LEFT } from "@web/views/Week/layout.constants";
+import { GRID_MARGIN_LEFT } from "@web/grid/grid.constants";
+import { useWeekInteractionEdgeNavigationState } from "@web/views/Week/interaction/state/edge-navigation.state";
 
 export const EdgeNavigationIndicators: FC = () => {
   const dragEdgeState = useWeekInteractionEdgeNavigationState();

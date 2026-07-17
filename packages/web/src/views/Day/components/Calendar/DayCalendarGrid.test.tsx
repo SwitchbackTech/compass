@@ -17,7 +17,7 @@ import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
-  DATA_CALENDAR_TIMED_GRID_ROW,
+  DATA_TIMED_GRID_ROW,
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
@@ -27,8 +27,8 @@ import {
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { CALENDAR_TIMED_EVENT_FAN_INDENT } from "@web/layout/calendar-grid/calendarGrid.constants";
-import { type CalendarGridMeasurements } from "@web/layout/calendar-grid/types/calendarGrid.types";
+import { TIMED_EVENT_FAN_INDENT } from "@web/grid/grid.constants";
+import { type GridMeasurements } from "@web/grid/types/grid.types";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
@@ -58,14 +58,14 @@ const measurements = {
     x: 0,
     y: 0,
   },
-} satisfies CalendarGridMeasurements;
+} satisfies GridMeasurements;
 
 mock.module("@web/views/Day/hooks/navigation/useDateInView", () => ({
   useDateInView: () => dayjs("2026-05-20T00:00:00.000"),
 }));
 
-mock.module("@web/layout/calendar-grid/hooks/useCalendarGridLayout", () => ({
-  useCalendarGridLayout: () => {
+mock.module("@web/grid/hooks/useGridMeasurements", () => ({
+  useGridMeasurements: () => {
     const allDayColumnsRef = { current: null as HTMLDivElement | null };
     const mainGridRef = { current: null as HTMLDivElement | null };
     const timedColumnsRef = { current: null as HTMLDivElement | null };
@@ -237,7 +237,7 @@ const getTimedGrid = () =>
 
 const getTimedSlot = (index = 0) => {
   const slot = getTimedGrid().querySelectorAll<HTMLElement>(
-    `[${DATA_CALENDAR_TIMED_GRID_ROW}='true']`,
+    `[${DATA_TIMED_GRID_ROW}='true']`,
   )[index];
 
   expect(slot).toBeDefined();
@@ -385,7 +385,7 @@ describe("DayCalendarGrid", () => {
 
     expect(parseFloat(early.style.width)).toBe(parseFloat(late.style.width));
     expect(parseFloat(late.style.left) - parseFloat(early.style.left)).toBe(
-      CALENDAR_TIMED_EVENT_FAN_INDENT,
+      TIMED_EVENT_FAN_INDENT,
     );
     expect(early.style.boxShadow).toContain("0 0 0 0.75px");
     expect(late.style.boxShadow).toContain("0 0 0 0.75px");

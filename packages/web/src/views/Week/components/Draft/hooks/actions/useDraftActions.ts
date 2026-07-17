@@ -36,6 +36,7 @@ import {
   selectGridDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import { GRID_TIME_STEP } from "@web/grid/grid.constants";
 import { useDraftEffects } from "@web/views/Week/components/Draft/hooks/effects/useDraftEffects";
 import {
   type Setters_Draft,
@@ -44,7 +45,6 @@ import {
 } from "@web/views/Week/components/Draft/hooks/state/useDraftState";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
 import { getDragDurationMinutes } from "./drag-duration.util";
 
 const scopeFromApplyTo = (
