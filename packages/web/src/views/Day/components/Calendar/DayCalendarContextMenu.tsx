@@ -1,22 +1,19 @@
-import {
-  autoUpdate,
-  FloatingPortal,
-  flip,
-  offset,
-  shift,
-  useFloating,
-} from "@floating-ui/react";
+import { FloatingPortal, useFloating } from "@floating-ui/react";
 import {
   type MouseEvent as ReactMouseEvent,
   useCallback,
   useMemo,
   useState,
 } from "react";
-import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getCalendarEventIdFromElement } from "@web/common/utils/event/event.util";
 import { ContextMenu } from "@web/components/ContextMenu/ContextMenu";
 import { type ContextMenuItemsActions } from "@web/components/ContextMenu/ContextMenuItems";
+import {
+  CONTEXT_MENU_FLOATING_OPTIONS,
+  contextMenuStyle,
+  cursorReference,
+} from "@web/components/ContextMenu/contextMenu.floating";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 
@@ -36,15 +33,9 @@ export const useDayCalendarContextMenu = ({
   const deleteContextMenuEvent = useDeleteEvent(contextMenuEventId);
 
   const { context, refs, floatingStyles } = useFloating({
-    placement: "right-start",
-    middleware: [offset(5), flip(), shift()],
+    ...CONTEXT_MENU_FLOATING_OPTIONS,
     open: isOpen,
     onOpenChange: setIsOpen,
-    // Same as GridContextMenuWrapper: the reference is a virtual element at
-    // the click's viewport coordinates, and the menu is portalled out of the
-    // scrolling grid, so anchor it to the viewport.
-    strategy: "fixed",
-    whileElementsMounted: autoUpdate,
   });
 
   const closeContextMenu = useCallback(() => {
@@ -75,12 +66,7 @@ export const useDayCalendarContextMenu = ({
         return;
       }
 
-      // Anchor the menu to a virtual element at the cursor (the idiomatic
-      // floating-ui pattern, matching GridContextMenuWrapper).
-      refs.setReference({
-        getBoundingClientRect: () =>
-          new DOMRect(event.clientX, event.clientY, 0, 0),
-      });
+      refs.setReference(cursorReference(event.clientX, event.clientY));
       setContextMenuEvent(selectedEvent);
       setIsOpen(true);
     },
@@ -121,7 +107,7 @@ export const useDayCalendarContextMenu = ({
           event={contextMenuEvent ?? undefined}
           onOutsideClick={closeContextMenu}
           ref={refs.setFloating}
-          style={{ ...floatingStyles, zIndex: Z_INDEX_FLOATING_MENU }}
+          style={contextMenuStyle(floatingStyles)}
         />
       </FloatingPortal>
     ) : null,

@@ -1,15 +1,7 @@
-import {
-  autoUpdate,
-  FloatingPortal,
-  flip,
-  offset,
-  shift,
-  useFloating,
-} from "@floating-ui/react";
+import { FloatingPortal, useFloating } from "@floating-ui/react";
 import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useState } from "react";
-import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import {
   assembleGridEvent,
   getCalendarEventIdFromElement,
@@ -23,6 +15,11 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { ContextMenu } from "./ContextMenu";
+import {
+  CONTEXT_MENU_FLOATING_OPTIONS,
+  contextMenuStyle,
+  cursorReference,
+} from "./contextMenu.floating";
 
 export const ContextMenuWrapper = ({
   id,
@@ -38,8 +35,7 @@ export const ContextMenuWrapper = ({
   const [isOpen, setIsOpen] = useState(false);
 
   const { refs, floatingStyles, context } = useFloating({
-    placement: "right-start",
-    middleware: [offset(5), flip(), shift()],
+    ...CONTEXT_MENU_FLOATING_OPTIONS,
     open: isOpen,
     onOpenChange(newIsOpen, _, reason) {
       setIsOpen(newIsOpen);
@@ -47,11 +43,6 @@ export const ContextMenuWrapper = ({
         handleDiscard();
       }
     },
-    // The reference is a virtual element at the click's viewport coordinates,
-    // and the menu is portalled out of the scrolling grid, so anchor it to
-    // the viewport rather than an offset parent.
-    strategy: "fixed",
-    whileElementsMounted: autoUpdate,
   });
 
   const getSelectedEvent = (eventId: string) => {
@@ -84,10 +75,7 @@ export const ContextMenuWrapper = ({
       const draft = editGridEventDraft(getSelectedEvent(eventId));
       if (!draft) return;
 
-      // Create a virtual element where the user clicked
-      refs.setReference({
-        getBoundingClientRect: () => new DOMRect(e.clientX, e.clientY, 0, 0), // Position menu exactly at the click position
-      });
+      refs.setReference(cursorReference(e.clientX, e.clientY));
 
       draftActions.startGridDraft({ activity: "eventRightClick", draft });
 
@@ -108,8 +96,6 @@ export const ContextMenuWrapper = ({
     >
       {children}
       {isOpen && (
-        // Portalled: rendered inline it shared a stacking context with the
-        // event cards and lost to any card stacked above it.
         <FloatingPortal>
           <ContextMenu
             ref={refs.setFloating}
@@ -118,7 +104,7 @@ export const ContextMenuWrapper = ({
                 ? assembleGridEvent(draftEvent)
                 : undefined
             }
-            style={{ ...floatingStyles, zIndex: Z_INDEX_FLOATING_MENU }}
+            style={contextMenuStyle(floatingStyles)}
             context={context}
             close={closeMenu}
             onOutsideClick={handleDiscard}
