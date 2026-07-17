@@ -31,7 +31,7 @@ export function useUpNextEvent() {
     : undefined;
 
   const openEventDetails = useCallback(
-    (activity: "gridClick" | "keyboardEdit" = "gridClick") => {
+    (activity: "gridClick" | "keyboardEdit") => {
       if (!sourceEvent) return;
 
       const draft = editGridEventDraft(sourceEvent);

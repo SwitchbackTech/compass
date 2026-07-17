@@ -3,7 +3,6 @@ import {
   CommandIcon,
   KeyboardIcon,
 } from "@phosphor-icons/react";
-import { getGoogleSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
 import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
 import { useVersionCheck } from "@web/components/PlannerSidebar/PlannerSidebarActions/useVersionCheck";
@@ -27,7 +26,7 @@ export const PlannerSidebarActions = ({
   const { isUpdateAvailable } = useVersionCheck();
   const googleState = useGoogleUiState();
   const isCalendarSyncing =
-    getGoogleSyncStatus(googleState)?.variant === "syncing";
+    googleState === "IMPORTING" || googleState === "repairing";
 
   const handleUpdateReload = () => {
     reloadLocation();
