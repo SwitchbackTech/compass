@@ -62,7 +62,7 @@ Use `codex-simplify-code` on the diff from the base branch. Reduce duplication, 
 
 ## 6. Independent review and final local gate
 
-Run a fresh, read-only reviewer agent against the final branch diff after simplification. This review is internal to `ship`: the user should not need another command, approval, or review step.
+Run a fresh, read-only reviewer agent against the final branch diff after simplification. Spawn it without inherited conversation context (`fork_turns: "none"`) and provide a self-contained task with the worktree path, base ref, task intent, and repository instructions. This review is internal to `ship`: the user should not need another command, approval, or review step.
 
 Give the reviewer the task intent, applicable `AGENTS.md`, and the complete base-to-head diff without the implementation agent's conclusions. Direct it to:
 
