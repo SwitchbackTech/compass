@@ -44,9 +44,12 @@
   --compass-color-tag-three: hsl(270 100 83);
   --compass-color-text-light: hsl(47 7 73);
   --compass-color-text-lighter: hsl(0 0 100);
-  /* 54.9% alpha measured 3.53:1 against --compass-color-bg-primary, below
-     the 4.5:1 minimum for normal text (e.g. past-week day labels). 70%
-     clears 5:1 while staying visibly muted relative to --color-text-light. */
+  /* At 54.9% alpha this measured 3.53:1 against --compass-color-bg-primary,
+     below the 4.5:1 minimum for normal text. 70% composites to ~5.0:1 there
+     (e.g. past-week day labels) and to ~4.9:1 against
+     --compass-color-bg-secondary - the real backdrop for the event form's
+     muted text, whose shell is transparent over the sidebar - so both
+     surfaces clear 4.5:1 while staying muted relative to --color-text-light. */
   --compass-color-text-light-inactive: hsl(208 13 71 / 70%);
   --compass-color-text-dark: hsl(222 28 7);
   --compass-color-text-dark-placeholder: hsl(219 8 46 / 90.2%);
