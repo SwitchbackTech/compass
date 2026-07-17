@@ -57,6 +57,10 @@ export function useAuthFormHandlers({
 
       try {
         const response = await EmailPassword.signUp({
+          // Same as signIn below: signing up is always a fresh identity, so
+          // never link it to whatever session the browser still holds. A
+          // stale cookie would otherwise attach the new account to it.
+          shouldTryLinkingWithSessionUser: false,
           formFields: [
             { id: "name", value: data.name },
             { id: "email", value: data.email },

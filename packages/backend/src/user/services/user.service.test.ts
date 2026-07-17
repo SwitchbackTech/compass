@@ -180,6 +180,59 @@ describe("UserService", () => {
       expect(storedUser?.google).toBeUndefined();
     });
 
+    // Only Google discovery creates calendars, so without this a
+    // password-only account owns none and every write fails
+    // CALENDAR_NOT_FOUND.
+    it("gives a new user a local calendar to write to", async () => {
+      const userId = mongoService.objectId().toString();
+
+      await userService.upsertUserFromAuth({
+        userId,
+        email: "solo@example.com",
+        name: "Solo User",
+      });
+
+      const calendar = await calendarService.getLocalCalendar(userId);
+      expect(calendar).toEqual(
+        expect.objectContaining({ access: "owner", isActive: true }),
+      );
+      expect(calendar?.source).toEqual({ provider: "local" });
+    });
+
+    it("keeps a single local calendar across repeat sign-ins", async () => {
+      const userId = mongoService.objectId().toString();
+      const input = { userId, email: "repeat@example.com", name: "Repeat" };
+
+      await userService.upsertUserFromAuth(input);
+      const first = await calendarService.getLocalCalendar(userId);
+      await userService.upsertUserFromAuth(input);
+
+      const calendars = await mongoService.calendar
+        .find({
+          userId: mongoService.objectId(userId),
+          "source.provider": "local",
+        })
+        .toArray();
+      expect(calendars).toHaveLength(1);
+      expect(calendars[0]?._id.toString()).toBe(first?._id.toString());
+    });
+
+    // Handing one to everyone who signs in would put a calendar they never
+    // made in every existing Google user's sidebar, and an empty column in
+    // their day view.
+    it("does not hand an existing user a local calendar they never had", async () => {
+      const user = await UserDriver.createUser();
+
+      await userService.upsertUserFromAuth({
+        userId: user._id.toString(),
+        email: user.email,
+      });
+
+      expect(
+        await calendarService.getLocalCalendar(user._id.toString()),
+      ).toBeNull();
+    });
+
     it("updates an existing user without removing stored Google data", async () => {
       const user = await UserDriver.createUser();
 

@@ -159,6 +159,19 @@ class UserService {
       { upsert: true, session },
     );
 
+    // Every auth path lands here, so this is the one place that can promise a
+    // new account owns somewhere to write: Google discovery only creates
+    // google-sourced calendars, which leaves a password-only account with
+    // none at all, and syncLocalEventsToCloud needs this to be the landing
+    // place for whatever the user wrote before signing up.
+    //
+    // New accounts only. Doing it on every sign-in would also hand one to
+    // every existing Google user, who would find a calendar they never made
+    // in their sidebar and an empty column in their day view.
+    if (isNewUser) {
+      await calendarService.ensureLocalCalendar(userId, session);
+    }
+
     return {
       user: {
         ...nextUser,

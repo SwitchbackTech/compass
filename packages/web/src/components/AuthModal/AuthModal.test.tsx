@@ -628,6 +628,7 @@ describe("AuthModal", () => {
         );
       });
       expect(mockEmailPassword.signUp).toHaveBeenCalledWith({
+        shouldTryLinkingWithSessionUser: false,
         formFields: [
           { id: "name", value: "Alex" },
           { id: "email", value: "test@example.com" },
@@ -635,6 +636,36 @@ describe("AuthModal", () => {
         ],
       });
       expect(mockUpdateMetadata).not.toHaveBeenCalled();
+    });
+
+    // Signing up is always a fresh identity. Linking it to whatever session
+    // the browser still holds is how a just-deleted account's leftover cookie
+    // dragged the new one into its dead session.
+    it("skips existing-session linking during email/password sign up", async () => {
+      const user = userEvent.setup();
+      await renderWithProviders(<ModalTrigger />);
+
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: /^sign up$/i }),
+        ).toBeInTheDocument();
+      });
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
+      });
+      await user.type(screen.getByLabelText(/name/i), "Alex");
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
+      await user.type(screen.getByLabelText(/password/i), "password123");
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
+
+      await waitFor(() => {
+        expect(mockEmailPassword.signUp).toHaveBeenCalledWith(
+          expect.objectContaining({ shouldTryLinkingWithSessionUser: false }),
+        );
+      });
     });
 
     it("skips existing-session linking during email/password sign in", async () => {
