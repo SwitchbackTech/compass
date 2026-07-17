@@ -88,14 +88,14 @@ export function ReleaseNotesPrompt() {
               </h2>
               <p className="text-text-light">
                 Get monthly release notes with new features, improvements, and
-                helpful tips. Unsubscribe anytime from the email footer.
+                helpful tips. Unsubscribe anytime.
               </p>
             </div>
             <div className="flex flex-wrap justify-end gap-3">
               <button
                 type="button"
                 onClick={decline}
-                className="c-button rounded-full px-5"
+                className="c-button c-button-secondary rounded-full px-5"
               >
                 Nah, I don&apos;t want updates
               </button>
