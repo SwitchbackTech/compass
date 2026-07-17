@@ -35,9 +35,24 @@ describe("sidebar width storage", () => {
     expect(readSidebarWidth()).toBe(SIDEBAR_MAX_WIDTH);
   });
 
+  it("rounds fractional stored widths instead of resetting to the default", () => {
+    // Drags on zoomed/HiDPI displays used to persist values like "400.5",
+    // which the old integer-only guard rejected — resetting the sidebar on
+    // every view switch and refresh.
+    localStorage.setItem(STORAGE_KEYS.SIDEBAR_WIDTH, "400.5");
+
+    expect(readSidebarWidth()).toBe(401);
+  });
+
   it("writes widths through the storage abstraction", () => {
     writeSidebarWidth(360);
 
     expect(localStorage.getItem(STORAGE_KEYS.SIDEBAR_WIDTH)).toBe("360");
+  });
+
+  it("rounds fractional widths on write", () => {
+    writeSidebarWidth(400.5);
+
+    expect(localStorage.getItem(STORAGE_KEYS.SIDEBAR_WIDTH)).toBe("401");
   });
 });
