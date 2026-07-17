@@ -7,29 +7,34 @@ import {
   showErrorToast,
 } from "@web/common/utils/toast/error-toast.util";
 
+// Imported dynamically to avoid a module cycle: google.auth.util shows this
+// toast, and the reconnect flow needs google.auth.util's local-event flush.
+const flushPendingLocalEvents = async (): Promise<boolean> => {
+  const { syncPendingLocalEvents } = await import(
+    "@web/auth/google/util/google.auth.util"
+  );
+  return syncPendingLocalEvents();
+};
+
 interface GoogleReconnectToastProps {
   toastId: Id;
+  syncPendingLocalEvents?: () => Promise<boolean>;
 }
 
 // Shown when Google reports invalid_grant, which covers both "access expired"
 // and "user revoked access" with no way to tell them apart, so the copy must
-// stay accurate for either cause.
+// stay accurate for either cause. Hooks are fine here: ToastContainer renders
+// inside GoogleOAuthProvider (CompassProvider).
 export const GoogleReconnectToast = ({
   toastId,
+  syncPendingLocalEvents = flushPendingLocalEvents,
 }: GoogleReconnectToastProps) => {
-  // Legal here: ToastContainer renders inside GoogleOAuthProvider
-  // (CompassProvider), so the OAuth context is available.
   const { startGoogleAuthorization } = useStartGoogleAuthorization({
     intent: "connectCalendar",
     prompt: "consent",
   });
 
   const handleReconnect = async () => {
-    // Imported dynamically to avoid a module cycle: google.auth.util shows
-    // this toast, and this handler needs google.auth.util's local-event flush.
-    const { syncPendingLocalEvents } = await import(
-      "@web/auth/google/util/google.auth.util"
-    );
     const didSyncLocalEvents = await syncPendingLocalEvents();
 
     // The flush already showed its own error toast; keep this one around so
@@ -70,22 +75,4 @@ export function showGoogleReconnectToast(): Id {
       severity: ErrorToastSeverity.CRITICAL,
     },
   );
-}
-
-// At most once per page load, so a dismissal isn't nagged mid-session but the
-// reminder returns on the next load until the user reconnects.
-let hasShownOnLoad = false;
-
-export function showGoogleReconnectToastOnLoad(): boolean {
-  if (hasShownOnLoad) {
-    return false;
-  }
-
-  hasShownOnLoad = true;
-  showGoogleReconnectToast();
-  return true;
-}
-
-export function resetGoogleReconnectToastOnLoadForTests(): void {
-  hasShownOnLoad = false;
 }

@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 // mock.module is process-wide and leaks across test files (deleted-toast's
 // react-toastify mock would otherwise leak in here with no error/dismiss), so
@@ -27,33 +27,19 @@ mock.module(
   }),
 );
 
-// The real module is captured up front and a flag (flipped off in afterAll)
-// decides which implementation runs per call, keeping other test files'
-// imports of google.auth.util intact.
-const actualGoogleAuthUtil = await import(
-  "@web/auth/google/util/google.auth.util"
+const { GoogleReconnectToast, showGoogleReconnectToast } = await import(
+  "@web/common/utils/toast/google-reconnect.toast"
 );
+
 const mockSyncPendingLocalEvents = mock();
-let isGoogleAuthUtilMocked = true;
 
-mock.module("@web/auth/google/util/google.auth.util", () => ({
-  ...actualGoogleAuthUtil,
-  syncPendingLocalEvents: () =>
-    isGoogleAuthUtilMocked
-      ? mockSyncPendingLocalEvents()
-      : actualGoogleAuthUtil.syncPendingLocalEvents(),
-}));
-
-const {
-  GoogleReconnectToast,
-  resetGoogleReconnectToastOnLoadForTests,
-  showGoogleReconnectToast,
-  showGoogleReconnectToastOnLoad,
-} = await import("@web/common/utils/toast/google-reconnect.toast");
-
-afterAll(() => {
-  isGoogleAuthUtilMocked = false;
-});
+const renderToast = () =>
+  render(
+    <GoogleReconnectToast
+      toastId="google-revoked-api"
+      syncPendingLocalEvents={mockSyncPendingLocalEvents}
+    />,
+  );
 
 describe("GoogleReconnectToast", () => {
   beforeEach(() => {
@@ -61,10 +47,11 @@ describe("GoogleReconnectToast", () => {
     mockSyncPendingLocalEvents.mockClear();
     toast.error.mockClear();
     toast.dismiss.mockClear();
+    toast.isActive.mockReturnValue(false);
   });
 
   it("explains the disconnect without blaming the user or implying data loss", () => {
-    render(<GoogleReconnectToast toastId="google-revoked-api" />);
+    renderToast();
 
     expect(
       screen.getByText("Google Calendar disconnected"),
@@ -78,7 +65,7 @@ describe("GoogleReconnectToast", () => {
 
   it("flushes pending local events, dismisses itself, then starts the consent flow", async () => {
     mockSyncPendingLocalEvents.mockResolvedValue(true);
-    render(<GoogleReconnectToast toastId="google-revoked-api" />);
+    renderToast();
 
     await userEvent.click(
       screen.getByRole("button", { name: "Reconnect Google Calendar" }),
@@ -93,7 +80,7 @@ describe("GoogleReconnectToast", () => {
 
   it("stays open and does not start authorization when the local-event flush fails", async () => {
     mockSyncPendingLocalEvents.mockResolvedValue(false);
-    render(<GoogleReconnectToast toastId="google-revoked-api" />);
+    renderToast();
 
     await userEvent.click(
       screen.getByRole("button", { name: "Reconnect Google Calendar" }),
@@ -119,19 +106,5 @@ describe("showGoogleReconnectToast", () => {
     showGoogleReconnectToast();
 
     expect(toast.error).not.toHaveBeenCalled();
-  });
-});
-
-describe("showGoogleReconnectToastOnLoad", () => {
-  beforeEach(() => {
-    resetGoogleReconnectToastOnLoadForTests();
-  });
-
-  // Asserted via the return value rather than toast.error call counts: other
-  // test files leak process-wide mocks of error-toast.util, so whether the
-  // underlying toast fires here depends on suite order.
-  it("shows the reconnect toast at most once per page load", () => {
-    expect(showGoogleReconnectToastOnLoad()).toBe(true);
-    expect(showGoogleReconnectToastOnLoad()).toBe(false);
   });
 });

@@ -55,7 +55,7 @@ const googleAuthUtil = createGoogleAuthUtil({
         );
       },
     }),
-  showReconnectToast: () => void showGoogleReconnectToast(),
+  showReconnectToast: showGoogleReconnectToast,
   syncLocalEventsToCloud: () => syncLocalEventsToCloud(),
   toastError: toast.error,
 });
