@@ -24,9 +24,7 @@ import {
 import {
   ID_EVENT_FORM_ACTION_MENU,
   Z_INDEX_FLOATING_MENU,
-  ZIndex,
 } from "@web/common/constants/web.constants";
-import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import IconButton from "@web/components/IconButton/IconButton";
 
 interface MenuContextValue {
@@ -55,7 +53,6 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
   id,
   bgColor,
 }) => {
-  const maxZIndex = useGridMaxZIndex();
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const openedByMouseRef = useRef(false);
@@ -63,10 +60,6 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
 
   const menuId = id || ID_EVENT_FORM_ACTION_MENU;
   const triggerId = `${menuId}-trigger`;
-  const menuZIndex = Math.max(
-    maxZIndex + ZIndex.LAYER_2,
-    Z_INDEX_FLOATING_MENU,
-  );
 
   const { refs, context } = useFloating({
     open,
@@ -150,7 +143,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
               style={{
                 ...context.floatingStyles,
                 backgroundColor: bgColor,
-                zIndex: menuZIndex,
+                zIndex: Z_INDEX_FLOATING_MENU,
               }}
               {...getFloatingProps()}
               id={menuId}

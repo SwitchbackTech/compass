@@ -1,5 +1,6 @@
 import {
   autoUpdate,
+  FloatingPortal,
   flip,
   offset,
   shift,
@@ -11,6 +12,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getCalendarEventIdFromElement } from "@web/common/utils/event/event.util";
 import { ContextMenu } from "@web/components/ContextMenu/ContextMenu";
@@ -33,11 +35,15 @@ export const useDayCalendarContextMenu = ({
   const duplicateContextMenuEvent = useDuplicateEvent(contextMenuEventId);
   const deleteContextMenuEvent = useDeleteEvent(contextMenuEventId);
 
-  const { context, refs, x, y } = useFloating({
+  const { context, refs, floatingStyles } = useFloating({
     placement: "right-start",
     middleware: [offset(5), flip(), shift()],
     open: isOpen,
     onOpenChange: setIsOpen,
+    // Same as GridContextMenuWrapper: the reference is a virtual element at
+    // the click's viewport coordinates, and the menu is portalled out of the
+    // scrolling grid, so anchor it to the viewport.
+    strategy: "fixed",
     whileElementsMounted: autoUpdate,
   });
 
@@ -107,15 +113,17 @@ export const useDayCalendarContextMenu = ({
 
   return {
     contextMenu: isOpen ? (
-      <ContextMenu
-        actions={contextMenuActions}
-        close={closeContextMenu}
-        context={context}
-        event={contextMenuEvent ?? undefined}
-        onOutsideClick={closeContextMenu}
-        ref={refs.setFloating}
-        style={{ position: "absolute", top: `${y}px`, left: `${x}px` }}
-      />
+      <FloatingPortal>
+        <ContextMenu
+          actions={contextMenuActions}
+          close={closeContextMenu}
+          context={context}
+          event={contextMenuEvent ?? undefined}
+          onOutsideClick={closeContextMenu}
+          ref={refs.setFloating}
+          style={{ ...floatingStyles, zIndex: Z_INDEX_FLOATING_MENU }}
+        />
+      </FloatingPortal>
     ) : null,
     handleContextMenu,
   };

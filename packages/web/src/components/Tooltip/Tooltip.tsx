@@ -8,8 +8,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
-import { Z_INDEX_TOOLTIP, ZIndex } from "@web/common/constants/web.constants";
-import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
+import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import { type TooltipOptions } from "./tooltip.types";
 import { TooltipContext, useTooltip, useTooltipContext } from "./useTooltip";
 
@@ -68,7 +67,6 @@ export const TooltipContent = forwardRef<
   HTMLProps<HTMLDivElement>
 >(function TooltipContent({ children, className, style, ...props }, propRef) {
   const context = useTooltipContext();
-  const maxZIndex = useGridMaxZIndex();
   const ref = useMergeRefs([context.refs.setFloating, propRef]);
 
   return (
@@ -82,7 +80,7 @@ export const TooltipContent = forwardRef<
             position: context.strategy,
             top: context.y ?? 0,
             visibility: context.x == null ? "hidden" : "visible",
-            zIndex: Math.max(maxZIndex + ZIndex.LAYER_3, Z_INDEX_TOOLTIP),
+            zIndex: Z_INDEX_TOOLTIP,
             ...context.transitionStyles,
             ...style,
           }}

@@ -1,5 +1,6 @@
 import {
   autoUpdate,
+  FloatingPortal,
   flip,
   offset,
   shift,
@@ -8,6 +9,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useState } from "react";
+import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import {
   assembleGridEvent,
   getCalendarEventIdFromElement,
@@ -35,7 +37,7 @@ export const ContextMenuWrapper = ({
 
   const [isOpen, setIsOpen] = useState(false);
 
-  const { refs, x, y, context } = useFloating({
+  const { refs, floatingStyles, context } = useFloating({
     placement: "right-start",
     middleware: [offset(5), flip(), shift()],
     open: isOpen,
@@ -45,6 +47,10 @@ export const ContextMenuWrapper = ({
         handleDiscard();
       }
     },
+    // The reference is a virtual element at the click's viewport coordinates,
+    // and the menu is portalled out of the scrolling grid, so anchor it to
+    // the viewport rather than an offset parent.
+    strategy: "fixed",
     whileElementsMounted: autoUpdate,
   });
 
@@ -102,22 +108,22 @@ export const ContextMenuWrapper = ({
     >
       {children}
       {isOpen && (
-        <ContextMenu
-          ref={refs.setFloating}
-          event={
-            draftEvent && hasEventDates(draftEvent)
-              ? assembleGridEvent(draftEvent)
-              : undefined
-          }
-          style={{
-            position: "absolute",
-            top: `${y}px`,
-            left: `${x}px`,
-          }}
-          context={context}
-          close={closeMenu}
-          onOutsideClick={handleDiscard}
-        />
+        // Portalled: rendered inline it shared a stacking context with the
+        // event cards and lost to any card stacked above it.
+        <FloatingPortal>
+          <ContextMenu
+            ref={refs.setFloating}
+            event={
+              draftEvent && hasEventDates(draftEvent)
+                ? assembleGridEvent(draftEvent)
+                : undefined
+            }
+            style={{ ...floatingStyles, zIndex: Z_INDEX_FLOATING_MENU }}
+            context={context}
+            close={closeMenu}
+            onOutsideClick={handleDiscard}
+          />
+        </FloatingPortal>
       )}
     </div>
   );

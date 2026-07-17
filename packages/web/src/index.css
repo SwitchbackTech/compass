@@ -1,8 +1,5 @@
 @import "tailwindcss";
 
-/* Dynamic z-index css to support up to 100 overlapping agenda events */
-@source inline("{hover:,focus:,}z-{{0..100..1}}");
-
 /*
  * Runtime theme values. Future themes override these variables without
  * changing component classes or rebuilding Tailwind utilities.
@@ -366,8 +363,11 @@
   }
 }
 
+/* Both wrappers (week + day) portal this out of their grid and pass in
+ * floating-ui's positioning plus Z_INDEX_FLOATING_MENU, so it carries no
+ * position or z-index of its own. */
 @utility c-context-menu {
-  @apply absolute z-2 min-w-40 list-none rounded border border-border-primary bg-menu-bg py-[5px] shadow-[0_4px_6px_var(--color-shadow-default)];
+  @apply min-w-40 list-none rounded border border-border-primary bg-menu-bg py-[5px] shadow-[0_4px_6px_var(--color-shadow-default)];
 }
 
 @utility c-tooltip {
