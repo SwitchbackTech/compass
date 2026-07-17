@@ -182,21 +182,32 @@ export const mapEventRecordToGoogle = (
     throw new Error("Cannot write busy-content event to Google");
   }
 
+  // Same key-merge rule as `recurrence` below: the keys the other schedule
+  // kind uses must be nulled, not omitted. Omitting them leaves the previous
+  // kind's keys on Google, and it rejects a start holding both a date and a
+  // dateTime ("Invalid start time") - which is what dragging a timed event
+  // into the all-day row sends.
   const scheduleFields: Pick<GoogleEventWriteInput, "start" | "end"> =
     record.schedule.kind === "timed"
       ? {
           start: {
+            date: null,
             dateTime: record.schedule.start.toISOString(),
             timeZone: record.schedule.timeZone,
           },
           end: {
+            date: null,
             dateTime: record.schedule.end.toISOString(),
             timeZone: record.schedule.timeZone,
           },
         }
       : {
-          start: { date: record.schedule.start },
-          end: { date: record.schedule.end },
+          start: {
+            date: record.schedule.start,
+            dateTime: null,
+            timeZone: null,
+          },
+          end: { date: record.schedule.end, dateTime: null, timeZone: null },
         };
 
   return {

@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { Status } from "@core/errors/status.codes";
+import { EventMutationErrorSchema } from "@core/types/event-command.contracts";
 import { createExternalStore } from "@web/common/utils/external-store.util";
 import { refreshEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { type ApiError } from "../api.types";
@@ -17,6 +18,17 @@ const BACKEND_DOWN_STATUSES: number[] = [
 
 const unavailableStore = createExternalStore(false);
 
+/**
+ * The backend answers PROVIDER_FAILURE with a 502 (event.error.ts), so a
+ * gateway status alone doesn't mean it's unreachable. A body in the mutation
+ * error shape can only have come from the backend itself - a proxy that
+ * couldn't reach it has no way to write one - which puts it under the same
+ * rule as the 500 above: it answered, so the failure is this request's.
+ */
+function isBackendAuthoredError(data: unknown): boolean {
+  return EventMutationErrorSchema.safeParse(data).success;
+}
+
 export function isBackendUnavailableError(error: unknown): boolean {
   if (!(error instanceof Error)) {
     return false;
@@ -26,9 +38,12 @@ export function isBackendUnavailableError(error: unknown): boolean {
     // Read the status off the response rather than the message: `createApiError`
     // bakes the status into the message text, and string-matching that is what
     // previously let real 502s through as ordinary request failures.
-    const status = (error as ApiError).response?.status;
+    const response = (error as ApiError).response;
     // No response at all means the request never reached the backend.
-    return status === undefined || BACKEND_DOWN_STATUSES.includes(status);
+    if (response === undefined) return true;
+    if (!BACKEND_DOWN_STATUSES.includes(response.status)) return false;
+
+    return !isBackendAuthoredError(response.data);
   }
 
   return error.message === "Failed to fetch";
