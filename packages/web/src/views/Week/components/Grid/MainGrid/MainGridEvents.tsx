@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import {
   type CalendarCardIdentity,
   isEventReadOnly,
@@ -6,14 +6,9 @@ import {
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
-import {
-  Categories_Event,
-  type GridEvent,
-} from "@web/common/types/web.event.types";
-import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import {
-  draftActions,
   selectDraft,
   selectDraftId,
   useDraftStore,
@@ -22,6 +17,7 @@ import {
   createTimedEventLayout,
   type TimedDeckLayout,
 } from "@web/grid/layout/timed-deck.layout";
+import { useGridEventDraftHandlers } from "@web/views/Week/components/Grid/useGridEventDraftHandlers";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
@@ -84,39 +80,9 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
       })),
     [timedEventItems, calendarLookup],
   );
-  const category = Categories_Event.TIMED;
 
-  // NOT converted to GridEventDraft/editGridEventDraft: useDraftActions.ts
-  // reads `draft.position.dragOffset` off this store's `event` field when a
-  // keyboardEdit draft is subsequently repositioned by arrow keys, and
-  // gridEventDraftToSchemaEvent has no grid-layout `position` to give it.
-  // See packet-03-phase-3c scoping note.
-  const handleKeyDown = (event: GridEvent) => {
-    draftActions.start({
-      activity: "keyboardEdit",
-      event,
-      eventType: category,
-    });
-  };
-
-  // Read-only cards can't be repositioned, so they don't need the
-  // keyboardEdit path above - and must not use it: `start` leaves `gridDraft`
-  // null, which opens the sidebar form with nothing to render.
-  const openReadOnlyDetails = useCallback(
-    (event: GridEvent) => {
-      const sourceEvent = weekEvents.find(
-        (candidate) => candidate.id === event._id,
-      );
-      const draft = sourceEvent ? editGridEventDraft(sourceEvent) : null;
-      if (!draft) {
-        return;
-      }
-
-      draftActions.startGridDraft({ activity: "gridClick", draft });
-      draftActions.setFormOpen(true);
-    },
-    [weekEvents],
-  );
+  const { onEventKeyDown, onOpenReadOnlyDetails } =
+    useGridEventDraftHandlers(weekEvents);
 
   return (
     <div id={ID_GRID_EVENTS_TIMED}>
@@ -147,8 +113,8 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
                 isReadOnly={isReadOnly}
                 key={`initial-${event._id}`}
                 measurements={measurements}
-                onEventKeyDown={handleKeyDown}
-                onOpenReadOnlyDetails={openReadOnlyDetails}
+                onEventKeyDown={onEventKeyDown}
+                onOpenReadOnlyDetails={onOpenReadOnlyDetails}
                 weekProps={weekProps}
               />
             );

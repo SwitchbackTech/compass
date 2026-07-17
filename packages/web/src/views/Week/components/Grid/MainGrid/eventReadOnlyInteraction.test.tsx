@@ -292,6 +292,64 @@ describe("Week grid read-only interaction gate", () => {
     act(() => draftActions.discard());
   });
 
+  // The keyboard path had the same blank-sidebar defect the read-only cases
+  // above were routed around: it opened the form via `start`, which leaves
+  // gridDraft null. That also stranded arrow-key repositioning, which reads
+  // the draft's own schedule.
+  it("opens a writable timed event with its details when focused and Entered", () => {
+    const writableCalendar = makeCalendar({
+      access: "owner",
+      capabilities: getCalendarCapabilities("owner"),
+    });
+    seededCalendars = [writableCalendar];
+    const event = createTimedEvent(writableCalendar.id, {
+      content: {
+        kind: "details",
+        title: "Keyboard focus block",
+        description: "",
+      },
+    });
+    seededEvents = [event];
+
+    renderMainGridEvents();
+
+    const card = screen.getByRole("button", { name: /keyboard focus block/i });
+    act(() => {
+      fireEvent.keyDown(card, { key: "Enter" });
+    });
+
+    expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
+    expect(useDraftStore.getState().gridDraft?.source?.id).toBe(event.id);
+
+    act(() => draftActions.discard());
+  });
+
+  it("opens a writable all-day event with its details when focused and Entered", () => {
+    const writableCalendar = makeCalendar({
+      access: "owner",
+      capabilities: getCalendarCapabilities("owner"),
+    });
+    seededCalendars = [writableCalendar];
+    const event = createAllDayEvent(writableCalendar.id, {
+      content: { kind: "details", title: "Keyboard holiday", description: "" },
+    });
+    seededEvents = [event];
+
+    renderAllDayEvents();
+
+    const card = screen.getByRole("button", {
+      name: /all-day event: keyboard holiday/i,
+    });
+    act(() => {
+      fireEvent.keyDown(card, { key: "Enter" });
+    });
+
+    expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
+    expect(useDraftStore.getState().gridDraft?.source?.id).toBe(event.id);
+
+    act(() => draftActions.discard());
+  });
+
   it("treats a busy timed event as read-only, and renders 'Busy' as its title, even on a writable calendar", () => {
     const writableCalendar = makeCalendar({
       access: "owner",
