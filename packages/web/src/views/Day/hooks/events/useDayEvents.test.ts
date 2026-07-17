@@ -63,7 +63,8 @@ describe("useDayEvents", () => {
 
   it("fetches day events into the query cache", async () => {
     const queryClient = createCompassQueryClient();
-    const date = dayjs.utc("2025-11-11T00:00:00Z");
+    // Local-mode, like the route loader hands the hook (see loaders.test.ts).
+    const date = dayjs("2025-11-11T00:00:00.000");
 
     renderHook(() => useDayEvents(date), { queryClient });
 
@@ -85,7 +86,7 @@ describe("useDayEvents", () => {
 
   it("re-fetches with a new key when the date changes", async () => {
     const queryClient = createCompassQueryClient();
-    const initialDate = dayjs.utc("2025-11-11T00:00:00Z");
+    const initialDate = dayjs("2025-11-11T00:00:00.000");
 
     const { rerender } = renderHook(({ date }) => useDayEvents(date), {
       initialProps: { date: initialDate },
