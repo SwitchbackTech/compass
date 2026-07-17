@@ -1,4 +1,4 @@
-import { type MouseEvent, useCallback, useMemo } from "react";
+import { type MouseEvent, useMemo } from "react";
 import {
   type CalendarCardIdentity,
   isEventReadOnly,
@@ -7,15 +7,14 @@ import {
 } from "@web/calendars/useCalendarLookup";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import {
-  draftActions,
   selectDraft,
   selectDraftId,
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
+import { useGridEventDraftHandlers } from "@web/views/Week/components/Grid/useGridEventDraftHandlers";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
@@ -83,40 +82,8 @@ export const AllDayEvents = ({
     [visibleAllDayEvents, calendarLookup],
   );
 
-  const gridDraftFor = useCallback(
-    (event: GridEvent) => {
-      const sourceEvent = weekEvents.find(
-        (candidate) => candidate.id === event._id,
-      );
-      return sourceEvent ? editGridEventDraft(sourceEvent) : null;
-    },
-    [weekEvents],
-  );
-
-  // startGridDraft, not `start`: `start` leaves gridDraft null, which both
-  // opens the sidebar form with nothing to render and strands arrow-key
-  // repositioning (it reads the draft's own schedule). Mirrors
-  // MainGridEvents' timed-event handler.
-  const handleKeyDown = useCallback(
-    (event: GridEvent) => {
-      const draft = gridDraftFor(event);
-      if (!draft) return;
-
-      draftActions.startGridDraft({ activity: "keyboardEdit", draft });
-    },
-    [gridDraftFor],
-  );
-
-  const openReadOnlyDetails = useCallback(
-    (event: GridEvent) => {
-      const draft = gridDraftFor(event);
-      if (!draft) return;
-
-      draftActions.startGridDraft({ activity: "gridClick", draft });
-      draftActions.setFormOpen(true);
-    },
-    [gridDraftFor],
-  );
+  const { onEventKeyDown, onOpenReadOnlyDetails } =
+    useGridEventDraftHandlers(weekEvents);
 
   return (
     <div
@@ -149,8 +116,8 @@ export const AllDayEvents = ({
                 isReadOnly={isReadOnly}
                 key={event._id}
                 measurements={measurements}
-                onKeyDown={handleKeyDown}
-                onOpenReadOnlyDetails={openReadOnlyDetails}
+                onKeyDown={onEventKeyDown}
+                onOpenReadOnlyDetails={onOpenReadOnlyDetails}
                 weekDays={weekDays}
               />
             );
