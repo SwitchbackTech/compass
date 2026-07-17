@@ -4,7 +4,10 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 
 export interface DayLoaderData {
-  dateInView: Dayjs; // in UTC
+  // Local-mode, not UTC: dayEventQueryRange formats this to build the day's
+  // query bounds, so a UTC-mode value would shift the window off local
+  // midnight and drop evening events.
+  dateInView: Dayjs;
   dateString: string;
 }
 

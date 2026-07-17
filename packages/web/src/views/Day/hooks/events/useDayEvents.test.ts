@@ -47,9 +47,24 @@ describe("useDayEvents", () => {
     return match?.[1];
   };
 
+  // Pins an explicit offset zone (the machine's may be UTC, where the
+  // correct and incorrect formats coincide) so a return to .utc(true), which
+  // shifted the window off local midnight, fails here.
+  it("keeps the local offset so evening events stay inside the day window", () => {
+    const date = dayjs.tz("2026-07-16 12:00", "America/Denver");
+    const { startDate, endDate } = dayEventQueryRange(date);
+
+    const eveningEvent = dayjs.tz("2026-07-16 21:00", "America/Denver");
+    expect(eveningEvent.valueOf()).toBeGreaterThanOrEqual(
+      Date.parse(startDate),
+    );
+    expect(eveningEvent.valueOf()).toBeLessThan(Date.parse(endDate));
+  });
+
   it("fetches day events into the query cache", async () => {
     const queryClient = createCompassQueryClient();
-    const date = dayjs.utc("2025-11-11T00:00:00Z");
+    // Local-mode, like the route loader hands the hook (see loaders.test.ts).
+    const date = dayjs("2025-11-11T00:00:00.000");
 
     renderHook(() => useDayEvents(date), { queryClient });
 
@@ -71,7 +86,7 @@ describe("useDayEvents", () => {
 
   it("re-fetches with a new key when the date changes", async () => {
     const queryClient = createCompassQueryClient();
-    const initialDate = dayjs.utc("2025-11-11T00:00:00Z");
+    const initialDate = dayjs("2025-11-11T00:00:00.000");
 
     const { rerender } = renderHook(({ date }) => useDayEvents(date), {
       initialProps: { date: initialDate },

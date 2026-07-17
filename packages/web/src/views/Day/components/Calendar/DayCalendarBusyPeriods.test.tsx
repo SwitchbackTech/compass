@@ -18,6 +18,7 @@ import {
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type GridMeasurements } from "@web/grid/types/grid.types";
+import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { DayCalendarBusyPeriodsLayer } from "./DayCalendarBusyPeriods";
 import { afterEach, describe, expect, it } from "bun:test";
 
@@ -53,11 +54,16 @@ function Provider({ children }: PropsWithChildren) {
     client.setQueryData(calendarQueryKeys.all, seededCalendars);
 
     const calendarIds = deriveAvailabilityCalendarIds(seededCalendars);
-    const start = dateInView.startOf("day").utc(true).format();
-    const end = dateInView.endOf("day").utc(true).format();
+    // Same range the layer queries, so the seeded entry lands under the key
+    // it reads.
+    const { startDate, endDate } = dayEventQueryRange(dateInView);
     const response: AvailabilityResponse = { busyPeriods: seededBusyPeriods };
     client.setQueryData(
-      availabilityQueryOptions({ calendarIds, start, end }).queryKey,
+      availabilityQueryOptions({
+        calendarIds,
+        start: startDate,
+        end: endDate,
+      }).queryKey,
       response,
     );
 
