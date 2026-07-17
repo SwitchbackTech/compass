@@ -131,7 +131,6 @@ export const OverlayPanel = ({
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={message ? messageId : undefined}
         aria-live={role === "status" ? "polite" : undefined}
-        aria-busy={role === "status" ? true : undefined}
       >
         {icon}
         {title && (

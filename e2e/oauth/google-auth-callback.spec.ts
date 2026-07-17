@@ -91,7 +91,7 @@ test("finishes a saved Google sign-in callback", async ({ page }) => {
   await page.goto(getCallbackUrl(state));
 
   await expect(
-    page.locator('[role="status"][aria-busy="true"][aria-live="polite"]'),
+    page.locator('[role="status"][aria-live="polite"]'),
   ).toBeVisible();
   await expect(page).toHaveURL(/\/week$/);
   expect(apiMocks.loginOrSignupRequests).toHaveLength(1);

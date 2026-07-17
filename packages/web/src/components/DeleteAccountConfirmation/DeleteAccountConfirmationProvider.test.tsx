@@ -69,9 +69,12 @@ describe("DeleteAccountConfirmationProvider", () => {
     await confirmDeletion();
 
     // Still in flight: the request has not resolved yet.
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      /so long captain@example.com/i,
-    );
+    const farewell = await screen.findByRole("status");
+    expect(farewell).toHaveTextContent(/so long captain@example.com/i);
+    // aria-busy on a live region withholds the announcement until it flips
+    // false, and this one never does - it lives until the reload, so a screen
+    // reader user got silence where everyone else got the farewell.
+    expect(farewell).not.toHaveAttribute("aria-busy");
     expect(assign).not.toHaveBeenCalled();
 
     finishDelete();
