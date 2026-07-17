@@ -34,7 +34,7 @@ const position = {
   width: 140,
 };
 
-describe("CalendarEventCard", () => {
+describe("EventCard", () => {
   it("renders timed event details, interaction attributes, and resize handles", () => {
     const onEventMouseDown = mock();
     const onScalerMouseDown = mock();
