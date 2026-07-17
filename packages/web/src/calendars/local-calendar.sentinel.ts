@@ -31,7 +31,9 @@ export function getLocalCalendarSentinelId(): CalendarId {
 export function synthesizeLocalCalendar(id: CalendarId): Calendar {
   return {
     id,
-    name: "Local",
+    // Matches the server's ensureLocalCalendar name so the sidebar row doesn't
+    // rename itself from "Local" to "Compass" when an anonymous user signs up.
+    name: "Compass",
     description: "",
     timeZone: null,
     foregroundColor: "#000000",

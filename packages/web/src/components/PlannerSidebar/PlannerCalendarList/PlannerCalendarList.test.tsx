@@ -150,14 +150,14 @@ describe("PlannerCalendarList", () => {
     // The anonymous synthesized local calendar is isPrimary, but must not be
     // relabeled "primary" - the header shows "Temporary account", not its name.
     const local = makeCalendar({
-      name: "Local",
+      name: "Compass",
       provider: "local",
       isPrimary: true,
     });
 
     renderCalendarList([local], { authenticated: false });
 
-    expect(screen.getByText("Local")).toBeInTheDocument();
+    expect(screen.getByText("Compass")).toBeInTheDocument();
     expect(screen.queryByText("primary")).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
