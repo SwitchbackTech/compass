@@ -13,7 +13,7 @@ When you self-host Compass on a server, you get a stack of small services. Only 
 ```mermaid
 flowchart TD
     browser[Your browser]
-    indexeddb[(Browser IndexedDB<br/>tasks)]
+    indexeddb[(Browser IndexedDB<br/>offline events)]
     caddy[Caddy<br/>HTTPS]
     web[web container<br/>127.0.0.1:9080]
     backend[backend container<br/>127.0.0.1:3000/api]
@@ -24,7 +24,7 @@ flowchart TD
     browser -->|loads Compass| caddy
     caddy -->|web traffic| web
     caddy -->|API traffic| backend
-    browser -->|stores tasks locally| indexeddb
+    browser -->|caches events locally| indexeddb
     backend -->|Docker volume| mongo
     backend --> supertokens
     supertokens -->|Docker volume| postgres

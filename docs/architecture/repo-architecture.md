@@ -10,7 +10,7 @@ The React frontend. It owns:
 
 - app startup and routing
 - auth/session-aware UI
-- event and task interactions
+- event interactions
 - local offline storage
 - SSE listeners (`EventSource`)
 
@@ -48,7 +48,7 @@ The shared domain layer. It owns:
 
 High-value files:
 
-- `packages/core/src/types/event.types.ts`
+- `packages/core/src/types/event.contracts.ts`
 - `packages/core/src/types/type.utils.ts`
 - `packages/core/src/constants/core.constants.ts`
 - `packages/core/src/constants/sse.constants.ts`
@@ -69,7 +69,7 @@ Entry point:
 
 ### Web -> Core
 
-The web package imports shared event/task/date concepts from `core` and should not redefine them locally unless the data is UI-specific.
+The web package imports shared event/date concepts from `core` and should not redefine them locally unless the data is UI-specific.
 
 ### Backend -> Core
 
@@ -119,7 +119,7 @@ Web state is not single-system:
 
 - Zustand stores hold transient client state (draft, view dates/sidebar, cmd palette, user metadata)
 - TanStack Query owns persisted event reads/mutations and deduplicates keyed event reads
-- IndexedDB stores offline events/tasks
+- IndexedDB stores offline events
 
 Treat this as an intentional mixed architecture, not an inconsistency to "fix" casually.
 

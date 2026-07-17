@@ -159,9 +159,9 @@ export function timedGridSchedule(start: Date, end: Date): GridScheduleDraft {
   return { kind: "timed", start, end, timeZone: getBrowserTimeZone() };
 }
 
-// Mirrors event.legacy-bridge.ts's legacyRecurrenceFromEvent, duplicated
-// locally so this adapter doesn't depend on the bridge file being dissolved
-// (see event.view-model.ts's prior conversion for the same pattern).
+// Mirrors event.view-model.ts's scheduledEventToSchemaEvent recurrence
+// conversion (the now-deleted event.legacy-bridge.ts used the same mapping),
+// duplicated locally so this adapter has no dependency on that module.
 function legacyRecurrenceFromEvent(event: Event): CompassEvent["recurrence"] {
   return event.recurrence.kind === "series"
     ? { rule: [...event.recurrence.rules], eventId: event.id }

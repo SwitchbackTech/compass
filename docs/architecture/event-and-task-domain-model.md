@@ -1,15 +1,14 @@
-# Event And Task Domain Model
+# Event Domain Model
 
 The event domain is the most cross-cutting part of Compass. Read this before changing event shape, recurrence logic, sync behavior, or local persistence.
 
 ## Current Contracts (sub-calendar v1)
 
-The runtime now uses the strict calendar-owned contracts everywhere: Mongo
+The runtime uses the strict calendar-owned contracts everywhere: Mongo
 storage, the HTTP API, SSE, IndexedDB, and the web data/state layers. The
-legacy sections further down describe the RETIRED pre-cutover model; they
-remain only until the last web components stop converting shapes through
-`packages/web/src/events/queries/event.legacy-bridge.ts`, after which the
-legacy types are deleted.
+pre-cutover legacy event model (and its `event.legacy-bridge.ts` conversion
+shim) has been fully removed — the sections below describe the current model
+only.
 
 - `packages/core/src/types/domain-primitives.ts` — branded ids, `DateOnly`,
   `DateTime` (RFC 3339 with offset), `TimeZone`, `SortOrder`, `RRule`.
@@ -69,41 +68,37 @@ rediscovering it:
 
 Primary source:
 
-- `packages/core/src/types/event.types.ts`
+- `packages/core/src/types/event.contracts.ts`
 
 Important event fields:
 
-- `_id`: Compass event id
-- `startDate`, `endDate`: ISO datetime or date strings
-- `isAllDay`: display semantics
-- `origin`: where the event came from
-- `gEventId`: Google event id when synced
-- `gRecurringEventId`: Google recurring parent id when relevant
-- `recurrence.rule`: RRULE array for recurring bases
-- `recurrence.eventId`: base Compass event id for recurring instances
+- `id`: Compass event id
+- `calendarId`: required, immutable once created (see Deferred Beyond V1)
+- `content`: discriminated union — `details` (`title` + `description`) or
+  `busy` (free/busy-only calendars)
+- `schedule`: discriminated union — `timed` (`start`/`end`/`timeZone`) or
+  `allDay` (`DateOnly` `start`/`end`, exclusive end)
+- `recurrence`: discriminated union — `single` (standalone event), `series`
+  (recurring base, carries `rules`), or `occurrence` (references its parent
+  via `seriesId`)
+- `createdAt`, `updatedAt`
+
+The backend record shape (`packages/backend/src/event/event.record.ts`) mirrors
+this with Mongo-native types (`ObjectId`, `Date`) plus a single nullable
+`externalReference` for provider identity (Google `eventId` /
+`recurringEventId`) instead of separate `gEventId`/`gRecurringEventId` fields.
 
 ## Display Categories
 
-`Categories_Event` maps events to visible buckets:
+`Categories_Event` (`packages/web/src/common/types/web.event.types.ts`) maps
+events to visible buckets:
 
 - `allday`
 - `timed`
-- `sidebarWeek`
-- `sidebarMonth`
 
 These are UI-facing categories, not storage categories.
 
-## Recurrence Categories
-
-`Categories_Recurrence` models structural state:
-
-- `STANDALONE`
-- `RECURRENCE_BASE`
-- `RECURRENCE_INSTANCE`
-
-Many sync and parser decisions key off transitions between these states.
-
-For the full recurring-event lifecycle, see [Recurrence Handling](../features/recurring-events-handling.md).
+For the full recurring-event lifecycle, see [Recurrence Handling](../Features/recurring-events-handling.md).
 
 ## Update Scopes
 
@@ -115,7 +110,7 @@ Recurring edits use `RecurringEventUpdateScope`:
 
 If you change recurring edit behavior, check:
 
-- `packages/core/src/types/event.types.ts`
+- `packages/core/src/types/event.contracts.ts`
 - `packages/backend/src/event/controllers/event.controller.ts`
 - `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`
 
@@ -123,10 +118,10 @@ If you change recurring edit behavior, check:
 
 The backend treats recurring events as:
 
-- one base event containing recurrence rules
-- zero or more generated instances referencing the base via `recurrence.eventId`
+- one series event (`recurrence.kind === "series"`) containing `rules`
+- zero or more generated occurrences (`recurrence.kind === "occurrence"`) referencing the series via `seriesId`
 
-When reading instances back, the backend rehydrates the instance with the base event's recurrence rule before returning it.
+When reading occurrences back, the backend rehydrates them against their series event's recurrence rules before returning them.
 
 Primary code:
 
@@ -137,49 +132,28 @@ Primary code:
 
 ## Optimistic IDs
 
-The web generates a real Mongo `ObjectId` client-side (`createObjectIdString()`) before the create mutation fires, so the optimistic event and the persisted event share the same `_id`:
+The web generates a real Mongo `ObjectId` client-side (`createObjectIdString()`) before the create mutation fires, so the optimistic event and the persisted event share the same `id`:
 
 - web optimistic flow: `packages/web/src/events/mutations/useEventMutations.ts`
 - backend normalization: `packages/backend/src/event/controllers/event.controller.ts`
 
-Do not assume every incoming `_id` is already a durable Mongo id.
+Do not assume every incoming `id` is already a durable Mongo id.
 
-## Task Model
+## Tasks (removed)
 
-Primary source:
-
-- `packages/web/src/common/types/task.types.ts`
-
-Task fields:
-
-- `_id`
-- `title`
-- `status` (`todo` or `completed`)
-- `order`
-- `createdAt`
-- `description`
-- `user`
-
-Tasks are stored with a `dateKey` in the offline data store, not in the public
-`Task` shape.
-
-## Storage-Specific Task Shape
-
-The IndexedDB offline data store wraps tasks as `StoredTask`:
-
-- public task data
-- plus `dateKey`
-
-Source:
-
-- `packages/web/src/common/storage/offline-data/offline-data.store.ts`
+The Tasks and Someday features were removed from the app in 2026-07 (v1.0.194).
+`StoredTask` and the read-only legacy `tasks` IndexedDB table are retained in
+`packages/web/src/common/storage/offline-data/offline-data.store.ts` for
+one-time data recovery only (`getAllTasks`/`getTaskCount`/`clearAllTasks`) —
+there is no live task-creation or task-editing path anywhere in the app. See
+`packages/web/src/components/PlannerSidebar/TasksRemovalNotice` for the
+user-facing removal notice.
 
 ## Invariants To Preserve
 
-- Every persisted event must have a stable Compass `_id`.
-- Instances reference a base event via `recurrence.eventId`.
-- Base recurring events carry the `recurrence.rule`.
-- Tasks should normalize through `normalizeTask` / `normalizeTasks` before persistence.
+- Every persisted event must have a stable Compass `id`.
+- Occurrences reference their series via `recurrence.seriesId`.
+- Series events carry `recurrence.rules`.
 - Local storage schemas can evolve, but migrations must preserve existing user data.
 
 ## Before Changing The Domain

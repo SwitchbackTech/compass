@@ -253,7 +253,7 @@ If a test overrides globals (for example `window.location` or `window.indexedDB`
 
 ### Floating UI-Dependent Tests
 
-If a test exercises components that rely on `@floating-ui/react` refs/styles (for example Day view task/context-menu interactions), import the shared setup:
+If a test exercises components that rely on `@floating-ui/react` refs/styles (for example Day view context-menu interactions), import the shared setup:
 
 - `@web/__tests__/floating-ui.setup`
 

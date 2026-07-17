@@ -14,13 +14,11 @@ Files:
 Breakpoints:
 
 - `SIDEBAR_AUTO_COLLAPSE_BREAKPOINT` = 1280px (Tailwind `xl`)
-- `TASK_LIST_AUTO_COLLAPSE_BREAKPOINT` = 720px (task list + divider + a
-  minimum-usable calendar no longer fit side by side below this width)
 
 The hook only reacts to `matchMedia` `change` events — a breakpoint crossing,
 not a continuous width readout. This means a manual toggle (`[` for the
-sidebar, `]` for the day-view task list) sticks until the next crossing; it
-does not get silently re-opened or re-closed by unrelated re-renders.
+sidebar) sticks until the next crossing; it does not get silently re-opened
+or re-closed by unrelated re-renders.
 
 ## Week Grid Day Window
 

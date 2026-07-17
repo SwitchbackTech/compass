@@ -4,80 +4,90 @@ This document explains how Compass models recurring events, how recurring edits 
 
 ## Structural Model
 
-Compass stores recurring events as:
+Compass stores recurrence as a discriminated union on the event's `recurrence` field, with three kinds:
 
-- one base event with `recurrence.rule`
-- zero or more generated instances with `recurrence.eventId`
+- `{ kind: "single" }` — a standalone, non-recurring event
+- `{ kind: "series", rules }` — a series base, owning the RRULE (`rules`)
+- `{ kind: "occurrence", seriesId }` — a materialized instance, pointing back at its series base by `seriesId`
 
-The base event owns the recurrence rule. Instances do not carry their own independent rule in storage; they point back to the base. When the backend returns an instance through normal event reads, it rehydrates recurrence information from the base.
+The series base owns the recurrence rule; occurrences do not carry their own RRULE, only a `seriesId` reference. There is no separate "recurrence.eventId" pointer — the field is literally named `seriesId`.
 
 Primary files:
 
-- `packages/core/src/types/event.types.ts`
-- `packages/core/src/util/event/compass.event.rrule.ts`
+- `packages/core/src/types/event.contracts.ts` (`EventRecurrenceSchema`)
+- `packages/backend/src/event/event.record.ts` (`EventRecurrenceRecordSchema` — same three kinds, persisted shape)
+- `packages/backend/src/event/services/recur/util/recur.util.ts` (RRULE expansion / `materializeSeriesInstances`)
 - `packages/backend/src/event/services/event.service.ts`
 
-## Recurrence Categories
+Google linkage is a single `externalReference` field on the record (nullable), not separate `gEventId`/`gRecurringEventId` fields:
 
-Compass-to-Google event propagation classifies event shape using `Categories_Recurrence`:
+```
+externalReference: { provider: "google", eventId, recurringEventId } | null
+```
 
-- `STANDALONE`
-- `RECURRENCE_BASE`
-- `RECURRENCE_INSTANCE`
+(`packages/backend/src/event/event.record.ts`)
 
-The Compass-to-Google path treats recurrence handling as a transition problem:
+## How Recurring Edits Are Planned
 
-1. build a transition context from the incoming Compass payload plus the current DB event
-2. analyze that transition into a plain `CompassOperationPlan`
-3. apply Compass persistence steps from the plan
-4. execute Google side effects separately if the plan calls for them
+There is no longer a `Categories_Recurrence` classification (`STANDALONE`/`RECURRENCE_BASE`/`RECURRENCE_INSTANCE`) or a transition-key dispatch table — that mechanism was removed as part of the sub-calendar v1 rewrite. Recurrence handling is now a direct, three-stage pipeline keyed off the incoming mutation's `scope` (`"this" | "all" | "thisAndFollowing"`, `RecurrenceScopeSchema` in `packages/core/src/types/event-command.contracts.ts`) plus the target event's `recurrence.kind`:
+
+1. **Analyze** — `analyzeReplace(...)` / `analyzeDelete(...)` in `compass.event.parser.ts` take the target `EventRecord`, its optional `SeriesContext` (`{ base, instances }`), the input, and `now`, and return a pure `ReplacePlan` or `DeletePlan` describing what must change.
+2. **Materialize** — `generateReplace(...)` / `generateDelete(...)` in `compass.event.generator.ts` expand a plan into concrete records to persist (`MaterializedMutation`: `{ upsert, deleteIds, primary }`), including RRULE expansion via `materializeSeriesInstances` for a (re)created series.
+3. **Execute** — `executeMutation(...)` / `executeDelete(...)` in `compass.event.executor.ts` persist the materialized change via `eventRepository` inside a Mongo transaction.
 
 Primary files:
 
 - `packages/backend/src/event/classes/compass.event.parser.ts`
+- `packages/backend/src/event/classes/compass.event.generator.ts`
 - `packages/backend/src/event/classes/compass.event.executor.ts`
-- `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`
+- `packages/backend/src/event/services/event.service.ts` (orchestrates analyze -> generate -> execute -> propagate -> notify)
 
 ## Update Scopes
 
-Recurring edits start with `RecurringEventUpdateScope`:
+Recurring edits arrive with a `scope` of `"this"`, `"all"`, or `"thisAndFollowing"` (`RecurrenceScopeSchema`). There is no `RecurringEventUpdateScope` enum or `CompassEventFactory` on the backend anymore — that expansion step lived in the old event model. The web layer still has its own `RecurringEventUpdateScope` enum (`packages/web/src/common/types/web.event.types.ts`, consumed by `packages/web/src/events/recurrence/recurrence-scope.ts`) for UI purposes, which maps down to the same three backend scope strings.
 
-- `This Event`
-- `This and Following Events`
-- `All Events`
+`analyzeReplace`/`analyzeDelete` resolve each scope directly:
 
-`CompassEventFactory` expands those user-facing scopes into one or more normalized `CompassEvent` payloads before sync processing runs.
-
-Examples:
-
-- `This Event` on a recurring instance becomes a single instance update/delete
-- `This and Following Events` splits the existing series into:
-  - a truncated old series
-  - a new series starting at the edited instance
-- `All Events` resolves to a base-series mutation
+- `"this"` on an occurrence updates/deletes just that instance; a series base itself cannot be edited/deleted with `"this"` (throws `RECURRENCE_CONFLICT`).
+- `"all"` resolves to the series base (or the target itself if it's not part of a series) and rewrites/deletes the whole series.
+- `"thisAndFollowing"` on the series' earliest occurrence collapses to `"all"`. Otherwise it splits the series: a truncated old base (RRULE `UNTIL` set just before the edited/deleted instance) plus, for replace, a new base starting at the edited instance.
 
 Primary file:
 
-- `packages/backend/src/event/classes/compass.event.generator.ts`
+- `packages/backend/src/event/classes/compass.event.parser.ts` (`analyzeReplace`, `analyzeDelete`)
 
-## How Series Mutations Work
+## Plan And Mutation Shapes
 
-The recurrence planner distinguishes several Compass mutation shapes:
+`ReplacePlan` (`compass.event.parser.ts`) is one of:
 
-- `CREATE`: create a standalone event or a new series
-- `UPDATE`: update one stored event
-- `DELETE`: delete one stored event or one full series
-- `UPDATE_SERIES`: update base/instance shared fields without rebuilding the series
-- `TRUNCATE_SERIES`: delete instances after a new `UNTIL` date, then update the base series
-- `RECREATE_SERIES`: delete generated instances, then recreate the series from the new rule
+- `replaceThis` — update a single stored event
+- `replaceSeries` — replace the series base (and rematerialize instances if still a series)
+- `replaceSplit` — truncate the old base, delete following instances, insert a new base (and its materialized instances)
 
-Current split rule:
+`DeletePlan` is one of:
 
-- if only the RRULE `UNTIL` changed, use `TRUNCATE_SERIES`
-- if other recurrence options changed, use `RECREATE_SERIES`
-- if no recurrence split is needed, use `UPDATE_SERIES`
+- `deleteThis` — delete a single stored event
+- `deleteSeries` — delete an entire series by `seriesId`
+- `deleteSplit` — truncate the base and delete the following instances
 
-This keeps the recurrence interpretation in the planner and the DB mutations in the executor.
+`generateReplace`/`generateDelete` (`compass.event.generator.ts`) turn each plan variant into a `MaterializedMutation` (`{ upsert, deleteIds, primary }`) or the delete equivalent (`{ upsert, deleteIds, deleteSeriesId, primary }`). `executeMutation`/`executeDelete` (`compass.event.executor.ts`) then persist that via `eventRepository.bulkReplace` / `deleteMany` / `deleteBySeriesId`.
+
+There is no separate `UPDATE_SERIES` / `TRUNCATE_SERIES` / `RECREATE_SERIES` naming — the plan `kind` values above (`replaceSeries`, `replaceSplit`, etc.) are the current vocabulary.
+
+## Google Sync Boundary
+
+Google side effects are driven by an `EventChangeSet` (`{ upserted, deletedBefore, originalStartByEventId? }`) built in `event.service.ts` from the plan's materialized records plus the pre-mutation records being deleted/replaced. `CompassToGoogleEventPropagation.propagate(userId, change)` (in `compass-to-google.event-propagation.ts`) runs strictly after the Mongo transaction commits — Google writes never happen inside an open transaction.
+
+There is no `analyzeCompassTransition`/`applyCompassPlan`/`CompassOperationPlan`/`clearRecurrenceBeforeGoogleUpdate`/`googleDeleteEventId` in the current code. Instead:
+
+- `propagateDelete(...)` uses the record's own `externalReference.eventId` when present; for an occurrence with no `externalReference` yet, it resolves the series base via `resolveSeriesBase(...)` and looks up the Google instance by original start time (`gcalService.findEventInstance`).
+- `propagateUpsert(...)` patches via `externalReference.eventId` when present, otherwise resolves/creates via the series base (for occurrences) or creates a new Google event (for a fresh base/single), then persists the resulting `externalReference` back onto the record.
+- A series base present in the same upsert batch (a fresh series create, or a scope `"all"`/`"thisAndFollowing"` regeneration/truncation) is tracked in `regeneratingSeriesIds`; occurrences riding along in that same batch are skipped for per-instance Google resolution, since Google will expand/truncate its own copies from the base's RRULE.
+
+Primary files:
+
+- `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`
+- `packages/backend/src/event/services/event.service.ts`
 
 ## Google Series Splits
 
@@ -94,82 +104,36 @@ Useful heuristics during Google sync:
 
 This is why Compass-to-Google event propagation keys off persisted state plus event properties instead of trying to reconstruct a single high-level Google UI action.
 
-## Google Sync Boundary
-
-The recurrence planner does not call Google directly.
-
-Instead:
-
-- `analyzeCompassTransition(...)` describes the implied Google effect
-- `applyCompassPlan(...)` performs only Compass DB mutations
-- `CompassToGoogleEventPropagation` executes Google create/update/delete after Compass persistence succeeds
-
-Delete-oriented Google effects should prefer the persisted DB `gEventId` when available, then fall back to the incoming payload `gEventId`.
-
-## Transition Key And Plan Contract
-
-The planner dispatch key is:
-
-- `${dbCategory ?? "NIL"}->>${eventCategory}_${status}`
-
-Concrete examples from current tests:
-
-- `NIL->>RECURRENCE_BASE_CONFIRMED`
-- `STANDALONE->>STANDALONE_CANCELLED`
-- `RECURRENCE_BASE->>STANDALONE_CONFIRMED`
-
-`analyzeCompassTransition(...)` returns a `CompassOperationPlan` with:
-
-- transition metadata (`summary`, `operation`, `transitionKey`)
-- Compass persistence intent (`compassMutation`, `steps`, `provider`)
-- Google side-effect intent (`googleEffect`)
-- optional `clearRecurrenceBeforeGoogleUpdate` guard for series -> standalone updates
-
-`applyCompassPlan(...)` executes the `steps` in order, then returns:
-
-- transition summary (`Event_Transition`)
-- last persisted Compass event when a step returns one
-- `googleDeleteEventId` resolved from persisted event first, otherwise planner fallback
-
-Compass-to-Google event propagation executes Google effects only after Compass persistence succeeds.
-
 ## Recurrence Sync Triage Runbook
 
 Use this sequence when recurring edits behave unexpectedly:
 
-1. Capture the transition key from backend logs:
-   - `Handle Compass event(<id>): <transitionKey>`
-2. Look up the key in `PLAN_BUILDERS` in `compass.event.parser.ts`.
-3. Verify the planned `steps` order and `googleEffect` in unit tests:
+1. Reproduce the mutation via `eventService.replace`/`eventService.delete` (`packages/backend/src/event/services/event.service.ts`) and note the input `scope` and the target's `recurrence.kind`.
+2. Step through `analyzeReplace`/`analyzeDelete` in `compass.event.parser.ts` to see which `ReplacePlan`/`DeletePlan` variant it produces (`replaceThis`/`replaceSeries`/`replaceSplit`, `deleteThis`/`deleteSeries`/`deleteSplit`).
+3. Check the matching materialization in `compass.event.generator.ts` (`generateReplace`/`generateDelete`) for the resulting `upsert`/`deleteIds`/`primary`.
+4. Verify persistence in `compass.event.executor.ts` (`executeMutation`/`executeDelete`) and Google propagation in `compass-to-google.event-propagation.ts` (`propagateUpsert`/`propagateDelete`).
+5. Confirm against unit tests:
    - `compass.event.parser.test.ts`
+   - `compass.event.generator.test.ts`
    - `compass.event.executor.test.ts`
    - `compass-to-google.event-propagation.test.ts`
-4. Map each step to persistence calls in `executeStep(...)`:
-   - `create` -> `_createCompassEvent`
-   - `update` -> `_updateCompassEvent`
-   - `update_series` -> `_updateCompassSeries`
-   - `delete_single` -> `_deleteSingleCompassEvent`
-   - `delete_series` -> `_deleteSeries`
-   - `delete_instances_after_until` -> `_deleteInstancesAfterUntil`
-5. For unexpected Google deletes, confirm `googleDeleteEventId` came from persisted DB `gEventId` before payload fallback.
-6. For series -> standalone updates, verify the recurrence-clearing guard:
-   - planner sets `clearRecurrenceBeforeGoogleUpdate`
-   - executor clears `persistedEvent.recurrence` before `_updateGcal(...)`
+6. For unexpected/missing Google updates on an occurrence, confirm `externalReference` is being read/written correctly and that `originalStartByEventId` carries the pre-edit anchor (needed because Google's `originalStartTime` never moves after an instance's own start/end is edited).
 
 ## What To Verify When Changing Recurrence Logic
 
-- transition classification for base, instance, and standalone shapes
-- `RecurringEventUpdateScope` expansion in `CompassEventFactory`
+- plan classification for single, series-base, and occurrence targets across all three scopes
 - RRULE split behavior for:
-  - no split
-  - `UNTIL`-only truncation
-  - full series recreation
-- Google side effects for recurrence transitions
-- SSE notifications for calendar changes
+  - no split (`"all"` / `"this"`)
+  - `thisAndFollowing` truncation + new base
+  - full series delete
+- Google side effects for recurrence transitions, including the `regeneratingSeriesIds` skip path
+- SSE notifications for calendar changes (`notify(...)` in `event.service.ts`)
 
 Good test anchors:
 
 - `packages/backend/src/event/classes/compass.event.parser.test.ts`
+- `packages/backend/src/event/classes/compass.event.generator.test.ts`
 - `packages/backend/src/event/classes/compass.event.executor.test.ts`
 - `packages/backend/src/sync/services/event-propagation/__tests__/compass-to-google.all-event.test.ts`
+- `packages/backend/src/sync/services/event-propagation/__tests__/compass-to-google.this-and-following-event.test.ts`
 - `packages/backend/src/sync/services/event-propagation/__tests__/compass-to-google-this-event/*.test.ts`
