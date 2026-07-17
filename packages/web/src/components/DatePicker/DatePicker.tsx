@@ -20,7 +20,6 @@ export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
   headerEndContent?: React.ReactNode;
   inputColor?: string;
   isOpen?: boolean;
-  monthContainerClassName?: string;
   monthTextClassName?: string;
   view: "sidebar" | "grid";
   withTodayButton?: boolean;
@@ -42,7 +41,6 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     headerEndContent,
     inputColor,
     isOpen = true,
-    monthContainerClassName,
     monthTextClassName,
     portalId = "root",
     view,
@@ -116,8 +114,12 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
           >
             <div
               className={classNames(
-                "min-w-0 flex-1 items-start",
-                monthContainerClassName,
+                "min-w-0 items-start",
+                // Grid pickers grow the label so the arrows sit at the right
+                // edge. The sidebar keeps the label at intrinsic width so the
+                // month label and nav arrows read as one group on the left,
+                // clearly separate from the sidebar-close control.
+                view !== "sidebar" && "flex-1",
               )}
             >
               <span
