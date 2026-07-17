@@ -1,0 +1,141 @@
+import { type PropsWithChildren } from "react";
+import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@web/__tests__/__mocks__/mock.render";
+import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { createCompassQueryClient } from "@web/api/query-client";
+import {
+  DATA_EVENT_ELEMENT_ID,
+  Z_INDEX_FLOATING_MENU,
+} from "@web/common/constants/web.constants";
+import { type GridEvent } from "@web/common/types/web.event.types";
+import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { draftActions } from "@web/events/stores/draft.store";
+import { useDayCalendarContextMenu } from "@web/views/Day/components/Calendar/DayCalendarContextMenu";
+import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
+import { afterEach, describe, expect, it, mock } from "bun:test";
+import "@testing-library/jest-dom";
+
+// The menu used to render inline with a hardcoded z-2, so any event card
+// stacked above 2 painted over it. Cards carry inline z-indexes inside the
+// grid's stacking context, so the menu has to leave that context and carry
+// the shared floating-menu z-index. Nothing else asserts this: a menu that
+// renders behind a card still passes every other test in the suite.
+
+const WRAPPER_ID = "test-context-wrapper";
+
+const event: Event = createMockEvent({
+  content: { kind: "details", title: "Stacked event", description: "" },
+  schedule: EventScheduleSchema.parse({
+    kind: "timed",
+    start: "2024-01-15T09:00:00.000Z",
+    end: "2024-01-15T10:00:00.000Z",
+    timeZone: "UTC",
+  }),
+});
+
+// The day view hands its menu a GridEvent directly rather than looking one up.
+const gridEvent = {
+  ...event,
+  _id: event.id,
+  position: gridEventDefaultPosition,
+} as unknown as GridEvent;
+
+// The wrapper looks the right-clicked id up in the query cache, and
+// seedEventQueries only sets query *defaults* - those never materialize into
+// a cache entry unless something mounts the query. Write the entry directly.
+// findEventInCache scans every cached entry regardless of source, so the
+// unauthenticated default is enough.
+const seedCacheEntry = () => {
+  const queryClient = createCompassQueryClient();
+  queryClient.setQueryData(
+    eventQueryKeys.week({
+      source: "local",
+      start: "2024-01-14T00:00:00.000Z",
+      end: "2024-01-21T00:00:00.000Z",
+    }),
+    toNormalizedEventQueryData([event]),
+  );
+  return queryClient;
+};
+
+// The menu's items read the draft context; this test is only about where the
+// menu renders, so a stub is enough.
+const DraftStub = ({ children }: PropsWithChildren) => (
+  <DraftContext.Provider
+    value={
+      {
+        actions: { duplicateEvent: mock(), openForm: mock() },
+        confirmation: { onDelete: mock() },
+        setters: { setDraft: mock() },
+      } as never
+    }
+  >
+    {children}
+  </DraftContext.Provider>
+);
+
+afterEach(() => {
+  draftActions.discard();
+  cleanup();
+});
+
+const expectMenuFloatsAboveTheGrid = () => {
+  const menu = document.querySelector<HTMLElement>(".c-context-menu");
+  expect(menu).not.toBeNull();
+  expect(menu?.style.zIndex).toBe(String(Z_INDEX_FLOATING_MENU));
+  expect(menu?.closest(`#${WRAPPER_ID}`)).toBeNull();
+};
+
+describe("context menu layering", () => {
+  it("floats the week grid's menu above the event cards", () => {
+    render(
+      <ContextMenuWrapper id={WRAPPER_ID}>
+        {/* Stands in for an event card: the wrapper reads the id off the
+            right-clicked element. */}
+        <div {...{ [DATA_EVENT_ELEMENT_ID]: event.id }}>Stacked event</div>
+      </ContextMenuWrapper>,
+      { queryClient: seedCacheEntry(), wrapper: DraftStub },
+    );
+
+    fireEvent.contextMenu(screen.getByText("Stacked event"));
+
+    expectMenuFloatsAboveTheGrid();
+  });
+
+  // The day view builds its own menu around the same component. It used to
+  // lean on a z-index baked into the shared stylesheet, so removing that
+  // silently dropped it behind every card.
+  it("floats the day grid's menu above the event cards", () => {
+    const DayHarness = () => {
+      const { contextMenu, handleContextMenu } = useDayCalendarContextMenu({
+        getDayEventById: () => gridEvent,
+        onOpenEvent: () => {},
+      });
+
+      return (
+        // biome-ignore lint/a11y/noStaticElementInteractions: stands in for the day grid, which forwards right-clicks from its cards.
+        <div id={WRAPPER_ID} onContextMenu={handleContextMenu}>
+          <div {...{ [DATA_EVENT_ELEMENT_ID]: event.id }}>Stacked event</div>
+          {contextMenu}
+        </div>
+      );
+    };
+
+    render(<DayHarness />, {
+      queryClient: seedCacheEntry(),
+      wrapper: DraftStub,
+    });
+
+    fireEvent.contextMenu(screen.getByText("Stacked event"));
+
+    expectMenuFloatsAboveTheGrid();
+  });
+});

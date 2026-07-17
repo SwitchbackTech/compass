@@ -21,8 +21,6 @@ export const DATA_DRAFT_EVENT = "data-draft-event";
 export const DATA_NEW_DRAFT_EVENT = "data-new-draft-event";
 export const DATA_TIMED_GRID_ROW = "data-calendar-timed-grid-row";
 export const ID_CONTEXT_MENU_ITEMS = "context-menu-items";
-export const CLASS_ALL_DAY_CALENDAR_EVENT = "all-day-calendar-event";
-export const CLASS_TIMED_CALENDAR_EVENT = "timed-calendar-event";
 
 export enum ZIndex {
   // Below LAYER_1 (the default saved-event-card z-index) so a freeBusy
