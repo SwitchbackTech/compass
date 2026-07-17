@@ -18,6 +18,24 @@ describe("Time Labels", () => {
     expect(meridians(eveningLabel)).toBe(1);
   });
 
+  // Counting meridiems missed that dropping the start's took its trailing
+  // space with it, so every same-meridiem label - most of them - rendered as
+  // "6  - 7 AM" on the card and in its aria-label. Assert the whole string.
+  it("reads as one range when both ends share a meridiem", () => {
+    expect(
+      getTimesLabel("2022-07-06T06:00:00-05:00", "2022-07-06T07:00:00-05:00"),
+    ).toBe("6 - 7 AM");
+    expect(
+      getTimesLabel("2022-07-06T10:45:00-05:00", "2022-07-06T11:00:00-05:00"),
+    ).toBe("10:45 - 11 AM");
+  });
+
+  it("keeps both meridiems when the range crosses noon", () => {
+    expect(
+      getTimesLabel("2022-07-06T11:00:00-05:00", "2022-07-06T13:00:00-05:00"),
+    ).toBe("11 AM - 1 PM");
+  });
+
   it("preserves am/pm when needed", () => {
     const label = getTimesLabel(
       "2022-07-06T01:00:00-05:00",

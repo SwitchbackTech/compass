@@ -235,11 +235,14 @@ const _addTimesToDates = (dt: SelectedDates, timeZone: string) => {
   return { startDate, endDate };
 };
 
+// "6 AM" - "7 AM" reads as "6 - 7 AM": the start's meridiem is redundant when
+// the end repeats it. trimEnd because dropping it also leaves the space that
+// separated it, which the caller's " - " would double up on.
 const _cleanStartMeridiem = (start: string, end: string) => {
   const meridiems = [start.slice(-2), end.slice(-2)];
   const verboseMeridiems = meridiems[0] === meridiems[1];
   if (verboseMeridiems) {
-    return start.slice(0, -2);
+    return start.slice(0, -2).trimEnd();
   }
   return start;
 };
