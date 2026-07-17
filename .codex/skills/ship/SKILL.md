@@ -30,9 +30,11 @@ For browser-observable changes, read and use the available Chrome-control skill.
 1. Open a fresh local tab and exercise the golden path.
 2. Derive 2–4 edge cases from the diff: boundaries, new conditionals, state transitions, and the exact bug reproduction. Avoid generic cases unrelated to the change.
 3. Check browser console and network failures when exposed.
-4. Record reviewer-facing steps while testing: URL/view, user action, and observable result. Use these unchanged as unchecked PR manual-test steps.
+4. Record completed validation evidence: URL/view, user action, observable result, and console or network status when relevant. Evidence is a record of work already performed, not a checklist for the user.
 
 For changes not observable in the browser, run and record an equivalent CLI or API scenario. Never silently skip this validation record. Re-run the affected scenario after a user-visible fix.
+
+Do not ask the user to repeat validation per PR. The owner's normal daily use of staging is a separate confidence loop, not a merge gate or an itemized acceptance pass.
 
 ## 3. Review correctness
 
@@ -58,7 +60,18 @@ Use `codex-simplify-code` on the diff from the base branch. Reduce duplication, 
 - Revalidate user-visible behavior after behavior-adjacent cleanup.
 - Capture what changed, or that no simplification opportunity existed, and justify any retained or new `useEffect`, `useRef`, or `useState` for the PR.
 
-## 6. Final local gate
+## 6. Independent review and final local gate
+
+Run a fresh, read-only reviewer agent against the final branch diff after simplification. Spawn it without inherited conversation context (`fork_turns: "none"`) and provide a self-contained task with the worktree path, base ref, task intent, and repository instructions. This review is internal to `ship`: the user should not need another command, approval, or review step.
+
+Give the reviewer the task intent, applicable `AGENTS.md`, and the complete base-to-head diff without the implementation agent's conclusions. Direct it to:
+
+1. Start from changed lines and form concrete risk questions.
+2. Narrow with `rg` or file discovery before reading the smallest relevant caller, contract, and test ranges.
+3. Report only confirmed, actionable defects with severity, path/line, impact, and supporting evidence; omit style preferences and speculative findings.
+4. Cover correctness, regression coverage, performance, accessibility, security/privacy/data loss, simplicity, and maintainability as applicable.
+
+Fix confirmed findings, revalidate them, and commit the review fixes separately with a conventional message before running a fresh confirmation review. Repeat only when a confirmed finding changed the diff. Stop if a fresh reviewer is unavailable, a finding is uncertain, or confidence remains incomplete; do not substitute self-review or hand validation back to the user.
 
 Run checks chosen from the actual diff and repository guidance. At minimum run focused regression tests, affected type checking, and lint; run broader package tests for shared contracts. Use `bun run verify` only after inspecting its selected checks. Confirm the diff and worktree are clean except for intentional, committed work; distinguish new failures from existing warnings.
 
@@ -73,14 +86,14 @@ Use these sections in order:
 
 ## Simplicity
 
-## Manual Testing Steps
-- [ ] Reviewer-visible golden-path and diff-derived edge-case steps
+## Automated validation
+
+## Independent review
 
 ## Test plan
-- [x] Commands actually run
 ```
 
-Write manual steps in user-observable language—never function, variable, or file names. Close the originating issue only when unambiguous.
+Under automated validation, record the completed browser, CLI, or API scenarios and their observed results. Under independent review, record the final reviewer result and any confirmed findings fixed. Under test plan, list commands actually run. Do not include manual-testing sections, unchecked boxes, or tasks for the user. Close the originating issue only when unambiguous.
 
 ## 8. Monitor CI and feedback
 
@@ -90,7 +103,7 @@ Inspect unresolved review threads or requested changes. Address actionable feedb
 
 ## 9. Squash merge
 
-Merge only when required checks and reviews are satisfied, the PR targets the expected base, and local validation supports confidence. Compass normally squash-merges; use the repository’s observed strategy and delete the remote branch only when normal. Never merge on a guess.
+Merge only when required checks and the independent review gate are satisfied, the PR targets the expected base, and local validation supports confidence. Compass normally squash-merges; use the repository’s observed strategy and delete the remote branch only when normal. Never merge on a guess.
 
 ## 10. Monitor main release
 
@@ -100,4 +113,4 @@ Treat tag, publication, deployment, migration, or health-check failures as incid
 
 ## Report
 
-Lead with the shipped result. Include the PR and merge result, implementation and simplification commits, local/manual validation, PR CI, post-merge release/deployment result and tag, plus pre-existing warnings or follow-up risks. Emit git directives only for actions that actually succeeded.
+Lead with the shipped result. Include the PR and merge result, implementation and simplification commits, automated/browser validation, independent review, PR CI, post-merge release/deployment result and tag, plus pre-existing warnings or follow-up risks. Emit git directives only for actions that actually succeeded.

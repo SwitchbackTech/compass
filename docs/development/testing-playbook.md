@@ -328,7 +328,7 @@ conformance:
 | React Testing Library | Roles, accessible names, state, focus, and keyboard behavior | Focused web tests and `bun run test:web` |
 | Playwright with axe | Automatically detectable issues in realistic rendered states | `bun run test:a11y`, `bun run verify web`, and E2E CI |
 | Targeted browser assertions | Regressions generic rules cannot reliably model, such as transient contrast or focus behavior | The relevant E2E regression test |
-| Manual review | Keyboard usability, zoom/reflow, screen-reader experience, and other judgment-based WCAG criteria | Major UI changes and periodic audits |
+| Daily staging use and periodic audits | Broad usability regressions and judgment-based WCAG criteria | Once-daily normal use and separately scoped audits, never per-PR checklists |
 
 #### How Axe Coverage Works
 
@@ -393,7 +393,8 @@ at the call site. Unexplained `incomplete` results seen in this suite today
 are `color-contrast` (axe cannot compute a background across an
 absolutely-positioned overlap or a CSS gradient, and cannot reliably sample
 single-character date-cell text) - these are exactly the states the
-datepicker's targeted contrast test and manual review already cover.
+datepicker's targeted contrast test covers or periodic accessibility audits
+must inspect.
 
 #### Representative Checkpoints
 
@@ -443,22 +444,18 @@ Test meaningful outcomes such as focus movement, updated `aria-expanded` or
 A successful `getByRole` query is useful pressure toward semantic markup, but
 it is not an accessibility audit by itself.
 
-#### Manual Review
+#### Daily Staging Confidence
 
-For a major UI change, verify the affected flow with:
+Once per day, use the accumulated staging build as a normal Compass user. This
+is an unstructured product-confidence pass, not a PR checklist: do not replay
+individual changes or map observations back to every merged PR. File any
+regression observed during normal use as a bug.
 
-- keyboard-only navigation, including visible focus and a logical focus order
-- browser zoom and reflow at 200% and 400%
-- VoiceOver on macOS for names, roles, state changes, and announcements
-- reduced-motion and forced-colors/high-contrast settings when relevant
-- a free browser audit such as Accessibility Insights for Web
-
-Record the states reviewed in the PR - `.github/PULL_REQUEST_TEMPLATE.md` has a
-short accessibility checklist for exactly the judgment calls automation can't
-make (keyboard reach, dynamic content exercised, zoom/reflow, screen-reader
-names, reduced-motion/forced-colors). Automated checks passing means no tested
-automated violation was found; it does not mean the page conforms to every WCAG
-success criterion.
+Per-PR confidence comes from automated tests, agent-driven browser validation,
+and the independent diff-first review. If those gates cannot establish
+correctness, `ship` pauses instead of delegating manual verification to the
+owner. Separately scoped accessibility audits can still examine judgment-based
+WCAG criteria without becoming a release requirement for each PR.
 
 #### Workflow For UI Changes
 
@@ -469,7 +466,8 @@ success criterion.
 4. Add a targeted browser regression only for behavior the general scan does
    not protect.
 5. Run `bun run test:web`, `bun run lint`, and `bun run verify web`.
-6. For major UI changes, complete and document the relevant manual checks.
+6. Record completed agent-driven browser validation in the PR. Do not add
+   manual tasks; pause `ship` if the behavior cannot be confirmed.
 
 Browser-based accessibility checks are appropriate for CI and pre-push
 verification. Keep commit hooks limited to fast static checks so normal commits
