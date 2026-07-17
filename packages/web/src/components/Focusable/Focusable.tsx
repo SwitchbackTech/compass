@@ -10,11 +10,10 @@ import {
 import { type UnderlinedInput } from "@web/common/types/component.types";
 import { Divider } from "@web/components/Divider/Divider";
 
-// Placeholders match the time pickers' value color (--color-text-lighter)
-// rather than a muted grey, so the event form's title and its date/time
-// controls read as one row of text instead of two different states.
+// Muted placeholders, matching Textarea: full white is what the user typed,
+// so a hint that borrows it reads as a real value.
 export const INPUT_RESET_CLASSNAME =
-  "h-8.5 border-0 px-2 outline-none placeholder:text-text-lighter hover:bg-border-primary";
+  "h-8.5 border-0 px-2 outline-none placeholder:text-text-light-inactive hover:bg-border-primary";
 
 export interface Props
   extends UnderlinedInput,
