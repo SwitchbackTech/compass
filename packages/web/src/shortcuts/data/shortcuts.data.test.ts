@@ -53,6 +53,20 @@ describe("shortcuts.data", () => {
       });
     });
 
+    it("lists the Up Next shortcut in both views", () => {
+      for (const view of ["day", "week"] as const) {
+        const [navigate] = getShortcutMenuSections({
+          view,
+          isViewingCurrentPeriod: true,
+        });
+
+        expect(navigate.shortcuts).toContainEqual({
+          keys: ["n"],
+          label: "Open Up Next event",
+        });
+      }
+    });
+
     it.each([
       ["day", true, "Scroll to now"],
       ["day", false, "Go to today"],

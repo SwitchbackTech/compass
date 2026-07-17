@@ -9,6 +9,7 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   loadDateParam,
   loadTodayData,
+  redirectToDefaultCalendar,
   redirectToToday,
   validateWeekDateParam,
 } from "@web/routers/loaders";
@@ -60,7 +61,7 @@ function createTestRouter(initialEntries: string[]) {
   const rootIndexRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/",
-    beforeLoad: () => redirectToToday(ROOT_ROUTES.DAY_DATE),
+    beforeLoad: redirectToDefaultCalendar,
   });
 
   return createRouter({
@@ -75,13 +76,21 @@ function createTestRouter(initialEntries: string[]) {
 }
 
 describe("router redirects", () => {
-  it("redirects / to today's dated day route", async () => {
-    const { dateString } = loadTodayData();
+  it("redirects / to the bare week route", async () => {
     const router = createTestRouter(["/"]);
 
     await router.load();
 
-    expect(router.state.location.pathname).toBe(`/day/${dateString}`);
+    expect(router.state.location.pathname).toBe(ROOT_ROUTES.WEEK);
+  });
+
+  it("preserves search params when redirecting / to the week route", async () => {
+    const router = createTestRouter(["/?auth=login"]);
+
+    await router.load();
+
+    expect(router.state.location.pathname).toBe(ROOT_ROUTES.WEEK);
+    expect(router.state.location.search).toEqual({ auth: "login" });
   });
 
   it("redirects /day to today's dated day route", async () => {

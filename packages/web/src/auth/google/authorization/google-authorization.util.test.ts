@@ -30,13 +30,13 @@ describe("google-authorization.util", () => {
     ).toBe("/week/2026-07-08?x=1");
   });
 
-  it("falls back to /day for external return paths", () => {
+  it("falls back to /week for external return paths", () => {
     expect(
       getSafeGoogleAuthReturnPath(
         "https://evil.example/phish",
         "http://localhost:9080",
       ),
-    ).toBe("/day");
+    ).toBe("/week");
   });
 
   it("builds the existing auth-code payload shape", () => {

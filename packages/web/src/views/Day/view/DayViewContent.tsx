@@ -7,6 +7,7 @@ import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { SidebarEventDetails } from "@web/components/PlannerSidebar/EventDetails/SidebarEventDetails";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { ResizableSidebarPanel } from "@web/components/PlannerSidebar/ResizableSidebarPanel";
+import { useUpNextEventShortcut } from "@web/components/PlannerSidebar/UpNextCard/useUpNextEvent";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import { focusFirstSidebarItem } from "@web/components/PlannerSidebar/util/sidebarFocus.util";
 import {
@@ -51,6 +52,7 @@ export const DayViewContent = memo(() => {
     onPrevious: navigateToPreviousDay,
   });
   useDayEvents(dateInView);
+  useUpNextEventShortcut();
 
   const toggleSidebar = useCallback(() => {
     viewActions.toggleSidebar();

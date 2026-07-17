@@ -6,6 +6,7 @@ import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { ResizableSidebarPanel } from "@web/components/PlannerSidebar/ResizableSidebarPanel";
+import { useUpNextEventShortcut } from "@web/components/PlannerSidebar/UpNextCard/useUpNextEvent";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import {
   draftActions,
@@ -40,6 +41,7 @@ import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 
 export const WeekView = () => {
+  useUpNextEventShortcut();
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   // Event details live in the sidebar, so an open form reveals the sidebar
   // even when the user keeps it collapsed; their persisted preference is

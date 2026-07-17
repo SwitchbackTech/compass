@@ -9,6 +9,7 @@ import { validateAuthSearch } from "@web/components/AuthModal/hooks/useAuthModal
 import {
   loadAuthenticated,
   loadDateParam,
+  redirectToDefaultCalendar,
   redirectToToday,
   validateDayDateParam,
   validateWeekDateParam,
@@ -100,7 +101,7 @@ export const weekIndexRoute = createRoute({
 export const rootIndexRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
   path: "/",
-  beforeLoad: () => redirectToToday(ROOT_ROUTES.DAY_DATE),
+  beforeLoad: redirectToDefaultCalendar,
 });
 
 export const cleanupRoute = createRoute({

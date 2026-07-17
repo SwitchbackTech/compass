@@ -4,7 +4,7 @@ import {
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
 import { type ApiError, type ApiMethodConfig } from "@web/api/api.types";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
 import {
   GOOGLE_AUTH_SCOPES_REQUIRED,
   GOOGLE_AUTHORIZATION_ERROR_MESSAGE,
@@ -58,7 +58,7 @@ export type CompleteGoogleAuthorizationResult =
 
 const fail = (
   message = GOOGLE_AUTHORIZATION_ERROR_MESSAGE,
-  returnPath: string = ROOT_ROUTES.DAY,
+  returnPath: string = DEFAULT_CALENDAR_ROUTE,
 ): CompleteGoogleAuthorizationResult => ({
   message,
   returnPath,
@@ -101,7 +101,7 @@ export async function completeGoogleAuthorization({
 
   const savedIntent = readGoogleAuthorizationIntent(state);
   clearGoogleAuthorizationIntent(state);
-  const returnPath = savedIntent?.returnPath ?? ROOT_ROUTES.DAY;
+  const returnPath = savedIntent?.returnPath ?? DEFAULT_CALENDAR_ROUTE;
 
   if (!savedIntent || params.get("error")) {
     return fail(GOOGLE_AUTHORIZATION_ERROR_MESSAGE, returnPath);

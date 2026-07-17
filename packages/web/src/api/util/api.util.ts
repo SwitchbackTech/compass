@@ -6,7 +6,7 @@ import {
 } from "@core/types/auth.types";
 import { session } from "@web/auth/compass/session/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
 import {
   assignLocation,
   reloadLocation,
@@ -85,10 +85,10 @@ export const signOut = async (status: SignoutStatus) => {
 
   await session.signOut();
 
-  if (window.location.pathname.startsWith(ROOT_ROUTES.DAY)) {
+  if (window.location.pathname.startsWith(DEFAULT_CALENDAR_ROUTE)) {
     return;
   }
-  assignLocation(ROOT_ROUTES.DAY);
+  assignLocation(DEFAULT_CALENDAR_ROUTE);
 };
 
 export const getRequestUrl = (url: string): string => {

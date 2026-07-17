@@ -18,6 +18,7 @@ const getNavigateShortcuts = ({
     view === "day" ? VIEW_SHORTCUTS.week : VIEW_SHORTCUTS.day;
 
   return [
+    { keys: ["n"], label: "Open Up Next event" },
     { keys: ["j"], label: `Previous ${view}` },
     { keys: ["k"], label: `Next ${view}` },
     ...(view === "week"

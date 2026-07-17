@@ -147,6 +147,7 @@
   /* Animations */
   --animate-progress-slide: progressSlide 2s ease-out infinite;
   --animate-sync-text-wave: syncTextWave 2.4s linear infinite;
+  --animate-sync-icon-wave: syncIconWave 2.4s linear infinite;
   --animate-loader-spin: loaderSpin 1.1s linear infinite;
   --animate-login-progress: loginProgress 1.5s ease-in-out infinite;
   --animate-login-message-in: loginMessageIn 0.8s ease-in-out;
@@ -166,6 +167,15 @@
     }
     to {
       background-position: -50% 0;
+    }
+  }
+
+  @keyframes syncIconWave {
+    from {
+      mask-position: 150% 0;
+    }
+    to {
+      mask-position: -50% 0;
     }
   }
 
@@ -325,6 +335,23 @@
     animation: none;
     background: none;
     color: var(--color-text-light);
+  }
+}
+
+@utility c-sync-icon-wave {
+  mask-image: linear-gradient(
+    90deg,
+    transparent 35%,
+    black 50%,
+    transparent 65%
+  );
+  mask-position: 150% 0;
+  mask-size: 250% 100%;
+  animation: var(--animate-sync-icon-wave);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    mask: none;
   }
 }
 
