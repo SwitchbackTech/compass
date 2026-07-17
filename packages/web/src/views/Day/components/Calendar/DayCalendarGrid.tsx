@@ -94,6 +94,10 @@ export function DayCalendarGrid() {
   useDayEventNudgeShortcuts({ timedEvents: displayedTimedEvents });
   const draft = useDraftStore(selectDraft);
 
+  const calendarColumnKeys = useMemo(
+    () => displayedCalendars.map((calendar) => calendar.id),
+    [displayedCalendars],
+  );
   const getDayInteractionLayoutSources = useCallback(
     () => ({
       allDayColumnsElement: gridRefs.allDayColumnsRef.current,
@@ -327,6 +331,7 @@ export function DayCalendarGrid() {
     >
       <DayInteractionCoordinator
         allDayEvents={displayedAllDayEvents}
+        calendarColumnKeys={calendarColumnKeys}
         dateInView={dateInView}
         getLayoutSources={getDayInteractionLayoutSources}
         onOpenEvent={openEventFormForEvent}

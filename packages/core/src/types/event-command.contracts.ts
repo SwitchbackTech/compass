@@ -45,6 +45,11 @@ export const CreateEventInputSchema = z.strictObject({
 export type CreateEventInput = z.infer<typeof CreateEventInputSchema>;
 
 export const ReplaceEventInputSchema = z.strictObject({
+  // Destination calendar for a cross-calendar move (drag between Day-view
+  // columns). Omitted or equal to the event's current calendar means no
+  // move. Only single (non-recurring) events may move; the server rejects
+  // moves for series/occurrences.
+  calendarId: CalendarIdSchema.optional(),
   content: EditableContentSchema,
   schedule: EventScheduleSchema,
   recurrence: RecurrenceEditSchema,

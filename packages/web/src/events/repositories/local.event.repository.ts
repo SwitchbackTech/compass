@@ -89,6 +89,7 @@ export class LocalEventRepository implements EventRepository {
 
     const event: Event = {
       ...existing,
+      calendarId: input.calendarId ?? existing.calendarId,
       content: input.content,
       schedule: input.schedule,
       recurrence,

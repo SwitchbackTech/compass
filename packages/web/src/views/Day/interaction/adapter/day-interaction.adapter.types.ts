@@ -24,6 +24,14 @@ export interface DayInteractionPointerOwnership {
 
 export interface DayInteractionAdapterOptions {
   engineOptions?: InteractionEngineSchedulerOptions;
+  /**
+   * Ordered keys of the rendered per-calendar columns (calendar ids, one per
+   * displayed calendar). Drags hit-test against these so an event can be
+   * dropped on another calendar's column; empty means a single dateless
+   * column (no calendar columns rendered), which disables cross-column
+   * movement.
+   */
+  getColumnKeys?: () => string[];
   getLayoutSources?: () => GridLayoutCacheSources;
   getVisibleDate?: () => Dayjs;
   runtime?: () => DayInteractionRuntime;

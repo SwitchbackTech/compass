@@ -222,6 +222,7 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
           status: 200,
           data: { items: [], nextSyncToken: "sync-token" },
         }),
+        move: jest.fn().mockResolvedValue({ status: 200, data: {} }),
         patch: jest.fn().mockResolvedValue({ status: 200, data: {} }),
         watch: jest.fn().mockResolvedValue({
           status: 200,
@@ -287,6 +288,11 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
       method: "deleteEvent",
       call: () => gcalService.deleteEvent(context, "cal-1", "event-1"),
       mock: () => context.gcal.events.delete as jest.Mock,
+    },
+    {
+      method: "moveEvent",
+      call: () => gcalService.moveEvent(context, "cal-1", "event-1", "cal-2"),
+      mock: () => context.gcal.events.move as jest.Mock,
     },
     {
       method: "getEventInstances",

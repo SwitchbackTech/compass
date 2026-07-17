@@ -1,4 +1,5 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   ID_ALLDAY_COLUMNS,
@@ -94,6 +95,7 @@ const inertRuntime: DayInteractionRuntime = {
 
 export const createDayInteractionAdapter = ({
   engineOptions,
+  getColumnKeys = () => [],
   getLayoutSources = () => ({}),
   getVisibleDate = () => dayjs(),
   runtime = () => inertRuntime,
@@ -225,7 +227,7 @@ export const createDayInteractionAdapter = ({
         const visibleDate = getVisibleDate();
 
         if (visual.type === "allDayDrag" && target.type === "allDayDrag") {
-          result = commitAllDayDragInteraction(target, visual, visibleDate);
+          result = commitAllDayDragInteraction(target, visual);
         } else if (
           visual.type === "allDayResize" &&
           target.type === "allDayResize"
@@ -249,10 +251,26 @@ export const createDayInteractionAdapter = ({
       },
       createVisual: ({ pointerStart, sourceElement, target }) => {
         const visibleDateKey = getVisibleDate().format(YEAR_MONTH_DAY_FORMAT);
+        // The Day view renders one column per calendar, all sharing one date,
+        // so drag column keys are CALENDAR IDS (not dates like the Week
+        // view) — a column change is a cross-calendar move. Resizes stay
+        // within the event's own column and keep the single-column layout.
+        // An event whose calendar isn't among the rendered columns (columns
+        // and events momentarily out of sync) also falls back to the single
+        // column: anchoring it to column 0 would make a purely vertical drag
+        // commit a calendar move the user never made.
+        const calendarColumnKeys = isDragTarget(target) ? getColumnKeys() : [];
+        const eventColumnIndex = calendarColumnKeys.indexOf(
+          target.event.calendarId ?? "",
+        );
+        const columnKeys =
+          eventColumnIndex >= 0 ? calendarColumnKeys : [visibleDateKey];
+        const initialColumnIndex = Math.max(0, eventColumnIndex);
+        const initialColumnKey = columnKeys[initialColumnIndex]!;
         const nextLayout = buildDayLayoutCacheForTarget(
           target,
           getLayoutSources(),
-          [visibleDateKey],
+          columnKeys,
         );
 
         if (!nextLayout) {
@@ -267,8 +285,8 @@ export const createDayInteractionAdapter = ({
 
         if (target.type === "allDayDrag") {
           return createAllDayDragVisual({
-            dayDate: visibleDateKey,
-            dayIndex: 0,
+            dayDate: initialColumnKey,
+            dayIndex: initialColumnIndex,
             eventId: target.event._id!,
             pointerStart,
             sourceRect,
@@ -298,8 +316,8 @@ export const createDayInteractionAdapter = ({
         }
 
         return createTimedDragVisual({
-          dayDate: visibleDateKey,
-          dayIndex: 0,
+          dayDate: initialColumnKey,
+          dayIndex: initialColumnIndex,
           endMinutes: getLocalMinutes(target.event.endDate),
           eventId: target.event._id!,
           pointerStart,
@@ -683,14 +701,20 @@ const commitTimedResizeInteraction = (
 const commitAllDayDragInteraction = (
   target: DayAllDayDragTarget,
   visual: AllDayDragVisual,
-  visibleDate: Dayjs,
 ): DayAllDayDragCommitResult => {
   const hasMoved =
     "dayDate" in visual ? visual.dayDate !== visual.initialDayDate : false;
 
+  // In the Day view every column shares the visible date, so an all-day drag
+  // that "moved" can only have changed COLUMN, i.e. calendar. Keep the
+  // event's own dates: rewriting them to the visible date would truncate a
+  // multi-day all-day event to a single day.
   return {
     event: hasMoved
-      ? allDayVisualToDayGridEvent(target.event, visibleDate)
+      ? {
+          ...target.event,
+          calendarId: columnMoveCalendarId(visual, target.event),
+        }
       : target.event,
     eventId: target.event._id!,
     hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
@@ -725,6 +749,7 @@ const timedDragVisualToDayGridEvent = (
   visibleDate: Dayjs,
 ): GridEvent => ({
   ...event,
+  calendarId: columnMoveCalendarId(visual, event),
   isAllDay: false,
   endDate: visibleDate
     .startOf("day")
@@ -735,6 +760,20 @@ const timedDragVisualToDayGridEvent = (
     .add(visual.startMinutes, "minutes")
     .format(),
 });
+
+/**
+ * Day-view drag column keys are calendar ids (see createVisual), so a drop
+ * on a different column is a cross-calendar move. Same-column drops (and the
+ * single-column fallback, whose one key is a date string that never changes)
+ * keep the event's own calendarId.
+ */
+const columnMoveCalendarId = (
+  visual: Pick<TimedDragVisual, "dayDate" | "initialDayDate">,
+  event: GridEvent,
+): CalendarId | undefined =>
+  visual.dayDate !== visual.initialDayDate
+    ? (visual.dayDate as CalendarId)
+    : event.calendarId;
 
 const timedResizeVisualToDayGridEvent = (
   event: GridEvent,

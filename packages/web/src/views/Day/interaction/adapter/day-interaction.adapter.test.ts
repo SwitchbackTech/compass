@@ -28,8 +28,12 @@ const allDaySourceRect = {
   width: 320,
 };
 
+const CALENDAR_A = "aaaaaaaaaaaaaaaaaaaaaaaa";
+const CALENDAR_B = "bbbbbbbbbbbbbbbbbbbbbbbb";
+
 const timedEvent: GridEvent = {
   _id: "timed-event",
+  calendarId: CALENDAR_A as never,
   endDate: "2026-05-18T10:00:00.000",
   isAllDay: false,
   origin: Origin.COMPASS,
@@ -41,6 +45,7 @@ const timedEvent: GridEvent = {
 
 const allDayEvent: GridEvent = {
   _id: "all-day-event",
+  calendarId: CALENDAR_A as never,
   endDate: "2026-05-21",
   isAllDay: true,
   origin: Origin.COMPASS,
@@ -112,11 +117,15 @@ const makePointerEvent = (
 };
 
 const createAdapter = ({
+  columnKeys,
+  extraTimedEvents = [],
   mainGridScrollTop = 0,
   onAllDayDrag,
   onTimedDrag,
   onTimedResize,
 }: {
+  columnKeys?: string[];
+  extraTimedEvents?: GridEvent[];
   mainGridScrollTop?: number;
   onAllDayDrag?: (result: DayAllDayDragCommitResult) => void;
   onTimedDrag?: (result: DayTimedDragCommitResult) => void;
@@ -156,6 +165,7 @@ const createAdapter = ({
         return timerId;
       },
     },
+    getColumnKeys: () => columnKeys ?? [],
     getLayoutSources: () => ({
       allDayColumnsElement,
       mainGridElement,
@@ -170,7 +180,8 @@ const createAdapter = ({
             ? multiDayAllDayEvent
             : null,
       getTimedEventById: (eventId) =>
-        eventId === timedEvent._id ? timedEvent : null,
+        extraTimedEvents.find((event) => event._id === eventId) ??
+        (eventId === timedEvent._id ? timedEvent : null),
       onClickAllDayEvent: () => undefined,
       onClickTimedEvent: () => undefined,
       onCommitAllDayDrag: (result) => onAllDayDrag?.(result),
@@ -346,6 +357,50 @@ afterEach(() => {
   dayEventRegistry.clear();
 });
 
+// Two 160px-wide calendar columns across the 320px grid: dragging from
+// column A's center (x=80) to column B's center (x=240) crosses columns.
+const dragEventAcrossCalendarColumns = (
+  event: GridEvent,
+  eventType: "all-day" | "timed",
+  { toX, toY }: { toX: number; toY?: number },
+) => {
+  const results: {
+    allDay?: DayAllDayDragCommitResult;
+    timed?: DayTimedDragCommitResult;
+  } = {};
+  const { child } = registerEvent(event, eventType);
+  const { adapter, flushFrame } = createAdapter({
+    columnKeys: [CALENDAR_A, CALENDAR_B],
+    extraTimedEvents: eventType === "timed" ? [event] : [],
+    onAllDayDrag: (result) => {
+      results.allDay = result;
+    },
+    onTimedDrag: (result) => {
+      results.timed = result;
+    },
+  });
+  const y = eventType === "timed" ? 160 : 20;
+
+  adapter.handlePointerDown(
+    makePointerEvent("pointerdown", { target: child, x: 80, y }),
+  );
+  adapter.handlePointerMove(
+    makePointerEvent("pointermove", { target: child, x: toX, y: toY ?? y }),
+  );
+  flushFrame();
+  adapter.handlePointerUp(
+    makePointerEvent("pointerup", { target: child, x: toX, y: toY ?? y }),
+  );
+
+  const result = eventType === "timed" ? results.timed : results.allDay;
+
+  if (!result) {
+    throw new Error("Expected the drag to commit");
+  }
+
+  return result;
+};
+
 describe("DayInteractionAdapter", () => {
   it("keeps timed drag on the one visible date", () => {
     const result = dragTimedEvent();
@@ -353,6 +408,66 @@ describe("DayInteractionAdapter", () => {
     expect(result.type).toBe("timedDragEnd");
     expect(result.event.isAllDay).toBe(false);
     expect(dayjs(result.event.startDate).isSame(visibleDate, "day")).toBe(true);
+  });
+
+  it("moves a timed event to the other calendar when dropped on its column", () => {
+    const result = dragEventAcrossCalendarColumns(timedEvent, "timed", {
+      toX: 240,
+    });
+
+    expect(result.hasMoved).toBe(true);
+    expect(result.event.calendarId).toBe(CALENDAR_B as never);
+    expect(dayjs(result.event.startDate).isSame(visibleDate, "day")).toBe(true);
+  });
+
+  it("keeps a timed event's calendar when dragged within its own column", () => {
+    const result = dragEventAcrossCalendarColumns(timedEvent, "timed", {
+      toX: 80,
+      toY: 220,
+    });
+
+    expect(result.hasMoved).toBe(true);
+    expect(result.event.calendarId).toBe(CALENDAR_A as never);
+  });
+
+  it("moves an all-day event to the other calendar when dropped on its column", () => {
+    const result = dragEventAcrossCalendarColumns(allDayEvent, "all-day", {
+      toX: 240,
+    });
+
+    expect(result.hasMoved).toBe(true);
+    expect(result.event.calendarId).toBe(CALENDAR_B as never);
+    expect(result.event.startDate).toBe(allDayEvent.startDate);
+    expect(result.event.endDate).toBe(allDayEvent.endDate);
+  });
+
+  it("keeps a multi-day all-day event's dates on a cross-calendar move", () => {
+    const result = dragEventAcrossCalendarColumns(
+      multiDayAllDayEvent,
+      "all-day",
+      { toX: 240 },
+    );
+
+    expect(result.hasMoved).toBe(true);
+    expect(result.event.calendarId).toBe(CALENDAR_B as never);
+    expect(result.event.startDate).toBe(multiDayAllDayEvent.startDate);
+    expect(result.event.endDate).toBe(multiDayAllDayEvent.endDate);
+  });
+
+  it("disables cross-column movement for an event whose calendar has no column", () => {
+    const orphan: GridEvent = {
+      ...timedEvent,
+      _id: "orphan-timed-event",
+      calendarId: "cccccccccccccccccccccccc" as never,
+    };
+    const result = dragEventAcrossCalendarColumns(orphan, "timed", {
+      toX: 240,
+    });
+
+    // Horizontal-only drag in the single-column fallback: no column change,
+    // no time change, so the commit reports no movement at all.
+    expect(result.hasMoved).toBe(false);
+    expect(result.event.calendarId).toBe(orphan.calendarId!);
   });
 
   it("keeps timed resize timed with a valid time range", () => {

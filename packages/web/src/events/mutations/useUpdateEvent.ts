@@ -1,11 +1,15 @@
 import { useQueryClient } from "@tanstack/react-query";
 import fastDeepEqual from "fast-deep-equal/es6";
 import { useCallback } from "react";
+import { type Calendar } from "@core/types/calendar.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import { buildCalendarLookup } from "@web/calendars/useCalendarLookup";
 import {
   type GridEvent,
   type RecurringEventUpdateScope,
 } from "@web/common/types/web.event.types";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
   editGridEventDraft,
   parseGridEventDraft,
@@ -64,6 +68,27 @@ export function useUpdateEvent(dependencies: EventMutationDependencies = {}) {
       const sourceEvent = findEventInCache(queryClient, event._id);
       if (!sourceEvent) return;
 
+      // A differing calendarId means the drag dropped the event on another
+      // calendar's column (Day view). Guard here so a blocked move reverts
+      // the whole drag; the backend re-enforces both rules.
+      const nextCalendarId =
+        event.calendarId && event.calendarId !== sourceEvent.calendarId
+          ? event.calendarId
+          : null;
+      if (nextCalendarId) {
+        if (sourceEvent.recurrence.kind !== "single") {
+          showErrorToast("Repeating events can't move to another calendar.");
+          return;
+        }
+        const destination = buildCalendarLookup(
+          queryClient.getQueryData<Calendar[]>(calendarQueryKeys.all),
+        ).get(nextCalendarId);
+        if (destination && !destination.capabilities.canWrite) {
+          showErrorToast(`You can't move events to ${destination.name}.`);
+          return;
+        }
+      }
+
       const sourceDraft = editGridEventDraft(
         sourceEvent,
         toRecurrenceScope(applyTo),
@@ -89,11 +114,21 @@ export function useUpdateEvent(dependencies: EventMutationDependencies = {}) {
         },
       };
 
-      if (fastDeepEqual(patchedDraft.values, sourceDraft.values)) return;
+      if (
+        !nextCalendarId &&
+        fastDeepEqual(patchedDraft.values, sourceDraft.values)
+      ) {
+        return;
+      }
 
       const parsed = parseGridEventDraft(patchedDraft);
       if (parsed.ok && parsed.mode === "edit") {
-        replace({ id: parsed.eventId, input: parsed.input });
+        replace({
+          id: parsed.eventId,
+          input: nextCalendarId
+            ? { ...parsed.input, calendarId: nextCalendarId }
+            : parsed.input,
+        });
       }
     },
     [replace, queryClient],
