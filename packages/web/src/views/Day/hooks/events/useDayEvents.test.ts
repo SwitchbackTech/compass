@@ -47,11 +47,9 @@ describe("useDayEvents", () => {
     return match?.[1];
   };
 
-  // Regression: the bounds must be the real local-midnight instants. They
-  // were previously relabeled as UTC via .utc(true), which shifted the whole
-  // window earlier by the local offset (6h in MDT) and dropped evening events
-  // from the day view and the Up Next card. Pins an explicit offset zone so
-  // the assertion holds regardless of the machine's timezone.
+  // Pins an explicit offset zone (the machine's may be UTC, where the
+  // correct and incorrect formats coincide) so a return to .utc(true), which
+  // shifted the window off local midnight, fails here.
   it("keeps the local offset so evening events stay inside the day window", () => {
     const date = dayjs.tz("2026-07-16 12:00", "America/Denver");
     const { startDate, endDate } = dayEventQueryRange(date);

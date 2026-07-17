@@ -10,10 +10,9 @@ import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjace
  * calendar day's start, not this day's end, so all-day events spanning only
  * this single day still fall within the range's exclusive upper bound.
  *
- * Bounds keep the local UTC offset (like the week query) so they are the real
- * local-midnight instants. Relabeling them as UTC would shift the window by
- * the offset and drop evening events from the fetch and cache-membership
- * checks.
+ * Bounds keep their local UTC offset (like the week query) so they are real
+ * local-midnight instants; relabeling them as UTC shifts the window by the
+ * offset and drops evening events.
  */
 export const dayEventQueryRange = (date: dayjs.Dayjs) => ({
   startDate: toUTCOffset(date.startOf("day")),

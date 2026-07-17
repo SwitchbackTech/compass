@@ -35,10 +35,7 @@ export const DayCalendarBusyPeriodsLayer = ({
   measurements,
   visibleDates,
 }: Props) => {
-  const { startDate, endDate } = useMemo(
-    () => dayEventQueryRange(dateInView),
-    [dateInView],
-  );
+  const { startDate, endDate } = dayEventQueryRange(dateInView);
   const { data } = useAvailabilityQuery({ start: startDate, end: endDate });
   const calendarLookup = useCalendarLookup();
   const segments = useMemo(
