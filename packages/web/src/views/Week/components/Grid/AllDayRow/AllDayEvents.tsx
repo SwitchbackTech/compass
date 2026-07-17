@@ -6,10 +6,7 @@ import {
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
-import {
-  Categories_Event,
-  type GridEvent,
-} from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import {
@@ -86,37 +83,39 @@ export const AllDayEvents = ({
     [visibleAllDayEvents, calendarLookup],
   );
 
-  // NOT converted to GridEventDraft/editGridEventDraft: useDraftActions.ts
-  // reads `draft.position.dragOffset` off this store's `event` field when a
-  // keyboardEdit draft is subsequently repositioned by arrow keys, and
-  // gridEventDraftToSchemaEvent has no grid-layout `position` to give it.
-  // See packet-03-phase-3c scoping note.
-  const handleKeyDown = (event: GridEvent) => {
-    draftActions.start({
-      activity: "keyboardEdit",
-      event,
-      eventType: Categories_Event.ALLDAY,
-    });
-  };
-
-  // Read-only cards can't be repositioned, so they don't need the
-  // keyboardEdit path above - and must not use it: `start` leaves `gridDraft`
-  // null, which opens the sidebar form with nothing to render. Mirrors
-  // MainGridEvents' timed-event handler.
-  const openReadOnlyDetails = useCallback(
+  const gridDraftFor = useCallback(
     (event: GridEvent) => {
       const sourceEvent = weekEvents.find(
         (candidate) => candidate.id === event._id,
       );
-      const draft = sourceEvent ? editGridEventDraft(sourceEvent) : null;
-      if (!draft) {
-        return;
-      }
+      return sourceEvent ? editGridEventDraft(sourceEvent) : null;
+    },
+    [weekEvents],
+  );
+
+  // startGridDraft, not `start`: `start` leaves gridDraft null, which both
+  // opens the sidebar form with nothing to render and strands arrow-key
+  // repositioning (it reads the draft's own schedule). Mirrors
+  // MainGridEvents' timed-event handler.
+  const handleKeyDown = useCallback(
+    (event: GridEvent) => {
+      const draft = gridDraftFor(event);
+      if (!draft) return;
+
+      draftActions.startGridDraft({ activity: "keyboardEdit", draft });
+    },
+    [gridDraftFor],
+  );
+
+  const openReadOnlyDetails = useCallback(
+    (event: GridEvent) => {
+      const draft = gridDraftFor(event);
+      if (!draft) return;
 
       draftActions.startGridDraft({ activity: "gridClick", draft });
       draftActions.setFormOpen(true);
     },
-    [weekEvents],
+    [gridDraftFor],
   );
 
   return (
