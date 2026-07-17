@@ -8,6 +8,7 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { revokeSessionMock } from "@backend/__tests__/helpers/mock.setup";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import { UserError } from "@backend/common/errors/user/user.errors";
@@ -58,6 +59,35 @@ describe("UserController", () => {
       );
 
       expect(response.body).toEqual(expect.objectContaining({ user: 1 }));
+      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
+    });
+
+    // Revoking the user's sessions server-side leaves this caller holding an
+    // access token that still passes signature checks, so it boots back up as
+    // the deleted user: reads 401, writes fail CALENDAR_NOT_FOUND, and the
+    // next sign-up gets tangled in the dead session.
+    it("should sign the caller out so their cookies can't outlive the account", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+
+      await userDriver.deleteAccount(
+        { userId: user._id.toString() },
+        Status.OK,
+      );
+
+      expect(revokeSessionMock).toHaveBeenCalled();
+    });
+
+    // The account is already gone by then, so reporting a failure would tell
+    // the user to try again on an account that no longer exists.
+    it("should still report success when clearing the cookies fails", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      revokeSessionMock.mockRejectedValueOnce(new Error("supertokens down"));
+
+      await userDriver.deleteAccount(
+        { userId: user._id.toString() },
+        Status.OK,
+      );
+
       expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
     });
 

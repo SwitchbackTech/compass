@@ -54,6 +54,12 @@ function mockGoogleapis() {
   );
 }
 
+/**
+ * Stands in for SessionContainer.revokeSession, which clears the response's
+ * cookies. Exported so a test can assert a handler signed its caller out.
+ */
+export const revokeSessionMock = jest.fn(async () => {});
+
 function mockSuperTokens() {
   const userMetadata = new Map<string, UserMetadata>();
 
@@ -101,6 +107,10 @@ function mockSuperTokens() {
           getHandle() {
             return sessionId;
           },
+          // The real SessionContainer clears the response's cookies here;
+          // without a stand-in, a handler that signs its caller out would
+          // throw in tests but work in production.
+          revokeSession: revokeSessionMock,
           getAccessTokenPayload(): SupertokensAccessTokenPayload {
             return {
               iat: now.getMilliseconds(),
