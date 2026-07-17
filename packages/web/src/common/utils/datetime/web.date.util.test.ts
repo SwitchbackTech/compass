@@ -8,6 +8,7 @@ import {
   getCalendarHeadingLabel,
   getColorsByHour,
   getHourLabels,
+  getTimesLabel,
   getWeekRangeLabel,
   toUTCOffset,
 } from "@web/common/utils/datetime/web.date.util";
@@ -256,6 +257,18 @@ const getColorTotals = (colors: string[]) => {
   const colorTotals = [color1.length, color2.length];
   return colorTotals;
 };
+
+describe("getTimesLabel", () => {
+  it("collapses the shared meridiem without leaving a double space", () => {
+    const label = getTimesLabel("2025-01-05 09:00", "2025-01-05 10:00");
+    expect(label).toBe("9 - 10 AM");
+  });
+
+  it("keeps both meridiems when the range crosses noon", () => {
+    const label = getTimesLabel("2025-01-05 11:00", "2025-01-05 13:00");
+    expect(label).toBe("11 AM - 1 PM");
+  });
+});
 
 describe("getHourLabels", () => {
   it("has 23 intervals by default (excludes midnight)", () => {
