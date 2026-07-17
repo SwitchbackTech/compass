@@ -9,10 +9,10 @@ import {
 } from "./backend-unavailable-error.util";
 
 /** Mirrors what `createApiError` builds for a response the backend/proxy returned. */
-const createApiErrorWithStatus = (status: number): ApiError => {
+const createApiErrorWithStatus = (status: number, data?: unknown): ApiError => {
   const error = new Error(`Request failed with status ${status}`) as ApiError;
   error.name = "ApiError";
-  error.response = { status } as ApiResponse<unknown>;
+  error.response = { status, data } as ApiResponse<unknown>;
   return error;
 };
 
@@ -57,6 +57,30 @@ describe("isBackendUnavailableError", () => {
     expect(
       isBackendUnavailableError(createApiErrorWithStatus(Status.UNAUTHORIZED)),
     ).toBe(false);
+  });
+
+  // The backend answers PROVIDER_FAILURE with a 502 of its own, e.g. when
+  // Google rejects a sync. Treating that as "backend down" dropped the app
+  // into local mode mid-mutation, which either threw "Event not found" from
+  // IndexedDB or silently re-keyed the queries and lost the edit from view.
+  it("does not treat a backend-authored gateway error as unavailability", () => {
+    expect(
+      isBackendUnavailableError(
+        createApiErrorWithStatus(Status.BAD_GATEWAY, {
+          code: "PROVIDER_FAILURE",
+          message: "Failed to sync the change to Google Calendar",
+          retryable: true,
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("still treats a gateway error with no backend body as unavailability", () => {
+    expect(
+      isBackendUnavailableError(
+        createApiErrorWithStatus(Status.BAD_GATEWAY, "<html>502 Bad Gateway"),
+      ),
+    ).toBe(true);
   });
 
   it("ignores non-API errors", () => {

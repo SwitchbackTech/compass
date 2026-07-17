@@ -330,10 +330,15 @@ describe("mapEventRecordToGoogle", () => {
       summary: "Design review",
       description: "notes",
       start: {
+        date: null,
         dateTime: "2026-07-14T15:00:00.000Z",
         timeZone: "America/Denver",
       },
-      end: { dateTime: "2026-07-14T16:00:00.000Z", timeZone: "America/Denver" },
+      end: {
+        date: null,
+        dateTime: "2026-07-14T16:00:00.000Z",
+        timeZone: "America/Denver",
+      },
       recurrence: null,
     });
   });
@@ -343,9 +348,47 @@ describe("mapEventRecordToGoogle", () => {
       schedule: { kind: "allDay", start: "2026-08-03", end: "2026-08-06" },
     });
     const patch = mapEventRecordToGoogle(record);
-    expect(patch.start).toEqual({ date: "2026-08-03" });
-    expect(patch.end).toEqual({ date: "2026-08-06" });
+    expect(patch.start).toEqual({
+      date: "2026-08-03",
+      dateTime: null,
+      timeZone: null,
+    });
+    expect(patch.end).toEqual({
+      date: "2026-08-06",
+      dateTime: null,
+      timeZone: null,
+    });
     expect(patch.recurrence).toBeNull();
+  });
+
+  // events.patch merges start/end key by key, so a converted event has to
+  // clear the keys its previous kind used. Omitting them left a dragged
+  // timed->all-day event with both a date and a dateTime on Google, which it
+  // rejects with "Invalid start time" - surfacing as a 502 PROVIDER_FAILURE.
+  it.each([
+    [
+      "timed to all-day",
+      { kind: "allDay", start: "2026-08-03", end: "2026-08-04" },
+      "dateTime",
+    ],
+    [
+      "all-day to timed",
+      {
+        kind: "timed",
+        start: new Date("2026-07-14T15:00:00.000Z"),
+        end: new Date("2026-07-14T16:00:00.000Z"),
+        timeZone: "America/Denver",
+      },
+      "date",
+    ],
+  ])("clears the other kind's keys when converting %s", (_label, schedule, clearedKey) => {
+    const patch = mapEventRecordToGoogle(
+      buildRecord({ schedule: schedule as EventRecord["schedule"] }),
+    );
+
+    // Present-and-null, not absent: an omitted key is left as-is by Google.
+    expect(patch.start).toHaveProperty(clearedKey, null);
+    expect(patch.end).toHaveProperty(clearedKey, null);
   });
 
   it("includes recurrence rules for a series event", () => {
