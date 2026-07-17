@@ -20,8 +20,8 @@ import {
 
 const mockSyncLocalEventsToCloud = mock();
 const mockToastError = mock();
-const mockIsToastActive = mock(() => false);
-const mockClearUserMetadata = mock();
+const mockShowReconnectToast = mock();
+const mockRefreshUserMetadata = mock();
 const mockCloseStream = mock();
 const mockOpenStream = mock();
 const mockRefreshEventRepositorySource = mock();
@@ -29,14 +29,14 @@ const mockRemoveEventsByGoogleCalendars = mock();
 const mockRemoveEventQueries = mock();
 
 const googleAuthUtil = createGoogleAuthUtil({
-  clearUserMetadata: mockClearUserMetadata,
   closeStream: mockCloseStream,
-  isToastActive: mockIsToastActive,
   markGoogleAsRevoked,
   openStream: mockOpenStream,
   refreshEventRepositorySource: mockRefreshEventRepositorySource,
+  refreshUserMetadata: mockRefreshUserMetadata,
   removeEventsByGoogleCalendars: mockRemoveEventsByGoogleCalendars,
   removeEventQueries: mockRemoveEventQueries,
+  showReconnectToast: mockShowReconnectToast,
   syncLocalEventsToCloud: mockSyncLocalEventsToCloud,
   toastError: mockToastError,
 });
@@ -48,9 +48,8 @@ describe("google-auth.util", () => {
   beforeEach(() => {
     mockSyncLocalEventsToCloud.mockClear();
     mockToastError.mockClear();
-    mockIsToastActive.mockClear();
-    mockIsToastActive.mockReturnValue(false);
-    mockClearUserMetadata.mockClear();
+    mockShowReconnectToast.mockClear();
+    mockRefreshUserMetadata.mockClear();
     mockCloseStream.mockClear();
     mockOpenStream.mockClear();
     mockRefreshEventRepositorySource.mockClear();
@@ -148,19 +147,16 @@ describe("google-auth.util", () => {
   });
 
   describe("handleGoogleRevoked", () => {
-    it("shows toast with GOOGLE_REVOKED_TOAST_ID when not already active", () => {
+    it("shows the actionable reconnect toast", () => {
       handleGoogleRevoked();
 
-      expect(mockToastError).toHaveBeenCalledWith(
-        "Google access revoked. Your Google data has been removed.",
-        expect.objectContaining({ autoClose: false }),
-      );
+      expect(mockShowReconnectToast).toHaveBeenCalledTimes(1);
     });
 
-    it("clears user metadata and Google-origin events on revocation", () => {
+    it("refreshes user metadata (not clears) so the UI lands in RECONNECT_REQUIRED, and drops Google-origin events", () => {
       handleGoogleRevoked();
 
-      expect(mockClearUserMetadata).toHaveBeenCalledTimes(1);
+      expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
       expect(mockRemoveEventsByGoogleCalendars).toHaveBeenCalledTimes(1);
     });
 
@@ -182,14 +178,6 @@ describe("google-auth.util", () => {
       handleGoogleRevoked();
 
       expect(isGoogleRevoked()).toBe(true);
-    });
-
-    it("does not show toast when one is already active", () => {
-      mockIsToastActive.mockReturnValue(true);
-
-      handleGoogleRevoked();
-
-      expect(mockToastError).not.toHaveBeenCalled();
     });
   });
 });

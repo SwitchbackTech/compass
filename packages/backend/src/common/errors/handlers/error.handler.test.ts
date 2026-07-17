@@ -84,7 +84,8 @@ describe("error.handler", () => {
       expect(res.status).toHaveBeenCalledWith(Status.UNAUTHORIZED);
       expect(send).toHaveBeenCalledWith({
         code: "GOOGLE_REVOKED",
-        message: "Google access revoked. Your Google data has been removed.",
+        message:
+          "Google Calendar access expired or was revoked. Reconnect Google Calendar in Compass to resume syncing.",
       });
       expect(handleGoogleRevokedSpy).toHaveBeenCalledWith(userId, {
         status: "attention",
