@@ -118,7 +118,8 @@ const handleGoogleError = async (
 
     res.status(Status.UNAUTHORIZED).send({
       code: "GOOGLE_REVOKED",
-      message: "Google access revoked. Your Google data has been removed.",
+      message:
+        "Google Calendar access expired or was revoked. Reconnect Google Calendar in Compass to resume syncing.",
     });
     return;
   }
