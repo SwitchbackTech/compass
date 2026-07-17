@@ -42,6 +42,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   });
   const { actions, confirmation, setters, state } = useDraftContext();
   const mutations = useEventMutations();
+  const activeInteractionEventRef = useRef<Event | null>(null);
   const layoutSourcesRef = useRef(getLayoutSources);
   const timedEventsById = useMemo(() => {
     return mapEventsById(timedEvents);
@@ -96,7 +97,13 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   // draft from the query cache's source Event plus the engine's resulting
   // dates.
   const gridEventDraftFromSavedResult = (event: GridEvent) => {
-    const sourceEvent = event._id ? eventsById.get(event._id) : undefined;
+    const sourceEvent = event._id
+      ? resolveInteractionSourceEvent(
+          event._id,
+          eventsById,
+          activeInteractionEventRef.current,
+        )
+      : undefined;
     const draft = sourceEvent ? editGridEventDraft(sourceEvent, "this") : null;
 
     if (!draft) return null;
@@ -176,6 +183,13 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     onCommitTimedDrag: commitSavedMutation,
     onCommitTimedResize: commitSavedMutation,
     onMotionActivation: (target) => {
+      // Edge navigation replaces the visible query before pointer-up. Retain
+      // the canonical source so the destination-week commit can still build
+      // its strict mutation input.
+      activeInteractionEventRef.current = target.event._id
+        ? (eventsById.get(target.event._id) ?? null)
+        : null;
+
       if (target.hadFormOpenBeforeInteraction) {
         actions.closeForm();
       }
@@ -208,3 +222,11 @@ const mapEventsById = (events: GridEvent[]) => {
 
   return eventsById;
 };
+
+export const resolveInteractionSourceEvent = (
+  eventId: string,
+  visibleEventsById: ReadonlyMap<string, Event>,
+  activeInteractionEvent: Event | null,
+) =>
+  visibleEventsById.get(eventId) ??
+  (activeInteractionEvent?.id === eventId ? activeInteractionEvent : undefined);
