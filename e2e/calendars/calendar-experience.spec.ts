@@ -510,7 +510,7 @@ test("a read-only event opens as a read-only form", async ({ page }) => {
   // close-out; keyboard ("M") and this View path are the deterministic
   // inspection routes today.
   await card.click({ button: "right" });
-  await page.getByRole("menu").getByRole("button", { name: "View" }).click();
+  await page.getByRole("menu").getByRole("menuitem", { name: "View" }).click();
 
   const form = page.getByRole("form");
   const titleInput = form.getByPlaceholder("Title");
@@ -535,7 +535,7 @@ test("a read-only event's context menu offers view and duplicate but not delete"
   await card.click({ button: "right" });
 
   const menu = page.getByRole("menu");
-  await expect(menu.getByRole("button", { name: "View" })).toBeVisible();
-  await expect(menu.getByRole("button", { name: "Duplicate" })).toBeVisible();
-  await expect(menu.getByRole("button", { name: "Delete" })).toHaveCount(0);
+  await expect(menu.getByRole("menuitem", { name: "View" })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Duplicate" })).toBeVisible();
+  await expect(menu.getByRole("menuitem", { name: "Delete" })).toHaveCount(0);
 });
