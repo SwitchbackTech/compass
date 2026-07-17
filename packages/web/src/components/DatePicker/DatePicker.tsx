@@ -20,7 +20,6 @@ export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
   headerEndContent?: React.ReactNode;
   inputColor?: string;
   isOpen?: boolean;
-  monthContainerClassName?: string;
   monthTextClassName?: string;
   view: "sidebar" | "grid";
   withTodayButton?: boolean;
@@ -42,7 +41,6 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     headerEndContent,
     inputColor,
     isOpen = true,
-    monthContainerClassName,
     monthTextClassName,
     portalId = "root",
     view,
@@ -122,7 +120,6 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                 // month label and nav arrows read as one group on the left,
                 // clearly separate from the sidebar-close control.
                 view !== "sidebar" && "flex-1",
-                monthContainerClassName,
               )}
             >
               <span
