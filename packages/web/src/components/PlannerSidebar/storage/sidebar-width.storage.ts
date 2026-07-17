@@ -9,12 +9,17 @@ export function readSidebarWidth(): number {
   const stored = persistentBrowserStore.get(STORAGE_KEYS.SIDEBAR_WIDTH);
   if (stored === null) return SIDEBAR_DEFAULT_WIDTH;
 
+  // Drags on zoomed/HiDPI displays produce fractional widths, so tolerate
+  // (and heal) any finite stored value instead of resetting to the default.
   const width = Number(stored);
-  return Number.isInteger(width)
-    ? clampSidebarWidth(width)
+  return Number.isFinite(width)
+    ? clampSidebarWidth(Math.round(width))
     : SIDEBAR_DEFAULT_WIDTH;
 }
 
 export function writeSidebarWidth(width: number): void {
-  persistentBrowserStore.set(STORAGE_KEYS.SIDEBAR_WIDTH, String(width));
+  persistentBrowserStore.set(
+    STORAGE_KEYS.SIDEBAR_WIDTH,
+    String(Math.round(width)),
+  );
 }
