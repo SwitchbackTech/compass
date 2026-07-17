@@ -1,12 +1,13 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { useContext } from "react";
+import { session } from "@web/auth/compass/session/Session";
 import {
   initialUserMetadataState,
   userMetadataActions,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { DEFAULT_AUTH_STATE } from "@web/common/constants/auth.constants";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 // Create mocks at module level
 const refreshUserMetadata = mock().mockResolvedValue(undefined);
@@ -23,35 +24,7 @@ const markAnonymousCalendarChangeForSignUpPrompt = mock();
 const shouldShowAnonymousCalendarChangeSignUpPrompt = mock(() => false);
 const subscribeToAuthState = mock();
 const updateAuthState = mock();
-const doesSessionExist = mock();
-const eventListeners = new Set<(event: { action: string }) => void>();
-const mockRecipeInit = mock(() => ({}));
-const mockSuperTokensInit = mock(() => ({}));
-
-mock.module("supertokens-web-js", () => ({
-  default: { init: mockSuperTokensInit },
-  init: mockSuperTokensInit,
-}));
-
-mock.module("supertokens-web-js/recipe/emailpassword", () => ({
-  default: { init: mockRecipeInit },
-  init: mockRecipeInit,
-}));
-
-mock.module("supertokens-web-js/recipe/emailverification", () => ({
-  default: { init: mockRecipeInit },
-  init: mockRecipeInit,
-}));
-
-mock.module("supertokens-web-js/recipe/thirdparty", () => ({
-  default: { init: mockRecipeInit },
-  init: mockRecipeInit,
-}));
-
-mock.module("supertokens-web-js/recipe/session", () => ({
-  default: { init: mockRecipeInit },
-  init: mockRecipeInit,
-}));
+const doesSessionExist = spyOn(session, "doesSessionExist");
 
 mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
   refreshUserMetadata,
@@ -75,31 +48,6 @@ mock.module("@web/auth/compass/state/auth.state.util", () => ({
   subscribeToAuthState,
   updateAuthState,
 }));
-
-mock.module("@web/auth/compass/session/Session", () => ({
-  session: {
-    doesSessionExist,
-    onAnyEvent: (listener: (event: { action: string }) => void) => {
-      eventListeners.add(listener);
-
-      return () => eventListeners.delete(listener);
-    },
-    emit: (payload: unknown) =>
-      eventListeners.forEach((listener) =>
-        listener(payload as { action: string }),
-      ),
-    signOut: mock().mockResolvedValue(undefined),
-  },
-}));
-
-// Dynamic import after mocking
-const { session } = require("@web/auth/compass/session/Session") as {
-  session: {
-    doesSessionExist: ReturnType<typeof mock>;
-    onAnyEvent: (listener: (event: { action: string }) => void) => () => void;
-    emit: (payload: unknown) => void;
-  };
-};
 
 const { SessionContext } =
   require("./session.context") as typeof import("./session.context");
@@ -147,7 +95,7 @@ describe("SessionProvider sessionInit", () => {
     sessionInit();
 
     // Simulate SESSION_CREATED event
-    session.emit({ action: "SESSION_CREATED" });
+    session.emit({ action: "SESSION_CREATED", userContext: undefined });
 
     await waitFor(() => {
       expect(markUserAsAuthenticated).toHaveBeenCalledWith("test@example.com");
@@ -159,7 +107,7 @@ describe("SessionProvider sessionInit", () => {
 
     // Simulate SIGN_OUT event; user metadata should be cleared
     userMetadataActions.set({ google: { connectionState: "HEALTHY" } });
-    session.emit({ action: "SIGN_OUT" });
+    session.emit({ action: "SIGN_OUT", userContext: undefined });
 
     expect(useUserMetadataStore.getState()).toEqual(initialUserMetadataState);
     expect(closeStream).toHaveBeenCalledTimes(2);
@@ -181,7 +129,7 @@ describe("SessionProvider sessionInit", () => {
 
     sessionInit();
     act(() => {
-      session.emit({ action: "SESSION_CREATED" });
+      session.emit({ action: "SESSION_CREATED", userContext: undefined });
     });
 
     expect(result.current.authenticated).toBe(true);

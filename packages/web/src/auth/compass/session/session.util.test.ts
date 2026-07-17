@@ -1,17 +1,13 @@
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
+import { session } from "./Session";
 import { getUserId } from "./session.util";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 
-const mockDoesSessionExist = mock();
-const mockGetAccessTokenPayloadSecurely = mock();
-
-mock.module("@web/auth/compass/session/Session", () => ({
-  session: {
-    doesSessionExist: mockDoesSessionExist,
-    getAccessTokenPayloadSecurely: mockGetAccessTokenPayloadSecurely,
-    signOut: mock().mockResolvedValue(undefined),
-  },
-}));
+const mockDoesSessionExist = spyOn(session, "doesSessionExist");
+const mockGetAccessTokenPayloadSecurely = spyOn(
+  session,
+  "getAccessTokenPayloadSecurely",
+);
 
 describe("session.util", () => {
   beforeEach(() => {
