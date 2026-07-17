@@ -18,13 +18,6 @@ Primary file:
 | `bun run cli migrate pending` | `packages/scripts/src/commands/migrate.ts` | Lists pending migrations. |
 | `bun run cli migrate executed` | `packages/scripts/src/commands/migrate.ts` | Lists executed migrations. |
 
-## Deleting An Account
-
-There is no longer a `cli delete` command. Users delete their own account from
-the app: open the command palette and run **Delete account** (Settings), which
-calls `DELETE /api/user`. That purges their Compass data and SuperTokens auth
-state, revokes their Google grant, and clears their browser storage.
-
 ## Migration Internals
 
 The migration command:

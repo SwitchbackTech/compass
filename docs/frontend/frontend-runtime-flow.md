@@ -250,14 +250,6 @@ arithmetic. See [Week Drag Interaction](./week-drag-interaction.md) for the
 coordinate model and why it matters once the week view can render fewer than
 7 days.
 
-## Day Task Drag Handle Positioning
-
-File:
-
-- `packages/web/src/views/Day/components/Task/DraggableTask.tsx`
-
-`DraggableTask` uses `@floating-ui/react` to place the reorder handle. The component explicitly strips non-finite floating coordinates (`left`/`top`) before applying styles. This avoids invalid inline styles when the layout engine cannot resolve a finite position and keeps task rows render-safe during drag-handle visibility transitions.
-
 ## Repository Selection
 
 File:

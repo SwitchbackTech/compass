@@ -15,7 +15,6 @@ bun run dev:web
 Use this for:
 
 - most layout and interaction work
-- local task behavior
 - many event UI changes
 - router and view work
 
@@ -113,7 +112,6 @@ Bun build/dev behavior:
 - component rendering
 - keyboard and pointer interactions
 - local storage behavior
-- many task workflows
 
 ### Requires backend
 

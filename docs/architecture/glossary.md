@@ -31,7 +31,7 @@ resizes, or repositions before saving.
 generate instances.
 
 **Instance Event**: One occurrence generated from a base event. Instances point
-back to the base with `recurrence.eventId`.
+back to the base with `recurrence.seriesId`.
 
 #### Recurring Event Metadata
 
@@ -41,15 +41,7 @@ Following Events, or All Events.
 A **Recurring Series** has exactly one **Base Event** and zero or more
   **Instance Events**.
 An **Instance Event** belongs to exactly one **Base Event** through
-  `recurrence.eventId`.
-
-## Tasks
-
-**Task**:
-A local task item tied to a specific date.
-
-**Date key**:
-The storage-level date association for tasks.
+  `recurrence.seriesId`.
 
 ## Views
 
@@ -78,8 +70,7 @@ An operator-run Compass install, usually the local Docker setup served at
 ## Users
 
 **Anonymous user**:
-A user with no account session whose events and tasks stay in browser
-IndexedDB.
+A user with no account session whose events stay in browser IndexedDB.
 _Avoid_: local user
 
 **Authenticated user**:
@@ -161,7 +152,7 @@ _Avoid_: hotkey — the term survives only inside the third-party
 
 ## Relationships
 
-- An **Anonymous user** stores **Events** and **Tasks** in browser IndexedDB.
+- An **Anonymous user** stores **Events** in browser IndexedDB.
 - An **Authenticated user** stores **Events** through the backend and configured
   MongoDB.
 - A **Timed Event** appears in the **Timed Grid**.
@@ -202,12 +193,10 @@ _Avoid_: hotkey — the term survives only inside the third-party
   Grid** while it remains a **Timed Event**.
 - A dragged **Timed Event** released outside the visible **Timed Grid** uses
   its visible bounded position as the saved time.
-- A **Task** belongs to a **Date key** and stays local today, even when the user
-  is authenticated.
 - A **Recurring Series** has exactly one **Base Event** and zero or more
   **Instance Events**.
 - An **Instance Event** belongs to exactly one **Base Event** through
-  `recurrence.eventId`.
+  `recurrence.seriesId`.
 - A **Base Event** owns the series recurrence rule.
 - An **Update Scope** tells Compass whether a recurring change applies to one
   instance, this-and-following instances, or the whole series.

@@ -70,7 +70,7 @@ Use the generic base schema with `parseApiError(error, ApiErrorResponseSchema)` 
 
 The most important shared contract is the event schema in:
 
-- `packages/core/src/types/event.types.ts`
+- `packages/core/src/types/event.contracts.ts`
 
 Do not duplicate event field definitions inside `web` or `backend` unless the extra type is intentionally layer-specific.
 
@@ -139,6 +139,6 @@ For shared API error changes, make that workflow concrete:
 - changing a TypeScript interface without updating the Zod schema
 - changing web-only types while forgetting the backend contract
 - adding a field to storage or API responses without updating normalization
-- mixing local-only and shared event/task types unintentionally
+- mixing local-only and shared event types unintentionally
 - putting an endpoint-specific schema behind a generic helper name
 - branching on raw `error.response.data.code` strings in components instead of parsing through a shared schema

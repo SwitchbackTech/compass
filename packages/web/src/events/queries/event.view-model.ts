@@ -20,9 +20,9 @@ import { type NormalizedEventQueryData } from "./event.query.types";
 // there's nothing real to duplicate/resubmit.
 export const BUSY_EVENT_TITLE = "Busy";
 
-// The grid renderer (assembleGridEvent) still consumes the legacy
-// CompassEvent shape. This mirrors the mapping event.legacy-bridge.ts uses,
-// scoped to scheduled (timed/allDay) events.
+// The grid renderer (assembleGridEvent) still consumes the CompassEvent
+// shape rather than the core Event contract directly, scoped to scheduled
+// (timed/allDay) events.
 const scheduledEventToSchemaEvent = (event: Event): CompassEvent => {
   const { schedule } = event;
   return {
@@ -49,7 +49,7 @@ const eventsFrom = (data?: NormalizedEventQueryData): Event[] =>
   data?.ids.flatMap((id) => (data.entities[id] ? [data.entities[id]] : [])) ??
   [];
 
-// assembleGridEvent/hasEventDates still operate on the legacy CompassEvent
+// assembleGridEvent/hasEventDates still operate on the CompassEvent
 // shape; bridged via scheduledEventToSchemaEvent above. A cache entry with a
 // missing/malformed `schedule` is a bug upstream (normalizeEventList/query
 // seeding), not a case to silently swallow — but it must not crash this
@@ -70,7 +70,7 @@ const isValidScheduledEvent = (event: Event): boolean => {
 
 // Re-attaches calendarId + isBusy onto the GridEvent produced by the
 // Event -> CompassEvent -> GridEvent bridge above. scheduledEventToSchemaEvent
-// returns the legacy, hand-written core `CompassEvent` shape (event.types.ts),
+// returns the hand-written core `CompassEvent` shape (compass-event.contracts.ts),
 // which has neither field, so the bridge itself can't carry them through
 // without widening that shared type (used by 10+ unrelated consumers). Joining
 // back by event id after assembleGridEvent keeps the bridge untouched and scopes

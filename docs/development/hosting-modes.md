@@ -10,7 +10,7 @@ The runtime mode affects:
 
 - which services must be running
 - which environment values are required
-- where events, tasks, identity, and sessions are stored
+- where events, identity, and sessions are stored
 - what you need to reproduce a bug
 - how you debug auth and sync behavior
 
@@ -25,17 +25,15 @@ When you are debugging anything storage-, auth-, or sync-related, the first ques
 | Self-hosted | Anonymous | Browser IndexedDB |
 | Self-hosted | Signed in | Operator backend -> configured MongoDB |
 
-Tasks currently stay in IndexedDB in every mode. That will change once backend task persistence is added.
-
 ## Anonymous Browser State
 
 The lightest state. Useful for trying Compass without creating an account.
 
 - no account, no login
-- events and tasks live in the browser's IndexedDB
-- calendar and task data never leave the browser
+- events live in the browser's IndexedDB
+- calendar data never leaves the browser
 
-This is the same story everywhere: on [compasscalendar.com](https://compasscalendar.com) and on a self-hosted install before the user signs up. The web app might be served from Compass Cloud or from a self-hosted server, but either way, anonymous calendar and task data stay in the browser.
+This is the same story everywhere: on [compasscalendar.com](https://compasscalendar.com) and on a self-hosted install before the user signs up. The web app might be served from Compass Cloud or from a self-hosted server, but either way, anonymous calendar data stays in the browser.
 
 ## Self-Hosted Account Mode
 
@@ -81,7 +79,6 @@ A few things that trip up new contributors:
 - **SuperTokens ≠ event storage.** SuperTokens stores identity and sessions. Compass events live in MongoDB (or IndexedDB when anonymous).
 - **MongoDB stores events after signup, not before.** Anonymous events never touch the backend.
 - **Google sync is independent from account mode.** Self-hosted account mode can run without Google. Google sign-in/connect requires Google OAuth credentials, and Google-to-Compass watch notifications require a public HTTPS webhook URL. See [Local Development](./local-development.md) for the backend env contract.
-- **Tasks stay local.** Tasks currently live in IndexedDB regardless of account state. Backend task persistence is not wired up yet.
 
 ## Deeper Docs
 

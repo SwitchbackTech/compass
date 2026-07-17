@@ -13,7 +13,7 @@ These are the safest implementation paths for common Compass changes.
 
 ## Add A New Event Field
 
-1. Update the event schema/types in `packages/core/src/types/event.types.ts`.
+1. Update the event schema/types in `packages/core/src/types/event.contracts.ts`.
 2. Update any mapper or utility code in `packages/core/src/mappers` or `packages/core/src/util/event`.
 3. Update backend persistence or parser logic if the field is stored or transformed.
 4. Update web editors, selectors, and rendering.
@@ -23,7 +23,7 @@ Rule: never treat event shape as web-only unless the field is strictly presentat
 
 ## Change Recurring Event Behavior
 
-1. Read `packages/core/src/types/event.types.ts`.
+1. Read `packages/core/src/types/event.contracts.ts`.
 2. Read `docs/features/recurring-events-handling.md`.
 3. Read `packages/backend/src/event/classes/compass.event.generator.ts`.
 4. Read `packages/backend/src/event/classes/compass.event.parser.ts`.
@@ -36,20 +36,19 @@ Do not edit recurring behavior from one layer only.
 
 ### Common Mistakes
 
-- **Changing only the executor without updating the parser plan builders** — the executor reads the `steps` array that the parser produces. If the plan builder for a given transition key is wrong, the executor will silently do the wrong thing even if the executor logic looks correct. Always trace from `PLAN_BUILDERS` in `compass.event.parser.ts` to confirm `steps` and `googleEffect` match the intended behavior.
+- **Changing only the generator/executor without updating the parser's plan** — `analyzeReplace(...)` and `analyzeDelete(...)` in `compass.event.parser.ts` are pure functions that turn a target event, its `SeriesContext` (base + instances), and the mutation input into a `ReplacePlan` or `DeletePlan` (`replaceThis`/`replaceSeries`/`replaceSplit`, `deleteThis`/`deleteSeries`/`deleteSplit`). `compass.event.generator.ts` (`generateReplace`/`generateDelete`) expands that plan into concrete records to persist (`upsert`, `deleteIds`, `primary`), and `compass.event.executor.ts` (`executeMutation`/`executeDelete`) is the only layer that touches the DB. If the parser produces the wrong plan kind or wrong instance ids, the generator and executor will faithfully do the wrong thing even though their own logic is correct. Always trace from `EventService.replace`/`EventService.delete` in `packages/backend/src/event/services/event.service.ts` through `analyzeReplace`/`analyzeDelete` first.
 - **Missing a database migration for existing recurring events** — existing user data will not be retroactively updated by code changes alone. If you modify how recurring series are stored or processed, add a migration to `packages/scripts/src/migrations`.
 - **Testing only the happy-path transition** — cancellation transitions follow a different planner path. A test that only covers the primary create/update flow can pass while cancellation transitions break silently.
 
 ## Triage A Recurrence Sync Regression
 
-1. Reproduce with one event and one expected transition outcome.
-2. Capture Compass-to-Google event propagation logs for the transition key:
-   - `Handle Compass event(<id>): <transitionKey>`
-3. Find the key in `PLAN_BUILDERS` in `packages/backend/src/event/classes/compass.event.parser.ts`.
-4. Confirm planned `steps` and `googleEffect` match expected behavior.
-5. Confirm executor step mapping in `packages/backend/src/event/classes/compass.event.executor.ts`.
+1. Reproduce with one event and one expected outcome (which scope: `this`, `thisAndFollowing`, or `all`).
+2. Trace the request through `EventService.replace`/`EventService.delete` in `packages/backend/src/event/services/event.service.ts`: confirm `seriesContext(...)` resolved the right `base`/`instances`, then log or debug the `ReplacePlan`/`DeletePlan` returned by `analyzeReplace`/`analyzeDelete` in `packages/backend/src/event/classes/compass.event.parser.ts` — check its `kind` and, for split plans, the `deleteInstanceIds` and `truncatedBase`/`newBase`.
+3. Confirm `generateReplace`/`generateDelete` in `packages/backend/src/event/classes/compass.event.generator.ts` expand that plan into the expected `upsert`/`deleteIds`/`primary` (or `deleteSeriesId`).
+4. Confirm `executeMutation`/`executeDelete` in `packages/backend/src/event/classes/compass.event.executor.ts` apply those records via `eventRepository`.
+5. If the DB side is correct but Google is wrong, check `CompassToGoogleEventPropagation.propagate(...)` in `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts` — it logs `Compass->Google propagation failed` on error and `Skipping Google effect for user <id> because Google is not connected.` when there's no refresh token; check `deletedBefore`/`originalStartByEventId` passed in from `event.service.ts`.
 6. Run focused tests:
-   - `bun run test:backend --runTestsByPath packages/backend/src/event/classes/compass.event.parser.test.ts packages/backend/src/event/classes/compass.event.executor.test.ts packages/backend/src/sync/services/event-propagation/__tests__/compass-to-google.event-propagation.test.ts --runInBand`
+   - `bun run test:backend --runTestsByPath packages/backend/src/event/classes/compass.event.parser.test.ts packages/backend/src/event/classes/compass.event.generator.test.ts packages/backend/src/event/classes/compass.event.executor.test.ts packages/backend/src/sync/services/event-propagation/__tests__/compass-to-google.event-propagation.test.ts --runInBand`
 
 ## Add An SSE Event
 
@@ -76,12 +75,6 @@ Do not edit recurring behavior from one layer only.
 1. Start in `packages/web/src/events/repositories/event.repository.util.ts`.
 2. Verify auth-state implications in `packages/web/src/auth/session/SessionProvider.tsx` and auth-state helpers.
 3. Test both never-authenticated and previously-authenticated behavior.
-
-## Change Day View Task Behavior
-
-1. Start in `packages/web/src/views/Day/hooks/tasks`.
-2. Inspect supporting UI in `packages/web/src/views/Day/components/TaskList`.
-3. If persistence changed, update storage adapter code and tests.
 
 ## Change A Shared Hotkey Dialog (Day + Week)
 

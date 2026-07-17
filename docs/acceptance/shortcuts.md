@@ -10,18 +10,14 @@ Use this guide to validate:
 - navigating between days in Day view (J, K, T)
 - navigating between weeks in Week view (J, K, T)
 - opening and using the command palette (Cmd+K)
-- creating events with keyboard shortcuts (C, A in Week view)
-- creating tasks with the keyboard (C in Day view)
+- creating events with keyboard shortcuts (C, A in both Day and Week view)
 - toggling the sidebar ([)
-- completing tasks with the keyboard (Enter on checkbox)
-- deleting tasks with the keyboard (Delete/Backspace)
 - undoing with the keyboard (Cmd+Z / Ctrl+Z)
 - confirming that shortcuts do not fire while typing in inputs
 
 Do not use this guide to validate:
 
 - full event CRUD flows (see `events.md`)
-- full task management flows (see `tasks.md`)
 
 ## Setup
 
@@ -44,26 +40,26 @@ Helpful notes:
 | --------------------------- | --------- | --------------------------------- |
 | `D`                         | Global    | Navigate to Day view              |
 | `W`                         | Global    | Navigate to Week view             |
-| `Z`                         | Global    | Log out                           |
 | `Cmd+K` / `Ctrl+K`          | Global    | Open command palette              |
 | `[`                         | Global    | Toggle sidebar                    |
+| `Cmd+Z` / `Ctrl+Z`          | Global    | Undo last event action            |
+| `Cmd+Shift+Z` / `Ctrl+Shift+Z` | Global | Redo last undone event action     |
 | `J`                         | Day view  | Previous day                      |
 | `K`                         | Day view  | Next day                          |
 | `T`                         | Day view  | Go to today                       |
-| `U`                         | Day view  | Focus task list                   |
-| `C`                         | Day view  | Create task                       |
-| `E`                         | Day view  | Edit focused task                 |
-| `Delete` / `Backspace`      | Day view  | Delete focused task               |
-| `Enter`                     | Day view  | Mark focused task complete        |
-| `Shift+ArrowRight`          | Day view  | Move focused task to next day     |
-| `Shift+ArrowLeft`           | Day view  | Move focused task to previous day |
+| `U`                         | Day view  | Focus sidebar                     |
+| `I`                         | Day view  | Focus calendar                    |
+| `C`                         | Day view  | Create timed event                |
+| `A`                         | Day view  | Create all-day event              |
 | `Shift+ArrowUp` / `Shift+ArrowDown` | Day view | Move focused timed event 15 min earlier/later |
-| `Cmd+Z` / `Ctrl+Z`          | Day view  | Undo last action                  |
 | `J`                         | Week view | Previous week                     |
 | `K`                         | Week view | Next week                         |
 | `T`                         | Week view | Go to today                       |
 | `C`                         | Week view | Create timed event                |
 | `A`                         | Week view | Create all-day event              |
+| `U`                         | Week view | Focus sidebar                     |
+| `I`                         | Week view | Focus first calendar event        |
+| `Delete`                    | Week view | Delete focused/hovered event      |
 | `Shift+ArrowLeft`           | Week view | Move focused event to previous day |
 | `Shift+ArrowRight`          | Week view | Move focused event to next day    |
 | `Shift+ArrowUp` / `Shift+ArrowDown` | Week view | Move focused timed event 15 min earlier/later |
@@ -197,23 +193,21 @@ Pressing `A` in Week view opens a new event form pre-configured as an all-day ev
 
 ---
 
-## Scenario 7: Create A Task With The Keyboard (C In Day View)
+## Scenario 7: Create An Event With A Keyboard Shortcut (C In Day View)
 
 ### UX
 
-Pressing `C` in Day view opens an inline task input — distinct from `C` in Week view, which opens an event form.
+Pressing `C` in Day view opens a new timed event form, the same behavior as `C` in Week view.
 
 ### Steps
 
 1. Navigate to `/day`.
 2. Ensure no input is focused.
 3. Press `C`.
-4. Type a title and press Enter.
 
 ### Expected Results
 
-- An inline task input appears in the task panel (not an event form).
-- The saved task appears in the task list.
+- The event creation form opens.
 
 ---
 
@@ -237,65 +231,45 @@ Pressing `[` toggles the sidebar open or closed from any view.
 
 ---
 
-## Scenario 9: Complete A Task With The Keyboard (Enter On Checkbox)
+## Scenario 9: Delete A Focused Event With The Keyboard (Delete, Week View)
 
 ### UX
 
-Pressing Enter while a task checkbox is focused marks the task as complete — equivalent to clicking the checkbox.
+Pressing Delete while an event is focused or hovered in the Week grid deletes it — equivalent to a mouse-driven delete action.
 
 ### Steps
 
-1. Navigate to `/day` and create a task.
-2. Tab to or click the task checkbox to focus it.
-3. Press Enter.
+1. Navigate to `/week`.
+2. Focus or hover an event in the grid.
+3. Press Delete.
 
 ### Expected Results
 
-- The task is marked as completed.
-- The task moves below any remaining incomplete tasks and appears faded.
-- This is functionally identical to clicking the checkbox with the mouse.
-
----
-
-## Scenario 10: Delete A Task With The Keyboard (Delete/Backspace)
-
-### UX
-
-Pressing Delete or Backspace while a task checkbox is focused removes the task — equivalent to a mouse-driven delete action.
-
-### Steps
-
-1. Navigate to `/day` and create a task.
-2. Focus the task checkbox.
-3. Press Delete (or Backspace).
-
-### Expected Results
-
-- The task is removed from the list.
+- The event is removed from the grid.
 - An undo toast appears.
-- This is functionally identical to a mouse-driven delete.
 
 ---
 
-## Scenario 11: Undo With The Keyboard (Cmd+Z / Ctrl+Z)
+## Scenario 10: Undo With The Keyboard (Cmd+Z / Ctrl+Z)
 
 ### UX
 
-After deleting an event or task, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux) restores it — equivalent to clicking the undo toast.
+After deleting or moving an event, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux) undoes it — equivalent to clicking the undo toast.
 
 ### Steps
 
-1. In Day view, delete a task.
+1. Delete an event (see Scenario 9).
 2. Immediately press Cmd+Z (Mac) or Ctrl+Z (Windows/Linux).
 
 ### Expected Results
 
-- The deleted task is restored with its original properties.
+- The deleted event is restored with its original properties.
 - The undo toast dismisses.
+- Pressing Cmd+Shift+Z (or Ctrl+Shift+Z) immediately after redoes the undone action.
 
 ---
 
-## Scenario 12: Shortcuts Do Not Fire While Typing In Inputs
+## Scenario 11: Shortcuts Do Not Fire While Typing In Inputs
 
 ### UX
 
@@ -303,17 +277,17 @@ All view-navigation and action shortcuts are suppressed when the user is focused
 
 ### Steps
 
-1. Navigate to `/day`.
-2. Click the Create Task button to open the inline task input.
-3. With the input focused, press `D`, `W`, `N`, `J`, `K`.
+1. Navigate to `/week`.
+2. Press `C` to open the event creation form, focusing the title input.
+3. With the input focused, press `D`, `W`, `J`, `K`.
 4. Press `Delete`.
 5. Press Cmd+K.
 
 ### Expected Results
 
-- `D`, `W`, `N`, `J`, `K`, and `Delete` do not trigger any navigation or action while the task input is focused. The characters type normally into the input.
+- `D`, `W`, `J`, `K`, and `Delete` do not trigger any navigation or action while the form input is focused. The characters type normally into the input.
 - Cmd+K (or Ctrl+K) still opens the command palette even from inside the input.
-- After pressing Escape to cancel the input, the same shortcuts resume normal behavior.
+- After pressing Escape to cancel the form, the same shortcuts resume normal behavior.
 
 ---
 
@@ -321,14 +295,12 @@ All view-navigation and action shortcuts are suppressed when the user is focused
 
 If time is limited, run these checks before shipping shortcut-related changes:
 
-1. `D`, `W`, `N` navigate to the correct views from any starting view.
+1. `D`, `W` navigate to the correct views from any starting view.
 2. `J` and `K` navigate days in Day view and weeks in Week view.
 3. `T` returns to today from any offset in both Day and Week view.
 4. Cmd+K opens the command palette; Escape closes it without action.
-5. `C` in Week view opens an event form; `C` in Day view opens a task input.
-6. `A` in Week view opens an all-day event form.
-7. `[` toggles the sidebar in both Week and Day view.
-8. Enter on a focused task checkbox marks the task complete.
-9. Delete/Backspace on a focused task checkbox removes the task.
-10. Cmd+Z / Ctrl+Z restores the last deleted task or event.
-11. No shortcuts fire inside a focused text input except Cmd+K.
+5. `C` opens a timed event form and `A` an all-day event form, in both Day and Week view.
+6. `[` toggles the sidebar in both Week and Day view.
+7. Delete removes a focused/hovered event in Week view and shows an undo toast.
+8. Cmd+Z / Ctrl+Z undoes the last event action; Cmd+Shift+Z / Ctrl+Shift+Z redoes it.
+9. No shortcuts fire inside a focused text input except Cmd+K.

@@ -6,8 +6,9 @@ Compass supports a meaningful local-first path for unauthenticated users and res
 
 Compass uses two intentionally separate storage abstractions:
 
-- `OfflineDataStore` owns asynchronous event, task, and migration-record data.
-  Its current implementation is `IndexedDbOfflineDataStore`.
+- `OfflineDataStore` owns asynchronous event and migration-record data (plus a
+  retained, read-only legacy `tasks` table — see below). Its current
+  implementation is `IndexedDbOfflineDataStore`.
 - `BrowserKeyValueStore` owns synchronous browser key-value state backed by
   `localStorage` or `sessionStorage`.
 
@@ -47,13 +48,15 @@ Current database name:
 Current table groups:
 
 - `events`
-- `tasks`
+- `tasks` — retained read-only for recovery; the Tasks feature was removed
+  (2026-07) and there is no live task-creation or task-editing path anymore
 - `_migrations`
 
 The IndexedDB store keeps:
 
 - events keyed by `_id`
-- tasks keyed by `_id` and associated to a `dateKey`
+- tasks keyed by `_id` and associated to a `dateKey` (legacy rows only, see
+  `StoredTask` in `offline-data.store.ts`)
 - migration completion records in `_migrations`
 
 ## Legacy Primary-Key Migration
@@ -62,7 +65,7 @@ File:
 
 - `packages/web/src/common/storage/offline-data/legacy-primary-key.migration.ts`
 
-There is explicit support for an older task schema that used `id` instead of `_id`.
+There is explicit support for an older task schema that used `id` instead of `_id`. This exists purely so the retained legacy `tasks` rows (see Tasks below) survive a Dexie schema upgrade without data loss.
 
 Recovery strategy:
 
@@ -70,7 +73,7 @@ Recovery strategy:
 2. read legacy records through a legacy Dexie schema
 3. delete the old database
 4. reopen using the current schema
-5. reinsert events and tasks
+5. reinsert events and legacy tasks
 
 ## Data Migrations
 
@@ -84,9 +87,7 @@ Data migrations:
 - are tracked in the `_migrations` table
 - fail startup if they fail
 
-Current example:
-
-- task `id` -> `_id` migration
+There are currently no registered data migrations (`dataMigrations` is empty); the array exists as the extension point for the next one.
 
 ## External Migrations
 
@@ -96,10 +97,9 @@ External migrations:
 - are tracked in localStorage, not IndexedDB
 - are non-blocking on failure
 
-Current examples:
+Current example:
 
-- localStorage task import
-- demo data seeding
+- demo data seeding (`packages/web/src/common/storage/migrations/external/demo-data-seed.ts`)
 
 ## Failure Model
 
@@ -116,7 +116,7 @@ Expected behavior:
 - toast explains offline storage is unavailable
 - authenticated users can continue in remote-only mode
 
-## Event And Task Persistence
+## Event Persistence
 
 Event operations:
 
@@ -124,21 +124,22 @@ Event operations:
 - put one or many events
 - delete by event id
 
-Task operations:
+## Legacy Task Recovery
 
-- get tasks for a `dateKey`
-- replace all tasks for a date
-- upsert a single task
-- move a task between dates
+The only remaining task-shaped operations are read-only, for recovering data a user had before the feature was removed:
 
-All task writes should pass through normalization helpers from `packages/web/src/common/types/task.types.ts`.
+- `getAllTasks()` — read every retained legacy task row
+- `getTaskCount()` — cheap existence check without reading every row
+- `clearAllTasks()` — clear the retained legacy table
+
+There is no create/update/reorder/move path for tasks anymore.
 
 ## When To Add A Migration
 
 Add a migration when you change:
 
 - IndexedDB schema shape
-- local task/event field names or required defaults
+- local event field names or required defaults
 - import behavior from legacy local sources
 
 Choose the right mechanism:

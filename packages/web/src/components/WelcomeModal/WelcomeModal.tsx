@@ -137,8 +137,8 @@ export function WelcomeModal() {
             Compass Calendar helps you manage your time, simply.
           </h2>
           <p className="text-text-light">
-            A small, but mighty calendar/todo app. Built for busy minimalists
-            who get things done.
+            A small, but mighty calendar app. Built for busy minimalists who get
+            things done.
           </p>
         </div>
 
