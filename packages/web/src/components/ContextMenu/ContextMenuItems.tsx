@@ -1,5 +1,6 @@
 import { Copy, PenNib, Trash } from "@phosphor-icons/react";
 import type React from "react";
+import { createContext, useContext } from "react";
 import {
   isEventReadOnly,
   useCalendarLookup,
@@ -15,6 +16,21 @@ export interface ContextMenuAction {
   onClick: () => void;
   icon: React.ReactNode;
 }
+
+// Supplied by ContextMenu so each item can wire into floating-ui's roving-focus
+// list navigation (arrow keys) and register its node in the shared listRef. The
+// menu still renders standalone (e.g. in tests) without a provider, in which
+// case items fall back to plain roving-free buttons.
+interface ContextMenuNavContextValue {
+  getItemProps: (
+    userProps?: React.HTMLProps<HTMLElement>,
+  ) => Record<string, unknown>;
+  listRef: React.MutableRefObject<Array<HTMLElement | null>>;
+  activeIndex: number | null;
+}
+
+export const ContextMenuNavContext =
+  createContext<ContextMenuNavContextValue | null>(null);
 
 export interface ContextMenuItemsActions {
   delete: () => void;
@@ -72,22 +88,37 @@ export function ContextMenuItemsView({
         ]),
   ];
 
+  const nav = useContext(ContextMenuNavContext);
+
   return (
-    <div id={ID_CONTEXT_MENU_ITEMS}>
-      {menuActions.map((item) => (
-        <button
-          className="c-context-menu-item"
-          key={item.id}
-          type="button"
-          onClick={() => {
-            item.onClick();
-            close();
-          }}
-        >
-          {item.icon}
-          <span className="text-l">{item.label}</span>
-        </button>
-      ))}
+    // role="none" keeps the menu -> menuitem ownership valid across this
+    // container (the id is also how isContextMenuOpen() detects the menu).
+    <div id={ID_CONTEXT_MENU_ITEMS} role="none">
+      {menuActions.map((item, index) => {
+        const select = () => {
+          item.onClick();
+          close();
+        };
+        const itemProps = nav
+          ? nav.getItemProps({ onClick: select })
+          : { onClick: select };
+        return (
+          <button
+            className="c-context-menu-item"
+            key={item.id}
+            type="button"
+            role="menuitem"
+            ref={(node) => {
+              if (nav) nav.listRef.current[index] = node;
+            }}
+            tabIndex={nav ? (nav.activeIndex === index ? 0 : -1) : undefined}
+            {...itemProps}
+          >
+            {item.icon}
+            <span className="text-l">{item.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
