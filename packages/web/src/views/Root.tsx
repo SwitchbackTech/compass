@@ -7,7 +7,7 @@ import { AuthenticatedLayout } from "@web/components/AuthenticatedLayout/Authent
 import { GlobalShortcutsHost } from "@web/components/CompassProvider/CompassProvider";
 import { MobileGate } from "@web/components/MobileGate/MobileGate";
 import SSEProvider from "@web/sse/provider/SSEProvider";
-import { BackendDownView } from "@web/views/BackendDown";
+import { BackendDownView } from "@web/views/BackendDown/BackendDown";
 
 export const RootView = () => {
   // Gate on the device OS, not the window width: narrow desktop windows get

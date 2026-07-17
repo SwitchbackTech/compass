@@ -62,8 +62,8 @@ export function createTasksRemovalNotice({
       >
         <div className="flex items-start justify-between gap-2">
           <p className="text-text-lighter leading-relaxed">
-            We simplified things by removing tasks and someday. Don't worry, you
-            can still get that data back.
+            We simplified things by removing tasks. Don't worry, you can still
+            get that data back.
           </p>
           <button
             aria-label="Dismiss"

@@ -33,18 +33,14 @@ export const BackendDownView = () => {
       <PixelPirate className="h-20 w-20" />
 
       <h1 className="font-[VT323,monospace] text-4xl">
-        🏴‍☠️ Blimey! Our servers walked the plank
+        🏴‍☠️ A heavy fog has rolled in!
       </h1>
 
       <p className="max-w-xl text-text-light text-xl">
-        Compass can't reach its own crew right now. It's us, not you.
+        You calendar is safe below deck, but the Compass servers are busy
       </p>
       <p className="max-w-xl text-text-light text-xl">
-        Your calendar is safe below deck — nothing's lost.
-      </p>
-      <p className="max-w-xl text-text-light text-xl">
-        We're bailing water as we speak. This page sails on by itself once we're
-        back.
+        Drop an anchor and check back in a moment.
       </p>
 
       {/* aria-disabled + re-entry guard instead of `disabled`: disabling a
