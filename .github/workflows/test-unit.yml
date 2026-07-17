@@ -117,7 +117,16 @@ jobs:
         run: |
           bun install --frozen-lockfile
 
+      - name: Run web tests
+        if: matrix.project == 'web'
+        timeout-minutes: 1
+        env:
+          TZ: Etc/UTC
+        run: |
+          bun run test:web
+
       - name: Run ${{ matrix.project }} tests
+        if: matrix.project != 'web'
         env:
           TZ: Etc/UTC
         run: |

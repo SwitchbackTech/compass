@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from "react";
-import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
+import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 import {
   computeVisibleDayCount,
   WEEK_DAY_COUNT,

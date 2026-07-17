@@ -24,7 +24,7 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
   getWeekInteractionTargetAttributes,
   useWeekEventRegistrationRef,
-} from "@web/views/Week/interaction/registry/weekEventRegistry";
+} from "@web/views/Week/interaction/registry/week-event.registry";
 import { isAllDayEventInVisibleDays } from "@web/views/Week/util/week-window.util";
 
 interface Props {

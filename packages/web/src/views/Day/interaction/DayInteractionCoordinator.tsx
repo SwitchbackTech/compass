@@ -7,8 +7,8 @@ import {
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { CalendarInteractionPointerCaptureBoundary } from "@web/interaction/react/CalendarInteractionPointerCaptureBoundary";
-import { type CalendarLayoutCacheSources } from "@web/layout/calendar-grid/interaction/calendarLayoutCache";
+import { type GridLayoutCacheSources } from "@web/grid/interaction/layout.cache";
+import { PointerCaptureBoundary } from "@web/interaction/react/PointerCaptureBoundary";
 import {
   createDayInteractionAdapter,
   type DayAllDayDragCommitResult,
@@ -16,12 +16,12 @@ import {
   type DayInteractionRuntime,
   type DayTimedDragCommitResult,
   type DayTimedResizeCommitResult,
-} from "./adapter/DayInteractionAdapter";
+} from "./adapter/day-interaction.adapter";
 
 interface Props extends PropsWithChildren {
   allDayEvents?: GridEvent[];
   dateInView: Dayjs;
-  getLayoutSources: () => CalendarLayoutCacheSources;
+  getLayoutSources: () => GridLayoutCacheSources;
   onOpenEvent: (event: GridEvent) => void;
   timedEvents?: GridEvent[];
 }
@@ -106,9 +106,9 @@ export const DayInteractionCoordinator: FC<Props> = ({
   };
 
   return (
-    <CalendarInteractionPointerCaptureBoundary adapter={adapter}>
+    <PointerCaptureBoundary adapter={adapter}>
       {children}
-    </CalendarInteractionPointerCaptureBoundary>
+    </PointerCaptureBoundary>
   );
 };
 

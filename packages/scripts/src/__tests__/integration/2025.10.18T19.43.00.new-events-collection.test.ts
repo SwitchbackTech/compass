@@ -1,5 +1,8 @@
 import { faker } from "@faker-js/faker";
-import { type EventNew, EventNewSchema } from "@scripts/common/event-new.types";
+import {
+  type EventNew,
+  EventNewSchema,
+} from "@scripts/common/migration-support/event-new.types";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import Migration from "@scripts/migrations/2025.10.18T19.43.00.new-events-collection";
 import { ObjectId } from "mongodb";

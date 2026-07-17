@@ -5,7 +5,7 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
-import { CALENDAR_DECK_MIN_WIDTH } from "@web/layout/calendar-grid/calendarGrid.constants";
+import { DECK_MIN_WIDTH } from "@web/grid/grid.constants";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { GridDraft } from "./GridDraft";
@@ -190,7 +190,7 @@ describe("GridDraft", () => {
       name: /Timed event: Planning/,
     });
 
-    expect(draftBlock.style.width).toBe(`${CALENDAR_DECK_MIN_WIDTH}px`);
+    expect(draftBlock.style.width).toBe(`${DECK_MIN_WIDTH}px`);
     expect(Number(draftBlock.style.zIndex)).toBe(deckLayout.order + 1);
   });
 

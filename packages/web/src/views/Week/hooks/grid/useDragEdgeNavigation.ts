@@ -4,11 +4,11 @@ import {
   createWeekEdgeNavigationController,
   WEEK_EDGE_NAVIGATION_THRESHOLD_PX,
   type WeekEdgeNavigationPoint,
-} from "@web/views/Week/interaction/adapter/weekEdgeNavigation";
+} from "@web/views/Week/interaction/adapter/edge-navigation";
 import {
   resetWeekInteractionEdgeNavigationState,
   setWeekInteractionEdgeNavigationState,
-} from "@web/views/Week/interaction/state/weekInteractionEdgeNavigationState";
+} from "@web/views/Week/interaction/state/edge-navigation.state";
 import { type WeekProps } from "../useWeek";
 
 export const useDragEdgeNavigation = (

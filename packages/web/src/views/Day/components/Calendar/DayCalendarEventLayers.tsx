@@ -10,12 +10,12 @@ import {
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import { CALENDAR_GRID_MARGIN_LEFT } from "@web/layout/calendar-grid/calendarGrid.constants";
-import { createCalendarTimedEventLayout } from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
+import { GRID_MARGIN_LEFT } from "@web/grid/grid.constants";
+import { createTimedEventLayout } from "@web/grid/layout/timed-deck.layout";
 import {
-  type CalendarGridMeasurements,
-  type CalendarGridVisibleDate,
-} from "@web/layout/calendar-grid/types/calendarGrid.types";
+  type GridMeasurements,
+  type GridVisibleDate,
+} from "@web/grid/types/grid.types";
 import {
   DayAllDayCalendarEvent,
   DayTimedCalendarEvent,
@@ -31,9 +31,9 @@ interface DayEventsProps {
   getCalendarColumnIndex: (event: GridEvent) => number;
   draft: CompassEvent | null;
   events: GridEvent[];
-  measurements: CalendarGridMeasurements;
+  measurements: GridMeasurements;
   onOpenEvent: (event: GridEvent) => void;
-  visibleDates: CalendarGridVisibleDate[];
+  visibleDates: GridVisibleDate[];
 }
 
 export const DayCalendarAllDayEventsLayer = ({
@@ -66,9 +66,9 @@ export const DayCalendarAllDayEventsLayer = ({
       id={ID_GRID_EVENTS_ALLDAY}
       style={{
         height: "100%",
-        marginLeft: CALENDAR_GRID_MARGIN_LEFT,
+        marginLeft: GRID_MARGIN_LEFT,
         position: "relative",
-        width: `calc(100% - ${CALENDAR_GRID_MARGIN_LEFT}px)`,
+        width: `calc(100% - ${GRID_MARGIN_LEFT}px)`,
       }}
     >
       {renderedEvents.map((event) => (
@@ -128,7 +128,7 @@ export const DayCalendarTimedEventsLayer = ({
       columnEvents.push(event);
       eventsByColumn.set(columnIndex, columnEvents);
     }
-    return [...eventsByColumn.values()].flatMap(createCalendarTimedEventLayout);
+    return [...eventsByColumn.values()].flatMap(createTimedEventLayout);
   }, [getCalendarColumnIndex, renderedEvents]);
 
   return (

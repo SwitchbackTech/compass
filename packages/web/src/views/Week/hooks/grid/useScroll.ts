@@ -1,14 +1,14 @@
 import { type MutableRefObject, useCallback, useEffect } from "react";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
+import { TIMED_VISIBLE_HOURS } from "@web/grid/grid.constants";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
-import { WEEK_TIMED_VISIBLE_HOURS } from "@web/views/Week/layout.constants";
 
 export const useScroll = (
   timedGridRef: MutableRefObject<HTMLElement | null>,
 ) => {
   const scrollToNow = useCallback(() => {
     const gridRowHeight =
-      (timedGridRef.current?.clientHeight || 0) / WEEK_TIMED_VISIBLE_HOURS;
+      (timedGridRef.current?.clientHeight || 0) / TIMED_VISIBLE_HOURS;
     const minuteHeight = gridRowHeight / 60;
 
     const buffer = 150;

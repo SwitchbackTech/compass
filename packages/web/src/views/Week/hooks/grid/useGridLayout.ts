@@ -1,9 +1,9 @@
-import { useCalendarGridLayout } from "@web/layout/calendar-grid/hooks/useCalendarGridLayout";
-import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
+import { useGridMeasurements } from "@web/grid/hooks/useGridMeasurements";
+import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 import { WEEK_DAY_COUNT } from "@web/views/Week/util/week-window.util";
 
 export const useGridLayout = (visibleDateCount: number = WEEK_DAY_COUNT) =>
-  useCalendarGridLayout({
+  useGridMeasurements({
     isInteractionMotionActive: isWeekInteractionMotionActive,
     visibleDateCount,
   });

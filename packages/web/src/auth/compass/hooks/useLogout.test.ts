@@ -1,10 +1,11 @@
 import { act, renderHook } from "@testing-library/react";
+import { session } from "@web/auth/compass/session/Session";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 const clearAuthenticationState = mock();
 const setAuthenticated = mock();
-const signOut = mock();
 const mockUseSession = mock();
+const signOut = spyOn(session, "signOut");
 
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
@@ -12,12 +13,6 @@ mock.module("@web/auth/compass/session/useSession", () => ({
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
   clearAuthenticationState,
-}));
-
-mock.module("@web/auth/compass/session/Session", () => ({
-  session: {
-    signOut,
-  },
 }));
 
 const { useLogout } = await import("./useLogout");

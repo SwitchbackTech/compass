@@ -34,6 +34,7 @@ const sessionMock = {
   getInvalidClaimsFromResponse: createMock().mockResolvedValue([]),
   getAccessTokenPayloadSecurely: createMock().mockResolvedValue({
     mockKey: "mockValue",
+    sub: "mock-user-id",
   }),
 };
 

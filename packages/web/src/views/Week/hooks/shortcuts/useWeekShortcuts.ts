@@ -43,12 +43,12 @@ import { useDraftContext } from "@web/views/Week/components/Draft/context/useDra
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
-  type CalendarEventTarget,
-  focusCalendarEventTarget,
-  getFirstVisibleCalendarEventTarget,
-  getFocusedCalendarEventTarget,
-  getHoveredCalendarEventTarget,
-} from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
+  focusGridEventTarget,
+  type GridEventTarget,
+  getFirstVisibleGridEventTarget,
+  getFocusedGridEventTarget,
+  getHoveredGridEventTarget,
+} from "@web/views/Week/interaction/targeting/week-event.targeting";
 
 export interface ShortcutProps {
   isCurrentWeek: boolean;
@@ -171,31 +171,26 @@ export const useWeekShortcuts = ({
   }, [isSidebarOpen]);
 
   const focusFirstCalendarEvent = useCallback(() => {
-    const target = getFirstVisibleCalendarEventTarget();
+    const target = getFirstVisibleGridEventTarget();
     if (!target) return;
 
-    focusCalendarEventTarget(target);
+    focusGridEventTarget(target);
   }, []);
 
-  const findCalendarEventForTarget = useCallback(
-    (target: CalendarEventTarget) => {
-      const events =
-        target.eventType === "all-day"
-          ? allDayEventsRef.current
-          : timedEventsRef.current;
+  const findCalendarEventForTarget = useCallback((target: GridEventTarget) => {
+    const events =
+      target.eventType === "all-day"
+        ? allDayEventsRef.current
+        : timedEventsRef.current;
 
-      return (
-        events.find((candidate) => candidate._id === target.eventId) ?? null
-      );
-    },
-    [],
-  );
+    return events.find((candidate) => candidate._id === target.eventId) ?? null;
+  }, []);
 
   const getTargetedCalendarEvent = useCallback(() => {
     const target =
-      getFocusedCalendarEventTarget() ??
-      getHoveredCalendarEventTarget() ??
-      getFirstVisibleCalendarEventTarget();
+      getFocusedGridEventTarget() ??
+      getHoveredGridEventTarget() ??
+      getFirstVisibleGridEventTarget();
 
     if (!target) return null;
 
@@ -249,7 +244,7 @@ export const useWeekShortcuts = ({
 
       // Focused only (no hover/first-visible fallback): moving an event the
       // user isn't focused on would be surprising
-      const target = getFocusedCalendarEventTarget();
+      const target = getFocusedGridEventTarget();
       if (!target) return;
 
       const event = findCalendarEventForTarget(target);

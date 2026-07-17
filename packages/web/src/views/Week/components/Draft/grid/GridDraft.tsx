@@ -12,7 +12,7 @@ import {
 } from "@web/common/utils/event/event.util";
 import { focusEventFormTitle } from "@web/common/utils/form/form.util";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
-import { type CalendarTimedDeckLayout } from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
+import { type TimedDeckLayout } from "@web/grid/layout/timed-deck.layout";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
@@ -22,7 +22,7 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 
 interface Props {
   activeAllDayDraftEvent?: GridEventEntity | null;
-  deckLayout?: CalendarTimedDeckLayout | null;
+  deckLayout?: TimedDeckLayout | null;
   measurements: Measurements_Grid;
   recurringPreviews?: readonly GridEventEntity[];
   weekProps: WeekProps;
@@ -85,7 +85,7 @@ export const GridDraft: FC<Props> = ({
   return (
     <>
       {/* Read-only previews of the other recurrence occurrences in view. They
-          take no handlers, so CalendarTimedEventCard swallows clicks — only the
+          take no handlers, so TimedEventCard swallows clicks — only the
           canonical draft below is interactive. */}
       {recurringPreviews.map((preview) => (
         <GridEvent

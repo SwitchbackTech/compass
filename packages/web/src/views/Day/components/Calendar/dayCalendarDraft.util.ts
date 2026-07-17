@@ -6,8 +6,8 @@ import {
   type EventWithDates,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
-import { positionAllDayDraftEvent } from "@web/layout/calendar-grid/layout/allDayDraftEventPosition";
-import { type CalendarGridVisibleDate } from "@web/layout/calendar-grid/types/calendarGrid.types";
+import { positionAllDayDraftEvent } from "@web/grid/layout/all-day-draft.position";
+import { type GridVisibleDate } from "@web/grid/types/grid.types";
 
 export const addVisibleDraftEvent = ({
   draft,
@@ -18,7 +18,7 @@ export const addVisibleDraftEvent = ({
   draft: CompassEvent | null;
   events: GridEvent[];
   isAllDay: boolean;
-  visibleDates: CalendarGridVisibleDate[];
+  visibleDates: GridVisibleDate[];
 }) => {
   if (
     !draft ||
@@ -73,7 +73,7 @@ export const isActiveDraftEvent = (
 
 export const isDraftVisibleOnDate = (
   draft: EventWithDates,
-  visibleDates: CalendarGridVisibleDate[],
+  visibleDates: GridVisibleDate[],
 ) => {
   const visibleDate = visibleDates[0]?.date;
 

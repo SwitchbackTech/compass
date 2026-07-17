@@ -1,5 +1,8 @@
 import { type MigrationContext } from "@scripts/common/cli.types";
-import { type EventNew, EventNewSchema } from "@scripts/common/event-new.types";
+import {
+  type EventNew,
+  EventNewSchema,
+} from "@scripts/common/migration-support/event-new.types";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import { type RunnableMigration } from "umzug";
 import mongoService from "@backend/common/services/mongo.service";

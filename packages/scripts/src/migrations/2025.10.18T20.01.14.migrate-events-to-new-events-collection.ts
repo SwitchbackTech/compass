@@ -3,7 +3,7 @@ import {
   type EventNew,
   EventNewSchema,
   GoogleEventMetadataSchema,
-} from "@scripts/common/event-new.types";
+} from "@scripts/common/migration-support/event-new.types";
 import { type AnyBulkWriteOperation, ObjectId } from "mongodb";
 import { type MigrationParams, type RunnableMigration } from "umzug";
 import { z } from "zod/v4";

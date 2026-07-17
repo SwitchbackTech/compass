@@ -23,22 +23,19 @@ import {
 } from "@web/common/constants/web.constants";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { useDraftStore } from "@web/events/stores/draft.store";
+import { DECK_INDENT, DRAFT_DURATION_MIN } from "@web/grid/grid.constants";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import {
   WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
   WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
   weekEventRegistry,
-} from "@web/views/Week/interaction/registry/weekEventRegistry";
-import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
+} from "@web/views/Week/interaction/registry/week-event.registry";
+import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 import {
-  clearHoveredCalendarEventTarget,
-  getHoveredCalendarEventTarget,
-} from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
-import {
-  DECK_INDENT,
-  DRAFT_DURATION_MIN,
-} from "@web/views/Week/layout.constants";
+  clearHoveredGridEventTarget,
+  getHoveredGridEventTarget,
+} from "@web/views/Week/interaction/targeting/week-event.targeting";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 import { Categories_Event } from "@web/common/types/web.event.types";
@@ -98,7 +95,7 @@ const { MainGrid } = await import("./MainGrid");
 const { MainGridEvents } = await import("./MainGridEvents");
 
 afterEach(() => {
-  clearHoveredCalendarEventTarget();
+  clearHoveredGridEventTarget();
   cleanup();
   setWeekInteractionMotionActive(false);
   weekEventRegistry.clear();
@@ -545,14 +542,14 @@ describe("Week calendar accessibility", () => {
     const eventButton = screen.getByRole("button", { name: /hover target/i });
 
     fireEvent.mouseEnter(eventButton);
-    expect(getHoveredCalendarEventTarget()).toMatchObject({
+    expect(getHoveredGridEventTarget()).toMatchObject({
       element: eventButton,
       eventId: event._id,
       eventType: "timed",
     });
 
     fireEvent.mouseLeave(eventButton);
-    expect(getHoveredCalendarEventTarget()).toBeNull();
+    expect(getHoveredGridEventTarget()).toBeNull();
   });
 
   it("gives all-day events an all-day accessible name and target type", () => {

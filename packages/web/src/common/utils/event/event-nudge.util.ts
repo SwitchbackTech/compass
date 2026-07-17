@@ -1,7 +1,7 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { CALENDAR_GRID_TIME_STEP } from "@web/layout/calendar-grid/calendarGrid.constants";
+import { GRID_TIME_STEP } from "@web/grid/grid.constants";
 
 export interface EventNudgeMovement {
   days: number;
@@ -18,9 +18,9 @@ export const getArrowKeyMovement = (
     case "ArrowRight":
       return { days: 1, minutes: 0 };
     case "ArrowUp":
-      return isAllDay ? null : { days: 0, minutes: -CALENDAR_GRID_TIME_STEP };
+      return isAllDay ? null : { days: 0, minutes: -GRID_TIME_STEP };
     case "ArrowDown":
-      return isAllDay ? null : { days: 0, minutes: CALENDAR_GRID_TIME_STEP };
+      return isAllDay ? null : { days: 0, minutes: GRID_TIME_STEP };
     default:
       return null;
   }

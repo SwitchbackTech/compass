@@ -9,8 +9,8 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
-import { CalendarAllDayRow } from "@web/layout/calendar-grid/components/CalendarAllDayRow";
-import { useAllDayDraftCreation } from "@web/layout/calendar-grid/hooks/useAllDayDraftCreation";
+import { AllDayGridRow } from "@web/grid/components/AllDayGridRow";
+import { useAllDayDraftCreation } from "@web/grid/hooks/useAllDayDraftCreation";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -134,7 +134,7 @@ const AllDayRowCalendar: FC<AllDayRowCalendarProps> = ({
   const allDayEventsLayer = useAllDayEventsLayer(measurements, weekProps);
 
   return (
-    <CalendarAllDayRow
+    <AllDayGridRow
       allDayColumnsRef={allDayRef}
       allDayRowRef={allDayRowRef}
       eventsLayer={allDayEventsLayer}

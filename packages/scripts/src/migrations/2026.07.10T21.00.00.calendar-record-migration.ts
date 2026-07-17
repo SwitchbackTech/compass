@@ -2,7 +2,7 @@ import { type MigrationContext } from "@scripts/common/cli.types";
 import {
   buildLocalCalendarRecord,
   transformLegacyCalendar,
-} from "@scripts/common/legacy-calendar.transform";
+} from "@scripts/common/migration-support/legacy-calendar.transform";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import { type AnyBulkWriteOperation, type Document } from "mongodb";
 import { type MigrationParams, type RunnableMigration } from "umzug";

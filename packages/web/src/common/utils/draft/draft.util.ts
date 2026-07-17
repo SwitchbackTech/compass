@@ -11,7 +11,7 @@ import {
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
-import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
+import { GRID_TIME_STEP } from "@web/grid/grid.constants";
 
 export const createTimedDraft = (
   isCurrentWeek: boolean,

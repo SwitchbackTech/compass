@@ -7,7 +7,7 @@ import {
 } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { CalendarTimedGrid } from "@web/layout/calendar-grid/components/CalendarTimedGrid";
+import { TimedGrid } from "@web/grid/components/TimedGrid";
 import { MainGridBusyPeriods } from "@web/views/Week/components/Grid/MainGrid/MainGridBusyPeriods";
 import { MainGridEvents } from "@web/views/Week/components/Grid/MainGrid/MainGridEvents";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
@@ -151,7 +151,7 @@ const MainGridCalendar: FC<MainGridCalendarProps> = ({
   );
 
   return (
-    <CalendarTimedGrid
+    <TimedGrid
       eventsLayer={timedEventsLayer}
       onMouseDown={onTimedMouseDown}
       timedColumnsRef={timedColumnsElementRef}

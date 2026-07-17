@@ -3,21 +3,21 @@ import { type Dayjs } from "@core/util/date/dayjs";
 import { useAvailabilityQuery } from "@web/calendars/availability.query";
 import { useCalendarLookup } from "@web/calendars/useCalendarLookup";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
-import { CalendarBusyPeriodBlock } from "@web/layout/calendar-grid/components/CalendarBusyPeriodBlock";
-import { splitBusyPeriodsByDay } from "@web/layout/calendar-grid/layout/calendarBusyPeriodLayout";
-import { getCalendarBusyPeriodPosition } from "@web/layout/calendar-grid/layout/calendarEventPosition";
+import { BusyPeriodBlock } from "@web/grid/components/BusyPeriodBlock";
+import { splitBusyPeriodsByDay } from "@web/grid/layout/busy-period.layout";
+import { getBusyPeriodPosition } from "@web/grid/layout/event.position";
 import {
-  type CalendarGridMeasurements,
-  type CalendarGridVisibleDate,
-} from "@web/layout/calendar-grid/types/calendarGrid.types";
+  type GridMeasurements,
+  type GridVisibleDate,
+} from "@web/grid/types/grid.types";
 
 const ID_GRID_BUSY_PERIODS = "busyPeriods";
 
 interface Props {
   calendarColumnIndexById?: ReadonlyMap<string, number>;
   dateInView: Dayjs;
-  measurements: CalendarGridMeasurements;
-  visibleDates: CalendarGridVisibleDate[];
+  measurements: GridMeasurements;
+  visibleDates: GridVisibleDate[];
 }
 
 /**
@@ -56,7 +56,7 @@ export const DayCalendarBusyPeriodsLayer = ({
         const columnIndex = calendarColumnIndexById?.get(segment.calendarId);
         if (calendarColumnIndexById && columnIndex === undefined) return null;
 
-        const position = getCalendarBusyPeriodPosition(segment, {
+        const position = getBusyPeriodPosition(segment, {
           columnIndex,
           measurements,
           visibleDates,
@@ -65,7 +65,7 @@ export const DayCalendarBusyPeriodsLayer = ({
           calendarLookup.get(segment.calendarId)?.name ?? "Calendar";
 
         return (
-          <CalendarBusyPeriodBlock
+          <BusyPeriodBlock
             ariaLabel={`Busy, ${calendarName} calendar, ${getTimesLabel(segment.start, segment.end)}`}
             key={segment.key}
             position={position}

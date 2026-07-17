@@ -12,10 +12,10 @@ import {
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
-import { CalendarInteractionPointerCaptureBoundary } from "@web/interaction/react/CalendarInteractionPointerCaptureBoundary";
+import { PointerCaptureBoundary } from "@web/interaction/react/PointerCaptureBoundary";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import { type WeekLayoutCacheSources } from "./adapter/geometry/weekLayoutCache";
+import { type WeekLayoutCacheSources } from "./adapter/geometry/week-layout.cache";
 import {
   createWeekInteractionAdapter,
   type WeekAllDayDragCommitResult,
@@ -23,7 +23,7 @@ import {
   type WeekInteractionRuntime,
   type WeekTimedDragCommitResult,
   type WeekTimedResizeCommitResult,
-} from "./adapter/WeekInteractionAdapter";
+} from "./adapter/week-interaction.adapter";
 import { useWeekInteractionLayoutSync } from "./useWeekInteractionLayoutSync";
 
 interface Props extends PropsWithChildren {
@@ -191,9 +191,9 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   };
 
   return (
-    <CalendarInteractionPointerCaptureBoundary adapter={adapter}>
+    <PointerCaptureBoundary adapter={adapter}>
       {children}
-    </CalendarInteractionPointerCaptureBoundary>
+    </PointerCaptureBoundary>
   );
 };
 

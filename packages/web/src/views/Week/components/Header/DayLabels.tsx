@@ -2,7 +2,7 @@ import cn from "classnames";
 import { type FC } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
-import { CALENDAR_EVENT_WIDTH_MINIMUM } from "@web/layout/calendar-grid/calendarGrid.constants";
+import { EVENT_WIDTH_MINIMUM } from "@web/grid/grid.constants";
 
 interface Props {
   today: Dayjs;
@@ -45,7 +45,7 @@ export const DayLabels: FC<Props> = ({
       <div
         className="absolute top-0 left-12.5 grid h-full w-[calc(100%-50px)] items-end"
         style={{
-          gridTemplateColumns: `repeat(${weekDays.length}, minmax(${CALENDAR_EVENT_WIDTH_MINIMUM}px, 1fr))`,
+          gridTemplateColumns: `repeat(${weekDays.length}, minmax(${EVENT_WIDTH_MINIMUM}px, 1fr))`,
         }}
       >
         {weekDays.map((day) => {

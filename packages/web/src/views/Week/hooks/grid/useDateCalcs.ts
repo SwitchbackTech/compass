@@ -1,7 +1,7 @@
 import { type MutableRefObject } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { useCalendarDateCalcs } from "@web/layout/calendar-grid/hooks/useCalendarDateCalcs";
+import { useGridCoordinates } from "@web/grid/hooks/useGridCoordinates";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 
 export const useDateCalcs = (
@@ -9,7 +9,7 @@ export const useDateCalcs = (
   mainGridRef: MutableRefObject<HTMLElement | null>,
   weekDays: Dayjs[],
 ) => {
-  const calendarDateCalcs = useCalendarDateCalcs(
+  const calendarDateCalcs = useGridCoordinates(
     measurements,
     mainGridRef,
     weekDays.map((date) => ({

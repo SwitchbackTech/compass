@@ -130,7 +130,8 @@ recovery command).
 
 A successful run ends with the verification summary. If you need to re-check
 later without re-migrating, the same checks are exposed as
-`verifyEventMigration` in `packages/scripts/src/common/event-migration.verify.ts`.
+`verifyEventMigration` in
+`packages/scripts/src/common/migration-support/event-migration.verify.ts`.
 
 ## Cutover (performed with the runtime-cutover release, not now)
 

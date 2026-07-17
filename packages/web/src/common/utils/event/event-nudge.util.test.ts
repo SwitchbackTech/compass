@@ -2,7 +2,7 @@ import {
   getArrowKeyMovement,
   nudgeEventDates,
 } from "@web/common/utils/event/event-nudge.util";
-import { CALENDAR_GRID_TIME_STEP } from "@web/layout/calendar-grid/calendarGrid.constants";
+import { GRID_TIME_STEP } from "@web/grid/grid.constants";
 import { describe, expect, it } from "bun:test";
 
 describe("getArrowKeyMovement", () => {
@@ -20,11 +20,11 @@ describe("getArrowKeyMovement", () => {
   it("maps up/down to 15-minute moves for timed events", () => {
     expect(getArrowKeyMovement("ArrowUp", false)).toEqual({
       days: 0,
-      minutes: -CALENDAR_GRID_TIME_STEP,
+      minutes: -GRID_TIME_STEP,
     });
     expect(getArrowKeyMovement("ArrowDown", false)).toEqual({
       days: 0,
-      minutes: CALENDAR_GRID_TIME_STEP,
+      minutes: GRID_TIME_STEP,
     });
   });
 
