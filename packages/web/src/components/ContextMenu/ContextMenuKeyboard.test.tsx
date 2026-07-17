@@ -1,11 +1,11 @@
 import { useFloating } from "@floating-ui/react";
 import { useEffect } from "react";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
   screen,
-  waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
@@ -70,17 +70,23 @@ const OpenMenuHarness = ({
 
 const getMenu = () => screen.getByRole("menu");
 
+// The menu seats focus on a deferred + retried timeout (the portalled menu
+// isn't focusable during the synchronous commit). Flush that whole retry window
+// deterministically rather than polling with waitFor, which races the timer
+// chain and runs slow enough to time out on CI.
+const flushFocusSeat = () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  });
+
 describe("ContextMenu keyboard operability", () => {
   afterEach(cleanup);
 
   it("moves focus into the menu (first item) when it opens", async () => {
     render(<OpenMenuHarness />);
+    await flushFocusSeat();
 
-    // Focus is seated on a deferred timeout (the portalled menu isn't focusable
-    // during the synchronous commit), so wait for it to land.
-    await waitFor(() =>
-      expect(screen.getByRole("menuitem", { name: "Edit" })).toHaveFocus(),
-    );
+    expect(screen.getByRole("menuitem", { name: "Edit" })).toHaveFocus();
   });
 
   it("returns focus to the opener when the menu closes", async () => {
@@ -90,12 +96,11 @@ describe("ContextMenu keyboard operability", () => {
     opener.focus();
 
     const { rerender } = render(<OpenMenuHarness open />);
-    await waitFor(() =>
-      expect(screen.getByRole("menuitem", { name: "Edit" })).toHaveFocus(),
-    );
+    await flushFocusSeat();
+    expect(screen.getByRole("menuitem", { name: "Edit" })).toHaveFocus();
 
     rerender(<OpenMenuHarness open={false} />);
-    await waitFor(() => expect(opener).toHaveFocus());
+    expect(opener).toHaveFocus();
 
     opener.remove();
   });
