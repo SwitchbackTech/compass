@@ -71,7 +71,7 @@ Give the reviewer the task intent, applicable `AGENTS.md`, and the complete base
 3. Report only confirmed, actionable defects with severity, path/line, impact, and supporting evidence; omit style preferences and speculative findings.
 4. Cover correctness, regression coverage, performance, accessibility, security/privacy/data loss, simplicity, and maintainability as applicable.
 
-Fix confirmed findings and run one fresh confirmation review on the updated diff. Stop if a fresh reviewer is unavailable, a finding is uncertain, or confidence remains incomplete; do not substitute self-review or hand validation back to the user.
+Fix confirmed findings, revalidate them, and commit the review fixes separately with a conventional message before running a fresh confirmation review. Repeat only when a confirmed finding changed the diff. Stop if a fresh reviewer is unavailable, a finding is uncertain, or confidence remains incomplete; do not substitute self-review or hand validation back to the user.
 
 Run checks chosen from the actual diff and repository guidance. At minimum run focused regression tests, affected type checking, and lint; run broader package tests for shared contracts. Use `bun run verify` only after inspecting its selected checks. Confirm the diff and worktree are clean except for intentional, committed work; distinguish new failures from existing warnings.
 
