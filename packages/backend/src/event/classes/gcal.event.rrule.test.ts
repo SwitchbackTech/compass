@@ -16,6 +16,7 @@ import {
   mockRecurringGcalBaseEvent,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
+import { describe, expect, it } from "bun:test";
 
 describe("GcalEventRRule: ", () => {
   it(`should return the correct number of events based on rrule count`, () => {

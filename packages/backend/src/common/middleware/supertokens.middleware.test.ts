@@ -21,6 +21,7 @@ import {
   getFormFieldValue,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import userService from "@backend/user/services/user.service";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 jest.mock("cors", () => ({
   __esModule: true,
@@ -800,8 +801,8 @@ describe("supertokens.middleware", () => {
         signOutPOST: jest.fn().mockResolvedValue({ res: "ok" }),
       };
 
-      (userService.handleLogoutCleanup as jest.Mock).mockRejectedValue(
-        new Error("cleanup failed"),
+      (userService.handleLogoutCleanup as jest.Mock).mockImplementation(() =>
+        Promise.reject(new Error("cleanup failed")),
       );
 
       initSupertokens();

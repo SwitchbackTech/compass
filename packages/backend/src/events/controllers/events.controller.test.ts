@@ -12,6 +12,15 @@ import {
 } from "@backend/sync/services/watch/google-watch-repair.service";
 import { GoogleWatchStateStatus } from "@backend/sync/services/watch/google-watch-state";
 import userService from "@backend/user/services/user.service";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 describe("EventsController", () => {
   beforeAll(initSupertokens);
@@ -63,7 +72,9 @@ describe("EventsController", () => {
     const userId = "507f1f77bcf86cd799439012";
     jest
       .spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
-      .mockRejectedValue(new Error("simulated repair failure"));
+      .mockImplementation(() =>
+        Promise.reject(new Error("simulated repair failure")),
+      );
 
     const req = {
       session: { getUserId: () => userId },
@@ -149,7 +160,9 @@ describe("EventsController", () => {
       });
     jest
       .spyOn(userService, "touchLastSeenAt")
-      .mockRejectedValue(new Error("simulated touch failure"));
+      .mockImplementation(() =>
+        Promise.reject(new Error("simulated touch failure")),
+      );
 
     const req = {
       session: { getUserId: () => userId },

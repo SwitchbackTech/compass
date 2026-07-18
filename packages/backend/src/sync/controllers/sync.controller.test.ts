@@ -31,6 +31,14 @@ import { googleWatchService } from "@backend/sync/services/watch/google-watch.se
 import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 import { randomUUID } from "node:crypto";
 
 // B10: legacy IMPORT_GCAL_END/EVENT_CHANGED/USER_METADATA/GOOGLE_REVOKED SSE
@@ -301,7 +309,7 @@ describe("SyncController", () => {
 
       const handleGoogleWatchNotificationSpy = jest
         .spyOn(googleWatchService, "handleGoogleWatchNotification")
-        .mockRejectedValue(invalidGrant400Error);
+        .mockImplementation(() => Promise.reject(invalidGrant400Error));
 
       const pruneGoogleDataSpy = jest
         .spyOn(userService, "pruneGoogleData")
@@ -357,7 +365,7 @@ describe("SyncController", () => {
       // pruneGoogleData was called.
       const handleGoogleWatchNotificationSpy = jest
         .spyOn(googleWatchService, "handleGoogleWatchNotification")
-        .mockRejectedValue(invalidGrant400Error);
+        .mockImplementation(() => Promise.reject(invalidGrant400Error));
 
       const response = await syncDriver.handleGoogleNotification(
         {
@@ -400,7 +408,7 @@ describe("SyncController", () => {
 
       const handleGoogleWatchNotificationSpy = jest
         .spyOn(googleWatchService, "handleGoogleWatchNotification")
-        .mockRejectedValue(missingRefreshTokenError);
+        .mockImplementation(() => Promise.reject(missingRefreshTokenError));
 
       const pruneGoogleDataSpy = jest
         .spyOn(userService, "pruneGoogleData")
@@ -438,7 +446,7 @@ describe("SyncController", () => {
     it("should return GONE status when missing refresh token and no watch record found", async () => {
       const handleGoogleWatchNotificationSpy = jest
         .spyOn(googleWatchService, "handleGoogleWatchNotification")
-        .mockRejectedValue(missingRefreshTokenError);
+        .mockImplementation(() => Promise.reject(missingRefreshTokenError));
 
       const response = await syncDriver.handleGoogleNotification(
         {
@@ -470,7 +478,7 @@ describe("SyncController", () => {
 
       const handleGoogleWatchNotificationSpy = jest
         .spyOn(googleWatchService, "handleGoogleWatchNotification")
-        .mockRejectedValue(invalidSyncTokenError);
+        .mockImplementation(() => Promise.reject(invalidSyncTokenError));
 
       const repairSpy = jest
         .spyOn(googleCalendarSyncService, "repairGoogleCalendarSync")

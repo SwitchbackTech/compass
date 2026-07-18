@@ -11,6 +11,7 @@ import {
 } from "@backend/event/classes/compass.event.executor";
 import { type EventRecord } from "@backend/event/event.record";
 import { eventRepository } from "@backend/event/event.repository";
+import { afterAll, beforeEach, describe, expect, it } from "bun:test";
 
 const calendarId = new ObjectId();
 

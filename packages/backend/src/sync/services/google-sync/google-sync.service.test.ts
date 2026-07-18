@@ -23,6 +23,15 @@ import * as syncImportService from "@backend/sync/services/import/google-import.
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 const seedPrimaryGoogleCalendar = async (userId: ObjectId) => {
   await mongoService.calendar.insertOne({
@@ -450,7 +459,9 @@ describe("googleCalendarSyncService", () => {
       jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
         importAllEvents: jest
           .fn()
-          .mockRejectedValue(new Error("primary calendar import failure")),
+          .mockImplementation(() =>
+            Promise.reject(new Error("primary calendar import failure")),
+          ),
       } as unknown as Awaited<
         ReturnType<typeof syncImportService.createSyncImport>
       >);
@@ -570,7 +581,9 @@ describe("googleCalendarSyncService", () => {
 
       jest
         .spyOn(userMetadataService, "updateUserMetadata")
-        .mockRejectedValue(new Error("metadata unavailable"));
+        .mockImplementation(() =>
+          Promise.reject(new Error("metadata unavailable")),
+        );
 
       await googleCalendarSyncService.repairGoogleCalendarSync(userId);
 

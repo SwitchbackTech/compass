@@ -44,24 +44,20 @@ E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` vi
 
 ## Current Test Strategy
 
+Every package now runs on Bun's test runner; Jest has been removed.
+
 - `bun run test:core` uses `bun test` with a small compatibility preload for the core BSON mock setup.
 - `bun run test:web` runs `bun test --cwd packages/web` directly. Web tests should be isolated enough to run in one Bun process without batching.
-- `bun run test:backend` and `bun run test:scripts` intentionally retain the existing Jest harness while their hoist-heavy module-mocking patterns are migrated.
+- `bun run test:backend` and `bun run test:scripts` use `packages/scripts/src/testing/run-tests.ts`, a launcher that boots one in-memory MongoDB replica set and runs each test file in its own `bun test` process (Jest-like per-file isolation) against the shared server, in parallel. This keeps the isolation Jest gave us without its per-file startup cost.
+- Test files import lifecycle/assertion APIs from `bun:test` (never `jest` -- the ambient `jest` global is a compatibility shim from `packages/scripts/src/testing/apply-bun-jest-compat.cjs` that maps `jest.mock`/`jest.requireActual`/etc. onto `bun:test`).
 
-## Retained Jest Layout
+### Test tiers
 
-Source:
-
-- `jest.config.js`
-
-Projects:
-
-- `core`
-- `web`
-- `backend`
-- `scripts`
-
-Each project has its own setup files and module alias mapping.
+- `bun run test:backend` / `bun run test:scripts` -- the full package suite.
+- `bun run test:backend:fast` / `bun run test:scripts:fast` -- only files that never touch Mongo (auto-classified: no `setupTestDb`).
+- `bun run test:backend:db` / `bun run test:scripts:db` -- only the Mongo-backed files.
+- `bun run test:migrations` -- the active migration suites under `packages/scripts/src/migrations`.
+- Focus a run with `--filter <substring>`, e.g. `bun packages/scripts/src/testing/run-tests.ts backend --filter user.controller`.
 
 ## What To Run By Change Type
 
@@ -261,7 +257,7 @@ This keeps tests on production code paths while avoiding brittle layout coupling
 
 ### Jest Unbound-Method Rule In Tests
 
-Test linting enforces `jest/unbound-method`. If you need to assert method calls on non-mock objects, spy on the method first so assertions are bound to a Jest mock/spy.
+If you need to assert method calls on non-mock objects, spy on the method first (`jest.spyOn(...)`, backed by `bun:test`) so the assertion is bound to a real mock/spy rather than an unbound method reference.
 
 Useful anchors:
 
@@ -279,7 +275,7 @@ Preferred style:
 
 **Do not import `mongoService` (or other persistence implementations) directly in tests.** Use test drivers instead (e.g. `UserDriver`, `GoogleWatchDriver` in `packages/backend/src/__tests__/drivers/`). Drivers encapsulate persistence so that switching away from Mongo (or another store) in the future does not require changing test code.
 
-CI runs every lane with `TZ: Etc/UTC` (see CI Unit Test Workflow above). If a backend test only fails locally, match that explicitly rather than relying on your machine's default timezone: `TZ=UTC ./node_modules/.bin/jest --selectProjects backend`.
+CI runs every lane with `TZ: Etc/UTC` (see CI Unit Test Workflow above). The launcher already sets `TZ=Etc/UTC` for each test process, so a backend test that only fails locally is rarely a timezone issue; to reproduce CI exactly, run `bun run test:backend`.
 
 Useful anchors:
 

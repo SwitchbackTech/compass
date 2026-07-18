@@ -1,5 +1,6 @@
 import { parseConfigFromEnv } from "@backend/common/constants/config.constants";
 import { isGoogleConfigured } from "@backend/common/constants/config.util";
+import { describe, expect, it } from "bun:test";
 
 const validEnv = {
   BASEURL: "http://localhost:3000/api",

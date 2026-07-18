@@ -1,4 +1,4 @@
-import { type Handler, type NextFunction, type Response } from "express";
+import { type NextFunction, type Response } from "express";
 import mergeWith from "lodash.mergewith";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import {
@@ -20,6 +20,7 @@ import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/facto
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
+import { beforeEach } from "bun:test";
 import { randomUUID } from "node:crypto";
 
 export interface CompassTestState {
@@ -27,19 +28,26 @@ export interface CompassTestState {
   calendarlist: gSchema$CalendarListEntry[];
 }
 
+// The per-test gcal fixture state. Tests read it (via the gcal mock) and
+// freely mutate it (e.g. `compassTestState().calendarlist = [...]`). It is a
+// plain mutable singleton rather than a virtual jest module: Bun exposes mocked
+// modules as read-only namespaces, so assigning to a property of a virtual mock
+// throws "assign to readonly property".
+let currentTestState: CompassTestState = freshTestState();
+
+function freshTestState(): CompassTestState {
+  return {
+    events: { ...mockAndCategorizeGcalEvents() },
+    calendarlist: [mockCalendarListCreate()],
+  };
+}
+
 function mockCompassTestState() {
-  jest.mock(
-    "compass-test-state",
-    (): CompassTestState => ({
-      events: { ...mockAndCategorizeGcalEvents() },
-      calendarlist: [mockCalendarListCreate()],
-    }),
-    { virtual: true },
-  );
+  currentTestState = freshTestState();
 }
 
 export function compassTestState(): CompassTestState {
-  return jest.requireMock<CompassTestState>("compass-test-state");
+  return currentTestState;
 }
 
 function mockGoogleapis() {
@@ -296,28 +304,39 @@ function mockSuperTokens() {
 }
 
 function mockWinstonLogger() {
-  mockModule("@core/logger/winston.logger", () => ({
-    Logger: jest.fn().mockImplementation(() => ({
-      debug: jest.fn(),
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      verbose: jest.fn(),
-    })),
-  }));
-}
+  // One stable logger instance per name. A subject module captures its logger
+  // once at import time (`const logger = Logger("app:x")`); returning the same
+  // instance for that name lets an observability test grab the very logger the
+  // subject uses via `Logger("app:x")` and assert on it -- without the test
+  // registering its own winston mock, which cannot take effect before the
+  // statically-imported subject already loaded.
+  const loggers = new Map<string, Record<string, jest.Mock>>();
 
-function mockHttpLoggingMiddleware() {
-  mockModule("@backend/common/middleware/http.logger.middleware", () => ({
-    httpLoggingMiddleware: jest.fn<void, Parameters<Handler>>((...args) =>
-      args[2](),
-    ),
+  mockModule("@core/logger/winston.logger", () => ({
+    Logger: jest.fn((name?: string) => {
+      const key = name ?? "";
+      const existing = loggers.get(key);
+      if (existing) return existing;
+
+      const logger = {
+        debug: jest.fn(),
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        verbose: jest.fn(),
+      };
+      loggers.set(key, logger);
+      return logger;
+    }),
   }));
 }
 
 function mockConstants() {
+  // Small enough that modest fixtures still exercise multi-batch code paths,
+  // but not so small that a scale test (e.g. the ~20k-event backfill memory
+  // check) pays thousands of tiny round-trips. The real value is 1000.
   mockModule("@backend/common/constants/backend.constants.ts", () => ({
-    MONGO_BATCH_SIZE: 5,
+    MONGO_BATCH_SIZE: 250,
   }));
 }
 
@@ -339,11 +358,13 @@ export function mockEnv(env: Partial<typeof CONFIG>) {
 }
 
 export function mockNodeModules() {
+  // Applied once, at preload time, so the mocks are in place before any test
+  // file's top-level code or `beforeAll` runs. Each test file runs in its own
+  // process (see run-tests.ts), so there is no cross-file mock leakage to guard
+  // against -- matching the per-file isolation Jest gave us.
   beforeEach(mockCompassTestState);
-  afterEach(() => jest.unmock("compass-test-state"));
   mockConstants();
   mockWinstonLogger();
-  mockHttpLoggingMiddleware();
   mockGoogleapis();
   mockSuperTokens();
 }

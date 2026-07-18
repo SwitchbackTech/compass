@@ -1,6 +1,7 @@
 import { Logger } from "@core/logger/winston.logger";
 import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
 import { warnIfWebhookNotPublicHttps } from "@backend/sync/services/watch/google-watch-config";
+import { afterEach, describe, expect, it } from "bun:test";
 
 describe("warnIfWebhookNotPublicHttps (packet 09 ops: self-host webhook check)", () => {
   afterEach(() => {

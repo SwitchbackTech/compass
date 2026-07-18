@@ -1,4 +1,5 @@
 import { readPorts, reassignPorts } from "@scripts/commands/dev-ports";
+import { describe, expect, it } from "bun:test";
 
 const SAMPLE_YAML = `# Compass Config
 # hand-written setup notes live here

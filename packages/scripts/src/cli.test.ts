@@ -1,5 +1,6 @@
 import CompassCLI from "@scripts/cli";
 import { MigratorType } from "./common/cli.types";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 const mockExitHelpfully = jest.fn();
 const mockRunMigrator = jest.fn((): Promise<void> => Promise.resolve());

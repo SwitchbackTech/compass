@@ -15,6 +15,14 @@ import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { mapGoogleEvent } from "@backend/event/google-event.adapter";
 import { GoogleToCompassEventPropagation } from "@backend/sync/services/event-propagation/google-to-compass/google-to-compass.event-propagation";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 jest.mock("@backend/common/services/gcal/gcal.service", () => ({
   __esModule: true,

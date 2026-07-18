@@ -8,6 +8,14 @@ import {
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import { hasUserBeenActiveSince } from "@backend/sync/services/watch/google-watch-activity";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 describe("hasUserBeenActiveSince", () => {
   beforeAll(initSupertokens);

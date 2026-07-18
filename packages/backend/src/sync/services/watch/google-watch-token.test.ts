@@ -5,6 +5,7 @@ import {
   decodeChannelToken,
   encodeChannelToken,
 } from "@backend/sync/services/watch/google-watch-token";
+import { describe, expect, it } from "bun:test";
 
 // Mock CONFIG
 jest.mock("@backend/common/constants/config.constants", () => ({

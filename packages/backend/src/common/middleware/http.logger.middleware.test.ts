@@ -1,9 +1,7 @@
 import { type Request, type Response } from "express";
+import { httpLoggingMiddleware } from "@backend/common/middleware/http.logger.middleware";
+import { afterEach, describe, expect, it } from "bun:test";
 import { EventEmitter } from "node:events";
-
-const { httpLoggingMiddleware } = jest.requireActual<
-  typeof import("@backend/common/middleware/http.logger.middleware")
->("@backend/common/middleware/http.logger.middleware");
 
 const makeRequest = (originalUrl: string): Request =>
   ({

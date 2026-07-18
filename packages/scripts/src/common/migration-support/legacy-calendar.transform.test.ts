@@ -4,6 +4,7 @@ import {
 } from "@scripts/common/migration-support/legacy-calendar.transform";
 import { ObjectId } from "mongodb";
 import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
+import { describe, expect, it } from "bun:test";
 
 const legacyGoogleCalendar = (overrides: Record<string, unknown> = {}) => ({
   _id: new ObjectId(),

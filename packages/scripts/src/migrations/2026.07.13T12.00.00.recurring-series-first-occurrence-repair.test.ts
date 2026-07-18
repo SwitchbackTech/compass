@@ -9,6 +9,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import mongoService from "@backend/common/services/mongo.service";
 import { type EventRecord } from "@backend/event/event.record";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
 
 const buildBase = (overrides: Partial<EventRecord> = {}): EventRecord => ({
   _id: new ObjectId(),
@@ -60,7 +61,7 @@ describe("2026.07.13T12.00.00.recurring-series-first-occurrence-repair", () => {
   afterAll(cleanupTestDb);
 
   it("no-ops cleanly against a fresh, empty database", async () => {
-    await expect(migration.up(contextFor(false))).resolves.not.toThrow();
+    await expect(migration.up(contextFor(false))).resolves.toBeUndefined();
   });
 
   it("removes an unlinked duplicate occurrence when a linked occurrence already exists at the same start", async () => {

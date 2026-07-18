@@ -20,6 +20,14 @@ import {
   getSync,
   updateSync,
 } from "@backend/sync/services/records/sync-records.repository";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 jest.mock("@backend/common/services/gcal/gcal.service", () => ({
   __esModule: true,

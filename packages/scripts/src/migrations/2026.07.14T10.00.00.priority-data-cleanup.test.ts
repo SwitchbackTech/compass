@@ -9,6 +9,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { IS_DEV } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
 
 // Mirrors the removed `Collections.PRIORITY` naming convention -- see the
 // migration under test for why this is reconstructed rather than imported.
@@ -32,7 +33,7 @@ describe("2026.07.14T10.00.00.priority-data-cleanup", () => {
   afterAll(cleanupTestDb);
 
   it("no-ops cleanly against a fresh, empty database", async () => {
-    await expect(migration.up(contextFor(false))).resolves.not.toThrow();
+    await expect(migration.up(contextFor(false))).resolves.toBeUndefined();
   });
 
   it("unsets the priority field from event documents that still carry it", async () => {
@@ -96,7 +97,7 @@ describe("2026.07.14T10.00.00.priority-data-cleanup", () => {
     });
 
     await migration.up(contextFor(false));
-    await expect(migration.up(contextFor(false))).resolves.not.toThrow();
+    await expect(migration.up(contextFor(false))).resolves.toBeUndefined();
 
     const remaining = await events
       .find({ priority: { $exists: true } })

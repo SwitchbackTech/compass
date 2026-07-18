@@ -14,6 +14,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { IS_DEV } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
 
 describe("2026.07.10T21.00.00.calendar-record-migration", () => {
   const migration = new Migration();
@@ -56,7 +57,7 @@ describe("2026.07.10T21.00.00.calendar-record-migration", () => {
 
   describe("up", () => {
     it("no-ops cleanly against a fresh, empty database", async () => {
-      await expect(migration.up(migrationContext)).resolves.not.toThrow();
+      await expect(migration.up(migrationContext)).resolves.toBeUndefined();
 
       const calendars = await mongoService.calendar.find().toArray();
       expect(calendars).toHaveLength(0);
@@ -142,7 +143,7 @@ describe("2026.07.10T21.00.00.calendar-record-migration", () => {
 
       const firstPass = await mongoService.calendar.find().toArray();
 
-      await expect(migration.up(migrationContext)).resolves.not.toThrow();
+      await expect(migration.up(migrationContext)).resolves.toBeUndefined();
 
       const secondPass = await mongoService.calendar.find().toArray();
       expect(secondPass).toEqual(firstPass);

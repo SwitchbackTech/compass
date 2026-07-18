@@ -12,6 +12,7 @@ import { compassTestState } from "@backend/__tests__/helpers/mock.setup";
 import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { getCalendarsToSync } from "@backend/sync/services/init/google-sync-init";
+import { afterAll, beforeEach, describe, expect, it } from "bun:test";
 
 describe("getCalendarsToSync", () => {
   beforeEach(setupTestDb);

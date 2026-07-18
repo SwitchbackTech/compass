@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import supertokens from "supertokens-node";
 import Session from "supertokens-node/recipe/session";
 import compassAuthService from "./compass.auth.service";
+import { describe, expect, it } from "bun:test";
 
 jest.mock("supertokens-node/recipe/session", () => ({
   __esModule: true,
@@ -66,8 +67,8 @@ describe("CompassAuthService", () => {
     it("throws a helpful error when session creation fails", async () => {
       const compassUserId = faker.database.mongodbObjectId();
 
-      createNewSessionWithoutRequestResponseMock.mockRejectedValue(
-        new Error("boom"),
+      createNewSessionWithoutRequestResponseMock.mockImplementation(() =>
+        Promise.reject(new Error("boom")),
       );
 
       await expect(

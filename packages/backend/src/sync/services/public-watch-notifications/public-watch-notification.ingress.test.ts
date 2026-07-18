@@ -5,6 +5,7 @@ import {
   hasPublicWatchNotificationHeaders,
   parsePublicWatchNotification,
 } from "./public-watch-notification.ingress";
+import { describe, expect, it } from "bun:test";
 
 const makeHeaders = (overrides: Record<string, string | undefined> = {}) => ({
   "x-goog-channel-id": new ObjectId().toString(),
