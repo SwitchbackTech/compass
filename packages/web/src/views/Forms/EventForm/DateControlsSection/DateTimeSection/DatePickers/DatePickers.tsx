@@ -12,6 +12,16 @@ const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
   e.stopPropagation();
 };
 
+// The start and end date pickers share one row inside a narrow sidebar card.
+// react-datepicker's wrapper/input-container are inline-block and size to the
+// input's fixed width, so two of them overflow the card and the end date spills
+// past its right edge. flex-1 + min-w-0 lets each field shrink to stay inside
+// the card (max-w-28 keeps them compact on a wide sidebar); forcing the whole
+// react-datepicker chain to fill the field is what lets the shrink reach the
+// input instead of stopping at the inline-block wrappers.
+const dateFieldClassName =
+  "flex min-w-0 max-w-28 flex-1 items-center [&_.react-datepicker-wrapper]:w-full [&_.react-datepicker\\_\\_input-container]:w-full [&_input]:w-full [&_input]:min-w-0";
+
 interface Props {
   displayEndDate: Date;
   isEndDatePickerOpen: boolean;
@@ -173,56 +183,60 @@ export const DatePickers: FC<Props> = ({
 
   return (
     <>
-      <div className="flex items-center">
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
-        <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
-          <DatePicker
-            calendarClassName="startDatePicker"
-            isOpen={isStartDatePickerOpen}
-            monthTextClassName="text-medium"
-            onCalendarClose={closeStartDatePicker}
-            onCalendarOpen={() => {
-              setIsStartDatePickerOpen(true);
-            }}
-            onChange={() => null}
-            onInputClick={() => {
-              if (isEndDatePickerOpen) {
-                setIsEndDatePickerOpen(false);
-              }
-              setIsStartDatePickerOpen(true);
-            }}
-            onKeyDown={(e) => onPickerKeyDown("start", e)}
-            onSelect={onSelectStartDate}
-            selected={selectedStartDate}
-            title="Pick Start Date"
-            view="grid"
-          />
-        </div>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
+      <div
+        className={dateFieldClassName}
+        onMouseUp={stopPropagation}
+        onMouseDown={stopPropagation}
+      >
+        <DatePicker
+          calendarClassName="startDatePicker"
+          isOpen={isStartDatePickerOpen}
+          monthTextClassName="text-medium"
+          onCalendarClose={closeStartDatePicker}
+          onCalendarOpen={() => {
+            setIsStartDatePickerOpen(true);
+          }}
+          onChange={() => null}
+          onInputClick={() => {
+            if (isEndDatePickerOpen) {
+              setIsEndDatePickerOpen(false);
+            }
+            setIsStartDatePickerOpen(true);
+          }}
+          onKeyDown={(e) => onPickerKeyDown("start", e)}
+          onSelect={onSelectStartDate}
+          selected={selectedStartDate}
+          title="Pick Start Date"
+          view="grid"
+        />
       </div>
 
-      <div className="flex w-30 items-center">
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
-        <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
-          <DatePicker
-            calendarClassName="endDatePicker"
-            isOpen={isEndDatePickerOpen}
-            monthTextClassName="text-medium"
-            onCalendarClose={closeEndDatePicker}
-            onCalendarOpen={() => setIsEndDatePickerOpen(true)}
-            onChange={() => null}
-            onInputClick={() => {
-              if (isStartDatePickerOpen) {
-                setIsStartDatePickerOpen(false);
-              }
-              setIsEndDatePickerOpen(true);
-            }}
-            onKeyDown={(e) => onPickerKeyDown("end", e)}
-            onSelect={onSelectEndDate}
-            selected={displayEndDate}
-            title="Pick End Date"
-            view="grid"
-          />
-        </div>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
+      <div
+        className={dateFieldClassName}
+        onMouseUp={stopPropagation}
+        onMouseDown={stopPropagation}
+      >
+        <DatePicker
+          calendarClassName="endDatePicker"
+          isOpen={isEndDatePickerOpen}
+          monthTextClassName="text-medium"
+          onCalendarClose={closeEndDatePicker}
+          onCalendarOpen={() => setIsEndDatePickerOpen(true)}
+          onChange={() => null}
+          onInputClick={() => {
+            if (isStartDatePickerOpen) {
+              setIsStartDatePickerOpen(false);
+            }
+            setIsEndDatePickerOpen(true);
+          }}
+          onKeyDown={(e) => onPickerKeyDown("end", e)}
+          onSelect={onSelectEndDate}
+          selected={displayEndDate}
+          title="Pick End Date"
+          view="grid"
+        />
       </div>
     </>
   );
