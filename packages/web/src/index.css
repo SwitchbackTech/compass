@@ -590,7 +590,9 @@
   }
 
   &.calendar--open {
-    height: 230px;
+    /* Match the month-container height so 6-row months aren't clipped by the
+       overflow:hidden on .calendar. The two heights must stay in sync. */
+    height: 240px;
   }
 
   &[data-view="sidebar"].calendar--open {

@@ -179,7 +179,7 @@ export const DatePickers: FC<Props> = ({
           <DatePicker
             calendarClassName="startDatePicker"
             isOpen={isStartDatePickerOpen}
-            monthTextClassName="text-base"
+            monthTextClassName="text-medium"
             onCalendarClose={closeStartDatePicker}
             onCalendarOpen={() => {
               setIsStartDatePickerOpen(true);
@@ -206,7 +206,7 @@ export const DatePickers: FC<Props> = ({
           <DatePicker
             calendarClassName="endDatePicker"
             isOpen={isEndDatePickerOpen}
-            monthTextClassName="text-base"
+            monthTextClassName="text-medium"
             onCalendarClose={closeEndDatePicker}
             onCalendarOpen={() => setIsEndDatePickerOpen(true)}
             onChange={() => null}
