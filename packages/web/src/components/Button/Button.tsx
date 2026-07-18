@@ -28,6 +28,11 @@ export const Btn = forwardRef<
 
 Btn.displayName = "Btn";
 
+// EVENT_COLOR is a fixed module-level constant, so its derived save-button
+// colors are too — computed once rather than on every SaveButton render.
+const SAVE_BUTTON_BACKGROUND = darken(EVENT_COLOR);
+const SAVE_BUTTON_TEXT_COLOR = theme.getContrastText(SAVE_BUTTON_BACKGROUND);
+
 interface SaveButtonProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "color" | "disabled"> {
   minWidth: number;
@@ -38,13 +43,12 @@ export const SaveButton = forwardRef<
   HTMLButtonElement,
   PropsWithChildren<SaveButtonProps>
 >(({ className, disabled, minWidth, style, ...props }, ref) => {
-  const background = darken(EVENT_COLOR);
   const buttonStyle: CSSVariables = {
     ...style,
-    "--save-button-text-color": theme.getContrastText(background),
+    "--save-button-text-color": SAVE_BUTTON_TEXT_COLOR,
     "--save-button-hover-color": "var(--color-text-muted)",
     "--elevated-shadow-color": darken(EVENT_COLOR, 25),
-    background,
+    background: SAVE_BUTTON_BACKGROUND,
     minWidth,
   };
 
