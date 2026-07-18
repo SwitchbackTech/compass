@@ -101,7 +101,7 @@ describe("CalendarListHeader", () => {
       screen.getByRole("heading", { name: "Temporary account" }),
     ).toBeInTheDocument();
     const trigger = screen.getByRole("button", { name: "Temporary account" });
-    expect(trigger).toHaveClass("text-text-lighter");
+    expect(trigger).toHaveClass("text-text");
     expect(trigger).not.toHaveClass("c-sync-text-wave");
     expect(screen.queryByText("Sign up")).toBeNull();
 
@@ -121,7 +121,7 @@ describe("CalendarListHeader", () => {
 
     const trigger = screen.getByRole("button", { name: "Temporary account" });
     expect(trigger).toHaveClass("c-sync-text-wave");
-    expect(trigger).not.toHaveClass("text-text-lighter");
+    expect(trigger).not.toHaveClass("text-text");
   });
 
   it("also opens sign up by clicking the temporary account label directly (keyboard path)", async () => {
@@ -145,7 +145,7 @@ describe("CalendarListHeader", () => {
     const email = screen.getByText("ahab@pequod.com");
     expect(email.tagName).toBe("SPAN");
     expect(email).not.toHaveAttribute("tabindex");
-    expect(email).toHaveClass("text-text-lighter");
+    expect(email).toHaveClass("text-text");
     expect(screen.queryByRole("status")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
   });
@@ -159,7 +159,7 @@ describe("CalendarListHeader", () => {
 
     const email = screen.getByText("ahab@pequod.com");
     expect(email.tagName).toBe("SPAN");
-    expect(email).toHaveClass("text-text-lighter");
+    expect(email).toHaveClass("text-text");
     expect(email).not.toHaveClass("c-sync-text-wave");
     expect(screen.queryByRole("status")).toBeNull();
 
@@ -195,8 +195,8 @@ describe("CalendarListHeader", () => {
 
     const email = screen.getByText("ahab@pequod.com");
     expect(email.tagName).toBe("SPAN");
-    expect(email).toHaveClass("text-text-lighter");
-    expect(email).not.toHaveClass("text-status-warning");
+    expect(email).toHaveClass("text-text");
+    expect(email).not.toHaveClass("text-warning");
     expect(screen.queryByRole("status")).toBeNull();
 
     await user.hover(email);
@@ -214,8 +214,8 @@ describe("CalendarListHeader", () => {
     renderHeader();
 
     const email = screen.getByText("ahab@pequod.com");
-    expect(email).toHaveClass("text-text-lighter");
-    expect(email).not.toHaveClass("text-status-error");
+    expect(email).toHaveClass("text-text");
+    expect(email).not.toHaveClass("text-error");
     expect(screen.queryByRole("status")).toBeNull();
 
     await user.hover(email);

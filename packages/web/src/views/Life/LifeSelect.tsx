@@ -23,9 +23,9 @@ export function LifeSelect({
 
   return (
     <label className={`flex w-full flex-col gap-1 ${className}`} htmlFor={id}>
-      <span className="font-medium text-sm text-text-light">{label}</span>
+      <span className="font-medium text-sm text-text-muted">{label}</span>
       <select
-        className="h-10 rounded border border-border-primary bg-bg-secondary px-3 text-sm text-text-lighter transition-colors hover:bg-panel-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+        className="h-10 rounded border border-border bg-surface px-3 text-sm text-text transition-colors hover:bg-surface-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         id={id}
         onChange={handleChange}
         value={value}

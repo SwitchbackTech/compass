@@ -13,9 +13,9 @@ const CONTRAST = 120;
  * Brightness maps from the dark backdrop up to white, so the portrait keeps
  * its light, angelic feel while sitting on the app's dark surface.
  */
-const SHADOW_COLOR_VAR = "--color-bg-primary";
-const HIGHLIGHT_COLOR_VAR = "--color-text-lighter";
-const BACKDROP_COLOR_VAR = "--color-bg-primary";
+const SHADOW_COLOR_VAR = "--color-background";
+const HIGHLIGHT_COLOR_VAR = "--color-text";
+const BACKDROP_COLOR_VAR = "--color-background";
 
 interface Particle {
   x: number;

@@ -1,5 +1,5 @@
 import { type FC } from "react";
-import { theme } from "@web/common/styles/theme";
+import { colors } from "@web/common/styles/colors";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";
@@ -43,7 +43,7 @@ export const CalendarHeader: FC<Props> = ({
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
 
   return (
-    <div className="flex h-12 w-full shrink-0 items-center gap-3 text-text-light">
+    <div className="flex h-12 w-full shrink-0 items-center gap-3 text-text-muted">
       {!isSidebarOpen ? (
         <TooltipWrapper
           description="Open sidebar"
@@ -55,12 +55,12 @@ export const CalendarHeader: FC<Props> = ({
             aria-label="Open sidebar"
             className="c-focus-ring flex h-6 w-6 cursor-pointer items-center justify-center"
           >
-            <SidebarIcon color={theme.color.text.lightInactive} size={21} />
+            <SidebarIcon color={colors.textMuted} size={21} />
           </button>
         </TooltipWrapper>
       ) : null}
 
-      <h1 className="text-text-lighter" aria-live="polite">
+      <h1 className="text-text" aria-live="polite">
         <span className="relative text-xl">{label}</span>
       </h1>
 

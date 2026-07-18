@@ -54,7 +54,7 @@ describe("EventGrid", () => {
     renderGrid(1);
 
     expect(screen.getByRole("region", { name: "All-day events" })).toHaveClass(
-      "bg-bg-primary",
+      "bg-background",
     );
     expect(
       screen.getByRole("region", { name: "All-day events" }),

@@ -43,12 +43,12 @@ export const CalendarList: FC<Props> = ({
       <Header />
 
       {isPending ? (
-        <p className="text-text-light-inactive text-xs">Loading calendars…</p>
+        <p className="text-text-muted text-xs">Loading calendars…</p>
       ) : isError ? (
         <div className="flex items-center justify-between gap-2 text-xs">
-          <p className="text-status-error">Couldn't load calendars.</p>
+          <p className="text-error">Couldn't load calendars.</p>
           <button
-            className="c-focus-ring rounded-xs px-1.5 py-0.5 text-accent-primary hover:brightness-110"
+            className="c-focus-ring rounded-xs px-1.5 py-0.5 text-accent hover:brightness-110"
             onClick={() => void refetch()}
             type="button"
           >
@@ -56,7 +56,7 @@ export const CalendarList: FC<Props> = ({
           </button>
         </div>
       ) : calendars.length === 0 ? (
-        <p className="text-text-light-inactive text-xs">No calendars yet.</p>
+        <p className="text-text-muted text-xs">No calendars yet.</p>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {calendars.map((calendar) => {
@@ -90,7 +90,7 @@ export const CalendarList: FC<Props> = ({
                   <button
                     aria-label={`${calendar.isVisible ? "Hide" : "Show"} ${displayName} calendar`}
                     aria-pressed={calendar.isVisible}
-                    className="c-focus-ring group flex w-full min-w-0 items-center gap-2 rounded px-1 py-0.5 text-left text-text-lighter text-xs hover:bg-panel-bg"
+                    className="c-focus-ring group flex w-full min-w-0 items-center gap-2 rounded px-1 py-0.5 text-left text-text text-xs hover:bg-surface-panel"
                     onClick={() =>
                       toggleCalendarVisibility(calendar.id, !calendar.isVisible)
                     }
@@ -99,7 +99,7 @@ export const CalendarList: FC<Props> = ({
                     {calendarRow}
                   </button>
                 ) : (
-                  <div className="flex min-w-0 items-center gap-2 px-1 py-0.5 text-text-lighter text-xs">
+                  <div className="flex min-w-0 items-center gap-2 px-1 py-0.5 text-text text-xs">
                     {calendarRow}
                   </div>
                 )}

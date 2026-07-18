@@ -111,7 +111,7 @@ export const SelectView = ({
         {...getReferenceProps()}
         className={
           buttonClassName ??
-          "flex items-center gap-2 rounded px-3 py-1.5 text-sm text-text-lighter/90 transition-colors hover:bg-text-lighter/10"
+          "flex items-center gap-2 rounded px-3 py-1.5 text-sm text-text/90 transition-colors hover:bg-text/10"
         }
         aria-expanded={isOpen}
         aria-haspopup="listbox"
@@ -156,7 +156,7 @@ export const SelectView = ({
           })}
           id={dropdownId}
           data-testid="view-select-dropdown"
-          className="absolute inset-inline-end-0 top-full z-50 mt-1 min-w-[140px] rounded border border-border-primary bg-bg-secondary py-1 shadow-lg"
+          className="absolute inset-inline-end-0 top-full z-50 mt-1 min-w-[140px] rounded border border-border bg-surface py-1 shadow-lg"
           role="listbox"
         >
           {options.map((option, index) => {
@@ -178,8 +178,8 @@ export const SelectView = ({
                 tabIndex={isActive ? 0 : -1}
                 className={classNames(
                   "c-focus-ring flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm transition-colors",
-                  isSelected ? "text-accent-primary" : "text-text-light",
-                  isActive ? "bg-text-lighter/10" : "hover:bg-text-lighter/10",
+                  isSelected ? "text-accent" : "text-text-muted",
+                  isActive ? "bg-text/10" : "hover:bg-text/10",
                 )}
               >
                 <span>{option.label}</span>

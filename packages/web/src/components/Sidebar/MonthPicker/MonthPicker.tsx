@@ -67,7 +67,7 @@ export const MonthPicker: FC<Props> = ({
               onClick={onToggleSidebar}
               shortcut="["
             >
-              <span className="flex h-6 w-6 items-center justify-center text-text-light">
+              <span className="flex h-6 w-6 items-center justify-center text-text-muted">
                 <SidebarIcon size={21} />
               </span>
             </TooltipWrapper>

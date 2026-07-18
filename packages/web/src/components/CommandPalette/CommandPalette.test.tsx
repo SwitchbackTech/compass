@@ -105,7 +105,7 @@ const getInput = () =>
 // Scoped to the label span (not the row's full textContent) so it isn't
 // polluted by the row's keycap chip text (e.g. "Go to DayD").
 const activeRowText = (container: HTMLElement) =>
-  container.ownerDocument.querySelector(".bg-panel-badge-bg > span")
+  container.ownerDocument.querySelector(".bg-surface-overlay > span")
     ?.textContent ?? null;
 
 const isOpen = () => selectIsCmdPaletteOpen(useSettingsStore.getState());
@@ -322,7 +322,7 @@ describe("CommandPalette", () => {
 
     const status = screen.getByRole("status");
     expect(status).toHaveTextContent("Calendar is out of date");
-    expect(status).toHaveClass("text-status-warning");
+    expect(status).toHaveClass("text-warning");
     expect(status).not.toHaveAttribute("role", "option");
 
     // Survives an unrelated search that empties the list.

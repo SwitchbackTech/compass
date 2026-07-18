@@ -4,7 +4,6 @@ import { DeleteMenuButton } from "./DeleteMenuButton";
 import { DuplicateMenuButton } from "./DuplicateMenuButton";
 
 interface Props {
-  bgColor: string;
   isExistingEvent: boolean;
   /**
    * Read-only events (unwritable calendar or busy content, packet 08 step
@@ -19,19 +18,17 @@ interface Props {
 }
 
 export const EventActionMenu: React.FC<Props> = ({
-  bgColor,
   isExistingEvent,
   isReadOnly = false,
   onDuplicate,
   onDelete,
 }) => {
   return (
-    <ActionsMenu bgColor={bgColor}>
+    <ActionsMenu>
       {(close) => (
         <>
           {!isExistingEvent ? null : (
             <DuplicateMenuButton
-              bgColor={bgColor}
               onClick={() => {
                 onDuplicate();
                 close();
@@ -40,7 +37,6 @@ export const EventActionMenu: React.FC<Props> = ({
           )}
           {!isReadOnly && (
             <DeleteMenuButton
-              bgColor={bgColor}
               onClick={() => {
                 onDelete();
                 close();

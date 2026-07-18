@@ -1,36 +1,31 @@
-export const c = {
-  black: "hsla(0 0 0 / 25%)",
-  black100: "hsla(0 0 0 / 100%)",
-  blue400: "hsl(214, 85%, 62%)",
-  blue300: "hsl(195 78 56)",
-  blue200: "hsl(196 60 59)",
-  blue100: "hsl(202 100 67)",
-  blueGray400: "hsl(207 14 57)",
-  blueGray300: "hsl(205 33 61)",
-  blueGray200: "hsl(205 36 62)",
-  blueGray100: "hsl(196 45 78)",
-  darkBlue500: "hsl(220 29 6)",
-  darkBlue400: "hsl(222 28 7)",
-  darkBlue300: "hsl(218 27 8)",
-  darkBlue200: "hsl(218 24 9)",
-  darkBlue100: "hsl(223 27 10)",
-  gray900: "hsl(0 0 0 / 50.2%)",
-  gray800: "hsl(219 18 34 / 20%)",
-  gray700: "hsl(219 18 34 25.1%)",
-  gray600: "hsl(219 8 46 / 20%)",
-  gray500: "hsl(219 8 46 / 20%)",
-  gray400: "hsl(221 9 37)",
-  gray300: "hsl(219 8 46 / 90.2%)",
-  gray200: "hsl(208 13 71 / 54.9%)",
-  gray100: "hsl(47 7 73)",
-  green: "hsl(105 61 62)",
-  orange: "hsl(25 100 63)",
-  purple: "hsl(270 100 83)",
-  red: "hsl(0 63 60)",
-  teal: "hsl(163 44 67)",
-  white200: "hsl(0 0 98)",
-  white100: "hsl(0 0 100)",
-};
+// Dark Abyss role palette. Mirrors the [data-theme="dark-abyss"] block in
+// packages/web/src/index.css (guarded by theme-css.test.ts value-parity
+// assertions). These hex copies exist only where real hex is required —
+// tinycolor math, <canvas>, and third-party inline style objects (react-select,
+// react-toastify) — and do NOT react to a [data-theme] switch. When a second
+// theme lands, those specific consumers need to move to getComputedStyle
+// reads instead of importing this map directly.
+export const colors = {
+  background: "#06090F",
+  surface: "#0C1219",
+  surfacePanel: "#121A23",
+  surfaceRaised: "#18222D",
 
-export const textLight = c.gray100;
-export const textDark = c.darkBlue400;
+  borderStrong: "#4E6374",
+
+  text: "#C6D0D9",
+  textMuted: "#7E8A95",
+  textSubtle: "#4E5A66",
+
+  accent: "#7CC6E4",
+  accentHover: "#8CCDE7",
+  accentStrong: "#598FA4",
+  accentSecondary: "#5C7C92",
+  accentSecondaryHover: "#6B8CA2",
+  onAccent: "#05121A",
+
+  success: "#78AE88",
+  warning: "#C2A578",
+  error: "#C17E70",
+  info: "#6E97BE",
+};

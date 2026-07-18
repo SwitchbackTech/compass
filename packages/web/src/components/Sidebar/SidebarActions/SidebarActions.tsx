@@ -45,7 +45,7 @@ export const SidebarActions = ({
     : "Open shortcuts";
 
   return (
-    <div className="flex h-12 shrink-0 items-center justify-between border-border-primary border-t px-3">
+    <div className="flex h-12 shrink-0 items-center justify-between border-border border-t px-3">
       <div className="flex items-center gap-2">
         <TooltipWrapper
           description={shortcutsActionLabel}
@@ -54,7 +54,7 @@ export const SidebarActions = ({
         >
           <button
             aria-label={shortcutsActionLabel}
-            className="flex size-9 items-center justify-center rounded-default text-text-light-inactive transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            className="flex size-9 items-center justify-center rounded-default text-text-muted transition hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             type="button"
           >
             <KeyboardIcon
@@ -78,7 +78,7 @@ export const SidebarActions = ({
                 ? "Open command palette, calendar syncing"
                 : "Open command palette"
             }
-            className="flex size-9 items-center justify-center rounded-default text-text-light-inactive transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            className="flex size-9 items-center justify-center rounded-default text-text-muted transition hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             type="button"
           >
             <span className="relative flex size-4 items-center justify-center">
@@ -90,7 +90,7 @@ export const SidebarActions = ({
               {isCalendarSyncing ? (
                 <CommandIcon
                   aria-hidden="true"
-                  className="c-sync-icon-wave absolute inset-0 text-text-lighter"
+                  className="c-sync-icon-wave absolute inset-0 text-text"
                   size={16}
                   weight={isCmdPaletteOpen ? "fill" : "regular"}
                 />
@@ -106,7 +106,7 @@ export const SidebarActions = ({
           >
             <button
               aria-label="Get latest version"
-              className="flex size-9 items-center justify-center rounded-default text-accent-primary transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+              className="flex size-9 items-center justify-center rounded-default text-accent transition hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               type="button"
             >
               <ArrowClockwiseIcon aria-hidden="true" size={16} />

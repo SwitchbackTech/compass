@@ -14,7 +14,7 @@ export const WeekDay = ({ day, bgColor, onClick, selected }: WeekDayProps) => {
   return (
     <button
       type="button"
-      className="size-6 cursor-pointer rounded-full border border-[var(--compass-color-border-primary-dark)] bg-[var(--weekday-bg)] text-m transition-all duration-300 focus:shadow-[0_0_0_2px_var(--compass-color-border-primary-dark)] data-[selected=true]:bg-[var(--weekday-selected-bg)] data-[selected=true]:text-[var(--weekday-selected-text)] data-[selected=false]:hover:bg-bg-primary data-[selected=false]:hover:text-text-light"
+      className="size-6 cursor-pointer rounded-full border border-[var(--border-strong)] bg-[var(--weekday-bg)] text-m transition-all duration-300 focus:shadow-[0_0_0_2px_var(--border-strong)] data-[selected=true]:bg-[var(--weekday-selected-bg)] data-[selected=true]:text-[var(--weekday-selected-text)] data-[selected=false]:hover:bg-background data-[selected=false]:hover:text-text-muted"
       data-selected={selected}
       style={
         {

@@ -4,8 +4,8 @@ import * as ReactDatePickerModule from "react-datepicker";
 import { type ReactDatePickerProps } from "react-datepicker";
 import dayjs from "@core/util/date/dayjs";
 import { darken, isDark } from "@web/common/styles/color.utils";
+import { colors } from "@web/common/styles/colors";
 import { type CSSVariables } from "@web/common/styles/css.types";
-import { theme } from "@web/common/styles/theme";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
@@ -49,19 +49,19 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     withTodayButton = true,
     ...props
   } = datePickerProps;
-  const resolvedBgColor = bgColor ?? theme.color.bg.primary;
+  const resolvedBgColor = bgColor ?? colors.background;
   const datePickerStyle: CSSVariables = {
     // Grid (popover) pickers read as an elevated surface a step above the app
     // background; the sidebar picker overrides this to transparent in CSS.
-    "--date-picker-bg": bgColor ?? "var(--compass-color-bg-secondary)",
+    "--date-picker-bg": bgColor ?? "var(--surface)",
   };
   const isDarkBackground = isDark(resolvedBgColor);
   const headerColor =
     view === "sidebar"
-      ? "var(--compass-color-text-light)"
+      ? "var(--text-muted)"
       : isDarkBackground
-        ? "var(--compass-color-text-lighter)"
-        : "var(--compass-color-text-dark)";
+        ? "var(--text)"
+        : "var(--on-accent)";
 
   return (
     <ReactDatePicker
@@ -160,7 +160,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                       type="button"
                       aria-label="Go to this month"
                       className={classNames(
-                        "flex h-6 w-6 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-text-lighter/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
+                        "flex h-6 w-6 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-text/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
                         currentMonth === selectedMonth && "invisible",
                       )}
                       style={{ color: headerColor }}

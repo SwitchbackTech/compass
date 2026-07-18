@@ -61,7 +61,7 @@ export const OverlayPanel = ({
   }, [role]);
 
   const backdropClasses = clsx(
-    "fixed inset-0 flex items-center justify-center bg-bg-primary/85 backdrop-blur-sm",
+    "fixed inset-0 flex items-center justify-center bg-background/85 backdrop-blur-sm",
   );
 
   const panelClasses = clsx(
@@ -69,19 +69,17 @@ export const OverlayPanel = ({
     align === "start" ? "items-start" : "items-center",
     variant === "modal" && [
       widthClassName,
-      "max-w-[90vw] gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]",
+      "max-w-[90vw] gap-6 rounded-xl bg-surface-panel p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]",
     ],
     variant === "status" &&
-      "max-w-sm gap-3 rounded-lg border border-border-primary bg-bg-secondary/90 px-6 py-5 shadow-lg",
+      "max-w-sm gap-3 rounded-lg border border-border bg-surface/90 px-6 py-5 shadow-lg",
   );
 
   const titleClasses = clsx(
-    "m-0 line-clamp-2 w-full min-w-0 font-semibold text-lg text-text-lighter",
+    "m-0 line-clamp-2 w-full min-w-0 font-semibold text-lg text-text",
   );
 
-  const messageClasses = clsx(
-    "m-0 whitespace-pre-line text-base text-text-lighter",
-  );
+  const messageClasses = clsx("m-0 whitespace-pre-line text-base text-text");
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (onDismiss && e.target === e.currentTarget) {
@@ -192,13 +190,13 @@ export const OverlayPanelActionButton = ({
 }: OverlayPanelActionButtonProps) => (
   <button
     className={clsx(
-      "h-11 rounded px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-panel-bg disabled:pointer-events-none disabled:opacity-50",
+      "h-11 rounded px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel disabled:pointer-events-none disabled:opacity-50",
       variant === "primary" &&
-        "bg-accent-primary text-text-dark transition hover:brightness-110",
+        "bg-accent text-on-accent transition hover:brightness-110",
       variant === "destructive" &&
-        "bg-status-error text-text-dark transition hover:brightness-110",
+        "bg-error text-on-accent transition hover:brightness-110",
       variant === "secondary" &&
-        "border border-border-primary bg-panel-badge-bg text-text-lighter transition-colors hover:bg-panel-bg",
+        "border border-border bg-surface-overlay text-text transition-colors hover:bg-surface-panel",
       className,
     )}
     type={type}

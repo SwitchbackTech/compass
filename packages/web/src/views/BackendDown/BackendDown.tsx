@@ -36,10 +36,10 @@ export const BackendDownView = () => {
         🏴‍☠️ A heavy fog has rolled in!
       </h1>
 
-      <p className="max-w-xl text-text-light text-xl">
+      <p className="max-w-xl text-text-muted text-xl">
         You calendar is safe below deck, but the Compass servers are busy
       </p>
-      <p className="max-w-xl text-text-light text-xl">
+      <p className="max-w-xl text-text-muted text-xl">
         Drop an anchor and check back in a moment.
       </p>
 
@@ -50,7 +50,7 @@ export const BackendDownView = () => {
         type="button"
         onClick={handleRetry}
         aria-disabled={isChecking}
-        className="mt-5 cursor-pointer rounded border-2 border-border-primary bg-fg-primary-dark px-4 py-2 font-semibold text-[16px] text-text-lighter transition-all duration-200 ease-in-out hover:brightness-120 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-primary focus-visible:outline-offset-2 aria-disabled:cursor-wait aria-disabled:opacity-70"
+        className="mt-5 cursor-pointer rounded border-2 border-border bg-accent-secondary px-4 py-2 font-semibold text-[16px] text-text transition-all duration-200 ease-in-out hover:brightness-120 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 aria-disabled:cursor-wait aria-disabled:opacity-70"
       >
         {isChecking ? "Scanning the horizon..." : "Try again"}
       </button>

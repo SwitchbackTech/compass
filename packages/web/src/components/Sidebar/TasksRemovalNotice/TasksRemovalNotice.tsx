@@ -58,16 +58,16 @@ export function createTasksRemovalNotice({
     return (
       <section
         aria-label="Tasks removed"
-        className="flex flex-col gap-2 rounded-lg bg-panel-badge-bg p-3 text-xs"
+        className="flex flex-col gap-2 rounded-lg bg-surface-overlay p-3 text-xs"
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="text-text-lighter leading-relaxed">
+          <p className="text-text leading-relaxed">
             We simplified things by removing tasks. Don't worry, you can still
             get that data back.
           </p>
           <button
             aria-label="Dismiss"
-            className="c-focus-ring shrink-0 rounded-xs text-text-light-inactive hover:text-text-lighter"
+            className="c-focus-ring shrink-0 rounded-xs text-text-muted hover:text-text"
             onClick={dismiss}
             type="button"
           >
@@ -76,7 +76,7 @@ export function createTasksRemovalNotice({
         </div>
 
         <button
-          className="c-focus-ring self-start rounded-xs bg-accent-primary px-2 py-1 font-medium text-s text-text-dark hover:brightness-110 disabled:opacity-60"
+          className="c-focus-ring self-start rounded-xs bg-accent px-2 py-1 font-medium text-s text-on-accent hover:brightness-110 disabled:opacity-60"
           disabled={exportStatus === "exporting"}
           onClick={handleExport}
           type="button"
@@ -85,7 +85,7 @@ export function createTasksRemovalNotice({
         </button>
 
         {exportStatus === "error" ? (
-          <p className="text-status-error">Couldn't export your data.</p>
+          <p className="text-error">Couldn't export your data.</p>
         ) : null}
       </section>
     );

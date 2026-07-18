@@ -36,11 +36,11 @@ export const SessionExpiredToast = ({ toastId }: SessionExpiredToastProps) => {
 
   return (
     <div className="flex w-full flex-col gap-2">
-      <p className="text-sm text-text-lighter">
+      <p className="text-sm text-text">
         You've been signed out. Please sign in again.
       </p>
       <button
-        className="w-full rounded bg-fg-primary-dark px-3 py-2 font-medium text-sm text-text-lighter transition-colors hover:bg-[color-mix(in_srgb,var(--color-fg-primary-dark)_90%,white)]"
+        className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-sm text-text transition-colors hover:bg-accent-secondary-hover"
         onClick={handleSignIn}
         type="button"
       >

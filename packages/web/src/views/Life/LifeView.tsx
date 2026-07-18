@@ -49,7 +49,7 @@ function ZoomButton({
   return (
     <button
       aria-label={ariaLabel}
-      className="inline-flex h-9 w-9 items-center justify-center rounded border border-border-primary bg-panel-badge-bg text-text-lighter transition hover:scale-105 hover:bg-panel-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary disabled:pointer-events-none disabled:opacity-50"
+      className="inline-flex h-9 w-9 items-center justify-center rounded border border-border bg-surface-overlay text-text transition hover:scale-105 hover:bg-surface-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50"
       disabled={disabled}
       onClick={onClick}
       type="button"
@@ -77,7 +77,7 @@ function ZoomControls({
           -
         </span>
       </ZoomButton>
-      <span className="min-w-20 text-center font-medium text-sm text-text-light">
+      <span className="min-w-20 text-center font-medium text-sm text-text-muted">
         {Math.round(zoom * 100)}%
       </span>
       <ZoomButton
@@ -133,9 +133,7 @@ export function LifeView({ enableDotTooltips = true, today }: LifeViewProps) {
       const dot = (
         <span
           className={`block h-2 w-2 rounded-[1px] transition-colors ${
-            isFilled
-              ? "bg-accent-primary"
-              : "border border-border-primary bg-bg-primary"
+            isFilled ? "bg-accent" : "border border-border bg-background"
           }`}
           key={weekNumber}
           title={`Week ${weekNumber}`}
@@ -261,16 +259,16 @@ export function LifeView({ enableDotTooltips = true, today }: LifeViewProps) {
   const allowScroll = !isMobile && effectiveScale > 1.001;
 
   return (
-    <main className="min-h-screen overflow-auto bg-bg-primary p-4 md:p-8">
+    <main className="min-h-screen overflow-auto bg-background p-4 md:p-8">
       <div className="mx-auto max-w-7xl">
         <header className="mb-8 text-center">
           <div className="mb-2 flex items-center justify-center gap-2">
-            <h1 className="font-bold font-mono text-4xl text-text-lighter tracking-normal md:text-5xl">
+            <h1 className="font-bold font-mono text-4xl text-text tracking-normal md:text-5xl">
               MY LIFE IN WEEKS
             </h1>
             <LifeAboutDialog />
           </div>
-          <p className="text-text-light">
+          <p className="text-text-muted">
             Each dot represents one week of your life.
           </p>
         </header>
@@ -329,12 +327,10 @@ export function LifeView({ enableDotTooltips = true, today }: LifeViewProps) {
 
         {weeksLived > 0 ? (
           <div className="mb-6 text-center" role="status" aria-live="polite">
-            <p className="font-medium text-lg text-text-lighter">
+            <p className="font-medium text-lg text-text">
               You've lived{" "}
-              <span className="font-bold text-accent-primary">
-                {weeksLived}
-              </span>{" "}
-              weeks ({Math.floor(weeksLived / 52)} years)
+              <span className="font-bold text-accent">{weeksLived}</span> weeks
+              ({Math.floor(weeksLived / 52)} years)
             </p>
           </div>
         ) : null}
@@ -343,7 +339,7 @@ export function LifeView({ enableDotTooltips = true, today }: LifeViewProps) {
 
         <section
           aria-label="Life in weeks visualization"
-          className={`h-[60vh] rounded border border-border-primary p-4 md:p-6 ${
+          className={`h-[60vh] rounded border border-border p-4 md:p-6 ${
             allowScroll ? "c-scroll overflow-auto" : "overflow-hidden"
           }`}
           ref={containerRef}
@@ -374,7 +370,7 @@ export function LifeView({ enableDotTooltips = true, today }: LifeViewProps) {
           </div>
         </section>
 
-        <p className="mt-6 text-center text-text-light text-xs">
+        <p className="mt-6 text-center text-text-muted text-xs">
           {isMobile ? "Pinch " : "Use Ctrl+Scroll "} or use buttons to zoom
         </p>
       </div>

@@ -38,9 +38,9 @@ import { type CommandSection } from "./command-palette.types";
 
 const SYNC_STATUS_VARIANT_CLASSNAME: Record<SyncStatusVariant, string> = {
   syncing: "c-sync-text-wave",
-  healthy: "text-text-lighter",
-  warning: "text-status-warning",
-  error: "text-status-error",
+  healthy: "text-text",
+  warning: "text-warning",
+  error: "text-error",
 };
 
 interface CommandPaletteProps {
@@ -187,7 +187,7 @@ export const CommandPalette = ({
     <FloatingPortal>
       <FloatingOverlay
         lockScroll
-        className="flex justify-center bg-bg-primary/85 backdrop-blur-sm"
+        className="flex justify-center bg-background/85 backdrop-blur-sm"
         style={{ zIndex: Z_INDEX_MODAL }}
       >
         {/* No FloatingFocusManager: virtual list navigation keeps real focus in
@@ -195,7 +195,7 @@ export const CommandPalette = ({
             input on open via the focusInputOnMount callback ref above. */}
         <div
           ref={refs.setFloating}
-          className="mt-[15vh] h-fit w-[640px] max-w-[90vw] overflow-hidden rounded-xl border border-border-primary bg-bg-secondary shadow-[0_16px_48px_var(--color-shadow-default)]"
+          className="mt-[15vh] h-fit w-[640px] max-w-[90vw] overflow-hidden rounded-xl border border-border bg-surface shadow-[0_16px_48px_var(--color-shadow-default)]"
         >
           {syncStatus ? (
             <div
@@ -219,7 +219,7 @@ export const CommandPalette = ({
             value={search}
             placeholder={placeholder}
             aria-label="Command palette search"
-            className="w-full border-border-primary border-b bg-transparent px-4 py-3 text-text-light outline-none placeholder:text-text-lighter focus-visible:border-accent-primary"
+            className="w-full border-border border-b bg-transparent px-4 py-3 text-text-muted outline-none placeholder:text-text focus-visible:border-accent"
             onChange={(event) => {
               setSearch(event.target.value);
               setActiveIndex(0);
@@ -228,22 +228,22 @@ export const CommandPalette = ({
 
           <div className="max-h-[50vh] overflow-y-auto p-2">
             {filteredSections.length === 0 ? (
-              <div className="px-3 py-2 text-text-lighter">
+              <div className="px-3 py-2 text-text">
                 No results for “{search}”
               </div>
             ) : (
               filteredSections.map((section) => (
                 <div key={section.id} className="mb-1">
-                  <div className="px-3 pt-2 pb-1 font-semibold text-text-lighter text-xs uppercase tracking-wide">
+                  <div className="px-3 pt-2 pb-1 font-semibold text-text text-xs uppercase tracking-wide">
                     {section.heading}
                   </div>
                   {section.items.map((item) => {
                     itemIndex += 1;
                     const index = itemIndex;
                     const isActive = activeIndex === index;
-                    const rowClassName = `flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-text-light ${
+                    const rowClassName = `flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-text-muted ${
                       isActive
-                        ? "bg-panel-badge-bg ring-1 ring-accent-primary ring-inset"
+                        ? "bg-surface-overlay ring-1 ring-accent ring-inset"
                         : ""
                     } ${item.disabled ? "cursor-default opacity-50" : ""}`;
 

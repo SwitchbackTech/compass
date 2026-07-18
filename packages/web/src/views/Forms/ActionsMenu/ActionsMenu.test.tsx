@@ -22,9 +22,7 @@ describe("ActionsMenu", () => {
   it("exposes the trigger as a real button with aria-expanded reflecting open state", async () => {
     const user = userEvent.setup();
 
-    renderMenu(
-      <ActionsMenu bgColor="#fff">{() => <TestMenuItem />}</ActionsMenu>,
-    );
+    renderMenu(<ActionsMenu>{() => <TestMenuItem />}</ActionsMenu>);
 
     const trigger = screen.getByRole("button", { name: "Open actions menu" });
     expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -40,9 +38,7 @@ describe("ActionsMenu", () => {
   it("keeps mouse hover from stealing focus from the editor action trigger", async () => {
     const user = userEvent.setup();
 
-    renderMenu(
-      <ActionsMenu bgColor="#fff">{() => <TestMenuItem />}</ActionsMenu>,
-    );
+    renderMenu(<ActionsMenu>{() => <TestMenuItem />}</ActionsMenu>);
 
     const trigger = screen.getByLabelText("Open actions menu");
     trigger.focus();
@@ -59,9 +55,7 @@ describe("ActionsMenu", () => {
   it("keeps the menu mounted when focus moves inside it", async () => {
     const user = userEvent.setup();
 
-    renderMenu(
-      <ActionsMenu bgColor="#fff">{() => <TestMenuItem />}</ActionsMenu>,
-    );
+    renderMenu(<ActionsMenu>{() => <TestMenuItem />}</ActionsMenu>);
 
     await user.click(screen.getByLabelText("Open actions menu"));
 
@@ -76,12 +70,12 @@ describe("ActionsMenu", () => {
     const user = userEvent.setup();
 
     renderMenu(
-      <ActionsMenu bgColor="#fff">
+      <ActionsMenu>
         {() => (
           <>
-            <MenuItem bgColor="#fff">First</MenuItem>
-            <MenuItem bgColor="#fff">Second</MenuItem>
-            <MenuItem bgColor="#fff">Third</MenuItem>
+            <MenuItem>First</MenuItem>
+            <MenuItem>Second</MenuItem>
+            <MenuItem>Third</MenuItem>
           </>
         )}
       </ActionsMenu>,

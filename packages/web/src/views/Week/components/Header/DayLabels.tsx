@@ -21,10 +21,10 @@ export const DayLabels: FC<Props> = ({
     const isCurrentWeek = today.week() === week;
     const isToday = isCurrentWeek && today.format("DD") === day.format("DD");
     const color = day.isBefore(today, "day")
-      ? "var(--compass-color-text-light-inactive)"
+      ? "var(--text-muted)"
       : isToday
-        ? "var(--compass-color-accent-primary)"
-        : "var(--compass-color-text-light)";
+        ? "var(--accent)"
+        : "var(--text-muted)";
 
     return { isToday, color };
   };

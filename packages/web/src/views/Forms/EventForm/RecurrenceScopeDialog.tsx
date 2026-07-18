@@ -23,12 +23,12 @@ const RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
 ];
 
 const updateScopeOptionClassName =
-  "flex min-h-11 cursor-pointer items-center gap-3 rounded px-3 text-base text-text-lighter transition-colors hover:bg-panel-badge-bg";
+  "flex min-h-11 cursor-pointer items-center gap-3 rounded px-3 text-base text-text transition-colors hover:bg-surface-overlay";
 
-const selectedUpdateScopeOptionClassName = "bg-panel-badge-bg";
+const selectedUpdateScopeOptionClassName = "bg-surface-overlay";
 
 const radioDotClassName =
-  "relative flex size-[18px] flex-none rounded-full border-2 border-border-secondary transition-colors after:absolute after:inset-0 after:m-auto after:size-2 after:scale-0 after:rounded-full after:bg-accent-primary after:transition-transform peer-checked:border-accent-primary peer-checked:after:scale-100 peer-focus-visible:ring-2 peer-focus-visible:ring-accent-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-panel-bg";
+  "relative flex size-[18px] flex-none rounded-full border-2 border-border-strong transition-colors after:absolute after:inset-0 after:m-auto after:size-2 after:scale-0 after:rounded-full after:bg-accent after:transition-transform peer-checked:border-accent peer-checked:after:scale-100 peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-panel";
 
 export function RecurrenceScopeDialog() {
   const {

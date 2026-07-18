@@ -37,7 +37,7 @@ export const LoginAbsoluteOverflowLoader = ({
       <div className="c-loader-spinner" />
       {showMessage && (
         <div
-          className="absolute bottom-2/5 left-1/2 w-full max-w-100 -translate-x-1/2 animate-login-message-in text-center text-l text-text-lighter"
+          className="absolute bottom-2/5 left-1/2 w-full max-w-100 -translate-x-1/2 animate-login-message-in text-center text-l text-text"
           key={currentMessage}
         >
           <div className="mb-3.75">{currentMessage}</div>

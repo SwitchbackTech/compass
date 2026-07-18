@@ -175,7 +175,7 @@ export const AuthModal: FC = () => {
           />
         )}
         {showSubmitError ? (
-          <p className="text-center text-sm text-status-error" role="alert">
+          <p className="text-center text-sm text-error" role="alert">
             {submitError}
           </p>
         ) : null}
@@ -183,9 +183,9 @@ export const AuthModal: FC = () => {
         {showGoogleAuth ? (
           <>
             <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-border-primary" />
-              <span className="text-sm text-text-light">or</span>
-              <div className="h-px flex-1 bg-border-primary" />
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-sm text-text-muted">or</span>
+              <div className="h-px flex-1 bg-border" />
             </div>
             <GoogleButton
               onClick={handleGoogleSignIn}
@@ -196,12 +196,12 @@ export const AuthModal: FC = () => {
           </>
         ) : null}
         {/* Privacy & Terms links */}
-        <div className="flex items-center justify-center text-center text-text-light-inactive text-xs">
+        <div className="flex items-center justify-center text-center text-text-muted text-xs">
           <a
             href="https://www.compasscalendar.com/terms"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-text-lighter hover:underline"
+            className="text-text hover:underline"
           >
             Terms
           </a>
@@ -210,7 +210,7 @@ export const AuthModal: FC = () => {
             href="https://www.compasscalendar.com/privacy"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-text-lighter hover:underline"
+            className="text-text hover:underline"
           >
             Privacy
           </a>

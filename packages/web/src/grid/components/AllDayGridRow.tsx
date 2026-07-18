@@ -49,7 +49,7 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
   visibleDates,
 }) => (
   <section
-    className="relative flex w-full shrink-0 items-start bg-bg-primary"
+    className="relative flex w-full shrink-0 items-start bg-background"
     aria-label="All-day events"
     id={rowId}
     ref={allDayRowRef}
@@ -59,7 +59,7 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
     }}
   >
     <div
-      className="absolute top-0 left-[var(--calendar-grid-margin-left)] grid h-full w-[calc(100%_-_var(--calendar-grid-margin-left))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))] before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-0.5 before:bg-grid-line-primary before:content-['']"
+      className="absolute top-0 left-[var(--calendar-grid-margin-left)] grid h-full w-[calc(100%_-_var(--calendar-grid-margin-left))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))] before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-0.5 before:bg-border before:content-['']"
       id={columnsId}
       ref={allDayColumnsRef}
       style={
@@ -75,7 +75,7 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
           <tr className="contents">
             {visibleDates.map(({ date, key, surfaceLabel }) => (
               <th
-                className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-grid-line-primary border-l"
+                className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l"
                 aria-label={surfaceLabel ?? date.format("dddd, MMMM D, YYYY")}
                 key={key}
                 scope="col"

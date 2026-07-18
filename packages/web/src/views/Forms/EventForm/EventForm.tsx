@@ -66,7 +66,7 @@ const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
  * panel background — same recipe as CommandPalette rows / c-button-secondary.
  */
 const FormCard = ({ children }: { children: ReactNode }) => (
-  <div className="flex flex-col gap-2.5 rounded-md bg-panel-badge-bg p-3">
+  <div className="flex flex-col gap-2.5 rounded-md bg-surface-overlay p-3">
     {children}
   </div>
 );
@@ -544,7 +544,6 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
             }
             actions={
               <EventActionMenu
-                bgColor="var(--color-bg-secondary)"
                 isExistingEvent={isExistingEvent}
                 isReadOnly={isReadOnly}
                 onDuplicate={onDuplicateEvent}
@@ -574,7 +573,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                   value={draft.values.calendarId}
                 />
               ) : (
-                <p className="text-text-light text-xs">
+                <p className="text-text-muted text-xs">
                   Calendar: {originalCalendarName}
                 </p>
               )}
@@ -593,7 +592,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           </fieldset>
 
           {isReadOnly && (
-            <p role="note" className="text-text-light text-xs">
+            <p role="note" className="text-text-muted text-xs">
               Read-only — you don't have permission to edit this event.
             </p>
           )}

@@ -326,7 +326,7 @@ export function DayCalendarGrid() {
   return (
     <section
       aria-label="Calendar agenda"
-      className="flex h-full min-w-xs flex-1 flex-col bg-bg-primary px-0.5 pb-0.5"
+      className="flex h-full min-w-xs flex-1 flex-col bg-background px-0.5 pb-0.5"
       onContextMenu={handleContextMenu}
     >
       <DayInteractionCoordinator

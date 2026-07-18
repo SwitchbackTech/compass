@@ -18,14 +18,14 @@ import { useHasPendingEventMutations } from "@web/events/mutations/useEventPendi
 const TEMPORARY_ACCOUNT_MESSAGE = "Sign up to save your changes";
 
 const TOOLTIP_ACTION_BUTTON_CLASSNAME =
-  "c-focus-ring self-start rounded-xs bg-accent-primary px-2 py-1 font-medium text-s text-text-dark hover:brightness-110";
+  "c-focus-ring self-start rounded-xs bg-accent px-2 py-1 font-medium text-s text-on-accent hover:brightness-110";
 
 const HEADING_CLASSNAME =
   "mb-2 flex min-w-0 font-semibold text-sm leading-none";
 
 // Keeps the temporary-account label keyboard-focusable while looking like plain text.
 const TEMPORARY_ACCOUNT_TRIGGER_CLASSNAME =
-  "min-w-0 truncate appearance-none border-0 bg-transparent p-0 text-left font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary";
+  "min-w-0 truncate appearance-none border-0 bg-transparent p-0 text-left font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
 
 /**
  * The calendar list's heading is the account identity (email, or the
@@ -62,7 +62,7 @@ const TemporaryAccountHeader: FC = () => {
           <button
             className={classNames(
               TEMPORARY_ACCOUNT_TRIGGER_CLASSNAME,
-              isDirty ? "c-sync-text-wave" : "text-text-lighter",
+              isDirty ? "c-sync-text-wave" : "text-text",
             )}
             onClick={handleOpenSignUp}
             type="button"
@@ -98,7 +98,7 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
         <span
           className={classNames(
             "min-w-0 truncate",
-            isSyncing ? "c-sync-text-wave" : "text-text-lighter",
+            isSyncing ? "c-sync-text-wave" : "text-text",
           )}
           translate="no"
         >

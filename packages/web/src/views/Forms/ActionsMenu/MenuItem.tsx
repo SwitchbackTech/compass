@@ -16,14 +16,12 @@ export interface MenuItemProps
    * empty), the tooltip is disabled.
    */
   tooltip?: string | string[];
-  bgColor: string;
 }
 
 const MenuItem: React.FC<MenuItemProps> = ({
   tooltip,
   children,
   onClick,
-  bgColor,
   type = "button",
   ...rest
 }) => {
@@ -87,11 +85,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
       role="menuitem"
       tabIndex={tabIndex}
       type={type}
-      className="c-focus-ring flex w-full cursor-pointer items-center gap-2 rounded-xs border-0 bg-(--actions-menu-item-bg) px-2 py-1.5 text-left text-m text-text-light transition-colors hover:bg-text-lighter/10 focus-visible:bg-text-lighter/10"
-      // Paint the resting background through a CSS variable (not an inline
-      // background-color) so the hover/focus utilities above can override it;
-      // an inline background-color would always win over a class.
-      style={{ "--actions-menu-item-bg": bgColor } as React.CSSProperties}
+      className="c-focus-ring flex w-full cursor-pointer items-center gap-2 rounded-xs border-0 bg-transparent px-2 py-1.5 text-left text-m text-text-muted transition-colors hover:bg-text/10 focus-visible:bg-text/10"
     >
       {children}
     </button>

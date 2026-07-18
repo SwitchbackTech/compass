@@ -21,9 +21,9 @@ export const DropZone = ({
       className={classNames(
         "relative rounded-default border-2 border-dashed transition-[background-color,border-color] duration-200",
         isInvalid
-          ? "border-status-error border-solid bg-status-error/10"
+          ? "border-error border-solid bg-error/10"
           : isActive
-            ? "border-border-primary bg-bg-secondary"
+            ? "border-border bg-surface"
             : "border-transparent bg-transparent",
         className,
       )}

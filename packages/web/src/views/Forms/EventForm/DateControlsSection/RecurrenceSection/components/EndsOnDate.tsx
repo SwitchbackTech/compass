@@ -31,7 +31,7 @@ export const EndsOnDate = ({
         className="flex items-start"
         style={{
           cursor: "pointer",
-          borderColor: "var(--compass-color-border-primary-dark)",
+          borderColor: "var(--border-strong)",
           borderBottomWidth: 1,
           borderBottomStyle: "solid",
         }}

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import ReactSelect from "react-select";
 import { brighten, darken } from "@web/common/styles/color.utils";
+import { colors } from "@web/common/styles/colors";
 import { theme } from "@web/common/styles/theme";
 import {
   FREQUENCY_MAP,
@@ -42,7 +43,7 @@ export const FreqSelect = ({
       theme={(selectTheme) => ({
         ...selectTheme,
         borderRadius: 4,
-        primary: theme.color.border.primaryDark, // focus border color
+        primary: colors.borderStrong, // focus border color
         primary25: darken(bgColor), // hover color
         primary50: brighten(bgColor), // selected color
       })}
@@ -58,7 +59,7 @@ export const FreqSelect = ({
             filter: `brightness(95%)`,
           },
           boxShadow: state.isFocused
-            ? `0 0 0 2px ${theme.color.border.primaryDark}`
+            ? `0 0 0 2px ${colors.borderStrong}`
             : "none",
         }),
         indicatorSeparator: () => ({
@@ -84,9 +85,7 @@ export const FreqSelect = ({
               : isFocused
                 ? bgDark
                 : undefined,
-          color: isDisabled
-            ? theme.color.text.lightInactive
-            : theme.color.text.dark,
+          color: isDisabled ? colors.textMuted : colors.onAccent,
           cursor: isDisabled ? "not-allowed" : "default",
           ":active": {
             ...styles[":active"],

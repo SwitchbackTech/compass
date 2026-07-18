@@ -21,7 +21,7 @@ export const SaveSection: React.FC<Props> = ({
   return (
     // Pinned footer bar: EventForm renders this outside its scrollable body,
     // so it stays visible while the fields scroll.
-    <div className="flex items-center justify-end gap-3 border-border-primary border-t px-4 py-3">
+    <div className="flex items-center justify-end gap-3 border-border border-t px-4 py-3">
       {onCancel && (
         <TooltipWrapper onClick={onCancel} description={cancelText}>
           <Btn title={cancelText}>{cancelText}</Btn>

@@ -1,4 +1,4 @@
-const hat = "var(--compass-color-accent-primary)";
+const hat = "var(--accent)";
 const skin = "#F4D7B5";
 const dark = "#0d1017";
 const beard = "#8B5E3C";

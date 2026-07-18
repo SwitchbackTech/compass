@@ -73,9 +73,7 @@ const AllDayEventCardBase = (
   // The fill only ever gets darkened for past events, never lightened, but
   // check dynamically (matching TimedEventCard) rather than assuming
   // a fixed dark title color stays safe if the fill or darken amount changes.
-  const titleColorClassName = isDark(bgColor)
-    ? "text-text-lighter"
-    : "text-text-dark";
+  const titleColorClassName = isDark(bgColor) ? "text-text" : "text-on-accent";
 
   const eventStyle = {
     "--event-bg": bgColor,
@@ -119,7 +117,7 @@ const AllDayEventCardBase = (
       role="button"
       tabIndex={0}
       className={cn(
-        "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-260 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
+        "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-260 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
         {
           "hover:cursor-pointer": !isPlaceholder,
         },

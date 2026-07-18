@@ -8,7 +8,7 @@ import {
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { theme } from "@web/common/styles/theme";
+import { colors } from "@web/common/styles/colors";
 import { type GridEvent as GridEventEntity } from "@web/common/types/web.event.types";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { TimedEventCard } from "@web/grid/components/TimedEventCard";
@@ -105,7 +105,7 @@ const GridEventBase = (
 
   const deckBoxShadow = (() => {
     if (!isDeck) return undefined;
-    const ring = `0 0 0 0.75px ${theme.color.bg.primary}`;
+    const ring = `0 0 0 0.75px ${colors.background}`;
     const drop = isFocused
       ? "0 6px 14px -3px rgba(0,0,0,0.55)"
       : "0 3px 6px -2px rgba(0,0,0,0.4)";

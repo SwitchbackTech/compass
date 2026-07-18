@@ -49,15 +49,15 @@ export const GoogleReconnectToast = ({
 
   return (
     <div className="flex w-full flex-col gap-2">
-      <p className="font-medium text-sm text-text-lighter">
+      <p className="font-medium text-sm text-text">
         Google Calendar disconnected
       </p>
-      <p className="text-sm text-text-lighter">
+      <p className="text-sm text-text">
         This happens when access expires or is revoked. Your events are still
         safe in Google. Reconnect and Compass will re-import them.
       </p>
       <button
-        className="w-full rounded bg-fg-primary-dark px-3 py-2 font-medium text-sm text-text-lighter transition-colors hover:bg-[color-mix(in_srgb,var(--color-fg-primary-dark)_90%,white)]"
+        className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-sm text-text transition-colors hover:bg-accent-secondary-hover"
         onClick={() => void handleReconnect()}
         type="button"
       >

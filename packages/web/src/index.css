@@ -1,122 +1,85 @@
 @import "tailwindcss";
 
 /*
- * Runtime theme values. Future themes override these variables without
- * changing component classes or rebuilding Tailwind utilities.
+ * Theme architecture — semantic role tokens, theme-agnostic. Components only
+ * read the --color-* utilities below; swap the [data-theme] attribute on
+ * <html> to change the whole palette. Values must mirror
+ * common/styles/colors.ts (guarded by theme-css.test.ts).
  */
-:root {
-  --compass-color-accent-primary: hsl(202 100 67);
-  --compass-color-accent-secondary: hsl(196 60 59);
-  --compass-color-accent-primary-shadow: hsl(202 100 42);
-  --compass-color-bg-primary: hsl(222 28 7);
-  --compass-color-bg-secondary: hsl(218 24 9);
-  --compass-color-border-primary: hsl(219 18 34 / 20%);
-  --compass-color-border-primary-dark: hsl(0 0 0 / 50.2%);
-  --compass-color-border-secondary: hsl(47 7 73);
-  --compass-color-date-picker-outside-dark: hsl(47 7 63);
-  --compass-color-date-picker-outside-light: hsl(222 12 17);
-  --compass-color-fg-primary: hsl(47 7 73);
-  --compass-color-fg-primary-dark: hsl(208 13 71 / 54.9%);
-  --compass-color-gradient-accent-light-start: hsl(202 100 67);
-  --compass-color-gradient-accent-light-end: hsl(196 45 78);
-  --compass-color-grid-line-primary: hsl(219 18 34 / 20%);
-  --compass-color-menu-bg: hsl(0 0 98);
-  --compass-color-menu-border: hsl(0 0 93);
-  --compass-color-menu-hover: hsl(0 0 96);
-  --compass-color-menu-text: hsl(0 0 20);
-  --compass-color-menu-tooltip-bg: hsl(0 0 20);
-  --compass-color-menu-tooltip-text: hsl(0 0 100);
-  --compass-color-not-found-gradient-highlight: hsl(218 27 8);
-  --compass-color-overlay-backdrop: hsl(0 0 0 / 80%);
-  --compass-color-panel-badge-bg: hsl(0 0 100 / 7%);
-  --compass-color-panel-bg: hsl(219 8 46 / 20%);
-  --compass-color-panel-scrollbar: hsl(219 8 46 / 20%);
-  --compass-color-panel-scrollbar-active: hsl(221 9 37);
-  --compass-color-panel-shadow: hsl(221 9 37);
-  --compass-color-panel-text: hsl(0 0 98);
-  --compass-color-shadow-default: hsla(0 0 0 / 25%);
-  --compass-color-status-success: hsl(105 61 62);
-  --compass-color-status-error: hsl(0 63 60);
-  --compass-color-status-warning: hsl(38 62 60);
-  --compass-color-status-info: hsl(208 13 71 / 54.9%);
-  --compass-color-tag-one: hsl(202 100 67);
-  --compass-color-tag-two: hsl(105 61 62);
-  --compass-color-tag-three: hsl(270 100 83);
-  --compass-color-text-light: hsl(47 7 73);
-  --compass-color-text-lighter: hsl(0 0 100);
-  /* At 54.9% alpha this measured 3.53:1 against --compass-color-bg-primary,
-     below the 4.5:1 minimum for normal text. 70% composites to ~5.0:1 there
-     (e.g. past-week day labels) and to ~4.9:1 against
-     --compass-color-bg-secondary - the real backdrop for the event form's
-     muted text, whose shell is transparent over the sidebar - so both
-     surfaces clear 4.5:1 while staying muted relative to --color-text-light. */
-  --compass-color-text-light-inactive: hsl(208 13 71 / 70%);
-  --compass-color-text-dark: hsl(222 28 7);
-  --compass-color-text-dark-placeholder: hsl(219 8 46 / 90.2%);
-  --compass-color-text-divider: #5f5f5f;
-  --compass-color-text-gradient-start: hsl(202 100 67);
-  --compass-color-text-gradient-end: hsl(195 78 56);
-  --compass-radius: 4px;
-  --compass-text-m: 0.8125rem;
-  --compass-transition-default: 0.3s;
+
+/* Theme 01 — Dark Abyss (default) */
+:root,
+[data-theme="dark-abyss"] {
+  color-scheme: dark;
+
+  /* Surfaces — deep near-black navy, layered up */
+  --background: #06090f;
+  --surface: #0c1219;
+  --surface-panel: #121a23;
+  --surface-raised: #18222d;
+  --surface-overlay: hsl(0 0 100 / 7%);
+
+  /* Borders */
+  --border: hsl(206 24% 60% / 12%);
+  --border-strong: #4e6374;
+
+  /* Text — cool tinted. text-muted must clear 4.5:1 against --background,
+     --surface, and --surface-raised (menu items sit on the latter) — the
+     lightest of the three is the binding case. */
+  --text: #c6d0d9;
+  --text-muted: #7e8a95;
+  --text-subtle: #4e5a66;
+
+  /* Accents — muted, close in weight */
+  --accent: #7cc6e4;
+  --accent-hover: #8ccde7;
+  --accent-strong: #598fa4; /* pressed / elevated underside */
+  --accent-secondary: #5c7c92;
+  --accent-secondary-hover: #6b8ca2;
+  --on-accent: #05121a; /* text on accent fills */
+
+  /* Status */
+  --success: #78ae88;
+  --warning: #c2a578;
+  --error: #c17e70;
+  --info: #6e97be;
+
+  /* Overlays */
+  --overlay-backdrop: hsl(0 0 0 / 80%);
+  --shadow-default: hsl(0 0 0 / 25%);
+
+  --transition-default: 0.3s;
 }
 
+/* Map roles -> Tailwind color-* utilities. Never changes per theme. */
 @theme inline {
-  --color-accent-primary: var(--compass-color-accent-primary);
-  --color-accent-primary-shadow: var(--compass-color-accent-primary-shadow);
-  --color-accent-secondary: var(--compass-color-accent-secondary);
-  --color-bg-primary: var(--compass-color-bg-primary);
-  --color-bg-secondary: var(--compass-color-bg-secondary);
-  --color-border-primary: var(--compass-color-border-primary);
-  --color-border-primary-dark: var(--compass-color-border-primary-dark);
-  --color-border-secondary: var(--compass-color-border-secondary);
-  --color-date-picker-outside-dark: var(
-    --compass-color-date-picker-outside-dark
-  );
-  --color-date-picker-outside-light: var(
-    --compass-color-date-picker-outside-light
-  );
-  --color-fg-primary: var(--compass-color-fg-primary);
-  --color-fg-primary-dark: var(--compass-color-fg-primary-dark);
-  --color-gradient-accent-light-start: var(
-    --compass-color-gradient-accent-light-start
-  );
-  --color-gradient-accent-light-end: var(
-    --compass-color-gradient-accent-light-end
-  );
-  --color-grid-line-primary: var(--compass-color-grid-line-primary);
-  --color-menu-bg: var(--compass-color-menu-bg);
-  --color-menu-border: var(--compass-color-menu-border);
-  --color-menu-hover: var(--compass-color-menu-hover);
-  --color-menu-text: var(--compass-color-menu-text);
-  --color-menu-tooltip-bg: var(--compass-color-menu-tooltip-bg);
-  --color-menu-tooltip-text: var(--compass-color-menu-tooltip-text);
-  --color-not-found-gradient-highlight: var(
-    --compass-color-not-found-gradient-highlight
-  );
-  --color-overlay-backdrop: var(--compass-color-overlay-backdrop);
-  --color-panel-badge-bg: var(--compass-color-panel-badge-bg);
-  --color-panel-bg: var(--compass-color-panel-bg);
-  --color-panel-scrollbar: var(--compass-color-panel-scrollbar);
-  --color-panel-scrollbar-active: var(--compass-color-panel-scrollbar-active);
-  --color-panel-shadow: var(--compass-color-panel-shadow);
-  --color-panel-text: var(--compass-color-panel-text);
-  --color-shadow-default: var(--compass-color-shadow-default);
-  --color-status-success: var(--compass-color-status-success);
-  --color-status-error: var(--compass-color-status-error);
-  --color-status-warning: var(--compass-color-status-warning);
-  --color-status-info: var(--compass-color-status-info);
-  --color-tag-one: var(--compass-color-tag-one);
-  --color-tag-two: var(--compass-color-tag-two);
-  --color-tag-three: var(--compass-color-tag-three);
-  --color-text-light: var(--compass-color-text-light);
-  --color-text-lighter: var(--compass-color-text-lighter);
-  --color-text-light-inactive: var(--compass-color-text-light-inactive);
-  --color-text-dark: var(--compass-color-text-dark);
-  --color-text-dark-placeholder: var(--compass-color-text-dark-placeholder);
-  --color-text-divider: var(--compass-color-text-divider);
-  --color-text-gradient-start: var(--compass-color-text-gradient-start);
-  --color-text-gradient-end: var(--compass-color-text-gradient-end);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-panel: var(--surface-panel);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-accent-secondary-hover: var(--accent-secondary-hover);
+  --color-on-accent: var(--on-accent);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+
+  --color-overlay-backdrop: var(--overlay-backdrop);
+  --color-shadow-default: var(--shadow-default);
 }
 
 @theme {
@@ -232,7 +195,7 @@
   }
 
   body {
-    background-color: var(--color-bg-primary);
+    background-color: var(--color-background);
   }
 
   #root {
@@ -242,7 +205,7 @@
 }
 
 @utility c-focus-ring {
-  @apply rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-primary focus-visible:ring-offset-1 focus-visible:ring-offset-panel-bg;
+  @apply rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-surface-panel;
 }
 
 @utility c-button {
@@ -269,30 +232,30 @@
 
 @utility c-button-elevated {
   box-shadow:
-    0 3px 0 0 var(--elevated-shadow-color, var(--color-accent-primary-shadow)),
+    0 3px 0 0 var(--elevated-shadow-color, var(--color-accent-strong)),
     0 6px 14px -6px var(--color-shadow-default);
 
   &:hover {
     box-shadow:
-      0 4px 0 0 var(--elevated-shadow-color, var(--color-accent-primary-shadow)),
+      0 4px 0 0 var(--elevated-shadow-color, var(--color-accent-strong)),
       0 10px 18px -6px var(--color-shadow-default);
     transform: translateY(-1px);
   }
 
   &:active {
     box-shadow:
-      0 1px 0 0 var(--elevated-shadow-color, var(--color-accent-primary-shadow)),
+      0 1px 0 0 var(--elevated-shadow-color, var(--color-accent-strong)),
       0 2px 6px -4px var(--color-shadow-default);
     transform: translateY(2px);
   }
 }
 
 @utility c-button-primary {
-  @apply bg-accent-primary text-text-dark hover:brightness-110;
+  @apply bg-accent text-on-accent hover:bg-accent-hover;
 }
 
 @utility c-button-secondary {
-  @apply border border-border-primary bg-panel-badge-bg text-text-lighter hover:bg-panel-bg;
+  @apply border border-border bg-surface-overlay text-text hover:bg-surface-panel;
 }
 
 @utility c-disclosure-content {
@@ -310,10 +273,7 @@
 
 @utility c-text-gradient {
   color: transparent;
-  background: linear-gradient(
-    var(--compass-color-text-gradient-start),
-    var(--compass-color-text-gradient-end)
-  );
+  background: linear-gradient(var(--accent), var(--accent-strong));
   background-clip: text;
   -webkit-background-clip: text;
 }
@@ -322,9 +282,9 @@
   color: transparent;
   background-image: linear-gradient(
     90deg,
-    var(--color-text-light) 0% 38%,
-    var(--color-text-lighter) 50%,
-    var(--color-text-light) 62% 100%
+    var(--color-text-muted) 0% 38%,
+    var(--color-text) 50%,
+    var(--color-text-muted) 62% 100%
   );
   background-size: 250% 100%;
   background-clip: text;
@@ -334,7 +294,7 @@
   @media (prefers-reduced-motion: reduce) {
     animation: none;
     background: none;
-    color: var(--color-text-light);
+    color: var(--color-text-muted);
   }
 }
 
@@ -376,20 +336,16 @@
 }
 
 @utility c-loader-spinner {
-  @apply relative my-15 h-[10em] w-[10em] animate-loader-spin rounded-full border-[1.1em] border-text-lighter/20 border-l-text-lighter text-[4px] -indent-[9999em];
+  @apply relative my-15 h-[10em] w-[10em] animate-loader-spin rounded-full border-[1.1em] border-text/20 border-l-text text-[4px] -indent-[9999em];
   transform: translateZ(0);
 }
 
 @utility c-login-progress {
-  @apply relative h-0.75 w-full overflow-hidden rounded-[3px] bg-border-primary;
+  @apply relative h-0.75 w-full overflow-hidden rounded-[3px] bg-border;
 
   &::after {
     @apply absolute top-0 h-full w-[45%] animate-login-progress content-[""];
-    background: linear-gradient(
-      90deg,
-      var(--compass-color-accent-primary),
-      var(--compass-color-tag-three)
-    );
+    background: linear-gradient(90deg, var(--accent), var(--accent-strong));
   }
 }
 
@@ -397,11 +353,11 @@
  * floating-ui's positioning plus Z_INDEX_FLOATING_MENU, so it carries no
  * position or z-index of its own. */
 @utility c-context-menu {
-  @apply min-w-40 list-none rounded border border-border-primary bg-menu-bg py-[5px] shadow-[0_4px_6px_var(--color-shadow-default)];
+  @apply min-w-40 list-none rounded border border-border bg-surface-raised py-[5px] shadow-[0_4px_6px_var(--color-shadow-default)];
 }
 
 @utility c-tooltip {
-  @apply rounded bg-menu-tooltip-bg px-2 py-1 font-medium text-menu-tooltip-text leading-snug shadow-[0_4px_6px_var(--color-shadow-default)];
+  @apply rounded border border-border bg-surface-raised px-2 py-1 font-medium text-text leading-snug shadow-[0_4px_6px_var(--color-shadow-default)];
   font-size: var(--font-size-s);
 }
 
@@ -410,23 +366,23 @@
 }
 
 @utility c-keycap {
-  @apply inline-flex items-center rounded border border-border-primary bg-panel-bg px-1.5 py-0.5 font-medium text-text-light leading-none;
+  @apply inline-flex items-center rounded border border-border bg-surface-panel px-1.5 py-0.5 font-medium text-text-muted leading-none;
   font-size: var(--font-size-s);
 }
 
 @utility c-context-menu-item {
-  @apply c-focus-ring flex w-full cursor-pointer appearance-none items-center gap-2 whitespace-nowrap border-0 bg-transparent px-3 py-2.5 text-left text-[14px] text-menu-text select-none hover:bg-(--menu-item-hover) focus-visible:bg-(--menu-item-hover) disabled:cursor-wait disabled:opacity-50;
+  @apply c-focus-ring flex w-full cursor-pointer appearance-none items-center gap-2 whitespace-nowrap border-0 bg-transparent px-3 py-2.5 text-left text-[14px] text-text select-none hover:bg-surface-overlay focus-visible:bg-surface-overlay disabled:cursor-wait disabled:opacity-50;
 }
 
 @utility c-not-found {
-  @apply flex h-screen w-screen flex-col items-center justify-center text-text-lighter;
+  @apply flex h-screen w-screen flex-col items-center justify-center text-text;
   background: linear-gradient(
     to right,
-    var(--compass-color-bg-primary),
-    var(--compass-color-bg-primary),
-    var(--compass-color-bg-secondary),
-    var(--compass-color-not-found-gradient-highlight),
-    var(--compass-color-bg-primary)
+    var(--background),
+    var(--background),
+    var(--surface),
+    var(--surface-panel),
+    var(--background)
   );
 }
 
@@ -441,11 +397,11 @@
   --date-picker-hover-bg: color-mix(
     in srgb,
     var(--date-picker-bg) 82%,
-    var(--compass-color-fg-primary)
+    var(--text-muted)
   );
-  --date-picker-hover-text: var(--compass-color-text-lighter);
-  --date-picker-selected-bg: var(--compass-color-accent-primary);
-  --date-picker-selected-text: var(--compass-color-text-dark);
+  --date-picker-hover-text: var(--text);
+  --date-picker-selected-bg: var(--accent);
+  --date-picker-selected-text: var(--on-accent);
 
   &[data-view="sidebar"] {
     background-color: transparent;
@@ -460,7 +416,7 @@
    */
   &:not([data-view="sidebar"]) {
     box-shadow:
-      0 0 0 1px var(--color-border-primary),
+      0 0 0 1px var(--color-border),
       0 8px 24px var(--color-shadow-default);
   }
 
@@ -505,13 +461,13 @@
 
   & .react-datepicker__day-name {
     margin: 0;
-    color: var(--compass-color-text-dark);
+    color: var(--on-accent);
     font-size: 11px;
     opacity: 0.8;
   }
 
   &[data-dark="true"] .react-datepicker__day-name {
-    color: var(--compass-color-text-light);
+    color: var(--text-muted);
   }
 
   &[data-view="sidebar"] .react-datepicker__day-name {
@@ -524,12 +480,12 @@
     margin: 0;
     border: 0;
     border-radius: 50%;
-    color: var(--compass-color-text-dark);
+    color: var(--on-accent);
     line-height: 1.5rem;
   }
 
   &[data-dark="true"] .react-datepicker__day {
-    color: var(--compass-color-text-lighter);
+    color: var(--text);
   }
 
   &[data-view="sidebar"] .react-datepicker__day {
@@ -544,7 +500,7 @@
   }
 
   & .react-datepicker__day:focus-visible {
-    outline: 2px solid var(--compass-color-accent-primary);
+    outline: 2px solid var(--accent);
     outline-offset: 1px;
   }
 
@@ -562,16 +518,16 @@
   }
 
   & .react-datepicker__day--today:not(.react-datepicker__day--selected) {
-    color: var(--compass-color-text-dark);
+    color: var(--on-accent);
     text-decoration: underline;
-    text-decoration-color: var(--compass-color-text-dark);
+    text-decoration-color: var(--on-accent);
     text-underline-offset: 3px;
   }
 
   &[data-view="sidebar"]
     .react-datepicker__day--today:not(.react-datepicker__day--selected) {
-    color: var(--compass-color-accent-primary);
-    text-decoration-color: var(--compass-color-accent-primary);
+    color: var(--accent);
+    text-decoration-color: var(--accent);
   }
 
   & .react-datepicker__day--today:hover {
@@ -580,7 +536,7 @@
   }
 
   & .react-datepicker__day--keyboard-selected {
-    background-color: var(--compass-color-bg-primary);
+    background-color: var(--background);
   }
 
   &[data-view="sidebar"] .react-datepicker__day--keyboard-selected {
@@ -588,12 +544,12 @@
   }
 
   & .react-datepicker__day--outside-month {
-    color: var(--compass-color-date-picker-outside-light);
+    color: var(--text-subtle);
     opacity: 0.8;
   }
 
   &[data-dark="true"] .react-datepicker__day--outside-month {
-    color: var(--compass-color-date-picker-outside-dark);
+    color: var(--text-muted);
   }
 
   &.calendar {
@@ -644,19 +600,19 @@
     &:hover::-webkit-scrollbar-thumb,
     &:focus::-webkit-scrollbar-thumb,
     &:active::-webkit-scrollbar-thumb {
-      background-color: var(--color-panel-scrollbar);
+      background-color: var(--color-border);
     }
 
     @-moz-document url-prefix() {
       & {
         scrollbar-width: thin;
-        scrollbar-color: var(--color-panel-scrollbar) transparent;
+        scrollbar-color: var(--color-border) transparent;
       }
     }
 
     /* Even more visible on hover of the thumb itself */
     &:hover::-webkit-scrollbar-thumb:hover {
-      background-color: var(--color-panel-scrollbar-active);
+      background-color: var(--color-border-strong);
     }
   }
 }
@@ -683,10 +639,10 @@
 
 @utility c-recurrence-toggle {
   @apply inline-flex items-center gap-1 rounded-sm border border-transparent bg-transparent px-2 py-0.5 transition-all duration-300;
-  color: var(--compass-color-text-light);
+  color: var(--text-muted);
   font-size: var(--font-size-m);
   &[data-repeat="false"] {
-    color: var(--compass-color-text-light-inactive);
+    color: var(--text-muted);
     opacity: 0.85;
   }
   &[data-disabled="true"] {
@@ -697,7 +653,7 @@
     background: hsl(0 0 100 / 12%);
   }
   &:focus-visible {
-    box-shadow: 0 0 0 2px var(--compass-color-accent-primary);
+    box-shadow: 0 0 0 2px var(--accent);
   }
   & svg {
     margin-right: 0.25rem;
@@ -719,49 +675,49 @@
   & .timepicker__option--is-selected,
   & .timepicker__option--is-focused {
     background: hsl(0 0 100 / 10%);
-    color: var(--compass-color-text-lighter);
+    color: var(--text);
   }
   & .timepicker__control {
     min-height: 38px;
     border: 0;
-    border-radius: var(--compass-radius);
-    background: var(--color-panel-badge-bg);
+    border-radius: var(--radius-default);
+    background: var(--color-surface-overlay);
     box-shadow: none;
-    transition: var(--compass-transition-default);
+    transition: var(--transition-default);
   }
   & .timepicker__control:hover {
     background: hsl(0 0 100 / 12%);
   }
   & .timepicker__control--is-focused {
-    box-shadow: 0 0 0 2px var(--compass-color-accent-primary);
+    box-shadow: 0 0 0 2px var(--accent);
   }
   & .timepicker__value-container {
     height: 100%;
     padding: 0 8px;
   }
   & .timepicker__single-value {
-    color: var(--compass-color-text-lighter);
+    color: var(--text);
   }
   & .timepicker__menu {
     min-width: 150px;
-    border: 1px solid var(--color-border-primary);
+    border: 1px solid var(--color-border);
     border-radius: 2px;
-    background: var(--compass-color-bg-secondary);
+    background: var(--surface);
   }
   & .timepicker__menu-list {
     padding: 0;
-    font-size: var(--compass-text-m);
-    transition: var(--compass-transition-default);
+    font-size: var(--font-size-m);
+    transition: var(--transition-default);
   }
   & .timepicker__menu-list::-webkit-scrollbar {
     width: 8px;
   }
   & .timepicker__menu-list::-webkit-scrollbar-thumb {
-    border-radius: var(--compass-radius);
-    background: var(--color-panel-scrollbar);
+    border-radius: var(--radius-default);
+    background: var(--color-border);
   }
   & .timepicker__menu-list::-webkit-scrollbar-thumb:hover {
-    background: var(--color-panel-scrollbar-active);
+    background: var(--color-border-strong);
     transition: background-color 0.2s;
   }
 }
