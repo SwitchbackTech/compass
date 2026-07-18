@@ -3,7 +3,7 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { useCalendarVisibility } from "@web/calendars/useCalendarVisibility";
-import { PlannerCalendarListHeader } from "./PlannerCalendarListHeader";
+import { CalendarListHeader } from "./CalendarListHeader";
 
 // Primary calendars first, then alphabetical by name; the local calendar
 // (offline/anonymous synthesized calendar, or the server's own local
@@ -25,9 +25,9 @@ interface Props {
   Header?: FC;
 }
 
-export const PlannerCalendarList: FC<Props> = ({
+export const CalendarList: FC<Props> = ({
   coalesceDelayMs,
-  Header = PlannerCalendarListHeader,
+  Header = CalendarListHeader,
 }) => {
   const { authenticated } = useSession();
   const { data, isPending, isError, refetch } = useCalendarsQuery();

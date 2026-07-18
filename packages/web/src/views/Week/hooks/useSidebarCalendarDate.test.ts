@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerSidebarCalendarDate";
+import { useSidebarCalendarDate } from "@web/views/Week/hooks/useSidebarCalendarDate";
 import { describe, expect, it, mock } from "bun:test";
 
 const dateFormat = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
@@ -9,13 +9,13 @@ const expectDate = (date: Dayjs, value: string) => {
   expect(date.format(dateFormat)).toBe(value);
 };
 
-describe("usePlannerSidebarCalendarDate", () => {
+describe("useSidebarCalendarDate", () => {
   it("keeps the clicked weekday selected after the week view moves to that week", async () => {
     const goToDate = mock();
     const today = dayjs("2026-05-11");
     const { result, rerender } = renderHook(
       ({ viewEnd, viewStart }) =>
-        usePlannerSidebarCalendarDate({
+        useSidebarCalendarDate({
           goToDate,
           today,
           viewEnd,
@@ -51,7 +51,7 @@ describe("usePlannerSidebarCalendarDate", () => {
     const viewStart = dayjs("2026-05-10");
     const viewEnd = dayjs("2026-05-16");
     const { result, rerender } = renderHook(
-      (props) => usePlannerSidebarCalendarDate(props),
+      (props) => useSidebarCalendarDate(props),
       {
         initialProps: {
           goToDate,
@@ -78,7 +78,7 @@ describe("usePlannerSidebarCalendarDate", () => {
     const today = dayjs("2026-05-11");
     const { result, rerender } = renderHook(
       ({ viewEnd, viewStart }) =>
-        usePlannerSidebarCalendarDate({
+        useSidebarCalendarDate({
           goToDate,
           today,
           viewEnd,

@@ -4,15 +4,15 @@ import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 const TOGGLE_SHORTCUTS_HOTKEY = { key: "?", shift: true } as const;
 const TOGGLE_SHORTCUTS_SLASH_HOTKEY = { key: "/", shift: true } as const;
 
-interface UsePlannerShortcutsArgs {
+interface UseSidebarShortcutsArgs {
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
 }
 
-export function usePlannerShortcuts({
+export function useSidebarShortcuts({
   isSidebarOpen,
   onToggleSidebar,
-}: UsePlannerShortcutsArgs) {
+}: UseSidebarShortcutsArgs) {
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
 
   const closeShortcuts = useCallback(() => {

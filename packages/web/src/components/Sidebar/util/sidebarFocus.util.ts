@@ -3,7 +3,7 @@ import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 /**
  * Focuses the month picker's tab-stoppable day (react-datepicker keeps
  * exactly one day at tabindex=0) so arrow keys navigate dates right away,
- * falling back to the first interactive element in the planner sidebar.
+ * falling back to the first interactive element in the sidebar.
  * Used by the Day and Week views' "u" shortcut. Returns whether a focus
  * target was found.
  */

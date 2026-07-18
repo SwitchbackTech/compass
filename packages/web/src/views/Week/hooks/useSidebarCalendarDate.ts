@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 
-interface PlannerSidebarCalendarDateArgs {
+interface SidebarCalendarDateArgs {
   currentDate: Dayjs;
   today: Dayjs;
   viewEnd: Dayjs;
   viewStart: Dayjs;
 }
 
-interface UsePlannerSidebarCalendarDateArgs {
+interface UseSidebarCalendarDateArgs {
   goToDate: (date: Dayjs) => void;
   today: Dayjs;
   viewEnd: Dayjs;
@@ -17,12 +17,12 @@ interface UsePlannerSidebarCalendarDateArgs {
 
 const dateFormat = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 
-function resolvePlannerSidebarCalendarDate({
+function resolveSidebarCalendarDate({
   currentDate,
   today,
   viewEnd,
   viewStart,
-}: PlannerSidebarCalendarDateArgs) {
+}: SidebarCalendarDateArgs) {
   if (currentDate.isBetween(viewStart, viewEnd, "day", "[]")) {
     return currentDate;
   }
@@ -34,14 +34,14 @@ function resolvePlannerSidebarCalendarDate({
   return viewStart;
 }
 
-export function usePlannerSidebarCalendarDate({
+export function useSidebarCalendarDate({
   goToDate,
   today,
   viewEnd,
   viewStart,
-}: UsePlannerSidebarCalendarDateArgs) {
+}: UseSidebarCalendarDateArgs) {
   const [calendarDate, setCalendarDate] = useState(() =>
-    resolvePlannerSidebarCalendarDate({
+    resolveSidebarCalendarDate({
       currentDate: today,
       today,
       viewEnd,
@@ -59,7 +59,7 @@ export function usePlannerSidebarCalendarDate({
     const nextViewStart = dayjs(viewStartKey, dateFormat);
 
     setCalendarDate((currentDate) =>
-      resolvePlannerSidebarCalendarDate({
+      resolveSidebarCalendarDate({
         currentDate,
         today: nextToday,
         viewEnd: nextViewEnd,

@@ -3,7 +3,7 @@ import { persistentBrowserStore } from "@web/common/storage/browser-key-value.st
 import {
   clampSidebarWidth,
   SIDEBAR_DEFAULT_WIDTH,
-} from "@web/components/PlannerSidebar/storage/sidebar-width.constants";
+} from "@web/components/Sidebar/storage/sidebar-width.constants";
 
 export function readSidebarWidth(): number {
   const stored = persistentBrowserStore.get(STORAGE_KEYS.SIDEBAR_WIDTH);

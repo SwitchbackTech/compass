@@ -33,7 +33,7 @@ const TEMPORARY_ACCOUNT_TRIGGER_CLASSNAME =
  * title, and carries the syncing wave shimmer plus the sign-up-to-save CTA
  * for anonymous users. Detailed sync status lives in the command palette.
  */
-export const PlannerCalendarListHeader: FC = () => {
+export const CalendarListHeader: FC = () => {
   const { email } = useUser();
 
   if (!email) {

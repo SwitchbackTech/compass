@@ -46,7 +46,7 @@ export function WelcomeModal() {
   if (!visible) return null;
 
   // Fade the backdrop and gently scale the panel before unmounting, so the
-  // first reveal of the planner underneath feels smooth rather than abrupt.
+  // first reveal of the sidebar underneath feels smooth rather than abrupt.
   const dismiss = () => {
     if (closing) return;
     markWelcomeSeen();

@@ -21,7 +21,7 @@ import { describe, expect, it } from "bun:test";
 
 // This suite exercises the real useCalendarLookup -> resolveCalendarCardIdentity
 // -> card chain end to end (calendars seeded through the query cache, exactly
-// as PlannerCalendarList.test.tsx seeds calendars.query.ts), rather than
+// as CalendarList.test.tsx seeds calendars.query.ts), rather than
 // stubbing the resolved identity - the id -> name resolution and the
 // single-calendar gate are the behavior under test, not just the card's
 // rendering of a given prop.

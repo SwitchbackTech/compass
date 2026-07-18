@@ -2,14 +2,14 @@ import { type HTMLAttributes, type ReactNode } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
-import { PlannerCalendarList } from "./PlannerCalendarList/PlannerCalendarList";
-import { PlannerMonthPicker } from "./PlannerMonthPicker/PlannerMonthPicker";
-import { PlannerSidebarActions } from "./PlannerSidebarActions/PlannerSidebarActions";
+import { CalendarList } from "./CalendarList/CalendarList";
+import { MonthPicker } from "./MonthPicker/MonthPicker";
 import { ShortcutsOverlay } from "./ShortcutsOverlay/ShortcutsOverlay";
+import { SidebarActions } from "./SidebarActions/SidebarActions";
 import { TasksRemovalNotice } from "./TasksRemovalNotice/TasksRemovalNotice";
 import { UpNextCard } from "./UpNextCard/UpNextCard";
 
-export interface PlannerSidebarProps extends HTMLAttributes<HTMLDivElement> {
+export interface SidebarProps extends HTMLAttributes<HTMLDivElement> {
   calendarDate: Dayjs;
   /**
    * The view's event-details form. Shown in place of the sidebar's normal
@@ -28,24 +28,24 @@ export interface PlannerSidebarProps extends HTMLAttributes<HTMLDivElement> {
   shortcutsViewLabel?: string;
 }
 
-type PlannerSidebarDependencies = {
-  PlannerCalendarList: typeof PlannerCalendarList;
-  PlannerMonthPicker: typeof PlannerMonthPicker;
-  PlannerSidebarActions: typeof PlannerSidebarActions;
+type SidebarDependencies = {
+  CalendarList: typeof CalendarList;
+  MonthPicker: typeof MonthPicker;
+  SidebarActions: typeof SidebarActions;
   ShortcutsOverlay: typeof ShortcutsOverlay;
   TasksRemovalNotice: typeof TasksRemovalNotice;
   UpNextCard: typeof UpNextCard;
 };
 
-export function createPlannerSidebar({
-  PlannerCalendarList: PlannerCalendarListComponent,
-  PlannerMonthPicker: PlannerMonthPickerComponent,
-  PlannerSidebarActions: PlannerSidebarActionsComponent,
+export function createSidebar({
+  CalendarList: CalendarListComponent,
+  MonthPicker: MonthPickerComponent,
+  SidebarActions: SidebarActionsComponent,
   ShortcutsOverlay: ShortcutsOverlayComponent,
   TasksRemovalNotice: TasksRemovalNoticeComponent,
   UpNextCard: UpNextCardComponent,
-}: PlannerSidebarDependencies) {
-  return function PlannerSidebar({
+}: SidebarDependencies) {
+  return function Sidebar({
     calendarDate,
     eventDetails,
     isEventDetailsOpen = false,
@@ -58,13 +58,13 @@ export function createPlannerSidebar({
     shortcutSections,
     shortcutsViewLabel,
     ...props
-  }: PlannerSidebarProps) {
+  }: SidebarProps) {
     const showEventDetails = Boolean(eventDetails) && isEventDetailsOpen;
 
     return (
       <aside
         {...props}
-        aria-label="Planner sidebar"
+        aria-label="Sidebar"
         className="relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-panel-bg pt-5 text-panel-text"
         id={ID_SIDEBAR}
       >
@@ -79,19 +79,19 @@ export function createPlannerSidebar({
           </section>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-4 pb-5 [scrollbar-gutter:stable]">
-            <PlannerMonthPickerComponent
+            <MonthPickerComponent
               monthsShown={monthsShown}
               onSelectDate={onSelectDate}
               onToggleSidebar={onToggleSidebar}
               selectedDate={calendarDate}
             />
             <UpNextCardComponent />
-            <PlannerCalendarListComponent />
+            <CalendarListComponent />
             <TasksRemovalNoticeComponent />
           </div>
         )}
 
-        <PlannerSidebarActionsComponent
+        <SidebarActionsComponent
           isShortcutsOpen={isShortcutsOpen}
           onToggleShortcuts={onToggleShortcuts}
         />
@@ -107,10 +107,10 @@ export function createPlannerSidebar({
   };
 }
 
-export const PlannerSidebar = createPlannerSidebar({
-  PlannerCalendarList,
-  PlannerMonthPicker,
-  PlannerSidebarActions,
+export const Sidebar = createSidebar({
+  CalendarList,
+  MonthPicker,
+  SidebarActions,
   ShortcutsOverlay,
   TasksRemovalNotice,
   UpNextCard,

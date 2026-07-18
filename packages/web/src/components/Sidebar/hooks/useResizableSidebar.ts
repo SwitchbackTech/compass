@@ -6,11 +6,11 @@ import {
   SIDEBAR_DIVIDER_WIDTH,
   SIDEBAR_MAX_WIDTH,
   SIDEBAR_MIN_WIDTH,
-} from "@web/components/PlannerSidebar/storage/sidebar-width.constants";
+} from "@web/components/Sidebar/storage/sidebar-width.constants";
 import {
   readSidebarWidth,
   writeSidebarWidth,
-} from "@web/components/PlannerSidebar/storage/sidebar-width.storage";
+} from "@web/components/Sidebar/storage/sidebar-width.storage";
 
 // The calendar area must keep at least this much room, so a drag can never
 // squeeze it below a usable width.

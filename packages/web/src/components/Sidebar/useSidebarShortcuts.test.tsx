@@ -2,24 +2,24 @@ import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
-import { usePlannerShortcuts } from "./usePlannerShortcuts";
+import { useSidebarShortcuts } from "./useSidebarShortcuts";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 function wrapper({ children }: PropsWithChildren) {
   return <HotkeysProvider>{children}</HotkeysProvider>;
 }
 
-describe("usePlannerShortcuts", () => {
+describe("useSidebarShortcuts", () => {
   beforeEach(() => {
     HotkeyManager.resetInstance();
   });
 
-  it("opens the planner sidebar before opening shortcuts with ?", async () => {
+  it("opens the sidebar before opening shortcuts with ?", async () => {
     const onToggleSidebar = mock();
 
     const { result } = renderHook(
       () =>
-        usePlannerShortcuts({
+        useSidebarShortcuts({
           isSidebarOpen: false,
           onToggleSidebar,
         }),
@@ -44,7 +44,7 @@ describe("usePlannerShortcuts", () => {
 
     const { result } = renderHook(
       () =>
-        usePlannerShortcuts({
+        useSidebarShortcuts({
           isSidebarOpen: true,
           onToggleSidebar,
         }),
@@ -80,7 +80,7 @@ describe("usePlannerShortcuts", () => {
 
     const { result } = renderHook(
       () =>
-        usePlannerShortcuts({
+        useSidebarShortcuts({
           isSidebarOpen: true,
           onToggleSidebar,
         }),
@@ -100,12 +100,12 @@ describe("usePlannerShortcuts", () => {
     });
   });
 
-  it("closes shortcuts when the planner sidebar closes", async () => {
+  it("closes shortcuts when the sidebar closes", async () => {
     const onToggleSidebar = mock();
 
     const { rerender, result } = renderHook(
       ({ isSidebarOpen }) =>
-        usePlannerShortcuts({
+        useSidebarShortcuts({
           isSidebarOpen,
           onToggleSidebar,
         }),
@@ -135,7 +135,7 @@ describe("usePlannerShortcuts", () => {
 
     const { result } = renderHook(
       () =>
-        usePlannerShortcuts({
+        useSidebarShortcuts({
           isSidebarOpen: true,
           onToggleSidebar,
         }),

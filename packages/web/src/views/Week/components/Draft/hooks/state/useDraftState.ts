@@ -73,7 +73,7 @@ export const useDraftState = () => {
     "startDate" | "endDate" | null
   >("endDate");
   // Form-open lives in the draft store (not local state) so the shared
-  // PlannerSidebar can swap its body for the event-details panel from any
+  // Sidebar can swap its body for the event-details panel from any
   // view. Week reads/writes it through the same shape as the old useState
   // pair.
   const isFormOpen = useDraftStore((state) =>
