@@ -21,6 +21,18 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { getDragDurationMinutes } from "./drag-duration.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
+// useCalendarsQuery (called by useDraftActions) reads useSession() to decide
+// its anon-vs-authenticated branch. mock.module on that path is process-wide
+// and several sibling test files register it without restoring it (see
+// CalendarList.test.tsx), so this file can inherit whatever value another
+// file left behind depending on cross-file load order. Registering it here
+// too - matching the real SessionContext default (no SessionProvider is
+// mounted in this file's tests) - keeps this file's tests deterministic
+// regardless of what any other file does.
+mock.module("@web/auth/compass/session/useSession", () => ({
+  useSession: () => ({ authenticated: false, setAuthenticated: () => {} }),
+}));
+
 let currentState = createInitialState();
 
 const { useDraftActions } =

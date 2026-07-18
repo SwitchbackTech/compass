@@ -16,19 +16,34 @@ import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
 
-// Mocked at the hook (several sibling test files, e.g. useAuthCmdItems.test.ts,
-// already mock.module this same path without restoring it - mock.module is
-// process-wide, so whichever file registers last "wins" for every later
-// resolution). afterEach below leaves a valid (never `undefined`) return value
-// configured rather than resetting, so a file that runs after this one and
-// inherits this mock without configuring its own doesn't crash destructuring
-// `useSession()`'s result.
+// mock.module is process-wide and not reliably restorable, so the real hook
+// is captured up front and a flag (flipped off in afterAll) decides which
+// implementation runs on each call - the same technique used in
+// SidebarActions.test.tsx for useVersionCheck. This lets a file that runs
+// after this one (e.g. useDraftActions.test.ts) get the real useSession back
+// instead of permanently inheriting this file's mock.
+const actualUseSession = (await import("@web/auth/compass/session/useSession"))
+  .useSession;
+let isSessionMocked = true;
 const mockUseSession = mock();
 mock.module("@web/auth/compass/session/useSession", () => ({
-  useSession: mockUseSession,
+  useSession: (...args: Parameters<typeof actualUseSession>) =>
+    isSessionMocked ? mockUseSession(...args) : actualUseSession(...args),
 }));
+
+afterAll(() => {
+  isSessionMocked = false;
+});
 
 // CalendarList.tsx is already cached by the time this file runs -
 // Sidebar.test.tsx imports createSidebar from "./Sidebar",
@@ -102,10 +117,6 @@ describe("CalendarList", () => {
 
   afterEach(() => {
     BaseApi.defaults.adapter = undefined;
-    // Leave a *valid* value configured (not a full mockReset, which would make
-    // the mock return `undefined` and crash any later file's destructure of
-    // useSession()'s result if this leaked mock.module registration is still
-    // active for them - see the top-of-file comment).
     mockUseSession.mockReturnValue({
       authenticated: false,
       setAuthenticated: () => {},
