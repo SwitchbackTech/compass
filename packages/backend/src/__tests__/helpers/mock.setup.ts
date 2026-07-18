@@ -20,6 +20,7 @@ import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/facto
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
+import { beforeEach } from "bun:test";
 import { randomUUID } from "node:crypto";
 
 export interface CompassTestState {
