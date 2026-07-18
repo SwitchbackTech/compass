@@ -22,6 +22,15 @@ import { googleWatchService } from "@backend/sync/services/watch/google-watch.se
 import { googleWatchMaintenanceService } from "@backend/sync/services/watch/google-watch-maintenance.service";
 import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import userService from "@backend/user/services/user.service";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 describe("googleWatchMaintenanceService", () => {
   beforeAll(initSupertokens);
@@ -86,7 +95,7 @@ describe("googleWatchMaintenanceService", () => {
     // stopWatch's already-covered behavior.
     jest
       .spyOn(googleWatchService, "stopWatch")
-      .mockRejectedValue(invalidGrant400Error);
+      .mockImplementation(() => Promise.reject(invalidGrant400Error));
     const publishSyncStatusSpy = jest.spyOn(sseServer, "publishSyncStatus");
 
     const result =

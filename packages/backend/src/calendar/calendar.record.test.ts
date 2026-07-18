@@ -6,6 +6,7 @@ import {
   GoogleCalendarSourceRecordSchema,
   LocalCalendarSourceRecordSchema,
 } from "@backend/calendar/calendar.record";
+import { describe, expect, it } from "bun:test";
 
 const baseRecord = () => ({
   _id: new ObjectId(),

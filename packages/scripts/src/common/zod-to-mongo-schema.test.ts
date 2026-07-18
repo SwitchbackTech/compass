@@ -4,6 +4,7 @@ import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import { z } from "zod/v4";
 import { type JSONSchema } from "zod/v4/core";
 import { zObjectId, zObjectIdMini } from "@core/types/type.utils";
+import { describe, expect, it } from "bun:test";
 
 describe("zodToMongoSchema", () => {
   it("should convert zod object properly", () => {

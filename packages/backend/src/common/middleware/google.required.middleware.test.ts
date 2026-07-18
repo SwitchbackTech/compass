@@ -8,6 +8,7 @@ import {
   requireGoogleConnectionFrom,
   requireGoogleConnectionSession,
 } from "@backend/common/middleware/google.required.middleware";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 jest.mock("@backend/common/guards/google.guard", () => ({
   requireGoogleConnection: jest.fn(),
@@ -80,7 +81,9 @@ describe("google.required.middleware", () => {
         Status.BAD_REQUEST,
         true,
       );
-      mockRequireGoogleConnection.mockRejectedValue(baseError);
+      mockRequireGoogleConnection.mockImplementation(() =>
+        Promise.reject(baseError),
+      );
 
       await requireGoogleConnectionSession(
         mockReq as Parameters<typeof requireGoogleConnectionSession>[0],
@@ -102,7 +105,9 @@ describe("google.required.middleware", () => {
         session: { getUserId: () => userId },
       };
       const unexpectedError = new Error("Database connection failed");
-      mockRequireGoogleConnection.mockRejectedValue(unexpectedError);
+      mockRequireGoogleConnection.mockImplementation(() =>
+        Promise.reject(unexpectedError),
+      );
 
       await requireGoogleConnectionSession(
         mockReq as Parameters<typeof requireGoogleConnectionSession>[0],

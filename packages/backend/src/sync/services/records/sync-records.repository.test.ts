@@ -8,6 +8,14 @@ import {
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import syncRecords from "./sync-records.repository";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 describe("syncRecords", () => {
   beforeAll(initSupertokens);

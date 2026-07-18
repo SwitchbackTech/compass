@@ -4,6 +4,7 @@ import {
   analyzeReplace,
 } from "@backend/event/classes/compass.event.parser";
 import { type EventRecord } from "@backend/event/event.record";
+import { describe, expect, it } from "bun:test";
 
 const now = new Date("2026-07-10T00:00:00.000Z");
 const calendarId = new ObjectId();

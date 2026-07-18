@@ -26,6 +26,15 @@ import {
 } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 const FAR_FUTURE = () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
@@ -332,7 +341,7 @@ describe("googleWatchRepairService", () => {
 
       jest
         .spyOn(gcalService, "getEvents")
-        .mockRejectedValueOnce(invalidSyncTokenError);
+        .mockImplementationOnce(() => Promise.reject(invalidSyncTokenError));
       const fullRepairSpy = jest
         .spyOn(googleCalendarSyncService, "repairGoogleCalendarSync")
         .mockResolvedValue(undefined);
@@ -366,7 +375,7 @@ describe("googleWatchRepairService", () => {
 
       jest
         .spyOn(gcalService, "getEvents")
-        .mockRejectedValueOnce(invalidGrant400Error);
+        .mockImplementationOnce(() => Promise.reject(invalidGrant400Error));
       const publishSyncStatusSpy = jest.spyOn(sseServer, "publishSyncStatus");
 
       const result =

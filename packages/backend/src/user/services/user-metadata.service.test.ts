@@ -16,6 +16,15 @@ import {
 } from "@backend/sync/services/google-sync/google-sync.activity";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock factory spreads requireActual
 jest.mock("@backend/sync/services/watch/google-watch-config", () => ({

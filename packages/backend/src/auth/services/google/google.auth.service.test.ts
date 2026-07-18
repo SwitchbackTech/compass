@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type Credentials, type TokenPayload } from "google-auth-library";
+import { Logger } from "@core/logger/winston.logger";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
   cleanupCollections,
@@ -19,31 +20,14 @@ import {
   type AuthDecision,
   type GoogleSignInSuccess,
 } from "./google.auth.types";
-
-type MockLoggerModule = {
-  __mockLogger: {
-    debug: jest.Mock;
-    error: jest.Mock;
-    info: jest.Mock;
-    verbose: jest.Mock;
-    warn: jest.Mock;
-  };
-};
-
-jest.mock("@core/logger/winston.logger", () => {
-  const mockLogger: MockLoggerModule["__mockLogger"] = {
-    debug: jest.fn(),
-    error: jest.fn(),
-    info: jest.fn(),
-    verbose: jest.fn(),
-    warn: jest.fn(),
-  };
-
-  return {
-    __mockLogger: mockLogger,
-    Logger: jest.fn(() => mockLogger),
-  };
-});
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 jest.mock("@backend/auth/services/google/util/google.auth.util", () => {
   const actual = jest.requireActual<typeof GoogleAuthUtilModule>(
@@ -85,9 +69,16 @@ describe("googleAuthService", () => {
       ({
         access_token: faker.internet.jwt(),
       }) as Pick<Credentials, "refresh_token" | "access_token">;
+    // The repo-wide winston mock returns one stable logger per name, so this
+    // is the instance the service captured at import (`Logger("app:auth.google.service")`).
     const getMockLogger = () =>
-      (jest.requireMock("@core/logger/winston.logger") as MockLoggerModule)
-        .__mockLogger;
+      Logger("app:auth.google.service") as unknown as {
+        debug: jest.Mock;
+        error: jest.Mock;
+        info: jest.Mock;
+        verbose: jest.Mock;
+        warn: jest.Mock;
+      };
 
     beforeEach(() => {
       mockDetermineGoogleAuthMode.mockReset();
@@ -357,7 +348,7 @@ describe("googleAuthService", () => {
       const restartError = new Error("sync failed");
       const restartSpy = jest
         .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
-        .mockRejectedValue(restartError);
+        .mockImplementation(() => Promise.reject(restartError));
 
       await userService.pruneGoogleData(compassUserId);
 

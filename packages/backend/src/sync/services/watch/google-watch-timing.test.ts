@@ -6,6 +6,7 @@ import {
   syncExpired,
   syncExpiresSoon,
 } from "@backend/sync/services/watch/google-watch-timing";
+import { describe, expect, it } from "bun:test";
 
 describe("googleWatchTiming", () => {
   describe("getChannelExpiration", () => {

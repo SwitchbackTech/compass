@@ -13,6 +13,7 @@ import {
   buildEventRecord,
   seedGoogleCalendar,
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
+import { afterAll, beforeEach, describe, expect, it } from "bun:test";
 
 const seedLocalCalendar = async (userId: ObjectId) => {
   const record = CalendarRecordSchema.parse({

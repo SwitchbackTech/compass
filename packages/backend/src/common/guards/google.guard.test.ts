@@ -5,6 +5,7 @@ import { type Schema_User } from "@core/types/user.types";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { requireGoogleConnection } from "@backend/common/guards/google.guard";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 const isGoogleConnected = async (userId: string): Promise<boolean> => {
   if (!IDSchema.safeParse(userId).success) {
@@ -122,7 +123,7 @@ describe("google.guard", () => {
 
       mockFindCompassUserBy.mockResolvedValue(userWithGoogle);
 
-      await expect(requireGoogleConnection(userId)).resolves.not.toThrow();
+      await expect(requireGoogleConnection(userId)).resolves.toBeUndefined();
     });
 
     it("throws when userId is not a valid ObjectId", async () => {

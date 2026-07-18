@@ -23,6 +23,15 @@ import { googleCalendarListService } from "@backend/sync/services/calendarlist/g
 import { seedLocalCalendar } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 import * as syncImportService from "@backend/sync/services/import/google-import.service";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 const buildGoogleCalendar = (
   userId: ObjectId,
@@ -599,7 +608,9 @@ describe("googleCalendarListService", () => {
       jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
         importAllEvents: jest
           .fn()
-          .mockRejectedValue(new Error("simulated import failure")),
+          .mockImplementation(() =>
+            Promise.reject(new Error("simulated import failure")),
+          ),
       } as unknown as Awaited<
         ReturnType<typeof syncImportService.createSyncImport>
       >);

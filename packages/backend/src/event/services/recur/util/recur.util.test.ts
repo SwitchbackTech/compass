@@ -4,6 +4,7 @@ import {
   materializeSeriesInstances,
   withUntil,
 } from "@backend/event/services/recur/util/recur.util";
+import { describe, expect, it } from "bun:test";
 
 const buildBase = (overrides: Partial<EventRecord> = {}): EventRecord => ({
   _id: new ObjectId(),

@@ -17,6 +17,7 @@
   "devDependencies": {
     "@types/inquirer": "^9.0.1",
     "@types/node": "^24.7.2",
+    "mongodb-memory-server": "^9.2.0",
     "typescript": "^7.0.2"
   }
 }
