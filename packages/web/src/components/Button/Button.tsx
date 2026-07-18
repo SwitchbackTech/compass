@@ -18,7 +18,7 @@ export const Btn = forwardRef<
     {...props}
     type={type}
     className={classNames(
-      "c-focus-ring flex cursor-pointer items-center justify-center rounded-[2px]",
+      "c-focus-ring flex cursor-pointer items-center justify-center rounded-xs",
       className,
     )}
     ref={ref}
@@ -51,7 +51,7 @@ export const SaveButton = forwardRef<
       {...props}
       aria-disabled={disabled || undefined}
       className={classNames(
-        "c-button-elevated min-w-[158px] px-2 text-text-dark transition-[background-color,color,box-shadow,transform] duration-500 hover:bg-bg-primary hover:text-(--save-button-hover-color)",
+        "c-button-elevated min-w-39.5 px-2 text-text-dark transition-[background-color,color,box-shadow,transform] duration-500 hover:bg-bg-primary hover:text-(--save-button-hover-color)",
         disabled && "pointer-events-none opacity-50",
         className,
       )}

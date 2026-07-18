@@ -11,6 +11,8 @@ import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/components/Icons/ChevronRightIcon";
 import { Focusable, INPUT_RESET_CLASSNAME } from "../Focusable/Focusable";
+import { CircleIcon } from "../Icons/CircleIcon";
+import { TooltipWrapper } from "../Tooltip/TooltipWrapper";
 
 export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
   animationOnToggle?: boolean;
@@ -112,16 +114,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
               headerClassName,
             )}
           >
-            <div
-              className={classNames(
-                "min-w-0 items-start",
-                // Grid pickers grow the label so the arrows sit at the right
-                // edge. The sidebar keeps the label at intrinsic width so the
-                // month label and nav arrows read as one group on the left,
-                // clearly separate from the sidebar-close control.
-                view !== "sidebar" && "flex-1",
-              )}
-            >
+            <div className={classNames("w-16 items-start")}>
               <span
                 className={classNames("relative", monthTextClassName)}
                 style={{ color: headerColor }}
@@ -160,20 +153,23 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                   </MonthNavButton>
                 </div>
                 {withTodayButton && (
-                  <button
-                    className={classNames(
-                      "relative mr-10 cursor-pointer border-0 bg-transparent px-1.5 text-l hover:brightness-160 hover:transition-[filter] hover:duration-350 hover:ease-out",
-                      currentMonth === selectedMonth && "opacity-0",
-                    )}
-                    onClick={() => {
-                      headerProps.changeMonth(dayjs().month());
-                      headerProps.changeYear(dayjs().year());
-                    }}
-                    style={{ color: "var(--compass-color-text-light)" }}
-                    type="button"
-                  >
-                    Today
-                  </button>
+                  <TooltipWrapper description={currentMonth}>
+                    <button
+                      type="button"
+                      aria-label="Go to this month"
+                      className={classNames(
+                        "flex h-6 w-6 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-text-lighter/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
+                        currentMonth === selectedMonth && "invisible",
+                      )}
+                      style={{ color: headerColor }}
+                      onClick={() => {
+                        headerProps.changeMonth(dayjs().month());
+                        headerProps.changeYear(dayjs().year());
+                      }}
+                    >
+                      <CircleIcon />
+                    </button>
+                  </TooltipWrapper>
                 )}
               </div>
             )}
