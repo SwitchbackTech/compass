@@ -8,8 +8,6 @@ import {
   buildAllDayGridLayoutCache,
   buildDragGridLayoutCache,
   buildTimedGridLayoutCache,
-  type DayColumnCache,
-  type EdgeNavigationCache,
   type GridLayoutCache,
   type GridLayoutCacheOptions,
   type GridLayoutCacheSources,
@@ -35,8 +33,6 @@ export interface WeekLayoutCacheInput extends GridLayoutCacheSources {
   visibleDays: string[];
 }
 
-export type WeekDayColumnCache = DayColumnCache;
-export type WeekEdgeNavigationCache = EdgeNavigationCache;
 export type WeekLayoutCache = GridLayoutCache;
 export type { SmartScrollCache };
 export { getNearestDayColumn };

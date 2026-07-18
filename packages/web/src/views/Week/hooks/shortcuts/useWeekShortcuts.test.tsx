@@ -25,8 +25,8 @@ import { initialViewState, useViewStore } from "@web/events/stores/view.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/week-event.registry";
 import {
-  clearHoveredGridEventTarget,
-  setHoveredGridEventTarget,
+  clearHoveredWeekGridEventTarget,
+  setHoveredWeekGridEventTarget,
 } from "@web/views/Week/interaction/targeting/week-event.targeting";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -118,7 +118,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  clearHoveredGridEventTarget();
+  clearHoveredWeekGridEventTarget();
   cleanup();
   document.body.innerHTML = "";
   pendingEventIds = [];
@@ -316,7 +316,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
 
   it("deletes the hovered calendar event with Delete when no event is focused", () => {
     const button = addCalendarTarget();
-    setHoveredGridEventTarget(button);
+    setHoveredWeekGridEventTarget(button);
 
     const { queryClient } = renderShortcuts();
     pressKey("Delete");
@@ -539,7 +539,7 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
 
   it("does not move hovered-but-unfocused events", () => {
     const button = addCalendarTarget();
-    setHoveredGridEventTarget(button);
+    setHoveredWeekGridEventTarget(button);
 
     renderShortcuts();
     pressKey("ArrowRight", shiftKey);

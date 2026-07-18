@@ -7,8 +7,8 @@ import { getAllDayEventPosition } from "@web/grid/layout/event.position";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
-  clearHoveredGridEventTarget,
-  setHoveredGridEventTarget,
+  clearHoveredWeekGridEventTarget,
+  setHoveredWeekGridEventTarget,
 } from "@web/views/Week/interaction/targeting/week-event.targeting";
 
 interface Props {
@@ -74,10 +74,10 @@ const AllDayEventBase = (
       onMouseEnter={(e: MouseEvent<HTMLDivElement>) => {
         if (!shouldTrackCalendarHover) return;
 
-        setHoveredGridEventTarget(e.currentTarget);
+        setHoveredWeekGridEventTarget(e.currentTarget);
       }}
       onMouseLeave={(e: MouseEvent<HTMLDivElement>) => {
-        clearHoveredGridEventTarget(e.currentTarget);
+        clearHoveredWeekGridEventTarget(e.currentTarget);
       }}
       onScalerMouseDown={onScalerMouseDown}
       position={position}

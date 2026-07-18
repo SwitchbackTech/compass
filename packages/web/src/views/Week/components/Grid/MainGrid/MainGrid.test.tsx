@@ -33,8 +33,8 @@ import {
 } from "@web/views/Week/interaction/registry/week-event.registry";
 import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 import {
-  clearHoveredGridEventTarget,
-  getHoveredGridEventTarget,
+  clearHoveredWeekGridEventTarget,
+  getHoveredWeekGridEventTarget,
 } from "@web/views/Week/interaction/targeting/week-event.targeting";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
@@ -95,7 +95,7 @@ const { MainGrid } = await import("./MainGrid");
 const { MainGridEvents } = await import("./MainGridEvents");
 
 afterEach(() => {
-  clearHoveredGridEventTarget();
+  clearHoveredWeekGridEventTarget();
   cleanup();
   setWeekInteractionMotionActive(false);
   weekEventRegistry.clear();
@@ -542,14 +542,14 @@ describe("Week calendar accessibility", () => {
     const eventButton = screen.getByRole("button", { name: /hover target/i });
 
     fireEvent.mouseEnter(eventButton);
-    expect(getHoveredGridEventTarget()).toMatchObject({
+    expect(getHoveredWeekGridEventTarget()).toMatchObject({
       element: eventButton,
       eventId: event._id,
       eventType: "timed",
     });
 
     fireEvent.mouseLeave(eventButton);
-    expect(getHoveredGridEventTarget()).toBeNull();
+    expect(getHoveredWeekGridEventTarget()).toBeNull();
   });
 
   it("gives all-day events an all-day accessible name and target type", () => {
