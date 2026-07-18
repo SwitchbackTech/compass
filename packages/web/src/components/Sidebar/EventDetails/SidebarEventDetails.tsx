@@ -23,7 +23,7 @@ import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
 
 /**
- * The Day view's event-details panel, docked in the planner sidebar.
+ * The Day view's event-details panel, docked in the sidebar.
  * Store-driven: renders the current grid draft whenever the draft store says
  * the form is open. Week wires its own panel through DraftContext — see
  * WeekSidebarEventDetails.

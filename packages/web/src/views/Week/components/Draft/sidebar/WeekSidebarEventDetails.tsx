@@ -3,7 +3,7 @@ import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 /**
- * The Week view's event-details panel, docked in the planner sidebar. Wired
+ * The Week view's event-details panel, docked in the sidebar. Wired
  * through DraftContext so it keeps Week's save/confirmation pipeline
  * (useDraftConfirmation) intact; the Day view's store-driven equivalent is
  * SidebarEventDetails.

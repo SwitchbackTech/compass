@@ -18,7 +18,7 @@ const sections = [
 ];
 
 describe("ShortcutsOverlay", () => {
-  it("renders shortcut sections over the planner sidebar", () => {
+  it("renders shortcut sections over the sidebar", () => {
     render(
       <ShortcutsOverlay
         isOpen={true}

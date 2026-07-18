@@ -1,12 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
-import { createPlannerSidebar } from "./PlannerSidebar";
+import { createSidebar } from "./Sidebar";
 import { describe, expect, it, mock } from "bun:test";
 
-const PlannerSidebar = createPlannerSidebar({
-  PlannerCalendarList: () => <div>Calendar list</div>,
-  PlannerMonthPicker: () => <div>Calendar picker</div>,
-  PlannerSidebarActions: () => <div>Sidebar actions</div>,
+const Sidebar = createSidebar({
+  CalendarList: () => <div>Calendar list</div>,
+  MonthPicker: () => <div>Calendar picker</div>,
+  SidebarActions: () => <div>Sidebar actions</div>,
   ShortcutsOverlay: () => null,
   TasksRemovalNotice: () => null,
   UpNextCard: () => <div>Up next</div>,
@@ -21,9 +21,9 @@ const sidebarProps = {
   shortcutSections: [],
 };
 
-describe("PlannerSidebar", () => {
+describe("Sidebar", () => {
   it("renders the core sidebar sections", () => {
-    render(<PlannerSidebar {...sidebarProps} />);
+    render(<Sidebar {...sidebarProps} />);
 
     expect(screen.getByText("Calendar picker")).toBeTruthy();
     expect(screen.getByText("Calendar list")).toBeTruthy();
@@ -32,17 +32,14 @@ describe("PlannerSidebar", () => {
 
   it("shows event details only while the parent says they are open", () => {
     const { rerender } = render(
-      <PlannerSidebar
-        {...sidebarProps}
-        eventDetails={<div>Event details</div>}
-      />,
+      <Sidebar {...sidebarProps} eventDetails={<div>Event details</div>} />,
     );
 
     expect(screen.queryByText("Event details")).toBeNull();
     expect(screen.getByText("Calendar picker")).toBeTruthy();
 
     rerender(
-      <PlannerSidebar
+      <Sidebar
         {...sidebarProps}
         eventDetails={<div>Event details</div>}
         isEventDetailsOpen

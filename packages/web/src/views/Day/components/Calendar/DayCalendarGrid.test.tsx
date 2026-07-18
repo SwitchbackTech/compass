@@ -93,7 +93,7 @@ mock.module("@web/grid/hooks/useGridMeasurements", () => ({
 
 // Stand-in for the sidebar-docked event details panel: DayCalendarGrid no
 // longer renders any form itself — it only toggles the draft store — so the
-// harness mounts this store-driven probe where PlannerSidebar would mount
+// harness mounts this store-driven probe where Sidebar would mount
 // SidebarEventDetails.
 const EventFormProbe = () => {
   const isFormOpen = useDraftStore(selectIsEventFormOpen);

@@ -17,7 +17,7 @@ const isFloatingLayerOpen = () =>
     (element) =>
       element.getAttribute("aria-hidden") !== "true" &&
       element.getClientRects().length > 0 &&
-      !element.closest('[data-testid="Planner month picker"]'),
+      !element.closest('[data-testid="Month picker"]'),
   );
 
 /**

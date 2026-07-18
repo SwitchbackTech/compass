@@ -3,11 +3,11 @@ import {
   SIDEBAR_DEFAULT_WIDTH,
   SIDEBAR_MAX_WIDTH,
   SIDEBAR_MIN_WIDTH,
-} from "@web/components/PlannerSidebar/storage/sidebar-width.constants";
+} from "@web/components/Sidebar/storage/sidebar-width.constants";
 import {
   readSidebarWidth,
   writeSidebarWidth,
-} from "@web/components/PlannerSidebar/storage/sidebar-width.storage";
+} from "@web/components/Sidebar/storage/sidebar-width.storage";
 import { beforeEach, describe, expect, it } from "bun:test";
 
 describe("sidebar width storage", () => {

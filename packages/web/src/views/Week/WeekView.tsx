@@ -4,10 +4,10 @@ import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigati
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
-import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
-import { ResizableSidebarPanel } from "@web/components/PlannerSidebar/ResizableSidebarPanel";
-import { useUpNextEventShortcut } from "@web/components/PlannerSidebar/UpNextCard/useUpNextEvent";
-import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
+import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";
+import { Sidebar } from "@web/components/Sidebar/Sidebar";
+import { useUpNextEventShortcut } from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
+import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
 import {
   draftActions,
   selectIsEventFormOpen,
@@ -35,7 +35,7 @@ import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
 import { useScroll } from "@web/views/Week/hooks/grid/useScroll";
 import { useVisibleDayCount } from "@web/views/Week/hooks/grid/useVisibleDayCount";
 import { useDayShiftTransition } from "@web/views/Week/hooks/useDayShiftTransition";
-import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerSidebarCalendarDate";
+import { useSidebarCalendarDate } from "@web/views/Week/hooks/useSidebarCalendarDate";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
@@ -51,7 +51,7 @@ export const WeekView = () => {
     viewActions.toggleSidebar();
   }, []);
   const { closeShortcuts, isShortcutsOpen, toggleShortcuts } =
-    usePlannerShortcuts({
+    useSidebarShortcuts({
       isSidebarOpen,
       onToggleSidebar: toggleSidebar,
     });
@@ -118,7 +118,7 @@ export const WeekView = () => {
     [isCurrentWeek],
   );
 
-  const { calendarDate, goToDateFromSidebar } = usePlannerSidebarCalendarDate({
+  const { calendarDate, goToDateFromSidebar } = useSidebarCalendarDate({
     goToDate: weekProps.state.goToDate,
     today,
     viewEnd: weekProps.component.endOfView,
@@ -150,7 +150,7 @@ export const WeekView = () => {
           <ContextMenuWrapper id="sidebar-context-menu">
             <Draft measurements={measurements} weekProps={weekProps} />
             <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
-              <PlannerSidebar
+              <Sidebar
                 calendarDate={calendarDate}
                 eventDetails={<WeekSidebarEventDetails />}
                 isEventDetailsOpen={isEventDetailsOpen}

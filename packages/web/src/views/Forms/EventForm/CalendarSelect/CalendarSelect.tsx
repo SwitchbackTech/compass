@@ -27,7 +27,7 @@ const getWritableCalendars = (calendars: Calendar[]): Calendar[] =>
   );
 
 // Primary first (it's the default target), then alphabetical - mirrors
-// PlannerCalendarList's sort so the same calendar lands in the same relative
+// CalendarList's sort so the same calendar lands in the same relative
 // position across the sidebar list and this picker.
 const sortWritableCalendars = (calendars: Calendar[]): Calendar[] =>
   [...calendars].sort((a, b) => {

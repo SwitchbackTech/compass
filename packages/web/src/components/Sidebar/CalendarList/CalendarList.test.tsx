@@ -16,38 +16,53 @@ import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
 
-// Mocked at the hook (several sibling test files, e.g. useAuthCmdItems.test.ts,
-// already mock.module this same path without restoring it - mock.module is
-// process-wide, so whichever file registers last "wins" for every later
-// resolution). afterEach below leaves a valid (never `undefined`) return value
-// configured rather than resetting, so a file that runs after this one and
-// inherits this mock without configuring its own doesn't crash destructuring
-// `useSession()`'s result.
+// mock.module is process-wide and not reliably restorable, so the real hook
+// is captured up front and a flag (flipped off in afterAll) decides which
+// implementation runs on each call - the same technique used in
+// SidebarActions.test.tsx for useVersionCheck. This lets a file that runs
+// after this one (e.g. useDraftActions.test.ts) get the real useSession back
+// instead of permanently inheriting this file's mock.
+const actualUseSession = (await import("@web/auth/compass/session/useSession"))
+  .useSession;
+let isSessionMocked = true;
 const mockUseSession = mock();
 mock.module("@web/auth/compass/session/useSession", () => ({
-  useSession: mockUseSession,
+  useSession: (...args: Parameters<typeof actualUseSession>) =>
+    isSessionMocked ? mockUseSession(...args) : actualUseSession(...args),
 }));
 
-// PlannerCalendarList.tsx is already cached by the time this file runs -
-// PlannerSidebar.test.tsx imports createPlannerSidebar from "./PlannerSidebar",
+afterAll(() => {
+  isSessionMocked = false;
+});
+
+// CalendarList.tsx is already cached by the time this file runs -
+// Sidebar.test.tsx imports createSidebar from "./Sidebar",
 // and merely loading that file (regardless of the DI stubs it renders with)
-// runs PlannerSidebar.tsx's own top-level `import { PlannerCalendarList }`,
+// runs Sidebar.tsx's own top-level `import { CalendarList }`,
 // binding its useSession import to whatever was active at that earlier point.
 // A plain require here would return that stale instance. A cache-busted URL
 // forces a fresh evaluation that re-resolves useSession against the mock
 // above (same technique as useVersionCheck.test.ts).
-const plannerCalendarListModuleUrl = new URL(
-  `./PlannerCalendarList.tsx?test=${Math.random().toString(36).slice(2)}`,
+const calendarListModuleUrl = new URL(
+  `./CalendarList.tsx?test=${Math.random().toString(36).slice(2)}`,
   import.meta.url,
 );
-const { PlannerCalendarList } = (await import(
-  plannerCalendarListModuleUrl.href
-)) as typeof import("./PlannerCalendarList");
+const { CalendarList } = (await import(
+  calendarListModuleUrl.href
+)) as typeof import("./CalendarList");
 
 // The real header renders the account email / temporary-account CTA via its
-// own auth+sync hooks (covered in PlannerCalendarListHeader.test.tsx); stub it
+// own auth+sync hooks (covered in CalendarListHeader.test.tsx); stub it
 // here so list tests don't need those hooks mocked.
 const StubHeader = () => <h2>Calendars</h2>;
 
@@ -83,10 +98,7 @@ const renderCalendarList = (
   queryClient.setQueryData(calendarQueryKeys.all, calendars);
 
   const utils = render(
-    <PlannerCalendarList
-      coalesceDelayMs={coalesceDelayMs}
-      Header={StubHeader}
-    />,
+    <CalendarList coalesceDelayMs={coalesceDelayMs} Header={StubHeader} />,
     {
       wrapper,
     },
@@ -95,7 +107,7 @@ const renderCalendarList = (
   return { queryClient, ...utils };
 };
 
-describe("PlannerCalendarList", () => {
+describe("CalendarList", () => {
   beforeEach(() => {
     mockUseSession.mockReturnValue({
       authenticated: true,
@@ -105,10 +117,6 @@ describe("PlannerCalendarList", () => {
 
   afterEach(() => {
     BaseApi.defaults.adapter = undefined;
-    // Leave a *valid* value configured (not a full mockReset, which would make
-    // the mock return `undefined` and crash any later file's destructure of
-    // useSession()'s result if this leaked mock.module registration is still
-    // active for them - see the top-of-file comment).
     mockUseSession.mockReturnValue({
       authenticated: false,
       setAuthenticated: () => {},
@@ -310,7 +318,7 @@ describe("PlannerCalendarList", () => {
     BaseApi.defaults.adapter = () => new Promise(() => {});
     const { wrapper } = createStoreWrapper();
 
-    render(<PlannerCalendarList Header={StubHeader} />, { wrapper });
+    render(<CalendarList Header={StubHeader} />, { wrapper });
 
     expect(screen.getByText(/loading calendars/i)).toBeInTheDocument();
   });
@@ -337,7 +345,7 @@ describe("PlannerCalendarList", () => {
       };
     };
     const { wrapper } = createStoreWrapper();
-    render(<PlannerCalendarList Header={StubHeader} />, { wrapper });
+    render(<CalendarList Header={StubHeader} />, { wrapper });
 
     await waitFor(() => {
       expect(screen.getByText(/couldn.t load calendars/i)).toBeInTheDocument();

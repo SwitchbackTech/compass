@@ -19,7 +19,7 @@ import {
   isEventFormKeyboardTarget,
   isEventFormOpen,
 } from "@web/common/utils/form/form.util";
-import { focusFirstSidebarItem } from "@web/components/PlannerSidebar/util/sidebarFocus.util";
+import { focusFirstSidebarItem } from "@web/components/Sidebar/util/sidebarFocus.util";
 import { type GridScheduleDraft } from "@web/events/event-draft.types";
 import {
   editGridEventDraft,

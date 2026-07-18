@@ -96,7 +96,7 @@ mutate(payload)
   fails, the dependent write is skipped entirely.
 - **Pending state** is derived from TanStack Query's mutation state via
   `usePendingEventIds`, not stored separately. It never blocks interaction; its
-  only UI is the "Syncing changes…" spinner in `PlannerAccountSummary`.
+  only UI is the sync shimmer on the account email in `CalendarListHeader`.
 
 ## One membership rule for reads and writes
 

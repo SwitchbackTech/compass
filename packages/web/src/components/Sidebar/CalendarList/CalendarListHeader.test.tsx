@@ -53,20 +53,20 @@ afterAll(() => {
   isAuthModalMocked = false;
 });
 
-// PlannerCalendarListHeader.tsx is already cached by the time this file runs -
-// PlannerCalendarList.test.tsx (which sorts before this file) imports
-// PlannerCalendarList.tsx, whose own top-level import evaluated this module and
+// CalendarListHeader.tsx is already cached by the time this file runs -
+// CalendarList.test.tsx (which sorts before this file) imports
+// CalendarList.tsx, whose own top-level import evaluated this module and
 // bound its hook imports to whatever was active at that earlier point. A plain
 // require here would return that stale instance. A cache-busted URL forces a
 // fresh evaluation that re-resolves the hooks against the mocks above (same
-// technique as PlannerCalendarList.test.tsx).
+// technique as CalendarList.test.tsx).
 const headerModuleUrl = new URL(
-  `./PlannerCalendarListHeader.tsx?test=${Math.random().toString(36).slice(2)}`,
+  `./CalendarListHeader.tsx?test=${Math.random().toString(36).slice(2)}`,
   import.meta.url,
 );
-const { PlannerCalendarListHeader } = (await import(
+const { CalendarListHeader } = (await import(
   headerModuleUrl.href
-)) as typeof import("./PlannerCalendarListHeader");
+)) as typeof import("./CalendarListHeader");
 
 const renderHeader = ({
   pendingEventIds = [],
@@ -78,12 +78,12 @@ const renderHeader = ({
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <PlannerCalendarListHeader />
+      <CalendarListHeader />
     </QueryClientProvider>,
   );
 };
 
-describe("PlannerCalendarListHeader", () => {
+describe("CalendarListHeader", () => {
   beforeEach(() => {
     mockEmail = undefined;
     mockGoogleState = "NOT_CONNECTED";

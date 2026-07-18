@@ -5,7 +5,7 @@ import {
 } from "@phosphor-icons/react";
 import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
 import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
-import { useVersionCheck } from "@web/components/PlannerSidebar/PlannerSidebarActions/useVersionCheck";
+import { useVersionCheck } from "@web/components/Sidebar/SidebarActions/useVersionCheck";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import {
   selectIsCmdPaletteOpen,
@@ -18,7 +18,7 @@ interface Props {
   onToggleShortcuts: () => void;
 }
 
-export const PlannerSidebarActions = ({
+export const SidebarActions = ({
   isShortcutsOpen,
   onToggleShortcuts,
 }: Props) => {

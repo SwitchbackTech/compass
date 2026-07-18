@@ -50,9 +50,9 @@ The single-date calendar view. When routed without a date, it opens on today,
 but it can represent any selected date.
 _Avoid_: Today view, unless referring specifically to the current date
 
-**Planner Sidebar**:
+**Sidebar**:
 The calendar side panel that holds navigation and account context.
-_Avoid_: Planning sidebar
+_Avoid_: Planner sidebar, planning sidebar
 
 ## Hosting
 

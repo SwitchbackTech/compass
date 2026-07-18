@@ -9,8 +9,8 @@ Use this document to find the first files to inspect for common Compass changes.
 - Root authenticated shell: `packages/web/src/views/Root.tsx`
 - Router config: `packages/web/src/routers/index.tsx`
 - Router loaders: `packages/web/src/routers/loaders.ts`
-- Client version polling: `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/useVersionCheck.ts`
-- Update CTA wiring: `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`
+- Client version polling: `packages/web/src/components/Sidebar/SidebarActions/useVersionCheck.ts`
+- Update CTA wiring: `packages/web/src/components/Sidebar/SidebarActions/SidebarActions.tsx`
 
 ## Authentication And Session
 
@@ -37,7 +37,7 @@ Use this document to find the first files to inspect for common Compass changes.
 ## Day / Week Views
 
 - Day view route and content: `packages/web/src/views/Day/view`
-- Day view header (includes Planner Sidebar toggle control): `packages/web/src/views/Day/components/Header/Header.tsx`
+- Day view header (includes sidebar toggle control): `packages/web/src/views/Day/components/Header/Header.tsx`
 - Day keyboard shortcuts (includes `[` toggle): `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
 - Day view hooks: `packages/web/src/views/Day/hooks`
 - Week view: `packages/web/src/views/Week`
@@ -47,12 +47,12 @@ Use this document to find the first files to inspect for common Compass changes.
   - week view: `packages/web/src/views/Week/WeekView.tsx`
   - day view: `packages/web/src/views/Day/view/DayViewContent.tsx`
 
-## Planner Sidebar
+## Sidebar
 
-- Shared sidebar shell: `packages/web/src/components/PlannerSidebar/PlannerSidebar.tsx`
-- Month picker: `packages/web/src/components/PlannerSidebar/PlannerMonthPicker/PlannerMonthPicker.tsx`
-- Account row: `packages/web/src/components/PlannerSidebar/PlannerAccountSummary/PlannerAccountSummary.tsx`
-- Sidebar actions and shortcuts overlay: `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`, `packages/web/src/components/PlannerSidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`
+- Shared sidebar shell: `packages/web/src/components/Sidebar/Sidebar.tsx`
+- Month picker: `packages/web/src/components/Sidebar/MonthPicker/MonthPicker.tsx`
+- Account identity/sync indicator: `packages/web/src/components/Sidebar/CalendarList/CalendarListHeader.tsx`
+- Sidebar actions and shortcuts overlay: `packages/web/src/components/Sidebar/SidebarActions/SidebarActions.tsx`, `packages/web/src/components/Sidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`
 - Week mount point: `packages/web/src/views/Week/WeekView.tsx`
 - Day mount point: `packages/web/src/views/Day/view/DayViewContent.tsx`
 

@@ -12,7 +12,7 @@ import {
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
-import { SidebarEventDetails } from "@web/components/PlannerSidebar/EventDetails/SidebarEventDetails";
+import { SidebarEventDetails } from "@web/components/Sidebar/EventDetails/SidebarEventDetails";
 import {
   createGridEventDraft,
   editGridEventDraft,

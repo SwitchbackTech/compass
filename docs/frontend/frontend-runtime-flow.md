@@ -97,8 +97,8 @@ Responsibilities:
 
 Files:
 
-- `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/useVersionCheck.ts`
-- `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`
+- `packages/web/src/components/Sidebar/SidebarActions/useVersionCheck.ts`
+- `packages/web/src/components/Sidebar/SidebarActions/SidebarActions.tsx`
 
 Runtime behavior:
 
@@ -108,20 +108,20 @@ Runtime behavior:
 - requests use an absolute URL built from `window.location.origin` (`/version.json?t=<timestamp>`) with no-store/no-cache fetch options
 - checks are de-duplicated so concurrent visibility/interval triggers do not issue overlapping fetches
 
-When the server version differs from `BUILD_VERSION`, `isUpdateAvailable` becomes `true` and the Planner Sidebar shows a refresh action that triggers `window.location.reload()`.
+When the server version differs from `BUILD_VERSION`, `isUpdateAvailable` becomes `true` and the sidebar shows a refresh action that triggers `window.location.reload()`.
 
-## Planner Sidebar Footer Controls
+## Sidebar Footer Controls
 
 Files:
 
-- `packages/web/src/components/PlannerSidebar/PlannerSidebar.tsx`
-- `packages/web/src/components/PlannerSidebar/PlannerMonthPicker/PlannerMonthPicker.tsx`
-- `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`
-- `packages/web/src/components/PlannerSidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`
+- `packages/web/src/components/Sidebar/Sidebar.tsx`
+- `packages/web/src/components/Sidebar/MonthPicker/MonthPicker.tsx`
+- `packages/web/src/components/Sidebar/SidebarActions/SidebarActions.tsx`
+- `packages/web/src/components/Sidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`
 
 Layout contract:
 
-- the Planner Sidebar is fixed at 285px wide and fills the viewport height
+- the sidebar is fixed at 285px wide and fills the viewport height
 - the scrollable planning content reserves its own scrollbar gutter so the footer stays fixed
 - the footer control row is pinned to the bottom of the sidebar
 - footer actions are grouped into shortcut access on the left and utility actions on the right
@@ -132,12 +132,12 @@ Control mapping:
 - Command palette toggle (`modifier + K`) calls open/close palette actions from the settings Zustand store (`packages/web/src/settings/settings.store.ts`).
 - Refresh appears only when `useVersionCheck()` reports an available update.
 - The account row shows temporary-account or signed-in account context.
-- Background Google import state is not shown in the Planner Sidebar footer.
+- Background Google import state is not shown in the sidebar footer.
 
 Icon state constraints:
 
 - shortcut and command icons use filled weight when their related overlay/palette is open
-- shortcut overlay state should not replace the Planner Sidebar conceptually; closing the overlay returns to the same sidebar
+- shortcut overlay state should not replace the sidebar conceptually; closing the overlay returns to the same sidebar
 
 ## Dedication Dialog Runtime
 
@@ -314,17 +314,20 @@ Files:
 
 - `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.ts`
 - `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.util.ts`
-- `packages/web/src/components/PlannerSidebar/PlannerAccountSummary/PlannerAccountSummary.tsx`
-- `packages/web/src/components/CommandPalette/hooks/useGoogleCmdItems.ts`
+- `packages/web/src/components/Sidebar/CalendarList/CalendarListHeader.tsx`
+- `packages/web/src/components/CommandPalette/hooks/useCalendarSyncCmdItems.ts`
 
-UI state comes from a single server-enriched metadata field (`google.connectionState`) plus two client-only states (`checking`, `repairing`). The sidebar account email text itself is the status indicator, via `getGoogleAccountSummaryStatus`:
+UI state comes from a single server-enriched metadata field (`google.connectionState`) plus two client-only states (`checking`, `repairing`). The sidebar's calendar-list heading (the account email, or "Temporary account" when anonymous) is the lightweight status indicator: it renders with a `c-sync-text-wave` shimmer whenever `getGoogleSyncStatus(state)?.variant === "syncing"` or an event mutation is still pending, and an `sr-only role="status"` live region announces "Syncing…" alongside it. `CalendarListHeader` does not render per-state tooltips or actions itself.
 
-- `HEALTHY` → email renders normally (`text-text-light`); tooltip reads "Up-to-date"
-- `ATTENTION` → email renders in `text-status-warning`; tooltip explains a sync is needed and offers a **Sync now** button (`onRepairGoogle`)
-- `RECONNECT_REQUIRED` → email renders in `text-status-error`; tooltip offers a **Reconnect** button (`onOpenGoogleAuth`)
-- `NOT_CONNECTED` → plain email text, no tooltip
+Detailed sync status and the reconnect/sync actions live in the command palette instead, via `useCalendarSyncCmdItems`/`getGoogleConnectionConfig`:
 
-When a status has an action, the email itself renders as a `<button>` so keyboard users can trigger the action directly (Enter/Space) without needing to hover into the tooltip. An `sr-only role="status"` live region mirrors the tooltip text so screen readers hear state transitions. User-facing copy avoids the word "repair" — the `ATTENTION` state is framed as needing a sync, not a repair.
+- `HEALTHY` → no command action (`syncStatus.text` is "Calendar up-to-date")
+- `ATTENTION` → **Sync Google Calendar** command action (`onRepairGoogle`); `syncStatus.text` is "Calendar is out of date"
+- `RECONNECT_REQUIRED` → **Reconnect Google Calendar** command action (`onConnectGoogle`); `syncStatus.text` is "Calendar needs reconnecting"
+- `NOT_CONNECTED` → **Connect Google Calendar** command action (`onConnectGoogle`); no `syncStatus`
+- `checking` / `repairing` / `IMPORTING` → no command action; `syncStatus.text` is "Syncing calendar…"
+
+User-facing copy avoids the word "repair" — the `ATTENTION` state is framed as needing a sync, not a repair.
 
 Important constraint:
 

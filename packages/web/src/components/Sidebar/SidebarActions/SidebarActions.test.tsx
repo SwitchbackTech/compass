@@ -12,21 +12,16 @@ import { afterAll, afterEach, describe, expect, it, mock } from "bun:test";
 // sits alongside this file and imports the real hook) get the real
 // implementation back instead of permanently inheriting this file's stub.
 const actualUseVersionCheck = (
-  await import(
-    "@web/components/PlannerSidebar/PlannerSidebarActions/useVersionCheck"
-  )
+  await import("@web/components/Sidebar/SidebarActions/useVersionCheck")
 ).useVersionCheck;
 let isVersionCheckMocked = true;
 
-mock.module(
-  "@web/components/PlannerSidebar/PlannerSidebarActions/useVersionCheck",
-  () => ({
-    useVersionCheck: () =>
-      isVersionCheckMocked
-        ? { isUpdateAvailable: false }
-        : actualUseVersionCheck(),
-  }),
-);
+mock.module("@web/components/Sidebar/SidebarActions/useVersionCheck", () => ({
+  useVersionCheck: () =>
+    isVersionCheckMocked
+      ? { isUpdateAvailable: false }
+      : actualUseVersionCheck(),
+}));
 
 afterAll(() => {
   isVersionCheckMocked = false;
@@ -36,19 +31,16 @@ afterEach(() => {
   act(() => resetGoogleSyncUIStateForTests());
 });
 
-const { PlannerSidebarActions } =
-  require("@web/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions") as typeof import("@web/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions");
+const { SidebarActions } =
+  require("@web/components/Sidebar/SidebarActions/SidebarActions") as typeof import("@web/components/Sidebar/SidebarActions/SidebarActions");
 
-describe("PlannerSidebarActions", () => {
+describe("SidebarActions", () => {
   it("shimmers the command palette icon while Google Calendar is syncing", () => {
     const { wrapper } = createStoreWrapper();
     setSyncingSyncIndicatorOverride();
 
     render(
-      <PlannerSidebarActions
-        isShortcutsOpen={false}
-        onToggleShortcuts={mock()}
-      />,
+      <SidebarActions isShortcutsOpen={false} onToggleShortcuts={mock()} />,
       { wrapper },
     );
 
@@ -63,10 +55,7 @@ describe("PlannerSidebarActions", () => {
     const { wrapper } = createStoreWrapper();
 
     render(
-      <PlannerSidebarActions
-        isShortcutsOpen={false}
-        onToggleShortcuts={mock()}
-      />,
+      <SidebarActions isShortcutsOpen={false} onToggleShortcuts={mock()} />,
       { wrapper },
     );
 
@@ -84,10 +73,7 @@ describe("PlannerSidebarActions", () => {
     const { wrapper } = createStoreWrapper();
 
     render(
-      <PlannerSidebarActions
-        isShortcutsOpen={true}
-        onToggleShortcuts={mock()}
-      />,
+      <SidebarActions isShortcutsOpen={true} onToggleShortcuts={mock()} />,
       { wrapper },
     );
 

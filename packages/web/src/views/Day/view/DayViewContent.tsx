@@ -4,12 +4,12 @@ import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
-import { SidebarEventDetails } from "@web/components/PlannerSidebar/EventDetails/SidebarEventDetails";
-import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
-import { ResizableSidebarPanel } from "@web/components/PlannerSidebar/ResizableSidebarPanel";
-import { useUpNextEventShortcut } from "@web/components/PlannerSidebar/UpNextCard/useUpNextEvent";
-import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
-import { focusFirstSidebarItem } from "@web/components/PlannerSidebar/util/sidebarFocus.util";
+import { SidebarEventDetails } from "@web/components/Sidebar/EventDetails/SidebarEventDetails";
+import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";
+import { Sidebar } from "@web/components/Sidebar/Sidebar";
+import { useUpNextEventShortcut } from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
+import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
+import { focusFirstSidebarItem } from "@web/components/Sidebar/util/sidebarFocus.util";
 import {
   selectIsEventFormOpen,
   useDraftStore,
@@ -70,7 +70,7 @@ export const DayViewContent = memo(() => {
   }, []);
 
   const { closeShortcuts, isShortcutsOpen, toggleShortcuts } =
-    usePlannerShortcuts({
+    useSidebarShortcuts({
       isSidebarOpen,
       onToggleSidebar: toggleSidebar,
     });
@@ -127,7 +127,7 @@ export const DayViewContent = memo(() => {
       <Dedication />
 
       <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
-        <PlannerSidebar
+        <Sidebar
           calendarDate={dateInView}
           eventDetails={<SidebarEventDetails />}
           isEventDetailsOpen={isEventDetailsOpen}
