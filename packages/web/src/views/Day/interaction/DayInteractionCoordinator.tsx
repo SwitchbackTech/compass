@@ -20,6 +20,8 @@ import {
 
 interface Props extends PropsWithChildren {
   allDayEvents?: GridEvent[];
+  /** Ordered calendar ids of the rendered per-calendar columns. */
+  calendarColumnKeys?: string[];
   dateInView: Dayjs;
   getLayoutSources: () => GridLayoutCacheSources;
   onOpenEvent: (event: GridEvent) => void;
@@ -27,9 +29,11 @@ interface Props extends PropsWithChildren {
 }
 
 const EMPTY_GRID_EVENTS: GridEvent[] = [];
+const EMPTY_COLUMN_KEYS: string[] = [];
 
 export const DayInteractionCoordinator: FC<Props> = ({
   allDayEvents = EMPTY_GRID_EVENTS,
+  calendarColumnKeys = EMPTY_COLUMN_KEYS,
   children,
   dateInView,
   getLayoutSources,
@@ -41,6 +45,8 @@ export const DayInteractionCoordinator: FC<Props> = ({
   const isFormOpenRef = useRef(isFormOpen);
   isFormOpenRef.current = isFormOpen;
   const layoutSourcesRef = useRef(getLayoutSources);
+  const calendarColumnKeysRef = useRef(calendarColumnKeys);
+  calendarColumnKeysRef.current = calendarColumnKeys;
   const timedEventsById = useMemo(() => {
     return mapEventsById(timedEvents);
   }, [timedEvents]);
@@ -55,6 +61,7 @@ export const DayInteractionCoordinator: FC<Props> = ({
   const adapter = useMemo(
     () =>
       createDayInteractionAdapter({
+        getColumnKeys: () => calendarColumnKeysRef.current,
         getLayoutSources: () => layoutSourcesRef.current(),
         getVisibleDate: () => dateInView,
         runtime: () => runtimeRef.current,

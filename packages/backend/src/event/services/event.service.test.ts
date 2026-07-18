@@ -6,6 +6,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
+import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
@@ -725,5 +726,258 @@ describe("EventService (visibility filtering for list reads, packet 08)", () => 
         scope: "this",
       }),
     ).resolves.toBeUndefined();
+  });
+});
+
+/**
+ * Cross-calendar move (drag between Day-view columns): a replace whose
+ * calendarId differs from the event's current calendar re-homes a single
+ * event. Moves supersede A6's calendar-immutability for single events only;
+ * recurring events are rejected before any write.
+ */
+describe("EventService (cross-calendar move)", () => {
+  beforeEach(setupTestDb);
+  beforeEach(cleanupCollections);
+  afterEach(() => jest.restoreAllMocks());
+  afterAll(cleanupTestDb);
+
+  const moveInput = (calendarId: string) => ({
+    calendarId: calendarId as never,
+    content: { kind: "details" as const, title: "Moved", description: "" },
+    schedule: {
+      kind: "timed" as const,
+      start: "2026-07-14T15:00:00-06:00",
+      end: "2026-07-14T16:00:00-06:00",
+      timeZone: "America/Denver" as never,
+    },
+    recurrence: { kind: "preserve" as const },
+    scope: "this" as const,
+  });
+
+  it("moves a single event to the destination calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const source = await seedLocalCalendar(user._id);
+    const destination = await seedLocalCalendar(user._id);
+    const event = buildEventRecord(source._id);
+    await mongoService.event.insertOne(event);
+
+    const replaced = await eventService.replace(
+      user._id.toString(),
+      event._id.toHexString(),
+      moveInput(destination._id.toHexString()) as never,
+    );
+
+    expect(replaced.calendarId).toEqual(destination._id);
+
+    const stored = await mongoService.event.findOne({ _id: event._id });
+    expect(stored?.calendarId).toEqual(destination._id);
+  });
+
+  it("treats a matching calendarId as a plain replace, not a move", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+    const event = buildEventRecord(calendar._id);
+    await mongoService.event.insertOne(event);
+
+    const replaced = await eventService.replace(
+      user._id.toString(),
+      event._id.toHexString(),
+      moveInput(calendar._id.toHexString()) as never,
+    );
+
+    expect(replaced.calendarId).toEqual(calendar._id);
+    expect(replaced.content.kind === "details" && replaced.content.title).toBe(
+      "Moved",
+    );
+  });
+
+  it("rejects a move for a recurring event with RECURRENCE_CONFLICT", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const source = await seedLocalCalendar(user._id);
+    const destination = await seedLocalCalendar(user._id);
+    const event = buildEventRecord(source._id, {
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+    });
+    await mongoService.event.insertOne(event);
+
+    await expect(
+      eventService.replace(
+        user._id.toString(),
+        event._id.toHexString(),
+        moveInput(destination._id.toHexString()) as never,
+      ),
+    ).rejects.toMatchObject({ mutationCode: "RECURRENCE_CONFLICT" });
+
+    const stored = await mongoService.event.findOne({ _id: event._id });
+    expect(stored?.calendarId).toEqual(source._id);
+  });
+
+  it("rejects a move that also converts the event to a series", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const source = await seedLocalCalendar(user._id);
+    const destination = await seedLocalCalendar(user._id);
+    const event = buildEventRecord(source._id);
+    await mongoService.event.insertOne(event);
+
+    await expect(
+      eventService.replace(user._id.toString(), event._id.toHexString(), {
+        ...moveInput(destination._id.toHexString()),
+        recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+      } as never),
+    ).rejects.toMatchObject({ mutationCode: "RECURRENCE_CONFLICT" });
+
+    const stored = await mongoService.event.findOne({ _id: event._id });
+    expect(stored?.calendarId).toEqual(source._id);
+  });
+
+  it("rejects moving a Google event onto a non-Google calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const source = await seedGoogleCalendar(user._id, { access: "owner" });
+    const destination = await seedLocalCalendar(user._id);
+    const event = buildEventRecord(source._id, {
+      externalReference: {
+        provider: "google",
+        eventId: "google-event-1",
+        recurringEventId: null,
+      },
+    });
+    await mongoService.event.insertOne(event);
+
+    await expect(
+      eventService.replace(
+        user._id.toString(),
+        event._id.toHexString(),
+        moveInput(destination._id.toHexString()) as never,
+      ),
+    ).rejects.toMatchObject({ mutationCode: "PROVIDER_FAILURE" });
+
+    const stored = await mongoService.event.findOne({ _id: event._id });
+    expect(stored?.calendarId).toEqual(source._id);
+  });
+
+  it("reverts the calendar when Google refuses the move", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const source = await seedGoogleCalendar(user._id, { access: "owner" });
+    const destination = await seedGoogleCalendar(user._id, {
+      access: "writer",
+      isPrimary: false,
+    });
+    const event = buildEventRecord(source._id, {
+      externalReference: {
+        provider: "google",
+        eventId: "google-event-1",
+        recurringEventId: null,
+      },
+    });
+    await mongoService.event.insertOne(event);
+
+    jest
+      .spyOn(gcalService, "moveEvent")
+      .mockRejectedValue(new Error("cannotChangeOrganizer"));
+
+    await expect(
+      eventService.replace(
+        user._id.toString(),
+        event._id.toHexString(),
+        moveInput(destination._id.toHexString()) as never,
+      ),
+    ).rejects.toMatchObject({ mutationCode: "PROVIDER_FAILURE" });
+
+    const stored = await mongoService.event.findOne({ _id: event._id });
+    expect(stored?.calendarId).toEqual(source._id);
+  });
+
+  it("rejects a move to a read-only destination with CALENDAR_READ_ONLY", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const source = await seedLocalCalendar(user._id);
+    const destination = await seedGoogleCalendar(user._id, {
+      access: "reader",
+    });
+    const event = buildEventRecord(source._id);
+    await mongoService.event.insertOne(event);
+
+    await expect(
+      eventService.replace(
+        user._id.toString(),
+        event._id.toHexString(),
+        moveInput(destination._id.toHexString()) as never,
+      ),
+    ).rejects.toMatchObject({ mutationCode: "CALENDAR_READ_ONLY" });
+
+    const stored = await mongoService.event.findOne({ _id: event._id });
+    expect(stored?.calendarId).toEqual(source._id);
+  });
+
+  it("publishes eventsChanged for both the source and destination calendars", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const source = await seedLocalCalendar(user._id);
+    const destination = await seedLocalCalendar(user._id);
+    const event = buildEventRecord(source._id);
+    await mongoService.event.insertOne(event);
+    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
+
+    await eventService.replace(
+      user._id.toString(),
+      event._id.toHexString(),
+      moveInput(destination._id.toHexString()) as never,
+    );
+
+    const notifiedCalendarIds = publishSpy.mock.calls.map(
+      ([, payload]) => payload.calendarId,
+    );
+    expect(notifiedCalendarIds).toEqual(
+      expect.arrayContaining([
+        source._id.toHexString(),
+        destination._id.toHexString(),
+      ]),
+    );
+  });
+
+  it("moves the Google copy via events.move (then patches) when both calendars are Google", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const source = await seedGoogleCalendar(user._id, { access: "owner" });
+    const destination = await seedGoogleCalendar(user._id, {
+      access: "writer",
+      isPrimary: false,
+    });
+    const event = buildEventRecord(source._id, {
+      externalReference: {
+        provider: "google",
+        eventId: "google-event-1",
+        recurringEventId: null,
+      },
+    });
+    await mongoService.event.insertOne(event);
+
+    const moveSpy = jest
+      .spyOn(gcalService, "moveEvent")
+      .mockResolvedValue({} as never);
+    const patchSpy = jest
+      .spyOn(gcalService, "patchEvent")
+      .mockResolvedValue({} as never);
+
+    await eventService.replace(
+      user._id.toString(),
+      event._id.toHexString(),
+      moveInput(destination._id.toHexString()) as never,
+    );
+
+    expect(moveSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      source.source.calendarId,
+      "google-event-1",
+      destination.source.calendarId,
+    );
+    expect(patchSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      destination.source.calendarId,
+      "google-event-1",
+      expect.anything(),
+    );
+
+    const stored = await mongoService.event.findOne({ _id: event._id });
+    expect(stored?.externalReference).toEqual(
+      expect.objectContaining({ eventId: "google-event-1" }),
+    );
   });
 });

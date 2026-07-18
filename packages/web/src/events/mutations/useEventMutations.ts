@@ -75,6 +75,7 @@ function mergeReplaceInput(existing: Event, input: ReplaceEventInput): Event {
 
   return {
     ...existing,
+    calendarId: input.calendarId ?? existing.calendarId,
     content: input.content,
     schedule: input.schedule,
     recurrence,

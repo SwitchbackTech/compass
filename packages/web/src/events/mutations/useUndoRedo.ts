@@ -66,6 +66,9 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
       mutations.replace({
         id,
         input: {
+          // Restores the snapshot's calendar too, so undoing a cross-calendar
+          // move puts the event back on its original calendar.
+          calendarId: snapshot.calendarId,
           content: snapshot.content,
           schedule: snapshot.schedule,
           recurrence: { kind: "single" },

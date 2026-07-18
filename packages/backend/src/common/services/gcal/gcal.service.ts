@@ -80,6 +80,30 @@ class GCalService {
     return response;
   }
 
+  /**
+   * Moves an event to another Google calendar. Google preserves the event id
+   * across a move, so the stored externalReference stays valid. No
+   * sendUpdates: re-homing an event between the user's own calendars must
+   * not email attendees (matches createEvent/patchEvent).
+   */
+  async moveEvent(
+    { gcal, quotaUser }: GoogleRequestContext,
+    calendarId: string,
+    gcalEventId: string,
+    destinationCalendarId: string,
+  ): Promise<gSchema$Event> {
+    const response = await withGoogleRetry(() =>
+      gcal.events.move({
+        calendarId,
+        destination: destinationCalendarId,
+        eventId: gcalEventId,
+        quotaUser,
+      }),
+    );
+
+    return this.validateGCalResponse(response).data;
+  }
+
   private async getEventInstances(
     { gcal, quotaUser }: GoogleRequestContext,
     calendarId: string,

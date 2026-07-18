@@ -48,6 +48,31 @@ export const isWritableToGoogle = (record: EventRecord): boolean =>
  * begin with.
  */
 export class CompassToGoogleEventPropagation {
+  /**
+   * Shared failure policy for post-transaction Google effects: a user
+   * without a Google connection is a normal skip; anything else logs and
+   * surfaces as PROVIDER_FAILURE with the given message.
+   */
+  private static async runGoogleEffects(
+    userId: string,
+    failureMessage: string,
+    run: () => Promise<void>,
+  ): Promise<void> {
+    try {
+      await run();
+    } catch (err) {
+      if (isMissingGoogleRefreshToken(err)) {
+        logger.info(
+          `Skipping Google effect for user ${userId} because Google is not connected.`,
+        );
+        return;
+      }
+
+      logger.error(failureMessage, err as Error);
+      throw eventMutationError("PROVIDER_FAILURE", failureMessage);
+    }
+  }
+
   static async propagate(
     userId: string,
     change: EventChangeSet,
@@ -87,39 +112,100 @@ export class CompassToGoogleEventPropagation {
         .map((record) => record._id.toHexString()),
     );
 
-    try {
-      for (const record of change.deletedBefore) {
-        await CompassToGoogleEventPropagation.propagateDelete(
-          userId,
-          record,
-          calendarById.get(record.calendarId.toHexString()),
-          regeneratingSeriesIds,
-        );
-      }
+    await CompassToGoogleEventPropagation.runGoogleEffects(
+      userId,
+      "Failed to sync the change to Google Calendar",
+      async () => {
+        for (const record of change.deletedBefore) {
+          await CompassToGoogleEventPropagation.propagateDelete(
+            userId,
+            record,
+            calendarById.get(record.calendarId.toHexString()),
+            regeneratingSeriesIds,
+          );
+        }
 
-      for (const record of change.upserted) {
-        await CompassToGoogleEventPropagation.propagateUpsert(
-          userId,
-          record,
-          calendarById.get(record.calendarId.toHexString()),
-          change.originalStartByEventId,
-          regeneratingSeriesIds,
-        );
-      }
-    } catch (err) {
-      if (isMissingGoogleRefreshToken(err)) {
-        logger.info(
-          `Skipping Google effect for user ${userId} because Google is not connected.`,
-        );
-        return;
-      }
+        for (const record of change.upserted) {
+          await CompassToGoogleEventPropagation.propagateUpsert(
+            userId,
+            record,
+            calendarById.get(record.calendarId.toHexString()),
+            change.originalStartByEventId,
+            regeneratingSeriesIds,
+          );
+        }
+      },
+    );
+  }
 
-      logger.error("Compass->Google propagation failed", err as Error);
-      throw eventMutationError(
-        "PROVIDER_FAILURE",
-        "Failed to sync the change to Google Calendar",
-      );
-    }
+  /**
+   * Propagates a single event's cross-calendar move (the drag-between-Day-
+   * columns flow). The service restricts moves to non-recurring events and
+   * rejects moves OFF a Google calendar onto a non-Google one (that would
+   * mean deleting the Google copy — cancellation emails, lost attendees), so
+   * the only cases here are Google->Google and local->Google/local->local.
+   * `record` already carries the destination calendarId and the post-edit
+   * content/schedule. Runs after the Mongo transaction, like propagate();
+   * the caller compensates (reverts the calendarId) when this throws.
+   */
+  static async propagateCalendarMove(
+    userId: string,
+    record: EventRecord,
+    from: CalendarRecord,
+    to: CalendarRecord,
+  ): Promise<void> {
+    const fromGoogle = from.source.provider === "google" ? from.source : null;
+    const toGoogle = to.source.provider === "google" ? to.source : null;
+
+    await CompassToGoogleEventPropagation.runGoogleEffects(
+      userId,
+      "Failed to sync the calendar move to Google Calendar",
+      async () => {
+        if (fromGoogle && toGoogle && record.externalReference) {
+          const context = await createGoogleRequestContext(userId);
+          await gcalService.moveEvent(
+            context,
+            fromGoogle.calendarId,
+            record.externalReference.eventId,
+            toGoogle.calendarId,
+          );
+          // Move keeps the Google event id; the follow-up patch applies any
+          // content/schedule change from the same drag. A patch failure is
+          // non-fatal: the move itself landed, and the next ordinary edit
+          // re-patches at the destination.
+          try {
+            await gcalService.patchEvent(
+              context,
+              toGoogle.calendarId,
+              record.externalReference.eventId,
+              mapEventRecordToGoogle(record),
+            );
+          } catch (patchError) {
+            logger.warn(
+              `Post-move patch failed for event ${record._id.toHexString()}; the move itself succeeded.`,
+              patchError as Error,
+            );
+          }
+          return;
+        }
+
+        if (toGoogle) {
+          // Entering Google from a local calendar (or a Google-owned record
+          // that never synced): create fresh on the destination and store the
+          // new externalReference. Any lingering externalReference is stale —
+          // moves off Google calendars are rejected — so discard it rather
+          // than letting the upsert patch a Google event that isn't there.
+          await CompassToGoogleEventPropagation.propagateUpsert(
+            userId,
+            { ...record, externalReference: null },
+            to,
+            undefined,
+            new Set(),
+          );
+        }
+        // local -> local: nothing to sync.
+      },
+    );
   }
 
   /**

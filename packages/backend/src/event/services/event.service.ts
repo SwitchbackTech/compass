@@ -21,6 +21,7 @@ import {
 import {
   analyzeDelete,
   analyzeReplace,
+  type ReplacePlan,
   type SeriesContext,
 } from "@backend/event/classes/compass.event.parser";
 import { eventMutationError } from "@backend/event/event.error";
@@ -75,6 +76,26 @@ const notify = async (
 };
 
 const OBJECT_ID_PATTERN = /^[0-9a-f]{24}$/i;
+
+/**
+ * Applies a cross-calendar move to the plan's updated record. Only single
+ * (non-recurring) events may move (enforced before planning), so the plan is
+ * always replaceThis — or replaceSeries with no instances when the caller
+ * sent a series scope for a single event; replaceSplit requires an
+ * occurrence and can't occur.
+ */
+const retargetPlanCalendar = (
+  plan: ReplacePlan,
+  calendarId: ObjectId,
+): ReplacePlan => {
+  if (plan.kind === "replaceThis") {
+    return { ...plan, updated: { ...plan.updated, calendarId } };
+  }
+  if (plan.kind === "replaceSeries") {
+    return { ...plan, updatedBase: { ...plan.updatedBase, calendarId } };
+  }
+  return plan;
+};
 
 class EventService {
   private async ownedCalendarIds(userId: string): Promise<ObjectId[]> {
@@ -236,10 +257,52 @@ class EventService {
     input: ReplaceEventInput,
   ): Promise<EventRecord> => {
     const target = await this.requireOwnedEvent(userId, eventId);
-    await this.requireWritableCalendar(userId, target.calendarId);
+    const sourceCalendar = await this.requireWritableCalendar(
+      userId,
+      target.calendarId,
+    );
+    // A differing input.calendarId is a cross-calendar move (drag between
+    // Day-view columns). Moves supersede A6's calendar-immutability for
+    // single events only: a series' materialized instances must stay on the
+    // base's calendar, and Google has no per-occurrence move either. Both
+    // the pre-image AND the incoming recurrence must be single — otherwise
+    // one call could convert-to-series and move at once, recreating the
+    // multi-calendar-series states the guard exists to prevent.
+    const isMove =
+      !!input.calendarId && !target.calendarId.equals(input.calendarId);
+    if (
+      isMove &&
+      (target.recurrence.kind !== "single" ||
+        input.recurrence.kind === "series")
+    ) {
+      throw eventMutationError(
+        "RECURRENCE_CONFLICT",
+        "Recurring events cannot move between calendars",
+      );
+    }
+    const destinationCalendar = isMove
+      ? await this.requireWritableCalendar(userId, input.calendarId!)
+      : null;
+    // Moving a Google event off Google would mean deleting the Google copy —
+    // cancellation emails to every attendee, and attendees/conferencing lost
+    // for good if it's ever recreated. Not supported; Google events may only
+    // move between Google calendars.
+    if (
+      destinationCalendar &&
+      sourceCalendar.source.provider === "google" &&
+      destinationCalendar.source.provider !== "google"
+    ) {
+      throw eventMutationError(
+        "PROVIDER_FAILURE",
+        "Google events can only move to another Google calendar",
+      );
+    }
     const ownedCalendarIds = await this.ownedCalendarIds(userId);
     const series = await this.seriesContext(target, ownedCalendarIds);
-    const plan = analyzeReplace(target, series, input, new Date());
+    let plan = analyzeReplace(target, series, input, new Date());
+    if (destinationCalendar) {
+      plan = retargetPlanCalendar(plan, destinationCalendar._id);
+    }
     const materialized = generateReplace(plan);
     const deletedBefore = [target, ...(series?.instances ?? [])].filter(
       (record) => materialized.deleteIds.some((id) => id.equals(record._id)),
@@ -263,12 +326,46 @@ class EventService {
       executeMutation(materialized, session),
     );
 
-    await CompassToGoogleEventPropagation.propagate(userId, {
-      upserted: materialized.upsert,
-      deletedBefore,
-      originalStartByEventId,
-    });
-    await notify(userId, [materialized.primary], "updated");
+    if (destinationCalendar) {
+      // The generic propagation would patch the Google copy under the
+      // DESTINATION calendar (record.calendarId already points there), where
+      // the event doesn't exist yet — moves need Google's events.move first.
+      try {
+        await CompassToGoogleEventPropagation.propagateCalendarMove(
+          userId,
+          materialized.primary,
+          sourceCalendar,
+          destinationCalendar,
+        );
+      } catch (err) {
+        // Google refused the move (e.g. the user isn't the event's
+        // organizer). The transaction already committed the new calendarId,
+        // so put the record back on the source calendar — otherwise Compass
+        // and Google disagree forever and every later edit patches a Google
+        // event that isn't on that calendar. The client's settle-time
+        // refetch then restores the event to its original column.
+        await eventRepository.replaceOne({
+          ...materialized.primary,
+          calendarId: target.calendarId,
+        });
+        throw err;
+      }
+    } else {
+      await CompassToGoogleEventPropagation.propagate(userId, {
+        upserted: materialized.upsert,
+        deletedBefore,
+        originalStartByEventId,
+      });
+    }
+    // On a move, notify the source calendar too (via the pre-move `target`)
+    // so clients drop the event from the old column as well.
+    await notify(
+      userId,
+      destinationCalendar
+        ? [target, materialized.primary]
+        : [materialized.primary],
+      "updated",
+    );
 
     return materialized.primary;
   };
