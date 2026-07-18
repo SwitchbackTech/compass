@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { type CSSVariables } from "@web/common/styles/css.types";
+import { theme } from "@web/common/styles/theme";
 import { type FrequencyValues } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
 import { CaretInput } from "./CaretInput";
 import { FreqSelect } from "./FreqSelect";
@@ -42,8 +43,13 @@ export const RecurrenceIntervalSelect = ({
       <span className="relative text-l">Every</span>
 
       <input
-        className="ml-1 h-9.5 w-8 rounded-sm border border-transparent bg-[var(--recurrence-bg)] px-1 text-center text-s transition-all duration-300 hover:brightness-90 focus:shadow-[0_0_0_2px_var(--border-strong)] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&[type=number]]:[appearance:textfield]"
-        style={{ "--recurrence-bg": bgColor } as CSSVariables}
+        className="ml-1 h-9.5 w-8 rounded-sm border border-transparent bg-[var(--recurrence-bg)] px-1 text-center text-[var(--recurrence-text)] text-s transition-all duration-300 hover:brightness-90 focus:shadow-[0_0_0_2px_var(--border-strong)] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&[type=number]]:[appearance:textfield]"
+        style={
+          {
+            "--recurrence-bg": bgColor,
+            "--recurrence-text": theme.getContrastText(bgColor),
+          } as CSSVariables
+        }
         type="number"
         max={max}
         min={min}

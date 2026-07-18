@@ -14,13 +14,15 @@ export const WeekDay = ({ day, bgColor, onClick, selected }: WeekDayProps) => {
   return (
     <button
       type="button"
-      className="size-6 cursor-pointer rounded-full border border-[var(--border-strong)] bg-[var(--weekday-bg)] text-m transition-all duration-300 focus:shadow-[0_0_0_2px_var(--border-strong)] data-[selected=true]:bg-[var(--weekday-selected-bg)] data-[selected=true]:text-[var(--weekday-selected-text)] data-[selected=false]:hover:bg-background data-[selected=false]:hover:text-text-muted"
+      className="size-6 cursor-pointer rounded-full border border-[var(--border-strong)] bg-[var(--weekday-bg)] text-[var(--weekday-text)] text-m transition-all duration-300 focus:shadow-[0_0_0_2px_var(--border-strong)] data-[selected=true]:bg-[var(--weekday-selected-bg)] data-[selected=true]:text-[var(--weekday-selected-text)] data-[selected=false]:hover:bg-background data-[selected=false]:hover:text-text-muted"
       data-selected={selected}
       style={
         {
           "--weekday-bg": bgColor,
+          "--weekday-text": theme.getContrastText(bgColor),
           "--weekday-selected-bg": darken(bgColor, 30),
-          "--weekday-selected-text": theme.getContrastText(bgColor),
+          // Contrast text for the actual (darkened) selected fill, not bgColor.
+          "--weekday-selected-text": theme.getContrastText(darken(bgColor, 30)),
         } as CSSVariables
       }
       onClick={(event: React.MouseEvent<HTMLButtonElement>) => {

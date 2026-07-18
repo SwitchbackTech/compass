@@ -14,7 +14,8 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import { brighten, darken, isDark } from "@web/common/styles/color.utils";
+import { brighten, darken } from "@web/common/styles/color.utils";
+import { theme } from "@web/common/styles/theme";
 import { EVENT_COLOR, EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
@@ -123,11 +124,13 @@ const TimedEventCardBase = (
   );
 
   const baseColor = EVENT_COLOR;
-  const draftColor = darken(baseColor, 18);
-  // A `brightness()` filter would scale the title text toward black right
-  // along with the fill, which is what let past events fall below the 4.5:1
-  // contrast minimum. Darkening only the fill keeps the (fixed) title color's
-  // contrast ratio intact.
+  // Darkened well past the mid-tone "dead zone" (where neither dark nor light
+  // text clears 4.5:1) so the draft fill is unambiguously dark and takes the
+  // light title color, visibly distinct from the light-filled saved events.
+  const draftColor = darken(baseColor, 38);
+  // A `brightness()` filter would scale the title text along with the fill,
+  // which is what let past events fall below the 4.5:1 contrast minimum.
+  // Darkening the fill only a little keeps it light enough for dark text.
   const pastColor = darken(baseColor, 5);
   const hoverColor = EVENT_HOVER_COLOR;
   const selectedBoxShadow = "0 0 0 1px rgba(255,255,255,0.55)";
@@ -150,11 +153,10 @@ const TimedEventCardBase = (
     !isDraft && !isPlaceholder && !isResizing && !isInPast
       ? hoverColor
       : bgColor;
-  // The fill is neutral and its lightness swings widely across states (the
-  // draft overlay in particular darkens far more than the others), so the
-  // title needs a text color chosen per-state rather than one fixed value to
-  // keep 4.5:1+ contrast against every fill.
-  const titleColorClassName = isDark(bgColor) ? "text-text" : "text-on-accent";
+  // The fill is neutral and its lightness swings widely across states, so the
+  // text color is chosen per-state (whichever of dark/light reads better) and
+  // set on the content wrapper so the title and time label share it.
+  const contentColor = theme.getContrastText(bgColor);
 
   const eventStyle = {
     "--event-bg": bgColor,
@@ -267,11 +269,10 @@ const TimedEventCardBase = (
       )}
       <div
         className="flex flex-col flex-wrap items-start"
+        style={{ color: contentColor }}
         {...{ [EVENT_CONTENT_ATTRIBUTE]: "true" }}
       >
-        <span className={titleColorClassName} style={titleStyle}>
-          {event.title}
-        </span>
+        <span style={titleStyle}>{event.title}</span>
         {!event.isAllDay && (
           <>
             {showTimeLabel && (

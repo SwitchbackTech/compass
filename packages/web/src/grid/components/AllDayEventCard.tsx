@@ -13,7 +13,8 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import { darken, isDark } from "@web/common/styles/color.utils";
+import { darken } from "@web/common/styles/color.utils";
+import { theme } from "@web/common/styles/theme";
 import { EVENT_COLOR, EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
@@ -70,10 +71,10 @@ const AllDayEventCardBase = (
   // isInPast is excluded here (falls through to bgColor) so a past event
   // stays dimmed on hover instead of snapping to full brightness.
   const hoverBgColor = !isPlaceholder && !isInPast ? hoverColor : bgColor;
-  // The fill only ever gets darkened for past events, never lightened, but
-  // check dynamically (matching TimedEventCard) rather than assuming
-  // a fixed dark title color stays safe if the fill or darken amount changes.
-  const titleColorClassName = isDark(bgColor) ? "text-text" : "text-on-accent";
+  // Chosen per-fill (whichever of dark/light reads better) rather than a fixed
+  // color, matching TimedEventCard, so a future fill/darken tweak can't quietly
+  // drop the title below 4.5:1.
+  const titleColor = theme.getContrastText(bgColor);
 
   const eventStyle = {
     "--event-bg": bgColor,
@@ -157,10 +158,8 @@ const AllDayEventCardBase = (
         })}
       >
         <span
-          className={cn(
-            "relative min-w-0 truncate text-xs",
-            titleColorClassName,
-          )}
+          className="relative min-w-0 truncate text-xs"
+          style={{ color: titleColor }}
         >
           {event.title}
           <SpaceCharacter />
