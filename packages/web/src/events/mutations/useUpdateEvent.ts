@@ -4,7 +4,10 @@ import { useCallback } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
-import { buildCalendarLookup } from "@web/calendars/useCalendarLookup";
+import {
+  buildCalendarLookup,
+  isEventReadOnly,
+} from "@web/calendars/useCalendarLookup";
 import {
   type GridEvent,
   type RecurringEventUpdateScope,
@@ -80,11 +83,12 @@ export function useUpdateEvent(dependencies: EventMutationDependencies = {}) {
           showErrorToast("Repeating events can't move to another calendar.");
           return;
         }
-        const destination = buildCalendarLookup(
+        const lookup = buildCalendarLookup(
           queryClient.getQueryData<Calendar[]>(calendarQueryKeys.all),
-        ).get(nextCalendarId);
-        if (destination && !destination.capabilities.canWrite) {
-          showErrorToast(`You can't move events to ${destination.name}.`);
+        );
+        if (isEventReadOnly(lookup, nextCalendarId, false)) {
+          const name = lookup.get(nextCalendarId)?.name ?? "that calendar";
+          showErrorToast(`You can't move events to ${name}.`);
           return;
         }
       }

@@ -966,15 +966,11 @@ describe("EventService (cross-calendar move)", () => {
       expect.anything(),
       source.source.calendarId,
       "google-event-1",
-      destination.source.provider === "google"
-        ? destination.source.calendarId
-        : "",
+      destination.source.calendarId,
     );
     expect(patchSpy).toHaveBeenCalledWith(
       expect.anything(),
-      destination.source.provider === "google"
-        ? destination.source.calendarId
-        : "",
+      destination.source.calendarId,
       "google-event-1",
       expect.anything(),
     );
