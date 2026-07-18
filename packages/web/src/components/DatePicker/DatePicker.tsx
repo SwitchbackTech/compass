@@ -11,6 +11,8 @@ import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/components/Icons/ChevronRightIcon";
 import { Focusable, INPUT_RESET_CLASSNAME } from "../Focusable/Focusable";
+import { CircleIcon } from "../Icons/CircleIcon";
+import { TooltipWrapper } from "../Tooltip/TooltipWrapper";
 
 export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
   animationOnToggle?: boolean;
@@ -20,7 +22,6 @@ export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
   headerEndContent?: React.ReactNode;
   inputColor?: string;
   isOpen?: boolean;
-  monthContainerClassName?: string;
   monthTextClassName?: string;
   view: "sidebar" | "grid";
   withTodayButton?: boolean;
@@ -42,7 +43,6 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     headerEndContent,
     inputColor,
     isOpen = true,
-    monthContainerClassName,
     monthTextClassName,
     portalId = "root",
     view,
@@ -51,7 +51,9 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
   } = datePickerProps;
   const resolvedBgColor = bgColor ?? theme.color.bg.primary;
   const datePickerStyle: CSSVariables = {
-    "--date-picker-bg": bgColor ?? "var(--compass-color-bg-primary)",
+    // Grid (popover) pickers read as an elevated surface a step above the app
+    // background; the sidebar picker overrides this to transparent in CSS.
+    "--date-picker-bg": bgColor ?? "var(--compass-color-bg-secondary)",
   };
   const isDarkBackground = isDark(resolvedBgColor);
   const headerColor =
@@ -114,12 +116,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
               headerClassName,
             )}
           >
-            <div
-              className={classNames(
-                "min-w-0 flex-1 items-start",
-                monthContainerClassName,
-              )}
-            >
+            <div className={classNames("w-16 items-start")}>
               <span
                 className={classNames("relative", monthTextClassName)}
                 style={{ color: headerColor }}
@@ -158,20 +155,23 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                   </MonthNavButton>
                 </div>
                 {withTodayButton && (
-                  <button
-                    className={classNames(
-                      "relative mr-10 cursor-pointer border-0 bg-transparent px-1.5 text-l hover:brightness-160 hover:transition-[filter] hover:duration-350 hover:ease-out",
-                      currentMonth === selectedMonth && "opacity-0",
-                    )}
-                    onClick={() => {
-                      headerProps.changeMonth(dayjs().month());
-                      headerProps.changeYear(dayjs().year());
-                    }}
-                    style={{ color: "var(--compass-color-text-light)" }}
-                    type="button"
-                  >
-                    Today
-                  </button>
+                  <TooltipWrapper description={currentMonth}>
+                    <button
+                      type="button"
+                      aria-label="Go to this month"
+                      className={classNames(
+                        "flex h-6 w-6 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-text-lighter/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
+                        currentMonth === selectedMonth && "invisible",
+                      )}
+                      style={{ color: headerColor }}
+                      onClick={() => {
+                        headerProps.changeMonth(dayjs().month());
+                        headerProps.changeYear(dayjs().year());
+                      }}
+                    >
+                      <CircleIcon />
+                    </button>
+                  </TooltipWrapper>
                 )}
               </div>
             )}

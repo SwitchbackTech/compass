@@ -21,6 +21,10 @@ export interface AllDayDragVisual {
    * absolutely, because the converted block lands on the column it was dropped
    * on and has no meaningful offset from where the span started.
    */
+  /**
+   * Column key semantics match TimedDragVisual.dayDate: a date in the Week
+   * view, a calendar id in the Day view.
+   */
   dayDate: string;
   dayIndex: number;
   eventId: string;

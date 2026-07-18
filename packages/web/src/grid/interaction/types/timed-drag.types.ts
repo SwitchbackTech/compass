@@ -29,7 +29,12 @@ export type CrossRowSize = { height: number; width: number } | null;
  */
 export interface TimedDragVisual {
   crossRowSize: CrossRowSize;
-  /** Local YYYY-MM-DD date of the column currently under the drag. */
+  /**
+   * Key of the column currently under the drag. Week view columns are
+   * local YYYY-MM-DD dates; Day view columns are CALENDAR IDS (all columns
+   * share the visible date there) - do not dayjs-parse this without knowing
+   * which view produced it.
+   */
   dayDate: string;
   dayIndex: number;
   durationMinutes: number;

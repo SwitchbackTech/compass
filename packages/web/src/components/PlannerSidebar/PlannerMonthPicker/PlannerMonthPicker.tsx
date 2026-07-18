@@ -76,7 +76,6 @@ export const PlannerMonthPicker: FC<Props> = ({
         headerClassName="!relative !justify-start !px-0 !pb-3"
         inline
         isOpen={true}
-        monthContainerClassName="!w-auto"
         monthTextClassName="text-[14px] font-medium"
         monthsShown={monthsShown}
         onChange={(date) => {
@@ -90,7 +89,7 @@ export const PlannerMonthPicker: FC<Props> = ({
         selected={focusedDate.toDate()}
         shouldCloseOnSelect={false}
         view="sidebar"
-        withTodayButton={false}
+        withTodayButton={true}
       />
     </fieldset>
   );

@@ -7,10 +7,9 @@ interface EventFormShellProps extends ComponentPropsWithoutRef<"form"> {
 
 /**
  * Outer `<form>` for the event form. Transparent full-height flex column so
- * the sidebar's own background shows through — the form is part of the
- * sidebar, not a card floating on it. Children own scrolling and padding
+ * the sidebar's own background shows through. Children own scrolling and padding
  * (EventForm renders a scrollable body plus a pinned footer). The
- * (resizable) sidebar width is the single source of the form's size.
+ * resizable sidebar width is the single source of the form's size.
  * Content-agnostic: callers pass their fields as children and any
  * form-specific props (`name`, mouse handlers, an extra `className`).
  */
