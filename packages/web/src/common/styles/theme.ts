@@ -1,4 +1,4 @@
-import { isDark } from "@web/common/styles/color.utils";
+import { readability } from "@web/common/styles/color.utils";
 import { colors } from "@web/common/styles/colors";
 
 export const theme = {
@@ -22,9 +22,14 @@ export const theme = {
       extraBold: 900,
     },
   },
-  // Light text on dark backgrounds, dark text on light backgrounds.
+  // Return whichever text token actually has the higher contrast against the
+  // background. A brightness threshold misfires on mid-tone fills, where the
+  // "lighter" side is still too dark for light text (and vice versa).
   getContrastText: (backgroundColor: string): string =>
-    isDark(backgroundColor) ? colors.text : colors.onAccent,
+    readability(colors.onAccent, backgroundColor) >=
+    readability(colors.text, backgroundColor)
+      ? colors.onAccent
+      : colors.text,
   transition: {
     default: "0.3s",
   },

@@ -6,7 +6,9 @@ export const EVENT_ALLDAY_ROW_HEIGHT = EVENT_ALLDAY_HEIGHT + EVENT_ALLDAY_GAP;
 export const EVENT_PADDING_RIGHT = 10;
 export const TIMED_EVENT_COLUMN_INSET = 5;
 export const GRID_EVENT_TIME_LABEL_FONT_SIZE = "11px";
-export const GRID_EVENT_TIME_LABEL_OPACITY = "0.78";
+// Dims the time label relative to the title. Kept high enough that the label,
+// composited over the event fill, still clears 4.5:1 with the dark title color.
+export const GRID_EVENT_TIME_LABEL_OPACITY = "0.82";
 // Line box the 11px time label occupies. The title's line clamp subtracts this
 // so the label keeps its row instead of being pushed past the card's clipped edge.
 export const GRID_EVENT_TIME_LABEL_LINE_HEIGHT = 13;
