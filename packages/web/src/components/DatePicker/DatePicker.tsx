@@ -51,7 +51,9 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
   } = datePickerProps;
   const resolvedBgColor = bgColor ?? theme.color.bg.primary;
   const datePickerStyle: CSSVariables = {
-    "--date-picker-bg": bgColor ?? "var(--compass-color-bg-primary)",
+    // Grid (popover) pickers read as an elevated surface a step above the app
+    // background; the sidebar picker overrides this to transparent in CSS.
+    "--date-picker-bg": bgColor ?? "var(--compass-color-bg-secondary)",
   };
   const isDarkBackground = isDark(resolvedBgColor);
   const headerColor =

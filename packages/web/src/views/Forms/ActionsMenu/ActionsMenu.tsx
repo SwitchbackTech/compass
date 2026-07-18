@@ -138,7 +138,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
             returnFocus={false}
           >
             <div
-              className="flex flex-col gap-2 rounded-sm bg-(--actions-menu-bg) p-2 shadow-[0_4px_8px_rgb(0_0_0/10%)]"
+              className="flex flex-col gap-1 rounded-sm border border-border-primary bg-(--actions-menu-bg) p-1 shadow-[0_8px_24px_var(--color-shadow-default)]"
               ref={refs.setFloating}
               style={{
                 ...context.floatingStyles,
