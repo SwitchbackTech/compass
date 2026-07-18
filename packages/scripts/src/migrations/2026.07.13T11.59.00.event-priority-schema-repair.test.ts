@@ -78,7 +78,7 @@ describe("2026.07.13T11.59.00.event-priority-schema-repair", () => {
   afterAll(cleanupTestDb);
 
   it("no-ops when the active event collection does not exist", async () => {
-    await expect(migration.up(migrationContext)).resolves.not.toThrow();
+    await migration.up(migrationContext);
   });
 
   it("refuses to modify a pre-cutover legacy event collection", async () => {
@@ -115,7 +115,7 @@ describe("2026.07.13T11.59.00.event-priority-schema-repair", () => {
     expect(await events().countDocuments({ priority: { $exists: true } })).toBe(
       0,
     );
-    await expect(events().insertOne(eventRecord())).resolves.not.toThrow();
+    await events().insertOne(eventRecord());
 
     const info = await mongoService.db
       .listCollections({ name: collectionName() })
@@ -132,7 +132,7 @@ describe("2026.07.13T11.59.00.event-priority-schema-repair", () => {
     await events().insertOne({ ...eventRecord(), priority: "unassigned" });
 
     await migration.up(migrationContext);
-    await expect(migration.up(migrationContext)).resolves.not.toThrow();
+    await migration.up(migrationContext);
 
     expect(await events().countDocuments()).toBe(1);
     expect(await events().countDocuments({ priority: { $exists: true } })).toBe(

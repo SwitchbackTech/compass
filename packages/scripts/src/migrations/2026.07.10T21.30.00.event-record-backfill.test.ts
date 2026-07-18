@@ -125,7 +125,7 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
 
   describe("up", () => {
     it("no-ops cleanly against a fresh, empty database", async () => {
-      await expect(migration.up(migrationContext)).resolves.not.toThrow();
+      await migration.up(migrationContext);
       expect(await destinationCollection().countDocuments()).toBe(0);
     });
 
@@ -493,7 +493,7 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
       await migration.up(migrationContext);
       const firstPass = await destinationCollection().find({}).toArray();
 
-      await expect(migration.up(migrationContext)).resolves.not.toThrow();
+      await migration.up(migrationContext);
       const secondPass = await destinationCollection().find({}).toArray();
 
       expect(secondPass).toHaveLength(firstPass.length);
@@ -610,7 +610,7 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
 
       // Resume = simply rerunning the migration. bulkWrite is real again, so
       // this is an ordinary full run against the ragged state left above.
-      await expect(migration.up(migrationContext)).resolves.not.toThrow();
+      await migration.up(migrationContext);
 
       const afterResume = await destinationCollection().find({}).toArray();
       expect(afterResume).toHaveLength(eventsPerUser * 2);

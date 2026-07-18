@@ -32,7 +32,7 @@ describe("2026.07.14T10.00.00.priority-data-cleanup", () => {
   afterAll(cleanupTestDb);
 
   it("no-ops cleanly against a fresh, empty database", async () => {
-    await expect(migration.up(contextFor(false))).resolves.not.toThrow();
+    await migration.up(contextFor(false));
   });
 
   it("unsets the priority field from event documents that still carry it", async () => {
@@ -96,7 +96,7 @@ describe("2026.07.14T10.00.00.priority-data-cleanup", () => {
     });
 
     await migration.up(contextFor(false));
-    await expect(migration.up(contextFor(false))).resolves.not.toThrow();
+    await migration.up(contextFor(false));
 
     const remaining = await events
       .find({ priority: { $exists: true } })

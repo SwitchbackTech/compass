@@ -1,10 +1,10 @@
-import CompassCLI from "@scripts/cli";
 import { MigratorType } from "./common/cli.types";
+import { beforeEach, describe, expect, it, jest, mock } from "bun:test";
 
 const mockExitHelpfully = jest.fn();
 const mockRunMigrator = jest.fn((): Promise<void> => Promise.resolve());
 
-jest.mock("@scripts/cli.validator", () => {
+mock.module("@scripts/cli.validator", () => {
   return {
     CliValidator: jest.fn().mockImplementation(() => ({
       exitHelpfully: mockExitHelpfully,
@@ -12,10 +12,12 @@ jest.mock("@scripts/cli.validator", () => {
   };
 });
 
-jest.mock("@scripts/commands/migrate", () => ({
+mock.module("@scripts/commands/migrate", () => ({
   __esModule: true,
   runMigrator: jest.fn((type: MigratorType) => mockRunMigrator(type)),
 }));
+
+const { default: CompassCLI } = await import("@scripts/cli");
 
 describe("CompassCLI", () => {
   beforeEach(() => jest.clearAllMocks());

@@ -33,7 +33,10 @@
     "test:backend": "./node_modules/.bin/jest --selectProjects backend",
     "test:core": "bun test packages/core/src --preload ./packages/scripts/src/testing/core.preload.ts",
     "test:web": "bun test --cwd packages/web",
-    "test:scripts": "./node_modules/.bin/jest scripts",
+    "test:scripts": "bun test packages/scripts/src --preload ./packages/scripts/src/testing/scripts.preload.ts",
+    "test:scripts:migrations": "bun test packages/scripts/src/migrations --preload ./packages/scripts/src/testing/scripts.preload.ts",
+    "test:scripts:db": "bun test --preload ./packages/scripts/src/testing/scripts.preload.ts $(rg -l 'mock\\.db\\.setup' packages/scripts/src --glob '*.test.ts')",
+    "test:scripts:unit": "bun test $(rg --files-without-match 'mock\\.db\\.setup' packages/scripts/src --glob '*.test.ts')",
     "type-check": "bunx typescript@7.0.2 --noEmit && bunx typescript@7.0.2 -p packages/web/tsconfig.app.json --noEmit && bun run type-check:web-tests",
     "type-check:web-tests": "bunx typescript@7.0.2 -p packages/web/tsconfig.test.json --noEmit",
     "verify": "bun packages/scripts/src/testing/verify.ts",
@@ -58,6 +61,7 @@
     "@types/node-fetch": "^2.6.13",
     "axe-core": "^4.12.1",
     "jest": "^29.0.3",
+    "mongodb-memory-server": "9.2.0",
     "typescript": "^7.0.2"
   },
   "resolutions": {

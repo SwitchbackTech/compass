@@ -60,7 +60,7 @@ describe("2026.07.13T12.00.00.recurring-series-first-occurrence-repair", () => {
   afterAll(cleanupTestDb);
 
   it("no-ops cleanly against a fresh, empty database", async () => {
-    await expect(migration.up(contextFor(false))).resolves.not.toThrow();
+    await migration.up(contextFor(false));
   });
 
   it("removes an unlinked duplicate occurrence when a linked occurrence already exists at the same start", async () => {

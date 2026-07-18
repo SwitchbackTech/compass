@@ -69,7 +69,7 @@ describe("2026.07.15T22.00.00.timed-event-timezone-repair", () => {
   afterAll(cleanupTestDb);
 
   it("no-ops cleanly against a fresh, empty database", async () => {
-    await expect(migration.up(contextFor(false))).resolves.not.toThrow();
+    await migration.up(contextFor(false));
   });
 
   it("re-derives schedule.timeZone from the owning calendar for a UTC-tagged event", async () => {
@@ -167,7 +167,7 @@ describe("2026.07.15T22.00.00.timed-event-timezone-repair", () => {
     await mongoService.event.insertOne(event);
 
     await migration.up(contextFor(false));
-    await expect(migration.up(contextFor(false))).resolves.not.toThrow();
+    await migration.up(contextFor(false));
 
     const updated = await mongoService.event.findOne({ _id: event._id });
     expect(updated?.schedule).toMatchObject({ timeZone: "America/Denver" });
