@@ -21,8 +21,8 @@ import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 import {
-  clearHoveredGridEventTarget,
-  setHoveredGridEventTarget,
+  clearHoveredWeekGridEventTarget,
+  setHoveredWeekGridEventTarget,
 } from "@web/views/Week/interaction/targeting/week-event.targeting";
 
 interface Props {
@@ -149,10 +149,10 @@ const GridEventBase = (
       onMouseEnter={(e: MouseEvent<HTMLDivElement>) => {
         if (!shouldTrackCalendarHover) return;
 
-        setHoveredGridEventTarget(e.currentTarget);
+        setHoveredWeekGridEventTarget(e.currentTarget);
       }}
       onMouseLeave={(e: MouseEvent<HTMLDivElement>) => {
-        clearHoveredGridEventTarget(e.currentTarget);
+        clearHoveredWeekGridEventTarget(e.currentTarget);
       }}
       onScalerMouseDown={onScalerMouseDown}
       position={{ ...position, zIndex }}

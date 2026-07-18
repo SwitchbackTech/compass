@@ -1,16 +1,16 @@
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/week-event.registry";
 import {
-  clearHoveredGridEventTarget,
-  focusGridEventTarget,
-  getFirstVisibleGridEventTarget,
-  getFocusedGridEventTarget,
-  getHoveredGridEventTarget,
-  setHoveredGridEventTarget,
+  clearHoveredWeekGridEventTarget,
+  focusWeekGridEventTarget,
+  getFirstVisibleWeekGridEventTarget,
+  getFocusedWeekGridEventTarget,
+  getHoveredWeekGridEventTarget,
+  setHoveredWeekGridEventTarget,
 } from "./week-event.targeting";
 import { afterEach, describe, expect, it } from "bun:test";
 
 afterEach(() => {
-  clearHoveredGridEventTarget();
+  clearHoveredWeekGridEventTarget();
   weekEventRegistry.clear();
   document.body.innerHTML = "";
 });
@@ -53,7 +53,7 @@ describe("weekGridEventTargeting", () => {
     });
     focused.focus();
 
-    expect(getFocusedGridEventTarget()).toMatchObject({
+    expect(getFocusedWeekGridEventTarget()).toMatchObject({
       element: focused,
       eventId: "focused",
       eventType: "all-day",
@@ -62,9 +62,9 @@ describe("weekGridEventTargeting", () => {
 
   it("uses the hovered calendar event when nothing is focused", () => {
     const hovered = addEventButton({ eventId: "hovered" });
-    setHoveredGridEventTarget(hovered);
+    setHoveredWeekGridEventTarget(hovered);
 
-    expect(getHoveredGridEventTarget()).toMatchObject({
+    expect(getHoveredWeekGridEventTarget()).toMatchObject({
       element: hovered,
       eventId: "hovered",
       eventType: "timed",
@@ -76,7 +76,7 @@ describe("weekGridEventTargeting", () => {
     addEventButton({ eventId: "hidden", isVisible: false });
     const firstVisible = addEventButton({ eventId: "visible" });
 
-    expect(getFirstVisibleGridEventTarget()).toMatchObject({
+    expect(getFirstVisibleWeekGridEventTarget()).toMatchObject({
       element: firstVisible,
       eventId: "visible",
       eventType: "timed",
@@ -85,10 +85,10 @@ describe("weekGridEventTargeting", () => {
 
   it("focuses a returned calendar target", () => {
     const button = addEventButton({ eventId: "target" });
-    const target = getFirstVisibleGridEventTarget();
+    const target = getFirstVisibleWeekGridEventTarget();
 
     if (!target) throw new Error("expected target");
-    focusGridEventTarget(target);
+    focusWeekGridEventTarget(target);
 
     expect(document.activeElement).toBe(button);
   });

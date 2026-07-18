@@ -9,30 +9,33 @@ import {
   weekEventRegistry,
 } from "@web/views/Week/interaction/registry/week-event.registry";
 
-export type GridEventTargetType = WeekInteractionEventType;
+export type WeekGridEventTargetType = WeekInteractionEventType;
 
-export type GridEventTarget = SharedGridEventTarget<GridEventTargetType>;
+export type WeekGridEventTarget =
+  SharedGridEventTarget<WeekGridEventTargetType>;
 
 const TARGET_SELECTOR = `[${WEEK_INTERACTION_EVENT_ID_ATTRIBUTE}][${WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE}]`;
 
-const weekGridEventTargeting = createGridEventTargeting<GridEventTargetType>({
-  registry: weekEventRegistry,
-  targetSelector: TARGET_SELECTOR,
-});
+const weekGridEventTargeting =
+  createGridEventTargeting<WeekGridEventTargetType>({
+    registry: weekEventRegistry,
+    targetSelector: TARGET_SELECTOR,
+  });
 
-export const setHoveredGridEventTarget =
+export const setHoveredWeekGridEventTarget =
   weekGridEventTargeting.setHoveredGridEventTarget;
 
-export const clearHoveredGridEventTarget =
+export const clearHoveredWeekGridEventTarget =
   weekGridEventTargeting.clearHoveredGridEventTarget;
 
-export const getFocusedGridEventTarget =
+export const getFocusedWeekGridEventTarget =
   weekGridEventTargeting.getFocusedGridEventTarget;
 
-export const getHoveredGridEventTarget =
+export const getHoveredWeekGridEventTarget =
   weekGridEventTargeting.getHoveredGridEventTarget;
 
-export const getFirstVisibleGridEventTarget =
+export const getFirstVisibleWeekGridEventTarget =
   weekGridEventTargeting.getFirstVisibleGridEventTarget;
 
-export const focusGridEventTarget = weekGridEventTargeting.focusGridEventTarget;
+export const focusWeekGridEventTarget =
+  weekGridEventTargeting.focusGridEventTarget;
