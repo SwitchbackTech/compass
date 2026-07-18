@@ -183,64 +183,60 @@ export const DatePickers: FC<Props> = ({
 
   return (
     <>
-      <div className={dateFieldClassName}>
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
-        <div
-          className="w-full"
-          onMouseUp={stopPropagation}
-          onMouseDown={stopPropagation}
-        >
-          <DatePicker
-            calendarClassName="startDatePicker"
-            isOpen={isStartDatePickerOpen}
-            monthTextClassName="text-medium"
-            onCalendarClose={closeStartDatePicker}
-            onCalendarOpen={() => {
-              setIsStartDatePickerOpen(true);
-            }}
-            onChange={() => null}
-            onInputClick={() => {
-              if (isEndDatePickerOpen) {
-                setIsEndDatePickerOpen(false);
-              }
-              setIsStartDatePickerOpen(true);
-            }}
-            onKeyDown={(e) => onPickerKeyDown("start", e)}
-            onSelect={onSelectStartDate}
-            selected={selectedStartDate}
-            title="Pick Start Date"
-            view="grid"
-          />
-        </div>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
+      <div
+        className={dateFieldClassName}
+        onMouseUp={stopPropagation}
+        onMouseDown={stopPropagation}
+      >
+        <DatePicker
+          calendarClassName="startDatePicker"
+          isOpen={isStartDatePickerOpen}
+          monthTextClassName="text-medium"
+          onCalendarClose={closeStartDatePicker}
+          onCalendarOpen={() => {
+            setIsStartDatePickerOpen(true);
+          }}
+          onChange={() => null}
+          onInputClick={() => {
+            if (isEndDatePickerOpen) {
+              setIsEndDatePickerOpen(false);
+            }
+            setIsStartDatePickerOpen(true);
+          }}
+          onKeyDown={(e) => onPickerKeyDown("start", e)}
+          onSelect={onSelectStartDate}
+          selected={selectedStartDate}
+          title="Pick Start Date"
+          view="grid"
+        />
       </div>
 
-      <div className={dateFieldClassName}>
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
-        <div
-          className="w-full"
-          onMouseUp={stopPropagation}
-          onMouseDown={stopPropagation}
-        >
-          <DatePicker
-            calendarClassName="endDatePicker"
-            isOpen={isEndDatePickerOpen}
-            monthTextClassName="text-medium"
-            onCalendarClose={closeEndDatePicker}
-            onCalendarOpen={() => setIsEndDatePickerOpen(true)}
-            onChange={() => null}
-            onInputClick={() => {
-              if (isStartDatePickerOpen) {
-                setIsStartDatePickerOpen(false);
-              }
-              setIsEndDatePickerOpen(true);
-            }}
-            onKeyDown={(e) => onPickerKeyDown("end", e)}
-            onSelect={onSelectEndDate}
-            selected={displayEndDate}
-            title="Pick End Date"
-            view="grid"
-          />
-        </div>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
+      <div
+        className={dateFieldClassName}
+        onMouseUp={stopPropagation}
+        onMouseDown={stopPropagation}
+      >
+        <DatePicker
+          calendarClassName="endDatePicker"
+          isOpen={isEndDatePickerOpen}
+          monthTextClassName="text-medium"
+          onCalendarClose={closeEndDatePicker}
+          onCalendarOpen={() => setIsEndDatePickerOpen(true)}
+          onChange={() => null}
+          onInputClick={() => {
+            if (isStartDatePickerOpen) {
+              setIsStartDatePickerOpen(false);
+            }
+            setIsEndDatePickerOpen(true);
+          }}
+          onKeyDown={(e) => onPickerKeyDown("end", e)}
+          onSelect={onSelectEndDate}
+          selected={displayEndDate}
+          title="Pick End Date"
+          view="grid"
+        />
       </div>
     </>
   );
