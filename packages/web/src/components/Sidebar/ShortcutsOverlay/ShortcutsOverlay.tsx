@@ -51,24 +51,20 @@ export function ShortcutsOverlay({
     >
       <div
         className={classNames(
-          "flex h-full flex-col bg-bg-secondary/95 px-4 pt-8 pb-5 text-text-light shadow-2xl backdrop-blur-md",
+          "flex h-full flex-col bg-surface/95 px-4 pt-8 pb-5 text-text-muted shadow-2xl backdrop-blur-md",
           "transition-transform duration-200 ease-out motion-reduce:transition-none",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="mb-5 flex items-center justify-between">
           <div>
-            <div className="font-medium text-text-lighter text-xl">
-              Shortcuts
-            </div>
-            <div className="mt-1 text-text-light-inactive text-xs">
-              {subtitle}
-            </div>
+            <div className="font-medium text-text text-xl">Shortcuts</div>
+            <div className="mt-1 text-text-muted text-xs">{subtitle}</div>
           </div>
 
           <button
             aria-label="Close shortcuts"
-            className="flex size-7 items-center justify-center rounded-default text-text-light-inactive transition-colors hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            className="flex size-7 items-center justify-center rounded-default text-text-muted transition-colors hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             onClick={onClose}
             tabIndex={isOpen ? 0 : -1}
             type="button"

@@ -58,7 +58,7 @@ export const Dedication = () => {
           aria-label="Close dialog"
         />
         <div
-          className={`relative flex max-h-[90vh] w-[min(92vw,44rem)] flex-col gap-6 overflow-y-auto rounded-xl border border-border-primary bg-bg-secondary p-6 text-text-light shadow-[0_16px_48px_var(--color-shadow-default)] transition-transform duration-300 ease-out sm:p-8 ${
+          className={`relative flex max-h-[90vh] w-[min(92vw,44rem)] flex-col gap-6 overflow-y-auto rounded-xl border border-border bg-surface p-6 text-text-muted shadow-[0_16px_48px_var(--color-shadow-default)] transition-transform duration-300 ease-out sm:p-8 ${
             isVisible ? "scale-100" : "scale-95"
           }`}
         >
@@ -68,7 +68,7 @@ export const Dedication = () => {
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:gap-8">
             <blockquote>
               <p
-                className="text-2xl text-text-lighter"
+                className="text-2xl text-text"
                 style={{ fontFamily: '"Caveat", cursive' }}
               >
                 "I have such amazing friends and family and I wish I could slow
@@ -80,7 +80,7 @@ export const Dedication = () => {
             <AsciiPortrait
               src={derekImg}
               alt="Headshot of Derek"
-              className="h-44 w-44 shrink-0 overflow-hidden rounded-full shadow-[0_0_10px_var(--color-panel-shadow)] sm:h-60 sm:w-60"
+              className="h-44 w-44 shrink-0 overflow-hidden rounded-full shadow-[0_0_10px_var(--color-shadow-default)] sm:h-60 sm:w-60"
             />
           </div>
         </div>

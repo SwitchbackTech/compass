@@ -15,7 +15,7 @@ import {
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { type CSSVariables } from "@web/common/styles/css.types";
-import { blueGradient } from "@web/common/styles/theme.util";
+import { accentGradient } from "@web/common/styles/theme.util";
 import {
   getColorsByHour,
   getHourLabels,
@@ -59,7 +59,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
       // c-scroll sets `:focus-visible { outline: none }`; restore a visible
       // indicator now that this is a real Tab stop (see tabIndex below), or
       // keyboard users get a focusable-but-invisible region.
-      className="c-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--compass-color-accent-primary)] focus-visible:[outline-offset:-1px]"
+      className="c-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--accent)] focus-visible:[outline-offset:-1px]"
       id={timedGridId}
       ref={timedGridRef}
       // biome-ignore lint/a11y/noNoninteractiveTabindex: WCAG 2.1.1 requires a scrollable region to be keyboard-focusable (axe's scrollable-region-focusable rule); tabIndex={-1} previously made a mouse click the only way in.
@@ -91,7 +91,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
             <tr className="contents">
               {visibleDates.map(({ date, key, surfaceLabel }) => (
                 <th
-                  className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-grid-line-primary border-l data-[past=true]:bg-bg-secondary"
+                  className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l data-[past=true]:bg-surface"
                   data-past={date.isBefore(today, "day")}
                   aria-label={surfaceLabel ?? date.format("dddd, MMMM D, YYYY")}
                   key={key}
@@ -114,7 +114,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
         {getHourLabels(true).map((dayTime) => (
           // biome-ignore lint/a11y/noStaticElementInteractions: Hour rows are pointer-only drag targets for creating timed events.
           <div
-            className="relative flex h-[calc(100%/var(--calendar-visible-hours))] w-full items-start border-grid-line-primary border-b"
+            className="relative flex h-[calc(100%/var(--calendar-visible-hours))] w-full items-start border-border border-b"
             key={dayTime}
             {...{ [DATA_TIMED_GRID_ROW]: "true" }}
             onMouseDown={onMouseDown}
@@ -190,7 +190,7 @@ const CalendarNowLine = ({
       aria-hidden="true"
       className="absolute h-px"
       style={{
-        background: blueGradient,
+        background: accentGradient,
         top: `${percentOfDay}%`,
         left: `calc(${columnIndex} * 100% / ${columnCount})`,
         width: `calc(100% / ${columnCount})`,

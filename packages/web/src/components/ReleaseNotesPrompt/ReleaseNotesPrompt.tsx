@@ -63,7 +63,7 @@ export function ReleaseNotesPrompt() {
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: The backdrop catches outside clicks and Escape to dismiss the modal.
     <div
-      className="fixed inset-0 flex items-center justify-center bg-bg-primary/85 p-8 backdrop-blur-sm transition-opacity duration-400 ease-out data-closing:opacity-0 motion-reduce:transition-none"
+      className="fixed inset-0 flex items-center justify-center bg-background/85 p-8 backdrop-blur-sm transition-opacity duration-400 ease-out data-closing:opacity-0 motion-reduce:transition-none"
       data-closing={closing || undefined}
       onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
@@ -77,16 +77,16 @@ export function ReleaseNotesPrompt() {
         aria-modal
         aria-label="Release notes subscription"
         data-closing={closing || undefined}
-        className="flex w-120 max-w-[90vw] flex-col gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-transform duration-400 ease-out data-closing:scale-105 motion-reduce:transition-none"
+        className="flex w-120 max-w-[90vw] flex-col gap-6 rounded-xl bg-surface-panel p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-transform duration-400 ease-out data-closing:scale-105 motion-reduce:transition-none"
       >
         <PixelPirate className="h-14 w-14" />
         {state === "asking" ? (
           <>
             <div className="flex flex-col gap-2">
-              <h2 className="font-bold text-2xl text-text-lighter leading-snug">
+              <h2 className="font-bold text-2xl text-text leading-snug">
                 Want the latest Compass news?
               </h2>
-              <p className="text-text-light">
+              <p className="text-text-muted">
                 Get monthly release notes with new features, improvements, and
                 helpful tips. Unsubscribe anytime.
               </p>
@@ -110,10 +110,10 @@ export function ReleaseNotesPrompt() {
           </>
         ) : (
           <div className="flex flex-col gap-2">
-            <h2 className="font-bold text-2xl text-text-lighter leading-snug">
+            <h2 className="font-bold text-2xl text-text leading-snug">
               {state === "confirmed" ? "You're in!" : "No problem."}
             </h2>
-            <p className="text-text-light">
+            <p className="text-text-muted">
               {state === "confirmed"
                 ? "Monthly notes headed your way."
                 : "No problem, you can signup using the cmd palette if you change your mind."}

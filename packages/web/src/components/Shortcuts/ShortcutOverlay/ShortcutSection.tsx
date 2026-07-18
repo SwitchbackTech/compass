@@ -16,10 +16,10 @@ export const ShortcutSection = ({
       className={
         isFirst
           ? "mb-6 last:mb-0"
-          : "mt-6 mb-6 border-border-primary/60 border-t pt-5 last:mb-0"
+          : "mt-6 mb-6 border-border/60 border-t pt-5 last:mb-0"
       }
     >
-      <div className="mb-3 font-bold text-sm text-text-lighter leading-tight">
+      <div className="mb-3 font-bold text-sm text-text leading-tight">
         {title}
       </div>
       <ShortcutList shortcuts={shortcuts} />

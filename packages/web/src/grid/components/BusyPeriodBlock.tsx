@@ -24,7 +24,7 @@ export const BusyPeriodBlock = ({
 }: BusyPeriodBlockProps) => {
   const style: CSSProperties = {
     backgroundImage:
-      "repeating-linear-gradient(135deg, var(--color-panel-badge-bg) 0px, var(--color-panel-badge-bg) 4px, transparent 4px, transparent 9px)",
+      "repeating-linear-gradient(135deg, var(--color-surface-overlay) 0px, var(--color-surface-overlay) 4px, transparent 4px, transparent 9px)",
     height: position.height || 0,
     left: position.left,
     top: position.top,
@@ -35,7 +35,7 @@ export const BusyPeriodBlock = ({
   return (
     <div
       aria-label={ariaLabel}
-      className="pointer-events-none absolute overflow-hidden rounded-xs border border-border-primary bg-panel-badge-bg"
+      className="pointer-events-none absolute overflow-hidden rounded-xs border border-border bg-surface-overlay"
       role="img"
       style={style}
     />

@@ -5,16 +5,14 @@ import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 interface Props {
   onClick: () => void;
   tooltipText?: string;
-  bgColor: string;
 }
 
 export const MigrateAboveMenuButton: React.FC<Props> = ({
   onClick,
   tooltipText = "Migrate Above",
-  bgColor,
 }) => {
   return (
-    <MenuItem onClick={onClick} aria-label={tooltipText} bgColor={bgColor}>
+    <MenuItem onClick={onClick} aria-label={tooltipText}>
       <ArrowUpIcon size={14} />
       <span>{tooltipText}</span>
     </MenuItem>

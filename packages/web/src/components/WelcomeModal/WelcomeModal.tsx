@@ -90,7 +90,7 @@ export function WelcomeModal() {
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: The backdrop catches outside clicks and Escape to dismiss the welcome modal.
     <div
-      className="fixed inset-0 flex items-center justify-center overflow-y-auto bg-bg-primary/85 py-8 backdrop-blur-sm transition-opacity duration-400 ease-out data-closing:opacity-0 motion-reduce:transition-none"
+      className="fixed inset-0 flex items-center justify-center overflow-y-auto bg-background/85 py-8 backdrop-blur-sm transition-opacity duration-400 ease-out data-closing:opacity-0 motion-reduce:transition-none"
       data-closing={closing || undefined}
       onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
@@ -104,7 +104,7 @@ export function WelcomeModal() {
         aria-modal
         aria-label="Welcome to Compass Calendar"
         data-closing={closing || undefined}
-        className="flex w-120 max-w-[90vw] flex-col gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-transform duration-400 ease-out data-closing:scale-105 motion-reduce:transition-none"
+        className="flex w-120 max-w-[90vw] flex-col gap-6 rounded-xl bg-surface-panel p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-transform duration-400 ease-out data-closing:scale-105 motion-reduce:transition-none"
       >
         {/* Top row: pirate top-left, log-in pill top-right */}
         <div className="flex items-center justify-between">
@@ -114,9 +114,9 @@ export function WelcomeModal() {
             <div className="pointer-events-none absolute left-full ml-1 flex -translate-x-1 items-center opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100">
               <span
                 aria-hidden
-                className="h-0 w-0 border-y-4 border-y-transparent border-r-4 border-r-panel-badge-bg"
+                className="h-0 w-0 border-y-4 border-y-transparent border-r-4 border-r-surface-overlay"
               />
-              <span className="whitespace-nowrap rounded-lg bg-panel-badge-bg px-3 py-1 font-[VT323,monospace] text-base text-text-lighter">
+              <span className="whitespace-nowrap rounded-lg bg-surface-overlay px-3 py-1 font-[VT323,monospace] text-base text-text">
                 No signup required
               </span>
             </div>
@@ -133,10 +133,10 @@ export function WelcomeModal() {
 
         {/* Header */}
         <div className="flex flex-col gap-2">
-          <h2 className="font-bold text-2xl text-text-lighter leading-snug">
+          <h2 className="font-bold text-2xl text-text leading-snug">
             Compass Calendar helps you manage your time, simply.
           </h2>
-          <p className="text-text-light">
+          <p className="text-text-muted">
             A small, but mighty calendar app. Built for busy minimalists who get
             things done.
           </p>
@@ -154,7 +154,7 @@ export function WelcomeModal() {
         </div>
 
         {/* FAQ */}
-        <div className="flex flex-col divide-y divide-border-primary">
+        <div className="flex flex-col divide-y divide-border">
           {FAQ_ITEMS.map((item, index) => {
             const isExpanded = expandedFaqs.has(item.question);
             const answerId = `${disclosureIdPrefix}-faq-answer-${index}`;
@@ -166,7 +166,7 @@ export function WelcomeModal() {
                   type="button"
                   aria-controls={answerId}
                   aria-expanded={isExpanded}
-                  className="c-focus-ring w-full cursor-pointer select-none text-left font-medium text-sm text-text-lighter transition-colors hover:text-text-lightest"
+                  className="c-focus-ring w-full cursor-pointer select-none text-left font-medium text-sm text-text transition-colors hover:text-text-lightest"
                   onClick={() => toggleFaq(item.question)}
                 >
                   {item.question}
@@ -178,7 +178,7 @@ export function WelcomeModal() {
                   data-state={state}
                 >
                   <div>
-                    <div className="mt-2 text-sm text-text-light leading-relaxed">
+                    <div className="mt-2 text-sm text-text-muted leading-relaxed">
                       {item.answer !== null ? (
                         item.answer
                       ) : (
@@ -187,7 +187,7 @@ export function WelcomeModal() {
                           more. You can run it yourself too; read the{" "}
                           <a
                             href="/blog/self-host"
-                            className="c-focus-ring font-medium text-accent-primary underline-offset-4 hover:underline"
+                            className="c-focus-ring font-medium text-accent underline-offset-4 hover:underline"
                           >
                             self-hosting guide
                           </a>{" "}
@@ -203,14 +203,14 @@ export function WelcomeModal() {
         </div>
 
         {/* Footer: social + legal */}
-        <div className="flex items-center justify-between border-border-primary border-t pt-4">
+        <div className="flex items-center justify-between border-border border-t pt-4">
           <div className="flex items-center gap-3">
             <a
               href="https://x.com/CompassCalendar"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="X (Twitter)"
-              className="c-focus-ring text-text-light transition-colors hover:text-text-lighter"
+              className="c-focus-ring text-text-muted transition-colors hover:text-text"
             >
               <XLogoIcon size={18} weight="bold" />
             </a>
@@ -219,7 +219,7 @@ export function WelcomeModal() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn"
-              className="c-focus-ring text-text-light transition-colors hover:text-text-lighter"
+              className="c-focus-ring text-text-muted transition-colors hover:text-text"
             >
               <LinkedinLogoIcon size={18} weight="bold" />
             </a>
@@ -228,17 +228,17 @@ export function WelcomeModal() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="GitHub"
-              className="c-focus-ring text-text-light transition-colors hover:text-text-lighter"
+              className="c-focus-ring text-text-muted transition-colors hover:text-text"
             >
               <GithubLogoIcon size={18} weight="bold" />
             </a>
           </div>
-          <div className="flex items-center gap-4 text-text-light text-xs">
+          <div className="flex items-center gap-4 text-text-muted text-xs">
             <a
               href="https://compasscalendar.com/privacy"
               target="_blank"
               rel="noopener noreferrer"
-              className="c-focus-ring underline-offset-4 hover:text-text-lighter hover:underline"
+              className="c-focus-ring underline-offset-4 hover:text-text hover:underline"
             >
               Privacy
             </a>
@@ -246,7 +246,7 @@ export function WelcomeModal() {
               href="https://compasscalendar.com/terms"
               target="_blank"
               rel="noopener noreferrer"
-              className="c-focus-ring underline-offset-4 hover:text-text-lighter hover:underline"
+              className="c-focus-ring underline-offset-4 hover:text-text hover:underline"
             >
               Terms
             </a>

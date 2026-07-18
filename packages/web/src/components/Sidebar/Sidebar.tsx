@@ -65,7 +65,7 @@ export function createSidebar({
       <aside
         {...props}
         aria-label="Sidebar"
-        className="relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-panel-bg pt-5 text-panel-text"
+        className="relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-surface-panel pt-5 text-text"
         id={ID_SIDEBAR}
       >
         {showEventDetails ? (

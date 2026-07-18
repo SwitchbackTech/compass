@@ -38,8 +38,8 @@ export function DeleteAccountConfirmationDialog({
       widthClassName="w-[480px]"
     >
       <div className="flex w-full flex-col gap-2">
-        <label htmlFor={inputId} className="text-sm text-text-lighter">
-          Type <span className="text-text-light">{DELETE_ACCOUNT_PHRASE}</span>{" "}
+        <label htmlFor={inputId} className="text-sm text-text">
+          Type <span className="text-text-muted">{DELETE_ACCOUNT_PHRASE}</span>{" "}
           to confirm
         </label>
         <input
@@ -47,7 +47,7 @@ export function DeleteAccountConfirmationDialog({
           type="text"
           value={typedPhrase}
           autoComplete="off"
-          className="w-full rounded border border-border-primary bg-transparent px-3 py-2 text-text-light outline-none placeholder:text-text-lighter focus-visible:border-accent-primary"
+          className="w-full rounded border border-border bg-transparent px-3 py-2 text-text-muted outline-none placeholder:text-text focus-visible:border-accent"
           onChange={(event) => setTypedPhrase(event.target.value)}
           // Typing the phrase out is the whole point of the confirmation,
           // so it can't be pasted or dragged in.

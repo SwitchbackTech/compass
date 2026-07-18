@@ -1,6 +1,5 @@
 import { type Id, type ToastOptions } from "react-toastify";
-import { c } from "@web/common/styles/colors";
-import { theme } from "@web/common/styles/theme";
+import { colors } from "@web/common/styles/colors";
 
 export const EVENT_DELETED_TOAST_ID: Id = "event-deleted";
 export const GOOGLE_REVOKED_TOAST_ID: Id = "google-revoked-api";
@@ -14,11 +13,11 @@ export const toastDefaultOptions: ToastOptions = {
   closeOnClick: true,
   theme: "dark",
   style: {
-    backgroundColor: theme.color.bg.primary,
-    color: theme.color.text.lighter,
-    boxShadow: `0 4px 12px ${c.gray900}`,
+    backgroundColor: colors.background,
+    color: colors.text,
+    boxShadow: "0 4px 12px hsl(0 0 0 / 50%)",
   },
   progressStyle: {
-    background: c.gray200,
+    background: colors.textMuted,
   },
 };

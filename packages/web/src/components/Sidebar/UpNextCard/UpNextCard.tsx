@@ -38,15 +38,15 @@ export const UpNextCard: FC = () => {
     <section aria-label="Up next">
       <button
         aria-label={`Up next: ${upNext.title}. ${countdown}.`}
-        className="c-focus-ring group relative flex w-full min-w-0 flex-col gap-0.5 rounded border border-border-primary bg-bg-secondary px-2 py-1.5 text-left hover:brightness-110"
+        className="c-focus-ring group relative flex w-full min-w-0 flex-col gap-0.5 rounded border border-border bg-surface px-2 py-1.5 text-left hover:brightness-110"
         onClick={() => openEventDetails("gridClick")}
         type="button"
       >
-        <span className="pr-8 text-accent-primary text-xs">{countdown}</span>
+        <span className="pr-8 text-accent text-xs">{countdown}</span>
         <ShortcutHint className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
           N
         </ShortcutHint>
-        <span className="min-w-0 truncate font-medium text-sm text-text-lighter">
+        <span className="min-w-0 truncate font-medium text-sm text-text">
           {upNext.title}
         </span>
       </button>

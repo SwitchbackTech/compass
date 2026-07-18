@@ -108,7 +108,7 @@ export const CalendarSelect = ({ value, onChange }: CalendarSelectProps) => {
 
   if (writableCalendars.length === 0) {
     return (
-      <p className="my-1.5 text-status-error text-xs">
+      <p className="my-1.5 text-error text-xs">
         No writable calendar available
       </p>
     );
@@ -128,7 +128,7 @@ export const CalendarSelect = ({ value, onChange }: CalendarSelectProps) => {
         aria-haspopup="listbox"
         aria-controls={isOpen ? dropdownId : undefined}
         aria-label={buttonLabel}
-        className="c-focus-ring flex w-full items-center gap-2 rounded-xs px-1.5 py-1 text-left text-text-lighter text-xs hover:bg-text-lighter/10"
+        className="c-focus-ring flex w-full items-center gap-2 rounded-xs px-1.5 py-1 text-left text-text text-xs hover:bg-text/10"
         type="button"
       >
         <span
@@ -165,7 +165,7 @@ export const CalendarSelect = ({ value, onChange }: CalendarSelectProps) => {
           })}
           id={dropdownId}
           aria-label="Calendar"
-          className="absolute top-full left-0 z-50 mt-1 min-w-[200px] rounded border border-border-primary bg-bg-secondary py-1 shadow-lg"
+          className="absolute top-full left-0 z-50 mt-1 min-w-[200px] rounded border border-border bg-surface py-1 shadow-lg"
           role="listbox"
         >
           {writableCalendars.map((calendar, index) => {
@@ -187,8 +187,8 @@ export const CalendarSelect = ({ value, onChange }: CalendarSelectProps) => {
                 tabIndex={isActive ? 0 : -1}
                 className={classNames(
                   "flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 text-left text-xs transition-colors",
-                  isSelected ? "text-accent-primary" : "text-text-light",
-                  isActive ? "bg-text-lighter/10" : "hover:bg-text-lighter/10",
+                  isSelected ? "text-accent" : "text-text-muted",
+                  isActive ? "bg-text/10" : "hover:bg-text/10",
                 )}
               >
                 <span

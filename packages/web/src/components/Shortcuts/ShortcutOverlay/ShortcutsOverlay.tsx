@@ -32,16 +32,14 @@ export const ShortcutsOverlay = ({
     <aside
       aria-label={ariaLabel}
       className={classNames(
-        "fixed top-24 left-3 border-border-primary bg-bg-secondary",
+        "fixed top-24 left-3 border-border bg-surface",
         "border p-3 shadow-lg backdrop-blur-sm md:block",
         `hidden w-60 rounded-lg ${className}`,
       )}
       style={{ zIndex: ZIndex.MAX }}
     >
       {heading && (
-        <div className="mb-2 font-medium text-text-lighter text-xs">
-          {heading}
-        </div>
+        <div className="mb-2 font-medium text-text text-xs">{heading}</div>
       )}
       {visibleSections.map((section, index) => (
         <ShortcutSection

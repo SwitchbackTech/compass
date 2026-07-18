@@ -55,13 +55,13 @@ export const CleanupView = () => {
 
       {!isClearing && !error && (
         <div className="flex flex-col items-center gap-6 p-8 text-center">
-          <div className="text-text-lighter text-xl">
+          <div className="text-text text-xl">
             Browser data cleared successfully!
           </div>
           <button
             type="button"
             onClick={handleRedirect}
-            className="rounded-sm bg-accent-primary px-6 py-3 text-text-lighter transition-colors hover:bg-accent-primary/90"
+            className="rounded-sm bg-accent px-6 py-3 text-text transition-colors hover:bg-accent/90"
           >
             Continue to Home
           </button>
@@ -69,7 +69,7 @@ export const CleanupView = () => {
       )}
 
       {error && (
-        <div className="p-8 text-center text-text-lighter text-xl">{error}</div>
+        <div className="p-8 text-center text-text text-xl">{error}</div>
       )}
     </div>
   );

@@ -13,7 +13,7 @@ import { Divider } from "@web/components/Divider/Divider";
 // Muted placeholders, matching Textarea: full white is what the user typed,
 // so a hint that borrows it reads as a real value.
 export const INPUT_RESET_CLASSNAME =
-  "h-8.5 border-0 px-2 outline-none placeholder:text-text-light-inactive hover:bg-border-primary";
+  "h-8.5 border-0 px-2 outline-none placeholder:text-text-muted hover:bg-border";
 
 export interface Props
   extends UnderlinedInput,

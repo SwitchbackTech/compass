@@ -6,6 +6,7 @@ import {
 } from "react";
 import { darken } from "@web/common/styles/color.utils";
 import { type CSSVariables } from "@web/common/styles/css.types";
+import { theme } from "@web/common/styles/theme";
 import { EVENT_COLOR } from "@web/common/styles/theme.util";
 
 // A native button (not a div) so Enter/Space activate it — click handlers
@@ -40,7 +41,8 @@ export const SaveButton = forwardRef<
   const background = darken(EVENT_COLOR);
   const buttonStyle: CSSVariables = {
     ...style,
-    "--save-button-hover-color": "var(--color-text-light)",
+    "--save-button-text-color": theme.getContrastText(background),
+    "--save-button-hover-color": "var(--color-text-muted)",
     "--elevated-shadow-color": darken(EVENT_COLOR, 25),
     background,
     minWidth,
@@ -51,7 +53,7 @@ export const SaveButton = forwardRef<
       {...props}
       aria-disabled={disabled || undefined}
       className={classNames(
-        "c-button-elevated min-w-39.5 px-2 text-text-dark transition-[background-color,color,box-shadow,transform] duration-500 hover:bg-bg-primary hover:text-(--save-button-hover-color)",
+        "c-button-elevated min-w-39.5 px-2 text-(--save-button-text-color) transition-[background-color,color,box-shadow,transform] duration-500 hover:bg-background hover:text-(--save-button-hover-color)",
         disabled && "pointer-events-none opacity-50",
         className,
       )}

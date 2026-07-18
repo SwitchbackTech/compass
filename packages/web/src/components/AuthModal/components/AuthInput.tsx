@@ -33,10 +33,7 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {showLabel && (
-          <label
-            htmlFor={inputId}
-            className="font-medium text-sm text-text-lighter"
-          >
+          <label htmlFor={inputId} className="font-medium text-sm text-text">
             {label}
           </label>
         )}
@@ -44,11 +41,11 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
           ref={ref}
           id={inputId}
           className={clsx(
-            "border-border-primary border-b bg-transparent py-2 text-base transition-colors",
-            "text-text-lighter placeholder:text-text-darkPlaceholder",
-            "focus:border-accent-primary focus:outline-none",
+            "border-border border-b bg-transparent py-2 text-base transition-colors",
+            "text-text placeholder:text-text-subtle",
+            "focus:border-accent focus:outline-none",
             {
-              "border-status-error focus:border-status-error": showError,
+              "border-error focus:border-error": showError,
             },
           )}
           aria-label={!showLabel ? ariaLabel : undefined}
@@ -57,7 +54,7 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
           {...inputProps}
         />
         {showError && (
-          <span id={errorId} className="text-sm text-status-error" role="alert">
+          <span id={errorId} className="text-sm text-error" role="alert">
             {error}
           </span>
         )}

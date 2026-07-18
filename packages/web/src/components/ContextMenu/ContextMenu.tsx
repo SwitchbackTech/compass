@@ -6,9 +6,6 @@ import {
   useRole,
 } from "@floating-ui/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { darken } from "@web/common/styles/color.utils";
-import { type CSSVariables } from "@web/common/styles/css.types";
-import { EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   ContextMenuItems,
@@ -110,19 +107,11 @@ export const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
 
     if (!event) return null;
 
-    const bgColor = EVENT_HOVER_COLOR;
-
     return (
       <ul
         className="c-context-menu"
         ref={setMenuRef}
-        style={
-          {
-            ...style,
-            backgroundColor: bgColor,
-            "--menu-item-hover": darken(bgColor, 8),
-          } as CSSVariables
-        }
+        style={style}
         {...getFloatingProps()}
       >
         <ContextMenuNavContext.Provider

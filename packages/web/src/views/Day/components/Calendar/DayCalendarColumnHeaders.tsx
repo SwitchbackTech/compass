@@ -8,7 +8,7 @@ export const DayCalendarColumnHeaders = ({
 }) => (
   <section
     aria-label="Calendars"
-    className="grid min-h-12 shrink-0 bg-bg-primary"
+    className="grid min-h-12 shrink-0 bg-background"
     style={{
       gridTemplateColumns: `repeat(${calendars.length}, minmax(0, 1fr))`,
       marginLeft: GRID_MARGIN_LEFT,
@@ -16,7 +16,7 @@ export const DayCalendarColumnHeaders = ({
   >
     {calendars.map((calendar) => (
       <div
-        className="flex min-w-0 items-center justify-center gap-2 border-grid-line-primary border-l px-3 last:border-r"
+        className="flex min-w-0 items-center justify-center gap-2 border-border border-l px-3 last:border-r"
         key={calendar.id}
       >
         <span
@@ -24,9 +24,7 @@ export const DayCalendarColumnHeaders = ({
           className="size-2 shrink-0 rounded-full"
           style={{ backgroundColor: calendar.backgroundColor }}
         />
-        <span className="truncate text-sm text-text-lighter">
-          {calendar.name}
-        </span>
+        <span className="truncate text-sm text-text">{calendar.name}</span>
       </div>
     ))}
   </section>

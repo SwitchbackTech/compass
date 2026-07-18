@@ -171,7 +171,7 @@ describe("EventCard", () => {
     expect(icon).not.toBeNull();
     const iconClass = icon?.getAttribute("class") ?? "";
     expect(iconClass).not.toContain("left-1");
-    expect(iconClass).not.toContain("fg-primary");
+    expect(iconClass).not.toContain("text-muted");
   });
 
   it("shows the repeat indicator on a 15-minute recurring event despite its small rendered height", () => {
@@ -322,7 +322,7 @@ describe("EventCard", () => {
     expect(icon).not.toBeNull();
     const iconClass = icon?.getAttribute("class") ?? "";
     expect(iconClass).toContain("bottom-0.5");
-    expect(iconClass).not.toContain("fg-primary");
+    expect(iconClass).not.toContain("text-muted");
   });
 
   it("announces recurring all-day events", () => {

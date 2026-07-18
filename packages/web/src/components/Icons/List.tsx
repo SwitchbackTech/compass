@@ -4,7 +4,7 @@ import { getInteractiveIconClassName } from "./icon.utils";
 export const ListIcon = ({ className, ...props }: IconProps) => (
   <List
     className={getInteractiveIconClassName(
-      `cursor-pointer text-text-light ${className ?? ""}`,
+      `cursor-pointer text-text-muted ${className ?? ""}`,
     )}
     {...props}
   />

@@ -45,14 +45,9 @@ export const useMenuContext = () => {
 interface ActionsMenuProps {
   children: (closeMenu: () => void) => React.ReactNode;
   id?: string;
-  bgColor: string;
 }
 
-export const ActionsMenu: React.FC<ActionsMenuProps> = ({
-  children,
-  id,
-  bgColor,
-}) => {
+export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const openedByMouseRef = useRef(false);
@@ -138,11 +133,10 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
             returnFocus={false}
           >
             <div
-              className="flex flex-col gap-1 rounded-sm border border-border-primary bg-(--actions-menu-bg) p-1 shadow-[0_8px_24px_var(--color-shadow-default)]"
+              className="flex flex-col gap-1 rounded-sm border border-border bg-surface-raised p-1 shadow-[0_8px_24px_var(--color-shadow-default)]"
               ref={refs.setFloating}
               style={{
                 ...context.floatingStyles,
-                backgroundColor: bgColor,
                 zIndex: Z_INDEX_FLOATING_MENU,
               }}
               {...getFloatingProps()}

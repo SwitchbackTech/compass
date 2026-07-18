@@ -12,7 +12,7 @@ import {
 } from "@core/types/event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
-import { theme } from "@web/common/styles/theme";
+import { colors as palette } from "@web/common/styles/colors";
 import { type Option_Time } from "@web/common/types/util.types";
 import {
   type Categories_Event,
@@ -34,9 +34,7 @@ export const getColorsByHour = (currentHour: number) => {
 
   [...(new Array(24) as number[])].map((_, index) => {
     const isCurrentHour = currentHour - 1 === index;
-    const color = isCurrentHour
-      ? theme.color.text.accent
-      : theme.color.text.light;
+    const color = isCurrentHour ? palette.accent : palette.textMuted;
 
     colors.push(color);
 
