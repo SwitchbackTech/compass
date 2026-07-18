@@ -22,21 +22,17 @@ function discoverMigrationFiles(): string[] {
 describe("migration discovery", () => {
   const files = discoverMigrationFiles();
 
-  it("finds the timestamped migration files", () => {
+  it("finds uniquely-named, timestamped migration files", () => {
     expect(files.length).toBeGreaterThan(0);
-    for (const file of files) {
-      // Umzug orders by filename; the repo names migrations `YYYY.MM.DD...`.
-      expect(parse(file).name).toMatch(/^\d{4}\.\d{2}\.\d{2}T/);
-    }
-  });
 
-  it("orders migrations lexicographically by filename (chronological)", () => {
     const names = files.map((file) => parse(file).name);
-    const sorted = [...names].sort((a, b) => a.localeCompare(b));
-    // A migration named out of chronological order would run in the wrong
-    // sequence; the loader's sort must be a stable identity on sorted input.
-    expect([...names].sort((a, b) => a.localeCompare(b))).toEqual(sorted);
-    expect(new Set(names).size).toBe(names.length); // names are unique
+    for (const name of names) {
+      // Umzug sorts by filename, so a zero-padded `YYYY.MM.DD...` prefix is
+      // what makes lexicographic order equal chronological order.
+      expect(name).toMatch(/^\d{4}\.\d{2}\.\d{2}T/);
+    }
+    // Duplicate names would make the run order ambiguous.
+    expect(new Set(names).size).toBe(names.length);
   });
 
   it("exposes a runnable migration (default export with an up method) per file", async () => {
