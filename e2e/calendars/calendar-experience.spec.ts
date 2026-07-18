@@ -9,12 +9,22 @@ test.skip(
   "Mouse/keyboard flows are desktop-only in week view.",
 );
 
+// Wide enough for all 7 week columns (track needs GRID_MARGIN_LEFT +
+// 7 * DAY_COLUMN_MIN_USABLE_WIDTH beside the sidebar). At the default
+// 1280px, bare /week shows a 6-day Sun-Fri window anchored on the week
+// start, which EXCLUDES today whenever today is Saturday (UTC) — the
+// today-anchored fixtures below then never render and every assertion on
+// them fails. Full width keeps "the default week view always includes
+// today" true on every weekday.
+test.use({ viewport: { width: 1600, height: 900 } });
+
 // Fixtures. CalendarSchema/EventSchema (packages/core/src/types) are zod
 // strictObjects - an extra or missing field fails parsing client-side and
 // the app renders nothing, so every fixture below is a full, honest member
 // of those shapes. IDs are 24-char hex (ObjectId format). Event times anchor
 // on "today" so the default week view (dayjs().startOf("week"), always
-// including today) renders them without knowing the week-start convention.
+// including today at full width - see the viewport note above) renders them
+// without knowing the week-start convention.
 
 const objectId = (seed: string) => seed.repeat(24);
 
