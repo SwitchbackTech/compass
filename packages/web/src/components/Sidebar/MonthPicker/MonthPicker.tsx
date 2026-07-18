@@ -89,7 +89,7 @@ export const MonthPicker: FC<Props> = ({
         selected={focusedDate.toDate()}
         shouldCloseOnSelect={false}
         view="sidebar"
-        withTodayButton={false}
+        withTodayButton={true}
       />
     </fieldset>
   );

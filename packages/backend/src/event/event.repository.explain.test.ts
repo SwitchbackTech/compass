@@ -6,6 +6,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import mongoService from "@backend/common/services/mongo.service";
 import { type EventRecord } from "@backend/event/event.record";
+import { afterAll, beforeEach, describe, expect, it } from "bun:test";
 
 /**
  * Query explain regression tests (packet 09 step 5). Not env-gated: explain

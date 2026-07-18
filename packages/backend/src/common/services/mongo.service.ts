@@ -8,6 +8,7 @@ import {
   MongoClient,
   ObjectId,
 } from "mongodb";
+import { NodeEnv } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { type Schema_Sync } from "@core/types/sync.types";
 import { type Schema_User } from "@core/types/user.types";
@@ -160,12 +161,17 @@ class MongoService {
   }
 
   async reconnect(client: MongoClient): Promise<MongoClient> {
+    // A local/in-memory test server is either up or it is not; the production
+    // startup backoff (a full second before the first attempt, growing 5x)
+    // only adds dead time per test file. Connect eagerly under test.
+    const isTest = CONFIG.NODE_ENV === NodeEnv.Test;
+
     return backOff(client.connect.bind(client), {
       jitter: "full",
-      delayFirstAttempt: true,
-      startingDelay: 1000,
+      delayFirstAttempt: !isTest,
+      startingDelay: isTest ? 0 : 1000,
       timeMultiple: 5,
-      retry: (...args) => this.onRetryConnect(...args, 25000),
+      retry: (...args) => this.onRetryConnect(...args, isTest ? 0 : 25000),
     });
   }
 

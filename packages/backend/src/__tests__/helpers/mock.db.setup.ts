@@ -34,9 +34,11 @@ export async function cleanupCollections(): Promise<void> {
 }
 
 export async function cleanupTestDb(): Promise<void> {
-  try {
-    await mongoService.stop();
-  } catch (err) {
-    console.error("Error during test db cleanup:", err);
-  }
+  // Intentionally does not disconnect. Each test file runs in its own process
+  // (see run-tests.ts) that shares one Mongo server and exits when the file
+  // finishes, so tearing the client down here is unnecessary. It was also
+  // harmful: a file with sibling `describe` blocks that each `beforeAll(setup)`
+  // would disconnect after the first block, and the next block's
+  // `beforeEach(cleanupCollections)` then ran against a closed client. Dropping
+  // the per-describe teardown keeps the single connection alive for the file.
 }

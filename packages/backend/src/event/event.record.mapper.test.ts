@@ -6,6 +6,7 @@ import {
   mapCreateInput,
   mapEventRecord,
 } from "@backend/event/event.record.mapper";
+import { describe, expect, it } from "bun:test";
 
 const buildRecord = (overrides: Partial<EventRecord> = {}): EventRecord => ({
   _id: new ObjectId(),

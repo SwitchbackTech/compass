@@ -5,24 +5,13 @@ import {
   isRetryableGoogleError,
   withGoogleRetry,
 } from "@backend/common/services/gcal/gcal.retry";
+import { describe, expect, it } from "bun:test";
 
-// Local override so the retry module's own `logger` instance (captured once
-// at import time) is this mock, letting the observability tests below assert
-// on it directly instead of the repo-wide no-op logger mock. Babel hoists
-// `import`s above any same-file `const`, so the shared mock object is
-// defined inside the factory itself (nothing external to dereference too
-// early) and recovered afterward from `Logger`'s single recorded call.
-jest.mock("@core/logger/winston.logger", () => ({
-  Logger: jest.fn(() => ({
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    verbose: jest.fn(),
-  })),
-}));
-
-const mockLogger = (Logger as unknown as jest.Mock).mock.results[0]?.value as {
+// The repo-wide winston mock (see mock.setup.ts) returns one stable logger per
+// name, so this is the very instance the retry module captured at import time
+// (`Logger("app:gcal.retry")`). Grabbing it by the same name lets the
+// observability tests assert on it directly.
+const mockLogger = Logger("app:gcal.retry") as unknown as {
   debug: jest.Mock;
   info: jest.Mock;
   warn: jest.Mock;
@@ -175,8 +164,12 @@ describe("withGoogleRetry", () => {
     const sleep = jest.fn(noopSleep);
     const fn = jest
       .fn()
-      .mockRejectedValueOnce(makeGaxiosError({ status: 429 }))
-      .mockRejectedValueOnce(makeGaxiosError({ status: 500 }))
+      .mockImplementationOnce(() =>
+        Promise.reject(makeGaxiosError({ status: 429 })),
+      )
+      .mockImplementationOnce(() =>
+        Promise.reject(makeGaxiosError({ status: 500 })),
+      )
       .mockResolvedValueOnce("ok");
 
     await expect(withGoogleRetry(fn, { sleep, maxAttempts: 5 })).resolves.toBe(
@@ -189,7 +182,7 @@ describe("withGoogleRetry", () => {
   it("throws immediately on a non-retryable error without sleeping", async () => {
     const sleep = jest.fn(noopSleep);
     const err = makeGaxiosError({ status: 404 });
-    const fn = jest.fn().mockRejectedValue(err);
+    const fn = jest.fn().mockImplementation(() => Promise.reject(err));
 
     await expect(withGoogleRetry(fn, { sleep })).rejects.toBe(err);
     expect(fn).toHaveBeenCalledTimes(1);
@@ -199,7 +192,7 @@ describe("withGoogleRetry", () => {
   it("throws the original error once maxAttempts is exhausted", async () => {
     const sleep = jest.fn(noopSleep);
     const err = makeGaxiosError({ status: 429 });
-    const fn = jest.fn().mockRejectedValue(err);
+    const fn = jest.fn().mockImplementation(() => Promise.reject(err));
 
     await expect(withGoogleRetry(fn, { sleep, maxAttempts: 3 })).rejects.toBe(
       err,
@@ -222,7 +215,10 @@ describe("withGoogleRetry Retry-After handling", () => {
       status: 429,
       headers: { "retry-after": "2" },
     });
-    const fn = jest.fn().mockRejectedValueOnce(err).mockResolvedValueOnce("ok");
+    const fn = jest
+      .fn()
+      .mockImplementationOnce(() => Promise.reject(err))
+      .mockResolvedValueOnce("ok");
 
     await expect(
       withGoogleRetry(fn, { sleep, baseDelayMs: 10_000, maxDelayMs: 30_000 }),
@@ -239,7 +235,10 @@ describe("withGoogleRetry Retry-After handling", () => {
       status: 429,
       headers: { "retry-after": "9999" },
     });
-    const fn = jest.fn().mockRejectedValueOnce(err).mockResolvedValueOnce("ok");
+    const fn = jest
+      .fn()
+      .mockImplementationOnce(() => Promise.reject(err))
+      .mockResolvedValueOnce("ok");
 
     await expect(
       withGoogleRetry(fn, { sleep, maxDelayMs: 30_000 }),
@@ -259,7 +258,10 @@ describe("withGoogleRetry Retry-After handling", () => {
       status: 429,
       headers: value === undefined ? undefined : { "retry-after": value },
     });
-    const fn = jest.fn().mockRejectedValueOnce(err).mockResolvedValueOnce("ok");
+    const fn = jest
+      .fn()
+      .mockImplementationOnce(() => Promise.reject(err))
+      .mockResolvedValueOnce("ok");
 
     await expect(
       withGoogleRetry(fn, { sleep, baseDelayMs: 500, maxDelayMs: 30_000 }),
@@ -289,7 +291,10 @@ describe("withGoogleRetry observability logging", () => {
   it("logs once when a call succeeds after retrying", async () => {
     const sleep = jest.fn(noopSleep);
     const err = makeGaxiosError({ status: 429 });
-    const fn = jest.fn().mockRejectedValueOnce(err).mockResolvedValueOnce("ok");
+    const fn = jest
+      .fn()
+      .mockImplementationOnce(() => Promise.reject(err))
+      .mockResolvedValueOnce("ok");
 
     await withGoogleRetry(fn, { sleep });
 
@@ -309,7 +314,7 @@ describe("withGoogleRetry observability logging", () => {
   it("logs once when a call fails after exhausting retries", async () => {
     const sleep = jest.fn(noopSleep);
     const err = makeGaxiosError({ status: 500 });
-    const fn = jest.fn().mockRejectedValue(err);
+    const fn = jest.fn().mockImplementation(() => Promise.reject(err));
 
     await expect(withGoogleRetry(fn, { sleep, maxAttempts: 2 })).rejects.toBe(
       err,
@@ -330,7 +335,7 @@ describe("withGoogleRetry observability logging", () => {
   it("logs nothing extra when a non-retryable error fails on the first try", async () => {
     const sleep = jest.fn(noopSleep);
     const err = makeGaxiosError({ status: 404 });
-    const fn = jest.fn().mockRejectedValue(err);
+    const fn = jest.fn().mockImplementation(() => Promise.reject(err));
 
     await expect(withGoogleRetry(fn, { sleep })).rejects.toBe(err);
 

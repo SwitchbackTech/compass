@@ -20,6 +20,15 @@ import {
   GoogleWatchStateStatus,
   inspectGoogleWatchState,
 } from "@backend/sync/services/watch/google-watch-state";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 jest.mock("@backend/sync/services/watch/google-watch-config", () => {
   const actual = jest.requireActual(

@@ -254,7 +254,18 @@ function applyBunJestCompat(bunJest, bunMock) {
     const { callerRequire, resolvedModule } = resolveModule(moduleName);
 
     if (!actualModules.has(resolvedModule)) {
-      actualModules.set(resolvedModule, callerRequire(moduleName));
+      const mod = callerRequire(moduleName);
+      // Bun keeps a single live module object; a later `mock.module` of the
+      // same specifier mutates that object's exports in place. Jest instead
+      // handed back an independent copy of the real module. Snapshot the
+      // exports here so the common `{ ...jest.requireActual(x), fn: jest.fn(()
+      // => actual.fn()) }` pattern keeps calling the real `fn` instead of
+      // recursing into its own mock.
+      const snapshot =
+        mod && typeof mod === "object" && !Array.isArray(mod)
+          ? { ...mod }
+          : mod;
+      actualModules.set(resolvedModule, snapshot);
     }
 
     return actualModules.get(resolvedModule);
@@ -275,6 +286,16 @@ function applyBunJestCompat(bunJest, bunMock) {
   jestCompat.mocked = (item) => item;
   jestCompat.doMock = (moduleName, factory) =>
     jestCompat.mock(moduleName, factory);
+  // Bun has no per-module unmock. Every caller in this repo pairs `unmock`
+  // with a `beforeEach` that re-registers the mock, so the fresh value is
+  // installed on the next tick regardless; a no-op preserves that behavior
+  // without disturbing other module mocks (which a global reset would).
+  jestCompat.unmock = () => bunJest;
+  jestCompat.dontMock = () => bunJest;
+  jestCompat.setMock = (moduleName, moduleExports) => {
+    bunMock.module(moduleName, () => moduleExports);
+    return bunJest;
+  };
   jestCompat.replaceProperty = (target, propertyKey, value) => {
     const ownDescriptor = Object.getOwnPropertyDescriptor(target, propertyKey);
     const prototype = Object.getPrototypeOf(target);

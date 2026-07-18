@@ -3,6 +3,7 @@ import {
   mockRecurringGcalBaseEvent,
   mockRecurringGcalInstances,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
+import { describe, expect, it } from "bun:test";
 
 describe("mockRecurringInstances", () => {
   it("should not include 'recurrence'", () => {

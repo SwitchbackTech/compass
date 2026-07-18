@@ -15,7 +15,8 @@
     "**/*.spec.ts",
     "**/*.spec.tsx",
     "packages/scripts/src/testing/core.jest-compat.ts",
-    "packages/scripts/src/testing/core.preload.ts"
+    "packages/scripts/src/testing/core.preload.ts",
+    "packages/scripts/src/testing/scripts.preload.ts"
   ],
   "compilerOptions": {
     "target": "ES2022" /* Specify ECMAScript target version. */,

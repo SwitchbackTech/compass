@@ -11,6 +11,7 @@ import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
 import { type gSchema$Event } from "@core/types/gcal";
 import { type GoogleRequestContext } from "./gcal.context";
 import gcalService from "./gcal.service";
+import { describe, expect, it } from "bun:test";
 
 describe("gcal.service watch callbacks", () => {
   it("uses the Google webhook base URL for event watch callback addresses", async () => {
@@ -109,7 +110,7 @@ describe("gcal.service watch callbacks", () => {
 
     const list = jest
       .fn()
-      .mockRejectedValueOnce(rateLimitError)
+      .mockImplementationOnce(() => Promise.reject(rateLimitError))
       .mockResolvedValueOnce({ status: 200, data: { items: [] } });
     const context = {
       gcal: { events: { list } },

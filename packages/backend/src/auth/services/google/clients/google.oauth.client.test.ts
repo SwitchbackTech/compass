@@ -5,6 +5,7 @@ import { BaseError } from "@core/errors/errors.base";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import GoogleOAuthClient from "./google.oauth.client";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 jest.mock("@googleapis/calendar", () => ({
   calendar: jest.fn(),

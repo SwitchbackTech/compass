@@ -10,6 +10,7 @@ import {
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import userService from "@backend/user/services/user.service";
+import { describe, expect, it } from "bun:test";
 
 describe("error.handler", () => {
   describe("toClientErrorPayload", () => {

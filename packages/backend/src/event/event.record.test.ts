@@ -1,6 +1,7 @@
 import { ObjectId as BsonObjectId } from "bson";
 import { ObjectId } from "mongodb";
 import { EventRecordSchema } from "@backend/event/event.record";
+import { describe, expect, it } from "bun:test";
 
 const baseFields = () => ({
   _id: new ObjectId(),

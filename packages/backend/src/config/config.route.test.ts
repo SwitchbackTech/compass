@@ -1,6 +1,7 @@
 import { Status } from "@core/errors/status.codes";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { CONFIG } from "@backend/common/constants/config.constants";
+import { describe, expect, it } from "bun:test";
 
 describe("GET /api/config", () => {
   const baseDriver = new BaseDriver();

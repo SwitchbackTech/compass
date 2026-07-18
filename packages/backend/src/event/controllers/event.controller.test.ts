@@ -5,6 +5,7 @@ import { EventListResponseSchema } from "@core/types/event-command.contracts";
 import eventController from "@backend/event/controllers/event.controller";
 import eventService from "@backend/event/services/event.service";
 import { buildEventRecord } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
+import { afterEach, describe, expect, it } from "bun:test";
 
 // No prior test file existed for event.controller.ts. This mirrors the fake
 // req/res driver already established in calendar.controller.test.ts (no

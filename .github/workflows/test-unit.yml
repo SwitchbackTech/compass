@@ -117,6 +117,15 @@ jobs:
         run: |
           bun install --frozen-lockfile
 
+      # backend and scripts boot an in-memory MongoDB; cache the downloaded
+      # mongod binary so each run doesn't re-fetch it.
+      - name: Cache MongoDB binaries
+        if: matrix.project == 'backend' || matrix.project == 'scripts'
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: ${{ runner.os }}-mongodb-memory-server
+
       - name: Run web tests
         if: matrix.project == 'web'
         timeout-minutes: 1
@@ -127,6 +136,7 @@ jobs:
 
       - name: Run ${{ matrix.project }} tests
         if: matrix.project != 'web'
+        timeout-minutes: 5
         env:
           TZ: Etc/UTC
         run: |

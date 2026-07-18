@@ -11,6 +11,7 @@ import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import calendarController from "@backend/calendar/controllers/calendar.controller";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { type Res_Promise } from "@backend/common/types/express.types";
+import { afterEach, describe, expect, it } from "bun:test";
 
 // These exercise calendarController.availability directly against fake
 // req/res objects (no supertest), mirroring events.controller.test.ts - the

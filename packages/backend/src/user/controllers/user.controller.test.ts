@@ -14,6 +14,15 @@ import supertokensUserCleanupService from "@backend/auth/services/supertokens/su
 import { UserError } from "@backend/common/errors/user/user.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 // Keep the real revoke from making a live call to Google during tests.
 jest.mock("@backend/auth/services/google/google.revoke.service", () => ({
@@ -81,7 +90,13 @@ describe("UserController", () => {
     // the user to try again on an account that no longer exists.
     it("should still report success when clearing the cookies fails", async () => {
       const { user } = await UtilDriver.setupTestUser();
-      revokeSessionMock.mockRejectedValueOnce(new Error("supertokens down"));
+      // Lazy rejection (throw on call) rather than mockRejectedValueOnce: the
+      // controller only reaches revokeSession after the DB delete, and an
+      // eagerly-created rejected promise would be flagged as unhandled in the
+      // gap before it is awaited.
+      revokeSessionMock.mockImplementationOnce(async () => {
+        throw new Error("supertokens down");
+      });
 
       await userDriver.deleteAccount(
         { userId: user._id.toString() },

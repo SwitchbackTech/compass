@@ -87,8 +87,11 @@ const MenuItem: React.FC<MenuItemProps> = ({
       role="menuitem"
       tabIndex={tabIndex}
       type={type}
-      className="c-focus-ring flex w-full cursor-pointer items-center gap-2 border-0 bg-(--actions-menu-item-bg) px-2 py-1 text-left text-m text-text-dark hover:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)]"
-      style={{ backgroundColor: bgColor }}
+      className="c-focus-ring flex w-full cursor-pointer items-center gap-2 rounded-xs border-0 bg-(--actions-menu-item-bg) px-2 py-1.5 text-left text-m text-text-light transition-colors hover:bg-text-lighter/10 focus-visible:bg-text-lighter/10"
+      // Paint the resting background through a CSS variable (not an inline
+      // background-color) so the hover/focus utilities above can override it;
+      // an inline background-color would always win over a class.
+      style={{ "--actions-menu-item-bg": bgColor } as React.CSSProperties}
     >
       {children}
     </button>

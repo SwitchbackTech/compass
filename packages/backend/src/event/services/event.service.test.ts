@@ -14,6 +14,14 @@ import {
   buildEventRecord,
   seedGoogleCalendar,
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 const seedLocalCalendar = async (userId: ObjectId) => {
   const record = CalendarRecordSchema.parse({
@@ -873,7 +881,9 @@ describe("EventService (cross-calendar move)", () => {
 
     jest
       .spyOn(gcalService, "moveEvent")
-      .mockRejectedValue(new Error("cannotChangeOrganizer"));
+      .mockImplementation(() =>
+        Promise.reject(new Error("cannotChangeOrganizer")),
+      );
 
     await expect(
       eventService.replace(

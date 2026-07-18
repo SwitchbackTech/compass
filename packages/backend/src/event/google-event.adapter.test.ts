@@ -8,6 +8,7 @@ import {
   mapEventRecordToGoogle,
   mapGoogleEvent,
 } from "@backend/event/google-event.adapter";
+import { describe, expect, it } from "bun:test";
 
 const calendarId = new ObjectId();
 

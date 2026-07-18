@@ -30,6 +30,15 @@ import {
   GoogleWatchStateStatus,
   inspectGoogleWatchState,
 } from "@backend/sync/services/watch/google-watch-state";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "bun:test";
 
 jest.mock("@backend/sync/services/watch/google-watch-config", () => {
   const actual = jest.requireActual(
@@ -153,7 +162,7 @@ describe("googleWatchService", () => {
 
     jest
       .spyOn(gcalService, "stopWatch")
-      .mockRejectedValue(invalidGrant400Error);
+      .mockImplementation(() => Promise.reject(invalidGrant400Error));
 
     await expect(
       googleWatchService.stopWatch(
@@ -172,8 +181,8 @@ describe("googleWatchService", () => {
 
     jest
       .spyOn(gcalService, "stopWatch")
-      .mockRejectedValue(
-        createGoogleError({ code: "500", responseStatus: 500 }),
+      .mockImplementation(() =>
+        Promise.reject(createGoogleError({ code: "500", responseStatus: 500 })),
       );
 
     await expect(
@@ -661,7 +670,9 @@ describe("googleWatchService", () => {
           },
         };
       }
-      jest.spyOn(gcalService, "watchEvents").mockRejectedValue(unsupported);
+      jest
+        .spyOn(gcalService, "watchEvents")
+        .mockImplementation(() => Promise.reject(unsupported));
 
       await googleWatchService.startGoogleWatches(
         userId,
@@ -701,8 +712,10 @@ describe("googleWatchService", () => {
 
       jest
         .spyOn(gcalService, "watchCalendars")
-        .mockRejectedValue(
-          createGoogleError({ code: "500", responseStatus: 500 }),
+        .mockImplementation(() =>
+          Promise.reject(
+            createGoogleError({ code: "500", responseStatus: 500 }),
+          ),
         );
       jest.spyOn(gcalService, "watchEvents").mockResolvedValue({
         watch: { resourceId: `resource-${gCalendarId}`, expiration: future() },

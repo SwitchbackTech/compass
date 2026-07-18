@@ -451,6 +451,19 @@
     background-color: transparent;
   }
 
+  /*
+   * Grid (popover) pickers float over the app at the same darkness as the
+   * background, so give them a 1px edge + elevation to read as a distinct
+   * surface. Drawn as a box-shadow ring rather than a border: the popover is
+   * height-clamped with overflow:hidden (see .calendar--open), and a border-box
+   * border would eat into that height and re-clip 6-row months.
+   */
+  &:not([data-view="sidebar"]) {
+    box-shadow:
+      0 0 0 1px var(--color-border-primary),
+      0 8px 24px var(--color-shadow-default);
+  }
+
   & .react-datepicker__month-container {
     display: flex;
     width: 100%;
@@ -590,7 +603,9 @@
   }
 
   &.calendar--open {
-    height: 230px;
+    /* Match the month-container height so 6-row months aren't clipped by the
+       overflow:hidden on .calendar. The two heights must stay in sync. */
+    height: 240px;
   }
 
   &[data-view="sidebar"].calendar--open {

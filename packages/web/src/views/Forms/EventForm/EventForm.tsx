@@ -544,7 +544,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
             }
             actions={
               <EventActionMenu
-                bgColor="var(--color-menu-bg)"
+                bgColor="var(--color-bg-secondary)"
                 isExistingEvent={isExistingEvent}
                 isReadOnly={isReadOnly}
                 onDuplicate={onDuplicateEvent}

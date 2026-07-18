@@ -17,13 +17,10 @@ never pay for it.
 
 ```bash
 # normal run -- confirms the bench suite shows as skipped
-TZ=UTC ./node_modules/.bin/jest --selectProjects backend
+bun run test:backend
 
 # the real run -- prints one `[bench]` summary line per scenario.
-# (--testPathPattern is load-bearing: a bare trailing "bench" arg is
-# consumed by --selectProjects as a nonexistent project name and the
-# whole suite runs instead.)
-RUN_BENCH=1 TZ=UTC ./node_modules/.bin/jest --selectProjects backend --testPathPattern="bench"
+RUN_BENCH=1 bun packages/scripts/src/testing/run-tests.ts backend --filter bench
 ```
 
 ### Last recorded numbers

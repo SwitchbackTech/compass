@@ -6,6 +6,7 @@ import gcalService from "@backend/common/services/gcal/gcal.service";
 import { type EventRecord } from "@backend/event/event.record";
 import { eventRepository } from "@backend/event/event.repository";
 import { GoogleEventSync } from "@backend/event/google-event-sync.service";
+import { afterEach, describe, expect, it } from "bun:test";
 
 const calendar: CalendarRecord = {
   _id: new ObjectId(),
