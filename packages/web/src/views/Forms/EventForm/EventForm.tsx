@@ -20,7 +20,7 @@ import {
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
-import { EVENT_COLOR } from "@web/common/styles/theme.util";
+import { useEventPalette } from "@web/common/styles/theme.util";
 import { type SelectOption } from "@web/common/types/component.types";
 import { Categories_Event } from "@web/common/types/web.event.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
@@ -148,6 +148,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     // gridEventDraftToSchemaEvent doc comment.
     const event = useMemo(() => gridEventDraftToSchemaEvent(draft), [draft]);
     const { title } = event;
+    const { base: eventColor } = useEventPalette();
     const category =
       draft.values.schedule.kind === "allDay"
         ? Categories_Event.ALLDAY
@@ -437,7 +438,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     };
 
     const recurrenceSectionProps = {
-      bgColor: EVENT_COLOR,
+      bgColor: eventColor,
       event,
       setEvent: setLatestEvent,
     };
@@ -537,7 +538,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                 onKeyDown={handleTitleKeyDown}
                 placeholder="Title"
                 name="Event Title"
-                underlineColor={EVENT_COLOR}
+                underlineColor={eventColor}
                 value={displayTitle}
                 withUnderline
               />
@@ -581,7 +582,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
             <FormCard>
               <Textarea
-                underlineColor={EVENT_COLOR}
+                underlineColor={eventColor}
                 onChange={onChangeEventTextField("description")}
                 onKeyDown={handleIgnoredKeys}
                 placeholder="Description"

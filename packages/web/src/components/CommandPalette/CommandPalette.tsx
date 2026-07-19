@@ -22,6 +22,7 @@ import { useDeleteAccountCmdItems } from "@web/components/CommandPalette/hooks/u
 import { useExportDataCmdItems } from "@web/components/CommandPalette/hooks/useExportDataCmdItems";
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
 import { useSubscribeCmdItems } from "@web/components/CommandPalette/hooks/useSubscribeCmdItems";
+import { useThemeCmdItems } from "@web/components/CommandPalette/hooks/useThemeCmdItems";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { useUndoRedo } from "@web/events/mutations/useUndoRedo";
@@ -89,6 +90,7 @@ export const CommandPalette = ({
   const authCmdItems = useAuthCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
   const deleteAccountCmdItems = useDeleteAccountCmdItems();
+  const themeCmdItems = useThemeCmdItems();
   const { undo, canUndo } = useUndoRedo(mutationDependencies);
 
   const [search, setSearch] = useState("");
@@ -140,6 +142,11 @@ export const CommandPalette = ({
           onClick: () => queueMicrotask(undo),
         },
       ],
+    },
+    {
+      id: "appearance",
+      heading: "Appearance",
+      items: themeCmdItems,
     },
     {
       id: "settings",

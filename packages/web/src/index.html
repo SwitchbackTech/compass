@@ -6,6 +6,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#06090f" />
 
+    <!--
+      Apply the saved theme before first paint so light-theme users don't flash
+      the default dark palette while the app boots (index.tsx awaits IndexedDB
+      first). Runs pre-module, so the key + colors are hard-coded here; keep them
+      in sync with settings/theme/theme.constants.ts. Dark is the CSS default,
+      so only a non-default choice needs touching.
+    -->
+    <script>
+      try {
+        if (localStorage.getItem("compass.theme") === "light-beach") {
+          document.documentElement.setAttribute("data-theme", "light-beach");
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute("content", "#f3eee2");
+        }
+      } catch {}
+    </script>
+
     <title>Compass Calendar | get organized, simply</title>
     <meta
       name="description"

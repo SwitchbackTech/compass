@@ -12,7 +12,6 @@ import {
 } from "@core/types/event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
-import { colors as palette } from "@web/common/styles/colors";
 import { type Option_Time } from "@web/common/types/util.types";
 import {
   type Categories_Event,
@@ -33,8 +32,10 @@ export const getColorsByHour = (currentHour: number) => {
   const colors: string[] = [];
 
   [...(new Array(24) as number[])].map((_, index) => {
+    // CSS variables (not hex) so the labels land in inline styles that
+    // resolve against the active [data-theme].
     const isCurrentHour = currentHour - 1 === index;
-    const color = isCurrentHour ? palette.accent : palette.textMuted;
+    const color = isCurrentHour ? "var(--accent)" : "var(--text-muted)";
 
     colors.push(color);
 

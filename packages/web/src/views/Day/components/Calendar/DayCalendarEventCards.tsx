@@ -1,7 +1,6 @@
 import { type MouseEvent, useCallback, useMemo, useRef, useState } from "react";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { colors } from "@web/common/styles/colors";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { AllDayEventCard } from "@web/grid/components/AllDayEventCard";
 import { TimedEventCard } from "@web/grid/components/TimedEventCard";
@@ -160,7 +159,7 @@ export const DayTimedCalendarEvent = ({
     : undefined;
   const deckBoxShadow = (() => {
     if (!isDeck) return undefined;
-    const ring = `0 0 0 0.75px ${colors.background}`;
+    const ring = `0 0 0 0.75px var(--background)`;
     const drop = isFocused
       ? "0 6px 14px -3px rgba(0,0,0,0.55)"
       : "0 3px 6px -2px rgba(0,0,0,0.4)";

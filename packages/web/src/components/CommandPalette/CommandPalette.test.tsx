@@ -175,14 +175,14 @@ describe("CommandPalette", () => {
     expect(activeRowText(container)).toBe("Go to Day");
 
     // Walk down to "Create all-day event", then the next ArrowDown skips the
-    // disabled Undo row and lands on the (stubbed, always-first) Google item.
+    // disabled Undo row and lands on the Appearance section's theme toggle.
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Today
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Show Shortcuts
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create event
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create all-day event
     expect(activeRowText(container)).toBe("Create all-day event");
     fireEvent.keyDown(input, { key: "ArrowDown" }); // skips Undo last change
-    expect(activeRowText(container)).toBe("Connect Google Calendar");
+    expect(activeRowText(container)).toBe("Switch to light theme");
   });
 
   it("runs the active item's onClick and closes on Enter", async () => {

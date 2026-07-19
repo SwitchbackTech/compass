@@ -4,12 +4,13 @@ import * as ReactDatePickerModule from "react-datepicker";
 import { type ReactDatePickerProps } from "react-datepicker";
 import dayjs from "@core/util/date/dayjs";
 import { darken, isDark } from "@web/common/styles/color.utils";
-import { colors } from "@web/common/styles/colors";
+import { colors, lightColors } from "@web/common/styles/colors";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/components/Icons/ChevronRightIcon";
+import { selectTheme, useThemeStore } from "@web/settings/theme/theme.store";
 import { Focusable, INPUT_RESET_CLASSNAME } from "../Focusable/Focusable";
 import { CircleIcon } from "../Icons/CircleIcon";
 import { TooltipWrapper } from "../Tooltip/TooltipWrapper";
@@ -49,17 +50,24 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     withTodayButton = true,
     ...props
   } = datePickerProps;
-  const resolvedBgColor = bgColor ?? colors.background;
+  const isDarkTheme = useThemeStore(selectTheme) === "dark-abyss";
+  const resolvedBgColor =
+    bgColor ?? (isDarkTheme ? colors.background : lightColors.background);
   const datePickerStyle: CSSVariables = {
     // Grid (popover) pickers read as an elevated surface a step above the app
     // background; the sidebar picker overrides this to transparent in CSS.
     "--date-picker-bg": bgColor ?? "var(--surface)",
   };
   const isDarkBackground = isDark(resolvedBgColor);
+  // When the picker bg has the same polarity as the theme's surfaces, the
+  // theme's standard --text already contrasts with it; a mismatched bg (e.g.
+  // the light event-fill picker on the dark theme) needs --on-accent, the
+  // token that flips polarity. The CSS keys off this via [data-dark].
+  const usesThemeText = isDarkBackground === isDarkTheme;
   const headerColor =
     view === "sidebar"
       ? "var(--text-muted)"
-      : isDarkBackground
+      : usesThemeText
         ? "var(--text)"
         : "var(--on-accent)";
 
@@ -73,7 +81,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
       calendarContainer={({ children, className }) => (
         <div
           className={classNames("c-date-picker", className)}
-          data-dark={isDarkBackground}
+          data-dark={usesThemeText}
           data-view={view}
           style={datePickerStyle}
         >

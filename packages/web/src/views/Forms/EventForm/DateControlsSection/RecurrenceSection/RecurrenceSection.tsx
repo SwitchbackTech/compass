@@ -3,7 +3,7 @@ import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { isBackendUnavailable as getIsBackendUnavailable } from "@web/api/util/backend-unavailable-error.util";
 import { type CompassSession } from "@web/auth/compass/session/session.types";
 import { useSession } from "@web/auth/compass/session/useSession";
-import { EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
+import { useEventPalette } from "@web/common/styles/theme.util";
 import { EndsOnDate } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/EndsOnDate";
 import { RecurrenceIntervalSelect } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/RecurrenceIntervalSelect";
 import { RecurrenceToggle } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/RecurrenceToggle";
@@ -31,6 +31,7 @@ export function createRecurrenceSection({
     setEvent,
   }: RecurrenceSectionProps) {
     const { authenticated } = useSession();
+    const { hover: inputColor } = useEventPalette();
     const recurrenceHook = useRecurrence(event, { setEvent });
     const { setInterval, setFreq, setWeekDays, setUntil } = recurrenceHook;
     const { weekDays, interval, freq, until, toggleRecurrence } =
@@ -69,7 +70,7 @@ export function createRecurrenceSection({
 
             <EndsOnDate
               bgColor={bgColor}
-              inputColor={EVENT_HOVER_COLOR}
+              inputColor={inputColor}
               until={until}
               minDate={event.endDate}
               setUntil={setUntil}

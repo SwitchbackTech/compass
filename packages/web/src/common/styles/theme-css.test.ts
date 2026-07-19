@@ -1,4 +1,4 @@
-import { colors } from "./colors";
+import { colors, lightColors } from "./colors";
 import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -97,6 +97,24 @@ describe("Tailwind theme CSS", () => {
     }
   });
 
+  it("declares the Light Beach theme scope", () => {
+    expect(indexCss).toContain('[data-theme="light-beach"]');
+    expect(indexCss).toContain("color-scheme: light");
+  });
+
+  it("defines every semantic role in the Light Beach theme", () => {
+    // Isolate the light-beach block so we don't accidentally match a role that
+    // only the dark block defines.
+    const block = indexCss.match(/\[data-theme="light-beach"\]\s*\{([^}]*)\}/);
+    expect(block).not.toBeNull();
+    const body = block?.[1] ?? "";
+
+    for (const token of semanticColorTokens) {
+      // Value can be hex or hsl(...); just assert the role is assigned something.
+      expect(body).toMatch(new RegExp(`--${token}:\\s*\\S`));
+    }
+  });
+
   it("does not contain any pre-restyle token names", () => {
     for (const name of deadNames) {
       expect(indexCss).not.toContain(name);
@@ -107,6 +125,27 @@ describe("Tailwind theme CSS", () => {
     for (const [jsKey, cssToken] of Object.entries(jsColorKeyToCssToken)) {
       const hex = colors[jsKey as keyof typeof colors];
       const match = indexCss.match(
+        new RegExp(`--${cssToken}:\\s*(#[0-9a-fA-F]{6});`),
+      );
+      expect(match).not.toBeNull();
+      expect(match?.[1]?.toLowerCase()).toBe(hex.toLowerCase());
+    }
+  });
+
+  it("keeps lightColors hex values in sync with the light-beach block", () => {
+    const block = indexCss.match(/\[data-theme="light-beach"\]\s*\{([^}]*)\}/);
+    const body = block?.[1] ?? "";
+
+    const lightJsColorKeyToCssToken: Record<keyof typeof lightColors, string> =
+      {
+        background: "background",
+        text: "text",
+        onAccent: "on-accent",
+      };
+
+    for (const [jsKey, cssToken] of Object.entries(lightJsColorKeyToCssToken)) {
+      const hex = lightColors[jsKey as keyof typeof lightColors];
+      const match = body.match(
         new RegExp(`--${cssToken}:\\s*(#[0-9a-fA-F]{6});`),
       );
       expect(match).not.toBeNull();
