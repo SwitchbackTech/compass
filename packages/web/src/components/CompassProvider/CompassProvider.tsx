@@ -80,6 +80,8 @@ export const CompassOptionalProviders = ({ children }: PropsWithChildren) => {
         apiKey={ENV_WEB.POSTHOG_KEY as string}
         options={{
           api_host: ENV_WEB.POSTHOG_HOST!,
+          // Assumes the US cloud; self-hosters on another instance would differ.
+          ui_host: "https://us.posthog.com",
           capture_exceptions: {
             capture_unhandled_errors: true,
             capture_unhandled_rejections: true,
