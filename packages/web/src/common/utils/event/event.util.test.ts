@@ -56,6 +56,27 @@ describe("handleError", () => {
     expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
     expect(consoleErrorSpy).toHaveBeenCalledWith(error);
   });
+
+  it("does not log a retryable, backend-authored mutation failure", () => {
+    // A 502 PROVIDER_FAILURE the backend authored: it answered (so it isn't
+    // "unavailable"), and it's retryable, so the user just needs a nudge. It
+    // must not console.error - otherwise every transient provider hiccup
+    // becomes a fresh error-tracking issue via capture_console_errors.
+    const error = new Error("Request failed with status 502") as ApiError;
+    error.name = "ApiError";
+    error.response = {
+      status: 502,
+      data: {
+        code: "PROVIDER_FAILURE",
+        message: "Google rejected the write",
+        retryable: true,
+      },
+    } as ApiResponse<unknown>;
+
+    handleError(error);
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
 });
 
 describe("isEventInRange", () => {

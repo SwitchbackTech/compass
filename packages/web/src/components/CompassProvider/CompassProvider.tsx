@@ -83,7 +83,13 @@ export const CompassOptionalProviders = ({ children }: PropsWithChildren) => {
           capture_exceptions: {
             capture_unhandled_errors: true,
             capture_unhandled_rejections: true,
-            capture_console_errors: true,
+            // Off on purpose: the app deliberately console.error's errors it
+            // has already handled (a network blip during a session check, a
+            // retryable 502 from a provider), so capturing console.error as an
+            // exception turns every expected transient failure into a fresh
+            // error-tracking issue. Genuinely uncaught errors/rejections are
+            // still captured by the two handlers above.
+            capture_console_errors: false,
           },
           opt_in_site_apps: true,
           person_profiles: "always",

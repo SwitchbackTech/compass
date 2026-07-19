@@ -5,8 +5,10 @@ import {
   type BaseEvent,
   type CompassEvent,
 } from "@core/types/compass-event.contracts";
+import { EventMutationErrorSchema } from "@core/types/event-command.contracts";
 import { type WithId } from "@core/types/type.utils";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { type ApiError } from "@web/api/api.types";
 import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 import { getUserId } from "@web/auth/compass/session/session.util";
 import {
@@ -175,6 +177,20 @@ export const getWeekDayLabel = (day: Dayjs | Date) => {
   return day.format(YEAR_MONTH_DAY_COMPACT_FORMAT);
 };
 
+/**
+ * A retryable mutation failure the backend authored - e.g. a 502
+ * PROVIDER_FAILURE thrown when Google rejects a write. The app already treats
+ * these as retryable, so they only warrant a toast; console.error'ing them
+ * re-surfaces every routine provider hiccup as a brand-new error-tracking issue
+ * (capture_console_errors turns deliberate logging into exception capture).
+ */
+const isRetryableMutationError = (error: Error): boolean => {
+  const parsed = EventMutationErrorSchema.safeParse(
+    (error as ApiError).response?.data,
+  );
+  return parsed.success && parsed.data.retryable;
+};
+
 export const handleError = (error: Error) => {
   if (isBackendUnavailableError(error)) {
     return;
@@ -184,6 +200,14 @@ export const handleError = (error: Error) => {
   const code = parseInt(error.message.slice(-3), 10);
   if (codesToIgnore.includes(code)) {
     // api interceptor will handle these
+    return;
+  }
+
+  if (isRetryableMutationError(error)) {
+    // Expected transient failure: nudge the user to retry without logging it.
+    showErrorToast(
+      "Something went wrong behind the scenes. Please try again later.",
+    );
     return;
   }
 
