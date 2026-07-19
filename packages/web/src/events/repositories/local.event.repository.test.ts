@@ -1,4 +1,5 @@
 import {
+  type CalendarId,
   DateTimeSchema,
   type EventId,
   TimeZoneSchema,
@@ -38,21 +39,52 @@ describe("LocalEventRepository", () => {
     expect(putEvent.mock.calls[0][0].isDemo).toBe(true);
   });
 
-  it("throws when replacing an event that does not exist locally", async () => {
+  it("upserts (instead of throwing) when the edit target is absent from the store", async () => {
+    // The optimistic layer can resolve an edit target from the query cache
+    // that was never persisted to IndexedDB (e.g. a materialized recurring
+    // occurrence). Replacing it must not throw "Event not found".
     getAllEvents.mockResolvedValue([]);
 
-    await expect(
-      repository.replace("c".repeat(24) as EventId, {
-        content: { kind: "details", title: "x", description: "" },
-        schedule: {
-          kind: "timed",
-          start: DateTimeSchema.parse("2026-05-05T09:00:00.000-05:00"),
-          end: DateTimeSchema.parse("2026-05-05T10:00:00.000-05:00"),
-          timeZone: TimeZoneSchema.parse("America/Chicago"),
-        },
-        recurrence: { kind: "single" },
-        scope: "this",
-      }),
-    ).rejects.toThrow();
+    const id = "c".repeat(24) as EventId;
+    const result = await repository.replace(id, {
+      content: { kind: "details", title: "x", description: "" },
+      schedule: {
+        kind: "timed",
+        start: DateTimeSchema.parse("2026-05-05T09:00:00.000-05:00"),
+        end: DateTimeSchema.parse("2026-05-05T10:00:00.000-05:00"),
+        timeZone: TimeZoneSchema.parse("America/Chicago"),
+      },
+      recurrence: { kind: "single" },
+      scope: "this",
+    });
+
+    expect(result.id).toBe(id);
+    expect(putEvent).toHaveBeenCalledTimes(1);
+    expect(putEvent.mock.calls[0][0]).toMatchObject({
+      id,
+      isDemo: false,
+      event: { id, content: { title: "x" } },
+    });
+  });
+
+  it("preserves the input calendar when replacing a missing event that carries one", async () => {
+    getAllEvents.mockResolvedValue([]);
+
+    const id = "d".repeat(24) as EventId;
+    const calendarId = "e".repeat(24) as EventId;
+    const result = await repository.replace(id, {
+      content: { kind: "details", title: "y", description: "" },
+      calendarId: calendarId as unknown as CalendarId,
+      schedule: {
+        kind: "timed",
+        start: DateTimeSchema.parse("2026-05-05T09:00:00.000-05:00"),
+        end: DateTimeSchema.parse("2026-05-05T10:00:00.000-05:00"),
+        timeZone: TimeZoneSchema.parse("America/Chicago"),
+      },
+      recurrence: { kind: "single" },
+      scope: "this",
+    });
+
+    expect(result.calendarId).toBe(calendarId as unknown as CalendarId);
   });
 });

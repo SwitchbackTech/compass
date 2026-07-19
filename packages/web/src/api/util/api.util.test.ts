@@ -201,12 +201,32 @@ describe("handleErrorResponse", () => {
     ).rejects.toThrow("Google revocation handler is not configured");
   });
 
-  it("keeps skipSessionRecovery local to unauthorized responses", async () => {
+  it("does not sign the user out on a 404 from a data endpoint", async () => {
     window.history.pushState({}, "", "/day");
     const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
     const error = createApiError(
       { status: Status.NOT_FOUND },
-      { skipSessionRecovery: true, url: "/event" },
+      { url: "/event" },
+    );
+
+    // A missing resource (e.g. syncing an event onto a not-yet-provisioned
+    // calendar) rethrows for the caller to handle - it must not eject the user.
+    await expect(
+      handleErrorResponse(error, { onGoogleRevoked: undefined }),
+    ).rejects.toBe(error);
+
+    expect(signOutSpy).not.toHaveBeenCalled();
+    signOutSpy.mockRestore();
+  });
+
+  it("still signs the user out on an unauthorized data-endpoint response", async () => {
+    // Already on the calendar route, so signOut skips the (jsdom-unsupported)
+    // navigation and we can assert purely on the sign-out call.
+    window.history.pushState({}, "", "/week");
+    const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
+    const error = createApiError(
+      { status: Status.UNAUTHORIZED },
+      { url: "/event" },
     );
 
     await expect(
