@@ -126,7 +126,9 @@ const TimedEventCardBase = (
   const { base: baseColor, hover: hoverColor } = useEventPalette();
   // Darkened well past the mid-tone "dead zone" (where neither dark nor light
   // text clears 4.5:1) so the draft fill is unambiguously dark and takes the
-  // light title color, visibly distinct from the light-filled saved events.
+  // light title color. On the dark theme that separates it from the lighter
+  // saved fills; on the light theme (already-dark fills) the drop-shadow
+  // below carries the draft-vs-saved distinction.
   const draftColor = darken(baseColor, 38);
   // Past events recede in the direction of the theme's grid: the dark theme's
   // light steel fill dims slightly, the light theme's ink fill fades toward

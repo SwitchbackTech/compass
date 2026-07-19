@@ -1,3 +1,5 @@
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+
 /**
  * The app's themes, keyed by the `data-theme` value they set on <html>. Each
  * key must match a `[data-theme="…"]` block in index.css. `metaColor` mirrors
@@ -14,8 +16,9 @@ export type ThemeName = keyof typeof THEMES;
 export const DEFAULT_THEME: ThemeName = "dark-abyss";
 
 /**
- * localStorage key for the persisted choice. The no-flash inline script in
- * index.html hard-codes this same string (it runs before any JS module loads,
- * so it can't import it) — keep the two in sync.
+ * localStorage key for the persisted choice, registered in the app-wide
+ * STORAGE_KEYS enum like every other persistent key. The no-flash inline
+ * script in index.html hard-codes the same string (it runs before any JS
+ * module loads, so it can't import it) — keep the two in sync.
  */
-export const THEME_STORAGE_KEY = "compass.theme";
+export const THEME_STORAGE_KEY = STORAGE_KEYS.THEME;

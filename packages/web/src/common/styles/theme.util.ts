@@ -63,5 +63,7 @@ export const accentGradient =
 const mutedGradient =
   "linear-gradient(90deg, var(--text-muted), var(--text-subtle))";
 
-export const getGradient = (color: string) =>
-  color === getEventPalette().base ? getEventPalette().gradient : mutedGradient;
+export const getGradient = (color: string) => {
+  const { base, gradient } = getEventPalette();
+  return color === base ? gradient : mutedGradient;
+};
