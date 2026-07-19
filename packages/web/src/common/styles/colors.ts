@@ -29,3 +29,13 @@ export const colors = {
   error: "#C17E70",
   info: "#6E97BE",
 };
+
+// Light Beach counterparts, mirroring the [data-theme="light-beach"] block in
+// index.css (same theme-css.test.ts parity guard). Only the roles a JS
+// consumer actually needs real hex for (contrast math, tinycolor derivations)
+// live here — everything else should keep reading CSS variables.
+export const lightColors = {
+  background: "#F3EEE2",
+  text: "#403A2F",
+  onAccent: "#F6F3EA",
+};

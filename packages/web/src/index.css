@@ -51,6 +51,52 @@
   --transition-default: 0.3s;
 }
 
+/*
+ * Theme 02 — Light Beach. Redefines the same 22 roles as the dark block above.
+ * Scoped to the attribute only (no :root), so it sits later in source order and
+ * wins over the dark block's :root defaults at equal specificity — placement,
+ * not specificity, is what makes it override. See theme-css.test.ts for parity.
+ */
+[data-theme="light-beach"] {
+  color-scheme: light;
+
+  /* Surfaces — warm sand, layered down */
+  --background: #f3eee2;
+  --surface: #ece6d7;
+  --surface-panel: #e7e0cf;
+  --surface-raised: #e1d9c6;
+  --surface-overlay: hsl(40 25% 25% / 6%);
+
+  /* Borders */
+  --border: hsl(40 20% 30% / 15%);
+  --border-strong: #a89c81;
+
+  /* Text — warm ink, darkest on the lightest surface */
+  --text: #403a2f;
+  --text-muted: #5e5847;
+  --text-subtle: #948b74;
+
+  /* Accents — near-black ink; hover/strong go darker (inverse of dark theme) */
+  --accent: #2b2a27;
+  --accent-hover: #403d37;
+  --accent-strong: #141412; /* pressed / elevated underside */
+  --accent-secondary: #7a7771;
+  --accent-secondary-hover: #6b6862;
+  --on-accent: #f6f3ea; /* text on accent fills */
+
+  /* Status */
+  --success: #57876a;
+  --warning: #9c7d45;
+  --error: #ad6553;
+  --info: #8a8475;
+
+  /* Overlays */
+  --overlay-backdrop: hsl(40 25% 15% / 40%);
+  --shadow-default: hsl(40 25% 25% / 18%);
+
+  --transition-default: 0.3s;
+}
+
 /* Map roles -> Tailwind color-* utilities. Never changes per theme. */
 @theme inline {
   --color-background: var(--background);
@@ -522,6 +568,15 @@
     text-decoration: underline;
     text-decoration-color: var(--on-accent);
     text-underline-offset: 3px;
+  }
+
+  /* data-dark means "bg matches the theme's surface polarity", so today needs
+     the theme's standard text + accent underline to stay readable. Must sit
+     before the sidebar override below (equal specificity, source order). */
+  &[data-dark="true"]
+    .react-datepicker__day--today:not(.react-datepicker__day--selected) {
+    color: var(--text);
+    text-decoration-color: var(--accent);
   }
 
   &[data-view="sidebar"]

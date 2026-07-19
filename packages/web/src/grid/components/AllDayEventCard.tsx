@@ -13,9 +13,9 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import { darken } from "@web/common/styles/color.utils";
+import { brighten, darken, isDark } from "@web/common/styles/color.utils";
 import { theme } from "@web/common/styles/theme";
-import { EVENT_COLOR, EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
+import { useEventPalette } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { EVENT_RESIZE_HANDLE_ATTRIBUTE } from "@web/grid/interaction/dom";
@@ -57,17 +57,21 @@ const AllDayEventCardBase = (
   }: AllDayEventCardProps,
   ref: ForwardedRef<HTMLDivElement>,
 ) => {
-  const baseColor = EVENT_COLOR;
-  const hoverColor = EVENT_HOVER_COLOR;
+  const { base: baseColor, hover: hoverColor } = useEventPalette();
   const isInPast = dayjs().isAfter(dayjs(event.endDate));
   const isRecurring = isRecurringEvent(event);
   const showRepeatIcon =
     isRecurring && !isPlaceholder && position.width >= REPEAT_ICON_MIN_WIDTH;
-  // A `brightness()` filter would scale the title text toward black right
-  // along with the fill, which is what let past events fall below the 4.5:1
-  // contrast minimum. Darkening only the fill keeps the (fixed) title color's
-  // contrast ratio intact.
-  const bgColor = isInPast ? darken(baseColor, 5) : baseColor;
+  // Past events recede in the direction of the theme's grid, matching
+  // TimedEventCard: the dark theme's light steel fill dims slightly, the
+  // light theme's ink fill fades toward the paper. Only the fill moves — a
+  // `brightness()` filter would drag the title text along with it and let
+  // past events fall below the 4.5:1 contrast minimum.
+  const bgColor = isInPast
+    ? isDark(baseColor)
+      ? brighten(baseColor, 14)
+      : darken(baseColor, 5)
+    : baseColor;
   // isInPast is excluded here (falls through to bgColor) so a past event
   // stays dimmed on hover instead of snapping to full brightness.
   const hoverBgColor = !isPlaceholder && !isInPast ? hoverColor : bgColor;

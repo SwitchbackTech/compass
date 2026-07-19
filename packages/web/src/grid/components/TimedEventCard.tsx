@@ -14,9 +14,9 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import { brighten, darken } from "@web/common/styles/color.utils";
+import { brighten, darken, isDark } from "@web/common/styles/color.utils";
 import { theme } from "@web/common/styles/theme";
-import { EVENT_COLOR, EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
+import { useEventPalette } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
@@ -123,17 +123,23 @@ const TimedEventCardBase = (
     [position.height, showTimeLabel],
   );
 
-  const baseColor = EVENT_COLOR;
+  const { base: baseColor, hover: hoverColor } = useEventPalette();
   // Darkened well past the mid-tone "dead zone" (where neither dark nor light
   // text clears 4.5:1) so the draft fill is unambiguously dark and takes the
   // light title color, visibly distinct from the light-filled saved events.
   const draftColor = darken(baseColor, 38);
-  // A `brightness()` filter would scale the title text along with the fill,
-  // which is what let past events fall below the 4.5:1 contrast minimum.
-  // Darkening the fill only a little keeps it light enough for dark text.
-  const pastColor = darken(baseColor, 5);
-  const hoverColor = EVENT_HOVER_COLOR;
-  const selectedBoxShadow = "0 0 0 1px rgba(255,255,255,0.55)";
+  // Past events recede in the direction of the theme's grid: the dark theme's
+  // light steel fill dims slightly, the light theme's ink fill fades toward
+  // the paper (brighten 14 keeps light text >= 4.5:1 and stays clearly apart
+  // from the brighten-10 hover fill). A `brightness()` filter can't do either
+  // safely — it scales the title text along with the fill.
+  const pastColor = isDark(baseColor)
+    ? brighten(baseColor, 14)
+    : darken(baseColor, 5);
+  // Ring color follows --text so it contrasts with the page in both themes;
+  // a fixed white ring vanished on the light theme's paper background.
+  const selectedBoxShadow =
+    "0 0 0 1px color-mix(in srgb, var(--text) 55%, transparent)";
 
   const bgColor = (() => {
     if (isDraft) return draftColor;

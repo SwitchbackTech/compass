@@ -1,0 +1,21 @@
+/**
+ * The app's themes, keyed by the `data-theme` value they set on <html>. Each
+ * key must match a `[data-theme="…"]` block in index.css. `metaColor` mirrors
+ * that theme's --background and drives the <meta name="theme-color"> chrome.
+ */
+export const THEMES = {
+  "dark-abyss": { metaColor: "#06090f" },
+  "light-beach": { metaColor: "#f3eee2" },
+} satisfies Record<string, { metaColor: string }>;
+
+export type ThemeName = keyof typeof THEMES;
+
+/** Dark is the default (also the index.css :root fallback). */
+export const DEFAULT_THEME: ThemeName = "dark-abyss";
+
+/**
+ * localStorage key for the persisted choice. The no-flash inline script in
+ * index.html hard-codes this same string (it runs before any JS module loads,
+ * so it can't import it) — keep the two in sync.
+ */
+export const THEME_STORAGE_KEY = "compass.theme";

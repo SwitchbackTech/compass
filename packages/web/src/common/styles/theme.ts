@@ -1,5 +1,19 @@
 import { readability } from "@web/common/styles/color.utils";
-import { colors } from "@web/common/styles/colors";
+import { colors, lightColors } from "@web/common/styles/colors";
+import { type ThemeName } from "@web/settings/theme/theme.constants";
+import { useThemeStore } from "@web/settings/theme/theme.store";
+
+// The two text candidates getContrastText picks between, per theme. Reading
+// the store via getState (not a hook) keeps this callable from plain
+// functions; callers re-render on a theme switch anyway because their fill
+// colors come from useEventPalette.
+const CONTRAST_TEXT_CANDIDATES: Record<
+  ThemeName,
+  { light: string; dark: string }
+> = {
+  "dark-abyss": { light: colors.text, dark: colors.onAccent },
+  "light-beach": { light: lightColors.onAccent, dark: lightColors.text },
+};
 
 export const theme = {
   text: {
@@ -25,11 +39,14 @@ export const theme = {
   // Return whichever text token actually has the higher contrast against the
   // background. A brightness threshold misfires on mid-tone fills, where the
   // "lighter" side is still too dark for light text (and vice versa).
-  getContrastText: (backgroundColor: string): string =>
-    readability(colors.onAccent, backgroundColor) >=
-    readability(colors.text, backgroundColor)
-      ? colors.onAccent
-      : colors.text,
+  getContrastText: (backgroundColor: string): string => {
+    const { light, dark } =
+      CONTRAST_TEXT_CANDIDATES[useThemeStore.getState().theme];
+    return readability(dark, backgroundColor) >=
+      readability(light, backgroundColor)
+      ? dark
+      : light;
+  },
   transition: {
     default: "0.3s",
   },

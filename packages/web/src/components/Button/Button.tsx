@@ -4,10 +4,9 @@ import {
   forwardRef,
   type PropsWithChildren,
 } from "react";
-import { darken } from "@web/common/styles/color.utils";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { theme } from "@web/common/styles/theme";
-import { EVENT_COLOR } from "@web/common/styles/theme.util";
+import { useEventPalette } from "@web/common/styles/theme.util";
 
 // A native button (not a div) so Enter/Space activate it — click handlers
 // often live on a wrapping TooltipTrigger div and rely on bubbling.
@@ -28,11 +27,6 @@ export const Btn = forwardRef<
 
 Btn.displayName = "Btn";
 
-// EVENT_COLOR is a fixed module-level constant, so its derived save-button
-// colors are too — computed once rather than on every SaveButton render.
-const SAVE_BUTTON_BACKGROUND = darken(EVENT_COLOR);
-const SAVE_BUTTON_TEXT_COLOR = theme.getContrastText(SAVE_BUTTON_BACKGROUND);
-
 interface SaveButtonProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "color" | "disabled"> {
   minWidth: number;
@@ -43,12 +37,15 @@ export const SaveButton = forwardRef<
   HTMLButtonElement,
   PropsWithChildren<SaveButtonProps>
 >(({ className, disabled, minWidth, style, ...props }, ref) => {
+  // Per-theme, precomputed in theme.util — the hook subscription is what
+  // repaints the button when the theme switches.
+  const { saveButtonBg, saveButtonShadow } = useEventPalette();
   const buttonStyle: CSSVariables = {
     ...style,
-    "--save-button-text-color": SAVE_BUTTON_TEXT_COLOR,
+    "--save-button-text-color": theme.getContrastText(saveButtonBg),
     "--save-button-hover-color": "var(--color-text-muted)",
-    "--elevated-shadow-color": darken(EVENT_COLOR, 25),
-    background: SAVE_BUTTON_BACKGROUND,
+    "--elevated-shadow-color": saveButtonShadow,
+    background: saveButtonBg,
     minWidth,
   };
 

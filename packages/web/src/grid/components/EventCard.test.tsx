@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { EVENT_COLOR } from "@web/common/styles/theme.util";
+import { getEventPalette } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
@@ -104,8 +104,12 @@ describe("EventCard", () => {
 
     expect(card).toHaveClass("bg-(--event-bg)");
     expect(card).not.toHaveClass("bg-event-selected");
-    expect(card.style.getPropertyValue("--event-bg")).toBe(EVENT_COLOR);
-    expect(card.style.boxShadow).toContain("rgba(255,255,255,0.55)");
+    expect(card.style.getPropertyValue("--event-bg")).toBe(
+      getEventPalette().base,
+    );
+    expect(card.style.boxShadow).toContain(
+      "color-mix(in srgb, var(--text) 55%, transparent)",
+    );
   });
 
   it("keeps timed event keyboard activation from reaching parent shortcuts", () => {
