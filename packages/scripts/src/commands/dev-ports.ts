@@ -29,6 +29,10 @@ export interface DevPorts {
   backend: number;
 }
 
+// Which dev server is launching, so the port-in-use warning only covers the
+// service that's actually about to bind. Port reassignment stays pair-based.
+export type Scope = "web" | "backend";
+
 export function readPorts(yamlText: string): DevPorts | null {
   try {
     const config = parse(yamlText) as {
@@ -154,7 +158,47 @@ async function findNextPorts(claimed: DevPorts[]): Promise<DevPorts | null> {
   return null;
 }
 
-async function main(): Promise<void> {
+// Best-effort: PIDs listening on the given TCP port, or [] if none (or if
+// lsof isn't available). Sibling-config detection can't see a stale process
+// still bound to this worktree's own port, so we probe the live socket only
+// to print a friendlier warning than the raw EADDRINUSE stack trace the dev
+// server would otherwise throw.
+function portHolders(port: number): string[] {
+  try {
+    const out = execSync(`lsof -nP -iTCP:${port} -sTCP:LISTEN -t`, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    return out
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+  } catch {
+    return []; // no holder (lsof exits non-zero) or lsof unavailable
+  }
+}
+
+// `scope` limits the check to the service actually being launched, so
+// `dev:backend` doesn't warn about a web server legitimately running on 9080
+// (and vice versa). Omitted → check both.
+function warnIfPortsHeld(ports: DevPorts, scope?: Scope): void {
+  for (const [label, port] of [
+    ["web", ports.web],
+    ["backend", ports.backend],
+  ] as const) {
+    if (scope && label !== scope) continue;
+    const pids = portHolders(port);
+    if (pids.length > 0) {
+      console.log(
+        `[dev-ports] warning: ${label} port ${port} is already in use by ` +
+          `PID ${pids.join(", ")}. The dev server will fail to bind. ` +
+          `Free it with: kill ${pids.join(" ")}`,
+      );
+    }
+  }
+}
+
+async function main(scope?: Scope): Promise<void> {
   const root = process.cwd();
   const configPath = path.join(root, "compass.yaml");
 
@@ -170,6 +214,7 @@ async function main(): Promise<void> {
 
   const claimed = readSiblingPorts(root);
   if (!isPortsClaimed(current, claimed)) {
+    warnIfPortsHeld(current, scope);
     return;
   }
 
@@ -183,6 +228,7 @@ async function main(): Promise<void> {
     console.log(
       "[dev-ports] compass.yaml uses custom URLs — manage ports manually",
     );
+    warnIfPortsHeld(current, scope);
     return;
   }
 
@@ -194,7 +240,10 @@ async function main(): Promise<void> {
 }
 
 if (require.main === module) {
-  main().catch((err) => {
+  const arg = process.argv[2];
+  const scope: Scope | undefined =
+    arg === "web" || arg === "backend" ? arg : undefined;
+  main(scope).catch((err) => {
     console.log(err);
     process.exit(1);
   });
