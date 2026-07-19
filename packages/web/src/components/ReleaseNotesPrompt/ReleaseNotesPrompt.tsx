@@ -87,8 +87,7 @@ export function ReleaseNotesPrompt() {
                 Want the latest Compass news?
               </h2>
               <p className="text-text-muted">
-                Get monthly release notes with new features, improvements, and
-                helpful tips. Unsubscribe anytime.
+                Get monthly product email. Unsubscribe anytime.
               </p>
             </div>
             <div className="flex flex-wrap justify-end gap-3">
@@ -97,14 +96,14 @@ export function ReleaseNotesPrompt() {
                 onClick={decline}
                 className="c-button c-button-secondary rounded-full px-5"
               >
-                Nah, I don&apos;t want updates
+                Nah, I don&apos;t want more emails
               </button>
               <button
                 type="button"
                 onClick={() => void subscribe()}
                 className="c-button c-button-primary c-button-elevated rounded-full px-5"
               >
-                Yes, Keep Me Updated
+                Yes, keep me updated
               </button>
             </div>
           </>
@@ -115,7 +114,7 @@ export function ReleaseNotesPrompt() {
             </h2>
             <p className="text-text-muted">
               {state === "confirmed"
-                ? "Monthly notes headed your way."
+                ? "You'll get the next release notes in your inbox"
                 : "No problem, you can signup using the cmd palette if you change your mind."}
             </p>
           </div>
