@@ -19,10 +19,10 @@
     "debug:supertokens": "export DEBUG=com.supertokens &&bun run dev:backend",
     "debug:web": "http-server build/web/",
     "dev:backend -verbose": "export DEBUG=* &&bun run dev:backend",
-    "dev:backend": "bun run dev:ports && cd packages/backend && bun --watch src/app.ts",
+    "dev:backend": "bun run dev:ports backend && cd packages/backend && bun --watch src/app.ts",
     "dev:ports": "bun packages/scripts/src/commands/dev-ports.ts",
     "dev:update": "git checkout main && git pull &&bun install",
-    "dev:web": "bun run dev:ports && cd packages/web &&bun run dev.ts",
+    "dev:web": "bun run dev:ports web && cd packages/web &&bun run dev.ts",
     "lint": "bun packages/scripts/src/testing/check-semantic-colors.ts && biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
@@ -58,7 +58,7 @@
     "@types/node": "^22.13.10",
     "@types/node-fetch": "^2.6.13",
     "axe-core": "^4.12.1",
-    "typescript": "^7.0.2"
+    "typescript": "7.0.2"
   },
   "resolutions": {
     "glob": "^13.0.6",
