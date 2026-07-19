@@ -86,4 +86,17 @@ describe("syncLocalEventsToCloud", () => {
     expect(createEvent).not.toHaveBeenCalled();
     expect(clearAllEvents).not.toHaveBeenCalled();
   });
+
+  it("keeps records on-device when the server has no local calendar yet, rather than posting a sentinel id", async () => {
+    // No local calendar in the list (e.g. it hasn't been provisioned yet).
+    listCalendars.mockResolvedValue([]);
+    getAllEvents.mockResolvedValue([createMockLocalEventRecord({}, false)]);
+
+    await expect(syncLocalEventsToCloud()).resolves.toBe(0);
+
+    // Never POST against a calendar the backend can't resolve (would 404), and
+    // never clear the store - the records stay put for a later sync.
+    expect(createEvent).not.toHaveBeenCalled();
+    expect(clearAllEvents).not.toHaveBeenCalled();
+  });
 });

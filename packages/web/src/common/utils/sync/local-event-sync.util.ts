@@ -1,7 +1,6 @@
 import { type CreateEventInput } from "@core/types/event-command.contracts";
 import { CalendarApi } from "@web/calendars/calendar.api";
 import { getLocalCalendar } from "@web/calendars/calendar.util";
-import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import { type OfflineDataStore } from "@web/common/storage/offline-data/offline-data.store";
 import {
   ensureOfflineDataStoreReady,
@@ -63,11 +62,19 @@ export function createSyncLocalEventsToCloud({
     if (recordsToSync.length > 0) {
       const calendars = await listCalendars();
       const serverLocalCalendar = getLocalCalendar(calendars);
-      const serverLocalCalendarId =
-        serverLocalCalendar?.id ?? getLocalCalendarSentinelId();
+
+      // Never fall back to the client-generated sentinel calendar id: the
+      // backend can't resolve it and rejects the POST with CALENDAR_NOT_FOUND
+      // (a 404 that used to sign the just-signed-up user out). When the
+      // server-side local calendar isn't available yet, keep the records
+      // on-device - untouched, so a later sync can push them onto the real
+      // calendar - rather than losing them to a rejected request.
+      if (!serverLocalCalendar) {
+        return 0;
+      }
 
       for (const record of recordsToSync) {
-        await createEvent(toCreateInput(record, serverLocalCalendarId));
+        await createEvent(toCreateInput(record, serverLocalCalendar.id));
       }
     }
 

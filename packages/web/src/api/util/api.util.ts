@@ -159,11 +159,13 @@ export const handleErrorResponse = async <T>(
 
   const isAuthEndpoint = requestUrl?.includes("/signinup");
 
+  // A 404 on a data endpoint means a resource is missing (e.g. syncing a
+  // just-created event onto a calendar the server hasn't provisioned yet),
+  // not that the session is invalid - so it must never force a sign-out.
+  // Only genuine session-level failures (GONE/UNAUTHORIZED) do.
   if (
     !isAuthEndpoint &&
-    (status === Status.GONE ||
-      status === Status.NOT_FOUND ||
-      status === Status.UNAUTHORIZED)
+    (status === Status.GONE || status === Status.UNAUTHORIZED)
   ) {
     await signOut(status);
   } else if (!isAuthEndpoint) {
