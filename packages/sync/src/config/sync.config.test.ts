@@ -71,6 +71,40 @@ describe("Sync service configuration", () => {
     });
   });
 
+  describe("Google credentials (shared google config section)", () => {
+    const withGoogle = (google: Record<string, unknown> | undefined) =>
+      ({
+        runtime: { nodeEnv: "staging", timezone: "Etc/UTC" },
+        sync: baseSyncSection(),
+        google,
+      }) as unknown as CompassConfig;
+
+    it("leaves the Google client unset when the google section is absent", () => {
+      const config = parseSyncConfig(withGoogle(undefined));
+      expect(config.GOOGLE_CLIENT_ID).toBeUndefined();
+      expect(config.GOOGLE_CLIENT_SECRET).toBeUndefined();
+    });
+
+    it("reads the Google client id and secret from the google section", () => {
+      const config = parseSyncConfig(
+        withGoogle({
+          clientId: "id.apps.googleusercontent.com",
+          clientSecret: "secret",
+        }),
+      );
+      expect(config.GOOGLE_CLIENT_ID).toBe("id.apps.googleusercontent.com");
+      expect(config.GOOGLE_CLIENT_SECRET).toBe("secret");
+    });
+
+    it("treats an empty-string placeholder as unset", () => {
+      const config = parseSyncConfig(
+        withGoogle({ clientId: "", clientSecret: "" }),
+      );
+      expect(config.GOOGLE_CLIENT_ID).toBeUndefined();
+      expect(config.GOOGLE_CLIENT_SECRET).toBeUndefined();
+    });
+  });
+
   describe("required fields", () => {
     it("throws a clear error when the sync section is absent", () => {
       const config = { runtime: { nodeEnv: "staging", timezone: "Etc/UTC" } };
