@@ -131,6 +131,23 @@ describe("ProviderConnectionRepository", () => {
     expect(await repo.findById(tenantId, mine, created._id)).not.toBeNull();
   });
 
+  it("rejects an actionRequired upsert with no reason before any write lands", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await expect(
+      repo.upsertByProviderAccount(
+        baseUpsert({
+          tenantId,
+          principalId,
+          state: "actionRequired",
+          stateReason: null,
+        }),
+      ),
+    ).rejects.toThrow();
+    // Nothing was persisted — the invalid state never reached Mongo.
+    expect(await repo.listByPrincipal(tenantId, principalId)).toHaveLength(0);
+  });
+
   it("rejects a raw duplicate insert violating the unique account identity", async () => {
     const shared = {
       tenantId: objectId(),
