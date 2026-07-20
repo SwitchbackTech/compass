@@ -79,4 +79,120 @@ export class JobRepository {
     const result = await this.collection.deleteOne({ _id: id, coalescingKey });
     return result.deletedCount === 1;
   }
+
+  // Atomically claim the highest-priority due job for one worker. A job is due
+  // when it's pending and its runAfter has passed, OR it's claimed but its
+  // lease has expired (the previous owner crashed). Because findOneAndUpdate is
+  // a single atomic operation, two workers racing for the same job can never
+  // both win — the loser simply gets the next job or null. Returns null when no
+  // job is due.
+  async claimDueJob(
+    owner: string,
+    now: Date,
+    leaseDurationMs: number,
+  ): Promise<JobRecord | null> {
+    const leaseExpiresAt = new Date(now.getTime() + leaseDurationMs);
+    const result = await this.collection.findOneAndUpdate(
+      {
+        $or: [
+          { state: "pending", runAfter: { $lte: now } },
+          { state: "claimed", leaseExpiresAt: { $lt: now } },
+        ],
+      },
+      {
+        $set: { state: "claimed", leaseOwner: owner, leaseExpiresAt },
+        $inc: { attempt: 1 },
+        $currentDate: { updatedAt: true },
+      },
+      { sort: { priority: -1, runAfter: 1 }, returnDocument: "after" },
+    );
+    return result ? JobRecordSchema.parse(result) : null;
+  }
+
+  // Extend the lease while a worker is still processing. Only the current owner
+  // can heartbeat; a job reclaimed by someone else returns false.
+  async heartbeat(
+    id: SyncJobId,
+    owner: string,
+    now: Date,
+    leaseDurationMs: number,
+  ): Promise<boolean> {
+    const result = await this.collection.updateOne(
+      { _id: id, leaseOwner: owner, state: "claimed" },
+      {
+        $set: { leaseExpiresAt: new Date(now.getTime() + leaseDurationMs) },
+        $currentDate: { updatedAt: true },
+      },
+    );
+    return result.modifiedCount === 1;
+  }
+
+  // Finish a job the worker owns. Scoped to the owner so a job reclaimed after a
+  // stale lease isn't deleted out from under its new owner.
+  async complete(id: SyncJobId, owner: string): Promise<boolean> {
+    const result = await this.collection.deleteOne({
+      _id: id,
+      leaseOwner: owner,
+    });
+    return result.deletedCount === 1;
+  }
+
+  // Reschedule a job the worker owns for a later retry, returning it to the
+  // pending pool and releasing the lease.
+  async scheduleRetry(
+    id: SyncJobId,
+    owner: string,
+    runAfter: Date,
+    failureClass: JobRecord["failureClass"],
+  ): Promise<boolean> {
+    const result = await this.collection.updateOne(
+      { _id: id, leaseOwner: owner },
+      {
+        $set: {
+          state: "pending",
+          runAfter,
+          leaseOwner: null,
+          leaseExpiresAt: null,
+          failureClass,
+        },
+        $currentDate: { updatedAt: true },
+      },
+    );
+    return result.modifiedCount === 1;
+  }
+
+  // Mark a job the worker owns as a permanent failure needing attention.
+  async fail(
+    id: SyncJobId,
+    owner: string,
+    failureClass: JobRecord["failureClass"],
+  ): Promise<boolean> {
+    const result = await this.collection.updateOne(
+      { _id: id, leaseOwner: owner },
+      {
+        $set: {
+          state: "failed",
+          leaseOwner: null,
+          leaseExpiresAt: null,
+          failureClass,
+        },
+        $currentDate: { updatedAt: true },
+      },
+    );
+    return result.modifiedCount === 1;
+  }
+
+  // On graceful shutdown, return every job this worker still holds to the
+  // pending pool so another worker (or the restarted process) picks them up
+  // immediately instead of waiting for the lease to expire.
+  async releaseOwned(owner: string): Promise<number> {
+    const result = await this.collection.updateMany(
+      { leaseOwner: owner, state: "claimed" },
+      {
+        $set: { state: "pending", leaseOwner: null, leaseExpiresAt: null },
+        $currentDate: { updatedAt: true },
+      },
+    );
+    return result.modifiedCount;
+  }
 }
