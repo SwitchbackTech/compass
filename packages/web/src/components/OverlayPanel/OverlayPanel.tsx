@@ -24,6 +24,8 @@ interface Props {
   children?: ReactNode;
   /** Called when clicking the backdrop or pressing Escape */
   onDismiss?: () => void;
+  /** Overrides the element that receives focus when the dialog closes. */
+  restoreFocus?: () => void;
   /** ARIA role for the panel (default: "dialog") */
   role?: "dialog" | "status" | "alert";
   /** Cross-axis alignment of the title/message/children (default: "center") */
@@ -41,6 +43,7 @@ export const OverlayPanel = ({
   message,
   children,
   onDismiss,
+  restoreFocus,
   role = "dialog",
   align = "center",
   variant = "modal",
@@ -57,8 +60,12 @@ export const OverlayPanel = ({
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const firstFocusable = panel.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
     (firstFocusable ?? panel).focus();
-    return () => previouslyFocused?.focus?.();
-  }, [role]);
+    return () => {
+      // Let the Escape key's global handlers finish before restoring focus.
+      if (restoreFocus) setTimeout(restoreFocus);
+      else previouslyFocused?.focus?.();
+    };
+  }, [restoreFocus, role]);
 
   const backdropClasses = clsx(
     "fixed inset-0 flex items-center justify-center bg-background/85 backdrop-blur-sm",
@@ -89,6 +96,8 @@ export const OverlayPanel = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (onDismiss && e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
       onDismiss();
       return;
     }

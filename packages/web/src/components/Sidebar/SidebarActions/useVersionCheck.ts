@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import * as envConstants from "@web/common/constants/env.constants";
+import { APP_VERSION } from "@web/common/constants/version.constants";
 
 const MIN_HIDDEN_DURATION_MS = 30_000;
 const BACKUP_CHECK_INTERVAL_MS = 5 * 60 * 1000;
-const CURRENT_VERSION =
-  typeof BUILD_VERSION === "string" ? BUILD_VERSION : "dev";
 const versionResponseSchema = z.object({
   version: z.string().optional(),
 });
@@ -80,7 +79,7 @@ export const useVersionCheck = (): VersionCheckResult => {
         return;
       }
 
-      setIsUpdateAvailable(serverVersion !== CURRENT_VERSION);
+      setIsUpdateAvailable(serverVersion !== APP_VERSION);
     } catch (error) {
       console.error("Version check failed:", error);
     } finally {
@@ -130,5 +129,5 @@ export const useVersionCheck = (): VersionCheckResult => {
     };
   }, [checkVersion]);
 
-  return { isUpdateAvailable, currentVersion: CURRENT_VERSION };
+  return { isUpdateAvailable, currentVersion: APP_VERSION };
 };

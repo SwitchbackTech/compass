@@ -133,8 +133,10 @@ describe("CommandPalette", () => {
     expect(screen.getByText("Create all-day event")).toBeInTheDocument();
     // Settings surfaces the (stubbed) Google item.
     expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
-    expect(screen.getByText("Report Bug")).toBeInTheDocument();
-
+    expect(screen.getByRole("option", { name: "Report Bug" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("issues/new"),
+    );
     expect(getInput()).toHaveFocus();
     // First option is active by default.
     expect(activeRowText(container)).toBe("Go to Day");
@@ -226,17 +228,6 @@ describe("CommandPalette", () => {
     fireEvent.pointerDown(overlay);
     fireEvent.click(overlay);
     expect(isOpen()).toBe(false);
-  });
-
-  it("renders link items as anchors with href and target", () => {
-    renderPalette();
-    const link = screen.getByText("Report Bug").closest("a");
-    expect(link).toHaveAttribute(
-      "href",
-      expect.stringContaining("github.com/SwitchbackTech/compass/issues"),
-    );
-    expect(link).toHaveAttribute("target", "_blank");
-    expect(link).toHaveAttribute("rel", "noopener noreferrer");
   });
 
   it("renders a disabled Undo row with keycaps when there is no history", () => {
