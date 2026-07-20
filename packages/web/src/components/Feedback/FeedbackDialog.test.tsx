@@ -10,7 +10,7 @@ describe("FeedbackDialog", () => {
     const user = userEvent.setup();
     const onSubmit = mock();
 
-    render(
+    const { rerender } = render(
       <FeedbackDialog kind="bug" onDismiss={mock()} onSubmit={onSubmit} />,
     );
 
@@ -27,6 +27,25 @@ describe("FeedbackDialog", () => {
     ).toBeDisabled();
 
     await user.type(details, "  Events disappear after syncing.  ");
+    rerender(
+      <FeedbackDialog
+        kind="bug"
+        isSubmitting
+        onDismiss={mock()}
+        onSubmit={onSubmit}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Sending…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+    await user.keyboard("{Escape}");
+    expect(
+      screen.getByRole("dialog", { name: "Report a bug" }),
+    ).toBeInTheDocument();
+    expect(details).toHaveFocus();
+
+    rerender(
+      <FeedbackDialog kind="bug" onDismiss={mock()} onSubmit={onSubmit} />,
+    );
     await user.click(screen.getByRole("button", { name: "Send bug report" }));
 
     expect(onSubmit).toHaveBeenCalledWith("Events disappear after syncing.");

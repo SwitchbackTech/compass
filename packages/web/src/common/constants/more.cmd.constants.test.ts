@@ -1,4 +1,7 @@
-import { getMoreCommandPaletteSections } from "@web/common/constants/more.cmd.constants";
+import {
+  getCommandPalettePlaceholder,
+  getMoreCommandPaletteSections,
+} from "@web/common/constants/more.cmd.constants";
 import {
   feedbackActions,
   selectFeedbackRequest,
@@ -14,6 +17,10 @@ describe("getMoreCommandPaletteSections", () => {
 
     expect(section.items).toHaveLength(1);
     expect(section.items[0].label).toMatch(/^Version: /);
+    expect(getCommandPalettePlaceholder("day", false)).not.toContain("bug");
+    expect(getCommandPalettePlaceholder("week", false)).not.toContain(
+      "feedback",
+    );
   });
 
   it("opens a prefilled feedback request from each cloud command", () => {

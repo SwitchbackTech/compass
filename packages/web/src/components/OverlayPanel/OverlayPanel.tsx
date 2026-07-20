@@ -96,6 +96,8 @@ export const OverlayPanel = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (onDismiss && e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
       onDismiss();
       return;
     }

@@ -31,13 +31,15 @@ const DIALOG_COPY = {
 
 interface FeedbackDialogProps {
   kind: FeedbackKind;
+  isSubmitting?: boolean;
   onDismiss: () => void;
   restoreFocus?: () => void;
-  onSubmit: (details: string) => void;
+  onSubmit: (details: string) => void | Promise<void>;
 }
 
 export function FeedbackDialog({
   kind,
+  isSubmitting = false,
   onDismiss,
   restoreFocus,
   onSubmit,
@@ -46,6 +48,9 @@ export function FeedbackDialog({
   const textareaId = useId();
   const contextId = useId();
   const copy = DIALOG_COPY[kind];
+  const handleDismiss = () => {
+    if (!isSubmitting) onDismiss();
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -57,7 +62,7 @@ export function FeedbackDialog({
     <OverlayPanel
       title={copy.title}
       message="Send feedback without leaving Compass."
-      onDismiss={onDismiss}
+      onDismiss={handleDismiss}
       restoreFocus={restoreFocus}
       align="start"
       variant="modal"
@@ -86,15 +91,18 @@ export function FeedbackDialog({
         </div>
 
         <OverlayPanelActions>
-          <OverlayPanelActionButton onClick={onDismiss}>
+          <OverlayPanelActionButton
+            disabled={isSubmitting}
+            onClick={handleDismiss}
+          >
             Cancel
           </OverlayPanelActionButton>
           <OverlayPanelActionButton
             type="submit"
             variant="primary"
-            disabled={!details.trim()}
+            disabled={!details.trim() || isSubmitting}
           >
-            {copy.submitLabel}
+            {isSubmitting ? "Sending…" : copy.submitLabel}
           </OverlayPanelActionButton>
         </OverlayPanelActions>
       </form>

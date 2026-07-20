@@ -5,6 +5,21 @@ import { type CommandSection } from "@web/components/CommandPalette/command-pale
 import { feedbackActions } from "@web/components/Feedback/feedback.store";
 import { type ViewName } from "@web/shortcuts/shortcuts.constants";
 
+export function getCommandPalettePlaceholder(
+  currentView: ViewName,
+  feedbackEnabled = isPosthogEnabled(),
+): string {
+  if (currentView === "day") {
+    return feedbackEnabled
+      ? "Try: 'week', 'today', 'bug', or 'feedback'"
+      : "Try: 'week' or 'today'";
+  }
+
+  return feedbackEnabled
+    ? "Try: 'create', 'bug', or 'feedback'"
+    : "Try: 'create'";
+}
+
 export function getMoreCommandPaletteSections(
   currentView: ViewName,
   feedbackEnabled = isPosthogEnabled(),

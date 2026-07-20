@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { usePostHog } from "@web/auth/posthog/posthog-react";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
@@ -20,17 +21,23 @@ const restoreCommandPaletteFocus = () => {
 export function FeedbackDialogHost() {
   const request = useFeedbackStore(selectFeedbackRequest);
   const posthog = usePostHog();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!request) return null;
 
-  const handleSubmit = (details: string) => {
+  const handleSubmit = async (details: string) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
-      captureFeedback(posthog, { ...request, details });
+      await captureFeedback(posthog, { ...request, details });
     } catch {
+      setIsSubmitting(false);
       showErrorToast("Couldn't send your feedback. Please try again.");
       return;
     }
 
+    setIsSubmitting(false);
     feedbackActions.close();
     showStatusToast("feedback-sent", "Thanks — your feedback was sent.");
   };
@@ -38,6 +45,7 @@ export function FeedbackDialogHost() {
   return (
     <FeedbackDialog
       kind={request.kind}
+      isSubmitting={isSubmitting}
       onDismiss={feedbackActions.close}
       restoreFocus={restoreCommandPaletteFocus}
       onSubmit={handleSubmit}

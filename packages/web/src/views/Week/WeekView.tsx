@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
+import { getCommandPalettePlaceholder } from "@web/common/constants/more.cmd.constants";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
@@ -141,7 +142,7 @@ export const WeekView = () => {
         today={today}
         onGoToToday={goToTodayViaCmd}
         onShowShortcuts={toggleShortcuts}
-        placeholder="Try: 'create', 'bug', or 'feedback'"
+        placeholder={getCommandPalettePlaceholder("week")}
       />
       <Dedication />
 
