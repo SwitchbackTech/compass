@@ -476,7 +476,10 @@
 
   &[data-view="sidebar"] .react-datepicker__month-container {
     height: 252px;
-    padding: 0;
+    /* Leave room for the 2px focus outline + 1px offset on the leftmost/
+       rightmost day (Sun/Sat), otherwise it's clipped by .calendar's
+       overflow:hidden. */
+    padding: 0 3px;
   }
 
   & .react-datepicker__month {
@@ -563,26 +566,15 @@
     color: var(--date-picker-selected-text);
   }
 
+  /* --accent is chosen per-theme to stand out against the app's normal
+     surfaces (not just accent-filled ones), so it stays readable regardless
+     of theme or of an arbitrary event-color picker background — one rule for
+     both the sidebar and form/grid pickers, no data-dark branching needed. */
   & .react-datepicker__day--today:not(.react-datepicker__day--selected) {
-    color: var(--on-accent);
-    text-decoration: underline;
-    text-decoration-color: var(--on-accent);
-    text-underline-offset: 3px;
-  }
-
-  /* data-dark means "bg matches the theme's surface polarity", so today needs
-     the theme's standard text + accent underline to stay readable. Must sit
-     before the sidebar override below (equal specificity, source order). */
-  &[data-dark="true"]
-    .react-datepicker__day--today:not(.react-datepicker__day--selected) {
-    color: var(--text);
-    text-decoration-color: var(--accent);
-  }
-
-  &[data-view="sidebar"]
-    .react-datepicker__day--today:not(.react-datepicker__day--selected) {
     color: var(--accent);
+    text-decoration: underline;
     text-decoration-color: var(--accent);
+    text-underline-offset: 3px;
   }
 
   & .react-datepicker__day--today:hover {
@@ -802,7 +794,7 @@
     position: absolute;
     inset: -2px;
     z-index: -1;
-    border-radius: var(--radius-default);
+    border-radius: 50%;
     background: var(--date-picker-selected-bg);
     content: "";
   }
