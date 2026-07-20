@@ -4,7 +4,7 @@ import {
   useCallback,
   useState,
 } from "react";
-import { subscribeToReleaseNotes } from "@web/auth/compass/user/util/subscribe.util";
+import { UserApi } from "@web/api/user.api";
 import { releaseNotesPromptActions } from "@web/auth/state/release-notes-prompt.store";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
@@ -43,7 +43,10 @@ export function ReleaseNotesPrompt() {
   const subscribe = async () => {
     if (state !== "asking") return;
     try {
-      await subscribeToReleaseNotes();
+      const response = await UserApi.subscribeToEmailUpdates();
+      if (response.status !== "subscribed") {
+        throw new Error("Subscriber is not active");
+      }
       setState("confirmed");
       window.setTimeout(dismiss, 1300);
     } catch {

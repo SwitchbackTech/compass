@@ -42,7 +42,6 @@ supertokens:
 
 # email:
 #   kitApiSecret: REPLACE_WITH_KIT_API_SECRET
-#   kitUserTagId: REPLACE_WITH_KIT_USER_TAG_ID
 
 # posthog:
 #   key: REPLACE_WITH_POSTHOG_KEY

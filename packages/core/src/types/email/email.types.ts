@@ -7,6 +7,19 @@ export const SubscriberStateSchema = z
   .default("active");
 export type SubscriberState = z.infer<typeof SubscriberStateSchema>;
 
+/** The current user's email-update state, as reported by Kit. */
+export const EmailUpdatesStatusSchema = z.enum([
+  "unavailable",
+  "not_subscribed",
+  "subscribed",
+]);
+export type EmailUpdatesStatus = z.infer<typeof EmailUpdatesStatusSchema>;
+
+export const EmailUpdatesResponseSchema = z.strictObject({
+  status: EmailUpdatesStatusSchema,
+});
+export type EmailUpdatesResponse = z.infer<typeof EmailUpdatesResponseSchema>;
+
 // Keep this up-to-date with: https://developers.kit.com/api-reference/subscribers/create-a-subscriber
 export const SubscriberSchema = z.object({
   email_address: z.string().email(),

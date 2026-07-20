@@ -4,6 +4,7 @@ export interface CommandItem {
   id: string;
   label: string;
   icon: Icon;
+  iconClassName?: string;
   onClick?: () => void;
   href?: string;
   target?: "_blank";

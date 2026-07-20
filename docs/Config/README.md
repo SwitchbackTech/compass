@@ -74,6 +74,5 @@ See [Google Calendar](../self-hosting/google-calendar.md) for full setup instruc
 | key | Required | Description |
 |---|---|---|
 | `email.kitApiSecret` | No | Kit.com API secret key. |
-| `email.kitUserTagId` | No | Kit.com tag ID applied to users on signup. |
 | `posthog.key` | No | PostHog project key injected into the web bundle. |
 | `posthog.host` | No | PostHog host injected into the web bundle. |
