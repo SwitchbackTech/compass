@@ -69,6 +69,9 @@ services:
       - /tmp
     volumes:
       - ${COMPASS_CONFIG_FILE:-./compass.yaml}:/app/compass.yaml:ro
+      # The shared logger writes logs/app.log; the root fs is read-only, so
+      # give it a writable mount (same as the backend).
+      - compass_sync_logs:/app/logs
     restart: unless-stopped
     healthcheck:
       test:
@@ -147,6 +150,7 @@ services:
 
 volumes:
   compass_backend_logs:
+  compass_sync_logs:
   compass_mongo_configdb:
   compass_mongo_data:
   compass_supertokens_postgres_data:

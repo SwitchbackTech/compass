@@ -121,12 +121,16 @@ describe("self-host docker compose", () => {
     expect(compose).toContain("switchbacktech/compass-sync:");
     // Liveness probe, not readiness: a store-less passive service stays up.
     expect(compose).toContain("http://127.0.0.1:3010/health/live");
-    // The `sync` profile lets a deploy start the container only where an
-    // isolated sync database is provisioned.
     const syncBlock = compose
       .slice(compose.indexOf("  sync:"))
       .split(/\n {2}\w/)[0];
+    // The `sync` profile lets a deploy start the container only where an
+    // isolated sync database is provisioned.
     expect(syncBlock).toContain("profiles: [sync]");
+    // The read-only root fs needs a writable mount for the logger's log file,
+    // or the container crashes on startup.
+    expect(syncBlock).toContain("compass_sync_logs:/app/logs");
+    expect(compose).toContain("compass_sync_logs:");
   });
 });
 
