@@ -88,22 +88,17 @@ describe("UserMetadataService", () => {
       expect(metadata.sync?.importGCal).toBe("RESTART");
     });
 
-    it("removes legacy email subscription metadata", async () => {
+    it("does not expose legacy email subscription metadata", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
 
       await SupertokensUserMetadata.updateUserMetadata(userId, {
         subscribeToUpdates: true,
       });
-      const clearUserMetadataSpy = jest
-        .spyOn(SupertokensUserMetadata, "clearUserMetadata")
-        .mockResolvedValue({ status: "OK" });
 
       const metadata = await driver.fetchUserMetadata(userId);
 
       expect(metadata).not.toHaveProperty("subscribeToUpdates");
-      expect(clearUserMetadataSpy).toHaveBeenCalledWith(userId);
-      clearUserMetadataSpy.mockRestore();
     });
 
     it("returns NOT_CONNECTED when the user never connected Google", async () => {

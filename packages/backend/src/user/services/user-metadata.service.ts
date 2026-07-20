@@ -17,6 +17,12 @@ type GoogleMetadataAssessment = {
 
 const legacyEmailUpdatesKey = "subscribeToUpdates";
 
+function hasLegacyEmailUpdatesMetadata(
+  metadata: Partial<UserMetadata>,
+): boolean {
+  return Object.hasOwn(metadata, legacyEmailUpdatesKey);
+}
+
 function removeLegacyEmailUpdatesMetadata<T extends Partial<UserMetadata>>(
   metadata: T,
 ): T {
@@ -27,28 +33,6 @@ function removeLegacyEmailUpdatesMetadata<T extends Partial<UserMetadata>>(
 }
 
 class UserMetadataService {
-  private replaceUserMetadata = async (
-    userId: string,
-    metadata: UserMetadata,
-  ): Promise<UserMetadata> => {
-    const clearResult = await SupertokensUserMetadata.clearUserMetadata(userId);
-
-    if (clearResult.status !== "OK")
-      throw new Error("Failed to clear user metadata");
-
-    if (Object.keys(metadata).length === 0) return metadata;
-
-    const updateResult = (await SupertokensUserMetadata.updateUserMetadata(
-      userId,
-      metadata,
-    )) as GetUserMetadataResponse;
-
-    if (updateResult.status !== "OK")
-      throw new Error("Failed to update user metadata");
-
-    return updateResult.metadata;
-  };
-
   private getStoredUserMetadata = async (
     userId: string,
     userContext?: Record<string, JSONObject>,
@@ -115,14 +99,14 @@ class UserMetadataService {
     data: Partial<UserMetadata>;
   }): Promise<UserMetadata> => {
     const storedMetadata = await this.getStoredUserMetadata(userId);
-    const value = removeLegacyEmailUpdatesMetadata(storedMetadata);
-    const cleanData = removeLegacyEmailUpdatesMetadata(data);
+    const value = hasLegacyEmailUpdatesMetadata(storedMetadata)
+      ? removeLegacyEmailUpdatesMetadata(storedMetadata)
+      : storedMetadata;
+    const cleanData = hasLegacyEmailUpdatesMetadata(data)
+      ? removeLegacyEmailUpdatesMetadata(data)
+      : data;
 
     const update = mergeWith(value, cleanData) as UserMetadata;
-
-    if (legacyEmailUpdatesKey in storedMetadata) {
-      return this.replaceUserMetadata(userId, update);
-    }
 
     const result = (await SupertokensUserMetadata.updateUserMetadata(
       userId,
@@ -144,11 +128,9 @@ class UserMetadataService {
       userId,
       userContext,
     );
-    const metadata = removeLegacyEmailUpdatesMetadata(storedMetadata);
-
-    if (legacyEmailUpdatesKey in storedMetadata) {
-      await this.replaceUserMetadata(userId, metadata);
-    }
+    const metadata = hasLegacyEmailUpdatesMetadata(storedMetadata)
+      ? removeLegacyEmailUpdatesMetadata(storedMetadata)
+      : storedMetadata;
 
     if (options?.skipAssessment) {
       const user = await findCompassUserBy("_id", userId);
