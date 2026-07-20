@@ -1,0 +1,161 @@
+import { z } from "zod/v4";
+import { DateTimeSchema, EventIdSchema } from "@core/types/domain-primitives";
+import {
+  EditableRecurrenceSchema,
+  EventScheduleSchema,
+} from "@core/types/event.contracts";
+import {
+  RecurrenceEditSchema,
+  RecurrenceScopeSchema,
+} from "@core/types/event-command.contracts";
+import {
+  ProviderEventVersionSchema,
+  SyncEventCalendarIdSchema,
+  SyncEventContentSchema,
+} from "@core/types/sync/event.contracts";
+import {
+  IdempotencyKeySchema,
+  PrincipalIdSchema,
+  ProviderEventIdSchema,
+  SyncCommandIdSchema,
+  TenantIdSchema,
+} from "@core/types/sync/identity.contracts";
+
+// Durable event command contracts for Compass Sync (ledger S04). A command
+// records acknowledged user intent (01-domain-model "Command") and is
+// persisted before any asynchronous work begins (R-SYNC-05). This file adds
+// contracts only — nothing here executes a command or reads/writes the
+// existing Compass API event endpoints (02-sync-lifecycle "Durable event
+// commands").
+
+// create has no calendar to move within and no prior scope to preserve, so
+// its recurrence input reuses the existing single/series edit shape.
+const CreateCommandInputSchema = z.strictObject({
+  kind: z.literal("create"),
+  calendarId: SyncEventCalendarIdSchema,
+  content: SyncEventContentSchema,
+  schedule: EventScheduleSchema,
+  recurrence: EditableRecurrenceSchema,
+});
+
+// update never changes the owning calendar — that is exclusively the "move"
+// operation's job, so the two stay independently retryable and idempotent.
+const UpdateCommandInputSchema = z.strictObject({
+  kind: z.literal("update"),
+  content: SyncEventContentSchema,
+  schedule: EventScheduleSchema,
+  recurrence: RecurrenceEditSchema,
+  scope: RecurrenceScopeSchema,
+});
+
+const MoveCommandInputSchema = z.strictObject({
+  kind: z.literal("move"),
+  calendarId: SyncEventCalendarIdSchema,
+});
+
+const DeleteCommandInputSchema = z.strictObject({
+  kind: z.literal("delete"),
+  scope: RecurrenceScopeSchema,
+});
+
+export const SyncCommandInputSchema = z.discriminatedUnion("kind", [
+  CreateCommandInputSchema,
+  UpdateCommandInputSchema,
+  MoveCommandInputSchema,
+  DeleteCommandInputSchema,
+]);
+export type SyncCommandInput = z.infer<typeof SyncCommandInputSchema>;
+
+// Provider-side rejection classes a command outcome can carry. These map to
+// the failure classification table in 02-sync-lifecycle.md; "capability"
+// failures are typed rather than a silently degraded write (01-domain-model
+// "Provider adapter contract").
+export const SyncCommandFailureReasonSchema = z.enum([
+  "versionConflict",
+  "readOnlyCalendar",
+  "unsupportedCapability",
+  "permanentProviderError",
+  "authorizationRevoked",
+]);
+export type SyncCommandFailureReason = z.infer<
+  typeof SyncCommandFailureReasonSchema
+>;
+
+// Nonterminal: pending (persisted, not yet attempted), applying (in flight
+// at the provider), reconciling (response was ambiguous; identity must be
+// confirmed before another attempt — 02-sync-lifecycle "Create" step 6).
+// Terminal: confirmed, failed, cancelled.
+const PendingOutcomeSchema = z.strictObject({ state: z.literal("pending") });
+const ApplyingOutcomeSchema = z.strictObject({ state: z.literal("applying") });
+const ReconcilingOutcomeSchema = z.strictObject({
+  state: z.literal("reconciling"),
+});
+
+const ConfirmedOutcomeSchema = z
+  .strictObject({
+    state: z.literal("confirmed"),
+    // Both null when the event has no provider target: confirmation is
+    // durable cloud persistence only (02-sync-lifecycle "Create" step 3).
+    // Otherwise both present together — a provider identity without a
+    // version (or vice versa) is not a coherent confirmed state.
+    providerEventId: ProviderEventIdSchema.nullable(),
+    providerVersion: ProviderEventVersionSchema.nullable(),
+  })
+  .refine(
+    (outcome) =>
+      (outcome.providerEventId === null) === (outcome.providerVersion === null),
+    {
+      message:
+        "providerEventId and providerVersion must both be null or both present",
+      path: ["providerVersion"],
+    },
+  );
+
+const FailedOutcomeSchema = z.strictObject({
+  state: z.literal("failed"),
+  failureReason: SyncCommandFailureReasonSchema,
+});
+
+const CancelledOutcomeSchema = z.strictObject({
+  state: z.literal("cancelled"),
+});
+
+export const SyncCommandOutcomeSchema = z.discriminatedUnion("state", [
+  PendingOutcomeSchema,
+  ApplyingOutcomeSchema,
+  ReconcilingOutcomeSchema,
+  ConfirmedOutcomeSchema,
+  FailedOutcomeSchema,
+  CancelledOutcomeSchema,
+]);
+export type SyncCommandOutcome = z.infer<typeof SyncCommandOutcomeSchema>;
+
+export const SyncCommandSchema = z
+  .strictObject({
+    id: SyncCommandIdSchema,
+    tenantId: TenantIdSchema,
+    principalId: PrincipalIdSchema,
+    // Unique per (tenantId, principalId, idempotencyKey) — the same key
+    // always refers to the same command (01-domain-model "Command").
+    idempotencyKey: IdempotencyKeySchema,
+    eventId: EventIdSchema,
+    input: SyncCommandInputSchema,
+    // Last provider version the client observed, for a conditional write on
+    // update/move/delete. Null means no known provider version yet (an
+    // unlinked event, or a first write attempt). Never present on create,
+    // which has no prior provider state to condition against.
+    expectedVersion: ProviderEventVersionSchema.nullable(),
+    outcome: SyncCommandOutcomeSchema,
+    attemptCount: z.number().int().min(0),
+    createdAt: DateTimeSchema,
+    updatedAt: DateTimeSchema,
+  })
+  .refine(
+    (command) =>
+      command.input.kind !== "create" || command.expectedVersion === null,
+    {
+      message: "A create command cannot carry an expectedVersion",
+      path: ["expectedVersion"],
+    },
+  );
+export type SyncCommand = z.infer<typeof SyncCommandSchema>;
