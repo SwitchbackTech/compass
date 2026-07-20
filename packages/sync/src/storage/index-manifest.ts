@@ -116,8 +116,11 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       options: { unique: true },
     },
     {
-      name: "state_runafter_priority",
-      key: { state: 1, runAfter: 1, priority: -1 },
+      // Field order matches the due-job claim: filter on state, then sort by
+      // priority (desc) then runAfter (asc), so the claim is served from the
+      // index without a blocking in-memory sort.
+      name: "state_priority_runafter",
+      key: { state: 1, priority: -1, runAfter: 1 },
     },
     {
       name: "lease_expiry",
