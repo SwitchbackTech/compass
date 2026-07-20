@@ -280,23 +280,6 @@ export const CommandPalette = ({
                       </>
                     );
 
-                    if (item.href) {
-                      return (
-                        <a
-                          key={item.id}
-                          {...commonProps}
-                          role="option"
-                          aria-selected={isActive}
-                          href={item.href}
-                          target={item.target}
-                          rel="noopener noreferrer"
-                          className={rowClassName}
-                        >
-                          {content}
-                        </a>
-                      );
-                    }
-
                     return (
                       <button
                         key={item.id}

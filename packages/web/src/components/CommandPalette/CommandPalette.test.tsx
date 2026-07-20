@@ -133,10 +133,6 @@ describe("CommandPalette", () => {
     expect(screen.getByText("Create all-day event")).toBeInTheDocument();
     // Settings surfaces the (stubbed) Google item.
     expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Report Bug" })).toHaveAttribute(
-      "href",
-      expect.stringContaining("issues/new"),
-    );
     expect(getInput()).toHaveFocus();
     // First option is active by default.
     expect(activeRowText(container)).toBe("Go to Day");
