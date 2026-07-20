@@ -116,7 +116,9 @@ class UserMetadataService {
     if (result.status !== "OK")
       throw new Error("Failed to update user metadata");
 
-    return result.metadata;
+    return hasLegacyEmailUpdatesMetadata(result.metadata)
+      ? removeLegacyEmailUpdatesMetadata(result.metadata)
+      : result.metadata;
   };
 
   fetchUserMetadata = async (

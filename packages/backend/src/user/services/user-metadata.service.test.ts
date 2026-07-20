@@ -101,6 +101,23 @@ describe("UserMetadataService", () => {
       expect(metadata).not.toHaveProperty("subscribeToUpdates");
     });
 
+    it("does not expose legacy email subscription metadata after an update", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      await SupertokensUserMetadata.updateUserMetadata(userId, {
+        subscribeToUpdates: true,
+      });
+
+      const metadata = await driver.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "RESTART" } },
+      });
+
+      expect(metadata).not.toHaveProperty("subscribeToUpdates");
+      expect(metadata.sync?.importGCal).toBe("RESTART");
+    });
+
     it("returns NOT_CONNECTED when the user never connected Google", async () => {
       const user = await UserDriver.createUser({ withGoogle: false });
       const userId = user._id.toString();
