@@ -22,7 +22,7 @@ export function captureFeedback(
   posthog: PostHogCaptureClient,
   { details, kind, view }: FeedbackSubmission,
 ): void {
-  posthog.capture("survey sent", {
+  const result = posthog.capture("survey sent", {
     $survey_id: FEEDBACK_SURVEY.id,
     $survey_name: FEEDBACK_SURVEY.name,
     $survey_questions: [FEEDBACK_SURVEY.question],
@@ -34,4 +34,8 @@ export function captureFeedback(
     feedback_source: "command_palette",
     feedback_type: kind,
   });
+
+  if (result === undefined) {
+    throw new Error("PostHog rejected the feedback event");
+  }
 }

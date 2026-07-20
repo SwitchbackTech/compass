@@ -6,7 +6,7 @@ import { describe, expect, it, mock } from "bun:test";
 
 describe("captureFeedback", () => {
   it("captures a completed PostHog survey response with app context", () => {
-    const capture = mock();
+    const capture = mock(() => ({}));
 
     captureFeedback(
       { capture },
@@ -30,5 +30,18 @@ describe("captureFeedback", () => {
       feedback_source: "command_palette",
       feedback_type: "suggestion",
     });
+  });
+
+  it("fails when PostHog rejects the capture", () => {
+    expect(() =>
+      captureFeedback(
+        { capture: mock(() => undefined) },
+        {
+          details: "Keep my report open so I can retry.",
+          kind: "bug",
+          view: "day",
+        },
+      ),
+    ).toThrow("PostHog rejected the feedback event");
   });
 });
