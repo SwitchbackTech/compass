@@ -148,23 +148,6 @@ export const WeekView = () => {
 
       <DraftProvider dateCalcs={dateCalcs} weekProps={weekProps}>
         <Shortcuts shortcutsProps={shortcutProps}>
-          <ContextMenuWrapper id="sidebar-context-menu">
-            <Draft measurements={measurements} weekProps={weekProps} />
-            <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
-              <Sidebar
-                calendarDate={calendarDate}
-                eventDetails={<WeekSidebarEventDetails />}
-                isEventDetailsOpen={isEventDetailsOpen}
-                isShortcutsOpen={isShortcutsOpen}
-                onCloseShortcuts={closeShortcuts}
-                onToggleShortcuts={toggleShortcuts}
-                onSelectDate={goToDateFromSidebar}
-                onToggleSidebar={toggleSidebar}
-                shortcutSections={shortcutSections}
-                shortcutsViewLabel="Week"
-              />
-            </ResizableSidebarPanel>
-          </ContextMenuWrapper>
           <div
             id={ID_MAIN}
             ref={mainRef}
@@ -201,6 +184,22 @@ export const WeekView = () => {
               </div>
             </WeekGridScrollArea>
           </div>
+          <ContextMenuWrapper id="sidebar-context-menu">
+            <Draft measurements={measurements} weekProps={weekProps} />
+            <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
+              <Sidebar
+                calendarDate={calendarDate}
+                eventDetails={<WeekSidebarEventDetails />}
+                isEventDetailsOpen={isEventDetailsOpen}
+                isShortcutsOpen={isShortcutsOpen}
+                onCloseShortcuts={closeShortcuts}
+                onToggleShortcuts={toggleShortcuts}
+                onSelectDate={goToDateFromSidebar}
+                shortcutSections={shortcutSections}
+                shortcutsViewLabel="Week"
+              />
+            </ResizableSidebarPanel>
+          </ContextMenuWrapper>
         </Shortcuts>
 
         <RecurrenceScopeDialog />

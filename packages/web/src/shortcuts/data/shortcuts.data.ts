@@ -83,7 +83,7 @@ const getEditShortcuts = (view: ShortcutMenuView): Shortcut[] =>
       ];
 
 const getOtherShortcuts = (): Shortcut[] => [
-  { keys: ["["], label: "Toggle sidebar" },
+  { keys: ["]"], label: "Toggle sidebar" },
   { keys: ["?"], label: "Toggle shortcuts" },
   { keys: ["Mod", "k"], label: "Command Palette" },
 ];

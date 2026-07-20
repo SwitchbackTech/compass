@@ -127,21 +127,6 @@ export const DayViewContent = memo(() => {
       />
       <Dedication />
 
-      <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
-        <Sidebar
-          calendarDate={dateInView}
-          eventDetails={<SidebarEventDetails />}
-          isEventDetailsOpen={isEventDetailsOpen}
-          isShortcutsOpen={isShortcutsOpen}
-          onCloseShortcuts={closeShortcuts}
-          onToggleShortcuts={toggleShortcuts}
-          onSelectDate={navigateToDate}
-          onToggleSidebar={toggleSidebar}
-          shortcutSections={shortcutSections}
-          shortcutsViewLabel="Day"
-        />
-      </ResizableSidebarPanel>
-
       <div
         id={ID_MAIN}
         ref={mainRef}
@@ -153,6 +138,20 @@ export const DayViewContent = memo(() => {
           <DayCalendarGrid />
         </div>
       </div>
+
+      <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
+        <Sidebar
+          calendarDate={dateInView}
+          eventDetails={<SidebarEventDetails />}
+          isEventDetailsOpen={isEventDetailsOpen}
+          isShortcutsOpen={isShortcutsOpen}
+          onCloseShortcuts={closeShortcuts}
+          onToggleShortcuts={toggleShortcuts}
+          onSelectDate={navigateToDate}
+          shortcutSections={shortcutSections}
+          shortcutsViewLabel="Day"
+        />
+      </ResizableSidebarPanel>
     </div>
   );
 });

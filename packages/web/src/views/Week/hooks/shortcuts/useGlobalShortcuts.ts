@@ -57,7 +57,7 @@ export function useGlobalShortcuts() {
     }
   });
 
-  useAppShortcutUp("[", () => viewActions.toggleSidebar());
+  useAppShortcutUp("]", () => viewActions.toggleSidebar());
 
   useAppShortcut(
     "Mod+K",
