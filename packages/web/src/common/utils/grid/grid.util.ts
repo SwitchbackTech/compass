@@ -155,14 +155,10 @@ export const getBeforeTodayDiff = (
   const diff = yesterdayIndex + futureFactor;
   return diff;
 };
-export const getElemById = (id: string): HTMLDivElement => {
+export const getElemById = (id: string): HTMLDivElement | null => {
   const element = document.getElementById(id);
 
-  if (!(element instanceof HTMLDivElement)) {
-    throw new Error(`Expected #${id} to be an HTMLDivElement.`);
-  }
-
-  return element;
+  return element instanceof HTMLDivElement ? element : null;
 };
 
 export const getRelativePercentages = (todayIndex: number) => {
