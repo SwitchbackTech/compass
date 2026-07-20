@@ -75,8 +75,11 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       key: { eventId: 1, occurrenceKey: 1 },
       options: { unique: true },
     },
-    { name: "calendar_start", key: { calendarId: 1, "schedule.start": 1 } },
-    { name: "principal_start", key: { principalId: 1, "schedule.start": 1 } },
+    // Index the normalized start instant (startAt), not the schedule.start
+    // union path — range queries compare all-day and timed occurrences on one
+    // coherent axis.
+    { name: "calendar_start", key: { calendarId: 1, startAt: 1 } },
+    { name: "principal_start", key: { principalId: 1, startAt: 1 } },
   ],
   [SYNC_COLLECTIONS.syncResources]: [
     {
