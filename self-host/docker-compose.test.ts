@@ -105,6 +105,33 @@ describe("self-host docker compose", () => {
       ),
     );
   });
+
+  it("builds the sync image without build-time Compass config", () => {
+    const dockerfile = readRepoFile("self-host/Dockerfile.sync");
+
+    expect(dockerfile).toContain("RUN bun run build:sync");
+    expect(dockerfile).not.toContain("--environment");
+  });
+
+  it("gates the passive sync service behind its own profile", () => {
+    const compose = readFileSync(join(import.meta.dir, "compose.yaml"), {
+      encoding: "utf8",
+    });
+
+    expect(compose).toContain("switchbacktech/compass-sync:");
+    // Liveness probe, not readiness: a store-less passive service stays up.
+    expect(compose).toContain("http://127.0.0.1:3010/health/live");
+    const syncBlock = compose
+      .slice(compose.indexOf("  sync:"))
+      .split(/\n {2}\w/)[0];
+    // The `sync` profile lets a deploy start the container only where an
+    // isolated sync database is provisioned.
+    expect(syncBlock).toContain("profiles: [sync]");
+    // The read-only root fs needs a writable mount for the logger's log file,
+    // or the container crashes on startup.
+    expect(syncBlock).toContain("compass_sync_logs:/app/logs");
+    expect(compose).toContain("compass_sync_logs:");
+  });
 });
 
 describe("self-host installer", () => {
@@ -147,10 +174,10 @@ describe("self-host helper", () => {
 });
 
 describe("staging deploy workflow", () => {
-  it("lets the self-host helper default compose profiles when the environment variable is unset", () => {
+  it("lets the self-host helper default compose profiles when none are set", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
-    expect(workflow).toContain('if [ -n "$COMPOSE_PROFILES" ]; then');
+    expect(workflow).toContain('if [ -n "$DEPLOY_PROFILES" ]; then');
     expect(workflow).toContain("cd ~/compass && ./compass update");
   });
 
@@ -188,6 +215,31 @@ describe("staging deploy workflow", () => {
     expect(dockerfile).toContain("ARG POSTHOG_KEY=");
     expect(dockerfile).toContain("ARG POSTHOG_HOST=");
     expect(dockerfile).toContain("'posthog:'");
+  });
+
+  it("writes the sync config and enables its profile only when provisioned", () => {
+    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
+
+    expect(workflow).toContain(
+      "SYNC_MONGO_URI: $".concat("{{ secrets.SYNC_MONGO_URI }}"),
+    );
+    expect(workflow).toContain(
+      "SYNC_INTERNAL_AUTH_TOKEN: $".concat(
+        "{{ secrets.SYNC_INTERNAL_AUTH_TOKEN }}",
+      ),
+    );
+    expect(workflow).toContain('if [ -n "$SYNC_MONGO_URI" ]; then');
+    expect(workflow).toContain("Sync deploy requires SYNC_INTERNAL_AUTH_TOKEN");
+    expect(workflow).toContain("'sync:'");
+    expect(workflow).toContain('mongoUri: \\"$'.concat('{SYNC_MONGO_URI}\\"'));
+    expect(workflow).toContain("enforceLeastPrivilege: true");
+    // The sync profile is appended so the container starts where provisioned.
+    expect(workflow).toContain(
+      'DEPLOY_PROFILES="$'.concat(
+        "{DEPLOY_PROFILES:+$",
+        '{DEPLOY_PROFILES},}sync"',
+      ),
+    );
   });
 
   it("writes Kit email config whenever the deployment has a secret", () => {

@@ -50,6 +50,40 @@ services:
       retries: 5
       start_period: 20s
 
+  sync:
+    image: switchbacktech/compass-sync:${COMPASS_VERSION:-latest}
+    # Gated behind the `sync` profile: the deploy enables it only where an
+    # isolated sync database is provisioned, so environments without one never
+    # start a crash-looping container. Where enabled, Sync stays passive
+    # (serves health, does no provider work) until explicitly activated.
+    # No published host port and no Caddy route: reachable only on the internal
+    # compose network. No depends_on mongo: Atlas environments have no mongo
+    # container, and the service tolerates a not-yet-ready store (liveness stays
+    # up, readiness 503).
+    profiles: [sync]
+    environment:
+      COMPASS_CONFIG_FILE: /app/compass.yaml
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - ${COMPASS_CONFIG_FILE:-./compass.yaml}:/app/compass.yaml:ro
+      # The shared logger writes logs/app.log; the root fs is read-only, so
+      # give it a writable mount (same as the backend).
+      - compass_sync_logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bun -e \"fetch('http://127.0.0.1:3010/health/live').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
   mongo:
     image: switchbacktech/compass-mongo:${COMPASS_VERSION:-latest}
     profiles: [selfhosted]
@@ -116,6 +150,7 @@ services:
 
 volumes:
   compass_backend_logs:
+  compass_sync_logs:
   compass_mongo_configdb:
   compass_mongo_data:
   compass_supertokens_postgres_data:

@@ -76,6 +76,17 @@ jobs:
             switchbacktech/compass-backend:${{ steps.version.outputs.minor_tag }}
             switchbacktech/compass-backend:latest
 
+      - name: Build and push compass-sync
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: self-host/Dockerfile.sync
+          push: ${{ github.event_name == 'push' || inputs.push_images }}
+          tags: |
+            switchbacktech/compass-sync:${{ steps.version.outputs.image_version }}
+            switchbacktech/compass-sync:${{ steps.version.outputs.minor_tag }}
+            switchbacktech/compass-sync:latest
+
       - name: Build and push compass-mongo
         uses: docker/build-push-action@v7
         with:

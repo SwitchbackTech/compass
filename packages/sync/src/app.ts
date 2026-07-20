@@ -59,31 +59,30 @@ function closeHttpServer(httpServer: Server): Promise<void> {
 }
 
 // The Compass API database Sync's least-privilege user must not be able to
-// read. Only enforced in staging/production, where the scoped Atlas user runs.
+// read. The check runs only where a scoped database user exists (config flag).
 const COMPASS_API_DATABASE = "prod_calendar";
 
 async function start(): Promise<void> {
   const config = loadSyncConfig();
   const service = createSyncService(config);
 
-  // Connect storage before listening. Register the disconnect drain first so,
-  // under the coordinator's reverse-order teardown, storage closes LAST — after
-  // any workers that depend on it. Registering the readiness check means
-  // /health/ready stays 503 until the connection and indexes are verified.
+  // Register the disconnect drain first so, under the coordinator's
+  // reverse-order teardown, storage closes LAST — after any workers that
+  // depend on it. Readiness reflects storage state, so /health/ready stays 503
+  // until Mongo is connected and its indexes are installed.
   const mongo = new SyncMongoService();
   service.shutdown.register("mongo", () => mongo.disconnect());
-  await mongo.connect({
-    uri: config.MONGO_URI,
-    forbiddenDatabaseName: COMPASS_API_DATABASE,
-    nodeEnv: config.NODE_ENV,
-  });
   service.readiness.register("storage", async () => {
+    if (!mongo.isConnected) return false;
     await mongo.db.command({ ping: 1 });
     return true;
   });
 
   registerSignalHandlers(service, logger);
 
+  // Bind the port before connecting storage so liveness comes up regardless.
+  // A passive service must stay alive and report not-ready if Mongo is
+  // unreachable, rather than crash-loop under the restart policy.
   await new Promise<void>((resolve) =>
     service.httpServer.listen(config.PORT, () => {
       logger.info(
@@ -92,6 +91,23 @@ async function start(): Promise<void> {
       resolve();
     }),
   );
+
+  // Connect storage after the port is open. A failure — unreachable store, or
+  // a least-privilege violation — is logged and leaves readiness at 503; it
+  // does not take the process down. The passive service does no work until
+  // ready, so staying up-but-not-ready is safe and diagnosable.
+  try {
+    await mongo.connect({
+      uri: config.MONGO_URI,
+      forbiddenDatabaseName: COMPASS_API_DATABASE,
+      enforceLeastPrivilege: config.ENFORCE_LEAST_PRIVILEGE,
+    });
+  } catch (error) {
+    logger.error(
+      "Sync storage unavailable at startup; staying up as not-ready",
+      error,
+    );
+  }
 }
 
 function registerSignalHandlers(

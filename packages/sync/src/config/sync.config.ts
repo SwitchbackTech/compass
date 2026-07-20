@@ -20,6 +20,11 @@ export type SyncExecutionMode = z.infer<typeof SyncExecutionModeSchema>;
 // Coerce yaml numbers-or-strings to a bounded positive integer.
 const PositiveIntFromInput = z.coerce.number().int().positive();
 
+// Accept a yaml boolean or the strings "true"/"false" (env vars are strings).
+const BooleanFromInput = z
+  .union([z.boolean(), z.enum(["true", "false"])])
+  .transform((value) => value === true || value === "true");
+
 export const SyncConfigSchema = z.strictObject({
   NODE_ENV: z.enum(NodeEnv),
   PORT: PositiveIntFromInput.default(SYNC_PORT_DEFAULT),
@@ -32,6 +37,10 @@ export const SyncConfigSchema = z.strictObject({
   CALLBACK_BASE_URL: z.url(),
   EXECUTION: SyncExecutionModeSchema.default("passive"),
   MAX_CONCURRENCY: PositiveIntFromInput.default(SYNC_MAX_CONCURRENCY_DEFAULT),
+  // On when a scoped `compass_sync` database user exists (managed cloud), so
+  // startup verifies it cannot read the API database. Off for a single-database
+  // self-host with no scoped user. Defaults off — enable it deliberately.
+  ENFORCE_LEAST_PRIVILEGE: BooleanFromInput.default(false),
 });
 export type SyncConfig = z.infer<typeof SyncConfigSchema>;
 
@@ -50,6 +59,7 @@ export function parseSyncConfig(config: CompassConfig): SyncConfig {
     CALLBACK_BASE_URL: config.sync.callbackBaseUrl,
     EXECUTION: config.sync.execution,
     MAX_CONCURRENCY: config.sync.maxConcurrency,
+    ENFORCE_LEAST_PRIVILEGE: config.sync.enforceLeastPrivilege,
   });
 }
 
@@ -64,6 +74,7 @@ export function parseSyncConfigFromEnv(
     CALLBACK_BASE_URL: rawEnv["SYNC_CALLBACK_BASE_URL"],
     EXECUTION: rawEnv["SYNC_EXECUTION"],
     MAX_CONCURRENCY: rawEnv["SYNC_MAX_CONCURRENCY"],
+    ENFORCE_LEAST_PRIVILEGE: rawEnv["SYNC_ENFORCE_LEAST_PRIVILEGE"],
   });
 }
 
