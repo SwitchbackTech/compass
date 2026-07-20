@@ -1,5 +1,4 @@
 import { type Db, MongoClient } from "mongodb";
-import { NodeEnv } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { installIndexManifest } from "@sync/storage/index-manifest";
 
@@ -16,7 +15,10 @@ export interface SyncMongoOptions {
   // A database Sync's least-privilege user must NOT be able to read (the
   // Compass API's database). Startup fails if Sync can reach it.
   readonly forbiddenDatabaseName: string;
-  readonly nodeEnv: NodeEnv;
+  // Enforce the least-privilege check only where a scoped database user exists
+  // (managed cloud). A single-database self-host has no scoped user, so its
+  // credentials can legitimately reach the API database and the check is off.
+  readonly enforceLeastPrivilege: boolean;
 }
 
 // Owns the connection to the isolated `compass_sync` database.
@@ -59,18 +61,13 @@ export class SyncMongoService {
     }
   }
 
-  // In staging/production the Sync user is scoped to `compass_sync`, so a read
-  // of the Compass API database must be denied. Local dev / in-memory tests
-  // have no auth, so the check would false-positive; skip it there and rely on
-  // the injectable unit test for the logic.
+  // Where a scoped `compass_sync` user exists, a read of the Compass API
+  // database must be denied. A self-host with one shared database has no scoped
+  // user, and dev / in-memory tests have no auth, so the check is off there and
+  // the logic is covered by the injectable unit test.
   private async verifyLeastPrivilege(options: SyncMongoOptions): Promise<void> {
-    const enforced =
-      options.nodeEnv === NodeEnv.Staging ||
-      options.nodeEnv === NodeEnv.Production;
-    if (!enforced) {
-      logger.info(
-        `Skipping least-privilege check in ${options.nodeEnv} (no scoped auth)`,
-      );
+    if (!options.enforceLeastPrivilege) {
+      logger.info("Skipping least-privilege check (no scoped database user)");
       return;
     }
 

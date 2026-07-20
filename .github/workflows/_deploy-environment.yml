@@ -86,6 +86,8 @@ jobs:
           MONGO_REPLICA_SET_KEY: ${{ secrets.MONGO_REPLICA_SET_KEY }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SYNC_INTERNAL_AUTH_TOKEN: ${{ secrets.SYNC_INTERNAL_AUTH_TOKEN }}
+          SYNC_MONGO_URI: ${{ secrets.SYNC_MONGO_URI }}
           SUPERTOKENS_KEY: ${{ secrets.SUPERTOKENS_KEY }}
           SUPERTOKENS_POSTGRES_PASSWORD: ${{ secrets.SUPERTOKENS_POSTGRES_PASSWORD }}
           SUPERTOKENS_URI: ${{ secrets.SUPERTOKENS_URI }}
@@ -145,6 +147,21 @@ jobs:
                 'email:' \
                 "  kitApiSecret: \"${KIT_API_SECRET}\""
             fi
+            # Sync runs only where its isolated database is provisioned. The
+            # scoped Atlas user there must be denied the API database, so
+            # least-privilege enforcement is on.
+            if [ -n "$SYNC_MONGO_URI" ]; then
+              if [ -z "$SYNC_INTERNAL_AUTH_TOKEN" ]; then
+                echo "Sync deploy requires SYNC_INTERNAL_AUTH_TOKEN when SYNC_MONGO_URI is set." >&2
+                exit 1
+              fi
+              printf '%s\n' \
+                'sync:' \
+                "  mongoUri: \"${SYNC_MONGO_URI}\"" \
+                "  internalAuthToken: \"${SYNC_INTERNAL_AUTH_TOKEN}\"" \
+                "  callbackBaseUrl: \"${FRONTEND_URL}\"" \
+                '  enforceLeastPrivilege: true'
+            fi
           } | ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" \
                 "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml && chmod 644 ~/compass/compass.yaml"
           COMPOSE_GIT_REF="${COMPOSE_GIT_REF:-${RELEASE_TAG}}"
@@ -155,9 +172,15 @@ jobs:
           fi
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compose.yaml -o ~/compass/compose.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compass -o ~/compass/compass && chmod +x ~/compass/compass"
-          ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yaml down 2>/dev/null || true"
-          if [ -n "$COMPOSE_PROFILES" ]; then
-            ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && COMPOSE_PROFILES='${COMPOSE_PROFILES}' ./compass update"
+          # Enable the `sync` profile only where the isolated sync database is
+          # provisioned, so the sync container starts exactly there.
+          DEPLOY_PROFILES="$COMPOSE_PROFILES"
+          if [ -n "$SYNC_MONGO_URI" ]; then
+            DEPLOY_PROFILES="${DEPLOY_PROFILES:+${DEPLOY_PROFILES},}sync"
+          fi
+          ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && COMPOSE_PROFILES=selfhosted,sync docker compose --project-name compass -f compose.yaml down 2>/dev/null || true"
+          if [ -n "$DEPLOY_PROFILES" ]; then
+            ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && COMPOSE_PROFILES='${DEPLOY_PROFILES}' ./compass update"
           else
             ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && ./compass update"
           fi

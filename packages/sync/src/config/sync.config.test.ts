@@ -50,6 +50,25 @@ describe("Sync service configuration", () => {
       const config = parseSyncConfig(compassConfigWithSync({ port: "4010" }));
       expect(config.PORT).toBe(4010);
     });
+
+    it("defaults the least-privilege check off when omitted", () => {
+      const config = parseSyncConfig(compassConfigWithSync());
+      expect(config.ENFORCE_LEAST_PRIVILEGE).toBe(false);
+    });
+
+    it("accepts a yaml boolean for the least-privilege flag", () => {
+      const config = parseSyncConfig(
+        compassConfigWithSync({ enforceLeastPrivilege: true }),
+      );
+      expect(config.ENFORCE_LEAST_PRIVILEGE).toBe(true);
+    });
+
+    it("coerces the string 'true' for the least-privilege flag", () => {
+      const config = parseSyncConfig(
+        compassConfigWithSync({ enforceLeastPrivilege: "true" }),
+      );
+      expect(config.ENFORCE_LEAST_PRIVILEGE).toBe(true);
+    });
   });
 
   describe("required fields", () => {

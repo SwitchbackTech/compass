@@ -75,6 +75,7 @@ const CompassConfigSchema = z
         callbackBaseUrl: z.string(),
         execution: z.enum(["passive", "active"]).optional(),
         maxConcurrency: z.union([z.string(), z.number()]).optional(),
+        enforceLeastPrivilege: z.union([z.boolean(), z.string()]).optional(),
       })
       .nullish(),
   })

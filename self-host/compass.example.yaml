@@ -53,3 +53,4 @@ supertokens:
 #   callbackBaseUrl: https://cal.yourdomain.com # public base URL for provider OAuth/webhook callbacks
 #   execution: passive # passive | active
 #   maxConcurrency: 4
+#   enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)

@@ -1,5 +1,4 @@
 import { faker } from "@faker-js/faker";
-import { NodeEnv } from "@core/constants/core.constants";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
   assertForbiddenDatabaseUnreachable,
@@ -26,7 +25,7 @@ describe("SyncMongoService", () => {
       uri,
       databaseName: uniqueDbName(),
       forbiddenDatabaseName: "prod_calendar",
-      nodeEnv: NodeEnv.Test,
+      enforceLeastPrivilege: false,
     });
 
     expect(service.isConnected).toBe(true);
@@ -53,7 +52,7 @@ describe("SyncMongoService", () => {
         uri,
         databaseName: uniqueDbName(),
         forbiddenDatabaseName: "prod_calendar",
-        nodeEnv: NodeEnv.Staging,
+        enforceLeastPrivilege: true,
       }),
     ).rejects.toThrow(/excessive privileges/);
   });
@@ -65,7 +64,7 @@ describe("SyncMongoService", () => {
         // Reserved TEST-NET address; connection is refused quickly.
         uri: "mongodb://192.0.2.1:27017/compass_sync?serverSelectionTimeoutMS=500&connectTimeoutMS=500",
         forbiddenDatabaseName: "prod_calendar",
-        nodeEnv: NodeEnv.Test,
+        enforceLeastPrivilege: false,
       }),
     ).rejects.toThrow();
   });
@@ -76,7 +75,7 @@ describe("SyncMongoService", () => {
       uri,
       databaseName: uniqueDbName(),
       forbiddenDatabaseName: "prod_calendar",
-      nodeEnv: NodeEnv.Test,
+      enforceLeastPrivilege: false,
     });
 
     const collection = service.db.collection(SYNC_COLLECTIONS.jobs);

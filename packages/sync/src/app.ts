@@ -59,7 +59,7 @@ function closeHttpServer(httpServer: Server): Promise<void> {
 }
 
 // The Compass API database Sync's least-privilege user must not be able to
-// read. Only enforced in staging/production, where the scoped Atlas user runs.
+// read. The check runs only where a scoped database user exists (config flag).
 const COMPASS_API_DATABASE = "prod_calendar";
 
 async function start(): Promise<void> {
@@ -75,7 +75,7 @@ async function start(): Promise<void> {
   await mongo.connect({
     uri: config.MONGO_URI,
     forbiddenDatabaseName: COMPASS_API_DATABASE,
-    nodeEnv: config.NODE_ENV,
+    enforceLeastPrivilege: config.ENFORCE_LEAST_PRIVILEGE,
   });
   service.readiness.register("storage", async () => {
     await mongo.db.command({ ping: 1 });

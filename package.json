@@ -46,6 +46,7 @@
     "type-check:web-tests": "bunx typescript@7.0.2 -p packages/web/tsconfig.test.json --noEmit",
     "verify": "bun packages/scripts/src/testing/verify.ts",
     "build:backend": "bun packages/scripts/src/commands/build.backend.ts",
+    "build:sync": "bun packages/scripts/src/commands/build.sync.ts",
     "build:web": "cd packages/web && bun run build.ts"
   },
   "dependencies": {
