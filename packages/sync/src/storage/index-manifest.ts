@@ -26,7 +26,14 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
   [SYNC_COLLECTIONS.providerConnections]: [
     {
       name: "provider_account_identity",
-      key: { tenantId: 1, principalId: 1, provider: 1, providerAccountId: 1 },
+      // account.providerAccountId is nested in the record — the index path must
+      // match where the field actually lives, or every document keys on null.
+      key: {
+        tenantId: 1,
+        principalId: 1,
+        provider: 1,
+        "account.providerAccountId": 1,
+      },
       options: { unique: true },
     },
     { name: "principal_state", key: { principalId: 1, state: 1 } },
