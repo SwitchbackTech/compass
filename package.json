@@ -12,7 +12,8 @@
   "_moduleAliases": {
     "@compass/backend": "packages/backend/src",
     "@compass/core": "packages/core/src",
-    "@compass/scripts": "packages/scripts/src"
+    "@compass/scripts": "packages/scripts/src",
+    "@compass/sync": "packages/sync/src"
   },
   "scripts": {
     "cli": "bun packages/scripts/src/cli.ts",
@@ -21,19 +22,21 @@
     "dev:backend -verbose": "export DEBUG=* &&bun run dev:backend",
     "dev:backend": "bun run dev:ports backend && cd packages/backend && bun --watch src/app.ts",
     "dev:ports": "bun packages/scripts/src/commands/dev-ports.ts",
+    "dev:sync": "cd packages/sync && bun --watch src/app.ts",
     "dev:update": "git checkout main && git pull &&bun install",
     "dev:web": "bun run dev:ports web && cd packages/web &&bun run dev.ts",
     "lint": "bun packages/scripts/src/testing/check-semantic-colors.ts && biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "test": "bun test:core && bun test:web && bun test:backend && bun test:scripts",
+    "test": "bun test:core && bun test:sync && bun test:web && bun test:backend && bun test:scripts",
     "test:a11y": "bunx playwright test e2e/accessibility",
     "test:e2e": "bunx playwright test",
     "test:backend": "bun packages/scripts/src/testing/run-tests.ts backend",
     "test:backend:fast": "bun packages/scripts/src/testing/run-tests.ts backend --tier fast",
     "test:backend:db": "bun packages/scripts/src/testing/run-tests.ts backend --tier db",
     "test:core": "bun test packages/core/src --preload ./packages/scripts/src/testing/core.preload.ts",
+    "test:sync": "bun test packages/sync/src --preload ./packages/sync/src/__tests__/sync.preload.ts",
     "test:web": "bun test --cwd packages/web",
     "test:scripts": "bun packages/scripts/src/testing/run-tests.ts scripts",
     "test:scripts:fast": "bun packages/scripts/src/testing/run-tests.ts scripts --tier fast",
