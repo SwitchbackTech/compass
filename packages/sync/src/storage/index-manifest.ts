@@ -102,6 +102,12 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
     },
     { name: "event_state", key: { eventId: 1, "outcome.state": 1 } },
     { name: "pending_age", key: { createdAt: 1 } },
+    // Covers the per-principal nonterminal queue drain (filter on state,
+    // ordered oldest-first) so it's an index scan, not a collection scan.
+    {
+      name: "principal_nonterminal",
+      key: { tenantId: 1, principalId: 1, "outcome.state": 1, createdAt: 1 },
+    },
   ],
   [SYNC_COLLECTIONS.jobs]: [
     {
