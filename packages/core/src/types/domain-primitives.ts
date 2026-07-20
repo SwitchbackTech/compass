@@ -1,21 +1,20 @@
 import { z } from "zod/v4";
 import {
+  OBJECT_ID_STRING_PATTERN,
   RGBHexSchema,
   TimezoneSchema,
   zYearMonthDayString,
 } from "@core/types/type.utils";
 
-const OBJECT_ID_PATTERN = /^[0-9a-f]{24}$/i;
-
 export const EventIdSchema = z
   .string()
-  .regex(OBJECT_ID_PATTERN)
+  .regex(OBJECT_ID_STRING_PATTERN)
   .brand<"EventId">();
 export type EventId = z.infer<typeof EventIdSchema>;
 
 export const CalendarIdSchema = z
   .string()
-  .regex(OBJECT_ID_PATTERN)
+  .regex(OBJECT_ID_STRING_PATTERN)
   .brand<"CalendarId">();
 export type CalendarId = z.infer<typeof CalendarIdSchema>;
 

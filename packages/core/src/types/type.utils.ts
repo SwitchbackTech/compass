@@ -56,6 +56,8 @@ export const RGBHexSchema = zod4.string().regex(/^#[0-9a-f]{6}$/i, {
   message: "Invalid color. Must be a 7-character hex color code.",
 });
 
+export const OBJECT_ID_STRING_PATTERN = /^[0-9a-f]{24}$/i;
+
 export const ExpirationDateSchema = zod4
   .union([
     zod4.date(),
