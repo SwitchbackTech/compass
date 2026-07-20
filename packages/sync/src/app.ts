@@ -4,6 +4,7 @@ import { ReadinessRegistry } from "@sync/lifecycle/readiness";
 import { ShutdownCoordinator } from "@sync/lifecycle/shutdown";
 import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
+import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { createServer, type Server } from "node:http";
 
 const logger = Logger("sync:app");
@@ -57,9 +58,29 @@ function closeHttpServer(httpServer: Server): Promise<void> {
   );
 }
 
+// The Compass API database Sync's least-privilege user must not be able to
+// read. Only enforced in staging/production, where the scoped Atlas user runs.
+const COMPASS_API_DATABASE = "prod_calendar";
+
 async function start(): Promise<void> {
   const config = loadSyncConfig();
   const service = createSyncService(config);
+
+  // Connect storage before listening. Register the disconnect drain first so,
+  // under the coordinator's reverse-order teardown, storage closes LAST — after
+  // any workers that depend on it (S33). Registering the readiness check means
+  // /health/ready stays 503 until the connection and indexes are verified.
+  const mongo = new SyncMongoService();
+  service.shutdown.register("mongo", () => mongo.disconnect());
+  await mongo.connect({
+    uri: config.MONGO_URI,
+    forbiddenDatabaseName: COMPASS_API_DATABASE,
+    nodeEnv: config.NODE_ENV,
+  });
+  service.readiness.register("storage", async () => {
+    await mongo.db.command({ ping: 1 });
+    return true;
+  });
 
   registerSignalHandlers(service, logger);
 
