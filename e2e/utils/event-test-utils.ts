@@ -91,27 +91,26 @@ const pressShortcut = async (page: Page, key: string) => {
   }, key);
 };
 
-const ensureWeekView = async (page: Page) => {
-  const weekViewButton = page.getByRole("button", {
-    name: /select view, currently week/i,
-  });
+/**
+ * The header's date title doubles as the Day/Week switcher trigger, so it's
+ * the sole button inside the page's one <h1> regardless of which view or
+ * date it displays.
+ */
+export const getViewSwitcherButton = (page: Page) =>
+  page.getByRole("heading", { level: 1 }).getByRole("button");
 
-  if (await weekViewButton.isVisible()) {
+const ensureWeekView = async (page: Page) => {
+  if (page.url().includes("/week")) {
     return;
   }
 
-  const viewButton = page
-    .getByRole("button", { name: /select view, currently/i })
-    .first();
+  const viewButton = getViewSwitcherButton(page);
   await viewButton.waitFor({ state: "visible", timeout: 5000 });
   await viewButton.click();
   await page.getByRole("option", { name: "Week" }).click();
   await page.waitForURL((url) => url.pathname.startsWith("/week"), {
     timeout: 10000,
   });
-
-  // Verify we actually switched to Week view
-  await weekViewButton.waitFor({ state: "visible", timeout: 5000 });
 };
 
 const blurActiveElement = async (page: Page) => {
@@ -127,13 +126,10 @@ const getFormTitleInput = (page: Page) =>
   page.getByRole("form").getByPlaceholder("Title");
 
 const waitForCalendarShell = async (page: Page) => {
-  await page
-    .getByRole("button", { name: /select view, currently/i })
-    .first()
-    .waitFor({
-      state: "visible",
-      timeout: 15000,
-    });
+  await getViewSwitcherButton(page).waitFor({
+    state: "visible",
+    timeout: 15000,
+  });
 };
 
 const clearClientAuthState = async (page: Page) => {
