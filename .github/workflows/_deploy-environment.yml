@@ -55,6 +55,7 @@ jobs:
           push: true
           build-args: |
             BASEURL=${{ vars.BACKEND_API_URL }}
+            FEEDBACK_ENABLED=${{ inputs.environment == 'production' || inputs.environment == 'staging-cloud' }}
             GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}
             POSTHOG_KEY=${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_KEY || '' }}
             POSTHOG_HOST=${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_HOST || '' }}

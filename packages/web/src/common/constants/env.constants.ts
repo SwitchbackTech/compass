@@ -19,6 +19,10 @@ const BACKEND_BASEURL = API_BASEURL.replace(/\/[^/]*$/, "");
 const webEnvSchema = z.object({
   API_BASEURL: z.string().url(),
   BACKEND_BASEURL: z.string().url(),
+  FEEDBACK_ENABLED: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
   GOOGLE_CLIENT_ID: z.string().optional(),
   NODE_ENV: z.string(),
   POSTHOG_KEY: z
@@ -34,6 +38,7 @@ const webEnvSchema = z.object({
 export const ENV_WEB = webEnvSchema.parse({
   API_BASEURL,
   BACKEND_BASEURL,
+  FEEDBACK_ENABLED: process.env.FEEDBACK_ENABLED,
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   NODE_ENV: process.env.NODE_ENV,
   POSTHOG_KEY: process.env.POSTHOG_KEY,

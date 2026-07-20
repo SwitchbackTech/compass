@@ -44,6 +44,7 @@ const define: Record<string, string> = {
   "process.env": JSON.stringify({
     NODE_ENV: config.runtime.nodeEnv || "production",
     API_BASEURL: config.backend.apiUrl,
+    FEEDBACK_ENABLED: process.env.FEEDBACK_ENABLED || "false",
     GOOGLE_CLIENT_ID: config.google?.clientId || "",
     POSTHOG_KEY: config.posthog?.key || "",
     POSTHOG_HOST: config.posthog?.host || "",

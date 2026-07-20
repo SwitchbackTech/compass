@@ -1,5 +1,5 @@
 import { BugIcon, ChatsIcon, InfoIcon } from "@phosphor-icons/react";
-import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
+import { isFeedbackEnabled } from "@web/auth/posthog/posthog.util";
 import { APP_VERSION } from "@web/common/constants/version.constants";
 import { type CommandSection } from "@web/components/CommandPalette/command-palette.types";
 import { feedbackActions } from "@web/components/Feedback/feedback.store";
@@ -7,7 +7,7 @@ import { type ViewName } from "@web/shortcuts/shortcuts.constants";
 
 export function getCommandPalettePlaceholder(
   currentView: ViewName,
-  feedbackEnabled = isPosthogEnabled(),
+  feedbackEnabled = isFeedbackEnabled(),
 ): string {
   if (currentView === "day") {
     return feedbackEnabled
@@ -22,7 +22,7 @@ export function getCommandPalettePlaceholder(
 
 export function getMoreCommandPaletteSections(
   currentView: ViewName,
-  feedbackEnabled = isPosthogEnabled(),
+  feedbackEnabled = isFeedbackEnabled(),
 ): CommandSection[] {
   const feedbackItems = feedbackEnabled
     ? [

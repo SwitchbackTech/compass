@@ -7,7 +7,10 @@ import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
-import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
+import {
+  isFeedbackEnabled,
+  isPosthogEnabled,
+} from "@web/auth/posthog/posthog.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CompassRefsProvider } from "@web/common/refs/compass-refs";
 import { queryClient as defaultQueryClient } from "@web/api/query-client";
@@ -99,7 +102,7 @@ export const CompassOptionalProviders = ({ children }: PropsWithChildren) => {
         }}
       >
         {wrappedChildren}
-        <FeedbackDialogHost />
+        {isFeedbackEnabled() ? <FeedbackDialogHost /> : null}
       </PostHogProvider>
     );
   }
