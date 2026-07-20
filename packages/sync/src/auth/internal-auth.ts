@@ -8,15 +8,15 @@ import {
 } from "@core/types/sync/identity.contracts";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-// Internal service authentication for the Compass Sync service (ledger S10).
+// Internal service authentication for the Compass Sync service.
 //
 // Only the trusted Compass API calls Sync's internal routes. Each request is
 // HMAC-signed with a shared, rotatable service secret over a timestamp and the
 // tenant/principal the request acts on behalf of. Sync derives the
 // tenant/principal context from those SIGNED headers — never from the request
 // body — so a caller cannot assert ownership of another tenant without the
-// secret (R-SEC-03; 04-security-and-observability.md "authenticated caller
-// identity", "authorizes every resource against tenant/principal").
+// secret. Every request is an authenticated caller identity, and every
+// resource is authorized against its tenant/principal.
 //
 // The signed timestamp bounds replay to a short freshness window rather than a
 // nonce store: on a private TLS network with a single trusted caller that is

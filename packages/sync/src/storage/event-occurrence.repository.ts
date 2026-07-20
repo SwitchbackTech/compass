@@ -29,10 +29,10 @@ export interface OccurrenceRangeQuery {
   after?: OccurrenceRangeCursor;
 }
 
-// Repository for `event_occurrences` (ledger S13). Rebuilding a series' window
+// Repository for `event_occurrences`. Rebuilding a series' window
 // replaces exactly that event's occurrences for the given generation, so a
-// series edit rebuilds only the affected horizon (02-sync-lifecycle). The
-// range query is the bounded, keyset-paginated display projection.
+// series edit rebuilds only the affected horizon. The range query is the
+// bounded, keyset-paginated display projection.
 export class EventOccurrenceRepository {
   private readonly collection: Collection<EventOccurrenceRecord>;
 

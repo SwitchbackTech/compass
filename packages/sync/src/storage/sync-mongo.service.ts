@@ -19,10 +19,10 @@ export interface SyncMongoOptions {
   readonly nodeEnv: NodeEnv;
 }
 
-// Owns the connection to the isolated `compass_sync` database (ledger S11).
+// Owns the connection to the isolated `compass_sync` database.
 // It installs index manifests, verifies the least-privilege user, and never
-// makes cross-database calls into the Compass API's data
-// (01-domain-model.md; 00-architecture ownership boundary).
+// makes cross-database calls into the Compass API's data — that ownership
+// boundary is enforced here.
 export class SyncMongoService {
   #client?: MongoClient;
   #db?: Db;

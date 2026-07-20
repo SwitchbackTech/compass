@@ -1,11 +1,11 @@
-// Readiness tracking for the Compass Sync service (ledger S09).
+// Readiness tracking for the Compass Sync service.
 //
 // Liveness answers "is the process running" (always true once we respond).
 // Readiness answers "are all required dependencies verified" — storage
 // connectivity, index installation, scheduler, change-feed init. Later commits
-// register real checks; S09 provides the registry and proves a failing check
+// register real checks; this provides the registry and proves a failing check
 // makes the service not-ready. The service must never report ready before its
-// dependencies and indexes are verified (07-commit-ledger.md S09).
+// dependencies and indexes are verified.
 
 export interface ReadinessCheckResult {
   readonly name: string;

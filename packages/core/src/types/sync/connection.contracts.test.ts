@@ -196,7 +196,7 @@ describe("Sync connection contracts", () => {
     });
 
     // Every capability combination is representable: facts describe what the
-    // provider permits, and no combination is privileged (R-CAL-05).
+    // provider permits, and no combination is privileged.
     it.each(
       Array.from({ length: 16 }, (_, mask) => [
         {

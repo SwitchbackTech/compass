@@ -11,12 +11,12 @@ import {
   TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
 
-// Connection and calendar contracts for Compass Sync (ledger S02).
-// R-CONN-01..06, R-CAL-01..05: provider facts only — no credentials, and no
-// product preferences (visibility, blocking, booking target) which belong to
-// the Compass product layer.
+// Connection and calendar contracts for Compass Sync.
+// Provider facts only — no credentials, and no product preferences
+// (visibility, blocking, booking target) which belong to the Compass product
+// layer.
 
-// The one user-facing connection state (R-CONN-03). Only the shared health
+// The one user-facing connection state. Only the shared health
 // derivation may produce these values; no code path reports healthy because a
 // single operation succeeded.
 export const ConnectionStateSchema = z.enum([
@@ -43,7 +43,7 @@ export type ConnectionStateReason = z.infer<typeof ConnectionStateReasonSchema>;
 
 // Display facts about the authorized provider account. The stable
 // providerAccountId is the only ownership proof; email is display data and
-// may change without changing identity (R-CONN-02).
+// may change without changing identity.
 export const ProviderAccountFactsSchema = z.strictObject({
   providerAccountId: ProviderAccountIdSchema,
   email: z.string().trim().min(1).max(320).nullable(),
@@ -67,7 +67,7 @@ export const ProviderConnectionSchema = z
     state: ConnectionStateSchema,
     // Present exactly when the state needs a user-facing explanation.
     stateReason: ConnectionStateReasonSchema.nullable(),
-    // Evidence timestamps (R-CONN-04): data sync vs verified health are
+    // Evidence timestamps: data sync vs verified health are
     // distinct facts. Null until the first successful pass.
     lastSyncedAt: DateTimeSchema.nullable(),
     lastHealthyAt: DateTimeSchema.nullable(),
@@ -118,7 +118,7 @@ export const ProviderCalendarSchema = z.strictObject({
   providerCalendarId: ProviderCalendarSourceIdSchema,
   displayName: z.string().trim().min(1).max(1024),
   color: z.string().trim().min(1).max(64).nullable(),
-  // Provider facts (R-CAL-02): active reflects the provider/calendar-list
+  // Provider facts: active reflects the provider/calendar-list
   // state, primary the provider's default-calendar designation.
   active: z.boolean(),
   primary: z.boolean(),
@@ -138,7 +138,7 @@ export type ConnectionListResponse = z.infer<
 
 export const CalendarListQuerySchema = z.strictObject({
   // Optional narrowing; principal scope always comes from authenticated
-  // context, never from the request body (R-SEC-03).
+  // context, never from the request body.
   connectionId: ConnectionIdSchema.optional(),
   activeOnly: z.boolean().optional(),
 });

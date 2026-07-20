@@ -1,11 +1,11 @@
-// Dependency-drain coordination for the Compass Sync service (ledger S09).
+// Dependency-drain coordination for the Compass Sync service.
 //
 // This coordinator drains BACKGROUND DEPENDENCIES only — job-claim workers,
 // schedulers, and storage clients registered by later commits. It runs tasks
 // in REVERSE registration order so higher-level work (job claims) drains
 // before the storage it depends on: startup acquires storage first, then
 // starts workers, so LIFO teardown stops workers first and closes storage
-// last (04-security-and-observability.md "stops claims ... then closes").
+// last: it stops claims before it closes the storage they depend on.
 //
 // The HTTP listener is deliberately NOT a task here. Stopping the front door
 // must happen FIRST (before dependencies drain), so `createSyncService`

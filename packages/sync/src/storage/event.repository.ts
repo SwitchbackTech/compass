@@ -13,7 +13,7 @@ import {
 
 // Fields for a provider-linked event upsert. Sync assigns _id/createdAt on
 // first sight and dedupes on the (connection, calendar, providerEventId)
-// identity so a repeated provider read never duplicates (R-EVENT-01).
+// identity so a repeated provider read never duplicates.
 export type ProviderEventUpsert = Omit<
   EventRecord,
   "_id" | "createdAt" | "updatedAt"

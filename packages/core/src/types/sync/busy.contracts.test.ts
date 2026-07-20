@@ -112,7 +112,7 @@ describe("Sync busy contracts", () => {
       expect(BusyQuerySchema.safeParse(query).success).toBe(true);
     });
 
-    it("rejects a range exceeding the 366-day ceiling (R-AVAIL-06 stays a floor, not unbounded)", () => {
+    it("rejects a range exceeding the 366-day ceiling (12 months is a floor, not unbounded)", () => {
       const query = {
         ...baseQuery(),
         start: "2026-01-01T00:00:00.000Z",
@@ -195,7 +195,7 @@ describe("Sync busy contracts", () => {
       expect(BusyQueryResponseSchema.safeParse(response).success).toBe(false);
     });
 
-    it("rejects bookable=true when complete is false (fail-closed, R-AVAIL-04)", () => {
+    it("rejects bookable=true when complete is false (fail-closed)", () => {
       const response = {
         ...baseResponse(),
         complete: false,

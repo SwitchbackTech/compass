@@ -8,10 +8,10 @@ import {
   type SyncCollectionName,
 } from "@sync/storage/collections";
 
-// Declarative index manifests for the `compass_sync` collections (ledger S11),
-// drawn from the essential-index table in 01-domain-model.md. Installation is
+// Declarative index manifests for the `compass_sync` collections,
+// drawn from the domain model's essential indexes. Installation is
 // idempotent: MongoDB createIndex is a no-op when an identical index already
-// exists, so re-running startup never errors. Repositories (S12-S14) rely on
+// exists, so re-running startup never errors. Repositories rely on
 // these unique identities for atomic upserts and coalescing.
 
 export interface IndexManifestEntry {
@@ -130,7 +130,7 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
         partialFilterExpression: { providerEventId: { $type: "string" } },
       },
     },
-    // TTL: content-free markers expire 30 days after deletion (R-EVENT-10).
+    // TTL: content-free markers expire 30 days after deletion.
     {
       name: "ttl_expiry",
       key: { expiresAt: 1 },

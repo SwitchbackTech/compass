@@ -21,12 +21,10 @@ import {
   TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
 
-// Durable event command contracts for Compass Sync (ledger S04). A command
-// records acknowledged user intent (01-domain-model "Command") and is
-// persisted before any asynchronous work begins (R-SYNC-05). This file adds
-// contracts only — nothing here executes a command or reads/writes the
-// existing Compass API event endpoints (02-sync-lifecycle "Durable event
-// commands").
+// Durable event command contracts for Compass Sync. A command
+// records acknowledged user intent and is persisted before any asynchronous
+// work begins. This file adds contracts only — nothing here executes a command
+// or reads/writes the existing Compass API event endpoints.
 
 // create has no calendar to move within and no prior scope to preserve, so
 // its recurrence input reuses the existing single/series edit shape.
@@ -67,9 +65,8 @@ export const SyncCommandInputSchema = z.discriminatedUnion("kind", [
 export type SyncCommandInput = z.infer<typeof SyncCommandInputSchema>;
 
 // Provider-side rejection classes a command outcome can carry. These map to
-// the failure classification table in 02-sync-lifecycle.md; "capability"
-// failures are typed rather than a silently degraded write (01-domain-model
-// "Provider adapter contract").
+// the sync failure classification; "capability" failures are typed rather than
+// a silently degraded write in the provider adapter contract.
 export const SyncCommandFailureReasonSchema = z.enum([
   "versionConflict",
   "readOnlyCalendar",
@@ -83,7 +80,7 @@ export type SyncCommandFailureReason = z.infer<
 
 // Nonterminal: pending (persisted, not yet attempted), applying (in flight
 // at the provider), reconciling (response was ambiguous; identity must be
-// confirmed before another attempt — 02-sync-lifecycle "Create" step 6).
+// confirmed before another attempt).
 // Terminal: confirmed, failed, cancelled.
 const PendingOutcomeSchema = z.strictObject({ state: z.literal("pending") });
 const ApplyingOutcomeSchema = z.strictObject({ state: z.literal("applying") });
@@ -95,7 +92,7 @@ const ConfirmedOutcomeSchema = z
   .strictObject({
     state: z.literal("confirmed"),
     // Both null when the event has no provider target: confirmation is
-    // durable cloud persistence only (02-sync-lifecycle "Create" step 3).
+    // durable cloud persistence only.
     // Otherwise both present together — a provider identity without a
     // version (or vice versa) is not a coherent confirmed state.
     providerEventId: ProviderEventIdSchema.nullable(),
@@ -136,7 +133,7 @@ export const SyncCommandSchema = z
     tenantId: TenantIdSchema,
     principalId: PrincipalIdSchema,
     // Unique per (tenantId, principalId, idempotencyKey) — the same key
-    // always refers to the same command (01-domain-model "Command").
+    // always refers to the same command.
     idempotencyKey: IdempotencyKeySchema,
     eventId: EventIdSchema,
     input: SyncCommandInputSchema,

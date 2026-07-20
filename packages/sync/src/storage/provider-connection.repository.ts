@@ -12,11 +12,10 @@ import {
   ProviderConnectionUpsertSchema,
 } from "@sync/storage/provider-connection.record";
 
-// Repository for `provider_connections` (ledger S12). Upserts are keyed on the
+// Repository for `provider_connections`. Upserts are keyed on the
 // stable provider-account identity so reconnecting the same account updates one
-// document instead of creating a duplicate (R-CONN-02). Every query is scoped
-// to a tenant/principal — one principal can never read another's connections
-// (R-SEC-03).
+// document instead of creating a duplicate. Every query is scoped
+// to a tenant/principal — one principal can never read another's connections.
 export class ProviderConnectionRepository {
   private readonly collection: Collection<ProviderConnectionRecord>;
 

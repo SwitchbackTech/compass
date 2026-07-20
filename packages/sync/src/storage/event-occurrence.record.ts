@@ -10,9 +10,9 @@ import {
   TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
 
-// Persistence record for `event_occurrences` (ledger S13) — a derived,
+// Persistence record for `event_occurrences` — a derived,
 // display-ready instance projected from an event/series within the rolling
-// horizon (R-AVAIL-06). Never expand a non-ending series to completion; only
+// horizon. Never expand a non-ending series to completion; only
 // the bounded window is materialized. tenantId/principalId are denormalized for
 // scoped queries and the principal_start index; generation ties an occurrence
 // to the import generation of its source event so a repair can rebuild in a new
