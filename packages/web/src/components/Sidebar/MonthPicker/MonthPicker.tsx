@@ -45,8 +45,8 @@ export const MonthPicker: FC<Props> = ({
 
     return dateKey ===
       focusedDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT)
-      ? "!rounded-default !font-semibold"
-      : "!rounded-default !font-light";
+      ? "!font-semibold"
+      : "!font-light";
   };
 
   return (
