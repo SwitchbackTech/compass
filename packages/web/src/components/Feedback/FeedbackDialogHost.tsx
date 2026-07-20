@@ -10,10 +10,10 @@ import {
   useFeedbackStore,
 } from "@web/components/Feedback/feedback.store";
 
-const restoreCommandPaletteFocus = () => {
+export const restoreCommandPaletteFocus = () => {
   document
     .querySelector<HTMLButtonElement>(
-      'button[aria-label^="Open command palette"]',
+      'button[aria-label^="Open command palette"], button[aria-label="Open sidebar"]',
     )
     ?.focus();
 };

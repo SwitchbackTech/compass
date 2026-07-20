@@ -5,19 +5,12 @@ import { type CommandSection } from "@web/components/CommandPalette/command-pale
 import { feedbackActions } from "@web/components/Feedback/feedback.store";
 import { type ViewName } from "@web/shortcuts/shortcuts.constants";
 
-export function getCommandPalettePlaceholder(
-  currentView: ViewName,
-  feedbackEnabled = isPosthogEnabled(),
-): string {
+export function getCommandPalettePlaceholder(currentView: ViewName): string {
   if (currentView === "day") {
-    return feedbackEnabled
-      ? "Try: 'week', 'today', 'bug', or 'feedback'"
-      : "Try: 'week' or 'today'";
+    return "Try: 'week', 'today', 'bug', or 'feedback'";
   }
 
-  return feedbackEnabled
-    ? "Try: 'create', 'bug', or 'feedback'"
-    : "Try: 'create'";
+  return "Try: 'create', 'bug', or 'feedback'";
 }
 
 export function getMoreCommandPaletteSections(
@@ -39,7 +32,22 @@ export function getMoreCommandPaletteSections(
           onClick: () => feedbackActions.open("suggestion", currentView),
         },
       ]
-    : [];
+    : [
+        {
+          id: "report-bug",
+          label: "Report Bug",
+          icon: BugIcon,
+          href: "https://github.com/SwitchbackTech/compass/issues/new?assignees=&projects=&template=2-bug-report.yml",
+          target: "_blank" as const,
+        },
+        {
+          id: "share-feedback",
+          label: "Share Feedback",
+          icon: ChatsIcon,
+          href: "https://github.com/SwitchbackTech/compass/discussions",
+          target: "_blank" as const,
+        },
+      ];
 
   return [
     {

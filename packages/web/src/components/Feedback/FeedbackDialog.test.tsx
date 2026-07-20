@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { FeedbackDialog } from "@web/components/Feedback/FeedbackDialog";
+import { restoreCommandPaletteFocus } from "@web/components/Feedback/FeedbackDialogHost";
 import { describe, expect, it, mock } from "bun:test";
 
 describe("FeedbackDialog", () => {
@@ -111,6 +112,37 @@ describe("FeedbackDialog", () => {
         screen.getByRole("button", {
           name: "Open command palette, calendar syncing",
         }),
+      ).toHaveFocus(),
+    );
+  });
+
+  it("can restore focus to the collapsed sidebar trigger", async () => {
+    const user = userEvent.setup();
+
+    function FeedbackDialogWithCollapsedSidebar() {
+      const [open, setOpen] = useState(true);
+
+      return (
+        <>
+          <button type="button" aria-label="Open sidebar" />
+          {open ? (
+            <FeedbackDialog
+              kind="suggestion"
+              onDismiss={() => setOpen(false)}
+              restoreFocus={restoreCommandPaletteFocus}
+              onSubmit={mock()}
+            />
+          ) : null}
+        </>
+      );
+    }
+
+    render(<FeedbackDialogWithCollapsedSidebar />);
+    await user.keyboard("{Escape}");
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Open sidebar" }),
       ).toHaveFocus(),
     );
   });

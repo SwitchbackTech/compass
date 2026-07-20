@@ -12,15 +12,25 @@ import { beforeEach, describe, expect, it } from "bun:test";
 describe("getMoreCommandPaletteSections", () => {
   beforeEach(feedbackActions.close);
 
-  it("omits feedback commands when PostHog is not enabled", () => {
+  it("keeps the existing GitHub feedback links without PostHog", () => {
     const [section] = getMoreCommandPaletteSections("week", false);
 
-    expect(section.items).toHaveLength(1);
-    expect(section.items[0].label).toMatch(/^Version: /);
-    expect(getCommandPalettePlaceholder("day", false)).not.toContain("bug");
-    expect(getCommandPalettePlaceholder("week", false)).not.toContain(
-      "feedback",
+    expect(section.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "report-bug",
+          href: expect.stringContaining("issues/new"),
+          target: "_blank",
+        }),
+        expect.objectContaining({
+          id: "share-feedback",
+          href: expect.stringContaining("discussions"),
+          target: "_blank",
+        }),
+      ]),
     );
+    expect(getCommandPalettePlaceholder("day")).toContain("bug");
+    expect(getCommandPalettePlaceholder("week")).toContain("feedback");
   });
 
   it("opens a prefilled feedback request from each cloud command", () => {

@@ -6,6 +6,8 @@ export interface CommandItem {
   icon: Icon;
   iconClassName?: string;
   onClick?: () => void;
+  href?: string;
+  target?: "_blank";
   disabled?: boolean;
   /** A single key (`"?"`) or one key per combo entry (`["Shift", "W"]`), rendered as keycap chips. */
   shortcut?: string | string[];
