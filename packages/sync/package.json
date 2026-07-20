@@ -1,0 +1,15 @@
+{
+  "name": "@compass/sync",
+  "description": "Compass Sync service — provider state, sync work, and connection health",
+  "license": "MIT",
+  "version": "1.0.0",
+  "main": "build/src/app.js",
+  "dependencies": {
+    "@compass/core": "1.0.0",
+    "tslib": "^2.4.0"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^9.6.0",
+    "@types/node": "^22.13.10"
+  }
+}

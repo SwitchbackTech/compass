@@ -81,11 +81,18 @@
           "level": "on",
           "options": {
             "groups": [
-              [":PACKAGE:", "!@core/**", "!@web/**", "!@backend/**"],
-              ["@*", "!@core/**", "!@web/**", "!@backend/**"],
+              [
+                ":PACKAGE:",
+                "!@core/**",
+                "!@web/**",
+                "!@backend/**",
+                "!@sync/**"
+              ],
+              ["@*", "!@core/**", "!@web/**", "!@backend/**", "!@sync/**"],
               ["@core/**", "!@core"],
               ["@web/**", "!@web"],
               ["@backend/**", "!@backend"],
+              ["@sync/**", "!@sync"],
               ":PATH:"
             ]
           }

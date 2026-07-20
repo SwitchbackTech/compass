@@ -23,7 +23,9 @@ cp compass.example.yaml compass.yaml
 bun install
 bun dev:web
 bun dev:backend
+bun dev:sync
 bun test:core
+bun test:sync
 bun test:web
 bun test:backend
 bun test:scripts
@@ -35,6 +37,7 @@ bun lint:fix
 Validation defaults:
 
 - Core: `bun test:core`
+- Sync: `bun test:sync`
 - Web: `bun test:web`
 - Backend: `bun test:backend`
 - Scripts: `bun test:scripts`
@@ -57,6 +60,7 @@ Validation defaults:
   - `@compass/backend` -> `packages/backend/src`
   - `@compass/core` -> `packages/core/src`
   - `@compass/scripts` -> `packages/scripts/src`
+  - `@compass/sync` -> `packages/sync/src`
   - `@web/*` -> `packages/web/src/*`
   - `@core/*` -> `packages/core/src/*`
 - Shared web/backend contracts belong in `packages/core` and should use Zod.

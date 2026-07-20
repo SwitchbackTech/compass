@@ -26,11 +26,12 @@ type BunRuntime = {
 
 const bunRuntime = (globalThis as unknown as { Bun: BunRuntime }).Bun;
 
-const VALID_PACKAGES = ["core", "web", "backend", "scripts"] as const;
+const VALID_PACKAGES = ["core", "sync", "web", "backend", "scripts"] as const;
 type Package = (typeof VALID_PACKAGES)[number];
 
 const PACKAGE_PREFIXES: Record<string, Package> = {
   "packages/core/": "core",
+  "packages/sync/": "sync",
   "packages/web/": "web",
   "packages/backend/": "backend",
   "packages/scripts/": "scripts",

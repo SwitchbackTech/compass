@@ -157,7 +157,7 @@ state that nothing else needs), keep it — but say why in the commit message
 ## Repo-Specific Conventions
 
 - Use path aliases, not deep relative imports: `@compass/core`,
-  `@compass/backend`, `@compass/scripts`, `@web/*`, `@core/*`
+  `@compass/backend`, `@compass/scripts`, `@compass/sync`, `@web/*`, `@core/*`
 - Shared web/backend contracts belong in `packages/core` and use Zod — match
   the existing import style in the file you're editing
 - Zustand stores follow store + module actions + plain selectors (see
@@ -230,6 +230,7 @@ Match the check to the packages actually touched — don't default to a broad
 suite:
 
 - `packages/core` changes → `bun run test:core`
+- `packages/sync` changes → `bun run test:sync`
 - `packages/web` changes → `bun run test:web`
 - `packages/backend` changes → `bun run test:backend`
 - `packages/scripts` changes → `bun run test:scripts`
