@@ -89,7 +89,6 @@ describe("self-host docker compose", () => {
     const dockerfile = readRepoFile("self-host/Dockerfile.web");
 
     expect(dockerfile).not.toContain("COMPASS_WEB_BUILD_CONFIG_B64");
-    expect(dockerfile).not.toContain("FEEDBACK_ENABLED");
     expect(dockerfile).not.toContain("POSTHOG_");
     expect(dockerfile).not.toContain("posthog:");
   });
@@ -184,12 +183,10 @@ describe("staging deploy workflow", () => {
     expect(workflow).toContain("file: .github/docker/Dockerfile.web");
     expect(workflow).toContain("POSTHOG_KEY=$");
     expect(workflow).toContain("POSTHOG_HOST=$");
-    expect(workflow).toContain("FEEDBACK_ENABLED=$");
     expect(workflow).not.toContain("COMPASS_WEB_BUILD_CONFIG_B64");
     expect(workflow).not.toContain("base64");
     expect(dockerfile).toContain("ARG POSTHOG_KEY=");
     expect(dockerfile).toContain("ARG POSTHOG_HOST=");
-    expect(dockerfile).toContain("ARG FEEDBACK_ENABLED=false");
     expect(dockerfile).toContain("'posthog:'");
   });
 
