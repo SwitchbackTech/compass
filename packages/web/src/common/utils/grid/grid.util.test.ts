@@ -5,12 +5,7 @@ import {
   FLEX_TMRW,
   FLEX_TODAY,
 } from "@web/views/Week/layout.constants";
-import {
-  getFlexBasis,
-  getLineClamp,
-  getPrevDayWidth,
-  maybeGetElemById,
-} from "./grid.util";
+import { getFlexBasis, getLineClamp, getPrevDayWidth } from "./grid.util";
 
 describe("getLineClamp", () => {
   it("uses a minimum value of 1", () => {
@@ -21,32 +16,6 @@ describe("getLineClamp", () => {
   });
   it("uses value larger than 1 when possible", () => {
     expect(getLineClamp(190.88)).toBeGreaterThan(1);
-  });
-});
-
-describe("maybeGetElemById", () => {
-  afterEach(() => {
-    document.body.innerHTML = "";
-  });
-
-  it("returns the element when a matching HTMLDivElement is mounted", () => {
-    const div = document.createElement("div");
-    div.id = "mainGrid";
-    document.body.appendChild(div);
-
-    expect(maybeGetElemById("mainGrid")).toBe(div);
-  });
-
-  it("returns null when the element is absent", () => {
-    expect(maybeGetElemById("mainGrid")).toBeNull();
-  });
-
-  it("returns null when the element is not an HTMLDivElement", () => {
-    const span = document.createElement("span");
-    span.id = "mainGrid";
-    document.body.appendChild(span);
-
-    expect(maybeGetElemById("mainGrid")).toBeNull();
   });
 });
 

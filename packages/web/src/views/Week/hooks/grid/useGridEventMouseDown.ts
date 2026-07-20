@@ -9,7 +9,7 @@ import {
   type GridEvent,
 } from "@web/common/types/web.event.types";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
-import { maybeGetElemById } from "@web/common/utils/grid/grid.util";
+import { getElemById } from "@web/common/utils/grid/grid.util";
 
 export const GRID_EVENT_MOUSE_HOLD_DELAY = 750; // ms
 export const GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD = 25; // pixels
@@ -93,9 +93,7 @@ export const useGridEventMouseDown = (
   const onMouseDown = (e: ReactMouseEvent, event: GridEvent) => {
     e.stopPropagation();
     targetRef.current = e.currentTarget;
-    const element = maybeGetElemById(elementId);
-    // The grid element can be briefly absent during a render / view-transition
-    // race. Fail soft rather than throwing on this core interaction path.
+    const element = getElemById(elementId);
     if (!element) {
       return;
     }

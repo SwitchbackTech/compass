@@ -155,22 +155,7 @@ export const getBeforeTodayDiff = (
   const diff = yesterdayIndex + futureFactor;
   return diff;
 };
-export const getElemById = (id: string): HTMLDivElement => {
-  const element = document.getElementById(id);
-
-  if (!(element instanceof HTMLDivElement)) {
-    throw new Error(`Expected #${id} to be an HTMLDivElement.`);
-  }
-
-  return element;
-};
-
-/**
- * Non-throwing variant of {@link getElemById}. Returns the element when it is a
- * mounted HTMLDivElement, otherwise `null` so callers can fail soft during
- * render / view-transition races when the element is briefly absent.
- */
-export const maybeGetElemById = (id: string): HTMLDivElement | null => {
+export const getElemById = (id: string): HTMLDivElement | null => {
   const element = document.getElementById(id);
 
   return element instanceof HTMLDivElement ? element : null;
