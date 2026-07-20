@@ -185,6 +185,12 @@ export class JobRepository {
   // On graceful shutdown, return every job this worker still holds to the
   // pending pool so another worker (or the restarted process) picks them up
   // immediately instead of waiting for the lease to expire.
+  //
+  // Precondition: the caller must drain all in-flight job handlers for this
+  // worker BEFORE calling releaseOwned. Running it concurrently with an
+  // in-flight complete()/scheduleRetry() can flip a just-finished job back to
+  // pending (the completion then no-ops because the lease is cleared), causing
+  // another worker to reprocess already-done work.
   async releaseOwned(owner: string): Promise<number> {
     const result = await this.collection.updateMany(
       { leaseOwner: owner, state: "claimed" },
