@@ -103,6 +103,15 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          # Sync activates only when BOTH its secrets are present. Sync is an
+          # optional passive add-on, so a half-provisioned config must never
+          # block the web/backend deploy — skip it cleanly instead.
+          SYNC_ENABLED=""
+          if [ -n "$SYNC_MONGO_URI" ] && [ -n "$SYNC_INTERNAL_AUTH_TOKEN" ]; then
+            SYNC_ENABLED="1"
+          elif [ -n "$SYNC_MONGO_URI" ] || [ -n "$SYNC_INTERNAL_AUTH_TOKEN" ]; then
+            echo "Note: sync is only partially configured (need both SYNC_MONGO_URI and SYNC_INTERNAL_AUTH_TOKEN); skipping sync." >&2
+          fi
           {
             printf '%s\n' \
               'runtime:' \
@@ -147,14 +156,9 @@ jobs:
                 'email:' \
                 "  kitApiSecret: \"${KIT_API_SECRET}\""
             fi
-            # Sync runs only where its isolated database is provisioned. The
-            # scoped Atlas user there must be denied the API database, so
-            # least-privilege enforcement is on.
-            if [ -n "$SYNC_MONGO_URI" ]; then
-              if [ -z "$SYNC_INTERNAL_AUTH_TOKEN" ]; then
-                echo "Sync deploy requires SYNC_INTERNAL_AUTH_TOKEN when SYNC_MONGO_URI is set." >&2
-                exit 1
-              fi
+            # The scoped Atlas user for the isolated sync database must be
+            # denied the API database, so least-privilege enforcement is on.
+            if [ -n "$SYNC_ENABLED" ]; then
               printf '%s\n' \
                 'sync:' \
                 "  mongoUri: \"${SYNC_MONGO_URI}\"" \
@@ -172,10 +176,11 @@ jobs:
           fi
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compose.yaml -o ~/compass/compose.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compass -o ~/compass/compass && chmod +x ~/compass/compass"
-          # Enable the `sync` profile only where the isolated sync database is
-          # provisioned, so the sync container starts exactly there.
+          # Enable the `sync` profile only when sync is fully configured, so the
+          # container starts exactly where its config was written (never against
+          # a compass.yaml that has no sync section).
           DEPLOY_PROFILES="$COMPOSE_PROFILES"
-          if [ -n "$SYNC_MONGO_URI" ]; then
+          if [ -n "$SYNC_ENABLED" ]; then
             DEPLOY_PROFILES="${DEPLOY_PROFILES:+${DEPLOY_PROFILES},}sync"
           fi
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && COMPOSE_PROFILES=selfhosted,sync docker compose --project-name compass -f compose.yaml down 2>/dev/null || true"
