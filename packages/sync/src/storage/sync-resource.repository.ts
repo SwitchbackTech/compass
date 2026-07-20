@@ -65,17 +65,27 @@ export class SyncResourceRepository {
     return SyncResourceRecordSchema.parse(result);
   }
 
-  async markAttempt(id: string, at: Date): Promise<void> {
+  async markAttempt(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    at: Date,
+  ): Promise<void> {
     await this.collection.updateOne(
-      { _id: id },
+      { _id: id, tenantId, principalId },
       { $set: { lastAttemptAt: at, updatedAt: new Date() } },
     );
   }
 
   // Save mid-batch page progress without moving the incremental cursor.
-  async setPageCheckpoint(id: string, pageCursor: string): Promise<void> {
+  async setPageCheckpoint(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    pageCursor: string,
+  ): Promise<void> {
     await this.collection.updateOne(
-      { _id: id },
+      { _id: id, tenantId, principalId },
       { $set: { pageCursor, updatedAt: new Date() } },
     );
   }
@@ -83,12 +93,14 @@ export class SyncResourceRepository {
   // Advance the incremental cursor after a batch fully commits, clearing the
   // mid-batch checkpoint and recording success.
   async advanceCursor(
+    tenantId: TenantId,
+    principalId: PrincipalId,
     id: string,
     syncCursor: string,
     succeededAt: Date,
   ): Promise<void> {
     await this.collection.updateOne(
-      { _id: id },
+      { _id: id, tenantId, principalId },
       {
         $set: {
           syncCursor,
@@ -101,18 +113,24 @@ export class SyncResourceRepository {
   }
 
   async updateSubscription(
+    tenantId: TenantId,
+    principalId: PrincipalId,
     id: string,
     subscription: SubscriptionInput,
   ): Promise<void> {
     await this.collection.updateOne(
-      { _id: id },
+      { _id: id, tenantId, principalId },
       { $set: { ...subscription, updatedAt: new Date() } },
     );
   }
 
-  async clearSubscription(id: string): Promise<void> {
+  async clearSubscription(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+  ): Promise<void> {
     await this.collection.updateOne(
-      { _id: id },
+      { _id: id, tenantId, principalId },
       {
         $set: {
           subscriptionId: null,
@@ -126,9 +144,13 @@ export class SyncResourceRepository {
 
   // Begin a fresh import generation for a non-destructive repair. The old
   // generation's data stays queryable until the replacement completes.
-  async startNewGeneration(id: string): Promise<number> {
+  async startNewGeneration(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+  ): Promise<number> {
     const result = await this.collection.findOneAndUpdate(
-      { _id: id },
+      { _id: id, tenantId, principalId },
       { $inc: { importGeneration: 1 }, $set: { updatedAt: new Date() } },
       { returnDocument: "after" },
     );
