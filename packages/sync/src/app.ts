@@ -13,6 +13,10 @@ export interface SyncService {
   readonly readiness: ReadinessRegistry;
   readonly shutdown: ShutdownCoordinator;
   readonly httpServer: Server;
+  // Graceful stop: close the HTTP front door first (stop admitting new work),
+  // then drain background dependencies in reverse order (workers -> storage).
+  // Idempotent — safe to call from repeated signals or test cleanup.
+  readonly stop: () => Promise<void>;
 }
 
 // Wires the service's lifecycle pieces from a validated config without binding
@@ -30,9 +34,20 @@ export function createSyncService(config: SyncConfig): SyncService {
   const app = buildSyncApp({ identity, readiness });
   const httpServer = createServer(app);
 
-  shutdown.register("http-server", () => closeHttpServer(httpServer));
+  const stop = async (): Promise<void> => {
+    // Phase 1: stop accepting new connections before anything drains, so no
+    // new request can hit a dependency that is about to close.
+    await closeHttpServer(httpServer);
+    // Phase 2: reverse-order teardown of background dependencies. The
+    // coordinator is idempotent, so a second stop() (repeated signal, test
+    // cleanup) does not re-run drains.
+    const errors = await shutdown.shutdown();
+    for (const { name, error } of errors) {
+      logger.error(`Shutdown task "${name}" failed`, error);
+    }
+  };
 
-  return { identity, readiness, shutdown, httpServer };
+  return { identity, readiness, shutdown, httpServer, stop };
 }
 
 function closeHttpServer(httpServer: Server): Promise<void> {
@@ -46,7 +61,7 @@ async function start(): Promise<void> {
   const config = loadSyncConfig();
   const service = createSyncService(config);
 
-  registerSignalHandlers(service.shutdown, logger);
+  registerSignalHandlers(service, logger);
 
   await new Promise<void>((resolve) =>
     service.httpServer.listen(config.PORT, () => {
@@ -59,17 +74,13 @@ async function start(): Promise<void> {
 }
 
 function registerSignalHandlers(
-  shutdown: ShutdownCoordinator,
+  service: SyncService,
   log: ReturnType<typeof Logger>,
 ): void {
   const handle = (signal: NodeJS.Signals) => {
-    if (shutdown.isShuttingDown) return;
+    if (service.shutdown.isShuttingDown) return;
     log.info(`Received ${signal}, draining Sync service`);
-    void shutdown.shutdown().then((errors) => {
-      for (const { name, error } of errors) {
-        log.error(`Shutdown task "${name}" failed`, error);
-      }
-    });
+    void service.stop();
   };
 
   process.on("SIGTERM", () => handle("SIGTERM"));

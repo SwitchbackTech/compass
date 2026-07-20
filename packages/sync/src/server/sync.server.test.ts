@@ -25,7 +25,7 @@ describe("Sync HTTP server health endpoints", () => {
   let service: SyncService;
 
   afterEach(async () => {
-    await service.shutdown.shutdown();
+    await service.stop();
   });
 
   it("serves liveness with structured, content-free identity", async () => {
@@ -72,13 +72,43 @@ describe("Sync HTTP server health endpoints", () => {
     expect(body.execution).toBe("active");
   });
 
-  it("closes the HTTP server on graceful shutdown", async () => {
+  it("closes the HTTP front door on graceful stop", async () => {
     service = createSyncService(testConfig());
     await listen(service);
     expect(service.httpServer.listening).toBe(true);
 
-    const errors = await service.shutdown.shutdown();
-    expect(errors).toEqual([]);
+    await service.stop();
     expect(service.httpServer.listening).toBe(false);
+  });
+
+  it("closes the HTTP listener before draining dependencies", async () => {
+    service = createSyncService(testConfig());
+    await listen(service);
+
+    const events: string[] = [];
+    // A dependency drain (as S11+ will register) records when it runs; the
+    // HTTP listener must already be closed by then.
+    service.shutdown.register("dependency", () => {
+      events.push(
+        service.httpServer.listening ? "http-still-open" : "http-closed",
+      );
+    });
+
+    await service.stop();
+    expect(events).toEqual(["http-closed"]);
+  });
+
+  it("is idempotent — a second stop does not re-run dependency drains", async () => {
+    service = createSyncService(testConfig());
+    await listen(service);
+
+    let drains = 0;
+    service.shutdown.register("dependency", () => {
+      drains += 1;
+    });
+
+    await service.stop();
+    await service.stop();
+    expect(drains).toBe(1);
   });
 });

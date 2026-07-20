@@ -63,4 +63,18 @@ describe("ShutdownCoordinator", () => {
     expect(coordinator.isShuttingDown).toBe(true);
     await pending;
   });
+
+  it("is idempotent — a second shutdown does not re-run tasks", async () => {
+    let runs = 0;
+    const coordinator = new ShutdownCoordinator();
+    coordinator.register("mongo", () => {
+      runs += 1;
+    });
+
+    await coordinator.shutdown();
+    const secondErrors = await coordinator.shutdown();
+
+    expect(runs).toBe(1);
+    expect(secondErrors).toEqual([]);
+  });
 });

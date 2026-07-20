@@ -1,11 +1,16 @@
-// Graceful-shutdown coordination for the Compass Sync service (ledger S09).
+// Dependency-drain coordination for the Compass Sync service (ledger S09).
 //
-// Registered drain tasks run in REVERSE registration order (last started,
-// first stopped), so higher-level work (job claims) drains before the
-// resources it depends on (storage, HTTP). Later commits register real drains:
-// stop claiming new work, then complete or release in-flight leases, then
-// close storage. S09 provides the ordering guarantee and proves one failing
-// drain does not prevent the others from running.
+// This coordinator drains BACKGROUND DEPENDENCIES only — job-claim workers,
+// schedulers, and storage clients registered by later commits. It runs tasks
+// in REVERSE registration order so higher-level work (job claims) drains
+// before the storage it depends on: startup acquires storage first, then
+// starts workers, so LIFO teardown stops workers first and closes storage
+// last (04-security-and-observability.md "stops claims ... then closes").
+//
+// The HTTP listener is deliberately NOT a task here. Stopping the front door
+// must happen FIRST (before dependencies drain), so `createSyncService`
+// closes the HTTP server as an explicit first phase, ahead of this coordinator
+// (see app.ts `stop`).
 
 export type ShutdownTask = () => void | Promise<void>;
 
@@ -26,13 +31,15 @@ export class ShutdownCoordinator {
     return this.shuttingDown;
   }
 
-  // Runs every registered task, in reverse order, even if some throw. Returns
-  // the collected failures so the caller can log them; one broken drain must
-  // never strand the resources registered before it.
+  // Runs every registered task once, in reverse order, even if some throw.
+  // Idempotent: a second call is a no-op returning no errors, so a repeated
+  // signal or a double stop() never re-runs a non-idempotent drain (e.g.
+  // closing a Mongo client twice).
   async shutdown(): Promise<ShutdownTaskError[]> {
+    if (this.shuttingDown) return [];
     this.shuttingDown = true;
-    const errors: ShutdownTaskError[] = [];
 
+    const errors: ShutdownTaskError[] = [];
     for (const { name, task } of [...this.tasks].reverse()) {
       try {
         await task();
