@@ -1,4 +1,4 @@
-import { type Collection, type Db, ObjectId } from "mongodb";
+import { type Collection, type Db, type MongoClient, ObjectId } from "mongodb";
 import { type EventId } from "@core/types/domain-primitives";
 import { type SyncEventCalendarId } from "@core/types/sync/event.contracts";
 import {
@@ -36,31 +36,46 @@ export interface OccurrenceRangeQuery {
 export class EventOccurrenceRepository {
   private readonly collection: Collection<EventOccurrenceRecord>;
 
-  constructor(db: Db) {
+  // The client is needed to run the rebuild atomically in a transaction.
+  constructor(
+    db: Db,
+    private readonly client: MongoClient,
+  ) {
     this.collection = db.collection<EventOccurrenceRecord>(
       SYNC_COLLECTIONS.eventOccurrences,
     );
   }
 
-  // Replace all occurrences for one event within a generation. Delete-then-
-  // insert is scoped to (eventId, generation), so occurrences of other events —
-  // and of the same event in a different generation being built by a repair —
-  // are never touched (never delete an old generation before its replacement).
+  // Replace all occurrences for one event within a generation, atomically.
+  // The delete+insert runs in a transaction so a concurrent range query never
+  // observes the mid-rebuild empty window, and a failed insert rolls the delete
+  // back (no lost occurrences). Scoped to (eventId, generation), so occurrences
+  // of other events — and of the same event in another generation being built
+  // by a repair — are never touched (never delete an old generation before its
+  // replacement completes).
   async replaceForEvent(
     eventId: EventId,
     generation: number,
     occurrences: OccurrenceInput[],
   ): Promise<void> {
-    await this.collection.deleteMany({ eventId, generation });
-    if (occurrences.length === 0) return;
-
     const docs = occurrences.map((occurrence) =>
       EventOccurrenceRecordSchema.parse({
         _id: new ObjectId().toHexString(),
         ...occurrence,
       }),
     );
-    await this.collection.insertMany(docs);
+
+    const session = this.client.startSession();
+    try {
+      await session.withTransaction(async () => {
+        await this.collection.deleteMany({ eventId, generation }, { session });
+        if (docs.length > 0) {
+          await this.collection.insertMany(docs, { session });
+        }
+      });
+    } finally {
+      await session.endSession();
+    }
   }
 
   async listByCalendarRange(

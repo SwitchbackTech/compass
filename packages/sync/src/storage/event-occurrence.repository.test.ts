@@ -43,7 +43,7 @@ describe("EventOccurrenceRepository", () => {
     await client.connect();
     db = client.db(`occ_${objectId()}`);
     await installIndexManifest(db);
-    repo = new EventOccurrenceRepository(db);
+    repo = new EventOccurrenceRepository(db, client);
   });
 
   afterEach(async () => {
@@ -180,6 +180,54 @@ describe("EventOccurrenceRepository", () => {
       expect(first).toHaveLength(2);
       expect(second).toHaveLength(1);
       expect(ids.size).toBe(3);
+    });
+
+    it("paginates correctly across occurrences that share the same startAt", async () => {
+      // Five occurrences at the SAME instant straddling page boundaries — the
+      // (_id) tie-break in the composite cursor must not skip or repeat any.
+      const tenant2 = objectId() as OccurrenceInput["tenantId"];
+      const principal2 = objectId() as OccurrenceInput["principalId"];
+      const cal = objectId();
+      const sameInstant = new Date("2026-07-14T09:00:00-06:00");
+      const eventId = objectId() as OccurrenceInput["eventId"];
+      await repo.replaceForEvent(
+        eventId,
+        0,
+        Array.from({ length: 5 }, (_, i) =>
+          occurrence({
+            tenantId: tenant2,
+            principalId: principal2,
+            eventId,
+            occurrenceKey: `${cal}:tie:${i}`,
+            calendarId: cal as OccurrenceInput["calendarId"],
+            startAt: sameInstant,
+          }),
+        ),
+      );
+
+      const query = {
+        tenantId: tenant2,
+        principalId: principal2,
+        calendarIds: [cal] as OccurrenceInput["calendarId"][],
+        start: new Date("2026-07-01T00:00:00-06:00"),
+        end: new Date("2026-07-16T00:00:00-06:00"),
+      };
+      const seen: string[] = [];
+      let after: { startAt: Date; id: string } | undefined;
+      for (let i = 0; i < 10; i += 1) {
+        const page = await repo.listByCalendarRange({
+          ...query,
+          limit: 2,
+          after,
+        });
+        if (page.length === 0) break;
+        for (const o of page) seen.push(o._id);
+        const lastRow = page[page.length - 1];
+        if (!lastRow) break;
+        after = { startAt: lastRow.startAt, id: lastRow._id };
+      }
+      expect(seen).toHaveLength(5);
+      expect(new Set(seen).size).toBe(5);
     });
   });
 });
