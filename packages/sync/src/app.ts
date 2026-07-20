@@ -1,18 +1,101 @@
-import { syncServiceIdentity } from "@sync/service-identity";
+import { Logger } from "@core/logger/winston.logger";
+import { loadSyncConfig, type SyncConfig } from "@sync/config/sync.config";
+import { ReadinessRegistry } from "@sync/lifecycle/readiness";
+import { ShutdownCoordinator } from "@sync/lifecycle/shutdown";
+import { buildSyncApp } from "@sync/server/sync.server";
+import { buildServiceIdentity } from "@sync/service-identity";
+import { createServer, type Server } from "node:http";
 
-// Entry point for the Compass Sync service (ledger S07). Intentionally inert:
-// the scaffold builds and starts but does no provider, storage, or HTTP work
-// yet. Configuration (S08), process lifecycle/health (S09), internal auth
-// (S10), and isolated Mongo storage (S11) land in later commits. This keeps
-// the standalone package deployable and type-checked before it does anything
-// user-facing (00-architecture-overview.md "Deployment and scaling").
+const logger = Logger("sync:app");
 
-export function describeSyncService(): string {
-  return `${syncServiceIdentity.name} scaffold ready`;
+export interface SyncService {
+  readonly identity: ReturnType<typeof buildServiceIdentity>;
+  readonly readiness: ReadinessRegistry;
+  readonly shutdown: ShutdownCoordinator;
+  readonly httpServer: Server;
+  // Graceful stop: close the HTTP front door first (stop admitting new work),
+  // then drain background dependencies in reverse order (workers -> storage).
+  // Idempotent — safe to call from repeated signals or test cleanup.
+  readonly stop: () => Promise<void>;
 }
 
-// Only run when invoked directly (bun packages/sync/src/app.ts), not on import
-// from tests.
+// Wires the service's lifecycle pieces from a validated config without binding
+// a port or reading a file — so tests can drive it directly. Later commits
+// register storage/scheduler readiness checks and drain tasks against the
+// returned registries (S11+).
+export function createSyncService(config: SyncConfig): SyncService {
+  const identity = buildServiceIdentity({
+    environment: config.NODE_ENV,
+    execution: config.EXECUTION,
+  });
+  const readiness = new ReadinessRegistry();
+  const shutdown = new ShutdownCoordinator();
+
+  const app = buildSyncApp({ identity, readiness });
+  const httpServer = createServer(app);
+
+  const stop = async (): Promise<void> => {
+    // Phase 1: stop accepting new connections before anything drains, so no
+    // new request can hit a dependency that is about to close.
+    await closeHttpServer(httpServer);
+    // Phase 2: reverse-order teardown of background dependencies. The
+    // coordinator is idempotent, so a second stop() (repeated signal, test
+    // cleanup) does not re-run drains.
+    const errors = await shutdown.shutdown();
+    for (const { name, error } of errors) {
+      logger.error(`Shutdown task "${name}" failed`, error);
+    }
+  };
+
+  return { identity, readiness, shutdown, httpServer, stop };
+}
+
+function closeHttpServer(httpServer: Server): Promise<void> {
+  if (!httpServer.listening) return Promise.resolve();
+  return new Promise((resolve, reject) =>
+    httpServer.close((error) => (error ? reject(error) : resolve())),
+  );
+}
+
+async function start(): Promise<void> {
+  const config = loadSyncConfig();
+  const service = createSyncService(config);
+
+  registerSignalHandlers(service, logger);
+
+  await new Promise<void>((resolve) =>
+    service.httpServer.listen(config.PORT, () => {
+      logger.info(
+        `${service.identity.name} listening on ${config.PORT} (${service.identity.environment}, execution=${service.identity.execution})`,
+      );
+      resolve();
+    }),
+  );
+}
+
+function registerSignalHandlers(
+  service: SyncService,
+  log: ReturnType<typeof Logger>,
+): void {
+  const handle = (signal: NodeJS.Signals) => {
+    if (service.shutdown.isShuttingDown) return;
+    log.info(`Received ${signal}, draining Sync service`);
+    void service.stop();
+  };
+
+  process.on("SIGTERM", () => handle("SIGTERM"));
+  process.on("SIGINT", () => handle("SIGINT"));
+  process.on("SIGQUIT", () => handle("SIGQUIT"));
+}
+
+// Retained for the scaffold identity test and quick manual smoke checks.
+export function describeSyncService(): string {
+  return "compass-sync scaffold ready";
+}
+
 if (import.meta.main) {
-  console.log(describeSyncService());
+  start().catch((error) => {
+    logger.error("Sync service failed to start", error);
+    process.exit(1);
+  });
 }
