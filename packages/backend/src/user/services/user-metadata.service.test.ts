@@ -1,4 +1,4 @@
-import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
+import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
 import { GoogleWatchDriver } from "@backend/__tests__/drivers/google-watch.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UserMetadataServiceDriver } from "@backend/__tests__/drivers/user-metadata.service.driver";
@@ -58,55 +58,18 @@ describe("UserMetadataService", () => {
       expect(persisted.sync?.importGCal).toBe("RESTART");
     });
 
-    it("tags the user in Kit on first opt-in to updates", async () => {
+    it("does not persist email subscription metadata from an update", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const { addTagToSubscriber } = EmailDriver.mockEmailServiceResponse();
-
-      const metadata = await driver.updateUserMetadata({
-        userId,
-        data: { subscribeToUpdates: true },
-      });
-
-      expect(metadata.subscribeToUpdates).toBe(true);
-      expect(addTagToSubscriber).toHaveBeenCalledTimes(1);
-
-      addTagToSubscriber.mockRestore();
-    });
-
-    it("does not re-tag the user in Kit on a repeat opt-in", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-      const { addTagToSubscriber } = EmailDriver.mockEmailServiceResponse();
 
       await driver.updateUserMetadata({
         userId,
-        data: { subscribeToUpdates: true },
-      });
-      await driver.updateUserMetadata({
-        userId,
-        data: { subscribeToUpdates: true },
+        data: { subscribeToUpdates: true } as Partial<UserMetadata>,
       });
 
-      expect(addTagToSubscriber).toHaveBeenCalledTimes(1);
+      const stored = await SupertokensUserMetadata.getUserMetadata(userId);
 
-      addTagToSubscriber.mockRestore();
-    });
-
-    it("does not tag the user in Kit when not opting in", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-      const { addTagToSubscriber } = EmailDriver.mockEmailServiceResponse();
-
-      const metadata = await driver.updateUserMetadata({
-        userId,
-        data: { sync: { importGCal: "RESTART" } },
-      });
-
-      expect(metadata.subscribeToUpdates).toBeUndefined();
-      expect(addTagToSubscriber).not.toHaveBeenCalled();
-
-      addTagToSubscriber.mockRestore();
+      expect(stored.metadata).not.toHaveProperty("subscribeToUpdates");
     });
   });
 
@@ -122,6 +85,36 @@ describe("UserMetadataService", () => {
 
       const metadata = await driver.fetchUserMetadata(userId);
 
+      expect(metadata.sync?.importGCal).toBe("RESTART");
+    });
+
+    it("does not expose legacy email subscription metadata", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      await SupertokensUserMetadata.updateUserMetadata(userId, {
+        subscribeToUpdates: true,
+      });
+
+      const metadata = await driver.fetchUserMetadata(userId);
+
+      expect(metadata).not.toHaveProperty("subscribeToUpdates");
+    });
+
+    it("does not expose legacy email subscription metadata after an update", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      await SupertokensUserMetadata.updateUserMetadata(userId, {
+        subscribeToUpdates: true,
+      });
+
+      const metadata = await driver.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "RESTART" } },
+      });
+
+      expect(metadata).not.toHaveProperty("subscribeToUpdates");
       expect(metadata.sync?.importGCal).toBe("RESTART");
     });
 

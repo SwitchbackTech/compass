@@ -33,7 +33,7 @@ export function showErrorToast(
 ): Id {
   const { toastId, severity = ErrorToastSeverity.DEFAULT, options } = config;
 
-  if (toastId && toast.isActive(toastId)) {
+  if (toastId && toast.isActive?.(toastId)) {
     return toastId;
   }
 

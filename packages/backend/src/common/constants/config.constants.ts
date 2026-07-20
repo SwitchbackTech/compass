@@ -23,7 +23,6 @@ const ConfigSchema = z
     GOOGLE_CLIENT_SECRET: z.string().nonempty().optional(),
     DB: z.string().nonempty(),
     EMAILER_SECRET: z.string().nonempty().optional(),
-    EMAILER_USER_TAG_ID: z.string().nonempty().optional(),
     FRONTEND_URL: z.string().url(),
     GCAL_WEBHOOK_BASEURL: z.string().url(),
     MONGO_URI: z.string().nonempty(),
@@ -95,7 +94,6 @@ function parseRawConfig(config: CompassConfig): Config {
     GOOGLE_CLIENT_SECRET: nonEmpty(config.google?.clientSecret),
     DB: isDev(nodeEnv) ? "dev_calendar" : "prod_calendar",
     EMAILER_SECRET: nonEmpty(config.email?.kitApiSecret),
-    EMAILER_USER_TAG_ID: toStr(config.email?.kitUserTagId),
     FRONTEND_URL: config.web.url,
     GCAL_WEBHOOK_BASEURL:
       nonEmpty(config.google?.webhookUrl) || config.backend.apiUrl,
@@ -125,7 +123,6 @@ export function parseConfigFromEnv(
     GOOGLE_CLIENT_SECRET: rawEnv["GOOGLE_CLIENT_SECRET"],
     DB: isDev(nodeEnv) ? "dev_calendar" : "prod_calendar",
     EMAILER_SECRET: rawEnv["EMAILER_API_SECRET"],
-    EMAILER_USER_TAG_ID: rawEnv["EMAILER_USER_TAG_ID"],
     FRONTEND_URL: rawEnv["FRONTEND_URL"],
     GCAL_WEBHOOK_BASEURL: rawEnv["GCAL_WEBHOOK_BASEURL"] || rawEnv["BASEURL"],
     MONGO_URI: rawEnv["MONGO_URI"],

@@ -66,6 +66,12 @@ export class UserRoutes extends CommonRoutesConfig {
       .get(userController.getMetadata)
       .post(userController.updateMetadata);
 
+    this.app
+      .route(`/api/user/email-updates`)
+      .all(verifySession())
+      .get(userController.getEmailUpdates)
+      .put(userController.subscribeToEmailUpdates);
+
     return this.app;
   }
 }

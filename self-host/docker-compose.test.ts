@@ -190,35 +190,22 @@ describe("staging deploy workflow", () => {
     expect(dockerfile).toContain("'posthog:'");
   });
 
-  it("writes Kit email config only for production deploys", () => {
+  it("writes Kit email config whenever the deployment has a secret", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
     expect(workflow).toContain(
-      "KIT_USER_TAG_ID: $".concat(
-        "{{ inputs.environment == 'production' && vars.KIT_USER_TAG_ID || '' }}",
-      ),
-    );
-    expect(workflow).toContain(
-      "KIT_API_SECRET: $".concat(
-        "{{ inputs.environment == 'production' && secrets.KIT_API_SECRET || '' }}",
-      ),
+      "KIT_API_SECRET: $".concat("{{ secrets.KIT_API_SECRET }}"),
     );
     expect(workflow).toContain(
       'if [ "$'.concat('{{ inputs.environment }}" = "production" ]; then'),
     );
-    expect(workflow).toContain(
-      "Production deploy requires KIT_API_SECRET and KIT_USER_TAG_ID",
-    );
-    expect(workflow).toContain(
-      'if [ -n "$KIT_API_SECRET" ] && [ -n "$KIT_USER_TAG_ID" ]; then',
-    );
+    expect(workflow).toContain("Production deploy requires KIT_API_SECRET");
+    expect(workflow).toContain('if [ -n "$KIT_API_SECRET" ]; then');
     expect(workflow).toContain("'email:'");
     expect(workflow).toContain(
       'kitApiSecret: \\"$'.concat('{KIT_API_SECRET}\\"'),
     );
-    expect(workflow).toContain(
-      'kitUserTagId: \\"$'.concat('{KIT_USER_TAG_ID}\\"'),
-    );
+    expect(workflow).not.toContain("kitUserTagId");
   });
 
   it("runs deploy health checks after each staging deploy", () => {

@@ -1,80 +1,48 @@
-import { renderHook, waitFor } from "@testing-library/react";
-import { act } from "react";
-import {
-  userMetadataActions,
-  useUserMetadataStore,
-} from "@web/auth/state/user-metadata.store";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockUseSession = mock();
+mockUseSession.mockReturnValue({
+  authenticated: false,
+  setAuthenticated: () => {},
+});
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
 }));
 
-const mockUpdateMetadata = mock();
+const actualUserApi = (await import("@web/api/user.api")).UserApi;
+const mockGetEmailUpdates = mock();
+const mockSubscribeToEmailUpdates = mock();
+let isUserApiMocked = true;
+
+mockGetEmailUpdates.mockResolvedValue({ status: "unavailable" });
+
 mock.module("@web/api/user.api", () => ({
-  UserApi: { updateMetadata: mockUpdateMetadata },
-}));
-
-// Mocking react-toastify directly here wouldn't help: showErrorToast and
-// showStatusToast are themselves import-bound to react-toastify, and several
-// sibling suites replace that package process-wide via mock.module without
-// restoring it (see event.util.test.ts's comment on the same fragility) — so
-// whichever suite's react-toastify binding got cached first inside those
-// utils wins, regardless of what this file registers. Mocking the two util
-// modules useSubscribeCmdItems.ts imports directly sidesteps that: the fresh
-// cache-busted import below resolves them freshly against this file's mocks.
-// Each mock captures the real function up front and delegates back to it
-// (flag flipped off in afterAll) so status-toast.util.test.ts and any other
-// direct consumer of these utils get the real implementation afterward.
-const actualShowStatusToast = (
-  await import("@web/common/utils/toast/status-toast.util")
-).showStatusToast;
-const mockShowStatusToast = mock();
-let isStatusToastMocked = true;
-
-mock.module("@web/common/utils/toast/status-toast.util", () => ({
-  showStatusToast: (...args: Parameters<typeof actualShowStatusToast>) =>
-    isStatusToastMocked
-      ? mockShowStatusToast(...args)
-      : actualShowStatusToast(...args),
-}));
-
-const actualShowErrorToast = (
-  await import("@web/common/utils/toast/error-toast.util")
-).showErrorToast;
-const mockShowErrorToast = mock();
-let isErrorToastMocked = true;
-
-mock.module("@web/common/utils/toast/error-toast.util", () => ({
-  showErrorToast: (...args: Parameters<typeof actualShowErrorToast>) =>
-    isErrorToastMocked
-      ? mockShowErrorToast(...args)
-      : actualShowErrorToast(...args),
+  UserApi: {
+    ...actualUserApi,
+    getEmailUpdates: (
+      ...args: Parameters<typeof actualUserApi.getEmailUpdates>
+    ) =>
+      isUserApiMocked
+        ? mockGetEmailUpdates(...args)
+        : actualUserApi.getEmailUpdates(...args),
+    subscribeToEmailUpdates: (
+      ...args: Parameters<typeof actualUserApi.subscribeToEmailUpdates>
+    ) =>
+      isUserApiMocked
+        ? mockSubscribeToEmailUpdates(...args)
+        : actualUserApi.subscribeToEmailUpdates(...args),
+  },
 }));
 
 afterAll(() => {
-  isStatusToastMocked = false;
-  isErrorToastMocked = false;
-  // mock.module's useSession replacement is process-wide and never rebinds
-  // once other files import it (see comment above), so whatever this file's
-  // last-run test left mockUseSession returning leaks into every later
-  // suite's first `useSession()` call — including calendar.query.ts's
-  // authenticated branch, which then fires a real (unmocked) GET /calendars
-  // and hangs those tests. Settle it back to the safe/default "signed out"
-  // shape so later files see the same anon-mode behavior as if this file
-  // never ran.
+  isUserApiMocked = false;
   mockUseSession.mockReturnValue({
     authenticated: false,
     setAuthenticated: () => {},
   });
 });
 
-// CommandPalette.tsx statically imports this hook, so bun's module cache may
-// already hold a copy bound to whatever mocks were active whenever that file
-// last ran (mock.module is process-wide and doesn't rebind already-evaluated
-// importers). A cache-busting query string forces a fresh module evaluation
-// bound to this file's own mocks above, matching useLoadProfile.test.ts.
 async function importHook() {
   const moduleUrl = new URL(
     `./useSubscribeCmdItems.ts?test=${Math.random().toString(36).slice(2)}`,
@@ -89,11 +57,9 @@ async function importHook() {
 describe("useSubscribeCmdItems", () => {
   beforeEach(() => {
     mockUseSession.mockClear();
-    mockUpdateMetadata.mockClear();
-    mockShowStatusToast.mockClear();
-    mockShowErrorToast.mockClear();
-    userMetadataActions.clear();
-
+    mockGetEmailUpdates.mockClear();
+    mockSubscribeToEmailUpdates.mockClear();
+    mockGetEmailUpdates.mockResolvedValue({ status: "unavailable" });
     mockUseSession.mockReturnValue({ authenticated: true });
   });
 
@@ -101,64 +67,124 @@ describe("useSubscribeCmdItems", () => {
     mockUseSession.mockReturnValue({ authenticated: false });
     const { useSubscribeCmdItems } = await importHook();
 
-    const { result } = renderHook(() => useSubscribeCmdItems());
+    const { result } = renderHook(() => useSubscribeCmdItems(true));
 
     expect(result.current).toEqual([]);
+    expect(mockGetEmailUpdates).not.toHaveBeenCalled();
   });
 
-  it("returns no items when already subscribed", async () => {
-    userMetadataActions.set({ subscribeToUpdates: true });
+  it("waits to fetch until the palette opens and shows a loading item", async () => {
+    let resolveStatus!: (value: { status: "not_subscribed" }) => void;
+    mockGetEmailUpdates.mockReturnValue(
+      new Promise((resolve) => {
+        resolveStatus = resolve;
+      }),
+    );
     const { useSubscribeCmdItems } = await importHook();
 
-    const { result } = renderHook(() => useSubscribeCmdItems());
-
-    expect(result.current).toEqual([]);
-  });
-
-  it("shows a success toast and updates the store after subscribing", async () => {
-    mockUpdateMetadata.mockResolvedValue({ subscribeToUpdates: true });
-    const { useSubscribeCmdItems } = await importHook();
-
-    const { result } = renderHook(() => useSubscribeCmdItems());
-    const item = result.current.find(
-      (item) => item.id === "subscribe-to-updates",
+    const { result, rerender } = renderHook(
+      ({ open }) => useSubscribeCmdItems(open),
+      { initialProps: { open: false } },
     );
 
+    expect(result.current).toEqual([]);
+    rerender({ open: true });
+
+    expect(result.current).toEqual([
+      expect.objectContaining({
+        disabled: true,
+        label: "Checking email update status…",
+      }),
+    ]);
+    expect(mockGetEmailUpdates).toHaveBeenCalledTimes(1);
+
+    await act(async () => resolveStatus({ status: "not_subscribed" }));
+  });
+
+  it("hides the command when email updates are unavailable", async () => {
+    mockGetEmailUpdates.mockResolvedValue({ status: "unavailable" });
+    const { useSubscribeCmdItems } = await importHook();
+
+    const { result } = renderHook(() => useSubscribeCmdItems(true));
+
+    await waitFor(() => expect(result.current).toEqual([]));
+  });
+
+  it("shows a disabled subscribed item for an existing subscriber", async () => {
+    mockGetEmailUpdates.mockResolvedValue({ status: "subscribed" });
+    const { useSubscribeCmdItems } = await importHook();
+
+    const { result } = renderHook(() => useSubscribeCmdItems(true));
+
+    await waitFor(() => {
+      expect(result.current).toEqual([
+        expect.objectContaining({
+          disabled: true,
+          label: "You’re subscribed to updates",
+        }),
+      ]);
+    });
+  });
+
+  it("does not offer an opt-in to a previously unsubscribed user", async () => {
+    mockGetEmailUpdates.mockResolvedValue({ status: "unsubscribed" });
+    const { useSubscribeCmdItems } = await importHook();
+
+    const { result } = renderHook(() => useSubscribeCmdItems(true));
+
+    await waitFor(() => {
+      expect(result.current).toEqual([
+        expect.objectContaining({
+          disabled: true,
+          label: "You’re unsubscribed from updates",
+        }),
+      ]);
+    });
+    expect(mockSubscribeToEmailUpdates).not.toHaveBeenCalled();
+  });
+
+  it("subscribes a user who is not on the email list", async () => {
+    mockGetEmailUpdates.mockResolvedValue({ status: "not_subscribed" });
+    mockSubscribeToEmailUpdates.mockResolvedValue({ status: "subscribed" });
+    const { useSubscribeCmdItems } = await importHook();
+
+    const { result } = renderHook(() => useSubscribeCmdItems(true));
+
+    await waitFor(() => {
+      expect(result.current[0]?.label).toBe("Opt in to email updates");
+    });
     await act(async () => {
-      item?.onClick?.();
+      result.current[0]?.onClick?.();
     });
 
     await waitFor(() => {
-      expect(mockShowStatusToast).toHaveBeenCalledWith(
-        "subscribe-to-updates",
-        "Subscribed to updates",
-      );
+      expect(result.current[0]?.label).toBe("You’re subscribed to updates");
     });
-    expect(mockShowErrorToast).not.toHaveBeenCalled();
-    expect(useUserMetadataStore.getState().current).toEqual({
-      subscribeToUpdates: true,
-    });
+    expect(mockSubscribeToEmailUpdates).toHaveBeenCalledTimes(1);
   });
 
-  it("shows an error toast when subscribing fails", async () => {
-    mockUpdateMetadata.mockRejectedValue(new Error("network error"));
+  it("shows the check failure and retries after reopening the palette", async () => {
+    mockGetEmailUpdates
+      .mockRejectedValueOnce(new Error("network error"))
+      .mockResolvedValueOnce({ status: "not_subscribed" });
     const { useSubscribeCmdItems } = await importHook();
 
-    const { result } = renderHook(() => useSubscribeCmdItems());
-    const item = result.current.find(
-      (item) => item.id === "subscribe-to-updates",
+    const { result, rerender } = renderHook(
+      ({ open }) => useSubscribeCmdItems(open),
+      { initialProps: { open: true } },
     );
 
-    await act(async () => {
-      item?.onClick?.();
-    });
-
     await waitFor(() => {
-      expect(mockShowErrorToast).toHaveBeenCalledWith(
-        "Couldn't subscribe to updates. Please try again.",
-        { toastId: "subscribe-to-updates" },
+      expect(result.current[0]?.label).toBe(
+        "Couldn’t check email update status",
       );
     });
-    expect(mockShowStatusToast).not.toHaveBeenCalled();
+    rerender({ open: false });
+    rerender({ open: true });
+
+    await waitFor(() => {
+      expect(result.current[0]?.label).toBe("Opt in to email updates");
+    });
+    expect(mockGetEmailUpdates).toHaveBeenCalledTimes(2);
   });
 });

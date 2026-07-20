@@ -85,7 +85,7 @@ export const CommandPalette = ({
   const open = useSettingsStore(selectIsCmdPaletteOpen);
   const navigate = useNavigate();
   const { items: calendarCmdItems, syncStatus } = useCalendarSyncCmdItems();
-  const subscribeCmdItems = useSubscribeCmdItems();
+  const subscribeCmdItems = useSubscribeCmdItems(open);
   const exportDataCmdItems = useExportDataCmdItems();
   const authCmdItems = useAuthCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
@@ -267,7 +267,7 @@ export const CommandPalette = ({
 
                     const content = (
                       <>
-                        <item.icon size={18} />
+                        <item.icon size={18} className={item.iconClassName} />
                         <span className="min-w-0 flex-1 truncate">
                           {item.label}
                         </span>
