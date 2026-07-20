@@ -31,7 +31,6 @@ export const Header: FC<Props> = ({ scrollUtil, weekProps }) => {
       onPrev={() => weekProps.util.decrementWeek()}
       onNext={() => weekProps.util.incrementWeek()}
       onToday={onTodayClick}
-      isToday={weekProps.component.isCurrentWeek}
       prevLabel="Previous week"
       nextLabel="Next week"
     />

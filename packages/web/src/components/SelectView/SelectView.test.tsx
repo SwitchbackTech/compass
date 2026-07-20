@@ -1,5 +1,5 @@
 import { RouterProvider } from "@tanstack/react-router";
-import { type ReactElement, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -44,17 +44,21 @@ mock.module("@web/components/Shortcuts/ShortcutHint", () => ({
 const { SelectView } = await import("./SelectView");
 
 describe("SelectView", () => {
+  let onToday: ReturnType<typeof mock>;
+
   beforeEach(() => {
     mockNavigate.mockClear();
+    onToday = mock();
   });
 
   const renderWithRouter = async (
-    component: ReactElement,
+    label: string,
     initialRoute: string = ROOT_ROUTES.WEEK,
   ) => {
-    const router = createTestRouter(component, {
-      initialEntries: [initialRoute],
-    });
+    const router = createTestRouter(
+      <SelectView label={label} onToday={onToday} />,
+      { initialEntries: [initialRoute] },
+    );
     const result = render(<RouterProvider router={router} />);
 
     // TanStack's RouterProvider resolves the initial match asynchronously
@@ -81,10 +85,7 @@ describe("SelectView", () => {
 
   describe("Component Rendering", () => {
     it("renders the button with the date label", async () => {
-      await renderWithRouter(
-        <SelectView label="July 2026" />,
-        ROOT_ROUTES.WEEK,
-      );
+      await renderWithRouter("July 2026", ROOT_ROUTES.WEEK);
 
       const button = screen.getByRole("button");
       expect(button).toBeInTheDocument();
@@ -93,18 +94,15 @@ describe("SelectView", () => {
     });
 
     it("renders the label as the page heading", async () => {
-      await renderWithRouter(
-        <SelectView label="Monday, July 20" />,
-        ROOT_ROUTES.DAY,
-      );
+      await renderWithRouter("Monday, July 20", ROOT_ROUTES.DAY);
 
       expect(
         screen.getByRole("heading", { name: "Monday, July 20" }),
       ).toBeInTheDocument();
     });
 
-    it("renders Day and Week options with shortcut hints when dropdown is open", async () => {
-      await renderWithRouter(<SelectView label="July 2026" />);
+    it("renders Day, Week, and This Week options with shortcut hints when dropdown is open", async () => {
+      await renderWithRouter("July 2026");
 
       await openDropdown();
 
@@ -115,29 +113,27 @@ describe("SelectView", () => {
         withinDropdown
           .getAllByRole("option")
           .map((option) => option.textContent),
-      ).toEqual(["DayD", "WeekW"]);
+      ).toEqual(["DayD", "WeekW", "This WeekT"]);
 
       const shortcutHints = withinDropdown.getAllByTestId("shortcut-hint");
-      expect(shortcutHints).toHaveLength(2);
+      expect(shortcutHints).toHaveLength(3);
       expect(shortcutHints[0]).toHaveTextContent("D");
       expect(shortcutHints[1]).toHaveTextContent("W");
+      expect(shortcutHints[2]).toHaveTextContent("T");
     });
   });
 
   describe("Route Detection", () => {
     it("marks Day selected when on /day route", async () => {
-      await renderWithRouter(
-        <SelectView label="Monday, July 20" />,
-        ROOT_ROUTES.DAY,
-      );
+      await renderWithRouter("Monday, July 20", ROOT_ROUTES.DAY);
 
       await openDropdown();
 
-      expect(screen.getByRole("option", { name: /day/i })).toHaveAttribute(
+      expect(screen.getByRole("option", { name: /^day/i })).toHaveAttribute(
         "aria-selected",
         "true",
       );
-      expect(screen.getByRole("option", { name: /week/i })).toHaveAttribute(
+      expect(screen.getByRole("option", { name: /^week/i })).toHaveAttribute(
         "aria-selected",
         "false",
       );
@@ -145,45 +141,39 @@ describe("SelectView", () => {
 
     it("marks Day selected when on /day/:date route", async () => {
       await renderWithRouter(
-        <SelectView label="Monday, January 15" />,
+        "Monday, January 15",
         `${ROOT_ROUTES.DAY}/2024-01-15`,
       );
 
       await openDropdown();
 
-      expect(screen.getByRole("option", { name: /day/i })).toHaveAttribute(
+      expect(screen.getByRole("option", { name: /^day/i })).toHaveAttribute(
         "aria-selected",
         "true",
       );
     });
 
     it("marks Week selected when on /week route", async () => {
-      await renderWithRouter(
-        <SelectView label="July 2026" />,
-        ROOT_ROUTES.WEEK,
-      );
+      await renderWithRouter("July 2026", ROOT_ROUTES.WEEK);
 
       await openDropdown();
 
-      expect(screen.getByRole("option", { name: /week/i })).toHaveAttribute(
+      expect(screen.getByRole("option", { name: /^week/i })).toHaveAttribute(
         "aria-selected",
         "true",
       );
-      expect(screen.getByRole("option", { name: /day/i })).toHaveAttribute(
+      expect(screen.getByRole("option", { name: /^day/i })).toHaveAttribute(
         "aria-selected",
         "false",
       );
     });
 
     it("defaults to Week selected for unknown routes", async () => {
-      await renderWithRouter(
-        <SelectView label="July 2026" />,
-        "/unknown-route",
-      );
+      await renderWithRouter("July 2026", "/unknown-route");
 
       await openDropdown();
 
-      expect(screen.getByRole("option", { name: /week/i })).toHaveAttribute(
+      expect(screen.getByRole("option", { name: /^week/i })).toHaveAttribute(
         "aria-selected",
         "true",
       );
@@ -192,7 +182,7 @@ describe("SelectView", () => {
 
   describe("Dropdown Behavior", () => {
     it("opens dropdown when button is clicked", async () => {
-      await renderWithRouter(<SelectView label="July 2026" />);
+      await renderWithRouter("July 2026");
 
       const button = screen.getByRole("button");
       expect(button).toHaveAttribute("aria-expanded", "false");
@@ -200,11 +190,11 @@ describe("SelectView", () => {
       await openDropdown();
 
       expect(button).toHaveAttribute("aria-expanded", "true");
-      expect(screen.getByRole("option", { name: /day/i })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: /^day/i })).toBeInTheDocument();
     });
 
     it("closes dropdown when clicking outside", async () => {
-      await renderWithRouter(<SelectView label="July 2026" />);
+      await renderWithRouter("July 2026");
 
       const { button, user } = await openDropdown();
 
@@ -219,7 +209,7 @@ describe("SelectView", () => {
     });
 
     it("closes dropdown when ESC key is pressed", async () => {
-      await renderWithRouter(<SelectView label="July 2026" />);
+      await renderWithRouter("July 2026");
 
       const { button, user } = await openDropdown();
 
@@ -234,26 +224,33 @@ describe("SelectView", () => {
     });
 
     it("highlights active view option in dropdown", async () => {
-      await renderWithRouter(
-        <SelectView label="Monday, July 20" />,
-        ROOT_ROUTES.DAY,
-      );
+      await renderWithRouter("Monday, July 20", ROOT_ROUTES.DAY);
 
       await openDropdown();
 
-      const dayOption = screen.getByRole("option", { name: /day/i });
+      const dayOption = screen.getByRole("option", { name: /^day/i });
       expect(dayOption).toHaveAttribute("aria-selected", "true");
 
-      const weekOption = screen.getByRole("option", { name: /week/i });
+      const weekOption = screen.getByRole("option", { name: /^week/i });
       expect(weekOption).toHaveAttribute("aria-selected", "false");
     });
 
-    it("uses div elements for options instead of buttons", async () => {
-      await renderWithRouter(<SelectView label="July 2026" />);
+    it("never marks the This Week/Today action as selected", async () => {
+      await renderWithRouter("July 2026", ROOT_ROUTES.WEEK);
 
       await openDropdown();
 
-      const dayOption = screen.getByRole("option", { name: /day/i });
+      expect(
+        screen.getByRole("option", { name: /this week/i }),
+      ).toHaveAttribute("aria-selected", "false");
+    });
+
+    it("uses div elements for options instead of buttons", async () => {
+      await renderWithRouter("July 2026");
+
+      await openDropdown();
+
+      const dayOption = screen.getByRole("option", { name: /^day/i });
       expect(dayOption.tagName).toBe("DIV");
       expect(dayOption.tagName).not.toBe("BUTTON");
     });
@@ -261,13 +258,13 @@ describe("SelectView", () => {
 
   describe("User Interactions", () => {
     it("navigates to Day route when Day option is clicked", async () => {
-      await renderWithRouter(<SelectView label="July 2026" />);
+      await renderWithRouter("July 2026");
 
       const { user } = await openDropdown();
 
       const dropdown = screen.getByTestId("view-select-dropdown");
       const withinDropdown = within(dropdown);
-      const dayOption = withinDropdown.getByRole("option", { name: /day/i });
+      const dayOption = withinDropdown.getByRole("option", { name: /^day/i });
       await user.click(dayOption);
 
       expect(mockNavigate).toHaveBeenCalledWith({ to: ROOT_ROUTES.DAY });
@@ -275,16 +272,13 @@ describe("SelectView", () => {
     });
 
     it("navigates to Week route when Week option is clicked", async () => {
-      await renderWithRouter(
-        <SelectView label="Monday, July 20" />,
-        ROOT_ROUTES.DAY,
-      );
+      await renderWithRouter("Monday, July 20", ROOT_ROUTES.DAY);
 
       const { user } = await openDropdown();
 
       const dropdown = screen.getByTestId("view-select-dropdown");
       const withinDropdown = within(dropdown);
-      const weekOption = withinDropdown.getByRole("option", { name: /week/i });
+      const weekOption = withinDropdown.getByRole("option", { name: /^week/i });
       await user.click(weekOption);
 
       expect(mockNavigate).toHaveBeenCalledWith({ to: ROOT_ROUTES.WEEK });
@@ -292,11 +286,11 @@ describe("SelectView", () => {
     });
 
     it("closes dropdown after option selection", async () => {
-      await renderWithRouter(<SelectView label="July 2026" />);
+      await renderWithRouter("July 2026");
 
       const { button, user } = await openDropdown();
 
-      const dayOption = screen.getByRole("option", { name: /day/i });
+      const dayOption = screen.getByRole("option", { name: /^day/i });
       await user.click(dayOption);
 
       await waitFor(() => {
@@ -306,15 +300,46 @@ describe("SelectView", () => {
         expect(button).toHaveAttribute("aria-expanded", "false");
       });
     });
+
+    it("labels the today action 'This Week' and calls onToday on the week view", async () => {
+      await renderWithRouter("July 2026", ROOT_ROUTES.WEEK);
+
+      const { user, button } = await openDropdown();
+
+      const todayOption = screen.getByRole("option", { name: /this week/i });
+      await user.click(todayOption);
+
+      expect(onToday).toHaveBeenCalledTimes(1);
+      expect(mockNavigate).not.toHaveBeenCalled();
+
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId("view-select-dropdown"),
+        ).not.toBeInTheDocument();
+        expect(button).toHaveAttribute("aria-expanded", "false");
+      });
+    });
+
+    it("labels the today action 'Today (...)' and calls onToday on the day view", async () => {
+      await renderWithRouter("Monday, July 20", ROOT_ROUTES.DAY);
+
+      const { user } = await openDropdown();
+
+      const todayOption = screen.getByRole("option", { name: /^today/i });
+      await user.click(todayOption);
+
+      expect(onToday).toHaveBeenCalledTimes(1);
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
   });
 
   describe("Shortcut Hints", () => {
     it("displays d shortcut hint for Day option", async () => {
-      await renderWithRouter(<SelectView label="July 2026" />);
+      await renderWithRouter("July 2026");
 
       await openDropdown();
 
-      const dayOption = screen.getByRole("option", { name: /day/i });
+      const dayOption = screen.getByRole("option", { name: /^day/i });
       const shortcutHint = dayOption.querySelector(
         '[data-testid="shortcut-hint"]',
       );
@@ -322,68 +347,71 @@ describe("SelectView", () => {
     });
 
     it("displays w shortcut hint for Week option", async () => {
-      await renderWithRouter(<SelectView label="July 2026" />);
+      await renderWithRouter("July 2026");
 
       await openDropdown();
 
-      const weekOption = screen.getByRole("option", { name: /week/i });
+      const weekOption = screen.getByRole("option", { name: /^week/i });
       const shortcutHint = weekOption.querySelector(
         '[data-testid="shortcut-hint"]',
       );
       expect(shortcutHint).toHaveTextContent("W");
     });
+
+    it("displays t shortcut hint for the today action", async () => {
+      await renderWithRouter("July 2026");
+
+      await openDropdown();
+
+      const todayOption = screen.getByRole("option", { name: /this week/i });
+      const shortcutHint = todayOption.querySelector(
+        '[data-testid="shortcut-hint"]',
+      );
+      expect(shortcutHint).toHaveTextContent("T");
+    });
   });
 
   describe("Keyboard Navigation", () => {
     it("navigates to next option with ArrowDown", async () => {
-      await renderWithRouter(
-        <SelectView label="Monday, July 20" />,
-        ROOT_ROUTES.DAY,
-      );
+      await renderWithRouter("Monday, July 20", ROOT_ROUTES.DAY);
 
       const { user } = await openDropdown();
 
-      const dayOption = screen.getByRole("option", { name: /day/i });
+      const dayOption = screen.getByRole("option", { name: /^day/i });
       dayOption.focus();
 
       await user.keyboard("{ArrowDown}");
 
       await waitFor(() => {
-        const weekOption = screen.getByRole("option", { name: /week/i });
+        const weekOption = screen.getByRole("option", { name: /^week/i });
         expect(weekOption).toHaveAttribute("tabindex", "0");
         expect(dayOption).toHaveAttribute("tabindex", "-1");
       });
     });
 
     it("navigates to previous option with ArrowUp", async () => {
-      await renderWithRouter(
-        <SelectView label="Monday, July 20" />,
-        ROOT_ROUTES.DAY,
-      );
+      await renderWithRouter("Monday, July 20", ROOT_ROUTES.DAY);
 
       const { user } = await openDropdown();
 
-      const dayOption = screen.getByRole("option", { name: /day/i });
+      const dayOption = screen.getByRole("option", { name: /^day/i });
       dayOption.focus();
 
       await user.keyboard("{ArrowUp}");
 
       await waitFor(() => {
-        const weekOption = screen.getByRole("option", { name: /week/i });
-        expect(weekOption).toHaveAttribute("tabindex", "0");
+        const todayOption = screen.getByRole("option", { name: /^today/i });
+        expect(todayOption).toHaveAttribute("tabindex", "0");
         expect(dayOption).toHaveAttribute("tabindex", "-1");
       });
     });
 
     it("selects highlighted option with Enter key", async () => {
-      await renderWithRouter(
-        <SelectView label="Monday, July 20" />,
-        ROOT_ROUTES.DAY,
-      );
+      await renderWithRouter("Monday, July 20", ROOT_ROUTES.DAY);
 
       const { user } = await openDropdown();
 
-      const dayOption = screen.getByRole("option", { name: /day/i });
+      const dayOption = screen.getByRole("option", { name: /^day/i });
       dayOption.focus();
 
       await user.keyboard("{ArrowDown}");
@@ -395,33 +423,27 @@ describe("SelectView", () => {
     });
 
     it("selects highlighted option with Space key", async () => {
-      await renderWithRouter(
-        <SelectView label="July 2026" />,
-        ROOT_ROUTES.WEEK,
-      );
+      await renderWithRouter("July 2026", ROOT_ROUTES.WEEK);
 
       const { user } = await openDropdown();
 
-      const weekOption = screen.getByRole("option", { name: /week/i });
+      const weekOption = screen.getByRole("option", { name: /^week/i });
       weekOption.focus();
 
       await user.keyboard("{ArrowDown}");
       await user.keyboard(" ");
 
       await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith({ to: ROOT_ROUTES.DAY });
+        expect(onToday).toHaveBeenCalledTimes(1);
       });
     });
 
     it("initializes highlight to current view when dropdown opens", async () => {
-      await renderWithRouter(
-        <SelectView label="Monday, July 20" />,
-        ROOT_ROUTES.DAY,
-      );
+      await renderWithRouter("Monday, July 20", ROOT_ROUTES.DAY);
 
       const { user } = await openDropdown();
 
-      const dayOption = screen.getByRole("option", { name: /day/i });
+      const dayOption = screen.getByRole("option", { name: /^day/i });
       dayOption.focus();
 
       expect(dayOption).toHaveAttribute("aria-selected", "true");
@@ -429,48 +451,42 @@ describe("SelectView", () => {
       await user.keyboard("{ArrowDown}");
 
       await waitFor(() => {
-        const weekOption = screen.getByRole("option", { name: /week/i });
+        const weekOption = screen.getByRole("option", { name: /^week/i });
         expect(weekOption).toHaveAttribute("tabindex", "0");
         expect(dayOption).toHaveAttribute("tabindex", "-1");
       });
     });
 
     it("wraps navigation from last to first option", async () => {
-      await renderWithRouter(
-        <SelectView label="July 2026" />,
-        ROOT_ROUTES.WEEK,
-      );
+      await renderWithRouter("July 2026", ROOT_ROUTES.WEEK);
 
       const { user } = await openDropdown();
 
-      const weekOption = screen.getByRole("option", { name: /week/i });
-      weekOption.focus();
+      const todayOption = screen.getByRole("option", { name: /this week/i });
+      todayOption.focus();
 
       await user.keyboard("{ArrowDown}");
 
       await waitFor(() => {
-        const dayOption = screen.getByRole("option", { name: /day/i });
+        const dayOption = screen.getByRole("option", { name: /^day/i });
         expect(dayOption).toHaveAttribute("tabindex", "0");
-        expect(weekOption).toHaveAttribute("tabindex", "-1");
+        expect(todayOption).toHaveAttribute("tabindex", "-1");
       });
     });
 
     it("wraps navigation from first to last option", async () => {
-      await renderWithRouter(
-        <SelectView label="Monday, July 20" />,
-        ROOT_ROUTES.DAY,
-      );
+      await renderWithRouter("Monday, July 20", ROOT_ROUTES.DAY);
 
       const { user } = await openDropdown();
 
-      const dayOption = screen.getByRole("option", { name: /day/i });
+      const dayOption = screen.getByRole("option", { name: /^day/i });
       dayOption.focus();
 
       await user.keyboard("{ArrowUp}");
 
       await waitFor(() => {
-        const weekOption = screen.getByRole("option", { name: /week/i });
-        expect(weekOption).toHaveAttribute("tabindex", "0");
+        const todayOption = screen.getByRole("option", { name: /^today/i });
+        expect(todayOption).toHaveAttribute("tabindex", "0");
         expect(dayOption).toHaveAttribute("tabindex", "-1");
       });
     });
