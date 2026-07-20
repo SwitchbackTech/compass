@@ -5,6 +5,7 @@ import {
   EventOccurrenceListQuerySchema,
   EventOccurrenceListResponseSchema,
   OrganizerSchema,
+  SyncEventCalendarIdSchema,
   SyncEventOccurrenceSchema,
   SyncEventOwnershipSchema,
   SyncEventRecurrenceSchema,
@@ -119,8 +120,9 @@ describe("Sync event contracts", () => {
       expect(SyncEventSchema.safeParse(event).success).toBe(true);
     });
 
-    it("accepts a null confirmedAt before provider confirmation", () => {
-      expect(SyncEventSchema.safeParse(baseEvent()).success).toBe(true);
+    it("accepts a non-null confirmedAt once the provider has confirmed", () => {
+      const event = baseEvent({ confirmedAt: "2026-07-20T12:00:00.000Z" });
+      expect(SyncEventSchema.safeParse(event).success).toBe(true);
     });
 
     it("rejects a raw provider payload field", () => {
@@ -307,6 +309,22 @@ describe("Sync event contracts", () => {
       const occurrence = { ...baseOccurrence(), schedule: allDaySchedule };
       expect(SyncEventOccurrenceSchema.safeParse(occurrence).success).toBe(
         true,
+      );
+    });
+
+    // An occurrence must be groupable by calendar whether its source event is
+    // still unlinked (Compass's own calendar id) or provider-linked (the
+    // provider calendar id) — Sync is the store of record for both (R-LIFE-03).
+    it("accepts a Compass calendar id for an unlinked event's occurrence", () => {
+      expect(SyncEventCalendarIdSchema.safeParse(objectId()).success).toBe(
+        true,
+      );
+    });
+
+    it("rejects a calendarId that isn't a 24-character hex id", () => {
+      const occurrence = { ...baseOccurrence(), calendarId: "not-an-id" };
+      expect(SyncEventOccurrenceSchema.safeParse(occurrence).success).toBe(
+        false,
       );
     });
   });

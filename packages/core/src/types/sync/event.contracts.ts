@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import {
+  CalendarIdSchema,
   DateTimeSchema,
   EventIdSchema,
   RRuleSchema,
@@ -157,6 +158,16 @@ export const SyncEventSchema = z.strictObject({
 });
 export type SyncEvent = z.infer<typeof SyncEventSchema>;
 
+// Sync is the store of record for both provider-linked and still-unlinked
+// Compass cloud events (S26), so an occurrence's calendar grouping key must
+// accept either identity space: Compass's own calendar id for an unlinked
+// event, or the provider calendar id once one exists (R-LIFE-03).
+export const SyncEventCalendarIdSchema = z.union([
+  CalendarIdSchema,
+  ProviderCalendarIdSchema,
+]);
+export type SyncEventCalendarId = z.infer<typeof SyncEventCalendarIdSchema>;
+
 // One derived, display-ready instance within the rolling sync horizon (12
 // months past / 18 months future). Never expand a non-ending series to
 // completion; project only the bounded window a query needs (R-AVAIL-06).
@@ -171,7 +182,7 @@ export type OccurrenceKey = z.infer<typeof OccurrenceKeySchema>;
 export const SyncEventOccurrenceSchema = z.strictObject({
   occurrenceKey: OccurrenceKeySchema,
   eventId: EventIdSchema,
-  calendarId: ProviderCalendarIdSchema,
+  calendarId: SyncEventCalendarIdSchema,
   schedule: EventScheduleSchema,
   busy: z.boolean(),
   title: z.string(),
@@ -181,7 +192,7 @@ export type SyncEventOccurrence = z.infer<typeof SyncEventOccurrenceSchema>;
 
 export const EventOccurrenceListQuerySchema = z
   .strictObject({
-    calendarIds: z.array(ProviderCalendarIdSchema).min(1).readonly(),
+    calendarIds: z.array(SyncEventCalendarIdSchema).min(1).readonly(),
     start: DateTimeSchema,
     end: DateTimeSchema,
     cursor: z.string().trim().min(1).max(1024).optional(),
