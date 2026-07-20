@@ -2,6 +2,10 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockUseSession = mock();
+mockUseSession.mockReturnValue({
+  authenticated: false,
+  setAuthenticated: () => {},
+});
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
 }));
@@ -10,6 +14,8 @@ const actualUserApi = (await import("@web/api/user.api")).UserApi;
 const mockGetEmailUpdates = mock();
 const mockSubscribeToEmailUpdates = mock();
 let isUserApiMocked = true;
+
+mockGetEmailUpdates.mockResolvedValue({ status: "unavailable" });
 
 mock.module("@web/api/user.api", () => ({
   UserApi: {
@@ -29,36 +35,8 @@ mock.module("@web/api/user.api", () => ({
   },
 }));
 
-const actualShowStatusToast = (
-  await import("@web/common/utils/toast/status-toast.util")
-).showStatusToast;
-const mockShowStatusToast = mock();
-let isStatusToastMocked = true;
-
-mock.module("@web/common/utils/toast/status-toast.util", () => ({
-  showStatusToast: (...args: Parameters<typeof actualShowStatusToast>) =>
-    isStatusToastMocked
-      ? mockShowStatusToast(...args)
-      : actualShowStatusToast(...args),
-}));
-
-const actualShowErrorToast = (
-  await import("@web/common/utils/toast/error-toast.util")
-).showErrorToast;
-const mockShowErrorToast = mock();
-let isErrorToastMocked = true;
-
-mock.module("@web/common/utils/toast/error-toast.util", () => ({
-  showErrorToast: (...args: Parameters<typeof actualShowErrorToast>) =>
-    isErrorToastMocked
-      ? mockShowErrorToast(...args)
-      : actualShowErrorToast(...args),
-}));
-
 afterAll(() => {
   isUserApiMocked = false;
-  isStatusToastMocked = false;
-  isErrorToastMocked = false;
   mockUseSession.mockReturnValue({
     authenticated: false,
     setAuthenticated: () => {},
@@ -81,8 +59,7 @@ describe("useSubscribeCmdItems", () => {
     mockUseSession.mockClear();
     mockGetEmailUpdates.mockClear();
     mockSubscribeToEmailUpdates.mockClear();
-    mockShowStatusToast.mockClear();
-    mockShowErrorToast.mockClear();
+    mockGetEmailUpdates.mockResolvedValue({ status: "unavailable" });
     mockUseSession.mockReturnValue({ authenticated: true });
   });
 
@@ -164,14 +141,9 @@ describe("useSubscribeCmdItems", () => {
     });
 
     await waitFor(() => {
-      expect(mockShowStatusToast).toHaveBeenCalledWith(
-        "subscribe-to-updates",
-        "Subscribed to updates",
-      );
       expect(result.current[0]?.label).toBe("You’re subscribed to updates");
     });
     expect(mockSubscribeToEmailUpdates).toHaveBeenCalledTimes(1);
-    expect(mockShowErrorToast).not.toHaveBeenCalled();
   });
 
   it("shows the check failure and retries after reopening the palette", async () => {

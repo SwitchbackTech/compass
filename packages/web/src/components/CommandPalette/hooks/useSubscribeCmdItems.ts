@@ -39,7 +39,14 @@ export const useSubscribeCmdItems = (open: boolean): CommandItem[] => {
 
     hasChecked.current = true;
     setStatus("checking");
-    void UserApi.getEmailUpdates()
+    const getEmailUpdates = UserApi.getEmailUpdates;
+
+    if (!getEmailUpdates) {
+      setStatus("unavailable");
+      return;
+    }
+
+    void getEmailUpdates()
       .then((response) => setStatus(response.status))
       .catch(() => {
         hasChecked.current = false;

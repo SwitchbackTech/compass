@@ -15,7 +15,40 @@ type GoogleMetadataAssessment = {
   connectionState: GoogleConnectionState;
 };
 
+const legacyEmailUpdatesKey = "subscribeToUpdates";
+
+function removeLegacyEmailUpdatesMetadata<T extends Partial<UserMetadata>>(
+  metadata: T,
+): T {
+  const { [legacyEmailUpdatesKey]: _, ...cleanMetadata } =
+    metadata as UserMetadata & Record<string, unknown>;
+
+  return cleanMetadata as T;
+}
+
 class UserMetadataService {
+  private replaceUserMetadata = async (
+    userId: string,
+    metadata: UserMetadata,
+  ): Promise<UserMetadata> => {
+    const clearResult = await SupertokensUserMetadata.clearUserMetadata(userId);
+
+    if (clearResult.status !== "OK")
+      throw new Error("Failed to clear user metadata");
+
+    if (Object.keys(metadata).length === 0) return metadata;
+
+    const updateResult = (await SupertokensUserMetadata.updateUserMetadata(
+      userId,
+      metadata,
+    )) as GetUserMetadataResponse;
+
+    if (updateResult.status !== "OK")
+      throw new Error("Failed to update user metadata");
+
+    return updateResult.metadata;
+  };
+
   private getStoredUserMetadata = async (
     userId: string,
     userContext?: Record<string, JSONObject>,
@@ -81,9 +114,15 @@ class UserMetadataService {
     userId: string;
     data: Partial<UserMetadata>;
   }): Promise<UserMetadata> => {
-    const value = await this.getStoredUserMetadata(userId);
+    const storedMetadata = await this.getStoredUserMetadata(userId);
+    const value = removeLegacyEmailUpdatesMetadata(storedMetadata);
+    const cleanData = removeLegacyEmailUpdatesMetadata(data);
 
-    const update = mergeWith(value, data) as UserMetadata;
+    const update = mergeWith(value, cleanData) as UserMetadata;
+
+    if (legacyEmailUpdatesKey in storedMetadata) {
+      return this.replaceUserMetadata(userId, update);
+    }
 
     const result = (await SupertokensUserMetadata.updateUserMetadata(
       userId,
@@ -101,7 +140,15 @@ class UserMetadataService {
     userContext?: Record<string, JSONObject>,
     options?: { skipAssessment?: boolean },
   ): Promise<UserMetadata> => {
-    const metadata = await this.getStoredUserMetadata(userId, userContext);
+    const storedMetadata = await this.getStoredUserMetadata(
+      userId,
+      userContext,
+    );
+    const metadata = removeLegacyEmailUpdatesMetadata(storedMetadata);
+
+    if (legacyEmailUpdatesKey in storedMetadata) {
+      await this.replaceUserMetadata(userId, metadata);
+    }
 
     if (options?.skipAssessment) {
       const user = await findCompassUserBy("_id", userId);

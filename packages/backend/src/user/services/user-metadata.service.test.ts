@@ -1,3 +1,4 @@
+import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
 import { GoogleWatchDriver } from "@backend/__tests__/drivers/google-watch.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UserMetadataServiceDriver } from "@backend/__tests__/drivers/user-metadata.service.driver";
@@ -56,6 +57,20 @@ describe("UserMetadataService", () => {
 
       expect(persisted.sync?.importGCal).toBe("RESTART");
     });
+
+    it("does not persist email subscription metadata from an update", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      await driver.updateUserMetadata({
+        userId,
+        data: { subscribeToUpdates: true } as Partial<UserMetadata>,
+      });
+
+      const stored = await SupertokensUserMetadata.getUserMetadata(userId);
+
+      expect(stored.metadata).not.toHaveProperty("subscribeToUpdates");
+    });
   });
 
   describe("fetchUserMetadata", () => {
@@ -71,6 +86,24 @@ describe("UserMetadataService", () => {
       const metadata = await driver.fetchUserMetadata(userId);
 
       expect(metadata.sync?.importGCal).toBe("RESTART");
+    });
+
+    it("removes legacy email subscription metadata", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      await SupertokensUserMetadata.updateUserMetadata(userId, {
+        subscribeToUpdates: true,
+      });
+      const clearUserMetadataSpy = jest
+        .spyOn(SupertokensUserMetadata, "clearUserMetadata")
+        .mockResolvedValue({ status: "OK" });
+
+      const metadata = await driver.fetchUserMetadata(userId);
+
+      expect(metadata).not.toHaveProperty("subscribeToUpdates");
+      expect(clearUserMetadataSpy).toHaveBeenCalledWith(userId);
+      clearUserMetadataSpy.mockRestore();
     });
 
     it("returns NOT_CONNECTED when the user never connected Google", async () => {

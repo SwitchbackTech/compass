@@ -10,7 +10,7 @@ import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { PixelPirate } from "@web/components/WelcomeModal/PixelPirate";
 
-type PromptState = "asking" | "confirmed" | "declined";
+type PromptState = "asking" | "confirmed" | "declined" | "unavailable";
 
 export function ReleaseNotesPrompt() {
   const [state, setState] = useState<PromptState>("asking");
@@ -44,6 +44,10 @@ export function ReleaseNotesPrompt() {
     if (state !== "asking") return;
     try {
       const response = await UserApi.subscribeToEmailUpdates();
+      if (response.status === "unavailable") {
+        setState("unavailable");
+        return;
+      }
       if (response.status !== "subscribed") {
         throw new Error("Subscriber is not active");
       }
@@ -113,12 +117,18 @@ export function ReleaseNotesPrompt() {
         ) : (
           <div className="flex flex-col gap-2">
             <h2 className="font-bold text-2xl text-text leading-snug">
-              {state === "confirmed" ? "You're in!" : "No problem."}
+              {state === "confirmed"
+                ? "You're in!"
+                : state === "unavailable"
+                  ? "Email updates aren't available here."
+                  : "No problem."}
             </h2>
             <p className="text-text-muted">
               {state === "confirmed"
                 ? "You'll get the next release notes in your inbox"
-                : "No problem, you can signup using the cmd palette if you change your mind."}
+                : state === "unavailable"
+                  ? "Ask this Compass instance's administrator to enable email updates."
+                  : "No problem, you can signup using the cmd palette if you change your mind."}
             </p>
           </div>
         )}
