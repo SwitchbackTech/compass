@@ -165,7 +165,7 @@ describe("shortcuts.data", () => {
 
       expect(other?.title).toBe("Other");
       expect(other?.shortcuts).toContainEqual({
-        keys: ["["],
+        keys: ["]"],
         label: "Toggle sidebar",
       });
     });

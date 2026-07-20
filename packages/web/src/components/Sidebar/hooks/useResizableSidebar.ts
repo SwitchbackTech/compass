@@ -57,7 +57,7 @@ export function useResizableSidebar() {
     if (!e.isPrimary) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    // The sidebar is pinned to the left edge, so the room it can grow into is
+    // The sidebar is pinned to the right edge, so the room it can grow into is
     // the viewport minus the divider and the calendar's minimum width. Measured
     // once here since the viewport is stable for the duration of a drag.
     const dynamicMax =
@@ -75,7 +75,9 @@ export function useResizableSidebar() {
       const drag = dragRef.current;
       if (!drag) return;
 
-      const next = drag.startWidth + (e.clientX - drag.startX);
+      // The sidebar is pinned to the right edge, so dragging the divider
+      // toward the left (a decreasing clientX) grows it.
+      const next = drag.startWidth + (drag.startX - e.clientX);
       applyWidth(clampDragWidth(next, drag.dynamicMax));
     },
     [applyWidth],
@@ -93,8 +95,10 @@ export function useResizableSidebar() {
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
+      // The divider is left of the sidebar, so ArrowLeft (moving the
+      // splitter toward the calendar) grows it and ArrowRight shrinks it.
       const direction =
-        e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+        e.key === "ArrowLeft" ? 1 : e.key === "ArrowRight" ? -1 : 0;
       const next =
         direction !== 0
           ? widthRef.current + direction * KEYBOARD_STEP

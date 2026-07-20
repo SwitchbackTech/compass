@@ -95,13 +95,13 @@ describe("useGlobalShortcuts", () => {
     });
   });
 
-  it("toggles and persists the sidebar when pressing [", async () => {
+  it("toggles and persists the sidebar when pressing ]", async () => {
     const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
 
     expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
 
     act(() => {
-      pressKey("[");
+      pressKey("]");
     });
 
     await waitFor(() => {
@@ -110,13 +110,29 @@ describe("useGlobalShortcuts", () => {
     expect(localStorage.getItem(STORAGE_KEYS.SIDEBAR_OPEN)).toBe("false");
 
     act(() => {
-      pressKey("[");
+      pressKey("]");
     });
 
     await waitFor(() => {
       expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
     });
     expect(localStorage.getItem(STORAGE_KEYS.SIDEBAR_OPEN)).toBe("true");
+
+    act(() => {
+      unmount();
+    });
+  });
+
+  it("does not toggle the sidebar when pressing [", async () => {
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
+
+    expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
+
+    act(() => {
+      pressKey("[");
+    });
+
+    expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
 
     act(() => {
       unmount();

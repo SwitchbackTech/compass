@@ -232,7 +232,7 @@ export const ensureSidebarOpen = async (page: Page) => {
   if (!(await sidebar.isVisible())) {
     await blurActiveElement(page);
     await page.locator("#mainGrid").focus();
-    await pressShortcut(page, "[");
+    await pressShortcut(page, "]");
     await expect(sidebar).toBeVisible();
     await waitForMainGridWidthToSettle(page);
   }

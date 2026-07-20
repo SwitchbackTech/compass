@@ -6,6 +6,7 @@ import {
   useListNavigation,
   useRole,
 } from "@floating-ui/react";
+import { CaretDownIcon } from "@phosphor-icons/react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import classNames from "classnames";
 import { useRef, useState } from "react";
@@ -14,14 +15,11 @@ import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { VIEW_SHORTCUTS } from "@web/shortcuts/shortcuts.constants";
 
 interface SelectViewProps {
-  displayLabel?: string;
-  buttonClassName?: string;
+  /** The date heading text, e.g. "July 2026" or "Monday, July 20". */
+  label: string;
 }
 
-export const SelectView = ({
-  displayLabel,
-  buttonClassName,
-}: SelectViewProps) => {
+export const SelectView = ({ label }: SelectViewProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const location = useLocation();
@@ -49,7 +47,6 @@ export const SelectView = ({
   };
 
   const currentView = getCurrentView();
-  const buttonLabel = displayLabel ?? currentView;
 
   const { refs, context } = useFloating({
     open: isOpen,
@@ -106,36 +103,20 @@ export const SelectView = ({
 
   return (
     <div className="relative">
-      <button
-        ref={refs.setReference}
-        {...getReferenceProps()}
-        className={
-          buttonClassName ??
-          "flex items-center gap-2 rounded px-3 py-1.5 text-sm text-text/90 transition-colors hover:bg-text/10"
-        }
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
-        aria-controls={isOpen ? dropdownId : undefined}
-        aria-label={`Select view, currently ${currentView}`}
-      >
-        {/* min-width fits the widest label ("Week") so the nav arrows to the
-            left of this button don't shift when the view changes */}
-        <span className="min-w-10 text-left">{buttonLabel}</span>
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
+      <h1 className="text-text" aria-live="polite">
+        <button
+          ref={refs.setReference}
+          {...getReferenceProps()}
+          type="button"
+          className="c-focus-ring flex cursor-pointer items-center gap-1.5 rounded px-1 text-xl transition-colors hover:bg-text/10"
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          aria-controls={isOpen ? dropdownId : undefined}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
+          <span>{label}</span>
+          <CaretDownIcon size={14} aria-hidden="true" />
+        </button>
+      </h1>
 
       {isOpen && (
         <div
@@ -156,7 +137,7 @@ export const SelectView = ({
           })}
           id={dropdownId}
           data-testid="view-select-dropdown"
-          className="absolute inset-inline-end-0 top-full z-50 mt-1 min-w-[140px] rounded border border-border bg-surface py-1 shadow-lg"
+          className="absolute inset-inline-start-0 top-full z-50 mt-1 min-w-[140px] rounded border border-border bg-surface py-1 shadow-lg"
           role="listbox"
         >
           {options.map((option, index) => {

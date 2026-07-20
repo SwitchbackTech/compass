@@ -80,33 +80,31 @@ describe("SelectView", () => {
   }
 
   describe("Component Rendering", () => {
-    it("renders button with current view label for Week view", async () => {
-      await renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
+    it("renders the button with the date label", async () => {
+      await renderWithRouter(
+        <SelectView label="July 2026" />,
+        ROOT_ROUTES.WEEK,
+      );
 
       const button = screen.getByRole("button");
       expect(button).toBeInTheDocument();
-      expect(button).toHaveTextContent("Week");
+      expect(button.textContent).toBe("July 2026");
       expect(button).toHaveAttribute("aria-expanded", "false");
     });
 
-    it("renders button with current view label for Day view", async () => {
-      await renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
+    it("renders the label as the page heading", async () => {
+      await renderWithRouter(
+        <SelectView label="Monday, July 20" />,
+        ROOT_ROUTES.DAY,
+      );
 
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-      expect(button).toHaveTextContent("Day");
-    });
-
-    it("renders button with current view label for Day view with date param", async () => {
-      await renderWithRouter(<SelectView />, `${ROOT_ROUTES.DAY}/2024-01-15`);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-      expect(button).toHaveTextContent("Day");
+      expect(
+        screen.getByRole("heading", { name: "Monday, July 20" }),
+      ).toBeInTheDocument();
     });
 
     it("renders Day and Week options with shortcut hints when dropdown is open", async () => {
-      await renderWithRouter(<SelectView />);
+      await renderWithRouter(<SelectView label="July 2026" />);
 
       await openDropdown();
 
@@ -127,38 +125,74 @@ describe("SelectView", () => {
   });
 
   describe("Route Detection", () => {
-    it("detects Day view when on /day route", async () => {
-      await renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
+    it("marks Day selected when on /day route", async () => {
+      await renderWithRouter(
+        <SelectView label="Monday, July 20" />,
+        ROOT_ROUTES.DAY,
+      );
 
-      const button = screen.getByRole("button");
-      expect(button).toHaveTextContent("Day");
+      await openDropdown();
+
+      expect(screen.getByRole("option", { name: /day/i })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      expect(screen.getByRole("option", { name: /week/i })).toHaveAttribute(
+        "aria-selected",
+        "false",
+      );
     });
 
-    it("detects Day view when on /day/:date route", async () => {
-      await renderWithRouter(<SelectView />, `${ROOT_ROUTES.DAY}/2024-01-15`);
+    it("marks Day selected when on /day/:date route", async () => {
+      await renderWithRouter(
+        <SelectView label="Monday, January 15" />,
+        `${ROOT_ROUTES.DAY}/2024-01-15`,
+      );
 
-      const button = screen.getByRole("button");
-      expect(button).toHaveTextContent("Day");
+      await openDropdown();
+
+      expect(screen.getByRole("option", { name: /day/i })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
     });
 
-    it("detects Week view when on /week route", async () => {
-      await renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
+    it("marks Week selected when on /week route", async () => {
+      await renderWithRouter(
+        <SelectView label="July 2026" />,
+        ROOT_ROUTES.WEEK,
+      );
 
-      const button = screen.getByRole("button");
-      expect(button).toHaveTextContent("Week");
+      await openDropdown();
+
+      expect(screen.getByRole("option", { name: /week/i })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      expect(screen.getByRole("option", { name: /day/i })).toHaveAttribute(
+        "aria-selected",
+        "false",
+      );
     });
 
-    it("defaults to Week view for unknown routes", async () => {
-      await renderWithRouter(<SelectView />, "/unknown-route");
+    it("defaults to Week selected for unknown routes", async () => {
+      await renderWithRouter(
+        <SelectView label="July 2026" />,
+        "/unknown-route",
+      );
 
-      const button = screen.getByRole("button");
-      expect(button).toHaveTextContent("Week");
+      await openDropdown();
+
+      expect(screen.getByRole("option", { name: /week/i })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
     });
   });
 
   describe("Dropdown Behavior", () => {
     it("opens dropdown when button is clicked", async () => {
-      await renderWithRouter(<SelectView />);
+      await renderWithRouter(<SelectView label="July 2026" />);
 
       const button = screen.getByRole("button");
       expect(button).toHaveAttribute("aria-expanded", "false");
@@ -170,7 +204,7 @@ describe("SelectView", () => {
     });
 
     it("closes dropdown when clicking outside", async () => {
-      await renderWithRouter(<SelectView />);
+      await renderWithRouter(<SelectView label="July 2026" />);
 
       const { button, user } = await openDropdown();
 
@@ -185,7 +219,7 @@ describe("SelectView", () => {
     });
 
     it("closes dropdown when ESC key is pressed", async () => {
-      await renderWithRouter(<SelectView />);
+      await renderWithRouter(<SelectView label="July 2026" />);
 
       const { button, user } = await openDropdown();
 
@@ -200,7 +234,10 @@ describe("SelectView", () => {
     });
 
     it("highlights active view option in dropdown", async () => {
-      await renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
+      await renderWithRouter(
+        <SelectView label="Monday, July 20" />,
+        ROOT_ROUTES.DAY,
+      );
 
       await openDropdown();
 
@@ -212,7 +249,7 @@ describe("SelectView", () => {
     });
 
     it("uses div elements for options instead of buttons", async () => {
-      await renderWithRouter(<SelectView />);
+      await renderWithRouter(<SelectView label="July 2026" />);
 
       await openDropdown();
 
@@ -224,7 +261,7 @@ describe("SelectView", () => {
 
   describe("User Interactions", () => {
     it("navigates to Day route when Day option is clicked", async () => {
-      await renderWithRouter(<SelectView />);
+      await renderWithRouter(<SelectView label="July 2026" />);
 
       const { user } = await openDropdown();
 
@@ -238,7 +275,10 @@ describe("SelectView", () => {
     });
 
     it("navigates to Week route when Week option is clicked", async () => {
-      await renderWithRouter(<SelectView />);
+      await renderWithRouter(
+        <SelectView label="Monday, July 20" />,
+        ROOT_ROUTES.DAY,
+      );
 
       const { user } = await openDropdown();
 
@@ -252,7 +292,7 @@ describe("SelectView", () => {
     });
 
     it("closes dropdown after option selection", async () => {
-      await renderWithRouter(<SelectView />);
+      await renderWithRouter(<SelectView label="July 2026" />);
 
       const { button, user } = await openDropdown();
 
@@ -270,7 +310,7 @@ describe("SelectView", () => {
 
   describe("Shortcut Hints", () => {
     it("displays d shortcut hint for Day option", async () => {
-      await renderWithRouter(<SelectView />);
+      await renderWithRouter(<SelectView label="July 2026" />);
 
       await openDropdown();
 
@@ -282,7 +322,7 @@ describe("SelectView", () => {
     });
 
     it("displays w shortcut hint for Week option", async () => {
-      await renderWithRouter(<SelectView />);
+      await renderWithRouter(<SelectView label="July 2026" />);
 
       await openDropdown();
 
@@ -296,7 +336,10 @@ describe("SelectView", () => {
 
   describe("Keyboard Navigation", () => {
     it("navigates to next option with ArrowDown", async () => {
-      await renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
+      await renderWithRouter(
+        <SelectView label="Monday, July 20" />,
+        ROOT_ROUTES.DAY,
+      );
 
       const { user } = await openDropdown();
 
@@ -313,7 +356,10 @@ describe("SelectView", () => {
     });
 
     it("navigates to previous option with ArrowUp", async () => {
-      await renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
+      await renderWithRouter(
+        <SelectView label="Monday, July 20" />,
+        ROOT_ROUTES.DAY,
+      );
 
       const { user } = await openDropdown();
 
@@ -330,7 +376,10 @@ describe("SelectView", () => {
     });
 
     it("selects highlighted option with Enter key", async () => {
-      await renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
+      await renderWithRouter(
+        <SelectView label="Monday, July 20" />,
+        ROOT_ROUTES.DAY,
+      );
 
       const { user } = await openDropdown();
 
@@ -346,7 +395,10 @@ describe("SelectView", () => {
     });
 
     it("selects highlighted option with Space key", async () => {
-      await renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
+      await renderWithRouter(
+        <SelectView label="July 2026" />,
+        ROOT_ROUTES.WEEK,
+      );
 
       const { user } = await openDropdown();
 
@@ -362,7 +414,10 @@ describe("SelectView", () => {
     });
 
     it("initializes highlight to current view when dropdown opens", async () => {
-      await renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
+      await renderWithRouter(
+        <SelectView label="Monday, July 20" />,
+        ROOT_ROUTES.DAY,
+      );
 
       const { user } = await openDropdown();
 
@@ -381,7 +436,10 @@ describe("SelectView", () => {
     });
 
     it("wraps navigation from last to first option", async () => {
-      await renderWithRouter(<SelectView />, ROOT_ROUTES.WEEK);
+      await renderWithRouter(
+        <SelectView label="July 2026" />,
+        ROOT_ROUTES.WEEK,
+      );
 
       const { user } = await openDropdown();
 
@@ -398,7 +456,10 @@ describe("SelectView", () => {
     });
 
     it("wraps navigation from first to last option", async () => {
-      await renderWithRouter(<SelectView />, ROOT_ROUTES.DAY);
+      await renderWithRouter(
+        <SelectView label="Monday, July 20" />,
+        ROOT_ROUTES.DAY,
+      );
 
       const { user } = await openDropdown();
 

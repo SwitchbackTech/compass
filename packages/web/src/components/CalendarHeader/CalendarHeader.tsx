@@ -25,9 +25,9 @@ interface Props {
 }
 
 /**
- * Shared header for the Day and Week views: a left-aligned heading with the
- * prev/next arrows beside it, and a right-aligned control cluster (today, view
- * switcher).
+ * Shared header for the Day and Week views: a left-aligned cluster for
+ * orientation and navigation (view switcher, prev/next, today), and a
+ * right-aligned sidebar toggle.
  * Owns the heading markup, sidebar-toggle state, and the control layout so both
  * views stay consistent without re-wiring these concerns per caller.
  */
@@ -44,35 +44,29 @@ export const CalendarHeader: FC<Props> = ({
 
   return (
     <div className="flex h-12 w-full shrink-0 items-center gap-3 text-text-muted">
-      {!isSidebarOpen ? (
+      <SelectView label={label} />
+      <TooltipWrapper shortcut="J">
+        <ArrowButton direction="left" label={prevLabel} onClick={onPrev} />
+      </TooltipWrapper>
+      <TooltipWrapper shortcut="K">
+        <ArrowButton direction="right" label={nextLabel} onClick={onNext} />
+      </TooltipWrapper>
+      <TodayButton navigateToToday={onToday} isToday={isToday} />
+
+      <div className="z-2 ml-auto flex items-center pr-5">
         <TooltipWrapper
-          description="Open sidebar"
+          description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
           onClick={() => viewActions.toggleSidebar()}
-          shortcut="["
+          shortcut="]"
         >
           <button
             type="button"
-            aria-label="Open sidebar"
+            aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
             className="c-focus-ring flex h-6 w-6 cursor-pointer items-center justify-center"
           >
             <SidebarIcon color={colors.textMuted} size={21} />
           </button>
         </TooltipWrapper>
-      ) : null}
-
-      <h1 className="text-text" aria-live="polite">
-        <span className="relative text-xl">{label}</span>
-      </h1>
-
-      <div className="z-2 ml-auto flex items-center gap-3 pr-5">
-        <TodayButton navigateToToday={onToday} isToday={isToday} />
-        <TooltipWrapper shortcut="J">
-          <ArrowButton direction="left" label={prevLabel} onClick={onPrev} />
-        </TooltipWrapper>
-        <TooltipWrapper shortcut="K">
-          <ArrowButton direction="right" label={nextLabel} onClick={onNext} />
-        </TooltipWrapper>
-        <SelectView />
       </div>
     </div>
   );
