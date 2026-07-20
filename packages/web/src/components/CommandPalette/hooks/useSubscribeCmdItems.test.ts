@@ -126,6 +126,23 @@ describe("useSubscribeCmdItems", () => {
     });
   });
 
+  it("does not offer an opt-in to a previously unsubscribed user", async () => {
+    mockGetEmailUpdates.mockResolvedValue({ status: "unsubscribed" });
+    const { useSubscribeCmdItems } = await importHook();
+
+    const { result } = renderHook(() => useSubscribeCmdItems(true));
+
+    await waitFor(() => {
+      expect(result.current).toEqual([
+        expect.objectContaining({
+          disabled: true,
+          label: "You’re unsubscribed from updates",
+        }),
+      ]);
+    });
+    expect(mockSubscribeToEmailUpdates).not.toHaveBeenCalled();
+  });
+
   it("subscribes a user who is not on the email list", async () => {
     mockGetEmailUpdates.mockResolvedValue({ status: "not_subscribed" });
     mockSubscribeToEmailUpdates.mockResolvedValue({ status: "subscribed" });

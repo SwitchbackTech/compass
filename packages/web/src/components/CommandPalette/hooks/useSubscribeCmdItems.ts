@@ -24,6 +24,7 @@ export const useSubscribeCmdItems = (open: boolean): CommandItem[] => {
     | "unavailable"
     | "not_subscribed"
     | "subscribed"
+    | "unsubscribed"
     | "error"
   >("idle");
   const hasChecked = useRef(false);
@@ -74,6 +75,17 @@ export const useSubscribeCmdItems = (open: boolean): CommandItem[] => {
       {
         id: "subscribe-to-updates",
         label: "You’re subscribed to updates",
+        icon: BellIcon,
+        disabled: true,
+      },
+    ];
+  }
+
+  if (status === "unsubscribed") {
+    return [
+      {
+        id: "subscribe-to-updates",
+        label: "You’re unsubscribed from updates",
         icon: BellIcon,
         disabled: true,
       },

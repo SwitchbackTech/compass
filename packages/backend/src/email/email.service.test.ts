@@ -26,8 +26,23 @@ describe("EmailService", () => {
     expect(status).toBe("subscribed");
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      `https://api.kit.com/v4/subscribers?email_address=${encodeURIComponent(email)}&per_page=1&status=active`,
+      `https://api.kit.com/v4/subscribers?email_address=${encodeURIComponent(email)}&per_page=1&status=all`,
       expect.objectContaining({ method: "GET" }),
+    );
+  });
+
+  it("does not offer a new subscription to a cancelled Kit subscriber", async () => {
+    const email = faker.internet.email().toLowerCase();
+    globalThis.fetch = mock().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          subscribers: [{ id: 1, email_address: email, state: "cancelled" }],
+        }),
+      ),
+    );
+
+    await expect(EmailService.getEmailUpdatesStatus(email)).resolves.toBe(
+      "unsubscribed",
     );
   });
 

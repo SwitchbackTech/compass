@@ -12,6 +12,7 @@ export const EmailUpdatesStatusSchema = z.enum([
   "unavailable",
   "not_subscribed",
   "subscribed",
+  "unsubscribed",
 ]);
 export type EmailUpdatesStatus = z.infer<typeof EmailUpdatesStatusSchema>;
 

@@ -82,18 +82,20 @@ class EmailService {
       const query = new URLSearchParams({
         email_address: email,
         per_page: "1",
-        status: "active",
+        status: "all",
       });
       const response = await EmailService.get<Response_ListSubscribers>(
         `${EmailService.baseUrl}/subscribers?${query.toString()}`,
       );
 
-      const subscribed = response.subscribers.some(
+      const subscriber = response.subscribers.find(
         (subscriber) =>
           subscriber.email_address.toLowerCase() === email.toLowerCase(),
       );
 
-      return subscribed ? "subscribed" : "not_subscribed";
+      if (!subscriber) return "not_subscribed";
+
+      return subscriber.state === "active" ? "subscribed" : "unsubscribed";
     } catch (err) {
       EmailService.throwKitError(err, "Failed to retrieve email updates");
     }
@@ -109,7 +111,7 @@ class EmailService {
       const response = await EmailService.upsertSubscriber(subscriber);
       return response.subscriber.state === "active"
         ? "subscribed"
-        : "not_subscribed";
+        : "unsubscribed";
     } catch (err) {
       EmailService.throwKitError(err, "Failed to subscribe to email updates");
     }

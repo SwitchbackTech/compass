@@ -10,7 +10,12 @@ import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { PixelPirate } from "@web/components/WelcomeModal/PixelPirate";
 
-type PromptState = "asking" | "confirmed" | "declined" | "unavailable";
+type PromptState =
+  | "asking"
+  | "confirmed"
+  | "declined"
+  | "unavailable"
+  | "unsubscribed";
 
 export function ReleaseNotesPrompt() {
   const [state, setState] = useState<PromptState>("asking");
@@ -35,6 +40,10 @@ export function ReleaseNotesPrompt() {
   };
 
   const decline = () => {
+    if (state === "unavailable" || state === "unsubscribed") {
+      dismiss();
+      return;
+    }
     if (state !== "asking") return;
     setState("declined");
     window.setTimeout(dismiss, 1300);
@@ -46,6 +55,10 @@ export function ReleaseNotesPrompt() {
       const response = await UserApi.subscribeToEmailUpdates();
       if (response.status === "unavailable") {
         setState("unavailable");
+        return;
+      }
+      if (response.status === "unsubscribed") {
+        setState("unsubscribed");
         return;
       }
       if (response.status !== "subscribed") {
@@ -121,15 +134,30 @@ export function ReleaseNotesPrompt() {
                 ? "You're in!"
                 : state === "unavailable"
                   ? "Email updates aren't available here."
-                  : "No problem."}
+                  : state === "unsubscribed"
+                    ? "You're unsubscribed from updates."
+                    : "No problem."}
             </h2>
             <p className="text-text-muted">
               {state === "confirmed"
                 ? "You'll get the next release notes in your inbox"
                 : state === "unavailable"
                   ? "Ask this Compass instance's administrator to enable email updates."
-                  : "No problem, you can signup using the cmd palette if you change your mind."}
+                  : state === "unsubscribed"
+                    ? "Kit requires a separate re-subscription before it can send updates again."
+                    : "No problem, you can signup using the cmd palette if you change your mind."}
             </p>
+            {(state === "unavailable" || state === "unsubscribed") && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={dismiss}
+                  className="c-button c-button-primary rounded-full px-5"
+                >
+                  Got it
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
