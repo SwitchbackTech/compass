@@ -22,7 +22,7 @@ const timedSchedule = {
 };
 
 // 2026-03-08 is the US spring-forward transition; 09:00-10:00 local crosses
-// it in wall-clock time while the UTC offset itself changes (R-EVENT-04).
+// it in wall-clock time while the UTC offset itself changes.
 const dstCrossingSchedule = {
   kind: "timed",
   start: "2026-03-08T01:30:00-07:00",
@@ -314,7 +314,7 @@ describe("Sync event contracts", () => {
 
     // An occurrence must be groupable by calendar whether its source event is
     // still unlinked (Compass's own calendar id) or provider-linked (the
-    // provider calendar id) — Sync is the store of record for both (R-LIFE-03).
+    // provider calendar id) — Sync is the store of record for both.
     it("accepts a Compass calendar id for an unlinked event's occurrence", () => {
       expect(SyncEventCalendarIdSchema.safeParse(objectId()).success).toBe(
         true,

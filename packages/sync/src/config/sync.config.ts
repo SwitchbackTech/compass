@@ -5,12 +5,11 @@ import {
 } from "@core/config/compass.config";
 import { NodeEnv } from "@core/constants/core.constants";
 
-// Validated configuration for the Compass Sync service (ledger S08).
+// Validated configuration for the Compass Sync service.
 // Execution defaults to `passive`: the service starts, serves health, and
 // verifies storage read-only, but must not claim jobs, complete OAuth, accept
 // callbacks, or write to providers. Passive is enforced in code by later
-// commits; here it is the safe default when the field is omitted
-// (07-commit-ledger.md rollout controls).
+// commits; here it is the safe default when the field is omitted.
 
 const SYNC_PORT_DEFAULT = 3010;
 const SYNC_MAX_CONCURRENCY_DEFAULT = 4;

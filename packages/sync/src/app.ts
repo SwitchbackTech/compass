@@ -23,7 +23,7 @@ export interface SyncService {
 // Wires the service's lifecycle pieces from a validated config without binding
 // a port or reading a file — so tests can drive it directly. Later commits
 // register storage/scheduler readiness checks and drain tasks against the
-// returned registries (S11+).
+// returned registries.
 export function createSyncService(config: SyncConfig): SyncService {
   const identity = buildServiceIdentity({
     environment: config.NODE_ENV,
@@ -68,7 +68,7 @@ async function start(): Promise<void> {
 
   // Connect storage before listening. Register the disconnect drain first so,
   // under the coordinator's reverse-order teardown, storage closes LAST — after
-  // any workers that depend on it (S33). Registering the readiness check means
+  // any workers that depend on it. Registering the readiness check means
   // /health/ready stays 503 until the connection and indexes are verified.
   const mongo = new SyncMongoService();
   service.shutdown.register("mongo", () => mongo.disconnect());

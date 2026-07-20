@@ -3,10 +3,10 @@ import { Status } from "@core/errors/status.codes";
 import { type ReadinessRegistry } from "@sync/lifecycle/readiness";
 import { type StructuredServiceIdentity } from "@sync/service-identity";
 
-// Liveness and readiness endpoints for the Compass Sync service (ledger S09).
+// Liveness and readiness endpoints for the Compass Sync service.
 // These are content-free operational probes: they expose service identity and
-// dependency readiness, never user, tenant, or provider data
-// (04-security-and-observability.md — public health routes stay content-free).
+// dependency readiness, never user, tenant, or provider data. Public health
+// routes stay content-free.
 
 export const LIVENESS_PATH = "/health/live";
 export const READINESS_PATH = "/health/ready";

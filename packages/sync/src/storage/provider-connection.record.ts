@@ -28,11 +28,11 @@ function refineActionRequiredReason(
   }
 }
 
-// Persistence record for `provider_connections` (ledger S12). This is the
+// Persistence record for `provider_connections`. This is the
 // stored shape: string ids (Mongo accepts a string _id, and the ids are the
 // same opaque 24-hex values as the wire contracts) and Date timestamps for
-// indexable range queries. The API layer (S24) maps this to the ISO-string
-// ProviderConnection wire contract. Credential material is added in S19; product
+// indexable range queries. The API layer maps this to the ISO-string
+// ProviderConnection wire contract. Credential material is added later; product
 // preferences (visibility, blocking, booking target) are NOT stored here.
 export const ProviderConnectionRecordSchema = z
   .strictObject({

@@ -86,8 +86,8 @@ describe("Sync HTTP server health endpoints", () => {
     await listen(service);
 
     const events: string[] = [];
-    // A dependency drain (as S11+ will register) records when it runs; the
-    // HTTP listener must already be closed by then.
+    // A dependency drain (as later commits will register) records when it
+    // runs; the HTTP listener must already be closed by then.
     service.shutdown.register("dependency", () => {
       events.push(
         service.httpServer.listening ? "http-still-open" : "http-closed",

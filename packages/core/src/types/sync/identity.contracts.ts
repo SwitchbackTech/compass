@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { OBJECT_ID_STRING_PATTERN } from "@core/types/type.utils";
 
-// Identity primitives for Compass Sync (internal design packet, ledger S01).
+// Identity primitives for Compass Sync.
 // Compass-issued ids are ObjectId-shaped; provider-issued ids are opaque
 // strings scoped beneath the connection that issued them and must never be
 // treated as globally unique or user-facing.

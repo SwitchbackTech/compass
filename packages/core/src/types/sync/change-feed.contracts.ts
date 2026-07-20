@@ -6,14 +6,13 @@ import {
   SyncCommandIdSchema,
 } from "@core/types/sync/identity.contracts";
 
-// Resumable internal change-feed contracts for Compass Sync (ledger S05).
+// Resumable internal change-feed contracts for Compass Sync.
 // Compass API consumes this feed and translates it into typed browser SSE;
-// it never appears in the browser directly (02-sync-lifecycle "Client
-// invalidation and recovery"). Invalidations carry only IDs and reasons,
-// never event content — a client always refetches canonical state.
+// it never appears in the browser directly. Invalidations carry only IDs and
+// reasons, never event content — a client always refetches canonical state.
 
-// Import progress must never imply completion from partial data
-// (R-CLIENT-05): `complete` can only be true once every discovered calendar
+// Import progress must never imply completion from partial data:
+// `complete` can only be true once every discovered calendar
 // has finished, though the converse isn't required — a cursor-finalization
 // pass may still be pending even after every calendar's window fills.
 export const ImportProgressSchema = z
@@ -93,7 +92,7 @@ export type InvalidationEnvelope = z.infer<typeof InvalidationEnvelopeSchema>;
 
 // null means "resume from now" (no prior cursor, e.g. a fresh SSE
 // connection). Tenant/principal scope always comes from the authenticated
-// caller context, never from this request body (R-SEC-03).
+// caller context, never from this request body.
 export const ChangeFeedResumeQuerySchema = z.strictObject({
   cursor: ChangeFeedCursorSchema.nullable(),
 });
@@ -106,8 +105,7 @@ const ChangeFeedOkSchema = z.strictObject({
 });
 
 // Sent when a resume cursor is no longer valid; the caller must invalidate
-// all affected cached queries rather than trust a partial replay
-// (02-sync-lifecycle "Client invalidation and recovery").
+// all affected cached queries rather than trust a partial replay.
 const ChangeFeedResyncRequiredSchema = z.strictObject({
   kind: z.literal("resyncRequired"),
 });

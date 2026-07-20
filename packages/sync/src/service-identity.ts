@@ -1,9 +1,9 @@
 import { type NodeEnv } from "@core/constants/core.constants";
 
-// Stable identity for the Compass Sync service (ledger S07/S09). Kept as a plain
-// constant so health telemetry (S44) and internal-auth (S10) can reference one
+// Stable identity for the Compass Sync service. Kept as a plain
+// constant so health telemetry and internal-auth can reference one
 // canonical service name rather than string literals. PostHog's `service.name`
-// dimension uses this value (04-security-and-observability.md).
+// dimension uses this value.
 export const SYNC_SERVICE_NAME = "compass-sync";
 
 export interface SyncServiceIdentity {

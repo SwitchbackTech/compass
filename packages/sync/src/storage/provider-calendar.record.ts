@@ -11,11 +11,11 @@ import {
   TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
 
-// Persistence record for `provider_calendars` (ledger S12). Provider FACTS
+// Persistence record for `provider_calendars`. Provider FACTS
 // only — `active`/`primary`/`accessRole`/`capabilities` reflect what the
 // provider reports. Product preferences (visible, blocksAvailability,
-// bookingTarget) are owned by the Compass booking module, never stored here
-// (R-CAL-02; ledger S12 "do not store product visibility or booking prefs").
+// bookingTarget) are owned by the Compass booking module, never stored here —
+// do not store product visibility or booking prefs.
 export const ProviderCalendarRecordSchema = z.strictObject({
   _id: ProviderCalendarIdSchema,
   tenantId: TenantIdSchema,

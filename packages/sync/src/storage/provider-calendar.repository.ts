@@ -13,11 +13,11 @@ import {
   ProviderCalendarUpsertSchema,
 } from "@sync/storage/provider-calendar.record";
 
-// Repository for `provider_calendars` (ledger S12). Upserts are keyed on
+// Repository for `provider_calendars`. Upserts are keyed on
 // (connection, provider-calendar id) so re-discovering a calendar updates one
 // document; a renamed calendar keeps its Sync _id because identity is the
-// provider's calendar id, not its display name (R-CAL-07). Queries are scoped
-// to the owning tenant/principal (R-SEC-03).
+// provider's calendar id, not its display name. Queries are scoped
+// to the owning tenant/principal.
 export class ProviderCalendarRepository {
   private readonly collection: Collection<ProviderCalendarRecord>;
 

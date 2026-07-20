@@ -38,7 +38,7 @@ describe("Sync change-feed contracts", () => {
       expect(ImportProgressSchema.safeParse(progress).success).toBe(true);
     });
 
-    it("rejects complete=true before every calendar finishes (R-CLIENT-05)", () => {
+    it("rejects complete=true before every calendar finishes", () => {
       const progress = {
         calendarsTotal: 5,
         calendarsCompleted: 4,
