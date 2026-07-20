@@ -43,6 +43,21 @@ describe("SyncMongoService", () => {
     expect(() => service.db).toThrow(/not connected/);
   });
 
+  it("refuses to start in staging when the forbidden database is readable", async () => {
+    // The in-memory server has no auth, so the forbidden database IS reachable.
+    // With enforcement on (staging), the least-privilege guard must detect the
+    // excessive access and abort startup rather than run over-privileged.
+    service = new SyncMongoService();
+    await expect(
+      service.connect({
+        uri,
+        databaseName: uniqueDbName(),
+        forbiddenDatabaseName: "prod_calendar",
+        nodeEnv: NodeEnv.Staging,
+      }),
+    ).rejects.toThrow(/excessive privileges/);
+  });
+
   it("fails to connect against an unreachable server", async () => {
     service = new SyncMongoService();
     await expect(

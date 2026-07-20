@@ -49,8 +49,14 @@ export class SyncMongoService {
       ? client.db(options.databaseName)
       : client.db();
 
-    await this.verifyLeastPrivilege(options);
-    await installIndexManifest(this.#db);
+    try {
+      await this.verifyLeastPrivilege(options);
+      await installIndexManifest(this.#db);
+    } catch (error) {
+      // A failed startup must not leave an open client behind.
+      await this.disconnect();
+      throw error;
+    }
   }
 
   // In staging/production the Sync user is scoped to `compass_sync`, so a read
@@ -68,8 +74,15 @@ export class SyncMongoService {
       return;
     }
 
+    // Use a resource-scoped operation, not `ping`: `ping` is handshake-exempt
+    // and MongoDB never authorization-checks it, so it resolves for any user
+    // and would make this guard fire even for a correctly-scoped user.
+    // `listCollections` requires the `listCollections` privilege on the target
+    // database, so a scoped Sync user is denied with code 13.
     await assertForbiddenDatabaseUnreachable(() =>
-      this.#client!.db(options.forbiddenDatabaseName).command({ ping: 1 }),
+      this.#client!.db(options.forbiddenDatabaseName)
+        .listCollections({}, { nameOnly: true })
+        .toArray(),
     );
   }
 

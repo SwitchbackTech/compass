@@ -44,8 +44,16 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
     {
       name: "provider_event_identity",
       key: { connectionId: 1, calendarId: 1, providerEventId: 1 },
-      // Sparse: unlinked Compass events have no provider identity.
-      options: { unique: true, sparse: true },
+      // partialFilterExpression, not sparse: uniqueness must apply only to
+      // genuinely provider-linked events. A sparse index would index an
+      // unlinked event stored with providerEventId=null and then collide all
+      // such events on (null,null,null) — allowing only one unlinked event.
+      // Filtering on a real string providerEventId is robust whether the
+      // repository stores unlinked provider fields as null or absent.
+      options: {
+        unique: true,
+        partialFilterExpression: { providerEventId: { $type: "string" } },
+      },
     },
     { name: "principal_calendar", key: { principalId: 1, calendarId: 1 } },
     {
@@ -105,7 +113,12 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
     {
       name: "provider_event_identity",
       key: { connectionId: 1, calendarId: 1, providerEventId: 1 },
-      options: { unique: true },
+      // Markers are always provider-linked, but filter on a real providerEventId
+      // for the same robustness as the events index (never collide on nulls).
+      options: {
+        unique: true,
+        partialFilterExpression: { providerEventId: { $type: "string" } },
+      },
     },
     // TTL: content-free markers expire 30 days after deletion (R-EVENT-10).
     {

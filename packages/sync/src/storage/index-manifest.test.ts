@@ -83,4 +83,35 @@ describe("installIndexManifest", () => {
       Object.values(SYNC_COLLECTIONS).sort(),
     );
   });
+
+  it("allows many unlinked events while still rejecting duplicate provider identities", async () => {
+    await installIndexManifest(db);
+    const events = db.collection(SYNC_COLLECTIONS.events);
+
+    // Multiple unlinked events store provider fields as null; the partial
+    // unique index must not collide them (regression for the sparse hazard).
+    await events.insertOne({
+      principalId: "p",
+      connectionId: null,
+      calendarId: null,
+      providerEventId: null,
+    });
+    await events.insertOne({
+      principalId: "p",
+      connectionId: null,
+      calendarId: null,
+      providerEventId: null,
+    });
+    expect(await events.countDocuments()).toBe(2);
+
+    // Two genuinely linked events with the same provider identity DO collide.
+    const linked = {
+      principalId: "p",
+      connectionId: "c",
+      calendarId: "cal",
+      providerEventId: "evt-1",
+    };
+    await events.insertOne(linked);
+    await expect(events.insertOne({ ...linked })).rejects.toThrow();
+  });
 });
