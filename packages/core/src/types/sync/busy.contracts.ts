@@ -11,6 +11,9 @@ import { ConnectionIdSchema } from "@core/types/sync/identity.contracts";
 // which calendars block) here — that stays in the Compass booking module
 // (03-availability-and-booking.md).
 
+const isEndAfterStart = ({ start, end }: { start: string; end: string }) =>
+  Date.parse(end) > Date.parse(start);
+
 // Half-open [start, end) interval only: no calendar id, title, or other
 // event content ever appears on a busy interval (R-SEC-04 privacy).
 export const BusyIntervalSchema = z
@@ -18,7 +21,7 @@ export const BusyIntervalSchema = z
     start: DateTimeSchema,
     end: DateTimeSchema,
   })
-  .refine(({ start, end }) => Date.parse(end) > Date.parse(start), {
+  .refine(isEndAfterStart, {
     message: "Busy interval end must be after start",
     path: ["end"],
   });
@@ -46,7 +49,7 @@ export const BusyQuerySchema = z
     maxDataAgeSeconds: z.number().int().positive().optional(),
     purpose: BusyQueryPurposeSchema,
   })
-  .refine(({ start, end }) => Date.parse(end) > Date.parse(start), {
+  .refine(isEndAfterStart, {
     message: "Range end must be after start",
     path: ["end"],
   })
