@@ -89,7 +89,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [core, web, backend, scripts]
+        project: [core, sync, web, backend, scripts]
 
     steps:
       - name: Check out Git repository

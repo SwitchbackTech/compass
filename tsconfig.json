@@ -4,6 +4,7 @@
   "include": [
     "packages/core/src/**/*.ts",
     "packages/backend/src/**/*.ts",
+    "packages/sync/src/**/*.ts",
     "packages/scripts/src/**/*.ts",
     "packages/scripts/src/**/*.d.ts",
     "packages/scripts/src/commands/dev.js"
@@ -64,6 +65,7 @@
       "@core/*": ["./packages/core/src/*"],
       "@web/*": ["./packages/web/src/*"],
       "@backend/*": ["./packages/backend/src/*"],
+      "@sync/*": ["./packages/sync/src/*"],
       "@scripts/*": ["./packages/scripts/src/*"]
     },
     // "rootDirs": [],                              /* List of root folders whose combined content represents the structure of the project at runtime. */
