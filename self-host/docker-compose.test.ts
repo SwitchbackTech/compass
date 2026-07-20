@@ -217,7 +217,7 @@ describe("staging deploy workflow", () => {
     expect(dockerfile).toContain("'posthog:'");
   });
 
-  it("writes the sync config and enables its profile only when provisioned", () => {
+  it("configures sync and enables its profile only when both secrets are set", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
     expect(workflow).toContain(
@@ -228,12 +228,21 @@ describe("staging deploy workflow", () => {
         "{{ secrets.SYNC_INTERNAL_AUTH_TOKEN }}",
       ),
     );
-    expect(workflow).toContain('if [ -n "$SYNC_MONGO_URI" ]; then');
-    expect(workflow).toContain("Sync deploy requires SYNC_INTERNAL_AUTH_TOKEN");
+    // Both secrets gate a single SYNC_ENABLED flag; a half-provisioned config
+    // must never abort the deploy, so there is no `exit` in the sync path.
+    expect(workflow).toContain(
+      'if [ -n "$SYNC_MONGO_URI" ] && [ -n "$SYNC_INTERNAL_AUTH_TOKEN" ]; then',
+    );
+    expect(workflow).toContain('SYNC_ENABLED="1"');
+    expect(workflow).not.toContain(
+      "Sync deploy requires SYNC_INTERNAL_AUTH_TOKEN",
+    );
+    // Both the config section and the profile gate on the same flag, so the
+    // container never starts against a compass.yaml with no sync section.
+    expect(workflow).toContain('if [ -n "$SYNC_ENABLED" ]; then');
     expect(workflow).toContain("'sync:'");
     expect(workflow).toContain('mongoUri: \\"$'.concat('{SYNC_MONGO_URI}\\"'));
     expect(workflow).toContain("enforceLeastPrivilege: true");
-    // The sync profile is appended so the container starts where provisioned.
     expect(workflow).toContain(
       'DEPLOY_PROFILES="$'.concat(
         "{DEPLOY_PROFILES:+$",
