@@ -139,7 +139,6 @@ export const WeekView = () => {
     <div id="cal" className="flex h-screen w-screen overflow-hidden">
       <CommandPalette
         currentView="week"
-        today={today}
         onGoToToday={goToTodayViaCmd}
         onShowShortcuts={toggleShortcuts}
         placeholder={getCommandPalettePlaceholder("week")}

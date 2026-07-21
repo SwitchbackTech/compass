@@ -10,7 +10,6 @@ import {
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useRef, useState } from "react";
-import { type Dayjs } from "@core/util/date/dayjs";
 import { type SyncStatusVariant } from "@web/calendars/sync-status.types";
 import { eventCommandPaletteItems } from "@web/common/constants/event.cmd.constants";
 import { getMoreCommandPaletteSections } from "@web/common/constants/more.cmd.constants";
@@ -46,7 +45,6 @@ const SYNC_STATUS_VARIANT_CLASSNAME: Record<SyncStatusVariant, string> = {
 
 interface CommandPaletteProps {
   currentView: ViewName;
-  today: Dayjs;
   onGoToToday: () => void;
   onShowShortcuts: () => void;
   placeholder: string;
@@ -76,7 +74,6 @@ export function filterSections(
 
 export const CommandPalette = ({
   currentView,
-  today,
   onGoToToday,
   onShowShortcuts,
   placeholder,
@@ -118,12 +115,10 @@ export const CommandPalette = ({
       id: "navigation",
       heading: "Navigation",
       items: getNavigationCommandItems({
-        currentView,
         onGoToToday,
         onNavigateToView: (viewName) =>
           navigate({ to: VIEW_SHORTCUTS[viewName].route }),
         onShowShortcuts,
-        today,
       }),
     },
     {

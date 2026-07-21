@@ -5,7 +5,6 @@ import {
   type Icon,
   KeyboardIcon,
 } from "@phosphor-icons/react";
-import { type Dayjs } from "@core/util/date/dayjs";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 import {
   VIEW_SHORTCUTS,
@@ -13,11 +12,9 @@ import {
 } from "@web/shortcuts/shortcuts.constants";
 
 interface GetNavigationCommandItemsArgs {
-  currentView: ViewName;
   onGoToToday: () => void;
   onNavigateToView: (viewName: ViewName) => void;
   onShowShortcuts: () => void;
-  today: Dayjs;
 }
 
 const viewIcons: Record<ViewName, Icon> = {
@@ -28,28 +25,24 @@ const viewIcons: Record<ViewName, Icon> = {
 const navigationViewOrder: ViewName[] = ["day", "week"];
 
 export const getNavigationCommandItems = ({
-  currentView,
   onGoToToday,
   onNavigateToView,
   onShowShortcuts,
-  today,
 }: GetNavigationCommandItemsArgs): CommandItem[] => [
-  ...navigationViewOrder
-    .filter((viewName) => viewName !== currentView)
-    .map((viewName) => ({
-      id: `go-to-${viewName}`,
-      label: `Go to ${VIEW_SHORTCUTS[viewName].label}`,
-      icon: viewIcons[viewName],
-      shortcut: VIEW_SHORTCUTS[viewName].key,
-      onClick: () => onNavigateToView(viewName),
-    })),
   {
     id: "today",
-    label: `Go to Today (${today.format("dddd, MMMM D")})`,
+    label: "Go to Today",
     icon: ArrowUDownLeftIcon,
     shortcut: "t",
     onClick: onGoToToday,
   },
+  ...navigationViewOrder.map((viewName) => ({
+    id: `go-to-${viewName}`,
+    label: `Go to ${VIEW_SHORTCUTS[viewName].label}`,
+    icon: viewIcons[viewName],
+    shortcut: VIEW_SHORTCUTS[viewName].key,
+    onClick: () => onNavigateToView(viewName),
+  })),
   {
     id: "show-shortcuts",
     label: "Show Shortcuts",
