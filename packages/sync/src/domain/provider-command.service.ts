@@ -477,8 +477,12 @@ async function confirmDeletion(
   return confirmed ?? command;
 }
 
-// Restore a deletionPending event to active (best-effort) and fail the command.
-// A failed delete must not leave the event stuck reading as "deleting".
+// Restore a deletionPending event to active, then fail the command. A failed
+// delete must not leave the event stuck reading as "deleting". The revert write
+// is NOT wrapped in a catch: replaceExisting signals the benign "already gone"
+// case with a resolved false (not a throw), so a throw here is a real error —
+// letting it propagate keeps the command pending (not falsely failed) and
+// retryable, rather than marking it terminally failed with a stuck event.
 async function revertAndFail(
   deps: ProviderMutationDeps,
   command: CommandRecord,
@@ -486,8 +490,10 @@ async function revertAndFail(
   reason: SyncCommandFailureReason,
   now: () => Date,
 ): Promise<CommandRecord> {
-  await deps.events
-    .replaceExisting({ ...event, lifecycleState: "active", updatedAt: now() })
-    .catch(() => undefined);
+  await deps.events.replaceExisting({
+    ...event,
+    lifecycleState: "active",
+    updatedAt: now(),
+  });
   return failCommand(deps, command, reason);
 }
