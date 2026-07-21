@@ -7,7 +7,10 @@ import {
 import { rateLimit } from "express-rate-limit";
 import { Status } from "@core/errors/status.codes";
 import {
+  type CalendarListResponse,
   type ConnectionListResponse,
+  type ProviderCalendar,
+  ProviderCalendarSchema,
   type ProviderConnection,
   ProviderConnectionSchema,
 } from "@core/types/sync/connection.contracts";
@@ -24,12 +27,15 @@ import { deriveConnectionState } from "@sync/domain/connection-state";
 import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
 import { googleCapabilitiesFromScopes } from "@sync/providers/google/google-capabilities";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
+import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
+import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 
 export const CONNECTIONS_PATH = "/internal/connections";
+export const CALENDARS_PATH = "/internal/calendars";
 export const BEGIN_PATH = "/internal/connections/begin";
 // Where the provider redirects the browser after consent; `begin` builds the
 // redirect_uri from it and the public callback route below mounts on it.
@@ -94,6 +100,53 @@ export function registerConnectionRoutes(
         res.status(Status.OK).json(response);
       } catch {
         // Never surface storage internals or identity to the caller.
+        respondInternalError(res);
+      }
+    },
+  );
+
+  // List the caller's provider calendars, optionally narrowed to one connection
+  // (?connectionId=) and/or active calendars only (?activeOnly=true). Scoped to
+  // the signed principal; a read, so it is served in passive mode too.
+  app.get(
+    CALENDARS_PATH,
+    connectionRateLimit,
+    deps.authMiddleware,
+    async (req, res) => {
+      const auth = requireAuth(req, res);
+      if (!auth) return;
+      if (!ensureConnected(deps, res)) return;
+
+      // A present-but-bad connectionId (malformed, or repeated so Express parses
+      // it as an array) is a bad request, not a silently-unfiltered result.
+      const rawConnectionId = req.query["connectionId"];
+      let connectionId: ConnectionId | undefined;
+      if (rawConnectionId !== undefined) {
+        const parsed =
+          typeof rawConnectionId === "string"
+            ? ConnectionIdSchema.safeParse(rawConnectionId)
+            : null;
+        if (!parsed?.success) {
+          res
+            .status(Status.BAD_REQUEST)
+            .json({ error: "invalid_connection_id" });
+          return;
+        }
+        connectionId = parsed.data;
+      }
+
+      try {
+        const repo = new ProviderCalendarRepository(deps.mongo.db);
+        const records = await repo.listByPrincipal(
+          auth.tenantId,
+          auth.principalId,
+          { connectionId, activeOnly: req.query["activeOnly"] === "true" },
+        );
+        const response: CalendarListResponse = {
+          calendars: records.map(toProviderCalendar),
+        };
+        res.status(Status.OK).json(response);
+      } catch {
         respondInternalError(res);
       }
     },
@@ -418,6 +471,28 @@ export function toProviderConnection(
     stateReason: record.stateReason,
     lastSyncedAt: record.lastSyncedAt?.toISOString() ?? null,
     lastHealthyAt: record.lastHealthyAt?.toISOString() ?? null,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+  });
+}
+
+// Map a stored calendar record (string ids, Date timestamps) to the wire
+// contract (ISO-string timestamps), validated through the schema on the way out.
+export function toProviderCalendar(
+  record: ProviderCalendarRecord,
+): ProviderCalendar {
+  return ProviderCalendarSchema.parse({
+    id: record._id,
+    tenantId: record.tenantId,
+    principalId: record.principalId,
+    connectionId: record.connectionId,
+    providerCalendarId: record.providerCalendarId,
+    displayName: record.displayName,
+    color: record.color,
+    active: record.active,
+    primary: record.primary,
+    accessRole: record.accessRole,
+    capabilities: record.capabilities,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
   });

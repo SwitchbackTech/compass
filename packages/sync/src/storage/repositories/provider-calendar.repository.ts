@@ -1,4 +1,4 @@
-import { type Collection, type Db, ObjectId } from "mongodb";
+import { type Collection, type Db, type Filter, ObjectId } from "mongodb";
 import {
   type ConnectionId,
   type PrincipalId,
@@ -88,5 +88,20 @@ export class ProviderCalendarRepository {
       principalId,
     });
     return record ? ProviderCalendarRecordSchema.parse(record) : null;
+  }
+
+  // List a principal's calendars, optionally narrowed to one connection and/or
+  // to active calendars only. Always scoped to the owning tenant/principal.
+  async listByPrincipal(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    filter: { connectionId?: ConnectionId; activeOnly?: boolean } = {},
+  ): Promise<ProviderCalendarRecord[]> {
+    const query: Filter<ProviderCalendarRecord> = { tenantId, principalId };
+    if (filter.connectionId) query.connectionId = filter.connectionId;
+    if (filter.activeOnly) query.active = true;
+
+    const records = await this.collection.find(query).toArray();
+    return records.map((r) => ProviderCalendarRecordSchema.parse(r));
   }
 }
