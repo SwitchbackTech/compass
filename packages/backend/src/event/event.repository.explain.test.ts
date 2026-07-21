@@ -14,10 +14,9 @@ import { afterAll, beforeEach, describe, expect, it } from "bun:test";
  * gate should catch before it becomes a p95 regression in production.
  *
  * mongodb-memory-server starts with none of the migration history that
- * creates these indexes on the real `event`/`calendar` collections
- * (packages/scripts/src/migrations/2026.07.10T21.30.00.event-record-backfill.ts
- * and 2026.07.10T21.00.00.calendar-record-migration.ts), so this file
- * recreates that same index set locally. The filters below are hand-copied
+ * created these indexes on the real `event`/`calendar` collections (the
+ * sub-calendar v1 cutover migrations, removed after the cutover shipped),
+ * so this file recreates that same index set locally. The filters below are hand-copied
  * from event.repository.ts's private `listRange` method
  * (not exercised through the repository, since `.list()` awaits `.toArray()`
  * internally with no way to attach `.explain()`) -- if that filter shape
@@ -59,8 +58,8 @@ const expectIndexed = (stages: PlanStage[], indexName: string): void => {
   expect(ixscan?.indexName).toBe(indexName);
 };
 
-// Mirrors packages/scripts/src/migrations/2026.07.10T21.30.00.event-record-backfill.ts's
-// `#applyValidatorAndIndexes` -- only the indexes behind list()'s hot paths.
+// Mirrors the indexes the sub-calendar v1 cutover migration created on the
+// real `event` collection -- only the ones behind list()'s hot paths.
 async function createEventIndexes(): Promise<void> {
   await mongoService.event.createIndex({
     calendarId: 1,
@@ -74,7 +73,8 @@ async function createEventIndexes(): Promise<void> {
   });
 }
 
-// Mirrors packages/scripts/src/migrations/2026.07.10T21.00.00.calendar-record-migration.ts.
+// Mirrors the index the sub-calendar v1 cutover migration created on the
+// real `calendar` collection.
 async function createCalendarIndexes(): Promise<void> {
   await mongoService.calendar.createIndex(
     { userId: 1, "source.calendarId": 1 },

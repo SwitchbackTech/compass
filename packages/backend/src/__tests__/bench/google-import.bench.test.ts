@@ -28,9 +28,8 @@ import { performance } from "node:perf_hooks";
  */
 const describeBench = process.env["RUN_BENCH"] ? describe : describe.skip;
 
-// Generous on purpose (mirrors the migration memory test's rationale at
-// packages/scripts/src/migrations/2026.07.10T21.30.00.event-record-backfill.test.ts):
-// this asserts memory doesn't scale with total event count, not GC precision.
+// Generous on purpose: this asserts memory doesn't scale with total event
+// count, not GC precision.
 // Shared CI/dev runners can show a couple hundred MB of GC-timing noise.
 const HEAP_BUDGET_MB = 400;
 
