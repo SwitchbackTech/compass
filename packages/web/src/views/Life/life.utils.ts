@@ -105,7 +105,10 @@ export function getRandomLifespan(
   random = Math.random,
 ) {
   const currentAge = getAgeInYears(birthDateValue, today) ?? MIN_LIFESPAN;
-  const minimumAge = Math.min(currentAge, RANDOM_LIFESPAN_MAX);
+  const minimumAge = Math.max(
+    MIN_LIFESPAN,
+    Math.min(currentAge, RANDOM_LIFESPAN_MAX),
+  );
   const range = RANDOM_LIFESPAN_MAX - minimumAge + 1;
   return minimumAge + Math.floor(random() * range);
 }

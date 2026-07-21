@@ -69,5 +69,6 @@ describe("life utils", () => {
     expect(getRandomLifespan("1993-09-14", today, () => 0)).toBe(32);
     expect(getRandomLifespan("1993-09-14", today, () => 0.999)).toBe(100);
     expect(getRandomLifespan("", today, () => 0)).toBe(1);
+    expect(getRandomLifespan("2026-07-21", today, () => 0)).toBe(1);
   });
 });
