@@ -4,11 +4,9 @@ import { parse, resolve } from "node:path";
 
 // Guards the contract Umzug relies on (see commands/migrate.ts): every file in
 // the migrations directory is a runnable migration, discovered and ordered by
-// filename. This replaced the six retired 2025 integration suites -- those
-// re-ran permanently-completed migrations against seeded databases; this proves
-// the discovery/ordering still holds for the whole chain, cheaply and without
-// Mongo. Correctness of each migration's data transform lives in the
-// migration-support unit tests and the per-migration suites.
+// filename. This proves the discovery/ordering still holds for the whole
+// chain, cheaply and without Mongo. Correctness of each migration's data
+// transform lives in the per-migration suites.
 
 const MIGRATIONS_DIR = resolve(import.meta.dir);
 

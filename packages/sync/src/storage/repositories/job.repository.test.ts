@@ -1,8 +1,8 @@
 import { faker } from "@faker-js/faker";
 import { type Db, MongoClient } from "mongodb";
+import { type JobEnqueue } from "@sync/storage/contracts/job.contracts";
 import { installIndexManifest } from "@sync/storage/index-manifest";
-import { type JobEnqueue } from "@sync/storage/job.record";
-import { JobRepository } from "@sync/storage/job.repository";
+import { JobRepository } from "@sync/storage/repositories/job.repository";
 
 const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();

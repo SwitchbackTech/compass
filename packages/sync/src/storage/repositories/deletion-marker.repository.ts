@@ -10,7 +10,7 @@ import {
   type DeletionMarkerRecordInput,
   DeletionMarkerRecordInputSchema,
   DeletionMarkerRecordSchema,
-} from "@sync/storage/deletion-marker.record";
+} from "@sync/storage/contracts/deletion-marker.contracts";
 
 // Confirmed deletions are remembered for 30 days, after which the TTL index
 // removes the marker.

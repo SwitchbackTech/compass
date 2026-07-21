@@ -11,7 +11,7 @@ import {
   CommandRecordSchema,
   type CommandSubmit,
   CommandSubmitSchema,
-} from "@sync/storage/command.record";
+} from "@sync/storage/contracts/command.contracts";
 
 // Repository for `commands`. Submitting is idempotent on
 // (tenant, principal, idempotencyKey): a retried submission returns the

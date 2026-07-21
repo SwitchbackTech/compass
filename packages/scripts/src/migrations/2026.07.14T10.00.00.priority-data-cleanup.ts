@@ -17,16 +17,10 @@ export default class Migration implements RunnableMigration<MigrationContext> {
   async up(params: MigrationParams<MigrationContext>): Promise<void> {
     const { logger } = params.context;
 
-    // The legacy `event` collection (still the production source of truth --
-    // see docs/self-hosting/event-migration-runbook.md) has no Mongo-level
-    // schema validator, so a leftover `priority` field here is inert, not a
-    // write-blocking hazard. This is storage hygiene: strip the field the
-    // app hasn't read or written since the priority feature was removed.
-    // `event_new` is intentionally NOT touched here -- it is inactive
-    // prototype data owned by the sub-calendar v1 migration, fully rebuilt
-    // from legacy `event` on every backfill rerun, and will stop carrying
-    // `priority` on its own the next time that backfill runs (its transform
-    // no longer reads the field).
+    // The `event` collection has no Mongo-level schema validator, so a
+    // leftover `priority` field here is inert, not a write-blocking hazard.
+    // This is storage hygiene: strip the field the app hasn't read or
+    // written since the priority feature was removed.
     const events = mongoService.db.collection<Document>(
       mongoService.event.collectionName,
     );
@@ -40,8 +34,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
     // The standalone priority collection (deleted CRUD feature) is fully
     // orphaned -- every document in it is unreachable dead data. Drop it
-    // outright rather than emptying it, matching the drop-a-whole-collection
-    // precedent in 2025.10.18T19.43.00.new-events-collection.ts.
+    // outright rather than emptying it.
     const priorityCollectionExists = await mongoService.db
       .listCollections({ name: priorityCollectionName })
       .hasNext();

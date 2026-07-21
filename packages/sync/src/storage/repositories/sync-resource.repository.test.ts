@@ -1,8 +1,8 @@
 import { faker } from "@faker-js/faker";
 import { type Db, MongoClient } from "mongodb";
+import { type SyncResourceUpsert } from "@sync/storage/contracts/sync-resource.contracts";
 import { installIndexManifest } from "@sync/storage/index-manifest";
-import { type SyncResourceUpsert } from "@sync/storage/sync-resource.record";
-import { SyncResourceRepository } from "@sync/storage/sync-resource.repository";
+import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();

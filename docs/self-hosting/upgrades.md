@@ -66,29 +66,27 @@ backup is still the only rollback if one behaves unexpectedly.
 One current migration is cleanup rather than additive: `priority-data-cleanup`
 (`2026.07.14T10.00.00`) removes the now-dead `priority` field left over from
 the removed priority-tagging feature and drops its orphaned collection. It's
-routine (no cutover, no coordination with the sub-calendar v1 work below) —
-run it like any other pending migration; see [Event migration
-runbook](./event-migration-runbook.md#notes) for detail.
+routine — run it like any other pending migration.
 
-## The sub-calendar v1 cutover (one-time, special-cased)
+## Upgrading from a pre-cutover install (before v1.0.236)
 
-One upgrade is not a normal image update: the sub-calendar v1 release moves
-events out of the legacy `event` collection into a calendar-owned schema
-behind a one-time collection rename — a short write pause, not a rolling
-migration. Do not treat it like a routine `./compass update`.
+The sub-calendar v1 release (2026-07) moved events out of the legacy `event`
+collection into a calendar-owned schema behind a one-time collection rename.
+The migration code for that cutover shipped in releases up to **v1.0.310**
+and was removed afterwards, so releases newer than v1.0.310 cannot migrate a
+pre-cutover database.
 
-Follow, in order:
+If your install has never performed the cutover, upgrade in two steps:
 
-1. [Event migration runbook](./event-migration-runbook.md) — how to run and
-   verify the forward migration ahead of time. Running it early is safe; it
-   does not activate the new schema on its own.
-2. [Back up & restore: Sub-calendar v1 collection
-   cutover](./backup-and-restore.md) — the exact backup, cutover-rename, and
-   rollback commands, plus the loss window a rollback accepts.
+1. Upgrade to
+   [v1.0.310](https://github.com/SwitchbackTech/compass-calendar/tree/v1.0.310)
+   and complete the cutover following that version's
+   [event migration runbook](https://github.com/SwitchbackTech/compass-calendar/blob/v1.0.310/docs/self-hosting/event-migration-runbook.md).
+2. Then upgrade to the latest release as a normal upgrade and run any
+   remaining pending migrations.
 
-This procedure must be rehearsed on staging before it is ever run against
-production. Production cuts over exactly once, manually, only after every
-gate in the `09` release-hardening plan passes on staging.
+Installs that already cut over (or were first installed after v1.0.236)
+upgrade normally and can ignore this section.
 
 ## What to read next
 

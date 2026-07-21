@@ -48,8 +48,7 @@ drops or duplicates events during import fails this before anything else.
 calendar (every scenario's per-calendar event count stays under the 2500
 `perPage` used by `importFull`, so each calendar imports in a single
 page/single `apply()` call). The peak-minus-baseline delta must stay under
-400 MB -- generous on purpose, mirroring the memory test in
-`packages/scripts/src/migrations/2026.07.10T21.30.00.event-record-backfill.test.ts`.
+400 MB -- generous on purpose.
 The point isn't GC precision, it's that the 25-calendar scenario (most
 total imported events, 7125) shows no materially larger delta than the
 1-calendar scenario -- memory tracks batch/page size, not total dataset

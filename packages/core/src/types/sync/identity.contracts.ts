@@ -1,48 +1,32 @@
 import { z } from "zod/v4";
-import { OBJECT_ID_STRING_PATTERN } from "@core/types/type.utils";
+import { ObjectIdStringSchema } from "@core/types/type.utils";
 
 // Identity primitives for Compass Sync.
 // Compass-issued ids are ObjectId-shaped; provider-issued ids are opaque
 // strings scoped beneath the connection that issued them and must never be
 // treated as globally unique or user-facing.
 
-export const TenantIdSchema = z
-  .string()
-  .regex(OBJECT_ID_STRING_PATTERN)
-  .brand<"TenantId">();
+export const TenantIdSchema = ObjectIdStringSchema.brand<"TenantId">();
 export type TenantId = z.infer<typeof TenantIdSchema>;
 
-export const PrincipalIdSchema = z
-  .string()
-  .regex(OBJECT_ID_STRING_PATTERN)
-  .brand<"PrincipalId">();
+export const PrincipalIdSchema = ObjectIdStringSchema.brand<"PrincipalId">();
 export type PrincipalId = z.infer<typeof PrincipalIdSchema>;
 
-export const ConnectionIdSchema = z
-  .string()
-  .regex(OBJECT_ID_STRING_PATTERN)
-  .brand<"ConnectionId">();
+export const ConnectionIdSchema = ObjectIdStringSchema.brand<"ConnectionId">();
 export type ConnectionId = z.infer<typeof ConnectionIdSchema>;
 
 // Sync-issued stable id for a provider calendar record. Distinct from the
 // provider's own calendar id (ProviderCalendarSourceId) so preferences and
 // event ownership survive provider renames and reconnection.
-export const ProviderCalendarIdSchema = z
-  .string()
-  .regex(OBJECT_ID_STRING_PATTERN)
-  .brand<"ProviderCalendarId">();
+export const ProviderCalendarIdSchema =
+  ObjectIdStringSchema.brand<"ProviderCalendarId">();
 export type ProviderCalendarId = z.infer<typeof ProviderCalendarIdSchema>;
 
-export const SyncCommandIdSchema = z
-  .string()
-  .regex(OBJECT_ID_STRING_PATTERN)
-  .brand<"SyncCommandId">();
+export const SyncCommandIdSchema =
+  ObjectIdStringSchema.brand<"SyncCommandId">();
 export type SyncCommandId = z.infer<typeof SyncCommandIdSchema>;
 
-export const SyncJobIdSchema = z
-  .string()
-  .regex(OBJECT_ID_STRING_PATTERN)
-  .brand<"SyncJobId">();
+export const SyncJobIdSchema = ObjectIdStringSchema.brand<"SyncJobId">();
 export type SyncJobId = z.infer<typeof SyncJobIdSchema>;
 
 export const ProviderKindSchema = z.enum(["google"]);

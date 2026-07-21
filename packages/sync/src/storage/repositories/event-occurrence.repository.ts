@@ -9,7 +9,7 @@ import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
   type EventOccurrenceRecord,
   EventOccurrenceRecordSchema,
-} from "@sync/storage/event-occurrence.record";
+} from "@sync/storage/contracts/event-occurrence.contracts";
 
 export type OccurrenceInput = Omit<EventOccurrenceRecord, "_id">;
 

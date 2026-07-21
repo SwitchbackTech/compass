@@ -11,7 +11,7 @@ import {
   ProviderCalendarRecordSchema,
   type ProviderCalendarUpsert,
   ProviderCalendarUpsertSchema,
-} from "@sync/storage/provider-calendar.record";
+} from "@sync/storage/contracts/provider-calendar.contracts";
 
 // Repository for `provider_calendars`. Upserts are keyed on
 // (connection, provider-calendar id) so re-discovering a calendar updates one
