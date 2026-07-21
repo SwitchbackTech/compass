@@ -20,10 +20,12 @@ import {
 } from "@sync/providers/provider-auth.port";
 import {
   BEGIN_PATH,
+  CALENDARS_PATH,
   CONNECTIONS_PATH,
   OAUTH_CALLBACK_PATH,
 } from "@sync/server/connection.routes";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
+import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
@@ -753,5 +755,152 @@ describe("GET /oauth/google/callback", () => {
 
     expect(statusOf(res)).toBe("error");
     expect(adapter.exchanges).toHaveLength(0);
+  });
+});
+
+describe("GET /internal/calendars", () => {
+  let mongo: SyncMongoService;
+  let calendars: ProviderCalendarRepository;
+  let service: SyncService;
+  let base: string;
+
+  const startService = async (config: SyncConfig = testConfig()) => {
+    service = createSyncService(config, { mongo });
+    await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
+    const { port } = service.httpServer.address() as AddressInfo;
+    base = `http://127.0.0.1:${port}`;
+  };
+
+  const seedCalendar = (
+    tenantId: string,
+    principalId: string,
+    overrides: {
+      connectionId?: string;
+      displayName?: string;
+      active?: boolean;
+    } = {},
+  ) =>
+    calendars.upsertByProviderCalendar({
+      tenantId: tenantId as TenantId,
+      principalId: principalId as PrincipalId,
+      connectionId: (overrides.connectionId ?? objectId()) as ConnectionId,
+      providerCalendarId: objectId(),
+      displayName: overrides.displayName ?? "My Calendar",
+      color: null,
+      active: overrides.active ?? true,
+      primary: false,
+      accessRole: "owner",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: true,
+        canReadBusy: true,
+        canInviteAttendees: true,
+      },
+    });
+
+  const get = (tenantId: string, principalId: string, query = "") =>
+    fetch(`${base}${CALENDARS_PATH}${query}`, {
+      headers: signedHeaders(tenantId, principalId),
+    });
+
+  beforeEach(async () => {
+    mongo = new SyncMongoService();
+    await mongo.connect({
+      uri,
+      databaseName: `cal_api_${objectId()}`,
+      forbiddenDatabaseName: "compass_api_unused",
+      enforceLeastPrivilege: false,
+    });
+    calendars = new ProviderCalendarRepository(mongo.db);
+  });
+
+  afterEach(async () => {
+    await service?.stop();
+    await mongo.db.dropDatabase();
+    await mongo.disconnect();
+  });
+
+  it("returns the caller's calendars mapped to the wire contract", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await seedCalendar(tenantId, principalId, { displayName: "Work" });
+    await startService();
+
+    const res = await get(tenantId, principalId);
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      calendars: Array<Record<string, unknown>>;
+    };
+    expect(body.calendars).toHaveLength(1);
+    expect(body.calendars[0]).toMatchObject({
+      principalId,
+      displayName: "Work",
+      accessRole: "owner",
+    });
+    expect(typeof body.calendars[0].createdAt).toBe("string");
+  });
+
+  it("scopes results to the authenticated principal", async () => {
+    const tenantId = objectId();
+    const mine = objectId();
+    const other = objectId();
+    await seedCalendar(tenantId, mine, { displayName: "Mine" });
+    await seedCalendar(tenantId, other, { displayName: "Theirs" });
+    await startService();
+
+    const body = (await (await get(tenantId, mine)).json()) as {
+      calendars: Array<{ displayName: string }>;
+    };
+    expect(body.calendars).toHaveLength(1);
+    expect(body.calendars[0].displayName).toBe("Mine");
+  });
+
+  it("narrows to one connection when connectionId is given", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const conn = objectId();
+    await seedCalendar(tenantId, principalId, { connectionId: conn });
+    await seedCalendar(tenantId, principalId, { connectionId: objectId() });
+    await startService();
+
+    const body = (await (
+      await get(tenantId, principalId, `?connectionId=${conn}`)
+    ).json()) as { calendars: unknown[] };
+    expect(body.calendars).toHaveLength(1);
+  });
+
+  it("returns only active calendars when activeOnly=true", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await seedCalendar(tenantId, principalId, { active: true });
+    await seedCalendar(tenantId, principalId, { active: false });
+    await startService();
+
+    const all = (await (await get(tenantId, principalId)).json()) as {
+      calendars: unknown[];
+    };
+    const activeOnly = (await (
+      await get(tenantId, principalId, "?activeOnly=true")
+    ).json()) as { calendars: unknown[] };
+
+    expect(all.calendars).toHaveLength(2);
+    expect(activeOnly.calendars).toHaveLength(1);
+  });
+
+  it("rejects a malformed connectionId filter", async () => {
+    await startService();
+
+    const res = await get(objectId(), objectId(), "?connectionId=nope");
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects an unsigned request", async () => {
+    await startService();
+
+    const res = await fetch(`${base}${CALENDARS_PATH}`);
+
+    expect(res.status).toBe(401);
   });
 });
