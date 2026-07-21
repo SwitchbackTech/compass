@@ -3,7 +3,10 @@ import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { type CredentialCustody } from "@sync/credentials/credential-custody.service";
-import { executeProviderCreate } from "@sync/domain/provider-command.service";
+import {
+  executeProviderCreate,
+  executeProviderUpdate,
+} from "@sync/domain/provider-command.service";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import {
   type CommandRecord,
@@ -125,17 +128,42 @@ async function applyCloudMutation(
   // update: the target must exist; a missing event can't be updated, so leave
   // the command pending rather than confirming a no-op.
   if (!existing) return command;
-  if (existing.connectionId !== null) return command;
+  // A recurring series needs scope handling (later slice), and converting a
+  // single event into a series is itself a series edit — defer both. Gating on
+  // the command's intent (not the event's post-write recurrence) keeps a retry
+  // converging: the applied update never changes recurrence.kind here.
   if (existing.recurrence.kind !== "single") return command;
-  // Converting a single event into a series is a series-scope edit — defer it.
-  // Gating on the command's intent (not the event's post-write recurrence) keeps
-  // a retry converging: applyCloudUpdate never changes recurrence.kind here, so
-  // the guards above still pass on the re-read.
   if (command.input.recurrence.kind === "series") return command;
 
-  // Conditional replace (no upsert): if a concurrent delete removed the event
-  // between the read and here, the write is a no-op and the command stays
-  // pending rather than resurrecting the deleted event.
+  // A provider-linked event goes to the provider when provider work is enabled;
+  // otherwise it stays pending for a later execution.
+  if (existing.connectionId !== null) {
+    if (deps.execution === "active" && deps.provider) {
+      const calendar = await deps.calendars.findById(
+        command.tenantId,
+        command.principalId,
+        existing.calendarId as ProviderCalendarId,
+      );
+      if (calendar) {
+        return executeProviderUpdate(
+          {
+            commands: deps.commands,
+            events: deps.events,
+            writer: deps.provider.writer,
+            custody: deps.provider.custody,
+          },
+          command,
+          existing,
+          calendar,
+          now,
+        );
+      }
+    }
+    return command;
+  }
+
+  // Cloud single event: conditional replace (no upsert), so a concurrent delete
+  // is not resurrected — a miss leaves the command pending.
   const applied = await deps.events.replaceExisting(
     applyCloudUpdate(existing, command, now()),
   );
