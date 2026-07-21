@@ -10,6 +10,8 @@ import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 // the adapter's client factory so no module mocking or network call is needed.
 class FakeGoogleClient implements GoogleOAuthClient {
   authUrlOptions: Parameters<GoogleOAuthClient["generateAuthUrl"]>[0][] = [];
+  setRefreshTokens: string[] = [];
+  revokedTokens: string[] = [];
 
   constructor(
     private readonly behavior: {
@@ -17,6 +19,9 @@ class FakeGoogleClient implements GoogleOAuthClient {
       getTokenError?: unknown;
       payload?: TokenPayload;
       verifyError?: unknown;
+      refreshCredentials?: Credentials;
+      refreshError?: unknown;
+      revokeError?: unknown;
     } = {},
   ) {}
 
@@ -39,6 +44,21 @@ class FakeGoogleClient implements GoogleOAuthClient {
   }): Promise<{ getPayload(): TokenPayload | undefined }> {
     if (this.behavior.verifyError) throw this.behavior.verifyError;
     return { getPayload: () => this.behavior.payload };
+  }
+
+  setCredentials(credentials: { refresh_token: string }): void {
+    this.setRefreshTokens.push(credentials.refresh_token);
+  }
+
+  async refreshAccessToken(): Promise<{ credentials: Credentials }> {
+    if (this.behavior.refreshError) throw this.behavior.refreshError;
+    return { credentials: this.behavior.refreshCredentials ?? {} };
+  }
+
+  async revokeToken(token: string): Promise<unknown> {
+    if (this.behavior.revokeError) throw this.behavior.revokeError;
+    this.revokedTokens.push(token);
+    return {};
   }
 }
 
@@ -311,6 +331,116 @@ describe("GoogleAuthAdapter", () => {
       });
 
       expect(result.grantedScopes).toEqual([]);
+    });
+  });
+
+  describe("refreshAccessToken", () => {
+    it("mints a fresh access token, expiry, and scopes from the refresh token", async () => {
+      const expiryMs = 1_900_000_000_000;
+      const client = new FakeGoogleClient({
+        refreshCredentials: {
+          access_token: "fresh-access-token",
+          expiry_date: expiryMs,
+          scope: "https://www.googleapis.com/auth/calendar.events",
+        },
+      });
+      const { adapter } = adapterWith(client);
+
+      const result = await adapter.refreshAccessToken({
+        refreshToken: "stored-refresh-token",
+      });
+
+      // The refresh token is applied to the client before refreshing.
+      expect(client.setRefreshTokens).toEqual(["stored-refresh-token"]);
+      expect(result.accessToken).toBe("fresh-access-token");
+      expect(result.expiresAt).toEqual(new Date(expiryMs));
+      expect(result.grantedScopes).toEqual([
+        "https://www.googleapis.com/auth/calendar.events",
+      ]);
+    });
+
+    it("classifies an invalid_grant as authorizationRevoked", async () => {
+      const client = new FakeGoogleClient({
+        refreshError: { response: { data: { error: "invalid_grant" } } },
+      });
+      const { adapter } = adapterWith(client);
+
+      const error = (await adapter
+        .refreshAccessToken({ refreshToken: "revoked" })
+        .catch((e) => e)) as ProviderAuthError;
+
+      expect(error).toBeInstanceOf(ProviderAuthError);
+      expect(error.reason).toBe("authorizationRevoked");
+    });
+
+    it("classifies any other refresh error as refreshFailed", async () => {
+      const client = new FakeGoogleClient({
+        refreshError: {
+          response: { data: { error: "temporarily_unavailable" } },
+        },
+      });
+      const { adapter } = adapterWith(client);
+
+      const error = (await adapter
+        .refreshAccessToken({ refreshToken: "rt" })
+        .catch((e) => e)) as ProviderAuthError;
+
+      expect(error.reason).toBe("refreshFailed");
+    });
+
+    it("fails when the provider returns no access token or expiry", async () => {
+      const client = new FakeGoogleClient({
+        refreshCredentials: { access_token: "tok" }, // no expiry_date
+      });
+      const { adapter } = adapterWith(client);
+
+      const error = (await adapter
+        .refreshAccessToken({ refreshToken: "rt" })
+        .catch((e) => e)) as ProviderAuthError;
+
+      expect(error.reason).toBe("refreshFailed");
+    });
+
+    it("does not propagate the raw refresh error (which can carry the secret)", async () => {
+      const leaky = Object.assign(new Error("invalid_grant"), {
+        config: { data: "client_secret=SUPER_SECRET&refresh_token=rt" },
+        response: { data: { error: "invalid_grant" } },
+      });
+      const client = new FakeGoogleClient({ refreshError: leaky });
+      const { adapter } = adapterWith(client);
+
+      const error = (await adapter
+        .refreshAccessToken({ refreshToken: "rt" })
+        .catch((e) => e)) as ProviderAuthError;
+
+      const cause = error.cause as Error & { config?: unknown };
+      expect(cause).toBeInstanceOf(Error);
+      expect(cause).not.toBe(leaky);
+      expect(cause.config).toBeUndefined();
+      expect(JSON.stringify({ cause: cause.message })).not.toContain(
+        "SUPER_SECRET",
+      );
+    });
+  });
+
+  describe("revoke", () => {
+    it("revokes the token at the provider", async () => {
+      const client = new FakeGoogleClient();
+      const { adapter } = adapterWith(client);
+
+      await adapter.revoke({ token: "token-to-revoke" });
+
+      expect(client.revokedTokens).toEqual(["token-to-revoke"]);
+    });
+
+    it("never throws when revocation fails (best effort)", async () => {
+      const client = new FakeGoogleClient({
+        revokeError: new Error("revoke endpoint down"),
+      });
+      const { adapter } = adapterWith(client);
+
+      // Must resolve, not reject — a failed revoke can't block a disconnect.
+      await expect(adapter.revoke({ token: "token" })).resolves.toBeUndefined();
     });
   });
 });

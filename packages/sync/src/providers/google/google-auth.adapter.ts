@@ -9,6 +9,7 @@ import {
   type ProviderAuthAdapter,
   ProviderAuthError,
   type ProviderAuthorization,
+  type RefreshedCredential,
 } from "@sync/providers/provider-auth.port";
 
 // The subset of google-auth-library's OAuth2Client the adapter uses. Depending
@@ -26,10 +27,15 @@ export interface GoogleOAuthClient {
   verifyIdToken(options: { idToken: string; audience: string }): Promise<{
     getPayload(): TokenPayload | undefined;
   }>;
+  setCredentials(credentials: { refresh_token: string }): void;
+  refreshAccessToken(): Promise<{ credentials: Credentials }>;
+  revokeToken(token: string): Promise<unknown>;
 }
 
+// The redirect URI matters only for authorization/exchange; refresh and revoke
+// hit the token endpoint and don't use it, so it is optional.
 export type GoogleOAuthClientFactory = (
-  redirectUri: string,
+  redirectUri?: string,
 ) => GoogleOAuthClient;
 
 // Google implementation of the provider authorization port. Identity is the
@@ -120,6 +126,51 @@ export class GoogleAuthAdapter implements ProviderAuthAdapter {
     };
   }
 
+  async refreshAccessToken(input: {
+    refreshToken: string;
+  }): Promise<RefreshedCredential> {
+    // No redirect URI: refresh is a token-endpoint call.
+    const client = this.#makeClient();
+    client.setCredentials({ refresh_token: input.refreshToken });
+
+    let credentials: Credentials;
+    try {
+      ({ credentials } = await client.refreshAccessToken());
+    } catch (error) {
+      // invalid_grant means the refresh token itself is revoked or expired, so
+      // no retry will help — surface it as revoked authority for the caller to
+      // move the connection to action-required. Anything else is transient.
+      throw new ProviderAuthError(
+        isInvalidGrant(error) ? "authorizationRevoked" : "refreshFailed",
+        "Google rejected the refresh token",
+        { cause: redactedCause(error) },
+      );
+    }
+
+    if (!credentials.access_token || !credentials.expiry_date) {
+      throw new ProviderAuthError(
+        "refreshFailed",
+        "Google returned no access token or expiry on refresh",
+      );
+    }
+
+    return {
+      accessToken: credentials.access_token,
+      expiresAt: new Date(credentials.expiry_date),
+      grantedScopes: parseGrantedScopes(credentials.scope),
+    };
+  }
+
+  async revoke(input: { token: string }): Promise<void> {
+    // Best-effort: a failed revoke must not block deleting the stored
+    // credential, so swallow every error. The token value is never logged.
+    try {
+      await this.#makeClient().revokeToken(input.token);
+    } catch {
+      // Intentionally ignored — the credential is removed regardless.
+    }
+  }
+
   private async verifyIdToken(
     client: GoogleOAuthClient,
     idToken: string,
@@ -156,6 +207,15 @@ export class GoogleAuthAdapter implements ProviderAuthAdapter {
 // it is safe to keep for diagnostics.
 function redactedCause(error: unknown): Error | undefined {
   return error instanceof Error ? new Error(error.message) : undefined;
+}
+
+// A Google token-endpoint rejection carries the reason in the response body's
+// `error` field. `invalid_grant` specifically means the refresh token is
+// revoked or expired. Reading the response (not the request) is leak-safe.
+function isInvalidGrant(error: unknown): boolean {
+  const data = (error as { response?: { data?: { error?: string } } })?.response
+    ?.data;
+  return data?.error === "invalid_grant";
 }
 
 // Google returns granted scopes as a single space-delimited string. A subset of
