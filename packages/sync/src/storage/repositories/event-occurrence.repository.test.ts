@@ -1,11 +1,11 @@
 import { faker } from "@faker-js/faker";
 import { type Db, MongoClient } from "mongodb";
-import { type EventOccurrenceRecord } from "@sync/storage/event-occurrence.record";
+import { type EventOccurrenceRecord } from "@sync/storage/contracts/event-occurrence.contracts";
+import { installIndexManifest } from "@sync/storage/index-manifest";
 import {
   EventOccurrenceRepository,
   type OccurrenceInput,
-} from "@sync/storage/event-occurrence.repository";
-import { installIndexManifest } from "@sync/storage/index-manifest";
+} from "@sync/storage/repositories/event-occurrence.repository";
 
 const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();

@@ -10,7 +10,7 @@ import {
   JobEnqueueSchema,
   type JobRecord,
   JobRecordSchema,
-} from "@sync/storage/job.record";
+} from "@sync/storage/contracts/job.contracts";
 
 // Repository for `jobs`. Enqueue coalesces on a unique key so repeated
 // notifications for the same resource collapse into one pending job instead of

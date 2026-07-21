@@ -74,22 +74,22 @@ export const ProviderConnectionSchema = z
     createdAt: DateTimeSchema,
     updatedAt: DateTimeSchema,
   })
-  .superRefine((connection, ctx) => {
-    if (connection.state === "actionRequired" && !connection.stateReason) {
-      ctx.addIssue({
-        code: "custom",
-        message: "actionRequired state requires a stateReason",
-        path: ["stateReason"],
-      });
-    }
-    if (connection.stateReason && !STATES_WITH_REASON.has(connection.state)) {
-      ctx.addIssue({
-        code: "custom",
-        message: `stateReason is not allowed for state "${connection.state}"`,
-        path: ["stateReason"],
-      });
-    }
-  });
+  .refine(
+    (connection) =>
+      connection.state !== "actionRequired" || connection.stateReason !== null,
+    {
+      message: "actionRequired state requires a stateReason",
+      path: ["stateReason"],
+    },
+  )
+  .refine(
+    (connection) =>
+      !connection.stateReason || STATES_WITH_REASON.has(connection.state),
+    {
+      message: "stateReason is only allowed for delayed or actionRequired",
+      path: ["stateReason"],
+    },
+  );
 export type ProviderConnection = z.infer<typeof ProviderConnectionSchema>;
 
 // Provider-neutral access role for a calendar. Normalized capabilities are

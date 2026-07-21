@@ -9,6 +9,7 @@ import {
   PrincipalIdSchema,
   TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
+import { ObjectIdStringSchema } from "@core/types/type.utils";
 
 // Persistence record for `event_occurrences` — a derived,
 // display-ready instance projected from an event/series within the rolling
@@ -18,7 +19,7 @@ import {
 // to the import generation of its source event so a repair can rebuild in a new
 // generation before removing the old one.
 export const EventOccurrenceRecordSchema = z.strictObject({
-  _id: z.string().regex(/^[0-9a-f]{24}$/i),
+  _id: ObjectIdStringSchema,
   tenantId: TenantIdSchema,
   principalId: PrincipalIdSchema,
   eventId: EventIdSchema,

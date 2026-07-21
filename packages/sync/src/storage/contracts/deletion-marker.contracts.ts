@@ -9,6 +9,7 @@ import {
   ProviderEventIdSchema,
   TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
+import { ObjectIdStringSchema } from "@core/types/type.utils";
 
 export const DeletionSourceSchema = z.enum(["compass", "provider"]);
 export type DeletionSource = z.infer<typeof DeletionSourceSchema>;
@@ -19,7 +20,7 @@ export type DeletionSource = z.infer<typeof DeletionSourceSchema>;
 // Only provider identity and version are retained: no title, description,
 // attendees, location, or conference data.
 export const DeletionMarkerRecordSchema = z.strictObject({
-  _id: z.string().regex(/^[0-9a-f]{24}$/i),
+  _id: ObjectIdStringSchema,
   tenantId: TenantIdSchema,
   principalId: PrincipalIdSchema,
   connectionId: ConnectionIdSchema,
