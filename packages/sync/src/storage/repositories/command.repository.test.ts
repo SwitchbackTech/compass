@@ -1,8 +1,8 @@
 import { faker } from "@faker-js/faker";
 import { type Db, MongoClient } from "mongodb";
-import { type CommandSubmit } from "@sync/storage/command.record";
-import { CommandRepository } from "@sync/storage/command.repository";
+import { type CommandSubmit } from "@sync/storage/contracts/command.contracts";
 import { installIndexManifest } from "@sync/storage/index-manifest";
+import { CommandRepository } from "@sync/storage/repositories/command.repository";
 
 const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();

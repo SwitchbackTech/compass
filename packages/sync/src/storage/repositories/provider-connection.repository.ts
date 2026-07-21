@@ -10,7 +10,7 @@ import {
   ProviderConnectionRecordSchema,
   type ProviderConnectionUpsert,
   ProviderConnectionUpsertSchema,
-} from "@sync/storage/provider-connection.record";
+} from "@sync/storage/contracts/provider-connection.contracts";
 
 // Repository for `provider_connections`. Upserts are keyed on the
 // stable provider-account identity so reconnecting the same account updates one

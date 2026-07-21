@@ -41,6 +41,9 @@ export const SyncConfigSchema = z.strictObject({
   // startup verifies it cannot read the API database. Off for a single-database
   // self-host with no scoped user. Defaults off — enable it deliberately.
   ENFORCE_LEAST_PRIVILEGE: BooleanFromInput.default(false),
+  // The Compass API's database — the one Sync's least-privilege user must NOT
+  // be able to read. Only consulted when ENFORCE_LEAST_PRIVILEGE is on.
+  COMPASS_API_DATABASE: z.string().trim().min(1).default("prod_calendar"),
 });
 export type SyncConfig = z.infer<typeof SyncConfigSchema>;
 
@@ -60,6 +63,7 @@ export function parseSyncConfig(config: CompassConfig): SyncConfig {
     EXECUTION: config.sync.execution,
     MAX_CONCURRENCY: config.sync.maxConcurrency,
     ENFORCE_LEAST_PRIVILEGE: config.sync.enforceLeastPrivilege,
+    COMPASS_API_DATABASE: config.sync.compassApiDatabase,
   });
 }
 
@@ -75,6 +79,7 @@ export function parseSyncConfigFromEnv(
     EXECUTION: rawEnv["SYNC_EXECUTION"],
     MAX_CONCURRENCY: rawEnv["SYNC_MAX_CONCURRENCY"],
     ENFORCE_LEAST_PRIVILEGE: rawEnv["SYNC_ENFORCE_LEAST_PRIVILEGE"],
+    COMPASS_API_DATABASE: rawEnv["SYNC_COMPASS_API_DATABASE"],
   });
 }
 

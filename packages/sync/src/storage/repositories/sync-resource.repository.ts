@@ -10,7 +10,7 @@ import {
   SyncResourceRecordSchema,
   type SyncResourceUpsert,
   SyncResourceUpsertSchema,
-} from "@sync/storage/sync-resource.record";
+} from "@sync/storage/contracts/sync-resource.contracts";
 
 interface SubscriptionInput {
   subscriptionId: string;

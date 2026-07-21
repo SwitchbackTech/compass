@@ -5,6 +5,7 @@ import {
   PrincipalIdSchema,
   TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
+import { ObjectIdStringSchema } from "@core/types/type.utils";
 
 // A connection's calendar list, or one calendar's event collection — each an
 // independently synchronized unit of work.
@@ -17,7 +18,7 @@ export type ResourceKind = z.infer<typeof ResourceKindSchema>;
 // connection); an events resource is keyed to one provider calendar. Holds no
 // event content.
 export const SyncResourceRecordSchema = z.strictObject({
-  _id: z.string().regex(/^[0-9a-f]{24}$/i),
+  _id: ObjectIdStringSchema,
   tenantId: TenantIdSchema,
   principalId: PrincipalIdSchema,
   connectionId: ConnectionIdSchema,

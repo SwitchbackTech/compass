@@ -1,11 +1,11 @@
 import { faker } from "@faker-js/faker";
 import { type Db, MongoClient } from "mongodb";
-import { type DeletionMarkerRecordInput } from "@sync/storage/deletion-marker.record";
+import { type DeletionMarkerRecordInput } from "@sync/storage/contracts/deletion-marker.contracts";
+import { installIndexManifest } from "@sync/storage/index-manifest";
 import {
   DELETION_MARKER_RETENTION_MS,
   DeletionMarkerRepository,
-} from "@sync/storage/deletion-marker.repository";
-import { installIndexManifest } from "@sync/storage/index-manifest";
+} from "@sync/storage/repositories/deletion-marker.repository";
 
 const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();

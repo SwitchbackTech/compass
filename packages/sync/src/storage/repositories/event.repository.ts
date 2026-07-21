@@ -9,7 +9,7 @@ import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
   type EventRecord,
   EventRecordSchema,
-} from "@sync/storage/event.record";
+} from "@sync/storage/contracts/event.contracts";
 
 // Fields for a provider-linked event upsert. Sync assigns _id/createdAt on
 // first sight and dedupes on the (connection, calendar, providerEventId)

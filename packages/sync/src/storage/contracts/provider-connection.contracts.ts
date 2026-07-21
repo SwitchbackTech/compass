@@ -15,18 +15,15 @@ import {
 // A connection may only carry an actionRequired state with a reason attached
 // (mirrors the wire contract's derivation invariant). Shared by the record and
 // upsert schemas so the two cannot drift.
-function refineActionRequiredReason(
-  connection: { state: string; stateReason: string | null },
-  ctx: z.RefinementCtx,
-): void {
-  if (connection.state === "actionRequired" && !connection.stateReason) {
-    ctx.addIssue({
-      code: "custom",
-      message: "actionRequired state requires a stateReason",
-      path: ["stateReason"],
-    });
-  }
-}
+const hasReasonWhenActionRequired = (connection: {
+  state: string;
+  stateReason: string | null;
+}) => connection.state !== "actionRequired" || connection.stateReason !== null;
+
+const actionRequiredReasonIssue = {
+  message: "actionRequired state requires a stateReason",
+  path: ["stateReason"],
+};
 
 // Persistence record for `provider_connections`. This is the
 // stored shape: string ids (Mongo accepts a string _id, and the ids are the
@@ -49,7 +46,7 @@ export const ProviderConnectionRecordSchema = z
     createdAt: z.date(),
     updatedAt: z.date(),
   })
-  .superRefine(refineActionRequiredReason);
+  .refine(hasReasonWhenActionRequired, actionRequiredReasonIssue);
 export type ProviderConnectionRecord = z.infer<
   typeof ProviderConnectionRecordSchema
 >;
@@ -71,7 +68,7 @@ export const ProviderConnectionUpsertSchema = z
     lastSyncedAt: z.date().nullable(),
     lastHealthyAt: z.date().nullable(),
   })
-  .superRefine(refineActionRequiredReason);
+  .refine(hasReasonWhenActionRequired, actionRequiredReasonIssue);
 export type ProviderConnectionUpsert = z.infer<
   typeof ProviderConnectionUpsertSchema
 >;

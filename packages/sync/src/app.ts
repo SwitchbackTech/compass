@@ -58,10 +58,6 @@ function closeHttpServer(httpServer: Server): Promise<void> {
   );
 }
 
-// The Compass API database Sync's least-privilege user must not be able to
-// read. The check runs only where a scoped database user exists (config flag).
-const COMPASS_API_DATABASE = "prod_calendar";
-
 async function start(): Promise<void> {
   const config = loadSyncConfig();
   const service = createSyncService(config);
@@ -99,7 +95,7 @@ async function start(): Promise<void> {
   try {
     await mongo.connect({
       uri: config.MONGO_URI,
-      forbiddenDatabaseName: COMPASS_API_DATABASE,
+      forbiddenDatabaseName: config.COMPASS_API_DATABASE,
       enforceLeastPrivilege: config.ENFORCE_LEAST_PRIVILEGE,
     });
   } catch (error) {

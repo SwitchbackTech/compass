@@ -1,8 +1,8 @@
 import { faker } from "@faker-js/faker";
 import { type Db, MongoClient } from "mongodb";
+import { type ProviderCalendarUpsert } from "@sync/storage/contracts/provider-calendar.contracts";
 import { installIndexManifest } from "@sync/storage/index-manifest";
-import { type ProviderCalendarUpsert } from "@sync/storage/provider-calendar.record";
-import { ProviderCalendarRepository } from "@sync/storage/provider-calendar.repository";
+import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 
 const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();

@@ -76,6 +76,8 @@ const CompassConfigSchema = z
         execution: z.enum(["passive", "active"]).optional(),
         maxConcurrency: z.union([z.string(), z.number()]).optional(),
         enforceLeastPrivilege: z.union([z.boolean(), z.string()]).optional(),
+        // The Compass API's database name, used by the least-privilege check.
+        compassApiDatabase: z.string().optional(),
       })
       .nullish(),
   })

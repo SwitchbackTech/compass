@@ -41,13 +41,8 @@ export const CalendarRecordSchema = z
     createdAt: z.date(),
     updatedAt: z.date().nullable(),
   })
-  .superRefine(({ access, source }, context) => {
-    if (source.provider === "local" && access !== "owner") {
-      context.addIssue({
-        code: "custom",
-        message: "Local calendars must have owner access",
-        path: ["access"],
-      });
-    }
-  });
+  .refine(
+    ({ access, source }) => source.provider !== "local" || access === "owner",
+    { message: "Local calendars must have owner access", path: ["access"] },
+  );
 export type CalendarRecord = z.infer<typeof CalendarRecordSchema>;

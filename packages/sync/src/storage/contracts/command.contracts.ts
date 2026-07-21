@@ -14,18 +14,15 @@ import {
 
 // A create command has nothing prior to condition against, so it never carries
 // an expected version.
-function refineCreateHasNoExpectedVersion(
-  command: { input: { kind: string }; expectedVersion: string | null },
-  ctx: z.RefinementCtx,
-): void {
-  if (command.input.kind === "create" && command.expectedVersion !== null) {
-    ctx.addIssue({
-      code: "custom",
-      message: "A create command cannot carry an expectedVersion",
-      path: ["expectedVersion"],
-    });
-  }
-}
+const createHasNoExpectedVersion = (command: {
+  input: { kind: string };
+  expectedVersion: string | null;
+}) => command.input.kind !== "create" || command.expectedVersion === null;
+
+const createExpectedVersionIssue = {
+  message: "A create command cannot carry an expectedVersion",
+  path: ["expectedVersion"],
+};
 
 // Persistence record for `commands` — acknowledged, durable user intent for one
 // event mutation. Unique per (tenant, principal, idempotencyKey) so a retried
@@ -45,7 +42,7 @@ export const CommandRecordSchema = z
     createdAt: z.date(),
     updatedAt: z.date(),
   })
-  .superRefine(refineCreateHasNoExpectedVersion);
+  .refine(createHasNoExpectedVersion, createExpectedVersionIssue);
 export type CommandRecord = z.infer<typeof CommandRecordSchema>;
 
 // Fields a caller supplies to submit a command. Sync owns _id, attemptCount,
@@ -59,5 +56,5 @@ export const CommandSubmitSchema = z
     input: SyncCommandInputSchema,
     expectedVersion: ProviderEventVersionSchema.nullable(),
   })
-  .superRefine(refineCreateHasNoExpectedVersion);
+  .refine(createHasNoExpectedVersion, createExpectedVersionIssue);
 export type CommandSubmit = z.infer<typeof CommandSubmitSchema>;

@@ -54,3 +54,4 @@ supertokens:
 #   execution: passive # passive | active
 #   maxConcurrency: 4
 #   enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)
+#   compassApiDatabase: prod_calendar # API database the least-privilege check must be denied access to
