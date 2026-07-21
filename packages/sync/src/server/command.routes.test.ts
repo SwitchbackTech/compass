@@ -246,6 +246,50 @@ describe("POST /internal/commands", () => {
     expect(await mongo.db.collection("commands").countDocuments()).toBe(1);
   });
 
+  it("promotes an anonymous device event, preserving its clientEventId", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const clientEventId = `device-${objectId()}`;
+    const request = createRequest({
+      input: { ...createRequest().input, clientEventId },
+    });
+    await startService();
+
+    const res = await submit(tenantId, principalId, request);
+
+    expect(res.status).toBe(200);
+    const events = new EventRepository(mongo.db);
+    const stored = await events.findById(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+      request.eventId as never,
+    );
+    expect(stored?.clientEventId).toBe(clientEventId);
+  });
+
+  it("promoting the same device event twice yields one cloud event", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const clientEventId = `device-${objectId()}`;
+    // A stable eventId is what keeps a resumed/repeated promotion idempotent.
+    const request = createRequest({
+      input: { ...createRequest().input, clientEventId },
+    });
+    await startService();
+
+    await submit(tenantId, principalId, request);
+    await submit(tenantId, principalId, request);
+
+    expect(await mongo.db.collection("events").countDocuments()).toBe(1);
+    const events = new EventRepository(mongo.db);
+    const stored = await events.findById(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+      request.eventId as never,
+    );
+    expect(stored?.clientEventId).toBe(clientEventId);
+  });
+
   it("refuses to overwrite another principal's event with a reused id", async () => {
     const tenantId = objectId();
     const owner = objectId();

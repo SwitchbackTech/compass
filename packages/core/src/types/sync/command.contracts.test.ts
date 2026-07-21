@@ -84,6 +84,23 @@ describe("Sync command contracts", () => {
       );
     });
 
+    it("defaults a create's clientEventId to null when absent", () => {
+      const parsed = SyncCommandInputSchema.safeParse(createInput());
+      expect(parsed.success && parsed.data.kind === "create").toBe(true);
+      if (parsed.success && parsed.data.kind === "create") {
+        expect(parsed.data.clientEventId).toBeNull();
+      }
+    });
+
+    it("accepts a create carrying a clientEventId for promotion", () => {
+      const promoted = { ...createInput(), clientEventId: objectId() };
+      const parsed = SyncCommandInputSchema.safeParse(promoted);
+      expect(parsed.success).toBe(true);
+      if (parsed.success && parsed.data.kind === "create") {
+        expect(parsed.data.clientEventId).toBe(promoted.clientEventId);
+      }
+    });
+
     it.each([
       "this",
       "thisAndFollowing",

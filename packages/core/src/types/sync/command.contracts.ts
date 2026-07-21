@@ -9,6 +9,7 @@ import {
   RecurrenceScopeSchema,
 } from "@core/types/event-command.contracts";
 import {
+  ClientEventIdSchema,
   ProviderEventVersionSchema,
   SyncEventCalendarIdSchema,
   SyncEventContentSchema,
@@ -28,9 +29,13 @@ import {
 
 // create has no calendar to move within and no prior scope to preserve, so
 // its recurrence input reuses the existing single/series edit shape.
+// clientEventId carries the stable device-event identity when an anonymous
+// event is promoted to a cloud account, so the same device event stays
+// traceable across promotion; it is absent (null) for a plain cloud create.
 const CreateCommandInputSchema = z.strictObject({
   kind: z.literal("create"),
   calendarId: SyncEventCalendarIdSchema,
+  clientEventId: ClientEventIdSchema.nullable().default(null),
   content: SyncEventContentSchema,
   schedule: EventScheduleSchema,
   recurrence: EditableRecurrenceSchema,
