@@ -14,6 +14,7 @@ import {
   type ProviderWriteResult,
 } from "@sync/providers/provider-event-writer.port";
 import { type CommandSubmit } from "@sync/storage/contracts/command.contracts";
+import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
@@ -200,5 +201,114 @@ describe("submitCloudCommand provider dispatch", () => {
 
     expect(command.outcome.state).toBe("confirmed");
     expect(writer.calls).toHaveLength(0);
+  });
+
+  // Seed an existing event to mutate. Overrides let a test make it
+  // provider-linked or recurring to exercise the deferral guards.
+  const seedEvent = (
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    eventId: EventId,
+    overrides: Partial<EventRecord> = {},
+  ) =>
+    events.put({
+      _id: eventId,
+      tenantId,
+      principalId,
+      origin: "compass",
+      calendarId: objectId(),
+      clientEventId: null,
+      connectionId: null,
+      providerEventId: null,
+      providerVersion: null,
+      providerUpdatedAt: null,
+      deliveryState: null,
+      providerMetadata: null,
+      content: {
+        title: "Existing",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T09:00:00-06:00",
+        end: "2026-07-14T10:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "single" },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: now(),
+      updatedAt: now(),
+      confirmedAt: now(),
+      ...overrides,
+    } as EventRecord);
+
+  const deleteFor = (
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    eventId: EventId,
+  ): CommandSubmit => ({
+    tenantId,
+    principalId,
+    idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+    eventId,
+    input: { kind: "delete", scope: "all" } as SyncCommandInput,
+    expectedVersion: null,
+  });
+
+  const deps = () => ({
+    commands,
+    events,
+    calendars,
+    execution: "passive" as const,
+  });
+
+  it("leaves a delete of a provider-linked event pending (provider path)", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      connectionId: objectId() as never,
+      providerEventId: "g-evt-1" as never,
+      providerVersion: "etag-1" as never,
+      deliveryState: "confirmed",
+    });
+
+    const command = await submitCloudCommand(
+      deps(),
+      deleteFor(tenantId, principalId, eventId),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("pending");
+    // The event is untouched — never delete a provider event without the
+    // provider's confirmation.
+    expect(
+      await events.findById(tenantId, principalId, eventId),
+    ).not.toBeNull();
+  });
+
+  it("leaves a delete of a recurring series pending (scope handling)", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+
+    const command = await submitCloudCommand(
+      deps(),
+      deleteFor(tenantId, principalId, eventId),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("pending");
+    expect(
+      await events.findById(tenantId, principalId, eventId),
+    ).not.toBeNull();
   });
 });

@@ -51,6 +51,11 @@ export async function submitCloudCommand(
   // pending (a confirmed replay, or a kind we don't apply yet) is returned as
   // it stands, so a repeated submit never re-applies or overwrites an outcome.
   if (command.outcome.state !== "pending") return command;
+
+  // update/delete apply to an existing event; move is not handled yet.
+  if (command.input.kind === "update" || command.input.kind === "delete") {
+    return applyCloudMutation(deps, command, now);
+  }
   if (command.input.kind !== "create") return command;
 
   // A create whose target calendar is a connected provider calendar must go to
@@ -81,7 +86,71 @@ export async function submitCloudCommand(
   }
 
   await deps.events.put(buildCloudEventRecord(command, now()));
+  return confirmCloud(deps, command);
+}
 
+// Apply a cloud-only update or delete to an existing event. Only single,
+// unlinked events are handled here: a provider-linked event needs the provider
+// mutation path, and a recurring series needs scope handling — both land in
+// later slices, so those commands are left pending. Delete is idempotent (an
+// already-absent event confirms), so a retry after a crash converges.
+async function applyCloudMutation(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  const existing = await deps.events.findById(
+    command.tenantId,
+    command.principalId,
+    command.eventId,
+  );
+
+  if (command.input.kind === "delete") {
+    // Absence is the desired end state, so a delete of an already-gone (or
+    // never-created) event is confirmed rather than left hanging.
+    if (!existing) return confirmCloud(deps, command);
+    if (existing.connectionId !== null) return command;
+    if (existing.recurrence.kind !== "single") return command;
+    await deps.events.deleteById(
+      command.tenantId,
+      command.principalId,
+      command.eventId,
+    );
+    return confirmCloud(deps, command);
+  }
+
+  // Only update remains (applyCloudMutation is called for update/delete).
+  if (command.input.kind !== "update") return command;
+
+  // update: the target must exist; a missing event can't be updated, so leave
+  // the command pending rather than confirming a no-op.
+  if (!existing) return command;
+  if (existing.connectionId !== null) return command;
+  if (existing.recurrence.kind !== "single") return command;
+  // Converting a single event into a series is a series-scope edit — defer it.
+  // Gating on the command's intent (not the event's post-write recurrence) keeps
+  // a retry converging: applyCloudUpdate never changes recurrence.kind here, so
+  // the guards above still pass on the re-read.
+  if (command.input.recurrence.kind === "series") return command;
+
+  // Conditional replace (no upsert): if a concurrent delete removed the event
+  // between the read and here, the write is a no-op and the command stays
+  // pending rather than resurrecting the deleted event.
+  const applied = await deps.events.replaceExisting(
+    applyCloudUpdate(existing, command, now()),
+  );
+  if (!applied) return command;
+  return confirmCloud(deps, command);
+}
+
+// Confirm a cloud command with no provider identity — local persistence is the
+// only durability it needs. updateOutcome only misses if the command vanished
+// between submit and now (it cannot, within one request), so fall back to the
+// pending record rather than inventing an outcome.
+async function confirmCloud(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+): Promise<CommandRecord> {
   const confirmed = await deps.commands.updateOutcome(
     command.tenantId,
     command.principalId,
@@ -89,10 +158,33 @@ export async function submitCloudCommand(
     { state: "confirmed", providerEventId: null, providerVersion: null },
     command.attemptCount,
   );
-  // updateOutcome only misses if the command vanished between submit and now
-  // (it cannot, within one request); fall back to the pending record rather
-  // than inventing an outcome.
   return confirmed ?? command;
+}
+
+// Apply an update command's content/schedule/recurrence to an existing cloud
+// event, preserving its identity and provider fields. "preserve" keeps the
+// current recurrence; "single"/"series" set it.
+function applyCloudUpdate(
+  existing: EventRecord,
+  command: CommandRecord,
+  now: Date,
+): EventRecord {
+  if (command.input.kind !== "update") {
+    throw new Error("applyCloudUpdate requires an update command");
+  }
+  const { input } = command;
+  return {
+    ...existing,
+    content: input.content,
+    schedule: input.schedule,
+    recurrence:
+      input.recurrence.kind === "preserve"
+        ? existing.recurrence
+        : input.recurrence.kind === "series"
+          ? { kind: "seriesMaster", rules: input.recurrence.rules }
+          : { kind: "single" },
+    updatedAt: now,
+  };
 }
 
 // Build the canonical event for a cloud-only create. All provider fields are
