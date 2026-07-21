@@ -6,7 +6,11 @@ import {
   type SyncCommand,
   SyncCommandSchema,
 } from "@core/types/sync/command.contracts";
+import { type SyncExecutionMode } from "@sync/config/sync.config";
+import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import { submitCloudCommand } from "@sync/domain/cloud-command.service";
+import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
+import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import {
   ensureConnected,
   internalRateLimit,
@@ -15,6 +19,7 @@ import {
 } from "@sync/server/internal-http";
 import { type CommandRecord } from "@sync/storage/contracts/command.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
@@ -24,6 +29,15 @@ export const COMMANDS_PATH = "/internal/commands";
 export interface CommandApiDeps {
   authMiddleware: RequestHandler;
   mongo: SyncMongoService;
+  // Whether provider work is enabled. A provider-targeted create executes only
+  // when active; otherwise it is recorded pending.
+  execution: SyncExecutionMode;
+  // Provider write + auth adapters, present only when a provider is configured.
+  // Both are needed to execute a provider create (the writer performs it, the
+  // auth adapter backs the per-request credential custody). Absent leaves
+  // provider-targeted commands pending.
+  writer?: ProviderEventWriter;
+  authAdapter?: ProviderAuthAdapter;
   // Injectable clock so local confirmation timestamps are deterministic in
   // tests.
   now?: () => number;
@@ -56,11 +70,27 @@ export function registerCommandRoutes(
       const request = parsed.data;
 
       try {
+        // Build the provider write capability only when both adapters exist;
+        // custody is per-request (it holds the request's db-backed credential
+        // repo), the writer is shared.
+        const provider =
+          deps.writer && deps.authAdapter
+            ? {
+                writer: deps.writer,
+                custody: new CredentialCustody(
+                  new CredentialRepository(deps.mongo.db),
+                  deps.authAdapter,
+                ),
+              }
+            : undefined;
+
         const command = await submitCloudCommand(
           {
             commands: new CommandRepository(deps.mongo.db),
             events: new EventRepository(deps.mongo.db),
             calendars: new ProviderCalendarRepository(deps.mongo.db),
+            execution: deps.execution,
+            provider,
           },
           {
             tenantId: auth.tenantId,

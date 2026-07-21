@@ -24,12 +24,15 @@ export function buildSyncApp(deps: {
   registerHealthRoutes(app, deps);
   if (deps.connectionApi) {
     registerConnectionRoutes(app, deps.connectionApi);
-    // The command ingress shares the connection API's storage and auth; it makes
-    // no provider call for a cloud-only command, so it needs no adapter or
-    // secrets.
+    // The command ingress shares the connection API's storage and auth. A
+    // cloud-only command needs no provider adapter; a provider-targeted create
+    // uses the writer + auth adapter when provider work is enabled.
     registerCommandRoutes(app, {
       authMiddleware: deps.connectionApi.authMiddleware,
       mongo: deps.connectionApi.mongo,
+      execution: deps.connectionApi.execution,
+      writer: deps.connectionApi.writer,
+      authAdapter: deps.connectionApi.authAdapter,
       now: deps.connectionApi.now,
     });
     // The public webhook ingress shares the connection API's storage; it needs

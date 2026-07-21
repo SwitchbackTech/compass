@@ -5,7 +5,9 @@ import { ReadinessRegistry } from "@sync/lifecycle/readiness";
 import { ShutdownCoordinator } from "@sync/lifecycle/shutdown";
 import { deriveOAuthStateSecret } from "@sync/oauth/oauth-state";
 import { GoogleAuthAdapter } from "@sync/providers/google/google-auth.adapter";
+import { GoogleEventWriter } from "@sync/providers/google/google-event-writer.adapter";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
+import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
@@ -35,6 +37,9 @@ export function createSyncService(
     // Override the provider adapter (tests inject a fake to avoid the network);
     // production builds it from config.
     authAdapter?: ProviderAuthAdapter;
+    // Override the provider event writer (tests inject a fake); production
+    // builds it from config.
+    writer?: ProviderEventWriter;
   } = {},
 ): SyncService {
   const identity = buildServiceIdentity({
@@ -57,6 +62,9 @@ export function createSyncService(
         // The provider adapter is db-free, so it is built once here (gated on
         // provider config); the per-request custody/repos build from the db.
         authAdapter: deps.authAdapter ?? buildAuthAdapter(config),
+        // The event writer is likewise db-free and gated on provider config;
+        // the command routes use it for provider-targeted creates.
+        writer: deps.writer ?? buildEventWriter(config),
         // The OAuth CSRF state is signed with a key derived from the service
         // secret (domain-separated from internal-auth signing); the callback
         // resolves against the public base URL.
@@ -98,6 +106,16 @@ function buildAuthAdapter(config: SyncConfig): ProviderAuthAdapter | undefined {
     config.GOOGLE_CLIENT_ID,
     config.GOOGLE_CLIENT_SECRET,
   );
+}
+
+// Build the provider event writer when the provider is configured. Gated on the
+// same credentials as the auth adapter: a passive/unconfigured deployment
+// returns undefined, and provider-targeted commands stay pending.
+function buildEventWriter(config: SyncConfig): ProviderEventWriter | undefined {
+  if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET) {
+    return undefined;
+  }
+  return new GoogleEventWriter();
 }
 
 function closeHttpServer(httpServer: Server): Promise<void> {
