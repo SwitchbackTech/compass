@@ -8,9 +8,11 @@ import {
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { submitCloudCommand } from "@sync/domain/cloud-command.service";
+import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
   type ProviderCreateInput,
   type ProviderEventWriter,
+  type ProviderPatchInput,
   type ProviderWriteResult,
 } from "@sync/providers/provider-event-writer.port";
 import { type CommandSubmit } from "@sync/storage/contracts/command.contracts";
@@ -26,18 +28,44 @@ const objectId = () => faker.database.mongodbObjectId();
 class FakeWriter implements ProviderEventWriter {
   readonly provider = "google" as const;
   calls: ProviderCreateInput[] = [];
+  patchCalls: ProviderPatchInput[] = [];
+  // A stub current provider event for the update path's replay-detection fetch;
+  // its content differs from any command's intent so an update always patches.
+  fetched: ProviderEvent | null = {
+    kind: "event",
+    providerEventId: "g-evt-1",
+    providerVersion: "etag-1",
+    providerUpdatedAt: null,
+    content: {
+      title: "Provider copy",
+      description: "",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+    },
+    schedule: {
+      kind: "timed",
+      start: "2026-07-14T09:00:00-06:00",
+      end: "2026-07-14T10:00:00-06:00",
+      timeZone: "America/Denver",
+    },
+    busy: true,
+    recurrence: { kind: "single" },
+  };
   async createEvent(input: ProviderCreateInput): Promise<ProviderWriteResult> {
     this.calls.push(input);
     return { providerEventId: "g-evt-1", providerVersion: "etag-1" };
   }
-  patchEvent(): Promise<ProviderWriteResult> {
-    throw new Error("unused");
+  async patchEvent(input: ProviderPatchInput): Promise<ProviderWriteResult> {
+    this.patchCalls.push(input);
+    return { providerEventId: "g-evt-1", providerVersion: "etag-2" };
   }
   deleteEvent(): Promise<void> {
     throw new Error("unused");
   }
-  fetchEvent(): Promise<null> {
-    throw new Error("unused");
+  async fetchEvent(): Promise<ProviderEvent | null> {
+    return this.fetched;
   }
 }
 
@@ -310,5 +338,61 @@ describe("submitCloudCommand provider dispatch", () => {
     expect(
       await events.findById(tenantId, principalId, eventId),
     ).not.toBeNull();
+  });
+
+  it("routes a provider-linked update to the provider executor when active", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const calendar = await seedProviderCalendar(tenantId, principalId);
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      calendarId: calendar._id,
+      connectionId: calendar.connectionId as never,
+      providerEventId: "g-evt-1" as never,
+      providerVersion: "etag-1" as never,
+      deliveryState: "confirmed",
+    });
+    const writer = new FakeWriter();
+
+    const command = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        execution: "active",
+        provider: provider(writer),
+      },
+      {
+        tenantId,
+        principalId,
+        idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+        eventId,
+        input: {
+          kind: "update",
+          invitation: "none",
+          content: {
+            title: "Renamed",
+            description: "",
+            location: null,
+            organizer: null,
+            attendees: [],
+            conference: null,
+          },
+          schedule: {
+            kind: "timed",
+            start: "2026-07-14T09:00:00-06:00",
+            end: "2026-07-14T10:00:00-06:00",
+            timeZone: "America/Denver",
+          },
+          recurrence: { kind: "preserve" },
+          scope: "all",
+        } as unknown as SyncCommandInput,
+        expectedVersion: "etag-1" as never,
+      },
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    expect(writer.patchCalls).toHaveLength(1);
   });
 });

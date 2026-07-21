@@ -53,8 +53,11 @@ const CreateCommandInputSchema = z.strictObject({
 
 // update never changes the owning calendar — that is exclusively the "move"
 // operation's job, so the two stay independently retryable and idempotent.
+// invitation carries the user's choice of whether to notify attendees of the
+// edit, same as create; default is to notify no one.
 const UpdateCommandInputSchema = z.strictObject({
   kind: z.literal("update"),
+  invitation: InvitationIntentSchema,
   content: SyncEventContentSchema,
   schedule: EventScheduleSchema,
   recurrence: RecurrenceEditSchema,
