@@ -120,7 +120,6 @@ export const DayViewContent = memo(() => {
     <div id="day" className="flex h-screen w-screen overflow-hidden">
       <CommandPalette
         currentView="day"
-        today={dayjs()}
         onGoToToday={handleGoToToday}
         onShowShortcuts={toggleShortcuts}
         placeholder={getCommandPalettePlaceholder("day")}
