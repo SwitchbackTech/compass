@@ -1,4 +1,5 @@
 import { Logger } from "@core/logger/winston.logger";
+import { createInternalAuthMiddleware } from "@sync/auth/internal-auth";
 import { loadSyncConfig, type SyncConfig } from "@sync/config/sync.config";
 import { ReadinessRegistry } from "@sync/lifecycle/readiness";
 import { ShutdownCoordinator } from "@sync/lifecycle/shutdown";
@@ -24,7 +25,10 @@ export interface SyncService {
 // a port or reading a file — so tests can drive it directly. Later commits
 // register storage/scheduler readiness checks and drain tasks against the
 // returned registries.
-export function createSyncService(config: SyncConfig): SyncService {
+export function createSyncService(
+  config: SyncConfig,
+  deps: { mongo?: SyncMongoService } = {},
+): SyncService {
   const identity = buildServiceIdentity({
     environment: config.NODE_ENV,
     execution: config.EXECUTION,
@@ -32,7 +36,19 @@ export function createSyncService(config: SyncConfig): SyncService {
   const readiness = new ReadinessRegistry();
   const shutdown = new ShutdownCoordinator();
 
-  const app = buildSyncApp({ identity, readiness });
+  // The internal connection API mounts only when storage is provided. Its
+  // routes read the connected db per request, so the app is still built before
+  // Mongo connects (liveness-first startup).
+  const connectionApi = deps.mongo
+    ? {
+        authMiddleware: createInternalAuthMiddleware({
+          secret: config.INTERNAL_AUTH_TOKEN,
+        }),
+        mongo: deps.mongo,
+      }
+    : undefined;
+
+  const app = buildSyncApp({ identity, readiness, connectionApi });
   const httpServer = createServer(app);
 
   const stop = async (): Promise<void> => {
@@ -60,13 +76,17 @@ function closeHttpServer(httpServer: Server): Promise<void> {
 
 async function start(): Promise<void> {
   const config = loadSyncConfig();
-  const service = createSyncService(config);
+
+  // Build the mongo service before the app so the internal connection API can
+  // read from it. It is not connected yet; the app binds its port first and the
+  // routes access the db lazily, per request.
+  const mongo = new SyncMongoService();
+  const service = createSyncService(config, { mongo });
 
   // Register the disconnect drain first so, under the coordinator's
   // reverse-order teardown, storage closes LAST — after any workers that
   // depend on it. Readiness reflects storage state, so /health/ready stays 503
   // until Mongo is connected and its indexes are installed.
-  const mongo = new SyncMongoService();
   service.shutdown.register("mongo", () => mongo.disconnect());
   service.readiness.register("storage", async () => {
     if (!mongo.isConnected) return false;
