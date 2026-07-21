@@ -32,7 +32,7 @@ export function NumberInput({
     <div className="relative w-32">
       <input
         aria-label={ariaLabel}
-        className="c-number-input h-12 w-full rounded-lg border border-border bg-surface px-3 pr-10 text-center text-lg text-text outline-none transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+        className="c-number-input h-12 w-full rounded-lg border border-border bg-surface px-3 pr-10 text-center text-sm text-text outline-none transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
         id={id}
         inputMode="numeric"
         max={max}

@@ -14,6 +14,7 @@ import {
   validateDayDateParam,
   validateWeekDateParam,
 } from "@web/routers/loaders";
+import { validateLifeSearch } from "@web/views/Life/life-search";
 import { NotFoundView } from "@web/views/NotFound";
 
 export const rootRoute = createRootRoute({
@@ -33,6 +34,7 @@ export const rootRoute = createRootRoute({
 export const lifeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: ROOT_ROUTES.LIFE,
+  validateSearch: validateLifeSearch,
   component: lazyRouteComponent(
     () => import("@web/views/Life/LifeView"),
     "LifeView",

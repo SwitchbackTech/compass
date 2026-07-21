@@ -1,10 +1,14 @@
+import { ShuffleIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
+import { ArrowButton } from "@web/components/Button/ArrowButton";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { NumberInput } from "@web/components/NumberInput/NumberInput";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { LifeShareButtons } from "./LifeShareButtons";
 import {
   clampLifespan,
   formatDateInputValue,
+  getLifeVariationDescription,
   getRandomLifespan,
   LIFE_VARIATIONS,
   MAX_LIFESPAN,
@@ -14,18 +18,26 @@ import {
 import { type LifePreferences } from "./life-preferences.storage";
 
 interface LifeSidebarContentProps {
+  onCycleVariation: (direction: -1 | 1) => void;
   preferences: LifePreferences;
+  onShuffleAge: () => void;
   summary: string;
+  totalDots: number;
   today: Date;
+  weeksLived: number;
   onPreferencesChange: (
     update: (current: LifePreferences) => LifePreferences,
   ) => void;
 }
 
 export function LifeSidebarContent({
+  onCycleVariation,
   preferences,
+  onShuffleAge,
   summary,
+  totalDots,
   today,
+  weeksLived,
   onPreferencesChange,
 }: LifeSidebarContentProps) {
   const [isBirthDatePickerOpen, setIsBirthDatePickerOpen] = useState(false);
@@ -70,8 +82,24 @@ export function LifeSidebarContent({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-5 pb-5 text-sm">
       <section className="flex flex-col gap-2 text-text-muted">
-        <h2 className="font-semibold text-text">{variation.label}</h2>
-        <p>{variation.description}</p>
+        <div className="flex items-center gap-1">
+          <h2 className="font-semibold text-text">{variation.label}</h2>
+          <TooltipWrapper description="Previous life variation" shortcut="J">
+            <ArrowButton
+              direction="left"
+              label="Previous life variation in sidebar"
+              onClick={() => onCycleVariation(-1)}
+            />
+          </TooltipWrapper>
+          <TooltipWrapper description="Next life variation" shortcut="K">
+            <ArrowButton
+              direction="right"
+              label="Next life variation in sidebar"
+              onClick={() => onCycleVariation(1)}
+            />
+          </TooltipWrapper>
+        </div>
+        <p>{getLifeVariationDescription(preferences.lifespan)}</p>
       </section>
 
       <section className="flex flex-col gap-2 text-center">
@@ -119,15 +147,25 @@ export function LifeSidebarContent({
             selected={birthDate ?? undefined}
             title="Date of birth"
             view="grid"
+            withTodayButton={false}
             withUnderline={false}
           />
         </div>
 
-        <label
-          className="flex w-full flex-col items-center gap-1 text-text-muted"
-          htmlFor="life-age-of-death"
-        >
-          Age of Death
+        <div className="flex w-full flex-col items-center gap-1 text-text-muted">
+          <span className="flex items-center gap-1">
+            Age of Death
+            <TooltipWrapper description="Choose a random age">
+              <button
+                aria-label="Shuffle life variation"
+                className="flex size-6 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                onClick={onShuffleAge}
+                type="button"
+              >
+                <ShuffleIcon aria-hidden="true" size={14} />
+              </button>
+            </TooltipWrapper>
+          </span>
           <NumberInput
             ariaLabel="Age of Death"
             id="life-age-of-death"
@@ -146,7 +184,7 @@ export function LifeSidebarContent({
             }}
             value={lifespanInput}
           />
-        </label>
+        </div>
       </section>
 
       <section className="flex flex-col gap-3 text-text-muted">
@@ -156,6 +194,12 @@ export function LifeSidebarContent({
           week of your life, and each row represents one year.
         </p>
       </section>
+
+      <LifeShareButtons
+        lifespan={preferences.lifespan}
+        totalDots={totalDots}
+        weeksLived={weeksLived}
+      />
     </div>
   );
 }

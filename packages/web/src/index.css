@@ -561,12 +561,12 @@
     margin-bottom: 6px;
   }
 
-  & .react-datepicker__day--selected {
+  & .react-datepicker__day.react-datepicker__day--selected {
     background-color: var(--date-picker-selected-bg);
     color: var(--date-picker-selected-text);
   }
 
-  & .react-datepicker__day--selected:hover {
+  & .react-datepicker__day.react-datepicker__day--selected:hover {
     color: var(--date-picker-selected-text);
   }
 
@@ -586,8 +586,12 @@
     text-decoration-color: var(--date-picker-hover-text);
   }
 
-  & .react-datepicker__day--keyboard-selected {
-    background-color: var(--background);
+  &
+    .react-datepicker__day--keyboard-selected:not(
+      .react-datepicker__day--selected
+    ) {
+    background-color: var(--date-picker-hover-bg);
+    color: var(--date-picker-hover-text);
   }
 
   &[data-view="sidebar"] .react-datepicker__day--keyboard-selected {
@@ -641,6 +645,15 @@
 .c-number-input::-webkit-outer-spin-button {
   appearance: none;
   margin: 0;
+}
+
+.c-life-input + .react-datepicker__close-icon::after {
+  background-color: var(--text-muted);
+  color: var(--surface);
+}
+
+.c-life-input + .react-datepicker__close-icon:hover::after {
+  background-color: var(--text);
 }
 
 @utility c-scroll {

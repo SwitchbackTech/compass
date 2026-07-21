@@ -1,5 +1,7 @@
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCommandPalettePlaceholder } from "@web/common/constants/more.cmd.constants";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useResponsiveLayout } from "@web/components/AuthenticatedLayout/useResponsiveLayout";
 import { CalendarHeader } from "@web/components/CalendarHeader/CalendarHeader";
@@ -30,6 +32,7 @@ import {
   readLifePreferences,
   writeLifePreferences,
 } from "./life-preferences.storage";
+import { applyLifeSearch } from "./life-search";
 
 interface LifeViewProps {
   today?: Date;
@@ -41,9 +44,13 @@ function formatWeeks(value: number) {
 
 export function LifeView({ today }: LifeViewProps) {
   const currentDate = useMemo(() => today ?? new Date(), [today]);
+  const navigate = useNavigate();
+  const search = useSearch({ from: ROOT_ROUTES.LIFE });
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const currentWeekRef = useRef<HTMLButtonElement>(null);
-  const [preferences, setPreferences] = useState(readLifePreferences);
+  const [preferences, setPreferences] = useState(() =>
+    applyLifeSearch(readLifePreferences(), search, currentDate),
+  );
   const totalDots = useMemo(
     () => getTotalLifeDots(preferences.lifespan),
     [preferences.lifespan],
@@ -65,6 +72,28 @@ export function LifeView({ today }: LifeViewProps) {
   useEffect(() => {
     writeLifePreferences(preferences);
   }, [preferences]);
+
+  useEffect(() => {
+    setPreferences((current) => {
+      const next = applyLifeSearch(current, search, currentDate);
+      return current.variation === next.variation &&
+        current.lifespan === next.lifespan
+        ? current
+        : next;
+    });
+  }, [currentDate, search]);
+
+  useEffect(() => {
+    navigate({
+      to: ROOT_ROUTES.LIFE,
+      replace: true,
+      search: (currentSearch) => ({
+        ...currentSearch,
+        age: preferences.lifespan,
+        variation: preferences.variation,
+      }),
+    });
+  }, [navigate, preferences.lifespan, preferences.variation]);
 
   const toggleSidebar = useCallback(() => {
     viewActions.toggleSidebar();
@@ -110,8 +139,17 @@ export function LifeView({ today }: LifeViewProps) {
     },
     [currentDate],
   );
+  const shuffleAge = useCallback(() => {
+    setPreferences((current) => ({
+      ...current,
+      lifespan: getRandomLifespan(current.birthDate, currentDate),
+      variation: "random",
+    }));
+  }, [currentDate]);
 
   useAppShortcutUp("T", focusCurrentWeek);
+  useAppShortcutUp("J", () => cycleVariation(-1));
+  useAppShortcutUp("K", () => cycleVariation(1));
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
@@ -152,9 +190,13 @@ export function LifeView({ today }: LifeViewProps) {
           shortcutsViewLabel="Life"
         >
           <LifeSidebarContent
+            onCycleVariation={cycleVariation}
             preferences={preferences}
+            onShuffleAge={shuffleAge}
             summary={summary}
+            totalDots={totalDots}
             today={currentDate}
+            weeksLived={weeksLived}
             onPreferencesChange={onPreferencesChange}
           />
         </SidebarShell>
