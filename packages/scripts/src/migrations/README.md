@@ -5,27 +5,22 @@ orders them lexicographically by filename (so the `YYYY.MM.DD...` prefix is
 chronological), and records applied migrations in the `migrations` collection.
 See `../commands/migrate.ts`.
 
+## Retention policy
+
+Migrations are removed once no supported upgrade path runs them. The
+sub-calendar v1 cutover migrations (legacy event/calendar transforms and the
+event-record backfill) shipped in releases up to v1.0.310 and were deleted
+afterwards; pre-cutover installs must upgrade through v1.0.310 first (see
+`docs/self-hosting/upgrades.md`). Umzug tolerates ledger entries for deleted
+files -- they simply never rerun.
+
 ## Test / coverage policy
 
-The migration **implementations** are all retained: a fresh provisioning path
-and any supported upgrade path still runs the chain, and some steps also
-require a manual operator rename between them (see the event-collection cutover
-runbook), so the chain is intentionally not a single self-contained "run all up
-on an empty DB".
-
-Migration **tests** follow a baseline policy:
-
-- **Permanently-completed migrations** (the 2025-era schema/data steps that have
-  run on every live database since the calendar-owned-events cutover) do **not**
-  keep heavy per-migration integration suites. Their intermediate schemas are
-  superseded by later steps, so re-running them against a seeded database tests
-  states that no supported deployment is in anymore. Those six suites were
-  removed. `migration-discovery.test.ts` cheaply guards the discovery/ordering
-  contract for the whole chain, and the pure data-transform logic keeps its fast
-  unit tests in `../common/migration-support/`.
-- **Recent migrations** (within their rollback/support window) keep a focused
+- `migration-discovery.test.ts` cheaply guards the discovery/ordering
+  contract for the whole chain.
+- **Migrations within their rollback/support window** keep a focused
   integration suite proving reads, writes, indexes, idempotency, and failure
-  behavior -- but push exhaustive input/edge-case coverage down to the pure
+  behavior -- but push exhaustive input/edge-case coverage down to pure
   transform unit tests rather than repeating every case through the database.
 
 Do not reintroduce a full integration suite per historical migration. If you add
