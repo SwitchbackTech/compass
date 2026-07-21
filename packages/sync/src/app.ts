@@ -56,6 +56,10 @@ export function createSyncService(
         // The provider adapter is db-free, so it is built once here (gated on
         // provider config); the per-request custody/repos build from the db.
         authAdapter: deps.authAdapter ?? buildAuthAdapter(config),
+        // The OAuth CSRF state is signed with the service secret and the
+        // callback resolves against the public base URL.
+        stateSecret: config.INTERNAL_AUTH_TOKEN,
+        callbackBaseUrl: config.CALLBACK_BASE_URL,
       }
     : undefined;
 
