@@ -3,6 +3,8 @@ import { createInternalAuthMiddleware } from "@sync/auth/internal-auth";
 import { loadSyncConfig, type SyncConfig } from "@sync/config/sync.config";
 import { ReadinessRegistry } from "@sync/lifecycle/readiness";
 import { ShutdownCoordinator } from "@sync/lifecycle/shutdown";
+import { GoogleAuthAdapter } from "@sync/providers/google/google-auth.adapter";
+import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
@@ -27,7 +29,12 @@ export interface SyncService {
 // returned registries.
 export function createSyncService(
   config: SyncConfig,
-  deps: { mongo?: SyncMongoService } = {},
+  deps: {
+    mongo?: SyncMongoService;
+    // Override the provider adapter (tests inject a fake to avoid the network);
+    // production builds it from config.
+    authAdapter?: ProviderAuthAdapter;
+  } = {},
 ): SyncService {
   const identity = buildServiceIdentity({
     environment: config.NODE_ENV,
@@ -45,6 +52,10 @@ export function createSyncService(
           secret: config.INTERNAL_AUTH_TOKEN,
         }),
         mongo: deps.mongo,
+        execution: config.EXECUTION,
+        // The provider adapter is db-free, so it is built once here (gated on
+        // provider config); the per-request custody/repos build from the db.
+        authAdapter: deps.authAdapter ?? buildAuthAdapter(config),
       }
     : undefined;
 
@@ -65,6 +76,19 @@ export function createSyncService(
   };
 
   return { identity, readiness, shutdown, httpServer, stop };
+}
+
+// Build the provider authorization adapter when the provider is configured.
+// A passive deployment without provider credentials returns undefined, and the
+// connection API refuses provider-touching operations rather than failing.
+function buildAuthAdapter(config: SyncConfig): ProviderAuthAdapter | undefined {
+  if (!config.GOOGLE_CLIENT_ID || !config.GOOGLE_CLIENT_SECRET) {
+    return undefined;
+  }
+  return new GoogleAuthAdapter(
+    config.GOOGLE_CLIENT_ID,
+    config.GOOGLE_CLIENT_SECRET,
+  );
 }
 
 function closeHttpServer(httpServer: Server): Promise<void> {

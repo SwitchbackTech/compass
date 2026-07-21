@@ -56,6 +56,8 @@ export class ProviderConnectionRepository {
           tenantId: fields.tenantId,
           principalId: fields.principalId,
           provider: fields.provider,
+          // A freshly seen connection is connected; disconnect sets this later.
+          disconnectedAt: null,
           createdAt: now,
         },
       },
@@ -89,5 +91,30 @@ export class ProviderConnectionRepository {
       .find({ tenantId, principalId })
       .toArray();
     return records.map((r) => ProviderConnectionRecordSchema.parse(r));
+  }
+
+  // Record that the user disconnected this connection. Sets the durable
+  // `disconnectedAt` evidence and the terminal state together (they agree:
+  // state derivation maps a non-null disconnectedAt to "disconnected"). Scoped
+  // to the owning principal, and returns whether a row was actually updated so
+  // the caller can tell a real disconnect from a missing/foreign connection.
+  async markDisconnected(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: ConnectionId,
+    now: Date = new Date(),
+  ): Promise<boolean> {
+    const result = await this.collection.updateOne(
+      { _id: id, tenantId, principalId },
+      {
+        $set: {
+          disconnectedAt: now,
+          state: "disconnected",
+          stateReason: null,
+          updatedAt: now,
+        },
+      },
+    );
+    return result.matchedCount === 1;
   }
 }

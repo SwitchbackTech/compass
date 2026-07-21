@@ -1,13 +1,19 @@
 import { faker } from "@faker-js/faker";
 import { NodeEnv } from "@core/constants/core.constants";
 import {
+  type ConnectionId,
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { createSyncService, type SyncService } from "@sync/app";
 import { signInternalRequest } from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
+import {
+  type ProviderAuthAdapter,
+  type RefreshedCredential,
+} from "@sync/providers/provider-auth.port";
 import { CONNECTIONS_PATH } from "@sync/server/connection.routes";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
@@ -27,6 +33,25 @@ const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
     MAX_CONCURRENCY: 4,
     ...overrides,
   }) as SyncConfig;
+
+// A minimal provider auth adapter: disconnect only exercises revoke, which
+// records the token instead of hitting the network.
+class FakeAuthAdapter implements ProviderAuthAdapter {
+  readonly provider = "google" as const;
+  revoked: string[] = [];
+  buildAuthorizationUrl(): string {
+    return "https://example.com/consent";
+  }
+  exchangeAuthorizationCode(): Promise<never> {
+    throw new Error("unused");
+  }
+  refreshAccessToken(): Promise<RefreshedCredential> {
+    throw new Error("unused");
+  }
+  async revoke(input: { token: string }): Promise<void> {
+    this.revoked.push(input.token);
+  }
+}
 
 const seedConnection = (
   repo: ProviderConnectionRepository,
@@ -74,8 +99,11 @@ describe("GET /internal/connections", () => {
   let service: SyncService;
   let base: string;
 
-  const startService = async (config: SyncConfig = testConfig()) => {
-    service = createSyncService(config, { mongo });
+  const startService = async (
+    config: SyncConfig = testConfig(),
+    authAdapter?: ProviderAuthAdapter,
+  ) => {
+    service = createSyncService(config, { mongo, authAdapter });
     await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
     const { port } = service.httpServer.address() as AddressInfo;
     base = `http://127.0.0.1:${port}`;
@@ -188,5 +216,140 @@ describe("GET /internal/connections", () => {
     expect(
       ((await res.json()) as { connections: unknown[] }).connections,
     ).toHaveLength(1);
+  });
+});
+
+describe("DELETE /internal/connections/:id", () => {
+  let mongo: SyncMongoService;
+  let connections: ProviderConnectionRepository;
+  let credentials: CredentialRepository;
+  let service: SyncService;
+  let base: string;
+  let adapter: FakeAuthAdapter;
+
+  const activeConfig = () => testConfig({ EXECUTION: "active" });
+
+  const startService = async (
+    config: SyncConfig,
+    authAdapter?: ProviderAuthAdapter,
+  ) => {
+    service = createSyncService(config, { mongo, authAdapter });
+    await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
+    const { port } = service.httpServer.address() as AddressInfo;
+    base = `http://127.0.0.1:${port}`;
+  };
+
+  beforeEach(async () => {
+    mongo = new SyncMongoService();
+    await mongo.connect({
+      uri,
+      databaseName: `disconnect_${objectId()}`,
+      forbiddenDatabaseName: "compass_api_unused",
+      enforceLeastPrivilege: false,
+    });
+    connections = new ProviderConnectionRepository(mongo.db);
+    credentials = new CredentialRepository(mongo.db);
+    adapter = new FakeAuthAdapter();
+  });
+
+  afterEach(async () => {
+    await service?.stop();
+    await mongo.db.dropDatabase();
+    await mongo.disconnect();
+  });
+
+  const seedConnected = async (tenantId: string, principalId: string) => {
+    const connection = await seedConnection(
+      connections,
+      tenantId,
+      principalId,
+      "connected@example.com",
+    );
+    await credentials.store({
+      connectionId: connection._id,
+      provider: "google",
+      refreshToken: "stored-refresh-token",
+      scopes: ["https://www.googleapis.com/auth/calendar.events"],
+    });
+    return connection._id;
+  };
+
+  it("revokes, deletes the credential, and marks the connection disconnected", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const id = await seedConnected(tenantId, principalId);
+    await startService(activeConfig(), adapter);
+
+    const res = await fetch(`${base}${CONNECTIONS_PATH}/${id}`, {
+      method: "DELETE",
+      headers: signedHeaders(tenantId, principalId),
+    });
+
+    expect(res.status).toBe(204);
+    expect(adapter.revoked).toEqual(["stored-refresh-token"]);
+    expect(await credentials.findByConnection(id)).toBeNull();
+    const after = await connections.findById(
+      tenantId as never,
+      principalId as never,
+      id,
+    );
+    expect(after?.state).toBe("disconnected");
+    expect(after?.disconnectedAt).toBeInstanceOf(Date);
+  });
+
+  it("refuses to disconnect in passive mode rather than half-disconnecting", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const id = await seedConnected(tenantId, principalId);
+    await startService(testConfig({ EXECUTION: "passive" }), adapter);
+
+    const res = await fetch(`${base}${CONNECTIONS_PATH}/${id}`, {
+      method: "DELETE",
+      headers: signedHeaders(tenantId, principalId),
+    });
+
+    expect(res.status).toBe(409);
+    // Nothing was revoked or deleted.
+    expect(adapter.revoked).toEqual([]);
+    expect(await credentials.findByConnection(id)).not.toBeNull();
+  });
+
+  it("returns 404 for a connection the principal does not own, revoking nothing", async () => {
+    const tenantId = objectId();
+    const owner = objectId();
+    const stranger = objectId();
+    const id = await seedConnected(tenantId, owner);
+    await startService(activeConfig(), adapter);
+
+    const res = await fetch(`${base}${CONNECTIONS_PATH}/${id}`, {
+      method: "DELETE",
+      headers: signedHeaders(tenantId, stranger),
+    });
+
+    expect(res.status).toBe(404);
+    expect(adapter.revoked).toEqual([]);
+    expect(await credentials.findByConnection(id)).not.toBeNull();
+  });
+
+  it("rejects a malformed connection id", async () => {
+    await startService(activeConfig(), adapter);
+
+    const res = await fetch(`${base}${CONNECTIONS_PATH}/not-an-object-id`, {
+      method: "DELETE",
+      headers: signedHeaders(objectId(), objectId()),
+    });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects an unsigned disconnect", async () => {
+    await startService(activeConfig(), adapter);
+
+    const res = await fetch(
+      `${base}${CONNECTIONS_PATH}/${objectId() as ConnectionId}`,
+      { method: "DELETE" },
+    );
+
+    expect(res.status).toBe(401);
   });
 });
