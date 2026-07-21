@@ -62,6 +62,10 @@ export const FreqSelect = ({
             ? `0 0 0 2px ${colors.borderStrong}`
             : "none",
         }),
+        singleValue: (baseStyles) => ({
+          ...baseStyles,
+          color: theme.getContrastText(bgColor),
+        }),
         indicatorSeparator: () => ({
           visibility: "hidden",
         }),
@@ -76,26 +80,31 @@ export const FreqSelect = ({
           maxHeight: "none",
           overflowY: "visible",
         }),
-        option: (styles, { isDisabled, isFocused, isSelected }) => ({
-          ...styles,
-          backgroundColor: isDisabled
-            ? undefined
-            : isSelected
-              ? bgBright
-              : isFocused
-                ? bgDark
+        option: (styles, { isDisabled, isFocused, isSelected }) => {
+          const optionBg = isSelected ? bgBright : isFocused ? bgDark : bgColor;
+
+          return {
+            ...styles,
+            backgroundColor: isDisabled
+              ? undefined
+              : isSelected
+                ? bgBright
+                : isFocused
+                  ? bgDark
+                  : undefined,
+            color: theme.getContrastText(optionBg),
+            opacity: isDisabled ? 0.5 : 1,
+            cursor: isDisabled ? "not-allowed" : "default",
+            ":active": {
+              ...styles[":active"],
+              backgroundColor: !isDisabled
+                ? isSelected
+                  ? bgColor
+                  : bgBright
                 : undefined,
-          color: isDisabled ? colors.textMuted : colors.onAccent,
-          cursor: isDisabled ? "not-allowed" : "default",
-          ":active": {
-            ...styles[":active"],
-            backgroundColor: !isDisabled
-              ? isSelected
-                ? bgColor
-                : bgBright
-              : undefined,
-          },
-        }),
+            },
+          };
+        },
       }}
     />
   );

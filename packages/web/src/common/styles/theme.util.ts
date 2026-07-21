@@ -35,7 +35,11 @@ const buildEventPalette = (theme: ThemeName): EventPalette => {
     base,
     hover: brighten(base),
     gradient: `linear-gradient(90deg, ${darken(base, 15)}, ${darken(base, 30)})`,
-    saveButtonBg: darken(base),
+    // Undarkened: darken(base) sat right at the mid-tone dead zone (see
+    // getContrastText above), leaving Save's text only ~5:1 against its own
+    // fill. The plain base clears 6.5:1+ in both themes; saveButtonShadow
+    // still carries the "elevated" depth cue.
+    saveButtonBg: base,
     saveButtonShadow: darken(base, 25),
   };
 };

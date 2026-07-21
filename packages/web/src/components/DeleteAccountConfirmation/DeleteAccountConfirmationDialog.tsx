@@ -47,7 +47,7 @@ export function DeleteAccountConfirmationDialog({
           type="text"
           value={typedPhrase}
           autoComplete="off"
-          className="w-full rounded border border-border bg-transparent px-3 py-2 text-text-muted outline-none placeholder:text-text focus-visible:border-accent"
+          className="w-full rounded border border-border bg-transparent px-3 py-2 text-text outline-none placeholder:text-text-muted focus-visible:border-accent"
           onChange={(event) => setTypedPhrase(event.target.value)}
           // Typing the phrase out is the whole point of the confirmation,
           // so it can't be pasted or dragged in.
