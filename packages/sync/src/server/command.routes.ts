@@ -16,6 +16,7 @@ import {
 import { type CommandRecord } from "@sync/storage/contracts/command.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
+import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 
 export const COMMANDS_PATH = "/internal/commands";
@@ -59,6 +60,7 @@ export function registerCommandRoutes(
           {
             commands: new CommandRepository(deps.mongo.db),
             events: new EventRepository(deps.mongo.db),
+            calendars: new ProviderCalendarRepository(deps.mongo.db),
           },
           {
             tenantId: auth.tenantId,

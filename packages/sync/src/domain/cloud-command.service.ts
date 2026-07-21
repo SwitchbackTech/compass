@@ -1,5 +1,6 @@
 import { type EditableRecurrence } from "@core/types/event.contracts";
 import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
+import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
 import {
   type CommandRecord,
   type CommandSubmit,
@@ -7,10 +8,12 @@ import {
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
+import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 
 export interface CloudCommandRepos {
   commands: CommandRepository;
   events: EventRepository;
+  calendars: ProviderCalendarRepository;
 }
 
 // Durably record a command and, for a cloud-only create, apply it to the
@@ -20,7 +23,10 @@ export interface CloudCommandRepos {
 // runs while the command is still pending. So a retry after a crash at any
 // point converges on one confirmed command and one event.
 //
-// A non-create command is persisted as durable pending intent and returned
+// A command with a provider target (its calendar is a connected provider
+// calendar) is left pending here: confirming it locally would skip the provider
+// write. The provider execution path applies and confirms it. A non-create
+// command is likewise persisted as durable pending intent and returned
 // unchanged; applying update/move/delete locally lands in a later slice.
 export async function submitCloudCommand(
   repos: CloudCommandRepos,
@@ -34,6 +40,17 @@ export async function submitCloudCommand(
   // it stands, so a repeated submit never re-applies or overwrites an outcome.
   if (command.outcome.state !== "pending") return command;
   if (command.input.kind !== "create") return command;
+
+  // A create whose target calendar is a connected provider calendar must go to
+  // the provider, not be confirmed as a local cloud event. Leave it pending for
+  // the provider path. A calendar id that resolves to no provider calendar is a
+  // Compass cloud calendar, so it is applied locally below.
+  const providerCalendar = await repos.calendars.findById(
+    command.tenantId,
+    command.principalId,
+    command.input.calendarId as ProviderCalendarId,
+  );
+  if (providerCalendar) return command;
 
   await repos.events.put(buildCloudEventRecord(command, now()));
 
