@@ -246,6 +246,35 @@ describe("POST /internal/commands", () => {
     expect(await mongo.db.collection("commands").countDocuments()).toBe(1);
   });
 
+  it("refuses to overwrite another principal's event with a reused id", async () => {
+    const tenantId = objectId();
+    const owner = objectId();
+    const attacker = objectId();
+    const request = createRequest();
+    await startService();
+
+    // The owner creates an event.
+    await submit(tenantId, owner, request);
+
+    // A different principal submits a create reusing the owner's event id.
+    const res = await submit(tenantId, attacker, {
+      ...request,
+      idempotencyKey: `idem-${objectId()}`,
+    });
+
+    // The write is refused (the scoped filter collides on the unique _id),
+    // never a silent clobber.
+    expect(res.status).toBe(500);
+    const events = new EventRepository(mongo.db);
+    const stored = await events.findById(
+      tenantId as TenantId,
+      owner as PrincipalId,
+      request.eventId as never,
+    );
+    // The owner still owns the untouched event.
+    expect(stored?.principalId).toBe(owner);
+  });
+
   it("rejects a malformed command body", async () => {
     await startService();
 
