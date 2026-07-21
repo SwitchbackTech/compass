@@ -94,6 +94,13 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       key: { subscriptionExpiresAt: 1 },
       options: { sparse: true },
     },
+    {
+      // The public notification webhook looks a resource up by its channel id
+      // on every inbound callback; sparse because most resources have none.
+      name: "subscription_id",
+      key: { subscriptionId: 1 },
+      options: { sparse: true },
+    },
     { name: "last_success", key: { lastSuccessAt: 1 } },
   ],
   [SYNC_COLLECTIONS.commands]: [
