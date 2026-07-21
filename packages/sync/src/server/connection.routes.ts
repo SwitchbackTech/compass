@@ -27,6 +27,7 @@ import { deriveConnectionState } from "@sync/domain/connection-state";
 import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
 import { googleCapabilitiesFromScopes } from "@sync/providers/google/google-capabilities";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
+import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import {
   ensureConnected,
   internalRateLimit,
@@ -66,6 +67,10 @@ export interface ConnectionApiDeps {
   // The provider authorization adapter, present only when the provider is
   // configured. Absent (or passive mode) means no provider work is possible.
   authAdapter?: ProviderAuthAdapter;
+  // The provider event writer, present only when the provider is configured.
+  // Not used by the connection routes themselves; carried here because this is
+  // the shared bag the command routes are wired from.
+  writer?: ProviderEventWriter;
   // Secret the OAuth CSRF state is signed with, and the public base URL the
   // provider callback resolves against.
   stateSecret: string;

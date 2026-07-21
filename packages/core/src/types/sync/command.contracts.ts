@@ -27,6 +27,15 @@ import {
 // work begins. This file adds contracts only — nothing here executes a command
 // or reads/writes the existing Compass API event endpoints.
 
+// Whether writing this event to a provider should notify attendees. The choice
+// is the user's (made in the UI when they created the event), carried on the
+// command so Sync honors it rather than deciding. Defaults to notifying no one
+// — the safe choice for a create with no attendees or no provider target.
+export const InvitationIntentSchema = z
+  .enum(["all", "externalOnly", "none"])
+  .default("none");
+export type InvitationIntent = z.infer<typeof InvitationIntentSchema>;
+
 // create has no calendar to move within and no prior scope to preserve, so
 // its recurrence input reuses the existing single/series edit shape.
 // clientEventId carries the stable device-event identity when an anonymous
@@ -36,6 +45,7 @@ const CreateCommandInputSchema = z.strictObject({
   kind: z.literal("create"),
   calendarId: SyncEventCalendarIdSchema,
   clientEventId: ClientEventIdSchema.nullable().default(null),
+  invitation: InvitationIntentSchema,
   content: SyncEventContentSchema,
   schedule: EventScheduleSchema,
   recurrence: EditableRecurrenceSchema,

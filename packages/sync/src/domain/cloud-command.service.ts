@@ -1,6 +1,10 @@
 import { type EditableRecurrence } from "@core/types/event.contracts";
 import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
+import { type SyncExecutionMode } from "@sync/config/sync.config";
+import { type CredentialCustody } from "@sync/credentials/credential-custody.service";
+import { executeProviderCreate } from "@sync/domain/provider-command.service";
+import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import {
   type CommandRecord,
   type CommandSubmit,
@@ -10,10 +14,18 @@ import { type CommandRepository } from "@sync/storage/repositories/command.repos
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 
-export interface CloudCommandRepos {
+export interface CloudCommandDeps {
   commands: CommandRepository;
   events: EventRepository;
   calendars: ProviderCalendarRepository;
+  execution: SyncExecutionMode;
+  // Provider write capability, present only when a provider is configured and
+  // provider work is enabled. Absent means provider-targeted commands stay
+  // pending instead of executing.
+  provider?: {
+    writer: ProviderEventWriter;
+    custody: CredentialCustody;
+  };
 }
 
 // Durably record a command and, for a cloud-only create, apply it to the
@@ -29,11 +41,11 @@ export interface CloudCommandRepos {
 // command is likewise persisted as durable pending intent and returned
 // unchanged; applying update/move/delete locally lands in a later slice.
 export async function submitCloudCommand(
-  repos: CloudCommandRepos,
+  deps: CloudCommandDeps,
   submit: CommandSubmit,
   now: () => Date,
 ): Promise<CommandRecord> {
-  const command = await repos.commands.submit(submit);
+  const command = await deps.commands.submit(submit);
 
   // Only a freshly-persisted create is applied here. A command already past
   // pending (a confirmed replay, or a kind we don't apply yet) is returned as
@@ -42,19 +54,35 @@ export async function submitCloudCommand(
   if (command.input.kind !== "create") return command;
 
   // A create whose target calendar is a connected provider calendar must go to
-  // the provider, not be confirmed as a local cloud event. Leave it pending for
-  // the provider path. A calendar id that resolves to no provider calendar is a
-  // Compass cloud calendar, so it is applied locally below.
-  const providerCalendar = await repos.calendars.findById(
+  // the provider, not be confirmed as a local cloud event. Execute it now when
+  // provider work is enabled; otherwise leave it pending for a later execution.
+  // A calendar id that resolves to no provider calendar is a Compass cloud
+  // calendar, so it is applied locally below.
+  const providerCalendar = await deps.calendars.findById(
     command.tenantId,
     command.principalId,
     command.input.calendarId as ProviderCalendarId,
   );
-  if (providerCalendar) return command;
+  if (providerCalendar) {
+    if (deps.execution === "active" && deps.provider) {
+      return executeProviderCreate(
+        {
+          commands: deps.commands,
+          events: deps.events,
+          writer: deps.provider.writer,
+          custody: deps.provider.custody,
+        },
+        command,
+        providerCalendar,
+        now,
+      );
+    }
+    return command;
+  }
 
-  await repos.events.put(buildCloudEventRecord(command, now()));
+  await deps.events.put(buildCloudEventRecord(command, now()));
 
-  const confirmed = await repos.commands.updateOutcome(
+  const confirmed = await deps.commands.updateOutcome(
     command.tenantId,
     command.principalId,
     command._id,
