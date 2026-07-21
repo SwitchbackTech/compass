@@ -15,7 +15,6 @@ import { DeleteAccountConfirmationProvider } from "@web/components/DeleteAccount
 import { FeedbackDialogHost } from "@web/components/Feedback/FeedbackDialogHost";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
-import { useCalendarShellShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
 import { useUndoRedoShortcuts } from "@web/views/Week/hooks/shortcuts/useUndoRedoShortcuts";
 
 /**
@@ -23,7 +22,6 @@ import { useUndoRedoShortcuts } from "@web/views/Week/hooks/shortcuts/useUndoRed
  * {@link useGlobalShortcuts} can register app hotkeys (via useAppShortcut).
  */
 export function GlobalShortcutsHost() {
-  useCalendarShellShortcuts();
   useUndoRedoShortcuts();
   return null;
 }

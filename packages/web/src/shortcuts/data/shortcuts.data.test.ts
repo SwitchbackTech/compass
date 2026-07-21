@@ -53,6 +53,22 @@ describe("shortcuts.data", () => {
       });
     });
 
+    it("keeps Life shortcuts focused on navigation and shell controls", () => {
+      const sections = getShortcutMenuSections({
+        view: "life",
+        isViewingCurrentPeriod: true,
+      });
+
+      expect(sections.map((section) => section.id)).toEqual([
+        "navigate",
+        "other",
+      ]);
+      expect(sections[0]?.shortcuts).toEqual([
+        { keys: ["d"], label: "Go to Day view" },
+        { keys: ["w"], label: "Go to Week view" },
+      ]);
+    });
+
     it("lists the Up Next shortcut in both views", () => {
       for (const view of ["day", "week"] as const) {
         const [navigate] = getShortcutMenuSections({

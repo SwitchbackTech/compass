@@ -6,9 +6,9 @@ import {
   type Icon,
   KeyboardIcon,
 } from "@phosphor-icons/react";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 import {
+  LIFE_SHORTCUT,
   VIEW_SHORTCUTS,
   type ViewName,
 } from "@web/shortcuts/shortcuts.constants";
@@ -27,7 +27,12 @@ const commandPaletteViews: Record<
 > = {
   day: { ...VIEW_SHORTCUTS.day, icon: CalendarDotsIcon },
   week: { ...VIEW_SHORTCUTS.week, icon: CalendarIcon },
-  life: { icon: HourglassSimpleIcon, label: "Life", route: ROOT_ROUTES.LIFE },
+  life: {
+    icon: HourglassSimpleIcon,
+    label: LIFE_SHORTCUT.label,
+    route: LIFE_SHORTCUT.route,
+    shortcut: LIFE_SHORTCUT.key,
+  },
 };
 
 const navigationViewOrder: CommandPaletteViewName[] = ["day", "week", "life"];

@@ -32,6 +32,14 @@ describe("getNavigationCommandItems", () => {
     expect(labels).toEqual(["Go to Day", "Go to Week", "Go to Life"]);
   });
 
+  it("advertises the Life shortcut in the command palette", () => {
+    const life = getNavigationCommandItems(noopHandlers).find(
+      (item) => item.id === "go-to-life",
+    );
+
+    expect(life?.shortcut).toBe("l");
+  });
+
   it("runs the matching navigation callbacks", () => {
     const navigatedViews: CommandPaletteViewName[] = [];
     let didGoToToday = false;

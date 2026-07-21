@@ -2,6 +2,7 @@ import {
   clampLifespan,
   clampWeeksLived,
   formatDateInputValue,
+  getCurrentWeekLabel,
   getLifeDotLabel,
   getTotalLifeDots,
   getWeekLivedCount,
@@ -45,6 +46,12 @@ describe("life utils", () => {
   it("formats dot tooltip labels from one-indexed week numbers", () => {
     expect(getLifeDotLabel(1)).toBe("Year 1, Week 1");
     expect(getLifeDotLabel(105)).toBe("Year 3, Week 1");
+  });
+
+  it("formats the current week tooltip with the available lifespan", () => {
+    expect(getCurrentWeekLabel(new Date(2026, 6, 21), 1713, 4000)).toBe(
+      "Tuesday, July 21, 2026 | week 1714 / 4000",
+    );
   });
 
   it("clamps arbitrary week counts to the available dot count", () => {

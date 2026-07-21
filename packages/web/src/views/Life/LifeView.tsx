@@ -1,20 +1,28 @@
-import { Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getCommandPalettePlaceholder } from "@web/common/constants/more.cmd.constants";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ID_MAIN } from "@web/common/constants/web.constants";
+import { useResponsiveLayout } from "@web/components/AuthenticatedLayout/useResponsiveLayout";
+import { CalendarHeader } from "@web/components/CalendarHeader/CalendarHeader";
 import { LifeCommandPalette } from "@web/components/CommandPalette/CommandPalette";
-import { LifeAboutDialog } from "./LifeAboutDialog";
-import { LifeGrid } from "./LifeGrid";
+import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";
+import { SidebarShell } from "@web/components/Sidebar/SidebarShell";
+import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
 import {
-  clampLifespan,
-  formatDateInputValue,
+  selectIsSidebarOpen,
+  useViewStore,
+  viewActions,
+} from "@web/events/stores/view.store";
+import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
+import { LifeGrid } from "./LifeGrid";
+import { LifeSidebarContent } from "./LifeSidebarContent";
+import {
+  getCurrentWeekLabel,
   getTotalLifeDots,
   getWeekLivedCount,
-  MAX_LIFESPAN,
-  MIN_LIFESPAN,
   parseLifeDate,
 } from "./life.utils";
 import {
+  type LifePreferences,
   readLifePreferences,
   writeLifePreferences,
 } from "./life-preferences.storage";
@@ -29,7 +37,7 @@ function formatWeeks(value: number) {
 
 export function LifeView({ today }: LifeViewProps) {
   const currentDate = today ?? new Date();
-  const maxBirthDate = formatDateInputValue(currentDate);
+  const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const [preferences, setPreferences] = useState(readLifePreferences);
   const totalDots = useMemo(
     () => getTotalLifeDots(preferences.lifespan),
@@ -43,91 +51,75 @@ export function LifeView({ today }: LifeViewProps) {
   const summary = hasBirthDate
     ? `${formatWeeks(weeksLived)} weeks lived - ${Math.floor(weeksLived / 52)} years - ${Math.round((weeksLived / totalDots) * 100)}%`
     : "Birth date not set";
+  const currentWeekLabel = hasBirthDate
+    ? getCurrentWeekLabel(currentDate, weeksLived, totalDots)
+    : undefined;
+
+  useResponsiveLayout();
 
   useEffect(() => {
     writeLifePreferences(preferences);
   }, [preferences]);
 
+  const toggleSidebar = useCallback(() => {
+    viewActions.toggleSidebar();
+  }, []);
+  const { closeShortcuts, isShortcutsOpen, toggleShortcuts } =
+    useSidebarShortcuts({
+      isSidebarOpen,
+      onToggleSidebar: toggleSidebar,
+    });
+  const shortcutSections = useMemo(
+    () =>
+      getShortcutMenuSections({ view: "life", isViewingCurrentPeriod: true }),
+    [],
+  );
+  const onPreferencesChange = useCallback(
+    (update: (current: LifePreferences) => LifePreferences) => {
+      setPreferences(update);
+    },
+    [],
+  );
+
   return (
-    <main className="min-h-screen overflow-auto bg-background text-text">
+    <div className="flex h-screen w-screen overflow-hidden">
       <LifeCommandPalette placeholder={getCommandPalettePlaceholder("life")} />
 
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pt-5 pb-8 md:px-8">
-        <header className="flex h-auto min-h-12 shrink-0 flex-wrap items-center gap-3 text-text-muted md:flex-nowrap">
-          <Link
-            to={ROOT_ROUTES.WEEK}
-            className="c-focus-ring rounded text-sm text-text-muted transition-colors hover:text-text"
-          >
-            Back to calendar
-          </Link>
-          <div className="flex min-w-0 items-center gap-2 md:ml-3">
-            <h1 className="font-semibold text-text text-xl tracking-normal">
-              Life
-            </h1>
-            <LifeAboutDialog />
-          </div>
-          <p
-            aria-live="polite"
-            className="w-full text-sm text-text-muted md:ml-auto md:w-auto"
-            role="status"
-          >
-            {summary}
-          </p>
-        </header>
-
-        <section
-          aria-label="Life preferences"
-          className="mt-6 flex flex-wrap items-end gap-3"
-        >
-          <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm text-text-muted sm:max-w-52">
-            Date of birth
-            <input
-              aria-label="Date of birth"
-              className="h-9 rounded-md border border-border bg-surface px-3 text-text outline-none transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
-              max={maxBirthDate}
-              min="1900-01-01"
-              onChange={(event) =>
-                setPreferences((current) => ({
-                  ...current,
-                  birthDate: event.target.value,
-                }))
-              }
-              type="date"
-              value={preferences.birthDate}
-            />
-          </label>
-
-          <label className="flex w-32 flex-col gap-1 text-sm text-text-muted">
-            Through age
-            <input
-              aria-label="Through age"
-              className="h-9 rounded-md border border-border bg-surface px-3 text-text outline-none transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
-              max={MAX_LIFESPAN}
-              min={MIN_LIFESPAN}
-              onChange={(event) =>
-                setPreferences((current) => ({
-                  ...current,
-                  lifespan: clampLifespan(event.target.valueAsNumber),
-                }))
-              }
-              type="number"
-              value={preferences.lifespan}
-            />
-          </label>
-        </section>
-
+      <main
+        className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-background pt-5 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
+        id={ID_MAIN}
+      >
+        <CalendarHeader label="Life" showNavigation={false} />
         <section
           aria-label={`Life visualization: ${summary}`}
-          className="mt-6 min-w-0 flex-1 overflow-y-auto overflow-x-hidden"
+          className="min-h-0 flex-1 overflow-auto pr-5 pb-6"
         >
           <LifeGrid
+            currentWeekLabel={currentWeekLabel}
             showCurrentWeek={hasBirthDate}
             totalDots={totalDots}
             weeksLived={weeksLived}
           />
         </section>
-      </div>
-    </main>
+      </main>
+
+      <ResizableSidebarPanel isOpen={isSidebarOpen}>
+        <SidebarShell
+          isShortcutsOpen={isShortcutsOpen}
+          onCloseShortcuts={closeShortcuts}
+          onToggleShortcuts={toggleShortcuts}
+          shortcutSections={shortcutSections}
+          shortcutsViewLabel="Life"
+        >
+          <LifeSidebarContent
+            preferences={preferences}
+            summary={summary}
+            today={currentDate}
+            onPreferencesChange={onPreferencesChange}
+          />
+        </SidebarShell>
+      </ResizableSidebarPanel>
+    </div>
   );
 }
 

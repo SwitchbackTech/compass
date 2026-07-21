@@ -2,7 +2,7 @@ import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutO
 import { type Shortcut } from "@web/shortcuts/global.shortcut.types";
 import { VIEW_SHORTCUTS } from "@web/shortcuts/shortcuts.constants";
 
-export type ShortcutMenuView = "day" | "week";
+export type ShortcutMenuView = "day" | "week" | "life";
 
 interface ShortcutMenuConfig {
   view: ShortcutMenuView;
@@ -16,6 +16,13 @@ const getNavigateShortcuts = ({
 }: ShortcutMenuConfig): Shortcut[] => {
   const alternateView =
     view === "day" ? VIEW_SHORTCUTS.week : VIEW_SHORTCUTS.day;
+
+  if (view === "life") {
+    return [
+      { keys: [VIEW_SHORTCUTS.day.key], label: "Go to Day view" },
+      { keys: [VIEW_SHORTCUTS.week.key], label: "Go to Week view" },
+    ];
+  }
 
   return [
     { keys: ["n"], label: "Open Up Next event" },
@@ -42,45 +49,52 @@ const getNavigateShortcuts = ({
   ];
 };
 
-const getCreateShortcuts = (): Shortcut[] => [
-  { keys: ["c"], label: "Create timed event" },
-  { keys: ["a"], label: "Create all-day event" },
-];
+const getCreateShortcuts = (view: ShortcutMenuView): Shortcut[] =>
+  view === "life"
+    ? []
+    : [
+        { keys: ["c"], label: "Create timed event" },
+        { keys: ["a"], label: "Create all-day event" },
+      ];
 
 const getFocusShortcuts = (view: ShortcutMenuView): Shortcut[] =>
-  view === "day"
-    ? [
-        { keys: ["u"], label: "Focus sidebar" },
-        { keys: ["i"], label: "Focus calendar" },
-      ]
-    : [
-        { keys: ["u"], label: "Focus sidebar" },
-        { keys: ["i"], label: "Focus calendar event" },
-      ];
+  view === "life"
+    ? []
+    : view === "day"
+      ? [
+          { keys: ["u"], label: "Focus sidebar" },
+          { keys: ["i"], label: "Focus calendar" },
+        ]
+      : [
+          { keys: ["u"], label: "Focus sidebar" },
+          { keys: ["i"], label: "Focus calendar event" },
+        ];
 
 const getEditShortcuts = (view: ShortcutMenuView): Shortcut[] =>
-  view === "day"
-    ? [
-        {
-          keys: ["Shift", "ArrowUp"],
-          label: "Move event 15 min earlier",
-        },
-        {
-          keys: ["Shift", "ArrowDown"],
-          label: "Move event 15 min later",
-        },
-      ]
-    : [
-        { keys: ["Delete"], label: "Delete calendar event" },
-        { keys: ["Arrow keys"], label: "Move draft event" },
-        {
-          keys: ["Shift", "ArrowLeft"],
-          label: "Move event to previous day (or sidebar)",
-        },
-        { keys: ["Shift", "ArrowRight"], label: "Move event to next day" },
-        { keys: ["Shift", "ArrowUp"], label: "Move event 15 min earlier" },
-        { keys: ["Shift", "ArrowDown"], label: "Move event 15 min later" },
-      ];
+  view === "life"
+    ? []
+    : view === "day"
+      ? [
+          {
+            keys: ["Shift", "ArrowUp"],
+            label: "Move event 15 min earlier",
+          },
+          {
+            keys: ["Shift", "ArrowDown"],
+            label: "Move event 15 min later",
+          },
+        ]
+      : [
+          { keys: ["Delete"], label: "Delete calendar event" },
+          { keys: ["Arrow keys"], label: "Move draft event" },
+          {
+            keys: ["Shift", "ArrowLeft"],
+            label: "Move event to previous day (or sidebar)",
+          },
+          { keys: ["Shift", "ArrowRight"], label: "Move event to next day" },
+          { keys: ["Shift", "ArrowUp"], label: "Move event 15 min earlier" },
+          { keys: ["Shift", "ArrowDown"], label: "Move event 15 min later" },
+        ];
 
 const getOtherShortcuts = (): Shortcut[] => [
   { keys: ["]"], label: "Toggle sidebar" },
@@ -104,9 +118,9 @@ export const getShortcutMenuSections = (
       title: "Navigate",
       shortcuts: getNavigateShortcuts(config),
     },
-    { id: "create", title: "Create", shortcuts: getCreateShortcuts() },
+    { id: "create", title: "Create", shortcuts: getCreateShortcuts(view) },
     { id: "focus", title: "Focus", shortcuts: getFocusShortcuts(view) },
     { id: "edit", title: "Edit", shortcuts: getEditShortcuts(view) },
     { id: "other", title: "Other", shortcuts: getOtherShortcuts() },
-  ];
+  ].filter((section) => section.shortcuts.length > 0);
 };
