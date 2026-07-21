@@ -6,8 +6,8 @@ import {
 import {
   type CredentialRecord,
   type CredentialUpsert,
-} from "@sync/storage/credential.record";
-import { type CredentialRepository } from "@sync/storage/credential.repository";
+} from "@sync/storage/contracts/credential.contracts";
+import { type CredentialRepository } from "@sync/storage/repositories/credential.repository";
 
 // Refresh a cached access token this many ms before its stated expiry, to
 // absorb clock skew and request latency rather than serving a token that

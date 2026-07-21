@@ -7,9 +7,9 @@ import {
   ProviderAuthError,
   type RefreshedCredential,
 } from "@sync/providers/provider-auth.port";
-import { type CredentialUpsert } from "@sync/storage/credential.record";
-import { CredentialRepository } from "@sync/storage/credential.repository";
+import { type CredentialUpsert } from "@sync/storage/contracts/credential.contracts";
 import { installIndexManifest } from "@sync/storage/index-manifest";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 
 const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
