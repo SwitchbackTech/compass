@@ -156,3 +156,30 @@ export const SyncCommandSchema = z
     },
   );
 export type SyncCommand = z.infer<typeof SyncCommandSchema>;
+
+// What the trusted Compass API submits to durably record one command. The
+// tenant and principal are deliberately NOT in the body — they come from the
+// signed internal-auth context, so a caller can only ever write to its own
+// principal. The idempotency key makes a retried submission map to the same
+// command instead of creating a duplicate.
+export const CommandSubmitRequestSchema = z
+  .strictObject({
+    idempotencyKey: IdempotencyKeySchema,
+    eventId: EventIdSchema,
+    input: SyncCommandInputSchema,
+    expectedVersion: ProviderEventVersionSchema.nullable(),
+  })
+  .refine(
+    (request) =>
+      request.input.kind !== "create" || request.expectedVersion === null,
+    {
+      message: "A create command cannot carry an expectedVersion",
+      path: ["expectedVersion"],
+    },
+  );
+export type CommandSubmitRequest = z.infer<typeof CommandSubmitRequestSchema>;
+
+export const CommandSubmitResponseSchema = z.strictObject({
+  command: SyncCommandSchema,
+});
+export type CommandSubmitResponse = z.infer<typeof CommandSubmitResponseSchema>;
