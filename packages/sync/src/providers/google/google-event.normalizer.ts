@@ -9,7 +9,6 @@ import {
   SyncEventContentSchema,
 } from "@core/types/sync/event.contracts";
 import dayjs from "@core/util/date/dayjs";
-import { parseGCalEventDate } from "@core/util/event/gcal.event.util";
 import {
   ProviderEventError,
   type ProviderEventRead,
@@ -68,7 +67,7 @@ function cancellationSeries(
   if (!item.recurringEventId || !item.originalStartTime) return null;
   return {
     seriesProviderId: item.recurringEventId,
-    recurrenceId: formatInstant(item.originalStartTime),
+    recurrenceId: toOffsetIso(item.originalStartTime),
   };
 }
 
@@ -91,7 +90,9 @@ function mapOrganizer(
   if (!organizer?.email) return null;
   return {
     email: organizer.email,
-    displayName: organizer.displayName || null,
+    // Trim first: a whitespace-only name is absence, and would fail the
+    // contract's min-length after its own trim.
+    displayName: organizer.displayName?.trim() || null,
   };
 }
 
@@ -104,7 +105,7 @@ function mapAttendees(
     .filter((attendee) => Boolean(attendee.email))
     .map((attendee) => ({
       email: attendee.email as string,
-      displayName: attendee.displayName || null,
+      displayName: attendee.displayName?.trim() || null,
       // Anything Google does not report as a decision is still pending.
       responseStatus: KNOWN_RESPONSES.has(attendee.responseStatus ?? "")
         ? (attendee.responseStatus as Attendee["responseStatus"])
@@ -159,8 +160,8 @@ function mapSchedule(item: gSchema$Event) {
     // date's DST rules rather than trusting the stored offset.
     return EventScheduleSchema.parse({
       kind: "timed",
-      start: formatInstant(start),
-      end: formatInstant(end),
+      start: toOffsetIso(start),
+      end: toOffsetIso(end),
       timeZone,
     });
   }
@@ -179,16 +180,31 @@ function mapRecurrence(item: gSchema$Event): ProviderEventRecurrence {
     return {
       kind: "instance",
       seriesProviderId: item.recurringEventId,
-      recurrenceId: formatInstant(item.originalStartTime),
+      recurrenceId: toOffsetIso(item.originalStartTime),
     };
   }
   return { kind: "single" };
 }
 
-// A Google event date-time (timed or all-day) as an RFC3339 offset string in
-// its own zone. All-day values become that zone's midnight.
-function formatInstant(
-  eventDateTime: calendar_v3.Schema$EventDateTime,
-): string {
-  return parseGCalEventDate(eventDateTime).format(RFC3339_OFFSET);
+// A Google event date-time as a deterministic RFC3339 offset string, never
+// dependent on the host's zone. With a zone, re-anchor to it so the offset is
+// correct for that date's DST rules. Without one, canonicalize to UTC rather
+// than guessing the host's zone, so the value is a stable identity across
+// machines. An all-day date becomes UTC midnight. The absolute instant is
+// preserved in every case.
+function toOffsetIso(eventDateTime: calendar_v3.Schema$EventDateTime): string {
+  const { date, dateTime, timeZone } = eventDateTime;
+  if (dateTime) {
+    const anchored = timeZone
+      ? dayjs(dateTime).tz(timeZone)
+      : dayjs(dateTime).utc();
+    return anchored.format(RFC3339_OFFSET);
+  }
+  if (date) {
+    return dayjs.utc(date).format(RFC3339_OFFSET);
+  }
+  throw new ProviderEventError(
+    "unmappableSchedule",
+    "Event date-time had neither a date nor a dateTime",
+  );
 }

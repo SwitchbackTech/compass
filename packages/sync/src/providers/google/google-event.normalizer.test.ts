@@ -159,9 +159,9 @@ describe("normalizeGoogleEvent", () => {
       "tlf9q8uk5vjl2i2868q36dpi28_20130508T220000Z",
     );
     expect(read.series?.seriesProviderId).toBe("tlf9q8uk5vjl2i2868q36dpi28");
-    expect(Date.parse(read.series?.recurrenceId as string)).toBe(
-      Date.parse("2013-05-08T16:00:00-06:00"),
-    );
+    // originalStartTime has no timeZone: the id must be a deterministic,
+    // host-independent UTC string, not one derived from the host's zone.
+    expect(read.series?.recurrenceId).toBe("2013-05-08T22:00:00+00:00");
   });
 
   it("maps a cancelled standalone event to a cancellation with no series", () => {
@@ -187,6 +187,22 @@ describe("normalizeGoogleEvent", () => {
       { email: "a@x.com", displayName: "A", responseStatus: "accepted" },
       { email: "b@x.com", displayName: null, responseStatus: "needsAction" },
     ]);
+  });
+
+  it("treats a whitespace-only display name as absent", () => {
+    const read = asProviderEvent(
+      normalizeGoogleEvent(
+        gEvent({
+          organizer: { email: "org@x.com", displayName: "   " },
+          attendees: [
+            { email: "a@x.com", displayName: " ", responseStatus: "accepted" },
+          ],
+        }),
+      ),
+    );
+
+    expect(read.content.organizer?.displayName).toBeNull();
+    expect(read.content.attendees[0].displayName).toBeNull();
   });
 
   it("reads a conference url from hangoutLink and from conferenceData", () => {
