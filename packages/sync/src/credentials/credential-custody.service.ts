@@ -87,11 +87,20 @@ export class CredentialCustody {
     const refreshed = await this.adapter.refreshAccessToken({
       refreshToken: credential.refreshToken,
     });
-    await this.credentials.cacheAccessToken(
+    const cached = await this.credentials.cacheAccessToken(
       connectionId,
       refreshed.accessToken,
       refreshed.expiresAt,
     );
+    // A concurrent disconnect deleted the credential mid-refresh. The store
+    // already refused to resurrect it; refuse to hand the caller a live token
+    // for a connection that no longer has one, so the token is never used.
+    if (!cached) {
+      throw new ProviderAuthError(
+        "missingRefreshToken",
+        "Credential was removed during refresh",
+      );
+    }
     return refreshed.accessToken;
   }
 

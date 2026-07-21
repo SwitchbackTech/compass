@@ -221,6 +221,36 @@ describe("CredentialCustody", () => {
     expect(error.reason).toBe("authorizationRevoked");
   });
 
+  it("does not serve a token when a disconnect deletes the credential mid-refresh", async () => {
+    const connectionId = objectId() as ConnectionId;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const adapter = new FakeAdapter({
+      refreshed: {
+        accessToken: "orphan-token",
+        expiresAt: new Date("2099-01-01T00:00:00Z"),
+        grantedScopes: [],
+      },
+      onRefresh: () => gate,
+    });
+    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    await custody.store(baseCredential(connectionId));
+
+    // Start a refresh, delete the credential while it is in flight, then let
+    // the refresh finish.
+    const inFlight = custody.getValidAccessToken(connectionId);
+    await repo.deleteByConnection(connectionId);
+    release();
+
+    const error = (await inFlight.catch((e) => e)) as ProviderAuthError;
+    expect(error).toBeInstanceOf(ProviderAuthError);
+    expect(error.reason).toBe("missingRefreshToken");
+    // The token was never re-cached, so the deleted credential stays gone.
+    expect(await repo.findByConnection(connectionId)).toBeNull();
+  });
+
   it("deletes the credential and revokes it on disconnect", async () => {
     const connectionId = objectId() as ConnectionId;
     const adapter = new FakeAdapter();
