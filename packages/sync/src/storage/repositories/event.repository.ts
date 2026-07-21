@@ -116,6 +116,24 @@ export class EventRepository {
     return result.deletedCount > 0;
   }
 
+  // Replace an existing event, owner-scoped and WITHOUT upsert, so a write can
+  // never resurrect a document a concurrent delete already removed. Returns
+  // whether a document was matched; false means the event vanished since it was
+  // read, and the caller should re-evaluate rather than treat it as applied.
+  async replaceExisting(record: EventRecord): Promise<boolean> {
+    const parsed = EventRecordSchema.parse(record);
+    const result = await this.collection.replaceOne(
+      {
+        _id: parsed._id,
+        tenantId: parsed.tenantId,
+        principalId: parsed.principalId,
+      },
+      parsed,
+      { upsert: false },
+    );
+    return result.matchedCount > 0;
+  }
+
   // Bounded, keyset-paginated canonical events for one calendar/generation,
   // ordered by _id so a cursor never skips or repeats a row.
   async listByCalendar(query: EventListQuery): Promise<EventRecord[]> {

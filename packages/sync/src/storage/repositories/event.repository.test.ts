@@ -176,6 +176,45 @@ describe("EventRepository", () => {
     ).not.toBeNull();
   });
 
+  it("deleteById removes only the owner's event and is idempotent", async () => {
+    const saved = await repo.put(compassRecord());
+    const other = objectId() as EventRecord["principalId"];
+    // A foreign principal cannot delete it.
+    expect(await repo.deleteById(saved.tenantId, other, saved._id)).toBe(false);
+    expect(
+      await repo.findById(saved.tenantId, saved.principalId, saved._id),
+    ).not.toBeNull();
+    // The owner deletes it; a repeated delete is a no-op.
+    expect(
+      await repo.deleteById(saved.tenantId, saved.principalId, saved._id),
+    ).toBe(true);
+    expect(
+      await repo.deleteById(saved.tenantId, saved.principalId, saved._id),
+    ).toBe(false);
+  });
+
+  it("replaceExisting updates a present event but never resurrects an absent one", async () => {
+    const record = compassRecord();
+    // No document exists yet: a conditional replace must not insert one.
+    expect(await repo.replaceExisting(record)).toBe(false);
+    expect(
+      await repo.findById(record.tenantId, record.principalId, record._id),
+    ).toBeNull();
+    // Once it exists, the replace matches and updates it.
+    await repo.put(record);
+    const updated = {
+      ...record,
+      content: { ...record.content, title: "Changed" },
+    };
+    expect(await repo.replaceExisting(updated)).toBe(true);
+    const read = await repo.findById(
+      record.tenantId,
+      record.principalId,
+      record._id,
+    );
+    expect(read?.content.title).toBe("Changed");
+  });
+
   describe("listByCalendar keyset pagination", () => {
     const tenantId = objectId();
     const principalId = objectId();

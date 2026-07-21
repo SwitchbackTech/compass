@@ -327,6 +327,42 @@ describe("POST /internal/commands", () => {
     expect(stored?.content.title).toBe("Renamed");
   });
 
+  it("defers an update that converts a single event into a series", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const created = createRequest();
+    await startService();
+    await submit(tenantId, principalId, created);
+
+    const update = {
+      idempotencyKey: `idem-${objectId()}`,
+      eventId: created.eventId,
+      input: {
+        kind: "update",
+        content: created.input.content,
+        schedule: created.input.schedule,
+        recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+        scope: "all",
+      },
+      expectedVersion: null,
+    };
+    const res = await submit(tenantId, principalId, update);
+
+    const body = (await res.json()) as {
+      command: { outcome: { state: string } };
+    };
+    // Converting to a series is a scope edit, deferred — the event stays single
+    // so a retry re-reads a single event and stays consistently pending.
+    expect(body.command.outcome.state).toBe("pending");
+    const events = new EventRepository(mongo.db);
+    const stored = await events.findById(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+      created.eventId as never,
+    );
+    expect(stored?.recurrence).toEqual({ kind: "single" });
+  });
+
   it("deletes a cloud event and confirms", async () => {
     const tenantId = objectId();
     const principalId = objectId();

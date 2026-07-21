@@ -119,12 +119,27 @@ async function applyCloudMutation(
     return confirmCloud(deps, command);
   }
 
+  // Only update remains (applyCloudMutation is called for update/delete).
+  if (command.input.kind !== "update") return command;
+
   // update: the target must exist; a missing event can't be updated, so leave
   // the command pending rather than confirming a no-op.
   if (!existing) return command;
   if (existing.connectionId !== null) return command;
   if (existing.recurrence.kind !== "single") return command;
-  await deps.events.put(applyCloudUpdate(existing, command, now()));
+  // Converting a single event into a series is a series-scope edit — defer it.
+  // Gating on the command's intent (not the event's post-write recurrence) keeps
+  // a retry converging: applyCloudUpdate never changes recurrence.kind here, so
+  // the guards above still pass on the re-read.
+  if (command.input.recurrence.kind === "series") return command;
+
+  // Conditional replace (no upsert): if a concurrent delete removed the event
+  // between the read and here, the write is a no-op and the command stays
+  // pending rather than resurrecting the deleted event.
+  const applied = await deps.events.replaceExisting(
+    applyCloudUpdate(existing, command, now()),
+  );
+  if (!applied) return command;
   return confirmCloud(deps, command);
 }
 
