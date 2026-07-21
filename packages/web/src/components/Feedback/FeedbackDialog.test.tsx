@@ -7,67 +7,56 @@ import { restoreCommandPaletteFocus } from "@web/components/Feedback/FeedbackDia
 import { describe, expect, it, mock } from "bun:test";
 
 describe("FeedbackDialog", () => {
-  it("prefills the bug-report copy and submits trimmed details", async () => {
+  it("submits trimmed feedback details", async () => {
     const user = userEvent.setup();
     const onSubmit = mock();
 
     const { rerender } = render(
-      <FeedbackDialog kind="bug" onDismiss={mock()} onSubmit={onSubmit} />,
+      <FeedbackDialog onDismiss={mock()} onSubmit={onSubmit} />,
     );
 
     expect(
-      screen.getByRole("dialog", { name: "Report a bug" }),
+      screen.getByRole("dialog", { name: "Share feedback" }),
     ).toBeInTheDocument();
-    const details = screen.getByRole("textbox", { name: "What went wrong?" });
+    const details = screen.getByRole("textbox", {
+      name: "What would you like to share?",
+    });
     expect(details).toHaveFocus();
     expect(details).toHaveAccessibleDescription(
       "We'll include your account, app version, current view, and session details so we can follow up and troubleshoot.",
     );
     expect(
-      screen.getByRole("button", { name: "Send bug report" }),
+      screen.getByRole("button", { name: "Send feedback" }),
     ).toBeDisabled();
 
     await user.type(details, "  Events disappear after syncing.  ");
     rerender(
-      <FeedbackDialog
-        kind="bug"
-        isSubmitting
-        onDismiss={mock()}
-        onSubmit={onSubmit}
-      />,
+      <FeedbackDialog isSubmitting onDismiss={mock()} onSubmit={onSubmit} />,
     );
     expect(screen.getByRole("button", { name: "Sending…" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
     await user.keyboard("{Escape}");
     expect(
-      screen.getByRole("dialog", { name: "Report a bug" }),
+      screen.getByRole("dialog", { name: "Share feedback" }),
     ).toBeInTheDocument();
     expect(details).toHaveFocus();
 
-    rerender(
-      <FeedbackDialog kind="bug" onDismiss={mock()} onSubmit={onSubmit} />,
-    );
-    await user.click(screen.getByRole("button", { name: "Send bug report" }));
+    rerender(<FeedbackDialog onDismiss={mock()} onSubmit={onSubmit} />);
+    await user.click(screen.getByRole("button", { name: "Send feedback" }));
 
     expect(onSubmit).toHaveBeenCalledWith("Events disappear after syncing.");
   });
 
-  it("uses suggestion copy and dismisses without submitting", async () => {
+  it("dismisses without submitting", async () => {
     const user = userEvent.setup();
     const onDismiss = mock();
     const onSubmit = mock();
 
-    render(
-      <FeedbackDialog
-        kind="suggestion"
-        onDismiss={onDismiss}
-        onSubmit={onSubmit}
-      />,
-    );
+    render(<FeedbackDialog onDismiss={onDismiss} onSubmit={onSubmit} />);
 
     expect(
-      screen.getByRole("textbox", { name: "What would make Compass better?" }),
-    ).toHaveAttribute("placeholder", "Tell us what you'd like to see.");
+      screen.getByRole("textbox", { name: "What would you like to share?" }),
+    ).toHaveAttribute("placeholder", "Tell us what you think.");
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(onDismiss).toHaveBeenCalledTimes(1);
@@ -88,7 +77,6 @@ describe("FeedbackDialog", () => {
           />
           {open ? (
             <FeedbackDialog
-              kind="bug"
               onDismiss={() => setOpen(false)}
               restoreFocus={() =>
                 document
@@ -127,7 +115,6 @@ describe("FeedbackDialog", () => {
           <button type="button" aria-label="Open sidebar" />
           {open ? (
             <FeedbackDialog
-              kind="suggestion"
               onDismiss={() => setOpen(false)}
               restoreFocus={restoreCommandPaletteFocus}
               onSubmit={mock()}

@@ -7,7 +7,7 @@ export const FEEDBACK_SURVEY = {
   name: "Open feedback",
   question: {
     id: "d0154ae2-c312-4d19-9d03-bb28eb56d6e3",
-    question: "What can we do to improve Compass?",
+    question: "What would you like to share?",
   },
 } as const;
 
@@ -33,7 +33,7 @@ interface FeedbackDeliveryOptions {
 
 export async function captureFeedback(
   posthog: PostHogFeedbackClient,
-  { details, kind, view }: FeedbackSubmission,
+  { details, view }: FeedbackSubmission,
   {
     apiKey = ENV_WEB.POSTHOG_KEY,
     host = ENV_WEB.POSTHOG_HOST,
@@ -60,7 +60,7 @@ export async function captureFeedback(
         app_version: APP_VERSION,
         app_view: view,
         feedback_source: "command_palette",
-        feedback_type: kind,
+        feedback_type: "feedback",
       },
     }),
   });

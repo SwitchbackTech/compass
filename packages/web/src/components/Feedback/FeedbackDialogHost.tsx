@@ -44,7 +44,6 @@ export function FeedbackDialogHost() {
 
   return (
     <FeedbackDialog
-      kind={request.kind}
       isSubmitting={isSubmitting}
       onDismiss={feedbackActions.close}
       restoreFocus={restoreCommandPaletteFocus}

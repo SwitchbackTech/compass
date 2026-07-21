@@ -1,36 +1,11 @@
 import { type FormEvent, useId, useState } from "react";
-import { type FeedbackKind } from "@web/components/Feedback/feedback.store";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
 
-const DIALOG_COPY = {
-  bug: {
-    title: "Report a bug",
-    label: "What went wrong?",
-    placeholder: "What happened? What did you expect instead?",
-    submitLabel: "Send bug report",
-  },
-  suggestion: {
-    title: "Share a suggestion",
-    label: "What would make Compass better?",
-    placeholder: "Tell us what you'd like to see.",
-    submitLabel: "Send suggestion",
-  },
-} satisfies Record<
-  FeedbackKind,
-  {
-    title: string;
-    label: string;
-    placeholder: string;
-    submitLabel: string;
-  }
->;
-
 interface FeedbackDialogProps {
-  kind: FeedbackKind;
   isSubmitting?: boolean;
   onDismiss: () => void;
   restoreFocus?: () => void;
@@ -38,7 +13,6 @@ interface FeedbackDialogProps {
 }
 
 export function FeedbackDialog({
-  kind,
   isSubmitting = false,
   onDismiss,
   restoreFocus,
@@ -47,7 +21,6 @@ export function FeedbackDialog({
   const [details, setDetails] = useState("");
   const textareaId = useId();
   const contextId = useId();
-  const copy = DIALOG_COPY[kind];
   const handleDismiss = () => {
     if (!isSubmitting) onDismiss();
   };
@@ -60,7 +33,7 @@ export function FeedbackDialog({
 
   return (
     <OverlayPanel
-      title={copy.title}
+      title="Share feedback"
       message="Send feedback without leaving Compass."
       onDismiss={handleDismiss}
       restoreFocus={restoreFocus}
@@ -71,7 +44,7 @@ export function FeedbackDialog({
       <form className="flex w-full flex-col gap-5" onSubmit={handleSubmit}>
         <div className="flex flex-col gap-2">
           <label className="text-sm text-text" htmlFor={textareaId}>
-            {copy.label}
+            What would you like to share?
           </label>
           <textarea
             id={textareaId}
@@ -80,7 +53,7 @@ export function FeedbackDialog({
             maxLength={5000}
             rows={6}
             aria-describedby={contextId}
-            placeholder={copy.placeholder}
+            placeholder="Tell us what you think."
             className="w-full resize-y rounded border border-border bg-transparent px-3 py-2 text-text outline-none placeholder:text-text-muted focus-visible:border-accent"
             onChange={(event) => setDetails(event.target.value)}
           />
@@ -102,7 +75,7 @@ export function FeedbackDialog({
             variant="primary"
             disabled={!details.trim() || isSubmitting}
           >
-            {isSubmitting ? "Sending…" : copy.submitLabel}
+            {isSubmitting ? "Sending…" : "Send feedback"}
           </OverlayPanelActionButton>
         </OverlayPanelActions>
       </form>
