@@ -28,15 +28,7 @@ function gridScheduleFromEvent(event: Event): GridScheduleDraft | null {
   }
 
   if (schedule.kind === "allDay") {
-    // All-day draft Dates are local midnight everywhere (drag creation, form
-    // patches, shortcuts). new Date("YYYY-MM-DD") would parse as UTC midnight,
-    // which reads as the previous day when formatted back in local time west
-    // of UTC — dayjs parses date-only strings as local.
-    return {
-      kind: "allDay",
-      start: dayjs(schedule.start).toDate(),
-      end: dayjs(schedule.end).toDate(),
-    };
+    return allDayGridSchedule(schedule.start, schedule.end);
   }
 
   return null;
@@ -161,6 +153,21 @@ export function parseGridEventDraft(
 
 export function timedGridSchedule(start: Date, end: Date): GridScheduleDraft {
   return { kind: "timed", start, end, timeZone: getBrowserTimeZone() };
+}
+
+// All-day draft Dates are local midnight everywhere (drag creation, form
+// patches, shortcuts). new Date("YYYY-MM-DD") would parse as UTC midnight,
+// which reads as the previous day when formatted back in local time west of
+// UTC — dayjs parses date-only strings as local.
+export function allDayGridSchedule(
+  start: string,
+  end: string,
+): GridScheduleDraft {
+  return {
+    kind: "allDay",
+    start: dayjs(start).toDate(),
+    end: dayjs(end).toDate(),
+  };
 }
 
 // Mirrors event.view-model.ts's scheduledEventToSchemaEvent recurrence
