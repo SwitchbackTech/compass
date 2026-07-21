@@ -2,6 +2,8 @@ import { type RefObject, useEffect, useRef } from "react";
 
 const GESTURE_IDLE_MS = 180;
 const NAVIGATION_THRESHOLD_PX = 60;
+const NEW_SWIPE_DELTA_JUMP_PX = 10;
+const MOMENTUM_DEAD_PX = 8;
 
 type HorizontalNavigationOptions = {
   containerRef: RefObject<HTMLElement | null>;
@@ -47,11 +49,13 @@ export const useHorizontalNavigation = ({
 
     let accumulatedDelta = 0;
     let hasNavigated = false;
+    let lastDeltaX = 0;
     let resetTimer: ReturnType<typeof setTimeout> | undefined;
 
     const resetGesture = () => {
       accumulatedDelta = 0;
       hasNavigated = false;
+      lastDeltaX = 0;
     };
 
     const handleWheel = (event: WheelEvent) => {
@@ -67,6 +71,24 @@ export const useHorizontalNavigation = ({
       event.preventDefault();
       clearTimeout(resetTimer);
       resetTimer = setTimeout(resetGesture, GESTURE_IDLE_MS);
+
+      // Trackpad momentum events keep firing (< idle gap apart) long after the
+      // fingers lift, so the idle timer alone never releases the gesture lock.
+      // Momentum never reverses direction, so a sign flip is always a new
+      // swipe. A magnitude jump only counts as one once the tail has decayed
+      // to a crawl — a jump right after navigating is just the same swipe
+      // still accelerating. A re-swipe mid-tail in the same direction is
+      // indistinguishable from momentum and stays swallowed.
+      const isNewSwipe =
+        hasNavigated &&
+        (Math.sign(event.deltaX) !== Math.sign(lastDeltaX) ||
+          (Math.abs(lastDeltaX) <= MOMENTUM_DEAD_PX &&
+            Math.abs(event.deltaX) >
+              Math.abs(lastDeltaX) + NEW_SWIPE_DELTA_JUMP_PX));
+      if (isNewSwipe) {
+        resetGesture();
+      }
+      lastDeltaX = event.deltaX;
 
       if (hasNavigated) return;
 

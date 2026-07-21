@@ -49,11 +49,13 @@ export const useAllDayDraftCreation = ({
       .add(1, "day")
       .format(YEAR_MONTH_DAY_FORMAT);
 
+    // dayjs, not new Date(): date-only strings must parse as local midnight
+    // (the all-day draft convention), not UTC midnight.
     const draft = createGridEventDraft(
       {
         kind: "allDay",
-        start: new Date(startDate),
-        end: new Date(endDate),
+        start: dayjs(startDate).toDate(),
+        end: dayjs(endDate).toDate(),
       },
       undefined,
       calendarId,

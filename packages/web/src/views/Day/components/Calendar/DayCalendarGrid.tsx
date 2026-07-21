@@ -123,9 +123,11 @@ export function DayCalendarGrid() {
         : createGridEventDraft(
             event.isAllDay
               ? {
+                  // dayjs, not new Date(): date-only strings must parse as
+                  // local midnight (the all-day draft convention), not UTC.
                   kind: "allDay",
-                  start: new Date(event.startDate),
-                  end: new Date(event.endDate),
+                  start: dayjs(event.startDate).toDate(),
+                  end: dayjs(event.endDate).toDate(),
                 }
               : timedGridSchedule(
                   new Date(event.startDate),
