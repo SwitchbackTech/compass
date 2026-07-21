@@ -32,10 +32,12 @@ export const SyncResourceRecordSchema = z.strictObject({
   importGeneration: z.number().int().min(0),
   lastAttemptAt: z.date().nullable(),
   lastSuccessAt: z.date().nullable(),
-  // Push subscription: the provider channel id, its opaque resource id, and
-  // when it expires. All null when no subscription is active.
+  // Push subscription: the provider channel id, its opaque resource id, the
+  // per-channel secret the provider echoes back on callbacks, and when it
+  // expires. All null when no subscription is active.
   subscriptionId: z.string().min(1).nullable(),
   subscriptionResourceId: z.string().min(1).nullable(),
+  subscriptionToken: z.string().min(1).nullable(),
   subscriptionExpiresAt: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),

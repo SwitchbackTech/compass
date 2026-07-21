@@ -84,6 +84,7 @@ describe("SyncResourceRepository", () => {
       {
         subscriptionId: "chan-1",
         subscriptionResourceId: "res-1",
+        subscriptionToken: "chan-token-1",
         subscriptionExpiresAt: new Date("2026-07-27T00:00:00.000Z"),
       },
     );
@@ -154,6 +155,7 @@ describe("SyncResourceRepository", () => {
       {
         subscriptionId: "chan-1",
         subscriptionResourceId: "res-1",
+        subscriptionToken: "chan-token-1",
         subscriptionExpiresAt: new Date("2026-07-27T00:00:00.000Z"),
       },
     );
