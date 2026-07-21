@@ -267,25 +267,37 @@ describe("POST /internal/commands", () => {
     expect(stored?.clientEventId).toBe(clientEventId);
   });
 
-  it("promoting the same device event twice yields one cloud event", async () => {
+  it("converges a resumed promotion to one cloud event via the stable id", async () => {
     const tenantId = objectId();
     const principalId = objectId();
     const clientEventId = `device-${objectId()}`;
-    // A stable eventId is what keeps a resumed/repeated promotion idempotent.
-    const request = createRequest({
-      input: { ...createRequest().input, clientEventId },
-    });
+    const eventId = objectId();
+    const input = { ...createRequest().input, clientEventId };
     await startService();
 
-    await submit(tenantId, principalId, request);
-    await submit(tenantId, principalId, request);
+    // A resumed promotion is a fresh attempt (new idempotency key) for the same
+    // device event. Two separate commands result, but the stable event id keeps
+    // them converging on exactly one cloud event.
+    await submit(tenantId, principalId, {
+      idempotencyKey: `idem-${objectId()}`,
+      eventId,
+      input,
+      expectedVersion: null,
+    });
+    await submit(tenantId, principalId, {
+      idempotencyKey: `idem-${objectId()}`,
+      eventId,
+      input,
+      expectedVersion: null,
+    });
 
+    expect(await mongo.db.collection("commands").countDocuments()).toBe(2);
     expect(await mongo.db.collection("events").countDocuments()).toBe(1);
     const events = new EventRepository(mongo.db);
     const stored = await events.findById(
       tenantId as TenantId,
       principalId as PrincipalId,
-      request.eventId as never,
+      eventId as never,
     );
     expect(stored?.clientEventId).toBe(clientEventId);
   });
