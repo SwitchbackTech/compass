@@ -21,7 +21,6 @@ describe("captureFeedback", () => {
       posthog,
       {
         details: "Keep completed events visible.",
-        kind: "suggestion",
         view: "week",
       },
       { apiKey: "test-key", host: "https://us.i.posthog.com", send },
@@ -50,7 +49,7 @@ describe("captureFeedback", () => {
         app_version: expect.any(String),
         app_view: "week",
         feedback_source: "command_palette",
-        feedback_type: "suggestion",
+        feedback_type: "feedback",
       },
     });
   });
@@ -61,7 +60,6 @@ describe("captureFeedback", () => {
         posthog,
         {
           details: "Keep my report open so I can retry.",
-          kind: "bug",
           view: "day",
         },
         {

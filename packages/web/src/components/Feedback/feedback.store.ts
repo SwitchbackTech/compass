@@ -1,10 +1,7 @@
 import { create } from "zustand";
 import { type ViewName } from "@web/shortcuts/shortcuts.constants";
 
-export type FeedbackKind = "bug" | "suggestion";
-
 export interface FeedbackRequest {
-  kind: FeedbackKind;
   view: ViewName;
 }
 
@@ -17,8 +14,7 @@ export const useFeedbackStore = create<FeedbackState>()(() => ({
 }));
 
 export const feedbackActions = {
-  open: (kind: FeedbackKind, view: ViewName) =>
-    useFeedbackStore.setState({ request: { kind, view } }),
+  open: (view: ViewName) => useFeedbackStore.setState({ request: { view } }),
   close: () => useFeedbackStore.setState({ request: null }),
 };
 

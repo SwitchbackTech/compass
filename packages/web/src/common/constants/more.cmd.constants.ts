@@ -1,4 +1,4 @@
-import { BugIcon, ChatsIcon, InfoIcon } from "@phosphor-icons/react";
+import { ChatsIcon, InfoIcon } from "@phosphor-icons/react";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { APP_VERSION } from "@web/common/constants/version.constants";
 import { type CommandSection } from "@web/components/CommandPalette/command-palette.types";
@@ -11,13 +11,11 @@ export function getCommandPalettePlaceholder(
 ): string {
   if (currentView === "day") {
     return feedbackEnabled
-      ? "Try: 'week', 'today', 'bug', or 'feedback'"
+      ? "Try: 'week', 'today', or 'feedback'"
       : "Try: 'week' or 'today'";
   }
 
-  return feedbackEnabled
-    ? "Try: 'create', 'bug', or 'feedback'"
-    : "Try: 'create'";
+  return feedbackEnabled ? "Try: 'create' or 'feedback'" : "Try: 'create'";
 }
 
 export function getMoreCommandPaletteSections(
@@ -27,16 +25,10 @@ export function getMoreCommandPaletteSections(
   const feedbackItems = feedbackEnabled
     ? [
         {
-          id: "report-bug",
-          label: "Report Bug",
-          icon: BugIcon,
-          onClick: () => feedbackActions.open("bug", currentView),
-        },
-        {
           id: "share-feedback",
           label: "Share Feedback",
           icon: ChatsIcon,
-          onClick: () => feedbackActions.open("suggestion", currentView),
+          onClick: () => feedbackActions.open(currentView),
         },
       ]
     : [];

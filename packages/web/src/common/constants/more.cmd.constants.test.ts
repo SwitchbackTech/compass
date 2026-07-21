@@ -23,23 +23,21 @@ describe("getMoreCommandPaletteSections", () => {
     );
   });
 
-  it("opens a prefilled feedback request from each cloud command", () => {
+  it("opens the feedback request from the cloud command", () => {
     const [section] = getMoreCommandPaletteSections("day", true);
-    const reportBug = section.items.find((item) => item.id === "report-bug");
+    expect(section.items).toHaveLength(2);
+    expect(
+      section.items.find((item) => item.id === "report-bug"),
+    ).toBeUndefined();
     const shareFeedback = section.items.find(
       (item) => item.id === "share-feedback",
     );
 
-    reportBug?.onClick?.();
-    expect(selectFeedbackRequest(useFeedbackStore.getState())).toEqual({
-      kind: "bug",
-      view: "day",
-    });
-
     shareFeedback?.onClick?.();
     expect(selectFeedbackRequest(useFeedbackStore.getState())).toEqual({
-      kind: "suggestion",
       view: "day",
     });
+    expect(getCommandPalettePlaceholder("day", true)).toContain("feedback");
+    expect(getCommandPalettePlaceholder("day", true)).not.toContain("bug");
   });
 });
