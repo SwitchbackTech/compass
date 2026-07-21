@@ -39,6 +39,8 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
     { name: "principal_state", key: { principalId: 1, state: 1 } },
     { name: "health_age", key: { lastHealthyAt: 1 } },
   ],
+  // Keyed 1:1 by connection id (the automatic _id index); no secondary indexes.
+  [SYNC_COLLECTIONS.credentials]: [],
   [SYNC_COLLECTIONS.providerCalendars]: [
     {
       name: "connection_provider_calendar",
