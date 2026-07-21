@@ -117,12 +117,16 @@ export function registerConnectionRoutes(
       if (!auth) return;
       if (!ensureConnected(deps, res)) return;
 
-      // A bad connectionId is a bad request, not an empty result.
+      // A present-but-bad connectionId (malformed, or repeated so Express parses
+      // it as an array) is a bad request, not a silently-unfiltered result.
       const rawConnectionId = req.query["connectionId"];
       let connectionId: ConnectionId | undefined;
-      if (typeof rawConnectionId === "string") {
-        const parsed = ConnectionIdSchema.safeParse(rawConnectionId);
-        if (!parsed.success) {
+      if (rawConnectionId !== undefined) {
+        const parsed =
+          typeof rawConnectionId === "string"
+            ? ConnectionIdSchema.safeParse(rawConnectionId)
+            : null;
+        if (!parsed?.success) {
           res
             .status(Status.BAD_REQUEST)
             .json({ error: "invalid_connection_id" });

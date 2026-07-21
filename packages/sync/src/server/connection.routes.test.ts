@@ -896,6 +896,19 @@ describe("GET /internal/calendars", () => {
     expect(res.status).toBe(400);
   });
 
+  it("rejects a repeated connectionId that Express parses as an array", async () => {
+    await startService();
+    const conn = objectId();
+
+    const res = await get(
+      objectId(),
+      objectId(),
+      `?connectionId=${conn}&connectionId=${objectId()}`,
+    );
+
+    expect(res.status).toBe(400);
+  });
+
   it("rejects an unsigned request", async () => {
     await startService();
 
