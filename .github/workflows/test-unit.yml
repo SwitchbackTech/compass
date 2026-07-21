@@ -120,7 +120,7 @@ jobs:
       # backend and scripts boot an in-memory MongoDB; cache the downloaded
       # mongod binary so each run doesn't re-fetch it.
       - name: Cache MongoDB binaries
-        if: matrix.project == 'backend' || matrix.project == 'scripts'
+        if: matrix.project == 'backend' || matrix.project == 'scripts' || matrix.project == 'sync'
         uses: actions/cache@v5
         with:
           path: ~/.cache/mongodb-binaries

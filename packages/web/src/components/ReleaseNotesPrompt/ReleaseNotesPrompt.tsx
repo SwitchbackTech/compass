@@ -4,13 +4,18 @@ import {
   useCallback,
   useState,
 } from "react";
-import { subscribeToReleaseNotes } from "@web/auth/compass/user/util/subscribe.util";
+import { UserApi } from "@web/api/user.api";
 import { releaseNotesPromptActions } from "@web/auth/state/release-notes-prompt.store";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { PixelPirate } from "@web/components/WelcomeModal/PixelPirate";
 
-type PromptState = "asking" | "confirmed" | "declined";
+type PromptState =
+  | "asking"
+  | "confirmed"
+  | "declined"
+  | "unavailable"
+  | "unsubscribed";
 
 export function ReleaseNotesPrompt() {
   const [state, setState] = useState<PromptState>("asking");
@@ -35,6 +40,10 @@ export function ReleaseNotesPrompt() {
   };
 
   const decline = () => {
+    if (state === "unavailable" || state === "unsubscribed") {
+      dismiss();
+      return;
+    }
     if (state !== "asking") return;
     setState("declined");
     window.setTimeout(dismiss, 1300);
@@ -43,7 +52,18 @@ export function ReleaseNotesPrompt() {
   const subscribe = async () => {
     if (state !== "asking") return;
     try {
-      await subscribeToReleaseNotes();
+      const response = await UserApi.subscribeToEmailUpdates();
+      if (response.status === "unavailable") {
+        setState("unavailable");
+        return;
+      }
+      if (response.status === "unsubscribed") {
+        setState("unsubscribed");
+        return;
+      }
+      if (response.status !== "subscribed") {
+        throw new Error("Subscriber is not active");
+      }
       setState("confirmed");
       window.setTimeout(dismiss, 1300);
     } catch {
@@ -110,13 +130,34 @@ export function ReleaseNotesPrompt() {
         ) : (
           <div className="flex flex-col gap-2">
             <h2 className="font-bold text-2xl text-text leading-snug">
-              {state === "confirmed" ? "You're in!" : "No problem."}
+              {state === "confirmed"
+                ? "You're in!"
+                : state === "unavailable"
+                  ? "Email updates aren't available here."
+                  : state === "unsubscribed"
+                    ? "You're unsubscribed from updates."
+                    : "No problem."}
             </h2>
             <p className="text-text-muted">
               {state === "confirmed"
                 ? "You'll get the next release notes in your inbox"
-                : "No problem, you can signup using the cmd palette if you change your mind."}
+                : state === "unavailable"
+                  ? "Ask this Compass instance's administrator to enable email updates."
+                  : state === "unsubscribed"
+                    ? "Kit requires a separate re-subscription before it can send updates again."
+                    : "No problem, you can signup using the cmd palette if you change your mind."}
             </p>
+            {(state === "unavailable" || state === "unsubscribed") && (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={dismiss}
+                  className="c-button c-button-primary rounded-full px-5"
+                >
+                  Got it
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

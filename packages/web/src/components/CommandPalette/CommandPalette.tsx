@@ -13,7 +13,7 @@ import { useCallback, useRef, useState } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { type SyncStatusVariant } from "@web/calendars/sync-status.types";
 import { eventCommandPaletteItems } from "@web/common/constants/event.cmd.constants";
-import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
+import { getMoreCommandPaletteSections } from "@web/common/constants/more.cmd.constants";
 import { getNavigationCommandItems } from "@web/common/constants/navigation.cmd.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
@@ -85,7 +85,7 @@ export const CommandPalette = ({
   const open = useSettingsStore(selectIsCmdPaletteOpen);
   const navigate = useNavigate();
   const { items: calendarCmdItems, syncStatus } = useCalendarSyncCmdItems();
-  const subscribeCmdItems = useSubscribeCmdItems();
+  const subscribeCmdItems = useSubscribeCmdItems(open);
   const exportDataCmdItems = useExportDataCmdItems();
   const authCmdItems = useAuthCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
@@ -160,7 +160,7 @@ export const CommandPalette = ({
         ...deleteAccountCmdItems,
       ],
     },
-    ...moreCommandPaletteItems,
+    ...getMoreCommandPaletteSections(currentView),
   ];
 
   const filteredSections = filterSections(sections, search);
@@ -267,7 +267,7 @@ export const CommandPalette = ({
 
                     const content = (
                       <>
-                        <item.icon size={18} />
+                        <item.icon size={18} className={item.iconClassName} />
                         <span className="min-w-0 flex-1 truncate">
                           {item.label}
                         </span>
@@ -279,23 +279,6 @@ export const CommandPalette = ({
                         )}
                       </>
                     );
-
-                    if (item.href) {
-                      return (
-                        <a
-                          key={item.id}
-                          {...commonProps}
-                          role="option"
-                          aria-selected={isActive}
-                          href={item.href}
-                          target={item.target}
-                          rel="noopener noreferrer"
-                          className={rowClassName}
-                        >
-                          {content}
-                        </a>
-                      );
-                    }
 
                     return (
                       <button

@@ -12,6 +12,7 @@ import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CompassRefsProvider } from "@web/common/refs/compass-refs";
 import { queryClient as defaultQueryClient } from "@web/api/query-client";
 import { DeleteAccountConfirmationProvider } from "@web/components/DeleteAccountConfirmation/DeleteAccountConfirmationProvider";
+import { FeedbackDialogHost } from "@web/components/Feedback/FeedbackDialogHost";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
 import { useGlobalShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
@@ -98,6 +99,7 @@ export const CompassOptionalProviders = ({ children }: PropsWithChildren) => {
         }}
       >
         {wrappedChildren}
+        <FeedbackDialogHost />
       </PostHogProvider>
     );
   }

@@ -2,6 +2,7 @@ import { BaseError } from "@core/errors/errors.base";
 import { Logger } from "@core/logger/winston.logger";
 import { mapCompassUserToEmailSubscriber } from "@core/mappers/subscriber/map.subscriber";
 import {
+  type EmailUpdatesStatus,
   type Subscriber,
   SubscriberSchema,
 } from "@core/types/email/email.types";
@@ -13,7 +14,7 @@ import {
   genericError,
 } from "@backend/common/errors/handlers/error.handler";
 import {
-  type Response_TagSubscriber,
+  type Response_ListSubscribers,
   type Response_UpsertSubscriber,
 } from "./email.types";
 
@@ -71,67 +72,48 @@ class EmailService {
     }
   }
 
-  static async tagSubscribedUser(user: Schema_User): Promise<void> {
-    const isMissingValue =
-      !CONFIG.EMAILER_SECRET || !CONFIG.EMAILER_USER_TAG_ID;
-    if (isMissingValue) {
-      logger.warn(
-        "Did not tag subscriber due to missing EMAILER_ ENV value(s)",
-      );
-      return;
-    }
+  static async getEmailUpdatesStatus(
+    email: string,
+  ): Promise<EmailUpdatesStatus> {
+    if (!CONFIG.EMAILER_SECRET) return "unavailable";
 
-    const subscriber = mapCompassUserToEmailSubscriber(user);
-    await EmailService.addTagToSubscriber(
-      subscriber,
-      CONFIG.EMAILER_USER_TAG_ID!,
-    );
+    try {
+      EmailService.initialize();
+      const query = new URLSearchParams({
+        email_address: email,
+        per_page: "1",
+        status: "all",
+      });
+      const response = await EmailService.get<Response_ListSubscribers>(
+        `${EmailService.baseUrl}/subscribers?${query.toString()}`,
+      );
+
+      const subscriber = response.subscribers.find(
+        (subscriber) =>
+          subscriber.email_address.toLowerCase() === email.toLowerCase(),
+      );
+
+      if (!subscriber) return "not_subscribed";
+
+      return subscriber.state === "active" ? "subscribed" : "unsubscribed";
+    } catch (err) {
+      EmailService.throwKitError(err, "Failed to retrieve email updates");
+    }
   }
 
-  static async addTagToSubscriber(
-    subscriber: Subscriber,
-    tagId: string,
-  ): Promise<Response_TagSubscriber> {
-    EmailService.initialize();
+  static async subscribeToEmailUpdates(
+    user: Schema_User,
+  ): Promise<EmailUpdatesStatus> {
+    if (!CONFIG.EMAILER_SECRET) return "unavailable";
+
     try {
-      // upsert subscriber
-      logger.debug(`Adding subscriber: ${subscriber.email_address}`);
-      const upsertedSubscriber =
-        await EmailService.upsertSubscriber(subscriber);
-      const subId = upsertedSubscriber.subscriber.id;
-
-      // add tag to subscriber
-      logger.info(`Tagging subscriber: ${subscriber.email_address}`);
-      const url = `${EmailService.baseUrl}/tags/${tagId}/subscribers/${subId}`;
-      return await EmailService.post<Response_TagSubscriber>(url, {});
+      const subscriber = mapCompassUserToEmailSubscriber(user);
+      const response = await EmailService.upsertSubscriber(subscriber);
+      return response.subscriber.state === "active"
+        ? "subscribed"
+        : "unsubscribed";
     } catch (err) {
-      if (err instanceof BaseError) {
-        throw err;
-      }
-
-      if (err instanceof KitApiError) {
-        logger.error({
-          message: err.message,
-          status: err.status,
-          data: err.data,
-          method: err.method,
-          url: err.url,
-        });
-
-        switch (err.status) {
-          case 401:
-            throw error(
-              EmailerError.InvalidSecret,
-              "Subscriber not upserted/tagged",
-            );
-          case 404:
-            throw error(EmailerError.InvalidTagId, "Subscriber was not tagged");
-          default:
-            throw genericError(err, "Failed to tag subscriber");
-        }
-      }
-
-      throw genericError(err, "Failed to tag subscriber");
+      EmailService.throwKitError(err, "Failed to subscribe to email updates");
     }
   }
 
@@ -146,8 +128,50 @@ class EmailService {
       );
     }
 
+    EmailService.initialize();
+    logger.debug(`Adding subscriber: ${subscriber.email_address}`);
     const url = `${EmailService.baseUrl}/subscribers`;
     return await EmailService.post<Response_UpsertSubscriber>(url, data);
+  }
+
+  private static throwKitError(err: unknown, message: string): never {
+    if (err instanceof BaseError) throw err;
+
+    if (err instanceof KitApiError) {
+      logger.error({
+        message: err.message,
+        status: err.status,
+        data: err.data,
+        method: err.method,
+        url: err.url,
+      });
+
+      if (err.status === 401) {
+        throw error(EmailerError.InvalidSecret, message);
+      }
+    }
+
+    throw genericError(err, message);
+  }
+
+  private static async get<T>(url: string): Promise<T> {
+    const response = await fetch(url, {
+      headers: EmailService.headers.headers,
+      method: "GET",
+    });
+    const data = await getResponseData(response);
+
+    if (!response.ok) {
+      throw new KitApiError(
+        `Kit request failed with status ${response.status}`,
+        "GET",
+        url,
+        response.status,
+        data,
+      );
+    }
+
+    return data as T;
   }
 
   private static async post<T>(url: string, body: object): Promise<T> {

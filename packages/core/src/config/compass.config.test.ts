@@ -62,6 +62,28 @@ describe("compass config", () => {
     expect(config.google?.clientSecret).toBeUndefined();
     expect(config.email).toBeUndefined();
     expect(config.posthog).toBeUndefined();
+    expect(config.sync).toBeUndefined();
+  });
+
+  it("parses the optional sync section when provided", () => {
+    const config = parseCompassConfigText(
+      `${validYaml}
+sync:
+  port: 3010
+  mongoUri: mongodb://localhost:27017/compass_sync
+  internalAuthToken: internal-token
+  callbackBaseUrl: http://localhost:3010
+  execution: passive
+`,
+      "compass.yaml",
+    );
+
+    expect(config.sync?.mongoUri).toBe(
+      "mongodb://localhost:27017/compass_sync",
+    );
+    expect(config.sync?.internalAuthToken).toBe("internal-token");
+    expect(config.sync?.callbackBaseUrl).toBe("http://localhost:3010");
+    expect(config.sync?.execution).toBe("passive");
   });
 
   it("accepts optional sections that are empty because they only contain comments", () => {

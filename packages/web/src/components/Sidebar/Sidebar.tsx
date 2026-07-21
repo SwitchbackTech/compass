@@ -23,7 +23,6 @@ export interface SidebarProps extends HTMLAttributes<HTMLDivElement> {
   onCloseShortcuts: () => void;
   onToggleShortcuts: () => void;
   onSelectDate: (date: Dayjs) => void;
-  onToggleSidebar?: () => void;
   shortcutSections: ShortcutOverlaySection[];
   shortcutsViewLabel?: string;
 }
@@ -54,7 +53,6 @@ export function createSidebar({
     onCloseShortcuts,
     onToggleShortcuts,
     onSelectDate,
-    onToggleSidebar,
     shortcutSections,
     shortcutsViewLabel,
     ...props
@@ -82,7 +80,6 @@ export function createSidebar({
             <MonthPickerComponent
               monthsShown={monthsShown}
               onSelectDate={onSelectDate}
-              onToggleSidebar={onToggleSidebar}
               selectedDate={calendarDate}
             />
             <UpNextCardComponent />

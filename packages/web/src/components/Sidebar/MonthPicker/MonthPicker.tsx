@@ -2,12 +2,9 @@ import { type FC, useEffect, useRef, useState } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
-import { SidebarIcon } from "@web/components/Icons/Sidebar";
-import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 interface Props {
   monthsShown?: number;
-  onToggleSidebar?: () => void;
   onSelectDate: (date: Dayjs) => void;
   selectedDate: Dayjs;
 }
@@ -20,7 +17,6 @@ const headerActionsClassName = "!ml-2.5";
 export const MonthPicker: FC<Props> = ({
   monthsShown,
   onSelectDate,
-  onToggleSidebar,
   selectedDate,
 }) => {
   const selectedDateKey = selectedDate.format(
@@ -45,8 +41,8 @@ export const MonthPicker: FC<Props> = ({
 
     return dateKey ===
       focusedDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT)
-      ? "!rounded-default !font-semibold"
-      : "!rounded-default !font-light";
+      ? "!font-semibold"
+      : "!font-light";
   };
 
   return (
@@ -60,19 +56,6 @@ export const MonthPicker: FC<Props> = ({
         calendarClassName={ID_DATEPICKER_SIDEBAR}
         dayClassName={getDayClassName}
         headerActionsClassName={headerActionsClassName}
-        headerEndContent={
-          onToggleSidebar ? (
-            <TooltipWrapper
-              description="Close sidebar"
-              onClick={onToggleSidebar}
-              shortcut="["
-            >
-              <span className="flex h-6 w-6 items-center justify-center text-text-muted">
-                <SidebarIcon size={21} />
-              </span>
-            </TooltipWrapper>
-          ) : null
-        }
         headerClassName="!relative !justify-start !px-0 !pb-3"
         inline
         isOpen={true}

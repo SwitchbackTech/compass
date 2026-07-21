@@ -13,8 +13,8 @@ interface Props extends PropsWithChildren {
 }
 
 /**
- * Width-collapsing wrapper for the left sidebar that is also user-resizable via
- * a drag handle or the keyboard (arrows/Home/End/Enter). The panel and its
+ * Width-collapsing wrapper for the right sidebar that is also user-resizable
+ * via a drag handle or the keyboard (arrows/Home/End/Enter). The panel and its
  * divider share one collapse transition, and a live drag disables that
  * transition so the width tracks the pointer 1:1.
  */
@@ -29,21 +29,6 @@ export function ResizableSidebarPanel({ children, isOpen }: Props) {
 
   return (
     <>
-      <div
-        className={classNames("h-full min-w-0 shrink-0 overflow-hidden", {
-          "transition-[width] duration-200 ease-out motion-reduce:transition-none":
-            animatesWidth,
-        })}
-        onTransitionEnd={transition.onTransitionEnd}
-        style={{ width: transition.isExpanded ? width : 0 }}
-      >
-        {/* The content holds its full width even while the wrapper collapses to
-            0, so overflow-hidden slides it out of view. */}
-        <div className="h-full shrink-0" style={{ width }}>
-          {children}
-        </div>
-      </div>
-
       {/* biome-ignore lint/a11y/useSemanticElements: An hr cannot host the focusable, draggable window-splitter interaction. */}
       <div
         {...dividerProps}
@@ -65,12 +50,27 @@ export function ResizableSidebarPanel({ children, isOpen }: Props) {
       >
         <div
           className={classNames(
-            "absolute inset-y-1 left-0 w-px rounded-full bg-border transition-[width,background-color] duration-200 ease-out motion-reduce:transition-none",
+            "absolute inset-y-1 right-0 w-px rounded-full bg-border transition-[width,background-color] duration-200 ease-out motion-reduce:transition-none",
             "group-hover:w-0.5 group-hover:bg-text/60",
             "group-focus-visible:w-1 group-focus-visible:bg-accent",
             { "w-0.5 bg-text/60": isResizing },
           )}
         />
+      </div>
+
+      <div
+        className={classNames("h-full min-w-0 shrink-0 overflow-hidden", {
+          "transition-[width] duration-200 ease-out motion-reduce:transition-none":
+            animatesWidth,
+        })}
+        onTransitionEnd={transition.onTransitionEnd}
+        style={{ width: transition.isExpanded ? width : 0 }}
+      >
+        {/* The content holds its full width even while the wrapper collapses to
+            0, so overflow-hidden slides it out of view. */}
+        <div className="h-full shrink-0" style={{ width }}>
+          {children}
+        </div>
       </div>
     </>
   );

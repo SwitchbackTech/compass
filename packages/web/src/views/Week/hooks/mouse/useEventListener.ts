@@ -7,7 +7,10 @@ type MouseEventHandler = {
 export const useEventListener = (
   eventName: "mouseup" | "mousemove",
   handler: MouseEventHandler,
-  element: HTMLElement | Window = window,
+  // Accept null so a fail-soft element lookup (getElemById returns null when
+  // the element is absent) can pass through — the effect already no-ops when
+  // the element can't receive listeners.
+  element: HTMLElement | Window | null = window,
 ) => {
   const savedHandler = useRef<(e: MouseEvent) => void>(handler);
   // Update ref.current value if handler changes.
@@ -20,9 +23,9 @@ export const useEventListener = (
   }, [handler]);
 
   useEffect(() => {
-    const isSupported = element?.addEventListener;
-
-    if (!isSupported) return;
+    // Inline the guard on `element` (not a separate `isSupported` const) so
+    // TypeScript narrows `element` to non-null for the calls below.
+    if (!element?.addEventListener) return;
 
     const listener = (event: Event) => {
       savedHandler.current(event as MouseEvent);

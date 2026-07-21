@@ -1,6 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 import {
   ensureSidebarOpen,
+  getViewSwitcherButton,
   openTimedEventFormWithMouse,
 } from "../utils/event-test-utils";
 
@@ -293,10 +294,10 @@ async function setupCalendarExperiencePage(
   });
 
   await page.goto("/week", { waitUntil: "domcontentloaded" });
-  await page
-    .getByRole("button", { name: /select view, currently/i })
-    .first()
-    .waitFor({ state: "visible", timeout: 15000 });
+  await getViewSwitcherButton(page).waitFor({
+    state: "visible",
+    timeout: 15000,
+  });
 
   await page.waitForFunction(
     () => (window as CompassE2EWindow).__COMPASS_E2E_HOOKS__ !== undefined,
@@ -386,9 +387,7 @@ test("day view separates visible calendars into distinct columns", async ({
 }) => {
   await setupCalendarExperiencePage(page);
 
-  await page
-    .getByRole("button", { name: /select view, currently week/i })
-    .click();
+  await getViewSwitcherButton(page).click();
   await page.getByRole("option", { name: /^day/i }).click();
 
   const dayAgenda = page.getByRole("region", { name: "Calendar agenda" });

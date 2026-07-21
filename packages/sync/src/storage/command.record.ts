@@ -1,0 +1,63 @@
+import { z } from "zod/v4";
+import { EventIdSchema } from "@core/types/domain-primitives";
+import {
+  SyncCommandInputSchema,
+  SyncCommandOutcomeSchema,
+} from "@core/types/sync/command.contracts";
+import { ProviderEventVersionSchema } from "@core/types/sync/event.contracts";
+import {
+  IdempotencyKeySchema,
+  PrincipalIdSchema,
+  SyncCommandIdSchema,
+  TenantIdSchema,
+} from "@core/types/sync/identity.contracts";
+
+// A create command has nothing prior to condition against, so it never carries
+// an expected version.
+function refineCreateHasNoExpectedVersion(
+  command: { input: { kind: string }; expectedVersion: string | null },
+  ctx: z.RefinementCtx,
+): void {
+  if (command.input.kind === "create" && command.expectedVersion !== null) {
+    ctx.addIssue({
+      code: "custom",
+      message: "A create command cannot carry an expectedVersion",
+      path: ["expectedVersion"],
+    });
+  }
+}
+
+// Persistence record for `commands` — acknowledged, durable user intent for one
+// event mutation. Unique per (tenant, principal, idempotencyKey) so a retried
+// submission maps to the same command. `outcome` is nested so its `state` is
+// indexable. No credentials or raw provider payloads are stored here.
+export const CommandRecordSchema = z
+  .strictObject({
+    _id: SyncCommandIdSchema,
+    tenantId: TenantIdSchema,
+    principalId: PrincipalIdSchema,
+    idempotencyKey: IdempotencyKeySchema,
+    eventId: EventIdSchema,
+    input: SyncCommandInputSchema,
+    expectedVersion: ProviderEventVersionSchema.nullable(),
+    outcome: SyncCommandOutcomeSchema,
+    attemptCount: z.number().int().min(0),
+    createdAt: z.date(),
+    updatedAt: z.date(),
+  })
+  .superRefine(refineCreateHasNoExpectedVersion);
+export type CommandRecord = z.infer<typeof CommandRecordSchema>;
+
+// Fields a caller supplies to submit a command. Sync owns _id, attemptCount,
+// outcome (starts pending), createdAt, and updatedAt.
+export const CommandSubmitSchema = z
+  .strictObject({
+    tenantId: TenantIdSchema,
+    principalId: PrincipalIdSchema,
+    idempotencyKey: IdempotencyKeySchema,
+    eventId: EventIdSchema,
+    input: SyncCommandInputSchema,
+    expectedVersion: ProviderEventVersionSchema.nullable(),
+  })
+  .superRefine(refineCreateHasNoExpectedVersion);
+export type CommandSubmit = z.infer<typeof CommandSubmitSchema>;

@@ -94,6 +94,9 @@ export const useGridEventMouseDown = (
     e.stopPropagation();
     targetRef.current = e.currentTarget;
     const element = getElemById(elementId);
+    if (!element) {
+      return;
+    }
     const initialX = e.clientX;
     const initialY = e.clientY;
     mouseMoved.current = false;

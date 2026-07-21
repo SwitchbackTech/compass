@@ -1,0 +1,23 @@
+FROM oven/bun:1.2.18 AS build
+
+WORKDIR /app
+COPY . .
+
+RUN bun install --frozen-lockfile
+RUN bun run build:sync
+
+FROM oven/bun:1.2.18-slim AS runtime
+
+WORKDIR /app
+
+RUN addgroup --system --gid 1001 compass \
+ && adduser --system --uid 1001 --ingroup compass --no-create-home compass
+
+COPY --from=build --chown=compass:compass /app/build/sync ./
+RUN mkdir -p /app/logs && chown compass:compass /app/logs
+
+USER compass
+
+ENV SYNC_PORT=3010
+EXPOSE 3010
+CMD ["bun", "app.js"]

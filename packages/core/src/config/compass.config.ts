@@ -52,6 +52,8 @@ const CompassConfigSchema = z
     email: z
       .object({
         kitApiSecret: optionalString,
+        // Retained solely so existing config files remain valid after tags
+        // stopped being part of Compass's email subscription flow.
         kitUserTagId: z.union([z.string(), z.number()]).optional(),
       })
       .nullish(),
@@ -59,6 +61,21 @@ const CompassConfigSchema = z
       .object({
         key: optionalString,
         host: optionalString,
+      })
+      .nullish(),
+    // Compass Sync service configuration. Optional so existing deployments
+    // (and the legacy backend) parse unchanged until Sync is provisioned.
+    // Sync owns its OWN isolated Mongo database (mongoUri) and never reads
+    // the backend's mongo.uri, per the sync-service ownership boundary.
+    sync: z
+      .object({
+        port: z.union([z.string(), z.number()]).optional(),
+        mongoUri: z.string(),
+        internalAuthToken: z.string(),
+        callbackBaseUrl: z.string(),
+        execution: z.enum(["passive", "active"]).optional(),
+        maxConcurrency: z.union([z.string(), z.number()]).optional(),
+        enforceLeastPrivilege: z.union([z.boolean(), z.string()]).optional(),
       })
       .nullish(),
   })

@@ -1,5 +1,6 @@
 import { memo, useCallback, useMemo, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
+import { getCommandPalettePlaceholder } from "@web/common/constants/more.cmd.constants";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
@@ -122,24 +123,9 @@ export const DayViewContent = memo(() => {
         today={dayjs()}
         onGoToToday={handleGoToToday}
         onShowShortcuts={toggleShortcuts}
-        placeholder="Try: 'week', 'today', 'bug', or 'feedback'"
+        placeholder={getCommandPalettePlaceholder("day")}
       />
       <Dedication />
-
-      <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
-        <Sidebar
-          calendarDate={dateInView}
-          eventDetails={<SidebarEventDetails />}
-          isEventDetailsOpen={isEventDetailsOpen}
-          isShortcutsOpen={isShortcutsOpen}
-          onCloseShortcuts={closeShortcuts}
-          onToggleShortcuts={toggleShortcuts}
-          onSelectDate={navigateToDate}
-          onToggleSidebar={toggleSidebar}
-          shortcutSections={shortcutSections}
-          shortcutsViewLabel="Day"
-        />
-      </ResizableSidebarPanel>
 
       <div
         id={ID_MAIN}
@@ -152,6 +138,20 @@ export const DayViewContent = memo(() => {
           <DayCalendarGrid />
         </div>
       </div>
+
+      <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
+        <Sidebar
+          calendarDate={dateInView}
+          eventDetails={<SidebarEventDetails />}
+          isEventDetailsOpen={isEventDetailsOpen}
+          isShortcutsOpen={isShortcutsOpen}
+          onCloseShortcuts={closeShortcuts}
+          onToggleShortcuts={toggleShortcuts}
+          onSelectDate={navigateToDate}
+          shortcutSections={shortcutSections}
+          shortcutsViewLabel="Day"
+        />
+      </ResizableSidebarPanel>
     </div>
   );
 });

@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
+import { getCommandPalettePlaceholder } from "@web/common/constants/more.cmd.constants";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
@@ -141,29 +142,12 @@ export const WeekView = () => {
         today={today}
         onGoToToday={goToTodayViaCmd}
         onShowShortcuts={toggleShortcuts}
-        placeholder="Try: 'create', 'bug', or 'feedback'"
+        placeholder={getCommandPalettePlaceholder("week")}
       />
       <Dedication />
 
       <DraftProvider dateCalcs={dateCalcs} weekProps={weekProps}>
         <Shortcuts shortcutsProps={shortcutProps}>
-          <ContextMenuWrapper id="sidebar-context-menu">
-            <Draft measurements={measurements} weekProps={weekProps} />
-            <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
-              <Sidebar
-                calendarDate={calendarDate}
-                eventDetails={<WeekSidebarEventDetails />}
-                isEventDetailsOpen={isEventDetailsOpen}
-                isShortcutsOpen={isShortcutsOpen}
-                onCloseShortcuts={closeShortcuts}
-                onToggleShortcuts={toggleShortcuts}
-                onSelectDate={goToDateFromSidebar}
-                onToggleSidebar={toggleSidebar}
-                shortcutSections={shortcutSections}
-                shortcutsViewLabel="Week"
-              />
-            </ResizableSidebarPanel>
-          </ContextMenuWrapper>
           <div
             id={ID_MAIN}
             ref={mainRef}
@@ -200,6 +184,22 @@ export const WeekView = () => {
               </div>
             </WeekGridScrollArea>
           </div>
+          <ContextMenuWrapper id="sidebar-context-menu">
+            <Draft measurements={measurements} weekProps={weekProps} />
+            <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
+              <Sidebar
+                calendarDate={calendarDate}
+                eventDetails={<WeekSidebarEventDetails />}
+                isEventDetailsOpen={isEventDetailsOpen}
+                isShortcutsOpen={isShortcutsOpen}
+                onCloseShortcuts={closeShortcuts}
+                onToggleShortcuts={toggleShortcuts}
+                onSelectDate={goToDateFromSidebar}
+                shortcutSections={shortcutSections}
+                shortcutsViewLabel="Week"
+              />
+            </ResizableSidebarPanel>
+          </ContextMenuWrapper>
         </Shortcuts>
 
         <RecurrenceScopeDialog />

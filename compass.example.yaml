@@ -42,8 +42,20 @@ supertokens:
 
 # email:
 #   kitApiSecret: REPLACE_WITH_KIT_API_SECRET
-#   kitUserTagId: REPLACE_WITH_KIT_USER_TAG_ID
 
 # posthog:
 #   key: REPLACE_WITH_POSTHOG_KEY
 #   host: REPLACE_WITH_POSTHOG_HOST
+
+# Compass Sync service (optional; omit until you run the standalone service).
+# execution defaults to `passive` (health + read-only verification, no provider
+# calls or job claims). mongoUri MUST point at an isolated database/user that
+# cannot read the backend's database.
+# sync:
+#   port: 3010
+#   mongoUri: mongodb+srv://compass_sync:REPLACE_WITH_SYNC_MONGO_PASSWORD@cluster/compass_sync?retryWrites=true&w=majority
+#   internalAuthToken: REPLACE_WITH_SYNC_INTERNAL_AUTH_TOKEN # any string; must match the value the API uses
+#   callbackBaseUrl: http://localhost:3010 # public base URL for provider OAuth/webhook callbacks
+#   execution: passive # passive | active
+#   maxConcurrency: 4
+#   enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)

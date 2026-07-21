@@ -105,6 +105,33 @@ describe("self-host docker compose", () => {
       ),
     );
   });
+
+  it("builds the sync image without build-time Compass config", () => {
+    const dockerfile = readRepoFile("self-host/Dockerfile.sync");
+
+    expect(dockerfile).toContain("RUN bun run build:sync");
+    expect(dockerfile).not.toContain("--environment");
+  });
+
+  it("gates the passive sync service behind its own profile", () => {
+    const compose = readFileSync(join(import.meta.dir, "compose.yaml"), {
+      encoding: "utf8",
+    });
+
+    expect(compose).toContain("switchbacktech/compass-sync:");
+    // Liveness probe, not readiness: a store-less passive service stays up.
+    expect(compose).toContain("http://127.0.0.1:3010/health/live");
+    const syncBlock = compose
+      .slice(compose.indexOf("  sync:"))
+      .split(/\n {2}\w/)[0];
+    // The `sync` profile lets a deploy start the container only where an
+    // isolated sync database is provisioned.
+    expect(syncBlock).toContain("profiles: [sync]");
+    // The read-only root fs needs a writable mount for the logger's log file,
+    // or the container crashes on startup.
+    expect(syncBlock).toContain("compass_sync_logs:/app/logs");
+    expect(compose).toContain("compass_sync_logs:");
+  });
 });
 
 describe("self-host installer", () => {
@@ -147,10 +174,10 @@ describe("self-host helper", () => {
 });
 
 describe("staging deploy workflow", () => {
-  it("lets the self-host helper default compose profiles when the environment variable is unset", () => {
+  it("lets the self-host helper default compose profiles when none are set", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
-    expect(workflow).toContain('if [ -n "$COMPOSE_PROFILES" ]; then');
+    expect(workflow).toContain('if [ -n "$DEPLOY_PROFILES" ]; then');
     expect(workflow).toContain("cd ~/compass && ./compass update");
   });
 
@@ -190,35 +217,56 @@ describe("staging deploy workflow", () => {
     expect(dockerfile).toContain("'posthog:'");
   });
 
-  it("writes Kit email config only for production deploys", () => {
+  it("configures sync and enables its profile only when both secrets are set", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
     expect(workflow).toContain(
-      "KIT_USER_TAG_ID: $".concat(
-        "{{ inputs.environment == 'production' && vars.KIT_USER_TAG_ID || '' }}",
-      ),
+      "SYNC_MONGO_URI: $".concat("{{ secrets.SYNC_MONGO_URI }}"),
     );
     expect(workflow).toContain(
-      "KIT_API_SECRET: $".concat(
-        "{{ inputs.environment == 'production' && secrets.KIT_API_SECRET || '' }}",
+      "SYNC_INTERNAL_AUTH_TOKEN: $".concat(
+        "{{ secrets.SYNC_INTERNAL_AUTH_TOKEN }}",
       ),
+    );
+    // Both secrets gate a single SYNC_ENABLED flag; a half-provisioned config
+    // must never abort the deploy, so there is no `exit` in the sync path.
+    expect(workflow).toContain(
+      'if [ -n "$SYNC_MONGO_URI" ] && [ -n "$SYNC_INTERNAL_AUTH_TOKEN" ]; then',
+    );
+    expect(workflow).toContain('SYNC_ENABLED="1"');
+    expect(workflow).not.toContain(
+      "Sync deploy requires SYNC_INTERNAL_AUTH_TOKEN",
+    );
+    // Both the config section and the profile gate on the same flag, so the
+    // container never starts against a compass.yaml with no sync section.
+    expect(workflow).toContain('if [ -n "$SYNC_ENABLED" ]; then');
+    expect(workflow).toContain("'sync:'");
+    expect(workflow).toContain('mongoUri: \\"$'.concat('{SYNC_MONGO_URI}\\"'));
+    expect(workflow).toContain("enforceLeastPrivilege: true");
+    expect(workflow).toContain(
+      'DEPLOY_PROFILES="$'.concat(
+        "{DEPLOY_PROFILES:+$",
+        '{DEPLOY_PROFILES},}sync"',
+      ),
+    );
+  });
+
+  it("writes Kit email config whenever the deployment has a secret", () => {
+    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
+
+    expect(workflow).toContain(
+      "KIT_API_SECRET: $".concat("{{ secrets.KIT_API_SECRET }}"),
     );
     expect(workflow).toContain(
       'if [ "$'.concat('{{ inputs.environment }}" = "production" ]; then'),
     );
-    expect(workflow).toContain(
-      "Production deploy requires KIT_API_SECRET and KIT_USER_TAG_ID",
-    );
-    expect(workflow).toContain(
-      'if [ -n "$KIT_API_SECRET" ] && [ -n "$KIT_USER_TAG_ID" ]; then',
-    );
+    expect(workflow).toContain("Production deploy requires KIT_API_SECRET");
+    expect(workflow).toContain('if [ -n "$KIT_API_SECRET" ]; then');
     expect(workflow).toContain("'email:'");
     expect(workflow).toContain(
       'kitApiSecret: \\"$'.concat('{KIT_API_SECRET}\\"'),
     );
-    expect(workflow).toContain(
-      'kitUserTagId: \\"$'.concat('{KIT_USER_TAG_ID}\\"'),
-    );
+    expect(workflow).not.toContain("kitUserTagId");
   });
 
   it("runs deploy health checks after each staging deploy", () => {
