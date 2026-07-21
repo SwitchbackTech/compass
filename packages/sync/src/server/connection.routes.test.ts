@@ -5,6 +5,7 @@ import {
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { createSyncService, type SyncService } from "@sync/app";
 import { signInternalRequest } from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
@@ -22,8 +23,13 @@ import {
   BEGIN_PATH,
   CALENDARS_PATH,
   CONNECTIONS_PATH,
+  EVENTS_PATH,
   OAUTH_CALLBACK_PATH,
 } from "@sync/server/connection.routes";
+import {
+  type EventOccurrenceRecord,
+  EventOccurrenceRecordSchema,
+} from "@sync/storage/contracts/event-occurrence.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
@@ -913,6 +919,297 @@ describe("GET /internal/calendars", () => {
     await startService();
 
     const res = await fetch(`${base}${CALENDARS_PATH}`);
+
+    expect(res.status).toBe(401);
+  });
+});
+
+describe("GET /internal/events", () => {
+  let mongo: SyncMongoService;
+  let service: SyncService;
+  let base: string;
+
+  const startService = async (config: SyncConfig = testConfig()) => {
+    service = createSyncService(config, { mongo });
+    await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
+    const { port } = service.httpServer.address() as AddressInfo;
+    base = `http://127.0.0.1:${port}`;
+  };
+
+  // Insert one occurrence directly, validated through the record schema so a
+  // seed that violates the contract fails in the test rather than the route.
+  const seedOccurrence = (
+    tenantId: string,
+    principalId: string,
+    overrides: Partial<EventOccurrenceRecord> = {},
+  ) => {
+    const start = overrides.startAt ?? new Date();
+    const record = EventOccurrenceRecordSchema.parse({
+      _id: objectId(),
+      tenantId,
+      principalId,
+      eventId: objectId(),
+      occurrenceKey: `${objectId()}:${start.toISOString()}`,
+      calendarId: objectId(),
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T09:00:00-06:00",
+        end: "2026-07-14T10:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      startAt: start,
+      busy: true,
+      title: "Standup",
+      cancelled: false,
+      generation: 0,
+      ...overrides,
+    });
+    return mongo.db
+      .collection<EventOccurrenceRecord>("event_occurrences")
+      .insertOne(record);
+  };
+
+  // A range wide enough to include seeds placed at "now" without brushing the
+  // horizon edges.
+  const wideRange = () =>
+    `start=${dayjs().subtract(1, "day").toISOString()}&end=${dayjs()
+      .add(1, "day")
+      .toISOString()}`;
+
+  const get = (tenantId: string, principalId: string, query: string) =>
+    fetch(`${base}${EVENTS_PATH}?${query}`, {
+      headers: signedHeaders(tenantId, principalId),
+    });
+
+  beforeEach(async () => {
+    mongo = new SyncMongoService();
+    await mongo.connect({
+      uri,
+      databaseName: `events_api_${objectId()}`,
+      forbiddenDatabaseName: "compass_api_unused",
+      enforceLeastPrivilege: false,
+    });
+  });
+
+  afterEach(async () => {
+    await service?.stop();
+    await mongo.db.dropDatabase();
+    await mongo.disconnect();
+  });
+
+  it("returns occurrences mapped to the strict wire contract", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId();
+    await seedOccurrence(tenantId, principalId, {
+      calendarId: calendarId as EventOccurrenceRecord["calendarId"],
+    });
+    await startService();
+
+    const body = (await (
+      await get(
+        tenantId,
+        principalId,
+        `calendarIds=${calendarId}&${wideRange()}`,
+      )
+    ).json()) as { occurrences: Array<Record<string, unknown>> };
+
+    expect(body.occurrences).toHaveLength(1);
+    // Only the wire fields — never the storage-only scope/axis/generation.
+    expect(Object.keys(body.occurrences[0]).sort()).toEqual([
+      "busy",
+      "calendarId",
+      "cancelled",
+      "eventId",
+      "occurrenceKey",
+      "schedule",
+      "title",
+    ]);
+  });
+
+  it("scopes results to the authenticated principal", async () => {
+    const tenantId = objectId();
+    const mine = objectId();
+    const stranger = objectId();
+    const calendarId = objectId();
+    await seedOccurrence(tenantId, mine, {
+      calendarId: calendarId as EventOccurrenceRecord["calendarId"],
+      title: "Mine",
+    });
+    await seedOccurrence(tenantId, stranger, {
+      calendarId: calendarId as EventOccurrenceRecord["calendarId"],
+      title: "Theirs",
+    });
+    await startService();
+
+    const body = (await (
+      await get(tenantId, mine, `calendarIds=${calendarId}&${wideRange()}`)
+    ).json()) as { occurrences: Array<{ title: string }> };
+
+    expect(body.occurrences).toHaveLength(1);
+    expect(body.occurrences[0].title).toBe("Mine");
+  });
+
+  it("returns every occurrence of a recurring series in range", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId() as EventOccurrenceRecord["calendarId"];
+    const eventId = objectId() as EventOccurrenceRecord["eventId"];
+    await seedOccurrence(tenantId, principalId, {
+      calendarId,
+      eventId,
+      occurrenceKey: `${eventId}:a` as EventOccurrenceRecord["occurrenceKey"],
+      startAt: dayjs().subtract(2, "hour").toDate(),
+    });
+    await seedOccurrence(tenantId, principalId, {
+      calendarId,
+      eventId,
+      occurrenceKey: `${eventId}:b` as EventOccurrenceRecord["occurrenceKey"],
+      startAt: dayjs().subtract(1, "hour").toDate(),
+    });
+    await startService();
+
+    const body = (await (
+      await get(
+        tenantId,
+        principalId,
+        `calendarIds=${calendarId}&${wideRange()}`,
+      )
+    ).json()) as { occurrences: Array<{ eventId: string }> };
+
+    expect(body.occurrences).toHaveLength(2);
+    expect(body.occurrences.every((o) => o.eventId === eventId)).toBe(true);
+  });
+
+  it("still returns a cancelled occurrence so the client can tombstone it", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId() as EventOccurrenceRecord["calendarId"];
+    await seedOccurrence(tenantId, principalId, {
+      calendarId,
+      cancelled: true,
+    });
+    await startService();
+
+    const body = (await (
+      await get(
+        tenantId,
+        principalId,
+        `calendarIds=${calendarId}&${wideRange()}`,
+      )
+    ).json()) as { occurrences: Array<{ cancelled: boolean }> };
+
+    expect(body.occurrences).toHaveLength(1);
+    expect(body.occurrences[0].cancelled).toBe(true);
+  });
+
+  it("clamps the range to the sync horizon", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId() as EventOccurrenceRecord["calendarId"];
+    // One before the 12-month past horizon, one inside it.
+    await seedOccurrence(tenantId, principalId, {
+      calendarId,
+      title: "AncientHistory",
+      startAt: dayjs().subtract(15, "month").toDate(),
+    });
+    await seedOccurrence(tenantId, principalId, {
+      calendarId,
+      title: "RecentPast",
+      startAt: dayjs().subtract(1, "month").toDate(),
+    });
+    await startService();
+
+    // Ask for a range that reaches back before the horizon.
+    const body = (await (
+      await get(
+        tenantId,
+        principalId,
+        `calendarIds=${calendarId}&start=${dayjs()
+          .subtract(20, "month")
+          .toISOString()}&end=${dayjs().add(1, "day").toISOString()}`,
+      )
+    ).json()) as { occurrences: Array<{ title: string }> };
+
+    expect(body.occurrences.map((o) => o.title)).toEqual(["RecentPast"]);
+  });
+
+  it("keyset paginates across pages with an opaque cursor", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId() as EventOccurrenceRecord["calendarId"];
+    for (let i = 0; i < 3; i++) {
+      await seedOccurrence(tenantId, principalId, {
+        calendarId,
+        title: `E${i}`,
+        startAt: dayjs()
+          .subtract(3 - i, "hour")
+          .toDate(),
+      });
+    }
+    await startService();
+
+    const first = (await (
+      await get(
+        tenantId,
+        principalId,
+        `calendarIds=${calendarId}&${wideRange()}&limit=2`,
+      )
+    ).json()) as { occurrences: Array<{ title: string }>; nextCursor: string };
+    expect(first.occurrences.map((o) => o.title)).toEqual(["E0", "E1"]);
+    expect(first.nextCursor).toBeTruthy();
+
+    const second = (await (
+      await get(
+        tenantId,
+        principalId,
+        `calendarIds=${calendarId}&${wideRange()}&limit=2&cursor=${encodeURIComponent(
+          first.nextCursor,
+        )}`,
+      )
+    ).json()) as { occurrences: Array<{ title: string }>; nextCursor: null };
+    expect(second.occurrences.map((o) => o.title)).toEqual(["E2"]);
+    expect(second.nextCursor).toBeNull();
+  });
+
+  it("rejects a malformed cursor", async () => {
+    await startService();
+    const badCursor = Buffer.from("notjson").toString("base64url");
+
+    const res = await get(
+      objectId(),
+      objectId(),
+      `calendarIds=${objectId()}&${wideRange()}&cursor=${badCursor}`,
+    );
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a query with no calendarIds", async () => {
+    await startService();
+
+    const res = await get(objectId(), objectId(), wideRange());
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a range whose end is not after its start", async () => {
+    await startService();
+    const now = dayjs().toISOString();
+
+    const res = await get(
+      objectId(),
+      objectId(),
+      `calendarIds=${objectId()}&start=${now}&end=${now}`,
+    );
+
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects an unsigned request", async () => {
+    await startService();
+
+    const res = await fetch(`${base}${EVENTS_PATH}?calendarIds=${objectId()}`);
 
     expect(res.status).toBe(401);
   });
