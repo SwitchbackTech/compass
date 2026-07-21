@@ -57,7 +57,7 @@ export const GoogleReconnectToast = ({
         safe in Google. Reconnect and Compass will re-import them.
       </p>
       <button
-        className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-sm text-text transition-colors hover:bg-accent-secondary-hover"
+        className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-on-accent text-sm transition-colors hover:bg-accent-secondary-hover"
         onClick={() => void handleReconnect()}
         type="button"
       >

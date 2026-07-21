@@ -513,7 +513,7 @@
   }
 
   &[data-dark="true"] .react-datepicker__day-name {
-    color: var(--text-muted);
+    color: var(--text);
   }
 
   &[data-view="sidebar"] .react-datepicker__day-name {

@@ -226,7 +226,7 @@ export const CommandPalette = ({
             value={search}
             placeholder={placeholder}
             aria-label="Command palette search"
-            className="w-full border-border border-b bg-transparent px-4 py-3 text-text-muted outline-none placeholder:text-text focus-visible:border-accent"
+            className="w-full border-border border-b bg-transparent px-4 py-3 text-text outline-none placeholder:text-text-muted focus-visible:border-accent"
             onChange={(event) => {
               setSearch(event.target.value);
               setActiveIndex(0);

@@ -20,7 +20,7 @@ export const MobileGate: React.FC = () => {
         <button
           type="button"
           onClick={handleJoinWaitlist}
-          className="min-h-[44px] cursor-pointer rounded border-none bg-accent px-8 py-2 font-medium font-sans text-base text-text transition-opacity duration-300 hover:opacity-90 focus:outline focus:outline-2 focus:outline-accent focus:outline-offset-2"
+          className="min-h-[44px] cursor-pointer rounded border-none bg-accent px-8 py-2 font-medium font-sans text-base text-on-accent transition-opacity duration-300 hover:opacity-90 focus:outline focus:outline-2 focus:outline-accent focus:outline-offset-2"
         >
           Join Mobile Waitlist
         </button>

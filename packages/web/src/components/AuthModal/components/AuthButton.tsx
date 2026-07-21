@@ -36,7 +36,7 @@ export const AuthButton: FC<AuthButtonProps> = ({
         isDisabled ? "cursor-not-allowed" : "cursor-pointer",
         {
           // Primary variant
-          "h-10 w-full bg-accent px-4 text-text focus:ring-accent":
+          "h-10 w-full bg-accent px-4 text-on-accent focus:ring-accent":
             variant === "primary",
           "c-button-elevated": variant === "primary" && !isDisabled,
           "hover:brightness-110": variant === "primary" && !isDisabled,
