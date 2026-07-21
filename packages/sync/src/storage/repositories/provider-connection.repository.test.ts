@@ -50,6 +50,30 @@ describe("ProviderConnectionRepository", () => {
     expect(created._id).toMatch(/^[0-9a-f]{24}$/);
     expect(created.createdAt).toBeInstanceOf(Date);
     expect(created.state).toBe("importing");
+    // A fresh connection carries no disconnect evidence.
+    expect(created.disconnectedAt).toBeNull();
+  });
+
+  it("clears disconnect evidence when the account reconnects via upsert", async () => {
+    const upsert = baseUpsert();
+    const created = await repo.upsertByProviderAccount(upsert);
+    await repo.markDisconnected(
+      created.tenantId,
+      created.principalId,
+      created._id,
+    );
+
+    // Re-authorizing the same account upserts a live state; disconnectedAt must
+    // not linger, or the row would be internally contradictory (live state,
+    // non-null disconnectedAt) and a re-deriving worker would see it as gone.
+    const reconnected = await repo.upsertByProviderAccount({
+      ...upsert,
+      state: "healthy",
+    });
+
+    expect(reconnected._id).toBe(created._id);
+    expect(reconnected.state).toBe("healthy");
+    expect(reconnected.disconnectedAt).toBeNull();
   });
 
   it("reconnecting the same account updates one document, not two", async () => {

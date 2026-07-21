@@ -41,6 +41,11 @@ export const ProviderConnectionRecordSchema = z
     capabilities: ProviderCapabilitySetSchema,
     state: ConnectionStateSchema,
     stateReason: ConnectionStateReasonSchema.nullable(),
+    // When the user disconnected this connection, or null while connected. This
+    // is durable evidence, not a derived flag: connection-state derivation
+    // treats a non-null value as the top-priority "disconnected" state, so a
+    // later re-deriving worker cannot silently resurrect a disconnected account.
+    disconnectedAt: z.date().nullable(),
     lastSyncedAt: z.date().nullable(),
     lastHealthyAt: z.date().nullable(),
     createdAt: z.date(),

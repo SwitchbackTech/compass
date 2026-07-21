@@ -49,6 +49,11 @@ export class ProviderConnectionRepository {
           stateReason: fields.stateReason,
           lastSyncedAt: fields.lastSyncedAt,
           lastHealthyAt: fields.lastHealthyAt,
+          // A successful upsert-by-account-identity means the account is live —
+          // a create or a reconnect — so clear any prior disconnect evidence.
+          // This keeps disconnectedAt and state consistent: an upsert never
+          // leaves a live state alongside a stale non-null disconnectedAt.
+          disconnectedAt: null,
           updatedAt: now,
         },
         $setOnInsert: {
@@ -89,5 +94,30 @@ export class ProviderConnectionRepository {
       .find({ tenantId, principalId })
       .toArray();
     return records.map((r) => ProviderConnectionRecordSchema.parse(r));
+  }
+
+  // Record that the user disconnected this connection. Sets the durable
+  // `disconnectedAt` evidence and the terminal state together (they agree:
+  // state derivation maps a non-null disconnectedAt to "disconnected"). Scoped
+  // to the owning principal, and returns whether a row was actually updated so
+  // the caller can tell a real disconnect from a missing/foreign connection.
+  async markDisconnected(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: ConnectionId,
+    now: Date = new Date(),
+  ): Promise<boolean> {
+    const result = await this.collection.updateOne(
+      { _id: id, tenantId, principalId },
+      {
+        $set: {
+          disconnectedAt: now,
+          state: "disconnected",
+          stateReason: null,
+          updatedAt: now,
+        },
+      },
+    );
+    return result.matchedCount === 1;
   }
 }
