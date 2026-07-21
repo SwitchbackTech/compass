@@ -110,13 +110,19 @@ export class GoogleEventWriter implements ProviderEventWriter {
       return toResult(created);
     } catch (error) {
       // A duplicate id means a prior attempt already created it: read it back
-      // and report success so a retry is a no-op, not a failure.
+      // and report success so a retry is a no-op, not a failure. The read-back
+      // has its own try so a failed lookup is classified (and redacted) too,
+      // never leaked as a raw provider error.
       if (googleStatus(error) === 409) {
-        const existing = await api.get({
-          calendarId: input.calendarId,
-          eventId: input.providerEventId,
-        });
-        return toResult(existing);
+        try {
+          const existing = await api.get({
+            calendarId: input.calendarId,
+            eventId: input.providerEventId,
+          });
+          return toResult(existing);
+        } catch (getError) {
+          throw classifyWriteError(getError);
+        }
       }
       throw classifyWriteError(error);
     }
@@ -191,6 +197,14 @@ function toResult(event: gSchema$Event): ProviderWriteResult {
 // than omitted — an omitted key is left unchanged on Google, and leaving the
 // other schedule kind's keys behind makes Google reject a start holding both a
 // date and a dateTime.
+//
+// organizer, attendees, and conference are deliberately NOT written. Compass is
+// not authoritative for a provider event's guest list (organizer is fixed by
+// the provider at creation, and attendee/conference management is a separate
+// concern), so those are read-reflected only. Patch's merge-by-key semantics
+// leave the provider's own values untouched, which is the intended behavior.
+// sendUpdates still notifies existing attendees of the title/time changes we do
+// write.
 function toGoogleBody(
   content: SyncEventContent,
   schedule: EventSchedule,

@@ -174,6 +174,26 @@ describe("GoogleEventWriter", () => {
     expect(result.providerVersion).toBe('"vGet"');
   });
 
+  it("classifies (and redacts) a failed read-back after a duplicate-id create", async () => {
+    // The 409 recovery lookup itself fails: the error must be classified, not
+    // leaked as a raw provider error carrying the bearer token.
+    const api = new FakeEventsApi({
+      insert: gError(409, "duplicate"),
+      get: gError(503),
+    });
+    const { writer } = writerWith(api);
+
+    const error = (await writer
+      .createEvent(baseCreate)
+      .catch((e) => e)) as ProviderWriteError;
+
+    expect(error).toBeInstanceOf(ProviderWriteError);
+    expect(error.reason).toBe("transient");
+    expect(JSON.stringify(error.cause ?? {})).not.toContain(
+      "super-secret-token",
+    );
+  });
+
   it("conditions a patch on the expected version via If-Match", async () => {
     const api = new FakeEventsApi();
     const { writer } = writerWith(api);
