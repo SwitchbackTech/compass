@@ -1,0 +1,65 @@
+import {
+  type CalendarAccessRole,
+  type CalendarCapabilities,
+} from "@core/types/sync/connection.contracts";
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
+
+// One calendar as the provider currently reports it, normalized to
+// provider-neutral facts. These map directly onto a persisted provider-calendar
+// record minus the Compass-owned ids; the discovery slice produces them, and a
+// later slice reconciles them into storage.
+export interface DiscoveredCalendar {
+  // The provider's own id for the calendar (opaque, scoped to the connection).
+  readonly providerCalendarId: string;
+  readonly displayName: string;
+  readonly color: string | null;
+  // The provider designates this as the account's default calendar.
+  readonly primary: boolean;
+  // The calendar is present and visible in the account's list. A deleted or
+  // hidden calendar is reported inactive so preferences survive its return.
+  readonly active: boolean;
+  readonly accessRole: CalendarAccessRole;
+  readonly capabilities: CalendarCapabilities;
+}
+
+// The result of one discovery pass: the full set of calendars the provider
+// returned across every page, plus the opaque cursor to resume incrementally.
+export interface CalendarDiscovery {
+  readonly calendars: readonly DiscoveredCalendar[];
+  // Opaque provider incremental cursor (Google's calendar-list nextSyncToken)
+  // for the next discovery. Null when the provider returned none.
+  readonly cursor: string | null;
+}
+
+// A provider-neutral calendar-discovery port. The domain lists an account's
+// calendars without knowing the provider; pagination, capability derivation,
+// and cursor handling stay inside the adapter.
+export interface ProviderCalendarAdapter {
+  readonly provider: ProviderKind;
+
+  // List every calendar the authorized account can see, following the
+  // provider's pagination. Pass `cursor` to resume incrementally from a prior
+  // pass; omit it for a full list. Rejects with a ProviderCalendarError.
+  discoverCalendars(input: {
+    readonly accessToken: string;
+    readonly cursor?: string;
+  }): Promise<CalendarDiscovery>;
+}
+
+// Why a discovery attempt could not complete. `cursorExpired` is distinct so the
+// caller can drop the stale cursor and re-list in full instead of retrying with
+// a token the provider will keep rejecting.
+export type ProviderCalendarErrorReason =
+  | "discoveryFailed" // the provider rejected or failed the calendar-list read
+  | "cursorExpired"; // the incremental cursor is too old; a full re-list is required
+
+export class ProviderCalendarError extends Error {
+  constructor(
+    readonly reason: ProviderCalendarErrorReason,
+    message: string,
+    options?: { cause?: unknown },
+  ) {
+    super(message, options);
+    this.name = "ProviderCalendarError";
+  }
+}
