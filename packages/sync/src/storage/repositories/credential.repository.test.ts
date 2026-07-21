@@ -6,8 +6,8 @@ import {
   type CredentialUpsert,
   redactCredential,
 } from "@sync/storage/contracts/credential.contracts";
-import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { installIndexManifest } from "@sync/storage/index-manifest";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 
 const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
