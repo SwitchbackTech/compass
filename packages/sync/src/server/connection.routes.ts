@@ -4,6 +4,7 @@ import {
   type RequestHandler,
   type Response,
 } from "express";
+import { rateLimit } from "express-rate-limit";
 import { Status } from "@core/errors/status.codes";
 import {
   type ConnectionListResponse,
@@ -32,6 +33,16 @@ export interface ConnectionApiDeps {
   authAdapter?: ProviderAuthAdapter;
 }
 
+// A generous backstop, not a throttle: the only caller is the trusted Compass
+// API over a private network, so this bounds a runaway loop or a compromised
+// caller rather than shaping normal traffic. Keyed per client ip, fixed window.
+const connectionRateLimit = rateLimit({
+  windowMs: 60_000,
+  limit: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Internal, authenticated connection endpoints. The tenant/principal comes from
 // the signed auth context, never the request, so every query is scoped to the
 // caller's own principal. Reads are allowed in passive mode — they touch no
@@ -41,29 +52,35 @@ export function registerConnectionRoutes(
   app: Express,
   deps: ConnectionApiDeps,
 ): void {
-  app.get(CONNECTIONS_PATH, deps.authMiddleware, async (req, res) => {
-    const auth = requireAuth(req, res);
-    if (!auth) return;
-    if (!ensureConnected(deps, res)) return;
+  app.get(
+    CONNECTIONS_PATH,
+    connectionRateLimit,
+    deps.authMiddleware,
+    async (req, res) => {
+      const auth = requireAuth(req, res);
+      if (!auth) return;
+      if (!ensureConnected(deps, res)) return;
 
-    try {
-      const repo = new ProviderConnectionRepository(deps.mongo.db);
-      const records = await repo.listByPrincipal(
-        auth.tenantId,
-        auth.principalId,
-      );
-      const response: ConnectionListResponse = {
-        connections: records.map(toProviderConnection),
-      };
-      res.status(Status.OK).json(response);
-    } catch {
-      // Never surface storage internals or identity to the caller.
-      respondInternalError(res);
-    }
-  });
+      try {
+        const repo = new ProviderConnectionRepository(deps.mongo.db);
+        const records = await repo.listByPrincipal(
+          auth.tenantId,
+          auth.principalId,
+        );
+        const response: ConnectionListResponse = {
+          connections: records.map(toProviderConnection),
+        };
+        res.status(Status.OK).json(response);
+      } catch {
+        // Never surface storage internals or identity to the caller.
+        respondInternalError(res);
+      }
+    },
+  );
 
   app.delete(
     `${CONNECTIONS_PATH}/:id`,
+    connectionRateLimit,
     deps.authMiddleware,
     async (req, res) => {
       const auth = requireAuth(req, res);
