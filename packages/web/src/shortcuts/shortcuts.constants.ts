@@ -9,4 +9,10 @@ export const VIEW_SHORTCUTS = {
   week: { key: "w", label: "Week", route: ROOT_ROUTES.WEEK },
 } as const;
 
+export const LIFE_SHORTCUT = {
+  key: "l",
+  label: "Life",
+  route: ROOT_ROUTES.LIFE,
+} as const;
+
 export type ViewName = keyof typeof VIEW_SHORTCUTS;

@@ -173,6 +173,22 @@ describe("useGlobalShortcuts", () => {
     });
   });
 
+  it("navigates to Life view for a plain L press", async () => {
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
+
+    act(() => {
+      pressKey("l");
+    });
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({ to: "/life" });
+    });
+
+    act(() => {
+      unmount();
+    });
+  });
+
   it("does not navigate when pressing W while already on a dated week route", () => {
     mockPathname.value = "/week/2026-05-20";
     const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });

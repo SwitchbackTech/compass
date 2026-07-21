@@ -1,13 +1,8 @@
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ReactNode } from "react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { viewActions } from "@web/events/stores/view.store";
 import { LifeView } from "./LifeView";
 import {
   afterAll,
@@ -27,6 +22,16 @@ function renderLifeView() {
   return render(<LifeView today={fixedToday} />);
 }
 
+async function renderLifeViewWithSidebar() {
+  const result = renderLifeView();
+  await waitFor(() => {
+    expect(
+      screen.getByRole("complementary", { name: "Sidebar" }),
+    ).toBeInTheDocument();
+  });
+  return result;
+}
+
 const mockNavigate = mock();
 const actualTanstackRouter = { ...(await import("@tanstack/react-router")) };
 let isRouterMocked = true;
@@ -43,6 +48,7 @@ mock.module("@tanstack/react-router", () => ({
       ? mockNavigate
       : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of this suite.
         actualTanstackRouter.useNavigate(...(args as [])),
+  useLocation: () => ({ pathname: "/life" }),
 }));
 
 afterAll(() => {
@@ -57,7 +63,9 @@ function mockViewport(isMobile: boolean) {
   });
   window.matchMedia = ((query: string) =>
     ({
-      matches: isMobile && query.includes("max-width"),
+      matches: query.includes("min-width")
+        ? !isMobile
+        : isMobile && query.includes("max-width"),
       media: query,
       onchange: null,
       addEventListener: () => undefined,
@@ -73,11 +81,14 @@ function getGrid(region: HTMLElement) {
 }
 
 beforeEach(() => {
+  localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, "true");
+  viewActions.setSidebarOpen(true);
   mockViewport(false);
 });
 
 afterEach(() => {
   localStorage.removeItem(STORAGE_KEYS.LIFE_PREFERENCES);
+  localStorage.removeItem(STORAGE_KEYS.SIDEBAR_OPEN);
   Object.defineProperty(window, "innerWidth", {
     configurable: true,
     value: originalInnerWidth,
@@ -87,12 +98,15 @@ afterEach(() => {
 });
 
 describe("LifeView", () => {
-  it("renders the native controls, status, grid, and no zoom UI", () => {
-    renderLifeView();
+  it("renders the shared header, sidebar controls, grid, and no zoom UI", async () => {
+    await renderLifeViewWithSidebar();
 
     expect(screen.getByRole("heading", { name: "Life" })).toBeInTheDocument();
-    expect(screen.getByLabelText(/date of birth/i)).toHaveValue("");
-    expect(screen.getByLabelText(/through age/i)).toHaveValue(79);
+    expect(screen.getByRole("textbox", { name: "Date of birth" })).toHaveValue(
+      "",
+    );
+    expect(screen.getByLabelText(/age of death/i)).toHaveValue(79);
+    expect(screen.getByText(/about life in weeks/i)).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Birth date not set");
     const region = screen.getByRole("region", {
       name: /life visualization/i,
@@ -106,9 +120,9 @@ describe("LifeView", () => {
   });
 
   it("updates weeks lived when the birth date changes", async () => {
-    renderLifeView();
+    await renderLifeViewWithSidebar();
 
-    fireEvent.change(screen.getByLabelText(/date of birth/i), {
+    fireEvent.change(screen.getByRole("textbox", { name: "Date of birth" }), {
       target: { value: "1990-06-15" },
     });
 
@@ -122,15 +136,15 @@ describe("LifeView", () => {
     ).toBeInTheDocument();
   });
 
-  it("updates the grid size when the lifespan changes", () => {
-    renderLifeView();
+  it("updates the grid size when the lifespan changes", async () => {
+    await renderLifeViewWithSidebar();
 
     const region = screen.getByRole("region", {
       name: /life visualization/i,
     });
     expect(getGrid(region).dataset.totalDots).toBe(String(79 * 52));
 
-    fireEvent.change(screen.getByLabelText(/through age/i), {
+    fireEvent.change(screen.getByLabelText(/age of death/i), {
       target: { value: "85" },
     });
 
@@ -138,12 +152,12 @@ describe("LifeView", () => {
   });
 
   it("persists the user's life preferences", async () => {
-    renderLifeView();
+    await renderLifeViewWithSidebar();
 
-    fireEvent.change(screen.getByLabelText(/date of birth/i), {
+    fireEvent.change(screen.getByRole("textbox", { name: "Date of birth" }), {
       target: { value: "2000-01-01" },
     });
-    fireEvent.change(screen.getByLabelText(/through age/i), {
+    fireEvent.change(screen.getByLabelText(/age of death/i), {
       target: { value: "81" },
     });
 
@@ -157,22 +171,34 @@ describe("LifeView", () => {
     });
   });
 
-  it("reads persisted preferences and ignores corrupt storage", () => {
+  it("reads persisted preferences and ignores corrupt storage", async () => {
     localStorage.setItem(
       STORAGE_KEYS.LIFE_PREFERENCES,
       JSON.stringify({ birthDate: "2000-01-01", lifespan: 81 }),
     );
-    const { unmount } = renderLifeView();
+    const { unmount } = await renderLifeViewWithSidebar();
 
-    expect(screen.getByLabelText(/date of birth/i)).toHaveValue("2000-01-01");
-    expect(screen.getByLabelText(/through age/i)).toHaveValue(81);
+    expect(screen.getByRole("textbox", { name: "Date of birth" })).toHaveValue(
+      "Jan 1, 2000",
+    );
+    expect(
+      (screen.getByLabelText(/age of death/i) as HTMLInputElement).value,
+    ).toBe("81");
     unmount();
 
     localStorage.setItem(STORAGE_KEYS.LIFE_PREFERENCES, "{");
-    renderLifeView();
+    await renderLifeViewWithSidebar();
 
-    expect(screen.getByLabelText(/date of birth/i)).toHaveValue("");
-    expect(screen.getByLabelText(/through age/i)).toHaveValue(79);
+    expect(
+      (
+        screen.getByRole("textbox", {
+          name: "Date of birth",
+        }) as HTMLInputElement
+      ).value,
+    ).toBe("");
+    expect(
+      (screen.getByLabelText(/age of death/i) as HTMLInputElement).value,
+    ).toBe("79");
   });
 
   it("keeps the 52-week row on mobile without horizontal scroll or dot buttons", () => {
@@ -187,25 +213,19 @@ describe("LifeView", () => {
     ) as HTMLElement;
 
     expect(firstWeekRow.style.gridTemplateColumns).toContain("repeat(52,");
-    expect(region).toHaveClass("overflow-x-hidden");
-    expect(screen.queryAllByRole("button")).toHaveLength(1);
+    expect(region).toHaveClass("overflow-auto");
+    expect(
+      screen.queryByRole("button", { name: /zoom/i }),
+    ).not.toBeInTheDocument();
   });
 
-  it("opens the about dialog with the blog link", async () => {
+  it("shows the privacy tooltip on the date of birth label", async () => {
     const user = userEvent.setup();
-    renderLifeView();
+    await renderLifeViewWithSidebar();
 
-    await user.click(screen.getByRole("button", { name: /information/i }));
-
-    const dialog = await screen.findByRole("dialog", {
-      name: /about life in weeks/i,
-    });
-    const link = within(dialog).getByRole("link", {
-      name: /visualize your life in weeks/i,
-    });
-    expect(link).toHaveAttribute(
-      "href",
-      "/blog/visualize-your-life-in-weeks?utm_source=website&utm_medium=life_in_weeks_dialog&utm_campaign=blog_link",
-    );
+    await user.hover(screen.getByText("Date of birth"));
+    expect(
+      await screen.findByText("We don't store this information"),
+    ).toBeInTheDocument();
   });
 });

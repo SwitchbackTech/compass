@@ -54,9 +54,10 @@ describe("SelectView", () => {
   const renderWithRouter = async (
     label: string,
     initialRoute: string = ROOT_ROUTES.WEEK,
+    includeToday = true,
   ) => {
     const router = createTestRouter(
-      <SelectView label={label} onToday={onToday} />,
+      <SelectView label={label} onToday={includeToday ? onToday : undefined} />,
       { initialEntries: [initialRoute] },
     );
     const result = render(<RouterProvider router={router} />);
@@ -166,6 +167,18 @@ describe("SelectView", () => {
         "aria-selected",
         "false",
       );
+    });
+
+    it("shows only Day and Week choices from the Life header", async () => {
+      await renderWithRouter("Life", ROOT_ROUTES.LIFE, false);
+
+      await openDropdown();
+
+      expect(
+        within(screen.getByTestId("view-select-dropdown"))
+          .getAllByRole("option")
+          .map((option) => option.textContent),
+      ).toEqual(["DayD", "WeekW"]);
     });
 
     it("defaults to Week selected for unknown routes", async () => {

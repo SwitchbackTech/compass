@@ -13,13 +13,14 @@ import {
 interface Props {
   /** Left-aligned heading text (e.g. "June 2026" or "Wednesday, July 1"). */
   label: string;
-  onPrev: () => void;
-  onNext: () => void;
-  onToday: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
+  onToday?: () => void;
+  showNavigation?: boolean;
   /** Accessible + tooltip label for the previous arrow, e.g. "Previous week". */
-  prevLabel: string;
+  prevLabel?: string;
   /** Accessible + tooltip label for the next arrow, e.g. "Next week". */
-  nextLabel: string;
+  nextLabel?: string;
 }
 
 /**
@@ -35,19 +36,24 @@ export const CalendarHeader: FC<Props> = ({
   onPrev,
   onNext,
   onToday,
-  prevLabel,
-  nextLabel,
+  prevLabel = "Previous",
+  nextLabel = "Next",
+  showNavigation = true,
 }) => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
 
   return (
     <div className="flex h-12 w-full shrink-0 items-center gap-3 text-text-muted">
-      <TooltipWrapper shortcut="J">
-        <ArrowButton direction="left" label={prevLabel} onClick={onPrev} />
-      </TooltipWrapper>
-      <TooltipWrapper shortcut="K">
-        <ArrowButton direction="right" label={nextLabel} onClick={onNext} />
-      </TooltipWrapper>
+      {showNavigation && onPrev && onNext && (
+        <>
+          <TooltipWrapper shortcut="J">
+            <ArrowButton direction="left" label={prevLabel} onClick={onPrev} />
+          </TooltipWrapper>
+          <TooltipWrapper shortcut="K">
+            <ArrowButton direction="right" label={nextLabel} onClick={onNext} />
+          </TooltipWrapper>
+        </>
+      )}
       <SelectView label={label} onToday={onToday} />
 
       <div className="z-2 ml-auto flex items-center pr-5">

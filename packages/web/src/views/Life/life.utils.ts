@@ -60,6 +60,22 @@ export function getLifeDotLabel(weekNumber: number) {
   return `Year ${yearOfLife}, Week ${weekOfYear}`;
 }
 
+export function getCurrentWeekLabel(
+  today: Date,
+  weeksLived: number,
+  totalDots: number,
+) {
+  const currentWeek = Math.min(weeksLived + 1, totalDots);
+  const dateLabel = today.toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "long",
+    weekday: "long",
+    year: "numeric",
+  });
+
+  return `${dateLabel} | week ${currentWeek} / ${totalDots}`;
+}
+
 export function formatDateInputValue(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");

@@ -3,7 +3,10 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useRef } from "react";
 import { viewActions } from "@web/events/stores/view.store";
 import { settingsActions } from "@web/settings/settings.store";
-import { VIEW_SHORTCUTS } from "@web/shortcuts/shortcuts.constants";
+import {
+  LIFE_SHORTCUT,
+  VIEW_SHORTCUTS,
+} from "@web/shortcuts/shortcuts.constants";
 import {
   useAppShortcut,
   useAppShortcutUp,
@@ -24,6 +27,7 @@ export function useNavigationShortcuts() {
   const dayHotkey = VIEW_SHORTCUTS.day.key.toUpperCase() as RegisterableHotkey;
   const weekHotkey =
     VIEW_SHORTCUTS.week.key.toUpperCase() as RegisterableHotkey;
+  const lifeHotkey = LIFE_SHORTCUT.key.toUpperCase() as RegisterableHotkey;
 
   // macOS swallows the keyup for a letter held with Cmd until Cmd itself is
   // released, then replays it with metaKey already false — which matches the
@@ -59,6 +63,12 @@ export function useNavigationShortcuts() {
   useAppShortcutUp(weekHotkey, () => {
     if (!location.pathname.startsWith(VIEW_SHORTCUTS.week.route)) {
       navigate({ to: VIEW_SHORTCUTS.week.route });
+    }
+  });
+
+  useAppShortcutUp(lifeHotkey, () => {
+    if (!location.pathname.startsWith(LIFE_SHORTCUT.route)) {
+      navigate({ to: LIFE_SHORTCUT.route });
     }
   });
 

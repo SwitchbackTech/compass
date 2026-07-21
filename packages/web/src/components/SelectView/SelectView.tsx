@@ -18,7 +18,7 @@ import { VIEW_SHORTCUTS } from "@web/shortcuts/shortcuts.constants";
 interface SelectViewProps {
   /** The date heading text, e.g. "July 2026" or "Monday, July 20". */
   label: string;
-  onToday: () => void;
+  onToday?: () => void;
 }
 
 export const SelectView = ({ label, onToday }: SelectViewProps) => {
@@ -38,6 +38,9 @@ export const SelectView = ({ label, onToday }: SelectViewProps) => {
     }
     if (pathname === ROOT_ROUTES.WEEK) {
       return "Week";
+    }
+    if (pathname === ROOT_ROUTES.LIFE) {
+      return "Life";
     }
     return "Week";
   };
@@ -84,11 +87,6 @@ export const SelectView = ({ label, onToday }: SelectViewProps) => {
     setIsOpen(false);
   };
 
-  const todayLabel =
-    currentView === "Week"
-      ? "This Week"
-      : `Today (${dayjs().locale("en").format("dddd, MMMM D")})`;
-
   const options = [
     {
       label: VIEW_SHORTCUTS.day.label,
@@ -102,12 +100,19 @@ export const SelectView = ({ label, onToday }: SelectViewProps) => {
       key: VIEW_SHORTCUTS.week.key,
       onSelect: () => navigate({ to: VIEW_SHORTCUTS.week.route }),
     },
-    {
-      label: todayLabel,
-      view: null,
-      key: "t",
-      onSelect: onToday,
-    },
+    ...(onToday
+      ? [
+          {
+            label:
+              currentView === "Week"
+                ? "This Week"
+                : `Today (${dayjs().locale("en").format("dddd, MMMM D")})`,
+            view: null,
+            key: "t",
+            onSelect: onToday,
+          },
+        ]
+      : []),
   ];
 
   const dropdownId = "view-select-dropdown";

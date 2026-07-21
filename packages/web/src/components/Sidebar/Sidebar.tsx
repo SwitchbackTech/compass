@@ -1,11 +1,11 @@
 import { type HTMLAttributes, type ReactNode } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { CalendarList } from "./CalendarList/CalendarList";
 import { MonthPicker } from "./MonthPicker/MonthPicker";
 import { ShortcutsOverlay } from "./ShortcutsOverlay/ShortcutsOverlay";
 import { SidebarActions } from "./SidebarActions/SidebarActions";
+import { SidebarShell } from "./SidebarShell";
 import { TasksRemovalNotice } from "./TasksRemovalNotice/TasksRemovalNotice";
 import { UpNextCard } from "./UpNextCard/UpNextCard";
 
@@ -30,19 +30,19 @@ export interface SidebarProps extends HTMLAttributes<HTMLDivElement> {
 type SidebarDependencies = {
   CalendarList: typeof CalendarList;
   MonthPicker: typeof MonthPicker;
-  SidebarActions: typeof SidebarActions;
-  ShortcutsOverlay: typeof ShortcutsOverlay;
   TasksRemovalNotice: typeof TasksRemovalNotice;
   UpNextCard: typeof UpNextCard;
+  SidebarActions: typeof SidebarActions;
+  ShortcutsOverlay: typeof ShortcutsOverlay;
 };
 
 export function createSidebar({
   CalendarList: CalendarListComponent,
   MonthPicker: MonthPickerComponent,
-  SidebarActions: SidebarActionsComponent,
-  ShortcutsOverlay: ShortcutsOverlayComponent,
   TasksRemovalNotice: TasksRemovalNoticeComponent,
   UpNextCard: UpNextCardComponent,
+  SidebarActions: SidebarActionsComponent,
+  ShortcutsOverlay: ShortcutsOverlayComponent,
 }: SidebarDependencies) {
   return function Sidebar({
     calendarDate,
@@ -60,11 +60,15 @@ export function createSidebar({
     const showEventDetails = Boolean(eventDetails) && isEventDetailsOpen;
 
     return (
-      <aside
+      <SidebarShell
         {...props}
-        aria-label="Sidebar"
-        className="relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-surface-panel pt-5 text-text"
-        id={ID_SIDEBAR}
+        isShortcutsOpen={isShortcutsOpen}
+        onCloseShortcuts={onCloseShortcuts}
+        onToggleShortcuts={onToggleShortcuts}
+        shortcutSections={shortcutSections}
+        shortcutsViewLabel={shortcutsViewLabel}
+        SidebarActionsComponent={SidebarActionsComponent}
+        ShortcutsOverlayComponent={ShortcutsOverlayComponent}
       >
         {showEventDetails ? (
           // Scrolling and horizontal padding live inside the event form so
@@ -87,19 +91,7 @@ export function createSidebar({
             <TasksRemovalNoticeComponent />
           </div>
         )}
-
-        <SidebarActionsComponent
-          isShortcutsOpen={isShortcutsOpen}
-          onToggleShortcuts={onToggleShortcuts}
-        />
-
-        <ShortcutsOverlayComponent
-          isOpen={isShortcutsOpen}
-          onClose={onCloseShortcuts}
-          sections={shortcutSections}
-          viewLabel={shortcutsViewLabel}
-        />
-      </aside>
+      </SidebarShell>
     );
   };
 }
@@ -107,8 +99,8 @@ export function createSidebar({
 export const Sidebar = createSidebar({
   CalendarList,
   MonthPicker,
-  SidebarActions,
-  ShortcutsOverlay,
   TasksRemovalNotice,
   UpNextCard,
+  SidebarActions,
+  ShortcutsOverlay,
 });
