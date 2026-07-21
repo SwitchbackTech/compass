@@ -65,7 +65,9 @@ function buildCloudEventRecord(command: CommandRecord, now: Date): EventRecord {
     principalId: command.principalId,
     origin: "compass",
     calendarId: input.calendarId,
-    clientEventId: null,
+    // Preserve the device-event identity when this create is a promotion of an
+    // anonymous event; null for a plain cloud create.
+    clientEventId: input.clientEventId,
     connectionId: null,
     providerEventId: null,
     providerVersion: null,

@@ -246,6 +246,62 @@ describe("POST /internal/commands", () => {
     expect(await mongo.db.collection("commands").countDocuments()).toBe(1);
   });
 
+  it("promotes an anonymous device event, preserving its clientEventId", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const clientEventId = `device-${objectId()}`;
+    const request = createRequest({
+      input: { ...createRequest().input, clientEventId },
+    });
+    await startService();
+
+    const res = await submit(tenantId, principalId, request);
+
+    expect(res.status).toBe(200);
+    const events = new EventRepository(mongo.db);
+    const stored = await events.findById(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+      request.eventId as never,
+    );
+    expect(stored?.clientEventId).toBe(clientEventId);
+  });
+
+  it("converges a resumed promotion to one cloud event via the stable id", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const clientEventId = `device-${objectId()}`;
+    const eventId = objectId();
+    const input = { ...createRequest().input, clientEventId };
+    await startService();
+
+    // A resumed promotion is a fresh attempt (new idempotency key) for the same
+    // device event. Two separate commands result, but the stable event id keeps
+    // them converging on exactly one cloud event.
+    await submit(tenantId, principalId, {
+      idempotencyKey: `idem-${objectId()}`,
+      eventId,
+      input,
+      expectedVersion: null,
+    });
+    await submit(tenantId, principalId, {
+      idempotencyKey: `idem-${objectId()}`,
+      eventId,
+      input,
+      expectedVersion: null,
+    });
+
+    expect(await mongo.db.collection("commands").countDocuments()).toBe(2);
+    expect(await mongo.db.collection("events").countDocuments()).toBe(1);
+    const events = new EventRepository(mongo.db);
+    const stored = await events.findById(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+      eventId as never,
+    );
+    expect(stored?.clientEventId).toBe(clientEventId);
+  });
+
   it("refuses to overwrite another principal's event with a reused id", async () => {
     const tenantId = objectId();
     const owner = objectId();
