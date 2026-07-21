@@ -638,6 +638,91 @@ describe("GET /oauth/google/callback", () => {
     expect(adapter.exchanges).toHaveLength(0);
   });
 
+  // Reconnect: the state names a specific connection. The account Google
+  // returns must match it, or a wrong-account consent would silently spawn a
+  // second connection and leave the broken one stuck.
+  const reconnectState = (
+    tenantId: string,
+    principalId: string,
+    connectionId: string,
+  ) =>
+    signOAuthState(deriveOAuthStateSecret(SECRET), {
+      tenantId: tenantId as TenantId,
+      principalId: principalId as PrincipalId,
+      connectionId: connectionId as ConnectionId,
+      issuedAt: Date.now(),
+    });
+
+  it("re-authorizes the named connection when the account matches", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const existing = await seedConnection(
+      connections,
+      tenantId,
+      principalId,
+      "reauth@example.com",
+    );
+    // Google returns the same account the connection is tied to.
+    adapter.exchangeResult = {
+      ...adapter.exchangeResult,
+      account: {
+        providerAccountId: existing.account.providerAccountId,
+        email: "reauth@example.com",
+        displayName: null,
+      },
+    };
+    await startService(activeConfig(), adapter);
+
+    const res = await hitCallback(
+      `code=c&state=${encodeURIComponent(reconnectState(tenantId, principalId, existing._id))}`,
+    );
+
+    expect(statusOf(res)).toBe("connected");
+    // Still one connection — the same one, re-authorized, not a duplicate.
+    const all = await connections.listByPrincipal(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+    );
+    expect(all).toHaveLength(1);
+    expect(all[0]._id).toBe(existing._id);
+  });
+
+  it("refuses and links nothing when reconnect consents with a different account", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const existing = await seedConnection(
+      connections,
+      tenantId,
+      principalId,
+      "original@example.com",
+    );
+    // Google returns a DIFFERENT account than the one being reconnected.
+    adapter.exchangeResult = {
+      ...adapter.exchangeResult,
+      account: {
+        providerAccountId: "some-other-google-sub",
+        email: "other@example.com",
+        displayName: null,
+      },
+    };
+    await startService(activeConfig(), adapter);
+
+    const res = await hitCallback(
+      `code=c&state=${encodeURIComponent(reconnectState(tenantId, principalId, existing._id))}`,
+    );
+
+    expect(statusOf(res)).toBe("error");
+    // No second connection was created; the original is untouched.
+    const all = await connections.listByPrincipal(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+    );
+    expect(all).toHaveLength(1);
+    expect(all[0].account.providerAccountId).toBe(
+      existing.account.providerAccountId,
+    );
+  });
+
   it("redirects with an error when the code exchange fails", async () => {
     const tenantId = objectId();
     const principalId = objectId();

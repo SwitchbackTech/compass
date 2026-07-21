@@ -12,6 +12,7 @@ import {
   ProviderConnectionSchema,
 } from "@core/types/sync/connection.contracts";
 import {
+  type ConnectionId,
   ConnectionIdSchema,
   type PrincipalId,
   type TenantId,
@@ -30,8 +31,8 @@ import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 
 export const CONNECTIONS_PATH = "/internal/connections";
 export const BEGIN_PATH = "/internal/connections/begin";
-// Where the provider redirects the browser after consent. The callback route
-// mounts here in a later slice; `begin` builds the redirect_uri from it now.
+// Where the provider redirects the browser after consent; `begin` builds the
+// redirect_uri from it and the public callback route below mounts on it.
 export const OAUTH_CALLBACK_PATH = "/oauth/google/callback";
 
 export interface ConnectionApiDeps {
@@ -319,12 +320,37 @@ function redirectAfterConnect(
 async function linkConnection(
   deps: ConnectionApiDeps,
   authAdapter: ProviderAuthAdapter,
-  state: { tenantId: TenantId; principalId: PrincipalId },
+  state: {
+    tenantId: TenantId;
+    principalId: PrincipalId;
+    connectionId: ConnectionId | null;
+  },
   authorization: Awaited<
     ReturnType<ProviderAuthAdapter["exchangeAuthorizationCode"]>
   >,
 ): Promise<void> {
   const connections = new ProviderConnectionRepository(deps.mongo.db);
+
+  // Reconnect: the state named a specific connection to re-authorize. Require
+  // the account Google just returned to match that connection's account.
+  // Otherwise the user consented with a different Google account (easy with
+  // multiple sessions, and there is no login_hint), and silently creating a
+  // second connection would leave the one they meant to fix stuck. Fail instead.
+  if (state.connectionId) {
+    const existing = await connections.findById(
+      state.tenantId,
+      state.principalId,
+      state.connectionId,
+    );
+    if (
+      !existing ||
+      existing.account.providerAccountId !==
+        authorization.account.providerAccountId
+    ) {
+      throw new Error("Reconnect account does not match the named connection");
+    }
+  }
+
   const derived = deriveConnectionState(
     {
       disconnectedAt: null,
@@ -351,16 +377,27 @@ async function linkConnection(
     lastHealthyAt: null,
   });
 
-  const custody = new CredentialCustody(
-    new CredentialRepository(deps.mongo.db),
-    authAdapter,
-  );
-  await custody.store({
-    connectionId: connection._id,
-    provider: "google",
-    refreshToken: authorization.refreshToken,
-    scopes: [...authorization.grantedScopes],
-  });
+  try {
+    const custody = new CredentialCustody(
+      new CredentialRepository(deps.mongo.db),
+      authAdapter,
+    );
+    await custody.store({
+      connectionId: connection._id,
+      provider: "google",
+      refreshToken: authorization.refreshToken,
+      scopes: [...authorization.grantedScopes],
+    });
+  } catch (error) {
+    // The connection persisted but its credential did not. Rather than leave it
+    // reporting "importing" with no credential to make progress, mark it
+    // disconnected (best-effort) so it reads as unusable; a retry re-links and
+    // clears the disconnect.
+    await connections
+      .markDisconnected(state.tenantId, state.principalId, connection._id)
+      .catch(() => undefined);
+    throw error;
+  }
 }
 
 // Map a stored connection record (string ids, Date timestamps) to the wire
