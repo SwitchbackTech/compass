@@ -111,6 +111,25 @@ describe("Sync command contracts", () => {
       );
     });
 
+    it("defaults an update's invitation to none when absent", () => {
+      const parsed = SyncCommandInputSchema.safeParse(updateInput());
+      expect(parsed.success && parsed.data.kind === "update").toBe(true);
+      if (parsed.success && parsed.data.kind === "update") {
+        expect(parsed.data.invitation).toBe("none");
+      }
+    });
+
+    it("accepts an update carrying an explicit invitation", () => {
+      const parsed = SyncCommandInputSchema.safeParse({
+        ...updateInput(),
+        invitation: "all",
+      });
+      expect(parsed.success && parsed.data.kind === "update").toBe(true);
+      if (parsed.success && parsed.data.kind === "update") {
+        expect(parsed.data.invitation).toBe("all");
+      }
+    });
+
     it("accepts a move input", () => {
       expect(SyncCommandInputSchema.safeParse(moveInput()).success).toBe(true);
     });
