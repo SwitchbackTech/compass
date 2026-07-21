@@ -1,10 +1,4 @@
-import {
-  type Express,
-  type Request,
-  type RequestHandler,
-  type Response,
-} from "express";
-import { rateLimit } from "express-rate-limit";
+import { type Express, type RequestHandler, type Response } from "express";
 import { Status } from "@core/errors/status.codes";
 import {
   type CalendarListResponse,
@@ -27,13 +21,18 @@ import {
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import dayjs from "@core/util/date/dayjs";
-import { type InternalAuthedRequest } from "@sync/auth/internal-auth";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import { deriveConnectionState } from "@sync/domain/connection-state";
 import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
 import { googleCapabilitiesFromScopes } from "@sync/providers/google/google-capabilities";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
+import {
+  ensureConnected,
+  internalRateLimit,
+  requireAuth,
+  respondInternalError,
+} from "@sync/server/internal-http";
 import { type EventOccurrenceRecord } from "@sync/storage/contracts/event-occurrence.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
@@ -78,16 +77,6 @@ export interface ConnectionApiDeps {
   now?: () => number;
 }
 
-// A generous backstop, not a throttle: the only caller is the trusted Compass
-// API over a private network, so this bounds a runaway loop or a compromised
-// caller rather than shaping normal traffic. Keyed per client ip, fixed window.
-const connectionRateLimit = rateLimit({
-  windowMs: 60_000,
-  limit: 300,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 // Internal, authenticated connection endpoints. The tenant/principal comes from
 // the signed auth context, never the request, so every query is scoped to the
 // caller's own principal. Reads are allowed in passive mode — they touch no
@@ -99,12 +88,12 @@ export function registerConnectionRoutes(
 ): void {
   app.get(
     CONNECTIONS_PATH,
-    connectionRateLimit,
+    internalRateLimit,
     deps.authMiddleware,
     async (req, res) => {
       const auth = requireAuth(req, res);
       if (!auth) return;
-      if (!ensureConnected(deps, res)) return;
+      if (!ensureConnected(deps.mongo, res)) return;
 
       try {
         const repo = new ProviderConnectionRepository(deps.mongo.db);
@@ -128,12 +117,12 @@ export function registerConnectionRoutes(
   // the signed principal; a read, so it is served in passive mode too.
   app.get(
     CALENDARS_PATH,
-    connectionRateLimit,
+    internalRateLimit,
     deps.authMiddleware,
     async (req, res) => {
       const auth = requireAuth(req, res);
       if (!auth) return;
-      if (!ensureConnected(deps, res)) return;
+      if (!ensureConnected(deps.mongo, res)) return;
 
       // A present-but-bad connectionId (malformed, or repeated so Express parses
       // it as an array) is a bad request, not a silently-unfiltered result.
@@ -176,12 +165,12 @@ export function registerConnectionRoutes(
   // the signed principal; a read, served in passive mode too.
   app.get(
     EVENTS_PATH,
-    connectionRateLimit,
+    internalRateLimit,
     deps.authMiddleware,
     async (req, res) => {
       const auth = requireAuth(req, res);
       if (!auth) return;
-      if (!ensureConnected(deps, res)) return;
+      if (!ensureConnected(deps.mongo, res)) return;
 
       const parsed = EventOccurrenceListQuerySchema.safeParse({
         calendarIds: toQueryArray(req.query["calendarIds"]),
@@ -263,12 +252,12 @@ export function registerConnectionRoutes(
   // connection in the callback slice; begin itself only mints the URL.
   app.post(
     BEGIN_PATH,
-    connectionRateLimit,
+    internalRateLimit,
     deps.authMiddleware,
     async (req, res) => {
       const auth = requireAuth(req, res);
       if (!auth) return;
-      if (!ensureConnected(deps, res)) return;
+      if (!ensureConnected(deps.mongo, res)) return;
       // Authorizing touches the provider, so a passive or unconfigured service
       // refuses rather than handing back a URL it could never complete.
       if (deps.execution === "passive" || !deps.authAdapter) {
@@ -324,7 +313,7 @@ export function registerConnectionRoutes(
   // a server-configured URL (never a request-controlled one), so there is no
   // open-redirect surface. Nothing here pulls provider data; it only links the
   // account and stores the credential.
-  app.get(OAUTH_CALLBACK_PATH, connectionRateLimit, async (req, res) => {
+  app.get(OAUTH_CALLBACK_PATH, internalRateLimit, async (req, res) => {
     const redirect = (status: string) =>
       redirectAfterConnect(deps, res, status);
 
@@ -379,12 +368,12 @@ export function registerConnectionRoutes(
 
   app.delete(
     `${CONNECTIONS_PATH}/:id`,
-    connectionRateLimit,
+    internalRateLimit,
     deps.authMiddleware,
     async (req, res) => {
       const auth = requireAuth(req, res);
       if (!auth) return;
-      if (!ensureConnected(deps, res)) return;
+      if (!ensureConnected(deps.mongo, res)) return;
 
       // Disconnect revokes at the provider, so a passive service (or one with no
       // provider configured) must refuse rather than half-disconnect: delete the
@@ -433,28 +422,6 @@ export function registerConnectionRoutes(
       }
     },
   );
-}
-
-// Read the verified auth context. The middleware always sets it on success;
-// treat its absence as a bug, not an authorization, and never run unscoped.
-function requireAuth(
-  req: Request,
-  res: Response,
-): InternalAuthedRequest["syncAuth"] | undefined {
-  const auth = (req as InternalAuthedRequest).syncAuth;
-  if (!auth) {
-    res.status(Status.UNAUTHORIZED).json({ error: "unauthorized" });
-    return undefined;
-  }
-  return auth;
-}
-
-function ensureConnected(deps: ConnectionApiDeps, res: Response): boolean {
-  if (!deps.mongo.isConnected) {
-    res.status(Status.SERVICE_UNAVAILABLE).json({ error: "not_ready" });
-    return false;
-  }
-  return true;
 }
 
 // Redirect the browser to the server-configured post-connect URL with a coarse
@@ -665,7 +632,3 @@ function decodeOccurrenceCursor(
 
 const maxDate = (a: Date, b: Date): Date => (a > b ? a : b);
 const minDate = (a: Date, b: Date): Date => (a < b ? a : b);
-
-function respondInternalError(res: Response): void {
-  res.status(Status.INTERNAL_SERVER).json({ error: "internal_error" });
-}
