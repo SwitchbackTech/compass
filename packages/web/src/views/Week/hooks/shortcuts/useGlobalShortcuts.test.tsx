@@ -37,7 +37,9 @@ mock.module("@tanstack/react-router", () => ({
         actualTanstackRouter.useLocation(...(args as [])),
 }));
 
-const { useGlobalShortcuts } = await import("./useGlobalShortcuts");
+const { useGlobalShortcuts, useNavigationShortcuts } = await import(
+  "./useGlobalShortcuts"
+);
 
 afterAll(() => {
   isRouterMocked = false;
@@ -130,6 +132,22 @@ describe("useGlobalShortcuts", () => {
 
     act(() => {
       pressKey("[");
+    });
+
+    expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
+
+    act(() => {
+      unmount();
+    });
+  });
+
+  it("keeps the root navigation shortcut set independent from sidebar toggles", () => {
+    const { unmount } = renderHook(() => useNavigationShortcuts(), { wrapper });
+
+    expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
+
+    act(() => {
+      pressKey("]");
     });
 
     expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);

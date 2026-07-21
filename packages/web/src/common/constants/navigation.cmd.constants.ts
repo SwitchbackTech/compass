@@ -2,52 +2,78 @@ import {
   ArrowUDownLeftIcon,
   CalendarDotsIcon,
   CalendarIcon,
+  HourglassSimpleIcon,
   type Icon,
   KeyboardIcon,
 } from "@phosphor-icons/react";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 import {
   VIEW_SHORTCUTS,
   type ViewName,
 } from "@web/shortcuts/shortcuts.constants";
 
+export type CommandPaletteViewName = ViewName | "life";
+
 interface GetNavigationCommandItemsArgs {
-  onGoToToday: () => void;
-  onNavigateToView: (viewName: ViewName) => void;
-  onShowShortcuts: () => void;
+  onGoToToday?: () => void;
+  onNavigateToView: (viewName: CommandPaletteViewName) => void;
+  onShowShortcuts?: () => void;
 }
 
-const viewIcons: Record<ViewName, Icon> = {
-  day: CalendarDotsIcon,
-  week: CalendarIcon,
+const commandPaletteViews: Record<
+  CommandPaletteViewName,
+  { icon: Icon; label: string; route: string; shortcut?: string }
+> = {
+  day: { ...VIEW_SHORTCUTS.day, icon: CalendarDotsIcon },
+  week: { ...VIEW_SHORTCUTS.week, icon: CalendarIcon },
+  life: { icon: HourglassSimpleIcon, label: "Life", route: ROOT_ROUTES.LIFE },
 };
 
-const navigationViewOrder: ViewName[] = ["day", "week"];
+const navigationViewOrder: CommandPaletteViewName[] = ["day", "week", "life"];
+
+export const getNavigationViewRoute = (viewName: CommandPaletteViewName) =>
+  commandPaletteViews[viewName].route;
 
 export const getNavigationCommandItems = ({
   onGoToToday,
   onNavigateToView,
   onShowShortcuts,
-}: GetNavigationCommandItemsArgs): CommandItem[] => [
-  {
-    id: "today",
-    label: "Go to Today",
-    icon: ArrowUDownLeftIcon,
-    shortcut: "t",
-    onClick: onGoToToday,
-  },
-  ...navigationViewOrder.map((viewName) => ({
-    id: `go-to-${viewName}`,
-    label: `Go to ${VIEW_SHORTCUTS[viewName].label}`,
-    icon: viewIcons[viewName],
-    shortcut: VIEW_SHORTCUTS[viewName].key,
-    onClick: () => onNavigateToView(viewName),
-  })),
-  {
-    id: "show-shortcuts",
-    label: "Show Shortcuts",
-    icon: KeyboardIcon,
-    shortcut: "?",
-    onClick: onShowShortcuts,
-  },
-];
+}: GetNavigationCommandItemsArgs): CommandItem[] => {
+  const calendarItems: CommandItem[] = [];
+
+  if (onGoToToday) {
+    calendarItems.push({
+      id: "today",
+      label: "Go to Today",
+      icon: ArrowUDownLeftIcon,
+      shortcut: "t",
+      onClick: onGoToToday,
+    });
+  }
+
+  calendarItems.push(
+    ...navigationViewOrder.map((viewName) => {
+      const view = commandPaletteViews[viewName];
+      return {
+        id: `go-to-${viewName}`,
+        label: `Go to ${view.label}`,
+        icon: view.icon,
+        shortcut: view.shortcut,
+        onClick: () => onNavigateToView(viewName),
+      };
+    }),
+  );
+
+  if (onShowShortcuts) {
+    calendarItems.push({
+      id: "show-shortcuts",
+      label: "Show Shortcuts",
+      icon: KeyboardIcon,
+      shortcut: "?",
+      onClick: onShowShortcuts,
+    });
+  }
+
+  return calendarItems;
+};

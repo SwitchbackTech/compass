@@ -6,6 +6,7 @@ export const StorageKeySchema = z.enum([
   "compass.onboarding.has-dismissed-tasks-removal-notice",
   "compass.sidebar.width",
   "compass.theme",
+  "compass.life.preferences",
   "compass.view.sidebar-open",
 ]);
 
@@ -15,6 +16,7 @@ export const STORAGE_KEYS: Record<
   | "AUTH"
   | "HAS_SEEN_WELCOME"
   | "HAS_DISMISSED_TASKS_REMOVAL_NOTICE"
+  | "LIFE_PREFERENCES"
   | "SIDEBAR_WIDTH"
   | "SIDEBAR_OPEN"
   | "THEME",
@@ -24,6 +26,7 @@ export const STORAGE_KEYS: Record<
   HAS_SEEN_WELCOME: "compass.onboarding.has-seen-welcome",
   HAS_DISMISSED_TASKS_REMOVAL_NOTICE:
     "compass.onboarding.has-dismissed-tasks-removal-notice",
+  LIFE_PREFERENCES: "compass.life.preferences",
   SIDEBAR_WIDTH: "compass.sidebar.width",
   SIDEBAR_OPEN: "compass.view.sidebar-open",
   THEME: "compass.theme",

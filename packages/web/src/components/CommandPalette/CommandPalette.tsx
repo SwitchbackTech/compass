@@ -13,7 +13,10 @@ import { useCallback, useRef, useState } from "react";
 import { type SyncStatusVariant } from "@web/calendars/sync-status.types";
 import { eventCommandPaletteItems } from "@web/common/constants/event.cmd.constants";
 import { getMoreCommandPaletteSections } from "@web/common/constants/more.cmd.constants";
-import { getNavigationCommandItems } from "@web/common/constants/navigation.cmd.constants";
+import {
+  getNavigationCommandItems,
+  getNavigationViewRoute,
+} from "@web/common/constants/navigation.cmd.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
 import { useCalendarSyncCmdItems } from "@web/components/CommandPalette/hooks/useCalendarSyncCmdItems";
@@ -30,10 +33,7 @@ import {
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
-import {
-  VIEW_SHORTCUTS,
-  type ViewName,
-} from "@web/shortcuts/shortcuts.constants";
+import { type ViewName } from "@web/shortcuts/shortcuts.constants";
 import { type CommandSection } from "./command-palette.types";
 
 const SYNC_STATUS_VARIANT_CLASSNAME: Record<SyncStatusVariant, string> = {
@@ -49,6 +49,15 @@ interface CommandPaletteProps {
   onShowShortcuts: () => void;
   placeholder: string;
   mutationDependencies?: EventMutationDependencies;
+}
+
+interface CommandPaletteContentProps {
+  placeholder: string;
+  sections: CommandSection[];
+  syncStatus?: {
+    text: string;
+    variant: SyncStatusVariant;
+  } | null;
 }
 
 /**
@@ -72,23 +81,12 @@ export function filterSections(
     .filter((section) => section.items.length > 0);
 }
 
-export const CommandPalette = ({
-  currentView,
-  onGoToToday,
-  onShowShortcuts,
+const CommandPaletteContent = ({
   placeholder,
-  mutationDependencies,
-}: CommandPaletteProps) => {
+  sections,
+  syncStatus,
+}: CommandPaletteContentProps) => {
   const open = useSettingsStore(selectIsCmdPaletteOpen);
-  const navigate = useNavigate();
-  const { items: calendarCmdItems, syncStatus } = useCalendarSyncCmdItems();
-  const subscribeCmdItems = useSubscribeCmdItems(open);
-  const exportDataCmdItems = useExportDataCmdItems();
-  const authCmdItems = useAuthCmdItems();
-  const logoutCmdItems = useLogoutCmdItems();
-  const deleteAccountCmdItems = useDeleteAccountCmdItems();
-  const themeCmdItems = useThemeCmdItems();
-  const { undo, canUndo } = useUndoRedo(mutationDependencies);
 
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState<number | null>(0);
@@ -109,54 +107,6 @@ export const CommandPalette = ({
       if (!nextOpen) close();
     },
   });
-
-  const sections: CommandSection[] = [
-    {
-      id: "navigation",
-      heading: "Navigation",
-      items: getNavigationCommandItems({
-        onGoToToday,
-        onNavigateToView: (viewName) =>
-          navigate({ to: VIEW_SHORTCUTS[viewName].route }),
-        onShowShortcuts,
-      }),
-    },
-    {
-      id: "general",
-      heading: "Common Tasks",
-      items: [
-        ...eventCommandPaletteItems,
-        {
-          id: "undo-last-change",
-          label: "Undo last change",
-          icon: ArrowCounterClockwiseIcon,
-          shortcut: ["Mod", "Z"],
-          disabled: !canUndo,
-          // Defer so the palette unmounts before undo's refocusEventElement
-          // starts hunting for the restored event element.
-          onClick: () => queueMicrotask(undo),
-        },
-      ],
-    },
-    {
-      id: "appearance",
-      heading: "Appearance",
-      items: themeCmdItems,
-    },
-    {
-      id: "settings",
-      heading: "Settings",
-      items: [
-        ...calendarCmdItems,
-        ...subscribeCmdItems,
-        ...exportDataCmdItems,
-        ...authCmdItems,
-        ...logoutCmdItems,
-        ...deleteAccountCmdItems,
-      ],
-    },
-    ...getMoreCommandPaletteSections(currentView),
-  ];
 
   const filteredSections = filterSections(sections, search);
   const flatItems = filteredSections.flatMap((section) => section.items);
@@ -249,17 +199,6 @@ export const CommandPalette = ({
                         : ""
                     } ${item.disabled ? "cursor-default opacity-50" : ""}`;
 
-                    const commonProps = getItemProps({
-                      ref(node: HTMLElement | null) {
-                        listRef.current[index] = node;
-                      },
-                      onClick() {
-                        if (item.disabled) return;
-                        item.onClick?.();
-                        close();
-                      },
-                    });
-
                     const content = (
                       <>
                         <item.icon size={18} className={item.iconClassName} />
@@ -278,7 +217,16 @@ export const CommandPalette = ({
                     return (
                       <button
                         key={item.id}
-                        {...commonProps}
+                        {...getItemProps({
+                          ref(node: HTMLElement | null) {
+                            listRef.current[index] = node;
+                          },
+                          onClick() {
+                            if (item.disabled) return;
+                            item.onClick?.();
+                            close();
+                          },
+                        })}
                         type="button"
                         role="option"
                         aria-selected={isActive}
@@ -296,5 +244,110 @@ export const CommandPalette = ({
         </div>
       </FloatingOverlay>
     </FloatingPortal>
+  );
+};
+
+export const CommandPalette = ({
+  currentView,
+  onGoToToday,
+  onShowShortcuts,
+  placeholder,
+  mutationDependencies,
+}: CommandPaletteProps) => {
+  const open = useSettingsStore(selectIsCmdPaletteOpen);
+  const navigate = useNavigate();
+  const { items: calendarCmdItems, syncStatus } = useCalendarSyncCmdItems();
+  const subscribeCmdItems = useSubscribeCmdItems(open);
+  const exportDataCmdItems = useExportDataCmdItems();
+  const authCmdItems = useAuthCmdItems();
+  const logoutCmdItems = useLogoutCmdItems();
+  const deleteAccountCmdItems = useDeleteAccountCmdItems();
+  const themeCmdItems = useThemeCmdItems();
+  const { undo, canUndo } = useUndoRedo(mutationDependencies);
+
+  const sections: CommandSection[] = [
+    {
+      id: "navigation",
+      heading: "Navigation",
+      items: getNavigationCommandItems({
+        onGoToToday,
+        onNavigateToView: (viewName) =>
+          navigate({ to: getNavigationViewRoute(viewName) }),
+        onShowShortcuts,
+      }),
+    },
+    {
+      id: "general",
+      heading: "Common Tasks",
+      items: [
+        ...eventCommandPaletteItems,
+        {
+          id: "undo-last-change",
+          label: "Undo last change",
+          icon: ArrowCounterClockwiseIcon,
+          shortcut: ["Mod", "Z"],
+          disabled: !canUndo,
+          // Defer so the palette unmounts before undo's refocusEventElement
+          // starts hunting for the restored event element.
+          onClick: () => queueMicrotask(undo),
+        },
+      ],
+    },
+    {
+      id: "appearance",
+      heading: "Appearance",
+      items: themeCmdItems,
+    },
+    {
+      id: "settings",
+      heading: "Settings",
+      items: [
+        ...calendarCmdItems,
+        ...subscribeCmdItems,
+        ...exportDataCmdItems,
+        ...authCmdItems,
+        ...logoutCmdItems,
+        ...deleteAccountCmdItems,
+      ],
+    },
+    ...getMoreCommandPaletteSections(currentView),
+  ];
+
+  return (
+    <CommandPaletteContent
+      placeholder={placeholder}
+      sections={sections}
+      syncStatus={syncStatus}
+    />
+  );
+};
+
+export const LifeCommandPalette = ({
+  placeholder,
+}: {
+  placeholder: string;
+}) => {
+  const navigate = useNavigate();
+  const themeCmdItems = useThemeCmdItems();
+
+  return (
+    <CommandPaletteContent
+      placeholder={placeholder}
+      sections={[
+        {
+          id: "navigation",
+          heading: "Navigation",
+          items: getNavigationCommandItems({
+            onNavigateToView: (viewName) =>
+              navigate({ to: getNavigationViewRoute(viewName) }),
+          }),
+        },
+        {
+          id: "appearance",
+          heading: "Appearance",
+          items: themeCmdItems,
+        },
+      ]}
+    />
   );
 };

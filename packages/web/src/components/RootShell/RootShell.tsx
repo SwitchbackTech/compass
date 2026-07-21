@@ -7,6 +7,7 @@ import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { ReleaseNotesPrompt } from "@web/components/ReleaseNotesPrompt/ReleaseNotesPrompt";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
+import { useNavigationShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
 
 /**
  * The auth modal is driven by the router's `?auth=` search param, so its
@@ -18,6 +19,7 @@ export function RootShell() {
   const isReleaseNotesPromptOpen = useReleaseNotesPromptStore(
     selectReleaseNotesPromptOpen,
   );
+  useNavigationShortcuts();
 
   return (
     <AuthModalProvider>

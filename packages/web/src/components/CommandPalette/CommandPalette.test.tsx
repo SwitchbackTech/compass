@@ -124,10 +124,11 @@ describe("CommandPalette", () => {
     expect(screen.getByText("Settings")).toBeInTheDocument();
     expect(screen.getByText("More")).toBeInTheDocument();
 
-    // Navigation always lists Today first, then Day and Week.
+    // Navigation always lists Today first, then app views.
     expect(screen.getByText("Go to Today")).toBeInTheDocument();
     expect(screen.getByText("Go to Day")).toBeInTheDocument();
     expect(screen.getByText("Go to Week")).toBeInTheDocument();
+    expect(screen.getByText("Go to Life")).toBeInTheDocument();
     expect(screen.getByText("Create event")).toBeInTheDocument();
     expect(screen.getByText("Create all-day event")).toBeInTheDocument();
     // Settings surfaces the (stubbed) Google item.
@@ -175,6 +176,7 @@ describe("CommandPalette", () => {
     // disabled Undo row and lands on the Appearance section's theme toggle.
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Day
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Week
+    fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Life
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Show Shortcuts
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create event
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create all-day event
