@@ -62,6 +62,9 @@ export function createSyncService(
         // resolves against the public base URL.
         stateSecret: deriveOAuthStateSecret(config.INTERNAL_AUTH_TOKEN),
         callbackBaseUrl: config.CALLBACK_BASE_URL,
+        // Fall back to the callback base when no explicit redirect is set.
+        postConnectRedirectUrl:
+          config.POST_CONNECT_REDIRECT_URL ?? config.CALLBACK_BASE_URL,
       }
     : undefined;
 

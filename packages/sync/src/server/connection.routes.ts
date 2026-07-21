@@ -11,11 +11,18 @@ import {
   type ProviderConnection,
   ProviderConnectionSchema,
 } from "@core/types/sync/connection.contracts";
-import { ConnectionIdSchema } from "@core/types/sync/identity.contracts";
+import {
+  type ConnectionId,
+  ConnectionIdSchema,
+  type PrincipalId,
+  type TenantId,
+} from "@core/types/sync/identity.contracts";
 import { type InternalAuthedRequest } from "@sync/auth/internal-auth";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
-import { signOAuthState } from "@sync/oauth/oauth-state";
+import { deriveConnectionState } from "@sync/domain/connection-state";
+import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
+import { googleCapabilitiesFromScopes } from "@sync/providers/google/google-capabilities";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
@@ -24,8 +31,8 @@ import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 
 export const CONNECTIONS_PATH = "/internal/connections";
 export const BEGIN_PATH = "/internal/connections/begin";
-// Where the provider redirects the browser after consent. The callback route
-// mounts here in a later slice; `begin` builds the redirect_uri from it now.
+// Where the provider redirects the browser after consent; `begin` builds the
+// redirect_uri from it and the public callback route below mounts on it.
 export const OAUTH_CALLBACK_PATH = "/oauth/google/callback";
 
 export interface ConnectionApiDeps {
@@ -40,7 +47,10 @@ export interface ConnectionApiDeps {
   // provider callback resolves against.
   stateSecret: string;
   callbackBaseUrl: string;
-  // Injectable clock so state issuance is deterministic in tests.
+  // Where the callback redirects the browser after connecting (already
+  // defaulted to callbackBaseUrl by the caller when unset).
+  postConnectRedirectUrl: string;
+  // Injectable clock so state issuance/verification is deterministic in tests.
   now?: () => number;
 }
 
@@ -150,6 +160,65 @@ export function registerConnectionRoutes(
     },
   );
 
+  // The public OAuth callback the provider redirects the browser to after
+  // consent. It carries NO internal-auth — the signed state is the only trust,
+  // so it is verified before any work. On every outcome the browser is sent to
+  // a server-configured URL (never a request-controlled one), so there is no
+  // open-redirect surface. Nothing here pulls provider data; it only links the
+  // account and stores the credential.
+  app.get(OAUTH_CALLBACK_PATH, connectionRateLimit, async (req, res) => {
+    const redirect = (status: string) =>
+      redirectAfterConnect(deps, res, status);
+
+    if (deps.execution === "passive" || !deps.authAdapter) {
+      return redirect("error");
+    }
+    if (!deps.mongo.isConnected) return redirect("error");
+    // The user declined consent, or the provider returned an error.
+    if (typeof req.query["error"] === "string") return redirect("declined");
+
+    const code = req.query["code"];
+    const state = req.query["state"];
+    if (typeof code !== "string" || typeof state !== "string") {
+      return redirect("error");
+    }
+
+    const verified = verifyOAuthState(
+      deps.stateSecret,
+      state,
+      (deps.now ?? Date.now)(),
+    );
+    if (!verified.ok) return redirect("error");
+
+    let authorization: Awaited<
+      ReturnType<ProviderAuthAdapter["exchangeAuthorizationCode"]>
+    >;
+    try {
+      authorization = await deps.authAdapter.exchangeAuthorizationCode({
+        code,
+        // Must match the redirect_uri begin used to build the consent URL.
+        redirectUri: `${deps.callbackBaseUrl}${OAUTH_CALLBACK_PATH}`,
+      });
+    } catch {
+      // Bad code, no refresh token, unverifiable identity — nothing to link.
+      return redirect("error");
+    }
+
+    try {
+      // authAdapter is non-null here (gated above); pass it so the helper needs
+      // no assertion.
+      await linkConnection(
+        deps,
+        deps.authAdapter,
+        verified.payload,
+        authorization,
+      );
+      return redirect("connected");
+    } catch {
+      return redirect("error");
+    }
+  });
+
   app.delete(
     `${CONNECTIONS_PATH}/:id`,
     connectionRateLimit,
@@ -228,6 +297,107 @@ function ensureConnected(deps: ConnectionApiDeps, res: Response): boolean {
     return false;
   }
   return true;
+}
+
+// Redirect the browser to the server-configured post-connect URL with a coarse
+// status. The base is from config, never the request, so it can't be abused as
+// an open redirect; status is a fixed label, carrying no provider detail.
+function redirectAfterConnect(
+  deps: ConnectionApiDeps,
+  res: Response,
+  status: string,
+): void {
+  const url = new URL(deps.postConnectRedirectUrl);
+  url.searchParams.set("provider", "google");
+  url.searchParams.set("status", status);
+  res.redirect(url.toString());
+}
+
+// Link an authorized account: upsert its connection (create or reconnect by the
+// stable provider-account identity) and store the durable credential. The
+// initial state is DERIVED from evidence — a just-identified account whose first
+// import has not finished is "importing", not set arbitrarily.
+async function linkConnection(
+  deps: ConnectionApiDeps,
+  authAdapter: ProviderAuthAdapter,
+  state: {
+    tenantId: TenantId;
+    principalId: PrincipalId;
+    connectionId: ConnectionId | null;
+  },
+  authorization: Awaited<
+    ReturnType<ProviderAuthAdapter["exchangeAuthorizationCode"]>
+  >,
+): Promise<void> {
+  const connections = new ProviderConnectionRepository(deps.mongo.db);
+
+  // Reconnect: the state named a specific connection to re-authorize. Require
+  // the account Google just returned to match that connection's account.
+  // Otherwise the user consented with a different Google account (easy with
+  // multiple sessions, and there is no login_hint), and silently creating a
+  // second connection would leave the one they meant to fix stuck. Fail instead.
+  if (state.connectionId) {
+    const existing = await connections.findById(
+      state.tenantId,
+      state.principalId,
+      state.connectionId,
+    );
+    if (
+      !existing ||
+      existing.account.providerAccountId !==
+        authorization.account.providerAccountId
+    ) {
+      throw new Error("Reconnect account does not match the named connection");
+    }
+  }
+
+  const derived = deriveConnectionState(
+    {
+      disconnectedAt: null,
+      credential: "valid",
+      permanentConflict: false,
+      accountIdentified: true,
+      initialImportComplete: false,
+      catchingUp: false,
+      oldestDueWorkAt: null,
+      recentProviderErrors: false,
+    },
+    new Date(),
+  );
+
+  const connection = await connections.upsertByProviderAccount({
+    tenantId: state.tenantId,
+    principalId: state.principalId,
+    provider: "google",
+    account: authorization.account,
+    capabilities: googleCapabilitiesFromScopes(authorization.grantedScopes),
+    state: derived.state,
+    stateReason: derived.reason,
+    lastSyncedAt: null,
+    lastHealthyAt: null,
+  });
+
+  try {
+    const custody = new CredentialCustody(
+      new CredentialRepository(deps.mongo.db),
+      authAdapter,
+    );
+    await custody.store({
+      connectionId: connection._id,
+      provider: "google",
+      refreshToken: authorization.refreshToken,
+      scopes: [...authorization.grantedScopes],
+    });
+  } catch (error) {
+    // The connection persisted but its credential did not. Rather than leave it
+    // reporting "importing" with no credential to make progress, mark it
+    // disconnected (best-effort) so it reads as unusable; a retry re-links and
+    // clears the disconnect.
+    await connections
+      .markDisconnected(state.tenantId, state.principalId, connection._id)
+      .catch(() => undefined);
+    throw error;
+  }
 }
 
 // Map a stored connection record (string ids, Date timestamps) to the wire
