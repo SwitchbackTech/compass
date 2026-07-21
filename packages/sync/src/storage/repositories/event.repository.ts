@@ -67,12 +67,23 @@ export class EventRepository {
   }
 
   // Full write of a Compass (or already-identified) event by its _id. Used for
-  // unlinked cloud events and for promoting/relinking an existing event.
+  // unlinked cloud events and for promoting/relinking an existing event. The
+  // filter is scoped to the owning tenant/principal, not _id alone: _id is the
+  // client-supplied event id, so an unscoped replace would let one principal
+  // overwrite another's event by reusing its id. Scoping means a foreign id
+  // collides on the unique _id at insert (a caught error) instead of silently
+  // clobbering the owner's document.
   async put(record: EventRecord): Promise<EventRecord> {
     const parsed = EventRecordSchema.parse(record);
-    await this.collection.replaceOne({ _id: parsed._id }, parsed, {
-      upsert: true,
-    });
+    await this.collection.replaceOne(
+      {
+        _id: parsed._id,
+        tenantId: parsed.tenantId,
+        principalId: parsed.principalId,
+      },
+      parsed,
+      { upsert: true },
+    );
     return parsed;
   }
 
