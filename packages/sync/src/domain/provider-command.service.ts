@@ -327,15 +327,24 @@ async function commitProviderUpdate(
 }
 
 // Whether the provider's current event already carries this command's intended
-// edit. A structural (key-order-independent) comparison of content and schedule;
-// used only to detect a safe replay, so a false negative is harmless.
+// edit — the signal that a prior attempt landed and this is a safe replay.
+// Compares ONLY the fields a patch actually writes (title, description,
+// location, schedule). organizer/attendees/conference are read-reflected, not
+// written by the provider adapter, so they drift independently (e.g. an
+// attendee RSVPs) — comparing them would turn a landed edit into a false miss,
+// then a stale-version patch, then a spurious versionConflict on a write that
+// already succeeded. Used only to detect a replay, so a false negative on the
+// compared fields is still safe (it falls through to the conditional patch).
 function matchesIntendedEdit(
   current: ProviderEvent,
   content: SyncEventContent,
   schedule: EventSchedule,
 ): boolean {
   return (
-    deepEqual(current.content, content) && deepEqual(current.schedule, schedule)
+    current.content.title === content.title &&
+    current.content.description === content.description &&
+    current.content.location === content.location &&
+    deepEqual(current.schedule, schedule)
   );
 }
 

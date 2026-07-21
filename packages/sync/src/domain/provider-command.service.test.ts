@@ -496,6 +496,49 @@ describe("executeProviderUpdate", () => {
     expect(stored?.providerVersion).toBe("etag-2");
   });
 
+  it("recognizes a replay even when read-reflected fields drifted", async () => {
+    const { calendar, event, command } = await seed();
+    const writer = new FakeUpdateWriter();
+    // The written fields (title/description/location/schedule) match this
+    // command's edit, but an attendee RSVP'd after our patch landed — a field
+    // the patch never writes. This must still count as a replay, not a false
+    // conflict on an edit that already succeeded.
+    writer.fetched = {
+      kind: "event",
+      providerEventId: "g-evt-1",
+      providerVersion: "etag-2",
+      providerUpdatedAt: null,
+      content: {
+        title: "New",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [
+          {
+            email: "guest@example.com",
+            displayName: null,
+            responseStatus: "accepted",
+          },
+        ],
+        conference: null,
+      },
+      schedule,
+      busy: true,
+      recurrence: { kind: "single" },
+    };
+
+    const result = await executeProviderUpdate(
+      { commands, events, writer, custody: tokenSource() },
+      command,
+      event,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("confirmed");
+    expect(writer.patchCalls).toHaveLength(0);
+  });
+
   it("fails with a conflict on a genuine concurrent external edit", async () => {
     const { calendar, event, command } = await seed();
     const writer = new FakeUpdateWriter();
