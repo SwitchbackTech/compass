@@ -15,6 +15,7 @@ import {
 interface SubscriptionInput {
   subscriptionId: string;
   subscriptionResourceId: string;
+  subscriptionToken: string;
   subscriptionExpiresAt: Date;
 }
 
@@ -54,6 +55,7 @@ export class SyncResourceRepository {
           lastSuccessAt: null,
           subscriptionId: null,
           subscriptionResourceId: null,
+          subscriptionToken: null,
           subscriptionExpiresAt: null,
           createdAt: now,
           updatedAt: now,
@@ -135,11 +137,23 @@ export class SyncResourceRepository {
         $set: {
           subscriptionId: null,
           subscriptionResourceId: null,
+          subscriptionToken: null,
           subscriptionExpiresAt: null,
           updatedAt: new Date(),
         },
       },
     );
+  }
+
+  // Find the resource a provider push channel belongs to. Keyed on the channel
+  // (subscription) id alone — an inbound callback carries no tenant/principal,
+  // and the channel id is unique — so authenticity is then checked against the
+  // stored token by verifyNotification, not by this lookup.
+  async findBySubscriptionId(
+    subscriptionId: string,
+  ): Promise<SyncResourceRecord | null> {
+    const record = await this.collection.findOne({ subscriptionId });
+    return record ? SyncResourceRecordSchema.parse(record) : null;
   }
 
   // Begin a fresh import generation for a non-destructive repair. The old

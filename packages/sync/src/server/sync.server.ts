@@ -5,6 +5,7 @@ import {
   registerConnectionRoutes,
 } from "@sync/server/connection.routes";
 import { registerHealthRoutes } from "@sync/server/health.routes";
+import { registerNotificationRoutes } from "@sync/server/notification.routes";
 import { type StructuredServiceIdentity } from "@sync/service-identity";
 
 // Builds the Sync service's HTTP application. Health probes are always public
@@ -22,6 +23,13 @@ export function buildSyncApp(deps: {
   registerHealthRoutes(app, deps);
   if (deps.connectionApi) {
     registerConnectionRoutes(app, deps.connectionApi);
+    // The public webhook ingress shares the connection API's storage; it needs
+    // no auth adapter or secrets, only the db and execution mode.
+    registerNotificationRoutes(app, {
+      mongo: deps.connectionApi.mongo,
+      execution: deps.connectionApi.execution,
+      now: deps.connectionApi.now,
+    });
   }
 
   return app;
