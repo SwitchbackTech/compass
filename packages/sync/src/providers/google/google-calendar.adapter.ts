@@ -46,7 +46,15 @@ const defaultApiFactory: GoogleCalendarListApiFactory = (accessToken) => {
   const gcal: gCalendar = calendar({ version: "v3", auth });
   return {
     async listPage({ pageToken, syncToken }) {
-      const { data } = await gcal.calendarList.list({ pageToken, syncToken });
+      const { data } = await gcal.calendarList.list({
+        pageToken,
+        syncToken,
+        // Default false on a full list, which would silently omit hidden and
+        // deleted calendars rather than let us report them inactive. Opt in so
+        // discovery sees the same set an incremental (syncToken) list forces.
+        showHidden: true,
+        showDeleted: true,
+      });
       return {
         items: data.items ?? [],
         nextPageToken: data.nextPageToken ?? null,
