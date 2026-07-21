@@ -2,20 +2,16 @@ export const FAQ_ITEMS = [
   {
     question: "Who is Compass for?",
     answer:
-      "Compass is designed for minimalists who value efficiency, keyboard shortcuts, and open-source software. We are focused on helping people do more with less.",
+      "Compass is for busy minimalists who value focus, speed, and independent software. If that's you, Compass will help you do more with less.",
   },
   {
-    question: "Does Compass use AI?",
+    question: "Can I try it without handing over my email?",
     answer:
-      "Not currently. Compass gives you the tools to make your own decisions about how to spend your time, without algorithmic suggestions you'll ignore anyway.",
+      "Yes, you can try it right now. Just press ESC or click Start Now. No trial, email or credit card required.",
   },
   {
-    question: "Is it open-source?",
-    answer: null, // rendered separately
-  },
-  {
-    question: "What makes Compass different from other calendars?",
+    question: "How is Compass different?",
     answer:
-      "It's simpler and faster. Instead of doing everything, we do a few things well.",
+      "We're simpler, faster, open-source...er. We also donate 10% of our revenue to support mental health.",
   },
 ];

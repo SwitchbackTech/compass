@@ -8,8 +8,8 @@ import {
 export const DELETE_ACCOUNT_PHRASE = "Delete my Compass account";
 
 const INTRO_TEXT = [
-  "This deletes your Compass account and everything Compass stores for you — your calendars, events, and settings. It can't be undone.",
-  "Your Google Calendar is not affected. Nothing there gets deleted, and Compass just loses its access to it.",
+  "This deletes your Compass account and data: your calendars, events, and settings. It can't be undone.",
+  "Your Google Calendar is not affected. Nothing there gets deleted, Compass just loses its access to it.",
 ].join("\n\n");
 
 interface DeleteAccountConfirmationDialogProps {
