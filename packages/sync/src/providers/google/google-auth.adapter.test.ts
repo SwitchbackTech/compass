@@ -201,6 +201,35 @@ describe("GoogleAuthAdapter", () => {
       expect((error as ProviderAuthError).reason).toBe("exchangeFailed");
     });
 
+    it("does not propagate the raw exchange error (which carries the client secret)", async () => {
+      // google-auth-library/gaxios errors retain the token-exchange request
+      // config, which includes the app's client_secret and the auth code.
+      const leaky = Object.assign(new Error("invalid_grant"), {
+        config: { data: "client_secret=SUPER_SECRET&code=auth-code" },
+        response: { data: { error: "invalid_grant" } },
+      });
+      const client = new FakeGoogleClient({ getTokenError: leaky });
+      const { adapter } = adapterWith(client);
+
+      const error = (await adapter
+        .exchangeAuthorizationCode({
+          code: "auth-code",
+          redirectUri: "https://x/sync/google",
+        })
+        .catch((e) => e)) as ProviderAuthError;
+
+      const cause = error.cause as Error & { config?: unknown };
+      // The reason and a safe message survive; the raw object does not.
+      expect(cause).toBeInstanceOf(Error);
+      expect(cause.message).toBe("invalid_grant");
+      expect(cause).not.toBe(leaky);
+      expect(cause.config).toBeUndefined();
+      // Nothing reachable from the error may serialize the secret.
+      expect(
+        JSON.stringify({ message: error.message, cause: cause.message }),
+      ).not.toContain("SUPER_SECRET");
+    });
+
     it("requires a refresh token", async () => {
       const client = new FakeGoogleClient({
         tokens: { ...validTokens, refresh_token: undefined },

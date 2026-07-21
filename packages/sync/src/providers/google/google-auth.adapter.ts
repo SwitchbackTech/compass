@@ -80,7 +80,7 @@ export class GoogleAuthAdapter implements ProviderAuthAdapter {
       throw new ProviderAuthError(
         "exchangeFailed",
         "Google rejected the authorization code exchange",
-        { cause: error },
+        { cause: redactedCause(error) },
       );
     }
 
@@ -135,7 +135,7 @@ export class GoogleAuthAdapter implements ProviderAuthAdapter {
       throw new ProviderAuthError(
         "invalidIdToken",
         "Google id token failed verification",
-        { cause: error },
+        { cause: redactedCause(error) },
       );
     }
     if (!payload) {
@@ -146,6 +146,16 @@ export class GoogleAuthAdapter implements ProviderAuthAdapter {
     }
     return payload;
   }
+}
+
+// Reduce a provider-SDK error to a bare message before attaching it as a
+// cause. The google-auth-library/gaxios error retains the full token-exchange
+// request config, which includes the app's `client_secret` and the auth code;
+// propagating the raw object would leak that secret the moment any caller logs
+// the cause chain. The message is built from the response, not the request, so
+// it is safe to keep for diagnostics.
+function redactedCause(error: unknown): Error | undefined {
+  return error instanceof Error ? new Error(error.message) : undefined;
 }
 
 // Google returns granted scopes as a single space-delimited string. A subset of
