@@ -265,14 +265,12 @@ describe("POST /internal/commands", () => {
     expect(await mongo.db.collection("events").countDocuments()).toBe(0);
   });
 
-  it("persists a non-create command as durable pending intent", async () => {
+  it("persists an unhandled command kind as durable pending intent", async () => {
     const tenantId = objectId();
     const principalId = objectId();
+    // move is not applied locally yet, so it is recorded pending.
     const request = createRequest({
-      input: {
-        kind: "delete",
-        scope: "this",
-      },
+      input: { kind: "move", calendarId: objectId() },
     });
     await startService();
 
@@ -285,6 +283,121 @@ describe("POST /internal/commands", () => {
     // No event is written for a command that was only recorded, not applied.
     expect(await mongo.db.collection("events").countDocuments()).toBe(0);
     expect(await mongo.db.collection("commands").countDocuments()).toBe(1);
+  });
+
+  it("updates a cloud event's content and confirms", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    // Create the event, then update it (both keyed on the same event id).
+    const created = createRequest();
+    await startService();
+    await submit(tenantId, principalId, created);
+
+    const update = {
+      idempotencyKey: `idem-${objectId()}`,
+      eventId: created.eventId,
+      input: {
+        kind: "update",
+        content: {
+          title: "Renamed",
+          description: "",
+          location: null,
+          organizer: null,
+          attendees: [],
+          conference: null,
+        },
+        schedule: created.input.schedule,
+        recurrence: { kind: "preserve" },
+        scope: "all",
+      },
+      expectedVersion: null,
+    };
+    const res = await submit(tenantId, principalId, update);
+
+    const body = (await res.json()) as {
+      command: { outcome: { state: string } };
+    };
+    expect(body.command.outcome.state).toBe("confirmed");
+    const events = new EventRepository(mongo.db);
+    const stored = await events.findById(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+      created.eventId as never,
+    );
+    expect(stored?.content.title).toBe("Renamed");
+  });
+
+  it("deletes a cloud event and confirms", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const created = createRequest();
+    await startService();
+    await submit(tenantId, principalId, created);
+
+    const del = {
+      idempotencyKey: `idem-${objectId()}`,
+      eventId: created.eventId,
+      input: { kind: "delete", scope: "all" },
+      expectedVersion: null,
+    };
+    const res = await submit(tenantId, principalId, del);
+
+    const body = (await res.json()) as {
+      command: { outcome: { state: string } };
+    };
+    expect(body.command.outcome.state).toBe("confirmed");
+    expect(await mongo.db.collection("events").countDocuments()).toBe(0);
+  });
+
+  it("confirms an idempotent delete of an already-absent event", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService();
+
+    const del = {
+      idempotencyKey: `idem-${objectId()}`,
+      eventId: objectId(),
+      input: { kind: "delete", scope: "all" },
+      expectedVersion: null,
+    };
+    const res = await submit(tenantId, principalId, del);
+
+    const body = (await res.json()) as {
+      command: { outcome: { state: string } };
+    };
+    expect(body.command.outcome.state).toBe("confirmed");
+  });
+
+  it("leaves an update of a missing event pending", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService();
+
+    const update = {
+      idempotencyKey: `idem-${objectId()}`,
+      eventId: objectId(),
+      input: {
+        kind: "update",
+        content: {
+          title: "Nope",
+          description: "",
+          location: null,
+          organizer: null,
+          attendees: [],
+          conference: null,
+        },
+        schedule: createRequest().input.schedule,
+        recurrence: { kind: "preserve" },
+        scope: "all",
+      },
+      expectedVersion: null,
+    };
+    const res = await submit(tenantId, principalId, update);
+
+    const body = (await res.json()) as {
+      command: { outcome: { state: string } };
+    };
+    expect(body.command.outcome.state).toBe("pending");
   });
 
   it("promotes an anonymous device event, preserving its clientEventId", async () => {

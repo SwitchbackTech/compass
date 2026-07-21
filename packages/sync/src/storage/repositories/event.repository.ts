@@ -100,6 +100,22 @@ export class EventRepository {
     return record ? EventRecordSchema.parse(record) : null;
   }
 
+  // Remove one event by id, scoped to its owner so a caller can only delete its
+  // own event. Idempotent: deleting an already-absent event is a no-op, so a
+  // retried delete converges. Returns whether a document was removed.
+  async deleteById(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: EventId,
+  ): Promise<boolean> {
+    const result = await this.collection.deleteOne({
+      _id: id,
+      tenantId,
+      principalId,
+    });
+    return result.deletedCount > 0;
+  }
+
   // Bounded, keyset-paginated canonical events for one calendar/generation,
   // ordered by _id so a cursor never skips or repeats a row.
   async listByCalendar(query: EventListQuery): Promise<EventRecord[]> {
