@@ -1,14 +1,19 @@
 import { getLifeDotLabel, WEEKS_PER_ROW } from "./life.utils";
 
 interface LifeGridProps {
+  showCurrentWeek: boolean;
   totalDots: number;
   weeksLived: number;
 }
 
 const DOTS = Array.from({ length: WEEKS_PER_ROW }, (_, index) => index);
 
-function getDotClassName(index: number, weeksLived: number) {
-  if (index === weeksLived) {
+function getDotClassName(
+  index: number,
+  weeksLived: number,
+  showCurrentWeek: boolean,
+) {
+  if (showCurrentWeek && index === weeksLived) {
     return "bg-accent ring-1 ring-accent/60";
   }
 
@@ -19,7 +24,11 @@ function getDotClassName(index: number, weeksLived: number) {
   return "bg-text/15";
 }
 
-export function LifeGrid({ totalDots, weeksLived }: LifeGridProps) {
+export function LifeGrid({
+  showCurrentWeek,
+  totalDots,
+  weeksLived,
+}: LifeGridProps) {
   const rows = Math.ceil(totalDots / WEEKS_PER_ROW);
 
   return (
@@ -51,7 +60,7 @@ export function LifeGrid({ totalDots, weeksLived }: LifeGridProps) {
                 return (
                   <span
                     aria-hidden="true"
-                    className={`aspect-square w-full max-w-2 justify-self-center rounded-[1px] ${getDotClassName(dotIndex, weeksLived)}`}
+                    className={`aspect-square w-full max-w-2 justify-self-center rounded-[1px] ${getDotClassName(dotIndex, weeksLived, showCurrentWeek)}`}
                     key={dotIndex}
                     title={getLifeDotLabel(dotIndex + 1)}
                   />

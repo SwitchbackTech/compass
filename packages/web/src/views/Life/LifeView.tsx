@@ -120,7 +120,11 @@ export function LifeView({ today }: LifeViewProps) {
           aria-label={`Life visualization: ${summary}`}
           className="mt-6 min-w-0 flex-1 overflow-y-auto overflow-x-hidden"
         >
-          <LifeGrid totalDots={totalDots} weeksLived={weeksLived} />
+          <LifeGrid
+            showCurrentWeek={hasBirthDate}
+            totalDots={totalDots}
+            weeksLived={weeksLived}
+          />
         </section>
       </div>
     </main>

@@ -94,9 +94,11 @@ describe("LifeView", () => {
     expect(screen.getByLabelText(/date of birth/i)).toHaveValue("");
     expect(screen.getByLabelText(/through age/i)).toHaveValue(79);
     expect(screen.getByRole("status")).toHaveTextContent("Birth date not set");
-    expect(
-      screen.getByRole("region", { name: /life visualization/i }),
-    ).toBeInTheDocument();
+    const region = screen.getByRole("region", {
+      name: /life visualization/i,
+    });
+    expect(region).toBeInTheDocument();
+    expect(region.querySelector(".ring-1")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /zoom/i }),
     ).not.toBeInTheDocument();
@@ -113,6 +115,11 @@ describe("LifeView", () => {
     expect(screen.getByRole("status")).toHaveTextContent(
       "1,854 weeks lived - 35 years - 45%",
     );
+    expect(
+      screen
+        .getByRole("region", { name: /life visualization/i })
+        .querySelector(".ring-1"),
+    ).toBeInTheDocument();
   });
 
   it("updates the grid size when the lifespan changes", () => {
