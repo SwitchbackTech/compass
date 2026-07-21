@@ -5,6 +5,7 @@
 // indexes.
 export const SYNC_COLLECTIONS = {
   providerConnections: "provider_connections",
+  credentials: "credentials",
   providerCalendars: "provider_calendars",
   events: "events",
   eventOccurrences: "event_occurrences",
