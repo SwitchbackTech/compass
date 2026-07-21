@@ -6,7 +6,7 @@ import {
   CredentialRecordSchema,
   type CredentialUpsert,
   CredentialUpsertSchema,
-} from "@sync/storage/credential.record";
+} from "@sync/storage/contracts/credential.contracts";
 
 // Repository for `credentials`. One document per connection, keyed by the
 // connection id. This is the ONLY place provider credentials are read or
