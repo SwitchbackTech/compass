@@ -49,6 +49,11 @@ export class ProviderConnectionRepository {
           stateReason: fields.stateReason,
           lastSyncedAt: fields.lastSyncedAt,
           lastHealthyAt: fields.lastHealthyAt,
+          // A successful upsert-by-account-identity means the account is live —
+          // a create or a reconnect — so clear any prior disconnect evidence.
+          // This keeps disconnectedAt and state consistent: an upsert never
+          // leaves a live state alongside a stale non-null disconnectedAt.
+          disconnectedAt: null,
           updatedAt: now,
         },
         $setOnInsert: {
@@ -56,8 +61,6 @@ export class ProviderConnectionRepository {
           tenantId: fields.tenantId,
           principalId: fields.principalId,
           provider: fields.provider,
-          // A freshly seen connection is connected; disconnect sets this later.
-          disconnectedAt: null,
           createdAt: now,
         },
       },
