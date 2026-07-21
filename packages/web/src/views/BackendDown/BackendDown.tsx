@@ -50,7 +50,7 @@ export const BackendDownView = () => {
         type="button"
         onClick={handleRetry}
         aria-disabled={isChecking}
-        className="mt-5 cursor-pointer rounded border-2 border-border bg-accent-secondary px-4 py-2 font-semibold text-[16px] text-text transition-all duration-200 ease-in-out hover:brightness-120 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 aria-disabled:cursor-wait aria-disabled:opacity-70"
+        className="mt-5 cursor-pointer rounded border-2 border-border bg-accent-secondary px-4 py-2 font-semibold text-[16px] text-on-accent transition-all duration-200 ease-in-out hover:brightness-120 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2 aria-disabled:cursor-wait aria-disabled:opacity-70"
       >
         {isChecking ? "Scanning the horizon..." : "Try again"}
       </button>

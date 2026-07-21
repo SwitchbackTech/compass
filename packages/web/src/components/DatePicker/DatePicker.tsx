@@ -6,6 +6,7 @@ import dayjs from "@core/util/date/dayjs";
 import { darken, isDark } from "@web/common/styles/color.utils";
 import { colors, lightColors } from "@web/common/styles/colors";
 import { type CSSVariables } from "@web/common/styles/css.types";
+import { theme } from "@web/common/styles/theme";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
@@ -95,7 +96,10 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
             INPUT_RESET_CLASSNAME,
             "w-28 transition-colors duration-300",
           )}
-          style={{ backgroundColor: inputColor }}
+          style={{
+            backgroundColor: inputColor,
+            color: inputColor ? theme.getContrastText(inputColor) : undefined,
+          }}
           underlineColor={darken(resolvedBgColor, -15)}
           withUnderline
         />
