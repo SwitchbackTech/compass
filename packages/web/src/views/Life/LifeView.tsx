@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCommandPalettePlaceholder } from "@web/common/constants/more.cmd.constants";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useResponsiveLayout } from "@web/components/AuthenticatedLayout/useResponsiveLayout";
@@ -13,12 +13,16 @@ import {
   viewActions,
 } from "@web/events/stores/view.store";
 import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
+import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 import { LifeGrid } from "./LifeGrid";
 import { LifeSidebarContent } from "./LifeSidebarContent";
 import {
   getCurrentWeekLabel,
+  getRandomLifespan,
   getTotalLifeDots,
   getWeekLivedCount,
+  LIFE_VARIATION_ORDER,
+  LIFE_VARIATIONS,
   parseLifeDate,
 } from "./life.utils";
 import {
@@ -36,8 +40,9 @@ function formatWeeks(value: number) {
 }
 
 export function LifeView({ today }: LifeViewProps) {
-  const currentDate = today ?? new Date();
+  const currentDate = useMemo(() => today ?? new Date(), [today]);
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
+  const currentWeekRef = useRef<HTMLButtonElement>(null);
   const [preferences, setPreferences] = useState(readLifePreferences);
   const totalDots = useMemo(
     () => getTotalLifeDots(preferences.lifespan),
@@ -80,6 +85,33 @@ export function LifeView({ today }: LifeViewProps) {
     },
     [],
   );
+  const focusCurrentWeek = useCallback(() => {
+    const currentWeek = currentWeekRef.current;
+    if (!currentWeek) return;
+
+    currentWeek.scrollIntoView({ behavior: "smooth", block: "center" });
+    currentWeek.focus();
+  }, []);
+  const cycleVariation = useCallback(
+    (direction: -1 | 1) => {
+      setPreferences((current) => {
+        const currentIndex = LIFE_VARIATION_ORDER.indexOf(current.variation);
+        const nextIndex =
+          (currentIndex + direction + LIFE_VARIATION_ORDER.length) %
+          LIFE_VARIATION_ORDER.length;
+        const variation = LIFE_VARIATION_ORDER[nextIndex];
+        const lifespan =
+          variation === "random"
+            ? getRandomLifespan(current.birthDate, currentDate)
+            : LIFE_VARIATIONS[variation].defaultLifespan;
+
+        return { ...current, lifespan, variation };
+      });
+    },
+    [currentDate],
+  );
+
+  useAppShortcutUp("T", focusCurrentWeek);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
@@ -89,13 +121,21 @@ export function LifeView({ today }: LifeViewProps) {
         className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-background pt-5 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
         id={ID_MAIN}
       >
-        <CalendarHeader label="Life" showNavigation={false} />
+        <CalendarHeader
+          label="Life"
+          nextLabel="Next life variation"
+          onNext={() => cycleVariation(1)}
+          onPrev={() => cycleVariation(-1)}
+          onToday={focusCurrentWeek}
+          prevLabel="Previous life variation"
+        />
         <section
           aria-label={`Life visualization: ${summary}`}
           className="min-h-0 flex-1 overflow-auto pr-5 pb-6"
         >
           <LifeGrid
             currentWeekLabel={currentWeekLabel}
+            currentWeekRef={currentWeekRef}
             showCurrentWeek={hasBirthDate}
             totalDots={totalDots}
             weeksLived={weeksLived}

@@ -566,6 +566,10 @@
     color: var(--date-picker-selected-text);
   }
 
+  & .react-datepicker__day--selected:hover {
+    color: var(--date-picker-selected-text);
+  }
+
   /* --accent is chosen per-theme to stand out against the app's normal
      surfaces (not just accent-filled ones), so it stays readable regardless
      of theme or of an arbitrary event-color picker background — one rule for
@@ -618,6 +622,25 @@
   &.calendar--animation {
     transition: 0.3s;
   }
+}
+
+/* Life controls share the same raised surface and border treatment in both
+   themes, while keeping the date picker and number input implementations
+   independent. */
+.c-life-input,
+.c-number-input {
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+.c-number-input {
+  appearance: textfield;
+}
+
+.c-number-input::-webkit-inner-spin-button,
+.c-number-input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
 }
 
 @utility c-scroll {

@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
+import { NumberInput } from "@web/components/NumberInput/NumberInput";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import {
   clampLifespan,
   formatDateInputValue,
+  getRandomLifespan,
+  LIFE_VARIATIONS,
   MAX_LIFESPAN,
   MIN_LIFESPAN,
   parseLifeDate,
@@ -26,7 +29,19 @@ export function LifeSidebarContent({
   onPreferencesChange,
 }: LifeSidebarContentProps) {
   const [isBirthDatePickerOpen, setIsBirthDatePickerOpen] = useState(false);
+  const [lifespanInput, setLifespanInput] = useState(() =>
+    String(preferences.lifespan),
+  );
+  const previousLifespanRef = useRef(preferences.lifespan);
   const birthDate = parseLifeDate(preferences.birthDate);
+  const variation = LIFE_VARIATIONS[preferences.variation];
+
+  useEffect(() => {
+    if (previousLifespanRef.current !== preferences.lifespan) {
+      setLifespanInput(String(preferences.lifespan));
+      previousLifespanRef.current = preferences.lifespan;
+    }
+  }, [preferences.lifespan]);
   const clearBirthDate = () => {
     onPreferencesChange((current) => ({ ...current, birthDate: "" }));
     setIsBirthDatePickerOpen(false);
@@ -40,24 +55,28 @@ export function LifeSidebarContent({
     );
     if (date < minimumDate || date > maximumDate) return;
 
+    const birthDateValue = formatDateInputValue(date);
     onPreferencesChange((current) => ({
       ...current,
-      birthDate: formatDateInputValue(date),
+      birthDate: birthDateValue,
+      lifespan:
+        current.variation === "random"
+          ? getRandomLifespan(birthDateValue, today)
+          : current.lifespan,
     }));
     setIsBirthDatePickerOpen(false);
   };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-5 pb-5 text-sm">
-      <section className="flex flex-col gap-3 text-text-muted">
-        <h2 className="font-semibold text-text">About Life in Weeks</h2>
-        <p>
-          This page shows your life as a grid of weeks. Each dot represents one
-          week of your life, and each row represents one year.
-        </p>
-        <p>
-          The default death age is set to 79. However, life expectancy varies
-          significantly by country and other factors.
+      <section className="flex flex-col gap-2 text-text-muted">
+        <h2 className="font-semibold text-text">{variation.label}</h2>
+        <p>{variation.description}</p>
+      </section>
+
+      <section className="flex flex-col gap-2 text-center">
+        <p aria-live="polite" className="font-medium text-text" role="status">
+          {summary}
         </p>
       </section>
 
@@ -65,10 +84,6 @@ export function LifeSidebarContent({
         aria-label="Life details"
         className="flex flex-col items-center gap-4 text-center"
       >
-        <p aria-live="polite" className="font-medium text-text" role="status">
-          {summary}
-        </p>
-
         <div className="flex w-full flex-col items-center gap-1 text-text-muted">
           <TooltipWrapper description="We don't store this information">
             <span className="cursor-help">Date of birth</span>
@@ -78,6 +93,7 @@ export function LifeSidebarContent({
             calendarClassName="lifeBirthDatePicker"
             dateFormat="MMM d, yyyy"
             id="life-date-of-birth"
+            inputClassName="c-life-input w-44"
             isClearable
             isOpen={isBirthDatePickerOpen}
             maxDate={today}
@@ -103,27 +119,42 @@ export function LifeSidebarContent({
             selected={birthDate ?? undefined}
             title="Date of birth"
             view="grid"
+            withUnderline={false}
           />
         </div>
 
-        <label className="flex w-full flex-col items-center gap-1 text-text-muted">
+        <label
+          className="flex w-full flex-col items-center gap-1 text-text-muted"
+          htmlFor="life-age-of-death"
+        >
           Age of Death
-          <input
-            aria-label="Age of Death"
-            className="h-9 w-28 rounded-md border border-border bg-surface px-3 text-center text-text outline-none transition-colors focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent/30"
+          <NumberInput
+            ariaLabel="Age of Death"
             id="life-age-of-death"
             max={MAX_LIFESPAN}
             min={MIN_LIFESPAN}
-            onChange={(event) =>
+            onChange={(value) => {
+              setLifespanInput(value);
+              if (!value) return;
+
+              const parsed = Number(value);
+              if (!Number.isFinite(parsed)) return;
               onPreferencesChange((current) => ({
                 ...current,
-                lifespan: clampLifespan(event.target.valueAsNumber),
-              }))
-            }
-            type="number"
-            value={preferences.lifespan}
+                lifespan: clampLifespan(parsed),
+              }));
+            }}
+            value={lifespanInput}
           />
         </label>
+      </section>
+
+      <section className="flex flex-col gap-3 text-text-muted">
+        <h2 className="font-semibold text-text">About Life.</h2>
+        <p>
+          This page shows your life as a grid of weeks. Each dot represents one
+          week of your life, and each row represents one year.
+        </p>
       </section>
     </div>
   );

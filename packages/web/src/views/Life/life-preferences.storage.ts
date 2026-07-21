@@ -1,21 +1,30 @@
 import { z } from "zod";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
-import { clampLifespan, DEFAULT_LIFESPAN, parseLifeDate } from "./life.utils";
+import {
+  clampLifespan,
+  DEFAULT_LIFESPAN,
+  LIFE_VARIATIONS,
+  type LifeVariation,
+  parseLifeDate,
+} from "./life.utils";
 
 const LifePreferencesSchema = z.object({
   birthDate: z.string().default(""),
   lifespan: z.number().default(DEFAULT_LIFESPAN),
+  variation: z.enum(["average", "long", "random"]).default("average"),
 });
 
 export interface LifePreferences {
   birthDate: string;
   lifespan: number;
+  variation: LifeVariation;
 }
 
 export const DEFAULT_LIFE_PREFERENCES: LifePreferences = {
   birthDate: "",
-  lifespan: DEFAULT_LIFESPAN,
+  lifespan: LIFE_VARIATIONS.average.defaultLifespan,
+  variation: "average",
 };
 
 function normalizeLifePreferences(
@@ -26,6 +35,7 @@ function normalizeLifePreferences(
       ? preferences.birthDate
       : "",
     lifespan: clampLifespan(preferences.lifespan),
+    variation: preferences.variation,
   };
 }
 

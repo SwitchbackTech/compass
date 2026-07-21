@@ -2,8 +2,10 @@ import {
   clampLifespan,
   clampWeeksLived,
   formatDateInputValue,
+  getAgeInYears,
   getCurrentWeekLabel,
   getLifeDotLabel,
+  getRandomLifespan,
   getTotalLifeDots,
   getWeekLivedCount,
   parseLifeDate,
@@ -21,7 +23,7 @@ describe("life utils", () => {
 
   it("calculates total dots from a clamped lifespan", () => {
     expect(getTotalLifeDots(85)).toBe(85 * 52);
-    expect(getTotalLifeDots(Number.NaN)).toBe(79 * 52);
+    expect(getTotalLifeDots(Number.NaN)).toBe(77 * 52);
     expect(getTotalLifeDots(-1)).toBe(1 * 52);
     expect(getTotalLifeDots(151)).toBe(150 * 52);
   });
@@ -40,7 +42,7 @@ describe("life utils", () => {
     expect(clampLifespan(80.6)).toBe(81);
     expect(clampLifespan(0)).toBe(1);
     expect(clampLifespan(151)).toBe(150);
-    expect(clampLifespan(Number.NaN)).toBe(79);
+    expect(clampLifespan(Number.NaN)).toBe(77);
   });
 
   it("formats dot tooltip labels from one-indexed week numbers", () => {
@@ -58,5 +60,14 @@ describe("life utils", () => {
     expect(clampWeeksLived(-5, 100)).toBe(0);
     expect(clampWeeksLived(50, 100)).toBe(50);
     expect(clampWeeksLived(150, 100)).toBe(100);
+  });
+
+  it("calculates current age and bounds random lifespan", () => {
+    const today = new Date(2026, 6, 21);
+
+    expect(getAgeInYears("1993-09-14", today)).toBe(32);
+    expect(getRandomLifespan("1993-09-14", today, () => 0)).toBe(32);
+    expect(getRandomLifespan("1993-09-14", today, () => 0.999)).toBe(100);
+    expect(getRandomLifespan("", today, () => 0)).toBe(1);
   });
 });

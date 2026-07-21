@@ -169,8 +169,8 @@ describe("SelectView", () => {
       );
     });
 
-    it("shows only Day and Week choices from the Life header", async () => {
-      await renderWithRouter("Life", ROOT_ROUTES.LIFE, false);
+    it("shows Day, Week, and Today choices from the Life header", async () => {
+      await renderWithRouter("Life", ROOT_ROUTES.LIFE);
 
       await openDropdown();
 
@@ -178,7 +178,7 @@ describe("SelectView", () => {
         within(screen.getByTestId("view-select-dropdown"))
           .getAllByRole("option")
           .map((option) => option.textContent),
-      ).toEqual(["DayD", "WeekW"]);
+      ).toEqual(["DayD", "WeekW", expect.stringMatching(/^Today \(/)]);
     });
 
     it("defaults to Week selected for unknown routes", async () => {
