@@ -7,7 +7,7 @@ export const FAQ_ITEMS = [
   {
     question: "Can I try it without handing over my email?",
     answer:
-      "Yes, you can try it right now. Just press ESC or click Start Now. No trial, email or credit card required.",
+      "Yes! Just press ESC or click Start Now. No trial, email or credit card required.",
   },
   {
     question: "How is Compass different?",

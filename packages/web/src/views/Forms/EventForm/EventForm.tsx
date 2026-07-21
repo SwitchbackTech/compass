@@ -530,7 +530,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                   INPUT_RESET_CLASSNAME,
                   // w-full: an input's intrinsic size-attribute width would
                   // overflow the sidebar-width form and force horizontal scroll
-                  "w-full bg-transparent font-semibold text-2xl",
+                  "w-full bg-transparent font-semibold text-xl",
                 )}
                 autoFocus
                 disabled={isReadOnly}

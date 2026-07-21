@@ -1,4 +1,4 @@
-export const SIDEBAR_DEFAULT_WIDTH = 285;
+export const SIDEBAR_DEFAULT_WIDTH = 345;
 export const SIDEBAR_MIN_WIDTH = 240;
 export const SIDEBAR_MAX_WIDTH = 480;
 // Width of the sidebar's resize-handle column.
