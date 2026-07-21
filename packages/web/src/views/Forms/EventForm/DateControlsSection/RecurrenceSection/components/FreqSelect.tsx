@@ -85,13 +85,7 @@ export const FreqSelect = ({
 
           return {
             ...styles,
-            backgroundColor: isDisabled
-              ? undefined
-              : isSelected
-                ? bgBright
-                : isFocused
-                  ? bgDark
-                  : undefined,
+            backgroundColor: isDisabled ? undefined : optionBg,
             color: theme.getContrastText(optionBg),
             opacity: isDisabled ? 0.5 : 1,
             cursor: isDisabled ? "not-allowed" : "default",
