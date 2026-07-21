@@ -1,5 +1,7 @@
-import { getNavigationCommandItems } from "@web/common/constants/navigation.cmd.constants";
-import { type ViewName } from "@web/shortcuts/shortcuts.constants";
+import {
+  type CommandPaletteViewName,
+  getNavigationCommandItems,
+} from "@web/common/constants/navigation.cmd.constants";
 import { describe, expect, it } from "bun:test";
 
 describe("getNavigationCommandItems", () => {
@@ -9,7 +11,7 @@ describe("getNavigationCommandItems", () => {
     onShowShortcuts: () => {},
   };
 
-  it("lists Today first, then Day and Week, then shortcuts", () => {
+  it("lists Today first, then Day, Week, Life, then shortcuts", () => {
     const labels = getNavigationCommandItems(noopHandlers).map(
       (item) => item.label,
     );
@@ -17,12 +19,21 @@ describe("getNavigationCommandItems", () => {
       "Go to Today",
       "Go to Day",
       "Go to Week",
+      "Go to Life",
       "Show Shortcuts",
     ]);
   });
 
+  it("can list only view navigation for non-calendar surfaces", () => {
+    const labels = getNavigationCommandItems({
+      onNavigateToView: () => {},
+    }).map((item) => item.label);
+
+    expect(labels).toEqual(["Go to Day", "Go to Week", "Go to Life"]);
+  });
+
   it("runs the matching navigation callbacks", () => {
-    const navigatedViews: ViewName[] = [];
+    const navigatedViews: CommandPaletteViewName[] = [];
     let didGoToToday = false;
     let didShowShortcuts = false;
     const items = getNavigationCommandItems({
@@ -39,10 +50,11 @@ describe("getNavigationCommandItems", () => {
 
     items.find((item) => item.id === "go-to-day")?.onClick?.();
     items.find((item) => item.id === "go-to-week")?.onClick?.();
+    items.find((item) => item.id === "go-to-life")?.onClick?.();
     items.find((item) => item.id === "today")?.onClick?.();
     items.find((item) => item.id === "show-shortcuts")?.onClick?.();
 
-    expect(navigatedViews).toEqual(["day", "week"]);
+    expect(navigatedViews).toEqual(["day", "week", "life"]);
     expect(didGoToToday).toBe(true);
     expect(didShowShortcuts).toBe(true);
   });

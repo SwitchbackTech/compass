@@ -14,6 +14,11 @@ import {
  * Mount once under {@link HotkeysProvider} (see `GlobalShortcutsHost` in CompassProvider).
  */
 export function useGlobalShortcuts() {
+  useNavigationShortcuts();
+  useCalendarShellShortcuts();
+}
+
+export function useNavigationShortcuts() {
   const navigate = useNavigate();
   const location = useLocation();
   const dayHotkey = VIEW_SHORTCUTS.day.key.toUpperCase() as RegisterableHotkey;
@@ -57,8 +62,6 @@ export function useGlobalShortcuts() {
     }
   });
 
-  useAppShortcutUp("]", () => viewActions.toggleSidebar());
-
   useAppShortcut(
     "Mod+K",
     () => {
@@ -80,4 +83,8 @@ export function useGlobalShortcuts() {
       blurOnTrigger: true,
     },
   );
+}
+
+export function useCalendarShellShortcuts() {
+  useAppShortcutUp("]", () => viewActions.toggleSidebar());
 }

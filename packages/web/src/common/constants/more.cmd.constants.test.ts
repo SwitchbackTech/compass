@@ -40,4 +40,10 @@ describe("getMoreCommandPaletteSections", () => {
     expect(getCommandPalettePlaceholder("day", true)).toContain("feedback");
     expect(getCommandPalettePlaceholder("day", true)).not.toContain("bug");
   });
+
+  it("uses a Life-specific placeholder", () => {
+    expect(getCommandPalettePlaceholder("life", true)).toBe(
+      "Try: 'day', 'week', or 'theme'",
+    );
+  });
 });

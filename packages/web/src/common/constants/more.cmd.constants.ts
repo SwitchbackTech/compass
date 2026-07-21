@@ -4,11 +4,16 @@ import { APP_VERSION } from "@web/common/constants/version.constants";
 import { type CommandSection } from "@web/components/CommandPalette/command-palette.types";
 import { feedbackActions } from "@web/components/Feedback/feedback.store";
 import { type ViewName } from "@web/shortcuts/shortcuts.constants";
+import { type CommandPaletteViewName } from "./navigation.cmd.constants";
 
 export function getCommandPalettePlaceholder(
-  currentView: ViewName,
+  currentView: CommandPaletteViewName,
   feedbackEnabled = isPosthogEnabled(),
 ): string {
+  if (currentView === "life") {
+    return "Try: 'day', 'week', or 'theme'";
+  }
+
   if (currentView === "day") {
     return feedbackEnabled
       ? "Try: 'week', 'today', or 'feedback'"
