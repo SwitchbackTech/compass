@@ -8,24 +8,20 @@ export type LifeVariation = "average" | "long" | "random";
 
 export interface LifeVariationDetails {
   label: string;
-  description: string;
   defaultLifespan: number;
 }
 
 export const LIFE_VARIATIONS: Record<LifeVariation, LifeVariationDetails> = {
   average: {
     label: "Average",
-    description: "A grounded view using an average lifespan of 77 years.",
     defaultLifespan: 77,
   },
   long: {
     label: "Long",
-    description: "A longer horizon gives you 100 years of weeks to explore.",
     defaultLifespan: 100,
   },
   random: {
     label: "Random",
-    description: "A playful unknown chooses an age between now and 100.",
     defaultLifespan: RANDOM_LIFESPAN_MAX,
   },
 };
@@ -35,6 +31,10 @@ export const LIFE_VARIATION_ORDER: LifeVariation[] = [
   "long",
   "random",
 ];
+
+export function getLifeVariationDescription(lifespan: number) {
+  return `This is your life if you live to ${lifespan}`;
+}
 
 const MS_PER_WEEK = 1000 * 60 * 60 * 24 * 7;
 

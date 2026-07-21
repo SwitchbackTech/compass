@@ -35,6 +35,7 @@ async function renderLifeViewWithSidebar() {
 const mockNavigate = mock();
 const actualTanstackRouter = { ...(await import("@tanstack/react-router")) };
 let isRouterMocked = true;
+let mockedLifeSearch: Record<string, unknown> = {};
 
 mock.module("@tanstack/react-router", () => ({
   ...actualTanstackRouter,
@@ -49,6 +50,7 @@ mock.module("@tanstack/react-router", () => ({
       : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of this suite.
         actualTanstackRouter.useNavigate(...(args as [])),
   useLocation: () => ({ pathname: "/life" }),
+  useSearch: () => mockedLifeSearch,
 }));
 
 afterAll(() => {
@@ -81,6 +83,8 @@ function getGrid(region: HTMLElement) {
 }
 
 beforeEach(() => {
+  mockedLifeSearch = {};
+  mockNavigate.mockClear();
   localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, "true");
   viewActions.setSidebarOpen(true);
   mockViewport(false);
@@ -241,6 +245,51 @@ describe("LifeView", () => {
     );
     expect(randomAge).toBeGreaterThanOrEqual(1);
     expect(randomAge).toBeLessThanOrEqual(100);
+  });
+
+  it("cycles life variations with J and K", async () => {
+    await renderLifeViewWithSidebar();
+
+    fireEvent.keyUp(document, { key: "k" });
+    expect(screen.getByText("Long")).toBeInTheDocument();
+    expect(
+      screen.getByText("This is your life if you live to 100"),
+    ).toBeInTheDocument();
+
+    fireEvent.keyUp(document, { key: "j" });
+    expect(screen.getByText("Average")).toBeInTheDocument();
+    expect(
+      screen.getByText("This is your life if you live to 77"),
+    ).toBeInTheDocument();
+  });
+
+  it("restores a bookmarkable Life variation", async () => {
+    mockedLifeSearch = { age: 100, variation: "long" };
+    await renderLifeViewWithSidebar();
+
+    expect(screen.getByText("Long")).toBeInTheDocument();
+    expect(
+      screen.getByText("This is your life if you live to 100"),
+    ).toBeInTheDocument();
+    expect(
+      (screen.getByLabelText(/age of death/i) as HTMLInputElement).value,
+    ).toBe("100");
+  });
+
+  it("shuffles to a random Life variation", async () => {
+    const user = userEvent.setup();
+    await renderLifeViewWithSidebar();
+
+    await user.click(
+      screen.getByRole("button", { name: "Shuffle life variation" }),
+    );
+
+    expect(screen.getByText("Random")).toBeInTheDocument();
+    const lifespan = Number(
+      (screen.getByLabelText(/age of death/i) as HTMLInputElement).value,
+    );
+    expect(lifespan).toBeGreaterThanOrEqual(1);
+    expect(lifespan).toBeLessThanOrEqual(100);
   });
 
   it("keeps the 52-week row on mobile without horizontal scroll or dot buttons", () => {

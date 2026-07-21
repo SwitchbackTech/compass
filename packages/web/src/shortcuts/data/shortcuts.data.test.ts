@@ -64,6 +64,8 @@ describe("shortcuts.data", () => {
         "other",
       ]);
       expect(sections[0]?.shortcuts).toEqual([
+        { keys: ["j"], label: "Previous life variation" },
+        { keys: ["k"], label: "Next life variation" },
         { keys: ["t"], label: "Focus current week" },
         { keys: ["d"], label: "Go to Day view" },
         { keys: ["w"], label: "Go to Week view" },
