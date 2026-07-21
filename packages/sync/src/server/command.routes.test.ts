@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { NodeEnv } from "@core/constants/core.constants";
 import {
+  type ConnectionId,
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
@@ -10,6 +11,7 @@ import { type SyncConfig } from "@sync/config/sync.config";
 import { COMMANDS_PATH } from "@sync/server/command.routes";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
+import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
 
@@ -222,6 +224,45 @@ describe("POST /internal/commands", () => {
       kind: "seriesMaster",
       rules: ["RRULE:FREQ=WEEKLY"],
     });
+  });
+
+  it("leaves a create targeting a provider calendar pending for the provider path", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService();
+
+    // A connected provider calendar; a create aimed at it must not be confirmed
+    // as a local cloud event.
+    const calendars = new ProviderCalendarRepository(mongo.db);
+    const calendar = await calendars.upsertByProviderCalendar({
+      tenantId: tenantId as TenantId,
+      principalId: principalId as PrincipalId,
+      connectionId: objectId() as ConnectionId,
+      providerCalendarId: objectId(),
+      displayName: "Google",
+      color: null,
+      active: true,
+      primary: true,
+      accessRole: "owner",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: true,
+        canReadBusy: true,
+        canInviteAttendees: true,
+      },
+    });
+
+    const request = createRequest({
+      input: { ...createRequest().input, calendarId: calendar._id },
+    });
+    const res = await submit(tenantId, principalId, request);
+
+    const body = (await res.json()) as {
+      command: { outcome: { state: string } };
+    };
+    expect(body.command.outcome.state).toBe("pending");
+    // No local cloud event is written for a provider-targeted create.
+    expect(await mongo.db.collection("events").countDocuments()).toBe(0);
   });
 
   it("persists a non-create command as durable pending intent", async () => {
