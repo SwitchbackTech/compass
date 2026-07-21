@@ -270,6 +270,7 @@ export const CommandPalette = ({
       id: "navigation",
       heading: "Navigation",
       items: getNavigationCommandItems({
+        currentView,
         onGoToToday,
         onNavigateToView: (viewName) =>
           navigate({ to: getNavigationViewRoute(viewName) }),
@@ -338,6 +339,7 @@ export const LifeCommandPalette = ({
           id: "navigation",
           heading: "Navigation",
           items: getNavigationCommandItems({
+            currentView: "life",
             onNavigateToView: (viewName) =>
               navigate({ to: getNavigationViewRoute(viewName) }),
           }),

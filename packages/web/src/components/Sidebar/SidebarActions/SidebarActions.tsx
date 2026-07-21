@@ -1,11 +1,5 @@
-import {
-  ArrowClockwiseIcon,
-  CommandIcon,
-  KeyboardIcon,
-} from "@phosphor-icons/react";
+import { CommandIcon, KeyboardIcon } from "@phosphor-icons/react";
 import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
-import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
-import { useVersionCheck } from "@web/components/Sidebar/SidebarActions/useVersionCheck";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import {
   selectIsCmdPaletteOpen,
@@ -23,14 +17,9 @@ export const SidebarActions = ({
   onToggleShortcuts,
 }: Props) => {
   const isCmdPaletteOpen = useSettingsStore(selectIsCmdPaletteOpen);
-  const { isUpdateAvailable } = useVersionCheck();
   const googleState = useGoogleUiState();
   const isCalendarSyncing =
     googleState === "IMPORTING" || googleState === "repairing";
-
-  const handleUpdateReload = () => {
-    reloadLocation();
-  };
 
   const toggleCmdPalette = () => {
     if (isCmdPaletteOpen) {
@@ -98,21 +87,6 @@ export const SidebarActions = ({
             </span>
           </button>
         </TooltipWrapper>
-
-        {isUpdateAvailable ? (
-          <TooltipWrapper
-            description="Get latest version"
-            onClick={handleUpdateReload}
-          >
-            <button
-              aria-label="Get latest version"
-              className="flex size-9 items-center justify-center rounded-default text-accent transition hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-              type="button"
-            >
-              <ArrowClockwiseIcon aria-hidden="true" size={16} />
-            </button>
-          </TooltipWrapper>
-        ) : null}
       </div>
     </div>
   );

@@ -105,8 +105,11 @@ describe("LifeView", () => {
     expect(screen.getByRole("textbox", { name: "Date of birth" })).toHaveValue(
       "",
     );
-    expect(screen.getByLabelText(/age of death/i)).toHaveValue(79);
-    expect(screen.getByText(/about life in weeks/i)).toBeInTheDocument();
+    expect(
+      (screen.getByLabelText(/age of death/i) as HTMLInputElement).value,
+    ).toBe("77");
+    expect(screen.getByText("Average")).toBeInTheDocument();
+    expect(screen.getByText("About Life.")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Birth date not set");
     const region = screen.getByRole("region", {
       name: /life visualization/i,
@@ -127,7 +130,7 @@ describe("LifeView", () => {
     });
 
     expect(screen.getByRole("status")).toHaveTextContent(
-      "1,854 weeks lived - 35 years - 45%",
+      "1,854 weeks lived - 35 years - 46%",
     );
     expect(
       screen
@@ -142,7 +145,7 @@ describe("LifeView", () => {
     const region = screen.getByRole("region", {
       name: /life visualization/i,
     });
-    expect(getGrid(region).dataset.totalDots).toBe(String(79 * 52));
+    expect(getGrid(region).dataset.totalDots).toBe(String(77 * 52));
 
     fireEvent.change(screen.getByLabelText(/age of death/i), {
       target: { value: "85" },
@@ -198,7 +201,46 @@ describe("LifeView", () => {
     ).toBe("");
     expect(
       (screen.getByLabelText(/age of death/i) as HTMLInputElement).value,
-    ).toBe("79");
+    ).toBe("77");
+  });
+
+  it("allows the age input to be cleared before entering a new age", async () => {
+    const user = userEvent.setup();
+    await renderLifeViewWithSidebar();
+
+    const ageInput = screen.getByLabelText(/age of death/i);
+    await user.clear(ageInput);
+    expect((ageInput as HTMLInputElement).value).toBe("");
+
+    await user.type(ageInput, "88");
+    expect((ageInput as HTMLInputElement).value).toBe("88");
+    expect(
+      getGrid(screen.getByRole("region", { name: /life visualization/i })),
+    ).toHaveAttribute("data-total-dots", String(88 * 52));
+  });
+
+  it("cycles life variations with arrows and resets their default ages", async () => {
+    const user = userEvent.setup();
+    await renderLifeViewWithSidebar();
+
+    await user.click(
+      screen.getByRole("button", { name: "Next life variation" }),
+    );
+
+    expect(screen.getByText("Long")).toBeInTheDocument();
+    expect(
+      (screen.getByLabelText(/age of death/i) as HTMLInputElement).value,
+    ).toBe("100");
+
+    await user.click(
+      screen.getByRole("button", { name: "Next life variation" }),
+    );
+    expect(screen.getByText("Random")).toBeInTheDocument();
+    const randomAge = Number(
+      (screen.getByLabelText(/age of death/i) as HTMLInputElement).value,
+    );
+    expect(randomAge).toBeGreaterThanOrEqual(1);
+    expect(randomAge).toBeLessThanOrEqual(100);
   });
 
   it("keeps the 52-week row on mobile without horizontal scroll or dot buttons", () => {
@@ -227,5 +269,20 @@ describe("LifeView", () => {
     expect(
       await screen.findByText("We don't store this information"),
     ).toBeInTheDocument();
+  });
+
+  it("focuses the current week when the today shortcut is pressed", async () => {
+    await renderLifeViewWithSidebar();
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Date of birth" }), {
+      target: { value: "1990-06-15" },
+    });
+
+    const currentWeek = screen.getByRole("button", {
+      name: /January 1, 2026 \| week/,
+    });
+    fireEvent.keyUp(document, { key: "t" });
+
+    expect(currentWeek).toHaveFocus();
   });
 });

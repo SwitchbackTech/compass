@@ -16,6 +16,7 @@ import {
 export type CommandPaletteViewName = ViewName | "life";
 
 interface GetNavigationCommandItemsArgs {
+  currentView?: CommandPaletteViewName;
   onGoToToday?: () => void;
   onNavigateToView: (viewName: CommandPaletteViewName) => void;
   onShowShortcuts?: () => void;
@@ -41,6 +42,7 @@ export const getNavigationViewRoute = (viewName: CommandPaletteViewName) =>
   commandPaletteViews[viewName].route;
 
 export const getNavigationCommandItems = ({
+  currentView,
   onGoToToday,
   onNavigateToView,
   onShowShortcuts,
@@ -58,16 +60,18 @@ export const getNavigationCommandItems = ({
   }
 
   calendarItems.push(
-    ...navigationViewOrder.map((viewName) => {
-      const view = commandPaletteViews[viewName];
-      return {
-        id: `go-to-${viewName}`,
-        label: `Go to ${view.label}`,
-        icon: view.icon,
-        shortcut: view.shortcut,
-        onClick: () => onNavigateToView(viewName),
-      };
-    }),
+    ...navigationViewOrder
+      .filter((viewName) => viewName !== currentView)
+      .map((viewName) => {
+        const view = commandPaletteViews[viewName];
+        return {
+          id: `go-to-${viewName}`,
+          label: `Go to ${view.label}`,
+          icon: view.icon,
+          shortcut: view.shortcut,
+          onClick: () => onNavigateToView(viewName),
+        };
+      }),
   );
 
   if (onShowShortcuts) {

@@ -1,7 +1,40 @@
 export const WEEKS_PER_ROW = 52;
-export const DEFAULT_LIFESPAN = 79;
+export const DEFAULT_LIFESPAN = 77;
 export const MIN_LIFESPAN = 1;
 export const MAX_LIFESPAN = 150;
+export const RANDOM_LIFESPAN_MAX = 100;
+
+export type LifeVariation = "average" | "long" | "random";
+
+export interface LifeVariationDetails {
+  label: string;
+  description: string;
+  defaultLifespan: number;
+}
+
+export const LIFE_VARIATIONS: Record<LifeVariation, LifeVariationDetails> = {
+  average: {
+    label: "Average",
+    description: "A grounded view using an average lifespan of 77 years.",
+    defaultLifespan: 77,
+  },
+  long: {
+    label: "Long",
+    description: "A longer horizon gives you 100 years of weeks to explore.",
+    defaultLifespan: 100,
+  },
+  random: {
+    label: "Random",
+    description: "A playful unknown chooses an age between now and 100.",
+    defaultLifespan: RANDOM_LIFESPAN_MAX,
+  },
+};
+
+export const LIFE_VARIATION_ORDER: LifeVariation[] = [
+  "average",
+  "long",
+  "random",
+];
 
 const MS_PER_WEEK = 1000 * 60 * 60 * 24 * 7;
 
@@ -51,6 +84,33 @@ export function getWeekLivedCount(
   );
 
   return clampWeeksLived(diffWeeks, totalDots);
+}
+
+export function getAgeInYears(birthDateValue: string, today = new Date()) {
+  const birthDate = parseLifeDate(birthDateValue);
+  if (!birthDate) return null;
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const birthdayHasPassed =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() >= birthDate.getDate());
+  if (!birthdayHasPassed) age -= 1;
+  return Math.max(0, age);
+}
+
+export function getRandomLifespan(
+  birthDateValue: string,
+  today = new Date(),
+  random = Math.random,
+) {
+  const currentAge = getAgeInYears(birthDateValue, today) ?? MIN_LIFESPAN;
+  const minimumAge = Math.max(
+    MIN_LIFESPAN,
+    Math.min(currentAge, RANDOM_LIFESPAN_MAX),
+  );
+  const range = RANDOM_LIFESPAN_MAX - minimumAge + 1;
+  return minimumAge + Math.floor(random() * range);
 }
 
 export function getLifeDotLabel(weekNumber: number) {

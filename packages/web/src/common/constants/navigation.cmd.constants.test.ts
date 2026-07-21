@@ -40,6 +40,15 @@ describe("getNavigationCommandItems", () => {
     expect(life?.shortcut).toBe("l");
   });
 
+  it("omits the current view from navigation", () => {
+    const labels = getNavigationCommandItems({
+      currentView: "life",
+      onNavigateToView: () => {},
+    }).map((item) => item.label);
+
+    expect(labels).toEqual(["Go to Day", "Go to Week"]);
+  });
+
   it("runs the matching navigation callbacks", () => {
     const navigatedViews: CommandPaletteViewName[] = [];
     let didGoToToday = false;

@@ -127,7 +127,7 @@ describe("CommandPalette", () => {
     // Navigation always lists Today first, then app views.
     expect(screen.getByText("Go to Today")).toBeInTheDocument();
     expect(screen.getByText("Go to Day")).toBeInTheDocument();
-    expect(screen.getByText("Go to Week")).toBeInTheDocument();
+    expect(screen.queryByText("Go to Week")).not.toBeInTheDocument();
     expect(screen.getByText("Go to Life")).toBeInTheDocument();
     expect(screen.getByText("Create event")).toBeInTheDocument();
     expect(screen.getByText("Create all-day event")).toBeInTheDocument();
@@ -175,7 +175,6 @@ describe("CommandPalette", () => {
     // Walk down to "Create all-day event", then the next ArrowDown skips the
     // disabled Undo row and lands on the Appearance section's theme toggle.
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Day
-    fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Week
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Life
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Show Shortcuts
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create event

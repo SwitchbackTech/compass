@@ -22,9 +22,11 @@ export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
   headerActionsClassName?: string;
   headerClassName?: string;
   headerEndContent?: React.ReactNode;
+  inputClassName?: string;
   inputColor?: string;
   isOpen?: boolean;
   monthTextClassName?: string;
+  withUnderline?: boolean;
   view: "sidebar" | "grid";
   withTodayButton?: boolean;
 }
@@ -43,9 +45,11 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     headerActionsClassName,
     headerClassName,
     headerEndContent,
+    inputClassName,
     inputColor,
     isOpen = true,
     monthTextClassName,
+    withUnderline = true,
     portalId = "root",
     view,
     withTodayButton = true,
@@ -95,13 +99,14 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
           className={classNames(
             INPUT_RESET_CLASSNAME,
             "w-28 transition-colors duration-300",
+            inputClassName,
           )}
           style={{
             backgroundColor: inputColor,
             color: inputColor ? theme.getContrastText(inputColor) : undefined,
           }}
           underlineColor={darken(resolvedBgColor, -15)}
-          withUnderline
+          withUnderline={withUnderline}
         />
       }
       dateFormat={"M-d-yyyy"}

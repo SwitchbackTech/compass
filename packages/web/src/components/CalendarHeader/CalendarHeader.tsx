@@ -1,8 +1,11 @@
+import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { type FC } from "react";
 import { colors } from "@web/common/styles/colors";
+import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";
+import { useVersionCheck } from "@web/components/Sidebar/SidebarActions/useVersionCheck";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import {
   selectIsSidebarOpen,
@@ -24,7 +27,7 @@ interface Props {
 }
 
 /**
- * Shared header for the Day and Week views: a left-aligned cluster for
+ * Shared header for the Day, Week, and Life views: a left-aligned cluster for
  * navigation and orientation (prev/next, then the view switcher) so the
  * arrows sit at a fixed position regardless of the title's width, and a
  * right-aligned sidebar toggle.
@@ -41,6 +44,7 @@ export const CalendarHeader: FC<Props> = ({
   showNavigation = true,
 }) => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
+  const { isUpdateAvailable } = useVersionCheck();
 
   return (
     <div className="flex h-12 w-full shrink-0 items-center gap-3 text-text-muted">
@@ -55,6 +59,20 @@ export const CalendarHeader: FC<Props> = ({
         </>
       )}
       <SelectView label={label} onToday={onToday} />
+      {isUpdateAvailable ? (
+        <TooltipWrapper
+          description="Get latest version"
+          onClick={reloadLocation}
+        >
+          <button
+            aria-label="Get latest version"
+            className="flex size-7 items-center justify-center rounded-default text-accent transition hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            type="button"
+          >
+            <ArrowClockwiseIcon aria-hidden="true" size={16} />
+          </button>
+        </TooltipWrapper>
+      ) : null}
 
       <div className="z-2 ml-auto flex items-center pr-5">
         <TooltipWrapper

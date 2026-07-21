@@ -1,3 +1,4 @@
+import { type Ref } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -10,6 +11,7 @@ interface LifeGridProps {
   totalDots: number;
   weeksLived: number;
   currentWeekLabel?: string;
+  currentWeekRef?: Ref<HTMLButtonElement>;
 }
 
 const DOTS = Array.from({ length: WEEKS_PER_ROW }, (_, index) => index);
@@ -35,6 +37,7 @@ export function LifeGrid({
   totalDots,
   weeksLived,
   currentWeekLabel,
+  currentWeekRef,
 }: LifeGridProps) {
   const rows = Math.ceil(totalDots / WEEKS_PER_ROW);
 
@@ -45,12 +48,12 @@ export function LifeGrid({
 
         return (
           <div
-            className="grid min-h-2.5 min-w-0 grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-2"
+            className="grid h-2.5 min-w-0 grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-2"
             key={age}
           >
             <span
               aria-hidden="true"
-              className="text-right text-[10px] text-text-muted/70 tabular-nums"
+              className="text-right text-[10px] text-text-muted/70 tabular-nums leading-[10px]"
             >
               {age === 1 || age % 10 === 0 ? age : ""}
             </span>
@@ -86,6 +89,7 @@ export function LifeGrid({
                         type="button"
                         aria-label={currentWeekLabel}
                         className="flex min-w-0 appearance-none items-center justify-center border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        ref={currentWeekRef}
                       >
                         {dot}
                       </button>

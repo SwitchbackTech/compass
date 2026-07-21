@@ -19,6 +19,7 @@ const getNavigateShortcuts = ({
 
   if (view === "life") {
     return [
+      { keys: ["t"], label: "Focus current week" },
       { keys: [VIEW_SHORTCUTS.day.key], label: "Go to Day view" },
       { keys: [VIEW_SHORTCUTS.week.key], label: "Go to Week view" },
     ];
