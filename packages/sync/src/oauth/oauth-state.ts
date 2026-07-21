@@ -29,6 +29,16 @@ export interface OAuthStatePayload {
 // consent, short enough to bound replay of a leaked callback URL.
 export const DEFAULT_OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
 
+// Derive a purpose-specific signing key from the service root secret, so the
+// OAuth state and internal-auth request signatures never share a key. Domain
+// separation: even though the two message formats are already structurally
+// distinct, a distinct key removes any cross-protocol coupling for free.
+export function deriveOAuthStateSecret(rootSecret: string): string {
+  return createHmac("sha256", rootSecret)
+    .update("compass-sync/oauth-state")
+    .digest("hex");
+}
+
 // A signed token is `<base64url(payload json)>.<hmac hex>`. The payload is
 // public (it rides in a URL); the signature is what makes it unforgeable.
 export function signOAuthState(

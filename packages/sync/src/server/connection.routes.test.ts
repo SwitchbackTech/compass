@@ -8,7 +8,10 @@ import {
 import { createSyncService, type SyncService } from "@sync/app";
 import { signInternalRequest } from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
-import { verifyOAuthState } from "@sync/oauth/oauth-state";
+import {
+  deriveOAuthStateSecret,
+  verifyOAuthState,
+} from "@sync/oauth/oauth-state";
 import {
   type ProviderAuthAdapter,
   type RefreshedCredential,
@@ -26,6 +29,8 @@ import { type AddressInfo } from "node:net";
 const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
 const SECRET = "internal-secret";
+// The service signs OAuth state with a key derived from the root secret.
+const STATE_SECRET = deriveOAuthStateSecret(SECRET);
 
 const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
   ({
@@ -426,7 +431,7 @@ describe("POST /internal/connections/begin", () => {
     expect(body.authorizationUrl).toContain(state);
     expect(redirectUri).toBe(`http://localhost:3010${OAUTH_CALLBACK_PATH}`);
 
-    const verified = verifyOAuthState(SECRET, state, Date.now());
+    const verified = verifyOAuthState(STATE_SECRET, state, Date.now());
     expect(verified.ok && verified.payload.principalId).toBe(principalId);
     expect(verified.ok && verified.payload.tenantId).toBe(tenantId);
     expect(verified.ok && verified.payload.connectionId).toBeNull();
@@ -449,7 +454,7 @@ describe("POST /internal/connections/begin", () => {
 
     expect(res.status).toBe(200);
     const { state } = adapter.authorizations[0];
-    const verified = verifyOAuthState(SECRET, state, Date.now());
+    const verified = verifyOAuthState(STATE_SECRET, state, Date.now());
     expect(verified.ok && verified.payload.connectionId).toBe(existing._id);
   });
 
