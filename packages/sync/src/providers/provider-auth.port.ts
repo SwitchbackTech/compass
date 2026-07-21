@@ -16,6 +16,15 @@ export interface ProviderAuthorization {
   readonly grantedScopes: readonly string[];
 }
 
+// A freshly minted short-lived access token and its absolute expiry. Callers
+// cache this against the durable refresh token and re-mint it when it expires.
+export interface RefreshedCredential {
+  readonly accessToken: string;
+  readonly expiresAt: Date;
+  // Scopes the provider reports for the refreshed token (may narrow over time).
+  readonly grantedScopes: readonly string[];
+}
+
 // A provider-neutral authorization port. The domain builds a consent URL and
 // exchanges the returned code without knowing which provider it is talking to;
 // provider-specific detail (endpoints, id-token verification, idempotency)
@@ -37,6 +46,18 @@ export interface ProviderAuthAdapter {
     readonly code: string;
     readonly redirectUri: string;
   }): Promise<ProviderAuthorization>;
+
+  // Mint a fresh access token from a stored refresh token. Rejects with a
+  // ProviderAuthError whose reason is `authorizationRevoked` when the provider
+  // reports the grant is no longer valid, so the caller can move the connection
+  // to an action-required state instead of retrying forever.
+  refreshAccessToken(input: {
+    readonly refreshToken: string;
+  }): Promise<RefreshedCredential>;
+
+  // Best-effort revocation of a token at the provider. Never rejects: a failed
+  // revoke must not block deleting the stored credential on disconnect.
+  revoke(input: { readonly token: string }): Promise<void>;
 }
 
 // Why an authorization attempt could not yield a usable connection. Callers map
@@ -46,7 +67,9 @@ export type ProviderAuthErrorReason =
   | "exchangeFailed" // the provider rejected the code exchange
   | "missingRefreshToken" // no refresh token returned (e.g. prior consent)
   | "missingIdentity" // the account could not be identified from the grant
-  | "invalidIdToken"; // the id token was absent or failed verification
+  | "invalidIdToken" // the id token was absent or failed verification
+  | "authorizationRevoked" // the refresh token is no longer valid (revoked/expired)
+  | "refreshFailed"; // the token refresh failed for a transient/unknown reason
 
 export class ProviderAuthError extends Error {
   constructor(
