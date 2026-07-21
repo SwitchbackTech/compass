@@ -5,6 +5,7 @@ import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { type CredentialCustody } from "@sync/credentials/credential-custody.service";
 import {
   executeProviderCreate,
+  executeProviderDelete,
   executeProviderUpdate,
 } from "@sync/domain/provider-command.service";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
@@ -14,6 +15,7 @@ import {
 } from "@sync/storage/contracts/command.contracts";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
+import { type DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 
@@ -21,6 +23,8 @@ export interface CloudCommandDeps {
   commands: CommandRepository;
   events: EventRepository;
   calendars: ProviderCalendarRepository;
+  // The deletion-marker store, for the tombstone a provider delete leaves.
+  markers: DeletionMarkerRepository;
   execution: SyncExecutionMode;
   // Provider write capability, present only when a provider is configured and
   // provider work is enabled. Absent means provider-targeted commands stay
@@ -112,8 +116,37 @@ async function applyCloudMutation(
     // Absence is the desired end state, so a delete of an already-gone (or
     // never-created) event is confirmed rather than left hanging.
     if (!existing) return confirmCloud(deps, command);
-    if (existing.connectionId !== null) return command;
+    // A recurring series needs scope handling (later slice) — defer for both
+    // cloud and provider events.
     if (existing.recurrence.kind !== "single") return command;
+    // A provider-linked event goes to the provider delete path when provider
+    // work is enabled; otherwise it stays pending. It is never removed locally
+    // here — content is deleted only after the provider confirms.
+    if (existing.connectionId !== null) {
+      if (deps.execution === "active" && deps.provider) {
+        const calendar = await deps.calendars.findById(
+          command.tenantId,
+          command.principalId,
+          existing.calendarId as ProviderCalendarId,
+        );
+        if (calendar) {
+          return executeProviderDelete(
+            {
+              commands: deps.commands,
+              events: deps.events,
+              writer: deps.provider.writer,
+              custody: deps.provider.custody,
+              markers: deps.markers,
+            },
+            command,
+            existing,
+            calendar,
+            now,
+          );
+        }
+      }
+      return command;
+    }
     await deps.events.deleteById(
       command.tenantId,
       command.principalId,

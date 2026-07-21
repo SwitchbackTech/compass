@@ -18,6 +18,7 @@ import {
 import { type CommandSubmit } from "@sync/storage/contracts/command.contracts";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
+import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
@@ -61,8 +62,9 @@ class FakeWriter implements ProviderEventWriter {
     this.patchCalls.push(input);
     return { providerEventId: "g-evt-1", providerVersion: "etag-2" };
   }
-  deleteEvent(): Promise<void> {
-    throw new Error("unused");
+  deleteCalls = 0;
+  async deleteEvent(): Promise<void> {
+    this.deleteCalls++;
   }
   async fetchEvent(): Promise<ProviderEvent | null> {
     return this.fetched;
@@ -79,6 +81,7 @@ describe("submitCloudCommand provider dispatch", () => {
   let commands: CommandRepository;
   let events: EventRepository;
   let calendars: ProviderCalendarRepository;
+  let markers: DeletionMarkerRepository;
 
   const now = () => new Date("2026-07-10T00:00:00.000Z");
 
@@ -144,6 +147,7 @@ describe("submitCloudCommand provider dispatch", () => {
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
     calendars = new ProviderCalendarRepository(mongo.db);
+    markers = new DeletionMarkerRepository(mongo.db);
   });
 
   afterEach(async () => {
@@ -162,6 +166,7 @@ describe("submitCloudCommand provider dispatch", () => {
         commands,
         events,
         calendars,
+        markers,
         execution: "active",
         provider: provider(writer),
       },
@@ -184,6 +189,7 @@ describe("submitCloudCommand provider dispatch", () => {
         commands,
         events,
         calendars,
+        markers,
         execution: "passive",
         provider: provider(writer),
       },
@@ -201,7 +207,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const calendar = await seedProviderCalendar(tenantId, principalId);
 
     const command = await submitCloudCommand(
-      { commands, events, calendars, execution: "active" },
+      { commands, events, calendars, markers, execution: "active" },
       submitFor(tenantId, principalId, calendar._id),
       now,
     );
@@ -219,6 +225,7 @@ describe("submitCloudCommand provider dispatch", () => {
         commands,
         events,
         calendars,
+        markers,
         execution: "active",
         provider: provider(writer),
       },
@@ -292,6 +299,7 @@ describe("submitCloudCommand provider dispatch", () => {
     commands,
     events,
     calendars,
+    markers,
     execution: "passive" as const,
   });
 
@@ -359,6 +367,7 @@ describe("submitCloudCommand provider dispatch", () => {
         commands,
         events,
         calendars,
+        markers,
         execution: "active",
         provider: provider(writer),
       },
@@ -394,5 +403,45 @@ describe("submitCloudCommand provider dispatch", () => {
 
     expect(command.outcome.state).toBe("confirmed");
     expect(writer.patchCalls).toHaveLength(1);
+  });
+
+  it("routes a provider-linked delete to the provider executor when active", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const calendar = await seedProviderCalendar(tenantId, principalId);
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      calendarId: calendar._id,
+      connectionId: calendar.connectionId as never,
+      providerEventId: "g-evt-1" as never,
+      providerVersion: "etag-1" as never,
+      deliveryState: "confirmed",
+    });
+    const writer = new FakeWriter();
+
+    const command = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        markers,
+        execution: "active",
+        provider: provider(writer),
+      },
+      deleteFor(tenantId, principalId, eventId),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    expect(writer.deleteCalls).toBe(1);
+    // Local content removed only after the provider confirmed.
+    expect(await events.findById(tenantId, principalId, eventId)).toBeNull();
+    expect(
+      await markers.exists(
+        calendar.connectionId,
+        calendar._id,
+        "g-evt-1" as never,
+      ),
+    ).toBe(true);
   });
 });

@@ -71,6 +71,9 @@ const MoveCommandInputSchema = z.strictObject({
 
 const DeleteCommandInputSchema = z.strictObject({
   kind: z.literal("delete"),
+  // Whether to notify attendees of the cancellation, same as create/update;
+  // default is to notify no one.
+  invitation: InvitationIntentSchema,
   scope: RecurrenceScopeSchema,
 });
 

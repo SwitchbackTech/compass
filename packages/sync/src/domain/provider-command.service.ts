@@ -23,6 +23,7 @@ import { type CommandRecord } from "@sync/storage/contracts/command.contracts";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
+import { type DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 
 // The slice of credential custody the executor needs — a valid access token for
@@ -37,6 +38,11 @@ export interface ProviderMutationDeps {
   events: EventRepository;
   writer: ProviderEventWriter;
   custody: AccessTokenSource;
+}
+
+// Delete also needs the deletion-marker store for the tombstone.
+export interface ProviderDeleteDeps extends ProviderMutationDeps {
+  markers: DeletionMarkerRepository;
 }
 
 // Execute a Compass-initiated create against the owning provider, then commit.
@@ -368,4 +374,126 @@ function deepEqual(a: unknown, b: unknown): boolean {
       (b as Record<string, unknown>)[key],
     ),
   );
+}
+
+// Delete a Compass-initiated provider event. The event is marked deletionPending
+// (so it reads as "deleting" while the command is in flight or retrying) BEFORE
+// the provider is asked, and its local content is removed only AFTER the
+// provider confirms — never delete content before provider confirmation. The
+// delete is unconditional: the user's intent to cancel does not hinge on a
+// version, and a routine attendee RSVP must not block it. Idempotent: the
+// adapter treats an already-absent event as deleted, and the marker + local
+// delete are both idempotent, so a retry after a crash converges.
+export async function executeProviderDelete(
+  deps: ProviderDeleteDeps,
+  command: CommandRecord,
+  event: EventRecord,
+  calendar: ProviderCalendarRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (command.input.kind !== "delete") {
+    throw new Error("executeProviderDelete requires a delete command");
+  }
+  if (!event.connectionId || !event.providerEventId) {
+    throw new Error("executeProviderDelete requires a linked event");
+  }
+  const { input } = command;
+  const connectionId = event.connectionId;
+  const providerEventId = event.providerEventId;
+
+  // Mark the event as being deleted. If it is already gone locally, a prior
+  // attempt removed it (the marker was written first) — the delete converged.
+  const marked = await deps.events.replaceExisting({
+    ...event,
+    lifecycleState: "deletionPending",
+    updatedAt: now(),
+  });
+  if (!marked) return confirmDeletion(deps, command);
+
+  let accessToken: string;
+  try {
+    accessToken = await deps.custody.getValidAccessToken(connectionId);
+  } catch (error) {
+    if (
+      error instanceof ProviderAuthError &&
+      error.reason === "refreshFailed"
+    ) {
+      return command;
+    }
+    return revertAndFail(deps, command, event, "authorizationRevoked", now);
+  }
+
+  try {
+    await deps.writer.deleteEvent({
+      accessToken,
+      calendarId: calendar.providerCalendarId,
+      providerEventId,
+      // Unconditional: a cancellation is not conditioned on the version, so an
+      // unrelated external change never blocks it.
+      expectedVersion: null,
+      invitation: input.invitation,
+    });
+  } catch (error) {
+    if (error instanceof ProviderWriteError) {
+      // Transient: keep the event deletionPending (visibly deleting) and retry.
+      if (error.reason === "transient") return command;
+      // Terminal: the delete failed, so restore the event to active rather than
+      // leaving it stuck showing "deleting".
+      return revertAndFail(deps, command, event, error.reason, now);
+    }
+    throw error;
+  }
+
+  // The provider confirmed the deletion. Write the content-free tombstone first
+  // (so no window exists where the event is gone with no marker), then remove
+  // the local record, then confirm. All three are idempotent.
+  await deps.markers.record({
+    tenantId: event.tenantId,
+    principalId: event.principalId,
+    connectionId,
+    calendarId: event.calendarId,
+    providerEventId,
+    providerVersion: event.providerVersion,
+    deletionSource: "compass",
+    deletedAt: now(),
+  });
+  await deps.events.deleteById(event.tenantId, event.principalId, event._id);
+  return confirmDeletion(deps, command);
+}
+
+// Confirm a completed deletion: the event has no live provider target anymore,
+// so the confirmed outcome carries no provider identity.
+async function confirmDeletion(
+  deps: ProviderMutationDeps,
+  command: CommandRecord,
+): Promise<CommandRecord> {
+  const confirmed = await deps.commands.updateOutcome(
+    command.tenantId,
+    command.principalId,
+    command._id,
+    { state: "confirmed", providerEventId: null, providerVersion: null },
+    command.attemptCount,
+  );
+  return confirmed ?? command;
+}
+
+// Restore a deletionPending event to active, then fail the command. A failed
+// delete must not leave the event stuck reading as "deleting". The revert write
+// is NOT wrapped in a catch: replaceExisting signals the benign "already gone"
+// case with a resolved false (not a throw), so a throw here is a real error —
+// letting it propagate keeps the command pending (not falsely failed) and
+// retryable, rather than marking it terminally failed with a stuck event.
+async function revertAndFail(
+  deps: ProviderMutationDeps,
+  command: CommandRecord,
+  event: EventRecord,
+  reason: SyncCommandFailureReason,
+  now: () => Date,
+): Promise<CommandRecord> {
+  await deps.events.replaceExisting({
+    ...event,
+    lifecycleState: "active",
+    updatedAt: now(),
+  });
+  return failCommand(deps, command, reason);
 }

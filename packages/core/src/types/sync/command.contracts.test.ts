@@ -149,6 +149,14 @@ describe("Sync command contracts", () => {
       );
     });
 
+    it("defaults a delete's invitation to none when absent", () => {
+      const parsed = SyncCommandInputSchema.safeParse(deleteInput());
+      expect(parsed.success && parsed.data.kind === "delete").toBe(true);
+      if (parsed.success && parsed.data.kind === "delete") {
+        expect(parsed.data.invitation).toBe("none");
+      }
+    });
+
     it("rejects an update input carrying a calendarId", () => {
       const input = { ...updateInput(), calendarId: objectId() };
       expect(SyncCommandInputSchema.safeParse(input).success).toBe(false);
