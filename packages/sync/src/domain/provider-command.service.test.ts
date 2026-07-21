@@ -10,12 +10,14 @@ import {
 import {
   type AccessTokenSource,
   executeProviderCreate,
+  executeProviderDelete,
   executeProviderUpdate,
 } from "@sync/domain/provider-command.service";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
   type ProviderCreateInput,
+  type ProviderDeleteInput,
   type ProviderEventWriter,
   type ProviderFetchInput,
   type ProviderPatchInput,
@@ -24,6 +26,7 @@ import {
 } from "@sync/providers/provider-event-writer.port";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
+import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
@@ -620,5 +623,237 @@ describe("executeProviderUpdate", () => {
     expect(result.outcome.state).toBe("failed");
     expect(writer.fetchCalls).toHaveLength(0);
     expect(writer.patchCalls).toHaveLength(0);
+  });
+});
+
+// A writer for the delete path: a configurable deleteEvent (success or a preset
+// error), recording its inputs.
+class FakeDeleteWriter implements ProviderEventWriter {
+  readonly provider = "google" as const;
+  deleteCalls: ProviderDeleteInput[] = [];
+  deleteError?: unknown;
+  createEvent(): Promise<ProviderWriteResult> {
+    throw new Error("unused");
+  }
+  patchEvent(): Promise<ProviderWriteResult> {
+    throw new Error("unused");
+  }
+  async deleteEvent(input: ProviderDeleteInput): Promise<void> {
+    this.deleteCalls.push(input);
+    if (this.deleteError) throw this.deleteError;
+  }
+  fetchEvent(): Promise<null> {
+    throw new Error("unused");
+  }
+}
+
+describe("executeProviderDelete", () => {
+  let mongo: SyncMongoService;
+  let commands: CommandRepository;
+  let events: EventRepository;
+  let markers: DeletionMarkerRepository;
+
+  const now = () => new Date("2026-07-10T00:00:00.000Z");
+
+  const schedule = {
+    kind: "timed" as const,
+    start: "2026-07-14T09:00:00-06:00",
+    end: "2026-07-14T10:00:00-06:00",
+    timeZone: "America/Denver",
+  };
+
+  // Seed a provider-linked event plus a delete command for it.
+  const seed = async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const connectionId = objectId() as ConnectionId;
+    const calendar: ProviderCalendarRecord = {
+      _id: objectId() as never,
+      tenantId,
+      principalId,
+      connectionId,
+      providerCalendarId: "primary@google.com" as never,
+      displayName: "Google",
+      color: null,
+      active: true,
+      primary: true,
+      accessRole: "owner",
+      capabilities: [],
+      createdAt: now(),
+      updatedAt: now(),
+    } as never;
+    const eventId = objectId() as EventId;
+    await events.put({
+      _id: eventId,
+      tenantId,
+      principalId,
+      origin: "compass",
+      calendarId: calendar._id,
+      clientEventId: null,
+      connectionId,
+      providerEventId: "g-evt-1" as never,
+      providerVersion: "etag-1" as never,
+      providerUpdatedAt: null,
+      deliveryState: "confirmed",
+      providerMetadata: null,
+      content: {
+        title: "Doomed",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      },
+      schedule,
+      recurrence: { kind: "single" },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: now(),
+      updatedAt: now(),
+      confirmedAt: now(),
+    } as never);
+    const event = await events.findById(tenantId, principalId, eventId);
+    if (!event) throw new Error("seed failed to read back the event");
+    const command = await commands.submit({
+      tenantId,
+      principalId,
+      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+      eventId,
+      input: { kind: "delete", invitation: "all", scope: "all" } as never,
+      expectedVersion: null,
+    });
+    return { tenantId, principalId, calendar, event, command };
+  };
+
+  beforeEach(async () => {
+    mongo = new SyncMongoService();
+    await mongo.connect({
+      uri,
+      databaseName: `provdel_${objectId()}`,
+      forbiddenDatabaseName: "compass_api_unused",
+      enforceLeastPrivilege: false,
+    });
+    commands = new CommandRepository(mongo.db);
+    events = new EventRepository(mongo.db);
+    markers = new DeletionMarkerRepository(mongo.db);
+  });
+
+  afterEach(async () => {
+    await mongo.db.dropDatabase();
+    await mongo.disconnect();
+  });
+
+  it("deletes at the provider, tombstones, removes the local event, and confirms", async () => {
+    const { tenantId, principalId, calendar, event, command } = await seed();
+    const writer = new FakeDeleteWriter();
+
+    const result = await executeProviderDelete(
+      { commands, events, writer, custody: tokenSource(), markers },
+      command,
+      event,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("confirmed");
+    expect(writer.deleteCalls).toHaveLength(1);
+    expect(writer.deleteCalls[0].invitation).toBe("all");
+    // Local content is gone, a content-free marker remains.
+    expect(await events.findById(tenantId, principalId, event._id)).toBeNull();
+    expect(
+      await markers.exists(
+        calendar.connectionId,
+        event.calendarId,
+        "g-evt-1" as never,
+      ),
+    ).toBe(true);
+  });
+
+  it("confirms idempotently when the local event is already gone (replay)", async () => {
+    const { tenantId, principalId, calendar, event, command } = await seed();
+    const writer = new FakeDeleteWriter();
+    // Simulate a prior attempt having already removed the local event.
+    await events.deleteById(tenantId, principalId, event._id);
+
+    const result = await executeProviderDelete(
+      { commands, events, writer, custody: tokenSource(), markers },
+      command,
+      event,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("confirmed");
+    // Nothing to re-delete at the provider — the local absence proves it landed.
+    expect(writer.deleteCalls).toHaveLength(0);
+  });
+
+  it("keeps the event deletionPending and stays pending on a transient failure", async () => {
+    const { tenantId, principalId, calendar, event, command } = await seed();
+    const writer = new FakeDeleteWriter();
+    writer.deleteError = new ProviderWriteError("transient", "blip");
+
+    const result = await executeProviderDelete(
+      { commands, events, writer, custody: tokenSource(), markers },
+      command,
+      event,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("pending");
+    const stored = await events.findById(tenantId, principalId, event._id);
+    expect(stored?.lifecycleState).toBe("deletionPending");
+  });
+
+  it("reverts the event to active and fails on a terminal error", async () => {
+    const { tenantId, principalId, calendar, event, command } = await seed();
+    const writer = new FakeDeleteWriter();
+    writer.deleteError = new ProviderWriteError(
+      "readOnlyCalendar",
+      "read only",
+    );
+
+    const result = await executeProviderDelete(
+      { commands, events, writer, custody: tokenSource(), markers },
+      command,
+      event,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("failed");
+    expect(
+      result.outcome.state === "failed" && result.outcome.failureReason,
+    ).toBe("readOnlyCalendar");
+    // The event is restored — a failed delete must not leave it "deleting".
+    const stored = await events.findById(tenantId, principalId, event._id);
+    expect(stored?.lifecycleState).toBe("active");
+  });
+
+  it("reverts and fails without deleting when the credential is revoked", async () => {
+    const { tenantId, principalId, calendar, event, command } = await seed();
+    const writer = new FakeDeleteWriter();
+
+    const result = await executeProviderDelete(
+      {
+        commands,
+        events,
+        writer,
+        custody: failingTokenSource(
+          new ProviderAuthError("authorizationRevoked", "revoked"),
+        ),
+        markers,
+      },
+      command,
+      event,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("failed");
+    expect(writer.deleteCalls).toHaveLength(0);
+    const stored = await events.findById(tenantId, principalId, event._id);
+    expect(stored?.lifecycleState).toBe("active");
   });
 });
