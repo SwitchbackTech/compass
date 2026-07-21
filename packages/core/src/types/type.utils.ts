@@ -56,13 +56,9 @@ export const RGBHexSchema = zod4.string().regex(/^#[0-9a-f]{6}$/i, {
   message: "Invalid color. Must be a 7-character hex color code.",
 });
 
-export const OBJECT_ID_STRING_PATTERN = /^[0-9a-f]{24}$/i;
-
 // An ObjectId kept as its 24-hex string form (Compass-side ids on the wire and
 // in Sync's records). Brand it at the point of use for a typed id.
-export const ObjectIdStringSchema = zod4
-  .string()
-  .regex(OBJECT_ID_STRING_PATTERN);
+export const ObjectIdStringSchema = zod4.string().regex(/^[0-9a-f]{24}$/i);
 
 export const ExpirationDateSchema = zod4
   .union([
