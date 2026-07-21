@@ -2,6 +2,8 @@ import {
   type NotificationSubscription,
   type ProviderNotification,
 } from "@sync/providers/provider-notifications.port";
+import { Buffer } from "node:buffer";
+import { timingSafeEqual } from "node:crypto";
 
 // The outcome of checking one inbound callback against the stored association.
 // A rejected callback is dropped and never triggers work; an accepted one may
@@ -49,13 +51,11 @@ export function verifyNotification(
     : { status: "ignore" };
 }
 
-// Compare two strings without short-circuiting on the first differing byte, so
-// a spoofed token cannot be recovered by measuring response time.
+// Compare two tokens without short-circuiting on the first differing byte, so a
+// spoofed token cannot be recovered by measuring response time. Equal length is
+// a precondition of timingSafeEqual; a wrong-length token is trivially invalid
+// and its length is not itself a secret. Mirrors internal-auth's HMAC compare.
 function constantTimeEquals(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i += 1) {
-    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return diff === 0;
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
 }
