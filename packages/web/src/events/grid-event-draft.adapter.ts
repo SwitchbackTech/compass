@@ -28,11 +28,7 @@ function gridScheduleFromEvent(event: Event): GridScheduleDraft | null {
   }
 
   if (schedule.kind === "allDay") {
-    return {
-      kind: "allDay",
-      start: new Date(schedule.start),
-      end: new Date(schedule.end),
-    };
+    return allDayGridSchedule(schedule.start, schedule.end);
   }
 
   return null;
@@ -157,6 +153,21 @@ export function parseGridEventDraft(
 
 export function timedGridSchedule(start: Date, end: Date): GridScheduleDraft {
   return { kind: "timed", start, end, timeZone: getBrowserTimeZone() };
+}
+
+// All-day draft Dates are local midnight everywhere (drag creation, form
+// patches, shortcuts). new Date("YYYY-MM-DD") would parse as UTC midnight,
+// which reads as the previous day when formatted back in local time west of
+// UTC — dayjs parses date-only strings as local.
+export function allDayGridSchedule(
+  start: string,
+  end: string,
+): GridScheduleDraft {
+  return {
+    kind: "allDay",
+    start: dayjs(start).toDate(),
+    end: dayjs(end).toDate(),
+  };
 }
 
 // Mirrors event.view-model.ts's scheduledEventToSchemaEvent recurrence
@@ -306,4 +317,6 @@ export function applySchemaEventPatchToGridDraft(
   };
 }
 
-const toDateOnlyString = (date: Date) => date.toISOString().slice(0, 10);
+// Local, not toISOString: all-day draft Dates are local midnight, so a UTC
+// rendering would shift the day for any non-UTC viewer.
+const toDateOnlyString = (date: Date) => dayjs(date).toYearMonthDayString();

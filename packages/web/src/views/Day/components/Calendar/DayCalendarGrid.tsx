@@ -23,6 +23,7 @@ import {
 } from "@web/common/utils/event/event.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
+  allDayGridSchedule,
   createGridEventDraft,
   editGridEventDraft,
   timedGridSchedule,
@@ -122,11 +123,7 @@ export function DayCalendarGrid() {
         ? editGridEventDraft(sourceEvent)
         : createGridEventDraft(
             event.isAllDay
-              ? {
-                  kind: "allDay",
-                  start: new Date(event.startDate),
-                  end: new Date(event.endDate),
-                }
+              ? allDayGridSchedule(event.startDate, event.endDate)
               : timedGridSchedule(
                   new Date(event.startDate),
                   new Date(event.endDate),

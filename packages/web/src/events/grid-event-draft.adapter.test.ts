@@ -138,3 +138,60 @@ test("duplicate falls back to no calendar when the source calendar isn't in the 
 
   expect(duplicate?.values.calendarId).toBeNull();
 });
+
+test("duplicating an all-day event round-trips the same calendar day through the full draft-to-save pipeline", () => {
+  // Guards the fix for a bug that landed all-day duplicates a day early in
+  // any timezone west of UTC: gridScheduleFromEvent parsed the date-only
+  // string as UTC midnight while toDateOnlyString re-serialized it in local
+  // time. Both now go through dayjs's local-parse/local-format, so this
+  // round trip holds regardless of timezone.
+  //
+  // bun test always runs with the ambient timezone pinned to UTC, where UTC
+  // parsing and local parsing produce the same instant - so this test can't
+  // reproduce the actual day-shift (verified manually instead, in a real
+  // America/Denver browser session: duplicate lands on the same day and
+  // survives a reload). It still guards the round trip itself, which would
+  // fail under any ambient timezone if the two conventions drifted apart
+  // again.
+  const allDayEvent = {
+    ...(timedEvent as object),
+    id: "0123456789abcdef01234568",
+    content: {
+      kind: "details" as const,
+      title: "Deep work day",
+      description: "",
+    },
+    schedule: {
+      kind: "allDay" as const,
+      start: "2026-07-20",
+      end: "2026-07-21",
+    },
+  } as unknown as Event;
+
+  const writableSourceCalendar = {
+    id: allDayEvent.calendarId,
+    capabilities: getCalendarCapabilities("owner"),
+  } as unknown as Calendar;
+
+  const duplicate = duplicateGridEventDraft(allDayEvent, [
+    writableSourceCalendar,
+  ]);
+  if (!duplicate) throw new Error("Expected duplicate draft");
+
+  const result = parseGridEventDraft(duplicate);
+
+  expect(result).toMatchObject({
+    ok: true,
+    mode: "create",
+    input: {
+      schedule: { kind: "allDay", start: "2026-07-20", end: "2026-07-21" },
+    },
+  });
+
+  // The grid projection the draft renders from must agree with what gets
+  // saved.
+  expect(gridEventDraftToSchemaEvent(duplicate)).toMatchObject({
+    startDate: "2026-07-20",
+    endDate: "2026-07-21",
+  });
+});

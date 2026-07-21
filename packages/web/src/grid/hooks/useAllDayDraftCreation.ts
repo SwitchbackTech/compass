@@ -6,6 +6,7 @@ import dayjs from "@core/util/date/dayjs";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
+  allDayGridSchedule,
   createGridEventDraft,
   gridEventDraftToSchemaEvent,
 } from "@web/events/grid-event-draft.adapter";
@@ -50,11 +51,7 @@ export const useAllDayDraftCreation = ({
       .format(YEAR_MONTH_DAY_FORMAT);
 
     const draft = createGridEventDraft(
-      {
-        kind: "allDay",
-        start: new Date(startDate),
-        end: new Date(endDate),
-      },
+      allDayGridSchedule(startDate, endDate),
       undefined,
       calendarId,
     );

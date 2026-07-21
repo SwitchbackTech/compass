@@ -155,10 +155,14 @@ export const getBeforeTodayDiff = (
   const diff = yesterdayIndex + futureFactor;
   return diff;
 };
-export const getElemById = (id: string): HTMLDivElement | null => {
+// #mainGrid/#allDayRow are <section> elements, not <div>s, so an
+// HTMLDivElement-only check made every lookup on them return null and
+// silently no-op event listeners (drag never started). Widened to accept
+// any element.
+export const getElemById = (id: string): HTMLElement | null => {
   const element = document.getElementById(id);
 
-  return element instanceof HTMLDivElement ? element : null;
+  return element instanceof HTMLElement ? element : null;
 };
 
 export const getRelativePercentages = (todayIndex: number) => {
