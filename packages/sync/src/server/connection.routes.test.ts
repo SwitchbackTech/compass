@@ -10,10 +10,12 @@ import { signInternalRequest } from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
 import {
   deriveOAuthStateSecret,
+  signOAuthState,
   verifyOAuthState,
 } from "@sync/oauth/oauth-state";
 import {
   type ProviderAuthAdapter,
+  type ProviderAuthorization,
   type RefreshedCredential,
 } from "@sync/providers/provider-auth.port";
 import {
@@ -55,8 +57,27 @@ class FakeAuthAdapter implements ProviderAuthAdapter {
     this.authorizations.push(input);
     return `https://consent.example.com/?state=${input.state}`;
   }
-  exchangeAuthorizationCode(): Promise<never> {
-    throw new Error("unused");
+  exchanges: Array<{ code: string; redirectUri: string }> = [];
+  exchangeResult: ProviderAuthorization = {
+    account: {
+      providerAccountId: "google-sub-1",
+      email: "connected@example.com",
+      displayName: "Connected User",
+    },
+    refreshToken: "granted-refresh-token",
+    grantedScopes: [
+      "https://www.googleapis.com/auth/calendar.readonly",
+      "https://www.googleapis.com/auth/calendar.events",
+    ],
+  };
+  exchangeError?: unknown;
+  async exchangeAuthorizationCode(input: {
+    code: string;
+    redirectUri: string;
+  }): Promise<ProviderAuthorization> {
+    this.exchanges.push(input);
+    if (this.exchangeError) throw this.exchangeError;
+    return this.exchangeResult;
   }
   refreshAccessToken(): Promise<RefreshedCredential> {
     throw new Error("unused");
@@ -505,5 +526,147 @@ describe("POST /internal/connections/begin", () => {
     const res = await fetch(`${base}${BEGIN_PATH}`, { method: "POST" });
 
     expect(res.status).toBe(401);
+  });
+});
+
+describe("GET /oauth/google/callback", () => {
+  let mongo: SyncMongoService;
+  let connections: ProviderConnectionRepository;
+  let credentials: CredentialRepository;
+  let service: SyncService;
+  let base: string;
+  let adapter: FakeAuthAdapter;
+
+  const activeConfig = () => testConfig({ EXECUTION: "active" });
+
+  const startService = async (
+    config: SyncConfig,
+    authAdapter?: ProviderAuthAdapter,
+  ) => {
+    service = createSyncService(config, { mongo, authAdapter });
+    await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
+    const { port } = service.httpServer.address() as AddressInfo;
+    base = `http://127.0.0.1:${port}`;
+  };
+
+  const validState = (tenantId: string, principalId: string) =>
+    signOAuthState(deriveOAuthStateSecret(SECRET), {
+      tenantId: tenantId as TenantId,
+      principalId: principalId as PrincipalId,
+      connectionId: null,
+      issuedAt: Date.now(),
+    });
+
+  const hitCallback = (query: string) =>
+    fetch(`${base}${OAUTH_CALLBACK_PATH}?${query}`, { redirect: "manual" });
+
+  const statusOf = (res: Response) =>
+    new URL(res.headers.get("location") as string).searchParams.get("status");
+
+  beforeEach(async () => {
+    mongo = new SyncMongoService();
+    await mongo.connect({
+      uri,
+      databaseName: `callback_${objectId()}`,
+      forbiddenDatabaseName: "compass_api_unused",
+      enforceLeastPrivilege: false,
+    });
+    connections = new ProviderConnectionRepository(mongo.db);
+    credentials = new CredentialRepository(mongo.db);
+    adapter = new FakeAuthAdapter();
+  });
+
+  afterEach(async () => {
+    await service?.stop();
+    await mongo.db.dropDatabase();
+    await mongo.disconnect();
+  });
+
+  it("links the connection and stores the credential on a valid callback", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService(activeConfig(), adapter);
+
+    const res = await hitCallback(
+      `code=auth-code&state=${encodeURIComponent(validState(tenantId, principalId))}`,
+    );
+
+    expect(res.status).toBe(302);
+    expect(statusOf(res)).toBe("connected");
+    // The code was exchanged against the same redirect_uri begin would use.
+    expect(adapter.exchanges[0].redirectUri).toBe(
+      `http://localhost:3010${OAUTH_CALLBACK_PATH}`,
+    );
+
+    const linked = await connections.listByPrincipal(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+    );
+    expect(linked).toHaveLength(1);
+    expect(linked[0].account.providerAccountId).toBe("google-sub-1");
+    expect(linked[0].state).toBe("importing");
+    expect(linked[0].capabilities).toContain("writeEvents");
+
+    const stored = await credentials.findByConnection(linked[0]._id);
+    expect(stored?.refreshToken).toBe("granted-refresh-token");
+  });
+
+  it("redirects with an error and links nothing when the state is invalid", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService(activeConfig(), adapter);
+
+    const res = await hitCallback("code=auth-code&state=forged.signature");
+
+    expect(res.status).toBe(302);
+    expect(statusOf(res)).toBe("error");
+    expect(adapter.exchanges).toHaveLength(0);
+    expect(
+      await connections.listByPrincipal(
+        tenantId as TenantId,
+        principalId as PrincipalId,
+      ),
+    ).toHaveLength(0);
+  });
+
+  it("redirects with declined when the user rejects consent", async () => {
+    await startService(activeConfig(), adapter);
+
+    const res = await hitCallback("error=access_denied");
+
+    expect(statusOf(res)).toBe("declined");
+    expect(adapter.exchanges).toHaveLength(0);
+  });
+
+  it("redirects with an error when the code exchange fails", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    adapter.exchangeError = new Error("bad code");
+    await startService(activeConfig(), adapter);
+
+    const res = await hitCallback(
+      `code=bad&state=${encodeURIComponent(validState(tenantId, principalId))}`,
+    );
+
+    expect(statusOf(res)).toBe("error");
+    expect(
+      await connections.listByPrincipal(
+        tenantId as TenantId,
+        principalId as PrincipalId,
+      ),
+    ).toHaveLength(0);
+  });
+
+  it("refuses to complete a callback in passive mode", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService(testConfig({ EXECUTION: "passive" }), adapter);
+
+    const res = await hitCallback(
+      `code=auth-code&state=${encodeURIComponent(validState(tenantId, principalId))}`,
+    );
+
+    expect(statusOf(res)).toBe("error");
+    expect(adapter.exchanges).toHaveLength(0);
   });
 });

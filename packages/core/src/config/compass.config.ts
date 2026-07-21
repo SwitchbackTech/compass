@@ -73,6 +73,9 @@ const CompassConfigSchema = z
         mongoUri: z.string(),
         internalAuthToken: z.string(),
         callbackBaseUrl: z.string(),
+        // Where the OAuth callback redirects the browser after connecting;
+        // defaults to callbackBaseUrl when omitted.
+        postConnectRedirectUrl: z.string().optional(),
         execution: z.enum(["passive", "active"]).optional(),
         maxConcurrency: z.union([z.string(), z.number()]).optional(),
         enforceLeastPrivilege: z.union([z.boolean(), z.string()]).optional(),

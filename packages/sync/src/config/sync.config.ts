@@ -35,6 +35,9 @@ export const SyncConfigSchema = z.strictObject({
   // Public base URL provider OAuth redirects and webhooks resolve against
   // (e.g. https://staging.compasscalendar.com). Must be a valid URL.
   CALLBACK_BASE_URL: z.url(),
+  // Where the OAuth callback redirects the browser after connecting. Optional;
+  // the callback falls back to CALLBACK_BASE_URL when it is unset.
+  POST_CONNECT_REDIRECT_URL: z.url().optional(),
   EXECUTION: SyncExecutionModeSchema.default("passive"),
   MAX_CONCURRENCY: PositiveIntFromInput.default(SYNC_MAX_CONCURRENCY_DEFAULT),
   // On when a scoped `compass_sync` database user exists (managed cloud), so
@@ -65,6 +68,7 @@ export function parseSyncConfig(config: CompassConfig): SyncConfig {
     MONGO_URI: config.sync.mongoUri,
     INTERNAL_AUTH_TOKEN: config.sync.internalAuthToken,
     CALLBACK_BASE_URL: config.sync.callbackBaseUrl,
+    POST_CONNECT_REDIRECT_URL: config.sync.postConnectRedirectUrl || undefined,
     EXECUTION: config.sync.execution,
     MAX_CONCURRENCY: config.sync.maxConcurrency,
     ENFORCE_LEAST_PRIVILEGE: config.sync.enforceLeastPrivilege,
@@ -84,6 +88,8 @@ export function parseSyncConfigFromEnv(
     MONGO_URI: rawEnv["SYNC_MONGO_URI"],
     INTERNAL_AUTH_TOKEN: rawEnv["SYNC_INTERNAL_AUTH_TOKEN"],
     CALLBACK_BASE_URL: rawEnv["SYNC_CALLBACK_BASE_URL"],
+    POST_CONNECT_REDIRECT_URL:
+      rawEnv["SYNC_POST_CONNECT_REDIRECT_URL"] || undefined,
     EXECUTION: rawEnv["SYNC_EXECUTION"],
     MAX_CONCURRENCY: rawEnv["SYNC_MAX_CONCURRENCY"],
     ENFORCE_LEAST_PRIVILEGE: rawEnv["SYNC_ENFORCE_LEAST_PRIVILEGE"],
