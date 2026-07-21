@@ -44,6 +44,11 @@ export const SyncConfigSchema = z.strictObject({
   // The Compass API's database — the one Sync's least-privilege user must NOT
   // be able to read. Only consulted when ENFORCE_LEAST_PRIVILEGE is on.
   COMPASS_API_DATABASE: z.string().trim().min(1).default("prod_calendar"),
+  // Google OAuth client, shared with the Compass API's `google` config section.
+  // Optional: a passive deployment without provider credentials still starts;
+  // the Google adapter refuses to construct when either is absent.
+  GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
+  GOOGLE_CLIENT_SECRET: z.string().trim().min(1).optional(),
 });
 export type SyncConfig = z.infer<typeof SyncConfigSchema>;
 
@@ -64,6 +69,9 @@ export function parseSyncConfig(config: CompassConfig): SyncConfig {
     MAX_CONCURRENCY: config.sync.maxConcurrency,
     ENFORCE_LEAST_PRIVILEGE: config.sync.enforceLeastPrivilege,
     COMPASS_API_DATABASE: config.sync.compassApiDatabase,
+    // Empty-string (unfilled deploy placeholder) or null coerces to absent.
+    GOOGLE_CLIENT_ID: config.google?.clientId || undefined,
+    GOOGLE_CLIENT_SECRET: config.google?.clientSecret || undefined,
   });
 }
 
@@ -80,6 +88,8 @@ export function parseSyncConfigFromEnv(
     MAX_CONCURRENCY: rawEnv["SYNC_MAX_CONCURRENCY"],
     ENFORCE_LEAST_PRIVILEGE: rawEnv["SYNC_ENFORCE_LEAST_PRIVILEGE"],
     COMPASS_API_DATABASE: rawEnv["SYNC_COMPASS_API_DATABASE"],
+    GOOGLE_CLIENT_ID: rawEnv["GOOGLE_CLIENT_ID"] || undefined,
+    GOOGLE_CLIENT_SECRET: rawEnv["GOOGLE_CLIENT_SECRET"] || undefined,
   });
 }
 

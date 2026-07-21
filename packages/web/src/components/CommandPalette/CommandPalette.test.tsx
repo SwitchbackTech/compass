@@ -1,7 +1,6 @@
 import "@testing-library/jest-dom";
 import { PlusIcon } from "@phosphor-icons/react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
-import dayjs from "@core/util/date/dayjs";
 import { renderWithStore } from "@web/__tests__/render-with-store";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type SyncStatus } from "@web/calendars/sync-status.types";
@@ -88,7 +87,6 @@ const renderPalette = (mutationDependencies?: EventMutationDependencies) =>
   renderWithStore(
     <CommandPalette
       currentView="week"
-      today={dayjs("2026-07-07")}
       onGoToToday={onGoToToday}
       onShowShortcuts={onShowShortcuts}
       placeholder="Try: 'create', 'bug', or 'code'"
@@ -126,16 +124,17 @@ describe("CommandPalette", () => {
     expect(screen.getByText("Settings")).toBeInTheDocument();
     expect(screen.getByText("More")).toBeInTheDocument();
 
-    // Week view hides its own nav item and surfaces the Day + Today entries.
+    // Navigation always lists Today first, then Day and Week.
+    expect(screen.getByText("Go to Today")).toBeInTheDocument();
     expect(screen.getByText("Go to Day")).toBeInTheDocument();
-    expect(screen.getByText(/Go to Today/)).toBeInTheDocument();
+    expect(screen.getByText("Go to Week")).toBeInTheDocument();
     expect(screen.getByText("Create event")).toBeInTheDocument();
     expect(screen.getByText("Create all-day event")).toBeInTheDocument();
     // Settings surfaces the (stubbed) Google item.
     expect(screen.getByText("Connect Google Calendar")).toBeInTheDocument();
     expect(getInput()).toHaveFocus();
     // First option is active by default.
-    expect(activeRowText(container)).toBe("Go to Day");
+    expect(activeRowText(container)).toBe("Go to Today");
   });
 
   it("filters case-insensitively, dropping empty sections, and shows a no-results row", () => {
@@ -165,16 +164,17 @@ describe("CommandPalette", () => {
     ).toBeDisabled();
 
     // First option active by default; ArrowUp wraps to the last (Version) row.
-    expect(activeRowText(container)).toBe("Go to Day");
+    expect(activeRowText(container)).toBe("Go to Today");
     fireEvent.keyDown(input, { key: "ArrowUp" });
     expect(activeRowText(container)).toMatch(/Version/);
     // ArrowDown from the last option wraps back to the first.
     fireEvent.keyDown(input, { key: "ArrowDown" });
-    expect(activeRowText(container)).toBe("Go to Day");
+    expect(activeRowText(container)).toBe("Go to Today");
 
     // Walk down to "Create all-day event", then the next ArrowDown skips the
     // disabled Undo row and lands on the Appearance section's theme toggle.
-    fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Today
+    fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Day
+    fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Week
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Show Shortcuts
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create event
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create all-day event
@@ -206,10 +206,10 @@ describe("CommandPalette", () => {
     const input = getInput();
 
     fireEvent.keyDown(input, { key: "ArrowDown" });
-    expect(activeRowText(container)).toMatch(/Go to Today/);
+    expect(activeRowText(container)).toBe("Go to Day");
 
     fireEvent.change(input, { target: { value: "go" } });
-    expect(activeRowText(container)).toBe("Go to Day");
+    expect(activeRowText(container)).toBe("Go to Today");
   });
 
   it("closes on Escape", () => {
