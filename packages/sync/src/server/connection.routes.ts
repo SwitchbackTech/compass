@@ -15,6 +15,7 @@ import { ConnectionIdSchema } from "@core/types/sync/identity.contracts";
 import { type InternalAuthedRequest } from "@sync/auth/internal-auth";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
+import { signOAuthState } from "@sync/oauth/oauth-state";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
@@ -22,15 +23,25 @@ import { ProviderConnectionRepository } from "@sync/storage/repositories/provide
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 
 export const CONNECTIONS_PATH = "/internal/connections";
+export const BEGIN_PATH = "/internal/connections/begin";
+// Where the provider redirects the browser after consent. The callback route
+// mounts here in a later slice; `begin` builds the redirect_uri from it now.
+export const OAUTH_CALLBACK_PATH = "/oauth/google/callback";
 
 export interface ConnectionApiDeps {
   authMiddleware: RequestHandler;
   mongo: SyncMongoService;
-  // Disconnect makes provider calls, so it is gated on execution mode.
+  // Disconnect and begin make provider calls, so they are gated on execution.
   execution: SyncExecutionMode;
   // The provider authorization adapter, present only when the provider is
   // configured. Absent (or passive mode) means no provider work is possible.
   authAdapter?: ProviderAuthAdapter;
+  // Secret the OAuth CSRF state is signed with, and the public base URL the
+  // provider callback resolves against.
+  stateSecret: string;
+  callbackBaseUrl: string;
+  // Injectable clock so state issuance is deterministic in tests.
+  now?: () => number;
 }
 
 // A generous backstop, not a throttle: the only caller is the trusted Compass
@@ -75,6 +86,67 @@ export function registerConnectionRoutes(
         // Never surface storage internals or identity to the caller.
         respondInternalError(res);
       }
+    },
+  );
+
+  // Start an OAuth authorization: return the provider consent URL carrying a
+  // signed CSRF state that binds the flow to this principal (and, for reconnect,
+  // to one existing connection). Completing consent creates/updates the
+  // connection in the callback slice; begin itself only mints the URL.
+  app.post(
+    BEGIN_PATH,
+    connectionRateLimit,
+    deps.authMiddleware,
+    async (req, res) => {
+      const auth = requireAuth(req, res);
+      if (!auth) return;
+      if (!ensureConnected(deps, res)) return;
+      // Authorizing touches the provider, so a passive or unconfigured service
+      // refuses rather than handing back a URL it could never complete.
+      if (deps.execution === "passive" || !deps.authAdapter) {
+        res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
+        return;
+      }
+
+      // Optional connectionId means reconnect: validate it is a real id owned by
+      // this principal, so the state cannot bind a flow to a foreign connection.
+      let connectionId = null;
+      const rawConnectionId = (req.body as { connectionId?: unknown })
+        ?.connectionId;
+      if (rawConnectionId !== undefined && rawConnectionId !== null) {
+        const parsed = ConnectionIdSchema.safeParse(rawConnectionId);
+        if (!parsed.success) {
+          res
+            .status(Status.BAD_REQUEST)
+            .json({ error: "invalid_connection_id" });
+          return;
+        }
+        try {
+          const owned = await new ProviderConnectionRepository(
+            deps.mongo.db,
+          ).findById(auth.tenantId, auth.principalId, parsed.data);
+          if (!owned) {
+            res.status(Status.NOT_FOUND).json({ error: "not_found" });
+            return;
+          }
+        } catch {
+          respondInternalError(res);
+          return;
+        }
+        connectionId = parsed.data;
+      }
+
+      const state = signOAuthState(deps.stateSecret, {
+        tenantId: auth.tenantId,
+        principalId: auth.principalId,
+        connectionId,
+        issuedAt: (deps.now ?? Date.now)(),
+      });
+      const authorizationUrl = deps.authAdapter.buildAuthorizationUrl({
+        state,
+        redirectUri: `${deps.callbackBaseUrl}${OAUTH_CALLBACK_PATH}`,
+      });
+      res.status(Status.OK).json({ authorizationUrl });
     },
   );
 

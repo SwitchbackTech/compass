@@ -3,6 +3,7 @@ import { createInternalAuthMiddleware } from "@sync/auth/internal-auth";
 import { loadSyncConfig, type SyncConfig } from "@sync/config/sync.config";
 import { ReadinessRegistry } from "@sync/lifecycle/readiness";
 import { ShutdownCoordinator } from "@sync/lifecycle/shutdown";
+import { deriveOAuthStateSecret } from "@sync/oauth/oauth-state";
 import { GoogleAuthAdapter } from "@sync/providers/google/google-auth.adapter";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { buildSyncApp } from "@sync/server/sync.server";
@@ -56,6 +57,11 @@ export function createSyncService(
         // The provider adapter is db-free, so it is built once here (gated on
         // provider config); the per-request custody/repos build from the db.
         authAdapter: deps.authAdapter ?? buildAuthAdapter(config),
+        // The OAuth CSRF state is signed with a key derived from the service
+        // secret (domain-separated from internal-auth signing); the callback
+        // resolves against the public base URL.
+        stateSecret: deriveOAuthStateSecret(config.INTERNAL_AUTH_TOKEN),
+        callbackBaseUrl: config.CALLBACK_BASE_URL,
       }
     : undefined;
 

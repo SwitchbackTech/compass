@@ -9,10 +9,18 @@ import { createSyncService, type SyncService } from "@sync/app";
 import { signInternalRequest } from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
 import {
+  deriveOAuthStateSecret,
+  verifyOAuthState,
+} from "@sync/oauth/oauth-state";
+import {
   type ProviderAuthAdapter,
   type RefreshedCredential,
 } from "@sync/providers/provider-auth.port";
-import { CONNECTIONS_PATH } from "@sync/server/connection.routes";
+import {
+  BEGIN_PATH,
+  CONNECTIONS_PATH,
+  OAUTH_CALLBACK_PATH,
+} from "@sync/server/connection.routes";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
@@ -21,6 +29,8 @@ import { type AddressInfo } from "node:net";
 const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
 const SECRET = "internal-secret";
+// The service signs OAuth state with a key derived from the root secret.
+const STATE_SECRET = deriveOAuthStateSecret(SECRET);
 
 const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
   ({
@@ -34,13 +44,16 @@ const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
     ...overrides,
   }) as SyncConfig;
 
-// A minimal provider auth adapter: disconnect only exercises revoke, which
-// records the token instead of hitting the network.
+// A minimal provider auth adapter: disconnect exercises revoke and begin
+// exercises buildAuthorizationUrl; both record their inputs instead of hitting
+// the network.
 class FakeAuthAdapter implements ProviderAuthAdapter {
   readonly provider = "google" as const;
   revoked: string[] = [];
-  buildAuthorizationUrl(): string {
-    return "https://example.com/consent";
+  authorizations: Array<{ state: string; redirectUri: string }> = [];
+  buildAuthorizationUrl(input: { state: string; redirectUri: string }): string {
+    this.authorizations.push(input);
+    return `https://consent.example.com/?state=${input.state}`;
   }
   exchangeAuthorizationCode(): Promise<never> {
     throw new Error("unused");
@@ -349,6 +362,147 @@ describe("DELETE /internal/connections/:id", () => {
       `${base}${CONNECTIONS_PATH}/${objectId() as ConnectionId}`,
       { method: "DELETE" },
     );
+
+    expect(res.status).toBe(401);
+  });
+});
+
+describe("POST /internal/connections/begin", () => {
+  let mongo: SyncMongoService;
+  let connections: ProviderConnectionRepository;
+  let service: SyncService;
+  let base: string;
+  let adapter: FakeAuthAdapter;
+
+  const activeConfig = () => testConfig({ EXECUTION: "active" });
+
+  const startService = async (
+    config: SyncConfig,
+    authAdapter?: ProviderAuthAdapter,
+  ) => {
+    service = createSyncService(config, { mongo, authAdapter });
+    await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
+    const { port } = service.httpServer.address() as AddressInfo;
+    base = `http://127.0.0.1:${port}`;
+  };
+
+  const begin = (
+    tenantId: string,
+    principalId: string,
+    body?: Record<string, unknown>,
+  ) =>
+    fetch(`${base}${BEGIN_PATH}`, {
+      method: "POST",
+      headers: {
+        ...signedHeaders(tenantId, principalId),
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(body ?? {}),
+    });
+
+  beforeEach(async () => {
+    mongo = new SyncMongoService();
+    await mongo.connect({
+      uri,
+      databaseName: `begin_${objectId()}`,
+      forbiddenDatabaseName: "compass_api_unused",
+      enforceLeastPrivilege: false,
+    });
+    connections = new ProviderConnectionRepository(mongo.db);
+    adapter = new FakeAuthAdapter();
+  });
+
+  afterEach(async () => {
+    await service?.stop();
+    await mongo.db.dropDatabase();
+    await mongo.disconnect();
+  });
+
+  it("returns a consent url whose state binds the flow to the caller", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService(activeConfig(), adapter);
+
+    const res = await begin(tenantId, principalId);
+
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { authorizationUrl: string };
+    const { state, redirectUri } = adapter.authorizations[0];
+    expect(body.authorizationUrl).toContain(state);
+    expect(redirectUri).toBe(`http://localhost:3010${OAUTH_CALLBACK_PATH}`);
+
+    const verified = verifyOAuthState(STATE_SECRET, state, Date.now());
+    expect(verified.ok && verified.payload.principalId).toBe(principalId);
+    expect(verified.ok && verified.payload.tenantId).toBe(tenantId);
+    expect(verified.ok && verified.payload.connectionId).toBeNull();
+  });
+
+  it("binds the state to an owned connection for reconnect", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const existing = await seedConnection(
+      connections,
+      tenantId,
+      principalId,
+      "reconnect@example.com",
+    );
+    await startService(activeConfig(), adapter);
+
+    const res = await begin(tenantId, principalId, {
+      connectionId: existing._id,
+    });
+
+    expect(res.status).toBe(200);
+    const { state } = adapter.authorizations[0];
+    const verified = verifyOAuthState(STATE_SECRET, state, Date.now());
+    expect(verified.ok && verified.payload.connectionId).toBe(existing._id);
+  });
+
+  it("refuses to reconnect a connection the principal does not own", async () => {
+    const tenantId = objectId();
+    const owner = objectId();
+    const stranger = objectId();
+    const existing = await seedConnection(
+      connections,
+      tenantId,
+      owner,
+      "owner@example.com",
+    );
+    await startService(activeConfig(), adapter);
+
+    const res = await begin(tenantId, stranger, {
+      connectionId: existing._id,
+    });
+
+    expect(res.status).toBe(404);
+    expect(adapter.authorizations).toHaveLength(0);
+  });
+
+  it("rejects a malformed reconnect connection id", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService(activeConfig(), adapter);
+
+    const res = await begin(tenantId, principalId, { connectionId: "nope" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("refuses to begin in passive mode", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService(testConfig({ EXECUTION: "passive" }), adapter);
+
+    const res = await begin(tenantId, principalId);
+
+    expect(res.status).toBe(409);
+    expect(adapter.authorizations).toHaveLength(0);
+  });
+
+  it("rejects an unsigned begin", async () => {
+    await startService(activeConfig(), adapter);
+
+    const res = await fetch(`${base}${BEGIN_PATH}`, { method: "POST" });
 
     expect(res.status).toBe(401);
   });
