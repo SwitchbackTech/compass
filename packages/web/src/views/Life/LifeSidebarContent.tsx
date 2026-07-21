@@ -27,7 +27,19 @@ export function LifeSidebarContent({
 }: LifeSidebarContentProps) {
   const [isBirthDatePickerOpen, setIsBirthDatePickerOpen] = useState(false);
   const birthDate = parseLifeDate(preferences.birthDate);
+  const clearBirthDate = () => {
+    onPreferencesChange((current) => ({ ...current, birthDate: "" }));
+    setIsBirthDatePickerOpen(false);
+  };
   const setBirthDate = (date: Date) => {
+    const minimumDate = new Date(1900, 0, 1);
+    const maximumDate = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    if (date < minimumDate || date > maximumDate) return;
+
     onPreferencesChange((current) => ({
       ...current,
       birthDate: formatDateInputValue(date),
@@ -66,18 +78,21 @@ export function LifeSidebarContent({
             calendarClassName="lifeBirthDatePicker"
             dateFormat="MMM d, yyyy"
             id="life-date-of-birth"
+            isClearable
             isOpen={isBirthDatePickerOpen}
             maxDate={today}
             minDate={new Date(1900, 0, 1)}
             onCalendarClose={() => setIsBirthDatePickerOpen(false)}
             onCalendarOpen={() => setIsBirthDatePickerOpen(true)}
-            onChange={(date) => {
-              if (date) setBirthDate(date);
-            }}
+            onChange={(date) => (date ? setBirthDate(date) : clearBirthDate())}
             onChangeRaw={(event) => {
               const value = event.currentTarget.value;
               const date = parseLifeDate(value);
-              if (date) setBirthDate(date);
+              if (date) {
+                setBirthDate(date);
+              } else if (!value) {
+                clearBirthDate();
+              }
             }}
             onInputClick={() => setIsBirthDatePickerOpen(true)}
             onSelect={(date) => {
