@@ -28,7 +28,13 @@ export function setupSyncStorage(): {
 
   beforeAll(async () => {
     await connectWithRetry(mongo, {
-      uri: process.env["SYNC_MONGO_URI"] as string,
+      // A short server-selection timeout so a connect against a momentarily
+      // saturated shared mongod REJECTS fast enough to retry within the runner's
+      // per-file kill budget, instead of stalling on the driver's 30s default.
+      uri: withServerSelectionTimeout(
+        process.env["SYNC_MONGO_URI"] as string,
+        SERVER_SELECTION_TIMEOUT_MS,
+      ),
       databaseName: `synctest_${faker.database.mongodbObjectId()}`,
       forbiddenDatabaseName: "compass_api_unused",
       enforceLeastPrivilege: false,
@@ -55,17 +61,33 @@ export function setupSyncStorage(): {
   };
 }
 
+// A connect against the shared mongod must fail FAST when the server is
+// momentarily saturated, so the retry loop below fits inside run-tests.ts's 90s
+// per-file kill. The driver's 30s default would let a few retries blow past it
+// (and get the file killed mid-retry, which is worse than one clean failure).
+const SERVER_SELECTION_TIMEOUT_MS = 8_000;
+const CONNECT_ATTEMPTS = 5;
+
+// Append a serverSelectionTimeoutMS to the mongo URI, respecting an existing
+// query string.
+function withServerSelectionTimeout(uri: string, ms: number): string {
+  const separator = uri.includes("?") ? "&" : "?";
+  return `${uri}${separator}serverSelectionTimeoutMS=${ms}`;
+}
+
 // Connect, retrying a few times on a transient failure. The whole sync suite
 // runs each test file in its own process against ONE shared in-memory mongod
 // (run-tests.ts); when many processes connect and install indexes at once, an
 // unlucky file can hit a transient server-selection timeout or refused
 // connection and fail its whole `beforeAll`. The server is alive (its neighbors
-// pass), so a short retry converges instead of flaking the run. The common path
-// connects on the first attempt with no delay; the backoff runs only on a retry.
+// pass), so a bounded fast retry rides out the spike instead of flaking the run.
+// With an 8s selection timeout, 5 attempts cover a ~40s stall, well under the
+// 90s kill. The common path connects on the first attempt with no delay; the
+// backoff runs only on a retry.
 async function connectWithRetry(
   mongo: SyncMongoService,
   options: Parameters<SyncMongoService["connect"]>[0],
-  attempts = 4,
+  attempts = CONNECT_ATTEMPTS,
 ): Promise<void> {
   for (let attempt = 1; ; attempt += 1) {
     try {
