@@ -24,6 +24,11 @@ const extraArgs = process.argv.slice(2);
 const files = resolveFiles(extraArgs);
 const bunFlags = extraArgs.filter((arg) => arg.startsWith("-"));
 
+if (files.length === 0) {
+  console.error("No test files found");
+  process.exit(1);
+}
+
 const concurrency = Math.max(1, Math.min(cpus().length, 8));
 let nextIndex = 0;
 let passedFiles = 0;
@@ -42,11 +47,14 @@ async function runOne(index: number): Promise<void> {
     },
   );
 
+  const timeout = setTimeout(() => proc.kill(9), 90_000);
+
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
+  clearTimeout(timeout);
 
   if (code === 0) {
     passedFiles++;

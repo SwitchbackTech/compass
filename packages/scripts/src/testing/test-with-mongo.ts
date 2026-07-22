@@ -133,11 +133,14 @@ async function runOne(index: number): Promise<void> {
     { env, stdout: "pipe", stderr: "pipe" },
   );
 
+  const timeout = setTimeout(() => proc.kill(9), 90_000);
+
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
     proc.exited,
   ]);
+  clearTimeout(timeout);
 
   if (code === 0) {
     passedFiles++;
