@@ -137,6 +137,47 @@ describe("CommandRepository", () => {
     expect(pending[0]?.idempotencyKey).toBe("b");
   });
 
+  it("reports a nonterminal command for an event, and none once it terminates", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const eventId = objectId();
+    const command = await repo.submit(
+      submit({ tenantId, principalId, eventId }),
+    );
+
+    expect(
+      await repo.hasNonterminalForEvent(
+        tenantId,
+        principalId,
+        eventId as never,
+      ),
+    ).toBe(true);
+    // A different event has no in-flight command.
+    expect(
+      await repo.hasNonterminalForEvent(
+        tenantId,
+        principalId,
+        objectId() as never,
+      ),
+    ).toBe(false);
+
+    await repo.updateOutcome(
+      tenantId,
+      principalId,
+      command._id,
+      { state: "confirmed", providerEventId: null, providerVersion: null },
+      1,
+    );
+    // Terminal now — no longer in flight.
+    expect(
+      await repo.hasNonterminalForEvent(
+        tenantId,
+        principalId,
+        eventId as never,
+      ),
+    ).toBe(false);
+  });
+
   it("rejects a raw duplicate insert violating the idempotency index", async () => {
     const shared = {
       tenantId: objectId(),

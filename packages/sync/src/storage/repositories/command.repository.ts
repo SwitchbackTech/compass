@@ -1,4 +1,5 @@
 import { type Collection, type Db, ObjectId } from "mongodb";
+import { type EventId } from "@core/types/domain-primitives";
 import { type SyncCommandOutcome } from "@core/types/sync/command.contracts";
 import {
   type PrincipalId,
@@ -68,6 +69,27 @@ export class CommandRepository {
       principalId,
     });
     return record ? CommandRecordSchema.parse(record) : null;
+  }
+
+  // Whether an unacknowledged Compass command still targets this event. An
+  // incremental pull consults this before applying a provider deletion so it
+  // never drops an event with a local edit/create still in flight — the Compass
+  // intent reconciles against the provider rather than being silently lost.
+  async hasNonterminalForEvent(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    eventId: EventId,
+  ): Promise<boolean> {
+    const existing = await this.collection.findOne(
+      {
+        tenantId,
+        principalId,
+        eventId,
+        "outcome.state": { $in: ["pending", "applying", "reconciling"] },
+      },
+      { projection: { _id: 1 } },
+    );
+    return existing !== null;
   }
 
   // Record a state transition (pending -> applying -> confirmed/failed/...) and
