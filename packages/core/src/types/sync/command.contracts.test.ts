@@ -32,12 +32,17 @@ const createInput = () => ({
   recurrence: { kind: "single" },
 });
 
+// A this/thisAndFollowing scope must carry a recurrenceId; scope "all" must not.
+const recurrenceIdFor = (scope: string) =>
+  scope === "all" ? null : "2026-07-14T09:00:00-06:00";
+
 const updateInput = (scope: string = "this") => ({
   kind: "update",
   content: baseContent,
   schedule: timedSchedule,
   recurrence: { kind: "preserve" },
   scope,
+  recurrenceId: recurrenceIdFor(scope),
 });
 
 const moveInput = () => ({ kind: "move", calendarId: objectId() });
@@ -45,6 +50,7 @@ const moveInput = () => ({ kind: "move", calendarId: objectId() });
 const deleteInput = (scope: string = "this") => ({
   kind: "delete",
   scope,
+  recurrenceId: recurrenceIdFor(scope),
 });
 
 const pendingOutcome = { state: "pending" };
@@ -127,6 +133,15 @@ describe("Sync command contracts", () => {
       expect(parsed.success && parsed.data.kind === "update").toBe(true);
       if (parsed.success && parsed.data.kind === "update") {
         expect(parsed.data.invitation).toBe("all");
+      }
+    });
+
+    it("defaults recurrenceId to null when absent", () => {
+      const { recurrenceId: _omit, ...withoutTarget } = updateInput("all");
+      const parsed = SyncCommandInputSchema.safeParse(withoutTarget);
+      expect(parsed.success && parsed.data.kind === "update").toBe(true);
+      if (parsed.success && parsed.data.kind === "update") {
+        expect(parsed.data.recurrenceId).toBeNull();
       }
     });
 
@@ -286,6 +301,31 @@ describe("Sync command contracts", () => {
       expect(
         SyncCommandSchema.parse(JSON.parse(JSON.stringify(parsed))),
       ).toEqual(parsed);
+    });
+
+    it.each([
+      "this",
+      "thisAndFollowing",
+    ] as const)("rejects a %s-scope command that omits a recurrenceId", (scope) => {
+      const command = baseCommand({
+        input: { ...updateInput(scope), recurrenceId: null },
+      });
+      expect(SyncCommandSchema.safeParse(command).success).toBe(false);
+    });
+
+    it("rejects an all-scope command that carries a recurrenceId", () => {
+      const command = baseCommand({
+        input: {
+          ...deleteInput("all"),
+          recurrenceId: "2026-07-14T09:00:00-06:00",
+        },
+      });
+      expect(SyncCommandSchema.safeParse(command).success).toBe(false);
+    });
+
+    it("accepts a this-scope delete targeting one occurrence", () => {
+      const command = baseCommand({ input: deleteInput("this") });
+      expect(SyncCommandSchema.safeParse(command).success).toBe(true);
     });
   });
 });
