@@ -10,7 +10,7 @@ import {
 } from "./life.utils";
 
 const LifePreferencesSchema = z.object({
-  birthDate: z.string().default(""),
+  birthDate: z.string().default("2000-01-01"),
   lifespan: z.number().default(DEFAULT_LIFESPAN),
   variation: z.enum(["average", "long", "random"]).default("average"),
 });
@@ -22,7 +22,7 @@ export interface LifePreferences {
 }
 
 export const DEFAULT_LIFE_PREFERENCES: LifePreferences = {
-  birthDate: "",
+  birthDate: "2000-01-01",
   lifespan: LIFE_VARIATIONS.average.defaultLifespan,
   variation: "average",
 };
@@ -50,6 +50,10 @@ export function readLifePreferences(): LifePreferences {
   } catch {
     return DEFAULT_LIFE_PREFERENCES;
   }
+}
+
+export function hasLifePreferences() {
+  return persistentBrowserStore.get(STORAGE_KEYS.LIFE_PREFERENCES) !== null;
 }
 
 export function writeLifePreferences(preferences: LifePreferences) {

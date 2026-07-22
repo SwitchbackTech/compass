@@ -1,4 +1,8 @@
-import { getLifeShareText, getSocialShareUrl } from "./life-share";
+import {
+  getCleanLifeShareUrl,
+  getLifeShareText,
+  getSocialShareUrl,
+} from "./life-share";
 import { describe, expect, it } from "bun:test";
 
 describe("life sharing", () => {
@@ -18,6 +22,14 @@ describe("life sharing", () => {
     expect(facebookShare.searchParams.get("quote")).toBe(
       "This is my life if I live to 83.",
     );
-    expect(facebookShare.searchParams.get("url")).toBe(pageUrl);
+    expect(facebookShare.searchParams.get("u")).toBe(pageUrl);
+  });
+
+  it("shares only the canonical Life URL", () => {
+    expect(
+      getCleanLifeShareUrl(
+        "https://user:secret@compasscalendar.com/life?auth=reset&token=secret&variation=random&age=83#token=secret",
+      ),
+    ).toBe("https://compasscalendar.com/life");
   });
 });

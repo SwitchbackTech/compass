@@ -15,4 +15,4 @@ export const LIFE_SHORTCUT = {
   route: ROOT_ROUTES.LIFE,
 } as const;
 
-export type ViewName = keyof typeof VIEW_SHORTCUTS;
+export type ViewName = keyof typeof VIEW_SHORTCUTS | "life";

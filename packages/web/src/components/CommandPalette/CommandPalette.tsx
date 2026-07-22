@@ -349,6 +349,7 @@ export const LifeCommandPalette = ({
           heading: "Appearance",
           items: themeCmdItems,
         },
+        ...getMoreCommandPaletteSections("life"),
       ]}
     />
   );

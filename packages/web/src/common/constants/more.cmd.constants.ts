@@ -11,7 +11,9 @@ export function getCommandPalettePlaceholder(
   feedbackEnabled = isPosthogEnabled(),
 ): string {
   if (currentView === "life") {
-    return "Try: 'day', 'week', or 'theme'";
+    return feedbackEnabled
+      ? "Try: 'day', 'week', or 'feedback'"
+      : "Try: 'day', 'week', or 'theme'";
   }
 
   if (currentView === "day") {

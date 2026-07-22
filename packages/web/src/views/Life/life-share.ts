@@ -9,6 +9,7 @@ export interface LifeShareData {
 type SocialPlatform = "facebook" | "x";
 
 const SHARE_TITLE = "Life in Weeks";
+const SHARE_URL = "compasscalendar.com/life";
 
 export function getLifeShareText(lifespan: number) {
   return `This is my life if I live to ${lifespan}.`;
@@ -27,11 +28,17 @@ export function getSocialShareUrl(
 
   if (platform === "x") {
     url.searchParams.set("text", getLifeShareText(lifespan));
+    url.searchParams.set("url", pageUrl);
   } else {
     url.searchParams.set("quote", getLifeShareText(lifespan));
+    url.searchParams.set("u", pageUrl);
   }
-  url.searchParams.set("url", pageUrl);
   return url.toString();
+}
+
+export function getCleanLifeShareUrl(pageUrl: string) {
+  const url = new URL(pageUrl);
+  return `${url.origin}${url.pathname}`;
 }
 
 function createCanvas(data: LifeShareData) {
@@ -58,12 +65,6 @@ function createCanvas(data: LifeShareData) {
   context.font = "32px system-ui, sans-serif";
   context.fillStyle = "#5e5847";
   context.fillText(getLifeShareText(data.lifespan), left, 132);
-  context.font = "24px system-ui, sans-serif";
-  context.fillText(
-    `${data.weeksLived.toLocaleString()} weeks lived`,
-    left,
-    174,
-  );
 
   for (let dotIndex = 0; dotIndex < data.totalDots; dotIndex += 1) {
     const row = Math.floor(dotIndex / WEEKS_PER_ROW);
@@ -81,6 +82,14 @@ function createCanvas(data: LifeShareData) {
       dotSize,
     );
   }
+
+  const linkY = canvas.height - 42;
+  context.font = "24px system-ui, sans-serif";
+  context.fillStyle = "#5e5847";
+  const linkWidth = context.measureText(SHARE_URL).width;
+  const linkX = Math.round((canvas.width - linkWidth) / 2);
+  context.fillText(SHARE_URL, linkX, linkY);
+  context.fillRect(linkX, linkY + 5, linkWidth, 1);
 
   return canvas;
 }

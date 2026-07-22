@@ -99,10 +99,16 @@ export function getAgeInYears(birthDateValue: string, today = new Date()) {
   return Math.max(0, age);
 }
 
+export function getSecureRandomNumber() {
+  const values = new Uint32Array(1);
+  window.crypto.getRandomValues(values);
+  return values[0] / 2 ** 32;
+}
+
 export function getRandomLifespan(
   birthDateValue: string,
   today = new Date(),
-  random = Math.random,
+  random = getSecureRandomNumber,
 ) {
   const currentAge = getAgeInYears(birthDateValue, today) ?? MIN_LIFESPAN;
   const minimumAge = Math.max(

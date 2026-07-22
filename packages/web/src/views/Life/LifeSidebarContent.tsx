@@ -18,6 +18,7 @@ import {
 import { type LifePreferences } from "./life-preferences.storage";
 
 interface LifeSidebarContentProps {
+  autoFocusBirthDate: boolean;
   onCycleVariation: (direction: -1 | 1) => void;
   preferences: LifePreferences;
   onShuffleAge: () => void;
@@ -31,6 +32,7 @@ interface LifeSidebarContentProps {
 }
 
 export function LifeSidebarContent({
+  autoFocusBirthDate,
   onCycleVariation,
   preferences,
   onShuffleAge,
@@ -47,6 +49,11 @@ export function LifeSidebarContent({
   const previousLifespanRef = useRef(preferences.lifespan);
   const birthDate = parseLifeDate(preferences.birthDate);
   const variation = LIFE_VARIATIONS[preferences.variation];
+
+  useEffect(() => {
+    if (!autoFocusBirthDate) return;
+    document.getElementById("life-date-of-birth")?.focus();
+  }, [autoFocusBirthDate]);
 
   useEffect(() => {
     if (previousLifespanRef.current !== preferences.lifespan) {

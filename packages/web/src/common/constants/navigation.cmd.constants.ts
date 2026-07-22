@@ -13,7 +13,7 @@ import {
   type ViewName,
 } from "@web/shortcuts/shortcuts.constants";
 
-export type CommandPaletteViewName = ViewName | "life";
+export type CommandPaletteViewName = ViewName;
 
 interface GetNavigationCommandItemsArgs {
   currentView?: CommandPaletteViewName;

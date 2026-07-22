@@ -28,6 +28,7 @@ import {
   parseLifeDate,
 } from "./life.utils";
 import {
+  hasLifePreferences,
   type LifePreferences,
   readLifePreferences,
   writeLifePreferences,
@@ -48,6 +49,7 @@ export function LifeView({ today }: LifeViewProps) {
   const search = useSearch({ from: ROOT_ROUTES.LIFE });
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const currentWeekRef = useRef<HTMLButtonElement>(null);
+  const isNewLifeUser = useRef(!hasLifePreferences()).current;
   const [preferences, setPreferences] = useState(() =>
     applyLifeSearch(readLifePreferences(), search, currentDate),
   );
@@ -190,6 +192,7 @@ export function LifeView({ today }: LifeViewProps) {
           shortcutsViewLabel="Life"
         >
           <LifeSidebarContent
+            autoFocusBirthDate={isNewLifeUser}
             onCycleVariation={cycleVariation}
             preferences={preferences}
             onShuffleAge={shuffleAge}
