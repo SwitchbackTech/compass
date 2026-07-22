@@ -53,6 +53,15 @@ import {
 
 const nowDateTime = () => DateTimeSchema.parse(new Date().toISOString());
 
+// An occurrence's series is its own recurrence pointer; the series base's
+// series is itself. Shared by the replace and delete optimistic callbacks,
+// which both need the series id to gather every cached instance.
+function seriesIdOf(event: Event | null): EventId | null {
+  if (event?.recurrence.kind === "occurrence") return event.recurrence.seriesId;
+  if (event?.recurrence.kind === "series") return event.id;
+  return null;
+}
+
 // A create's optimistic insert needs a full Event before the server response
 // lands; recurrence is a strict subset of EditableRecurrence ("single" |
 // "series"), so it's assignable as-is.
@@ -269,12 +278,7 @@ export function useEventMutations(
         const existing = findEventInCache(queryClient, id, source);
         if (!existing) return;
         const edited = mergeReplaceInput(existing, input);
-        const seriesId =
-          existing.recurrence.kind === "occurrence"
-            ? existing.recurrence.seriesId
-            : existing.recurrence.kind === "series"
-              ? existing.id
-              : null;
+        const seriesId = seriesIdOf(existing);
 
         if (seriesId && input.scope !== "this") {
           applyEventProjectionAcrossQueries(
@@ -320,12 +324,7 @@ export function useEventMutations(
       },
       ({ id, scope }) => {
         const existing = findEventInCache(queryClient, id, source);
-        const seriesId =
-          existing?.recurrence.kind === "occurrence"
-            ? existing.recurrence.seriesId
-            : existing?.recurrence.kind === "series"
-              ? existing.id
-              : null;
+        const seriesId = seriesIdOf(existing);
 
         if (existing && seriesId && scope !== "this") {
           applyEventProjectionAcrossQueries(

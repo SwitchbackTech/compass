@@ -125,7 +125,7 @@ export function projectRecurringDelete({
       ? seriesEvents
       : seriesEvents.filter((event) => isAtOrAfter(event, target.schedule));
 
-  const removeIds = new Set(affected.map((event) => event.id) as string[]);
+  const removeIds = new Set<string>(affected.map((event) => event.id));
   removeIds.add(target.id);
   if (scope === "all") removeIds.add(seriesId);
 
