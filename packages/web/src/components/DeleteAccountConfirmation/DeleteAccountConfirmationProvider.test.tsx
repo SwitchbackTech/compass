@@ -36,7 +36,9 @@ function Opener() {
 const confirmDeletion = async () => {
   const user = userEvent.setup();
   render(
-    <DeleteAccountConfirmationProvider>
+    // A short farewell hold so the test drives the flow without waiting the
+    // real 3-second span; the hold's behavior is unchanged, only its length.
+    <DeleteAccountConfirmationProvider farewellMs={20}>
       <Opener />
     </DeleteAccountConfirmationProvider>,
   );
@@ -78,8 +80,8 @@ describe("DeleteAccountConfirmationProvider", () => {
     expect(assign).not.toHaveBeenCalled();
 
     finishDelete();
-    // Generous: the farewell is held for its full span before the reload.
-    await waitFor(() => expect(assign).toHaveBeenCalled(), { timeout: 5000 });
+    // The farewell is held for its (now short) span, then the reload fires.
+    await waitFor(() => expect(assign).toHaveBeenCalled());
   });
 
   it("takes the farewell back down if the account could not be deleted", async () => {
