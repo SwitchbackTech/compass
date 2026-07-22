@@ -134,6 +134,26 @@ export class EventRepository {
     return result.matchedCount > 0;
   }
 
+  // Every exception event of a series (overridden or cancelled instances),
+  // owner-scoped. Used by a scope-"all" series edit/delete to clean up the
+  // instances the master's own record doesn't cover. A series has a bounded,
+  // realistic number of exceptions, so this is unpaginated.
+  async findSeriesExceptions(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    seriesId: EventId,
+  ): Promise<EventRecord[]> {
+    const records = await this.collection
+      .find({
+        tenantId,
+        principalId,
+        "recurrence.kind": "exception",
+        "recurrence.seriesId": seriesId,
+      })
+      .toArray();
+    return records.map((r) => EventRecordSchema.parse(r));
+  }
+
   // Bounded, keyset-paginated canonical events for one calendar/generation,
   // ordered by _id so a cursor never skips or repeats a row.
   async listByCalendar(query: EventListQuery): Promise<EventRecord[]> {

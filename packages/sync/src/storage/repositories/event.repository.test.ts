@@ -215,6 +215,64 @@ describe("EventRepository", () => {
     expect(read?.content.title).toBe("Changed");
   });
 
+  it("finds only the owner's exceptions of one series", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const seriesId = objectId();
+    const exception = (overrides: Partial<EventRecord>) =>
+      compassRecord({
+        tenantId,
+        principalId,
+        recurrence: {
+          kind: "exception",
+          seriesId,
+          recurrenceId: "2026-07-21T09:00:00-06:00",
+          cancelled: false,
+        } as EventRecord["recurrence"],
+        ...overrides,
+      });
+
+    const mine = await repo.put(exception({}));
+    // Same series, another instance — also mine.
+    await repo.put(exception({}));
+    // A different series' exception, a plain single, the master itself, and
+    // another principal's exception must all be excluded.
+    await repo.put(
+      compassRecord({
+        tenantId,
+        principalId,
+        recurrence: {
+          kind: "exception",
+          seriesId: objectId(),
+          recurrenceId: "2026-07-21T09:00:00-06:00",
+          cancelled: false,
+        } as EventRecord["recurrence"],
+      }),
+    );
+    await repo.put(compassRecord({ tenantId, principalId }));
+    await repo.put(
+      compassRecord({
+        _id: seriesId,
+        tenantId,
+        principalId,
+        recurrence: {
+          kind: "seriesMaster",
+          rules: ["RRULE:FREQ=WEEKLY"],
+        } as EventRecord["recurrence"],
+      }),
+    );
+    await repo.put(exception({ principalId: objectId() }));
+
+    const found = await repo.findSeriesExceptions(
+      tenantId,
+      principalId,
+      seriesId,
+    );
+    expect(found).toHaveLength(2);
+    expect(found.every((e) => e.recurrence.kind === "exception")).toBe(true);
+    expect(found.some((e) => e._id === mine._id)).toBe(true);
+  });
+
   describe("listByCalendar keyset pagination", () => {
     const tenantId = objectId();
     const principalId = objectId();

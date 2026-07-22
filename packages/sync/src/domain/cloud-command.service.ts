@@ -124,8 +124,16 @@ async function applyCloudMutation(
     // Absence is the desired end state, so a delete of an already-gone (or
     // never-created) event is confirmed rather than left hanging.
     if (!existing) return confirmCloud(deps, command);
-    // A recurring series needs scope handling (later slice) — defer for both
-    // cloud and provider events.
+    // A series master: only scope "all" on a cloud series is handled here.
+    // this/thisAndFollowing (which need occurrence identity + exception/split)
+    // and provider series stay pending for later slices.
+    if (existing.recurrence.kind === "seriesMaster") {
+      if (command.input.scope !== "all" || existing.connectionId !== null) {
+        return command;
+      }
+      return deleteCloudSeries(deps, command, existing);
+    }
+    // A bare exception target (this/thisAndFollowing) also stays pending.
     if (existing.recurrence.kind !== "single") return command;
     // A provider-linked event goes to the provider delete path when provider
     // work is enabled; otherwise it stays pending. It is never removed locally
@@ -179,10 +187,18 @@ async function applyCloudMutation(
   // update: the target must exist; a missing event can't be updated, so leave
   // the command pending rather than confirming a no-op.
   if (!existing) return command;
-  // A recurring series needs scope handling (later slice), and converting a
-  // single event into a series is itself a series edit — defer both. Gating on
-  // the command's intent (not the event's post-write recurrence) keeps a retry
-  // converging: the applied update never changes recurrence.kind here.
+  // A series master: only scope "all" on a cloud series is handled here;
+  // this/thisAndFollowing and provider series stay pending for later slices.
+  if (existing.recurrence.kind === "seriesMaster") {
+    if (command.input.scope !== "all" || existing.connectionId !== null) {
+      return command;
+    }
+    return updateCloudSeries(deps, command, existing, now);
+  }
+  // A bare exception target stays pending, and converting a single event into a
+  // series is itself a series edit — defer both. Gating on the command's intent
+  // (not the event's post-write recurrence) keeps a retry converging: an applied
+  // single-event update never changes recurrence.kind here.
   if (existing.recurrence.kind !== "single") return command;
   if (command.input.recurrence.kind === "series") return command;
 
@@ -221,6 +237,78 @@ async function applyCloudMutation(
   if (!applied) return command;
   await reprojectOccurrences(deps.occurrences, updated, now);
   return confirmCloud(deps, command);
+}
+
+// Apply a scope-"all" edit to a cloud series: drop any per-instance exceptions
+// (matching the app's existing series semantics, where an edit-all discards
+// overrides), replace the master, then reproject its whole window so the new
+// occurrences own every instant.
+//
+// Exceptions are cleared BEFORE the master is replaced, on purpose. An edit-all
+// can convert the series to a single event; if the replace ran first, a crash
+// before the cleanup would make the retry read a single-kind event and take the
+// single-event path, which never cleans exceptions — orphaning them. Clearing
+// first means they are gone before the master's recurrence kind can change, so a
+// retry converges down either path. replaceExisting returns false only when the
+// master is already gone, in which case clearing its exceptions was still right.
+async function updateCloudSeries(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  await clearSeriesExceptions(deps, command, master._id);
+  const updated = applyCloudUpdate(master, command, now());
+  const applied = await deps.events.replaceExisting(updated);
+  if (!applied) return command;
+  await reprojectOccurrences(deps.occurrences, updated, now);
+  return confirmCloud(deps, command);
+}
+
+// Delete a whole cloud series: clear the master's occurrences, remove every
+// exception (occurrences first), then remove the master LAST. Deleting the
+// master last keeps the delete branch's `!existing` short-circuit a valid
+// "already fully deleted" signal — if the master is gone on a retry, its
+// exceptions were removed before it. Every step is idempotent.
+async function deleteCloudSeries(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  master: EventRecord,
+): Promise<CommandRecord> {
+  await deps.occurrences.replaceForEvent(master._id, master.generation, []);
+  await clearSeriesExceptions(deps, command, master._id);
+  await deps.events.deleteById(
+    command.tenantId,
+    command.principalId,
+    master._id,
+  );
+  return confirmCloud(deps, command);
+}
+
+// Remove every exception of a series and clear each one's occurrences. Shared by
+// series edit-all (which discards overrides) and delete-all.
+async function clearSeriesExceptions(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  seriesId: EventRecord["_id"],
+): Promise<void> {
+  const exceptions = await deps.events.findSeriesExceptions(
+    command.tenantId,
+    command.principalId,
+    seriesId,
+  );
+  for (const exception of exceptions) {
+    await deps.occurrences.replaceForEvent(
+      exception._id,
+      exception.generation,
+      [],
+    );
+    await deps.events.deleteById(
+      command.tenantId,
+      command.principalId,
+      exception._id,
+    );
+  }
 }
 
 // Confirm a cloud command with no provider identity — local persistence is the
