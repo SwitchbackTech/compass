@@ -1,19 +1,19 @@
 /**
- * Test runner for the Mongo-backed packages (backend, scripts, sync).
+ * Isolated test runner for packages whose tests need a fresh module registry.
  *
  * Bun runs every file in a package inside ONE process, sharing the module
  * registry -- singletons, open handles and mock state leak between files, which
  * Jest avoided by giving each file its own registry. To get that isolation back
  * without paying Jest's per-file overhead, this launcher:
  *
- *   1. Boots one in-memory Mongo replica set for the whole run.
+ *   1. Boots one in-memory Mongo replica set when the package needs it.
  *   2. Runs each test file in its own `bun test` process (fresh modules =
- *      isolation), pointed at the shared server with a per-file database name so
- *      files can run in parallel without colliding.
+ *      isolation). Mongo-backed packages share the server through distinct
+ *      per-file databases so their files can run in parallel without colliding.
  *   3. Bounds parallelism to the core count and streams a compact summary.
  *
  * Usage:
- *   bun run-tests.ts <backend|scripts|sync> [--filter substring] [--tier fast|db]
+ *   bun run-tests.ts <backend|scripts|sync|web> [--filter substring] [--tier fast|db]
  *
  * Tiers are classified automatically (no hand-maintained allowlist): a file is
  * "db" if it touches the Mongo test harness (setupTestDb), otherwise "fast".
@@ -24,27 +24,38 @@ import { readFileSync } from "node:fs";
 import { cpus } from "node:os";
 import { resolve } from "node:path";
 
-type PackageName = "backend" | "scripts" | "sync";
+type PackageName = "backend" | "scripts" | "sync" | "web";
 
-const PACKAGES: Record<PackageName, { root: string; preload: string }> = {
+const PACKAGES: Record<
+  PackageName,
+  { root: string; preload: string; usesMongo: boolean }
+> = {
   backend: {
     root: "packages/backend/src",
     preload: "packages/backend/src/__tests__/backend.preload.ts",
+    usesMongo: true,
   },
   scripts: {
     root: "packages/scripts/src",
     preload: "packages/scripts/src/testing/scripts.preload.ts",
+    usesMongo: true,
   },
   sync: {
     root: "packages/sync/src",
     preload: "packages/sync/src/__tests__/sync.preload.ts",
+    usesMongo: true,
+  },
+  web: {
+    root: "packages/web/src",
+    preload: "packages/web/src/__tests__/web.preload.ts",
+    usesMongo: false,
   },
 };
 
 const pkg = process.argv[2] as PackageName;
 if (!pkg || !PACKAGES[pkg]) {
   console.error(
-    "Usage: run-tests.ts <backend|scripts|sync> [--filter substring]",
+    "Usage: run-tests.ts <backend|scripts|sync|web> [--filter substring]",
   );
   process.exit(2);
 }
@@ -59,7 +70,7 @@ if (tier && tier !== "fast" && tier !== "db") {
   process.exit(2);
 }
 
-const { root, preload: preloadRel } = PACKAGES[pkg];
+const { root, preload: preloadRel, usesMongo } = PACKAGES[pkg];
 const preload = resolve(preloadRel);
 
 // A file is "db" if it touches a Mongo test harness; otherwise "fast".
@@ -88,13 +99,13 @@ if (files.length === 0) {
 }
 
 const started = Date.now();
-console.log(
-  `Booting in-memory Mongo replica set for ${files.length} ${pkg} test files...`,
-);
+console.log(`Running ${files.length} isolated ${pkg} test files...`);
 
-const server = await MongoMemoryReplSet.create({
-  replSet: { count: 1, name: "compass-test", storageEngine: "wiredTiger" },
-});
+const server = usesMongo
+  ? await MongoMemoryReplSet.create({
+      replSet: { count: 1, name: "compass-test", storageEngine: "wiredTiger" },
+    })
+  : undefined;
 
 const concurrency = Math.max(1, Math.min(cpus().length - 1, 8));
 
@@ -109,11 +120,17 @@ const countRe = /^\s*(\d+)\s+(pass|fail|skip)\b/gm;
 
 async function runOne(index: number): Promise<void> {
   const file = files[index]!;
-  const uri = server.getUri(`testdb_${index}`);
   const label = file.replace(`${root}/`, "");
+  const env: Record<string, string | undefined> = {
+    ...process.env,
+    TZ: "Etc/UTC",
+  };
+  if (server) {
+    env["COMPASS_TEST_MONGO_URI"] = server.getUri(`testdb_${index}`);
+  }
 
   const proc = Bun.spawn(["bun", "test", file, "--preload", preload], {
-    env: { ...process.env, TZ: "Etc/UTC", COMPASS_TEST_MONGO_URI: uri },
+    env,
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -162,7 +179,7 @@ try {
 } finally {
   // Always tear the server down, even if a worker threw (e.g. a failed
   // spawn) -- otherwise the mongod process would be orphaned.
-  await server.stop();
+  await server?.stop();
 }
 
 const seconds = ((Date.now() - started) / 1000).toFixed(1);
