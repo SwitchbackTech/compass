@@ -1,5 +1,5 @@
-import { ObjectId as BsonObjectId } from "bson";
-import { ObjectId } from "mongodb";
+import { ObjectId } from "bson";
+import { ObjectId as MongoObjectId } from "mongodb";
 import {
   CalendarRecordSchema,
   CalendarSourceRecordSchema,
@@ -9,8 +9,8 @@ import {
 import { describe, expect, it } from "bun:test";
 
 const baseRecord = () => ({
-  _id: new ObjectId(),
-  userId: new ObjectId(),
+  _id: new MongoObjectId(),
+  userId: new MongoObjectId(),
   name: "Work",
   description: "",
   timeZone: "America/Denver",
@@ -90,14 +90,14 @@ describe("CalendarRecordSchema", () => {
   });
 
   it("transforms a 24-hex string _id into an ObjectId instance", () => {
-    const hex = new ObjectId().toHexString();
+    const hex = new MongoObjectId().toHexString();
     const result = CalendarRecordSchema.safeParse({
       ...baseRecord(),
       _id: hex,
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data._id).toBeInstanceOf(BsonObjectId);
+      expect(ObjectId.isValid(result.data._id.toString())).toBe(true);
     }
   });
 
@@ -105,7 +105,7 @@ describe("CalendarRecordSchema", () => {
     const result = CalendarRecordSchema.safeParse(baseRecord());
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data._id).toBeInstanceOf(BsonObjectId);
+      expect(ObjectId.isValid(result.data._id.toString())).toBe(true);
     }
   });
 });

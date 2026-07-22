@@ -16,6 +16,12 @@ describe("google.required.middleware", () => {
   let mockNext: Mock;
 
   beforeEach(() => {
+    if (
+      typeof (googleGuard.requireGoogleConnection as { mockClear?: () => void })
+        .mockClear === "function"
+    ) {
+      (googleGuard.requireGoogleConnection as Mock).mockClear();
+    }
     mockNext = mock();
     mockRes = {
       status: mock().mockReturnThis(),
@@ -44,6 +50,7 @@ describe("google.required.middleware", () => {
     });
 
     it("responds with 400 when userId is missing", async () => {
+      const requireSpy = spyOn(googleGuard, "requireGoogleConnection");
       mockReq = { session: undefined };
 
       await requireGoogleConnectionSession(
@@ -52,7 +59,7 @@ describe("google.required.middleware", () => {
         mockNext,
       );
 
-      expect(googleGuard.requireGoogleConnection).not.toHaveBeenCalled();
+      expect(requireSpy).not.toHaveBeenCalled();
       expect(mockRes.status).toHaveBeenCalledWith(
         UserError.MissingUserIdField.status,
       );
@@ -128,6 +135,7 @@ describe("google.required.middleware", () => {
     });
 
     it("responds with 400 when param userId is missing", async () => {
+      const requireSpy = spyOn(googleGuard, "requireGoogleConnection");
       mockReq = {
         params: {},
       };
@@ -135,7 +143,7 @@ describe("google.required.middleware", () => {
       const middleware = requireGoogleConnectionFrom("userId");
       await middleware(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(googleGuard.requireGoogleConnection).not.toHaveBeenCalled();
+      expect(requireSpy).not.toHaveBeenCalled();
       expect(mockRes.status).toHaveBeenCalledWith(
         UserError.MissingUserIdField.status,
       );

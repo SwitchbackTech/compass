@@ -5,17 +5,8 @@ import {
   describe,
   expect,
   it,
-  mock,
+  spyOn,
 } from "bun:test";
-
-mock.module("@backend/common/services/gcal/gcal.service", () => ({
-  __esModule: true,
-  default: {
-    getAllEvents: mock(),
-    getEvents: mock(),
-    getBaseRecurringEventInstances: mock(),
-  },
-}));
 
 import { ObjectId } from "mongodb";
 import { type gCalendar } from "@core/types/gcal";
@@ -88,9 +79,9 @@ describe("SyncImport", () => {
     userId = new ObjectId().toString();
     calendar = buildCalendar(new ObjectId(userId));
     await mongoService.calendar.insertOne(calendar);
-    (gcalService.getAllEvents as Mock).mockReset();
-    (gcalService.getEvents as Mock).mockReset();
-    (gcalService.getBaseRecurringEventInstances as Mock).mockReset();
+    spyOn(gcalService, "getAllEvents");
+    spyOn(gcalService, "getEvents");
+    spyOn(gcalService, "getBaseRecurringEventInstances");
   });
 
   describe("importAllEvents", () => {

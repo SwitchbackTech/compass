@@ -4,44 +4,7 @@
  * we do not need the database for this test
  */
 
-import { afterAll, beforeAll, describe, expect, it, mock } from "bun:test";
-
-mock.module("supertokens-node/recipe/session/framework/express", () => ({
-  verifySession:
-    () =>
-    (
-      req: { headers?: { cookie?: string }; session?: unknown },
-      _res: unknown,
-      next: () => void,
-    ) => {
-      const cookieHeader = req.headers?.cookie ?? "";
-      const sessionMatch = cookieHeader.match(/session=([^;]+)/);
-      if (sessionMatch) {
-        try {
-          const session = JSON.parse(decodeURIComponent(sessionMatch[1])) as {
-            userId: string;
-          };
-          req.session = {
-            getUserId: () => session.userId,
-            getHandle: () => "test-session-handle",
-          };
-        } catch {
-          // ignore invalid cookie
-        }
-      }
-      next();
-    },
-}));
-
-mock.module("@backend/user/services/user-metadata.service", () => ({
-  __esModule: true,
-  default: {
-    fetchUserMetadata: mock().mockResolvedValue({
-      sync: { importGCal: null },
-    }),
-  },
-}));
-
+import { afterAll, beforeAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { ObjectId } from "mongodb";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import {
@@ -49,6 +12,7 @@ import {
   ServerMessageSchema,
 } from "@core/types/server-message.contracts";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
+import userMetadataService from "@backend/user/services/user-metadata.service";
 
 describe("SSE Server", () => {
   const baseDriver = new BaseDriver();
@@ -58,6 +22,12 @@ describe("SSE Server", () => {
   });
 
   afterAll(async () => baseDriver.teardown());
+
+  beforeEach(() => {
+    spyOn(userMetadataService, "fetchUserMetadata").mockResolvedValue({
+      sync: { importGCal: null },
+    });
+  });
 
   describe("Subscription and events (B10 — single `message` event, dispatched by payload.type):", () => {
     it("delivers eventsChanged to a subscribed user", async () => {

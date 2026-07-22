@@ -10,10 +10,6 @@ import {
   spyOn,
 } from "bun:test";
 
-mock.module("@backend/auth/services/google/google.revoke.service", () => ({
-  revokeGoogleGrant: mock().mockResolvedValue(true),
-}));
-
 import { faker } from "@faker-js/faker";
 import * as supertokensNode from "supertokens-node";
 import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
@@ -26,7 +22,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
-import { revokeGoogleGrant } from "@backend/auth/services/google/google.revoke.service";
+import * as googleRevokeService from "@backend/auth/services/google/google.revoke.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import calendarService from "@backend/calendar/services/calendar.service";
@@ -39,10 +35,6 @@ import { googleWatchService } from "@backend/sync/services/watch/google-watch.se
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
-
-const mockRevokeGoogleGrant = revokeGoogleGrant as Mock<
-  typeof revokeGoogleGrant
->;
 
 const createSupertokensUser = (userId: string, recipeUserIds: string[]) => ({
   id: userId,
@@ -58,24 +50,28 @@ describe("UserService", () => {
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
   beforeEach(() => {
-    jest
-      .spyOn(compassAuthService, "revokeSessionsByUser")
-      .mockResolvedValue({ sessionsRevoked: 0 });
-    jest
-      .spyOn(supertokensUserCleanupService, "resolveByExternalUserId")
-      .mockResolvedValue({
-        externalUserIds: [],
-        superTokensUserIds: [],
-      });
-    jest
-      .spyOn(supertokensUserCleanupService, "cleanupResolvedTarget")
-      .mockResolvedValue({
-        superTokensUsers: 0,
-        superTokensMappings: 0,
-        superTokensMetadata: 0,
-      });
+    spyOn(googleRevokeService, "revokeGoogleGrant").mockResolvedValue(true);
+    spyOn(compassAuthService, "revokeSessionsByUser").mockResolvedValue({
+      sessionsRevoked: 0,
+    });
+    spyOn(
+      supertokensUserCleanupService,
+      "resolveByExternalUserId",
+    ).mockResolvedValue({
+      externalUserIds: [],
+      superTokensUserIds: [],
+    });
+    spyOn(
+      supertokensUserCleanupService,
+      "cleanupResolvedTarget",
+    ).mockResolvedValue({
+      superTokensUsers: 0,
+      superTokensMappings: 0,
+      superTokensMetadata: 0,
+    });
   });
   afterEach(() => {
+    mock.restore();
   });
   afterAll(cleanupTestDb);
 
@@ -316,7 +312,7 @@ describe("UserService", () => {
 
   describe("deleteAccount", () => {
     beforeEach(() => {
-      mockRevokeGoogleGrant.mockClear();
+      (googleRevokeService.revokeGoogleGrant as Mock).mockClear();
       spyOn(googleWatchService, "stopWatches").mockResolvedValue([]);
     });
 
@@ -327,7 +323,7 @@ describe("UserService", () => {
 
       expect(summary).toEqual(expect.objectContaining({ user: 1 }));
       expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
-      expect(mockRevokeGoogleGrant).toHaveBeenCalledWith(
+      expect(googleRevokeService.revokeGoogleGrant).toHaveBeenCalledWith(
         user.google?.gRefreshToken,
       );
     });
@@ -338,11 +334,13 @@ describe("UserService", () => {
       await userService.deleteAccount(user._id.toString());
 
       expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
-      expect(mockRevokeGoogleGrant).not.toHaveBeenCalled();
+      expect(googleRevokeService.revokeGoogleGrant).not.toHaveBeenCalled();
     });
 
     it("still deletes the account when revoking the Google grant fails", async () => {
-      mockRevokeGoogleGrant.mockResolvedValueOnce(false);
+      (googleRevokeService.revokeGoogleGrant as Mock).mockResolvedValueOnce(
+        false,
+      );
       const user = await UserDriver.createUser();
 
       await userService.deleteAccount(user._id.toString());
@@ -405,17 +403,14 @@ describe("UserService", () => {
         name: "Tyler Durden",
       });
 
-      const resolveSpy = jest
-        .spyOn(supertokensUserCleanupService, "resolveByExternalUserId")
+      const resolveSpy =       spyOn(supertokensUserCleanupService, "resolveByExternalUserId")
         .mockResolvedValue({
           externalUserIds: [userId],
           superTokensUserIds: ["st-user-id"],
         });
-      const revokeSpy = jest
-        .spyOn(compassAuthService, "revokeSessionsByUser")
+      const revokeSpy =       spyOn(compassAuthService, "revokeSessionsByUser")
         .mockResolvedValue({ sessionsRevoked: 2 });
-      const cleanupSpy = jest
-        .spyOn(supertokensUserCleanupService, "cleanupResolvedTarget")
+      const cleanupSpy =       spyOn(supertokensUserCleanupService, "cleanupResolvedTarget")
         .mockResolvedValue({
           superTokensUsers: 1,
           superTokensMappings: 1,
@@ -448,16 +443,13 @@ describe("UserService", () => {
   describe("supertokens auth cleanup", () => {
     it("removes orphaned SuperTokens users by email", async () => {
 
-      const initSpy = jest
-        .spyOn(supertokensMiddleware, "initSupertokens")
+      const initSpy =       spyOn(supertokensMiddleware, "initSupertokens")
         .mockImplementation(() => undefined);
-      const listUsersSpy = jest
-        .spyOn(supertokensNode, "listUsersByAccountInfo")
+      const listUsersSpy =       spyOn(supertokensNode, "listUsersByAccountInfo")
         .mockResolvedValue([
           createSupertokensUser("st-primary-user", ["recipe-user-1"]) as never,
         ]);
-      const getUserIdMappingSpy = jest
-        .spyOn(supertokensNode, "getUserIdMapping")
+      const getUserIdMappingSpy =       spyOn(supertokensNode, "getUserIdMapping")
         .mockImplementation(
           ({
             userId,
@@ -483,20 +475,16 @@ describe("UserService", () => {
             });
           },
         );
-      const getUserMetadataSpy = jest
-        .spyOn(SupertokensUserMetadata, "getUserMetadata")
+      const getUserMetadataSpy =       spyOn(SupertokensUserMetadata, "getUserMetadata")
         .mockResolvedValue({
           metadata: { skipOnboarding: true },
           status: "OK",
         });
-      const clearUserMetadataSpy = jest
-        .spyOn(SupertokensUserMetadata, "clearUserMetadata")
+      const clearUserMetadataSpy =       spyOn(SupertokensUserMetadata, "clearUserMetadata")
         .mockResolvedValue({ status: "OK" });
-      const deleteUserSpy = jest
-        .spyOn(supertokensNode, "deleteUser")
+      const deleteUserSpy =       spyOn(supertokensNode, "deleteUser")
         .mockResolvedValue({ status: "OK" });
-      const deleteUserIdMappingSpy = jest
-        .spyOn(supertokensNode, "deleteUserIdMapping")
+      const deleteUserIdMappingSpy =       spyOn(supertokensNode, "deleteUserIdMapping")
         .mockResolvedValue({
           didMappingExist: true,
           status: "OK",
@@ -527,11 +515,9 @@ describe("UserService", () => {
 
     it("removes mapped SuperTokens users by external user id", async () => {
 
-      const initSpy = jest
-        .spyOn(supertokensMiddleware, "initSupertokens")
+      const initSpy =       spyOn(supertokensMiddleware, "initSupertokens")
         .mockImplementation(() => undefined);
-      const getUserIdMappingSpy = jest
-        .spyOn(supertokensNode, "getUserIdMapping")
+      const getUserIdMappingSpy =       spyOn(supertokensNode, "getUserIdMapping")
         .mockImplementation(
           ({
             userId,
@@ -557,25 +543,20 @@ describe("UserService", () => {
             });
           },
         );
-      const getUserSpy = jest
-        .spyOn(supertokensNode, "getUser")
+      const getUserSpy =       spyOn(supertokensNode, "getUser")
         .mockResolvedValue(
           createSupertokensUser("st-primary-user", ["recipe-user-1"]) as never,
         );
-      const getUserMetadataSpy = jest
-        .spyOn(SupertokensUserMetadata, "getUserMetadata")
+      const getUserMetadataSpy =       spyOn(SupertokensUserMetadata, "getUserMetadata")
         .mockResolvedValue({
           metadata: { skipOnboarding: true },
           status: "OK",
         });
-      const clearUserMetadataSpy = jest
-        .spyOn(SupertokensUserMetadata, "clearUserMetadata")
+      const clearUserMetadataSpy =       spyOn(SupertokensUserMetadata, "clearUserMetadata")
         .mockResolvedValue({ status: "OK" });
-      const deleteUserSpy = jest
-        .spyOn(supertokensNode, "deleteUser")
+      const deleteUserSpy =       spyOn(supertokensNode, "deleteUser")
         .mockResolvedValue({ status: "OK" });
-      const deleteUserIdMappingSpy = jest
-        .spyOn(supertokensNode, "deleteUserIdMapping")
+      const deleteUserIdMappingSpy =       spyOn(supertokensNode, "deleteUserIdMapping")
         .mockResolvedValue({
           didMappingExist: true,
           status: "OK",
@@ -663,8 +644,7 @@ describe("UserService", () => {
   describe("handleLogoutCleanup", () => {
     it("skips Google metadata updates for email/password-only users", async () => {
       const user = await UserDriver.createUser({ withGoogle: false });
-      const stopWatchesSpy = jest
-        .spyOn(googleWatchService, "stopWatches")
+      const stopWatchesSpy =       spyOn(googleWatchService, "stopWatches")
         .mockResolvedValue([]);
       const updateMetadataSpy = spyOn(
         userMetadataService,
@@ -681,11 +661,9 @@ describe("UserService", () => {
 
     it("updates Google metadata and stops watches for last active Google sessions", async () => {
       const user = await UserDriver.createUser();
-      const stopWatchesSpy = jest
-        .spyOn(googleWatchService, "stopWatches")
+      const stopWatchesSpy =       spyOn(googleWatchService, "stopWatches")
         .mockResolvedValue([]);
-      const updateMetadataSpy = jest
-        .spyOn(userMetadataService, "updateUserMetadata")
+      const updateMetadataSpy =       spyOn(userMetadataService, "updateUserMetadata")
         .mockResolvedValue({} as never);
 
       await userService.handleLogoutCleanup(user._id.toString(), {

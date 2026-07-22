@@ -1,27 +1,19 @@
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { faker } from "@faker-js/faker";
 import supertokens from "supertokens-node";
-import { describe, expect, it, mock } from "bun:test";
-
-mock.module("supertokens-node/recipe/session", () => ({
-  __esModule: true,
-  default: {
-    createNewSessionWithoutRequestResponse: mock(),
-    revokeAllSessionsForUser: mock(),
-  },
-}));
-
 import Session from "supertokens-node/recipe/session";
 import compassAuthService from "./compass.auth.service";
 
-const createNewSessionWithoutRequestResponseMock = (
-  Session.createNewSessionWithoutRequestResponse,
-);
-
-const revokeAllSessionsForUserMock = (
-  Session.revokeAllSessionsForUser,
-);
-
 describe("CompassAuthService", () => {
+  beforeEach(() => {
+    spyOn(Session, "createNewSessionWithoutRequestResponse");
+    spyOn(Session, "revokeAllSessionsForUser");
+  });
+
+  afterEach(() => {
+    mock.restore();
+  });
+
   describe("createSessionForUser", () => {
     it("creates a session and returns the expected session payload", async () => {
       const compassUserId = faker.database.mongodbObjectId();
@@ -35,7 +27,7 @@ describe("CompassAuthService", () => {
         getHandle: mock().mockReturnValue(sessionHandle),
       };
 
-      createNewSessionWithoutRequestResponseMock.mockResolvedValue(
+      (Session.createNewSessionWithoutRequestResponse as Mock).mockResolvedValue(
         sessionMock as unknown as ReturnType<
           typeof Session.createNewSessionWithoutRequestResponse
         >,
@@ -49,7 +41,8 @@ describe("CompassAuthService", () => {
       ).toHaveBeenCalledWith("public", expect.anything());
 
       const [, calledRecipeUserId] =
-        createNewSessionWithoutRequestResponseMock.mock.calls[0] ?? [];
+        (Session.createNewSessionWithoutRequestResponse as Mock).mock
+          .calls[0] ?? [];
 
       expect(calledRecipeUserId).toBeDefined();
 
@@ -68,8 +61,8 @@ describe("CompassAuthService", () => {
     it("throws a helpful error when session creation fails", async () => {
       const compassUserId = faker.database.mongodbObjectId();
 
-      createNewSessionWithoutRequestResponseMock.mockImplementation(() =>
-        Promise.reject(new Error("boom")),
+      (Session.createNewSessionWithoutRequestResponse as Mock).mockImplementation(
+        () => Promise.reject(new Error("boom")),
       );
 
       await expect(
@@ -82,7 +75,7 @@ describe("CompassAuthService", () => {
     it("returns the revoked sessions count", async () => {
       const userId = faker.database.mongodbObjectId();
 
-      revokeAllSessionsForUserMock.mockResolvedValue([
+      (Session.revokeAllSessionsForUser as Mock).mockResolvedValue([
         faker.string.uuid(),
         faker.string.uuid(),
       ]);
@@ -96,7 +89,7 @@ describe("CompassAuthService", () => {
     it("returns 0 when no sessions are revoked", async () => {
       const userId = faker.database.mongodbObjectId();
 
-      revokeAllSessionsForUserMock.mockResolvedValue([]);
+      (Session.revokeAllSessionsForUser as Mock).mockResolvedValue([]);
 
       const result = await compassAuthService.revokeSessionsByUser(userId);
 

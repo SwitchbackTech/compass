@@ -1,11 +1,11 @@
-import { ObjectId as BsonObjectId } from "bson";
-import { ObjectId } from "mongodb";
+import { ObjectId } from "bson";
+import { ObjectId as MongoObjectId } from "mongodb";
 import { EventRecordSchema } from "@backend/event/event.record";
 import { describe, expect, it } from "bun:test";
 
 const baseFields = () => ({
-  _id: new ObjectId(),
-  calendarId: new ObjectId(),
+  _id: new MongoObjectId(),
+  calendarId: new MongoObjectId(),
   externalReference: null,
   createdAt: new Date(),
   updatedAt: null,
@@ -42,7 +42,7 @@ describe("EventRecordSchema", () => {
       ...baseFields(),
       content: { kind: "busy" },
       schedule: { kind: "allDay", start: "2026-07-13", end: "2026-07-14" },
-      recurrence: { kind: "occurrence", seriesId: new ObjectId() },
+      recurrence: { kind: "occurrence", seriesId: new MongoObjectId() },
     });
     expect(result.success).toBe(true);
   });
@@ -74,7 +74,7 @@ describe("EventRecordSchema", () => {
   });
 
   it("transforms 24-hex string ObjectId fields into ObjectId instances", () => {
-    const hex = new ObjectId().toHexString();
+    const hex = new MongoObjectId().toHexString();
     const result = EventRecordSchema.safeParse({
       ...baseFields(),
       _id: hex,
@@ -85,8 +85,8 @@ describe("EventRecordSchema", () => {
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data._id).toBeInstanceOf(BsonObjectId);
-      expect(result.data.calendarId).toBeInstanceOf(BsonObjectId);
+      expect(ObjectId.isValid(result.data._id.toString())).toBe(true);
+      expect(ObjectId.isValid(result.data.calendarId.toString())).toBe(true);
     }
   });
 

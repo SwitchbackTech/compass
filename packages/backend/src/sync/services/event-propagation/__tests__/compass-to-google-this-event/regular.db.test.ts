@@ -118,8 +118,7 @@ describe("CompassToGoogleEventPropagation - scope 'this' - standalone event", ()
   it("does not call Google to delete a record that was never synced (no externalReference)", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const createSpy = jest
-      .spyOn(gcalService, "createEvent")
+    const createSpy = spyOn(gcalService, "createEvent")
       .mockImplementationOnce(async () => {
         throw new Error("simulated provider outage during create");
       });

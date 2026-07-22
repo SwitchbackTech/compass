@@ -1,17 +1,17 @@
 import { GaxiosError, type GaxiosResponse } from "gaxios";
-import { Logger } from "@core/logger/winston.logger";
+import { LoggerFactory } from "@core/logger/logger.factory";
 import {
   computeBackoffDelayMs,
   isRetryableGoogleError,
   withGoogleRetry,
 } from "@backend/common/services/gcal/gcal.retry";
-import { describe, expect, it, mock, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 // The repo-wide winston mock (see mock.setup.ts) returns one stable logger per
 // name, so this is the very instance the retry module captured at import time
 // (`Logger("app:gcal.retry")`). Grabbing it by the same name lets the
 // observability tests assert on it directly.
-const mockLogger = Logger("app:gcal.retry") as unknown as {
+const mockLogger = LoggerFactory("app:gcal.retry") as unknown as {
   debug: Mock;
   info: Mock;
   warn: Mock;
@@ -162,8 +162,7 @@ describe("withGoogleRetry", () => {
 
   it("retries a retryable failure and resolves once it succeeds", async () => {
     const sleep = mock(noopSleep);
-    const fn = jest
-      .fn()
+    const fn = mock()
       .mockImplementationOnce(() =>
         Promise.reject(makeGaxiosError({ status: 429 })),
       )
@@ -215,8 +214,7 @@ describe("withGoogleRetry Retry-After handling", () => {
       status: 429,
       headers: { "retry-after": "2" },
     });
-    const fn = jest
-      .fn()
+    const fn = mock()
       .mockImplementationOnce(() => Promise.reject(err))
       .mockResolvedValueOnce("ok");
 
@@ -235,8 +233,7 @@ describe("withGoogleRetry Retry-After handling", () => {
       status: 429,
       headers: { "retry-after": "9999" },
     });
-    const fn = jest
-      .fn()
+    const fn = mock()
       .mockImplementationOnce(() => Promise.reject(err))
       .mockResolvedValueOnce("ok");
 
@@ -258,8 +255,7 @@ describe("withGoogleRetry Retry-After handling", () => {
       status: 429,
       headers: value === undefined ? undefined : { "retry-after": value },
     });
-    const fn = jest
-      .fn()
+    const fn = mock()
       .mockImplementationOnce(() => Promise.reject(err))
       .mockResolvedValueOnce("ok");
 
@@ -278,6 +274,14 @@ describe("withGoogleRetry Retry-After handling", () => {
 describe("withGoogleRetry observability logging", () => {
   const noopSleep = async () => undefined;
 
+  beforeEach(() => {
+    mockLogger.debug.mockClear();
+    mockLogger.info.mockClear();
+    mockLogger.warn.mockClear();
+    mockLogger.error.mockClear();
+    mockLogger.verbose.mockClear();
+  });
+
   it("logs nothing on the common first-try-success path", async () => {
     const sleep = mock(noopSleep);
     const fn = mock().mockResolvedValue("ok");
@@ -291,8 +295,7 @@ describe("withGoogleRetry observability logging", () => {
   it("logs once when a call succeeds after retrying", async () => {
     const sleep = mock(noopSleep);
     const err = makeGaxiosError({ status: 429 });
-    const fn = jest
-      .fn()
+    const fn = mock()
       .mockImplementationOnce(() => Promise.reject(err))
       .mockResolvedValueOnce("ok");
 

@@ -29,6 +29,7 @@ describe("httpLoggingMiddleware", () => {
   const originalLogLevel = process.env["LOG_LEVEL"];
 
   afterEach(() => {
+    mock.restore();
     process.env["LOG_LEVEL"] = originalLogLevel;
   });
 
@@ -43,7 +44,7 @@ describe("httpLoggingMiddleware", () => {
   });
 
   it("does not log health checks at the default log level", () => {
-    delete process.env["LOG_LEVEL"];
+    process.env["LOG_LEVEL"] = "info";
 
     const { next, logSpy } = runMiddleware(makeRequest("/api/health"));
 

@@ -260,7 +260,7 @@ This keeps tests on production code paths while avoiding brittle layout coupling
 
 ### Jest Unbound-Method Rule In Tests
 
-If you need to assert method calls on non-mock objects, spy on the method first (`jest.spyOn(...)`, backed by `bun:test`) so the assertion is bound to a real mock/spy rather than an unbound method reference.
+If you need to assert method calls on non-mock objects, spy on the method first (`spyOn(...)` from `bun:test`) so the assertion is bound to a real mock/spy rather than an unbound method reference.
 
 Useful anchors:
 

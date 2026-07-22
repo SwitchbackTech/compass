@@ -14,7 +14,7 @@ import {
   buildEventRecord,
   seedGoogleCalendar,
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
-import { , afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 const seedLocalCalendar = async (userId: ObjectId) => {
   const record = CalendarRecordSchema.parse({
@@ -597,8 +597,7 @@ describe("EventService (SSE suppression for invisible calendars, step 9)", () =>
     // (e.g. calendarService.list's ownership checks) passes through
     // untouched. notify() should still publish rather than silently drop it.
     const originalFind = mongoService.calendar.find.bind(mongoService.calendar);
-    jest
-      .spyOn(mongoService.calendar, "find")
+    spyOn(mongoService.calendar, "find")
       .mockImplementation(
         (...args: Parameters<typeof mongoService.calendar.find>) => {
           const [filter] = args;
@@ -871,8 +870,7 @@ describe("EventService (cross-calendar move)", () => {
     });
     await mongoService.event.insertOne(event);
 
-    jest
-      .spyOn(gcalService, "moveEvent")
+    spyOn(gcalService, "moveEvent")
       .mockImplementation(() =>
         Promise.reject(new Error("cannotChangeOrganizer")),
       );
@@ -951,11 +949,9 @@ describe("EventService (cross-calendar move)", () => {
     });
     await mongoService.event.insertOne(event);
 
-    const moveSpy = jest
-      .spyOn(gcalService, "moveEvent")
+    const moveSpy = spyOn(gcalService, "moveEvent")
       .mockResolvedValue({} as never);
-    const patchSpy = jest
-      .spyOn(gcalService, "patchEvent")
+    const patchSpy = spyOn(gcalService, "patchEvent")
       .mockResolvedValue({} as never);
 
     await eventService.replace(

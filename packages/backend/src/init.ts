@@ -26,4 +26,4 @@ import { startPostHogLogs } from "./logging/posthog-logs";
 
 startPostHogLogs();
 
-export const logger = Logger("app:root");
+export const logger: ReturnType<typeof Logger> = Logger("app:root");

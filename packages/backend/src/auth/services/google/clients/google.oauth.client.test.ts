@@ -1,35 +1,22 @@
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { faker } from "@faker-js/faker";
-import { describe, expect, it, mock } from "bun:test";
-
-const mockCalendarFn = mock();
-
-mock.module("@googleapis/calendar", () => ({
-  calendar: mockCalendarFn,
-}));
-
-mock.module("google-auth-library", () => {
-  class MockOAuth2Client {
-    credentials: Record<string, unknown> = {};
-    _clientId = "mock-client-id";
-    getToken = mock();
-    setCredentials = mock((credentials: Record<string, unknown>) => {
-      this.credentials = credentials;
-    });
-    verifyIdToken = mock();
-    getAccessToken = mock();
-  }
-
-  return {
-    OAuth2Client: mock(() => new MockOAuth2Client()),
-  };
-});
-
-import { calendar } from "@googleapis/calendar";
-import { OAuth2Client } from "google-auth-library";
+import * as googleapisCalendar from "@googleapis/calendar";
+import * as googleAuthLibrary from "google-auth-library";
 import { BaseError } from "@core/errors/errors.base";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import GoogleOAuthClient from "./google.oauth.client";
+
+class MockOAuth2Client {
+  credentials: Record<string, unknown> = {};
+  _clientId = "mock-client-id";
+  getToken = mock();
+  setCredentials = mock((credentials: Record<string, unknown>) => {
+    this.credentials = credentials;
+  });
+  verifyIdToken = mock();
+  getAccessToken = mock();
+}
 
 type MockOAuthClientInstance = {
   credentials: Record<string, unknown>;
@@ -40,26 +27,36 @@ type MockOAuthClientInstance = {
   getAccessToken: Mock;
 };
 
-const mockCalendar = calendar;
 const getMockOAuthClient = (
   client: GoogleOAuthClient,
 ): MockOAuthClientInstance =>
   client.oauthClient as unknown as MockOAuthClientInstance;
 
 describe("GoogleOAuthClient", () => {
+  beforeEach(() => {
+    spyOn(googleAuthLibrary, "OAuth2Client").mockImplementation(
+      () => new MockOAuth2Client() as unknown as googleAuthLibrary.OAuth2Client,
+    );
+    spyOn(googleapisCalendar, "calendar");
+  });
+
+  afterEach(() => {
+    mock.restore();
+  });
+
   it("creates a calendar client using the oauth client instance", () => {
     const gcalClient = { calendars: true };
-    mockCalendar.mockReturnValue(gcalClient);
+    (googleapisCalendar.calendar as Mock).mockReturnValue(gcalClient);
 
     const client = new GoogleOAuthClient();
 
-    expect(OAuth2Client).toHaveBeenCalledWith(
+    expect(googleAuthLibrary.OAuth2Client).toHaveBeenCalledWith(
       CONFIG.GOOGLE_CLIENT_ID,
       CONFIG.GOOGLE_CLIENT_SECRET,
       "http://localhost:9080/auth/google/callback",
     );
     expect(client.getGcalClient()).toBe(gcalClient);
-    expect(mockCalendar).toHaveBeenCalledWith({
+    expect(googleapisCalendar.calendar).toHaveBeenCalledWith({
       version: "v3",
       auth: client.oauthClient,
     });

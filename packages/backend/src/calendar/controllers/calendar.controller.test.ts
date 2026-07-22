@@ -11,7 +11,7 @@ import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import calendarController from "@backend/calendar/controllers/calendar.controller";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { type Res_Promise } from "@backend/common/types/express.types";
-import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 // These exercise calendarController.availability directly against fake
 // req/res objects (no supertest), mirroring events.controller.test.ts - the
@@ -26,7 +26,8 @@ import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 describe("CalendarController availability", () => {
   const userId = "507f1f77bcf86cd799439011";
 
-  afterEach(() => {
+  beforeEach(() => {
+    mock.restore();
   });
 
   const buildReq = (query: Record<string, string>): SessionRequest =>
@@ -42,9 +43,10 @@ describe("CalendarController availability", () => {
 
   it("parses comma-separated calendarIds and forwards start/end to calendarService.getAvailability", async () => {
     const availabilityResponse: AvailabilityResponse = { busyPeriods: [] };
-    const getAvailabilitySpy = jest
-      .spyOn(calendarService, "getAvailability")
-      .mockResolvedValue(availabilityResponse);
+    const getAvailabilitySpy = spyOn(
+      calendarService,
+      "getAvailability",
+    ).mockResolvedValue(availabilityResponse);
 
     const req = buildReq({
       calendarIds: "507f1f77bcf86cd799439012,507f1f77bcf86cd799439013",
@@ -105,7 +107,8 @@ describe("CalendarController availability", () => {
 describe("CalendarController list", () => {
   const userId = "507f1f77bcf86cd799439011";
 
-  afterEach(() => {
+  beforeEach(() => {
+    mock.restore();
   });
 
   it("returns a CalendarListResponse-shaped body for the session user's calendars", async () => {
@@ -125,9 +128,7 @@ describe("CalendarController list", () => {
       createdAt: new Date(),
       updatedAt: null,
     });
-    const listSpy = jest
-      .spyOn(calendarService, "list")
-      .mockResolvedValue([record]);
+    const listSpy = spyOn(calendarService, "list").mockResolvedValue([record]);
 
     const req = {
       query: {},

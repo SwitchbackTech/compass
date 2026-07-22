@@ -159,8 +159,7 @@ describe("CompassToGoogleEventPropagation - scope 'thisAndFollowing'", () => {
   it("creates (never patches) both halves of a split when the original series was never synced", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const createFailSpy = jest
-      .spyOn(gcalService, "createEvent")
+    const createFailSpy = spyOn(gcalService, "createEvent")
       .mockImplementationOnce(async () => {
         throw new Error("simulated provider outage during create");
       });

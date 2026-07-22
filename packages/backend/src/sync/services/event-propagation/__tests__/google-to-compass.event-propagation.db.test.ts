@@ -5,15 +5,8 @@ import {
   describe,
   expect,
   it,
-  mock,
+  spyOn,
 } from "bun:test";
-
-mock.module("@backend/common/services/gcal/gcal.service", () => ({
-  __esModule: true,
-  default: {
-    getBaseRecurringEventInstances: mock(),
-  },
-}));
 
 import { ObjectId } from "mongodb";
 import { type gCalendar, type gSchema$Event } from "@core/types/gcal";
@@ -74,7 +67,7 @@ describe("GoogleToCompassEventPropagation", () => {
       updatedAt: null,
     };
     await mongoService.calendar.insertOne(calendar);
-    (gcalService.getBaseRecurringEventInstances as Mock).mockReset();
+    spyOn(gcalService, "getBaseRecurringEventInstances");
   });
 
   it("creates a standalone event", async () => {

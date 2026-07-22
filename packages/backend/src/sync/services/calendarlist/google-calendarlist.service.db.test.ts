@@ -23,7 +23,7 @@ import { googleCalendarListService } from "@backend/sync/services/calendarlist/g
 import { seedLocalCalendar } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 import * as syncImportService from "@backend/sync/services/import/google-import.service";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
-import { , afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 const buildGoogleCalendar = (
   userId: ObjectId,
@@ -597,8 +597,7 @@ describe("googleCalendarListService", () => {
       ];
 
       spyOn(syncImportService, "createSyncImport").mockResolvedValue({
-        importAllEvents: jest
-          .fn()
+        importAllEvents: mock()
           .mockImplementation(() =>
             Promise.reject(new Error("simulated import failure")),
           ),
@@ -717,8 +716,7 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      jest
-        .spyOn(gcalService, "getAllCalendarListPages")
+      spyOn(gcalService, "getAllCalendarListPages")
         .mockImplementationOnce(() => {
           throw invalidSyncTokenError;
         });
@@ -785,8 +783,7 @@ describe("googleCalendarListService", () => {
       const userId = user._id.toString();
       const initialToken = await seedCalendarlistToken(userId);
 
-      jest
-        .spyOn(gcalService, "getAllCalendarListPages")
+      spyOn(gcalService, "getAllCalendarListPages")
         .mockImplementationOnce(() => {
           throw createGoogleError({ code: "500", responseStatus: 500 });
         });

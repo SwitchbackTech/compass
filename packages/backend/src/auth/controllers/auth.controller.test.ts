@@ -1,14 +1,6 @@
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { describe, expect, it, mock } from "bun:test";
-
-mock.module("@backend/auth/services/google/google.auth.service", () => ({
-  __esModule: true,
-  googleAuthService: {
-    connectGoogleToCurrentUser: mock(),
-  },
-}));
-
 import authController from "./auth.controller";
 
 describe("auth.controller", () => {

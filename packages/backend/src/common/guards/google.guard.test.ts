@@ -16,6 +16,14 @@ const isGoogleConnected = async (userId: string): Promise<boolean> => {
 };
 
 describe("google.guard", () => {
+  beforeEach(() => {
+    if (
+      typeof (userQueries.findCompassUserBy as { mockClear?: () => void })
+        .mockClear === "function"
+    ) {
+      (userQueries.findCompassUserBy as Mock).mockClear();
+    }
+  });
 
   describe("isGoogleConnected", () => {
     it("returns true when user has google.gRefreshToken", async () => {
@@ -116,12 +124,14 @@ describe("google.guard", () => {
     });
 
     it("throws when userId is not a valid ObjectId", async () => {
+      const findSpy = spyOn(userQueries, "findCompassUserBy");
+
       await expect(
         requireGoogleConnection("not-an-object-id"),
       ).rejects.toMatchObject({
         description: UserError.InvalidValue.description,
       });
-      expect(userQueries.findCompassUserBy).not.toHaveBeenCalled();
+      expect(findSpy).not.toHaveBeenCalled();
     });
 
     it("throws UserError.UserNotFound when user does not exist", async () => {

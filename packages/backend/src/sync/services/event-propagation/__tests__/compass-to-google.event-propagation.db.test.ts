@@ -51,8 +51,7 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
     const calendar = await seedGoogleCalendar(user._id);
     let sawCommittedWriteDuringGoogleCall = false;
 
-    const createSpy = jest
-      .spyOn(gcalService, "createEvent")
+    const createSpy = spyOn(gcalService, "createEvent")
       .mockImplementationOnce(async () => {
         // Read through the *unmocked* driver (no session) -- if the Mongo
         // transaction had not actually committed yet, this read would race
@@ -86,8 +85,7 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
     propagateSpy.mockClear();
     createEventSpy.mockClear();
 
-    const bulkReplaceSpy = jest
-      .spyOn(eventRepository, "bulkReplace")
+    const bulkReplaceSpy = spyOn(eventRepository, "bulkReplace")
       .mockImplementationOnce(async () => {
         throw new Error("simulated write conflict inside the transaction");
       });
@@ -113,8 +111,7 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
   it("surfaces PROVIDER_FAILURE on a Google error, but keeps the already-committed Mongo write", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const createSpy = jest
-      .spyOn(gcalService, "createEvent")
+    const createSpy = spyOn(gcalService, "createEvent")
       .mockImplementationOnce(async () => {
         throw new Error("simulated Google 500");
       });

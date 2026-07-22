@@ -1,7 +1,7 @@
 import { GaxiosError } from "gaxios";
-import { Logger } from "@core/logger/winston.logger";
+import { LoggerFactory } from "@core/logger/logger.factory";
 
-const logger = Logger("app:gcal.retry");
+const logger = LoggerFactory("app:gcal.retry");
 
 /** 403 reasons Google returns for quota/rate-limit rejections (retryable). */
 const RETRYABLE_403_REASONS = new Set([

@@ -6,13 +6,8 @@ import {
   describe,
   expect,
   it,
-  mock,
   spyOn,
 } from "bun:test";
-
-mock.module("@backend/auth/services/google/google.revoke.service", () => ({
-  revokeGoogleGrant: mock().mockResolvedValue(true),
-}));
 
 import { ObjectId } from "mongodb";
 import { Status } from "@core/errors/status.codes";
@@ -45,19 +40,21 @@ describe("UserController", () => {
     // exists here. The delete-and-revoke logic itself is covered in
     // user.service.test.ts; this is about the route and where userId comes from.
     beforeEach(() => {
-      jest
-        .spyOn(compassAuthService, "revokeSessionsByUser")
-        .mockResolvedValue({ sessionsRevoked: 0 });
-      jest
-        .spyOn(supertokensUserCleanupService, "resolveByExternalUserId")
-        .mockResolvedValue({ externalUserIds: [], superTokensUserIds: [] });
-      jest
-        .spyOn(supertokensUserCleanupService, "cleanupResolvedTarget")
-        .mockResolvedValue({
-          superTokensUsers: 0,
-          superTokensMappings: 0,
-          superTokensMetadata: 0,
-        });
+      spyOn(compassAuthService, "revokeSessionsByUser").mockResolvedValue({
+        sessionsRevoked: 0,
+      });
+      spyOn(
+        supertokensUserCleanupService,
+        "resolveByExternalUserId",
+      ).mockResolvedValue({ externalUserIds: [], superTokensUserIds: [] });
+      spyOn(
+        supertokensUserCleanupService,
+        "cleanupResolvedTarget",
+      ).mockResolvedValue({
+        superTokensUsers: 0,
+        superTokensMappings: 0,
+        superTokensMetadata: 0,
+      });
       spyOn(googleWatchService, "stopWatches").mockResolvedValue([]);
     });
 
@@ -153,9 +150,10 @@ describe("UserController", () => {
 
     it("returns the active Kit subscription state for the session user", async () => {
       const { user } = await UtilDriver.setupTestUser();
-      const getStatus = jest
-        .spyOn(EmailService, "getEmailUpdatesStatus")
-        .mockResolvedValue("subscribed");
+      const getStatus = spyOn(
+        EmailService,
+        "getEmailUpdatesStatus",
+      ).mockResolvedValue("subscribed");
 
       const response = await userDriver.getEmailUpdates({
         userId: user._id.toString(),
@@ -167,9 +165,10 @@ describe("UserController", () => {
 
     it("subscribes the session user without writing user metadata", async () => {
       const { user } = await UtilDriver.setupTestUser();
-      const subscribe = jest
-        .spyOn(EmailService, "subscribeToEmailUpdates")
-        .mockResolvedValue("subscribed");
+      const subscribe = spyOn(
+        EmailService,
+        "subscribeToEmailUpdates",
+      ).mockResolvedValue("subscribed");
 
       const response = await userDriver.subscribeToEmailUpdates({
         userId: user._id.toString(),

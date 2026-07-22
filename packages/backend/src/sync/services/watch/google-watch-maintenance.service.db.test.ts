@@ -22,7 +22,7 @@ import { googleWatchService } from "@backend/sync/services/watch/google-watch.se
 import { googleWatchMaintenanceService } from "@backend/sync/services/watch/google-watch-maintenance.service";
 import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import userService from "@backend/user/services/user.service";
-import { , afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 describe("googleWatchMaintenanceService", () => {
   beforeAll(initSupertokens);
@@ -84,8 +84,7 @@ describe("googleWatchMaintenanceService", () => {
     // watch without throwing - mocking stopWatch directly here isolates
     // the planner's OWN catch/A29 handling instead of re-proving
     // stopWatch's already-covered behavior.
-    jest
-      .spyOn(googleWatchService, "stopWatch")
+    spyOn(googleWatchService, "stopWatch")
       .mockImplementation(() => Promise.reject(invalidGrant400Error));
     const publishSyncStatusSpy = spyOn(sseServer, "publishSyncStatus");
 

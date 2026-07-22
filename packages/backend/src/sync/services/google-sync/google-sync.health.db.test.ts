@@ -6,17 +6,8 @@ import {
   describe,
   expect,
   it,
-  mock,
+  spyOn,
 } from "bun:test";
-import { createRequire } from "node:module";
-
-const requireActual = createRequire(import.meta.url);
-
-mock.module("@backend/sync/services/watch/google-watch-config", () => ({
-  ...requireActual("@backend/sync/services/watch/google-watch-config"),
-  isUsingGcalWebhookHttps: mock(() => true),
-}));
-
 import { Resource_Sync } from "@core/types/sync.types";
 import { GoogleWatchDriver } from "@backend/__tests__/drivers/google-watch.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
@@ -28,14 +19,14 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
-import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
+import * as googleWatchConfig from "@backend/sync/services/watch/google-watch-config";
 import { isGoogleCalendarSyncHealthy } from "./google-sync.health";
 
 describe("googleSyncHealth", () => {
   beforeAll(initSupertokens);
   beforeAll(() => setupTestDb(import.meta.url));
   beforeEach(() => {
-    (isUsingGcalWebhookHttps as Mock).mockReturnValue(true);
+    spyOn(googleWatchConfig, "isUsingGcalWebhookHttps").mockReturnValue(true);
   });
   beforeEach(cleanupCollections);
   afterAll(cleanupTestDb);
@@ -71,7 +62,7 @@ describe("googleSyncHealth", () => {
     const { user } = await UtilDriver.setupTestUser();
     const userId = user._id.toString();
 
-    (isUsingGcalWebhookHttps as Mock).mockReturnValue(false);
+    (googleWatchConfig.isUsingGcalWebhookHttps as Mock).mockReturnValue(false);
     await GoogleWatchDriver.removeActiveGoogleWatchesForUser(userId);
 
     await expect(isGoogleCalendarSyncHealthy(userId)).resolves.toBe(true);
@@ -81,7 +72,7 @@ describe("googleSyncHealth", () => {
     const { user } = await UtilDriver.setupTestUser();
     const userId = user._id.toString();
 
-    (isUsingGcalWebhookHttps as Mock).mockReturnValue(true);
+    (googleWatchConfig.isUsingGcalWebhookHttps as Mock).mockReturnValue(true);
     await GoogleWatchDriver.removeActiveGoogleWatchesForUser(userId);
 
     await expect(isGoogleCalendarSyncHealthy(userId)).resolves.toBe(false);

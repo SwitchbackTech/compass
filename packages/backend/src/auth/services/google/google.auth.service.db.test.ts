@@ -1,19 +1,4 @@
-import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
-import { createRequire } from "node:module";
-
-const requireActual = createRequire(import.meta.url);
-
-mock.module("@backend/auth/services/google/util/google.auth.util", () => {
-  const actual = requireActual<typeof GoogleAuthUtilModule>(
-    "@backend/auth/services/google/util/google.auth.util",
-  );
-
-  return {
-    ...actual,
-    determineGoogleAuthMode: mock(),
-  };
-});
-
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { faker } from "@faker-js/faker";
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { Logger } from "@core/logger/winston.logger";
@@ -24,28 +9,34 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oauth.client";
-import type * as GoogleAuthUtilModule from "@backend/auth/services/google/util/google.auth.util";
-import { determineGoogleAuthMode } from "@backend/auth/services/google/util/google.auth.util";
+import * as googleAuthUtil from "@backend/auth/services/google/util/google.auth.util";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
-import { googleAuthService } from "./google.auth.service";
 import {
   type AuthDecision,
   type GoogleSignInSuccess,
 } from "./google.auth.types";
 
+let googleAuthService: Awaited<
+  typeof import("./google.auth.service")
+>["googleAuthService"];
+
 describe("googleAuthService", () => {
+  beforeAll(async () => {
+    spyOn(googleAuthUtil, "determineGoogleAuthMode");
+    ({ googleAuthService } = await import("./google.auth.service"));
+  });
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
   afterAll(cleanupTestDb);
 
   describe("handleGoogleAuth", () => {
-    const mockDetermineGoogleAuthMode =
-      determineGoogleAuthMode as unknown as Mock<
-        typeof determineGoogleAuthMode
+    const mockDetermineGoogleAuthMode = () =>
+      googleAuthUtil.determineGoogleAuthMode as Mock<
+        typeof googleAuthUtil.determineGoogleAuthMode
       >;
 
     const makeProviderUser = (overrides?: Partial<TokenPayload>) =>
@@ -78,7 +69,7 @@ describe("googleAuthService", () => {
       };
 
     beforeEach(() => {
-      mockDetermineGoogleAuthMode.mockReset();
+      mockDetermineGoogleAuthMode().mockReset();
       spyOn(googleAuthService, "googleSignup")
         .mockResolvedValue({ cUserId: "signup-id" });
       spyOn(googleAuthService, "repairGoogleConnection")
@@ -114,7 +105,7 @@ describe("googleAuthService", () => {
         createdNewRecipeUser: true,
       };
 
-      mockDetermineGoogleAuthMode.mockResolvedValue(decision);
+      mockDetermineGoogleAuthMode().mockResolvedValue(decision);
 
       await googleAuthService.handleGoogleAuth(success);
 
@@ -146,7 +137,7 @@ describe("googleAuthService", () => {
         createdNewRecipeUser: true,
       };
 
-      mockDetermineGoogleAuthMode.mockResolvedValue(decision);
+      mockDetermineGoogleAuthMode().mockResolvedValue(decision);
 
       await expect(googleAuthService.handleGoogleAuth(success)).rejects.toThrow(
         "Refresh token expected for new user sign-up",
@@ -174,7 +165,7 @@ describe("googleAuthService", () => {
         createdNewRecipeUser: false,
       };
 
-      mockDetermineGoogleAuthMode.mockResolvedValue(decision);
+      mockDetermineGoogleAuthMode().mockResolvedValue(decision);
 
       await googleAuthService.handleGoogleAuth(success);
 
@@ -206,7 +197,7 @@ describe("googleAuthService", () => {
         createdNewRecipeUser: false,
       };
 
-      mockDetermineGoogleAuthMode.mockResolvedValue(decision);
+      mockDetermineGoogleAuthMode().mockResolvedValue(decision);
 
       await googleAuthService.handleGoogleAuth(success);
 
@@ -241,7 +232,7 @@ describe("googleAuthService", () => {
         createdNewRecipeUser: false,
       };
 
-      mockDetermineGoogleAuthMode.mockResolvedValue(decision);
+      mockDetermineGoogleAuthMode().mockResolvedValue(decision);
 
       await googleAuthService.handleGoogleAuth(success);
 
@@ -279,9 +270,9 @@ describe("googleAuthService", () => {
   });
 
   describe("repairGoogleConnection", () => {
-    const mockDetermineGoogleAuthMode =
-      determineGoogleAuthMode as unknown as Mock<
-        typeof determineGoogleAuthMode
+    const mockDetermineGoogleAuthMode = () =>
+      googleAuthUtil.determineGoogleAuthMode as Mock<
+        typeof googleAuthUtil.determineGoogleAuthMode
       >;
 
     it("relinks Google to the Compass user and schedules a full reimport", async () => {
@@ -370,7 +361,7 @@ describe("googleAuthService", () => {
       const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
 
-      mockDetermineGoogleAuthMode.mockResolvedValue({
+      mockDetermineGoogleAuthMode().mockResolvedValue({
         authMode: "RECONNECT_REPAIR",
         compassUserId,
         hasStoredRefreshToken: true,

@@ -1,27 +1,5 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
-
-const mockGetEvents = mock();
-
-mock.module("@backend/common/services/gcal/gcal.service", () => ({
-  __esModule: true,
-  default: {
-    getEvents: mockGetEvents,
-  },
-}));
-
-const mockLogger = {
-  debug: mock(),
-  error: mock(),
-  info: mock(),
-  verbose: mock(),
-  warn: mock(),
-};
-
-mock.module("@core/logger/winston.logger", () => ({
-  __mockLogger: mockLogger,
-  Logger: mock(() => mockLogger),
-}));
-
+import { afterAll, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import * as winstonLoggerModule from "@core/logger/winston.logger";
 import { ObjectId } from "mongodb";
 import { type gCalendar } from "@core/types/gcal";
 import {
@@ -34,12 +12,19 @@ import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { GCalEventsNotificationHandler } from "@backend/sync/services/notify/handler/gcal-events.notification.handler";
 
-const getMockLogger = () => mockLogger;
+const mockLogger = {
+  debug: mock(),
+  error: mock(),
+  info: mock(),
+  verbose: mock(),
+  warn: mock(),
+};
+
+let GCalEventsNotificationHandler: typeof import("@backend/sync/services/notify/handler/gcal-events.notification.handler").GCalEventsNotificationHandler;
 
 describe("GCalEventsNotificationHandler", () => {
-  let handler: GCalEventsNotificationHandler;
+  let handler: InstanceType<typeof GCalEventsNotificationHandler>;
   let mockGcal: gCalendar;
   let mockContext: GoogleRequestContext;
   let mockUserId: string;
@@ -47,17 +32,25 @@ describe("GCalEventsNotificationHandler", () => {
   let mockSyncToken: string;
   let calendar: CalendarRecord;
 
+  beforeAll(async () => {
+    spyOn(winstonLoggerModule, "Logger").mockReturnValue(
+      mockLogger as ReturnType<typeof winstonLoggerModule.Logger>,
+    );
+    ({ GCalEventsNotificationHandler } = await import(
+      "@backend/sync/services/notify/handler/gcal-events.notification.handler"
+    ));
+  });
+
   beforeAll(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
 
   beforeEach(() => {
-    const logger = getMockLogger();
-    logger.debug.mockReset();
-    logger.error.mockReset();
-    logger.info.mockReset();
-    logger.verbose.mockReset();
-    logger.warn.mockReset();
-    mockGetEvents.mockReset();
+    mockLogger.debug.mockClear();
+    mockLogger.error.mockClear();
+    mockLogger.info.mockClear();
+    mockLogger.verbose.mockClear();
+    mockLogger.warn.mockClear();
+    spyOn(gcalService, "getEvents");
   });
 
   beforeEach(async () => {
@@ -107,7 +100,10 @@ describe("GCalEventsNotificationHandler", () => {
     );
   });
 
-  afterAll(cleanupTestDb);
+  afterAll(() => {
+    mock.restore();
+    cleanupTestDb();
+  });
 
   describe("handleNotification", () => {
     const mockEvents = [
@@ -117,7 +113,7 @@ describe("GCalEventsNotificationHandler", () => {
     ];
 
     it("should process events after changes", async () => {
-      mockGetEvents.mockResolvedValue({
+      (gcalService.getEvents as Mock).mockResolvedValue({
         data: { items: mockEvents },
       });
 
@@ -135,7 +131,7 @@ describe("GCalEventsNotificationHandler", () => {
     });
 
     it("should return IGNORED when no changes found", async () => {
-      mockGetEvents.mockResolvedValue({
+      (gcalService.getEvents as Mock).mockResolvedValue({
         data: { items: [] },
       });
 
@@ -144,7 +140,7 @@ describe("GCalEventsNotificationHandler", () => {
     });
 
     it("should return IGNORED if no changes and nextSyncToken is different", async () => {
-      mockGetEvents.mockResolvedValue({
+      (gcalService.getEvents as Mock).mockResolvedValue({
         data: {
           items: [],
           nextSyncToken: "different-token",
@@ -156,14 +152,13 @@ describe("GCalEventsNotificationHandler", () => {
     });
 
     it("should not log the raw Google calendar id when there are no changes to process", async () => {
-      mockGetEvents.mockResolvedValue({
+      (gcalService.getEvents as Mock).mockResolvedValue({
         data: { items: [] },
       });
 
       await handler.handleNotification();
 
-      const logger = getMockLogger();
-      const loggedMessages = logger.info.mock.calls.map((call) => call[0]);
+      const loggedMessages = mockLogger.info.mock.calls.map((call) => call[0]);
 
       for (const message of loggedMessages) {
         expect(String(message)).not.toContain(mockCalendarId);
@@ -177,7 +172,7 @@ describe("GCalEventsNotificationHandler", () => {
         mockCalendarId,
         mockSyncToken,
       );
-      mockGetEvents.mockResolvedValue({
+      (gcalService.getEvents as Mock).mockResolvedValue({
         data: { items: mockEvents },
       });
 

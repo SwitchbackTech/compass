@@ -6,23 +6,8 @@ import {
   describe,
   expect,
   it,
-  mock,
   spyOn,
 } from "bun:test";
-import { createRequire } from "node:module";
-
-const requireActual = createRequire(import.meta.url);
-
-mock.module("@backend/sync/services/watch/google-watch-config", () => {
-  const actual = requireActual(
-    "@backend/sync/services/watch/google-watch-config",
-  );
-  return {
-    ...actual,
-    isUsingGcalWebhookHttps: mock(() => actual.isUsingGcalWebhookHttps()),
-  };
-});
-
 import { faker } from "@faker-js/faker";
 import { ObjectId, type WithId } from "mongodb";
 import { Resource_Sync } from "@core/types/sync.types";
@@ -39,7 +24,7 @@ import { initSupertokens } from "@backend/common/middleware/supertokens.middlewa
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
-import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
+import * as googleWatchConfig from "@backend/sync/services/watch/google-watch-config";
 import {
   classifyWatchState,
   GoogleWatchStateStatus,
@@ -325,6 +310,9 @@ describe("inspectGoogleWatchState", () => {
   beforeAll(initSupertokens);
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
+  beforeEach(() => {
+    spyOn(googleWatchConfig, "isUsingGcalWebhookHttps");
+  });
   afterAll(cleanupTestDb);
 
   it("case 1: NOT_APPLICABLE/GOOGLE_NOT_CONNECTED when the user has no google credentials", async () => {
@@ -341,7 +329,7 @@ describe("inspectGoogleWatchState", () => {
   it("case 2: NOT_APPLICABLE/PUBLIC_NOTIFICATIONS_DISABLED when the webhook baseurl isn't https", async () => {
     // Once: this test's single inspection call sees `false`; every other
     // test in the file falls through to the real (https) implementation.
-    (isUsingGcalWebhookHttps as Mock).mockReturnValueOnce(false);
+    (googleWatchConfig.isUsingGcalWebhookHttps as Mock).mockReturnValueOnce(false);
     const user = await UserDriver.createUser();
 
     const result = await inspectGoogleWatchState(user._id.toString());

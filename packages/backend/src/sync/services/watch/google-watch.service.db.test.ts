@@ -6,23 +6,8 @@ import {
   describe,
   expect,
   it,
-  mock,
   spyOn,
 } from "bun:test";
-import { createRequire } from "node:module";
-
-const requireActual = createRequire(import.meta.url);
-
-mock.module("@backend/sync/services/watch/google-watch-config", () => {
-  const actual = requireActual(
-    "@backend/sync/services/watch/google-watch-config",
-  );
-  return {
-    ...actual,
-    isUsingGcalWebhookHttps: mock(() => actual.isUsingGcalWebhookHttps()),
-  };
-});
-
 import { faker } from "@faker-js/faker";
 import { type GaxiosResponse } from "gaxios";
 import { ObjectId } from "mongodb";
@@ -50,7 +35,7 @@ import {
   updateSync,
 } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
-import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
+import * as googleWatchConfig from "@backend/sync/services/watch/google-watch-config";
 import {
   GoogleWatchStateStatus,
   inspectGoogleWatchState,
@@ -135,6 +120,9 @@ describe("googleWatchService", () => {
   beforeAll(initSupertokens);
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
+  beforeEach(() => {
+    spyOn(googleWatchConfig, "isUsingGcalWebhookHttps").mockReturnValue(true);
+  });
   afterAll(cleanupTestDb);
 
   it("deletes only the target user's watch records and returns their identities", async () => {
@@ -165,8 +153,7 @@ describe("googleWatchService", () => {
     const user = await UserDriver.createUser();
     const watch = await createWatch(user._id.toString());
 
-    jest
-      .spyOn(gcalService, "stopWatch")
+    spyOn(gcalService, "stopWatch")
       .mockImplementation(() => Promise.reject(invalidGrant400Error));
 
     await expect(
@@ -184,8 +171,7 @@ describe("googleWatchService", () => {
     const user = await UserDriver.createUser();
     const watch = await createWatch(user._id.toString());
 
-    jest
-      .spyOn(gcalService, "stopWatch")
+    spyOn(gcalService, "stopWatch")
       .mockImplementation(() =>
         Promise.reject(createGoogleError({ code: "500", responseStatus: 500 })),
       );
@@ -204,8 +190,7 @@ describe("googleWatchService", () => {
   });
 
   it("ignores expired notifications when no local watch record remains", async () => {
-    const cleanupSpy = jest
-      .spyOn(googleWatchService, "cleanupStaleWatch")
+    const cleanupSpy = spyOn(googleWatchService, "cleanupStaleWatch")
       .mockResolvedValue(false);
 
     await expect(
@@ -301,8 +286,7 @@ describe("googleWatchService", () => {
     const watch = await createWatch(userId, Resource_Sync.CALENDAR);
 
     const getEventsSpy = spyOn(gcalService, "getEvents");
-    const reconcileSpy = jest
-      .spyOn(googleCalendarListService, "reconcileCalendarList")
+    const reconcileSpy = spyOn(googleCalendarListService, "reconcileCalendarList")
       .mockResolvedValue({ outcome: "RECONCILED" });
 
     await expect(
@@ -418,8 +402,7 @@ describe("googleWatchService", () => {
     await createWatch(userId, primaryGCalId);
     const secondaryWatch = await createWatch(userId, secondaryGCalId);
 
-    const getEventsSpy = jest
-      .spyOn(gcalService, "getEvents")
+    const getEventsSpy = spyOn(gcalService, "getEvents")
       .mockResolvedValue({
         status: 200,
         statusText: "OK",
@@ -457,7 +440,7 @@ describe("googleWatchService", () => {
   });
 
   it("skips direct Google watch setup when the Google webhook URL is not HTTPS", async () => {
-    (isUsingGcalWebhookHttps as Mock).mockReturnValue(false);
+    (googleWatchConfig.isUsingGcalWebhookHttps as Mock).mockReturnValue(false);
     const startCalendarWatchSpy = spyOn(
       googleWatchService,
       "startCalendarListWatch",
@@ -535,13 +518,8 @@ describe("googleWatchService", () => {
     const future = () => String(Date.now() + 60 * 60 * 1000);
 
     beforeEach(() => {
-      // isUsingGcalWebhookHttps is a mock() from the mock.module() factory
-      // at the top of this file, not a spyOn() - the file's
-      // `afterEach(() => mock.restore())` doesn't reset it, and the
-      // "skips direct Google watch setup..." test above permanently stubs
-      // it to false. These tests exercise startGoogleWatches's gated path
-      // directly, so restore its HTTPS-configured default first.
-      (isUsingGcalWebhookHttps as Mock).mockReturnValue(true);
+      // Restore the HTTPS-configured default for startGoogleWatches tests.
+      (googleWatchConfig.isUsingGcalWebhookHttps as Mock).mockReturnValue(true);
     });
 
     it("contains a single event-watch failure: the other watches still start, no watch record persists for the failed calendar, and the inspector reports WATCHES_MISSING for it", async () => {
@@ -585,8 +563,7 @@ describe("googleWatchService", () => {
       spyOn(gcalService, "watchCalendars").mockResolvedValue({
         watch: { resourceId: "resource-calendarlist", expiration: future() },
       });
-      jest
-        .spyOn(gcalService, "watchEvents")
+      spyOn(gcalService, "watchEvents")
         .mockImplementation(async (_ctx, params) => {
           if (params.gCalendarId === failingGCalId) {
             throw createGoogleError({ code: "500", responseStatus: 500 });
@@ -675,8 +652,7 @@ describe("googleWatchService", () => {
           },
         };
       }
-      jest
-        .spyOn(gcalService, "watchEvents")
+      spyOn(gcalService, "watchEvents")
         .mockImplementation(() => Promise.reject(unsupported));
 
       await googleWatchService.startGoogleWatches(
@@ -715,8 +691,7 @@ describe("googleWatchService", () => {
         nextSyncToken: faker.string.alphanumeric(16),
       });
 
-      jest
-        .spyOn(gcalService, "watchCalendars")
+      spyOn(gcalService, "watchCalendars")
         .mockImplementation(() =>
           Promise.reject(
             createGoogleError({ code: "500", responseStatus: 500 }),

@@ -1,4 +1,4 @@
-import { spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { faker } from "@faker-js/faker";
 import { type SyncCommandInput } from "@core/types/sync/command.contracts";
 import {
@@ -737,8 +737,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const order: string[] = [];
     const realClear = occurrences.replaceForEvent.bind(occurrences);
     const realDelete = events.deleteById.bind(events);
-    jest
-      .spyOn(occurrences, "replaceForEvent")
+    spyOn(occurrences, "replaceForEvent")
       .mockImplementation(async (...args) => {
         order.push("clear");
         return realClear(...args);
