@@ -1,0 +1,230 @@
+import { type gSchema$Event } from "@core/types/gcal";
+import {
+  type GoogleEventListApi,
+  type GoogleEventListPage,
+  GoogleEventReaderAdapter,
+} from "@sync/providers/google/google-event-reader.adapter";
+import { ProviderEventReadError } from "@sync/providers/provider-event-reader.port";
+
+// A fake events.list API returning scripted pages in order, recording the
+// params it was called with so tests can assert window/cursor/pagination.
+class FakeEventListApi implements GoogleEventListApi {
+  calls: Array<Parameters<GoogleEventListApi["listPage"]>[0]> = [];
+  #pages: GoogleEventListPage[];
+  #error?: unknown;
+
+  constructor(pages: GoogleEventListPage[], error?: unknown) {
+    this.#pages = pages;
+    this.#error = error;
+  }
+
+  async listPage(
+    params: Parameters<GoogleEventListApi["listPage"]>[0],
+  ): Promise<GoogleEventListPage> {
+    this.calls.push(params);
+    if (this.#error) throw this.#error;
+    const page = this.#pages.shift();
+    if (!page) throw new Error("FakeEventListApi: no page scripted");
+    return page;
+  }
+}
+
+const gEvent = (overrides: Partial<gSchema$Event>): gSchema$Event => ({
+  kind: "calendar#event",
+  id: "evt-id",
+  etag: '"v1"',
+  status: "confirmed",
+  summary: "Title",
+  start: {
+    dateTime: "2025-01-15T09:00:00-05:00",
+    timeZone: "America/New_York",
+  },
+  end: { dateTime: "2025-01-15T10:00:00-05:00", timeZone: "America/New_York" },
+  ...overrides,
+});
+
+const page = (
+  overrides: Partial<GoogleEventListPage>,
+): GoogleEventListPage => ({
+  items: [],
+  nextPageToken: null,
+  nextSyncToken: null,
+  ...overrides,
+});
+
+function adapterWith(api: GoogleEventListApi) {
+  const tokensSeen: string[] = [];
+  const adapter = new GoogleEventReaderAdapter((accessToken) => {
+    tokensSeen.push(accessToken);
+    return api;
+  });
+  return { adapter, tokensSeen };
+}
+
+describe("GoogleEventReaderAdapter", () => {
+  it("normalizes a page's events and returns its page/sync tokens", async () => {
+    const api = new FakeEventListApi([
+      page({
+        items: [
+          gEvent({ id: "a", summary: "A" }),
+          gEvent({ id: "b", summary: "B" }),
+        ],
+        nextSyncToken: "sync-1",
+      }),
+    ]);
+    const { adapter, tokensSeen } = adapterWith(api);
+
+    const result = await adapter.listEventPage({
+      accessToken: "tok",
+      calendarId: "primary@google.com",
+    });
+
+    expect(tokensSeen).toEqual(["tok"]);
+    expect(result.events.map((e) => e.providerEventId)).toEqual(["a", "b"]);
+    expect(result.skipped).toBe(0);
+    expect(result.nextPageToken).toBeNull();
+    expect(result.nextSyncToken).toBe("sync-1");
+  });
+
+  it("passes the working window through and forwards no cursor", async () => {
+    const api = new FakeEventListApi([page({ nextSyncToken: null })]);
+    const { adapter } = adapterWith(api);
+
+    await adapter.listEventPage({
+      accessToken: "tok",
+      calendarId: "primary@google.com",
+      window: {
+        timeMin: "2026-06-01T00:00:00Z",
+        timeMax: "2026-09-01T00:00:00Z",
+      },
+    });
+
+    expect(api.calls[0].window).toEqual({
+      timeMin: "2026-06-01T00:00:00Z",
+      timeMax: "2026-09-01T00:00:00Z",
+    });
+    expect(api.calls[0].syncToken).toBeUndefined();
+  });
+
+  it("forwards the stored cursor and page token for a resumed full pass", async () => {
+    const api = new FakeEventListApi([page({})]);
+    const { adapter } = adapterWith(api);
+
+    await adapter.listEventPage({
+      accessToken: "tok",
+      calendarId: "primary@google.com",
+      cursor: "sync-token-0",
+      pageToken: "page-2",
+    });
+
+    expect(api.calls[0].syncToken).toBe("sync-token-0");
+    expect(api.calls[0].pageToken).toBe("page-2");
+  });
+
+  it("keeps cancellations in the page (an incremental deletion)", async () => {
+    const api = new FakeEventListApi([
+      page({
+        items: [
+          gEvent({ id: "live", summary: "Live" }),
+          gEvent({ id: "gone", status: "cancelled" }),
+        ],
+      }),
+    ]);
+    const { adapter } = adapterWith(api);
+
+    const result = await adapter.listEventPage({
+      accessToken: "tok",
+      calendarId: "primary@google.com",
+    });
+
+    expect(result.events.map((e) => e.kind)).toEqual(["event", "cancellation"]);
+  });
+
+  it("drops and counts a structurally unusable event without failing the page", async () => {
+    const api = new FakeEventListApi([
+      page({
+        items: [
+          gEvent({ id: "ok", summary: "OK" }),
+          // No etag: the normalizer rejects it as missingIdentity.
+          gEvent({ id: "no-etag", etag: undefined }),
+        ],
+      }),
+    ]);
+    const { adapter } = adapterWith(api);
+
+    const result = await adapter.listEventPage({
+      accessToken: "tok",
+      calendarId: "primary@google.com",
+    });
+
+    expect(result.events.map((e) => e.providerEventId)).toEqual(["ok"]);
+    expect(result.skipped).toBe(1);
+  });
+
+  it("maps an expired sync token (410) to cursorExpired", async () => {
+    const api = new FakeEventListApi([], { response: { status: 410 } });
+    const { adapter } = adapterWith(api);
+
+    await expect(
+      adapter.listEventPage({
+        accessToken: "tok",
+        calendarId: "primary@google.com",
+        cursor: "stale",
+      }),
+    ).rejects.toMatchObject({ reason: "cursorExpired" });
+  });
+
+  it("maps a rate limit and a server error to transient", async () => {
+    for (const status of [429, 503]) {
+      const api = new FakeEventListApi([], { response: { status } });
+      const { adapter } = adapterWith(api);
+      await expect(
+        adapter.listEventPage({
+          accessToken: "tok",
+          calendarId: "primary@google.com",
+        }),
+      ).rejects.toMatchObject({ reason: "transient" });
+    }
+  });
+
+  it("maps a networkless failure to transient", async () => {
+    const api = new FakeEventListApi([], new Error("socket hang up"));
+    const { adapter } = adapterWith(api);
+
+    await expect(
+      adapter.listEventPage({
+        accessToken: "tok",
+        calendarId: "primary@google.com",
+      }),
+    ).rejects.toMatchObject({ reason: "transient" });
+  });
+
+  it("maps an unrecoverable 4xx to readFailed", async () => {
+    const api = new FakeEventListApi([], { response: { status: 404 } });
+    const { adapter } = adapterWith(api);
+
+    await expect(
+      adapter.listEventPage({
+        accessToken: "tok",
+        calendarId: "primary@google.com",
+      }),
+    ).rejects.toMatchObject({ reason: "readFailed" });
+  });
+
+  it("never leaks the access token onto a thrown error's cause", async () => {
+    const leaky = new Error("boom") as Error & { config?: unknown };
+    leaky.config = { headers: { Authorization: "Bearer super-secret-token" } };
+    const api = new FakeEventListApi([], leaky);
+    const { adapter } = adapterWith(api);
+
+    const error = await adapter
+      .listEventPage({ accessToken: "tok", calendarId: "primary@google.com" })
+      .catch((e) => e as ProviderEventReadError);
+
+    expect(error).toBeInstanceOf(ProviderEventReadError);
+    expect(JSON.stringify(error.cause ?? {})).not.toContain(
+      "super-secret-token",
+    );
+    expect((error.cause as Error)?.message).toBe("boom");
+  });
+});

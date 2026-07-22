@@ -1,0 +1,67 @@
+import { type ProviderKind } from "@core/types/sync/identity.contracts";
+import { type ProviderEventRead } from "@sync/providers/provider-event.port";
+
+// A half-open working window over an event's time, as RFC3339 timestamps. The
+// first import pass windows to the user's current range so the useful part of a
+// large calendar becomes available quickly; the full pass omits the window.
+export interface EventWindow {
+  readonly timeMin: string;
+  readonly timeMax: string;
+}
+
+// One page of a calendar's events, normalized to provider-neutral reads.
+// Cancellations are included (an incremental page reports deletions this way),
+// so a caller that only wants live events filters them out. `skipped` counts
+// raw events dropped as structurally unusable, for observability. A provider
+// returns `nextSyncToken` only on the final page of a pass that is allowed to
+// produce one (a windowed pass never is).
+export interface ProviderEventPage {
+  readonly events: readonly ProviderEventRead[];
+  readonly skipped: number;
+  readonly nextPageToken: string | null;
+  readonly nextSyncToken: string | null;
+}
+
+export interface ProviderEventReadInput {
+  readonly accessToken: string;
+  readonly calendarId: string;
+  // Bounds the fast first pass. Omit (or null) for the full pass that earns a
+  // durable incremental cursor — providers forbid combining a window with a
+  // cursor, and a windowed list cannot yield a sync token.
+  readonly window?: EventWindow | null;
+  // The stored incremental cursor (sync token). Applies only to the first
+  // request of a pass; paging afterward is identified by pageToken alone.
+  readonly cursor?: string | null;
+  readonly pageToken?: string | null;
+}
+
+// A provider-neutral event read port. One call reads one page; the caller
+// follows pagination and checkpoints between pages so a large import resumes
+// where it left off. Reads masters and exceptions as distinct entities (never
+// provider-expanded instances) so the canonical store keeps them separable.
+export interface ProviderEventReader {
+  readonly provider: ProviderKind;
+
+  listEventPage(input: ProviderEventReadInput): Promise<ProviderEventPage>;
+}
+
+// Why a page read could not complete. `cursorExpired` (the stored sync token is
+// too old) is not retryable with the same token — the caller must re-import in
+// full. `transient` is a retryable network/provider failure; `readFailed` is an
+// unrecoverable rejection. Distinct from ProviderEventError, which is a
+// per-event normalization failure the reader absorbs into `skipped`.
+export type ProviderEventReadErrorReason =
+  | "cursorExpired"
+  | "transient"
+  | "readFailed";
+
+export class ProviderEventReadError extends Error {
+  constructor(
+    readonly reason: ProviderEventReadErrorReason,
+    message: string,
+    options?: { cause?: unknown },
+  ) {
+    super(message, options);
+    this.name = "ProviderEventReadError";
+  }
+}
