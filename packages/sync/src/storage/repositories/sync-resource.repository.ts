@@ -235,4 +235,26 @@ export class SyncResourceRepository {
       .toArray();
     return records.map((r) => SyncResourceRecordSchema.parse(r));
   }
+
+  // Events resources whose last successful sync is older than `before` (or which
+  // never succeeded), oldest first, bounded. This is the reconcile sweep's input
+  // — a missed-webhook fallback — so it is a GLOBAL scan across owners, not
+  // owner-scoped: each returned resource carries its own (tenantId, principalId)
+  // for the job the caller enqueues. A never-synced resource (lastSuccessAt
+  // null) sorts first so bootstrapping a new calendar is not starved by the
+  // stale ones. Uses the last_success index.
+  async listStaleEvents(
+    before: Date,
+    limit: number,
+  ): Promise<SyncResourceRecord[]> {
+    const records = await this.collection
+      .find({
+        resourceKind: "events",
+        $or: [{ lastSuccessAt: { $lt: before } }, { lastSuccessAt: null }],
+      })
+      .sort({ lastSuccessAt: 1 })
+      .limit(limit)
+      .toArray();
+    return records.map((r) => SyncResourceRecordSchema.parse(r));
+  }
 }
