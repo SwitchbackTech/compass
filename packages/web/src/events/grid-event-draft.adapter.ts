@@ -1,3 +1,4 @@
+import fastDeepEqual from "fast-deep-equal/react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
@@ -173,11 +174,22 @@ export function allDayGridSchedule(
 // Mirrors event.view-model.ts's scheduledEventToSchemaEvent recurrence
 // conversion (the now-deleted event.legacy-bridge.ts used the same mapping),
 // duplicated locally so this adapter has no dependency on that module.
-function legacyRecurrenceFromEvent(event: Event): CompassEvent["recurrence"] {
+//
+// An occurrence's own recurrence pointer carries no rule (only the series
+// base does), so opening one always reads as non-recurring unless the
+// caller resolves the base event and passes its rules through - see
+// EventForm.tsx's `seriesRules`.
+function legacyRecurrenceFromEvent(
+  event: Event,
+  seriesRules?: readonly string[],
+): CompassEvent["recurrence"] {
   return event.recurrence.kind === "series"
     ? { rule: [...event.recurrence.rules], eventId: event.id }
     : event.recurrence.kind === "occurrence"
-      ? { eventId: event.recurrence.seriesId }
+      ? {
+          eventId: event.recurrence.seriesId,
+          ...(seriesRules?.length ? { rule: [...seriesRules] } : {}),
+        }
       : undefined;
 }
 
@@ -187,11 +199,12 @@ function legacyRecurrenceFromEvent(event: Event): CompassEvent["recurrence"] {
 // back through the CompassEvent projection the form renders from.
 function legacyRecurrenceFromDraft(
   draft: GridEventDraft,
+  seriesRules?: readonly string[],
 ): CompassEvent["recurrence"] {
   const { recurrence } = draft.values;
 
   if (draft.kind === "edit" && recurrence.kind === "preserve") {
-    return legacyRecurrenceFromEvent(draft.source);
+    return legacyRecurrenceFromEvent(draft.source, seriesRules);
   }
 
   if (recurrence.kind === "series") {
@@ -227,6 +240,7 @@ function legacyRecurrenceFromDraft(
 // step 8).
 export function gridEventDraftToSchemaEvent(
   draft: GridEventDraft,
+  seriesRules?: readonly string[],
 ): CompassEvent & { calendarId?: CalendarId; isBusy?: boolean } {
   const { schedule } = draft.values;
 
@@ -240,7 +254,7 @@ export function gridEventDraftToSchemaEvent(
         : dayjs(schedule.end).format(),
     isAllDay: schedule.kind === "allDay",
     isBusy: draft.kind === "edit" && draft.source.content.kind === "busy",
-    recurrence: legacyRecurrenceFromDraft(draft),
+    recurrence: legacyRecurrenceFromDraft(draft, seriesRules),
     startDate:
       schedule.kind === "allDay"
         ? toDateOnlyString(schedule.start)
@@ -257,10 +271,23 @@ export function gridEventDraftToSchemaEvent(
 export function applySchemaEventPatchToGridDraft(
   current: GridEventDraft,
   patch: CompassEvent,
+  seriesRules?: readonly string[],
 ): GridEventDraft {
   const rule = patch.recurrence?.rule;
-  const recurrence =
-    Array.isArray(rule) && rule.length > 0
+  // A patch that merely echoes the draft's current projected rule (e.g. a
+  // title keystroke, which spreads the whole projected event through
+  // unchanged) must not flip the draft's recurrence away from "preserve" -
+  // otherwise every field edit on a recurring event would silently convert
+  // it into an explicit series-scope change. Only a rule that actually
+  // differs (the user edited recurrence) converts the draft.
+  const currentRule = legacyRecurrenceFromDraft(current, seriesRules)?.rule;
+  const ruleUnchanged =
+    Array.isArray(rule) &&
+    Array.isArray(currentRule) &&
+    fastDeepEqual(rule, currentRule);
+  const recurrence = ruleUnchanged
+    ? current.values.recurrence
+    : Array.isArray(rule) && rule.length > 0
       ? ({ kind: "series", rules: rule } as const)
       : current.kind === "edit"
         ? ({ kind: "preserve" } as const)

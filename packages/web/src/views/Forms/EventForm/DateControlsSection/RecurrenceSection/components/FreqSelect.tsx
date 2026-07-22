@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import ReactSelect from "react-select";
-import { brighten, darken } from "@web/common/styles/color.utils";
 import { colors } from "@web/common/styles/colors";
 import { theme } from "@web/common/styles/theme";
 import {
@@ -10,22 +9,18 @@ import {
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
 
 export interface FreqSelectProps {
-  bgColor: string;
   value: FrequencyValues;
   plural?: boolean;
   onFreqSelect: (option: FrequencyValues) => void;
 }
 
 export const FreqSelect = ({
-  bgColor,
   value,
   plural = false,
   onFreqSelect,
 }: FreqSelectProps) => {
   const options = useMemo(() => FREQUENCY_OPTIONS(plural ? "s" : ""), [plural]);
   const fontSize = theme.text.size.m;
-  const bgBright = brighten(bgColor);
-  const bgDark = darken(bgColor);
 
   const label = useMemo(
     () => `${FREQUENCY_MAP[value]}${plural ? "s" : ""}`,
@@ -44,19 +39,17 @@ export const FreqSelect = ({
         ...selectTheme,
         borderRadius: 4,
         primary: colors.borderStrong, // focus border color
-        primary25: darken(bgColor), // hover color
-        primary50: brighten(bgColor), // selected color
       })}
       styles={{
         control: (baseStyles, state) => ({
           ...baseStyles,
-          backgroundColor: bgColor,
+          backgroundColor: "var(--color-surface-overlay)",
           borderRadius: theme.shape.borderRadius,
           border: "none",
           transition: theme.transition.default,
           fontSize,
           "&:hover": {
-            filter: `brightness(95%)`,
+            backgroundColor: "hsl(0 0 100 / 12%)",
           },
           boxShadow: state.isFocused
             ? `0 0 0 2px ${colors.borderStrong}`
@@ -64,7 +57,17 @@ export const FreqSelect = ({
         }),
         singleValue: (baseStyles) => ({
           ...baseStyles,
-          color: theme.getContrastText(bgColor),
+          color: "var(--text)",
+        }),
+        // Matches CaretInput's stepper arrows, which inherit the ambient
+        // text color - without this react-select's default neutral gray
+        // caret visibly mismatches the sibling stepper.
+        dropdownIndicator: (baseStyles) => ({
+          ...baseStyles,
+          color: "var(--text)",
+          "&:hover": {
+            color: "var(--text)",
+          },
         }),
         indicatorSeparator: () => ({
           visibility: "hidden",
@@ -76,29 +79,24 @@ export const FreqSelect = ({
         menuList: (baseStyles) => ({
           ...baseStyles,
           fontSize,
-          backgroundColor: bgColor,
+          backgroundColor: "var(--surface)",
           maxHeight: "none",
           overflowY: "visible",
         }),
-        option: (styles, { isDisabled, isFocused, isSelected }) => {
-          const optionBg = isSelected ? bgBright : isFocused ? bgDark : bgColor;
-
-          return {
-            ...styles,
-            backgroundColor: isDisabled ? undefined : optionBg,
-            color: theme.getContrastText(optionBg),
-            opacity: isDisabled ? 0.5 : 1,
-            cursor: isDisabled ? "not-allowed" : "default",
-            ":active": {
-              ...styles[":active"],
-              backgroundColor: !isDisabled
-                ? isSelected
-                  ? bgColor
-                  : bgBright
-                : undefined,
-            },
-          };
-        },
+        // Same recipe as .timepicker__option--is-selected/--is-focused
+        // (index.css) - a translucent white overlay reads as a highlight on
+        // both themes' surfaces rather than needing per-theme tuning.
+        option: (styles, { isDisabled, isFocused, isSelected }) => ({
+          ...styles,
+          backgroundColor: isDisabled
+            ? undefined
+            : isSelected || isFocused
+              ? "hsl(0 0 100 / 10%)"
+              : "transparent",
+          color: "var(--text)",
+          opacity: isDisabled ? 0.5 : 1,
+          cursor: isDisabled ? "not-allowed" : "default",
+        }),
       }}
     />
   );

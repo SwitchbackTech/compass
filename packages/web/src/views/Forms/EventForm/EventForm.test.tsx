@@ -1,10 +1,15 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { act, type SetStateAction, useState } from "react";
+import { type EventId } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
-import { renderWithStore } from "@web/__tests__/render-with-store";
+import {
+  createStoreWrapper,
+  renderWithStore,
+} from "@web/__tests__/render-with-store";
+import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { Categories_Event } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
@@ -14,6 +19,7 @@ import {
   replaceGridDraftSchedule,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type Props as DateTimeSectionProps } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DateTimeSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -41,6 +47,23 @@ mock.module(
   () => ({
     DateControlsSection: (props: CapturedDateControlsSectionProps) => {
       capturedDateControlsSectionProps = props;
+      return null;
+    },
+  }),
+);
+
+interface CapturedRecurrenceSectionProps {
+  event: { recurrence?: { rule?: unknown; eventId?: unknown } };
+}
+
+let capturedRecurrenceSectionProps: CapturedRecurrenceSectionProps | null =
+  null;
+
+mock.module(
+  "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection",
+  () => ({
+    RecurrenceSection: (props: CapturedRecurrenceSectionProps) => {
+      capturedRecurrenceSectionProps = props;
       return null;
     },
   }),
@@ -168,6 +191,7 @@ describe("EventForm", () => {
   beforeEach(() => {
     HotkeyManager.resetInstance();
     capturedDateControlsSectionProps = null;
+    capturedRecurrenceSectionProps = null;
     document.body.removeAttribute("data-app-locked");
   });
 
@@ -732,5 +756,96 @@ describe("EventForm", () => {
     await user.keyboard("{Enter}");
 
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("hydrates an occurrence's recurrence from its cached series base, and keeps it preserved through a title edit", async () => {
+    const user = userEvent.setup();
+    const onSubmit = mock();
+    const seriesId = "0123456789abcdef11111111" as EventId;
+    const seriesRules = ["RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE"];
+    const seriesBase = createMockEvent({
+      id: seriesId,
+      content: { kind: "details", title: "Standup", description: "" },
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-04-20T14:00:00.000Z",
+        end: "2026-04-20T15:00:00.000Z",
+        timeZone: "UTC",
+      }),
+      recurrence: { kind: "series", rules: seriesRules },
+    });
+    const occurrence = createMockEvent({
+      content: { kind: "details", title: "Standup", description: "" },
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-04-27T14:00:00.000Z",
+        end: "2026-04-27T15:00:00.000Z",
+        timeZone: "UTC",
+      }),
+      recurrence: { kind: "occurrence", seriesId },
+    });
+    const draft = editGridEventDraft(occurrence);
+    if (!draft) throw new Error("expected an edit draft");
+
+    const { queryClient, wrapper } = createStoreWrapper();
+    // useEventById reads the cache synchronously on mount - the base must be
+    // present before the first render, not seeded after (setQueryDefaults'
+    // `initialData`, which seedEventQueries relies on, never materializes
+    // without a mounted query for that exact key).
+    queryClient.setQueryData(
+      eventQueryKeys.week({
+        source: "local",
+        start: "2026-04-20T00:00:00.000Z",
+        end: "2026-04-27T00:00:00.000Z",
+      }),
+      toNormalizedEventQueryData([seriesBase]),
+    );
+
+    function Harness() {
+      const [currentDraft, setDraft] = useState<GridEventDraft | null>(draft);
+      if (!currentDraft) return null;
+
+      return (
+        <EventForm
+          draft={currentDraft}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={onSubmit}
+          setDraft={setDraft}
+        />
+      );
+    }
+
+    render(<Harness />, { wrapper });
+
+    // The occurrence's own recurrence pointer carries no rule - this only
+    // passes once EventForm resolves the series base and threads its rules
+    // through, which is what lets RecurrenceSection auto-expand with the
+    // real rule instead of reading the event as non-recurring.
+    expect(capturedRecurrenceSectionProps?.event.recurrence).toMatchObject({
+      eventId: seriesId,
+      rule: seriesRules,
+    });
+
+    const titleField = screen.getByPlaceholderText("Title");
+    await user.clear(titleField);
+    await user.type(titleField, "Standup (moved)");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    // A field edit that never touches recurrence must not flip the draft
+    // from "preserve" to an explicit series conversion - the adapter's
+    // no-op guard compares the hydrated rule against what the patch echoes
+    // back, since every field patch spreads the whole projected event.
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        values: expect.objectContaining({
+          title: "Standup (moved)",
+          recurrence: { kind: "preserve" },
+        }),
+      }),
+    );
   });
 });

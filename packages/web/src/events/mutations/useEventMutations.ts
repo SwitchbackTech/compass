@@ -25,7 +25,10 @@ import {
   upsertEventAcrossQueries,
 } from "@web/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
-import { projectRecurringEdit } from "@web/events/recurrence/projectRecurringEdit";
+import {
+  projectRecurringDelete,
+  projectRecurringEdit,
+} from "@web/events/recurrence/projectRecurringEdit";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
@@ -49,6 +52,15 @@ import {
 } from "./event.mutation-history";
 
 const nowDateTime = () => DateTimeSchema.parse(new Date().toISOString());
+
+// An occurrence's series is its own recurrence pointer; the series base's
+// series is itself. Shared by the replace and delete optimistic callbacks,
+// which both need the series id to gather every cached instance.
+function seriesIdOf(event: Event | null): EventId | null {
+  if (event?.recurrence.kind === "occurrence") return event.recurrence.seriesId;
+  if (event?.recurrence.kind === "series") return event.id;
+  return null;
+}
 
 // A create's optimistic insert needs a full Event before the server response
 // lands; recurrence is a strict subset of EditableRecurrence ("single" |
@@ -266,12 +278,7 @@ export function useEventMutations(
         const existing = findEventInCache(queryClient, id, source);
         if (!existing) return;
         const edited = mergeReplaceInput(existing, input);
-        const seriesId =
-          existing.recurrence.kind === "occurrence"
-            ? existing.recurrence.seriesId
-            : existing.recurrence.kind === "series"
-              ? existing.id
-              : null;
+        const seriesId = seriesIdOf(existing);
 
         if (seriesId && input.scope !== "this") {
           applyEventProjectionAcrossQueries(
@@ -315,7 +322,29 @@ export function useEventMutations(
           () => repository.delete(variables.id, variables.scope),
         );
       },
-      ({ id }) => removeEventFromQueries(queryClient, id, { source }),
+      ({ id, scope }) => {
+        const existing = findEventInCache(queryClient, id, source);
+        const seriesId = seriesIdOf(existing);
+
+        if (existing && seriesId && scope !== "this") {
+          applyEventProjectionAcrossQueries(
+            queryClient,
+            projectRecurringDelete({
+              scope,
+              target: existing,
+              seriesId,
+              seriesEvents: findSeriesEventsInCache(
+                queryClient,
+                seriesId,
+                source,
+              ),
+            }),
+            source,
+          );
+          return;
+        }
+        removeEventFromQueries(queryClient, id, { source });
+      },
     ),
   );
 

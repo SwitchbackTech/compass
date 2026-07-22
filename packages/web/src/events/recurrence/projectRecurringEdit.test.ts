@@ -1,7 +1,10 @@
 import { type EventId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
-import { projectRecurringEdit } from "./projectRecurringEdit";
+import {
+  projectRecurringDelete,
+  projectRecurringEdit,
+} from "./projectRecurringEdit";
 import { describe, expect, test } from "bun:test";
 
 const SERIES_ID = "664e21f9a6b3f0b1c2d3e4f5" as EventId;
@@ -16,6 +19,19 @@ const occurrence = (day: number) =>
       timeZone: "UTC",
     } as never,
     recurrence: { kind: "occurrence", seriesId: SERIES_ID },
+  });
+
+const seriesBase = () =>
+  createMockEvent({
+    id: SERIES_ID,
+    content: { kind: "details", title: "Original", description: "" },
+    schedule: {
+      kind: "timed",
+      start: "2026-07-01T16:00:00.000Z",
+      end: "2026-07-01T17:00:00.000Z",
+      timeZone: "UTC",
+    } as never,
+    recurrence: { kind: "series", rules: ["RRULE:FREQ=DAILY"] },
   });
 
 describe("projectRecurringEdit", () => {
@@ -172,5 +188,58 @@ describe("projectRecurringEdit", () => {
 
     expect([...result.removeIds]).toEqual([events[0].id]);
     expect(result.upserts).toEqual([edited]);
+  });
+});
+
+describe("projectRecurringDelete", () => {
+  test("removes every occurrence and the series base for an all-events delete", () => {
+    const events = [occurrence(1), occurrence(2), occurrence(3)];
+    const target = events[1];
+
+    const result = projectRecurringDelete({
+      scope: "all",
+      target,
+      seriesId: SERIES_ID,
+      seriesEvents: events,
+    });
+
+    expect([...result.removeIds].sort()).toEqual(
+      [...events.map((event) => event.id), SERIES_ID].sort(),
+    );
+    expect(result.upserts).toEqual([]);
+  });
+
+  test("keeps earlier occurrences and the series base for a this-and-following delete", () => {
+    const events = [occurrence(1), occurrence(2), occurrence(3)];
+    const target = events[1];
+
+    const result = projectRecurringDelete({
+      scope: "thisAndFollowing",
+      target,
+      seriesId: SERIES_ID,
+      seriesEvents: events,
+    });
+
+    expect([...result.removeIds].sort()).toEqual(
+      [events[1].id, events[2].id].sort(),
+    );
+    expect(result.removeIds.has(events[0].id)).toBe(false);
+    expect(result.removeIds.has(SERIES_ID)).toBe(false);
+  });
+
+  test("removes every occurrence when an all-events delete is clicked on the series base", () => {
+    const base = seriesBase();
+    const events = [occurrence(1), occurrence(2)];
+
+    const result = projectRecurringDelete({
+      scope: "all",
+      target: base,
+      seriesId: SERIES_ID,
+      seriesEvents: events,
+    });
+
+    expect([...result.removeIds].sort()).toEqual(
+      [...events.map((event) => event.id), SERIES_ID].sort(),
+    );
   });
 });
