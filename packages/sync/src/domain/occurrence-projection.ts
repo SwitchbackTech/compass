@@ -175,13 +175,19 @@ export function truncateRulesBefore(
     .replace(/\.\d{3}/, "");
   // Drop any existing COUNT/UNTIL first: COUNT and UNTIL are mutually exclusive
   // per RFC 5545, and a stale UNTIL would otherwise survive alongside the new one.
-  return rules.map((rule) => {
-    const cleaned = rule
+  return stripRuleBounds(rules).map((rule) => `${rule};UNTIL=${until}`);
+}
+
+// Removes COUNT and UNTIL from each rule, leaving an open-ended pattern. Used to
+// derive the remainder series of a thisAndFollowing split (it continues the
+// original cadence from the split point, unbounded).
+export function stripRuleBounds(rules: readonly string[]): string[] {
+  return rules.map((rule) =>
+    rule
       .split(";")
       .filter((part) => !/^COUNT=/i.test(part) && !/^UNTIL=/i.test(part))
-      .join(";");
-    return `${cleaned};UNTIL=${until}`;
-  });
+      .join(";"),
+  );
 }
 
 // The schedule one occurrence of a series has at a given recurrence instant —
