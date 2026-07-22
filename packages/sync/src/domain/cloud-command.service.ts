@@ -1,4 +1,4 @@
-import { type DateTime } from "@core/types/domain-primitives";
+import { type DateTime, type EventId } from "@core/types/domain-primitives";
 import { type EditableRecurrence } from "@core/types/event.contracts";
 import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
@@ -7,6 +7,7 @@ import { type CredentialCustody } from "@sync/credentials/credential-custody.ser
 import {
   occurrenceScheduleAt,
   scheduleStartAt,
+  stripRuleBounds,
   truncateRulesBefore,
 } from "@sync/domain/occurrence-projection";
 import {
@@ -26,6 +27,7 @@ import { type DeletionMarkerRepository } from "@sync/storage/repositories/deleti
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { createHash } from "node:crypto";
 
 export interface CloudCommandDeps {
   commands: CommandRepository;
@@ -198,8 +200,8 @@ async function applyCloudMutation(
   // the command pending rather than confirming a no-op.
   if (!existing) return command;
   // A cloud series master: scope "all" edits the whole series, scope "this"
-  // overrides one occurrence. thisAndFollowing (series split) and provider series
-  // stay pending for later slices.
+  // overrides one occurrence, thisAndFollowing splits the series at the target.
+  // Provider series stay pending for later slices.
   if (existing.recurrence.kind === "seriesMaster") {
     if (existing.connectionId !== null) return command;
     if (command.input.scope === "all") {
@@ -208,7 +210,7 @@ async function applyCloudMutation(
     if (command.input.scope === "this") {
       return updateCloudOccurrence(deps, command, existing, now);
     }
-    return command;
+    return updateCloudSeriesFollowing(deps, command, existing, now);
   }
   // A bare exception target stays pending, and converting a single event into a
   // series is itself a series edit — defer both. Gating on the command's intent
@@ -494,6 +496,99 @@ async function deleteFollowingExceptions(
       new Date(exceptionInstant(exception)).getTime() >= splitAt.getTime(),
   );
   await deleteExceptions(deps, command, following);
+}
+
+// Edit one occurrence of a cloud series and every occurrence after it (scope
+// "thisAndFollowing") by SPLITTING the series: truncate the original master to
+// end before the split, drop the exceptions at or after it, and stand up a new
+// remainder master carrying the edit from the split point on. A split at the
+// series' first occurrence edits the whole series, so it collapses to edit-all.
+//
+// The remainder master's id is derived deterministically from (originalMaster,
+// split) so a retry upserts the SAME master instead of creating a second series.
+// The original is truncated (and reprojected) before the remainder is created,
+// so the worst transient state is a momentary gap at the split, never a
+// duplicate; every step is idempotent, so a retry converges.
+async function updateCloudSeriesFollowing(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (command.input.kind !== "update" || command.input.recurrenceId === null) {
+    return command;
+  }
+  if (master.recurrence.kind !== "seriesMaster") return command;
+  const splitAt = new Date(command.input.recurrenceId);
+  if (splitAt.getTime() <= scheduleStartAt(master.schedule).getTime()) {
+    return updateCloudSeries(deps, command, master, now);
+  }
+
+  await deleteFollowingExceptions(deps, command, master._id, splitAt);
+  const truncated: EventRecord = {
+    ...master,
+    recurrence: {
+      kind: "seriesMaster",
+      rules: truncateRulesBefore(master.recurrence.rules, splitAt),
+    },
+    updatedAt: now(),
+  };
+  const applied = await deps.events.replaceExisting(truncated);
+  if (!applied) return command;
+  await reprojectMaster(deps, command, truncated, now);
+
+  const remainder = buildRemainderMaster(master, command, now());
+  await deps.events.put(remainder);
+  await reprojectOccurrences(deps.occurrences, remainder, now);
+  return confirmCloud(deps, command);
+}
+
+// Build the remainder series of a thisAndFollowing split: a fresh master at the
+// edit's schedule, carrying the edited content and recurrence, with a
+// deterministic id so a retry converges on one series. "preserve" continues the
+// original cadence (bounds stripped, so it runs open-ended from the split).
+function buildRemainderMaster(
+  master: EventRecord,
+  command: CommandRecord,
+  now: Date,
+): EventRecord {
+  if (command.input.kind !== "update") {
+    throw new Error("buildRemainderMaster requires an update command");
+  }
+  if (master.recurrence.kind !== "seriesMaster") {
+    throw new Error("buildRemainderMaster requires a series master");
+  }
+  const { input } = command;
+  const recurrence: SyncEventRecurrence =
+    input.recurrence.kind === "series"
+      ? { kind: "seriesMaster", rules: input.recurrence.rules }
+      : input.recurrence.kind === "single"
+        ? { kind: "single" }
+        : {
+            kind: "seriesMaster",
+            rules: stripRuleBounds(master.recurrence.rules),
+          };
+  return {
+    ...master,
+    _id: remainderMasterId(master._id, command.input.recurrenceId as DateTime),
+    clientEventId: null,
+    content: input.content,
+    schedule: input.schedule,
+    recurrence,
+    createdAt: now,
+    updatedAt: now,
+    confirmedAt: now,
+  };
+}
+
+// A deterministic event id for the remainder series, so the same split always
+// resolves to the same master and a retry never duplicates it. A 24-hex prefix
+// of a SHA-256 over (seriesId, split) is a valid event id and collision-safe.
+function remainderMasterId(seriesId: EventId, splitAt: DateTime): EventId {
+  return createHash("sha256")
+    .update(`${seriesId}:${splitAt}`)
+    .digest("hex")
+    .slice(0, 24) as EventId;
 }
 
 // Confirm a cloud command with no provider identity — local persistence is the

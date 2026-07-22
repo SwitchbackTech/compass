@@ -346,51 +346,6 @@ describe("submitCloudCommand provider dispatch", () => {
     ).not.toBeNull();
   });
 
-  it("leaves a thisAndFollowing series update pending (split edit not built yet)", async () => {
-    const tenantId = objectId() as TenantId;
-    const principalId = objectId() as PrincipalId;
-    const eventId = objectId() as EventId;
-    await seedEvent(tenantId, principalId, eventId, {
-      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
-    });
-
-    const update: CommandSubmit = {
-      tenantId,
-      principalId,
-      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
-      eventId,
-      input: {
-        kind: "update",
-        invitation: "none",
-        content: {
-          title: "Later",
-          description: "",
-          location: null,
-          organizer: null,
-          attendees: [],
-          conference: null,
-        },
-        schedule: {
-          kind: "timed",
-          start: "2026-07-21T11:00:00-06:00",
-          end: "2026-07-21T12:00:00-06:00",
-          timeZone: "America/Denver",
-        },
-        recurrence: { kind: "preserve" },
-        scope: "thisAndFollowing",
-        recurrenceId: "2026-07-21T09:00:00-06:00",
-      } as unknown as SyncCommandInput,
-      expectedVersion: null,
-    };
-
-    const command = await submitCloudCommand(deps(), update, now);
-
-    expect(command.outcome.state).toBe("pending");
-    expect(
-      await events.findById(tenantId, principalId, eventId),
-    ).not.toBeNull();
-  });
-
   it("routes a provider-linked update to the provider executor when active", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
@@ -1016,6 +971,145 @@ describe("submitCloudCommand provider dispatch", () => {
     expect(
       await events.findById(tenantId, principalId, following._id),
     ).toBeNull();
+  });
+
+  const splitFor = (
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    eventId: EventId,
+    recurrenceId: string,
+    title: string,
+  ): CommandSubmit => ({
+    tenantId,
+    principalId,
+    idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+    eventId,
+    input: {
+      kind: "update",
+      invitation: "none",
+      content: {
+        title,
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-21T09:00:00-06:00",
+        end: "2026-07-21T10:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=2"] },
+      scope: "thisAndFollowing",
+      recurrenceId,
+    } as unknown as SyncCommandInput,
+    expectedVersion: null,
+  });
+
+  const otherSeriesMaster = (principalId: PrincipalId, masterId: EventId) =>
+    mongo.db
+      .collection(SYNC_COLLECTIONS.events)
+      .find({
+        principalId,
+        "recurrence.kind": "seriesMaster",
+        _id: { $ne: masterId },
+      })
+      .toArray();
+
+  it("splits a cloud series into a truncated original and an edited remainder", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    const master = await seriesMaster(tenantId, principalId, masterId);
+    // An override after the split — superseded by the new series, so dropped.
+    const following = await seriesException(
+      tenantId,
+      principalId,
+      masterId,
+      "2026-07-28T09:00:00-06:00",
+    );
+    await reprojectOccurrences(occurrences, master, now, [
+      "2026-07-28T09:00:00-06:00" as never,
+    ]);
+    await reprojectOccurrences(occurrences, following, now);
+
+    const command = await submitCloudCommand(
+      deps(),
+      splitFor(tenantId, principalId, masterId, EXCEPTED, "Split"),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    // The original keeps only the pre-split occurrence, with its old title.
+    const original = await events.findById(tenantId, principalId, masterId);
+    expect(original?.content.title).toBe("Existing");
+    expect(await occurrenceStartsFor(masterId)).toEqual([
+      "2026-07-14T15:00:00.000Z",
+    ]);
+    // The following exception is gone.
+    expect(
+      await events.findById(tenantId, principalId, following._id),
+    ).toBeNull();
+    // A remainder series carries the edit from the split point on.
+    const remainders = await otherSeriesMaster(principalId, masterId);
+    expect(remainders).toHaveLength(1);
+    const remainder = remainders[0];
+    expect(remainder?.["content"]).toMatchObject({ title: "Split" });
+    expect(await occurrenceStartsFor(remainder?.["_id"] as EventId)).toEqual([
+      "2026-07-21T15:00:00.000Z",
+      "2026-07-28T15:00:00.000Z",
+    ]);
+  });
+
+  it("upserts a single remainder master across two splits at the same point", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    const master = await seriesMaster(tenantId, principalId, masterId);
+    await reprojectOccurrences(occurrences, master, now);
+
+    // Two distinct commands (fresh idempotency keys) splitting at one point.
+    await submitCloudCommand(
+      deps(),
+      splitFor(tenantId, principalId, masterId, EXCEPTED, "First"),
+      now,
+    );
+    await submitCloudCommand(
+      deps(),
+      splitFor(tenantId, principalId, masterId, EXCEPTED, "Second"),
+      now,
+    );
+
+    // The deterministic remainder id means one remainder, not two.
+    expect(await otherSeriesMaster(principalId, masterId)).toHaveLength(1);
+  });
+
+  it("collapses a thisAndFollowing edit at the first occurrence to editing the whole series", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    const master = await seriesMaster(tenantId, principalId, masterId);
+    await reprojectOccurrences(occurrences, master, now);
+
+    const command = await submitCloudCommand(
+      deps(),
+      splitFor(
+        tenantId,
+        principalId,
+        masterId,
+        "2026-07-14T09:00:00-06:00",
+        "Whole",
+      ),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    // Edited in place — no separate remainder series was created.
+    const original = await events.findById(tenantId, principalId, masterId);
+    expect(original?.content.title).toBe("Whole");
+    expect(await otherSeriesMaster(principalId, masterId)).toHaveLength(0);
   });
 
   it("collapses thisAndFollowing at the first occurrence to deleting the whole series", async () => {
