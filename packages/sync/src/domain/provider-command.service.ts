@@ -180,6 +180,16 @@ function buildLinkedEventRecord(
         ? { kind: "seriesMaster", rules: input.recurrence.rules }
         : { kind: "single" },
     lifecycleState: "active",
+    // generation 0 is correct in steady state (a calendar's active generation is
+    // 0 until a repair bumps it). The one gap it leaves is self-healing: if a
+    // repair has already advanced this calendar's active generation, a just-
+    // created event's occurrences land at generation 0 and reads (which serve
+    // the active generation) miss it — until the next incremental pull, which
+    // re-reads this event from the provider (it IS at the provider, linked here)
+    // and reprojects it at the active generation. Repairs are rare and pulls are
+    // frequent, so the window is small and closes on its own; resolving the
+    // active generation here would thread a resources dependency through the
+    // whole command path for a case that corrects itself.
     generation: 0,
     createdAt: now,
     updatedAt: now,
