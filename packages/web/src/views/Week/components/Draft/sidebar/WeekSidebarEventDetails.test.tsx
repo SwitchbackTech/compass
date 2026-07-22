@@ -1,12 +1,8 @@
 import { HotkeyManager } from "@tanstack/react-hotkeys";
 import userEvent from "@testing-library/user-event";
 import { cleanup, render, screen } from "@web/__tests__/__mocks__/mock.render";
-import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import {
-  createGridEventDraft,
-  editGridEventDraft,
-} from "@web/events/grid-event-draft.adapter";
+import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import {
   draftActions,
   initialDraftState,
@@ -97,12 +93,11 @@ describe("WeekSidebarEventDetails", () => {
     );
   });
 
-  it("keeps an existing event's shared draft projection in sync with all-day changes", async () => {
+  it("keeps the shared draft projection in sync with all-day changes", async () => {
     const user = userEvent.setup();
-    const draft = editGridEventDraft(createMockEvent());
-    if (!draft) throw new Error("Expected an edit draft");
+    const draft = createDraft();
 
-    draftActions.startGridDraft({ activity: "keyboardEdit", draft });
+    draftActions.startGridDraft({ activity: "gridClick", draft });
     renderPanel({ draft });
 
     await user.click(screen.getByRole("checkbox", { name: "All day?" }));
