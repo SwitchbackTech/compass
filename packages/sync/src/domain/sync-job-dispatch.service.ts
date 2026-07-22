@@ -2,7 +2,9 @@ import { importCalendarEvents } from "@sync/domain/calendar-import.service";
 import { pullCalendarChanges } from "@sync/domain/calendar-pull.service";
 import { repairCalendar } from "@sync/domain/calendar-repair.service";
 import { type AccessTokenSource } from "@sync/domain/provider-command.service";
+import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
 import { type ProviderEventReader } from "@sync/providers/provider-event-reader.port";
+import { type ProviderNotificationAdapter } from "@sync/providers/provider-notifications.port";
 import {
   type JobEnqueue,
   type JobFailureClass,
@@ -25,6 +27,10 @@ export interface SyncJobDispatchDeps {
   commands: CommandRepository;
   reader: ProviderEventReader;
   custody: AccessTokenSource;
+  // maintainSubscription opens/renews the calendar's push channel; the callback
+  // url is where the provider posts change notifications back to this service.
+  notifications: ProviderNotificationAdapter;
+  callbackUrl: string;
 }
 
 // The decision a dispatch makes about a claimed job. The worker loop (a later
@@ -43,14 +49,15 @@ export type SyncJobOutcome =
   // Nothing to act on — the job's target vanished (resource/calendar deleted) or
   // the job is malformed for its kind. Settle complete; retrying can't help.
   | { readonly result: "drop"; readonly reason: string }
-  // This kind is not a provider-calendar sync job (commandApply, reconcile,
-  // subscriptionMaintain). Dispatch here does not own it; the loop routes it.
+  // This kind is not a provider-calendar sync job (commandApply, reconcile).
+  // Dispatch here does not own it; the loop routes it.
   | { readonly result: "unsupported"; readonly kind: JobRecord["kind"] };
 
 // Run one claimed provider-calendar sync job (initialImport / incrementalPull /
-// repair) and report how to settle it. Resolves the job's resource and calendar
-// first; a job whose target no longer exists is dropped rather than retried
-// forever. All reads/writes inside the called services are owner-scoped.
+// repair / subscriptionMaintain) and report how to settle it. Resolves the job's
+// resource and calendar first; a job whose target no longer exists is dropped
+// rather than retried forever. All reads/writes inside the called services are
+// owner-scoped.
 export async function dispatchSyncJob(
   deps: SyncJobDispatchDeps,
   job: JobRecord,
@@ -59,7 +66,8 @@ export async function dispatchSyncJob(
   if (
     job.kind !== "initialImport" &&
     job.kind !== "incrementalPull" &&
-    job.kind !== "repair"
+    job.kind !== "repair" &&
+    job.kind !== "subscriptionMaintain"
   ) {
     return { result: "unsupported", kind: job.kind };
   }
@@ -116,6 +124,13 @@ export async function dispatchSyncJob(
             failureClass: "retryableTransient",
             reason: "repair did not complete",
           };
+    }
+    case "subscriptionMaintain": {
+      // Open or renew the push channel. Every terminal outcome (watched /
+      // renewed / current / unsupported / authRevoked) settles the job; a
+      // transient watch failure throws and the worker retries with backoff.
+      await maintainSubscription(deps, calendar, resource, now);
+      return { result: "done" };
     }
   }
 }

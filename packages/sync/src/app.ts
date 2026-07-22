@@ -12,8 +12,10 @@ import { deriveOAuthStateSecret } from "@sync/oauth/oauth-state";
 import { GoogleAuthAdapter } from "@sync/providers/google/google-auth.adapter";
 import { GoogleEventReaderAdapter } from "@sync/providers/google/google-event-reader.adapter";
 import { GoogleEventWriter } from "@sync/providers/google/google-event-writer.adapter";
+import { GoogleNotificationAdapter } from "@sync/providers/google/google-notifications.adapter";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
+import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
@@ -234,6 +236,10 @@ function buildSchedulers(
       jobs,
       reader: new GoogleEventReaderAdapter(),
       custody: new CredentialCustody(new CredentialRepository(db), authAdapter),
+      notifications: new GoogleNotificationAdapter(),
+      // Where the provider posts change notifications back; the callback route
+      // verifies them against the stored subscription.
+      callbackUrl: `${config.CALLBACK_BASE_URL}${NOTIFICATIONS_PATH}`,
     },
     owner,
   );
