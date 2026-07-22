@@ -82,6 +82,9 @@ describe("googleAuthService", () => {
       // These spies are only needed for the `handleGoogleAuth` routing tests.
       // Without restoring, they can leak into the `repairGoogleConnection`
       // describe block below and cause unrelated assertions to fail.
+      (googleAuthService.googleSignup as Mock).mockRestore();
+      (googleAuthService.repairGoogleConnection as Mock).mockRestore();
+      (googleAuthService.googleSignin as Mock).mockRestore();
     });
 
     it("routes SIGNUP to googleSignup", async () => {
