@@ -228,6 +228,35 @@ describe("pullCalendarChanges", () => {
     expect(result.changed).toBe(1);
   });
 
+  it("writes into the active generation when a prior repair left one staged", async () => {
+    // A repair bumped importGeneration ahead of activeGeneration but never
+    // activated (crashed/incomplete). A pull must still write the live (active)
+    // generation, or its new events land in a generation reads never serve.
+    const calendar = await seedCalendar();
+    const resource = await seedImported(calendar, "cursor-0");
+    await resources.startNewGeneration(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+    ); // importGeneration -> 1, activeGeneration stays 0
+
+    const reader = new FakeReader([
+      page([single("new-1")], { nextSyncToken: "cursor-1" }),
+    ]);
+    const result = await pullCalendarChanges(deps(reader), calendar, now);
+
+    if (result.status !== "applied") throw new Error("expected applied");
+    const occAt = (generation: number) =>
+      storage
+        .db()
+        .collection(SYNC_COLLECTIONS.eventOccurrences)
+        .countDocuments({ calendarId: calendar._id, generation });
+    // The pulled event is visible at the active generation, not stranded in the
+    // repair's staged one.
+    expect(await occAt(0)).toBe(1);
+    expect(await occAt(1)).toBe(0);
+  });
+
   it("applies a provider deletion by removing the local event", async () => {
     const calendar = await seedCalendar();
     await seedImported(calendar);

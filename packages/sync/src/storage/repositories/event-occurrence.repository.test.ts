@@ -84,12 +84,15 @@ describe("EventOccurrenceRepository", () => {
 
   it("does not disturb another generation of the same event (non-destructive repair)", async () => {
     const eventId = objectId() as OccurrenceInput["eventId"];
+    // The SAME occurrence (same eventId + occurrenceKey) in two generations: the
+    // unique index includes generation, so a repair building generation 1 does
+    // not collide with the live generation 0.
+    const key = `${eventId}:instant`;
     await repo.replaceForEvent(eventId, 0, [
-      occurrence({ eventId, occurrenceKey: `${eventId}:gen0` }),
+      occurrence({ eventId, occurrenceKey: key, generation: 0 }),
     ]);
-    // A repair builds generation 1 alongside generation 0.
     await repo.replaceForEvent(eventId, 1, [
-      occurrence({ eventId, occurrenceKey: `${eventId}:gen1`, generation: 1 }),
+      occurrence({ eventId, occurrenceKey: key, generation: 1 }),
     ]);
     expect(
       await db.collection("event_occurrences").countDocuments({ eventId }),

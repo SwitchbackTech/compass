@@ -152,11 +152,14 @@ class ImportRun {
     private readonly resource: SyncResourceRecord,
     now: () => Date,
   ) {
+    // Import writes the active (live) generation — the one reads serve. Only a
+    // repair stages a separate importGeneration; the first import runs with
+    // active and import both at 0, so it populates the generation reads serve.
     this.#applier = new ProviderPageApplier(
       deps.events,
       deps.occurrences,
       calendar,
-      resource.importGeneration,
+      resource.activeGeneration,
       now,
     );
   }
