@@ -11,6 +11,7 @@ import {
   type ConnectionId,
   type ProviderEventId,
 } from "@core/types/sync/identity.contracts";
+import { reprojectOccurrences } from "@sync/domain/reproject";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
@@ -25,6 +26,7 @@ import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-ca
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
 import { type DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
+import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 
 // The slice of credential custody the executor needs — a valid access token for
 // a connection. Narrow so tests pass a plain fake; CredentialCustody satisfies
@@ -36,6 +38,9 @@ export interface AccessTokenSource {
 export interface ProviderMutationDeps {
   commands: CommandRepository;
   events: EventRepository;
+  // The derived occurrence projection, rebuilt (or cleared, on delete) so a
+  // provider-linked event appears in range queries.
+  occurrences: EventOccurrenceRepository;
   writer: ProviderEventWriter;
   custody: AccessTokenSource;
 }
@@ -101,10 +106,12 @@ export async function executeProviderCreate(
     throw error;
   }
 
-  // Commit the provider identity to the canonical event, then confirm.
-  await deps.events.put(
-    buildLinkedEventRecord(command, calendar, result, now()),
-  );
+  // Commit the provider identity to the canonical event and project its
+  // occurrences, then confirm. Both run before confirmation, so a crash leaves
+  // the command pending and a retry re-runs them idempotently.
+  const record = buildLinkedEventRecord(command, calendar, result, now());
+  await deps.events.put(record);
+  await reprojectOccurrences(deps.occurrences, record, now);
 
   const confirmed = await deps.commands.updateOutcome(
     command.tenantId,
@@ -307,7 +314,7 @@ async function commitProviderUpdate(
     throw new Error("commitProviderUpdate requires an update command");
   }
   const { input } = command;
-  const applied = await deps.events.replaceExisting({
+  const updated: EventRecord = {
     ...event,
     content: input.content,
     schedule: input.schedule,
@@ -315,8 +322,10 @@ async function commitProviderUpdate(
     providerUpdatedAt: null,
     deliveryState: "confirmed",
     updatedAt: now(),
-  });
+  };
+  const applied = await deps.events.replaceExisting(updated);
   if (!applied) return command;
+  await reprojectOccurrences(deps.occurrences, updated, now);
 
   const confirmed = await deps.commands.updateOutcome(
     command.tenantId,
@@ -445,8 +454,11 @@ export async function executeProviderDelete(
   }
 
   // The provider confirmed the deletion. Write the content-free tombstone first
-  // (so no window exists where the event is gone with no marker), then remove
-  // the local record, then confirm. All three are idempotent.
+  // (so no window exists where the event is gone with no marker), clear the
+  // occurrences, then remove the local record, then confirm. Clearing before the
+  // delete matters: a crash after deleteById would otherwise strand the
+  // occurrence rows, since the retry's already-gone (`!marked`) branch confirms
+  // without clearing them. All steps are idempotent.
   await deps.markers.record({
     tenantId: event.tenantId,
     principalId: event.principalId,
@@ -457,6 +469,7 @@ export async function executeProviderDelete(
     deletionSource: "compass",
     deletedAt: now(),
   });
+  await deps.occurrences.replaceForEvent(event._id, event.generation, []);
   await deps.events.deleteById(event.tenantId, event.principalId, event._id);
   return confirmDeletion(deps, command);
 }
