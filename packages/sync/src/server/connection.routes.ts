@@ -45,6 +45,7 @@ import { CredentialRepository } from "@sync/storage/repositories/credential.repo
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
+import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 
 export const CONNECTIONS_PATH = "/internal/connections";
@@ -228,10 +229,23 @@ export function registerConnectionRoutes(
           deps.mongo.db,
           deps.mongo.client,
         );
+        // Resolve the active generation for each requested calendar so a repair
+        // in progress is never read; a calendar with no events resource yet
+        // (cloud-only, or not imported) reads generation 0.
+        const resources = new SyncResourceRepository(deps.mongo.db);
+        const activeByCalendar = await resources.activeGenerationByCalendar(
+          auth.tenantId,
+          auth.principalId,
+          [...query.calendarIds],
+        );
+        const calendars = [...query.calendarIds].map((calendarId) => ({
+          calendarId,
+          generation: activeByCalendar.get(calendarId) ?? 0,
+        }));
         const records = await repo.listByCalendarRange({
           tenantId: auth.tenantId,
           principalId: auth.principalId,
-          calendarIds: [...query.calendarIds],
+          calendars,
           start,
           end,
           limit,

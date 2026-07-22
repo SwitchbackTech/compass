@@ -1,4 +1,5 @@
 import { type Collection, type Db, ObjectId } from "mongodb";
+import { type SyncEventCalendarId } from "@core/types/sync/event.contracts";
 import {
   type ConnectionId,
   type PrincipalId,
@@ -51,6 +52,7 @@ export class SyncResourceRepository {
           syncCursor: null,
           pageCursor: null,
           importGeneration: 0,
+          activeGeneration: 0,
           lastAttemptAt: null,
           lastSuccessAt: null,
           subscriptionId: null,
@@ -170,6 +172,44 @@ export class SyncResourceRepository {
     );
     if (!result) throw new Error("startNewGeneration: resource not found");
     return SyncResourceRecordSchema.parse(result).importGeneration;
+  }
+
+  // Serve reads from the generation a repair just finished building. The flip is
+  // a single field update, so reads switch from the old generation to the new
+  // one atomically; the old generation's rows are cleaned up afterward.
+  async activateGeneration(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    generation: number,
+  ): Promise<void> {
+    await this.collection.updateOne(
+      { _id: id, tenantId, principalId },
+      { $set: { activeGeneration: generation, updatedAt: new Date() } },
+    );
+  }
+
+  // The active generation to read for each of the given event calendars. A
+  // calendar with no events resource yet (a cloud-only calendar, or one not
+  // imported) is absent from the result; callers read generation 0 for those.
+  async activeGenerationByCalendar(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    calendarIds: readonly SyncEventCalendarId[],
+  ): Promise<Map<SyncEventCalendarId, number>> {
+    const records = await this.collection
+      .find({
+        tenantId,
+        principalId,
+        resourceKind: "events",
+        calendarId: { $in: [...calendarIds] },
+      })
+      .project<{ calendarId: SyncEventCalendarId; activeGeneration: number }>({
+        calendarId: 1,
+        activeGeneration: 1,
+      })
+      .toArray();
+    return new Map(records.map((r) => [r.calendarId, r.activeGeneration]));
   }
 
   async findById(

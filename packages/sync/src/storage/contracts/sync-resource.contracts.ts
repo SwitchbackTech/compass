@@ -29,7 +29,15 @@ export const SyncResourceRecordSchema = z.strictObject({
   syncCursor: z.string().min(1).nullable(),
   // Mid-batch page checkpoint for resumable pulls; null between batches.
   pageCursor: z.string().min(1).nullable(),
+  // The generation import and pull WRITE into. A non-destructive repair bumps
+  // this to build a fresh generation alongside the queryable one.
   importGeneration: z.number().int().min(0),
+  // The generation reads SERVE. Equal to importGeneration in steady state; a
+  // repair holds it back at the old generation until the new one completes,
+  // then activates it atomically, so reads never see a half-built repair.
+  // Defaults to 0 so a resource written before this field existed reads as the
+  // single generation it has.
+  activeGeneration: z.number().int().min(0).default(0),
   lastAttemptAt: z.date().nullable(),
   lastSuccessAt: z.date().nullable(),
   // Push subscription: the provider channel id, its opaque resource id, the
