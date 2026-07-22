@@ -38,8 +38,7 @@ export function getSocialShareUrl(
 
 export function getCleanLifeShareUrl(pageUrl: string) {
   const url = new URL(pageUrl);
-  url.searchParams.delete("age");
-  url.searchParams.delete("variation");
+  url.search = "";
   return url.toString();
 }
 

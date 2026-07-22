@@ -25,11 +25,11 @@ describe("life sharing", () => {
     expect(facebookShare.searchParams.get("u")).toBe(pageUrl);
   });
 
-  it("removes Life-specific state from shared links", () => {
+  it("shares only the canonical Life URL", () => {
     expect(
       getCleanLifeShareUrl(
-        "https://compasscalendar.com/life?variation=random&age=83&utm_source=x",
+        "https://compasscalendar.com/life?auth=reset&token=secret&variation=random&age=83",
       ),
-    ).toBe("https://compasscalendar.com/life?utm_source=x");
+    ).toBe("https://compasscalendar.com/life");
   });
 });
