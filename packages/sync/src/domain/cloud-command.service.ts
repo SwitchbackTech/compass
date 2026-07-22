@@ -4,7 +4,11 @@ import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { type CredentialCustody } from "@sync/credentials/credential-custody.service";
-import { occurrenceScheduleAt } from "@sync/domain/occurrence-projection";
+import {
+  occurrenceScheduleAt,
+  scheduleStartAt,
+  truncateRulesBefore,
+} from "@sync/domain/occurrence-projection";
 import {
   executeProviderCreate,
   executeProviderDelete,
@@ -137,7 +141,7 @@ async function applyCloudMutation(
       if (command.input.scope === "this") {
         return deleteCloudOccurrence(deps, command, existing, now);
       }
-      return command;
+      return deleteCloudSeriesFollowing(deps, command, existing, now);
     }
     // A bare exception target (this/thisAndFollowing) also stays pending.
     if (existing.recurrence.kind !== "single") return command;
@@ -435,6 +439,61 @@ async function reprojectMaster(
     now,
     exceptions.map(exceptionInstant),
   );
+}
+
+// Delete one occurrence of a cloud series and every occurrence after it (scope
+// "thisAndFollowing"): truncate the master's rule to end before the split point,
+// drop the exceptions at or after it, and reproject the shortened master. A
+// split at the series' first occurrence removes the whole series, so it collapses
+// to delete-all. The master keeps its kind (still a series), so a retry re-enters
+// here; truncation and the following-exception cleanup are both idempotent.
+async function deleteCloudSeriesFollowing(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (command.input.kind !== "delete" || command.input.recurrenceId === null) {
+    return command;
+  }
+  if (master.recurrence.kind !== "seriesMaster") return command;
+  const splitAt = new Date(command.input.recurrenceId);
+  if (splitAt.getTime() <= scheduleStartAt(master.schedule).getTime()) {
+    return deleteCloudSeries(deps, command, master);
+  }
+
+  await deleteFollowingExceptions(deps, command, master._id, splitAt);
+  const truncated: EventRecord = {
+    ...master,
+    recurrence: {
+      kind: "seriesMaster",
+      rules: truncateRulesBefore(master.recurrence.rules, splitAt),
+    },
+    updatedAt: now(),
+  };
+  const applied = await deps.events.replaceExisting(truncated);
+  if (!applied) return command;
+  await reprojectMaster(deps, command, truncated, now);
+  return confirmCloud(deps, command);
+}
+
+// Delete every exception at or after the split instant and clear its occurrences.
+async function deleteFollowingExceptions(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  seriesId: EventRecord["_id"],
+  splitAt: Date,
+): Promise<void> {
+  const exceptions = await deps.events.findSeriesExceptions(
+    command.tenantId,
+    command.principalId,
+    seriesId,
+  );
+  const following = exceptions.filter(
+    (exception) =>
+      new Date(exceptionInstant(exception)).getTime() >= splitAt.getTime(),
+  );
+  await deleteExceptions(deps, command, following);
 }
 
 // Confirm a cloud command with no provider identity — local persistence is the

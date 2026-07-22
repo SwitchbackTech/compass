@@ -4,6 +4,7 @@ import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import {
   type ProjectionHorizon,
   projectOccurrences,
+  truncateRulesBefore,
 } from "@sync/domain/occurrence-projection";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 
@@ -270,6 +271,45 @@ describe("projectOccurrences", () => {
       );
       expect(starts).toHaveLength(5);
       expect(starts.at(-1)).toBe("2026-06-05T14:30:00.000Z");
+    });
+  });
+
+  describe("truncateRulesBefore", () => {
+    it("appends a strictly-before UNTIL (one second earlier, inclusive bound)", () => {
+      const [rule] = truncateRulesBefore(
+        ["RRULE:FREQ=WEEKLY"],
+        new Date("2026-07-21T15:00:00.000Z"),
+      );
+      expect(rule).toBe("RRULE:FREQ=WEEKLY;UNTIL=20260721T145959Z");
+    });
+
+    it("drops a COUNT (mutually exclusive with UNTIL) and replaces a stale UNTIL", () => {
+      const [rule] = truncateRulesBefore(
+        ["RRULE:FREQ=WEEKLY;COUNT=10;UNTIL=20270101T000000Z"],
+        new Date("2026-07-21T15:00:00.000Z"),
+      );
+      expect(rule).toBe("RRULE:FREQ=WEEKLY;UNTIL=20260721T145959Z");
+    });
+
+    it("truncates the projection to occurrences before the split point", () => {
+      const e = event(
+        timed("2026-07-06T09:00:00-06:00", "2026-07-06T09:30:00-06:00"),
+        {
+          kind: "seriesMaster",
+          rules: truncateRulesBefore(
+            ["RRULE:FREQ=WEEKLY;COUNT=5"],
+            // Split at the third occurrence (2026-07-20 09:00 -06:00 = 15:00Z).
+            new Date("2026-07-20T15:00:00.000Z"),
+          ),
+        },
+      );
+      const starts = projectOccurrences(e, HORIZON).map((o) =>
+        o.startAt.toISOString(),
+      );
+      expect(starts).toEqual([
+        "2026-07-06T15:00:00.000Z",
+        "2026-07-13T15:00:00.000Z",
+      ]);
     });
   });
 });

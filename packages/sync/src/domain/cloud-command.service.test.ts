@@ -346,7 +346,7 @@ describe("submitCloudCommand provider dispatch", () => {
     ).not.toBeNull();
   });
 
-  it("leaves a thisAndFollowing series delete pending (split not built yet)", async () => {
+  it("leaves a thisAndFollowing series update pending (split edit not built yet)", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const eventId = objectId() as EventId;
@@ -354,17 +354,36 @@ describe("submitCloudCommand provider dispatch", () => {
       recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
     });
 
-    const command = await submitCloudCommand(
-      deps(),
-      deleteFor(
-        tenantId,
-        principalId,
-        eventId,
-        "thisAndFollowing",
-        "2026-07-21T09:00:00-06:00",
-      ),
-      now,
-    );
+    const update: CommandSubmit = {
+      tenantId,
+      principalId,
+      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+      eventId,
+      input: {
+        kind: "update",
+        invitation: "none",
+        content: {
+          title: "Later",
+          description: "",
+          location: null,
+          organizer: null,
+          attendees: [],
+          conference: null,
+        },
+        schedule: {
+          kind: "timed",
+          start: "2026-07-21T11:00:00-06:00",
+          end: "2026-07-21T12:00:00-06:00",
+          timeZone: "America/Denver",
+        },
+        recurrence: { kind: "preserve" },
+        scope: "thisAndFollowing",
+        recurrenceId: "2026-07-21T09:00:00-06:00",
+      } as unknown as SyncCommandInput,
+      expectedVersion: null,
+    };
+
+    const command = await submitCloudCommand(deps(), update, now);
 
     expect(command.outcome.state).toBe("pending");
     expect(
@@ -635,7 +654,8 @@ describe("submitCloudCommand provider dispatch", () => {
       schedule: {
         kind: "timed",
         start: recurrenceId,
-        end: "2026-07-21T11:00:00-06:00",
+        // A valid end on the same day as the instance (09:00 starts -> 23:00).
+        end: recurrenceId.replace(/T\d{2}:/, "T23:"),
         timeZone: "America/Denver",
       } as never,
     });
@@ -961,5 +981,65 @@ describe("submitCloudCommand provider dispatch", () => {
       masterId,
     );
     expect(exceptions).toHaveLength(1);
+  });
+
+  it("deletes this and following occurrences of a cloud series", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    // Weekly x3 from 2026-07-14: 07-14, 07-21, 07-28 (all 09:00-06 = 15:00Z).
+    const master = await seriesMaster(tenantId, principalId, masterId);
+    // An override on the last occurrence — it is at/after the split, so it goes.
+    const following = await seriesException(
+      tenantId,
+      principalId,
+      masterId,
+      "2026-07-28T09:00:00-06:00",
+    );
+    await reprojectOccurrences(occurrences, master, now, [
+      "2026-07-28T09:00:00-06:00" as never,
+    ]);
+    await reprojectOccurrences(occurrences, following, now);
+
+    const command = await submitCloudCommand(
+      deps(),
+      deleteFor(tenantId, principalId, masterId, "thisAndFollowing", EXCEPTED),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    // Only the occurrence before the split survives.
+    expect(await occurrenceStartsFor(masterId)).toEqual([
+      "2026-07-14T15:00:00.000Z",
+    ]);
+    // The following exception is gone.
+    expect(
+      await events.findById(tenantId, principalId, following._id),
+    ).toBeNull();
+  });
+
+  it("collapses thisAndFollowing at the first occurrence to deleting the whole series", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    const master = await seriesMaster(tenantId, principalId, masterId);
+    await reprojectOccurrences(occurrences, master, now);
+
+    const command = await submitCloudCommand(
+      deps(),
+      // The split point is the series' own first occurrence.
+      deleteFor(
+        tenantId,
+        principalId,
+        masterId,
+        "thisAndFollowing",
+        "2026-07-14T09:00:00-06:00",
+      ),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    expect(await events.findById(tenantId, principalId, masterId)).toBeNull();
+    expect(await occurrenceStartsFor(masterId)).toHaveLength(0);
   });
 });
