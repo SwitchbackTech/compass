@@ -1,20 +1,21 @@
 import { faker } from "@faker-js/faker";
-import { type Db, type MongoClient } from "mongodb";
 import { NodeEnv } from "@core/constants/core.constants";
 import {
   type ConnectionId,
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
-import { useSyncStorage } from "@sync/__tests__/helpers/storage";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { type SyncConfig } from "@sync/config/sync.config";
 import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
+import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
 
-const storage = useSyncStorage();
+const uri = process.env["SYNC_MONGO_URI"] as string;
+const storage = setupSyncStorage();
 const objectId = () => faker.database.mongodbObjectId();
 
 const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
@@ -44,7 +45,7 @@ const googHeaders = (
 });
 
 describe("POST /oauth/google/notifications", () => {
-  let mongo: { db: Db; client: MongoClient };
+  let mongo: SyncMongoService;
   let resources: SyncResourceRepository;
   let service: SyncService;
   let base: string;
@@ -88,7 +89,7 @@ describe("POST /oauth/google/notifications", () => {
       .countDocuments({ coalescingKey });
 
   beforeEach(() => {
-    mongo = { db: storage.db(), client: storage.client() };
+    mongo = storage.mongo();
     resources = new SyncResourceRepository(mongo.db);
   });
 

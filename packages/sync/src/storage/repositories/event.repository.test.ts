@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
-import { useSyncStorage } from "@sync/__tests__/helpers/storage";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import {
   EventRepository,
@@ -75,7 +75,7 @@ const compassRecord = (overrides: Partial<EventRecord> = {}): EventRecord =>
   }) as EventRecord;
 
 describe("EventRepository", () => {
-  const storage = useSyncStorage();
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: EventRepository;
 

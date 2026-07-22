@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
-import { useSyncStorage } from "@sync/__tests__/helpers/storage";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type CommandSubmit } from "@sync/storage/contracts/command.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 
@@ -39,7 +39,7 @@ const submit = (overrides: Partial<CommandSubmit> = {}): CommandSubmit =>
   }) as CommandSubmit;
 
 describe("CommandRepository", () => {
-  const storage = useSyncStorage();
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: CommandRepository;
 

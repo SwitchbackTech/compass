@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
-import { useSyncStorage } from "@sync/__tests__/helpers/storage";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type SyncResourceUpsert } from "@sync/storage/contracts/sync-resource.contracts";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
@@ -19,7 +19,7 @@ const upsert = (
   }) as SyncResourceUpsert;
 
 describe("SyncResourceRepository", () => {
-  const storage = useSyncStorage();
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: SyncResourceRepository;
 

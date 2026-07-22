@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
-import { useSyncStorage } from "@sync/__tests__/helpers/storage";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type JobEnqueue } from "@sync/storage/contracts/job.contracts";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 
@@ -21,7 +21,7 @@ const enqueue = (overrides: Partial<JobEnqueue> = {}): JobEnqueue =>
   }) as JobEnqueue;
 
 describe("JobRepository", () => {
-  const storage = useSyncStorage();
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: JobRepository;
 

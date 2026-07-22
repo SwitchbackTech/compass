@@ -1,5 +1,4 @@
 import { faker } from "@faker-js/faker";
-import { type Db, type MongoClient } from "mongodb";
 import { type RecurrenceEdit } from "@core/types/event-command.contracts";
 import { type SyncCommandInput } from "@core/types/sync/command.contracts";
 import {
@@ -9,7 +8,7 @@ import {
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
-import { useSyncStorage } from "@sync/__tests__/helpers/storage";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import {
   type AccessTokenSource,
   executeProviderCreate,
@@ -37,8 +36,9 @@ import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-ma
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 
-const storage = useSyncStorage();
+const storage = setupSyncStorage();
 const objectId = () => faker.database.mongodbObjectId();
 
 // A writer that records its calls and returns a fixed identity, or throws a
@@ -77,7 +77,7 @@ const failingTokenSource = (error: unknown): AccessTokenSource => ({
 });
 
 describe("executeProviderCreate", () => {
-  let mongo: { db: Db; client: MongoClient };
+  let mongo: SyncMongoService;
   let commands: CommandRepository;
   let events: EventRepository;
   let occurrences: EventOccurrenceRepository;
@@ -144,7 +144,7 @@ describe("executeProviderCreate", () => {
   };
 
   beforeEach(() => {
-    mongo = { db: storage.db(), client: storage.client() };
+    mongo = storage.mongo();
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
     occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
@@ -353,7 +353,7 @@ class FakeUpdateWriter implements ProviderEventWriter {
 }
 
 describe("executeProviderUpdate", () => {
-  let mongo: { db: Db; client: MongoClient };
+  let mongo: SyncMongoService;
   let commands: CommandRepository;
   let events: EventRepository;
   let occurrences: EventOccurrenceRepository;
@@ -453,7 +453,7 @@ describe("executeProviderUpdate", () => {
   };
 
   beforeEach(() => {
-    mongo = { db: storage.db(), client: storage.client() };
+    mongo = storage.mongo();
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
     occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
@@ -663,7 +663,7 @@ class FakeDeleteWriter implements ProviderEventWriter {
 }
 
 describe("executeProviderDelete", () => {
-  let mongo: { db: Db; client: MongoClient };
+  let mongo: SyncMongoService;
   let commands: CommandRepository;
   let events: EventRepository;
   let occurrences: EventOccurrenceRepository;
@@ -742,7 +742,7 @@ describe("executeProviderDelete", () => {
   };
 
   beforeEach(() => {
-    mongo = { db: storage.db(), client: storage.client() };
+    mongo = storage.mongo();
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
     occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
@@ -902,7 +902,7 @@ describe("executeProviderDelete", () => {
 });
 
 describe("executeProviderSeriesUpdate", () => {
-  let mongo: { db: Db; client: MongoClient };
+  let mongo: SyncMongoService;
   let commands: CommandRepository;
   let events: EventRepository;
   let occurrences: EventOccurrenceRepository;
@@ -1075,7 +1075,7 @@ describe("executeProviderSeriesUpdate", () => {
   };
 
   beforeEach(() => {
-    mongo = { db: storage.db(), client: storage.client() };
+    mongo = storage.mongo();
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
     occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);

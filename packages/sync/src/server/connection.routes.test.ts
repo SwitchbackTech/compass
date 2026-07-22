@@ -1,5 +1,4 @@
 import { faker } from "@faker-js/faker";
-import { type Db, type MongoClient } from "mongodb";
 import { NodeEnv } from "@core/constants/core.constants";
 import {
   type ConnectionId,
@@ -7,7 +6,7 @@ import {
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import dayjs from "@core/util/date/dayjs";
-import { useSyncStorage } from "@sync/__tests__/helpers/storage";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { signInternalRequest } from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
@@ -35,9 +34,11 @@ import {
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
+import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
 
-const storage = useSyncStorage();
+const uri = process.env["SYNC_MONGO_URI"] as string;
+const storage = setupSyncStorage();
 const objectId = () => faker.database.mongodbObjectId();
 const SECRET = "internal-secret";
 // The service signs OAuth state with a key derived from the root secret.
@@ -137,7 +138,7 @@ const signedHeaders = (
 };
 
 describe("GET /internal/connections", () => {
-  let mongo: { db: Db; client: MongoClient };
+  let mongo: SyncMongoService;
   let repo: ProviderConnectionRepository;
   let service: SyncService;
   let base: string;
@@ -153,7 +154,7 @@ describe("GET /internal/connections", () => {
   };
 
   beforeEach(() => {
-    mongo = { db: storage.db(), client: storage.client() };
+    mongo = storage.mongo();
     repo = new ProviderConnectionRepository(mongo.db);
   });
 
@@ -255,7 +256,7 @@ describe("GET /internal/connections", () => {
 });
 
 describe("DELETE /internal/connections/:id", () => {
-  let mongo: { db: Db; client: MongoClient };
+  let mongo: SyncMongoService;
   let connections: ProviderConnectionRepository;
   let credentials: CredentialRepository;
   let service: SyncService;
@@ -275,7 +276,7 @@ describe("DELETE /internal/connections/:id", () => {
   };
 
   beforeEach(() => {
-    mongo = { db: storage.db(), client: storage.client() };
+    mongo = storage.mongo();
     connections = new ProviderConnectionRepository(mongo.db);
     credentials = new CredentialRepository(mongo.db);
     adapter = new FakeAuthAdapter();
@@ -382,7 +383,7 @@ describe("DELETE /internal/connections/:id", () => {
 });
 
 describe("POST /internal/connections/begin", () => {
-  let mongo: { db: Db; client: MongoClient };
+  let mongo: SyncMongoService;
   let connections: ProviderConnectionRepository;
   let service: SyncService;
   let base: string;
@@ -415,7 +416,7 @@ describe("POST /internal/connections/begin", () => {
     });
 
   beforeEach(() => {
-    mongo = { db: storage.db(), client: storage.client() };
+    mongo = storage.mongo();
     connections = new ProviderConnectionRepository(mongo.db);
     adapter = new FakeAuthAdapter();
   });
@@ -515,7 +516,7 @@ describe("POST /internal/connections/begin", () => {
 });
 
 describe("GET /oauth/google/callback", () => {
-  let mongo: { db: Db; client: MongoClient };
+  let mongo: SyncMongoService;
   let connections: ProviderConnectionRepository;
   let credentials: CredentialRepository;
   let service: SyncService;
@@ -549,7 +550,7 @@ describe("GET /oauth/google/callback", () => {
     new URL(res.headers.get("location") as string).searchParams.get("status");
 
   beforeEach(() => {
-    mongo = { db: storage.db(), client: storage.client() };
+    mongo = storage.mongo();
     connections = new ProviderConnectionRepository(mongo.db);
     credentials = new CredentialRepository(mongo.db);
     adapter = new FakeAuthAdapter();
@@ -734,7 +735,7 @@ describe("GET /oauth/google/callback", () => {
 });
 
 describe("GET /internal/calendars", () => {
-  let mongo: { db: Db; client: MongoClient };
+  let mongo: SyncMongoService;
   let calendars: ProviderCalendarRepository;
   let service: SyncService;
   let base: string;
@@ -779,7 +780,7 @@ describe("GET /internal/calendars", () => {
     });
 
   beforeEach(() => {
-    mongo = { db: storage.db(), client: storage.client() };
+    mongo = storage.mongo();
     calendars = new ProviderCalendarRepository(mongo.db);
   });
 
@@ -886,7 +887,7 @@ describe("GET /internal/calendars", () => {
 });
 
 describe("GET /internal/events", () => {
-  let mongo: { db: Db; client: MongoClient };
+  let mongo: SyncMongoService;
   let service: SyncService;
   let base: string;
 
@@ -943,7 +944,7 @@ describe("GET /internal/events", () => {
     });
 
   beforeEach(() => {
-    mongo = { db: storage.db(), client: storage.client() };
+    mongo = storage.mongo();
   });
 
   afterEach(async () => {

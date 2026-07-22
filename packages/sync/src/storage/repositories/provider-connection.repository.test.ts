@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
-import { useSyncStorage } from "@sync/__tests__/helpers/storage";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type ProviderConnectionUpsert } from "@sync/storage/contracts/provider-connection.contracts";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 
@@ -27,7 +27,7 @@ const baseUpsert = (
   }) as ProviderConnectionUpsert;
 
 describe("ProviderConnectionRepository", () => {
-  const storage = useSyncStorage();
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: ProviderConnectionRepository;
 

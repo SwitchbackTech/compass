@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
-import { useSyncStorage } from "@sync/__tests__/helpers/storage";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type DeletionMarkerRecordInput } from "@sync/storage/contracts/deletion-marker.contracts";
 import {
   DELETION_MARKER_RETENTION_MS,
@@ -25,7 +25,7 @@ const markerInput = (
   }) as DeletionMarkerRecordInput;
 
 describe("DeletionMarkerRepository", () => {
-  const storage = useSyncStorage();
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: DeletionMarkerRepository;
 

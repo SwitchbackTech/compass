@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
-import { useSyncStorage } from "@sync/__tests__/helpers/storage";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
   type CredentialUpsert,
@@ -22,7 +22,7 @@ const baseCredential = (
 });
 
 describe("CredentialRepository", () => {
-  const storage = useSyncStorage();
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: CredentialRepository;
 

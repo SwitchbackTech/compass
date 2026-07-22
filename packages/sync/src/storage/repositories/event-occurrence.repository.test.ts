@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
-import { useSyncStorage } from "@sync/__tests__/helpers/storage";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type EventOccurrenceRecord } from "@sync/storage/contracts/event-occurrence.contracts";
 import {
   EventOccurrenceRepository,
@@ -33,7 +33,7 @@ const occurrence = (
   }) as OccurrenceInput;
 
 describe("EventOccurrenceRepository", () => {
-  const storage = useSyncStorage();
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: EventOccurrenceRepository;
 

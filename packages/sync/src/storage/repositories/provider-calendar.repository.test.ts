@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
-import { useSyncStorage } from "@sync/__tests__/helpers/storage";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type ProviderCalendarUpsert } from "@sync/storage/contracts/provider-calendar.contracts";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 
@@ -29,7 +29,7 @@ const baseUpsert = (
   }) as ProviderCalendarUpsert;
 
 describe("ProviderCalendarRepository", () => {
-  const storage = useSyncStorage();
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: ProviderCalendarRepository;
 

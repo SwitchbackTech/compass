@@ -1,12 +1,11 @@
 import { faker } from "@faker-js/faker";
-import { type Db, type MongoClient } from "mongodb";
 import { NodeEnv } from "@core/constants/core.constants";
 import {
   type ConnectionId,
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
-import { useSyncStorage } from "@sync/__tests__/helpers/storage";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { signInternalRequest } from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
@@ -14,9 +13,11 @@ import { COMMANDS_PATH } from "@sync/server/command.routes";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
 
-const storage = useSyncStorage();
+const uri = process.env["SYNC_MONGO_URI"] as string;
+const storage = setupSyncStorage();
 const objectId = () => faker.database.mongodbObjectId();
 const SECRET = "internal-secret";
 
@@ -79,7 +80,7 @@ const createRequest = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe("POST /internal/commands", () => {
-  let mongo: { db: Db; client: MongoClient };
+  let mongo: SyncMongoService;
   let service: SyncService;
   let base: string;
 
@@ -98,7 +99,7 @@ describe("POST /internal/commands", () => {
     });
 
   beforeEach(() => {
-    mongo = { db: storage.db(), client: storage.client() };
+    mongo = storage.mongo();
   });
 
   afterEach(async () => {
