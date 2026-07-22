@@ -41,9 +41,15 @@ describe("getMoreCommandPaletteSections", () => {
     expect(getCommandPalettePlaceholder("day", true)).not.toContain("bug");
   });
 
-  it("uses a Life-specific placeholder", () => {
+  it("offers feedback from Life", () => {
+    const [section] = getMoreCommandPaletteSections("life", true);
+    section.items.find((item) => item.id === "share-feedback")?.onClick?.();
+
+    expect(selectFeedbackRequest(useFeedbackStore.getState())).toEqual({
+      view: "life",
+    });
     expect(getCommandPalettePlaceholder("life", true)).toBe(
-      "Try: 'day', 'week', or 'theme'",
+      "Try: 'day', 'week', or 'feedback'",
     );
   });
 });

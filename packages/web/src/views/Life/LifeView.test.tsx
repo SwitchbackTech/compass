@@ -107,19 +107,24 @@ describe("LifeView", () => {
 
     expect(screen.getByRole("heading", { name: "Life" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Date of birth" })).toHaveValue(
-      "",
+      "Jan 1, 2000",
     );
+    expect(
+      screen.getByRole("textbox", { name: "Date of birth" }),
+    ).toHaveFocus();
     expect(
       (screen.getByLabelText(/age of death/i) as HTMLInputElement).value,
     ).toBe("77");
     expect(screen.getByText("Average")).toBeInTheDocument();
     expect(screen.getByText("About Life.")).toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("Birth date not set");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "1,356 weeks lived - 26 years - 34%",
+    );
     const region = screen.getByRole("region", {
       name: /life visualization/i,
     });
     expect(region).toBeInTheDocument();
-    expect(region.querySelector(".ring-1")).not.toBeInTheDocument();
+    expect(region.querySelector(".ring-1")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /zoom/i }),
     ).not.toBeInTheDocument();
@@ -202,7 +207,7 @@ describe("LifeView", () => {
           name: "Date of birth",
         }) as HTMLInputElement
       ).value,
-    ).toBe("");
+    ).toBe("Jan 1, 2000");
     expect(
       (screen.getByLabelText(/age of death/i) as HTMLInputElement).value,
     ).toBe("77");
