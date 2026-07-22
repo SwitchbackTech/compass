@@ -132,11 +132,16 @@ async function applyCloudMutation(
     // Absence is the desired end state, so a delete of an already-gone (or
     // never-created) event is confirmed rather than left hanging.
     if (!existing) return confirmCloud(deps, command);
-    // A cloud series master: scope "all" removes the whole series, scope "this"
-    // cancels one occurrence. thisAndFollowing (series split) and provider series
-    // stay pending for later slices.
+    // A series master: for a provider series, only scope "all" is handled here
+    // (delete the whole series at the provider); this/thisAndFollowing need
+    // provider exception ops and stay pending. For a cloud series, scope "all"
+    // removes the whole series, "this" cancels one occurrence, thisAndFollowing
+    // splits it.
     if (existing.recurrence.kind === "seriesMaster") {
-      if (existing.connectionId !== null) return command;
+      if (existing.connectionId !== null) {
+        if (command.input.scope !== "all") return command;
+        return dispatchProviderDelete(deps, command, existing, now);
+      }
       if (command.input.scope === "all") {
         return deleteCloudSeries(deps, command, existing);
       }
@@ -147,34 +152,10 @@ async function applyCloudMutation(
     }
     // A bare exception target (this/thisAndFollowing) also stays pending.
     if (existing.recurrence.kind !== "single") return command;
-    // A provider-linked event goes to the provider delete path when provider
-    // work is enabled; otherwise it stays pending. It is never removed locally
-    // here — content is deleted only after the provider confirms.
+    // A provider-linked event goes to the provider delete path; a cloud event is
+    // removed locally below. Content is removed only after the provider confirms.
     if (existing.connectionId !== null) {
-      if (deps.execution === "active" && deps.provider) {
-        const calendar = await deps.calendars.findById(
-          command.tenantId,
-          command.principalId,
-          existing.calendarId as ProviderCalendarId,
-        );
-        if (calendar) {
-          return executeProviderDelete(
-            {
-              commands: deps.commands,
-              events: deps.events,
-              occurrences: deps.occurrences,
-              writer: deps.provider.writer,
-              custody: deps.provider.custody,
-              markers: deps.markers,
-            },
-            command,
-            existing,
-            calendar,
-            now,
-          );
-        }
-      }
-      return command;
+      return dispatchProviderDelete(deps, command, existing, now);
     }
     // Clear the derived occurrences BEFORE removing the event. If this crashes
     // before the delete, a retry still finds the event and re-runs both steps;
@@ -254,6 +235,40 @@ async function applyCloudMutation(
   if (!applied) return command;
   await reprojectOccurrences(deps.occurrences, updated, now);
   return confirmCloud(deps, command);
+}
+
+// Route a delete of a provider-linked event to the provider executor when
+// provider work is enabled and the owning calendar resolves; otherwise leave the
+// command pending. Content is removed only after the provider confirms. Deleting
+// a series master here cancels the whole series at the provider. Shared by the
+// single-event and provider-series-all delete paths.
+async function dispatchProviderDelete(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  event: EventRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (deps.execution !== "active" || !deps.provider) return command;
+  const calendar = await deps.calendars.findById(
+    command.tenantId,
+    command.principalId,
+    event.calendarId as ProviderCalendarId,
+  );
+  if (!calendar) return command;
+  return executeProviderDelete(
+    {
+      commands: deps.commands,
+      events: deps.events,
+      occurrences: deps.occurrences,
+      writer: deps.provider.writer,
+      custody: deps.provider.custody,
+      markers: deps.markers,
+    },
+    command,
+    event,
+    calendar,
+    now,
+  );
 }
 
 // Apply a scope-"all" edit to a cloud series. An edit-all discards per-instance
