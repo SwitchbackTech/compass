@@ -7,12 +7,15 @@
   "main": "",
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",
+    "@types/lodash.mergewith": "^4.6.9",
+    "lodash.mergewith": "^4.6.2",
     "typescript": "^7.0.2"
   },
   "dependencies": {
     "@opentelemetry/api-logs": "^0.220.0",
     "bson": "^7.2.0",
     "dayjs": "^1.11.19",
+    "rrule": "^2.7.2",
     "winston": "^3.8.1",
     "yaml": "^2.9.0",
     "zod": "^3.25.76"

@@ -1,10 +1,8 @@
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 
-// In-memory Mongo for the sync test suite. Mirrors the backend helper's two
-// modes: in launcher mode (run-tests.ts) each worker reuses the shared
-// per-file URI from COMPASS_TEST_MONGO_URI; standalone, a single file starts
-// its own throwaway replica set. A replica set (not standalone) is required
-// because Sync uses multi-document transactions in later commits.
+// In-memory Mongo for the sync test suite. Reuses COMPASS_TEST_MONGO_URI from
+// test-with-mongo.ts when set; otherwise starts a throwaway replica set for
+// single-file runs. A replica set is required for multi-document transactions.
 
 let server: MongoMemoryReplSet | undefined;
 
@@ -24,6 +22,8 @@ export async function startMemoryMongo(): Promise<string> {
 }
 
 export async function stopMemoryMongo(): Promise<void> {
+  if (process.env["COMPASS_TEST_MONGO_URI"]) return;
+
   if (!server) return;
   await server.stop();
   server = undefined;

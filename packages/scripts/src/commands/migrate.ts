@@ -155,7 +155,7 @@ export const runMigrator = async (
   useDynamicDb = false,
 ): Promise<void> => {
   try {
-    await mongoService.start(useDynamicDb);
+    await mongoService.start(useDynamicDb ? null : undefined);
 
     const cli = await createMigrationCli(migratorType);
 

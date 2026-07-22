@@ -1,25 +1,20 @@
-import { faker } from "@faker-js/faker";
 import { type Db, type MongoClient } from "mongodb";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { afterAll, beforeAll, beforeEach } from "bun:test";
+import { createHash } from "node:crypto";
 
 // Shared Mongo lifecycle for storage-backed sync tests.
 //
 // Connecting and installing the index manifest are the expensive parts of test
-// setup (hundreds of milliseconds against a replica set), so they run ONCE per
-// file here; between tests only the collections are wiped, which is a few
-// milliseconds. The old pattern paid the full connect/install/dropDatabase
-// cycle in every beforeEach, which made a <30ms test cost ~700ms of setup and
-// pushed the whole suite past three minutes.
-//
-// Holds a real SyncMongoService (not a bare client) so server tests can inject
-// it into createSyncService, whose routes gate on `mongo.isConnected`. Each
-// call gets its own randomly-named database, so test files running in parallel
-// launcher processes (run-tests.ts) never collide. Tests that exercise
-// connection or manifest behavior itself (sync-mongo.service.test.ts,
-// index-manifest.test.ts) keep their own bespoke setup instead of this helper.
-export function setupSyncStorage(): {
+// setup, so they run once per file here; between tests only collections are
+// wiped. Each file gets a stable unique database name derived from its path so
+// parallel workers never collide.
+function syncTestDbName(testFileUrl: string): string {
+  return `synctest_${createHash("sha256").update(testFileUrl).digest("hex").slice(0, 12)}`;
+}
+
+export function setupSyncStorage(testFileUrl: string): {
   db: () => Db;
   client: () => MongoClient;
   mongo: () => SyncMongoService;
@@ -35,7 +30,7 @@ export function setupSyncStorage(): {
         process.env["SYNC_MONGO_URI"] as string,
         SERVER_SELECTION_TIMEOUT_MS,
       ),
-      databaseName: `synctest_${faker.database.mongodbObjectId()}`,
+      databaseName: syncTestDbName(testFileUrl),
       forbiddenDatabaseName: "compass_api_unused",
       enforceLeastPrivilege: false,
     });
@@ -61,10 +56,8 @@ export function setupSyncStorage(): {
   };
 }
 
-// A connect against the shared mongod must fail FAST when the server is
-// momentarily saturated, so the retry loop below fits inside run-tests.ts's 90s
-// per-file kill. The driver's 30s default would let a few retries blow past it
-// (and get the file killed mid-retry, which is worse than one clean failure).
+// A connect against the shared mongod must fail fast when the server is
+// momentarily saturated so the retry loop below can ride out transient spikes.
 const SERVER_SELECTION_TIMEOUT_MS = 8_000;
 const CONNECT_ATTEMPTS = 5;
 
@@ -75,15 +68,9 @@ function withServerSelectionTimeout(uri: string, ms: number): string {
   return `${uri}${separator}serverSelectionTimeoutMS=${ms}`;
 }
 
-// Connect, retrying a few times on a transient failure. The whole sync suite
-// runs each test file in its own process against ONE shared in-memory mongod
-// (run-tests.ts); when many processes connect and install indexes at once, an
-// unlucky file can hit a transient server-selection timeout or refused
-// connection and fail its whole `beforeAll`. The server is alive (its neighbors
-// pass), so a bounded fast retry rides out the spike instead of flaking the run.
-// With an 8s selection timeout, 5 attempts cover a ~40s stall, well under the
-// 90s kill. The common path connects on the first attempt with no delay; the
-// backoff runs only on a retry.
+// Connect, retrying a few times on a transient failure. The sync suite shares
+// one in-memory mongod across parallel workers; when many files connect and
+// install indexes at once, a bounded fast retry rides out transient spikes.
 async function connectWithRetry(
   mongo: SyncMongoService,
   options: Parameters<SyncMongoService["connect"]>[0],

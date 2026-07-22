@@ -358,10 +358,9 @@ export function mockEnv(env: Partial<typeof CONFIG>) {
 }
 
 export function mockNodeModules() {
-  // Applied once, at preload time, so the mocks are in place before any test
-  // file's top-level code or `beforeAll` runs. Each test file runs in its own
-  // process (see run-tests.ts), so there is no cross-file mock leakage to guard
-  // against -- matching the per-file isolation Jest gave us.
+  // Applied once at preload time so mocks are in place before test files load.
+  // Mongo-backed packages run each file in its own process (see test-with-mongo.ts)
+  // so preload mocks are not cleared by Bun's --isolate.
   beforeEach(mockCompassTestState);
   mockConstants();
   mockWinstonLogger();

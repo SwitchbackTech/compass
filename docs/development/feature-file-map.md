@@ -104,7 +104,7 @@ Use this document to find the first files to inspect for common Compass changes.
 
 ## Test Anchors
 
-- Per-file test launcher (optional shared in-memory Mongo replica set): `packages/scripts/src/testing/run-tests.ts`
+- Per-file test launchers: `packages/scripts/src/testing/test-with-mongo.ts` (Mongo packages), `packages/scripts/src/testing/test-isolated.ts` (web)
 - Bun/Jest compatibility shim used by every package's tests: `packages/scripts/src/testing/apply-bun-jest-compat.cjs`
 - Core test setup: `packages/core/src/__tests__`
 - Web test setup: `packages/web/src/__tests__`

@@ -1,4 +1,11 @@
 // sort-imports-ignore
+import { applyBackendTestEnv } from "@scripts/testing/backend-test-env";
+
+const sharedMongoUri = process.env["COMPASS_TEST_MONGO_URI"];
+if (sharedMongoUri) {
+  applyBackendTestEnv(sharedMongoUri);
+}
+
 // Bun preload for the backend test suite. Replaces the Jest project config
 // (setupFiles + setupFilesAfterEnv + @shelf/jest-mongodb preset) with one
 // ordered, single-process setup:

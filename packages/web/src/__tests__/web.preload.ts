@@ -346,5 +346,12 @@ afterEach(async () => {
   resetAllStores();
   server.resetHandlers();
 });
+// Safety net when multiple files share a --parallel worker: the last test in a
+// file runs afterEach above; this mirrors that reset if Bun ever skips it.
+afterAll(() => {
+  resetDocument();
+  resetBrowserState();
+  resetAllStores();
+});
 afterAll(() => server.close());
 afterAll(() => mock.restore());
