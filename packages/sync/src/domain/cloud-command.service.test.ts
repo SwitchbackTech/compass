@@ -522,6 +522,117 @@ describe("submitCloudCommand provider dispatch", () => {
     ).not.toBeNull();
   });
 
+  const updateSeriesFor = (
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    eventId: EventId,
+    scope: string,
+    recurrenceId: string | null = null,
+  ): CommandSubmit => ({
+    tenantId,
+    principalId,
+    idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+    eventId,
+    input: {
+      kind: "update",
+      invitation: "none",
+      content: {
+        title: "Renamed series",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T09:00:00-06:00",
+        end: "2026-07-14T10:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "preserve" },
+      scope,
+      recurrenceId,
+    } as unknown as SyncCommandInput,
+    expectedVersion: "etag-1" as never,
+  });
+
+  it("routes a provider-linked series all-scope update to the provider executor", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const calendar = await seedProviderCalendar(tenantId, principalId);
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      calendarId: calendar._id,
+      connectionId: calendar.connectionId as never,
+      providerEventId: "g-series-1" as never,
+      providerVersion: "etag-1" as never,
+      deliveryState: "confirmed",
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    const writer = new FakeWriter();
+
+    const command = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        markers,
+        execution: "active",
+        provider: provider(writer),
+      },
+      updateSeriesFor(tenantId, principalId, eventId, "all"),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    expect(writer.patchCalls).toHaveLength(1);
+  });
+
+  it("leaves a provider-linked series this-scope update pending", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const calendar = await seedProviderCalendar(tenantId, principalId);
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      calendarId: calendar._id,
+      connectionId: calendar.connectionId as never,
+      providerEventId: "g-series-1" as never,
+      providerVersion: "etag-1" as never,
+      deliveryState: "confirmed",
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    const writer = new FakeWriter();
+
+    const command = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        markers,
+        execution: "active",
+        provider: provider(writer),
+      },
+      updateSeriesFor(
+        tenantId,
+        principalId,
+        eventId,
+        "this",
+        "2026-07-21T09:00:00-06:00",
+      ),
+      now,
+    );
+
+    // Provider per-occurrence edits need provider exception ops (deferred).
+    expect(command.outcome.state).toBe("pending");
+    expect(writer.patchCalls).toHaveLength(0);
+    expect(
+      await events.findById(tenantId, principalId, eventId),
+    ).not.toBeNull();
+  });
+
   // The occurrence projection is the read model, so a cloud command must leave
   // it consistent with the event it just wrote.
   const occurrenceStartsFor = async (eventId: EventId): Promise<string[]> => {

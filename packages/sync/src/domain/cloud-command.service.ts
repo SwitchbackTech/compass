@@ -13,6 +13,7 @@ import {
 import {
   executeProviderCreate,
   executeProviderDelete,
+  executeProviderSeriesUpdate,
   executeProviderUpdate,
 } from "@sync/domain/provider-command.service";
 import { reprojectOccurrences } from "@sync/domain/reproject";
@@ -180,11 +181,16 @@ async function applyCloudMutation(
   // update: the target must exist; a missing event can't be updated, so leave
   // the command pending rather than confirming a no-op.
   if (!existing) return command;
-  // A cloud series master: scope "all" edits the whole series, scope "this"
-  // overrides one occurrence, thisAndFollowing splits the series at the target.
-  // Provider series stay pending for later slices.
+  // A series master. For a cloud series, scope "all" edits the whole series,
+  // "this" overrides one occurrence, thisAndFollowing splits at the target. For
+  // a provider series, only scope "all" is handled here (edit the whole series
+  // at the provider); this/thisAndFollowing need provider exception ops and stay
+  // pending.
   if (existing.recurrence.kind === "seriesMaster") {
-    if (existing.connectionId !== null) return command;
+    if (existing.connectionId !== null) {
+      if (command.input.scope !== "all") return command;
+      return dispatchProviderSeriesUpdate(deps, command, existing, now);
+    }
     if (command.input.scope === "all") {
       return updateCloudSeries(deps, command, existing, now);
     }
@@ -266,6 +272,38 @@ async function dispatchProviderDelete(
     },
     command,
     event,
+    calendar,
+    now,
+  );
+}
+
+// Route a scope-"all" edit of a provider-linked series master to the provider
+// executor when provider work is enabled and the owning calendar resolves;
+// otherwise leave the command pending. This edits the whole series at the
+// provider (Google's edit-all).
+async function dispatchProviderSeriesUpdate(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (deps.execution !== "active" || !deps.provider) return command;
+  const calendar = await deps.calendars.findById(
+    command.tenantId,
+    command.principalId,
+    master.calendarId as ProviderCalendarId,
+  );
+  if (!calendar) return command;
+  return executeProviderSeriesUpdate(
+    {
+      commands: deps.commands,
+      events: deps.events,
+      occurrences: deps.occurrences,
+      writer: deps.provider.writer,
+      custody: deps.provider.custody,
+    },
+    command,
+    master,
     calendar,
     now,
   );
