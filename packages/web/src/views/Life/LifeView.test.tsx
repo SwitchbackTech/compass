@@ -116,7 +116,17 @@ describe("LifeView", () => {
       (screen.getByLabelText(/age of death/i) as HTMLInputElement).value,
     ).toBe("77");
     expect(screen.getByText("Average")).toBeInTheDocument();
-    expect(screen.getByText("About Life.")).toBeInTheDocument();
+    expect(
+      screen.getByText("This is your life if you live to 77"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Each dot represents one week of your life, and each row represents one year.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Share" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent(
       "1,356 weeks lived - 26 years - 34%",
     );

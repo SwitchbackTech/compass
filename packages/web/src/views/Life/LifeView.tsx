@@ -197,9 +197,7 @@ export function LifeView({ today }: LifeViewProps) {
             preferences={preferences}
             onShuffleAge={shuffleAge}
             summary={summary}
-            totalDots={totalDots}
             today={currentDate}
-            weeksLived={weeksLived}
             onPreferencesChange={onPreferencesChange}
           />
         </SidebarShell>
