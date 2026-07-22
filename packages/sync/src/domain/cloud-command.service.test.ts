@@ -8,6 +8,7 @@ import {
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { submitCloudCommand } from "@sync/domain/cloud-command.service";
+import { reprojectOccurrences } from "@sync/domain/reproject";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
   type ProviderCreateInput,
@@ -300,12 +301,13 @@ describe("submitCloudCommand provider dispatch", () => {
     tenantId: TenantId,
     principalId: PrincipalId,
     eventId: EventId,
+    scope = "all",
   ): CommandSubmit => ({
     tenantId,
     principalId,
     idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
     eventId,
-    input: { kind: "delete", scope: "all" } as SyncCommandInput,
+    input: { kind: "delete", scope } as SyncCommandInput,
     expectedVersion: null,
   });
 
@@ -343,7 +345,10 @@ describe("submitCloudCommand provider dispatch", () => {
     ).not.toBeNull();
   });
 
-  it("leaves a delete of a recurring series pending (scope handling)", async () => {
+  it.each([
+    "this",
+    "thisAndFollowing",
+  ] as const)("leaves a series delete pending for scope %s (needs occurrence identity)", async (scope) => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const eventId = objectId() as EventId;
@@ -353,7 +358,7 @@ describe("submitCloudCommand provider dispatch", () => {
 
     const command = await submitCloudCommand(
       deps(),
-      deleteFor(tenantId, principalId, eventId),
+      deleteFor(tenantId, principalId, eventId, scope),
       now,
     );
 
@@ -593,5 +598,235 @@ describe("submitCloudCommand provider dispatch", () => {
     );
 
     expect(order).toEqual(["clear", "delete"]);
+  });
+
+  const seriesMaster = (
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    eventId: EventId,
+    overrides: Partial<EventRecord> = {},
+  ) =>
+    seedEvent(tenantId, principalId, eventId, {
+      recurrence: {
+        kind: "seriesMaster",
+        rules: ["RRULE:FREQ=WEEKLY;COUNT=3"],
+      },
+      ...overrides,
+    });
+
+  const seriesException = (
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    seriesId: EventId,
+    recurrenceId: string,
+    cancelled = false,
+  ) =>
+    seedEvent(tenantId, principalId, objectId() as EventId, {
+      recurrence: {
+        kind: "exception",
+        seriesId,
+        recurrenceId: recurrenceId as never,
+        cancelled,
+      },
+      schedule: {
+        kind: "timed",
+        start: recurrenceId,
+        end: "2026-07-21T11:00:00-06:00",
+        timeZone: "America/Denver",
+      } as never,
+    });
+
+  const updateAllFor = (
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    eventId: EventId,
+    title: string,
+    recurrence: unknown = { kind: "preserve" },
+  ): CommandSubmit => ({
+    tenantId,
+    principalId,
+    idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+    eventId,
+    input: {
+      kind: "update",
+      invitation: "none",
+      content: {
+        title,
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T09:00:00-06:00",
+        end: "2026-07-14T10:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence,
+      scope: "all",
+    } as unknown as SyncCommandInput,
+    expectedVersion: null,
+  });
+
+  it("deletes a whole cloud series and clears all its occurrences (scope all)", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    const excepted = "2026-07-21T09:00:00-06:00";
+    const master = await seriesMaster(tenantId, principalId, masterId);
+    const exception = await seriesException(
+      tenantId,
+      principalId,
+      masterId,
+      excepted,
+    );
+    await reprojectOccurrences(occurrences, master, now, [excepted as never]);
+    await reprojectOccurrences(occurrences, exception, now);
+    expect((await occurrenceStartsFor(masterId)).length).toBeGreaterThan(0);
+    expect(await occurrenceStartsFor(exception._id)).toHaveLength(1);
+
+    const command = await submitCloudCommand(
+      deps(),
+      deleteFor(tenantId, principalId, masterId),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    expect(await events.findById(tenantId, principalId, masterId)).toBeNull();
+    expect(
+      await events.findById(tenantId, principalId, exception._id),
+    ).toBeNull();
+    expect(await occurrenceStartsFor(masterId)).toHaveLength(0);
+    expect(await occurrenceStartsFor(exception._id)).toHaveLength(0);
+  });
+
+  it("edits a whole cloud series, drops its exceptions, and reprojects (scope all)", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    const excepted = "2026-07-21T09:00:00-06:00";
+    const master = await seriesMaster(tenantId, principalId, masterId);
+    const exception = await seriesException(
+      tenantId,
+      principalId,
+      masterId,
+      excepted,
+    );
+    await reprojectOccurrences(occurrences, master, now, [excepted as never]);
+    await reprojectOccurrences(occurrences, exception, now);
+
+    const command = await submitCloudCommand(
+      deps(),
+      updateAllFor(tenantId, principalId, masterId, "Renamed"),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    const updated = await events.findById(tenantId, principalId, masterId);
+    expect(updated?.content.title).toBe("Renamed");
+    // The exception is discarded and the master now owns every instant again.
+    expect(
+      await events.findById(tenantId, principalId, exception._id),
+    ).toBeNull();
+    expect(await occurrenceStartsFor(exception._id)).toHaveLength(0);
+    const starts = await occurrenceStartsFor(masterId);
+    expect(starts).toContain("2026-07-21T15:00:00.000Z");
+    expect(starts).toHaveLength(3);
+  });
+
+  it("preserves a cancelled occurrence across an edit-all (no resurrection)", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    const cancelledInstant = "2026-07-21T09:00:00-06:00";
+    const master = await seriesMaster(tenantId, principalId, masterId);
+    // The user deleted this one occurrence (scope "this" tombstone).
+    const tombstone = await seriesException(
+      tenantId,
+      principalId,
+      masterId,
+      cancelledInstant,
+      true,
+    );
+    await reprojectOccurrences(occurrences, master, now, [
+      cancelledInstant as never,
+    ]);
+    await reprojectOccurrences(occurrences, tombstone, now);
+
+    const command = await submitCloudCommand(
+      deps(),
+      updateAllFor(tenantId, principalId, masterId, "Renamed"),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    // The tombstone survives, so the deleted instant is still not a live
+    // occurrence of the master.
+    expect(
+      await events.findById(tenantId, principalId, tombstone._id),
+    ).not.toBeNull();
+    const starts = await occurrenceStartsFor(masterId);
+    expect(starts).not.toContain("2026-07-21T15:00:00.000Z");
+    expect(starts).toHaveLength(2);
+  });
+
+  it("converts a series to a single event on edit-all and still drops exceptions", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    const excepted = "2026-07-21T09:00:00-06:00";
+    const master = await seriesMaster(tenantId, principalId, masterId);
+    const exception = await seriesException(
+      tenantId,
+      principalId,
+      masterId,
+      excepted,
+    );
+    await reprojectOccurrences(occurrences, master, now, [excepted as never]);
+    await reprojectOccurrences(occurrences, exception, now);
+
+    const command = await submitCloudCommand(
+      deps(),
+      updateAllFor(tenantId, principalId, masterId, "Now single", {
+        kind: "single",
+      }),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    const updated = await events.findById(tenantId, principalId, masterId);
+    expect(updated?.recurrence.kind).toBe("single");
+    // The exceptions are gone even though the master is no longer a series.
+    expect(
+      await events.findById(tenantId, principalId, exception._id),
+    ).toBeNull();
+    expect(await occurrenceStartsFor(exception._id)).toHaveLength(0);
+    // A single event projects exactly one occurrence.
+    expect(await occurrenceStartsFor(masterId)).toHaveLength(1);
+  });
+
+  it("leaves an all-scope delete of a provider-linked series pending", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    await seriesMaster(tenantId, principalId, masterId, {
+      connectionId: objectId() as never,
+      providerEventId: "g-series-1" as never,
+      providerVersion: "etag-1" as never,
+      deliveryState: "confirmed",
+    });
+
+    const command = await submitCloudCommand(
+      deps(),
+      deleteFor(tenantId, principalId, masterId),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("pending");
+    expect(
+      await events.findById(tenantId, principalId, masterId),
+    ).not.toBeNull();
   });
 });
