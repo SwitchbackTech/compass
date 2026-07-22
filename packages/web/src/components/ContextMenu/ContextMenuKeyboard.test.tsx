@@ -16,15 +16,7 @@ import {
   contextMenuStyle,
   cursorReference,
 } from "@web/components/ContextMenu/contextMenu.floating";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
 const gridEvent = {
@@ -78,38 +70,21 @@ const OpenMenuHarness = ({
 
 const getMenu = () => screen.getByRole("menu");
 
-let queuedTimers: (() => void)[];
-let setTimeoutSpy: ReturnType<typeof spyOn>;
-
-beforeEach(() => {
-  queuedTimers = [];
-  setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
-    callback: TimerHandler,
-  ) => {
-    if (typeof callback === "function") {
-      queuedTimers.push(callback as () => void);
-    }
-    return 0;
-  }) as typeof setTimeout);
-});
-
 // The menu seats focus on a deferred + retried timeout (the portalled menu
-// isn't focusable during the synchronous commit). Flush that queue directly
-// rather than waiting through its retry window in real time.
+// isn't focusable during the synchronous commit). Flush that whole retry window
+// deterministically rather than polling with waitFor, which races the timer
+// chain and runs slow enough to time out on CI.
 const flushFocusSeat = () =>
-  act(() => {
-    while (queuedTimers.length > 0) queuedTimers.shift()?.();
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 250));
   });
 
 describe("ContextMenu keyboard operability", () => {
-  afterEach(() => {
-    setTimeoutSpy.mockRestore();
-    cleanup();
-  });
+  afterEach(cleanup);
 
   it("moves focus into the menu (first item) when it opens", async () => {
     render(<OpenMenuHarness />);
-    flushFocusSeat();
+    await flushFocusSeat();
 
     expect(screen.getByRole("menuitem", { name: "Edit" })).toHaveFocus();
   });
@@ -121,7 +96,7 @@ describe("ContextMenu keyboard operability", () => {
     opener.focus();
 
     const { rerender } = render(<OpenMenuHarness open />);
-    flushFocusSeat();
+    await flushFocusSeat();
     expect(screen.getByRole("menuitem", { name: "Edit" })).toHaveFocus();
 
     rerender(<OpenMenuHarness open={false} />);
