@@ -1,10 +1,9 @@
 import { faker } from "@faker-js/faker";
-import { type Db, MongoClient } from "mongodb";
+import { type Db } from "mongodb";
+import { useSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type SyncResourceUpsert } from "@sync/storage/contracts/sync-resource.contracts";
-import { installIndexManifest } from "@sync/storage/index-manifest";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
 
 const upsert = (
@@ -20,21 +19,13 @@ const upsert = (
   }) as SyncResourceUpsert;
 
 describe("SyncResourceRepository", () => {
-  let client: MongoClient;
+  const storage = useSyncStorage();
   let db: Db;
   let repo: SyncResourceRepository;
 
-  beforeEach(async () => {
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(`res_${objectId()}`);
-    await installIndexManifest(db);
+  beforeEach(() => {
+    db = storage.db();
     repo = new SyncResourceRepository(db);
-  });
-
-  afterEach(async () => {
-    await db.dropDatabase();
-    await client.close();
   });
 
   it("creates a resource with empty cursors and generation 0", async () => {

@@ -1,10 +1,9 @@
 import { faker } from "@faker-js/faker";
-import { type Db, MongoClient } from "mongodb";
+import { type Db } from "mongodb";
+import { useSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type ProviderConnectionUpsert } from "@sync/storage/contracts/provider-connection.contracts";
-import { installIndexManifest } from "@sync/storage/index-manifest";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
 
 const baseUpsert = (
@@ -28,21 +27,13 @@ const baseUpsert = (
   }) as ProviderConnectionUpsert;
 
 describe("ProviderConnectionRepository", () => {
-  let client: MongoClient;
+  const storage = useSyncStorage();
   let db: Db;
   let repo: ProviderConnectionRepository;
 
-  beforeEach(async () => {
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(`conn_${objectId()}`);
-    await installIndexManifest(db);
+  beforeEach(() => {
+    db = storage.db();
     repo = new ProviderConnectionRepository(db);
-  });
-
-  afterEach(async () => {
-    await db.dropDatabase();
-    await client.close();
   });
 
   it("assigns a stable id and timestamps on first upsert", async () => {

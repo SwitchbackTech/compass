@@ -1,10 +1,9 @@
 import { faker } from "@faker-js/faker";
-import { type Db, MongoClient } from "mongodb";
+import { type Db } from "mongodb";
+import { useSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type JobEnqueue } from "@sync/storage/contracts/job.contracts";
-import { installIndexManifest } from "@sync/storage/index-manifest";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
 
 const enqueue = (overrides: Partial<JobEnqueue> = {}): JobEnqueue =>
@@ -22,21 +21,13 @@ const enqueue = (overrides: Partial<JobEnqueue> = {}): JobEnqueue =>
   }) as JobEnqueue;
 
 describe("JobRepository", () => {
-  let client: MongoClient;
+  const storage = useSyncStorage();
   let db: Db;
   let repo: JobRepository;
 
-  beforeEach(async () => {
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(`job_${objectId()}`);
-    await installIndexManifest(db);
+  beforeEach(() => {
+    db = storage.db();
     repo = new JobRepository(db);
-  });
-
-  afterEach(async () => {
-    await db.dropDatabase();
-    await client.close();
   });
 
   it("enqueues a new pending job", async () => {

@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { type Db, type MongoClient } from "mongodb";
 import { type RecurrenceEdit } from "@core/types/event-command.contracts";
 import { type SyncCommandInput } from "@core/types/sync/command.contracts";
 import {
@@ -8,6 +9,7 @@ import {
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
+import { useSyncStorage } from "@sync/__tests__/helpers/storage";
 import {
   type AccessTokenSource,
   executeProviderCreate,
@@ -35,9 +37,8 @@ import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-ma
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
-import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
+const storage = useSyncStorage();
 const objectId = () => faker.database.mongodbObjectId();
 
 // A writer that records its calls and returns a fixed identity, or throws a
@@ -76,7 +77,7 @@ const failingTokenSource = (error: unknown): AccessTokenSource => ({
 });
 
 describe("executeProviderCreate", () => {
-  let mongo: SyncMongoService;
+  let mongo: { db: Db; client: MongoClient };
   let commands: CommandRepository;
   let events: EventRepository;
   let occurrences: EventOccurrenceRepository;
@@ -142,23 +143,12 @@ describe("executeProviderCreate", () => {
     return { tenantId, principalId, calendar, command };
   };
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `provcmd_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = { db: storage.db(), client: storage.client() };
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
     occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
     calendars = new ProviderCalendarRepository(mongo.db);
-  });
-
-  afterEach(async () => {
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   const now = () => new Date("2026-07-10T00:00:00.000Z");
@@ -363,7 +353,7 @@ class FakeUpdateWriter implements ProviderEventWriter {
 }
 
 describe("executeProviderUpdate", () => {
-  let mongo: SyncMongoService;
+  let mongo: { db: Db; client: MongoClient };
   let commands: CommandRepository;
   let events: EventRepository;
   let occurrences: EventOccurrenceRepository;
@@ -462,23 +452,12 @@ describe("executeProviderUpdate", () => {
     return { tenantId, principalId, calendar, event, command };
   };
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `provupd_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = { db: storage.db(), client: storage.client() };
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
     occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
     calendars = new ProviderCalendarRepository(mongo.db);
-  });
-
-  afterEach(async () => {
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   it("patches the provider and commits the new version and content", async () => {
@@ -684,7 +663,7 @@ class FakeDeleteWriter implements ProviderEventWriter {
 }
 
 describe("executeProviderDelete", () => {
-  let mongo: SyncMongoService;
+  let mongo: { db: Db; client: MongoClient };
   let commands: CommandRepository;
   let events: EventRepository;
   let occurrences: EventOccurrenceRepository;
@@ -762,23 +741,12 @@ describe("executeProviderDelete", () => {
     return { tenantId, principalId, calendar, event, command };
   };
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `provdel_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = { db: storage.db(), client: storage.client() };
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
     occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
     markers = new DeletionMarkerRepository(mongo.db);
-  });
-
-  afterEach(async () => {
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   it("deletes at the provider, tombstones, removes the local event, and confirms", async () => {
@@ -934,7 +902,7 @@ describe("executeProviderDelete", () => {
 });
 
 describe("executeProviderSeriesUpdate", () => {
-  let mongo: SyncMongoService;
+  let mongo: { db: Db; client: MongoClient };
   let commands: CommandRepository;
   let events: EventRepository;
   let occurrences: EventOccurrenceRepository;
@@ -1106,23 +1074,12 @@ describe("executeProviderSeriesUpdate", () => {
     return stored;
   };
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `provseries_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = { db: storage.db(), client: storage.client() };
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
     occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
     calendars = new ProviderCalendarRepository(mongo.db);
-  });
-
-  afterEach(async () => {
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   const deps = (writer: ProviderEventWriter) => ({

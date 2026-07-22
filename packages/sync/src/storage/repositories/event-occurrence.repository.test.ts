@@ -1,13 +1,12 @@
 import { faker } from "@faker-js/faker";
-import { type Db, MongoClient } from "mongodb";
+import { type Db } from "mongodb";
+import { useSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type EventOccurrenceRecord } from "@sync/storage/contracts/event-occurrence.contracts";
-import { installIndexManifest } from "@sync/storage/index-manifest";
 import {
   EventOccurrenceRepository,
   type OccurrenceInput,
 } from "@sync/storage/repositories/event-occurrence.repository";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
 
 const occurrence = (
@@ -34,21 +33,13 @@ const occurrence = (
   }) as OccurrenceInput;
 
 describe("EventOccurrenceRepository", () => {
-  let client: MongoClient;
+  const storage = useSyncStorage();
   let db: Db;
   let repo: EventOccurrenceRepository;
 
-  beforeEach(async () => {
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(`occ_${objectId()}`);
-    await installIndexManifest(db);
-    repo = new EventOccurrenceRepository(db, client);
-  });
-
-  afterEach(async () => {
-    await db.dropDatabase();
-    await client.close();
+  beforeEach(() => {
+    db = storage.db();
+    repo = new EventOccurrenceRepository(db, storage.client());
   });
 
   it("materializes occurrences for an event", async () => {

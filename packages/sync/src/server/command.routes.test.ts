@@ -1,10 +1,12 @@
 import { faker } from "@faker-js/faker";
+import { type Db, type MongoClient } from "mongodb";
 import { NodeEnv } from "@core/constants/core.constants";
 import {
   type ConnectionId,
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
+import { useSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { signInternalRequest } from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
@@ -12,10 +14,9 @@ import { COMMANDS_PATH } from "@sync/server/command.routes";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
-import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
+const storage = useSyncStorage();
 const objectId = () => faker.database.mongodbObjectId();
 const SECRET = "internal-secret";
 
@@ -78,7 +79,7 @@ const createRequest = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe("POST /internal/commands", () => {
-  let mongo: SyncMongoService;
+  let mongo: { db: Db; client: MongoClient };
   let service: SyncService;
   let base: string;
 
@@ -96,20 +97,12 @@ describe("POST /internal/commands", () => {
       body: JSON.stringify(body),
     });
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `cmd_api_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = { db: storage.db(), client: storage.client() };
   });
 
   afterEach(async () => {
     await service?.stop();
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   it("confirms a cloud-only create and writes the canonical event", async () => {

@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
-import { type Db, MongoClient } from "mongodb";
+import { type Db } from "mongodb";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
+import { useSyncStorage } from "@sync/__tests__/helpers/storage";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import {
   type ProviderAuthAdapter,
@@ -8,10 +9,8 @@ import {
   type RefreshedCredential,
 } from "@sync/providers/provider-auth.port";
 import { type CredentialUpsert } from "@sync/storage/contracts/credential.contracts";
-import { installIndexManifest } from "@sync/storage/index-manifest";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
 
 // A configurable ProviderAuthAdapter fake that counts refresh/revoke calls.
@@ -66,21 +65,13 @@ const baseCredential = (
 });
 
 describe("CredentialCustody", () => {
-  let client: MongoClient;
+  const storage = useSyncStorage();
   let db: Db;
   let repo: CredentialRepository;
 
-  beforeEach(async () => {
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(`custody_${objectId()}`);
-    await installIndexManifest(db);
+  beforeEach(() => {
+    db = storage.db();
     repo = new CredentialRepository(db);
-  });
-
-  afterEach(async () => {
-    await db.dropDatabase();
-    await client.close();
   });
 
   const fixedNow = () => new Date("2026-01-01T00:00:00Z");

@@ -1,19 +1,20 @@
 import { faker } from "@faker-js/faker";
+import { type Db, type MongoClient } from "mongodb";
 import { NodeEnv } from "@core/constants/core.constants";
 import {
   type ConnectionId,
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
+import { useSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { type SyncConfig } from "@sync/config/sync.config";
 import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
-import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
+const storage = useSyncStorage();
 const objectId = () => faker.database.mongodbObjectId();
 
 const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
@@ -43,7 +44,7 @@ const googHeaders = (
 });
 
 describe("POST /oauth/google/notifications", () => {
-  let mongo: SyncMongoService;
+  let mongo: { db: Db; client: MongoClient };
   let resources: SyncResourceRepository;
   let service: SyncService;
   let base: string;
@@ -86,21 +87,13 @@ describe("POST /oauth/google/notifications", () => {
       .collection(SYNC_COLLECTIONS.jobs)
       .countDocuments({ coalescingKey });
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `notif_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = { db: storage.db(), client: storage.client() };
     resources = new SyncResourceRepository(mongo.db);
   });
 
   afterEach(async () => {
     await service?.stop();
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   it("enqueues one pull for an authentic change, coalescing duplicates", async () => {

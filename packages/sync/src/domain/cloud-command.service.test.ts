@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { type Db, type MongoClient } from "mongodb";
 import { type SyncCommandInput } from "@core/types/sync/command.contracts";
 import {
   type ConnectionId,
@@ -7,6 +8,7 @@ import {
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
+import { useSyncStorage } from "@sync/__tests__/helpers/storage";
 import { submitCloudCommand } from "@sync/domain/cloud-command.service";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
@@ -24,9 +26,8 @@ import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-ma
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
-import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
+const storage = useSyncStorage();
 const objectId = () => faker.database.mongodbObjectId();
 
 class FakeWriter implements ProviderEventWriter {
@@ -80,7 +81,7 @@ const provider = (writer: ProviderEventWriter) => ({
 });
 
 describe("submitCloudCommand provider dispatch", () => {
-  let mongo: SyncMongoService;
+  let mongo: { db: Db; client: MongoClient };
   let commands: CommandRepository;
   let events: EventRepository;
   let occurrences: EventOccurrenceRepository;
@@ -140,24 +141,13 @@ describe("submitCloudCommand provider dispatch", () => {
     expectedVersion: null,
   });
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `cloudcmd_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = { db: storage.db(), client: storage.client() };
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
     occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
     calendars = new ProviderCalendarRepository(mongo.db);
     markers = new DeletionMarkerRepository(mongo.db);
-  });
-
-  afterEach(async () => {
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   it("executes a provider-targeted create when active and provider-capable", async () => {
