@@ -32,12 +32,19 @@ describe("getNavigationCommandItems", () => {
     expect(labels).toEqual(["Go to Day", "Go to Week", "Go to Life"]);
   });
 
-  it("advertises the Life shortcut in the command palette", () => {
-    const life = getNavigationCommandItems(noopHandlers).find(
-      (item) => item.id === "go-to-life",
+  it("advertises every view shortcut in the command palette", () => {
+    const shortcuts = Object.fromEntries(
+      getNavigationCommandItems(noopHandlers).map((item) => [
+        item.id,
+        item.shortcut,
+      ]),
     );
 
-    expect(life?.shortcut).toBe("l");
+    expect(shortcuts).toMatchObject({
+      "go-to-day": "d",
+      "go-to-week": "w",
+      "go-to-life": "l",
+    });
   });
 
   it("omits the current view from navigation", () => {

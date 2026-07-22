@@ -10,10 +10,12 @@ import { CaretDownIcon } from "@phosphor-icons/react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import classNames from "classnames";
 import { useRef, useState } from "react";
-import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
-import { VIEW_SHORTCUTS } from "@web/shortcuts/shortcuts.constants";
+import {
+  LIFE_SHORTCUT,
+  VIEW_SHORTCUTS,
+} from "@web/shortcuts/shortcuts.constants";
 
 interface SelectViewProps {
   /** The date heading text, e.g. "July 2026" or "Monday, July 20". */
@@ -28,7 +30,7 @@ export const SelectView = ({ label, onToday }: SelectViewProps) => {
   const navigate = useNavigate();
   const listRef = useRef<Array<HTMLElement | null>>([]);
 
-  const getCurrentView = () => {
+  const getCurrentView = (): "Day" | "Week" | "Life" => {
     const pathname = location.pathname;
     if (
       pathname === ROOT_ROUTES.DAY ||
@@ -45,21 +47,47 @@ export const SelectView = ({ label, onToday }: SelectViewProps) => {
     return "Week";
   };
 
-  const getCurrentViewIndex = () => {
-    const currentView = getCurrentView();
-    if (currentView === "Day") return 0;
-    return 1;
-  };
-
   const currentView = getCurrentView();
+
+  const options = [
+    ...(onToday
+      ? [
+          {
+            label: currentView === "Week" ? "This Week" : "Today",
+            view: null,
+            key: "t",
+            onSelect: onToday,
+          },
+        ]
+      : []),
+    {
+      label: VIEW_SHORTCUTS.day.label,
+      view: "Day" as const,
+      key: VIEW_SHORTCUTS.day.key,
+      onSelect: () => navigate({ to: VIEW_SHORTCUTS.day.route }),
+    },
+    {
+      label: VIEW_SHORTCUTS.week.label,
+      view: "Week" as const,
+      key: VIEW_SHORTCUTS.week.key,
+      onSelect: () => navigate({ to: VIEW_SHORTCUTS.week.route }),
+    },
+    {
+      label: LIFE_SHORTCUT.label,
+      view: "Life" as const,
+      key: LIFE_SHORTCUT.key,
+      onSelect: () => navigate({ to: LIFE_SHORTCUT.route }),
+    },
+  ];
 
   const { refs, context } = useFloating({
     open: isOpen,
     onOpenChange: (open) => {
       setIsOpen(open);
       if (open) {
-        // Initialize activeIndex to current view when opening
-        setActiveIndex(getCurrentViewIndex());
+        setActiveIndex(
+          options.findIndex((option) => option.view === currentView),
+        );
       } else {
         setActiveIndex(null);
         listRef.current = [];
@@ -86,34 +114,6 @@ export const SelectView = ({ label, onToday }: SelectViewProps) => {
     onSelect();
     setIsOpen(false);
   };
-
-  const options = [
-    {
-      label: VIEW_SHORTCUTS.day.label,
-      view: "Day" as const,
-      key: VIEW_SHORTCUTS.day.key,
-      onSelect: () => navigate({ to: VIEW_SHORTCUTS.day.route }),
-    },
-    {
-      label: VIEW_SHORTCUTS.week.label,
-      view: "Week" as const,
-      key: VIEW_SHORTCUTS.week.key,
-      onSelect: () => navigate({ to: VIEW_SHORTCUTS.week.route }),
-    },
-    ...(onToday
-      ? [
-          {
-            label:
-              currentView === "Week"
-                ? "This Week"
-                : `Today (${dayjs().locale("en").format("dddd, MMMM D")})`,
-            view: null,
-            key: "t",
-            onSelect: onToday,
-          },
-        ]
-      : []),
-  ];
 
   const dropdownId = "view-select-dropdown";
 
