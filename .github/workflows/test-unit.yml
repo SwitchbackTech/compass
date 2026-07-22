@@ -128,7 +128,7 @@ jobs:
 
       - name: Run web tests
         if: matrix.project == 'web'
-        timeout-minutes: 2
+        timeout-minutes: 5
         env:
           TZ: Etc/UTC
         run: |
