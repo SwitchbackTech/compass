@@ -44,6 +44,7 @@ import {
   replaceGridDraftSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { BUSY_EVENT_TITLE } from "@web/events/queries/event.view-model";
+import { useEventById } from "@web/events/queries/useEventById";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
@@ -145,11 +146,29 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     isExistingEvent,
     ...props
   }) => {
+    // An occurrence's own recurrence pointer carries no rule (only the
+    // series base does — see grid-event-draft.adapter.ts), so resolve the
+    // base from the cache and thread its rules through every CompassEvent
+    // projection below. This is what lets RecurrenceSection show an
+    // existing repeat event's real rule instead of reading as non-recurring.
+    const seriesBase = useEventById(
+      draft.kind === "edit" && draft.source.recurrence.kind === "occurrence"
+        ? draft.source.recurrence.seriesId
+        : undefined,
+    );
+    const seriesRules =
+      seriesBase?.recurrence.kind === "series"
+        ? seriesBase.recurrence.rules
+        : undefined;
+
     // CompassEvent-shaped projection of the canonical draft, for the
     // still-unconverted DatePickers field-patch API and RecurrenceSection's
     // CompassEvent contract — see grid-event-draft.adapter.ts's
     // gridEventDraftToSchemaEvent doc comment.
-    const event = useMemo(() => gridEventDraftToSchemaEvent(draft), [draft]);
+    const event = useMemo(
+      () => gridEventDraftToSchemaEvent(draft, seriesRules),
+      [draft, seriesRules],
+    );
     const { title } = event;
     const { base: eventColor } = useEventPalette();
     const category =
@@ -289,6 +308,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       (nextEvent: SetStateAction<CompassEvent | null>) => {
         const currentEvent = gridEventDraftToSchemaEvent(
           latestDraftRef.current,
+          seriesRules,
         );
         const resolvedEvent =
           typeof nextEvent === "function" ? nextEvent(currentEvent) : nextEvent;
@@ -299,10 +319,11 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           applySchemaEventPatchToGridDraft(
             latestDraftRef.current,
             resolvedEvent,
+            seriesRules,
           ),
         );
       },
-      [setLatestDraft],
+      [setLatestDraft, seriesRules],
     );
 
     useEffect(() => {
@@ -414,7 +435,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
     const onSetEventField: SetEventFormField = (field) => {
       setLatestEvent({
-        ...gridEventDraftToSchemaEvent(latestDraftRef.current),
+        ...gridEventDraftToSchemaEvent(latestDraftRef.current, seriesRules),
         ...field,
       });
     };
@@ -504,7 +525,6 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     };
 
     const recurrenceSectionProps = {
-      bgColor: eventColor,
       event,
       setEvent: setLatestEvent,
     };
@@ -631,7 +651,18 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                 onToggleAllDay={onToggleAllDay}
               />
 
-              <RecurrenceSection {...recurrenceSectionProps} />
+              <RecurrenceSection
+                // Remount (not re-sync) when the rule appears/disappears -
+                // useRecurrence seeds its freq/interval/weekday state once,
+                // so a hydrated rule arriving after first render (or the
+                // user's own toggle) needs a fresh mount to re-seed from it.
+                key={
+                  (event.recurrence?.rule?.length ?? 0) > 0
+                    ? "recurring"
+                    : "single"
+                }
+                {...recurrenceSectionProps}
+              />
             </FormCard>
 
             <FormCard>

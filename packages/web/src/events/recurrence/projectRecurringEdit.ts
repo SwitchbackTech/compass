@@ -102,3 +102,32 @@ export function projectRecurringEdit({
 
   return { removeIds: new Set(), upserts };
 }
+
+type ProjectRecurringDeleteInput = {
+  scope: Exclude<RecurrenceScope, "this">;
+  target: Event;
+  seriesId: string;
+  seriesEvents: readonly Event[];
+};
+
+// `seriesEvents` (from findSeriesEventsInCache) holds occurrences only, so the
+// series base is added back explicitly. It's only removed for "all" — the
+// backend keeps the base's earlier instances (and the base itself) intact
+// when truncating a "thisAndFollowing" delete.
+export function projectRecurringDelete({
+  scope,
+  target,
+  seriesId,
+  seriesEvents,
+}: ProjectRecurringDeleteInput): RecurringEditProjection {
+  const affected =
+    scope === "all"
+      ? seriesEvents
+      : seriesEvents.filter((event) => isAtOrAfter(event, target.schedule));
+
+  const removeIds = new Set(affected.map((event) => event.id) as string[]);
+  removeIds.add(target.id);
+  if (scope === "all") removeIds.add(seriesId);
+
+  return { removeIds, upserts: [] };
+}

@@ -25,7 +25,10 @@ import {
   upsertEventAcrossQueries,
 } from "@web/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
-import { projectRecurringEdit } from "@web/events/recurrence/projectRecurringEdit";
+import {
+  projectRecurringDelete,
+  projectRecurringEdit,
+} from "@web/events/recurrence/projectRecurringEdit";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
@@ -315,7 +318,34 @@ export function useEventMutations(
           () => repository.delete(variables.id, variables.scope),
         );
       },
-      ({ id }) => removeEventFromQueries(queryClient, id, { source }),
+      ({ id, scope }) => {
+        const existing = findEventInCache(queryClient, id, source);
+        const seriesId =
+          existing?.recurrence.kind === "occurrence"
+            ? existing.recurrence.seriesId
+            : existing?.recurrence.kind === "series"
+              ? existing.id
+              : null;
+
+        if (existing && seriesId && scope !== "this") {
+          applyEventProjectionAcrossQueries(
+            queryClient,
+            projectRecurringDelete({
+              scope,
+              target: existing,
+              seriesId,
+              seriesEvents: findSeriesEventsInCache(
+                queryClient,
+                seriesId,
+                source,
+              ),
+            }),
+            source,
+          );
+          return;
+        }
+        removeEventFromQueries(queryClient, id, { source });
+      },
     ),
   );
 

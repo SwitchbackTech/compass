@@ -594,6 +594,114 @@ describe("useEventMutations", () => {
     context.pending.resolve();
   });
 
+  test("optimistically removes an entire series across day and week caches for an all-events delete", async () => {
+    const context = setup();
+    const seriesId = event().id;
+    const first = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-02T16:00:00.000Z",
+        "2026-07-02T17:00:00.000Z",
+      ),
+    });
+    const second = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    const unrelated = event({
+      content: { kind: "details", title: "Unrelated", description: "" },
+    });
+    context.queryClient.setQueryData(
+      calendarKey,
+      normalized(first, second, unrelated),
+    );
+    context.queryClient.setQueryData(dayKey, normalized(first));
+
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: first.id,
+        scope: "all",
+      }),
+    );
+
+    await waitFor(() => {
+      const week =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(
+          calendarKey,
+        )!;
+      const day =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(dayKey)!;
+      // Both instances leave both caches immediately - no waiting for a
+      // refetch to clear the rest of the series.
+      expect(week.ids).toEqual([unrelated.id]);
+      expect(day.ids).toEqual([]);
+    });
+
+    context.pending.resolve();
+  });
+
+  test("keeps earlier instances when an this-and-following delete targets a middle occurrence", async () => {
+    const context = setup();
+    const seriesId = event().id;
+    const instances = [1, 2, 3].map((day) =>
+      occurrence(seriesId, {
+        schedule: timedSchedule(
+          `2026-07-0${day}T16:00:00.000Z`,
+          `2026-07-0${day}T17:00:00.000Z`,
+        ),
+      }),
+    );
+    context.queryClient.setQueryData(calendarKey, normalized(...instances));
+
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: instances[1].id,
+        scope: "thisAndFollowing",
+      }),
+    );
+
+    await waitFor(() => {
+      const cached =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(
+          calendarKey,
+        )!;
+      expect(cached.ids).toEqual([instances[0].id]);
+    });
+
+    context.pending.resolve();
+  });
+
+  test("removes only the clicked instance for a this-scope delete on a recurring event", async () => {
+    const context = setup();
+    const seriesId = event().id;
+    const first = occurrence(seriesId);
+    const second = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(first, second));
+
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: first.id,
+        scope: "this",
+      }),
+    );
+
+    await waitFor(() => {
+      const cached =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(
+          calendarKey,
+        )!;
+      expect(cached.ids).toEqual([second.id]);
+    });
+
+    context.pending.resolve();
+  });
+
   test("defers deletion until the in-flight create persists, then deletes server-side", async () => {
     const context = setup();
     context.queryClient.setQueryData(calendarKey, normalized());

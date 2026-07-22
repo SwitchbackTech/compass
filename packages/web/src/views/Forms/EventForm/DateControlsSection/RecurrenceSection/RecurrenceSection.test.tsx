@@ -19,12 +19,26 @@ const baseEvent = (): GridEvent =>
     user: "user-1",
   });
 
+const recurringEvent = (): GridEvent =>
+  assembleGridEvent({
+    _id: "event-2",
+    title: "Standup",
+    description: "",
+    startDate: "2026-04-27T14:00:00.000Z",
+    endDate: "2026-04-27T15:00:00.000Z",
+    origin: Origin.COMPASS,
+    user: "user-1",
+    recurrence: { rule: ["RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE"] },
+  });
+
 function renderRecurrenceSection({
   authenticated,
   isBackendUnavailable = false,
+  initialEvent = baseEvent(),
 }: {
   authenticated: boolean;
   isBackendUnavailable?: boolean;
+  initialEvent?: GridEvent;
 }) {
   const setAuthenticated = mock();
   const setEventSpy = mock();
@@ -34,7 +48,7 @@ function renderRecurrenceSection({
   });
 
   function Harness() {
-    const [event, setEvent] = useState<CompassEvent | null>(baseEvent());
+    const [event, setEvent] = useState<CompassEvent | null>(initialEvent);
     const handleSetEvent = useCallback<typeof setEvent>((nextEvent) => {
       setEventSpy(nextEvent);
       setEvent(nextEvent);
@@ -42,13 +56,7 @@ function renderRecurrenceSection({
 
     if (!event) return null;
 
-    return (
-      <RecurrenceSection
-        bgColor="#f8d784"
-        event={event}
-        setEvent={handleSetEvent}
-      />
-    );
+    return <RecurrenceSection event={event} setEvent={handleSetEvent} />;
   }
 
   const view = render(<Harness />);
@@ -157,5 +165,32 @@ describe("RecurrenceSection", () => {
 
     expect(await screen.findByText("Every")).toBeInTheDocument();
     expect(screen.getByText("Ends on:")).toBeInTheDocument();
+  });
+
+  it("shows an existing recurring event's controls immediately, with the stored weekdays filled in", () => {
+    const { container } = renderRecurrenceSection({
+      authenticated: true,
+      initialEvent: recurringEvent(),
+    });
+
+    // No click on the Repeat toggle - an event that already has a rule must
+    // render its controls expanded from the first render.
+    expect(screen.getByText("Every")).toBeInTheDocument();
+    expect(screen.getByText("Ends on:")).toBeInTheDocument();
+
+    const selected = [...container.querySelectorAll("[data-selected]")].map(
+      (button) => button.getAttribute("data-selected"),
+    );
+    // WEEKDAYS order is [sun, mon, tue, wed, thu, fri, sat]; the stored rule
+    // is BYDAY=MO,TU,WE.
+    expect(selected).toEqual([
+      "false",
+      "true",
+      "true",
+      "true",
+      "false",
+      "false",
+      "false",
+    ]);
   });
 });

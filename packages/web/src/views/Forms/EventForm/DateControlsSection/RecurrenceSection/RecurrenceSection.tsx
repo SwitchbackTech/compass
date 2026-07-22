@@ -3,7 +3,6 @@ import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { isBackendUnavailable as getIsBackendUnavailable } from "@web/api/util/backend-unavailable-error.util";
 import { type CompassSession } from "@web/auth/compass/session/session.types";
 import { useSession } from "@web/auth/compass/session/useSession";
-import { useEventPalette } from "@web/common/styles/theme.util";
 import { EndsOnDate } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/EndsOnDate";
 import { RecurrenceIntervalSelect } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/RecurrenceIntervalSelect";
 import { RecurrenceToggle } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/RecurrenceToggle";
@@ -11,7 +10,6 @@ import { WeekDays } from "@web/views/Forms/EventForm/DateControlsSection/Recurre
 import { useRecurrence } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/useRecurrence/useRecurrence";
 
 export interface RecurrenceSectionProps {
-  bgColor: string;
   event: CompassEvent;
   setEvent: Dispatch<SetStateAction<CompassEvent | null>>;
 }
@@ -26,12 +24,10 @@ export function createRecurrenceSection({
   useSession,
 }: RecurrenceSectionDependencies) {
   return function RecurrenceSection({
-    bgColor,
     event,
     setEvent,
   }: RecurrenceSectionProps) {
     const { authenticated } = useSession();
-    const { hover: inputColor } = useEventPalette();
     const recurrenceHook = useRecurrence(event, { setEvent });
     const { setInterval, setFreq, setWeekDays, setUntil } = recurrenceHook;
     const { weekDays, interval, freq, until, toggleRecurrence } =
@@ -53,7 +49,6 @@ export function createRecurrenceSection({
         {hasRecurrence && !isRecurrenceDisabled && (
           <>
             <RecurrenceIntervalSelect
-              bgColor={bgColor}
               initialValue={interval}
               frequency={freq}
               onChange={setInterval}
@@ -62,15 +57,9 @@ export function createRecurrenceSection({
               max={12}
             />
 
-            <WeekDays
-              bgColor={bgColor}
-              value={weekDays}
-              onChange={setWeekDays}
-            />
+            <WeekDays value={weekDays} onChange={setWeekDays} />
 
             <EndsOnDate
-              bgColor={bgColor}
-              inputColor={inputColor}
               until={until}
               minDate={event.endDate}
               setUntil={setUntil}

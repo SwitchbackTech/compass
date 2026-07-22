@@ -3,25 +3,19 @@ import { WEEKDAYS } from "@web/views/Forms/EventForm/DateControlsSection/Recurre
 import { WeekDay } from "./WeekDay";
 
 export interface WeekDaysProps {
-  bgColor: string;
   value: typeof WEEKDAYS;
   onChange: (days: typeof WEEKDAYS) => void;
 }
 
-export const WeekDays: React.FC<WeekDaysProps> = ({
-  bgColor,
-  value,
-  onChange,
-}) => {
+export const WeekDays: React.FC<WeekDaysProps> = ({ value, onChange }) => {
   return (
     <div className="mb-1 flex w-full basis-full items-center gap-2 p-0">
-      <span className="relative text-l">On: </span>
+      <span className="relative text-m">On: </span>
 
       {WEEKDAYS.map((day) => (
         <WeekDay
           key={day}
           day={day}
-          bgColor={bgColor}
           onClick={() => {
             if (value.includes(day)) {
               onChange(value.filter((weekday) => weekday !== day));
