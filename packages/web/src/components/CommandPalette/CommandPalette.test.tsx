@@ -83,10 +83,13 @@ const { CommandPalette, filterSections } = await import("./CommandPalette");
 const onGoToToday = mock();
 const onShowShortcuts = mock();
 
-const renderPalette = (mutationDependencies?: EventMutationDependencies) =>
+const renderPalette = (
+  mutationDependencies?: EventMutationDependencies,
+  currentView: "day" | "week" = "week",
+) =>
   renderWithStore(
     <CommandPalette
-      currentView="week"
+      currentView={currentView}
       onGoToToday={onGoToToday}
       onShowShortcuts={onShowShortcuts}
       placeholder="Try: 'create', 'bug', or 'code'"
@@ -136,6 +139,23 @@ describe("CommandPalette", () => {
     expect(getInput()).toHaveFocus();
     // First option is active by default.
     expect(activeRowText(container)).toBe("Go to Today");
+  });
+
+  it("renders the Day and Week navigation shortcut tips", () => {
+    const { unmount } = renderPalette();
+    const dayRow = screen.getByText("Go to Day").closest("button");
+
+    expect(dayRow?.querySelector("[aria-hidden='true']")?.textContent).toBe(
+      "D",
+    );
+
+    unmount();
+    renderPalette(undefined, "day");
+    const weekRow = screen.getByText("Go to Week").closest("button");
+
+    expect(weekRow?.querySelector("[aria-hidden='true']")?.textContent).toBe(
+      "W",
+    );
   });
 
   it("filters case-insensitively, dropping empty sections, and shows a no-results row", () => {

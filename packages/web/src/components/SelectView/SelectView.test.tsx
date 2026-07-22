@@ -102,7 +102,7 @@ describe("SelectView", () => {
       ).toBeInTheDocument();
     });
 
-    it("renders Day, Week, and This Week options with shortcut hints when dropdown is open", async () => {
+    it("orders This Week, Day, Week, and Life options with shortcut hints", async () => {
       await renderWithRouter("July 2026");
 
       await openDropdown();
@@ -114,13 +114,14 @@ describe("SelectView", () => {
         withinDropdown
           .getAllByRole("option")
           .map((option) => option.textContent),
-      ).toEqual(["DayD", "WeekW", "This WeekT"]);
+      ).toEqual(["This WeekT", "DayD", "WeekW", "LifeL"]);
 
       const shortcutHints = withinDropdown.getAllByTestId("shortcut-hint");
-      expect(shortcutHints).toHaveLength(3);
-      expect(shortcutHints[0]).toHaveTextContent("D");
-      expect(shortcutHints[1]).toHaveTextContent("W");
-      expect(shortcutHints[2]).toHaveTextContent("T");
+      expect(shortcutHints).toHaveLength(4);
+      expect(shortcutHints[0]).toHaveTextContent("T");
+      expect(shortcutHints[1]).toHaveTextContent("D");
+      expect(shortcutHints[2]).toHaveTextContent("W");
+      expect(shortcutHints[3]).toHaveTextContent("L");
     });
   });
 
@@ -169,8 +170,8 @@ describe("SelectView", () => {
       );
     });
 
-    it("shows Day, Week, and Today choices from the Life header", async () => {
-      await renderWithRouter("Life", ROOT_ROUTES.LIFE);
+    it("shows Day, Week, and Life choices from the Life header", async () => {
+      await renderWithRouter("Life", ROOT_ROUTES.LIFE, false);
 
       await openDropdown();
 
@@ -178,7 +179,7 @@ describe("SelectView", () => {
         within(screen.getByTestId("view-select-dropdown"))
           .getAllByRole("option")
           .map((option) => option.textContent),
-      ).toEqual(["DayD", "WeekW", expect.stringMatching(/^Today \(/)]);
+      ).toEqual(["DayD", "WeekW", "LifeL"]);
     });
 
     it("defaults to Week selected for unknown routes", async () => {
@@ -333,7 +334,7 @@ describe("SelectView", () => {
       });
     });
 
-    it("labels the today action 'Today (...)' and calls onToday on the day view", async () => {
+    it("labels the today action 'Today' and calls onToday on the day view", async () => {
       await renderWithRouter("Monday, July 20", ROOT_ROUTES.DAY);
 
       const { user } = await openDropdown();
@@ -444,6 +445,7 @@ describe("SelectView", () => {
       weekOption.focus();
 
       await user.keyboard("{ArrowDown}");
+      await user.keyboard("{ArrowDown}");
       await user.keyboard(" ");
 
       await waitFor(() => {
@@ -470,7 +472,7 @@ describe("SelectView", () => {
       });
     });
 
-    it("wraps navigation from last to first option", async () => {
+    it("moves from Today to Day", async () => {
       await renderWithRouter("July 2026", ROOT_ROUTES.WEEK);
 
       const { user } = await openDropdown();

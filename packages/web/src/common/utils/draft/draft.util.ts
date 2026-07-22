@@ -3,9 +3,9 @@ import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
-import { Categories_Event } from "@web/common/types/web.event.types";
 import { getElemById } from "@web/common/utils/grid/grid.util";
 import { roundToNext } from "@web/common/utils/round/round.util";
+import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraft,
   timedGridSchedule,
@@ -60,11 +60,7 @@ export const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
   return { startDate, endDate };
 };
 
-export const getDraftContainer = (category: Categories_Event) => {
-  switch (category) {
-    case Categories_Event.ALLDAY:
-      return getElemById(ID_GRID_EVENTS_ALLDAY);
-    case Categories_Event.TIMED:
-      return getElemById(ID_GRID_EVENTS_TIMED);
-  }
-};
+export const getDraftContainer = (draft: GridEventDraft) =>
+  draft.values.schedule.kind === "allDay"
+    ? getElemById(ID_GRID_EVENTS_ALLDAY)
+    : getElemById(ID_GRID_EVENTS_TIMED);

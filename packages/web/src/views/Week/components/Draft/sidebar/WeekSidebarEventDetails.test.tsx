@@ -3,8 +3,16 @@ import userEvent from "@testing-library/user-event";
 import { cleanup, render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
+import {
+  draftActions,
+  initialDraftState,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
-import { WeekSidebarEventDetails } from "@web/views/Week/components/Draft/sidebar/WeekSidebarEventDetails";
+import {
+  syncWeekGridDraft,
+  WeekSidebarEventDetails,
+} from "@web/views/Week/components/Draft/sidebar/WeekSidebarEventDetails";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
@@ -61,6 +69,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  useDraftStore.setState(initialDraftState, true);
 });
 
 describe("WeekSidebarEventDetails", () => {
@@ -85,5 +94,24 @@ describe("WeekSidebarEventDetails", () => {
         values: expect.objectContaining({ title: "Planning" }),
       }),
     );
+  });
+
+  it("keeps the shared draft projection in sync with all-day changes", () => {
+    const draft = createDraft();
+    const allDayDraft = createGridEventDraft({
+      kind: "allDay",
+      end: new Date("2026-05-27T00:00:00.000Z"),
+      start: new Date("2026-05-26T00:00:00.000Z"),
+    });
+    const setDraft = mock();
+
+    draftActions.startGridDraft({ activity: "gridClick", draft });
+    syncWeekGridDraft(allDayDraft, setDraft);
+
+    expect(useDraftStore.getState().gridDraft?.values.schedule.kind).toBe(
+      "allDay",
+    );
+    expect(useDraftStore.getState().event).toMatchObject({ isAllDay: true });
+    expect(setDraft).toHaveBeenCalledWith(allDayDraft);
   });
 });

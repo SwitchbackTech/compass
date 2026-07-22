@@ -53,10 +53,12 @@ export const AllDayEvents = ({
   // registry.
   const visibleAllDayEvents = useMemo(
     () =>
-      allDayEvents.filter((event: GridEvent) =>
-        isAllDayEventInVisibleDays(event, weekDays),
+      allDayEvents.filter(
+        (event: GridEvent) =>
+          isAllDayEventInVisibleDays(event, weekDays) &&
+          !(event._id === draftId && !draft?.isAllDay),
       ),
-    [allDayEvents, weekDays],
+    [allDayEvents, draft?.isAllDay, draftId, weekDays],
   );
   // Resolved once per event here (not inside each card) and kept referentially
   // stable across renders where neither the events nor the calendars changed,

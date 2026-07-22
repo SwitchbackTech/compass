@@ -58,6 +58,27 @@ describe("getActiveTimedDraftDeckLayout", () => {
     expect(getActiveTimedDraftDeckLayout(draft, events)).toBeNull();
   });
 
+  it("lays out a saved all-day event converted to timed", () => {
+    const draft = createTimedEvent({
+      _id: "draft",
+      endDate: "2026-05-26T10:15:00.000Z",
+      startDate: "2026-05-26T09:15:00.000Z",
+    });
+    const events = [
+      createTimedEvent({ _id: "draft", isAllDay: true }),
+      createTimedEvent({
+        _id: "overlap",
+        endDate: "2026-05-26T10:30:00.000Z",
+        startDate: "2026-05-26T09:30:00.000Z",
+      }),
+    ];
+
+    expect(getActiveTimedDraftDeckLayout(draft, events)).toEqual({
+      groupSize: 2,
+      order: 0,
+    });
+  });
+
   it("ignores all-day drafts", () => {
     const draft = createTimedEvent({
       _id: "draft",

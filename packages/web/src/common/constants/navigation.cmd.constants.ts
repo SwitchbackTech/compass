@@ -26,8 +26,18 @@ const commandPaletteViews: Record<
   CommandPaletteViewName,
   { icon: Icon; label: string; route: string; shortcut?: string }
 > = {
-  day: { ...VIEW_SHORTCUTS.day, icon: CalendarDotsIcon },
-  week: { ...VIEW_SHORTCUTS.week, icon: CalendarIcon },
+  day: {
+    icon: CalendarDotsIcon,
+    label: VIEW_SHORTCUTS.day.label,
+    route: VIEW_SHORTCUTS.day.route,
+    shortcut: VIEW_SHORTCUTS.day.key,
+  },
+  week: {
+    icon: CalendarIcon,
+    label: VIEW_SHORTCUTS.week.label,
+    route: VIEW_SHORTCUTS.week.route,
+    shortcut: VIEW_SHORTCUTS.week.key,
+  },
   life: {
     icon: HourglassSimpleIcon,
     label: LIFE_SHORTCUT.label,

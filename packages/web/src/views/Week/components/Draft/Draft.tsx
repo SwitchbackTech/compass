@@ -1,18 +1,11 @@
 import { type FC, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Origin } from "@core/constants/core.constants";
-import {
-  Categories_Event,
-  type GridEvent,
-} from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { getDraftContainer } from "@web/common/utils/draft/draft.util";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
-import {
-  selectDraftCategory,
-  useDraftStore,
-} from "@web/events/stores/draft.store";
 import { positionAllDayDraftEvent } from "@web/grid/layout/all-day-draft.position";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -32,7 +25,6 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   useGridMouseUp();
   useGridMouseMove();
 
-  const category = useDraftStore(selectDraftCategory);
   const { allDayEvents, timedEvents } = useWeekEventViewModel({
     startOfView: weekProps.component.startOfView,
     endOfView: weekProps.component.endOfView,
@@ -66,8 +58,12 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
     [allDayEvents, draftSchemaEvent],
   );
   const deckLayout = useMemo(
-    () => getActiveTimedDraftDeckLayout(draftSchemaEvent, timedEvents),
-    [draftSchemaEvent, timedEvents],
+    () =>
+      getActiveTimedDraftDeckLayout(draftSchemaEvent, [
+        ...timedEvents,
+        ...allDayEvents,
+      ]),
+    [allDayEvents, draftSchemaEvent, timedEvents],
   );
   const recurringPreviews = useMemo(
     () =>
@@ -86,24 +82,18 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   if (!draft) {
     return null;
   }
-  if (!category) return null;
 
-  const container = getDraftContainer(category);
+  const container = getDraftContainer(draft);
   if (!container) return null;
 
-  const isGridDraft =
-    category === Categories_Event.ALLDAY || category === Categories_Event.TIMED;
-
   return createPortal(
-    isGridDraft && (
-      <GridDraft
-        activeAllDayDraftEvent={activeAllDayDraftEvent}
-        deckLayout={deckLayout}
-        measurements={measurements}
-        recurringPreviews={recurringPreviews}
-        weekProps={weekProps}
-      />
-    ),
+    <GridDraft
+      activeAllDayDraftEvent={activeAllDayDraftEvent}
+      deckLayout={deckLayout}
+      measurements={measurements}
+      recurringPreviews={recurringPreviews}
+      weekProps={weekProps}
+    />,
     container,
   );
 };
