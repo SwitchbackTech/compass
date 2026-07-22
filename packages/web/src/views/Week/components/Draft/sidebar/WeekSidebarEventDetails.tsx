@@ -4,6 +4,14 @@ import { draftActions } from "@web/events/stores/draft.store";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
+export const syncWeekGridDraft = (
+  draft: GridEventDraft | null,
+  setDraft: Dispatch<SetStateAction<GridEventDraft | null>>,
+) => {
+  draftActions.setGridDraft(draft);
+  setDraft(draft);
+};
+
 /**
  * The Week view's event-details panel, docked in the sidebar. Wired
  * through DraftContext so it keeps Week's save/confirmation pipeline
@@ -25,8 +33,7 @@ export const WeekSidebarEventDetails: FC = () => {
     const resolvedDraft =
       typeof nextDraft === "function" ? nextDraft(draft) : nextDraft;
 
-    draftActions.setGridDraft(resolvedDraft);
-    setDraft(resolvedDraft);
+    syncWeekGridDraft(resolvedDraft, setDraft);
   };
 
   return (

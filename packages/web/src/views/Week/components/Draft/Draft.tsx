@@ -58,8 +58,12 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
     [allDayEvents, draftSchemaEvent],
   );
   const deckLayout = useMemo(
-    () => getActiveTimedDraftDeckLayout(draftSchemaEvent, timedEvents),
-    [draftSchemaEvent, timedEvents],
+    () =>
+      getActiveTimedDraftDeckLayout(draftSchemaEvent, [
+        ...timedEvents,
+        ...allDayEvents,
+      ]),
+    [allDayEvents, draftSchemaEvent, timedEvents],
   );
   const recurringPreviews = useMemo(
     () =>

@@ -7,21 +7,22 @@ import {
 
 export const getActiveTimedDraftDeckLayout = (
   draft: GridEvent | null,
-  timedEvents: GridEvent[],
+  events: GridEvent[],
 ): TimedDeckLayout | null => {
   if (!draft?._id || draft.isAllDay) {
     return null;
   }
 
-  const draftIndex = timedEvents.findIndex((event) => event._id === draft._id);
+  const draftIndex = events.findIndex((event) => event._id === draft._id);
   if (draftIndex === -1) {
     return null;
   }
 
-  const eventsWithDraft = [...timedEvents];
+  const eventsWithDraft = [...events];
   eventsWithDraft[draftIndex] = draft;
-  const draftDayEvents = eventsWithDraft.filter((event) =>
-    dayjs(event.startDate).isSame(draft.startDate, "day"),
+  const draftDayEvents = eventsWithDraft.filter(
+    (event) =>
+      !event.isAllDay && dayjs(event.startDate).isSame(draft.startDate, "day"),
   );
 
   return (
