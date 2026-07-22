@@ -39,6 +39,7 @@ export function getSocialShareUrl(
 export function getCleanLifeShareUrl(pageUrl: string) {
   const url = new URL(pageUrl);
   url.search = "";
+  url.hash = "";
   return url.toString();
 }
 
