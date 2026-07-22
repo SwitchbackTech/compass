@@ -13,6 +13,7 @@ import {
   executeProviderDelete,
   executeProviderUpdate,
 } from "@sync/domain/provider-command.service";
+import { reprojectOccurrences } from "@sync/domain/reproject";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
@@ -24,10 +25,12 @@ import {
   ProviderWriteError,
   type ProviderWriteResult,
 } from "@sync/providers/provider-event-writer.port";
+import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
+import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 
@@ -73,6 +76,7 @@ describe("executeProviderCreate", () => {
   let mongo: SyncMongoService;
   let commands: CommandRepository;
   let events: EventRepository;
+  let occurrences: EventOccurrenceRepository;
   let calendars: ProviderCalendarRepository;
 
   const createInput = (
@@ -145,6 +149,7 @@ describe("executeProviderCreate", () => {
     });
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
+    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
     calendars = new ProviderCalendarRepository(mongo.db);
   });
 
@@ -160,7 +165,7 @@ describe("executeProviderCreate", () => {
     const writer = new FakeWriter();
 
     const result = await executeProviderCreate(
-      { commands, events, writer, custody: tokenSource() },
+      { commands, events, occurrences, writer, custody: tokenSource() },
       command,
       calendar,
       now,
@@ -185,6 +190,15 @@ describe("executeProviderCreate", () => {
     expect(stored?.providerEventId).toBe("g-evt-1");
     expect(stored?.providerVersion).toBe("etag-1");
     expect(stored?.deliveryState).toBe("confirmed");
+
+    // The provider-linked event is projected into the read model.
+    const occ = await mongo.db
+      .collection(SYNC_COLLECTIONS.eventOccurrences)
+      .find({ eventId: command.eventId })
+      .toArray();
+    expect(occ.map((o) => (o["startAt"] as Date).toISOString())).toEqual([
+      "2026-07-14T15:00:00.000Z",
+    ]);
   });
 
   it("passes the caller's invitation intent through to the writer", async () => {
@@ -192,7 +206,7 @@ describe("executeProviderCreate", () => {
     const writer = new FakeWriter();
 
     await executeProviderCreate(
-      { commands, events, writer, custody: tokenSource() },
+      { commands, events, occurrences, writer, custody: tokenSource() },
       command,
       calendar,
       now,
@@ -204,7 +218,13 @@ describe("executeProviderCreate", () => {
   it("converges on one event when executed twice (idempotent write)", async () => {
     const { tenantId, principalId, calendar, command } = await seed();
     const writer = new FakeWriter();
-    const deps = { commands, events, writer, custody: tokenSource() };
+    const deps = {
+      commands,
+      events,
+      occurrences,
+      writer,
+      custody: tokenSource(),
+    };
 
     await executeProviderCreate(deps, command, calendar, now);
     await executeProviderCreate(deps, command, calendar, now);
@@ -225,7 +245,7 @@ describe("executeProviderCreate", () => {
     writer.error = new ProviderWriteError("transient", "network blip");
 
     const result = await executeProviderCreate(
-      { commands, events, writer, custody: tokenSource() },
+      { commands, events, occurrences, writer, custody: tokenSource() },
       command,
       calendar,
       now,
@@ -243,7 +263,7 @@ describe("executeProviderCreate", () => {
     writer.error = new ProviderWriteError("readOnlyCalendar", "read only");
 
     const result = await executeProviderCreate(
-      { commands, events, writer, custody: tokenSource() },
+      { commands, events, occurrences, writer, custody: tokenSource() },
       command,
       calendar,
       now,
@@ -266,6 +286,7 @@ describe("executeProviderCreate", () => {
       {
         commands,
         events,
+        occurrences,
         writer,
         custody: failingTokenSource(
           new ProviderAuthError("authorizationRevoked", "revoked"),
@@ -291,6 +312,7 @@ describe("executeProviderCreate", () => {
       {
         commands,
         events,
+        occurrences,
         writer,
         custody: failingTokenSource(
           new ProviderAuthError("refreshFailed", "temporary"),
@@ -341,6 +363,7 @@ describe("executeProviderUpdate", () => {
   let mongo: SyncMongoService;
   let commands: CommandRepository;
   let events: EventRepository;
+  let occurrences: EventOccurrenceRepository;
   let calendars: ProviderCalendarRepository;
 
   const now = () => new Date("2026-07-10T00:00:00.000Z");
@@ -446,6 +469,7 @@ describe("executeProviderUpdate", () => {
     });
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
+    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
     calendars = new ProviderCalendarRepository(mongo.db);
   });
 
@@ -461,7 +485,7 @@ describe("executeProviderUpdate", () => {
     writer.fetched = providerEvent("Old", "etag-1");
 
     const result = await executeProviderUpdate(
-      { commands, events, writer, custody: tokenSource() },
+      { commands, events, occurrences, writer, custody: tokenSource() },
       command,
       event,
       calendar,
@@ -475,6 +499,14 @@ describe("executeProviderUpdate", () => {
     const stored = await events.findById(tenantId, principalId, event._id);
     expect(stored?.content.title).toBe("New");
     expect(stored?.providerVersion).toBe("etag-2");
+
+    // The occurrence projection is rebuilt with the edited title.
+    const occ = await mongo.db
+      .collection(SYNC_COLLECTIONS.eventOccurrences)
+      .find({ eventId: event._id })
+      .toArray();
+    expect(occ).toHaveLength(1);
+    expect(occ[0]?.["title"]).toBe("New");
   });
 
   it("confirms without re-patching when the edit already landed (replay)", async () => {
@@ -485,7 +517,7 @@ describe("executeProviderUpdate", () => {
     writer.fetched = providerEvent("New", "etag-2");
 
     const result = await executeProviderUpdate(
-      { commands, events, writer, custody: tokenSource() },
+      { commands, events, occurrences, writer, custody: tokenSource() },
       command,
       event,
       calendar,
@@ -531,7 +563,7 @@ describe("executeProviderUpdate", () => {
     };
 
     const result = await executeProviderUpdate(
-      { commands, events, writer, custody: tokenSource() },
+      { commands, events, occurrences, writer, custody: tokenSource() },
       command,
       event,
       calendar,
@@ -551,7 +583,7 @@ describe("executeProviderUpdate", () => {
     writer.patchError = new ProviderWriteError("versionConflict", "stale");
 
     const result = await executeProviderUpdate(
-      { commands, events, writer, custody: tokenSource() },
+      { commands, events, occurrences, writer, custody: tokenSource() },
       command,
       event,
       calendar,
@@ -570,7 +602,7 @@ describe("executeProviderUpdate", () => {
     writer.fetched = null;
 
     const result = await executeProviderUpdate(
-      { commands, events, writer, custody: tokenSource() },
+      { commands, events, occurrences, writer, custody: tokenSource() },
       command,
       event,
       calendar,
@@ -591,7 +623,7 @@ describe("executeProviderUpdate", () => {
     writer.patchError = new ProviderWriteError("transient", "blip");
 
     const result = await executeProviderUpdate(
-      { commands, events, writer, custody: tokenSource() },
+      { commands, events, occurrences, writer, custody: tokenSource() },
       command,
       event,
       calendar,
@@ -609,6 +641,7 @@ describe("executeProviderUpdate", () => {
       {
         commands,
         events,
+        occurrences,
         writer,
         custody: failingTokenSource(
           new ProviderAuthError("authorizationRevoked", "revoked"),
@@ -651,6 +684,7 @@ describe("executeProviderDelete", () => {
   let mongo: SyncMongoService;
   let commands: CommandRepository;
   let events: EventRepository;
+  let occurrences: EventOccurrenceRepository;
   let markers: DeletionMarkerRepository;
 
   const now = () => new Date("2026-07-10T00:00:00.000Z");
@@ -735,6 +769,7 @@ describe("executeProviderDelete", () => {
     });
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
+    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
     markers = new DeletionMarkerRepository(mongo.db);
   });
 
@@ -746,9 +781,23 @@ describe("executeProviderDelete", () => {
   it("deletes at the provider, tombstones, removes the local event, and confirms", async () => {
     const { tenantId, principalId, calendar, event, command } = await seed();
     const writer = new FakeDeleteWriter();
+    // Project the event first so the delete has occurrences to clear.
+    await reprojectOccurrences(occurrences, event, now);
+    const occurrenceCount = () =>
+      mongo.db
+        .collection(SYNC_COLLECTIONS.eventOccurrences)
+        .countDocuments({ eventId: event._id });
+    expect(await occurrenceCount()).toBe(1);
 
     const result = await executeProviderDelete(
-      { commands, events, writer, custody: tokenSource(), markers },
+      {
+        commands,
+        events,
+        occurrences,
+        writer,
+        custody: tokenSource(),
+        markers,
+      },
       command,
       event,
       calendar,
@@ -758,8 +807,9 @@ describe("executeProviderDelete", () => {
     expect(result.outcome.state).toBe("confirmed");
     expect(writer.deleteCalls).toHaveLength(1);
     expect(writer.deleteCalls[0].invitation).toBe("all");
-    // Local content is gone, a content-free marker remains.
+    // Local content is gone, a content-free marker remains, occurrences cleared.
     expect(await events.findById(tenantId, principalId, event._id)).toBeNull();
+    expect(await occurrenceCount()).toBe(0);
     expect(
       await markers.exists(
         calendar.connectionId,
@@ -776,7 +826,14 @@ describe("executeProviderDelete", () => {
     await events.deleteById(tenantId, principalId, event._id);
 
     const result = await executeProviderDelete(
-      { commands, events, writer, custody: tokenSource(), markers },
+      {
+        commands,
+        events,
+        occurrences,
+        writer,
+        custody: tokenSource(),
+        markers,
+      },
       command,
       event,
       calendar,
@@ -794,7 +851,14 @@ describe("executeProviderDelete", () => {
     writer.deleteError = new ProviderWriteError("transient", "blip");
 
     const result = await executeProviderDelete(
-      { commands, events, writer, custody: tokenSource(), markers },
+      {
+        commands,
+        events,
+        occurrences,
+        writer,
+        custody: tokenSource(),
+        markers,
+      },
       command,
       event,
       calendar,
@@ -815,7 +879,14 @@ describe("executeProviderDelete", () => {
     );
 
     const result = await executeProviderDelete(
-      { commands, events, writer, custody: tokenSource(), markers },
+      {
+        commands,
+        events,
+        occurrences,
+        writer,
+        custody: tokenSource(),
+        markers,
+      },
       command,
       event,
       calendar,
@@ -839,6 +910,7 @@ describe("executeProviderDelete", () => {
       {
         commands,
         events,
+        occurrences,
         writer,
         custody: failingTokenSource(
           new ProviderAuthError("authorizationRevoked", "revoked"),

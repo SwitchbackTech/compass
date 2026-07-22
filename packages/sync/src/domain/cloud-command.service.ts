@@ -3,13 +3,12 @@ import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { type CredentialCustody } from "@sync/credentials/credential-custody.service";
-import { syncHorizon } from "@sync/domain/horizon";
-import { projectOccurrences } from "@sync/domain/occurrence-projection";
 import {
   executeProviderCreate,
   executeProviderDelete,
   executeProviderUpdate,
 } from "@sync/domain/provider-command.service";
+import { reprojectOccurrences } from "@sync/domain/reproject";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import {
   type CommandRecord,
@@ -87,6 +86,7 @@ export async function submitCloudCommand(
         {
           commands: deps.commands,
           events: deps.events,
+          occurrences: deps.occurrences,
           writer: deps.provider.writer,
           custody: deps.provider.custody,
         },
@@ -100,26 +100,8 @@ export async function submitCloudCommand(
 
   const record = buildCloudEventRecord(command, now());
   await deps.events.put(record);
-  await reprojectEvent(deps, record, now);
+  await reprojectOccurrences(deps.occurrences, record, now);
   return confirmCloud(deps, command);
-}
-
-// Rebuild an event's occurrence window after a cloud write. A cloud create or
-// single-event update carries no exceptions, so nothing is excluded here;
-// series-scope edits (which produce exceptions) pass their recurrenceIds once
-// that path lands. replaceForEvent is idempotent per (eventId, generation), so
-// a retry reprojects the same rows.
-async function reprojectEvent(
-  deps: CloudCommandDeps,
-  event: EventRecord,
-  now: () => Date,
-): Promise<void> {
-  const occurrences = projectOccurrences(event, syncHorizon(now()));
-  await deps.occurrences.replaceForEvent(
-    event._id,
-    event.generation,
-    occurrences,
-  );
 }
 
 // Apply a cloud-only update or delete to an existing event. Only single,
@@ -160,6 +142,7 @@ async function applyCloudMutation(
             {
               commands: deps.commands,
               events: deps.events,
+              occurrences: deps.occurrences,
               writer: deps.provider.writer,
               custody: deps.provider.custody,
               markers: deps.markers,
@@ -217,6 +200,7 @@ async function applyCloudMutation(
           {
             commands: deps.commands,
             events: deps.events,
+            occurrences: deps.occurrences,
             writer: deps.provider.writer,
             custody: deps.provider.custody,
           },
@@ -235,7 +219,7 @@ async function applyCloudMutation(
   const updated = applyCloudUpdate(existing, command, now());
   const applied = await deps.events.replaceExisting(updated);
   if (!applied) return command;
-  await reprojectEvent(deps, updated, now);
+  await reprojectOccurrences(deps.occurrences, updated, now);
   return confirmCloud(deps, command);
 }
 
