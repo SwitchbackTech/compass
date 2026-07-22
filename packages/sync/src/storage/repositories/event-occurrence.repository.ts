@@ -86,6 +86,25 @@ export class EventOccurrenceRepository {
     }
   }
 
+  // Drop every occurrence of a calendar below a generation. A completed repair
+  // uses this to garbage-collect the generations it replaced once reads have
+  // moved to the new one — including the previously-active generation and any
+  // orphaned intermediate generations left by earlier interrupted repairs.
+  // Owner-scoped and idempotent.
+  async deleteByCalendarBelowGeneration(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    calendarId: SyncEventCalendarId,
+    generation: number,
+  ): Promise<void> {
+    await this.collection.deleteMany({
+      tenantId,
+      principalId,
+      calendarId,
+      generation: { $lt: generation },
+    });
+  }
+
   async listByCalendarRange(
     query: OccurrenceRangeQuery,
   ): Promise<EventOccurrenceRecord[]> {

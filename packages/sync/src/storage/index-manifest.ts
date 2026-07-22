@@ -90,8 +90,13 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
   ],
   [SYNC_COLLECTIONS.eventOccurrences]: [
     {
-      name: "event_occurrence",
-      key: { eventId: 1, occurrenceKey: 1 },
+      // Unique per (event, instant) WITHIN a generation. The generation is part
+      // of the key so a non-destructive repair can hold the same occurrence in
+      // two generations at once (same event and occurrenceKey, different
+      // generation) without colliding — the old generation stays readable while
+      // the new one is built.
+      name: "event_occurrence_generation",
+      key: { eventId: 1, generation: 1, occurrenceKey: 1 },
       options: { unique: true },
     },
     // The range read filters each calendar to its active generation, then
@@ -205,6 +210,21 @@ export async function installIndexManifest(
     }
 
     const collection = db.collection(collectionName);
+
+    // Reconcile: the manifest is the source of truth, so drop any index it no
+    // longer declares before (re)creating the ones it does. This lets an index
+    // change its key under a new name — the old name is dropped here rather than
+    // lingering and enforcing a stale (e.g. unique) constraint. Never touch the
+    // built-in _id_ index. Safe while collections are empty (createIndex on a
+    // renamed key would otherwise conflict with the old same-named index).
+    const declared = new Set(entries.map((e) => e.name));
+    const present = await collection.indexes().catch(() => []);
+    for (const index of present) {
+      if (index.name && index.name !== "_id_" && !declared.has(index.name)) {
+        await collection.dropIndex(index.name);
+      }
+    }
+
     for (const entry of entries) {
       await collection.createIndex(entry.key, {
         name: entry.name,

@@ -234,6 +234,26 @@ export class EventRepository {
     return records.map((r) => EventRecordSchema.parse(r));
   }
 
+  // Remove a calendar's provider-linked events left below a generation — the
+  // ones a completed repair did NOT re-import (deleted at the provider), since a
+  // re-imported event's identity upsert bumped it to the new generation.
+  // Compass-owned events (no providerEventId) are preserved: they carry local
+  // intent the provider result can't speak to. Owner-scoped and idempotent.
+  async deleteStaleProviderEventsBelowGeneration(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    calendarId: EventRecord["calendarId"],
+    generation: number,
+  ): Promise<void> {
+    await this.collection.deleteMany({
+      tenantId,
+      principalId,
+      calendarId,
+      generation: { $lt: generation },
+      providerEventId: { $ne: null },
+    });
+  }
+
   // Bounded, keyset-paginated canonical events for one calendar/generation,
   // ordered by _id so a cursor never skips or repeats a row.
   async listByCalendar(query: EventListQuery): Promise<EventRecord[]> {

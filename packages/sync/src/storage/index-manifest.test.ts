@@ -87,6 +87,28 @@ describe("installIndexManifest", () => {
     await expect(commands.insertOne(key)).rejects.toThrow();
   });
 
+  it("drops an index the manifest no longer declares", async () => {
+    // A stray index (e.g. left by an older manifest) must be reconciled away so
+    // a renamed index can take a key the old same-named one would have blocked.
+    const events = db.collection(SYNC_COLLECTIONS.events);
+    await events.createIndex({ title: 1 }, { name: "stale_legacy_index" });
+    expect(
+      (await events.indexes()).some((i) => i.name === "stale_legacy_index"),
+    ).toBe(true);
+
+    await installIndexManifest(db);
+
+    expect(
+      (await events.indexes()).some((i) => i.name === "stale_legacy_index"),
+    ).toBe(false);
+    // A declared index is still present.
+    expect(
+      (await events.indexes()).some(
+        (i) => i.name === "provider_event_identity",
+      ),
+    ).toBe(true);
+  });
+
   it("covers every collection in the manifest", () => {
     expect(Object.keys(SYNC_INDEX_MANIFEST).sort()).toEqual(
       Object.values(SYNC_COLLECTIONS).sort(),
