@@ -268,4 +268,26 @@ describe("normalizeGoogleEvent", () => {
     expect(error).toBeInstanceOf(ProviderEventError);
     expect(error.reason).toBe("unmappableSchedule");
   });
+
+  it("throws a skippable ProviderEventError when content exceeds the contract", () => {
+    // Google does not cap attendee display names; the neutral contract does. An
+    // over-long one must surface as a skippable ProviderEventError, never a raw
+    // ZodError that would escape a batch reader's per-event skip boundary.
+    const error = (() => {
+      try {
+        normalizeGoogleEvent(
+          gEvent({
+            attendees: [
+              { email: "guest@example.com", displayName: "x".repeat(300) },
+            ],
+          }),
+        );
+      } catch (e) {
+        return e;
+      }
+    })() as ProviderEventError;
+
+    expect(error).toBeInstanceOf(ProviderEventError);
+    expect(error.reason).toBe("unmappableContent");
+  });
 });
