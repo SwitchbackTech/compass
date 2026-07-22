@@ -554,12 +554,18 @@ describe("SyncController", () => {
         // watch-healthy, so a real coordinator run would do unrelated
         // repair work within this test's wait window. Stub it out - it's
         // covered on its own in google-watch-repair.service.test.ts.
+        let notifyRepairStarted!: () => void;
+        const repairStarted = new Promise<void>((resolve) => {
+          notifyRepairStarted = resolve;
+        });
         const repairSpy = jest
           .spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
-          .mockResolvedValue(undefined as never);
+          .mockImplementation(async () => {
+            notifyRepairStarted();
+          });
 
         await syncDriver.importGCal({ userId });
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        await repairStarted;
 
         expect(importEndSpy).not.toHaveBeenCalled();
         expect(getAllEventsSpy).not.toHaveBeenCalled();
@@ -680,12 +686,21 @@ describe("SyncController", () => {
 
         await GoogleSyncDriver.createHealthyGoogleSync(user);
 
-        const syncStatusSpy = jest.spyOn(sseServer, "publishSyncStatus");
+        const realPublishSyncStatus =
+          sseServer.publishSyncStatus.bind(sseServer);
+        let notifySyncStarted!: () => void;
+        const syncStarted = new Promise<void>((resolve) => {
+          notifySyncStarted = resolve;
+        });
+        const syncStatusSpy = jest
+          .spyOn(sseServer, "publishSyncStatus")
+          .mockImplementation((...args) => {
+            notifySyncStarted();
+            return realPublishSyncStatus(...args);
+          });
 
         await syncDriver.importGCal({ userId });
-
-        // Wait a tick for the async fire-and-forget to run
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await syncStarted;
 
         expect(syncStatusSpy).toHaveBeenCalledWith(userId, {
           status: "syncing",
@@ -721,7 +736,18 @@ describe("SyncController", () => {
 
         await GoogleSyncDriver.createHealthyGoogleSync(user);
 
-        const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
+        const realPublishEventsChanged =
+          sseServer.publishEventsChanged.bind(sseServer);
+        let notifyEventsChanged!: () => void;
+        const eventsChanged = new Promise<void>((resolve) => {
+          notifyEventsChanged = resolve;
+        });
+        const eventsChangedSpy = jest
+          .spyOn(sseServer, "publishEventsChanged")
+          .mockImplementation((...args) => {
+            notifyEventsChanged();
+            return realPublishEventsChanged(...args);
+          });
 
         const stream = baseDriver.openSSEStream({
           userId,
@@ -736,9 +762,8 @@ describe("SyncController", () => {
         stream.close();
 
         // importCompleted is published before the trailing eventsChanged
-        // reconcile publish (which awaits one more calendar lookup); give
-        // that microtask a tick to run.
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // reconcile publish, so wait for the publish itself.
+        await eventsChanged;
 
         expect(eventsChangedSpy).toHaveBeenCalledWith(
           userId,

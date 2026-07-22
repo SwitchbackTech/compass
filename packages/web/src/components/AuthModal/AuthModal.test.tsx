@@ -972,8 +972,8 @@ describe("URL Parameter Support", () => {
   it("does not open modal for invalid param value", async () => {
     await renderWithProviders(<div />, "/?auth=invalid");
 
-    // Give it time to potentially open (it shouldn't)
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // renderWithProviders waits for the router's initial match, so there is
+    // no deferred modal work left to poll for here.
 
     expect(
       screen.queryByRole("heading", { name: /hey, welcome back/i }),

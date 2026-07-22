@@ -1,6 +1,14 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 import "@testing-library/jest-dom";
 
 const deleteAccount = mock(async () => ({}) as never);
@@ -9,12 +17,37 @@ const clearAllBrowserStorage = mock(async () => {});
 // it rather than replacing the object.
 const assign = spyOn(window.location, "assign").mockImplementation(() => {});
 
-mock.module("@web/api/user.api", () => ({ UserApi: { deleteAccount } }));
+const actualUserApi = (await import("@web/api/user.api")).UserApi;
+const actualBrowserCleanup = await import(
+  "@web/common/utils/cleanup/browser.cleanup.util"
+);
+const actualAuthState = await import("@web/auth/compass/state/auth.state.util");
+let mocksEnabled = true;
+
+// mock.module is process-wide. Keep these overrides active for this file, then
+// delegate back to the real modules so later files cannot inherit partial APIs.
+mock.module("@web/api/user.api", () => ({
+  UserApi: {
+    ...actualUserApi,
+    deleteAccount: (...args: Parameters<typeof actualUserApi.deleteAccount>) =>
+      mocksEnabled
+        ? deleteAccount(...args)
+        : actualUserApi.deleteAccount(...args),
+  },
+}));
 mock.module("@web/common/utils/cleanup/browser.cleanup.util", () => ({
-  clearAllBrowserStorage,
+  ...actualBrowserCleanup,
+  clearAllBrowserStorage: (
+    ...args: Parameters<typeof clearAllBrowserStorage>
+  ) =>
+    mocksEnabled
+      ? clearAllBrowserStorage(...args)
+      : actualBrowserCleanup.clearAllBrowserStorage(...args),
 }));
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
-  getLastKnownEmail: () => "captain@example.com",
+  ...actualAuthState,
+  getLastKnownEmail: () =>
+    mocksEnabled ? "captain@example.com" : actualAuthState.getLastKnownEmail(),
 }));
 
 const { DeleteAccountConfirmationProvider } =
@@ -52,6 +85,10 @@ afterEach(() => {
   assign.mockClear();
 });
 
+afterAll(() => {
+  mocksEnabled = false;
+});
+
 describe("DeleteAccountConfirmationProvider", () => {
   // Deleting spans a Mongo transaction and a Google grant revocation. The
   // farewell used to wait for that to finish, so the user sat looking at the
@@ -77,9 +114,24 @@ describe("DeleteAccountConfirmationProvider", () => {
     expect(farewell).not.toHaveAttribute("aria-busy");
     expect(assign).not.toHaveBeenCalled();
 
-    finishDelete();
-    // Generous: the farewell is held for its full span before the reload.
-    await waitFor(() => expect(assign).toHaveBeenCalled(), { timeout: 5000 });
+    // Resolve the one production timer immediately. This keeps the production
+    // API unchanged and prevents a real timer from leaking into later files.
+    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
+      callback: TimerHandler,
+    ) => {
+      if (typeof callback === "function") callback();
+      return 0;
+    }) as typeof setTimeout);
+    try {
+      finishDelete();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(assign).toHaveBeenCalled();
+    } finally {
+      setTimeoutSpy.mockRestore();
+    }
   });
 
   it("takes the farewell back down if the account could not be deleted", async () => {
