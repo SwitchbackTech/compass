@@ -1,23 +1,25 @@
-// Periodically runs the reconcile sweep (the missed-webhook fallback) on a
-// jittered interval. It owns only the timer and its lifecycle; the sweep itself
-// (find stale calendars, enqueue pulls) is injected, so this is testable without
-// repositories or real time.
+// Periodically runs a sweep on a jittered interval. It owns only the timer and
+// its lifecycle; the sweep itself (find due resources, enqueue jobs) is injected,
+// so this is testable without repositories or real time. Both the reconcile
+// fallback and subscription maintenance drive their sweeps through it.
 
-export interface ReconcileSchedulerDeps {
-  // Run one sweep for resources not synced since `before`; returns how many it
-  // enqueued. Bound to reconcileStaleCalendars + repositories by the caller.
+export interface SweepSchedulerDeps {
+  // Run one sweep for the cutoff instant `before`; returns how many it enqueued.
+  // Bound to a concrete sweep (reconcileStaleCalendars, maintainExpiringSubscriptions)
+  // + repositories by the caller.
   sweep: (before: Date) => Promise<number>;
 }
 
-export interface ReconcileSchedulerOptions {
+export interface SweepSchedulerOptions {
   // Base gap between sweeps. The ledger's fallback cadence is ~10 minutes.
   intervalMs?: number;
   // Jitter as a fraction of the interval (each wait is interval * (1 ± this)),
   // so replicas do not all sweep in lockstep and hammer the store together.
   jitterRatio?: number;
-  // A resource is stale if it has not synced within this window; each sweep asks
-  // for resources whose last success is older than now - staleAfterMs.
-  staleAfterMs?: number;
+  // Signed offset from now that defines each sweep's cutoff: before = now + windowMs.
+  // NEGATIVE looks BACK (reconcile: resources not synced since now - 15m).
+  // POSITIVE looks AHEAD (subscription: channels expiring before now + 24h).
+  windowMs?: number;
   now?: () => Date;
   // Injectable [0,1) source so a test can pin the jitter; defaults to Math.random.
   random?: () => number;
@@ -28,13 +30,12 @@ export interface ReconcileSchedulerOptions {
 
 const DEFAULT_INTERVAL_MS = 10 * 60_000;
 const DEFAULT_JITTER_RATIO = 0.2;
-const DEFAULT_STALE_AFTER_MS = 15 * 60_000;
 
-export class ReconcileScheduler {
+export class SweepScheduler {
   readonly #sweep: (before: Date) => Promise<number>;
   readonly #intervalMs: number;
   readonly #jitterRatio: number;
-  readonly #staleAfterMs: number;
+  readonly #windowMs: number;
   readonly #now: () => Date;
   readonly #random: () => number;
   readonly #onError: (error: unknown) => void;
@@ -44,14 +45,11 @@ export class ReconcileScheduler {
   #wake: (() => void) | null = null;
   #timer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(
-    deps: ReconcileSchedulerDeps,
-    options: ReconcileSchedulerOptions = {},
-  ) {
+  constructor(deps: SweepSchedulerDeps, options: SweepSchedulerOptions = {}) {
     this.#sweep = deps.sweep;
     this.#intervalMs = options.intervalMs ?? DEFAULT_INTERVAL_MS;
     this.#jitterRatio = options.jitterRatio ?? DEFAULT_JITTER_RATIO;
-    this.#staleAfterMs = options.staleAfterMs ?? DEFAULT_STALE_AFTER_MS;
+    this.#windowMs = options.windowMs ?? 0;
     this.#now = options.now ?? (() => new Date());
     this.#random = options.random ?? Math.random;
     this.#onError = options.onError ?? (() => {});
@@ -82,7 +80,7 @@ export class ReconcileScheduler {
   async #run(): Promise<void> {
     while (this.#running) {
       try {
-        const before = new Date(this.#now().getTime() - this.#staleAfterMs);
+        const before = new Date(this.#now().getTime() + this.#windowMs);
         await this.#sweep(before);
       } catch (error) {
         this.#onError(error);

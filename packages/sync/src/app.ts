@@ -3,7 +3,8 @@ import { createInternalAuthMiddleware } from "@sync/auth/internal-auth";
 import { loadSyncConfig, type SyncConfig } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import { reconcileStaleCalendars } from "@sync/domain/reconcile.service";
-import { ReconcileScheduler } from "@sync/domain/reconcile-scheduler.service";
+import { maintainExpiringSubscriptions } from "@sync/domain/subscription-sweep.service";
+import { SweepScheduler } from "@sync/domain/sweep-scheduler.service";
 import { SyncJobWorker } from "@sync/domain/sync-job-worker.service";
 import { SyncScheduler } from "@sync/domain/sync-scheduler.service";
 import { ReadinessRegistry } from "@sync/lifecycle/readiness";
@@ -187,18 +188,25 @@ async function start(): Promise<void> {
     });
 
     // Storage is up: start draining the job queue and periodically reconciling
-    // stale calendars. Both drains register AFTER the mongo drain so the
-    // coordinator's reverse-order teardown stops them FIRST (reconcile before
-    // drain, so no new jobs are enqueued while the drain finishes and releases
-    // its leases) and closes mongo last. Only an active, provider-configured
-    // deployment does work; a passive or unconfigured one serves health.
+    // stale calendars and renewing expiring push channels. All three register
+    // AFTER the mongo drain so the coordinator's reverse-order teardown stops
+    // them FIRST (the producing sweeps before the drain, so no new jobs are
+    // enqueued while the drain finishes and releases its leases) and closes mongo
+    // last. Only an active, provider-configured deployment does work; a passive
+    // or unconfigured one serves health.
     const schedulers = buildSchedulers(config, mongo);
     if (schedulers) {
       service.shutdown.register("scheduler", () => schedulers.drain.stop());
       service.shutdown.register("reconcile", () => schedulers.reconcile.stop());
+      service.shutdown.register("subscription", () =>
+        schedulers.subscription.stop(),
+      );
       schedulers.drain.start();
       schedulers.reconcile.start();
-      logger.info("Sync scheduler draining and reconciling");
+      schedulers.subscription.start();
+      logger.info(
+        "Sync scheduler draining, reconciling, and renewing channels",
+      );
     }
   } catch (error) {
     logger.error(
@@ -208,16 +216,28 @@ async function start(): Promise<void> {
   }
 }
 
+// A resource not synced within this window is swept for a reconcile pull.
+const RECONCILE_STALE_AFTER_MS = 15 * 60_000;
+// A push channel expiring within this window is swept for renewal. Matches
+// maintainSubscription's default renew guard so the sweep and the operation
+// agree on what "near expiry" means.
+const SUBSCRIPTION_RENEW_BEFORE_MS = 24 * 60 * 60_000;
+
 // Build the background schedulers for an active, provider-configured deployment:
-// the queue DRAIN (claims and runs jobs) and the RECONCILE sweep (the
-// missed-webhook fallback that enqueues pulls for stale calendars). Returns null
-// when there is nothing to run (passive execution, or no provider credentials to
-// refresh access tokens with). Repositories bind to the now-connected db; a
-// fresh owner id per process scopes the drain worker's leases.
+// the queue DRAIN (claims and runs jobs), the RECONCILE sweep (the missed-webhook
+// fallback that enqueues pulls for stale calendars), and the SUBSCRIPTION sweep
+// (that renews push channels before they expire). Returns null when there is
+// nothing to run (passive execution, or no provider credentials to refresh access
+// tokens with). Repositories bind to the now-connected db; a fresh owner id per
+// process scopes the drain worker's leases.
 function buildSchedulers(
   config: SyncConfig,
   mongo: SyncMongoService,
-): { drain: SyncScheduler; reconcile: ReconcileScheduler } | null {
+): {
+  drain: SyncScheduler;
+  reconcile: SweepScheduler;
+  subscription: SweepScheduler;
+} | null {
   if (config.EXECUTION !== "active") return null;
   const authAdapter = buildAuthAdapter(config);
   if (!authAdapter) return null;
@@ -247,14 +267,37 @@ function buildSchedulers(
     { worker, jobs },
     { owner, onError: (error) => logger.error("Sync job drain failed", error) },
   );
-  const reconcile = new ReconcileScheduler(
+  // The reconcile fallback looks BACK: enqueue a pull for any events resource not
+  // synced within the stale window (negative offset from now).
+  const reconcile = new SweepScheduler(
     {
       sweep: (before) =>
         reconcileStaleCalendars({ resources, jobs }, before, () => new Date()),
     },
-    { onError: (error) => logger.error("Sync reconcile sweep failed", error) },
+    {
+      windowMs: -RECONCILE_STALE_AFTER_MS,
+      onError: (error) => logger.error("Sync reconcile sweep failed", error),
+    },
   );
-  return { drain, reconcile };
+  // Subscription maintenance looks AHEAD: enqueue a renewal for any push channel
+  // expiring within the renew window (positive offset from now), so a channel is
+  // replaced before it lapses. Aligns with maintainSubscription's renew guard.
+  const subscription = new SweepScheduler(
+    {
+      sweep: (before) =>
+        maintainExpiringSubscriptions(
+          { resources, jobs },
+          before,
+          () => new Date(),
+        ),
+    },
+    {
+      windowMs: SUBSCRIPTION_RENEW_BEFORE_MS,
+      onError: (error) =>
+        logger.error("Sync subscription maintenance sweep failed", error),
+    },
+  );
+  return { drain, reconcile, subscription };
 }
 
 function registerSignalHandlers(
