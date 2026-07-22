@@ -39,7 +39,7 @@ async function runOne(index: number): Promise<void> {
   const label = file.replace(/^\.\/packages\/web\/src\//, "");
 
   const proc = Bun.spawn(
-    ["bun", "test", "--preload", PRELOAD, ...bunFlags, file],
+    ["bun", "test", file, "--preload", PRELOAD, ...bunFlags],
     {
       env: { ...process.env, TZ: "Etc/UTC", NODE_ENV: "test" },
       stdout: "pipe",

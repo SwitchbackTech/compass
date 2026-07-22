@@ -152,11 +152,7 @@ class MongoService {
     if (this.#internalClient) {
       const currentDb = this.#internalClient.db.databaseName;
       const nextDb =
-        dbName === null
-          ? undefined
-          : dbName === undefined
-            ? CONFIG.DB
-            : dbName;
+        dbName === null ? undefined : dbName === undefined ? CONFIG.DB : dbName;
 
       if (currentDb === nextDb) return this;
 

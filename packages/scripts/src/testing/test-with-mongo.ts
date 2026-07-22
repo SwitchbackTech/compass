@@ -129,7 +129,7 @@ async function runOne(index: number): Promise<void> {
   const label = file.replace(/^\.\/packages\/[^/]+\/src\//, "");
 
   const proc = Bun.spawn(
-    ["bun", "test", "--preload", preloadPath, ...bunFlags, file],
+    ["bun", "test", file, "--preload", preloadPath, ...bunFlags],
     { env, stdout: "pipe", stderr: "pipe" },
   );
 
