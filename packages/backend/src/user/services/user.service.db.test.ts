@@ -1,3 +1,19 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
+
+mock.module("@backend/auth/services/google/google.revoke.service", () => ({
+  revokeGoogleGrant: mock().mockResolvedValue(true),
+}));
+
 import { faker } from "@faker-js/faker";
 import * as supertokensNode from "supertokens-node";
 import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
@@ -23,22 +39,8 @@ import { googleWatchService } from "@backend/sync/services/watch/google-watch.se
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
 
-// Keep the real revoke from making a live call to Google during tests.
-jest.mock("@backend/auth/services/google/google.revoke.service", () => ({
-  revokeGoogleGrant: jest.fn().mockResolvedValue(true),
-}));
-
-const mockRevokeGoogleGrant = revokeGoogleGrant as jest.MockedFunction<
+const mockRevokeGoogleGrant = revokeGoogleGrant as Mock<
   typeof revokeGoogleGrant
 >;
 
@@ -74,7 +76,6 @@ describe("UserService", () => {
       });
   });
   afterEach(() => {
-    jest.restoreAllMocks();
   });
   afterAll(cleanupTestDb);
 
@@ -299,7 +300,7 @@ describe("UserService", () => {
         { $set: { email: normalizedEmail } },
       );
       const otherUserId = mongoService.objectId().toString();
-      const findOneSpy = jest.spyOn(mongoService.user, "findOne");
+      const findOneSpy = spyOn(mongoService.user, "findOne");
 
       await userService.upsertUserFromAuth({
         userId: otherUserId,
@@ -316,7 +317,7 @@ describe("UserService", () => {
   describe("deleteAccount", () => {
     beforeEach(() => {
       mockRevokeGoogleGrant.mockClear();
-      jest.spyOn(googleWatchService, "stopWatches").mockResolvedValue([]);
+      spyOn(googleWatchService, "stopWatches").mockResolvedValue([]);
     });
 
     it("deletes the user and revokes their stored Google grant", async () => {
@@ -446,7 +447,6 @@ describe("UserService", () => {
 
   describe("supertokens auth cleanup", () => {
     it("removes orphaned SuperTokens users by email", async () => {
-      jest.restoreAllMocks();
 
       const initSpy = jest
         .spyOn(supertokensMiddleware, "initSupertokens")
@@ -526,7 +526,6 @@ describe("UserService", () => {
     });
 
     it("removes mapped SuperTokens users by external user id", async () => {
-      jest.restoreAllMocks();
 
       const initSpy = jest
         .spyOn(supertokensMiddleware, "initSupertokens")
@@ -667,7 +666,7 @@ describe("UserService", () => {
       const stopWatchesSpy = jest
         .spyOn(googleWatchService, "stopWatches")
         .mockResolvedValue([]);
-      const updateMetadataSpy = jest.spyOn(
+      const updateMetadataSpy = spyOn(
         userMetadataService,
         "updateUserMetadata",
       );
@@ -733,8 +732,8 @@ describe("UserService", () => {
     it("stops sync, clears the Google refresh token, and resets sync metadata", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const stopWatchesSpy = jest.spyOn(googleWatchService, "stopWatches");
-      const deleteWatchesSpy = jest.spyOn(
+      const stopWatchesSpy = spyOn(googleWatchService, "stopWatches");
+      const deleteWatchesSpy = spyOn(
         googleWatchService,
         "deleteWatchesByUser",
       );

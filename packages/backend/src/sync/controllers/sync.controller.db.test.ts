@@ -31,14 +31,7 @@ import { googleWatchService } from "@backend/sync/services/watch/google-watch.se
 import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
+import { , afterAll, beforeAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { randomUUID } from "node:crypto";
 
 // B10: legacy IMPORT_GCAL_END/EVENT_CHANGED/USER_METADATA/GOOGLE_REVOKED SSE
@@ -256,8 +249,8 @@ describe("SyncController", () => {
           calendar: { _id: new ObjectId(), isVisible: true },
           eventIds: [],
         });
-      const backgroundChangeSpy = jest.spyOn(sseServer, "publishEventsChanged");
-      const importStartSpy = jest.spyOn(sseServer, "publishSyncStatus");
+      const backgroundChangeSpy = spyOn(sseServer, "publishEventsChanged");
+      const importStartSpy = spyOn(sseServer, "publishSyncStatus");
 
       const activeResponse = await syncDriver.handleGoogleNotification(
         {
@@ -315,7 +308,7 @@ describe("SyncController", () => {
         .spyOn(userService, "pruneGoogleData")
         .mockResolvedValue();
 
-      const handleGoogleRevokedSpy = jest.spyOn(sseServer, "publishSyncStatus");
+      const handleGoogleRevokedSpy = spyOn(sseServer, "publishSyncStatus");
 
       const response = await syncDriver.handleGoogleNotification(
         {
@@ -414,7 +407,7 @@ describe("SyncController", () => {
         .spyOn(userService, "pruneGoogleData")
         .mockResolvedValue();
 
-      const handleGoogleRevokedSpy = jest.spyOn(sseServer, "publishSyncStatus");
+      const handleGoogleRevokedSpy = spyOn(sseServer, "publishSyncStatus");
 
       const response = await syncDriver.handleGoogleNotification(
         {
@@ -512,7 +505,7 @@ describe("SyncController", () => {
         const { user } = await UtilDriver.setupTestUser();
         const userId = user._id.toString();
 
-        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
+        const getAllEventsSpy = spyOn(gcalService, "getAllEvents");
 
         await userMetadataService.updateUserMetadata({
           userId,
@@ -547,8 +540,8 @@ describe("SyncController", () => {
           data: { sync: { importGCal: "COMPLETED" } },
         });
 
-        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
-        const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
+        const getAllEventsSpy = spyOn(gcalService, "getAllEvents");
+        const importEndSpy = spyOn(sseServer, "publishImportCompleted");
         // The ignored path also fire-and-forgets the watch repair
         // coordinator (packet 07); this fixture wasn't crafted to be
         // watch-healthy, so a real coordinator run would do unrelated
@@ -577,7 +570,7 @@ describe("SyncController", () => {
       });
 
       it("restarts an import left marked in progress", async () => {
-        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
+        const getAllEventsSpy = spyOn(gcalService, "getAllEvents");
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
@@ -610,7 +603,7 @@ describe("SyncController", () => {
         const getGCalEventsSyncPageTokenSpy = jest
           .spyOn(syncQueries, "getGCalEventsSyncPageToken")
           .mockResolvedValue("5");
-        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
+        const getAllEventsSpy = spyOn(gcalService, "getAllEvents");
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
@@ -646,7 +639,7 @@ describe("SyncController", () => {
         const getGCalEventsSyncPageTokenSpy = jest
           .spyOn(syncQueries, "getGCalEventsSyncPageToken")
           .mockResolvedValue("5");
-        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
+        const getAllEventsSpy = spyOn(gcalService, "getAllEvents");
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 

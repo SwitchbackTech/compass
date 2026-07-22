@@ -23,15 +23,7 @@ import { googleCalendarListService } from "@backend/sync/services/calendarlist/g
 import { seedLocalCalendar } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 import * as syncImportService from "@backend/sync/services/import/google-import.service";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
+import { , afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 const buildGoogleCalendar = (
   userId: ObjectId,
@@ -134,7 +126,6 @@ describe("googleCalendarListService", () => {
   beforeAll(initSupertokens);
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
   describe("reconcileCalendarList", () => {
@@ -152,11 +143,11 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      const calendarsChangedSpy = jest.spyOn(
+      const calendarsChangedSpy = spyOn(
         sseServer,
         "publishCalendarsChanged",
       );
-      const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
+      const eventsChangedSpy = spyOn(sseServer, "publishEventsChanged");
 
       const result = await reconcile(userId);
 
@@ -224,7 +215,7 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      const getEventsSpy = jest.spyOn(gcalService, "getEvents");
+      const getEventsSpy = spyOn(gcalService, "getEvents");
 
       const result = await reconcile(userId);
 
@@ -270,8 +261,8 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      const stopWatchSpy = jest.spyOn(gcalService, "stopWatch");
-      const calendarsChangedSpy = jest.spyOn(
+      const stopWatchSpy = spyOn(gcalService, "stopWatch");
+      const calendarsChangedSpy = spyOn(
         sseServer,
         "publishCalendarsChanged",
       );
@@ -336,7 +327,7 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      const stopWatchSpy = jest.spyOn(gcalService, "stopWatch");
+      const stopWatchSpy = spyOn(gcalService, "stopWatch");
 
       await expect(reconcile(userId)).resolves.toEqual({
         outcome: "RECONCILED",
@@ -605,7 +596,7 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
+      spyOn(syncImportService, "createSyncImport").mockResolvedValue({
         importAllEvents: jest
           .fn()
           .mockImplementation(() =>
@@ -630,11 +621,11 @@ describe("googleCalendarListService", () => {
 
       compassTestState().calendarlist = [];
 
-      const calendarsChangedSpy = jest.spyOn(
+      const calendarsChangedSpy = spyOn(
         sseServer,
         "publishCalendarsChanged",
       );
-      const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
+      const eventsChangedSpy = spyOn(sseServer, "publishEventsChanged");
 
       await expect(reconcile(userId)).resolves.toEqual({
         outcome: "IGNORED",
@@ -732,7 +723,7 @@ describe("googleCalendarListService", () => {
           throw invalidSyncTokenError;
         });
 
-      const stopWatchSpy = jest.spyOn(gcalService, "stopWatch");
+      const stopWatchSpy = spyOn(gcalService, "stopWatch");
 
       const result = await reconcile(userId);
 

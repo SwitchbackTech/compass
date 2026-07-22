@@ -6,7 +6,7 @@ import gcalService from "@backend/common/services/gcal/gcal.service";
 import { type EventRecord } from "@backend/event/event.record";
 import { eventRepository } from "@backend/event/event.repository";
 import { GoogleEventSync } from "@backend/event/google-event-sync.service";
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
 const calendar: CalendarRecord = {
   _id: new ObjectId(),
@@ -64,7 +64,6 @@ const asInstancePages = async function* (...pages: gSchema$Event[][]) {
 };
 
 describe("GoogleEventSync", () => {
-  afterEach(() => jest.restoreAllMocks());
 
   it("writes a page of standalone events in one batch", async () => {
     const findSpy = jest

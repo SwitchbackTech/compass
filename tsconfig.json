@@ -15,7 +15,6 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
-    "packages/scripts/src/testing/core.jest-compat.ts",
     "packages/scripts/src/testing/core.preload.ts",
     "packages/scripts/src/testing/scripts.preload.ts"
   ],
@@ -72,7 +71,6 @@
     // "typeRoots": [],                             /* List of folders to include type definitions from. */
     "types": [
       "bun-types",
-      "jest",
       "node"
     ] /* Type declaration files to be included in compilation. */,
     "allowUnreachableCode": true,

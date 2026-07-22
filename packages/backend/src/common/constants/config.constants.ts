@@ -26,6 +26,7 @@ const ConfigSchema = z
     FRONTEND_URL: z.string().url(),
     GCAL_WEBHOOK_BASEURL: z.string().url(),
     MONGO_URI: z.string().nonempty(),
+    MONGO_BATCH_SIZE: z.coerce.number().int().positive().default(1000),
     NODE_ENV: z.nativeEnum(NodeEnv),
     TZ: z.enum(["Etc/UTC", "UTC"]),
     ORIGINS_ALLOWED: z.array(z.string().nonempty()).default([]),
@@ -98,6 +99,7 @@ function parseRawConfig(config: CompassConfig): Config {
     GCAL_WEBHOOK_BASEURL:
       nonEmpty(config.google?.webhookUrl) || config.backend.apiUrl,
     MONGO_URI: config.mongo.uri,
+    MONGO_BATCH_SIZE: 1000,
     NODE_ENV: nodeEnv,
     TZ: config.runtime.timezone,
     ORIGINS_ALLOWED: config.backend.originsAllowed ?? [],
@@ -126,6 +128,7 @@ export function parseConfigFromEnv(
     FRONTEND_URL: rawEnv["FRONTEND_URL"],
     GCAL_WEBHOOK_BASEURL: rawEnv["GCAL_WEBHOOK_BASEURL"] || rawEnv["BASEURL"],
     MONGO_URI: rawEnv["MONGO_URI"],
+    MONGO_BATCH_SIZE: rawEnv["MONGO_BATCH_SIZE"],
     NODE_ENV: nodeEnv,
     TZ: rawEnv["TZ"],
     ORIGINS_ALLOWED: rawEnv["CORS"] ? rawEnv["CORS"].split(",") : [],

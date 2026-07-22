@@ -1,11 +1,10 @@
 import { Logger } from "@core/logger/winston.logger";
 import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
 import { warnIfWebhookNotPublicHttps } from "@backend/sync/services/watch/google-watch-config";
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 describe("warnIfWebhookNotPublicHttps (packet 09 ops: self-host webhook check)", () => {
   afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   it("warns once when Google is configured but the webhook base URL is not public HTTPS", () => {
@@ -15,7 +14,7 @@ describe("warnIfWebhookNotPublicHttps (packet 09 ops: self-host webhook check)",
       GCAL_WEBHOOK_BASEURL: "http://localhost:3000",
     });
     const log = Logger("test:google-watch-config");
-    const warnSpy = jest.spyOn(log, "warn");
+    const warnSpy = spyOn(log, "warn");
 
     warnIfWebhookNotPublicHttps(log);
 
@@ -32,7 +31,7 @@ describe("warnIfWebhookNotPublicHttps (packet 09 ops: self-host webhook check)",
       GCAL_WEBHOOK_BASEURL: "https://cal.example.com",
     });
     const log = Logger("test:google-watch-config");
-    const warnSpy = jest.spyOn(log, "warn");
+    const warnSpy = spyOn(log, "warn");
 
     warnIfWebhookNotPublicHttps(log);
 
@@ -46,7 +45,7 @@ describe("warnIfWebhookNotPublicHttps (packet 09 ops: self-host webhook check)",
       GCAL_WEBHOOK_BASEURL: "http://localhost:3000",
     });
     const log = Logger("test:google-watch-config");
-    const warnSpy = jest.spyOn(log, "warn");
+    const warnSpy = spyOn(log, "warn");
 
     warnIfWebhookNotPublicHttps(log);
 
@@ -60,7 +59,7 @@ describe("warnIfWebhookNotPublicHttps (packet 09 ops: self-host webhook check)",
       GCAL_WEBHOOK_BASEURL: "http://localhost:3000",
     });
     const log = Logger("test:google-watch-config");
-    const warnSpy = jest.spyOn(log, "warn");
+    const warnSpy = spyOn(log, "warn");
 
     warnIfWebhookNotPublicHttps(log);
 

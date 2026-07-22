@@ -1,3 +1,22 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
+import { createRequire } from "node:module";
+
+const requireActual = createRequire(import.meta.url);
+
+mock.module("@backend/sync/services/watch/google-watch-config", () => ({
+  ...requireActual("@backend/sync/services/watch/google-watch-config"),
+  isUsingGcalWebhookHttps: mock(() => true),
+}));
+
 import { Resource_Sync } from "@core/types/sync.types";
 import { GoogleWatchDriver } from "@backend/__tests__/drivers/google-watch.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
@@ -11,29 +30,14 @@ import { initSupertokens } from "@backend/common/middleware/supertokens.middlewa
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
 import { isGoogleCalendarSyncHealthy } from "./google-sync.health";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
-
-jest.mock("@backend/sync/services/watch/google-watch-config", () => ({
-  ...jest.requireActual("@backend/sync/services/watch/google-watch-config"),
-  isUsingGcalWebhookHttps: jest.fn(() => true),
-}));
 
 describe("googleSyncHealth", () => {
   beforeAll(initSupertokens);
   beforeAll(() => setupTestDb(import.meta.url));
   beforeEach(() => {
-    (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(true);
+    (isUsingGcalWebhookHttps as Mock).mockReturnValue(true);
   });
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
   it("returns false when the user has no sync record", async () => {
@@ -67,7 +71,7 @@ describe("googleSyncHealth", () => {
     const { user } = await UtilDriver.setupTestUser();
     const userId = user._id.toString();
 
-    (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(false);
+    (isUsingGcalWebhookHttps as Mock).mockReturnValue(false);
     await GoogleWatchDriver.removeActiveGoogleWatchesForUser(userId);
 
     await expect(isGoogleCalendarSyncHealthy(userId)).resolves.toBe(true);
@@ -77,7 +81,7 @@ describe("googleSyncHealth", () => {
     const { user } = await UtilDriver.setupTestUser();
     const userId = user._id.toString();
 
-    (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(true);
+    (isUsingGcalWebhookHttps as Mock).mockReturnValue(true);
     await GoogleWatchDriver.removeActiveGoogleWatchesForUser(userId);
 
     await expect(isGoogleCalendarSyncHealthy(userId)).resolves.toBe(false);

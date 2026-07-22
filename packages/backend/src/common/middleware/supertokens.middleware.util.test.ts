@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
-import { type TokenPayload } from "google-auth-library";
-import { createUserIdMapping, getUserIdMapping } from "supertokens-node";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { createInMemoryUserIdMappingStore } from "@backend/auth/ports/supertokens.stores";
+import { registerUserIdMappingStore } from "@backend/auth/ports/supertokens.registry";
 import {
   buildResetPasswordLink,
   createGoogleSignInSuccess,
@@ -8,54 +9,37 @@ import {
   getFormFieldValue,
   maybeReplaceEmailPasswordSession,
 } from "@backend/common/middleware/supertokens.middleware.util";
-import { beforeEach, describe, expect, it } from "bun:test";
-
-jest.mock("supertokens-node", () => ({
-  createUserIdMapping: jest.fn(),
-  getUserIdMapping: jest.fn(),
-}));
 
 describe("supertokens.middleware.util", () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    registerUserIdMappingStore(createInMemoryUserIdMappingStore());
   });
 
   describe("ensureExternalUserIdMapping", () => {
     it("returns the existing external user id mapping", async () => {
       const recipeUserId = faker.database.mongodbObjectId();
       const externalUserId = faker.database.mongodbObjectId();
-
-      jest.mocked(getUserIdMapping).mockResolvedValue({
-        status: "OK",
-        externalUserId,
+      const store = createInMemoryUserIdMappingStore();
+      await store.createUserIdMapping({
         superTokensUserId: recipeUserId,
-      } as Awaited<ReturnType<typeof getUserIdMapping>>);
+        externalUserId,
+      });
+      registerUserIdMappingStore(store);
 
       await expect(ensureExternalUserIdMapping(recipeUserId)).resolves.toBe(
         externalUserId,
       );
-      expect(createUserIdMapping).not.toHaveBeenCalled();
     });
 
     it("creates a new external user id mapping when one does not exist", async () => {
       const recipeUserId = faker.database.mongodbObjectId();
 
-      jest.mocked(getUserIdMapping).mockResolvedValue({
-        status: "UNKNOWN_MAPPING_ERROR",
-      } as Awaited<ReturnType<typeof getUserIdMapping>>);
-      jest
-        .mocked(createUserIdMapping)
-        .mockResolvedValue({ status: "OK" } as Awaited<
-          ReturnType<typeof createUserIdMapping>
-        >);
-
       const externalUserId = await ensureExternalUserIdMapping(recipeUserId);
 
-      expect(createUserIdMapping).toHaveBeenCalledWith({
-        superTokensUserId: recipeUserId,
-        externalUserId,
-      });
       expect(externalUserId).toMatch(/^[a-f0-9]{24}$/);
+      await expect(ensureExternalUserIdMapping(recipeUserId)).resolves.toBe(
+        externalUserId,
+      );
     });
   });
 
@@ -130,7 +114,7 @@ describe("supertokens.middleware.util", () => {
           fromIdTokenPayload: {
             sub: faker.string.uuid(),
             email: faker.internet.email(),
-          } as TokenPayload,
+          },
         },
         oAuthTokens: {
           refresh_token: faker.string.uuid(),
@@ -164,7 +148,7 @@ describe("supertokens.middleware.util", () => {
           getUserId: () => "compass-user-id",
         },
       } as Parameters<typeof maybeReplaceEmailPasswordSession>[1];
-      const replaceSession = jest.fn();
+      const replaceSession = mock();
 
       const result = await maybeReplaceEmailPasswordSession(
         input,
@@ -194,7 +178,7 @@ describe("supertokens.middleware.util", () => {
         status: "OK" as const,
         session: existingSession,
       } as Parameters<typeof maybeReplaceEmailPasswordSession>[1];
-      const replaceSession = jest.fn().mockResolvedValue(replacementSession);
+      const replaceSession = mock().mockResolvedValue(replacementSession);
 
       const result = await maybeReplaceEmailPasswordSession(
         input,

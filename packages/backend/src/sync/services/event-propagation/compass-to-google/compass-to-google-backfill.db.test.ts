@@ -11,15 +11,7 @@ import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { type EventRecord } from "@backend/event/event.record";
 import compassToGoogleBackfill from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google-backfill";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
+import { , afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 const buildGoogleCalendar = (
   userId: ObjectId,
@@ -66,7 +58,6 @@ describe("compassToGoogleBackfill", () => {
   beforeAll(initSupertokens);
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
   it("creates a Google event for Compass-owned events without a provider reference", async () => {
@@ -77,7 +68,7 @@ describe("compassToGoogleBackfill", () => {
     const event = buildEvent(calendar._id);
     await mongoService.event.insertOne(event);
 
-    jest.spyOn(gcalService, "createEvent").mockResolvedValue({
+    spyOn(gcalService, "createEvent").mockResolvedValue({
       id: "google-event-id",
     } as never);
 
@@ -114,7 +105,7 @@ describe("compassToGoogleBackfill", () => {
       }),
     ]);
 
-    const createSpy = jest.spyOn(gcalService, "createEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
 
     await expect(
       compassToGoogleBackfill.syncCompassEventsToGoogle(userId),
@@ -133,7 +124,7 @@ describe("compassToGoogleBackfill", () => {
     await mongoService.calendar.insertOne(localCalendar);
     await mongoService.event.insertOne(buildEvent(localCalendar._id));
 
-    const createSpy = jest.spyOn(gcalService, "createEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
 
     await expect(
       compassToGoogleBackfill.syncCompassEventsToGoogle(userId),

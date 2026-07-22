@@ -22,21 +22,12 @@ import { googleWatchService } from "@backend/sync/services/watch/google-watch.se
 import { googleWatchMaintenanceService } from "@backend/sync/services/watch/google-watch-maintenance.service";
 import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import userService from "@backend/user/services/user.service";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
+import { , afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 describe("googleWatchMaintenanceService", () => {
   beforeAll(initSupertokens);
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
   it("returns maintenance buckets in dry mode without mutating watches", async () => {
@@ -84,7 +75,7 @@ describe("googleWatchMaintenanceService", () => {
       }),
     );
 
-    const deleteCompassDataSpy = jest.spyOn(
+    const deleteCompassDataSpy = spyOn(
       userService,
       "deleteCompassDataForUser",
     );
@@ -96,7 +87,7 @@ describe("googleWatchMaintenanceService", () => {
     jest
       .spyOn(googleWatchService, "stopWatch")
       .mockImplementation(() => Promise.reject(invalidGrant400Error));
-    const publishSyncStatusSpy = jest.spyOn(sseServer, "publishSyncStatus");
+    const publishSyncStatusSpy = spyOn(sseServer, "publishSyncStatus");
 
     const result =
       await googleWatchMaintenanceService.runMaintenanceByUser(userId);
@@ -146,7 +137,7 @@ describe("googleWatchMaintenanceService", () => {
       }),
     );
 
-    const repairSpy = jest.spyOn(
+    const repairSpy = spyOn(
       googleWatchRepairService,
       "repairGoogleWatchesForUser",
     );

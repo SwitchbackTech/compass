@@ -3,34 +3,24 @@ import { ObjectId } from "mongodb";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import { requireGoogleConnection } from "@backend/common/guards/google.guard";
+import * as googleGuard from "@backend/common/guards/google.guard";
 import {
   requireGoogleConnectionFrom,
   requireGoogleConnectionSession,
 } from "@backend/common/middleware/google.required.middleware";
-import { beforeEach, describe, expect, it } from "bun:test";
-
-jest.mock("@backend/common/guards/google.guard", () => ({
-  requireGoogleConnection: jest.fn(),
-}));
-
-const mockRequireGoogleConnection =
-  requireGoogleConnection as jest.MockedFunction<
-    typeof requireGoogleConnection
-  >;
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 describe("google.required.middleware", () => {
   let mockReq: Partial<Request & { session?: { getUserId: () => string } }>;
   let mockRes: Partial<Response>;
-  let mockNext: jest.Mock;
+  let mockNext: Mock;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockNext = jest.fn();
+    mockNext = mock();
     mockRes = {
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
+      status: mock().mockReturnThis(),
+      send: mock().mockReturnThis(),
+      json: mock().mockReturnThis(),
     };
   });
 
@@ -40,7 +30,7 @@ describe("google.required.middleware", () => {
       mockReq = {
         session: { getUserId: () => userId },
       };
-      mockRequireGoogleConnection.mockResolvedValue(undefined);
+      spyOn(googleGuard, "requireGoogleConnection").mockResolvedValue(undefined);
 
       await requireGoogleConnectionSession(
         mockReq as Parameters<typeof requireGoogleConnectionSession>[0],
@@ -48,7 +38,7 @@ describe("google.required.middleware", () => {
         mockNext,
       );
 
-      expect(mockRequireGoogleConnection).toHaveBeenCalledWith(userId);
+      expect(googleGuard.requireGoogleConnection).toHaveBeenCalledWith(userId);
       expect(mockNext).toHaveBeenCalled();
       expect(mockRes.status).not.toHaveBeenCalled();
     });
@@ -62,7 +52,7 @@ describe("google.required.middleware", () => {
         mockNext,
       );
 
-      expect(mockRequireGoogleConnection).not.toHaveBeenCalled();
+      expect(googleGuard.requireGoogleConnection).not.toHaveBeenCalled();
       expect(mockRes.status).toHaveBeenCalledWith(
         UserError.MissingUserIdField.status,
       );
@@ -81,7 +71,7 @@ describe("google.required.middleware", () => {
         Status.BAD_REQUEST,
         true,
       );
-      mockRequireGoogleConnection.mockImplementation(() =>
+      spyOn(googleGuard, "requireGoogleConnection").mockImplementation(() =>
         Promise.reject(baseError),
       );
 
@@ -105,7 +95,7 @@ describe("google.required.middleware", () => {
         session: { getUserId: () => userId },
       };
       const unexpectedError = new Error("Database connection failed");
-      mockRequireGoogleConnection.mockImplementation(() =>
+      spyOn(googleGuard, "requireGoogleConnection").mockImplementation(() =>
         Promise.reject(unexpectedError),
       );
 
@@ -127,12 +117,12 @@ describe("google.required.middleware", () => {
       mockReq = {
         params: { userId },
       };
-      mockRequireGoogleConnection.mockResolvedValue(undefined);
+      spyOn(googleGuard, "requireGoogleConnection").mockResolvedValue(undefined);
 
       const middleware = requireGoogleConnectionFrom("userId");
       await middleware(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockRequireGoogleConnection).toHaveBeenCalledWith(userId);
+      expect(googleGuard.requireGoogleConnection).toHaveBeenCalledWith(userId);
       expect(mockNext).toHaveBeenCalled();
       expect(mockRes.status).not.toHaveBeenCalled();
     });
@@ -145,7 +135,7 @@ describe("google.required.middleware", () => {
       const middleware = requireGoogleConnectionFrom("userId");
       await middleware(mockReq as Request, mockRes as Response, mockNext);
 
-      expect(mockRequireGoogleConnection).not.toHaveBeenCalled();
+      expect(googleGuard.requireGoogleConnection).not.toHaveBeenCalled();
       expect(mockRes.status).toHaveBeenCalledWith(
         UserError.MissingUserIdField.status,
       );

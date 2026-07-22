@@ -1,21 +1,20 @@
-jest.mock("@backend/common/constants/config.constants", () => ({
-  CONFIG: { GCAL_WEBHOOK_BASEURL: "https://example.trycloudflare.com/api" },
-}));
+import { beforeAll, describe, expect, it, mock, spyOn } from "bun:test";
+import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
+import * as googleWatchToken from "@backend/sync/services/watch/google-watch-token";
 
-jest.mock("@backend/sync/services/watch/google-watch-token", () => ({
-  encodeChannelToken: jest.fn(() => "encoded-token"),
-}));
+beforeAll(() => {
+  mockEnv({ GCAL_WEBHOOK_BASEURL: "https://example.trycloudflare.com/api" });
+});
 
 import { GaxiosError, type GaxiosResponse } from "gaxios";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
 import { type gSchema$Event } from "@core/types/gcal";
 import { type GoogleRequestContext } from "./gcal.context";
 import gcalService from "./gcal.service";
-import { describe, expect, it } from "bun:test";
 
 describe("gcal.service watch callbacks", () => {
   it("uses the Google webhook base URL for event watch callback addresses", async () => {
-    const watch = jest.fn().mockResolvedValue({
+    const watch = mock().mockResolvedValue({
       status: 200,
       data: { id: "507f1f77bcf86cd799439011", resourceId: "resource-id" },
     });
@@ -45,7 +44,7 @@ describe("gcal.service watch callbacks", () => {
   });
 
   it("uses the Google webhook base URL for calendar list watch callback addresses", async () => {
-    const watch = jest.fn().mockResolvedValue({
+    const watch = mock().mockResolvedValue({
       status: 200,
       data: { id: "507f1f77bcf86cd799439011", resourceId: "resource-id" },
     });
@@ -73,7 +72,7 @@ describe("gcal.service watch callbacks", () => {
   });
 
   it("forwards quotaUser into the underlying googleapis call", async () => {
-    const list = jest.fn().mockResolvedValue({
+    const list = mock().mockResolvedValue({
       status: 200,
       data: { items: [] },
     });
@@ -108,8 +107,7 @@ describe("gcal.service watch callbacks", () => {
       } as unknown as GaxiosResponse,
     );
 
-    const list = jest
-      .fn()
+    const list = mock()
       .mockImplementationOnce(() => Promise.reject(rateLimitError))
       .mockResolvedValueOnce({ status: 200, data: { items: [] } });
     const context = {
@@ -128,8 +126,7 @@ describe("gcal.service watch callbacks", () => {
 
 describe("gcal.service getAllCalendarListPages", () => {
   it("follows nextPageToken across pages and only returns nextSyncToken from the final page", async () => {
-    const list = jest
-      .fn()
+    const list = mock()
       .mockResolvedValueOnce({
         status: 200,
         data: { items: [{ id: "cal-1" }], nextPageToken: "page-2" },
@@ -165,7 +162,7 @@ describe("gcal.service getAllCalendarListPages", () => {
   });
 
   it("defaults a page's items to an empty array when Google omits them", async () => {
-    const list = jest.fn().mockResolvedValueOnce({
+    const list = mock().mockResolvedValueOnce({
       status: 200,
       data: { nextSyncToken: "final-token" },
     });
@@ -184,7 +181,7 @@ describe("gcal.service getAllCalendarListPages", () => {
   });
 
   it("throws PaginationNotSupported when the final page has neither a nextPageToken nor a nextSyncToken", async () => {
-    const list = jest.fn().mockResolvedValueOnce({
+    const list = mock().mockResolvedValueOnce({
       status: 200,
       data: { items: [{ id: "cal-1" }] },
     });
@@ -208,44 +205,42 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
   const CHANNEL_ID = "507f1f77bcf86cd799439011";
 
   // One shared context for the whole table: `clearMocks` (jest.config.js)
-  // wipes each jest.fn()'s recorded calls between tests, so reusing these
+  // wipes each mock()'s recorded calls between tests, so reusing these
   // mocks across `it.each` cases below doesn't leak call history.
   const context = {
     gcal: {
       events: {
-        get: jest.fn().mockResolvedValue({ status: 200, data: {} }),
-        insert: jest.fn().mockResolvedValue({ status: 200, data: {} }),
-        delete: jest.fn().mockResolvedValue({ status: 204, data: {} }),
-        instances: jest
-          .fn()
+        get: mock().mockResolvedValue({ status: 200, data: {} }),
+        insert: mock().mockResolvedValue({ status: 200, data: {} }),
+        delete: mock().mockResolvedValue({ status: 204, data: {} }),
+        instances: mock()
           .mockResolvedValue({ status: 200, data: { items: [] } }),
-        list: jest.fn().mockResolvedValue({
+        list: mock().mockResolvedValue({
           status: 200,
           data: { items: [], nextSyncToken: "sync-token" },
         }),
-        move: jest.fn().mockResolvedValue({ status: 200, data: {} }),
-        patch: jest.fn().mockResolvedValue({ status: 200, data: {} }),
-        watch: jest.fn().mockResolvedValue({
+        move: mock().mockResolvedValue({ status: 200, data: {} }),
+        patch: mock().mockResolvedValue({ status: 200, data: {} }),
+        watch: mock().mockResolvedValue({
           status: 200,
           data: { resourceId: "resource-1" },
         }),
       },
       calendarList: {
-        list: jest.fn().mockResolvedValue({
+        list: mock().mockResolvedValue({
           status: 200,
           data: { items: [], nextSyncToken: "sync-token" },
         }),
-        watch: jest.fn().mockResolvedValue({
+        watch: mock().mockResolvedValue({
           status: 200,
           data: { resourceId: "resource-1" },
         }),
       },
       channels: {
-        stop: jest.fn().mockResolvedValue({ status: 204, data: {} }),
+        stop: mock().mockResolvedValue({ status: 204, data: {} }),
       },
       freebusy: {
-        query: jest
-          .fn()
+        query: mock()
           .mockResolvedValue({ status: 200, data: { calendars: {} } }),
       },
     },
@@ -272,45 +267,45 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
   const cases: Array<{
     method: string;
     call: () => Promise<unknown>;
-    mock: () => jest.Mock;
+    mock: () => Mock;
   }> = [
     {
       method: "getEvent",
       call: () => gcalService.getEvent(context, "event-1"),
-      mock: () => context.gcal.events.get as jest.Mock,
+      mock: () => context.gcal.events.get as Mock,
     },
     {
       method: "createEvent",
       call: () =>
         gcalService.createEvent(context, "cal-1", {} as gSchema$Event),
-      mock: () => context.gcal.events.insert as jest.Mock,
+      mock: () => context.gcal.events.insert as Mock,
     },
     {
       method: "deleteEvent",
       call: () => gcalService.deleteEvent(context, "cal-1", "event-1"),
-      mock: () => context.gcal.events.delete as jest.Mock,
+      mock: () => context.gcal.events.delete as Mock,
     },
     {
       method: "moveEvent",
       call: () => gcalService.moveEvent(context, "cal-1", "event-1", "cal-2"),
-      mock: () => context.gcal.events.move as jest.Mock,
+      mock: () => context.gcal.events.move as Mock,
     },
     {
       method: "getEventInstances",
       call: () =>
         gcalServiceInternal.getEventInstances(context, "cal-1", "event-1"),
-      mock: () => context.gcal.events.instances as jest.Mock,
+      mock: () => context.gcal.events.instances as Mock,
     },
     {
       method: "findEventInstance",
       call: () =>
         gcalService.findEventInstance(context, "cal-1", "event-1", new Date()),
-      mock: () => context.gcal.events.instances as jest.Mock,
+      mock: () => context.gcal.events.instances as Mock,
     },
     {
       method: "getEvents",
       call: () => gcalService.getEvents(context, { calendarId: "cal-1" }),
-      mock: () => context.gcal.events.list as jest.Mock,
+      mock: () => context.gcal.events.list as Mock,
     },
     {
       method: "queryFreeBusy",
@@ -320,7 +315,7 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
           timeMax: "2024-01-02T00:00:00.000Z",
           gCalendarIds: ["cal-1"],
         }),
-      mock: () => context.gcal.freebusy.query as jest.Mock,
+      mock: () => context.gcal.freebusy.query as Mock,
     },
     {
       method: "patchEvent",
@@ -331,7 +326,7 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
           "event-1",
           {} as gSchema$Event,
         ),
-      mock: () => context.gcal.events.patch as jest.Mock,
+      mock: () => context.gcal.events.patch as Mock,
     },
     {
       method: "watchCalendars",
@@ -340,7 +335,7 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
           channelId: CHANNEL_ID,
           expiration: "123",
         }),
-      mock: () => context.gcal.calendarList.watch as jest.Mock,
+      mock: () => context.gcal.calendarList.watch as Mock,
     },
     {
       method: "watchEvents",
@@ -350,7 +345,7 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
           expiration: "123",
           gCalendarId: "cal-1",
         }),
-      mock: () => context.gcal.events.watch as jest.Mock,
+      mock: () => context.gcal.events.watch as Mock,
     },
     {
       method: "stopWatch",
@@ -359,7 +354,7 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
           channelId: "channel-1",
           resourceId: "resource-1",
         }),
-      mock: () => context.gcal.channels.stop as jest.Mock,
+      mock: () => context.gcal.channels.stop as Mock,
     },
     {
       method: "getAllEvents",
@@ -371,7 +366,7 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
           break;
         }
       },
-      mock: () => context.gcal.events.list as jest.Mock,
+      mock: () => context.gcal.events.list as Mock,
     },
     {
       method: "getAllCalendarListPages",
@@ -382,7 +377,7 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
           break;
         }
       },
-      mock: () => context.gcal.calendarList.list as jest.Mock,
+      mock: () => context.gcal.calendarList.list as Mock,
     },
   ];
 

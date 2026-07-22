@@ -9,12 +9,9 @@ if (sharedMongoUri) {
 // Bun preload for the backend test suite. Replaces the Jest project config
 // (setupFiles + setupFilesAfterEnv + @shelf/jest-mongodb preset) with one
 // ordered, single-process setup:
-//   1. Install the jest -> bun:test compatibility layer (global `jest`).
-//   2. Core env (NODE_ENV=test) so CONFIG resolves from env, not compass.yaml.
-//   3. Start one in-memory Mongo replica set and publish its URI.
-//   4. Backend env (reads the URI) + node-module mocks and per-test hooks.
-// The server is torn down once, after every file in the process has run.
-import "@scripts/testing/core.jest-compat";
+//   1. Core env (NODE_ENV=test) so CONFIG resolves from env, not compass.yaml.
+//   2. Start one in-memory Mongo replica set and publish its URI.
+//   3. Backend env (reads the URI) + injectable test seams via backend.test.start.
 import "@core/__tests__/core.test.init";
 import {
   startMemoryMongo,

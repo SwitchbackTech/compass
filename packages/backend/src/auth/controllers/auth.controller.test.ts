@@ -1,14 +1,15 @@
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
-import authController from "./auth.controller";
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
-jest.mock("@backend/auth/services/google/google.auth.service", () => ({
+mock.module("@backend/auth/services/google/google.auth.service", () => ({
   __esModule: true,
   googleAuthService: {
-    connectGoogleToCurrentUser: jest.fn(),
+    connectGoogleToCurrentUser: mock(),
   },
 }));
+
+import authController from "./auth.controller";
 
 describe("auth.controller", () => {
   describe("connectGoogle", () => {
@@ -17,7 +18,7 @@ describe("auth.controller", () => {
       const originalClientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
       CONFIG.GOOGLE_CLIENT_ID = undefined;
       CONFIG.GOOGLE_CLIENT_SECRET = undefined;
-      const promise = jest.fn();
+      const promise = mock();
 
       try {
         authController.connectGoogle(
@@ -44,7 +45,7 @@ describe("auth.controller", () => {
       const originalClientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
       CONFIG.GOOGLE_CLIENT_ID = undefined;
       CONFIG.GOOGLE_CLIENT_SECRET = undefined;
-      const promise = jest.fn();
+      const promise = mock();
 
       try {
         authController.connectGoogle(

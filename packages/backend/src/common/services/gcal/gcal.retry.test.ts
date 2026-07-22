@@ -5,18 +5,18 @@ import {
   isRetryableGoogleError,
   withGoogleRetry,
 } from "@backend/common/services/gcal/gcal.retry";
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock, spyOn } from "bun:test";
 
 // The repo-wide winston mock (see mock.setup.ts) returns one stable logger per
 // name, so this is the very instance the retry module captured at import time
 // (`Logger("app:gcal.retry")`). Grabbing it by the same name lets the
 // observability tests assert on it directly.
 const mockLogger = Logger("app:gcal.retry") as unknown as {
-  debug: jest.Mock;
-  info: jest.Mock;
-  warn: jest.Mock;
-  error: jest.Mock;
-  verbose: jest.Mock;
+  debug: Mock;
+  info: Mock;
+  warn: Mock;
+  error: Mock;
+  verbose: Mock;
 };
 
 const makeGaxiosError = ({
@@ -123,7 +123,7 @@ describe("isRetryableGoogleError", () => {
 
 describe("computeBackoffDelayMs", () => {
   it("produces increasing caps that saturate at maxDelayMs", () => {
-    const randomSpy = jest.spyOn(Math, "random").mockReturnValue(1);
+    const randomSpy = spyOn(Math, "random").mockReturnValue(1);
 
     const delays = [0, 1, 2, 3, 4, 5, 6, 10].map((attempt) =>
       computeBackoffDelayMs(attempt, { baseDelayMs: 500, maxDelayMs: 30_000 }),
@@ -135,7 +135,7 @@ describe("computeBackoffDelayMs", () => {
   });
 
   it("jitters within [0, cap]", () => {
-    const randomSpy = jest.spyOn(Math, "random").mockReturnValue(0.5);
+    const randomSpy = spyOn(Math, "random").mockReturnValue(0.5);
 
     const delay = computeBackoffDelayMs(2, {
       baseDelayMs: 500,
@@ -152,8 +152,8 @@ describe("withGoogleRetry", () => {
   const noopSleep = async () => undefined;
 
   it("resolves immediately on success without sleeping", async () => {
-    const sleep = jest.fn(noopSleep);
-    const fn = jest.fn().mockResolvedValue("ok");
+    const sleep = mock(noopSleep);
+    const fn = mock().mockResolvedValue("ok");
 
     await expect(withGoogleRetry(fn, { sleep })).resolves.toBe("ok");
     expect(fn).toHaveBeenCalledTimes(1);
@@ -161,7 +161,7 @@ describe("withGoogleRetry", () => {
   });
 
   it("retries a retryable failure and resolves once it succeeds", async () => {
-    const sleep = jest.fn(noopSleep);
+    const sleep = mock(noopSleep);
     const fn = jest
       .fn()
       .mockImplementationOnce(() =>
@@ -180,9 +180,9 @@ describe("withGoogleRetry", () => {
   });
 
   it("throws immediately on a non-retryable error without sleeping", async () => {
-    const sleep = jest.fn(noopSleep);
+    const sleep = mock(noopSleep);
     const err = makeGaxiosError({ status: 404 });
-    const fn = jest.fn().mockImplementation(() => Promise.reject(err));
+    const fn = mock().mockImplementation(() => Promise.reject(err));
 
     await expect(withGoogleRetry(fn, { sleep })).rejects.toBe(err);
     expect(fn).toHaveBeenCalledTimes(1);
@@ -190,9 +190,9 @@ describe("withGoogleRetry", () => {
   });
 
   it("throws the original error once maxAttempts is exhausted", async () => {
-    const sleep = jest.fn(noopSleep);
+    const sleep = mock(noopSleep);
     const err = makeGaxiosError({ status: 429 });
-    const fn = jest.fn().mockImplementation(() => Promise.reject(err));
+    const fn = mock().mockImplementation(() => Promise.reject(err));
 
     await expect(withGoogleRetry(fn, { sleep, maxAttempts: 3 })).rejects.toBe(
       err,
@@ -209,8 +209,8 @@ describe("withGoogleRetry Retry-After handling", () => {
     // random=1 pushes computed backoff to its max (30s for attempt 0 with a
     // 500ms base is still only 500ms, so pick a big base to make sure the
     // hint -- not the backoff -- is what's asserted below).
-    const randomSpy = jest.spyOn(Math, "random").mockReturnValue(1);
-    const sleep = jest.fn(noopSleep);
+    const randomSpy = spyOn(Math, "random").mockReturnValue(1);
+    const sleep = mock(noopSleep);
     const err = makeGaxiosError({
       status: 429,
       headers: { "retry-after": "2" },
@@ -230,7 +230,7 @@ describe("withGoogleRetry Retry-After handling", () => {
   });
 
   it("clamps a Retry-After hint larger than maxDelayMs", async () => {
-    const sleep = jest.fn(noopSleep);
+    const sleep = mock(noopSleep);
     const err = makeGaxiosError({
       status: 429,
       headers: { "retry-after": "9999" },
@@ -252,8 +252,8 @@ describe("withGoogleRetry Retry-After handling", () => {
     ["an HTTP-date", "Wed, 21 Oct 2015 07:28:00 GMT"],
     ["garbage", "soon-ish"],
   ])("falls back to computed backoff when the hint is %s", async (_case, value) => {
-    const randomSpy = jest.spyOn(Math, "random").mockReturnValue(0.5);
-    const sleep = jest.fn(noopSleep);
+    const randomSpy = spyOn(Math, "random").mockReturnValue(0.5);
+    const sleep = mock(noopSleep);
     const err = makeGaxiosError({
       status: 429,
       headers: value === undefined ? undefined : { "retry-after": value },
@@ -279,8 +279,8 @@ describe("withGoogleRetry observability logging", () => {
   const noopSleep = async () => undefined;
 
   it("logs nothing on the common first-try-success path", async () => {
-    const sleep = jest.fn(noopSleep);
-    const fn = jest.fn().mockResolvedValue("ok");
+    const sleep = mock(noopSleep);
+    const fn = mock().mockResolvedValue("ok");
 
     await withGoogleRetry(fn, { sleep });
 
@@ -289,7 +289,7 @@ describe("withGoogleRetry observability logging", () => {
   });
 
   it("logs once when a call succeeds after retrying", async () => {
-    const sleep = jest.fn(noopSleep);
+    const sleep = mock(noopSleep);
     const err = makeGaxiosError({ status: 429 });
     const fn = jest
       .fn()
@@ -312,9 +312,9 @@ describe("withGoogleRetry observability logging", () => {
   });
 
   it("logs once when a call fails after exhausting retries", async () => {
-    const sleep = jest.fn(noopSleep);
+    const sleep = mock(noopSleep);
     const err = makeGaxiosError({ status: 500 });
-    const fn = jest.fn().mockImplementation(() => Promise.reject(err));
+    const fn = mock().mockImplementation(() => Promise.reject(err));
 
     await expect(withGoogleRetry(fn, { sleep, maxAttempts: 2 })).rejects.toBe(
       err,
@@ -333,9 +333,9 @@ describe("withGoogleRetry observability logging", () => {
   });
 
   it("logs nothing extra when a non-retryable error fails on the first try", async () => {
-    const sleep = jest.fn(noopSleep);
+    const sleep = mock(noopSleep);
     const err = makeGaxiosError({ status: 404 });
-    const fn = jest.fn().mockImplementation(() => Promise.reject(err));
+    const fn = mock().mockImplementation(() => Promise.reject(err));
 
     await expect(withGoogleRetry(fn, { sleep })).rejects.toBe(err);
 

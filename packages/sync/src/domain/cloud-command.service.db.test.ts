@@ -1,3 +1,4 @@
+import { spyOn } from "bun:test";
 import { faker } from "@faker-js/faker";
 import { type SyncCommandInput } from "@core/types/sync/command.contracts";
 import {
@@ -742,7 +743,7 @@ describe("submitCloudCommand provider dispatch", () => {
         order.push("clear");
         return realClear(...args);
       });
-    jest.spyOn(events, "deleteById").mockImplementation(async (...args) => {
+    spyOn(events, "deleteById").mockImplementation(async (...args) => {
       order.push("delete");
       return realDelete(...args);
     });

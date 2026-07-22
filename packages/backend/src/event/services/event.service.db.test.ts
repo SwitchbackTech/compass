@@ -14,14 +14,7 @@ import {
   buildEventRecord,
   seedGoogleCalendar,
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
-import {
-  afterAll,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
+import { , afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 const seedLocalCalendar = async (userId: ObjectId) => {
   const record = CalendarRecordSchema.parse({
@@ -538,7 +531,7 @@ describe("EventService (SSE suppression for invisible calendars, step 9)", () =>
       { _id: calendar._id },
       { $set: { isVisible: false } },
     );
-    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
+    const publishSpy = spyOn(sseServer, "publishEventsChanged");
 
     await eventService.create(user._id.toString(), {
       calendarId: calendar._id.toHexString() as never,
@@ -558,7 +551,7 @@ describe("EventService (SSE suppression for invisible calendars, step 9)", () =>
   it("publishes eventsChanged for a create on a visible calendar", async () => {
     const { user } = await UtilDriver.setupTestUser();
     const calendar = await seedLocalCalendar(user._id);
-    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
+    const publishSpy = spyOn(sseServer, "publishEventsChanged");
 
     const created = await eventService.create(user._id.toString(), {
       calendarId: calendar._id.toHexString() as never,
@@ -619,7 +612,7 @@ describe("EventService (SSE suppression for invisible calendars, step 9)", () =>
           return originalFind(...args);
         },
       );
-    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
+    const publishSpy = spyOn(sseServer, "publishEventsChanged");
 
     await eventService.delete(user._id.toString(), created._id.toHexString(), {
       scope: "this",
@@ -746,7 +739,6 @@ describe("EventService (visibility filtering for list reads, packet 08)", () => 
 describe("EventService (cross-calendar move)", () => {
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
   const moveInput = (calendarId: string) => ({
@@ -924,7 +916,7 @@ describe("EventService (cross-calendar move)", () => {
     const destination = await seedLocalCalendar(user._id);
     const event = buildEventRecord(source._id);
     await mongoService.event.insertOne(event);
-    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
+    const publishSpy = spyOn(sseServer, "publishEventsChanged");
 
     await eventService.replace(
       user._id.toString(),

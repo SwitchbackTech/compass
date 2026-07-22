@@ -11,7 +11,7 @@ import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import calendarController from "@backend/calendar/controllers/calendar.controller";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { type Res_Promise } from "@backend/common/types/express.types";
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 // These exercise calendarController.availability directly against fake
 // req/res objects (no supertest), mirroring events.controller.test.ts - the
@@ -27,7 +27,6 @@ describe("CalendarController availability", () => {
   const userId = "507f1f77bcf86cd799439011";
 
   afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   const buildReq = (query: Record<string, string>): SessionRequest =>
@@ -37,7 +36,7 @@ describe("CalendarController availability", () => {
     }) as unknown as SessionRequest;
 
   const buildRes = () => {
-    const promise = jest.fn();
+    const promise = mock();
     return { promise } as unknown as Res_Promise;
   };
 
@@ -68,12 +67,12 @@ describe("CalendarController availability", () => {
     expect(res.promise).toHaveBeenCalledWith(availabilityResponse);
     // Packet 09 step 2: pin the response-boundary shape of GET
     // /api/calendars/availability against the shared core schema.
-    const sentBody = (res.promise as jest.Mock).mock.calls[0]?.[0];
+    const sentBody = (res.promise as Mock).mock.calls[0]?.[0];
     expect(() => AvailabilityResponseSchema.parse(sentBody)).not.toThrow();
   });
 
   it("rejects a range longer than 62 days with a 400, without calling calendarService.getAvailability (A7 bounded)", async () => {
-    const getAvailabilitySpy = jest.spyOn(calendarService, "getAvailability");
+    const getAvailabilitySpy = spyOn(calendarService, "getAvailability");
 
     const req = buildReq({
       calendarIds: "507f1f77bcf86cd799439012",
@@ -87,7 +86,7 @@ describe("CalendarController availability", () => {
     expect(getAvailabilitySpy).not.toHaveBeenCalled();
     expect(res.promise).toHaveBeenCalledTimes(1);
 
-    const rejection = (res.promise as jest.Mock).mock
+    const rejection = (res.promise as Mock).mock
       .calls[0]?.[0] as Promise<unknown>;
     await expect(rejection).rejects.toBeInstanceOf(BaseError);
     await rejection.catch((e) => {
@@ -107,7 +106,6 @@ describe("CalendarController list", () => {
   const userId = "507f1f77bcf86cd799439011";
 
   afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   it("returns a CalendarListResponse-shaped body for the session user's calendars", async () => {
@@ -135,7 +133,7 @@ describe("CalendarController list", () => {
       query: {},
       session: { getUserId: () => userId },
     } as unknown as SessionRequest;
-    const promise = jest.fn();
+    const promise = mock();
     const res = { promise } as unknown as Res_Promise;
 
     await calendarController.list(req, res);

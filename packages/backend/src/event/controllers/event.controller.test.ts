@@ -5,7 +5,7 @@ import { EventListResponseSchema } from "@core/types/event-command.contracts";
 import eventController from "@backend/event/controllers/event.controller";
 import eventService from "@backend/event/services/event.service";
 import { buildEventRecord } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
 // No prior test file existed for event.controller.ts. This mirrors the fake
 // req/res driver already established in calendar.controller.test.ts (no
@@ -17,7 +17,6 @@ describe("EventController readAll", () => {
   const userId = "507f1f77bcf86cd799439011";
 
   afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   it("returns an EventListResponse-shaped body for a range query", async () => {
@@ -33,9 +32,9 @@ describe("EventController readAll", () => {
       },
       session: { getUserId: () => userId },
     } as unknown as SessionRequest;
-    const json = jest.fn();
+    const json = mock();
     const res = {
-      status: jest.fn().mockReturnThis(),
+      status: mock().mockReturnThis(),
       json,
     } as unknown as Response;
 

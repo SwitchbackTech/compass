@@ -1,4 +1,5 @@
 import { type gCalendar } from "@core/types/gcal";
+import { getTestGcalOverride } from "@backend/common/services/gcal/gcal.test-context";
 import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 
 /**
@@ -18,10 +19,14 @@ export interface GoogleRequestContext {
  * should build the context object directly (`{ gcal, quotaUser: userId }`)
  * instead of calling this, to avoid a redundant network/DB round trip.
  */
+export type GcalClientResolver = (userId: string) => Promise<gCalendar>;
+
 export const createGoogleRequestContext = async (
   userId: string,
+  resolveGcalClient: GcalClientResolver = getGcalClient,
 ): Promise<GoogleRequestContext> => {
-  const gcal = await getGcalClient(userId);
+  const testGcal = getTestGcalOverride();
+  const gcal = testGcal ?? (await resolveGcalClient(userId));
 
   return { gcal, quotaUser: userId };
 };

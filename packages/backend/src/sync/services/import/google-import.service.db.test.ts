@@ -1,3 +1,22 @@
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
+
+mock.module("@backend/common/services/gcal/gcal.service", () => ({
+  __esModule: true,
+  default: {
+    getAllEvents: mock(),
+    getEvents: mock(),
+    getBaseRecurringEventInstances: mock(),
+  },
+}));
+
 import { ObjectId } from "mongodb";
 import { type gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
@@ -20,23 +39,6 @@ import {
   getSync,
   updateSync,
 } from "@backend/sync/services/records/sync-records.repository";
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
-
-jest.mock("@backend/common/services/gcal/gcal.service", () => ({
-  __esModule: true,
-  default: {
-    getAllEvents: jest.fn(),
-    getEvents: jest.fn(),
-    getBaseRecurringEventInstances: jest.fn(),
-  },
-}));
 
 const asPages = async function* (
   ...pages: Array<{
@@ -86,21 +88,21 @@ describe("SyncImport", () => {
     userId = new ObjectId().toString();
     calendar = buildCalendar(new ObjectId(userId));
     await mongoService.calendar.insertOne(calendar);
-    (gcalService.getAllEvents as jest.Mock).mockReset();
-    (gcalService.getEvents as jest.Mock).mockReset();
-    (gcalService.getBaseRecurringEventInstances as jest.Mock).mockReset();
+    (gcalService.getAllEvents as Mock).mockReset();
+    (gcalService.getEvents as Mock).mockReset();
+    (gcalService.getBaseRecurringEventInstances as Mock).mockReset();
   });
 
   describe("importAllEvents", () => {
     it("imports the base and materializes its instances", async () => {
       const { base, instances } = mockRecurringGcalEvents();
-      (gcalService.getAllEvents as jest.Mock).mockReturnValue(
+      (gcalService.getAllEvents as Mock).mockReturnValue(
         asPages({
           items: [base],
           nextSyncToken: "sync-token-1",
         }),
       );
-      (gcalService.getBaseRecurringEventInstances as jest.Mock).mockReturnValue(
+      (gcalService.getBaseRecurringEventInstances as Mock).mockReturnValue(
         asInstancePage(instances),
       );
 
@@ -123,7 +125,7 @@ describe("SyncImport", () => {
 
     it("does not create duplicate events on a repeated import of the same events", async () => {
       const gEvent = mockRegularGcalEvent();
-      (gcalService.getAllEvents as jest.Mock)
+      (gcalService.getAllEvents as Mock)
         .mockReturnValueOnce(
           asPages({ items: [gEvent], nextSyncToken: "sync-token-1" }),
         )
@@ -143,7 +145,7 @@ describe("SyncImport", () => {
 
     it("skips cancelled events and does not save them", async () => {
       const gEvent = mockRegularGcalEvent({ status: "cancelled" });
-      (gcalService.getAllEvents as jest.Mock).mockReturnValue(
+      (gcalService.getAllEvents as Mock).mockReturnValue(
         asPages({ items: [gEvent], nextSyncToken: "sync-token-1" }),
       );
 
@@ -166,7 +168,7 @@ describe("SyncImport", () => {
         yield { items: [page1Event], nextPageToken: "page-2-token" };
         throw new Error("simulated network failure fetching page 2");
       };
-      (gcalService.getAllEvents as jest.Mock).mockReturnValueOnce(
+      (gcalService.getAllEvents as Mock).mockReturnValueOnce(
         throwOnPage2(),
       );
 
@@ -199,7 +201,7 @@ describe("SyncImport", () => {
       expect(eventSyncAfterFailure?.nextSyncToken).toBeUndefined();
 
       // A retry resumes from the saved pageToken rather than page 1.
-      (gcalService.getAllEvents as jest.Mock).mockReturnValueOnce(
+      (gcalService.getAllEvents as Mock).mockReturnValueOnce(
         asPages({ items: [page2Event], nextSyncToken: "final-sync-token" }),
       );
 
@@ -238,7 +240,7 @@ describe("SyncImport", () => {
       );
 
       const gEvent = mockRegularGcalEvent();
-      (gcalService.getAllEvents as jest.Mock).mockReturnValue(
+      (gcalService.getAllEvents as Mock).mockReturnValue(
         asPages({ items: [gEvent], nextSyncToken: "sync-token-1" }),
       );
 
@@ -267,7 +269,7 @@ describe("SyncImport", () => {
       );
 
       const gEvent = mockRegularGcalEvent();
-      (gcalService.getEvents as jest.Mock).mockResolvedValue({
+      (gcalService.getEvents as Mock).mockResolvedValue({
         data: { items: [gEvent], nextSyncToken: "next-sync-token" },
       });
 
@@ -309,7 +311,7 @@ describe("SyncImport", () => {
 
     it("deletes the matching event when Google reports a cancellation", async () => {
       const gEvent = mockRegularGcalEvent();
-      (gcalService.getEvents as jest.Mock).mockResolvedValueOnce({
+      (gcalService.getEvents as Mock).mockResolvedValueOnce({
         data: { items: [gEvent], nextSyncToken: "sync-token-1" },
       });
 
@@ -321,7 +323,7 @@ describe("SyncImport", () => {
         1000,
       );
 
-      (gcalService.getEvents as jest.Mock).mockResolvedValueOnce({
+      (gcalService.getEvents as Mock).mockResolvedValueOnce({
         data: {
           items: [{ ...gEvent, status: "cancelled" }],
           nextSyncToken: "sync-token-2",

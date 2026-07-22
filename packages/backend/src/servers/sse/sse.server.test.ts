@@ -4,16 +4,9 @@
  * we do not need the database for this test
  */
 
-import { ObjectId } from "mongodb";
-import { type CalendarId, type EventId } from "@core/types/domain-primitives";
-import {
-  type ServerMessage,
-  ServerMessageSchema,
-} from "@core/types/server-message.contracts";
-import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
-import { afterAll, beforeAll, describe, expect, it } from "bun:test";
+import { afterAll, beforeAll, describe, expect, it, mock } from "bun:test";
 
-jest.mock("supertokens-node/recipe/session/framework/express", () => ({
+mock.module("supertokens-node/recipe/session/framework/express", () => ({
   verifySession:
     () =>
     (
@@ -40,14 +33,22 @@ jest.mock("supertokens-node/recipe/session/framework/express", () => ({
     },
 }));
 
-jest.mock("@backend/user/services/user-metadata.service", () => ({
+mock.module("@backend/user/services/user-metadata.service", () => ({
   __esModule: true,
   default: {
-    fetchUserMetadata: jest.fn().mockResolvedValue({
+    fetchUserMetadata: mock().mockResolvedValue({
       sync: { importGCal: null },
     }),
   },
 }));
+
+import { ObjectId } from "mongodb";
+import { type CalendarId, type EventId } from "@core/types/domain-primitives";
+import {
+  type ServerMessage,
+  ServerMessageSchema,
+} from "@core/types/server-message.contracts";
+import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 
 describe("SSE Server", () => {
   const baseDriver = new BaseDriver();

@@ -11,7 +11,7 @@ import {
   seedLocalCalendar,
   setupGoogleUser,
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
-import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 /**
  * Scope "all" (full-series edits/deletes) -- ported from the deleted
@@ -59,8 +59,8 @@ describe("CompassToGoogleEventPropagation - scope 'all' - full series", () => {
       user._id.toString(),
       calendar._id.toHexString(),
     );
-    const patchSpy = jest.spyOn(gcalService, "patchEvent");
-    const deleteSpy = jest.spyOn(gcalService, "deleteEvent");
+    const patchSpy = spyOn(gcalService, "patchEvent");
+    const deleteSpy = spyOn(gcalService, "deleteEvent");
     patchSpy.mockClear();
     deleteSpy.mockClear();
 
@@ -93,7 +93,7 @@ describe("CompassToGoogleEventPropagation - scope 'all' - full series", () => {
       user._id.toString(),
       calendar._id.toHexString(),
     );
-    const deleteSpy = jest.spyOn(gcalService, "deleteEvent");
+    const deleteSpy = spyOn(gcalService, "deleteEvent");
     deleteSpy.mockClear();
 
     await eventService.delete(user._id.toString(), base._id.toHexString(), {
@@ -136,7 +136,7 @@ describe("CompassToGoogleEventPropagation - scope 'all' - full series", () => {
     expect(base).toBeDefined();
     expect(base!.externalReference).toBeNull();
 
-    const deleteSpy = jest.spyOn(gcalService, "deleteEvent");
+    const deleteSpy = spyOn(gcalService, "deleteEvent");
     await eventService.delete(user._id.toString(), base!._id.toHexString(), {
       scope: "all",
     });
@@ -151,8 +151,8 @@ describe("CompassToGoogleEventPropagation - scope 'all' - full series", () => {
       user._id.toString(),
       seriesInput(calendar._id.toHexString()),
     );
-    const patchSpy = jest.spyOn(gcalService, "patchEvent");
-    const createSpy = jest.spyOn(gcalService, "createEvent");
+    const patchSpy = spyOn(gcalService, "patchEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
     patchSpy.mockClear();
     createSpy.mockClear();
 

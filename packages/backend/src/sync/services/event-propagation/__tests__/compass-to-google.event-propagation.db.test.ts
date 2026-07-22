@@ -14,7 +14,7 @@ import {
   setupNoGoogleUser,
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 import { CompassToGoogleEventPropagation } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
-import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 /**
  * The transaction envelope (B7) -- ported from the deleted
@@ -78,11 +78,11 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
   it("never calls propagate, and rolls back the partial write, when the Mongo transaction fails", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const propagateSpy = jest.spyOn(
+    const propagateSpy = spyOn(
       CompassToGoogleEventPropagation,
       "propagate",
     );
-    const createEventSpy = jest.spyOn(gcalService, "createEvent");
+    const createEventSpy = spyOn(gcalService, "createEvent");
     propagateSpy.mockClear();
     createEventSpy.mockClear();
 
@@ -154,8 +154,8 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
 
   it("propagate() is a no-op when the change set is empty", async () => {
     const { user } = await setupGoogleUser();
-    const createSpy = jest.spyOn(gcalService, "createEvent");
-    const calendarFindSpy = jest.spyOn(mongoService.calendar, "find");
+    const createSpy = spyOn(gcalService, "createEvent");
+    const calendarFindSpy = spyOn(mongoService.calendar, "find");
     createSpy.mockClear();
     calendarFindSpy.mockClear();
 
@@ -171,7 +171,7 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
 
   it("does not call Google for a delete when the deleted record's calendar is unknown/inactive", async () => {
     const { user } = await setupGoogleUser();
-    const deleteSpy = jest.spyOn(gcalService, "deleteEvent");
+    const deleteSpy = spyOn(gcalService, "deleteEvent");
     deleteSpy.mockClear();
 
     const orphanedRecord = {

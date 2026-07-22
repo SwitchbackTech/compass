@@ -1,3 +1,19 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
+
+mock.module("@backend/auth/services/google/google.revoke.service", () => ({
+  revokeGoogleGrant: mock().mockResolvedValue(true),
+}));
+
 import { ObjectId } from "mongodb";
 import { Status } from "@core/errors/status.codes";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
@@ -15,20 +31,6 @@ import { UserError } from "@backend/common/errors/user/user.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
-
-// Keep the real revoke from making a live call to Google during tests.
-jest.mock("@backend/auth/services/google/google.revoke.service", () => ({
-  revokeGoogleGrant: jest.fn().mockResolvedValue(true),
-}));
 
 describe("UserController", () => {
   const baseDriver = new BaseDriver();
@@ -56,9 +58,8 @@ describe("UserController", () => {
           superTokensMappings: 0,
           superTokensMetadata: 0,
         });
-      jest.spyOn(googleWatchService, "stopWatches").mockResolvedValue([]);
+      spyOn(googleWatchService, "stopWatches").mockResolvedValue([]);
     });
-    afterEach(() => jest.restoreAllMocks());
 
     it("should delete the account of the user in the session", async () => {
       const { user } = await UtilDriver.setupTestUser();
@@ -149,7 +150,6 @@ describe("UserController", () => {
   });
 
   describe("email updates", () => {
-    afterEach(() => jest.restoreAllMocks());
 
     it("returns the active Kit subscription state for the session user", async () => {
       const { user } = await UtilDriver.setupTestUser();

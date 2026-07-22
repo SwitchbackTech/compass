@@ -1,3 +1,19 @@
+import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { createRequire } from "node:module";
+
+const requireActual = createRequire(import.meta.url);
+
+mock.module("@backend/auth/services/google/util/google.auth.util", () => {
+  const actual = requireActual<typeof GoogleAuthUtilModule>(
+    "@backend/auth/services/google/util/google.auth.util",
+  );
+
+  return {
+    ...actual,
+    determineGoogleAuthMode: mock(),
+  };
+});
+
 import { faker } from "@faker-js/faker";
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { Logger } from "@core/logger/winston.logger";
@@ -20,25 +36,6 @@ import {
   type AuthDecision,
   type GoogleSignInSuccess,
 } from "./google.auth.types";
-import {
-  afterAll,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
-
-jest.mock("@backend/auth/services/google/util/google.auth.util", () => {
-  const actual = jest.requireActual<typeof GoogleAuthUtilModule>(
-    "@backend/auth/services/google/util/google.auth.util",
-  );
-
-  return {
-    ...actual,
-    determineGoogleAuthMode: jest.fn(),
-  };
-});
 
 describe("googleAuthService", () => {
   beforeEach(() => setupTestDb(import.meta.url));
@@ -47,7 +44,7 @@ describe("googleAuthService", () => {
 
   describe("handleGoogleAuth", () => {
     const mockDetermineGoogleAuthMode =
-      determineGoogleAuthMode as unknown as jest.MockedFunction<
+      determineGoogleAuthMode as unknown as Mock<
         typeof determineGoogleAuthMode
       >;
 
@@ -73,23 +70,20 @@ describe("googleAuthService", () => {
     // is the instance the service captured at import (`Logger("app:auth.google.service")`).
     const getMockLogger = () =>
       Logger("app:auth.google.service") as unknown as {
-        debug: jest.Mock;
-        error: jest.Mock;
-        info: jest.Mock;
-        verbose: jest.Mock;
-        warn: jest.Mock;
+        debug: Mock;
+        error: Mock;
+        info: Mock;
+        verbose: Mock;
+        warn: Mock;
       };
 
     beforeEach(() => {
       mockDetermineGoogleAuthMode.mockReset();
-      jest
-        .spyOn(googleAuthService, "googleSignup")
+      spyOn(googleAuthService, "googleSignup")
         .mockResolvedValue({ cUserId: "signup-id" });
-      jest
-        .spyOn(googleAuthService, "repairGoogleConnection")
+      spyOn(googleAuthService, "repairGoogleConnection")
         .mockResolvedValue({ cUserId: "repair-id" });
-      jest
-        .spyOn(googleAuthService, "googleSignin")
+      spyOn(googleAuthService, "googleSignin")
         .mockResolvedValue({ cUserId: "signin-id" });
     });
 
@@ -97,7 +91,6 @@ describe("googleAuthService", () => {
       // These spies are only needed for the `handleGoogleAuth` routing tests.
       // Without restoring, they can leak into the `repairGoogleConnection`
       // describe block below and cause unrelated assertions to fail.
-      jest.restoreAllMocks();
     });
 
     it("routes SIGNUP to googleSignup", async () => {
@@ -287,7 +280,7 @@ describe("googleAuthService", () => {
 
   describe("repairGoogleConnection", () => {
     const mockDetermineGoogleAuthMode =
-      determineGoogleAuthMode as unknown as jest.MockedFunction<
+      determineGoogleAuthMode as unknown as Mock<
         typeof determineGoogleAuthMode
       >;
 
@@ -303,8 +296,7 @@ describe("googleAuthService", () => {
         access_token: faker.internet.jwt(),
         refresh_token: faker.string.uuid(),
       };
-      const restartSpy = jest
-        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
+      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
 
       await userService.pruneGoogleData(compassUserId);
@@ -346,8 +338,7 @@ describe("googleAuthService", () => {
         refresh_token: faker.string.uuid(),
       };
       const restartError = new Error("sync failed");
-      const restartSpy = jest
-        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
+      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockImplementation(() => Promise.reject(restartError));
 
       await userService.pruneGoogleData(compassUserId);
@@ -376,8 +367,7 @@ describe("googleAuthService", () => {
         sub: user.google?.googleId,
         picture: faker.image.url(),
       });
-      const restartSpy = jest
-        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
+      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
 
       mockDetermineGoogleAuthMode.mockResolvedValue({
@@ -423,8 +413,7 @@ describe("googleAuthService", () => {
         sub: user.google?.googleId,
         picture: faker.image.url(),
       });
-      const importSpy = jest
-        .spyOn(googleCalendarSyncService, "importLatestGoogleCalendarChanges")
+      const importSpy = spyOn(googleCalendarSyncService, "importLatestGoogleCalendarChanges")
         .mockResolvedValue(undefined);
 
       await expect(
@@ -458,11 +447,9 @@ describe("googleAuthService", () => {
         picture: faker.image.url(),
       });
       const refreshToken = faker.string.uuid();
-      const restartSpy = jest
-        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
+      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
-      const exchangeSpy = jest
-        .spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
+      const exchangeSpy = spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
         .mockResolvedValue({
           gUser,
           tokens: {
@@ -503,11 +490,9 @@ describe("googleAuthService", () => {
       const emailPasswordUser = await UserDriver.createUser({
         withGoogle: false,
       });
-      const restartSpy = jest
-        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
+      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
-      const exchangeSpy = jest
-        .spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
+      const exchangeSpy = spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
         .mockResolvedValue({
           gUser: UserDriver.generateGoogleUser({
             sub: connectedUser.google?.googleId,
@@ -542,11 +527,9 @@ describe("googleAuthService", () => {
 
     it("rejects when the Google account email does not match the current Compass user", async () => {
       const user = await UserDriver.createUser({ withGoogle: false });
-      const restartSpy = jest
-        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
+      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
-      const exchangeSpy = jest
-        .spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
+      const exchangeSpy = spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
         .mockResolvedValue({
           gUser: UserDriver.generateGoogleUser({
             email: faker.internet.email(),
@@ -589,8 +572,7 @@ describe("googleAuthService", () => {
         picture: faker.image.url(),
       } as TokenPayload;
       const refreshToken = faker.string.uuid();
-      const restartSpy = jest
-        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
+      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
 
       const result = await googleAuthService.googleSignup(
@@ -620,8 +602,7 @@ describe("googleAuthService", () => {
         picture: faker.image.url(),
       } as TokenPayload;
       const refreshToken = faker.string.uuid();
-      const restartSpy = jest
-        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
+      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
 
       const result = await googleAuthService.googleSignup(

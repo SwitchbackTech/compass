@@ -2,7 +2,7 @@ import { type NextFunction, type Request } from "express";
 import { Status } from "@core/errors/status.codes";
 import { requestMiddleware } from "@backend/common/middleware/promise.middleware";
 import { type Res_Promise } from "@backend/common/types/express.types";
-import { beforeEach, describe, expect, it } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const flushPromises = async () => {
   await new Promise(setImmediate);
@@ -11,17 +11,17 @@ const flushPromises = async () => {
 describe("promise.middleware", () => {
   let mockReq: Partial<Request>;
   let mockRes: Res_Promise;
-  let mockNext: jest.MockedFunction<NextFunction>;
+  let mockNext: Mock<NextFunction>;
 
   beforeEach(() => {
     mockReq = {};
-    mockNext = jest.fn();
+    mockNext = mock();
     mockRes = {
-      status: jest.fn().mockReturnThis(),
-      send: jest.fn().mockReturnThis(),
+      status: mock().mockReturnThis(),
+      send: mock().mockReturnThis(),
       // The middleware overwrites this in `requestMiddleware()`, but we define
       // it so TypeScript knows it's callable.
-      promise: jest.fn() as Res_Promise["promise"],
+      promise: mock() as Res_Promise["promise"],
     } as unknown as Res_Promise;
 
     requestMiddleware()(mockReq as Request, mockRes, mockNext);

@@ -1,0 +1,31 @@
+import {
+  verifySession as supertokensVerifySession,
+  type VerifySessionOptions,
+} from "supertokens-node/recipe/session/framework/express";
+import { type NextFunction, type Request, type Response } from "express";
+
+type VerifySessionMiddlewareFactory = typeof supertokensVerifySession;
+
+let verifySessionFactory: VerifySessionMiddlewareFactory =
+  supertokensVerifySession;
+
+/** Production session guard; tests replace via registerTestVerifySession. */
+export function verifySession(options?: VerifySessionOptions) {
+  return verifySessionFactory(options);
+}
+
+export function registerTestVerifySession(
+  factory: VerifySessionMiddlewareFactory,
+): void {
+  verifySessionFactory = factory;
+}
+
+export function resetVerifySession(): void {
+  verifySessionFactory = supertokensVerifySession;
+}
+
+export type SessionRequestHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => void;

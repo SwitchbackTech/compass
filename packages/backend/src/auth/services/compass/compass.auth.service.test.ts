@@ -1,22 +1,23 @@
 import { faker } from "@faker-js/faker";
 import supertokens from "supertokens-node";
-import Session from "supertokens-node/recipe/session";
-import compassAuthService from "./compass.auth.service";
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
-jest.mock("supertokens-node/recipe/session", () => ({
+mock.module("supertokens-node/recipe/session", () => ({
   __esModule: true,
   default: {
-    createNewSessionWithoutRequestResponse: jest.fn(),
-    revokeAllSessionsForUser: jest.fn(),
+    createNewSessionWithoutRequestResponse: mock(),
+    revokeAllSessionsForUser: mock(),
   },
 }));
 
-const createNewSessionWithoutRequestResponseMock = jest.mocked(
+import Session from "supertokens-node/recipe/session";
+import compassAuthService from "./compass.auth.service";
+
+const createNewSessionWithoutRequestResponseMock = (
   Session.createNewSessionWithoutRequestResponse,
 );
 
-const revokeAllSessionsForUserMock = jest.mocked(
+const revokeAllSessionsForUserMock = (
   Session.revokeAllSessionsForUser,
 );
 
@@ -30,8 +31,8 @@ describe("CompassAuthService", () => {
       const sessionHandle = faker.string.uuid();
 
       const sessionMock = {
-        getAccessToken: jest.fn().mockReturnValue(accessToken),
-        getHandle: jest.fn().mockReturnValue(sessionHandle),
+        getAccessToken: mock().mockReturnValue(accessToken),
+        getHandle: mock().mockReturnValue(sessionHandle),
       };
 
       createNewSessionWithoutRequestResponseMock.mockResolvedValue(

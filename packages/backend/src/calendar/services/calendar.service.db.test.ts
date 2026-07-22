@@ -12,14 +12,7 @@ import calendarService from "@backend/calendar/services/calendar.service";
 import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import {
-  afterAll,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
+import { , afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 describe("CalendarService", () => {
   beforeEach(() => setupTestDb(import.meta.url));
@@ -235,7 +228,6 @@ describe("CalendarService", () => {
 
   describe("getAvailability", () => {
     afterEach(() => {
-      jest.restoreAllMocks();
     });
 
     it("merges busy periods from multiple freeBusyReader calendars, mapped back to compass ids", async () => {
@@ -246,7 +238,7 @@ describe("CalendarService", () => {
       const calendarB = await seedGoogleCalendar(user._id, {
         googleCalendarId: "google-b",
       });
-      jest.spyOn(gcalService, "queryFreeBusy").mockResolvedValue({
+      spyOn(gcalService, "queryFreeBusy").mockResolvedValue({
         calendars: {
           "google-a": {
             busy: [
@@ -300,7 +292,7 @@ describe("CalendarService", () => {
       const writerCalendar = await seedGoogleCalendar(user._id, {
         access: "writer",
       });
-      const queryFreeBusySpy = jest.spyOn(gcalService, "queryFreeBusy");
+      const queryFreeBusySpy = spyOn(gcalService, "queryFreeBusy");
 
       const query = AvailabilityQuerySchema.parse({
         calendarIds: [writerCalendar._id.toHexString()],
@@ -387,7 +379,7 @@ describe("CalendarService", () => {
       const erroringCalendar = await seedGoogleCalendar(user._id, {
         googleCalendarId: "google-erroring",
       });
-      jest.spyOn(gcalService, "queryFreeBusy").mockResolvedValue({
+      spyOn(gcalService, "queryFreeBusy").mockResolvedValue({
         calendars: {
           "google-ok": {
             busy: [

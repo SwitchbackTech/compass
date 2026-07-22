@@ -1,4 +1,4 @@
-import { calendar } from "@googleapis/calendar";
+import { getTestGcalFixture } from "@backend/__tests__/helpers/test-gcal-fixture";
 import { ObjectId, type WithoutId } from "mongodb";
 import { type Options } from "rrule";
 import { Origin } from "@core/constants/core.constants";
@@ -35,7 +35,9 @@ export interface State_AfterGcalImport {
 export const simulateGoogleCalendarEventCreation = async (
   event: gSchema$Event,
 ) => {
-  return calendar({ version: "v3" }).events.insert({ requestBody: event });
+  return getTestGcalFixture()
+    .createGcalClient()
+    .events.insert({ requestBody: event });
 };
 
 /**

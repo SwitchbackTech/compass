@@ -1,3 +1,101 @@
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { createRequire } from "node:module";
+
+const requireActual = createRequire(import.meta.url);
+
+mock.module("cors", () => ({
+  __esModule: true,
+  default: mock(),
+}));
+
+mock.module("supertokens-node", () => ({
+  __esModule: true,
+  default: {
+    init: mock(),
+    getAllCORSHeaders: mock(() => ["x-sut-header"]),
+    convertToRecipeUserId: mock((id: string) => `recipe_${id}`),
+  },
+  User: mock(),
+  getUser: mock(),
+}));
+
+mock.module("supertokens-node/recipe/dashboard", () => ({
+  __esModule: true,
+  default: {
+    init: mock(),
+  },
+}));
+
+mock.module("supertokens-node/recipe/emailpassword", () => ({
+  __esModule: true,
+  default: {
+    init: mock(),
+  },
+}));
+
+mock.module("supertokens-node/recipe/session", () => ({
+  __esModule: true,
+  default: {
+    createNewSession: mock(),
+    init: mock(),
+    getAllSessionHandlesForUser: mock(),
+    revokeSession: mock(),
+  },
+}));
+
+mock.module("supertokens-node/recipe/thirdparty", () => ({
+  __esModule: true,
+  default: {
+    init: mock(),
+  },
+}));
+
+mock.module("supertokens-node/recipe/usermetadata", () => ({
+  __esModule: true,
+  default: {
+    init: mock(),
+  },
+}));
+
+mock.module("@backend/auth/services/google/google.auth.service", () => ({
+  __esModule: true,
+  googleAuthService: {
+    getConnectedCompassUserId: mock(),
+    handleGoogleAuth: mock(),
+  },
+}));
+
+mock.module("@backend/common/services/mongo.service", () => ({
+  __esModule: true,
+  default: {
+    user: {
+      findOne: mock(),
+    },
+  },
+}));
+
+mock.module("@backend/user/services/user.service", () => ({
+  __esModule: true,
+  default: {
+    getCanonicalCompassUserId: mock(),
+    handleLogoutCleanup: mock(),
+    upsertUserFromAuth: mock(),
+  },
+}));
+
+mock.module("@backend/common/middleware/supertokens.middleware.util", () => {
+  const actual = requireActual<typeof SupertokensMiddlewareUtilModule>(
+    "@backend/common/middleware/supertokens.middleware.util",
+  );
+  return {
+    ...actual,
+    buildResetPasswordLink: mock(),
+    createGoogleSignInSuccess: mock(),
+    ensureExternalUserIdMapping: mock(),
+    getFormFieldValue: mock(),
+  };
+});
+
 import cors from "cors";
 import { ObjectId } from "mongodb";
 import superTokensNode from "supertokens-node";
@@ -21,100 +119,6 @@ import {
   getFormFieldValue,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import userService from "@backend/user/services/user.service";
-import { beforeEach, describe, expect, it } from "bun:test";
-
-jest.mock("cors", () => ({
-  __esModule: true,
-  default: jest.fn(),
-}));
-
-jest.mock("supertokens-node", () => ({
-  __esModule: true,
-  default: {
-    init: jest.fn(),
-    getAllCORSHeaders: jest.fn(() => ["x-sut-header"]),
-    convertToRecipeUserId: jest.fn((id: string) => `recipe_${id}`),
-  },
-  User: jest.fn(),
-  getUser: jest.fn(),
-}));
-
-jest.mock("supertokens-node/recipe/dashboard", () => ({
-  __esModule: true,
-  default: {
-    init: jest.fn(),
-  },
-}));
-
-jest.mock("supertokens-node/recipe/emailpassword", () => ({
-  __esModule: true,
-  default: {
-    init: jest.fn(),
-  },
-}));
-
-jest.mock("supertokens-node/recipe/session", () => ({
-  __esModule: true,
-  default: {
-    createNewSession: jest.fn(),
-    init: jest.fn(),
-    getAllSessionHandlesForUser: jest.fn(),
-    revokeSession: jest.fn(),
-  },
-}));
-
-jest.mock("supertokens-node/recipe/thirdparty", () => ({
-  __esModule: true,
-  default: {
-    init: jest.fn(),
-  },
-}));
-
-jest.mock("supertokens-node/recipe/usermetadata", () => ({
-  __esModule: true,
-  default: {
-    init: jest.fn(),
-  },
-}));
-
-jest.mock("@backend/auth/services/google/google.auth.service", () => ({
-  __esModule: true,
-  googleAuthService: {
-    getConnectedCompassUserId: jest.fn(),
-    handleGoogleAuth: jest.fn(),
-  },
-}));
-
-jest.mock("@backend/common/services/mongo.service", () => ({
-  __esModule: true,
-  default: {
-    user: {
-      findOne: jest.fn(),
-    },
-  },
-}));
-
-jest.mock("@backend/user/services/user.service", () => ({
-  __esModule: true,
-  default: {
-    getCanonicalCompassUserId: jest.fn(),
-    handleLogoutCleanup: jest.fn(),
-    upsertUserFromAuth: jest.fn(),
-  },
-}));
-
-jest.mock("@backend/common/middleware/supertokens.middleware.util", () => {
-  const actual = jest.requireActual<typeof SupertokensMiddlewareUtilModule>(
-    "@backend/common/middleware/supertokens.middleware.util",
-  );
-  return {
-    ...actual,
-    buildResetPasswordLink: jest.fn(),
-    createGoogleSignInSuccess: jest.fn(),
-    ensureExternalUserIdMapping: jest.fn(),
-    getFormFieldValue: jest.fn(),
-  };
-});
 
 type MockCallSource = { mock: { calls: unknown[][] } };
 
@@ -128,27 +132,27 @@ const getFirstCallArg = <T>(mockFn: MockCallSource): T => {
   return firstCall[0] as T;
 };
 
-const mockedCors = jest.mocked(cors);
-const mockedDashboardInit = jest.mocked(Dashboard.init);
-const mockedEmailPasswordInit = jest.mocked(EmailPassword.init);
-const mockedGetAllSessionHandlesForUser = jest.mocked(
+const mockedCors = mock.moduleed(cors);
+const mockedDashboardInit = mock.moduleed(Dashboard.init);
+const mockedEmailPasswordInit = mock.moduleed(EmailPassword.init);
+const mockedGetAllSessionHandlesForUser = mock.moduleed(
   Session.getAllSessionHandlesForUser,
 );
-const mockedGetAllSupertokensCorsHeaders = jest.mocked(
+const mockedGetAllSupertokensCorsHeaders = mock.moduleed(
   superTokensNode.getAllCORSHeaders,
 );
-const mockedGetConnectedCompassUserId = jest.mocked(
+const mockedGetConnectedCompassUserId = mock.moduleed(
   googleAuthService.getConnectedCompassUserId,
 );
-const mockedGetCanonicalCompassUserId = jest.mocked(
+const mockedGetCanonicalCompassUserId = mock.moduleed(
   userService.getCanonicalCompassUserId,
 );
-const mockedSessionCreateNewSession = jest.mocked(Session.createNewSession);
-const mockedSessionInit = jest.mocked(Session.init);
-const mockedSessionRevokeSession = jest.mocked(Session.revokeSession);
-const mockedSuperTokensInit = jest.mocked(superTokensNode.init);
-const mockedThirdPartyInit = jest.mocked(ThirdParty.init);
-const mockedUserMetadataInit = jest.mocked(UserMetadata.init);
+const mockedSessionCreateNewSession = mock.moduleed(Session.createNewSession);
+const mockedSessionInit = mock.moduleed(Session.init);
+const mockedSessionRevokeSession = mock.moduleed(Session.revokeSession);
+const mockedSuperTokensInit = mock.moduleed(superTokensNode.init);
+const mockedThirdPartyInit = mock.moduleed(ThirdParty.init);
+const mockedUserMetadataInit = mock.moduleed(UserMetadata.init);
 
 describe("supertokens.middleware", () => {
   beforeEach(() => {
@@ -305,7 +309,7 @@ describe("supertokens.middleware", () => {
     });
 
     it("rewrites password reset links in EmailPassword sendEmail", async () => {
-      (buildResetPasswordLink as jest.Mock).mockReturnValue(
+      (buildResetPasswordLink as Mock).mockReturnValue(
         "http://app/reset?token=rewritten",
       );
 
@@ -313,7 +317,7 @@ describe("supertokens.middleware", () => {
 
       const emailPasswordConfig = getFirstCallArg<{
         emailDelivery: {
-          override: (originalImplementation: { sendEmail: jest.Mock }) => {
+          override: (originalImplementation: { sendEmail: Mock }) => {
             sendEmail: (input: {
               passwordResetLink: string;
               user: { email: string };
@@ -322,7 +326,7 @@ describe("supertokens.middleware", () => {
         };
       }>(mockedEmailPasswordInit);
 
-      const originalSendEmail = jest.fn().mockResolvedValue(undefined);
+      const originalSendEmail = mock().mockResolvedValue(undefined);
       const overridden = emailPasswordConfig.emailDelivery.override({
         sendEmail: originalSendEmail,
       });
@@ -357,13 +361,13 @@ describe("supertokens.middleware", () => {
       }>(mockedEmailPasswordInit);
 
       const originalImplementation = {
-        signUpPOST: jest.fn(function (this: unknown, input: unknown) {
+        signUpPOST: mock(function (this: unknown, input: unknown) {
           return Promise.resolve({
             status: "EMAIL_ALREADY_EXISTS_ERROR",
             input,
           });
         }),
-        signInPOST: jest.fn(function (this: unknown, input: unknown) {
+        signInPOST: mock(function (this: unknown, input: unknown) {
           return Promise.resolve({
             status: "WRONG_CREDENTIALS_ERROR",
             input,
@@ -425,7 +429,7 @@ describe("supertokens.middleware", () => {
       };
 
       const originalImplementation = {
-        createNewRecipeUser: jest.fn().mockResolvedValue(responsePayload),
+        createNewRecipeUser: mock().mockResolvedValue(responsePayload),
       };
 
       const overridden = emailPasswordConfig.override.functions(
@@ -496,7 +500,7 @@ describe("supertokens.middleware", () => {
       const responsePayload = { status: "OK" };
       const successPayload = { providerUser: { id: "u1" } };
 
-      (createGoogleSignInSuccess as jest.Mock).mockReturnValue(successPayload);
+      (createGoogleSignInSuccess as Mock).mockReturnValue(successPayload);
 
       initSupertokens();
 
@@ -511,7 +515,7 @@ describe("supertokens.middleware", () => {
       }>(mockedThirdPartyInit);
 
       const originalImplementation = {
-        signInUpPOST: jest.fn().mockResolvedValue(responsePayload),
+        signInUpPOST: mock().mockResolvedValue(responsePayload),
       };
 
       const overridden = thirdPartyConfig.override.apis(originalImplementation);
@@ -527,7 +531,7 @@ describe("supertokens.middleware", () => {
     });
 
     it("replaces the EmailPassword sign-up session with the canonical Compass user", async () => {
-      (userService.upsertUserFromAuth as jest.Mock).mockResolvedValue({
+      (userService.upsertUserFromAuth as Mock).mockResolvedValue({
         user: { userId: "compass-user-id" },
         isNewUser: false,
       });
@@ -555,12 +559,12 @@ describe("supertokens.middleware", () => {
         };
       }>(mockedEmailPasswordInit);
       const originalImplementation = {
-        signUpPOST: jest.fn().mockResolvedValue({
+        signUpPOST: mock().mockResolvedValue({
           status: "OK" as const,
           session: googleSession,
         }),
       };
-      (getFormFieldValue as jest.Mock)
+      (getFormFieldValue as Mock)
         .mockReturnValueOnce("user@example.com")
         .mockReturnValueOnce("User Name");
       mockedSessionCreateNewSession.mockResolvedValue(compassSession as never);
@@ -587,7 +591,7 @@ describe("supertokens.middleware", () => {
     });
 
     it("replaces the EmailPassword sign-in session with the canonical Compass user", async () => {
-      (userService.upsertUserFromAuth as jest.Mock).mockResolvedValue({
+      (userService.upsertUserFromAuth as Mock).mockResolvedValue({
         user: { userId: "compass-user-id" },
         isNewUser: false,
       });
@@ -615,12 +619,12 @@ describe("supertokens.middleware", () => {
         };
       }>(mockedEmailPasswordInit);
       const originalImplementation = {
-        signInPOST: jest.fn().mockResolvedValue({
+        signInPOST: mock().mockResolvedValue({
           status: "OK" as const,
           session: googleSession,
         }),
       };
-      (getFormFieldValue as jest.Mock).mockReturnValueOnce("user@example.com");
+      (getFormFieldValue as Mock).mockReturnValueOnce("user@example.com");
       mockedSessionCreateNewSession.mockResolvedValue(compassSession as never);
       mockedSessionRevokeSession.mockResolvedValue(true);
       const overridden = emailPasswordConfig.override.apis(
@@ -675,7 +679,7 @@ describe("supertokens.middleware", () => {
         loginMethodsLength: 1,
       });
 
-      (createGoogleSignInSuccess as jest.Mock).mockImplementation(
+      (createGoogleSignInSuccess as Mock).mockImplementation(
         buildSuccessFromResponse,
       );
       mockedGetCanonicalCompassUserId.mockResolvedValue("compass-user-id");
@@ -696,7 +700,7 @@ describe("supertokens.middleware", () => {
         };
       }>(mockedThirdPartyInit);
       const originalImplementation = {
-        signInUpPOST: jest.fn().mockResolvedValue(responsePayload),
+        signInUpPOST: mock().mockResolvedValue(responsePayload),
       };
       const overridden = thirdPartyConfig.override.apis(originalImplementation);
       const req = { method: "POST" };
@@ -725,7 +729,7 @@ describe("supertokens.middleware", () => {
 
     it("does not call googleAuthService.handleGoogleAuth when ThirdParty signInUpPOST returns null success", async () => {
       const responsePayload = { status: "SIGN_IN_UP_NOT_ALLOWED" };
-      (createGoogleSignInSuccess as jest.Mock).mockReturnValue(null);
+      (createGoogleSignInSuccess as Mock).mockReturnValue(null);
 
       initSupertokens();
 
@@ -740,7 +744,7 @@ describe("supertokens.middleware", () => {
       }>(mockedThirdPartyInit);
 
       const originalImplementation = {
-        signInUpPOST: jest.fn().mockResolvedValue(responsePayload),
+        signInUpPOST: mock().mockResolvedValue(responsePayload),
       };
 
       const overridden = thirdPartyConfig.override.apis(originalImplementation);
@@ -756,12 +760,12 @@ describe("supertokens.middleware", () => {
 
       const originalImplementation = {
         marker: "ok" as const,
-        signOutPOST: jest.fn(function (this: { marker: string }) {
+        signOutPOST: mock(function (this: { marker: string }) {
           return Promise.resolve({ res: this.marker });
         }),
       };
 
-      (userService.handleLogoutCleanup as jest.Mock).mockResolvedValue(
+      (userService.handleLogoutCleanup as Mock).mockResolvedValue(
         undefined,
       );
 
@@ -798,10 +802,10 @@ describe("supertokens.middleware", () => {
       mockedGetAllSessionHandlesForUser.mockResolvedValue(["h1"]);
 
       const originalImplementation = {
-        signOutPOST: jest.fn().mockResolvedValue({ res: "ok" }),
+        signOutPOST: mock().mockResolvedValue({ res: "ok" }),
       };
 
-      (userService.handleLogoutCleanup as jest.Mock).mockImplementation(() =>
+      (userService.handleLogoutCleanup as Mock).mockImplementation(() =>
         Promise.reject(new Error("cleanup failed")),
       );
 
@@ -831,10 +835,10 @@ describe("supertokens.middleware", () => {
       mockedGetAllSessionHandlesForUser.mockResolvedValue(["h1", "h2"]);
 
       const originalImplementation = {
-        signOutPOST: jest.fn().mockResolvedValue({ res: "ok" }),
+        signOutPOST: mock().mockResolvedValue({ res: "ok" }),
       };
 
-      (userService.handleLogoutCleanup as jest.Mock).mockResolvedValue(
+      (userService.handleLogoutCleanup as Mock).mockResolvedValue(
         undefined,
       );
 
@@ -864,7 +868,7 @@ describe("supertokens.middleware", () => {
 
   describe("supertokensCors", () => {
     it("creates a cors middleware using SuperTokens CORS headers", () => {
-      const corsReturn = jest.fn();
+      const corsReturn = mock();
       mockedCors.mockReturnValue(corsReturn);
 
       mockedGetAllSupertokensCorsHeaders.mockReturnValue(["st-auth-mode"]);
@@ -892,7 +896,7 @@ describe("supertokens.middleware", () => {
     it("falls back to the configured frontend origin when allowed origins are empty", () => {
       const originalAllowedOrigins = CONFIG.ORIGINS_ALLOWED;
       const originalFrontendUrl = CONFIG.FRONTEND_URL;
-      const corsReturn = jest.fn();
+      const corsReturn = mock();
       mockedCors.mockReturnValue(corsReturn);
 
       CONFIG.ORIGINS_ALLOWED = [];

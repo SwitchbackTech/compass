@@ -4,21 +4,10 @@ import { ObjectId } from "mongodb";
 import { type Schema_User } from "@core/types/user.types";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import { beforeEach, describe, expect, it } from "bun:test";
-
-jest.mock("@backend/user/queries/user.queries", () => ({
-  findCompassUserBy: jest.fn(),
-}));
-
-const mockFindCompassUserBy = findCompassUserBy as jest.MockedFunction<
-  typeof findCompassUserBy
->;
+import * as userQueries from "@backend/user/queries/user.queries";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 describe("getGcalClient", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
 
   it("throws UserError.MissingGoogleRefreshToken when user exists but has no google", async () => {
     const userId = new ObjectId().toString();
@@ -31,13 +20,13 @@ describe("getGcalClient", () => {
       locale: "en",
     };
 
-    mockFindCompassUserBy.mockResolvedValue(userWithoutGoogle);
+    spyOn(userQueries, "findCompassUserBy").mockResolvedValue(userWithoutGoogle);
 
     await expect(getGcalClient(userId)).rejects.toMatchObject({
       description: UserError.MissingGoogleRefreshToken.description,
     });
 
-    expect(mockFindCompassUserBy).toHaveBeenCalledWith("_id", userId);
+    expect(userQueries.findCompassUserBy).toHaveBeenCalledWith("_id", userId);
   });
 
   it("throws UserError.MissingGoogleRefreshToken when user has google but no gRefreshToken", async () => {
@@ -56,7 +45,7 @@ describe("getGcalClient", () => {
       },
     };
 
-    mockFindCompassUserBy.mockResolvedValue(userWithEmptyGoogle);
+    spyOn(userQueries, "findCompassUserBy").mockResolvedValue(userWithEmptyGoogle);
 
     await expect(getGcalClient(userId)).rejects.toMatchObject({
       description: UserError.MissingGoogleRefreshToken.description,
@@ -65,9 +54,9 @@ describe("getGcalClient", () => {
 
   it("throws GaxiosError when user is not found", async () => {
     const userId = new ObjectId().toString();
-    mockFindCompassUserBy.mockResolvedValue(null);
+    spyOn(userQueries, "findCompassUserBy").mockResolvedValue(null);
 
     await expect(getGcalClient(userId)).rejects.toThrow(GaxiosError);
-    expect(mockFindCompassUserBy).toHaveBeenCalledWith("_id", userId);
+    expect(userQueries.findCompassUserBy).toHaveBeenCalledWith("_id", userId);
   });
 });

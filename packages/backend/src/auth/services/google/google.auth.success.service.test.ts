@@ -1,3 +1,19 @@
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { createRequire } from "node:module";
+
+const requireActual = createRequire(import.meta.url);
+
+mock.module("@backend/auth/services/google/util/google.auth.util", () => {
+  const actual = requireActual<typeof GoogleAuthUtilModule>(
+    "@backend/auth/services/google/util/google.auth.util",
+  );
+
+  return {
+    ...actual,
+    determineGoogleAuthMode: mock(),
+  };
+});
+
 import { faker } from "@faker-js/faker";
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
@@ -7,18 +23,6 @@ import {
 } from "@backend/auth/services/google/google.auth.types";
 import type * as GoogleAuthUtilModule from "@backend/auth/services/google/util/google.auth.util";
 import { determineGoogleAuthMode } from "@backend/auth/services/google/util/google.auth.util";
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
-
-jest.mock("@backend/auth/services/google/util/google.auth.util", () => {
-  const actual = jest.requireActual<typeof GoogleAuthUtilModule>(
-    "@backend/auth/services/google/util/google.auth.util",
-  );
-
-  return {
-    ...actual,
-    determineGoogleAuthMode: jest.fn(),
-  };
-});
 
 function makeProviderUser(overrides?: Partial<TokenPayload>): TokenPayload {
   return {
@@ -52,30 +56,26 @@ function makeDecision(overrides: Partial<AuthDecision>): AuthDecision {
 
 describe("handleGoogleAuth", () => {
   const mockDetermineGoogleAuthMode =
-    determineGoogleAuthMode as unknown as jest.MockedFunction<
+    determineGoogleAuthMode as unknown as Mock<
       typeof determineGoogleAuthMode
     >;
 
-  let mockRepairGoogleConnection: jest.SpyInstance;
-  let mockGoogleSignup: jest.SpyInstance;
-  let mockGoogleSignin: jest.SpyInstance;
+  let mockRepairGoogleConnection: SpyInstance;
+  let mockGoogleSignup: SpyInstance;
+  let mockGoogleSignin: SpyInstance;
 
   beforeEach(() => {
     mockDetermineGoogleAuthMode.mockReset();
 
-    mockRepairGoogleConnection = jest
-      .spyOn(googleAuthService, "repairGoogleConnection")
+    mockRepairGoogleConnection = spyOn(googleAuthService, "repairGoogleConnection")
       .mockResolvedValue({ cUserId: "repair-id" });
-    mockGoogleSignup = jest
-      .spyOn(googleAuthService, "googleSignup")
+    mockGoogleSignup = spyOn(googleAuthService, "googleSignup")
       .mockResolvedValue({ cUserId: "signup-id" });
-    mockGoogleSignin = jest
-      .spyOn(googleAuthService, "googleSignin")
+    mockGoogleSignin = spyOn(googleAuthService, "googleSignin")
       .mockResolvedValue({ cUserId: "signin-id" });
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   describe("signup path", () => {
@@ -308,8 +308,7 @@ describe("handleGoogleAuth", () => {
       });
       expect(mockGoogleSignup).toHaveBeenCalled();
 
-      jest.clearAllMocks();
-
+      
       const reconnectUserId = faker.database.mongodbObjectId();
       mockDetermineGoogleAuthMode.mockResolvedValueOnce(
         makeDecision({
@@ -329,8 +328,7 @@ describe("handleGoogleAuth", () => {
       });
       expect(mockRepairGoogleConnection).toHaveBeenCalled();
 
-      jest.clearAllMocks();
-
+      
       const signinUserId = faker.database.mongodbObjectId();
       mockDetermineGoogleAuthMode.mockResolvedValueOnce(
         makeDecision({

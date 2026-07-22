@@ -1,25 +1,29 @@
-import CompassCLI from "@scripts/cli";
 import { MigratorType } from "./common/cli.types";
-import { beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { createRequire } from "node:module";
 
-const mockExitHelpfully = jest.fn();
-const mockRunMigrator = jest.fn((): Promise<void> => Promise.resolve());
+const requireActual = createRequire(import.meta.url);
 
-jest.mock("@scripts/cli.validator", () => {
-  return {
-    CliValidator: jest.fn().mockImplementation(() => ({
-      exitHelpfully: mockExitHelpfully,
-    })),
-  };
-});
+const mockExitHelpfully = mock();
+const mockRunMigrator = mock((): Promise<void> => Promise.resolve());
 
-jest.mock("@scripts/commands/migrate", () => ({
-  __esModule: true,
-  runMigrator: jest.fn((type: MigratorType) => mockRunMigrator(type)),
+mock.module("@scripts/cli.validator", () => ({
+  CliValidator: mock().mockImplementation(() => ({
+    exitHelpfully: mockExitHelpfully,
+  })),
 }));
 
+mock.module("@scripts/commands/migrate", () => ({
+  __esModule: true,
+  runMigrator: mock((type: MigratorType) => mockRunMigrator(type)),
+}));
+
+const { default: CompassCLI } = requireActual("@scripts/cli") as typeof import("@scripts/cli");
+
 describe("CompassCLI", () => {
-  beforeEach(() => jest.clearAllMocks());
+  afterEach(() => {
+    mock.restore();
+  });
 
   it("runs migrate command and does not throw", async () => {
     const cli = new CompassCLI(["node", "cli", "migrate", "--help"]);
@@ -30,9 +34,7 @@ describe("CompassCLI", () => {
   });
 
   it("calls exitHelpfully for unsupported command", async () => {
-    const exitSpy = jest
-      .spyOn(process, "exit")
-      .mockImplementation(jest.fn() as never);
+    const exitSpy = spyOn(process, "exit").mockImplementation(mock() as never);
 
     const cli = new CompassCLI(["node", "cli", "unknown"]);
 

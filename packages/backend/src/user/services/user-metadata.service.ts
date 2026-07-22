@@ -1,7 +1,5 @@
 import mergeWith from "lodash.mergewith";
-import SupertokensUserMetadata, {
-  type JSONObject,
-} from "supertokens-node/recipe/usermetadata";
+import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
 import {
   type GoogleConnectionState,
   type UserMetadata,
@@ -35,11 +33,10 @@ function removeLegacyEmailUpdatesMetadata<T extends Partial<UserMetadata>>(
 class UserMetadataService {
   private getStoredUserMetadata = async (
     userId: string,
-    userContext?: Record<string, JSONObject>,
+    _userContext?: Record<string, unknown>,
   ): Promise<UserMetadata> => {
-    const result = (await SupertokensUserMetadata.getUserMetadata(
+    const result = (await getUserMetadataStore().getUserMetadata(
       userId,
-      userContext,
     )) as GetUserMetadataResponse;
 
     if (result.status !== "OK")
@@ -108,7 +105,7 @@ class UserMetadataService {
 
     const update = mergeWith(value, cleanData) as UserMetadata;
 
-    const result = (await SupertokensUserMetadata.updateUserMetadata(
+    const result = (await getUserMetadataStore().updateUserMetadata(
       userId,
       update,
     )) as GetUserMetadataResponse;
@@ -123,7 +120,7 @@ class UserMetadataService {
 
   fetchUserMetadata = async (
     userId: string,
-    userContext?: Record<string, JSONObject>,
+    userContext?: Record<string, unknown>,
     options?: { skipAssessment?: boolean },
   ): Promise<UserMetadata> => {
     const storedMetadata = await this.getStoredUserMetadata(

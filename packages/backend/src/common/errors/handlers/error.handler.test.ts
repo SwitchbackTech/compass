@@ -10,7 +10,7 @@ import {
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import userService from "@backend/user/services/user.service";
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock, spyOn } from "bun:test";
 
 describe("error.handler", () => {
   describe("toClientErrorPayload", () => {
@@ -64,15 +64,15 @@ describe("error.handler", () => {
   describe("handleExpressError", () => {
     it("returns 401 with GOOGLE_REVOKED payload when Google token is invalid", async () => {
       const userId = "507f1f77bcf86cd799439011";
-      jest.spyOn(userService, "pruneGoogleData").mockResolvedValue();
-      const handleGoogleRevokedSpy = jest.spyOn(sseServer, "publishSyncStatus");
+      spyOn(userService, "pruneGoogleData").mockResolvedValue();
+      const handleGoogleRevokedSpy = spyOn(sseServer, "publishSyncStatus");
       handleGoogleRevokedSpy.mockImplementation(() => undefined);
-      jest.spyOn(errorHandler, "isOperational").mockReturnValue(true);
+      spyOn(errorHandler, "isOperational").mockReturnValue(true);
 
-      const send = jest.fn();
+      const send = mock();
       const res = {
-        header: jest.fn().mockReturnThis(),
-        status: jest.fn().mockReturnThis(),
+        header: mock().mockReturnThis(),
+        status: mock().mockReturnThis(),
         send,
       } as unknown as Parameters<typeof handleExpressError>[1];
       const req = {

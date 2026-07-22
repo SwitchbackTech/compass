@@ -1,3 +1,23 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
+import { createRequire } from "node:module";
+
+const requireActual = createRequire(import.meta.url);
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock factory spreads requireActual
+mock.module("@backend/sync/services/watch/google-watch-config", () => ({
+  ...requireActual("@backend/sync/services/watch/google-watch-config"),
+  isUsingGcalWebhookHttps: mock(),
+}));
+
 import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
 import { GoogleWatchDriver } from "@backend/__tests__/drivers/google-watch.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
@@ -16,21 +36,6 @@ import {
 } from "@backend/sync/services/google-sync/google-sync.activity";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
-
-// eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock factory spreads requireActual
-jest.mock("@backend/sync/services/watch/google-watch-config", () => ({
-  ...jest.requireActual("@backend/sync/services/watch/google-watch-config"),
-  isUsingGcalWebhookHttps: jest.fn(),
-}));
 
 describe("UserMetadataService", () => {
   const driver = new UserMetadataServiceDriver();
@@ -150,7 +155,7 @@ describe("UserMetadataService", () => {
     it("returns HEALTHY without active watches when running without an HTTPS Google webhook URL", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const isUsingGcalWebhookHttpsSpy = isUsingGcalWebhookHttps as jest.Mock;
+      const isUsingGcalWebhookHttpsSpy = isUsingGcalWebhookHttps as Mock;
       isUsingGcalWebhookHttpsSpy.mockReturnValue(false);
 
       await GoogleWatchDriver.removeActiveGoogleWatchesForUser(userId);
@@ -165,7 +170,7 @@ describe("UserMetadataService", () => {
     it("returns ATTENTION without active watches when using an HTTPS Google webhook URL", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const isUsingGcalWebhookHttpsSpy = isUsingGcalWebhookHttps as jest.Mock;
+      const isUsingGcalWebhookHttpsSpy = isUsingGcalWebhookHttps as Mock;
       isUsingGcalWebhookHttpsSpy.mockReturnValue(true);
 
       await GoogleWatchDriver.removeActiveGoogleWatchesForUser(userId);

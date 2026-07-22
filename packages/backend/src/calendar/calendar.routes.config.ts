@@ -1,5 +1,5 @@
 import { type Application } from "express";
-import { verifySession } from "supertokens-node/recipe/session/framework/express";
+import { verifySession } from "@backend/auth/session/session.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import calendarController from "./controllers/calendar.controller";
 

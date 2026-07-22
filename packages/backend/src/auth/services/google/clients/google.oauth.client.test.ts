@@ -1,53 +1,52 @@
 import { faker } from "@faker-js/faker";
+import { describe, expect, it, mock } from "bun:test";
+
+const mockCalendarFn = mock();
+
+mock.module("@googleapis/calendar", () => ({
+  calendar: mockCalendarFn,
+}));
+
+mock.module("google-auth-library", () => {
+  class MockOAuth2Client {
+    credentials: Record<string, unknown> = {};
+    _clientId = "mock-client-id";
+    getToken = mock();
+    setCredentials = mock((credentials: Record<string, unknown>) => {
+      this.credentials = credentials;
+    });
+    verifyIdToken = mock();
+    getAccessToken = mock();
+  }
+
+  return {
+    OAuth2Client: mock(() => new MockOAuth2Client()),
+  };
+});
+
 import { calendar } from "@googleapis/calendar";
 import { OAuth2Client } from "google-auth-library";
 import { BaseError } from "@core/errors/errors.base";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import GoogleOAuthClient from "./google.oauth.client";
-import { beforeEach, describe, expect, it } from "bun:test";
-
-jest.mock("@googleapis/calendar", () => ({
-  calendar: jest.fn(),
-}));
-
-jest.mock("google-auth-library", () => {
-  class MockOAuth2Client {
-    credentials: Record<string, unknown> = {};
-    _clientId = "mock-client-id";
-    getToken = jest.fn();
-    setCredentials = jest.fn((credentials: Record<string, unknown>) => {
-      this.credentials = credentials;
-    });
-    verifyIdToken = jest.fn();
-    getAccessToken = jest.fn();
-  }
-
-  return {
-    OAuth2Client: jest.fn(() => new MockOAuth2Client()),
-  };
-});
 
 type MockOAuthClientInstance = {
   credentials: Record<string, unknown>;
   _clientId: string;
-  getToken: jest.Mock;
-  setCredentials: jest.Mock;
-  verifyIdToken: jest.Mock;
-  getAccessToken: jest.Mock;
+  getToken: Mock;
+  setCredentials: Mock;
+  verifyIdToken: Mock;
+  getAccessToken: Mock;
 };
 
-const mockCalendar = jest.mocked(calendar);
+const mockCalendar = calendar;
 const getMockOAuthClient = (
   client: GoogleOAuthClient,
 ): MockOAuthClientInstance =>
   client.oauthClient as unknown as MockOAuthClientInstance;
 
 describe("GoogleOAuthClient", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   it("creates a calendar client using the oauth client instance", () => {
     const gcalClient = { calendars: true };
     mockCalendar.mockReturnValue(gcalClient);

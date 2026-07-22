@@ -12,21 +12,12 @@ import {
 } from "@backend/sync/services/watch/google-watch-repair.service";
 import { GoogleWatchStateStatus } from "@backend/sync/services/watch/google-watch-state";
 import userService from "@backend/user/services/user.service";
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "bun:test";
+import { , afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 describe("EventsController", () => {
   beforeAll(initSupertokens);
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
   it("11: fire-and-forgets the watch repair coordinator after subscribing and replaying metadata", async () => {
@@ -52,14 +43,14 @@ describe("EventsController", () => {
 
     const req = {
       session: { getUserId: () => userId },
-      on: jest.fn(),
+      on: mock(),
     } as unknown as Request;
     const res = {
-      setHeader: jest.fn(),
-      flushHeaders: jest.fn(),
-      write: jest.fn(),
-      status: jest.fn().mockReturnThis(),
-      end: jest.fn(),
+      setHeader: mock(),
+      flushHeaders: mock(),
+      write: mock(),
+      status: mock().mockReturnThis(),
+      end: mock(),
       headersSent: false,
     } as unknown as Response;
 
@@ -78,14 +69,14 @@ describe("EventsController", () => {
 
     const req = {
       session: { getUserId: () => userId },
-      on: jest.fn(),
+      on: mock(),
     } as unknown as Request;
     const res = {
-      setHeader: jest.fn(),
-      flushHeaders: jest.fn(),
-      write: jest.fn(),
-      status: jest.fn().mockReturnThis(),
-      end: jest.fn(),
+      setHeader: mock(),
+      flushHeaders: mock(),
+      write: mock(),
+      status: mock().mockReturnThis(),
+      end: mock(),
       headersSent: false,
     } as unknown as Response;
 
@@ -119,18 +110,18 @@ describe("EventsController", () => {
     jest
       .spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
       .mockResolvedValue(noneResult);
-    const touchSpy = jest.spyOn(userService, "touchLastSeenAt");
+    const touchSpy = spyOn(userService, "touchLastSeenAt");
 
     const req = {
       session: { getUserId: () => userId },
-      on: jest.fn(),
+      on: mock(),
     } as unknown as Request;
     const res = {
-      setHeader: jest.fn(),
-      flushHeaders: jest.fn(),
-      write: jest.fn(),
-      status: jest.fn().mockReturnThis(),
-      end: jest.fn(),
+      setHeader: mock(),
+      flushHeaders: mock(),
+      write: mock(),
+      status: mock().mockReturnThis(),
+      end: mock(),
       headersSent: false,
     } as unknown as Response;
 
@@ -166,14 +157,14 @@ describe("EventsController", () => {
 
     const req = {
       session: { getUserId: () => userId },
-      on: jest.fn(),
+      on: mock(),
     } as unknown as Request;
     const res = {
-      setHeader: jest.fn(),
-      flushHeaders: jest.fn(),
-      write: jest.fn(),
-      status: jest.fn().mockReturnThis(),
-      end: jest.fn(),
+      setHeader: mock(),
+      flushHeaders: mock(),
+      write: mock(),
+      status: mock().mockReturnThis(),
+      end: mock(),
       headersSent: false,
     } as unknown as Response;
 

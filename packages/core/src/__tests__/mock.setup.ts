@@ -1,8 +1,12 @@
 import { faker as mockFaker } from "@faker-js/faker";
 import { default as mockMergeWith } from "lodash.mergewith";
+import { mock } from "bun:test";
+import { createRequire } from "node:module";
+
+const requireActual = createRequire(import.meta.url);
 
 export const mockBSON = () => {
-  jest.mock("bson", () => ({
+  mock.module("bson", () => ({
     ObjectId: class ObjectId {
       #value: string;
 
@@ -30,9 +34,9 @@ export function mockModule<T>(
   mockFactory: (mockedModule: T) => object = () => ({}),
   mockAsEsModule = true,
 ) {
-  const mockedModule = jest.requireActual(mockPath);
+  const mockedModule = requireActual(mockPath) as T;
 
-  jest.mock<T>(mockPath, () =>
+  mock.module(mockPath, () =>
     mockMergeWith(
       { __esModule: mockAsEsModule },
       mockedModule,

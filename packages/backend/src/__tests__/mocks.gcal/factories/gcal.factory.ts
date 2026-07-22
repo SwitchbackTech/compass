@@ -1,3 +1,4 @@
+import { mock, spyOn } from "bun:test";
 import {
   calendar,
   type calendar_v3,
@@ -11,6 +12,7 @@ import {
 } from "gaxios";
 import { Status } from "@core/errors/status.codes";
 import {
+  type gCalendar,
   type gSchema$CalendarList,
   type gSchema$CalendarListEntry,
   type gSchema$Channel,
@@ -26,7 +28,7 @@ import {
   isInstanceGCalEvent,
   isRegularGCalEvent,
 } from "@core/util/event/gcal.event.util";
-import { compassTestState } from "@backend/__tests__/helpers/mock.setup";
+import { getTestGcalFixture, type TestGcalFixture } from "@backend/__tests__/helpers/test-gcal-fixture";
 import { generateGcalId } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
 
@@ -115,21 +117,30 @@ interface Config_MockGcal {
  * @param config - The configuration for the mock.
  * @returns The mock Google Calendar API response.
  */
-export const mockGcal = ({
-  pageSize = 3,
-  nextSyncToken = "final-sync-token",
-  calendarListNextSyncToken = "calendar-li,st-sync-token",
-}: Config_MockGcal) => {
-  const calendarClient = calendar({ version: "v3" });
+export const createMockGcalClient = (
+  fixture: TestGcalFixture,
+  {
+    pageSize = 3,
+    nextSyncToken = "final-sync-token",
+    calendarListNextSyncToken = "calendar-li,st-sync-token",
+  }: Config_MockGcal = {},
+): gCalendar => {
+  const rawClient = calendar({ version: "v3" }) as Partial<gCalendar>;
+  const calendarClient = {
+    events: {},
+    calendarList: {},
+    channels: {},
+    freebusy: {},
+    ...rawClient,
+  } as gCalendar;
 
-  return jest.fn(() => ({
+  return {
     ...calendarClient,
     events: {
       ...calendarClient.events,
-      get: jest.fn(async (params: calendar_v3.Params$Resource$Events$Get) => {
+      get: mock(async (params: calendar_v3.Params$Resource$Events$Get) => {
         const { eventId } = params;
-        const testState = compassTestState();
-        const { all: events } = testState.events.gcalEvents;
+        const { all: events } = fixture.events.gcalEvents;
         const event = events.find((e) => e.id === eventId);
 
         if (!event) throw new Error(`Event with id ${eventId} not found`);
@@ -149,13 +160,12 @@ export const mockGcal = ({
           ),
         );
       }),
-      insert: jest.fn(
+      insert: mock(
         async (
           params: calendar_v3.Params$Resource$Events$Insert,
           options: StreamMethodOptions = { responseType: "stream" },
         ): GaxiosPromise<gSchema$Event> => {
-          const testState = compassTestState();
-          const { all: events } = testState.events.gcalEvents;
+          const { all: events } = fixture.events.gcalEvents;
           const id = params.requestBody?.id ?? generateGcalId();
           const event = { ...params.requestBody, id } as gSchema$EventBase;
           const isBase = isBaseGCalEvent(event);
@@ -174,13 +184,12 @@ export const mockGcal = ({
           );
         },
       ),
-      patch: jest.fn(
+      patch: mock(
         async (
           params: calendar_v3.Params$Resource$Events$Patch,
           options: MethodOptions = {},
         ): GaxiosPromise<gSchema$Event> => {
-          const testState = compassTestState();
-          const { all: events } = testState.events.gcalEvents;
+          const { all: events } = fixture.events.gcalEvents;
           const { eventId } = params;
           const eventIndex = events.findIndex((e) => e.id === eventId);
 
@@ -228,13 +237,12 @@ export const mockGcal = ({
           );
         },
       ),
-      update: jest.fn(
+      update: mock(
         async (
           params: calendar_v3.Params$Resource$Events$Update,
           options: MethodOptions = {},
         ): GaxiosPromise<gSchema$Event> => {
-          const testState = compassTestState();
-          const { all: events } = testState.events.gcalEvents;
+          const { all: events } = fixture.events.gcalEvents;
           const { eventId } = params;
           const eventIndex = events.findIndex((e) => e.id === eventId);
 
@@ -291,10 +299,9 @@ export const mockGcal = ({
           );
         },
       ),
-      delete: jest.fn(
+      delete: mock(
         async (params: calendar_v3.Params$Resource$Events$Delete) => {
-          const testState = compassTestState();
-          const { all: events } = testState.events.gcalEvents;
+          const { all: events } = fixture.events.gcalEvents;
           const { eventId } = params;
           const eventIndex = events.findIndex((e) => e.id === eventId);
 
@@ -330,9 +337,8 @@ export const mockGcal = ({
           });
         },
       ),
-      list: jest.fn(async (params: calendar_v3.Params$Resource$Events$List) => {
-        const testState = compassTestState();
-        const { all: events } = testState.events.gcalEvents;
+      list: mock(async (params: calendar_v3.Params$Resource$Events$List) => {
+        const { all: events } = fixture.events.gcalEvents;
 
         // When singleEvents is false, only return base events and regular events - without instance events
         if (!params.singleEvents) {
@@ -372,10 +378,9 @@ export const mockGcal = ({
           data: eventsPage,
         };
       }),
-      instances: jest.fn(
+      instances: mock(
         async (params: calendar_v3.Params$Resource$Events$Instances) => {
-          const testState = compassTestState();
-          const { all: events } = testState.events.gcalEvents;
+          const { all: events } = fixture.events.gcalEvents;
           const { eventId: id } = params;
 
           const baseEvent = events.find((e) => e.id === id);
@@ -400,7 +405,7 @@ export const mockGcal = ({
           };
         },
       ),
-      watch: jest.fn(
+      watch: mock(
         async (
           params: calendar_v3.Params$Resource$Events$Watch,
           options: MethodOptions = {},
@@ -421,12 +426,12 @@ export const mockGcal = ({
     },
     calendarList: {
       ...calendarClient.calendarList,
-      list: jest.fn(
+      list: mock(
         async (
           params: calendar_v3.Params$Resource$Events$Watch = {},
           options: MethodOptions = {},
         ): GaxiosPromise<gSchema$CalendarList> => {
-          const { calendarlist } = compassTestState();
+          const { calendarlist } = fixture;
 
           return Promise.resolve(
             createMockGaxiosResponse<gSchema$CalendarList>(
@@ -444,7 +449,7 @@ export const mockGcal = ({
           );
         },
       ),
-      watch: jest.fn(
+      watch: mock(
         async (
           params: calendar_v3.Params$Resource$Calendarlist$Watch,
           options: MethodOptions = {},
@@ -465,7 +470,7 @@ export const mockGcal = ({
     },
     channels: {
       ...calendarClient.channels,
-      stop: jest.fn(
+      stop: mock(
         async (
           params: calendar_v3.Params$Resource$Channels$Stop,
           options: MethodOptions = {},
@@ -486,10 +491,10 @@ export const mockGcal = ({
       // Default to "nobody's busy" - no shared compassTestState() slot exists
       // for freebusy (unlike events/calendarlist), so tests that care about a
       // specific busy response override this per-test with
-      // `jest.spyOn(gcalService, "queryFreeBusy")` instead of reaching down
+      // `spyOn(gcalService, "queryFreeBusy")` instead of reaching down
       // into this mock (see calendar.service.test.ts's getAvailability
       // describe block).
-      query: jest.fn(
+      query: mock(
         async (
           _params: calendar_v3.Params$Resource$Freebusy$Query,
           options: MethodOptions = {},
@@ -504,5 +509,9 @@ export const mockGcal = ({
           ),
       ),
     },
-  }));
+  } as gCalendar;
 };
+
+/** @deprecated Use createMockGcalClient(fixture) */
+export const mockGcal = (config: Config_MockGcal) =>
+  mock(() => createMockGcalClient(getTestGcalFixture(), config));
