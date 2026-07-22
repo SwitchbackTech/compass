@@ -426,10 +426,15 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       if (isAllDay === isCurrentlyAllDay) return;
 
       if (isAllDay) {
+        const endsAtMidnight = dayjs(currentDraft.values.schedule.end).isSame(
+          dayjs(currentDraft.values.schedule.end).startOf("day"),
+        );
         const schedule = mapToBackend({
           startDate: selectedStartDate,
           startTime,
-          endDate: selectedEndDate,
+          endDate: endsAtMidnight
+            ? selectedEndDate
+            : dayjs(selectedEndDate).add(1, "day").toDate(),
           endTime,
           isAllDay: true,
         });
