@@ -4,6 +4,7 @@ import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { type CredentialCustody } from "@sync/credentials/credential-custody.service";
+import { occurrenceScheduleAt } from "@sync/domain/occurrence-projection";
 import {
   executeProviderCreate,
   executeProviderDelete,
@@ -125,14 +126,18 @@ async function applyCloudMutation(
     // Absence is the desired end state, so a delete of an already-gone (or
     // never-created) event is confirmed rather than left hanging.
     if (!existing) return confirmCloud(deps, command);
-    // A series master: only scope "all" on a cloud series is handled here.
-    // this/thisAndFollowing (which need occurrence identity + exception/split)
-    // and provider series stay pending for later slices.
+    // A cloud series master: scope "all" removes the whole series, scope "this"
+    // cancels one occurrence. thisAndFollowing (series split) and provider series
+    // stay pending for later slices.
     if (existing.recurrence.kind === "seriesMaster") {
-      if (command.input.scope !== "all" || existing.connectionId !== null) {
-        return command;
+      if (existing.connectionId !== null) return command;
+      if (command.input.scope === "all") {
+        return deleteCloudSeries(deps, command, existing);
       }
-      return deleteCloudSeries(deps, command, existing);
+      if (command.input.scope === "this") {
+        return deleteCloudOccurrence(deps, command, existing, now);
+      }
+      return command;
     }
     // A bare exception target (this/thisAndFollowing) also stays pending.
     if (existing.recurrence.kind !== "single") return command;
@@ -188,13 +193,18 @@ async function applyCloudMutation(
   // update: the target must exist; a missing event can't be updated, so leave
   // the command pending rather than confirming a no-op.
   if (!existing) return command;
-  // A series master: only scope "all" on a cloud series is handled here;
-  // this/thisAndFollowing and provider series stay pending for later slices.
+  // A cloud series master: scope "all" edits the whole series, scope "this"
+  // overrides one occurrence. thisAndFollowing (series split) and provider series
+  // stay pending for later slices.
   if (existing.recurrence.kind === "seriesMaster") {
-    if (command.input.scope !== "all" || existing.connectionId !== null) {
-      return command;
+    if (existing.connectionId !== null) return command;
+    if (command.input.scope === "all") {
+      return updateCloudSeries(deps, command, existing, now);
     }
-    return updateCloudSeries(deps, command, existing, now);
+    if (command.input.scope === "this") {
+      return updateCloudOccurrence(deps, command, existing, now);
+    }
+    return command;
   }
   // A bare exception target stays pending, and converting a single event into a
   // series is itself a series edit — defer both. Gating on the command's intent
@@ -344,6 +354,87 @@ function exceptionInstant(event: EventRecord): DateTime {
     throw new Error("exceptionInstant requires an exception event");
   }
   return event.recurrence.recurrenceId;
+}
+
+// Cancel one occurrence of a cloud series (scope "this"): upsert a cancelled
+// exception tombstone at the target instant, reproject the master to exclude
+// that instant, then project the tombstone's own (cancelled) row. The exception
+// upsert is keyed on (series, recurrenceId), so a retry lands on the same
+// tombstone instead of duplicating it.
+async function deleteCloudOccurrence(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  // The contract guarantees a this-scope delete carries a recurrenceId.
+  if (command.input.kind !== "delete" || command.input.recurrenceId === null) {
+    return command;
+  }
+  const recurrenceId = command.input.recurrenceId;
+  const exception = await deps.events.upsertException(
+    master,
+    recurrenceId,
+    {
+      content: master.content,
+      schedule: occurrenceScheduleAt(master.schedule, recurrenceId),
+      cancelled: true,
+    },
+    now(),
+  );
+  await reprojectMaster(deps, command, master, now);
+  await reprojectOccurrences(deps.occurrences, exception, now);
+  return confirmCloud(deps, command);
+}
+
+// Override one occurrence of a cloud series (scope "this"): upsert an exception
+// carrying the edit at the target instant, reproject the master to exclude that
+// instant, then project the exception's own occurrence. Idempotent on the same
+// (series, recurrenceId) key.
+async function updateCloudOccurrence(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (command.input.kind !== "update" || command.input.recurrenceId === null) {
+    return command;
+  }
+  const exception = await deps.events.upsertException(
+    master,
+    command.input.recurrenceId,
+    {
+      content: command.input.content,
+      schedule: command.input.schedule,
+      cancelled: false,
+    },
+    now(),
+  );
+  await reprojectMaster(deps, command, master, now);
+  await reprojectOccurrences(deps.occurrences, exception, now);
+  return confirmCloud(deps, command);
+}
+
+// Reproject a series master excluding every instant one of its exceptions owns,
+// so the master never projects an occurrence at an excepted instant. Fetches the
+// exceptions fresh, so it picks up the one a scope-"this" edit just wrote.
+async function reprojectMaster(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  now: () => Date,
+): Promise<void> {
+  const exceptions = await deps.events.findSeriesExceptions(
+    command.tenantId,
+    command.principalId,
+    master._id,
+  );
+  await reprojectOccurrences(
+    deps.occurrences,
+    master,
+    now,
+    exceptions.map(exceptionInstant),
+  );
 }
 
 // Confirm a cloud command with no provider identity — local persistence is the

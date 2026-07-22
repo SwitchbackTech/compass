@@ -70,6 +70,23 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       key: { principalId: 1, clientEventId: 1 },
       options: { sparse: true },
     },
+    {
+      // At most one exception per (owner, series, instant), so a scope-"this"
+      // edit/delete upserts the same tombstone/override instead of racing two
+      // in. Partial on the exception kind: only exception events carry a
+      // recurrence.seriesId, and a non-exception would index as (null,null).
+      name: "series_exception_identity",
+      key: {
+        tenantId: 1,
+        principalId: 1,
+        "recurrence.seriesId": 1,
+        "recurrence.recurrenceId": 1,
+      },
+      options: {
+        unique: true,
+        partialFilterExpression: { "recurrence.kind": "exception" },
+      },
+    },
   ],
   [SYNC_COLLECTIONS.eventOccurrences]: [
     {
