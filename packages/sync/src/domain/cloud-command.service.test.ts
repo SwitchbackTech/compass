@@ -562,4 +562,36 @@ describe("submitCloudCommand provider dispatch", () => {
     expect(command.outcome.state).toBe("confirmed");
     expect(await occurrenceStartsFor(submit.eventId)).toHaveLength(0);
   });
+
+  it("clears occurrences before deleting the event so a crash cannot orphan them", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const submit = submitFor(tenantId, principalId, objectId());
+    await submitCloudCommand(deps(), submit, now);
+
+    // If the delete landed before the clear, a crash in between would leave the
+    // event gone but its occurrences orphaned — and the retry's `!existing`
+    // branch confirms without ever clearing them. Lock in the clear-first order.
+    const order: string[] = [];
+    const realClear = occurrences.replaceForEvent.bind(occurrences);
+    const realDelete = events.deleteById.bind(events);
+    jest
+      .spyOn(occurrences, "replaceForEvent")
+      .mockImplementation(async (...args) => {
+        order.push("clear");
+        return realClear(...args);
+      });
+    jest.spyOn(events, "deleteById").mockImplementation(async (...args) => {
+      order.push("delete");
+      return realDelete(...args);
+    });
+
+    await submitCloudCommand(
+      deps(),
+      deleteFor(tenantId, principalId, submit.eventId),
+      now,
+    );
+
+    expect(order).toEqual(["clear", "delete"]);
+  });
 });

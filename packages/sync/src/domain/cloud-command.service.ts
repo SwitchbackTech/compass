@@ -173,16 +173,19 @@ async function applyCloudMutation(
       }
       return command;
     }
-    await deps.events.deleteById(
-      command.tenantId,
-      command.principalId,
-      command.eventId,
-    );
-    // Clear the event's occurrences so range queries stop returning them.
+    // Clear the derived occurrences BEFORE removing the event. If this crashes
+    // before the delete, a retry still finds the event and re-runs both steps;
+    // deleting first would let a crash in between orphan the occurrence rows,
+    // since the retry's `!existing` branch confirms without ever clearing them.
     await deps.occurrences.replaceForEvent(
       command.eventId,
       existing.generation,
       [],
+    );
+    await deps.events.deleteById(
+      command.tenantId,
+      command.principalId,
+      command.eventId,
     );
     return confirmCloud(deps, command);
   }
