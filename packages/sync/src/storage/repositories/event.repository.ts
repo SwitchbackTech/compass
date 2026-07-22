@@ -1,5 +1,5 @@
 import { type Collection, type Db, ObjectId } from "mongodb";
-import { type EventId } from "@core/types/domain-primitives";
+import { type DateTime, type EventId } from "@core/types/domain-primitives";
 import { type SyncEventCalendarId } from "@core/types/sync/event.contracts";
 import {
   type PrincipalId,
@@ -132,6 +132,64 @@ export class EventRepository {
       { upsert: false },
     );
     return result.matchedCount > 0;
+  }
+
+  // Create or update the one exception (overridden or cancelled instance) of a
+  // series at a given recurrence instant, mirroring the master's calendar and
+  // provider identity. Keyed on (owner, seriesId, recurrenceId) and race-safe
+  // via the unique series_exception_identity index, so a scope-"this" edit or
+  // delete is idempotent — a retry lands on the same exception rather than a
+  // duplicate. Returns the stored exception (with its assigned _id).
+  async upsertException(
+    master: EventRecord,
+    recurrenceId: DateTime,
+    override: {
+      content: EventRecord["content"];
+      schedule: EventRecord["schedule"];
+      cancelled: boolean;
+    },
+    now: Date,
+  ): Promise<EventRecord> {
+    const result = await this.collection.findOneAndUpdate(
+      {
+        tenantId: master.tenantId,
+        principalId: master.principalId,
+        "recurrence.kind": "exception",
+        "recurrence.seriesId": master._id,
+        "recurrence.recurrenceId": recurrenceId,
+      },
+      {
+        // Mirror the master's ownership/calendar/provider identity; set the
+        // instance's own content, schedule, and cancelled flag. recurrence.kind
+        // /seriesId/recurrenceId are seeded from the filter on insert, so only
+        // cancelled is set here (setting the whole recurrence would conflict).
+        $set: {
+          origin: master.origin,
+          calendarId: master.calendarId,
+          clientEventId: null,
+          connectionId: master.connectionId,
+          providerEventId: master.providerEventId,
+          providerVersion: master.providerVersion,
+          providerUpdatedAt: master.providerUpdatedAt,
+          deliveryState: master.deliveryState,
+          providerMetadata: master.providerMetadata,
+          content: override.content,
+          schedule: override.schedule,
+          "recurrence.cancelled": override.cancelled,
+          lifecycleState: "active",
+          generation: master.generation,
+          updatedAt: now,
+        },
+        $setOnInsert: {
+          _id: new ObjectId().toHexString() as EventId,
+          createdAt: now,
+          confirmedAt: now,
+        },
+      },
+      { upsert: true, returnDocument: "after" },
+    );
+    if (!result) throw new Error("Exception upsert did not return a record");
+    return EventRecordSchema.parse(result);
   }
 
   // Every exception event of a series (overridden or cancelled instances),

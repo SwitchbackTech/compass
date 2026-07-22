@@ -302,12 +302,13 @@ describe("submitCloudCommand provider dispatch", () => {
     principalId: PrincipalId,
     eventId: EventId,
     scope = "all",
+    recurrenceId: string | null = null,
   ): CommandSubmit => ({
     tenantId,
     principalId,
     idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
     eventId,
-    input: { kind: "delete", scope } as SyncCommandInput,
+    input: { kind: "delete", scope, recurrenceId } as SyncCommandInput,
     expectedVersion: null,
   });
 
@@ -345,10 +346,7 @@ describe("submitCloudCommand provider dispatch", () => {
     ).not.toBeNull();
   });
 
-  it.each([
-    "this",
-    "thisAndFollowing",
-  ] as const)("leaves a series delete pending for scope %s (needs occurrence identity)", async (scope) => {
+  it("leaves a thisAndFollowing series delete pending (split not built yet)", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const eventId = objectId() as EventId;
@@ -358,7 +356,13 @@ describe("submitCloudCommand provider dispatch", () => {
 
     const command = await submitCloudCommand(
       deps(),
-      deleteFor(tenantId, principalId, eventId, scope),
+      deleteFor(
+        tenantId,
+        principalId,
+        eventId,
+        "thisAndFollowing",
+        "2026-07-21T09:00:00-06:00",
+      ),
       now,
     );
 
@@ -828,5 +832,134 @@ describe("submitCloudCommand provider dispatch", () => {
     expect(
       await events.findById(tenantId, principalId, masterId),
     ).not.toBeNull();
+  });
+
+  const updateThisFor = (
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    eventId: EventId,
+    recurrenceId: string,
+    title: string,
+  ): CommandSubmit => ({
+    tenantId,
+    principalId,
+    idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+    eventId,
+    input: {
+      kind: "update",
+      invitation: "none",
+      content: {
+        title,
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-21T11:00:00-06:00",
+        end: "2026-07-21T12:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "preserve" },
+      scope: "this",
+      recurrenceId,
+    } as unknown as SyncCommandInput,
+    expectedVersion: null,
+  });
+
+  const EXCEPTED = "2026-07-21T09:00:00-06:00";
+  const EXCEPTED_START = "2026-07-21T15:00:00.000Z";
+
+  it("cancels one occurrence of a cloud series with scope this", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    const master = await seriesMaster(tenantId, principalId, masterId);
+    await reprojectOccurrences(occurrences, master, now);
+    expect(await occurrenceStartsFor(masterId)).toHaveLength(3);
+
+    const command = await submitCloudCommand(
+      deps(),
+      deleteFor(tenantId, principalId, masterId, "this", EXCEPTED),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    const starts = await occurrenceStartsFor(masterId);
+    expect(starts).not.toContain(EXCEPTED_START);
+    expect(starts).toHaveLength(2);
+    const exceptions = await events.findSeriesExceptions(
+      tenantId,
+      principalId,
+      masterId,
+    );
+    expect(exceptions).toHaveLength(1);
+    const only = exceptions[0];
+    expect(
+      only?.recurrence.kind === "exception" && only.recurrence.cancelled,
+    ).toBe(true);
+  });
+
+  it("overrides one occurrence of a cloud series with scope this", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    const master = await seriesMaster(tenantId, principalId, masterId);
+    await reprojectOccurrences(occurrences, master, now);
+
+    const command = await submitCloudCommand(
+      deps(),
+      updateThisFor(tenantId, principalId, masterId, EXCEPTED, "Moved"),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    const exceptions = await events.findSeriesExceptions(
+      tenantId,
+      principalId,
+      masterId,
+    );
+    expect(exceptions).toHaveLength(1);
+    const only = exceptions[0];
+    expect(only?.content.title).toBe("Moved");
+    expect(
+      only?.recurrence.kind === "exception" && !only.recurrence.cancelled,
+    ).toBe(true);
+    // The master no longer owns the instant; the override occurrence does.
+    const masterStarts = await occurrenceStartsFor(masterId);
+    expect(masterStarts).not.toContain(EXCEPTED_START);
+    expect(masterStarts).toHaveLength(2);
+    if (only) {
+      expect(await occurrenceStartsFor(only._id)).toHaveLength(1);
+    }
+  });
+
+  it("upserts a single exception across two deletes of the same occurrence", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    const master = await seriesMaster(tenantId, principalId, masterId);
+    await reprojectOccurrences(occurrences, master, now);
+
+    // Two distinct commands (fresh idempotency keys) targeting one instant.
+    await submitCloudCommand(
+      deps(),
+      deleteFor(tenantId, principalId, masterId, "this", EXCEPTED),
+      now,
+    );
+    await submitCloudCommand(
+      deps(),
+      deleteFor(tenantId, principalId, masterId, "this", EXCEPTED),
+      now,
+    );
+
+    const exceptions = await events.findSeriesExceptions(
+      tenantId,
+      principalId,
+      masterId,
+    );
+    expect(exceptions).toHaveLength(1);
   });
 });

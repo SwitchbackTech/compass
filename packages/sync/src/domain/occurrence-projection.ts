@@ -159,6 +159,17 @@ function localizeInstant(floating: Date, schedule: EventSchedule): Date {
   return dayjs.tz(wall, schedule.timeZone).toDate();
 }
 
+// The schedule one occurrence of a series has at a given recurrence instant —
+// the master's schedule shifted to that instant, preserving duration and zone.
+// Used when materializing an exception event for a scope-"this" edit/delete so
+// its instance sits at the right instant.
+export function occurrenceScheduleAt(
+  masterSchedule: EventSchedule,
+  recurrenceId: DateTime,
+): EventSchedule {
+  return shiftSchedule(masterSchedule, new Date(recurrenceId));
+}
+
 // Builds one occurrence's schedule from the master's, at the given original
 // start instant, preserving duration and (for timed) the zone.
 function shiftSchedule(

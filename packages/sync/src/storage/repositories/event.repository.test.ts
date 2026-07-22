@@ -219,22 +219,26 @@ describe("EventRepository", () => {
     const tenantId = objectId();
     const principalId = objectId();
     const seriesId = objectId();
-    const exception = (overrides: Partial<EventRecord>) =>
+    const exception = (
+      recurrenceId: string,
+      overrides: Partial<EventRecord> = {},
+    ) =>
       compassRecord({
         tenantId,
         principalId,
         recurrence: {
           kind: "exception",
           seriesId,
-          recurrenceId: "2026-07-21T09:00:00-06:00",
+          recurrenceId,
           cancelled: false,
         } as EventRecord["recurrence"],
         ...overrides,
       });
 
-    const mine = await repo.put(exception({}));
-    // Same series, another instance — also mine.
-    await repo.put(exception({}));
+    const mine = await repo.put(exception("2026-07-21T09:00:00-06:00"));
+    // Same series, a different instance — also mine (distinct recurrenceId, per
+    // the unique series_exception_identity index).
+    await repo.put(exception("2026-07-28T09:00:00-06:00"));
     // A different series' exception, a plain single, the master itself, and
     // another principal's exception must all be excluded.
     await repo.put(
@@ -261,7 +265,9 @@ describe("EventRepository", () => {
         } as EventRecord["recurrence"],
       }),
     );
-    await repo.put(exception({ principalId: objectId() }));
+    await repo.put(
+      exception("2026-07-21T09:00:00-06:00", { principalId: objectId() }),
+    );
 
     const found = await repo.findSeriesExceptions(
       tenantId,
@@ -271,6 +277,52 @@ describe("EventRepository", () => {
     expect(found).toHaveLength(2);
     expect(found.every((e) => e.recurrence.kind === "exception")).toBe(true);
     expect(found.some((e) => e._id === mine._id)).toBe(true);
+  });
+
+  it("upserts one exception per (series, instant), mirroring the master", async () => {
+    const master = await repo.put(
+      compassRecord({
+        recurrence: {
+          kind: "seriesMaster",
+          rules: ["RRULE:FREQ=WEEKLY"],
+        } as EventRecord["recurrence"],
+      }),
+    );
+    const recurrenceId = "2026-07-21T09:00:00-06:00" as never;
+    const override = {
+      content: { ...master.content, title: "Overridden" },
+      schedule: master.schedule,
+      cancelled: false,
+    };
+
+    const first = await repo.upsertException(
+      master,
+      recurrenceId,
+      override,
+      new Date(),
+    );
+    // A second upsert for the same instant updates in place — same id, no dupe.
+    const second = await repo.upsertException(
+      master,
+      recurrenceId,
+      { ...override, cancelled: true },
+      new Date(),
+    );
+
+    expect(second._id).toBe(first._id);
+    expect(second.tenantId).toBe(master.tenantId);
+    expect(second.calendarId).toBe(master.calendarId);
+    if (second.recurrence.kind === "exception") {
+      expect(second.recurrence.seriesId).toBe(master._id);
+      expect(second.recurrence.recurrenceId).toBe(recurrenceId);
+      expect(second.recurrence.cancelled).toBe(true);
+    }
+    const exceptions = await repo.findSeriesExceptions(
+      master.tenantId,
+      master.principalId,
+      master._id,
+    );
+    expect(exceptions).toHaveLength(1);
   });
 
   describe("listByCalendar keyset pagination", () => {
