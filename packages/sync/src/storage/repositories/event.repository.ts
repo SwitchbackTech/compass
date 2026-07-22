@@ -41,6 +41,18 @@ export class EventRepository {
     this.collection = db.collection<EventRecord>(SYNC_COLLECTIONS.events);
   }
 
+  // Generation on the events store is a "last touched by" watermark, NOT an
+  // isolation key — deliberately unlike occurrences, which ARE generation-keyed
+  // (a doc per generation) because the range read serves them by generation.
+  // Nothing reads events by generation on any user path; the only reader is a
+  // repair's own bookkeeping. So exactly one canonical doc exists per provider
+  // identity, and re-importing it bumps its generation in place rather than
+  // inserting a second doc — which is what makes stale-detection work: a repair
+  // rebuilding into generation N leaves genuinely-deleted events stranded below
+  // N (deleteStaleProviderEventsBelowGeneration), while re-seen ones ride
+  // forward. Adding generation to the filter here (or to the unique
+  // provider_event_identity index) would collide the second import and defeat
+  // that signal. The filter therefore excludes generation on purpose.
   async upsertByProviderIdentity(
     input: ProviderEventUpsert,
   ): Promise<EventRecord> {
@@ -162,6 +174,10 @@ export class EventRepository {
   // via the unique series_exception_identity index, so a scope-"this" edit or
   // delete is idempotent — a retry lands on the same exception rather than a
   // duplicate. Returns the stored exception (with its assigned _id).
+  //
+  // Generation is a watermark here too (see upsertByProviderIdentity): a repair
+  // re-seeing an exception bumps it into the new generation in place, so the
+  // filter excludes generation and the index stays generation-free by design.
   async upsertException(
     master: EventRecord,
     recurrenceId: DateTime,
