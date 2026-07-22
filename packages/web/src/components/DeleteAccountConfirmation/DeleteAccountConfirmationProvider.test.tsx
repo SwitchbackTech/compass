@@ -1,54 +1,24 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  afterAll,
-  afterEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
+import { afterEach, describe, expect, it, spyOn } from "bun:test";
 import "@testing-library/jest-dom";
+import { UserApi } from "@web/api/user.api";
+import * as authState from "@web/auth/compass/state/auth.state.util";
+import * as browserCleanup from "@web/common/utils/cleanup/browser.cleanup.util";
 
-const deleteAccount = mock(async () => ({}) as never);
-const clearAllBrowserStorage = mock(async () => {});
+const deleteAccount = spyOn(UserApi, "deleteAccount").mockResolvedValue(
+  {} as never,
+);
+const clearAllBrowserStorage = spyOn(
+  browserCleanup,
+  "clearAllBrowserStorage",
+).mockResolvedValue();
+const getLastKnownEmail = spyOn(authState, "getLastKnownEmail").mockReturnValue(
+  "captain@example.com",
+);
 // jsdom's location is unconfigurable and its assign() only warns, so spy on
 // it rather than replacing the object.
 const assign = spyOn(window.location, "assign").mockImplementation(() => {});
-
-const actualUserApi = (await import("@web/api/user.api")).UserApi;
-const actualBrowserCleanup = await import(
-  "@web/common/utils/cleanup/browser.cleanup.util"
-);
-const actualAuthState = await import("@web/auth/compass/state/auth.state.util");
-let mocksEnabled = true;
-
-// mock.module is process-wide. Keep these overrides active for this file, then
-// delegate back to the real modules so later files cannot inherit partial APIs.
-mock.module("@web/api/user.api", () => ({
-  UserApi: {
-    ...actualUserApi,
-    deleteAccount: (...args: Parameters<typeof actualUserApi.deleteAccount>) =>
-      mocksEnabled
-        ? deleteAccount(...args)
-        : actualUserApi.deleteAccount(...args),
-  },
-}));
-mock.module("@web/common/utils/cleanup/browser.cleanup.util", () => ({
-  ...actualBrowserCleanup,
-  clearAllBrowserStorage: (
-    ...args: Parameters<typeof clearAllBrowserStorage>
-  ) =>
-    mocksEnabled
-      ? clearAllBrowserStorage(...args)
-      : actualBrowserCleanup.clearAllBrowserStorage(...args),
-}));
-mock.module("@web/auth/compass/state/auth.state.util", () => ({
-  ...actualAuthState,
-  getLastKnownEmail: () =>
-    mocksEnabled ? "captain@example.com" : actualAuthState.getLastKnownEmail(),
-}));
 
 const { DeleteAccountConfirmationProvider } =
   require("./DeleteAccountConfirmationProvider") as typeof import("./DeleteAccountConfirmationProvider");
@@ -82,11 +52,8 @@ const confirmDeletion = async () => {
 afterEach(() => {
   deleteAccount.mockClear();
   clearAllBrowserStorage.mockClear();
+  getLastKnownEmail.mockClear();
   assign.mockClear();
-});
-
-afterAll(() => {
-  mocksEnabled = false;
 });
 
 describe("DeleteAccountConfirmationProvider", () => {
