@@ -29,14 +29,19 @@ export const SyncResourceRecordSchema = z.strictObject({
   syncCursor: z.string().min(1).nullable(),
   // Mid-batch page checkpoint for resumable pulls; null between batches.
   pageCursor: z.string().min(1).nullable(),
-  // The generation import and pull WRITE into. A non-destructive repair bumps
-  // this to build a fresh generation alongside the queryable one.
+  // A repair's STAGING generation. Only a non-destructive repair touches this:
+  // it bumps this ahead of activeGeneration to build a fresh generation
+  // alongside the queryable one, then sets activeGeneration to it on success.
+  // Equal to activeGeneration in steady state. Steady-state writers (import and
+  // pull) do NOT write into this — they write the active generation, so a repair
+  // left incomplete (this bumped ahead, never activated) never strands their
+  // writes in a generation reads ignore.
   importGeneration: z.number().int().min(0),
-  // The generation reads SERVE. Equal to importGeneration in steady state; a
-  // repair holds it back at the old generation until the new one completes,
-  // then activates it atomically, so reads never see a half-built repair.
-  // Defaults to 0 so a resource written before this field existed reads as the
-  // single generation it has.
+  // The generation reads SERVE and steady-state writers (import, pull) write
+  // into — the single live generation outside a repair. A repair holds this back
+  // at the old generation while it builds importGeneration, then activates the
+  // new one atomically, so reads never see a half-built repair. Defaults to 0 so
+  // a resource written before this field existed reads as its single generation.
   activeGeneration: z.number().int().min(0).default(0),
   lastAttemptAt: z.date().nullable(),
   lastSuccessAt: z.date().nullable(),

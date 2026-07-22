@@ -85,11 +85,16 @@ export async function pullCalendarChanges(
     now(),
   );
 
+  // Write into the active (live) generation, not importGeneration: an
+  // incremental pull edits what reads currently serve. Were it to target a
+  // repair's staged importGeneration (bumped ahead but not yet active), its
+  // occurrences would land in a generation reads ignore — new events would
+  // vanish and provider deletions would leave phantoms until a repair completed.
   const applier = new ProviderPageApplier(
     deps.events,
     deps.occurrences,
     calendar,
-    resource.importGeneration,
+    resource.activeGeneration,
     now,
   );
   // A pull resumes a mid-batch page from the stored page checkpoint; otherwise

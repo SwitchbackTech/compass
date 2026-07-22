@@ -217,6 +217,14 @@ export async function installIndexManifest(
     // lingering and enforcing a stale (e.g. unique) constraint. Never touch the
     // built-in _id_ index. Safe while collections are empty (createIndex on a
     // renamed key would otherwise conflict with the old same-named index).
+    //
+    // OPERATIONAL CAVEAT: against a LARGE, POPULATED collection this is unsafe to
+    // run inline at startup — dropping then rebuilding a unique index leaves a
+    // window with no uniqueness enforced and blocks readiness on a foreground
+    // build. Fine today: sync isn't serving production data yet, so collections
+    // are empty or tiny and no concurrent writer exists at connect time. Before
+    // sync carries real data, a key change on a populated collection must move to
+    // a rolling/online index migration instead of this inline drop-and-rebuild.
     const declared = new Set(entries.map((e) => e.name));
     const present = await collection.indexes().catch(() => []);
     for (const index of present) {
