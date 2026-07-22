@@ -1,16 +1,28 @@
 import { Logger } from "@core/logger/winston.logger";
 import { createInternalAuthMiddleware } from "@sync/auth/internal-auth";
 import { loadSyncConfig, type SyncConfig } from "@sync/config/sync.config";
+import { CredentialCustody } from "@sync/credentials/credential-custody.service";
+import { SyncJobWorker } from "@sync/domain/sync-job-worker.service";
+import { SyncScheduler } from "@sync/domain/sync-scheduler.service";
 import { ReadinessRegistry } from "@sync/lifecycle/readiness";
 import { ShutdownCoordinator } from "@sync/lifecycle/shutdown";
 import { deriveOAuthStateSecret } from "@sync/oauth/oauth-state";
 import { GoogleAuthAdapter } from "@sync/providers/google/google-auth.adapter";
+import { GoogleEventReaderAdapter } from "@sync/providers/google/google-event-reader.adapter";
 import { GoogleEventWriter } from "@sync/providers/google/google-event-writer.adapter";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
+import { CommandRepository } from "@sync/storage/repositories/command.repository";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
+import { EventRepository } from "@sync/storage/repositories/event.repository";
+import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { JobRepository } from "@sync/storage/repositories/job.repository";
+import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { randomUUID } from "node:crypto";
 import { createServer, type Server } from "node:http";
 
 const logger = Logger("sync:app");
@@ -169,12 +181,58 @@ async function start(): Promise<void> {
       forbiddenDatabaseName: config.COMPASS_API_DATABASE,
       enforceLeastPrivilege: config.ENFORCE_LEAST_PRIVILEGE,
     });
+
+    // Storage is up: start draining the job queue. Registered AFTER the mongo
+    // drain so the coordinator's reverse-order teardown stops the scheduler
+    // FIRST (releasing its leases while storage is still open) and closes mongo
+    // last. Only an active, provider-configured deployment does work; a passive
+    // or unconfigured one serves health and admits nothing to drain.
+    const scheduler = buildScheduler(config, mongo);
+    if (scheduler) {
+      service.shutdown.register("scheduler", () => scheduler.stop());
+      scheduler.start();
+      logger.info("Sync scheduler draining the job queue");
+    }
   } catch (error) {
     logger.error(
       "Sync storage unavailable at startup; staying up as not-ready",
       error,
     );
   }
+}
+
+// Build the job-queue scheduler for an active, provider-configured deployment,
+// or null when there is nothing to drain (passive execution, or no provider
+// credentials to refresh access tokens with). The worker's repositories bind to
+// the now-connected db; a fresh owner id per process scopes its leases.
+function buildScheduler(
+  config: SyncConfig,
+  mongo: SyncMongoService,
+): SyncScheduler | null {
+  if (config.EXECUTION !== "active") return null;
+  const authAdapter = buildAuthAdapter(config);
+  if (!authAdapter) return null;
+
+  const db = mongo.db;
+  const owner = randomUUID();
+  const jobs = new JobRepository(db);
+  const worker = new SyncJobWorker(
+    {
+      events: new EventRepository(db),
+      occurrences: new EventOccurrenceRepository(db, mongo.client),
+      resources: new SyncResourceRepository(db),
+      calendars: new ProviderCalendarRepository(db),
+      commands: new CommandRepository(db),
+      jobs,
+      reader: new GoogleEventReaderAdapter(),
+      custody: new CredentialCustody(new CredentialRepository(db), authAdapter),
+    },
+    owner,
+  );
+  return new SyncScheduler(
+    { worker, jobs },
+    { owner, onError: (error) => logger.error("Sync job drain failed", error) },
+  );
 }
 
 function registerSignalHandlers(
