@@ -4,7 +4,7 @@ import { ArrowButton } from "@web/components/Button/ArrowButton";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { NumberInput } from "@web/components/NumberInput/NumberInput";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { LifeShareButtons } from "./LifeShareButtons";
+import { LifeQuote } from "./LifeQuote";
 import {
   clampLifespan,
   formatDateInputValue,
@@ -23,9 +23,7 @@ interface LifeSidebarContentProps {
   preferences: LifePreferences;
   onShuffleAge: () => void;
   summary: string;
-  totalDots: number;
   today: Date;
-  weeksLived: number;
   onPreferencesChange: (
     update: (current: LifePreferences) => LifePreferences,
   ) => void;
@@ -37,9 +35,7 @@ export function LifeSidebarContent({
   preferences,
   onShuffleAge,
   summary,
-  totalDots,
   today,
-  weeksLived,
   onPreferencesChange,
 }: LifeSidebarContentProps) {
   const [isBirthDatePickerOpen, setIsBirthDatePickerOpen] = useState(false);
@@ -90,7 +86,6 @@ export function LifeSidebarContent({
     <div className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-5 pb-5 text-sm">
       <section className="flex flex-col gap-2 text-text-muted">
         <div className="flex items-center gap-1">
-          <h2 className="font-semibold text-text">{variation.label}</h2>
           <TooltipWrapper description="Previous life variation" shortcut="J">
             <ArrowButton
               direction="left"
@@ -105,8 +100,13 @@ export function LifeSidebarContent({
               onClick={() => onCycleVariation(1)}
             />
           </TooltipWrapper>
+          <h2 className="font-semibold text-text">{variation.label}</h2>
         </div>
         <p>{getLifeVariationDescription(preferences.lifespan)}</p>
+        <p>
+          Each dot represents one week of your life, and each row represents one
+          year.
+        </p>
       </section>
 
       <section className="flex flex-col gap-2 text-center">
@@ -194,19 +194,7 @@ export function LifeSidebarContent({
         </div>
       </section>
 
-      <section className="flex flex-col gap-3 text-text-muted">
-        <h2 className="font-semibold text-text">About Life.</h2>
-        <p>
-          This page shows your life as a grid of weeks. Each dot represents one
-          week of your life, and each row represents one year.
-        </p>
-      </section>
-
-      <LifeShareButtons
-        lifespan={preferences.lifespan}
-        totalDots={totalDots}
-        weeksLived={weeksLived}
-      />
+      <LifeQuote />
     </div>
   );
 }
