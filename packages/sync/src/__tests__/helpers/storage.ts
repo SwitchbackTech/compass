@@ -27,7 +27,7 @@ export function setupSyncStorage(): {
   const mongo = new SyncMongoService();
 
   beforeAll(async () => {
-    await mongo.connect({
+    await connectWithRetry(mongo, {
       uri: process.env["SYNC_MONGO_URI"] as string,
       databaseName: `synctest_${faker.database.mongodbObjectId()}`,
       forbiddenDatabaseName: "compass_api_unused",
@@ -53,4 +53,30 @@ export function setupSyncStorage(): {
     client: () => mongo.client,
     mongo: () => mongo,
   };
+}
+
+// Connect, retrying a few times on a transient failure. The whole sync suite
+// runs each test file in its own process against ONE shared in-memory mongod
+// (run-tests.ts); when many processes connect and install indexes at once, an
+// unlucky file can hit a transient server-selection timeout or refused
+// connection and fail its whole `beforeAll`. The server is alive (its neighbors
+// pass), so a short retry converges instead of flaking the run. The common path
+// connects on the first attempt with no delay; the backoff runs only on a retry.
+async function connectWithRetry(
+  mongo: SyncMongoService,
+  options: Parameters<SyncMongoService["connect"]>[0],
+  attempts = 4,
+): Promise<void> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      await mongo.connect(options);
+      return;
+    } catch (error) {
+      // A half-open client from a connect that failed mid-way must be closed
+      // before retrying, or it leaks. disconnect() is safe when nothing opened.
+      await mongo.disconnect().catch(() => {});
+      if (attempt >= attempts) throw error;
+      await new Promise((resolve) => setTimeout(resolve, attempt * 250));
+    }
+  }
 }
