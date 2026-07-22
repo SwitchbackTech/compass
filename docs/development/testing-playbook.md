@@ -47,8 +47,8 @@ E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` vi
 Every package now runs on Bun's test runner; Jest has been removed.
 
 - `bun run test:core` uses `bun test` with a small compatibility preload for the core BSON mock setup.
-- `bun run test:web` runs `bun test --cwd packages/web` directly. Web tests should be isolated enough to run in one Bun process without batching.
-- `bun run test:backend` and `bun run test:scripts` use `packages/scripts/src/testing/run-tests.ts`, a launcher that boots one in-memory MongoDB replica set and runs each test file in its own `bun test` process (Jest-like per-file isolation) against the shared server, in parallel. This keeps the isolation Jest gave us without its per-file startup cost.
+- `bun run test:web` uses `packages/scripts/src/testing/run-tests.ts` to run each file in its own `bun test` process. This prevents Bun's process-wide module mocks from leaking between files while keeping the files parallel.
+- `bun run test:backend`, `bun run test:scripts`, and `bun run test:sync` use the same launcher with one shared in-memory MongoDB replica set and distinct per-file databases.
 - Test files import lifecycle/assertion APIs from `bun:test` (never `jest` -- the ambient `jest` global is a compatibility shim from `packages/scripts/src/testing/apply-bun-jest-compat.cjs` that maps `jest.mock`/`jest.requireActual`/etc. onto `bun:test`).
 
 ### Test tiers
@@ -114,12 +114,12 @@ Avoid:
 
 Isolation rules:
 
-- Do not use top-level `mock.module` for shared production modules unless the test imports the subject through a local factory and the mock cannot affect later files. Prefer provider wrappers, real stores, explicit dependency factories, or `spyOn` with teardown.
-- Avoid mocking shared UI primitives such as `TooltipWrapper`, `@floating-ui/react`, or session hooks in broad component tests. A mock that only helps one file can change unrelated tests later in the same Bun process.
+- Prefer provider wrappers, real stores, explicit dependency factories, or `spyOn` with teardown over top-level `mock.module`. Module mocks remain process-wide within their test file and can affect every later import in that file.
+- Avoid mocking shared UI primitives such as `TooltipWrapper`, `@floating-ui/react`, or session hooks in broad component tests. Even with per-file isolation, broad mocks can hide integration behavior inside that file.
 - If a test replaces globals (`fetch`, `document.getElementById`, storage, timers, console methods), restore the original value in teardown.
 - Prefer `renderWithStore`, `createStoreWrapper`, or a focused provider harness over mocking `@web/store` or `store.hooks`.
-- `bun test --cwd packages/web` is the acceptance check for web test isolation. A focused test can pass while still leaking into the direct suite.
-- `mock.module` is process-global, not per-file: the preload's `afterAll(() => mock.restore())` (`packages/web/src/__tests__/web.preload.ts`) runs once at the very end of the whole run, so a `mock.module(...)` in one test file replaces that module for every file that imports it afterward — an order-dependent failure. Only mock a module if it has a single importer with no dedicated test of its own; if it has a dedicated test elsewhere, mocking it here will break that test instead.
+- `bun run test:web` is the acceptance check for web test isolation. It runs every file in a fresh process through the same path CI uses; a focused test can still miss interactions within its own file.
+- `mock.module` is process-global, not test-scoped. The per-file runner prevents cross-file leaks, and the web preload restores mocks when each file finishes, but tests within one file still share that file's module registry.
 - To focus an element on mount in this jsdom setup, use React's `autoFocus` prop or a stable callback ref (`ref={useCallback(n => n?.focus(), [])}`) — both fire in the commit phase. A `useEffect(() => ref.current?.focus())` does **not** make the element `document.activeElement` in tests. `autoFocus` trips biome's `lint/a11y/noAutofocus` (error) and a JSX-attribute `biome-ignore` comment breaks the formatter, so prefer the callback ref.
 - `FloatingFocusManager` fights virtual-focus combobox palettes: for a component that keeps real focus in one input while using `useListNavigation({ virtual: true })` + `aria-activedescendant` (a command-palette style pattern), `FloatingFocusManager` asynchronously grabs focus to the panel container and steals it back from the input. Drop it — `useDismiss` still handles Escape/outside-press without it. It belongs on anchored forms with a real reference element instead (e.g. `FloatingEventForm`).
 
