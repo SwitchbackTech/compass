@@ -136,7 +136,11 @@ jobs:
 
       - name: Run ${{ matrix.project }} tests
         if: matrix.project != 'web'
-        timeout-minutes: 5
+        # backend/scripts/sync each boot an in-memory MongoDB, so they run far
+        # longer than the web suite and grow with the sync service. A slow runner
+        # pushed the sync suite past a 5-minute wall clock even with every test
+        # passing; give the mongo-backed suites real headroom (web stays 1m above).
+        timeout-minutes: 10
         env:
           TZ: Etc/UTC
         run: |
