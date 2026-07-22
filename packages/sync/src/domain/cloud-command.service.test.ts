@@ -445,6 +445,83 @@ describe("submitCloudCommand provider dispatch", () => {
     ).toBe(true);
   });
 
+  it("deletes a provider-linked series at the provider on an all-scope delete", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const calendar = await seedProviderCalendar(tenantId, principalId);
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      calendarId: calendar._id,
+      connectionId: calendar.connectionId as never,
+      providerEventId: "g-series-1" as never,
+      providerVersion: "etag-1" as never,
+      deliveryState: "confirmed",
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    const writer = new FakeWriter();
+
+    const command = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        markers,
+        execution: "active",
+        provider: provider(writer),
+      },
+      deleteFor(tenantId, principalId, eventId, "all"),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    expect(writer.deleteCalls).toBe(1);
+    expect(await events.findById(tenantId, principalId, eventId)).toBeNull();
+  });
+
+  it("leaves a provider-linked series this-scope delete pending", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const calendar = await seedProviderCalendar(tenantId, principalId);
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      calendarId: calendar._id,
+      connectionId: calendar.connectionId as never,
+      providerEventId: "g-series-1" as never,
+      providerVersion: "etag-1" as never,
+      deliveryState: "confirmed",
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    const writer = new FakeWriter();
+
+    const command = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        markers,
+        execution: "active",
+        provider: provider(writer),
+      },
+      deleteFor(
+        tenantId,
+        principalId,
+        eventId,
+        "this",
+        "2026-07-21T09:00:00-06:00",
+      ),
+      now,
+    );
+
+    // Provider per-occurrence deletes need provider exception ops (deferred).
+    expect(command.outcome.state).toBe("pending");
+    expect(writer.deleteCalls).toBe(0);
+    expect(
+      await events.findById(tenantId, principalId, eventId),
+    ).not.toBeNull();
+  });
+
   // The occurrence projection is the read model, so a cloud command must leave
   // it consistent with the event it just wrote.
   const occurrenceStartsFor = async (eventId: EventId): Promise<string[]> => {
