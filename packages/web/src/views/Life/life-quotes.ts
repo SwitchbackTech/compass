@@ -1,3 +1,5 @@
+import { getSecureRandomNumber } from "./life.utils";
+
 export const LIFE_QUOTES = [
   "“Teach us to number our days, that we may gain a heart of wisdom.” (Psalm 90:12)",
   "“It is not that we have a short time to live, but that we waste a lot of it.” (Seneca)",
@@ -51,15 +53,9 @@ export const LIFE_QUOTES = [
   "“Life moves pretty fast. If you don’t stop and look around once in a while, you could miss it.” (Ferris Bueller’s Day Off)",
 ] as const;
 
-function getRandomNumber() {
-  const values = new Uint32Array(1);
-  crypto.getRandomValues(values);
-  return values[0] / 2 ** 32;
-}
-
 export function getRandomLifeQuote(
   currentQuote?: string,
-  random = getRandomNumber,
+  random = getSecureRandomNumber,
 ) {
   const quotes = currentQuote
     ? LIFE_QUOTES.filter((quote) => quote !== currentQuote)
