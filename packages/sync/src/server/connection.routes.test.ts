@@ -6,6 +6,7 @@ import {
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { signInternalRequest } from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
@@ -33,10 +34,11 @@ import {
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
-import { SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
 
 const uri = process.env["SYNC_MONGO_URI"] as string;
+const storage = setupSyncStorage();
 const objectId = () => faker.database.mongodbObjectId();
 const SECRET = "internal-secret";
 // The service signs OAuth state with a key derived from the root secret.
@@ -151,21 +153,13 @@ describe("GET /internal/connections", () => {
     base = `http://127.0.0.1:${port}`;
   };
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `conn_api_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = storage.mongo();
     repo = new ProviderConnectionRepository(mongo.db);
   });
 
   afterEach(async () => {
     await service?.stop();
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   it("returns the caller's connections mapped to the wire contract", async () => {
@@ -281,14 +275,8 @@ describe("DELETE /internal/connections/:id", () => {
     base = `http://127.0.0.1:${port}`;
   };
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `disconnect_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = storage.mongo();
     connections = new ProviderConnectionRepository(mongo.db);
     credentials = new CredentialRepository(mongo.db);
     adapter = new FakeAuthAdapter();
@@ -296,8 +284,6 @@ describe("DELETE /internal/connections/:id", () => {
 
   afterEach(async () => {
     await service?.stop();
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   const seedConnected = async (tenantId: string, principalId: string) => {
@@ -429,22 +415,14 @@ describe("POST /internal/connections/begin", () => {
       body: JSON.stringify(body ?? {}),
     });
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `begin_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = storage.mongo();
     connections = new ProviderConnectionRepository(mongo.db);
     adapter = new FakeAuthAdapter();
   });
 
   afterEach(async () => {
     await service?.stop();
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   it("returns a consent url whose state binds the flow to the caller", async () => {
@@ -571,14 +549,8 @@ describe("GET /oauth/google/callback", () => {
   const statusOf = (res: Response) =>
     new URL(res.headers.get("location") as string).searchParams.get("status");
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `callback_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = storage.mongo();
     connections = new ProviderConnectionRepository(mongo.db);
     credentials = new CredentialRepository(mongo.db);
     adapter = new FakeAuthAdapter();
@@ -586,8 +558,6 @@ describe("GET /oauth/google/callback", () => {
 
   afterEach(async () => {
     await service?.stop();
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   it("links the connection and stores the credential on a valid callback", async () => {
@@ -809,21 +779,13 @@ describe("GET /internal/calendars", () => {
       headers: signedHeaders(tenantId, principalId),
     });
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `cal_api_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = storage.mongo();
     calendars = new ProviderCalendarRepository(mongo.db);
   });
 
   afterEach(async () => {
     await service?.stop();
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   it("returns the caller's calendars mapped to the wire contract", async () => {
@@ -981,20 +943,12 @@ describe("GET /internal/events", () => {
       headers: signedHeaders(tenantId, principalId),
     });
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `events_api_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = storage.mongo();
   });
 
   afterEach(async () => {
     await service?.stop();
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   it("returns occurrences mapped to the strict wire contract", async () => {

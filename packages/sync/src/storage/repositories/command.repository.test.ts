@@ -1,10 +1,9 @@
 import { faker } from "@faker-js/faker";
-import { type Db, MongoClient } from "mongodb";
+import { type Db } from "mongodb";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type CommandSubmit } from "@sync/storage/contracts/command.contracts";
-import { installIndexManifest } from "@sync/storage/index-manifest";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
 
 const timed = {
@@ -40,21 +39,13 @@ const submit = (overrides: Partial<CommandSubmit> = {}): CommandSubmit =>
   }) as CommandSubmit;
 
 describe("CommandRepository", () => {
-  let client: MongoClient;
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: CommandRepository;
 
-  beforeEach(async () => {
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(`cmd_${objectId()}`);
-    await installIndexManifest(db);
+  beforeEach(() => {
+    db = storage.db();
     repo = new CommandRepository(db);
-  });
-
-  afterEach(async () => {
-    await db.dropDatabase();
-    await client.close();
   });
 
   it("submits a new command as pending with zero attempts", async () => {

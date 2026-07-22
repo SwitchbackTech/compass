@@ -5,15 +5,17 @@ import {
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { type SyncConfig } from "@sync/config/sync.config";
 import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
-import { SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
 
 const uri = process.env["SYNC_MONGO_URI"] as string;
+const storage = setupSyncStorage();
 const objectId = () => faker.database.mongodbObjectId();
 
 const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
@@ -86,21 +88,13 @@ describe("POST /oauth/google/notifications", () => {
       .collection(SYNC_COLLECTIONS.jobs)
       .countDocuments({ coalescingKey });
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `notif_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = storage.mongo();
     resources = new SyncResourceRepository(mongo.db);
   });
 
   afterEach(async () => {
     await service?.stop();
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   it("enqueues one pull for an authentic change, coalescing duplicates", async () => {

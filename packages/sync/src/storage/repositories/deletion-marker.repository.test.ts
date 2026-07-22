@@ -1,13 +1,12 @@
 import { faker } from "@faker-js/faker";
-import { type Db, MongoClient } from "mongodb";
+import { type Db } from "mongodb";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type DeletionMarkerRecordInput } from "@sync/storage/contracts/deletion-marker.contracts";
-import { installIndexManifest } from "@sync/storage/index-manifest";
 import {
   DELETION_MARKER_RETENTION_MS,
   DeletionMarkerRepository,
 } from "@sync/storage/repositories/deletion-marker.repository";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
 
 const markerInput = (
@@ -26,21 +25,13 @@ const markerInput = (
   }) as DeletionMarkerRecordInput;
 
 describe("DeletionMarkerRepository", () => {
-  let client: MongoClient;
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: DeletionMarkerRepository;
 
-  beforeEach(async () => {
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(`del_${objectId()}`);
-    await installIndexManifest(db);
+  beforeEach(() => {
+    db = storage.db();
     repo = new DeletionMarkerRepository(db);
-  });
-
-  afterEach(async () => {
-    await db.dropDatabase();
-    await client.close();
   });
 
   it("records a content-free marker with a 30-day expiry", async () => {

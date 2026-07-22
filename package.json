@@ -36,7 +36,7 @@
     "test:backend:fast": "bun packages/scripts/src/testing/run-tests.ts backend --tier fast",
     "test:backend:db": "bun packages/scripts/src/testing/run-tests.ts backend --tier db",
     "test:core": "bun test packages/core/src --preload ./packages/scripts/src/testing/core.preload.ts",
-    "test:sync": "bun test packages/sync/src --preload ./packages/sync/src/__tests__/sync.preload.ts",
+    "test:sync": "bun packages/scripts/src/testing/run-tests.ts sync",
     "test:web": "bun test --cwd packages/web",
     "test:scripts": "bun packages/scripts/src/testing/run-tests.ts scripts",
     "test:scripts:fast": "bun packages/scripts/src/testing/run-tests.ts scripts --tier fast",
