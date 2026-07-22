@@ -54,37 +54,45 @@ function parseExtraArgs(extraArgs: string[]): {
       continue;
     }
 
-    explicitPaths.push(arg.startsWith("./") ? arg : `./${arg}`);
+    if (!arg.includes("*")) {
+      explicitPaths.push(arg.startsWith("./") ? arg : `./${arg}`);
+      continue;
+    }
+
+    const matches = Array.from(new Glob(arg).scanSync("."));
+    if (matches.length === 0) {
+      console.error(`No test files matched: ${arg}`);
+      process.exit(1);
+    }
+
+    explicitPaths.push(
+      ...matches.map((match) => `./${match.replace(/^\.\//, "")}`),
+    );
   }
 
   return { bunFlags, ignorePattern, explicitPaths };
 }
 
-function resolveTestPaths(
-  globPattern: string,
+function resolveTestTargets(
+  scan: string,
   extraArgs: string[],
-): { paths: string[]; bunFlags: string[] } {
+): { targets: string[]; bunFlags: string[]; label: string } {
   const { bunFlags, ignorePattern, explicitPaths } = parseExtraArgs(extraArgs);
 
-  let files =
-    explicitPaths.length > 0
-      ? explicitPaths
-      : Array.from(new Glob(globPattern).scanSync(".")).map(
-          (file) => `./${file.replace(/^\.\//, "")}`,
-        );
-
-  if (ignorePattern?.includes(".db.test.")) {
-    files = files.filter((file) => !file.includes(".db.test."));
+  if (explicitPaths.length > 0) {
+    return {
+      targets: explicitPaths,
+      bunFlags,
+      label: `${explicitPaths.length} files`,
+    };
   }
 
-  files.sort();
-
-  if (files.length === 0) {
-    console.error("No test files found");
-    process.exit(1);
+  const flags = [...bunFlags];
+  if (ignorePattern) {
+    flags.push("--path-ignore-patterns", ignorePattern);
   }
 
-  return { paths: files, bunFlags };
+  return { targets: [scan], bunFlags: flags, label: scan };
 }
 
 const pkg = process.argv[2] as PackageName;
@@ -99,9 +107,9 @@ if (!pkg || !PACKAGES[pkg]) {
   process.exit(2);
 }
 
-const { preload, glob } = PACKAGES[pkg];
+const { preload, scan } = PACKAGES[pkg];
 const preloadPath = resolve(preload);
-const { paths, bunFlags } = resolveTestPaths(glob, extraArgs);
+const { targets, bunFlags, label } = resolveTestTargets(scan, extraArgs);
 
 const started = Date.now();
 
@@ -117,11 +125,11 @@ const testTargets = [
   "--parallel",
   "--preload",
   preloadPath,
-  ...paths,
   ...bunFlags,
+  ...targets,
 ];
 
-console.log(`Running ${paths.length} ${pkg} test files...`);
+console.log(`Running ${label} (${pkg})...`);
 
 try {
   const proc = Bun.spawn(testTargets, {
