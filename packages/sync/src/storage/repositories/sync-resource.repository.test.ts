@@ -33,6 +33,62 @@ describe("SyncResourceRepository", () => {
     expect(resource.syncCursor).toBeNull();
     expect(resource.pageCursor).toBeNull();
     expect(resource.importGeneration).toBe(0);
+    expect(resource.activeGeneration).toBe(0);
+  });
+
+  it("activates a generation without moving the import generation", async () => {
+    const tenantId = objectId() as never;
+    const principalId = objectId() as never;
+    const resource = await repo.ensure(
+      upsert({ tenantId, principalId }) as SyncResourceUpsert,
+    );
+    // A repair builds a new import generation, leaving reads on the old one.
+    const importGen = await repo.startNewGeneration(
+      tenantId,
+      principalId,
+      resource._id,
+    );
+    expect(importGen).toBe(1);
+    let after = await repo.findById(tenantId, principalId, resource._id);
+    expect(after?.activeGeneration).toBe(0);
+
+    // Activation flips reads to the new generation.
+    await repo.activateGeneration(
+      tenantId,
+      principalId,
+      resource._id,
+      importGen,
+    );
+    after = await repo.findById(tenantId, principalId, resource._id);
+    expect(after?.activeGeneration).toBe(1);
+    expect(after?.importGeneration).toBe(1);
+  });
+
+  it("resolves the active generation for each event calendar, defaulting absent ones", async () => {
+    const tenantId = objectId() as never;
+    const principalId = objectId() as never;
+    const calA = objectId() as never;
+    const calB = objectId() as never;
+    const absent = objectId() as never;
+    const a = await repo.ensure(
+      upsert({ tenantId, principalId, calendarId: calA }) as SyncResourceUpsert,
+    );
+    await repo.ensure(
+      upsert({ tenantId, principalId, calendarId: calB }) as SyncResourceUpsert,
+    );
+    // calA has been repaired and activated to generation 1; calB stays at 0.
+    await repo.startNewGeneration(tenantId, principalId, a._id);
+    await repo.activateGeneration(tenantId, principalId, a._id, 1);
+
+    const map = await repo.activeGenerationByCalendar(tenantId, principalId, [
+      calA,
+      calB,
+      absent,
+    ]);
+    expect(map.get(calA)).toBe(1);
+    expect(map.get(calB)).toBe(0);
+    // A calendar with no events resource is absent — the caller reads gen 0.
+    expect(map.has(absent)).toBe(false);
   });
 
   it("ensures one resource per (connection, kind, calendar)", async () => {

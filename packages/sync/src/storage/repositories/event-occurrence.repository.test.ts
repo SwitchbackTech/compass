@@ -142,7 +142,10 @@ describe("EventOccurrenceRepository", () => {
       const page = await repo.listByCalendarRange({
         tenantId: tenantId as OccurrenceInput["tenantId"],
         principalId: principalId as OccurrenceInput["principalId"],
-        calendarIds: [calA, calB],
+        calendars: [
+          { calendarId: calA, generation: 0 },
+          { calendarId: calB, generation: 0 },
+        ],
         start: new Date("2026-07-01T00:00:00-06:00"),
         end: new Date("2026-07-16T00:00:00-06:00"),
         limit: 100,
@@ -156,7 +159,10 @@ describe("EventOccurrenceRepository", () => {
       const query = {
         tenantId: tenantId as OccurrenceInput["tenantId"],
         principalId: principalId as OccurrenceInput["principalId"],
-        calendarIds: [calA, calB],
+        calendars: [
+          { calendarId: calA, generation: 0 },
+          { calendarId: calB, generation: 0 },
+        ],
         start: new Date("2026-07-01T00:00:00-06:00"),
         end: new Date("2026-07-16T00:00:00-06:00"),
       };
@@ -199,7 +205,9 @@ describe("EventOccurrenceRepository", () => {
       const query = {
         tenantId: tenant2,
         principalId: principal2,
-        calendarIds: [cal] as OccurrenceInput["calendarId"][],
+        calendars: [
+          { calendarId: cal as OccurrenceInput["calendarId"], generation: 0 },
+        ],
         start: new Date("2026-07-01T00:00:00-06:00"),
         end: new Date("2026-07-16T00:00:00-06:00"),
       };
@@ -219,6 +227,52 @@ describe("EventOccurrenceRepository", () => {
       }
       expect(seen).toHaveLength(5);
       expect(new Set(seen).size).toBe(5);
+    });
+
+    it("reads only the requested generation, hiding a repair's new one", async () => {
+      const tenant = objectId() as OccurrenceInput["tenantId"];
+      const principal = objectId() as OccurrenceInput["principalId"];
+      const cal = objectId() as OccurrenceInput["calendarId"];
+      const at = new Date("2026-07-14T09:00:00-06:00");
+      const mk = (eventId: string, gen: number, key: string) =>
+        repo.replaceForEvent(eventId as OccurrenceInput["eventId"], gen, [
+          occurrence({
+            tenantId: tenant,
+            principalId: principal,
+            eventId: eventId as OccurrenceInput["eventId"],
+            occurrenceKey: key,
+            calendarId: cal,
+            startAt: at,
+            generation: gen,
+          }),
+        ]);
+      // The live generation 0 and a repair building generation 1 coexist.
+      await mk(objectId(), 0, `${cal}:live`);
+      await mk(objectId(), 1, `${cal}:repair`);
+
+      const range = {
+        start: new Date("2026-07-01T00:00:00-06:00"),
+        end: new Date("2026-07-16T00:00:00-06:00"),
+        limit: 100,
+      };
+      // Reading the active generation shows only the live row, never the repair.
+      const live = await repo.listByCalendarRange({
+        tenantId: tenant,
+        principalId: principal,
+        calendars: [{ calendarId: cal, generation: 0 }],
+        ...range,
+      });
+      expect(live).toHaveLength(1);
+      expect(live[0]?.occurrenceKey).toBe(`${cal}:live`);
+      // Reading generation 1 (post-activation) shows only the repair's row.
+      const repaired = await repo.listByCalendarRange({
+        tenantId: tenant,
+        principalId: principal,
+        calendars: [{ calendarId: cal, generation: 1 }],
+        ...range,
+      });
+      expect(repaired).toHaveLength(1);
+      expect(repaired[0]?.occurrenceKey).toBe(`${cal}:repair`);
     });
   });
 });

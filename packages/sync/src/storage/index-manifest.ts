@@ -94,10 +94,16 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       key: { eventId: 1, occurrenceKey: 1 },
       options: { unique: true },
     },
-    // Index the normalized start instant (startAt), not the schedule.start
-    // union path — range queries compare all-day and timed occurrences on one
-    // coherent axis.
-    { name: "calendar_start", key: { calendarId: 1, startAt: 1 } },
+    // The range read filters each calendar to its active generation, then
+    // sorts/paginates by (startAt, _id). Leading with (calendarId, generation)
+    // keeps the query index-covered even while a repair keeps two generations of
+    // a calendar's occurrences resident. Index the normalized start instant
+    // (startAt), not the schedule.start union path, so all-day and timed
+    // occurrences compare on one coherent axis.
+    {
+      name: "calendar_gen_start",
+      key: { calendarId: 1, generation: 1, startAt: 1, _id: 1 },
+    },
     { name: "principal_start", key: { principalId: 1, startAt: 1 } },
   ],
   [SYNC_COLLECTIONS.syncResources]: [

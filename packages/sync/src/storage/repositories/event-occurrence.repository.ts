@@ -18,10 +18,18 @@ export interface OccurrenceRangeCursor {
   id: string;
 }
 
+// One calendar to read, paired with the generation whose occurrences are
+// currently active for it — so a repair building a new generation alongside the
+// live one is never read until it activates.
+export interface CalendarGeneration {
+  calendarId: SyncEventCalendarId;
+  generation: number;
+}
+
 export interface OccurrenceRangeQuery {
   tenantId: TenantId;
   principalId: PrincipalId;
-  calendarIds: SyncEventCalendarId[];
+  calendars: readonly CalendarGeneration[];
   // Half-open [start, end) over the normalized start instant.
   start: Date;
   end: Date;
@@ -81,30 +89,34 @@ export class EventOccurrenceRepository {
   async listByCalendarRange(
     query: OccurrenceRangeQuery,
   ): Promise<EventOccurrenceRecord[]> {
-    const scope = {
-      tenantId: query.tenantId,
-      principalId: query.principalId,
-      calendarId: { $in: query.calendarIds },
+    if (query.calendars.length === 0) return [];
+    const base = { tenantId: query.tenantId, principalId: query.principalId };
+    // Read each calendar only at its active generation, so occurrences of a
+    // repair building a newer generation for that calendar stay invisible until
+    // it activates.
+    const activeCalendars = {
+      $or: query.calendars.map((c) => ({
+        calendarId: c.calendarId,
+        generation: c.generation,
+      })),
     };
     const inRange = { startAt: { $gte: query.start, $lt: query.end } };
 
     // Composite keyset over the (startAt, _id) sort: a later instant, or the
     // same instant with a greater _id. startAt is a top-level Date and _id a
     // string, so this is fully typeable — no cast needed.
-    const filter = query.after
-      ? {
-          ...scope,
-          $and: [
-            inRange,
-            {
-              $or: [
-                { startAt: { $gt: query.after.startAt } },
-                { startAt: query.after.startAt, _id: { $gt: query.after.id } },
-              ],
-            },
-          ],
-        }
-      : { ...scope, ...inRange };
+    const keyset = query.after
+      ? [
+          {
+            $or: [
+              { startAt: { $gt: query.after.startAt } },
+              { startAt: query.after.startAt, _id: { $gt: query.after.id } },
+            ],
+          },
+        ]
+      : [];
+
+    const filter = { ...base, $and: [activeCalendars, inRange, ...keyset] };
 
     const records = await this.collection
       .find(filter)
