@@ -619,13 +619,14 @@ describe("submitCloudCommand provider dispatch", () => {
     principalId: PrincipalId,
     seriesId: EventId,
     recurrenceId: string,
+    cancelled = false,
   ) =>
     seedEvent(tenantId, principalId, objectId() as EventId, {
       recurrence: {
         kind: "exception",
         seriesId,
         recurrenceId: recurrenceId as never,
-        cancelled: false,
+        cancelled,
       },
       schedule: {
         kind: "timed",
@@ -733,6 +734,42 @@ describe("submitCloudCommand provider dispatch", () => {
     const starts = await occurrenceStartsFor(masterId);
     expect(starts).toContain("2026-07-21T15:00:00.000Z");
     expect(starts).toHaveLength(3);
+  });
+
+  it("preserves a cancelled occurrence across an edit-all (no resurrection)", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const masterId = objectId() as EventId;
+    const cancelledInstant = "2026-07-21T09:00:00-06:00";
+    const master = await seriesMaster(tenantId, principalId, masterId);
+    // The user deleted this one occurrence (scope "this" tombstone).
+    const tombstone = await seriesException(
+      tenantId,
+      principalId,
+      masterId,
+      cancelledInstant,
+      true,
+    );
+    await reprojectOccurrences(occurrences, master, now, [
+      cancelledInstant as never,
+    ]);
+    await reprojectOccurrences(occurrences, tombstone, now);
+
+    const command = await submitCloudCommand(
+      deps(),
+      updateAllFor(tenantId, principalId, masterId, "Renamed"),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    // The tombstone survives, so the deleted instant is still not a live
+    // occurrence of the master.
+    expect(
+      await events.findById(tenantId, principalId, tombstone._id),
+    ).not.toBeNull();
+    const starts = await occurrenceStartsFor(masterId);
+    expect(starts).not.toContain("2026-07-21T15:00:00.000Z");
+    expect(starts).toHaveLength(2);
   });
 
   it("converts a series to a single event on edit-all and still drops exceptions", async () => {

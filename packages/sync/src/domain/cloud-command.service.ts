@@ -1,3 +1,4 @@
+import { type DateTime } from "@core/types/domain-primitives";
 import { type EditableRecurrence } from "@core/types/event.contracts";
 import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
@@ -239,29 +240,52 @@ async function applyCloudMutation(
   return confirmCloud(deps, command);
 }
 
-// Apply a scope-"all" edit to a cloud series: drop any per-instance exceptions
-// (matching the app's existing series semantics, where an edit-all discards
-// overrides), replace the master, then reproject its whole window so the new
-// occurrences own every instant.
+// Apply a scope-"all" edit to a cloud series. An edit-all discards per-instance
+// content/time OVERRIDES (they revert to the edited series), but a cancelled
+// exception is a per-instance DELETION and must survive — those are kept and
+// their instants excluded from the reprojected master, so a deleted occurrence
+// is not resurrected by a later series edit. Converting the series to a single
+// event drops every exception, cancellations included, since a single event has
+// no instances.
 //
 // Exceptions are cleared BEFORE the master is replaced, on purpose. An edit-all
 // can convert the series to a single event; if the replace ran first, a crash
 // before the cleanup would make the retry read a single-kind event and take the
 // single-event path, which never cleans exceptions — orphaning them. Clearing
-// first means they are gone before the master's recurrence kind can change, so a
-// retry converges down either path. replaceExisting returns false only when the
-// master is already gone, in which case clearing its exceptions was still right.
+// first means the discarded ones are gone before the master's recurrence kind
+// can change, so a retry converges down either path. Gating the kept/discarded
+// split on the command's immutable recurrence intent keeps that classification
+// stable across retries. replaceExisting returns false only when the master is
+// already gone, in which case discarding its overrides was still right.
 async function updateCloudSeries(
   deps: CloudCommandDeps,
   command: CommandRecord,
   master: EventRecord,
   now: () => Date,
 ): Promise<CommandRecord> {
-  await clearSeriesExceptions(deps, command, master._id);
+  const convertsToSingle =
+    command.input.kind === "update" &&
+    command.input.recurrence.kind === "single";
+  const exceptions = await deps.events.findSeriesExceptions(
+    command.tenantId,
+    command.principalId,
+    master._id,
+  );
+  const kept = convertsToSingle ? [] : exceptions.filter(isCancelledException);
+  const discarded = convertsToSingle
+    ? exceptions
+    : exceptions.filter((exception) => !isCancelledException(exception));
+
+  await deleteExceptions(deps, command, discarded);
   const updated = applyCloudUpdate(master, command, now());
   const applied = await deps.events.replaceExisting(updated);
   if (!applied) return command;
-  await reprojectOccurrences(deps.occurrences, updated, now);
+  await reprojectOccurrences(
+    deps.occurrences,
+    updated,
+    now,
+    kept.map(exceptionInstant),
+  );
   return confirmCloud(deps, command);
 }
 
@@ -276,7 +300,12 @@ async function deleteCloudSeries(
   master: EventRecord,
 ): Promise<CommandRecord> {
   await deps.occurrences.replaceForEvent(master._id, master.generation, []);
-  await clearSeriesExceptions(deps, command, master._id);
+  const exceptions = await deps.events.findSeriesExceptions(
+    command.tenantId,
+    command.principalId,
+    master._id,
+  );
+  await deleteExceptions(deps, command, exceptions);
   await deps.events.deleteById(
     command.tenantId,
     command.principalId,
@@ -285,18 +314,12 @@ async function deleteCloudSeries(
   return confirmCloud(deps, command);
 }
 
-// Remove every exception of a series and clear each one's occurrences. Shared by
-// series edit-all (which discards overrides) and delete-all.
-async function clearSeriesExceptions(
+// Remove the given exception events and clear each one's occurrences.
+async function deleteExceptions(
   deps: CloudCommandDeps,
   command: CommandRecord,
-  seriesId: EventRecord["_id"],
+  exceptions: readonly EventRecord[],
 ): Promise<void> {
-  const exceptions = await deps.events.findSeriesExceptions(
-    command.tenantId,
-    command.principalId,
-    seriesId,
-  );
   for (const exception of exceptions) {
     await deps.occurrences.replaceForEvent(
       exception._id,
@@ -309,6 +332,18 @@ async function clearSeriesExceptions(
       exception._id,
     );
   }
+}
+
+function isCancelledException(event: EventRecord): boolean {
+  return event.recurrence.kind === "exception" && event.recurrence.cancelled;
+}
+
+// The original instant a series exception overrides — its recurrence identity.
+function exceptionInstant(event: EventRecord): DateTime {
+  if (event.recurrence.kind !== "exception") {
+    throw new Error("exceptionInstant requires an exception event");
+  }
+  return event.recurrence.recurrenceId;
 }
 
 // Confirm a cloud command with no provider identity — local persistence is the
