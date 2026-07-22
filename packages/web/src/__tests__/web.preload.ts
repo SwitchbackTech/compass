@@ -295,8 +295,17 @@ if (typeof globalThis.structuredClone === "undefined") {
 mockNodeModules();
 
 const sessionModule = await import("supertokens-web-js/recipe/session");
-const { cleanup } = await import("@testing-library/react");
+const { cleanup, configure } = await import("@testing-library/react");
 const { resetAllStores } = await import("./utils/state/reset-stores");
+
+// Give async queries (findBy*, waitFor) real headroom. The default 1000ms is
+// fine locally (the whole suite runs in ~16s) but too tight on CI, where every
+// matrix job shares the runner's cores: under that contention a component that
+// resolves in tens of ms locally can take past a second, timing out queries in
+// tests that are otherwise correct (AuthModal/SelectView flaked this way). A
+// genuinely stuck async never resolves regardless, so this only widens the
+// window for slow-but-correct ones — it cannot mask a real hang.
+configure({ asyncUtilTimeout: 5000 });
 
 function resetDocument() {
   document.body.innerHTML = "";
