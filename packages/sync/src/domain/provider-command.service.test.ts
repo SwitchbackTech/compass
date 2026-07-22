@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { type RecurrenceEdit } from "@core/types/event-command.contracts";
 import { type SyncCommandInput } from "@core/types/sync/command.contracts";
 import {
   type ConnectionId,
@@ -11,6 +12,7 @@ import {
   type AccessTokenSource,
   executeProviderCreate,
   executeProviderDelete,
+  executeProviderSeriesUpdate,
   executeProviderUpdate,
 } from "@sync/domain/provider-command.service";
 import { reprojectOccurrences } from "@sync/domain/reproject";
@@ -26,6 +28,7 @@ import {
   type ProviderWriteResult,
 } from "@sync/providers/provider-event-writer.port";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
+import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
@@ -927,5 +930,520 @@ describe("executeProviderDelete", () => {
     expect(writer.deleteCalls).toHaveLength(0);
     const stored = await events.findById(tenantId, principalId, event._id);
     expect(stored?.lifecycleState).toBe("active");
+  });
+});
+
+describe("executeProviderSeriesUpdate", () => {
+  let mongo: SyncMongoService;
+  let commands: CommandRepository;
+  let events: EventRepository;
+  let occurrences: EventOccurrenceRepository;
+  let calendars: ProviderCalendarRepository;
+
+  const now = () => new Date("2026-07-10T00:00:00.000Z");
+
+  // A weekly series of four occurrences starting 2026-07-14 09:00 Denver.
+  const schedule = {
+    kind: "timed" as const,
+    start: "2026-07-14T09:00:00-06:00",
+    end: "2026-07-14T10:00:00-06:00",
+    timeZone: "America/Denver",
+  };
+  const weekly4 = ["RRULE:FREQ=WEEKLY;COUNT=4"];
+  const weekly2 = ["RRULE:FREQ=WEEKLY;COUNT=2"];
+  const content = (title: string) => ({
+    title,
+    description: "",
+    location: null,
+    organizer: null,
+    attendees: [],
+    conference: null,
+  });
+  // The provider's view of the series master, with its current rules.
+  const providerSeries = (
+    title: string,
+    version: string,
+    rules: readonly string[],
+  ): ProviderEvent => ({
+    kind: "event",
+    providerEventId: "g-evt-1",
+    providerVersion: version,
+    providerUpdatedAt: null,
+    content: content(title),
+    schedule,
+    busy: true,
+    recurrence: { kind: "seriesMaster", rules: [...rules] },
+  });
+
+  // Seed a provider-linked series master ("Old", weekly x4 at etag-1).
+  const seedMaster = async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const connectionId = objectId() as ConnectionId;
+    const calendar = await calendars.upsertByProviderCalendar({
+      tenantId,
+      principalId,
+      connectionId,
+      providerCalendarId: "primary@google.com",
+      displayName: "Google",
+      color: null,
+      active: true,
+      primary: true,
+      accessRole: "owner",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: true,
+        canReadBusy: true,
+        canInviteAttendees: true,
+      },
+    });
+    const eventId = objectId() as EventId;
+    await events.put({
+      _id: eventId,
+      tenantId,
+      principalId,
+      origin: "compass",
+      calendarId: calendar._id,
+      clientEventId: null,
+      connectionId,
+      providerEventId: "g-evt-1" as never,
+      providerVersion: "etag-1" as never,
+      providerUpdatedAt: null,
+      deliveryState: "confirmed",
+      providerMetadata: null,
+      content: content("Old"),
+      schedule,
+      recurrence: { kind: "seriesMaster", rules: [...weekly4] },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: now(),
+      updatedAt: now(),
+      confirmedAt: now(),
+    } as never);
+    const master = await events.findById(tenantId, principalId, eventId);
+    if (!master) throw new Error("seed failed to read back the master");
+    // Project the master so the read model starts with its four occurrences.
+    await reprojectOccurrences(occurrences, master, now);
+    return { tenantId, principalId, calendar, master };
+  };
+
+  // An edit-all update command for the seeded master.
+  const editAllCommand = async (
+    master: EventRecord,
+    edit: { title: string; recurrence: RecurrenceEdit },
+  ) =>
+    commands.submit({
+      tenantId: master.tenantId,
+      principalId: master.principalId,
+      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+      eventId: master._id,
+      input: {
+        kind: "update",
+        invitation: "all",
+        content: content(edit.title),
+        schedule,
+        recurrence: edit.recurrence,
+        scope: "all",
+        recurrenceId: null,
+      } as unknown as SyncCommandInput,
+      expectedVersion: "etag-1" as never,
+    });
+
+  const masterOccurrences = (eventId: EventId) =>
+    mongo.db
+      .collection(SYNC_COLLECTIONS.eventOccurrences)
+      .find({ eventId })
+      .sort({ startAt: 1 })
+      .toArray();
+
+  // Seed a provider-linked series exception. Real provider exceptions come from
+  // import (a later slice) and each carries its OWN provider event id, so this
+  // seeds a distinct providerEventId rather than reusing the master's — the
+  // provider-identity unique index forbids sharing it.
+  const putException = async (
+    master: EventRecord,
+    opts: {
+      providerEventId: string;
+      recurrenceId: string;
+      cancelled: boolean;
+      title: string;
+    },
+  ): Promise<EventRecord> => {
+    const id = objectId() as EventId;
+    await events.put({
+      _id: id,
+      tenantId: master.tenantId,
+      principalId: master.principalId,
+      origin: "compass",
+      calendarId: master.calendarId,
+      clientEventId: null,
+      connectionId: master.connectionId,
+      providerEventId: opts.providerEventId as never,
+      providerVersion: "etag-1" as never,
+      providerUpdatedAt: null,
+      deliveryState: "confirmed",
+      providerMetadata: null,
+      content: content(opts.title),
+      schedule,
+      recurrence: {
+        kind: "exception",
+        seriesId: master._id,
+        recurrenceId: opts.recurrenceId as never,
+        cancelled: opts.cancelled,
+      },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: now(),
+      updatedAt: now(),
+      confirmedAt: now(),
+    } as never);
+    const stored = await events.findById(
+      master.tenantId,
+      master.principalId,
+      id,
+    );
+    if (!stored) throw new Error("seed failed to read back the exception");
+    return stored;
+  };
+
+  beforeEach(async () => {
+    mongo = new SyncMongoService();
+    await mongo.connect({
+      uri,
+      databaseName: `provseries_${objectId()}`,
+      forbiddenDatabaseName: "compass_api_unused",
+      enforceLeastPrivilege: false,
+    });
+    commands = new CommandRepository(mongo.db);
+    events = new EventRepository(mongo.db);
+    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
+    calendars = new ProviderCalendarRepository(mongo.db);
+  });
+
+  afterEach(async () => {
+    await mongo.db.dropDatabase();
+    await mongo.disconnect();
+  });
+
+  const deps = (writer: ProviderEventWriter) => ({
+    commands,
+    events,
+    occurrences,
+    writer,
+    custody: tokenSource(),
+  });
+
+  it("patches the whole series and reprojects with the edited content", async () => {
+    const { tenantId, principalId, calendar, master } = await seedMaster();
+    const command = await editAllCommand(master, {
+      title: "New",
+      recurrence: { kind: "preserve" },
+    });
+    const writer = new FakeUpdateWriter();
+    writer.fetched = providerSeries("Old", "etag-1", weekly4);
+    writer.patchResult = {
+      providerEventId: "g-evt-1",
+      providerVersion: "etag-2",
+    };
+
+    const result = await executeProviderSeriesUpdate(
+      deps(writer),
+      command,
+      master,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("confirmed");
+    // Preserve re-writes the master's own rules; the whole series is patched.
+    expect(writer.patchCalls).toHaveLength(1);
+    expect(writer.patchCalls[0].recurrence).toEqual({
+      kind: "series",
+      rules: [...weekly4],
+    });
+    const stored = await events.findById(tenantId, principalId, master._id);
+    expect(stored?.content.title).toBe("New");
+    expect(stored?.providerVersion).toBe("etag-2");
+    expect(stored?.recurrence).toEqual({
+      kind: "seriesMaster",
+      rules: [...weekly4],
+    });
+    // All four occurrences carry the edited title.
+    const occ = await masterOccurrences(master._id);
+    expect(occ).toHaveLength(4);
+    expect(occ.every((o) => o["title"] === "New")).toBe(true);
+  });
+
+  it("patches on a rules-only edit instead of treating it as a replay", async () => {
+    const { tenantId, principalId, calendar, master } = await seedMaster();
+    // Same title and schedule, only the recurrence rule shrinks 4 -> 2. Without
+    // comparing recurrence this would look identical to the provider's current
+    // state and be confirmed WITHOUT ever writing the new rule.
+    const command = await editAllCommand(master, {
+      title: "Old",
+      recurrence: { kind: "series", rules: weekly2 },
+    });
+    const writer = new FakeUpdateWriter();
+    writer.fetched = providerSeries("Old", "etag-1", weekly4);
+    writer.patchResult = {
+      providerEventId: "g-evt-1",
+      providerVersion: "etag-2",
+    };
+
+    const result = await executeProviderSeriesUpdate(
+      deps(writer),
+      command,
+      master,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("confirmed");
+    expect(writer.patchCalls).toHaveLength(1);
+    expect(writer.patchCalls[0].recurrence).toEqual({
+      kind: "series",
+      rules: [...weekly2],
+    });
+    const stored = await events.findById(tenantId, principalId, master._id);
+    expect(stored?.recurrence).toEqual({
+      kind: "seriesMaster",
+      rules: [...weekly2],
+    });
+    // The horizon now holds only the two remaining occurrences.
+    expect(await masterOccurrences(master._id)).toHaveLength(2);
+  });
+
+  it("confirms without re-patching when the whole edit already landed", async () => {
+    const { calendar, master } = await seedMaster();
+    const command = await editAllCommand(master, {
+      title: "New",
+      recurrence: { kind: "series", rules: weekly2 },
+    });
+    const writer = new FakeUpdateWriter();
+    // Provider already holds the edited content AND the new rules at a fresh
+    // version — a prior attempt landed before the crash.
+    writer.fetched = providerSeries("New", "etag-2", weekly2);
+
+    const result = await executeProviderSeriesUpdate(
+      deps(writer),
+      command,
+      master,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("confirmed");
+    expect(writer.patchCalls).toHaveLength(0);
+  });
+
+  it("treats a reformatted-but-equivalent rule echo as a replay", async () => {
+    const { calendar, master } = await seedMaster();
+    const command = await editAllCommand(master, {
+      title: "New",
+      recurrence: {
+        kind: "series",
+        rules: ["RRULE:FREQ=WEEKLY;COUNT=4;INTERVAL=1"],
+      },
+    });
+    const writer = new FakeUpdateWriter();
+    // The provider echoes the same rule reordered and lowercased at a new
+    // version — our edit landed on a prior attempt. A byte-for-byte compare
+    // would miss it and re-patch with a now-stale version, failing a write that
+    // already succeeded.
+    writer.fetched = providerSeries("New", "etag-2", [
+      "rrule:interval=1;count=4;freq=weekly",
+    ]);
+
+    const result = await executeProviderSeriesUpdate(
+      deps(writer),
+      command,
+      master,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("confirmed");
+    expect(writer.patchCalls).toHaveLength(0);
+  });
+
+  it("fails with a conflict on a genuine concurrent external edit", async () => {
+    const { calendar, master } = await seedMaster();
+    const command = await editAllCommand(master, {
+      title: "New",
+      recurrence: { kind: "preserve" },
+    });
+    const writer = new FakeUpdateWriter();
+    writer.fetched = providerSeries("Someone else", "etag-9", weekly4);
+    writer.patchError = new ProviderWriteError("versionConflict", "stale");
+
+    const result = await executeProviderSeriesUpdate(
+      deps(writer),
+      command,
+      master,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("failed");
+    expect(
+      result.outcome.state === "failed" && result.outcome.failureReason,
+    ).toBe("versionConflict");
+  });
+
+  it("discards override exceptions but keeps cancelled tombstones", async () => {
+    const { tenantId, principalId, calendar, master } = await seedMaster();
+    // An override on the 2nd instant and a cancellation on the 3rd.
+    const override = await putException(master, {
+      providerEventId: "g-inst-override",
+      recurrenceId: "2026-07-21T09:00:00-06:00",
+      cancelled: false,
+      title: "Moved",
+    });
+    await putException(master, {
+      providerEventId: "g-inst-cancelled",
+      recurrenceId: "2026-07-28T09:00:00-06:00",
+      cancelled: true,
+      title: "Old",
+    });
+    const command = await editAllCommand(master, {
+      title: "New",
+      recurrence: { kind: "preserve" },
+    });
+    const writer = new FakeUpdateWriter();
+    writer.fetched = providerSeries("Old", "etag-1", weekly4);
+
+    const result = await executeProviderSeriesUpdate(
+      deps(writer),
+      command,
+      master,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("confirmed");
+    // The override is gone; the cancelled tombstone survives the edit.
+    expect(
+      await events.findById(tenantId, principalId, override._id),
+    ).toBeNull();
+    const remaining = await events.findSeriesExceptions(
+      tenantId,
+      principalId,
+      master._id,
+    );
+    expect(remaining).toHaveLength(1);
+    expect(
+      remaining[0]?.recurrence.kind === "exception" &&
+        remaining[0]?.recurrence.cancelled,
+    ).toBe(true);
+    // The reprojected master excludes the cancelled instant (2026-07-28 15:00Z)
+    // but re-covers the formerly-overridden instant, so three master rows remain.
+    const occ = await masterOccurrences(master._id);
+    const starts = occ.map((o) => (o["startAt"] as Date).toISOString());
+    expect(starts).toEqual([
+      "2026-07-14T15:00:00.000Z",
+      "2026-07-21T15:00:00.000Z",
+      "2026-08-04T15:00:00.000Z",
+    ]);
+  });
+
+  it("converts a series to a single event, dropping every exception", async () => {
+    const { tenantId, principalId, calendar, master } = await seedMaster();
+    await putException(master, {
+      providerEventId: "g-inst-cancelled",
+      recurrenceId: "2026-07-28T09:00:00-06:00",
+      cancelled: true,
+      title: "Old",
+    });
+    const command = await editAllCommand(master, {
+      title: "Just once",
+      recurrence: { kind: "single" },
+    });
+    const writer = new FakeUpdateWriter();
+    writer.fetched = providerSeries("Old", "etag-1", weekly4);
+
+    const result = await executeProviderSeriesUpdate(
+      deps(writer),
+      command,
+      master,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("confirmed");
+    // The provider write removes recurrence.
+    expect(writer.patchCalls[0].recurrence).toEqual({ kind: "single" });
+    const stored = await events.findById(tenantId, principalId, master._id);
+    expect(stored?.recurrence).toEqual({ kind: "single" });
+    // No exceptions survive a conversion to a single event, and the master
+    // projects exactly one occurrence.
+    expect(
+      await events.findSeriesExceptions(tenantId, principalId, master._id),
+    ).toHaveLength(0);
+    expect(await masterOccurrences(master._id)).toHaveLength(1);
+  });
+
+  it("converges when executed twice (idempotent retry)", async () => {
+    const { tenantId, principalId, calendar, master } = await seedMaster();
+    const command = await editAllCommand(master, {
+      title: "New",
+      recurrence: { kind: "series", rules: weekly2 },
+    });
+    const writer = new FakeUpdateWriter();
+    writer.fetched = providerSeries("Old", "etag-1", weekly4);
+    writer.patchResult = {
+      providerEventId: "g-evt-1",
+      providerVersion: "etag-2",
+    };
+
+    await executeProviderSeriesUpdate(
+      deps(writer),
+      command,
+      master,
+      calendar,
+      now,
+    );
+    // The provider now reflects the landed edit, so a retry is a replay.
+    writer.fetched = providerSeries("New", "etag-2", weekly2);
+    const second = await executeProviderSeriesUpdate(
+      deps(writer),
+      command,
+      master,
+      calendar,
+      now,
+    );
+
+    expect(second.outcome.state).toBe("confirmed");
+    // Only the first attempt wrote; the retry recognized the replay.
+    expect(writer.patchCalls).toHaveLength(1);
+    const owned = await events.listByCalendar({
+      tenantId,
+      principalId,
+      calendarId: calendar._id,
+      generation: 0,
+      limit: 10,
+    });
+    expect(owned).toHaveLength(1);
+    expect(await masterOccurrences(master._id)).toHaveLength(2);
+  });
+
+  it("leaves the command pending on a transient patch failure", async () => {
+    const { calendar, master } = await seedMaster();
+    const command = await editAllCommand(master, {
+      title: "New",
+      recurrence: { kind: "preserve" },
+    });
+    const writer = new FakeUpdateWriter();
+    writer.fetched = providerSeries("Old", "etag-1", weekly4);
+    writer.patchError = new ProviderWriteError("transient", "blip");
+
+    const result = await executeProviderSeriesUpdate(
+      deps(writer),
+      command,
+      master,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("pending");
   });
 });

@@ -1,11 +1,14 @@
+import { type DateTime } from "@core/types/domain-primitives";
 import {
   type EditableRecurrence,
   type EventSchedule,
 } from "@core/types/event.contracts";
+import { type RecurrenceEdit } from "@core/types/event-command.contracts";
 import { type SyncCommandFailureReason } from "@core/types/sync/command.contracts";
 import {
   type ProviderEventVersion,
   type SyncEventContent,
+  type SyncEventRecurrence,
 } from "@core/types/sync/event.contracts";
 import {
   type ConnectionId,
@@ -261,8 +264,13 @@ export async function executeProviderUpdate(
   if (!current) return failCommand(deps, command, "permanentProviderError");
 
   // Replay: the provider already holds this edit, so confirm at its version
-  // rather than writing again.
-  if (matchesIntendedEdit(current, input.content, input.schedule)) {
+  // rather than writing again. A single-event update always writes recurrence
+  // "single", so that is the intended recurrence to compare against.
+  if (
+    matchesIntendedEdit(current, input.content, input.schedule, {
+      kind: "single",
+    })
+  ) {
     return commitProviderUpdate(
       deps,
       command,
@@ -341,26 +349,328 @@ async function commitProviderUpdate(
   return confirmed ?? command;
 }
 
+// Apply a Compass-initiated scope-"all" edit to a provider-linked recurring
+// series — Google's "edit all events in the series". The master is patched with
+// the new content, schedule, AND recurrence rules, and its per-instance
+// overrides fall away. Kept separate from executeProviderUpdate because the
+// local commit is series-aware: it discards override exceptions but preserves
+// cancelled tombstones (a deletion must survive an edit) and reprojects the
+// master excluding their instants.
+//
+// Replay safety mirrors the single-event path: fetch the provider's current
+// master first; if it already carries this edit (content, schedule, and rules),
+// a prior attempt landed, so confirm at the current version without re-writing.
+// Otherwise patch conditionally on the command's expected version, turning a
+// genuine concurrent external edit into a versionConflict.
+export async function executeProviderSeriesUpdate(
+  deps: ProviderMutationDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  calendar: ProviderCalendarRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (command.input.kind !== "update") {
+    throw new Error("executeProviderSeriesUpdate requires an update command");
+  }
+  if (!master.connectionId || !master.providerEventId) {
+    throw new Error("executeProviderSeriesUpdate requires a linked event");
+  }
+  if (master.recurrence.kind !== "seriesMaster") {
+    throw new Error("executeProviderSeriesUpdate requires a series master");
+  }
+  const { input } = command;
+  const connectionId = master.connectionId;
+  const providerEventId = master.providerEventId;
+  const intendedRecurrence = intendedSeriesRecurrence(input.recurrence, master);
+
+  let accessToken: string;
+  try {
+    accessToken = await deps.custody.getValidAccessToken(connectionId);
+  } catch (error) {
+    if (
+      error instanceof ProviderAuthError &&
+      error.reason === "refreshFailed"
+    ) {
+      return command;
+    }
+    return failCommand(deps, command, "authorizationRevoked");
+  }
+
+  const location = {
+    accessToken,
+    calendarId: calendar.providerCalendarId,
+    providerEventId,
+  };
+
+  // Fetch the master's current provider state to detect a replay and learn the
+  // version to commit. A cancellation read means the series no longer exists.
+  let current: ProviderEvent | null;
+  try {
+    const read = await deps.writer.fetchEvent(location);
+    current = read?.kind === "event" ? read : null;
+  } catch (error) {
+    if (error instanceof ProviderWriteError) {
+      if (error.reason === "transient") return command;
+      return failCommand(deps, command, error.reason);
+    }
+    throw error;
+  }
+  if (!current) return failCommand(deps, command, "permanentProviderError");
+
+  // Replay: the provider already holds this series edit (rules included), so
+  // confirm at its version rather than writing again.
+  if (
+    matchesIntendedEdit(
+      current,
+      input.content,
+      input.schedule,
+      intendedRecurrence,
+    )
+  ) {
+    return commitProviderSeriesUpdate(
+      deps,
+      command,
+      master,
+      current.providerVersion,
+      now,
+    );
+  }
+
+  let result: ProviderWriteResult;
+  try {
+    result = await deps.writer.patchEvent({
+      ...location,
+      expectedVersion: command.expectedVersion,
+      content: input.content,
+      schedule: input.schedule,
+      recurrence: intendedRecurrence,
+      invitation: input.invitation,
+    });
+  } catch (error) {
+    if (error instanceof ProviderWriteError) {
+      if (error.reason === "transient") return command;
+      return failCommand(deps, command, error.reason);
+    }
+    throw error;
+  }
+
+  return commitProviderSeriesUpdate(
+    deps,
+    command,
+    master,
+    result.providerVersion,
+    now,
+  );
+}
+
+// Commit a provider series edit-all locally after the provider write lands.
+// An edit-all discards per-instance content/time OVERRIDES (they revert to the
+// edited series) but KEEPS cancelled tombstones, whose instants are excluded
+// from the reprojected master so a deleted occurrence is not resurrected. A
+// conversion to a single event drops every exception.
+//
+// Overrides are deleted BEFORE the master is replaced, on purpose — the same
+// crash-safety ordering the cloud path uses. A convert-to-single edit changes
+// the master's recurrence kind, and a retry that read the converted single
+// master would take the single-event path, which never cleans exceptions;
+// clearing first closes that hole. Gating the kept/discarded split on the
+// command's immutable recurrence intent keeps a retry classifying identically.
+// A false from replaceExisting means the master vanished mid-flight, so leave
+// the command pending rather than confirm a gone series.
+async function commitProviderSeriesUpdate(
+  deps: ProviderMutationDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  providerVersion: string,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (command.input.kind !== "update") {
+    throw new Error("commitProviderSeriesUpdate requires an update command");
+  }
+  const { input } = command;
+  const convertsToSingle = input.recurrence.kind === "single";
+  const exceptions = await deps.events.findSeriesExceptions(
+    command.tenantId,
+    command.principalId,
+    master._id,
+  );
+  const kept = convertsToSingle ? [] : exceptions.filter(isCancelledException);
+  const discarded = convertsToSingle
+    ? exceptions
+    : exceptions.filter((exception) => !isCancelledException(exception));
+
+  // Clear each discarded override's occurrences, then remove it. (Twin of the
+  // cloud path's deleteExceptions — kept local so the working cloud path is
+  // untouched; both are a plain occurrence-clear-then-delete loop.)
+  //
+  // Deferred gap: for a provider-linked series this removes only the LOCAL copy
+  // of the override, not the override event at the provider — patching a Google
+  // master does not delete its instance overrides. That is harmless today
+  // because provider-linked exceptions are only ever created by import, which
+  // does not exist yet, so `discarded` is always empty here. Once import lands,
+  // an edit-all must also cancel the discarded overrides at the provider (the
+  // same gap already noted for the provider delete path), or a later pull would
+  // resurrect them.
+  for (const exception of discarded) {
+    await deps.occurrences.replaceForEvent(
+      exception._id,
+      exception.generation,
+      [],
+    );
+    await deps.events.deleteById(
+      command.tenantId,
+      command.principalId,
+      exception._id,
+    );
+  }
+
+  const updated: EventRecord = {
+    ...master,
+    content: input.content,
+    schedule: input.schedule,
+    recurrence: storedSeriesRecurrence(input.recurrence, master),
+    providerVersion: providerVersion as ProviderEventVersion,
+    providerUpdatedAt: null,
+    deliveryState: "confirmed",
+    updatedAt: now(),
+  };
+  const applied = await deps.events.replaceExisting(updated);
+  if (!applied) return command;
+  await reprojectOccurrences(
+    deps.occurrences,
+    updated,
+    now,
+    kept.map(exceptionInstant),
+  );
+
+  const confirmed = await deps.commands.updateOutcome(
+    command.tenantId,
+    command.principalId,
+    command._id,
+    {
+      state: "confirmed",
+      providerEventId: master.providerEventId as ProviderEventId,
+      providerVersion: providerVersion as ProviderEventVersion,
+    },
+    command.attemptCount,
+  );
+  return confirmed ?? command;
+}
+
+// The provider recurrence a series edit-all writes. "series" sets new rules;
+// "single" removes recurrence (converting the series to one event); "preserve"
+// re-writes the master's current rules unchanged (harmless, keeps the write
+// self-describing).
+function intendedSeriesRecurrence(
+  recurrence: RecurrenceEdit,
+  master: EventRecord,
+): ProviderWriteRecurrence {
+  if (recurrence.kind === "series") {
+    return { kind: "series", rules: recurrence.rules };
+  }
+  if (recurrence.kind === "single") return { kind: "single" };
+  return master.recurrence.kind === "seriesMaster"
+    ? { kind: "series", rules: master.recurrence.rules }
+    : { kind: "single" };
+}
+
+// The stored recurrence a series edit-all applies to the local master, mirroring
+// intendedSeriesRecurrence in the canonical event's own union.
+function storedSeriesRecurrence(
+  recurrence: RecurrenceEdit,
+  master: EventRecord,
+): SyncEventRecurrence {
+  if (recurrence.kind === "series") {
+    return { kind: "seriesMaster", rules: recurrence.rules };
+  }
+  if (recurrence.kind === "single") return { kind: "single" };
+  return master.recurrence;
+}
+
+// Whether a series exception is a cancelled tombstone (a per-instance deletion)
+// rather than a content override. Twin of the cloud path's helper.
+function isCancelledException(event: EventRecord): boolean {
+  return event.recurrence.kind === "exception" && event.recurrence.cancelled;
+}
+
+// The original instant a series exception overrides — its recurrence identity.
+function exceptionInstant(event: EventRecord): DateTime {
+  if (event.recurrence.kind !== "exception") {
+    throw new Error("exceptionInstant requires an exception event");
+  }
+  return event.recurrence.recurrenceId;
+}
+
 // Whether the provider's current event already carries this command's intended
 // edit — the signal that a prior attempt landed and this is a safe replay.
 // Compares ONLY the fields a patch actually writes (title, description,
-// location, schedule). organizer/attendees/conference are read-reflected, not
-// written by the provider adapter, so they drift independently (e.g. an
-// attendee RSVPs) — comparing them would turn a landed edit into a false miss,
-// then a stale-version patch, then a spurious versionConflict on a write that
-// already succeeded. Used only to detect a replay, so a false negative on the
-// compared fields is still safe (it falls through to the conditional patch).
+// location, schedule, recurrence). organizer/attendees/conference are
+// read-reflected, not written by the provider adapter, so they drift
+// independently (e.g. an attendee RSVPs) — comparing them would turn a landed
+// edit into a false miss, then a stale-version patch, then a spurious
+// versionConflict on a write that already succeeded. Recurrence IS written (a
+// series edit-all changes the rules), so it must be compared: a rules-only edit
+// leaves content and schedule identical, and without this a false replay would
+// confirm the command without ever writing the new rules. Used only to detect a
+// replay, so a false negative on the compared fields is still safe (it falls
+// through to the conditional patch).
 function matchesIntendedEdit(
   current: ProviderEvent,
   content: SyncEventContent,
   schedule: EventSchedule,
+  recurrence: ProviderWriteRecurrence,
 ): boolean {
   return (
     current.content.title === content.title &&
     current.content.description === content.description &&
     current.content.location === content.location &&
-    deepEqual(current.schedule, schedule)
+    deepEqual(current.schedule, schedule) &&
+    recurrenceMatches(current.recurrence, recurrence)
   );
+}
+
+// Whether the provider's reported recurrence matches the recurrence a write
+// would set. A single write expects a non-recurring event; a series write
+// expects the same rules the provider now reports on its master.
+//
+// Rules are compared canonically, not byte-for-byte. A provider can echo a rule
+// it stored in a reformatted-but-equivalent form (reordered components,
+// different casing), so an exact compare would false-miss a landed edit — and
+// because this gates a replay, that miss would re-patch with a now-stale
+// expected version and fail a write that already succeeded, leaving the local
+// event diverged from the provider. Canonicalizing absorbs that cosmetic drift;
+// genuinely different rules still differ, so this never widens a real change
+// into a false match. Named wart: an exotic reformatting the canonicalization
+// misses (e.g. a provider injecting a non-default WKST we never sent) can still
+// false-miss — acceptable because Compass emits simple rules and the only
+// consequence is a spurious conflict in the narrow landed-then-retried window.
+function recurrenceMatches(
+  current: ProviderEvent["recurrence"],
+  intended: ProviderWriteRecurrence,
+): boolean {
+  if (intended.kind === "single") return current.kind === "single";
+  if (current.kind !== "seriesMaster") return false;
+  if (current.rules.length !== intended.rules.length) return false;
+  const currentCanonical = current.rules.map(canonicalRule).sort();
+  const intendedCanonical = intended.rules.map(canonicalRule).sort();
+  return currentCanonical.every(
+    (rule, index) => rule === intendedCanonical[index],
+  );
+}
+
+// A rule normalized for equality: uppercased, its optional RRULE: prefix
+// dropped, and its ;-separated components sorted. This makes the comparison
+// order- and case-insensitive without a full RRULE parse (which would drag in
+// dtstart defaulting and reformatting of its own).
+function canonicalRule(rule: string): string {
+  return rule
+    .trim()
+    .toUpperCase()
+    .replace(/^RRULE:/, "")
+    .split(";")
+    .filter((part) => part.length > 0)
+    .sort()
+    .join(";");
 }
 
 function deepEqual(a: unknown, b: unknown): boolean {
