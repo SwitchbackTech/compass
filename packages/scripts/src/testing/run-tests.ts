@@ -107,7 +107,10 @@ const server = usesMongo
     })
   : undefined;
 
-const concurrency = Math.max(1, Math.min(cpus().length - 1, 8));
+// Mongo needs CPU headroom to stay responsive while its test files run. Web
+// has no shared service, so use every available core for its larger suite.
+const reservedCpus = usesMongo ? 1 : 0;
+const concurrency = Math.max(1, Math.min(cpus().length - reservedCpus, 8));
 
 let nextIndex = 0;
 let passedFiles = 0;
