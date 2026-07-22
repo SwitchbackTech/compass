@@ -716,6 +716,10 @@ function buildCloudEventRecord(command: CommandRecord, now: Date): EventRecord {
     schedule: input.schedule,
     recurrence: toStoredRecurrence(input.recurrence),
     lifecycleState: "active",
+    // Always correct here: a cloud event lives on a calendar with no provider
+    // sync resource, so nothing ever repairs it into a new generation and reads
+    // serve generation 0 for it unconditionally. (The provider-linked create
+    // path documents the one narrow, self-healing generation gap.)
     generation: 0,
     createdAt: now,
     updatedAt: now,
