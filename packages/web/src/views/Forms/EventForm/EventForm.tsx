@@ -23,7 +23,10 @@ import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { useEventPalette } from "@web/common/styles/theme.util";
 import { type SelectOption } from "@web/common/types/component.types";
 import { Categories_Event } from "@web/common/types/web.event.types";
-import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
+import {
+  getTimeOptionByValue,
+  mapToBackend,
+} from "@web/common/utils/datetime/web.date.util";
 import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
@@ -416,6 +419,69 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       });
     };
 
+    const onToggleAllDay = (isAllDay: boolean) => {
+      const currentDraft = latestDraftRef.current;
+      const isCurrentlyAllDay = currentDraft.values.schedule.kind === "allDay";
+
+      if (isAllDay === isCurrentlyAllDay) return;
+
+      if (isAllDay) {
+        const endsAtMidnight = dayjs(currentDraft.values.schedule.end).isSame(
+          dayjs(currentDraft.values.schedule.end).startOf("day"),
+        );
+        const schedule = mapToBackend({
+          startDate: selectedStartDate,
+          startTime,
+          endDate: endsAtMidnight
+            ? selectedEndDate
+            : dayjs(selectedEndDate).add(1, "day").toDate(),
+          endTime,
+          isAllDay: true,
+        });
+
+        if (schedule.kind !== "allDay") return;
+
+        setLatestDraft(
+          replaceGridDraftSchedule(currentDraft, {
+            kind: "allDay",
+            start: dayjs(schedule.start).toDate(),
+            end: dayjs(schedule.end).toDate(),
+          }),
+        );
+        return;
+      }
+
+      const timedStart = dayjs(selectedStartDate).hour(9).minute(0);
+      const timedEnd = timedStart.add(1, "hour");
+      const nextStartTime = getTimeOptionByValue(timedStart);
+      const nextEndTime = getTimeOptionByValue(timedEnd);
+      const schedule = mapToBackend({
+        startDate: timedStart.toDate(),
+        startTime: nextStartTime,
+        endDate: timedEnd.toDate(),
+        endTime: nextEndTime,
+        isAllDay: false,
+      });
+
+      if (schedule.kind !== "timed") return;
+
+      updateDateTimeState({
+        displayEndDate: timedStart.toDate(),
+        endTime: nextEndTime,
+        selectedEndDate: timedEnd.toDate(),
+        selectedStartDate: timedStart.toDate(),
+        startTime: nextStartTime,
+      });
+      setLatestDraft(
+        replaceGridDraftSchedule(currentDraft, {
+          kind: "timed",
+          start: dayjs(schedule.start).toDate(),
+          end: dayjs(schedule.end).toDate(),
+          timeZone: schedule.timeZone,
+        }),
+      );
+    };
+
     const dateTimeSectionProps = {
       displayEndDate,
       draft,
@@ -562,6 +628,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
               <DateControlsSection
                 dateTimeSectionProps={dateTimeSectionProps}
                 eventCategory={category}
+                onToggleAllDay={onToggleAllDay}
               />
 
               <RecurrenceSection {...recurrenceSectionProps} />

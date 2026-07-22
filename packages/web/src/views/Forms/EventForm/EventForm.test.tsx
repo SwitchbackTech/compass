@@ -6,6 +6,7 @@ import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { renderWithStore } from "@web/__tests__/render-with-store";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraft,
@@ -28,6 +29,8 @@ type CapturedDateTimeSectionProps = Pick<
 
 interface CapturedDateControlsSectionProps {
   dateTimeSectionProps: CapturedDateTimeSectionProps;
+  eventCategory: Categories_Event;
+  onToggleAllDay: (checked: boolean) => void;
 }
 
 let capturedDateControlsSectionProps: CapturedDateControlsSectionProps | null =
@@ -55,7 +58,11 @@ mock.module("@web/views/Forms/EventForm/EventActionMenu", () => ({
 }));
 
 mock.module("@web/views/Forms/EventForm/SaveSection", () => ({
-  SaveSection: () => <button type="button">Save</button>,
+  SaveSection: ({ onSubmit }: { onSubmit: () => void }) => (
+    <button type="button" onClick={onSubmit}>
+      Save
+    </button>
+  ),
 }));
 
 const { EventForm } = require("./EventForm") as typeof import("./EventForm");
@@ -149,6 +156,13 @@ const createNewDraft = (
 
   return { ...draft, values: { ...draft.values, title } };
 };
+
+const createAllDayDraft = (): GridEventDraft =>
+  createGridEventDraft({
+    kind: "allDay",
+    start: new Date("2026-04-24T00:00:00"),
+    end: new Date("2026-04-25T00:00:00"),
+  });
 
 describe("EventForm", () => {
   beforeEach(() => {
@@ -395,6 +409,139 @@ describe("EventForm", () => {
     expect(props?.displayEndDate).toEqual(
       dayjs(expected.displayEndDate).toDate(),
     );
+  });
+
+  it("changes a draft to all day immediately and saves it as all day", async () => {
+    const user = userEvent.setup();
+    const onSubmit = mock();
+
+    function Harness() {
+      const [draft, setDraft] = useState<GridEventDraft | null>(
+        createNewDraft(),
+      );
+
+      if (!draft) return null;
+
+      return (
+        <EventForm
+          draft={draft}
+          isDraft
+          isExistingEvent={false}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={onSubmit}
+          setDraft={setDraft}
+        />
+      );
+    }
+
+    renderWithStore(<Harness />);
+
+    act(() => capturedDateControlsSectionProps?.onToggleAllDay(true));
+
+    expect(capturedDateControlsSectionProps?.eventCategory).toBe(
+      Categories_Event.ALLDAY,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        values: expect.objectContaining({
+          schedule: expect.objectContaining({ kind: "allDay" }),
+        }),
+      }),
+    );
+  });
+
+  it("keeps every day covered by a cross-day timed draft when switching to all day", async () => {
+    const user = userEvent.setup();
+    const onSubmit = mock();
+
+    function Harness() {
+      const [draft, setDraft] = useState<GridEventDraft | null>(
+        createNewDraft({
+          startDate: "2026-04-24T14:00:00.000Z",
+          endDate: "2026-04-25T15:00:00.000Z",
+        }),
+      );
+
+      if (!draft) return null;
+
+      return (
+        <EventForm
+          draft={draft}
+          isDraft
+          isExistingEvent={false}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={onSubmit}
+          setDraft={setDraft}
+        />
+      );
+    }
+
+    renderWithStore(<Harness />);
+
+    act(() => capturedDateControlsSectionProps?.onToggleAllDay(true));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    const savedDraft = onSubmit.mock.calls[0]?.[0] as GridEventDraft;
+    expect(savedDraft.values.schedule).toMatchObject({ kind: "allDay" });
+    if (savedDraft.values.schedule.kind !== "allDay") {
+      throw new Error("expected an all-day schedule");
+    }
+    expect(dayjs(savedDraft.values.schedule.end).toYearMonthDayString()).toBe(
+      "2026-04-26",
+    );
+  });
+
+  it("changes an all-day draft to a timed event that can be saved", async () => {
+    const user = userEvent.setup();
+    const onSubmit = mock();
+
+    function Harness() {
+      const [draft, setDraft] = useState<GridEventDraft | null>(
+        createAllDayDraft(),
+      );
+
+      if (!draft) return null;
+
+      return (
+        <EventForm
+          draft={draft}
+          isDraft
+          isExistingEvent={false}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={onSubmit}
+          setDraft={setDraft}
+        />
+      );
+    }
+
+    renderWithStore(<Harness />);
+
+    act(() => capturedDateControlsSectionProps?.onToggleAllDay(false));
+
+    expect(capturedDateControlsSectionProps?.eventCategory).toBe(
+      Categories_Event.TIMED,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    const savedDraft = onSubmit.mock.calls[0]?.[0] as GridEventDraft;
+    expect(savedDraft.values.schedule).toMatchObject({ kind: "timed" });
+    if (savedDraft.values.schedule.kind !== "timed") {
+      throw new Error("expected a timed schedule");
+    }
+    expect(
+      savedDraft.values.schedule.end.getTime() -
+        savedDraft.values.schedule.start.getTime(),
+    ).toBe(60 * 60 * 1000);
   });
 
   it("lets an untouched empty draft title keep normal arrow-key behavior", () => {
