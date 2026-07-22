@@ -36,9 +36,7 @@ function Opener() {
 const confirmDeletion = async () => {
   const user = userEvent.setup();
   render(
-    // A short farewell hold so the test drives the flow without waiting the
-    // real 3-second span; the hold's behavior is unchanged, only its length.
-    <DeleteAccountConfirmationProvider farewellMs={20}>
+    <DeleteAccountConfirmationProvider>
       <Opener />
     </DeleteAccountConfirmationProvider>,
   );
@@ -79,9 +77,24 @@ describe("DeleteAccountConfirmationProvider", () => {
     expect(farewell).not.toHaveAttribute("aria-busy");
     expect(assign).not.toHaveBeenCalled();
 
-    finishDelete();
-    // The farewell is held for its (now short) span, then the reload fires.
-    await waitFor(() => expect(assign).toHaveBeenCalled());
+    // Resolve the one production timer immediately. This keeps the production
+    // API unchanged and prevents a real timer from leaking into later files.
+    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
+      callback: TimerHandler,
+    ) => {
+      if (typeof callback === "function") callback();
+      return 0;
+    }) as typeof setTimeout);
+    try {
+      finishDelete();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(assign).toHaveBeenCalled();
+    } finally {
+      setTimeoutSpy.mockRestore();
+    }
   });
 
   it("takes the farewell back down if the account could not be deleted", async () => {

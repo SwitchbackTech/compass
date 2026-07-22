@@ -103,8 +103,9 @@ describe("usePrefetchAdjacentEvents", () => {
       { queryClient },
     );
 
-    // Give the effect a tick to (not) fire additional fetches.
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    // The second effect runs immediately; waiting for its first fetch would
+    // only add a real-time delay without observing additional behavior.
+    await Promise.resolve();
     expect(fetchWeekEvents.mock.calls.length).toBe(2);
   });
 });

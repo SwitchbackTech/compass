@@ -16,10 +16,7 @@ const FAREWELL_MS = 3000;
 
 export function DeleteAccountConfirmationProvider({
   children,
-  // The farewell hold, injectable so a test can drive the flow without waiting
-  // real seconds; production always uses the default.
-  farewellMs = FAREWELL_MS,
-}: PropsWithChildren<{ farewellMs?: number }>) {
+}: PropsWithChildren) {
   const value = useDeleteAccountConfirmationState();
   const { closeDeleteAccountConfirmation, isOpen } = value;
   const [farewell, setFarewell] = useState<string | null>(null);
@@ -57,7 +54,7 @@ export function DeleteAccountConfirmationProvider({
       // Hold the farewell for its full span measured from when it appeared,
       // so a slow delete doesn't add to the wait and a fast one doesn't
       // flash it.
-      const remaining = farewellMs - (performance.now() - shownAt);
+      const remaining = FAREWELL_MS - (performance.now() - shownAt);
       if (remaining > 0) {
         await new Promise((resolve) => setTimeout(resolve, remaining));
       }
@@ -68,7 +65,7 @@ export function DeleteAccountConfirmationProvider({
       // anonymous.
       window.location.assign(ROOT_ROUTES.ROOT);
     })();
-  }, [closeDeleteAccountConfirmation, farewellMs]);
+  }, [closeDeleteAccountConfirmation]);
 
   return (
     <DeleteAccountConfirmationContext.Provider value={value}>

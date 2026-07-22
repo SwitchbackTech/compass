@@ -199,9 +199,14 @@ describe("googleWatchRepairService", () => {
       const winnerGate = new Promise<void>((resolve) => {
         releaseWinner = resolve;
       });
+      let notifyRepairStarted!: () => void;
+      const repairStarted = new Promise<void>((resolve) => {
+        notifyRepairStarted = resolve;
+      });
       const startGoogleWatchesSpy = jest
         .spyOn(googleWatchService, "startGoogleWatches")
         .mockImplementation(async (...args) => {
+          notifyRepairStarted();
           await winnerGate;
           return realStartGoogleWatches(...args);
         });
@@ -211,9 +216,7 @@ describe("googleWatchRepairService", () => {
 
       // Wait until the winner is provably inside the repair step (lease
       // held) before racing the loser against it.
-      while (startGoogleWatchesSpy.mock.calls.length === 0) {
-        await new Promise((resolve) => setTimeout(resolve, 5));
-      }
+      await repairStarted;
 
       const second =
         await googleWatchRepairService.repairGoogleWatchesForUser(userId);
