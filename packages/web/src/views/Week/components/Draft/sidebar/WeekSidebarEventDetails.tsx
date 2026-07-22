@@ -1,4 +1,6 @@
-import { type FC } from "react";
+import { type Dispatch, type FC, type SetStateAction } from "react";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import { draftActions } from "@web/events/stores/draft.store";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
@@ -17,6 +19,16 @@ export const WeekSidebarEventDetails: FC = () => {
 
   if (!isFormOpen || !draft) return null;
 
+  const setFormDraft: Dispatch<SetStateAction<GridEventDraft | null>> = (
+    nextDraft,
+  ) => {
+    const resolvedDraft =
+      typeof nextDraft === "function" ? nextDraft(draft) : nextDraft;
+
+    draftActions.setGridDraft(resolvedDraft);
+    setDraft(resolvedDraft);
+  };
+
   return (
     <EventForm
       draft={draft}
@@ -28,7 +40,7 @@ export const WeekSidebarEventDetails: FC = () => {
       onSubmit={(nextDraft) => {
         if (nextDraft) void onSubmit(nextDraft);
       }}
-      setDraft={setDraft}
+      setDraft={setFormDraft}
     />
   );
 };

@@ -1,8 +1,17 @@
 import { HotkeyManager } from "@tanstack/react-hotkeys";
 import userEvent from "@testing-library/user-event";
 import { cleanup, render, screen } from "@web/__tests__/__mocks__/mock.render";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
+import {
+  createGridEventDraft,
+  editGridEventDraft,
+} from "@web/events/grid-event-draft.adapter";
+import {
+  draftActions,
+  initialDraftState,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { WeekSidebarEventDetails } from "@web/views/Week/components/Draft/sidebar/WeekSidebarEventDetails";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -61,6 +70,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  useDraftStore.setState(initialDraftState, true);
 });
 
 describe("WeekSidebarEventDetails", () => {
@@ -85,5 +95,21 @@ describe("WeekSidebarEventDetails", () => {
         values: expect.objectContaining({ title: "Planning" }),
       }),
     );
+  });
+
+  it("keeps an existing event's shared draft projection in sync with all-day changes", async () => {
+    const user = userEvent.setup();
+    const draft = editGridEventDraft(createMockEvent());
+    if (!draft) throw new Error("Expected an edit draft");
+
+    draftActions.startGridDraft({ activity: "keyboardEdit", draft });
+    renderPanel({ draft });
+
+    await user.click(screen.getByRole("checkbox", { name: "All day?" }));
+
+    expect(useDraftStore.getState().gridDraft?.values.schedule.kind).toBe(
+      "allDay",
+    );
+    expect(useDraftStore.getState().event).toMatchObject({ isAllDay: true });
   });
 });

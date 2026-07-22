@@ -50,8 +50,12 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   // so off-window events never land in the DOM or the interaction registry.
   const visibleTimedEvents = useMemo(
     () =>
-      timedEvents.filter((event) => isTimedEventInVisibleDays(event, weekDays)),
-    [timedEvents, weekDays],
+      timedEvents.filter(
+        (event) =>
+          isTimedEventInVisibleDays(event, weekDays) &&
+          !(event._id === draftId && draft?.isAllDay),
+      ),
+    [draft?.isAllDay, draftId, timedEvents, weekDays],
   );
   const timedEventItems = useMemo(
     () => createTimedEventLayout(visibleTimedEvents),

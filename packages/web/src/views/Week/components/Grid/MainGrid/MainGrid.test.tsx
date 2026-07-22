@@ -500,6 +500,29 @@ describe("Week calendar accessibility", () => {
     ).toBeInTheDocument();
   });
 
+  it("removes a converted all-day draft from the timed grid", () => {
+    const savedEvent = createSavedEvent({ title: "Converted event" });
+    seedGrid([savedEvent], {
+      ...savedEvent,
+      endDate: "2024-01-16",
+      isAllDay: true,
+      startDate: "2024-01-15",
+    });
+
+    render(
+      <Provider>
+        <MainGridEvents
+          measurements={measurements}
+          weekProps={createWeekProps()}
+        />
+      </Provider>,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: /timed event: converted event/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it("keeps pending saved events fully interactive", () => {
     const event = createSavedEvent({
       title: "Pending save",
