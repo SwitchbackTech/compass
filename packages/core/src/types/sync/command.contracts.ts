@@ -62,6 +62,10 @@ const UpdateCommandInputSchema = z.strictObject({
   schedule: EventScheduleSchema,
   recurrence: RecurrenceEditSchema,
   scope: RecurrenceScopeSchema,
+  // Which occurrence a this/thisAndFollowing scope targets: the instance's
+  // original scheduled start (its recurrence identity). Null for scope "all"
+  // and for a single event, which have no one occurrence to address.
+  recurrenceId: DateTimeSchema.nullable().default(null),
 });
 
 const MoveCommandInputSchema = z.strictObject({
@@ -75,6 +79,9 @@ const DeleteCommandInputSchema = z.strictObject({
   // default is to notify no one.
   invitation: InvitationIntentSchema,
   scope: RecurrenceScopeSchema,
+  // Which occurrence a this/thisAndFollowing scope targets (see update above).
+  // Null for scope "all" and for a single event.
+  recurrenceId: DateTimeSchema.nullable().default(null),
 });
 
 export const SyncCommandInputSchema = z.discriminatedUnion("kind", [
@@ -84,6 +91,17 @@ export const SyncCommandInputSchema = z.discriminatedUnion("kind", [
   DeleteCommandInputSchema,
 ]);
 export type SyncCommandInput = z.infer<typeof SyncCommandInputSchema>;
+
+// A this/thisAndFollowing scope targets one occurrence, so it must carry a
+// recurrenceId; scope "all" targets the whole series, so it must not. Enforced
+// on the request and command envelopes rather than the input union so the union
+// stays a clean discriminated union (a refined member can't discriminate).
+const recurrenceTargetIsCoherent = (input: SyncCommandInput): boolean => {
+  if (input.kind !== "update" && input.kind !== "delete") return true;
+  return (input.scope === "all") === (input.recurrenceId === null);
+};
+const RECURRENCE_TARGET_MESSAGE =
+  "recurrenceId is required for scope this/thisAndFollowing and must be null for scope all";
 
 // Provider-side rejection classes a command outcome can carry. These map to
 // the sync failure classification; "capability" failures are typed rather than
@@ -175,7 +193,11 @@ export const SyncCommandSchema = z
       message: "A create command cannot carry an expectedVersion",
       path: ["expectedVersion"],
     },
-  );
+  )
+  .refine((command) => recurrenceTargetIsCoherent(command.input), {
+    message: RECURRENCE_TARGET_MESSAGE,
+    path: ["input", "recurrenceId"],
+  });
 export type SyncCommand = z.infer<typeof SyncCommandSchema>;
 
 // What the trusted Compass API submits to durably record one command. The
@@ -197,7 +219,11 @@ export const CommandSubmitRequestSchema = z
       message: "A create command cannot carry an expectedVersion",
       path: ["expectedVersion"],
     },
-  );
+  )
+  .refine((request) => recurrenceTargetIsCoherent(request.input), {
+    message: RECURRENCE_TARGET_MESSAGE,
+    path: ["input", "recurrenceId"],
+  });
 export type CommandSubmitRequest = z.infer<typeof CommandSubmitRequestSchema>;
 
 export const CommandSubmitResponseSchema = z.strictObject({
