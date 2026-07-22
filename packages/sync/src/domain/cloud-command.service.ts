@@ -3,6 +3,8 @@ import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { type CredentialCustody } from "@sync/credentials/credential-custody.service";
+import { syncHorizon } from "@sync/domain/horizon";
+import { projectOccurrences } from "@sync/domain/occurrence-projection";
 import {
   executeProviderCreate,
   executeProviderDelete,
@@ -17,12 +19,16 @@ import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
 import { type DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
+import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 
 export interface CloudCommandDeps {
   commands: CommandRepository;
   events: EventRepository;
   calendars: ProviderCalendarRepository;
+  // The derived occurrence projection, rebuilt for an event's horizon whenever
+  // a cloud command changes it so range queries stay current.
+  occurrences: EventOccurrenceRepository;
   // The deletion-marker store, for the tombstone a provider delete leaves.
   markers: DeletionMarkerRepository;
   execution: SyncExecutionMode;
@@ -92,8 +98,28 @@ export async function submitCloudCommand(
     return command;
   }
 
-  await deps.events.put(buildCloudEventRecord(command, now()));
+  const record = buildCloudEventRecord(command, now());
+  await deps.events.put(record);
+  await reprojectEvent(deps, record, now);
   return confirmCloud(deps, command);
+}
+
+// Rebuild an event's occurrence window after a cloud write. A cloud create or
+// single-event update carries no exceptions, so nothing is excluded here;
+// series-scope edits (which produce exceptions) pass their recurrenceIds once
+// that path lands. replaceForEvent is idempotent per (eventId, generation), so
+// a retry reprojects the same rows.
+async function reprojectEvent(
+  deps: CloudCommandDeps,
+  event: EventRecord,
+  now: () => Date,
+): Promise<void> {
+  const occurrences = projectOccurrences(event, syncHorizon(now()));
+  await deps.occurrences.replaceForEvent(
+    event._id,
+    event.generation,
+    occurrences,
+  );
 }
 
 // Apply a cloud-only update or delete to an existing event. Only single,
@@ -147,6 +173,15 @@ async function applyCloudMutation(
       }
       return command;
     }
+    // Clear the derived occurrences BEFORE removing the event. If this crashes
+    // before the delete, a retry still finds the event and re-runs both steps;
+    // deleting first would let a crash in between orphan the occurrence rows,
+    // since the retry's `!existing` branch confirms without ever clearing them.
+    await deps.occurrences.replaceForEvent(
+      command.eventId,
+      existing.generation,
+      [],
+    );
     await deps.events.deleteById(
       command.tenantId,
       command.principalId,
@@ -197,10 +232,10 @@ async function applyCloudMutation(
 
   // Cloud single event: conditional replace (no upsert), so a concurrent delete
   // is not resurrected — a miss leaves the command pending.
-  const applied = await deps.events.replaceExisting(
-    applyCloudUpdate(existing, command, now()),
-  );
+  const updated = applyCloudUpdate(existing, command, now());
+  const applied = await deps.events.replaceExisting(updated);
   if (!applied) return command;
+  await reprojectEvent(deps, updated, now);
   return confirmCloud(deps, command);
 }
 

@@ -15,11 +15,13 @@ import {
   type ProviderPatchInput,
   type ProviderWriteResult,
 } from "@sync/providers/provider-event-writer.port";
+import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type CommandSubmit } from "@sync/storage/contracts/command.contracts";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
+import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 
@@ -80,6 +82,7 @@ describe("submitCloudCommand provider dispatch", () => {
   let mongo: SyncMongoService;
   let commands: CommandRepository;
   let events: EventRepository;
+  let occurrences: EventOccurrenceRepository;
   let calendars: ProviderCalendarRepository;
   let markers: DeletionMarkerRepository;
 
@@ -146,6 +149,7 @@ describe("submitCloudCommand provider dispatch", () => {
     });
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
+    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
     calendars = new ProviderCalendarRepository(mongo.db);
     markers = new DeletionMarkerRepository(mongo.db);
   });
@@ -166,6 +170,7 @@ describe("submitCloudCommand provider dispatch", () => {
         commands,
         events,
         calendars,
+        occurrences,
         markers,
         execution: "active",
         provider: provider(writer),
@@ -189,6 +194,7 @@ describe("submitCloudCommand provider dispatch", () => {
         commands,
         events,
         calendars,
+        occurrences,
         markers,
         execution: "passive",
         provider: provider(writer),
@@ -207,7 +213,14 @@ describe("submitCloudCommand provider dispatch", () => {
     const calendar = await seedProviderCalendar(tenantId, principalId);
 
     const command = await submitCloudCommand(
-      { commands, events, calendars, markers, execution: "active" },
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        markers,
+        execution: "active",
+      },
       submitFor(tenantId, principalId, calendar._id),
       now,
     );
@@ -225,6 +238,7 @@ describe("submitCloudCommand provider dispatch", () => {
         commands,
         events,
         calendars,
+        occurrences,
         markers,
         execution: "active",
         provider: provider(writer),
@@ -299,6 +313,7 @@ describe("submitCloudCommand provider dispatch", () => {
     commands,
     events,
     calendars,
+    occurrences,
     markers,
     execution: "passive" as const,
   });
@@ -367,6 +382,7 @@ describe("submitCloudCommand provider dispatch", () => {
         commands,
         events,
         calendars,
+        occurrences,
         markers,
         execution: "active",
         provider: provider(writer),
@@ -424,6 +440,7 @@ describe("submitCloudCommand provider dispatch", () => {
         commands,
         events,
         calendars,
+        occurrences,
         markers,
         execution: "active",
         provider: provider(writer),
@@ -443,5 +460,138 @@ describe("submitCloudCommand provider dispatch", () => {
         "g-evt-1" as never,
       ),
     ).toBe(true);
+  });
+
+  // The occurrence projection is the read model, so a cloud command must leave
+  // it consistent with the event it just wrote.
+  const occurrenceStartsFor = async (eventId: EventId): Promise<string[]> => {
+    const docs = await mongo.db
+      .collection(SYNC_COLLECTIONS.eventOccurrences)
+      .find({ eventId })
+      .sort({ startAt: 1 })
+      .toArray();
+    return docs.map((doc) => (doc["startAt"] as Date).toISOString());
+  };
+
+  it("projects the occurrence for a cloud single create", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const submit = submitFor(tenantId, principalId, objectId());
+
+    const command = await submitCloudCommand(deps(), submit, now);
+
+    expect(command.outcome.state).toBe("confirmed");
+    expect(await occurrenceStartsFor(submit.eventId)).toEqual([
+      "2026-07-14T15:00:00.000Z",
+    ]);
+  });
+
+  it("projects every occurrence for a cloud series create", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const submit = submitFor(tenantId, principalId, objectId());
+    (submit.input as { recurrence: unknown }).recurrence = {
+      kind: "series",
+      rules: ["RRULE:FREQ=WEEKLY;COUNT=3"],
+    };
+
+    await submitCloudCommand(deps(), submit, now);
+
+    expect(await occurrenceStartsFor(submit.eventId)).toEqual([
+      "2026-07-14T15:00:00.000Z",
+      "2026-07-21T15:00:00.000Z",
+      "2026-07-28T15:00:00.000Z",
+    ]);
+  });
+
+  it("reprojects occurrences when a cloud event is updated", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId);
+
+    const update: CommandSubmit = {
+      tenantId,
+      principalId,
+      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+      eventId,
+      input: {
+        kind: "update",
+        invitation: "none",
+        content: {
+          title: "Moved",
+          description: "",
+          location: null,
+          organizer: null,
+          attendees: [],
+          conference: null,
+        },
+        schedule: {
+          kind: "timed",
+          start: "2026-07-15T11:00:00-06:00",
+          end: "2026-07-15T12:00:00-06:00",
+          timeZone: "America/Denver",
+        },
+        recurrence: { kind: "preserve" },
+        scope: "this",
+      } as unknown as SyncCommandInput,
+      expectedVersion: null,
+    };
+
+    const command = await submitCloudCommand(deps(), update, now);
+
+    expect(command.outcome.state).toBe("confirmed");
+    expect(await occurrenceStartsFor(eventId)).toEqual([
+      "2026-07-15T17:00:00.000Z",
+    ]);
+  });
+
+  it("clears occurrences when a cloud event is deleted", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const submit = submitFor(tenantId, principalId, objectId());
+    await submitCloudCommand(deps(), submit, now);
+    expect(await occurrenceStartsFor(submit.eventId)).toHaveLength(1);
+
+    const command = await submitCloudCommand(
+      deps(),
+      deleteFor(tenantId, principalId, submit.eventId),
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    expect(await occurrenceStartsFor(submit.eventId)).toHaveLength(0);
+  });
+
+  it("clears occurrences before deleting the event so a crash cannot orphan them", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const submit = submitFor(tenantId, principalId, objectId());
+    await submitCloudCommand(deps(), submit, now);
+
+    // If the delete landed before the clear, a crash in between would leave the
+    // event gone but its occurrences orphaned — and the retry's `!existing`
+    // branch confirms without ever clearing them. Lock in the clear-first order.
+    const order: string[] = [];
+    const realClear = occurrences.replaceForEvent.bind(occurrences);
+    const realDelete = events.deleteById.bind(events);
+    jest
+      .spyOn(occurrences, "replaceForEvent")
+      .mockImplementation(async (...args) => {
+        order.push("clear");
+        return realClear(...args);
+      });
+    jest.spyOn(events, "deleteById").mockImplementation(async (...args) => {
+      order.push("delete");
+      return realDelete(...args);
+    });
+
+    await submitCloudCommand(
+      deps(),
+      deleteFor(tenantId, principalId, submit.eventId),
+      now,
+    );
+
+    expect(order).toEqual(["clear", "delete"]);
   });
 });

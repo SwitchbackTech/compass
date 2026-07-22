@@ -24,6 +24,10 @@ import dayjs from "@core/util/date/dayjs";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import { deriveConnectionState } from "@sync/domain/connection-state";
+import {
+  HORIZON_FUTURE_MONTHS,
+  HORIZON_PAST_MONTHS,
+} from "@sync/domain/horizon";
 import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
 import { googleCapabilitiesFromScopes } from "@sync/providers/google/google-capabilities";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
@@ -51,11 +55,10 @@ export const BEGIN_PATH = "/internal/connections/begin";
 // redirect_uri from it and the public callback route below mounts on it.
 export const OAUTH_CALLBACK_PATH = "/oauth/google/callback";
 
-// The rolling window Sync materializes occurrences for. A query's range is
-// clamped to it so the caller can never force an unbounded scan back to the
-// epoch or forward forever, regardless of the start/end it sends.
-const HORIZON_PAST_MONTHS = 12;
-const HORIZON_FUTURE_MONTHS = 18;
+// The rolling window Sync materializes occurrences for (shared with the
+// projection layer via @sync/domain/horizon). A query's range is clamped to it
+// so the caller can never force an unbounded scan back to the epoch or forward
+// forever, regardless of the start/end it sends.
 // The max page the wire contract allows; used when a query omits `limit`.
 const DEFAULT_EVENT_PAGE_LIMIT = 500;
 
