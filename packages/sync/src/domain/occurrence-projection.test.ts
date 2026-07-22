@@ -231,5 +231,45 @@ describe("projectOccurrences", () => {
       const occ = projectOccurrences(e, narrow);
       expect(occ).toHaveLength(10);
     });
+
+    it("honors a UTC UNTIL west of UTC without a phantom trailing occurrence", () => {
+      // Google encodes "ends June 9 (America/Denver)" as UNTIL=20260610T055959Z.
+      // A real-UTC UNTIL compared against floating candidates would leak one
+      // extra occurrence on June 10; the boundary must land on June 9.
+      const e = event(
+        timed("2026-06-01T03:00:00-06:00", "2026-06-01T03:15:00-06:00"),
+        {
+          kind: "seriesMaster",
+          rules: ["RRULE:FREQ=DAILY;UNTIL=20260610T055959Z"],
+        },
+      );
+      const starts = projectOccurrences(e, HORIZON).map((o) =>
+        o.startAt.toISOString(),
+      );
+      expect(starts).toHaveLength(9);
+      expect(starts.at(-1)).toBe("2026-06-09T09:00:00.000Z");
+    });
+
+    it("honors a UTC UNTIL east of UTC without dropping the final occurrence", () => {
+      // "ends June 5 (Asia/Kolkata, +05:30)" is UNTIL=20260605T182959Z. A
+      // real-UTC UNTIL would drop the true June 5 occurrence (20:00 IST is
+      // 14:30Z, past the naive 18:29:59 boundary in the floating frame).
+      const e = event(
+        timed(
+          "2026-06-01T20:00:00+05:30",
+          "2026-06-01T20:30:00+05:30",
+          "Asia/Kolkata",
+        ),
+        {
+          kind: "seriesMaster",
+          rules: ["RRULE:FREQ=DAILY;UNTIL=20260605T182959Z"],
+        },
+      );
+      const starts = projectOccurrences(e, HORIZON).map((o) =>
+        o.startAt.toISOString(),
+      );
+      expect(starts).toHaveLength(5);
+      expect(starts.at(-1)).toBe("2026-06-05T14:30:00.000Z");
+    });
   });
 });

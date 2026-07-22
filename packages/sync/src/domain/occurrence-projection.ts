@@ -79,7 +79,7 @@ function expandInstants(
   rules: readonly string[],
   horizon: ProjectionHorizon,
 ): Date[] {
-  const rule = rrulestr(rules.join("\n"), {
+  const rule = rrulestr(floatingRules(rules, schedule), {
     dtstart: floatingAnchor(schedule),
   });
 
@@ -92,6 +92,43 @@ function expandInstants(
   });
 
   return wallInstants.map((date) => localizeInstant(date, schedule));
+}
+
+// Rewrites a rule's UNTIL into the same floating frame as the dtstart. rrule
+// parses UNTIL as an absolute UTC instant (Google always emits ...Z) but
+// compares it against the floating candidates we expand from floatingAnchor, so
+// a real-UTC UNTIL would mis-bound the series by the zone's offset — projecting
+// a phantom trailing occurrence west of UTC, or dropping the true final one east
+// of it. Reinterpreting UNTIL's instant as wall time in the event's zone, then
+// relabeling it UTC, makes the boundary comparison apples-to-apples. All-day
+// series already expand in real UTC, so their UNTIL needs no rewrite.
+function floatingRules(
+  rules: readonly string[],
+  schedule: EventSchedule,
+): string {
+  const joined = rules.join("\n");
+  if (schedule.kind !== "timed") return joined;
+  const { timeZone } = schedule;
+  return joined.replace(/UNTIL=(\d{8}T\d{6})Z?/g, (_match, basic: string) => {
+    const wall = dayjs(basicUtcToDate(basic))
+      .tz(timeZone)
+      .format("YYYYMMDD[T]HHmmss");
+    return `UNTIL=${wall}Z`;
+  });
+}
+
+// Parses a basic-format UTC datetime ("20260610T055959") to its instant.
+function basicUtcToDate(basic: string): Date {
+  return new Date(
+    Date.UTC(
+      Number(basic.slice(0, 4)),
+      Number(basic.slice(4, 6)) - 1,
+      Number(basic.slice(6, 8)),
+      Number(basic.slice(9, 11)),
+      Number(basic.slice(11, 13)),
+      Number(basic.slice(13, 15)),
+    ),
+  );
 }
 
 // The rule's dtstart: the master's wall-clock start expressed as a naive UTC
