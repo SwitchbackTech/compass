@@ -1,12 +1,20 @@
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
+import { createHash } from "node:crypto";
+
+/** Stable per-file database name for isolated parallel test runs. */
+export function testDbName(testFileUrl: string): string {
+  return `test_${createHash("sha256").update(testFileUrl).digest("hex").slice(0, 12)}`;
+}
 
 /**
- * Setup a test database
+ * Connect mongoService to a unique database for the calling test file.
  */
-export async function setupTestDb(): Promise<void> {
+export async function setupTestDb(testFileUrl: string): Promise<void> {
+  const dbName = testDbName(testFileUrl);
+
   try {
-    await mongoService.start(true);
+    await mongoService.start(dbName);
   } catch (err) {
     const error = err as Error;
 
@@ -29,16 +37,11 @@ export async function cleanupCollections(): Promise<void> {
   );
 
   await Promise.all(
-    selectedCollections.map((collection) => collection.deleteMany()),
+    selectedCollections.map((collection) => collection.deleteMany({})),
   );
 }
 
 export async function cleanupTestDb(): Promise<void> {
-  // Intentionally does not disconnect. Each test file runs in its own process
-  // (see run-tests.ts) that shares one Mongo server and exits when the file
-  // finishes, so tearing the client down here is unnecessary. It was also
-  // harmful: a file with sibling `describe` blocks that each `beforeAll(setup)`
-  // would disconnect after the first block, and the next block's
-  // `beforeEach(cleanupCollections)` then ran against a closed client. Dropping
-  // the per-describe teardown keeps the single connection alive for the file.
+  // Intentionally does not disconnect within a file. Cross-file isolation comes
+  // from mongoService.start() reconnecting when the per-file database name changes.
 }

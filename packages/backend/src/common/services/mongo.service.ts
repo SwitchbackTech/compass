@@ -82,8 +82,8 @@ class MongoService {
     return this.#accessInternalCollectionProps("watch");
   }
 
-  private onConnect(client: MongoClient, useDynamicDb = false) {
-    this.#internalClient = this.createInternalClient(client, useDynamicDb);
+  private onConnect(client: MongoClient, dbName?: string | null) {
+    this.#internalClient = this.createInternalClient(client, dbName);
   }
 
   private onDisconnect(): void {
@@ -100,9 +100,10 @@ class MongoService {
 
   private createInternalClient(
     client: MongoClient,
-    useDynamicDb = false,
+    dbName?: string | null,
   ): InternalClient {
-    const db = client.db(useDynamicDb ? undefined : CONFIG.DB);
+    const db =
+      dbName === null ? client.db(undefined) : client.db(dbName ?? CONFIG.DB);
 
     return {
       db,
@@ -143,8 +144,24 @@ class MongoService {
     return retry;
   }
 
-  async start(useDynamicDb = false): Promise<MongoService> {
-    if (this.#internalClient) return this;
+  /**
+   * @param dbName Explicit database name for tests. `null` uses the default
+   * database from the connection URI (migrations). Omit for CONFIG.DB.
+   */
+  async start(dbName?: string | null): Promise<MongoService> {
+    if (this.#internalClient) {
+      const currentDb = this.#internalClient.db.databaseName;
+      const nextDb =
+        dbName === null
+          ? undefined
+          : dbName === undefined
+            ? CONFIG.DB
+            : dbName;
+
+      if (currentDb === nextDb) return this;
+
+      await this.stop();
+    }
 
     const client = new MongoClient(CONFIG.MONGO_URI, {
       serverApi: { strict: true, version: "1" },
@@ -155,7 +172,7 @@ class MongoService {
     client.on("connectionClosed", this.onClose.bind(this));
 
     const connectedClient = await this.reconnect(client);
-    this.onConnect(connectedClient, useDynamicDb);
+    this.onConnect(connectedClient, dbName);
 
     return this;
   }

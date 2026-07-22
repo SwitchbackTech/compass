@@ -44,20 +44,22 @@ E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` vi
 
 ## Current Test Strategy
 
-Every package now runs on Bun's test runner; Jest has been removed.
+Every package runs on Bun's native test runner; Jest has been removed.
 
-- `bun run test:core` uses `bun test` with a small compatibility preload for the core BSON mock setup.
-- `bun run test:web` uses `packages/scripts/src/testing/run-tests.ts` to run each file in its own `bun test` process. This prevents Bun's process-wide module mocks from leaking between files while keeping the files parallel.
-- `bun run test:backend`, `bun run test:scripts`, and `bun run test:sync` use the same launcher with one shared in-memory MongoDB replica set and distinct per-file databases.
-- Test files import lifecycle/assertion APIs from `bun:test` (never `jest` -- the ambient `jest` global is a compatibility shim from `packages/scripts/src/testing/apply-bun-jest-compat.cjs` that maps `jest.mock`/`jest.requireActual`/etc. onto `bun:test`).
+- `bun run test:core` uses `bun test --parallel` with a small compatibility preload.
+- `bun run test:web` uses [`test-isolated.ts`](../../packages/scripts/src/testing/test-isolated.ts) — one subprocess per file so preload `mock.module` mocks are not cleared by Bun's `--isolate` (which `--parallel` enables).
+- `bun run test:backend`, `bun run test:scripts`, and `bun run test:sync` use [`test-with-mongo.ts`](../../packages/scripts/src/testing/test-with-mongo.ts) — the same per-file subprocess model plus one shared in-memory Mongo replica set (`COMPASS_TEST_MONGO_URI`).
+- Test files import lifecycle/assertion APIs from `bun:test` (never `jest` — the ambient `jest` global is a compatibility shim from `packages/scripts/src/testing/apply-bun-jest-compat.cjs`).
 
-### Test tiers
+### Test file naming and tiers
 
-- `bun run test:backend` / `bun run test:scripts` -- the full package suite.
-- `bun run test:backend:fast` / `bun run test:scripts:fast` -- only files that never touch Mongo (auto-classified: no `setupTestDb`).
-- `bun run test:backend:db` / `bun run test:scripts:db` -- only the Mongo-backed files.
-- `bun run test:migrations` -- the active migration suites under `packages/scripts/src/migrations`.
-- Focus a run with `--filter <substring>`, e.g. `bun packages/scripts/src/testing/run-tests.ts backend --filter user.controller`.
+Mongo-backed tests use the `*.db.test.ts` / `*.db.test.tsx` suffix. Everything else is "fast".
+
+- `bun run test:backend` / `bun run test:scripts` / `bun run test:sync` — full package suite.
+- `bun run test:backend:fast` / `bun run test:scripts:fast` — single-process run excluding `*.db.test.*` (no Mongo harness).
+- `bun run test:backend:db` / `bun run test:scripts:db` — only `*.db.test.*` files.
+- `bun run test:migrations` — migration suites under `packages/scripts/src/migrations`.
+- Focus a run by passing a path: `bun packages/scripts/src/testing/test-with-mongo.ts backend ./packages/backend/src/user/controllers/user.controller.db.test.ts`.
 
 ## What To Run By Change Type
 
@@ -118,7 +120,7 @@ Isolation rules:
 - Avoid mocking shared UI primitives such as `TooltipWrapper`, `@floating-ui/react`, or session hooks in broad component tests. Even with per-file isolation, broad mocks can hide integration behavior inside that file.
 - If a test replaces globals (`fetch`, `document.getElementById`, storage, timers, console methods), restore the original value in teardown.
 - Prefer `renderWithStore`, `createStoreWrapper`, or a focused provider harness over mocking `@web/store` or `store.hooks`.
-- `bun run test:web` is the acceptance check for web test isolation. It runs every file in a fresh process through the same path CI uses; a focused test can still miss interactions within its own file.
+- `bun run test:web` is the acceptance check for web test isolation. It runs every file in a fresh process via `test-isolated.ts`; a focused test can still miss interactions within its own file.
 - `mock.module` is process-global, not test-scoped. The per-file runner prevents cross-file leaks, and the web preload restores mocks when each file finishes, but tests within one file still share that file's module registry.
 - To focus an element on mount in this jsdom setup, use React's `autoFocus` prop or a stable callback ref (`ref={useCallback(n => n?.focus(), [])}`) — both fire in the commit phase. A `useEffect(() => ref.current?.focus())` does **not** make the element `document.activeElement` in tests. `autoFocus` trips biome's `lint/a11y/noAutofocus` (error) and a JSX-attribute `biome-ignore` comment breaks the formatter, so prefer the callback ref.
 - `FloatingFocusManager` fights virtual-focus combobox palettes: for a component that keeps real focus in one input while using `useListNavigation({ virtual: true })` + `aria-activedescendant` (a command-palette style pattern), `FloatingFocusManager` asynchronously grabs focus to the panel container and steals it back from the input. Drop it — `useDismiss` still handles Escape/outside-press without it. It belongs on anchored forms with a real reference element instead (e.g. `FloatingEventForm`).

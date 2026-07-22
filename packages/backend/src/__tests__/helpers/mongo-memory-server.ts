@@ -3,17 +3,12 @@ import { MongoMemoryReplSet } from "mongodb-memory-server";
 /**
  * Provides the in-memory MongoDB URI for a test process.
  *
- * Two modes:
- *  - Launcher mode: the test runner (`run-tests.ts`) starts ONE replica set and
- *    hands each per-file worker process a unique-database URI via
- *    `COMPASS_TEST_MONGO_URI`. The worker reuses it and never starts its own
- *    server, so the expensive mongod boot happens once for the whole package.
- *  - Standalone mode: running a single file directly with `bun test --preload`
- *    (no launcher) starts a throwaway server for that process.
+ * When `COMPASS_TEST_MONGO_URI` is set (by test-with-mongo.ts), the worker
+ * reuses that shared replica set. Otherwise a throwaway server is started for
+ * single-file runs (`bun test --preload ... path/to/file.db.test.ts`).
  *
- * A replica set (not a standalone) is required because production code uses
- * multi-document transactions (`session.withTransaction`), which Mongo only
- * supports on a replica set.
+ * A replica set (not standalone) is required because production code uses
+ * multi-document transactions, which Mongo only supports on a replica set.
  */
 let server: MongoMemoryReplSet | undefined;
 
@@ -31,7 +26,8 @@ export async function startMemoryMongo(): Promise<string> {
 }
 
 export async function stopMemoryMongo(): Promise<void> {
-  // In launcher mode the server is owned by the parent process; nothing to do.
+  if (process.env["COMPASS_TEST_MONGO_URI"]) return;
+
   if (!server) return;
 
   await server.stop();

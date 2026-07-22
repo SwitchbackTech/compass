@@ -7,7 +7,7 @@ paths change materially.
 
 ## Import benchmark
 
-`packages/backend/src/__tests__/bench/google-import.bench.test.ts` runs
+`packages/backend/src/__tests__/bench/google-import.bench.db.test.ts` runs
 `googleCalendarSyncService.initializeGoogleCalendarSync` end-to-end against
 a deterministic, production-shaped event mix (60% single timed, 15%
 all-day, 20% recurring across 4 base series + instances, 5% cancelled --
@@ -20,7 +20,7 @@ never pay for it.
 bun run test:backend
 
 # the real run -- prints one `[bench]` summary line per scenario.
-RUN_BENCH=1 bun packages/scripts/src/testing/run-tests.ts backend --filter bench
+RUN_BENCH=1 bun packages/scripts/src/testing/test-with-mongo.ts backend ./packages/backend/src/__tests__/bench/google-import.bench.db.test.ts
 ```
 
 ### Last recorded numbers
