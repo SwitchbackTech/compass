@@ -12,20 +12,32 @@ describe("installIndexManifest", () => {
   let client: MongoClient;
   let db: Db;
 
-  beforeEach(async () => {
+  // Connect and install ONCE. Installing the manifest is ~25 createIndex
+  // round-trips; doing it per test made each test ~1s even uncontended, and the
+  // per-test dropDatabase serialized DDL on the shared mongod and raced the next
+  // test's writes ("database is in the process of being dropped") under the
+  // parallel runner. Install is deterministic, so one install serves every
+  // read-only assertion; the two write tests clear their own collections.
+  beforeAll(async () => {
     client = new MongoClient(uri);
     await client.connect();
-    // Unique database per test so files/tests never collide on the shared server.
     db = client.db(`manifest_${faker.database.mongodbObjectId()}`);
+    await installIndexManifest(db);
   });
 
-  afterEach(async () => {
+  beforeEach(async () => {
+    await Promise.all([
+      db.collection(SYNC_COLLECTIONS.commands).deleteMany({}),
+      db.collection(SYNC_COLLECTIONS.events).deleteMany({}),
+    ]);
+  });
+
+  afterAll(async () => {
     await db.dropDatabase();
     await client.close();
   });
 
   it("creates every declared collection", async () => {
-    await installIndexManifest(db);
     const names = new Set(
       (await db.listCollections({}, { nameOnly: true }).toArray()).map(
         (c) => c.name,
@@ -37,7 +49,6 @@ describe("installIndexManifest", () => {
   });
 
   it("creates the declared indexes for a collection", async () => {
-    await installIndexManifest(db);
     const indexes = await db.collection(SYNC_COLLECTIONS.commands).indexes();
     const names = indexes.map((i) => i.name);
     expect(names).toContain("idempotency_key");
@@ -58,7 +69,6 @@ describe("installIndexManifest", () => {
   });
 
   it("installs a TTL index on deletion markers", async () => {
-    await installIndexManifest(db);
     const indexes = await db
       .collection(SYNC_COLLECTIONS.deletionMarkers)
       .indexes();
@@ -67,7 +77,6 @@ describe("installIndexManifest", () => {
   });
 
   it("enforces the unique command idempotency key", async () => {
-    await installIndexManifest(db);
     const commands = db.collection(SYNC_COLLECTIONS.commands);
     const key = {
       tenantId: "t",
@@ -85,7 +94,6 @@ describe("installIndexManifest", () => {
   });
 
   it("allows many unlinked events while still rejecting duplicate provider identities", async () => {
-    await installIndexManifest(db);
     const events = db.collection(SYNC_COLLECTIONS.events);
 
     // Multiple unlinked events store provider fields as null; the partial

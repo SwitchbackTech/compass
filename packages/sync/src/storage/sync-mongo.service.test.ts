@@ -9,17 +9,15 @@ const uri = process.env["SYNC_MONGO_URI"] as string;
 
 const uniqueDbName = () => `svc_${faker.database.mongodbObjectId()}`;
 
-describe("SyncMongoService", () => {
+// The tests that need a healthy connection share ONE — connecting installs the
+// ~25-index manifest, so connecting per test made this file needlessly slow and,
+// with a per-test dropDatabase, raced other files' DDL on the shared mongod.
+// The connection-failure tests connect their own (failed) service, which never
+// installs because connect() rejects before the install step.
+describe("SyncMongoService when connected", () => {
   let service: SyncMongoService;
 
-  afterEach(async () => {
-    if (service?.isConnected) {
-      await service.db.dropDatabase();
-    }
-    await service?.disconnect();
-  });
-
-  it("connects, installs manifests, and exposes the db", async () => {
+  beforeAll(async () => {
     service = new SyncMongoService();
     await service.connect({
       uri,
@@ -27,7 +25,13 @@ describe("SyncMongoService", () => {
       forbiddenDatabaseName: "prod_calendar",
       enforceLeastPrivilege: false,
     });
+  });
 
+  afterAll(async () => {
+    await service.disconnect();
+  });
+
+  it("connects, installs manifests, and exposes the db", async () => {
     expect(service.isConnected).toBe(true);
     const names = new Set(
       (await service.db.listCollections({}, { nameOnly: true }).toArray()).map(
@@ -37,47 +41,7 @@ describe("SyncMongoService", () => {
     expect(names.has(SYNC_COLLECTIONS.providerConnections)).toBe(true);
   });
 
-  it("throws when db is accessed before connecting", () => {
-    service = new SyncMongoService();
-    expect(() => service.db).toThrow(/not connected/);
-  });
-
-  it("refuses to start in staging when the forbidden database is readable", async () => {
-    // The in-memory server has no auth, so the forbidden database IS reachable.
-    // With enforcement on (staging), the least-privilege guard must detect the
-    // excessive access and abort startup rather than run over-privileged.
-    service = new SyncMongoService();
-    await expect(
-      service.connect({
-        uri,
-        databaseName: uniqueDbName(),
-        forbiddenDatabaseName: "prod_calendar",
-        enforceLeastPrivilege: true,
-      }),
-    ).rejects.toThrow(/excessive privileges/);
-  });
-
-  it("fails to connect against an unreachable server", async () => {
-    service = new SyncMongoService();
-    await expect(
-      service.connect({
-        // Reserved TEST-NET address; connection is refused quickly.
-        uri: "mongodb://192.0.2.1:27017/compass_sync?serverSelectionTimeoutMS=500&connectTimeoutMS=500",
-        forbiddenDatabaseName: "prod_calendar",
-        enforceLeastPrivilege: false,
-      }),
-    ).rejects.toThrow();
-  });
-
   it("supports multi-document transactions (replica set)", async () => {
-    service = new SyncMongoService();
-    await service.connect({
-      uri,
-      databaseName: uniqueDbName(),
-      forbiddenDatabaseName: "prod_calendar",
-      enforceLeastPrivilege: false,
-    });
-
     const collection = service.db.collection(SYNC_COLLECTIONS.jobs);
     const session = service.client.startSession();
     try {
@@ -89,6 +53,41 @@ describe("SyncMongoService", () => {
       await session.endSession();
     }
     expect(await collection.countDocuments()).toBe(2);
+  });
+});
+
+describe("SyncMongoService connection failures", () => {
+  it("throws when db is accessed before connecting", () => {
+    const service = new SyncMongoService();
+    expect(() => service.db).toThrow(/not connected/);
+  });
+
+  it("refuses to start in staging when the forbidden database is readable", async () => {
+    // The in-memory server has no auth, so the forbidden database IS reachable.
+    // With enforcement on (staging), the least-privilege guard must detect the
+    // excessive access and abort startup rather than run over-privileged. The
+    // guard rejects before the manifest install, so nothing is left connected.
+    const service = new SyncMongoService();
+    await expect(
+      service.connect({
+        uri,
+        databaseName: uniqueDbName(),
+        forbiddenDatabaseName: "prod_calendar",
+        enforceLeastPrivilege: true,
+      }),
+    ).rejects.toThrow(/excessive privileges/);
+  });
+
+  it("fails to connect against an unreachable server", async () => {
+    const service = new SyncMongoService();
+    await expect(
+      service.connect({
+        // Reserved TEST-NET address; connection is refused quickly.
+        uri: "mongodb://192.0.2.1:27017/compass_sync?serverSelectionTimeoutMS=500&connectTimeoutMS=500",
+        forbiddenDatabaseName: "prod_calendar",
+        enforceLeastPrivilege: false,
+      }),
+    ).rejects.toThrow();
   });
 });
 
