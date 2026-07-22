@@ -2,6 +2,8 @@ import { Logger } from "@core/logger/winston.logger";
 import { createInternalAuthMiddleware } from "@sync/auth/internal-auth";
 import { loadSyncConfig, type SyncConfig } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
+import { reconcileStaleCalendars } from "@sync/domain/reconcile.service";
+import { ReconcileScheduler } from "@sync/domain/reconcile-scheduler.service";
 import { SyncJobWorker } from "@sync/domain/sync-job-worker.service";
 import { SyncScheduler } from "@sync/domain/sync-scheduler.service";
 import { ReadinessRegistry } from "@sync/lifecycle/readiness";
@@ -182,16 +184,19 @@ async function start(): Promise<void> {
       enforceLeastPrivilege: config.ENFORCE_LEAST_PRIVILEGE,
     });
 
-    // Storage is up: start draining the job queue. Registered AFTER the mongo
-    // drain so the coordinator's reverse-order teardown stops the scheduler
-    // FIRST (releasing its leases while storage is still open) and closes mongo
-    // last. Only an active, provider-configured deployment does work; a passive
-    // or unconfigured one serves health and admits nothing to drain.
-    const scheduler = buildScheduler(config, mongo);
-    if (scheduler) {
-      service.shutdown.register("scheduler", () => scheduler.stop());
-      scheduler.start();
-      logger.info("Sync scheduler draining the job queue");
+    // Storage is up: start draining the job queue and periodically reconciling
+    // stale calendars. Both drains register AFTER the mongo drain so the
+    // coordinator's reverse-order teardown stops them FIRST (reconcile before
+    // drain, so no new jobs are enqueued while the drain finishes and releases
+    // its leases) and closes mongo last. Only an active, provider-configured
+    // deployment does work; a passive or unconfigured one serves health.
+    const schedulers = buildSchedulers(config, mongo);
+    if (schedulers) {
+      service.shutdown.register("scheduler", () => schedulers.drain.stop());
+      service.shutdown.register("reconcile", () => schedulers.reconcile.stop());
+      schedulers.drain.start();
+      schedulers.reconcile.start();
+      logger.info("Sync scheduler draining and reconciling");
     }
   } catch (error) {
     logger.error(
@@ -201,26 +206,29 @@ async function start(): Promise<void> {
   }
 }
 
-// Build the job-queue scheduler for an active, provider-configured deployment,
-// or null when there is nothing to drain (passive execution, or no provider
-// credentials to refresh access tokens with). The worker's repositories bind to
-// the now-connected db; a fresh owner id per process scopes its leases.
-function buildScheduler(
+// Build the background schedulers for an active, provider-configured deployment:
+// the queue DRAIN (claims and runs jobs) and the RECONCILE sweep (the
+// missed-webhook fallback that enqueues pulls for stale calendars). Returns null
+// when there is nothing to run (passive execution, or no provider credentials to
+// refresh access tokens with). Repositories bind to the now-connected db; a
+// fresh owner id per process scopes the drain worker's leases.
+function buildSchedulers(
   config: SyncConfig,
   mongo: SyncMongoService,
-): SyncScheduler | null {
+): { drain: SyncScheduler; reconcile: ReconcileScheduler } | null {
   if (config.EXECUTION !== "active") return null;
   const authAdapter = buildAuthAdapter(config);
   if (!authAdapter) return null;
 
   const db = mongo.db;
   const owner = randomUUID();
+  const resources = new SyncResourceRepository(db);
   const jobs = new JobRepository(db);
   const worker = new SyncJobWorker(
     {
       events: new EventRepository(db),
       occurrences: new EventOccurrenceRepository(db, mongo.client),
-      resources: new SyncResourceRepository(db),
+      resources,
       calendars: new ProviderCalendarRepository(db),
       commands: new CommandRepository(db),
       jobs,
@@ -229,10 +237,18 @@ function buildScheduler(
     },
     owner,
   );
-  return new SyncScheduler(
+  const drain = new SyncScheduler(
     { worker, jobs },
     { owner, onError: (error) => logger.error("Sync job drain failed", error) },
   );
+  const reconcile = new ReconcileScheduler(
+    {
+      sweep: (before) =>
+        reconcileStaleCalendars({ resources, jobs }, before, () => new Date()),
+    },
+    { onError: (error) => logger.error("Sync reconcile sweep failed", error) },
+  );
+  return { drain, reconcile };
 }
 
 function registerSignalHandlers(
