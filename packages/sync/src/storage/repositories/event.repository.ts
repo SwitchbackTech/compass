@@ -100,6 +100,28 @@ export class EventRepository {
     return record ? EventRecordSchema.parse(record) : null;
   }
 
+  // Look up one provider-linked event by its provider identity, owner-scoped.
+  // Import uses this to resolve a series instance's provider parent to the
+  // locally stored master when the master arrived in an earlier page or run.
+  async findByProviderIdentity(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    identity: {
+      connectionId: NonNullable<EventRecord["connectionId"]>;
+      calendarId: EventRecord["calendarId"];
+      providerEventId: NonNullable<EventRecord["providerEventId"]>;
+    },
+  ): Promise<EventRecord | null> {
+    const record = await this.collection.findOne({
+      tenantId,
+      principalId,
+      connectionId: identity.connectionId,
+      calendarId: identity.calendarId,
+      providerEventId: identity.providerEventId,
+    });
+    return record ? EventRecordSchema.parse(record) : null;
+  }
+
   // Remove one event by id, scoped to its owner so a caller can only delete its
   // own event. Idempotent: deleting an already-absent event is a no-op, so a
   // retried delete converges. Returns whether a document was removed.
