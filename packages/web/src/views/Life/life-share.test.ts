@@ -28,7 +28,7 @@ describe("life sharing", () => {
   it("shares only the canonical Life URL", () => {
     expect(
       getCleanLifeShareUrl(
-        "https://compasscalendar.com/life?auth=reset&token=secret&variation=random&age=83#token=secret",
+        "https://user:secret@compasscalendar.com/life?auth=reset&token=secret&variation=random&age=83#token=secret",
       ),
     ).toBe("https://compasscalendar.com/life");
   });
