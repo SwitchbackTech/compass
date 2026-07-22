@@ -159,6 +159,31 @@ function localizeInstant(floating: Date, schedule: EventSchedule): Date {
   return dayjs.tz(wall, schedule.timeZone).toDate();
 }
 
+// Bounds a series' rules to end strictly before an instant, by setting (or
+// replacing) UNTIL. The UNTIL is a real-UTC instant, exactly as a provider
+// emits it — floatingRules re-frames it on expansion — so a thisAndFollowing
+// split truncates the master to just the occurrences before the split point.
+export function truncateRulesBefore(
+  rules: readonly string[],
+  instant: Date,
+): string[] {
+  // UNTIL is inclusive, so back off one second to end strictly before `instant`
+  // (the split occurrence itself is excluded). Sub-second cadence isn't modeled.
+  const until = new Date(instant.getTime() - 1000)
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
+  // Drop any existing COUNT/UNTIL first: COUNT and UNTIL are mutually exclusive
+  // per RFC 5545, and a stale UNTIL would otherwise survive alongside the new one.
+  return rules.map((rule) => {
+    const cleaned = rule
+      .split(";")
+      .filter((part) => !/^COUNT=/i.test(part) && !/^UNTIL=/i.test(part))
+      .join(";");
+    return `${cleaned};UNTIL=${until}`;
+  });
+}
+
 // The schedule one occurrence of a series has at a given recurrence instant —
 // the master's schedule shifted to that instant, preserving duration and zone.
 // Used when materializing an exception event for a scope-"this" edit/delete so
@@ -220,8 +245,9 @@ function toOccurrence(
 }
 
 // The normalized start instant used by range queries and the start-time index:
-// the timed instant itself, or midnight UTC of an all-day date.
-function scheduleStartAt(schedule: EventSchedule): Date {
+// the timed instant itself, or midnight UTC of an all-day date. Exported so a
+// series split can compare its cut point against the master's first occurrence.
+export function scheduleStartAt(schedule: EventSchedule): Date {
   if (schedule.kind === "timed") return new Date(schedule.start);
   return new Date(`${schedule.start}T00:00:00.000Z`);
 }
