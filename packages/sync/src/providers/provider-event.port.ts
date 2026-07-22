@@ -56,7 +56,9 @@ export type ProviderEventRead = ProviderEvent | ProviderEventCancellation;
 // (e.g. a timed event with no start), not merely unusual.
 export type ProviderEventErrorReason =
   | "missingIdentity" // the event carried no id/version to key it by
-  | "unmappableSchedule"; // start/end could not be resolved to a schedule
+  | "unmappableSchedule" // start/end could not be resolved to a schedule
+  | "unmappableContent"; // content failed the neutral contract (e.g. an
+// out-of-bounds attendee/organizer field the provider does not cap)
 
 export class ProviderEventError extends Error {
   constructor(

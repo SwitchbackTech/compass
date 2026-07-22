@@ -161,6 +161,34 @@ describe("GoogleEventReaderAdapter", () => {
     expect(result.skipped).toBe(1);
   });
 
+  it("skips a content-oversized event instead of failing the whole page", async () => {
+    const api = new FakeEventListApi([
+      page({
+        items: [
+          gEvent({ id: "ok", summary: "OK" }),
+          // Google does not cap attendee names; the neutral contract does. This
+          // event must be skipped, not throw out of the page.
+          gEvent({
+            id: "poison",
+            attendees: [
+              { email: "guest@example.com", displayName: "x".repeat(300) },
+            ],
+          }),
+          gEvent({ id: "ok2", summary: "OK2" }),
+        ],
+      }),
+    ]);
+    const { adapter } = adapterWith(api);
+
+    const result = await adapter.listEventPage({
+      accessToken: "tok",
+      calendarId: "primary@google.com",
+    });
+
+    expect(result.events.map((e) => e.providerEventId)).toEqual(["ok", "ok2"]);
+    expect(result.skipped).toBe(1);
+  });
+
   it("maps an expired sync token (410) to cursorExpired", async () => {
     const api = new FakeEventListApi([], { response: { status: 410 } });
     const { adapter } = adapterWith(api);

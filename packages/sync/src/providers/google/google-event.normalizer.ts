@@ -72,7 +72,12 @@ function cancellationSeries(
 }
 
 function mapContent(item: gSchema$Event) {
-  return SyncEventContentSchema.parse({
+  // safeParse, not parse: a provider can report a field the neutral contract
+  // caps but the provider does not (e.g. an attendee displayName longer than
+  // the contract's max). That makes one event unusable, so it must surface as a
+  // ProviderEventError the reader can skip — never a raw ZodError that would
+  // escape the per-event skip boundary and fail a whole import page.
+  const parsed = SyncEventContentSchema.safeParse({
     // Google omits summary/description for untitled/empty events; the neutral
     // contract models those as empty strings, not absence.
     title: item.summary ?? "",
@@ -82,6 +87,14 @@ function mapContent(item: gSchema$Event) {
     attendees: mapAttendees(item.attendees),
     conference: mapConference(item),
   });
+  if (!parsed.success) {
+    throw new ProviderEventError(
+      "unmappableContent",
+      "Event content failed the neutral contract",
+      { cause: parsed.error },
+    );
+  }
+  return parsed.data;
 }
 
 function mapOrganizer(
@@ -141,7 +154,7 @@ function mapSchedule(item: gSchema$Event) {
 
   if (start.date && end.date) {
     // Google's all-day end date is already exclusive, matching the contract.
-    return EventScheduleSchema.parse({
+    return parseSchedule({
       kind: "allDay",
       start: start.date,
       end: end.date,
@@ -158,7 +171,7 @@ function mapSchedule(item: gSchema$Event) {
     }
     // Re-anchor to the IANA zone so the emitted offset is correct for that
     // date's DST rules rather than trusting the stored offset.
-    return EventScheduleSchema.parse({
+    return parseSchedule({
       kind: "timed",
       start: toOffsetIso(start),
       end: toOffsetIso(end),
@@ -170,6 +183,21 @@ function mapSchedule(item: gSchema$Event) {
     "unmappableSchedule",
     "Event start/end mixes date and dateTime",
   );
+}
+
+// safeParse the neutral schedule so a value the contract rejects surfaces as a
+// skippable ProviderEventError, not a raw ZodError that would escape the
+// reader's per-event skip boundary and fail a whole import page.
+function parseSchedule(candidate: unknown) {
+  const parsed = EventScheduleSchema.safeParse(candidate);
+  if (!parsed.success) {
+    throw new ProviderEventError(
+      "unmappableSchedule",
+      "Event start/end could not be resolved to a schedule",
+      { cause: parsed.error },
+    );
+  }
+  return parsed.data;
 }
 
 function mapRecurrence(item: gSchema$Event): ProviderEventRecurrence {
