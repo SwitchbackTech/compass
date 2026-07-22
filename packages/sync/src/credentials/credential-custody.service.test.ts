@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
-import { type Db, MongoClient } from "mongodb";
+import { type Db } from "mongodb";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import {
   type ProviderAuthAdapter,
@@ -8,10 +9,8 @@ import {
   type RefreshedCredential,
 } from "@sync/providers/provider-auth.port";
 import { type CredentialUpsert } from "@sync/storage/contracts/credential.contracts";
-import { installIndexManifest } from "@sync/storage/index-manifest";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
 
 // A configurable ProviderAuthAdapter fake that counts refresh/revoke calls.
@@ -66,21 +65,13 @@ const baseCredential = (
 });
 
 describe("CredentialCustody", () => {
-  let client: MongoClient;
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: CredentialRepository;
 
-  beforeEach(async () => {
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(`custody_${objectId()}`);
-    await installIndexManifest(db);
+  beforeEach(() => {
+    db = storage.db();
     repo = new CredentialRepository(db);
-  });
-
-  afterEach(async () => {
-    await db.dropDatabase();
-    await client.close();
   });
 
   const fixedNow = () => new Date("2026-01-01T00:00:00Z");
@@ -227,26 +218,45 @@ describe("CredentialCustody", () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
+    // Resolves once the refresh has genuinely started — which proves custody
+    // already read the credential. Deleting only after this point pins the test
+    // to the mid-refresh race; deleting concurrently with the initial read
+    // could let the delete overtake it on a pooled connection and exercise the
+    // wrong path (the plain missing-credential throw).
+    let refreshStarted!: () => void;
+    const started = new Promise<void>((resolve) => {
+      refreshStarted = resolve;
+    });
     const adapter = new FakeAdapter({
       refreshed: {
         accessToken: "orphan-token",
         expiresAt: new Date("2099-01-01T00:00:00Z"),
         grantedScopes: [],
       },
-      onRefresh: () => gate,
+      onRefresh: () => {
+        refreshStarted();
+        return gate;
+      },
     });
     const custody = new CredentialCustody(repo, adapter, fixedNow);
     await custody.store(baseCredential(connectionId));
 
-    // Start a refresh, delete the credential while it is in flight, then let
-    // the refresh finish.
-    const inFlight = custody.getValidAccessToken(connectionId);
+    // Start a refresh; the rejection handler attaches immediately so the
+    // eventual rejection is never unhandled while later awaits are pending.
+    const inFlight = custody
+      .getValidAccessToken(connectionId)
+      .catch((e) => e as ProviderAuthError);
+    // Delete the credential while the refresh is in flight, then let it finish.
+    await started;
     await repo.deleteByConnection(connectionId);
     release();
 
-    const error = (await inFlight.catch((e) => e)) as ProviderAuthError;
+    const error = await inFlight;
     expect(error).toBeInstanceOf(ProviderAuthError);
-    expect(error.reason).toBe("missingRefreshToken");
+    expect((error as ProviderAuthError).reason).toBe("missingRefreshToken");
+    expect((error as ProviderAuthError).message).toBe(
+      "Credential was removed during refresh",
+    );
     // The token was never re-cached, so the deleted credential stays gone.
     expect(await repo.findByConnection(connectionId)).toBeNull();
   });

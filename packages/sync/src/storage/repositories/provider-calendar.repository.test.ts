@@ -1,10 +1,9 @@
 import { faker } from "@faker-js/faker";
-import { type Db, MongoClient } from "mongodb";
+import { type Db } from "mongodb";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type ProviderCalendarUpsert } from "@sync/storage/contracts/provider-calendar.contracts";
-import { installIndexManifest } from "@sync/storage/index-manifest";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
 
 const baseUpsert = (
@@ -30,21 +29,13 @@ const baseUpsert = (
   }) as ProviderCalendarUpsert;
 
 describe("ProviderCalendarRepository", () => {
-  let client: MongoClient;
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: ProviderCalendarRepository;
 
-  beforeEach(async () => {
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(`cal_${objectId()}`);
-    await installIndexManifest(db);
+  beforeEach(() => {
+    db = storage.db();
     repo = new ProviderCalendarRepository(db);
-  });
-
-  afterEach(async () => {
-    await db.dropDatabase();
-    await client.close();
   });
 
   it("assigns a stable id on first upsert", async () => {

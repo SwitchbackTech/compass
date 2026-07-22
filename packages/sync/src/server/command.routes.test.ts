@@ -5,6 +5,7 @@ import {
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { signInternalRequest } from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
@@ -12,10 +13,11 @@ import { COMMANDS_PATH } from "@sync/server/command.routes";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
-import { SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
 
 const uri = process.env["SYNC_MONGO_URI"] as string;
+const storage = setupSyncStorage();
 const objectId = () => faker.database.mongodbObjectId();
 const SECRET = "internal-secret";
 
@@ -96,20 +98,12 @@ describe("POST /internal/commands", () => {
       body: JSON.stringify(body),
     });
 
-  beforeEach(async () => {
-    mongo = new SyncMongoService();
-    await mongo.connect({
-      uri,
-      databaseName: `cmd_api_${objectId()}`,
-      forbiddenDatabaseName: "compass_api_unused",
-      enforceLeastPrivilege: false,
-    });
+  beforeEach(() => {
+    mongo = storage.mongo();
   });
 
   afterEach(async () => {
     await service?.stop();
-    await mongo.db.dropDatabase();
-    await mongo.disconnect();
   });
 
   it("confirms a cloud-only create and writes the canonical event", async () => {

@@ -1,15 +1,14 @@
 import { faker } from "@faker-js/faker";
-import { type Db, MongoClient } from "mongodb";
+import { type Db } from "mongodb";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
   type CredentialUpsert,
   redactCredential,
 } from "@sync/storage/contracts/credential.contracts";
-import { installIndexManifest } from "@sync/storage/index-manifest";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
 
 const baseCredential = (
@@ -23,21 +22,13 @@ const baseCredential = (
 });
 
 describe("CredentialRepository", () => {
-  let client: MongoClient;
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: CredentialRepository;
 
-  beforeEach(async () => {
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(`cred_${objectId()}`);
-    await installIndexManifest(db);
+  beforeEach(() => {
+    db = storage.db();
     repo = new CredentialRepository(db);
-  });
-
-  afterEach(async () => {
-    await db.dropDatabase();
-    await client.close();
   });
 
   it("stores and reads back a credential keyed by connection id", async () => {

@@ -1,13 +1,12 @@
 import { faker } from "@faker-js/faker";
-import { type Db, MongoClient } from "mongodb";
+import { type Db } from "mongodb";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
-import { installIndexManifest } from "@sync/storage/index-manifest";
 import {
   EventRepository,
   type ProviderEventUpsert,
 } from "@sync/storage/repositories/event.repository";
 
-const uri = process.env["SYNC_MONGO_URI"] as string;
 const objectId = () => faker.database.mongodbObjectId();
 
 const timed = (start: string, end: string, timeZone = "America/Denver") => ({
@@ -76,21 +75,13 @@ const compassRecord = (overrides: Partial<EventRecord> = {}): EventRecord =>
   }) as EventRecord;
 
 describe("EventRepository", () => {
-  let client: MongoClient;
+  const storage = setupSyncStorage();
   let db: Db;
   let repo: EventRepository;
 
-  beforeEach(async () => {
-    client = new MongoClient(uri);
-    await client.connect();
-    db = client.db(`event_${objectId()}`);
-    await installIndexManifest(db);
+  beforeEach(() => {
+    db = storage.db();
     repo = new EventRepository(db);
-  });
-
-  afterEach(async () => {
-    await db.dropDatabase();
-    await client.close();
   });
 
   it("dedupes a linked event on provider identity across repeated reads", async () => {

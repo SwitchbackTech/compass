@@ -1,5 +1,5 @@
 /**
- * Test runner for the Mongo-backed packages (backend, scripts).
+ * Test runner for the Mongo-backed packages (backend, scripts, sync).
  *
  * Bun runs every file in a package inside ONE process, sharing the module
  * registry -- singletons, open handles and mock state leak between files, which
@@ -13,7 +13,7 @@
  *   3. Bounds parallelism to the core count and streams a compact summary.
  *
  * Usage:
- *   bun run-tests.ts <backend|scripts> [--filter substring] [--tier fast|db]
+ *   bun run-tests.ts <backend|scripts|sync> [--filter substring] [--tier fast|db]
  *
  * Tiers are classified automatically (no hand-maintained allowlist): a file is
  * "db" if it touches the Mongo test harness (setupTestDb), otherwise "fast".
@@ -24,7 +24,7 @@ import { readFileSync } from "node:fs";
 import { cpus } from "node:os";
 import { resolve } from "node:path";
 
-type PackageName = "backend" | "scripts";
+type PackageName = "backend" | "scripts" | "sync";
 
 const PACKAGES: Record<PackageName, { root: string; preload: string }> = {
   backend: {
@@ -35,11 +35,17 @@ const PACKAGES: Record<PackageName, { root: string; preload: string }> = {
     root: "packages/scripts/src",
     preload: "packages/scripts/src/testing/scripts.preload.ts",
   },
+  sync: {
+    root: "packages/sync/src",
+    preload: "packages/sync/src/__tests__/sync.preload.ts",
+  },
 };
 
 const pkg = process.argv[2] as PackageName;
 if (!pkg || !PACKAGES[pkg]) {
-  console.error("Usage: run-tests.ts <backend|scripts> [--filter substring]");
+  console.error(
+    "Usage: run-tests.ts <backend|scripts|sync> [--filter substring]",
+  );
   process.exit(2);
 }
 
@@ -56,11 +62,13 @@ if (tier && tier !== "fast" && tier !== "db") {
 const { root, preload: preloadRel } = PACKAGES[pkg];
 const preload = resolve(preloadRel);
 
-// A file is "db" if it touches the Mongo test harness; otherwise "fast".
+// A file is "db" if it touches a Mongo test harness; otherwise "fast".
 // Derived from the source, so the classification can never drift out of sync
 // with a hand-maintained list.
 const isDbFile = (path: string): boolean =>
-  /\bsetupTestDb\b/.test(readFileSync(path, "utf8"));
+  /\bsetupTestDb\b|\bsetupSyncStorage\b|\bSYNC_MONGO_URI\b/.test(
+    readFileSync(path, "utf8"),
+  );
 
 const files = Array.from(new Glob("**/*.{test,spec}.{ts,tsx}").scanSync(root))
   .map((rel) => `${root}/${rel}`)
