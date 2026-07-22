@@ -99,7 +99,10 @@ export async function dispatchSyncJob(
     case "initialImport": {
       // Idempotent: a resource that already holds a cursor no-ops inside.
       await importCalendarEvents(deps, calendar, now);
-      return { result: "done" };
+      // Bootstrap the push channel once the calendar is imported. The followup
+      // is coalesced and maintainSubscription no-ops on an already-live channel,
+      // so a repeated import (a reclaimed lease, a re-import) never churns it.
+      return { result: "done", followup: subscriptionFollowup(resource, now) };
     }
     case "incrementalPull": {
       const pull = await pullCalendarChanges(deps, calendar, now);
@@ -166,5 +169,24 @@ function importFollowup(
     priority: 0,
     runAfter: now(),
     coalescingKey: `initialImport:${resource._id}`,
+  };
+}
+
+function subscriptionFollowup(
+  resource: SyncResourceRecord,
+  now: () => Date,
+): JobEnqueue {
+  return {
+    tenantId: resource.tenantId,
+    principalId: resource.principalId,
+    connectionId: resource.connectionId,
+    resourceId: resource._id,
+    commandId: null,
+    kind: "subscriptionMaintain",
+    priority: 0,
+    runAfter: now(),
+    // The same key the expiry sweep uses, so a bootstrap watch and a renewal
+    // never double up into two channels.
+    coalescingKey: `subscriptionMaintain:${resource._id}`,
   };
 }

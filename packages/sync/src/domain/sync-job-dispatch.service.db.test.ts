@@ -279,7 +279,7 @@ describe("dispatchSyncJob", () => {
     });
   });
 
-  it("runs an initial import for an already-imported resource as an idempotent no-op", async () => {
+  it("runs an initial import and hands off to a subscription bootstrap", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0"); // already imported
     const reader = new FakeReader([]); // import no-ops on an existing cursor
@@ -289,7 +289,14 @@ describe("dispatchSyncJob", () => {
       jobFor(resource, "initialImport"),
       now,
     );
-    expect(outcome).toEqual({ result: "done" });
+    // Even an idempotent no-op import ensures the push channel gets opened.
+    if (outcome.result !== "done" || !outcome.followup) {
+      throw new Error("expected a followup");
+    }
+    expect(outcome.followup.kind).toBe("subscriptionMaintain");
+    expect(outcome.followup.coalescingKey).toBe(
+      `subscriptionMaintain:${resource._id}`,
+    );
   });
 
   it("drops a job whose resource no longer exists", async () => {
