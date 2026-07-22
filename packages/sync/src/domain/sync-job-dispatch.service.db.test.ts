@@ -85,6 +85,23 @@ class FakeReader implements ProviderEventReader {
 
 const tokenSource = { getValidAccessToken: async () => "access-token" };
 
+// A notification adapter that records watch calls and returns a fixed channel,
+// so a subscriptionMaintain dispatch runs without a network round-trip.
+const notifications = {
+  provider: "google" as const,
+  watched: [] as string[],
+  watchEvents: async (input: { channelId: string }) => {
+    notifications.watched.push(input.channelId);
+    return {
+      channelId: input.channelId,
+      resourceId: "provider-resource",
+      expiresAt: new Date("2026-07-17T00:00:00.000Z"),
+    };
+  },
+  stopChannel: async () => {},
+  parseCallback: () => null,
+};
+
 describe("dispatchSyncJob", () => {
   const storage = setupSyncStorage(import.meta.url);
   let events: EventRepository;
@@ -109,6 +126,8 @@ describe("dispatchSyncJob", () => {
     commands,
     reader,
     custody: tokenSource,
+    notifications,
+    callbackUrl: "https://sync.example/oauth/google/notifications",
   });
 
   const seedCalendar = (): Promise<ProviderCalendarRecord> =>
@@ -301,5 +320,28 @@ describe("dispatchSyncJob", () => {
       now,
     );
     expect(outcome).toEqual({ result: "unsupported", kind: "reconcile" });
+  });
+
+  it("settles a subscriptionMaintain job as done, opening a channel", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0"); // no subscription
+    notifications.watched = [];
+    const reader = new FakeReader([]);
+
+    const outcome = await dispatchSyncJob(
+      deps(reader),
+      jobFor(resource, "subscriptionMaintain"),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+    // The channel was actually opened and persisted for the resource.
+    expect(notifications.watched).toHaveLength(1);
+    const saved = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(saved?.subscriptionResourceId).toBe("provider-resource");
   });
 });

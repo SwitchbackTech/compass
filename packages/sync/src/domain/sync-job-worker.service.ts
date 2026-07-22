@@ -122,10 +122,10 @@ export class SyncJobWorker {
         );
         return;
       case "unsupported":
-        // No handler for this kind in this build (commandApply/reconcile/
-        // subscriptionMaintain arrive later). Hold it for a future build via a
-        // backed-off retry rather than hot-loop or drop unfinished work. No
-        // producer enqueues these kinds yet, so this is defensive.
+        // No handler for this kind in this build (commandApply/reconcile arrive
+        // later). Hold it for a future build via a backed-off retry rather than
+        // hot-loop or drop unfinished work. No producer enqueues these kinds
+        // yet, so this is defensive.
         await this.#deps.jobs.scheduleRetry(
           job._id,
           this.#owner,
