@@ -6,7 +6,6 @@ import { Glob } from "bun";
 import { cpus } from "node:os";
 import { resolve } from "node:path";
 
-const ROOT = "./packages/web/src";
 const PRELOAD = resolve("packages/web/src/__tests__/web.preload.ts");
 const SCAN = "packages/web/src/**/*.{test,spec}.{ts,tsx}";
 

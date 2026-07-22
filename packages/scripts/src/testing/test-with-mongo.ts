@@ -8,16 +8,13 @@
  */
 import { Glob } from "bun";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
+import { backendTestSpawnEnv } from "./backend-test-env";
 import { cpus } from "node:os";
 import { resolve } from "node:path";
-import { backendTestSpawnEnv } from "./backend-test-env";
 
 type PackageName = "backend" | "scripts" | "sync";
 
-const PACKAGES: Record<
-  PackageName,
-  { preload: string; scan: string }
-> = {
+const PACKAGES: Record<PackageName, { preload: string; scan: string }> = {
   backend: {
     preload: "packages/backend/src/__tests__/backend.preload.ts",
     scan: "packages/backend/src/**/*.{test,spec}.{ts,tsx}",
