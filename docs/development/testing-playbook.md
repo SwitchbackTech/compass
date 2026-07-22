@@ -62,6 +62,31 @@ Mongo-backed tests use the `*.db.test.ts` / `*.db.test.tsx` suffix. Everything e
 - `bun run test:migrations` — migration suites under `packages/scripts/src/migrations`.
 - Focus a run: `bun packages/scripts/src/testing/test-mongo-env.ts backend -- ./packages/backend/src/user/controllers/user.controller.db.test.ts`.
 
+### Backend test timeouts (fail-fast)
+
+`test-mongo-env.ts` enforces two timeout layers for **backend** runs (`test:backend`, `test:backend:fast`, `test:backend:db`):
+
+| Layer | Default | Override |
+| --- | --- | --- |
+| **Suite wall clock** | 60s total (Mongo boot + `bun test`) | `COMPASS_TEST_MAX_SECONDS=120 bun run test:backend` |
+| **Per-test** | 15s via Bun `--timeout` | Pass `--timeout 30000` after `--` in the wrapper, or set the third arg on individual `test()` calls |
+
+On suite timeout the runner kills the hung `bun test` process and prints:
+
+- which phase hung (`starting in-memory Mongo replica set` vs `running bun test`)
+- the scan target or explicit paths
+- best-effort `Likely hung on:` from recent Bun output (last file header or test name)
+- slow tests seen before the kill (>= 5s each)
+- the last ~15 lines of output
+
+Exit code is **124** (same convention as `timeout(1)`).
+
+After a successful run, tests that took >= 5s each are listed under `Slow tests in backend`. Runs that use >80% of the suite budget emit a warning.
+
+Bun's built-in default per-test timeout is 5s when `--timeout` is omitted; the wrapper raises it to 15s for backend because `.db.test.ts` specs are heavier. Other mongo-backed packages (`scripts`, `sync`) keep Bun's default unless you pass `--timeout` explicitly.
+
+To reproduce CI locally: `bun run test:backend` (full 60s budget applies). For a one-off longer budget while fixing a slow spec: `COMPASS_TEST_MAX_SECONDS=180 bun run test:backend:db`.
+
 ## What To Run By Change Type
 
 ### Shared type or schema change

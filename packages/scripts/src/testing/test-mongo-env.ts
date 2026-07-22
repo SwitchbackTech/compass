@@ -2,15 +2,38 @@
  * Boots one in-memory Mongo replica set and runs native `bun test --parallel`
  * with shared mongod. Per-file DB isolation uses setupTestDb(import.meta.url).
  *
+ * Backend runs enforce a 60s wall-clock budget by default (override with
+ * COMPASS_TEST_MAX_SECONDS). Glob paths are passed through to Bun — never
+ * expanded into per-file argv lists, which can hang the runner.
+ *
  * Usage:
  *   bun test-mongo-env.ts <backend|scripts|sync> -- [bun test flags/paths...]
  */
 import { Glob } from "bun";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { backendTestSpawnEnv } from "./backend-test-env";
+import {
+  appendPerTestTimeout,
+  createOutputTee,
+  parseMaxSeconds,
+  remainingSeconds,
+  reportSlowTestsAfterRun,
+  reportSuiteTimeout,
+  waitForProcessExit,
+  withDeadline,
+  type TestRunPhase,
+} from "./test-run-timeout";
 import { resolve } from "node:path";
 
 type PackageName = "backend" | "scripts" | "sync";
+
+const DEFAULT_MAX_SECONDS: Partial<Record<PackageName, number>> = {
+  backend: 60,
+};
+
+function maxSecondsFor(pkg: PackageName): number | undefined {
+  return parseMaxSeconds(process.env.COMPASS_TEST_MAX_SECONDS, DEFAULT_MAX_SECONDS[pkg]);
+}
 
 const PACKAGES: Record<PackageName, { preload: string; scan: string; glob: string }> =
   {
@@ -65,9 +88,8 @@ function parseExtraArgs(extraArgs: string[]): {
       process.exit(1);
     }
 
-    explicitPaths.push(
-      ...matches.map((match) => `./${match.replace(/^\.\//, "")}`),
-    );
+    // Pass the glob through to Bun — expanding many files into argv can hang the runner.
+    explicitPaths.push(arg.startsWith("./") ? arg : `./${arg}`);
   }
 
   return { bunFlags, ignorePattern, explicitPaths };
@@ -83,7 +105,7 @@ function resolveTestTargets(
     return {
       targets: explicitPaths,
       bunFlags,
-      label: `${explicitPaths.length} files`,
+      label: explicitPaths.join(", "),
     };
   }
 
@@ -110,12 +132,38 @@ if (!pkg || !PACKAGES[pkg]) {
 const { preload, scan } = PACKAGES[pkg];
 const preloadPath = resolve(preload);
 const { targets, bunFlags, label } = resolveTestTargets(scan, extraArgs);
-
+const maxSeconds = maxSecondsFor(pkg);
 const started = Date.now();
+const outputTee = createOutputTee();
+let phase: TestRunPhase = "starting-mongo";
 
-const server = await MongoMemoryReplSet.create({
-  replSet: { count: 1, name: "compass-test", storageEngine: "wiredTiger" },
-});
+function reportTimeout(): never {
+  reportSuiteTimeout({
+    pkg,
+    label,
+    maxSeconds: maxSeconds ?? 0,
+    startedMs: started,
+    phase,
+    outputLines: outputTee.lines,
+  });
+}
+
+const mongoDeadline = remainingSeconds(maxSeconds, started);
+let server: MongoMemoryReplSet;
+
+try {
+  const createMongo = MongoMemoryReplSet.create({
+    replSet: { count: 1, name: "compass-test", storageEngine: "wiredTiger" },
+  });
+  server =
+    mongoDeadline === undefined
+      ? await createMongo
+      : await withDeadline(createMongo, mongoDeadline);
+} catch {
+  reportTimeout();
+}
+
+phase = "running-tests";
 const mongoUri = server.getUri();
 const env = backendTestSpawnEnv(mongoUri);
 
@@ -125,21 +173,47 @@ const testTargets = [
   "--parallel",
   "--preload",
   preloadPath,
-  ...bunFlags,
+  ...appendPerTestTimeout(bunFlags, pkg),
   ...targets,
 ];
 
-console.log(`Running ${label} (${pkg})...`);
+if (maxSeconds !== undefined) {
+  console.log(`Running ${label} (${pkg}, max ${maxSeconds}s)...`);
+} else {
+  console.log(`Running ${label} (${pkg})...`);
+}
 
 try {
   const proc = Bun.spawn(testTargets, {
     env,
-    stdout: "inherit",
-    stderr: "inherit",
+    stdout: "pipe",
+    stderr: "pipe",
   });
-  const code = await proc.exited;
-  const seconds = ((Date.now() - started) / 1000).toFixed(1);
-  console.log(`\n${pkg}: finished in ${seconds}s`);
+
+  if (proc.stdout) {
+    outputTee.attach(proc.stdout, process.stdout);
+  }
+  if (proc.stderr) {
+    outputTee.attach(proc.stderr, process.stderr);
+  }
+
+  const testDeadline = remainingSeconds(maxSeconds, started);
+  const code = await waitForProcessExit(proc, testDeadline);
+
+  const elapsedSeconds = (Date.now() - started) / 1000;
+
+  if (code === 124) {
+    reportTimeout();
+  }
+
+  console.log(`\n${pkg}: finished in ${elapsedSeconds.toFixed(1)}s`);
+
+  reportSlowTestsAfterRun({
+    pkg,
+    outputLines: outputTee.lines,
+    maxSeconds,
+    elapsedSeconds,
+  });
 
   if (code !== 0) {
     process.exit(code ?? 1);
