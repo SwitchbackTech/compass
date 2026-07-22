@@ -1,4 +1,4 @@
-import { ReconcileScheduler } from "@sync/domain/reconcile-scheduler.service";
+import { SweepScheduler } from "@sync/domain/sweep-scheduler.service";
 
 const now = () => new Date("2026-07-10T00:00:00.000Z");
 
@@ -24,12 +24,12 @@ class FakeSweeper {
   }
 }
 
-describe("ReconcileScheduler", () => {
+describe("SweepScheduler", () => {
   it("sweeps immediately on start, then again after the interval", async () => {
     const sweeper = new FakeSweeper();
-    const scheduler = new ReconcileScheduler(
+    const scheduler = new SweepScheduler(
       { sweep: sweeper.sweep },
-      { intervalMs: 5, jitterRatio: 0, staleAfterMs: 60_000, now },
+      { intervalMs: 5, jitterRatio: 0, windowMs: -60_000, now },
     );
 
     const secondSweep = (async () => {
@@ -41,13 +41,29 @@ describe("ReconcileScheduler", () => {
     await scheduler.stop();
 
     expect(sweeper.calls.length).toBeGreaterThanOrEqual(2);
-    // The sweep is asked for resources stale as of now - staleAfterMs.
+    // A negative window looks BACK: cutoff is now - 60s (the reconcile shape).
     expect(sweeper.calls[0]).toEqual(new Date("2026-07-09T23:59:00.000Z"));
+  });
+
+  it("looks ahead when the window is positive (the subscription shape)", async () => {
+    const sweeper = new FakeSweeper();
+    const scheduler = new SweepScheduler(
+      { sweep: sweeper.sweep },
+      { intervalMs: 10_000, jitterRatio: 0, windowMs: 60_000, now },
+    );
+
+    const firstSweep = sweeper.nextSweep();
+    scheduler.start();
+    await firstSweep;
+    await scheduler.stop();
+
+    // A positive window looks AHEAD: cutoff is now + 60s (channels expiring soon).
+    expect(sweeper.calls[0]).toEqual(new Date("2026-07-10T00:01:00.000Z"));
   });
 
   it("stops the loop and is safe to stop when never started", async () => {
     const sweeper = new FakeSweeper();
-    const scheduler = new ReconcileScheduler(
+    const scheduler = new SweepScheduler(
       { sweep: sweeper.sweep },
       { intervalMs: 10_000, jitterRatio: 0, now },
     );
@@ -68,7 +84,7 @@ describe("ReconcileScheduler", () => {
   it("keeps sweeping after one throws", async () => {
     const errors: unknown[] = [];
     const sweeper = new FakeSweeper(1); // first sweep throws
-    const scheduler = new ReconcileScheduler(
+    const scheduler = new SweepScheduler(
       { sweep: sweeper.sweep },
       { intervalMs: 1, jitterRatio: 0, now, onError: (e) => errors.push(e) },
     );
