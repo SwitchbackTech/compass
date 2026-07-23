@@ -1,5 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
+import { EventScheduleSchema } from "@core/types/event.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
@@ -117,12 +118,12 @@ describe("event query cache", () => {
   test("derives a subset from a cached superset range", () => {
     const client = new QueryClient();
     const event = createMockEvent({
-      schedule: {
+      schedule: EventScheduleSchema.parse({
         kind: "timed",
         start: "2026-07-03T09:00:00.000Z",
         end: "2026-07-03T10:00:00.000Z",
         timeZone: "UTC",
-      },
+      }),
     });
     client.setQueryData(keys.localWeek, normalizeEventList([event]));
 

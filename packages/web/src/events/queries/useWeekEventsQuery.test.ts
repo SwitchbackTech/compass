@@ -1,5 +1,6 @@
 import { waitFor } from "@testing-library/react";
 import { type EventId } from "@core/types/domain-primitives";
+import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
@@ -99,12 +100,12 @@ describe("useWeekEventsQuery", () => {
     const start = dayjs.utc("2025-11-10T00:00:00Z");
     const end = start.add(6, "day").endOf("day");
     const event = createMockEvent({
-      schedule: {
+      schedule: EventScheduleSchema.parse({
         kind: "timed",
-        start: "2025-11-11T09:00:00",
-        end: "2025-11-11T10:00:00",
+        start: "2025-11-11T09:00:00.000Z",
+        end: "2025-11-11T10:00:00.000Z",
         timeZone: "UTC",
-      },
+      }),
     });
     queryClient.setQueryData(
       eventQueryKeys.week({
