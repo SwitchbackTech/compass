@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
 import {
@@ -6,8 +7,9 @@ import {
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
-import { type GridEventDraft } from "@web/events/event-draft.types";
-import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
+import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
+import { type RecurrenceScopePendingAction } from "@web/events/recurrence/useRecurrenceScopeConfirmation";
+import { selectDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 const UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
@@ -36,22 +38,50 @@ export function RecurrenceScopeDialog() {
   } = useDraftContext();
   const {
     isRecurrenceUpdateScopeDialogOpen,
-    setRecurrenceUpdateScopeDialogOpen,
     onUpdateScopeChange,
+    pendingAction,
+    setRecurrenceUpdateScopeDialogOpen,
   } = confirmation;
+
   if (!isRecurrenceUpdateScopeDialogOpen) return null;
+
+  return (
+    <RecurrenceScopeConfirmationDialog
+      draft={draft ? gridEventDraftToSchemaEvent(draft) : null}
+      pendingAction={pendingAction}
+      setRecurrenceUpdateScopeDialogOpen={setRecurrenceUpdateScopeDialogOpen}
+      onUpdateScopeChange={onUpdateScopeChange}
+    />
+  );
+}
+
+type RecurrenceScopeConfirmationDialogProps = {
+  draft: CompassEvent | null;
+  onUpdateScopeChange: (applyTo: RecurringEventUpdateScope) => void;
+  pendingAction: RecurrenceScopePendingAction | null;
+  setRecurrenceUpdateScopeDialogOpen: (isOpen: boolean) => void;
+};
+
+export function RecurrenceScopeConfirmationDialog({
+  draft,
+  onUpdateScopeChange,
+  pendingAction,
+  setRecurrenceUpdateScopeDialogOpen,
+}: RecurrenceScopeConfirmationDialogProps) {
+  if (!pendingAction) return null;
 
   return (
     <RecurringEventUpdateScopeDialogContent
       draft={draft}
       onUpdateScopeChange={onUpdateScopeChange}
       setRecurrenceUpdateScopeDialogOpen={setRecurrenceUpdateScopeDialogOpen}
+      title={pendingAction.type === "delete" ? "Delete events" : undefined}
     />
   );
 }
 
 interface RecurringEventUpdateScopeDialogContentProps {
-  draft: GridEventDraft | null;
+  draft: CompassEvent | null;
   onUpdateScopeChange: (applyTo: RecurringEventUpdateScope) => void;
   recurrenceChanged?: boolean;
   setRecurrenceUpdateScopeDialogOpen: (isOpen: boolean) => void;
@@ -65,12 +95,12 @@ export function RecurringEventUpdateScopeDialogContent({
   setRecurrenceUpdateScopeDialogOpen,
   title = "Apply changes to",
 }: RecurringEventUpdateScopeDialogContentProps) {
-  const originalDraft = useDraftStore(selectGridDraft);
-  const currentDraft = draft ?? originalDraft;
+  const draftFromStore = useDraftStore(selectDraft);
+  const currentDraft = draft ?? draftFromStore;
   const recurrenceChanged =
     recurrenceChangedOverride ??
-    (currentDraft && originalDraft
-      ? DirtyParser.gridDraftRecurrenceChanged(currentDraft, originalDraft)
+    (currentDraft && draftFromStore
+      ? DirtyParser.recurrenceChanged(currentDraft, draftFromStore)
       : false);
   const options = recurrenceChanged
     ? RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS
@@ -135,3 +165,5 @@ export function RecurringEventUpdateScopeDialogContent({
     </OverlayPanel>
   );
 }
+
+export type { RecurrenceScopePendingAction };
