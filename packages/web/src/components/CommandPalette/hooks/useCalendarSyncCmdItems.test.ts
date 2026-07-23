@@ -1,12 +1,24 @@
 import { CloudArrowUpIcon } from "@phosphor-icons/react";
 import { renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
+const actualUseConnectGoogle = {
+  ...(await import("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle")),
+};
 const mockUseConnectGoogle = mock();
+let isUseConnectGoogleMocked = true;
 
 mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
-  useConnectGoogle: mockUseConnectGoogle,
+  useConnectGoogle: (...args: unknown[]) =>
+    isUseConnectGoogleMocked
+      ? mockUseConnectGoogle()
+      : // biome-ignore lint/correctness/useHookAtTopLevel: mock.module factory; flag is stable until afterAll.
+        actualUseConnectGoogle.useConnectGoogle(...(args as [])),
 }));
+
+afterAll(() => {
+  isUseConnectGoogleMocked = false;
+});
 
 async function importHook() {
   const moduleUrl = new URL(
