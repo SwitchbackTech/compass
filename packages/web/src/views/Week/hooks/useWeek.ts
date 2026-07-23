@@ -49,6 +49,12 @@ export const useWeek = (
     () => start.add(visibleDayCount - 1, "day").endOf("day"),
     [start, visibleDayCount],
   );
+  // Fetch window is always WEEK_DAY_COUNT days from the anchor so resize-driven
+  // column changes reuse the same cache entry; display still clips to weekDays.
+  const queryEnd = useMemo(
+    () => start.add(WEEK_DAY_COUNT - 1, "day").endOf("day"),
+    [start],
+  );
 
   const week = useMemo(() => start.week(), [start]);
 
@@ -62,10 +68,9 @@ export const useWeek = (
     [start, visibleDayCount],
   );
 
-  // Changing the visible range re-keys the query; revisits use cached data.
-  useWeekEventsQuery({ startOfView: start, endOfView: end });
+  useWeekEventsQuery({ startOfView: start, endOfView: queryEnd });
 
-  // Warm the previous and next visible pages using the exact read-key format.
+  // Warm the previous and next paged windows (J/K) using 7-day read keys.
   const previousStart = useMemo(
     () => start.subtract(visibleDayCount, "day"),
     [start, visibleDayCount],
@@ -79,13 +84,13 @@ export const useWeek = (
     {
       startDate: toUTCOffset(previousStart),
       endDate: toUTCOffset(
-        previousStart.add(visibleDayCount - 1, "day").endOf("day"),
+        previousStart.add(WEEK_DAY_COUNT - 1, "day").endOf("day"),
       ),
     },
     {
       startDate: toUTCOffset(nextStart),
       endDate: toUTCOffset(
-        nextStart.add(visibleDayCount - 1, "day").endOf("day"),
+        nextStart.add(WEEK_DAY_COUNT - 1, "day").endOf("day"),
       ),
     },
   );
@@ -141,6 +146,10 @@ export const useWeek = (
       startOfView: start,
       week,
       weekDays,
+    },
+    query: {
+      endOfView: queryEnd,
+      startOfView: start,
     },
     state: { goToDate },
     util: {

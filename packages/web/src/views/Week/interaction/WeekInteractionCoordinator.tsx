@@ -37,8 +37,8 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   weekProps,
 }) => {
   const { allDayEvents, events, timedEvents } = useWeekEventViewModel({
-    startOfView: weekProps.component.startOfView,
-    endOfView: weekProps.component.endOfView,
+    startOfView: weekProps.query.startOfView,
+    endOfView: weekProps.query.endOfView,
   });
   const { actions, confirmation, setters, state } = useDraftContext();
   const mutations = useEventMutations();

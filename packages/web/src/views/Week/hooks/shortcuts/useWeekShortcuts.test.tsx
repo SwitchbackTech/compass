@@ -195,6 +195,8 @@ const renderShortcuts = (options?: {
       useWeekShortcuts({
         endOfView: dayjs("2026-05-24T00:00:00.000"),
         isCurrentWeek: true,
+        queryEndOfView: dayjs("2026-05-24T23:59:59.999"),
+        queryStartOfView: dayjs("2026-05-18T00:00:00.000"),
         scrollUtil: { scrollToNow: mock() } as never,
         startOfView: dayjs("2026-05-18T00:00:00.000"),
         weekDays: Array.from({ length: 7 }, (_, index) =>

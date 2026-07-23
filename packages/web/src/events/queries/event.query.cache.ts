@@ -1,6 +1,7 @@
 import { type QueryClient, type QueryKey } from "@tanstack/react-query";
 import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
+import { isDateRangeOverlapping } from "@core/util/date/date.util";
 import { type RecurringEditProjection } from "@web/events/recurrence/projectRecurringEdit";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { eventQueryKeys } from "./event.query.keys";
@@ -116,6 +117,53 @@ export function eventBelongsToEntry(
   if (entry.metadata.source !== source) return false;
 
   return eventMatchesRange(event, entry.metadata.start, entry.metadata.end);
+}
+
+/**
+ * Builds placeholder read data for a requested week range by merging events
+ * from any cached week entries whose stored range overlaps it. Returns
+ * `undefined` when nothing usable is cached so true first loads still show
+ * the loading state.
+ */
+export function deriveOverlappingEventQueryData(
+  queryClient: QueryClient,
+  args: {
+    source: EventRepositorySource;
+    startDate: string;
+    endDate: string;
+  },
+): NormalizedEventQueryData | undefined {
+  const { source, startDate, endDate } = args;
+  const entities: NormalizedEventQueryData["entities"] = {};
+  const ids: EventId[] = [];
+  const seenIds = new Set<string>();
+
+  for (const entry of getEventQueryEntries(queryClient, {
+    source,
+    scope: "week",
+  })) {
+    if (
+      !isDateRangeOverlapping(
+        entry.metadata.start,
+        entry.metadata.end,
+        startDate,
+        endDate,
+      )
+    ) {
+      continue;
+    }
+
+    for (const id of entry.data.ids) {
+      if (seenIds.has(id)) continue;
+      const event = entry.data.entities[id];
+      if (!event || !eventMatchesRange(event, startDate, endDate)) continue;
+      seenIds.add(id);
+      ids.push(id);
+      entities[id] = event;
+    }
+  }
+
+  return ids.length > 0 ? { ids, entities } : undefined;
 }
 
 // Shared by every writer below: find the matching cached query entries and
