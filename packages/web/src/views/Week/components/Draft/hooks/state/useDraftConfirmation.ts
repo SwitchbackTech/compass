@@ -1,11 +1,11 @@
-import { useCallback, useState } from "react";
-import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
+import { useCallback } from "react";
+import { type Event } from "@core/types/event.contracts";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { useEventById } from "@web/events/queries/useEventById";
 import {
-  resolveRecurrenceScopeOnSubmit,
-  shouldPromptForRecurrenceScopeOnDelete,
-} from "@web/events/recurrence/recurrence-scope-decision";
+  type UseRecurrenceScopeConfirmationOptions,
+  useRecurrenceScopeConfirmation,
+} from "@web/events/recurrence/useRecurrenceScopeConfirmation";
 import { type useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 export const useDraftConfirmation = ({
@@ -21,89 +21,63 @@ export const useDraftConfirmation = ({
       : undefined;
   const baseEvent = useEventById(baseEventId);
 
-  const [
-    isRecurrenceUpdateScopeDialogOpen,
-    setRecurrenceUpdateScopeDialogOpen,
-  ] = useState<boolean>(false);
+  const getSaveContext = useCallback(
+    (_draft: GridEventDraft) => {
+      const isEditDraft = _draft.kind === "edit";
+      const draftIsInstance =
+        isEditDraft && _draft.source.recurrence.kind === "occurrence";
 
-  const [finalDraft, setFinalDraft] = useState<GridEventDraft | null>(null);
-
-  const [standaloneDraft, setStandaloneDraft] = useState<GridEventDraft | null>(
-    null,
+      return {
+        baseEvent: baseEvent as Event | null | undefined,
+        isInstance: isInstance() || draftIsInstance,
+        isRecurring: isEditDraft && (isRecurrence() || draftIsInstance),
+      };
+    },
+    [baseEvent, isInstance, isRecurrence],
   );
+
+  const getDeleteContext = useCallback(
+    () => ({ isRecurring: isRecurrence() }),
+    [isRecurrence],
+  );
+
+  const onSave = useCallback<UseRecurrenceScopeConfirmationOptions["onSave"]>(
+    (nextDraft, applyTo) => {
+      submit(nextDraft, applyTo);
+      discard();
+    },
+    [discard, submit],
+  );
+
+  const onDelete = useCallback<
+    UseRecurrenceScopeConfirmationOptions["onDelete"]
+  >(
+    (applyTo) => {
+      deleteEvent(applyTo);
+      discard();
+    },
+    [deleteEvent, discard],
+  );
+
+  const confirmation = useRecurrenceScopeConfirmation({
+    getDeleteContext,
+    getSaveContext,
+    onDelete,
+    onSave,
+  });
 
   const onConfirmConvertToStandalone = useCallback(() => {
-    if (standaloneDraft) {
-      submit(standaloneDraft, RecurringEventUpdateScope.ALL_EVENTS);
-      discard();
-    }
-
-    setStandaloneDraft(null);
-  }, [standaloneDraft, submit, discard]);
-
-  const onCancelConvertToStandalone = useCallback(() => {
-    setStandaloneDraft(null);
-  }, []);
-
-  const onUpdateScopeChange = useCallback(
-    (applyTo: RecurringEventUpdateScope) => {
-      if (finalDraft) {
-        submit(finalDraft, applyTo);
-      } else {
-        deleteEvent(applyTo);
-      }
-
-      setFinalDraft(null);
-      setRecurrenceUpdateScopeDialogOpen(false);
-      discard();
-    },
-    [finalDraft, submit, discard, deleteEvent],
-  );
-
-  const onSubmit = useCallback(
-    async (_draft: GridEventDraft) => {
-      const decision = resolveRecurrenceScopeOnSubmit({
-        draft: _draft,
-        baseEvent,
-        isInstance: isInstance(),
-        isRecurrence: isRecurrence(),
-      });
-
-      if (decision.action === "prompt") {
-        setFinalDraft(_draft);
-        return setRecurrenceUpdateScopeDialogOpen(true);
-      }
-
-      if (decision.action === "standalone-confirm") {
-        return setStandaloneDraft(_draft);
-      }
-
-      submit(_draft, decision.applyTo);
-      discard();
-    },
-    [submit, isRecurrence, isInstance, discard, baseEvent],
-  );
-
-  const onDelete = useCallback(async () => {
-    if (draft && shouldPromptForRecurrenceScopeOnDelete(draft)) {
-      setFinalDraft(null);
-      return setRecurrenceUpdateScopeDialogOpen(true);
-    }
-
-    deleteEvent(RecurringEventUpdateScope.THIS_EVENT);
+    confirmation.onConfirmConvertToStandalone();
     discard();
-  }, [deleteEvent, draft, discard]);
+  }, [confirmation, discard]);
 
   return {
-    isRecurrenceUpdateScopeDialogOpen,
-    setRecurrenceUpdateScopeDialogOpen,
+    ...confirmation,
     draft,
-    finalDraft,
-    standaloneDraft,
-    onSubmit,
-    onDelete,
-    onUpdateScopeChange,
+    finalDraft:
+      confirmation.pendingAction?.type === "save"
+        ? confirmation.pendingAction.draft
+        : null,
     onConfirmConvertToStandalone,
-    onCancelConvertToStandalone,
   };
 };

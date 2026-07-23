@@ -7,6 +7,33 @@ import { type GridEventDraft } from "@web/events/event-draft.types";
 
 type EditGridEventDraft = Extract<GridEventDraft, { kind: "edit" }>;
 
+export type RecurrenceScopeDecision =
+  | { kind: "prompt" }
+  | { kind: "apply"; scope: RecurringEventUpdateScope }
+  | { kind: "convertToStandalone" };
+
+export type ResolveRecurrenceScopeSaveInput = {
+  action: "save";
+  draft: GridEventDraft;
+  baseEvent?: Event | null;
+  isRecurring: boolean;
+  isInstance: boolean;
+  /**
+   * Day view always prompts before saving any edit to an existing recurring
+   * event. Week view applies occurrence-count and instance heuristics instead.
+   */
+  confirmAllRecurringEdits?: boolean;
+};
+
+export type ResolveRecurrenceScopeDeleteInput = {
+  action: "delete";
+  isRecurring: boolean;
+};
+
+export type ResolveRecurrenceScopeDecisionInput =
+  | ResolveRecurrenceScopeSaveInput
+  | ResolveRecurrenceScopeDeleteInput;
+
 export const hasMultipleRecurrenceOccurrences = (
   schedule: { start: Date; end: Date },
   rule: string[] | null | undefined,
@@ -29,6 +56,11 @@ export const hasMultipleRecurrenceOccurrences = (
   }
 };
 
+// Returns the recurrence rule that should decide the update-scope prompt:
+// an explicit "series"/"single" choice on the draft (the user toggled
+// recurrence in the form) always wins; otherwise ("preserve") falls back to
+// the source event's own rule, or — for an occurrence with no rule of its
+// own — the loaded series base's rule.
 export const getScopeDecisionRecurrenceRule = (
   draft: EditGridEventDraft,
   baseEvent: Event | null | undefined,
@@ -51,63 +83,62 @@ export const getScopeDecisionRecurrenceRule = (
   return undefined;
 };
 
-export type RecurrenceScopeSubmitDecision =
-  | { action: "submit"; applyTo: RecurringEventUpdateScope }
-  | { action: "prompt" }
-  | { action: "standalone-confirm" };
+export const resolveRecurrenceScopeDecision = (
+  input: ResolveRecurrenceScopeDecisionInput,
+): RecurrenceScopeDecision => {
+  if (input.action === "delete") {
+    if (input.isRecurring) {
+      return { kind: "prompt" };
+    }
 
-export function resolveRecurrenceScopeOnSubmit({
-  draft,
-  baseEvent,
-  isInstance,
-  isRecurrence,
-}: {
-  draft: GridEventDraft;
-  baseEvent: Event | null | undefined;
-  isInstance: boolean;
-  isRecurrence: boolean;
-}): RecurrenceScopeSubmitDecision {
+    return { kind: "apply", scope: RecurringEventUpdateScope.THIS_EVENT };
+  }
+
+  const {
+    draft,
+    baseEvent,
+    isRecurring,
+    isInstance,
+    confirmAllRecurringEdits = false,
+  } = input;
+
   if (draft.kind !== "edit") {
-    return {
-      action: "submit",
-      applyTo: RecurringEventUpdateScope.THIS_EVENT,
-    };
+    return { kind: "apply", scope: RecurringEventUpdateScope.THIS_EVENT };
+  }
+
+  if (confirmAllRecurringEdits) {
+    if (isRecurring) {
+      return { kind: "prompt" };
+    }
+
+    return { kind: "apply", scope: RecurringEventUpdateScope.THIS_EVENT };
   }
 
   const rule = getScopeDecisionRecurrenceRule(draft, baseEvent);
-  const draftIsInstance = draft.source.recurrence.kind === "occurrence";
-  const isRecurringEvent = isRecurrence || draftIsInstance;
-  const instanceEvent = isInstance || draftIsInstance;
-  const toStandAlone = instanceEvent && rule === null;
+  const toStandAlone = isInstance && rule === null;
   const hasMultipleOccurrences = hasMultipleRecurrenceOccurrences(
     draft.values.schedule,
     rule,
   );
   const isSingleOccurrenceInstance =
-    isRecurringEvent && instanceEvent && !hasMultipleOccurrences;
+    isRecurring && isInstance && !hasMultipleOccurrences;
   const shouldAskForUpdateScope =
-    !toStandAlone &&
-    isRecurringEvent &&
-    (hasMultipleOccurrences || !instanceEvent);
+    !toStandAlone && isRecurring && (hasMultipleOccurrences || !isInstance);
 
   if (shouldAskForUpdateScope) {
-    return { action: "prompt" };
+    return { kind: "prompt" };
   }
 
   if (toStandAlone) {
-    return { action: "standalone-confirm" };
+    return { kind: "convertToStandalone" };
   }
 
-  const applyTo =
-    toStandAlone || isSingleOccurrenceInstance
-      ? RecurringEventUpdateScope.ALL_EVENTS
-      : RecurringEventUpdateScope.THIS_EVENT;
+  const scope = isSingleOccurrenceInstance
+    ? RecurringEventUpdateScope.ALL_EVENTS
+    : RecurringEventUpdateScope.THIS_EVENT;
 
-  return { action: "submit", applyTo };
-}
+  return { kind: "apply", scope };
+};
 
-export function shouldPromptForRecurrenceScopeOnDelete(
-  draft: GridEventDraft,
-): boolean {
-  return draft.kind === "edit" && draft.source.recurrence.kind !== "single";
-}
+export const isExistingEventRecurring = (event: Event | null | undefined) =>
+  Boolean(event && event.recurrence.kind !== "single");
