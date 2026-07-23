@@ -192,6 +192,32 @@ describe("syncCalendarList", () => {
     expect(primary?.active).toBe(true);
   });
 
+  it("does not retire everything when a full list comes back empty", async () => {
+    const conn = connection();
+    // First full pass discovers a calendar (cursor null keeps the next pass full).
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          { calendars: [discovered("primary")], cursor: null },
+        ]),
+      ),
+      conn,
+      now,
+    );
+    // A full pass that returns zero calendars is a non-answer (a provider blip),
+    // not "all removed": the existing calendar must stay active.
+    await syncCalendarList(
+      deps(new FakeDiscovery([{ calendars: [], cursor: null }])),
+      conn,
+      now,
+    );
+
+    const primary = (await calendarDocs(conn)).find(
+      (d) => d.providerCalendarId === "primary",
+    );
+    expect(primary?.active).toBe(true);
+  });
+
   it("does not retire absent calendars on an incremental pass", async () => {
     const conn = connection();
     // Seed a full pass that stores a cursor, so the next pass is incremental.

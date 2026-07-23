@@ -107,7 +107,12 @@ export async function syncCalendarList(
   // Only a full pass sees the complete set, so only then can a calendar's absence
   // mean it was removed. An incremental pass reports removals as active:false
   // entries (handled by the upsert above), so it must not retire the absent.
-  if (fullList) {
+  //
+  // Guard on a non-empty result: an account always has at least a primary
+  // calendar, so a full list of zero is treated as a non-answer (a provider
+  // hiccup that returned empty instead of throwing) rather than "all removed" —
+  // retiring every calendar on an empty blip would be user-visible damage.
+  if (fullList && discovery.calendars.length > 0) {
     await deps.calendars.deactivateAbsent(
       tenantId,
       principalId,
