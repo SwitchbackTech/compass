@@ -212,6 +212,55 @@ export class SyncResourceRepository {
     return new Map(records.map((r) => [r.calendarId, r.activeGeneration]));
   }
 
+  // The events resources backing the given calendars, projected to what a busy /
+  // availability query needs: the generation to read, the owning connection, and
+  // the freshness watermark. A calendar with no events resource yet is simply
+  // absent from the result (the caller reports it missing).
+  async listEventResourceFreshnessByCalendar(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    calendarIds: readonly SyncEventCalendarId[],
+  ): Promise<
+    Map<
+      SyncEventCalendarId,
+      {
+        connectionId: ConnectionId;
+        activeGeneration: number;
+        lastSuccessAt: Date | null;
+      }
+    >
+  > {
+    const records = await this.collection
+      .find({
+        tenantId,
+        principalId,
+        resourceKind: "events",
+        calendarId: { $in: [...calendarIds] },
+      })
+      .project<{
+        calendarId: SyncEventCalendarId;
+        connectionId: ConnectionId;
+        activeGeneration: number;
+        lastSuccessAt: Date | null;
+      }>({
+        calendarId: 1,
+        connectionId: 1,
+        activeGeneration: 1,
+        lastSuccessAt: 1,
+      })
+      .toArray();
+    return new Map(
+      records.map((r) => [
+        r.calendarId,
+        {
+          connectionId: r.connectionId,
+          activeGeneration: r.activeGeneration,
+          lastSuccessAt: r.lastSuccessAt,
+        },
+      ]),
+    );
+  }
+
   async findById(
     tenantId: TenantId,
     principalId: PrincipalId,
