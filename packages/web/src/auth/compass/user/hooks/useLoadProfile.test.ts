@@ -14,7 +14,6 @@ import {
 
 const getLastKnownEmail = mock(() => "person@example.com");
 const markUserAsAuthenticated = mock();
-const showSessionExpiredToast = mock();
 const getProfile = mock();
 
 const mockProfile: UserProfile = {
@@ -55,27 +54,6 @@ afterAll(() => {
   isUserApiMocked = false;
 });
 
-// Same rationale as the UserApi mock above: spread the real module's other
-// exports (showErrorToast, dismissErrorToast, etc.) and only conditionally
-// override showSessionExpiredToast, so this file's mock doesn't permanently
-// strip the rest of the module for other files that resolve it afterward.
-const actualErrorToastUtil = await import(
-  "@web/common/utils/toast/error-toast.util"
-);
-let isErrorToastUtilMocked = true;
-
-mock.module("@web/common/utils/toast/error-toast.util", () => ({
-  ...actualErrorToastUtil,
-  showSessionExpiredToast: () =>
-    isErrorToastUtilMocked
-      ? showSessionExpiredToast()
-      : actualErrorToastUtil.showSessionExpiredToast(),
-}));
-
-afterAll(() => {
-  isErrorToastUtilMocked = false;
-});
-
 async function importHook() {
   const moduleUrl = new URL(
     `./useLoadProfile.ts?test=${Math.random().toString(36).slice(2)}`,
@@ -101,7 +79,6 @@ describe("useLoadProfile", () => {
   beforeEach(() => {
     getLastKnownEmail.mockClear().mockReturnValue("person@example.com");
     markUserAsAuthenticated.mockClear();
-    showSessionExpiredToast.mockClear();
     getProfile.mockClear();
     consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
   });

@@ -22,9 +22,9 @@ Local macOS, mongodb-memory-server.
 | `bun run test:sync` | 505 / 505 | ~31s |
 | `bun run test:scripts` | 40 / 40 | ~2s |
 
-`bun run test:backend` (fast + `.db.test.ts`) still has failing DB specs
-from the ongoing `jest` → `spyOn` migration; use `test:backend:fast` as
-the green gate until the full suite is restored.
+`bun run test:backend` (fast + `.db.test.ts`) is green after the
+`jest` → `spyOn` migration; benchmark specs remain skipped unless
+`RUN_BENCH=1`.
 
 ## Import benchmark
 
