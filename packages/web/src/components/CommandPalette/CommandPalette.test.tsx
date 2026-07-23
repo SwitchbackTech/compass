@@ -78,7 +78,9 @@ mock.module("@web/auth/compass/user/hooks/useUser", () => ({
   useUser: () => ({}),
 }));
 
-const { CommandPalette, filterSections } = await import("./CommandPalette");
+const { CommandPalette, LifeCommandPalette, filterSections } = await import(
+  "./CommandPalette"
+);
 
 const onGoToToday = mock();
 const onShowShortcuts = mock();
@@ -345,6 +347,28 @@ describe("CommandPalette", () => {
     renderPalette();
 
     expect(screen.getByRole("status")).toHaveClass("c-sync-text-wave");
+  });
+});
+
+describe("LifeCommandPalette", () => {
+  beforeEach(() => {
+    mockSyncStatus = null;
+  });
+
+  it("renders the sync status line above the input", () => {
+    mockSyncStatus = {
+      variant: "healthy",
+      text: "Calendar up-to-date",
+    };
+
+    renderWithStore(
+      <LifeCommandPalette placeholder="Try: 'day', 'week', or 'feedback'" />,
+      { settings: { isCmdPaletteOpen: true } },
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Calendar up-to-date",
+    );
   });
 });
 

@@ -56,10 +56,6 @@ interface CommandPaletteProps {
 interface CommandPaletteContentProps {
   placeholder: string;
   sections: CommandSection[];
-  syncStatus?: {
-    text: string;
-    variant: SyncStatusVariant;
-  } | null;
 }
 
 /**
@@ -86,8 +82,8 @@ export function filterSections(
 const CommandPaletteContent = ({
   placeholder,
   sections,
-  syncStatus,
 }: CommandPaletteContentProps) => {
+  const { syncStatus } = useCalendarSyncCmdItems();
   const open = useSettingsStore(selectIsCmdPaletteOpen);
 
   const [search, setSearch] = useState("");
@@ -259,7 +255,7 @@ export const CommandPalette = ({
 }: CommandPaletteProps) => {
   const open = useSettingsStore(selectIsCmdPaletteOpen);
   const navigate = useNavigate();
-  const { items: calendarCmdItems, syncStatus } = useCalendarSyncCmdItems();
+  const { items: calendarCmdItems } = useCalendarSyncCmdItems();
   const subscribeCmdItems = useSubscribeCmdItems(open);
   const exportDataCmdItems = useExportDataCmdItems();
   const demoEventsCmdItems = useDemoEventsCmdItems();
@@ -321,11 +317,7 @@ export const CommandPalette = ({
   ];
 
   return (
-    <CommandPaletteContent
-      placeholder={placeholder}
-      sections={sections}
-      syncStatus={syncStatus}
-    />
+    <CommandPaletteContent placeholder={placeholder} sections={sections} />
   );
 };
 
