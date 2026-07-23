@@ -178,4 +178,15 @@ describe("config.constants", () => {
       "Sync delegation requires both SYNC_SERVICE_URL and SYNC_INTERNAL_AUTH_TOKEN",
     );
   });
+
+  it("treats blank Sync env vars as unconfigured rather than failing", () => {
+    const env = parseConfigFromEnv({
+      ...validEnv,
+      SYNC_SERVICE_URL: "",
+      SYNC_INTERNAL_AUTH_TOKEN: "",
+    });
+
+    expect(env.SYNC_SERVICE_URL).toBeUndefined();
+    expect(env.SYNC_INTERNAL_AUTH_TOKEN).toBeUndefined();
+  });
 });

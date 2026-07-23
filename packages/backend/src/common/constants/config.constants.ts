@@ -160,8 +160,11 @@ export function parseConfigFromEnv(
     SUPERTOKENS_KEY: rawEnv["SUPERTOKENS_KEY"],
     TOKEN_GCAL_NOTIFICATION: rawEnv["TOKEN_GCAL_NOTIFICATION"],
     TOKEN_COMPASS_SYNC: rawEnv["TOKEN_COMPASS_SYNC"],
-    SYNC_SERVICE_URL: rawEnv["SYNC_SERVICE_URL"],
-    SYNC_INTERNAL_AUTH_TOKEN: rawEnv["SYNC_INTERNAL_AUTH_TOKEN"],
+    // nonEmpty so a var set to "" reads as unset (not-configured) rather than
+    // failing url()/nonempty(); mirrors the config-file path and keeps the
+    // both-or-neither check honest.
+    SYNC_SERVICE_URL: nonEmpty(rawEnv["SYNC_SERVICE_URL"]),
+    SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(rawEnv["SYNC_INTERNAL_AUTH_TOKEN"]),
     POSTHOG_KEY: rawEnv["POSTHOG_KEY"],
     POSTHOG_HOST: rawEnv["POSTHOG_HOST"] || DEFAULT_POSTHOG_HOST,
   });
