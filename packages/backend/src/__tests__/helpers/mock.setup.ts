@@ -129,12 +129,20 @@ function createTestVerifySession(): ReturnType<
   };
 }
 
-function registerTestLoggerFactory(): void {
-  const loggers = new Map<string, Record<string, ReturnType<typeof mock>>>();
+const testLoggers = new Map<string, Record<string, ReturnType<typeof mock>>>();
 
+function clearTestLoggerMocks(): void {
+  for (const logger of testLoggers.values()) {
+    for (const method of Object.values(logger)) {
+      method.mockClear();
+    }
+  }
+}
+
+function registerTestLoggerFactory(): void {
   const factory: LoggerFactoryFn = (name?: string) => {
     const key = name ?? "";
-    const existing = loggers.get(key);
+    const existing = testLoggers.get(key);
     if (existing) return existing as ReturnType<LoggerFactoryFn>;
 
     const logger = {
@@ -144,7 +152,7 @@ function registerTestLoggerFactory(): void {
       error: mock(),
       verbose: mock(),
     };
-    loggers.set(key, logger);
+    testLoggers.set(key, logger);
     return logger as ReturnType<LoggerFactoryFn>;
   };
 
@@ -191,6 +199,7 @@ export function setupBackendTestSeams(): void {
   metadata.reset();
   mappings.reset();
   revokeSessionMock.mockClear();
+  clearTestLoggerMocks();
 
   enterTestGcalClient(fixture.createGcalClient());
   registerUserMetadataStore(metadata);
