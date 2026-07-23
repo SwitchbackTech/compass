@@ -301,6 +301,30 @@ export function registerConnectionRoutes(
       }
       const query = parsed.data;
 
+      // Clamp the requested range to the horizon. A range that falls entirely
+      // outside it collapses to empty rather than scanning anything.
+      const now = deps.now ? deps.now() : Date.now();
+      const start = maxDate(
+        new Date(query.start),
+        dayjs(now).subtract(HORIZON_PAST_MONTHS, "month").toDate(),
+      );
+      const end = minDate(
+        new Date(query.end),
+        dayjs(now).add(HORIZON_FUTURE_MONTHS, "month").toDate(),
+      );
+      if (start >= end) {
+        const empty: BusyAvailabilityResponse = {
+          intervals: [],
+          computedAt: new Date(now).toISOString(),
+          connections: [],
+          complete: false,
+          issues: [],
+          bookable: false,
+        };
+        res.status(Status.OK).json(empty);
+        return;
+      }
+
       try {
         const availability = await computeBusyAvailability(
           {
@@ -315,10 +339,10 @@ export function registerConnectionRoutes(
             tenantId: auth.tenantId,
             principalId: auth.principalId,
             calendarIds: query.calendarIds,
-            start: new Date(query.start),
-            end: new Date(query.end),
+            start,
+            end,
             maxAgeMs: query.maxAgeMs,
-            now: deps.now ? new Date(deps.now()) : new Date(),
+            now: new Date(now),
           },
         );
         res.status(Status.OK).json(toBusyAvailabilityResponse(availability));
