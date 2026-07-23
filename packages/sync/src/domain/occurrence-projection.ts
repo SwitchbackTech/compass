@@ -241,6 +241,7 @@ function toOccurrence(
     calendarId: event.calendarId,
     schedule,
     startAt,
+    endAt: scheduleEndAt(schedule),
     // Sync's content carries no free/busy transparency yet, so every occurrence
     // is busy. Transparency modeling lands with provider content mapping.
     busy: true,
@@ -256,6 +257,17 @@ function toOccurrence(
 export function scheduleStartAt(schedule: EventSchedule): Date {
   if (schedule.kind === "timed") return new Date(schedule.start);
   return new Date(`${schedule.start}T00:00:00.000Z`);
+}
+
+// The normalized EXCLUSIVE end instant, paired with scheduleStartAt to form a
+// half-open [startAt, endAt) interval on one coherent UTC axis — what a busy /
+// overlap query needs (a timed or all-day occurrence starting before a window
+// but ending inside it still overlaps it). The all-day end date is already
+// exclusive, so midnight UTC of it is the exclusive end. Both schedule kinds
+// guarantee end > start, so endAt is always strictly after startAt.
+export function scheduleEndAt(schedule: EventSchedule): Date {
+  if (schedule.kind === "timed") return new Date(schedule.end);
+  return new Date(`${schedule.end}T00:00:00.000Z`);
 }
 
 function withinHorizon(instant: Date, horizon: ProjectionHorizon): boolean {

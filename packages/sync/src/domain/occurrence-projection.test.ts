@@ -76,6 +76,8 @@ describe("projectOccurrences", () => {
         generation: 0,
       });
       expect(occ?.startAt.toISOString()).toBe("2026-07-14T15:00:00.000Z");
+      // Half-open end: the timed end instant.
+      expect(occ?.endAt?.toISOString()).toBe("2026-07-14T16:00:00.000Z");
       expect(occ?.occurrenceKey).toBe(`${e._id}:2026-07-14T15:00:00.000Z`);
     });
 
@@ -84,6 +86,8 @@ describe("projectOccurrences", () => {
       const [occ] = projectOccurrences(e, HORIZON);
       expect(occ?.schedule).toEqual(allDay("2026-07-14", "2026-07-15"));
       expect(occ?.startAt.toISOString()).toBe("2026-07-14T00:00:00.000Z");
+      // The all-day end date is exclusive, so endAt is midnight UTC of it.
+      expect(occ?.endAt?.toISOString()).toBe("2026-07-15T00:00:00.000Z");
     });
 
     it("omits a single event whose start is before the horizon", () => {
@@ -153,6 +157,8 @@ describe("projectOccurrences", () => {
           new Date(o.schedule.end).getTime() -
           new Date(o.schedule.start).getTime();
         expect(durationMs).toBe(30 * 60 * 1000);
+        // endAt tracks the shifted duration on the normalized axis too.
+        expect(o.endAt?.getTime()).toBe(o.startAt.getTime() + 30 * 60 * 1000);
       }
     });
 
