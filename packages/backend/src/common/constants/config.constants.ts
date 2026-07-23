@@ -105,7 +105,7 @@ const toStr = (
 const nonEmpty = (value: string | null | undefined): string | undefined =>
   value?.trim() ? value : undefined;
 
-function parseRawConfig(config: CompassConfig): Config {
+export function parseRawConfig(config: CompassConfig): Config {
   const nodeEnv = config.runtime.nodeEnv as NodeEnv;
 
   return ConfigSchema.parse({
@@ -129,8 +129,16 @@ function parseRawConfig(config: CompassConfig): Config {
     SUPERTOKENS_KEY: config.supertokens.key,
     TOKEN_GCAL_NOTIFICATION: nonEmpty(config.google?.notificationToken) ?? "",
     TOKEN_COMPASS_SYNC: config.backend.compassToken,
+    // `serviceUrl` is the sole delegation signal: a deployment running the
+    // standalone Sync service always sets `internalAuthToken`, but that alone
+    // must NOT enable backend delegation (it would trip the both-or-neither
+    // check and refuse to start). Only inherit the shared secret once a
+    // serviceUrl is present, so the backend targets the same secret Sync
+    // verifies with.
     SYNC_SERVICE_URL: nonEmpty(config.sync?.serviceUrl),
-    SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(config.sync?.internalAuthToken),
+    SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(config.sync?.serviceUrl)
+      ? nonEmpty(config.sync?.internalAuthToken)
+      : undefined,
     POSTHOG_KEY: nonEmpty(config.posthog?.key),
     POSTHOG_HOST: nonEmpty(config.posthog?.host) || DEFAULT_POSTHOG_HOST,
   });
