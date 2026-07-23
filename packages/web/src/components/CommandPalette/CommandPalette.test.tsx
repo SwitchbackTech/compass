@@ -3,7 +3,6 @@ import { PlusIcon } from "@phosphor-icons/react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithStore } from "@web/__tests__/render-with-store";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
-import { type SyncStatus } from "@web/calendars/sync-status.types";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
@@ -15,7 +14,6 @@ import {
   selectIsCmdPaletteOpen,
   useSettingsStore,
 } from "@web/settings/settings.store";
-import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockNavigate = mock();
@@ -39,36 +37,32 @@ mock.module("@tanstack/react-router", () => ({
 
 afterAll(() => {
   isNavigateMocked = false;
+  isUseConnectGoogleMocked = false;
 });
 
 // The other Settings-section hooks (auth/logout/subscribe/calendar-sync) hang
 // off session or Google state that other suites mock globally (bun's
 // mock.module leaks across files), so their items are order-dependent and we
 // don't assert on them here — each has its own dedicated test. We stub only
-// useCalendarSyncCmdItems (no other importer with its own dedicated test) to
-// give the Settings section one deterministic item and to skip async /config
-// fetch. We deliberately do NOT stub useSubscribeCmdItems: even a restorable
-// stub would still evaluate (and permanently cache) the real module the first
-// time, binding its `UserApi` import ahead of useSubscribeCmdItems.test.ts's
-// own mock and breaking that file's assertions instead.
-const defaultCalendarCmdItems: CommandItem[] = [
-  {
-    id: "connect-google-calendar",
-    label: "Connect Google Calendar",
-    icon: PlusIcon,
-  },
-];
-let mockSyncStatus: SyncStatus = null;
-let mockCalendarCmdItems: CommandItem[] = defaultCalendarCmdItems;
-mock.module(
-  "@web/components/CommandPalette/hooks/useCalendarSyncCmdItems",
-  () => ({
-    useCalendarSyncCmdItems: () => ({
-      items: mockCalendarCmdItems,
-      syncStatus: mockSyncStatus,
-    }),
-  }),
-);
+// useConnectGoogle (not useCalendarSyncCmdItems) so the real calendar-sync
+// hook runs while skipping async /config fetch. We deliberately do NOT stub
+// useSubscribeCmdItems: even a restorable stub would still evaluate (and
+// permanently cache) the real module the first time, binding its `UserApi`
+// import ahead of useSubscribeCmdItems.test.ts's own mock and breaking that
+// file's assertions instead.
+const actualUseConnectGoogle = {
+  ...(await import("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle")),
+};
+const mockUseConnectGoogle = mock();
+let isUseConnectGoogleMocked = true;
+
+mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
+  useConnectGoogle: (...args: unknown[]) =>
+    isUseConnectGoogleMocked
+      ? mockUseConnectGoogle()
+      : // biome-ignore lint/correctness/useHookAtTopLevel: mock.module factory; flag is stable until afterAll.
+        actualUseConnectGoogle.useConnectGoogle(...(args as [])),
+}));
 
 // useExportDataCmdItems calls useUser(), which throws outside a
 // UserProvider — this render tree doesn't have one (see renderWithStore).
@@ -88,6 +82,39 @@ const { CommandPalette, LifeCommandPalette, filterSections } = await import(
 const onGoToToday = mock();
 const onShowShortcuts = mock();
 const mockOnConnectGoogle = mock();
+
+const setMockGoogleConnection = (
+  state:
+    | "NOT_CONNECTED"
+    | "ATTENTION"
+    | "repairing"
+    | "IMPORTING"
+    | "checking"
+    | "HEALTHY" = "NOT_CONNECTED",
+) => {
+  const commandActionByState = {
+    NOT_CONNECTED: {
+      label: "Connect Google Calendar",
+      icon: PlusIcon,
+      onSelect: mockOnConnectGoogle,
+    },
+    ATTENTION: {
+      label: "Sync Google Calendar",
+      icon: PlusIcon,
+      onSelect: mockOnConnectGoogle,
+    },
+    repairing: null,
+    IMPORTING: null,
+    checking: null,
+    HEALTHY: null,
+  } as const;
+
+  mockUseConnectGoogle.mockReturnValue({
+    isAvailable: true,
+    commandAction: commandActionByState[state],
+    state,
+  });
+};
 
 const renderPalette = (
   mutationDependencies?: EventMutationDependencies,
@@ -123,8 +150,7 @@ describe("CommandPalette", () => {
     onGoToToday.mockClear();
     onShowShortcuts.mockClear();
     mockOnConnectGoogle.mockClear();
-    mockSyncStatus = null;
-    mockCalendarCmdItems = defaultCalendarCmdItems;
+    setMockGoogleConnection("NOT_CONNECTED");
   });
 
   it("renders all sections with items and focuses the input on mount", () => {
@@ -330,10 +356,7 @@ describe("CommandPalette", () => {
   });
 
   it("renders the sync status line above the input with the variant color", () => {
-    mockSyncStatus = {
-      variant: "warning",
-      text: "Calendar is out of date",
-    };
+    setMockGoogleConnection("ATTENTION");
     renderPalette();
 
     const status = screen.getByRole("status");
@@ -349,7 +372,7 @@ describe("CommandPalette", () => {
   });
 
   it("shows the shimmer class for a syncing status", () => {
-    mockSyncStatus = { variant: "syncing", text: "Syncing your calendar…" };
+    setMockGoogleConnection("repairing");
     renderPalette();
 
     expect(screen.getByRole("status")).toHaveClass("c-sync-text-wave");
@@ -359,19 +382,7 @@ describe("CommandPalette", () => {
   });
 
   it("keeps the palette open when syncing Google Calendar", () => {
-    mockCalendarCmdItems = [
-      {
-        id: "connect-google-calendar",
-        label: "Sync Google Calendar",
-        icon: PlusIcon,
-        onClick: mockOnConnectGoogle,
-        keepOpen: true,
-      },
-    ];
-    mockSyncStatus = {
-      variant: "warning",
-      text: "Calendar is out of date",
-    };
+    setMockGoogleConnection("ATTENTION");
     renderPalette();
 
     fireEvent.click(screen.getByText("Sync Google Calendar"));
@@ -383,16 +394,11 @@ describe("CommandPalette", () => {
 
 describe("LifeCommandPalette", () => {
   beforeEach(() => {
-    mockSyncStatus = null;
-    mockCalendarCmdItems = defaultCalendarCmdItems;
+    mockOnConnectGoogle.mockClear();
+    setMockGoogleConnection("HEALTHY");
   });
 
   it("renders the sync status line above the input", () => {
-    mockSyncStatus = {
-      variant: "healthy",
-      text: "Calendar up-to-date",
-    };
-
     renderWithStore(
       <LifeCommandPalette placeholder="Try: 'day', 'week', or 'feedback'" />,
       { settings: { isCmdPaletteOpen: true } },
