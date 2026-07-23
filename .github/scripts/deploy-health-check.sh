@@ -368,7 +368,7 @@ ssh_remote() {
 
 remote_compose_prefix() {
   if [ "${PROFILE:-}" = "selfhosted" ]; then
-    printf 'cd ~/compass && COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yaml -f compose.selfhosted.yaml'
+    printf 'cd ~/compass && COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yaml'
   else
     printf 'cd ~/compass && docker compose --project-name compass -f compose.yaml'
   fi

@@ -461,13 +461,6 @@ download_compose_file() {
   fi
 
   mv "$tmp_compose" "$COMPOSE_FILE" || fail "Could not install compose.yaml."
-
-  tmp_overlay=$COMPASS_HOME/compose.selfhosted.yaml.$$
-  if curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compose.selfhosted.yaml" -o "$tmp_overlay"; then
-    mv "$tmp_overlay" "$COMPASS_HOME/compose.selfhosted.yaml" || fail "Could not install compose.selfhosted.yaml."
-  else
-    rm -f "$tmp_overlay" "$COMPASS_HOME/compose.selfhosted.yaml"
-  fi
 }
 
 download_helper() {

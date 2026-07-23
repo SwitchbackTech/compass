@@ -133,16 +133,15 @@ describe("self-host docker compose", () => {
     expect(compose).toContain("compass_sync_logs:");
   });
 
-  it("waits for mongo before starting backend in the selfhosted overlay", () => {
-    const overlay = readFileSync(
-      join(import.meta.dir, "compose.selfhosted.yaml"),
-      { encoding: "utf8" },
-    );
+  it("waits for mongo before starting backend when the selfhosted profile is active", () => {
+    const compose = readFileSync(join(import.meta.dir, "compose.yaml"), {
+      encoding: "utf8",
+    });
 
-    expect(overlay).toContain("depends_on:");
-    expect(overlay).toContain("mongo:");
-    expect(overlay).toContain("condition: service_healthy");
-    expect(overlay).toContain("stop_grace_period: 30s");
+    expect(compose).toContain("depends_on:");
+    expect(compose).toContain("condition: service_healthy");
+    expect(compose).toContain("stop_grace_period: 30s");
+    expect(compose).toContain("start_period: 90s");
   });
 });
 
@@ -184,10 +183,9 @@ describe("self-host helper", () => {
     expect(helper).not.toContain("read_config_value compose.version");
   });
 
-  it("layers the selfhosted compose overlay when that profile is active", () => {
+  it("updates in place with compose wait", () => {
     const helper = readRepoFile("self-host/compass");
 
-    expect(helper).toContain("compose.selfhosted.yaml");
     expect(helper).toContain("compose up -d --remove-orphans --wait");
   });
 });
@@ -212,8 +210,9 @@ describe("staging deploy workflow", () => {
   it("updates the stack in place without tearing down data services first", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
-    expect(workflow).toContain("compose.selfhosted.yaml");
-    expect(workflow).not.toContain("docker compose --project-name compass -f compose.yaml down");
+    expect(workflow).not.toContain(
+      "docker compose --project-name compass -f compose.yaml down",
+    );
   });
 
   it("writes the Google Calendar notification token with Google credentials", () => {
@@ -444,7 +443,6 @@ describe("deploy health check script", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("COMPOSE_PROFILES=selfhosted");
-    expect(result.stdout).toContain("-f compose.selfhosted.yaml");
     expect(result.stdout).toContain("docker compose --project-name compass");
   });
 });
