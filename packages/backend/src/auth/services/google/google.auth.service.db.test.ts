@@ -7,6 +7,7 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { getTestLoggerInfoCalls } from "@backend/__tests__/helpers/mock.setup";
 import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oauth.client";
 import * as googleAuthUtil from "@backend/auth/services/google/util/google.auth.util";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
@@ -70,7 +71,7 @@ describe("googleAuthService", () => {
     // LoggerFactory returns one stable mock logger per name in tests, so this
     // is the instance the service captured at import.
     const getMockLogger = () =>
-      LoggerFactory("app:auth.google.service") as unknown as {
+      authServiceLogger as unknown as {
         debug: Mock;
         error: Mock;
         info: Mock;
@@ -252,10 +253,13 @@ describe("googleAuthService", () => {
 
       await googleAuthService.handleGoogleAuth(success);
 
-      const mockLogger = getMockLogger();
+      const decisionCall = getTestLoggerInfoCalls(
+        "app:auth.google.service",
+      ).find(([message]) => message === "google_auth_decision");
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        "google_auth_decision",
+      expect(decisionCall).toBeDefined();
+      expect(decisionCall![0]).toBe("google_auth_decision");
+      expect(decisionCall![1]).toEqual(
         expect.objectContaining({
           authMode: "SIGNIN_INCREMENTAL",
           compassUserTraceId: expect.any(String),
@@ -271,9 +275,7 @@ describe("googleAuthService", () => {
         }),
       );
 
-      const tracePayload = mockLogger.info.mock.calls.find(
-        ([message]) => message === "google_auth_decision",
-      )?.[1];
+      const tracePayload = decisionCall![1];
       const serializedTrace = JSON.stringify(tracePayload);
 
       expect(tracePayload).not.toHaveProperty("compassUserId");

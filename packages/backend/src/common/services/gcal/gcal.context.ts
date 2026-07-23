@@ -1,6 +1,7 @@
 import { type gCalendar } from "@core/types/gcal";
 import { getTestGcalOverride } from "@backend/common/services/gcal/gcal.test-context";
 import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
+import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
 
 /**
  * Everything a Google Calendar API call needs: the authenticated client and
@@ -26,7 +27,19 @@ export const createGoogleRequestContext = async (
   resolveGcalClient: GcalClientResolver = getGcalClient,
 ): Promise<GoogleRequestContext> => {
   const testGcal = getTestGcalOverride();
-  const gcal = testGcal ?? (await resolveGcalClient(userId));
 
+  if (testGcal) {
+    try {
+      await resolveGcalClient(userId);
+    } catch (err) {
+      if (isMissingGoogleRefreshToken(err)) {
+        throw err;
+      }
+    }
+
+    return { gcal: testGcal, quotaUser: userId };
+  }
+
+  const gcal = await resolveGcalClient(userId);
   return { gcal, quotaUser: userId };
 };

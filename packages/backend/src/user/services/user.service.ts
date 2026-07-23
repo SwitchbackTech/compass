@@ -413,7 +413,7 @@ class UserService {
 
   fetchUserMetadata = async (
     userId: string,
-    userContext?: Record<string, JSONObject>,
+    _userContext?: Record<string, JSONObject>,
   ): Promise<UserMetadata> => {
     const { status, metadata } = (await getUserMetadataStore().getUserMetadata(
       userId,

@@ -38,7 +38,13 @@ import {
   setTestGcalIsolationKey,
 } from "@backend/common/services/gcal/gcal.test-context";
 import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
+import { sseServer } from "@backend/servers/sse/sse.server";
+import { googleCalendarListService } from "@backend/sync/services/calendarlist/google-calendarlist.service";
+import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
+import * as syncImportService from "@backend/sync/services/import/google-import.service";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { getChannelExpiration } from "@backend/sync/services/watch/google-watch-timing";
+import userService from "@backend/user/services/user.service";
 import { afterAll, afterEach, beforeEach, mock, spyOn } from "bun:test";
 import { randomUUID } from "node:crypto";
 
@@ -219,7 +225,46 @@ export function mockEnv(env: Partial<typeof CONFIG>) {
   };
 }
 
+function restoreMockedMethods(...targets: object[]): void {
+  for (const target of targets) {
+    for (const key of Object.getOwnPropertyNames(target)) {
+      const value = (target as Record<string, unknown>)[key];
+      if (
+        typeof value === "function" &&
+        "mockRestore" in value &&
+        typeof (value as { mockRestore?: () => void }).mockRestore ===
+          "function"
+      ) {
+        (value as { mockRestore: () => void }).mockRestore();
+      }
+    }
+  }
+}
+
+/** Clears per-test spies so sequential cases in a file do not leak call counts. */
+function restoreLeakedTestSpies(): void {
+  restoreMockedMethods(
+    gcalService,
+    sseServer,
+    googleWatchService,
+    googleCalendarListService,
+    googleCalendarSyncService,
+    userService,
+    syncImportService,
+  );
+}
+
+export function getTestLoggerInfoCalls(
+  namespace = "",
+): Array<[string, ...unknown[]]> {
+  const logger = testLoggers.get(namespace);
+  return (logger?.info.mock?.calls ?? []) as Array<[string, ...unknown[]]>;
+}
+
 export function setupBackendTestSeams(): void {
+  restoreLeakedTestSpies();
+  registerTestLoggerFactory();
+
   const fixture = getTestGcalFixture();
   const { metadata, mappings } = getFileSupertokensStores();
 

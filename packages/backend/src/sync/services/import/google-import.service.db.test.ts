@@ -286,6 +286,10 @@ describe("SyncImport", () => {
     });
 
     it("returns empty stats when no sync token is known yet", async () => {
+      expect(await getSync({ userId })).toBeNull();
+
+      (gcalService.getEvents as Mock).mockClear();
+
       const syncImport = new SyncImport(context);
       const result = await syncImport.importLatestEvents(
         userId,

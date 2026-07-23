@@ -25,7 +25,7 @@ import {
 } from "./google.auth.types";
 import { createHmac } from "node:crypto";
 
-const logger = LoggerFactory("app:auth.google.service");
+const getLogger = () => LoggerFactory("app:auth.google.service");
 const AUTH_TRACE_ID_LENGTH = 16;
 
 // Keep auth traces searchable without putting raw user identifiers in production logs.
@@ -136,7 +136,7 @@ function startGoogleCalendarSyncIfNeededInBackground(cUserId: string) {
   googleCalendarSyncService
     .startGoogleCalendarSyncIfNeeded(cUserId)
     .catch((err) => {
-      logger.error(
+      getLogger().error(
         `Something went wrong with starting calendar sync for user ${cUserId}`,
         err,
       );
@@ -295,7 +295,7 @@ async function googleSignin(
         err instanceof Error &&
         err.message === SyncError.NoSyncToken.description
       ) {
-        logger.info(
+        getLogger().info(
           `Resyncing google data due to missing sync for user: ${cUserId}`,
         );
 
@@ -308,7 +308,7 @@ async function googleSignin(
         return;
       }
 
-      logger.error("Error during incremental sync:", err);
+      getLogger().error("Error during incremental sync:", err);
     });
 
   return { cUserId };
@@ -335,7 +335,7 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
     createdNewRecipeUser,
   );
 
-  logger.info(
+  getLogger().info(
     "google_auth_decision",
     getGoogleAuthDecisionTrace({
       createdNewRecipeUser,
@@ -352,7 +352,7 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
       if (!isNewUser) {
         // Edge case: no Compass user found but SuperTokens says not new
         // This shouldn't happen in normal flow, treat as signup
-        logger.warn("No Compass user found but isNewUser is false", {
+        getLogger().warn("No Compass user found but isNewUser is false", {
           google_user_id: googleUserId,
           recipe_user_id: recipeUserId,
           created_new_recipe_user: createdNewRecipeUser,
