@@ -152,10 +152,23 @@ require_stack() {
   docker compose version >/dev/null 2>&1 || fail "Docker Compose is not available. Install Docker Desktop or Docker Engine with Compose."
 }
 
+compose_files() {
+  files="-f $COMPOSE_FILE"
+  case ",${COMPOSE_PROFILES}," in
+    *,selfhosted,*)
+      if [ -f "$INSTALL_DIR/compose.selfhosted.yaml" ]; then
+        files="$files -f $INSTALL_DIR/compose.selfhosted.yaml"
+      fi
+      ;;
+  esac
+  printf '%s\n' "$files"
+}
+
 compose() {
   require_stack
   set_compose_env
-  docker compose --project-name "$PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
+  # shellcheck disable=SC2086
+  docker compose --project-name "$PROJECT_NAME" $(compose_files) "$@"
 }
 
 check_health() {
@@ -251,13 +264,20 @@ case $command_name in
     ;;
   update)
     require_stack
-    compose pull || fail "Could not pull updated Compass images from Docker Hub."
-    compose up -d || fail "Docker Compose failed to start updated Compass."
-    if wait_for_health; then
-      info "Compass updated and running at $APP_URL"
-    else
-      fail "Compass updated, but the backend health check did not pass. Run './compass logs' for details."
-    fi
+    attempts=3
+    while [ "$attempts" -gt 0 ]; do
+      compose pull || fail "Could not pull updated Compass images from Docker Hub."
+      if compose up -d --remove-orphans --wait && wait_for_health; then
+        info "Compass updated and running at $APP_URL"
+        exit 0
+      fi
+      attempts=$((attempts - 1))
+      if [ "$attempts" -gt 0 ]; then
+        info "Update did not become healthy; retrying ($attempts attempt(s) left)..."
+        sleep 10
+      fi
+    done
+    fail "Compass updated, but the stack did not become healthy. Run './compass logs' for details."
     ;;
   open)
     open_browser
