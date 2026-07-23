@@ -1,10 +1,10 @@
-import { createHmac, randomUUID } from "node:crypto";
 import { type z } from "zod/v4";
 import {
   type BusyAvailabilityRequest,
   type BusyAvailabilityResponse,
   BusyAvailabilityResponseSchema,
 } from "@core/types/sync/availability.contracts";
+import { createHmac, randomUUID } from "node:crypto";
 
 // The internal endpoints this client calls. Kept in sync with the Sync service's
 // route paths; a contract test asserts they match.
