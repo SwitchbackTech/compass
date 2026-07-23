@@ -744,6 +744,33 @@
   }
 }
 
+@utility c-all-day-checkbox {
+  @apply size-4 shrink-0 cursor-pointer appearance-none rounded-sm border border-border-strong transition-all duration-300;
+  background-color: var(--surface-overlay);
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--accent);
+    outline: none;
+  }
+
+  &:checked {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    background-size: 12px 12px;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+}
+
+:root .c-all-day-checkbox:checked,
+[data-theme="dark-abyss"] .c-all-day-checkbox:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5L6.5 11.5L12.5 4.5' stroke='%2305121a' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+[data-theme="light-beach"] .c-all-day-checkbox:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.5 8.5L6.5 11.5L12.5 4.5' stroke='%23f6f3ea' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
 /*
  * Keep this unlayered so it can override react-select's unlayered CSS.
  * Rules inside a Tailwind @utility lose to unlayered library defaults.
