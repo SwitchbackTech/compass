@@ -1,4 +1,5 @@
 import * as actualReactToastify from "react-toastify";
+import { resetUseCompleteAuthenticationForTests } from "@web/auth/compass/hooks/useCompleteAuthentication.registry";
 import {
   registerSessionApiPort,
   resetSessionApiPort,
@@ -9,6 +10,10 @@ import {
   resetUseStartGoogleAuthorizationForTests,
   type UseStartGoogleAuthorization,
 } from "@web/auth/google/authorization/useStartGoogleAuthorization.registry";
+import {
+  resetGoogleAvailabilityForTests,
+  setGoogleAvailabilityForTests,
+} from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
 import {
   registerToastPort,
   resetToastPort,
@@ -82,16 +87,38 @@ export function createDefaultTestGoogleAuthorizationHook(): UseStartGoogleAuthor
   });
 }
 
+export function createTestEmailPasswordPort() {
+  return {
+    signUp: mock().mockResolvedValue({
+      status: "OK" as const,
+      user: { emails: ["test@example.com"] },
+    }),
+    signIn: mock().mockResolvedValue({
+      status: "OK" as const,
+      user: { emails: ["test@example.com"] },
+    }),
+    sendPasswordResetEmail: mock().mockResolvedValue({ status: "OK" as const }),
+    submitNewPassword: mock().mockResolvedValue({ status: "OK" as const }),
+    getResetPasswordTokenFromURL: mock().mockReturnValue("token"),
+  };
+}
+
 export function installDefaultWebTestSeams(): void {
   registerSessionApiPort(createDefaultTestSessionPort());
   registerToastPort(createTestToastPort().port);
   registerUseStartGoogleAuthorizationForTests(
     createDefaultTestGoogleAuthorizationHook(),
   );
+  // Skip /config fetch (no MSW handler); "unavailable" matches prior failed-fetch default.
+  resetGoogleAvailabilityForTests();
+  setGoogleAvailabilityForTests("unavailable");
 }
 
 export function resetWebTestSeams(): void {
   resetSessionApiPort();
   resetToastPort();
   resetUseStartGoogleAuthorizationForTests();
+  // AuthModal owns emailpassword reset — production SuperTokens patches XHR vs MSW.
+  resetUseCompleteAuthenticationForTests();
+  resetGoogleAvailabilityForTests();
 }

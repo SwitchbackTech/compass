@@ -33,6 +33,9 @@ async function renderLifeViewWithSidebar() {
 }
 
 const mockNavigate = mock();
+// Bun's mock.module is process-wide and file order is non-deterministic.
+// Gate every overridden hook so afterAll restores real useSearch — otherwise
+// AuthModal (URL-driven via ?auth=) never opens for later files in the process.
 const actualTanstackRouter = { ...(await import("@tanstack/react-router")) };
 let isRouterMocked = true;
 let mockedLifeSearch: Record<string, unknown> = {};
@@ -47,10 +50,21 @@ mock.module("@tanstack/react-router", () => ({
   useNavigate: (...args: unknown[]) =>
     isRouterMocked
       ? mockNavigate
-      : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of this suite.
-        actualTanstackRouter.useNavigate(...(args as [])),
-  useLocation: () => ({ pathname: "/life" }),
-  useSearch: () => mockedLifeSearch,
+      : (actualTanstackRouter.useNavigate as (...a: unknown[]) => unknown)(
+          ...args,
+        ),
+  useLocation: (...args: unknown[]) =>
+    isRouterMocked
+      ? { pathname: "/life" }
+      : (actualTanstackRouter.useLocation as (...a: unknown[]) => unknown)(
+          ...args,
+        ),
+  useSearch: (...args: unknown[]) =>
+    isRouterMocked
+      ? mockedLifeSearch
+      : (actualTanstackRouter.useSearch as (...a: unknown[]) => unknown)(
+          ...args,
+        ),
 }));
 
 afterAll(() => {

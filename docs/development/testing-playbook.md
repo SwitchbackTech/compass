@@ -50,12 +50,12 @@ Every package runs on Bun's native test runner (Bun 1.3.14+); Jest has been remo
 - `bun run test:web` — `test-parallel.ts web`: one `bun test` process with `web.preload.ts` (jsdom, MSW, Zustand reset, injectable test seams). Files run sequentially — not `--parallel` — because MSW/jsdom globals do not survive Bun's per-file `--isolate`. See [Web native parallel (future / blocked)](#web-native-parallel-future--blocked).
 - `bun run test:backend`, `bun run test:scripts`, and `bun run test:sync` — `test-mongo-env.ts` boots one shared in-memory Mongo replica set, then runs `bun test --parallel` with the package preload. Per-file DB names come from `setupTestDb(import.meta.url)`.
 - `bun run test:backend:fast`, `bun run test:sync:fast`, and `bun run test:scripts:fast` — `test-parallel.ts` with mongo-free preloads; excludes `*.db.test.*` via `--path-ignore-patterns`. No mongod boot — use these for day-to-day backend/sync/scripts work that does not touch persistence.
-- Backend and web SuperTokens, toast, and Google-auth behavior in tests use injectable seams (`TestGcalFixture`, `session.middleware`, `supertokens.registry`, `session.port`, `toast.port`, `useStartGoogleAuthorization.registry`, `LoggerFactory`) instead of preload `mock.module` clusters.
+- Backend and web SuperTokens, toast, and Google-auth behavior in tests use injectable seams (`TestGcalFixture`, `session.middleware`, `supertokens.registry`, `session.port`, `emailpassword.port`, `toast.port`, `useStartGoogleAuthorization.registry`, `useCompleteAuthentication.registry`, `LoggerFactory`) instead of preload `mock.module` clusters.
 - Test files import lifecycle/assertion APIs from `bun:test` only (`mock`, `spyOn`, `mock.module` where unavoidable).
 
 ### Known infrastructure constraints
 
-**Web test seams.** Session, toast, and Google authorization use injectable ports registered in `@web/__tests__/helpers/web-test-seams.ts`. The preload lifecycle calls `installDefaultWebTestSeams()` in `beforeEach` and `resetWebTestSeams()` in `afterEach`, so web no longer needs preload `mock.module` clusters or a per-file process launcher.
+**Web test seams.** Session, toast, Google authorization, email/password, and complete-authentication use injectable ports/registries registered in `@web/__tests__/helpers/web-test-seams.ts`. The preload lifecycle calls `installDefaultWebTestSeams()` in `beforeEach` and `resetWebTestSeams()` in `afterEach`, so web no longer needs preload `mock.module` clusters or a per-file process launcher.
 
 **Web sequential runner.** Web runs in one Bun process with files executed sequentially. Native `--parallel` is intentionally disabled — see [Web native parallel (future / blocked)](#web-native-parallel-future--blocked) below. Core/backend still use `--parallel`.
 
@@ -113,7 +113,7 @@ Under `--parallel` / `--isolate`, Bun clears globals between files in a worker b
 
 PR #2307 removed blockers that required the old per-file launcher and briefly enabled `bun test --parallel` for web:
 
-- **Injectable test seams** — session (`session.port`), toast (`toast.port`), and Google auth (`useStartGoogleAuthorization.registry`) replace preload `mock.module` clusters. Reset via `installDefaultWebTestSeams()` / `resetWebTestSeams()` in global hooks.
+- **Injectable test seams** — session (`session.port`), toast (`toast.port`), Google auth (`useStartGoogleAuthorization.registry`), email/password (`emailpassword.port`), and complete-auth (`useCompleteAuthentication.registry`) replace preload `mock.module` clusters. Reset via `installDefaultWebTestSeams()` / `resetWebTestSeams()` in global hooks.
 - **Setup module split** — `packages/web/src/__tests__/setup/` (jsdom, polyfills, indexedDB, lifecycle).
 - **Store reset registry** — `resetAllStores()` in global `afterEach`; `BaseApi.defaults.adapter` cleared each test.
 - **IndexedDB re-mirror** — survives one class of `--isolate` global clears.
@@ -217,7 +217,8 @@ Isolation rules:
 - If a test replaces globals (`fetch`, `document.getElementById`, storage, timers, console methods), restore the original value in teardown.
 - Prefer `renderWithStore`, `createStoreWrapper`, or a focused provider harness over mocking `@web/store` or `store.hooks`.
 - `bun run test:web` is the acceptance check for the web suite. It runs the full package sequentially in one process (not `--parallel`); see [Web native parallel (future / blocked)](#web-native-parallel-future--blocked). A focused single-file run can still miss cross-file interactions.
-- `mock.module` is process-global within a test file, not test-scoped. Prefer injectable seams (`session.port`, `toast.port`, hook registries) or `spyOn` with teardown. File-level `mock.module` remains acceptable for one-off module substitution when a seam does not exist yet.
+- `mock.module` is process-global within a test file, not test-scoped. Prefer injectable seams (`session.port`, `toast.port`, `emailpassword.port`, hook registries) or `spyOn` with teardown. File-level `mock.module` remains acceptable for one-off module substitution when a seam does not exist yet.
+- **Never mock `@tanstack/react-router` hooks without restoring them.** Bun's web suite runs all files in one process and discovery order is non-deterministic. Gate every overridden hook (`useNavigate`, `useSearch`, `useLocation`, `useParams`, …) behind a flag flipped off in `afterAll`, delegating to the snapshotted real implementation when the flag is false — see `SelectView.test.tsx`, `CommandPalette.test.tsx`, and `LifeView.test.tsx`. An unconditional `useSearch: () => ({})` will leave AuthModal (URL-driven via `?auth=`) unable to open for every later file in the process. Do not force alphabetical web file order as a workaround: that order trips a separate SuperTokens/posthog XMLHttpRequest conflict.
 - To focus an element on mount in this jsdom setup, use React's `autoFocus` prop or a stable callback ref (`ref={useCallback(n => n?.focus(), [])}`) — both fire in the commit phase. A `useEffect(() => ref.current?.focus())` does **not** make the element `document.activeElement` in tests. `autoFocus` trips biome's `lint/a11y/noAutofocus` (error) and a JSX-attribute `biome-ignore` comment breaks the formatter, so prefer the callback ref.
 - `FloatingFocusManager` fights virtual-focus combobox palettes: for a component that keeps real focus in one input while using `useListNavigation({ virtual: true })` + `aria-activedescendant` (a command-palette style pattern), `FloatingFocusManager` asynchronously grabs focus to the panel container and steals it back from the input. Drop it — `useDismiss` still handles Escape/outside-press without it. It belongs on anchored forms with a real reference element instead (e.g. `FloatingEventForm`).
 
@@ -227,7 +228,7 @@ Primary setup files:
 
 - `packages/web/src/__tests__/web.preload.ts` (orchestrator)
 - `packages/web/src/__tests__/web.test.init.ts` (API base URL, Google client id)
-- `packages/web/src/__tests__/helpers/web-test-seams.ts` (default session/toast/Google-auth test ports)
+- `packages/web/src/__tests__/helpers/web-test-seams.ts` (default session/toast/Google-auth test ports; helpers for emailpassword + complete-auth registration)
 - `packages/web/src/__tests__/__mocks__/server/mock.handlers.ts`
 
 Current defaults worth knowing:

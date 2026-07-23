@@ -81,8 +81,18 @@ export function createGoogleAvailability({
     emit();
   };
 
+  /** Pins availability for tests and skips the config fetch. */
+  const setGoogleAvailabilityForTests = (
+    availability: BackendGoogleAvailability,
+  ) => {
+    backendGoogleAvailability = availability;
+    loadPromise = Promise.resolve();
+    emit();
+  };
+
   return {
     resetGoogleAvailabilityForTests,
+    setGoogleAvailabilityForTests,
     useIsGoogleAvailable,
   };
 }
