@@ -45,6 +45,7 @@ const authStore = createExternalStore(false);
 let isCheckingSession = false;
 let isSessionInitialized = false;
 let sessionEventVersion = 0;
+let unsubscribeSessionEvents: (() => void) | undefined;
 
 const handleAuthenticatedSession = () => {
   authStore.set(true);
@@ -103,6 +104,15 @@ async function checkIfSessionExists(): Promise<boolean> {
   }
 }
 
+export function resetSessionProviderForTests(): void {
+  unsubscribeSessionEvents?.();
+  unsubscribeSessionEvents = undefined;
+  isSessionInitialized = false;
+  isCheckingSession = false;
+  sessionEventVersion = 0;
+  authStore.set(false);
+}
+
 export function sessionInit() {
   if (isSessionInitialized) {
     return;
@@ -113,8 +123,7 @@ export function sessionInit() {
 
   let lastAction: string | undefined;
 
-  // No need to unsubscribe as this runs for the lifetime of the app
-  session.onAnyEvent((e) => {
+  unsubscribeSessionEvents = session.onAnyEvent((e) => {
     if (e.action === lastAction) return;
     lastAction = e.action;
 

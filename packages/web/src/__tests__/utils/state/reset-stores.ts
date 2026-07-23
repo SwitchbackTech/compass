@@ -8,6 +8,7 @@
  * test files never need to remember it.
  */
 import { resetBackendAvailabilityForTests } from "@web/api/util/backend-unavailable-error.util";
+import { resetSessionProviderForTests } from "@web/auth/compass/session/SessionProvider";
 import {
   initialUserMetadataState,
   useUserMetadataStore,
@@ -43,6 +44,7 @@ const storeResets: StoreReset[] = [
   // poisoning is silent and only surfaces under CI's file ordering).
   resetBackendAvailabilityForTests,
   resetEventRepositorySourceForTests,
+  resetSessionProviderForTests,
   // Lives on window.__weekInteractionMotionActive, which survives across
   // test files (the preload reuses one jsdom window). A test that starts a
   // real drag and never completes it would otherwise leave every later
