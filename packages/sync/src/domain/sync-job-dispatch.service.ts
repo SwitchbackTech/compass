@@ -1,8 +1,10 @@
 import { importCalendarEvents } from "@sync/domain/calendar-import.service";
+import { syncCalendarList } from "@sync/domain/calendar-list-sync.service";
 import { pullCalendarChanges } from "@sync/domain/calendar-pull.service";
 import { repairCalendar } from "@sync/domain/calendar-repair.service";
 import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
+import { type ProviderCalendarAdapter } from "@sync/providers/provider-calendar.port";
 import { type ProviderEventReader } from "@sync/providers/provider-event-reader.port";
 import { type ProviderNotificationAdapter } from "@sync/providers/provider-notifications.port";
 import {
@@ -15,7 +17,9 @@ import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.c
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { type ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 export interface SyncJobDispatchDeps {
@@ -23,6 +27,11 @@ export interface SyncJobDispatchDeps {
   occurrences: EventOccurrenceRepository;
   resources: SyncResourceRepository;
   calendars: ProviderCalendarRepository;
+  // syncCalendarList resolves the connection a calendarListSync job targets,
+  // discovers its calendars, and enqueues an initial import per active calendar.
+  connections: ProviderConnectionRepository;
+  discovery: ProviderCalendarAdapter;
+  jobs: JobRepository;
   // pullCalendarChanges consults pending commands before deleting an event.
   commands: CommandRepository;
   reader: ProviderEventReader;
@@ -53,16 +62,31 @@ export type SyncJobOutcome =
   // Dispatch here does not own it; the loop routes it.
   | { readonly result: "unsupported"; readonly kind: JobRecord["kind"] };
 
-// Run one claimed provider-calendar sync job (initialImport / incrementalPull /
-// repair / subscriptionMaintain) and report how to settle it. Resolves the job's
-// resource and calendar first; a job whose target no longer exists is dropped
-// rather than retried forever. All reads/writes inside the called services are
-// owner-scoped.
+// Run one claimed sync job (calendarListSync / initialImport / incrementalPull /
+// repair / subscriptionMaintain) and report how to settle it. calendarListSync
+// resolves the job's CONNECTION; the rest resolve its resource and calendar. A
+// job whose target no longer exists is dropped rather than retried forever. All
+// reads/writes inside the called services are owner-scoped.
 export async function dispatchSyncJob(
   deps: SyncJobDispatchDeps,
   job: JobRecord,
   now: () => Date,
 ): Promise<SyncJobOutcome> {
+  // Calendar-list discovery is keyed on the connection, not a calendar/resource,
+  // so it is resolved and handled before the resource-based family below.
+  if (job.kind === "calendarListSync") {
+    const connection = await deps.connections.findById(
+      job.tenantId,
+      job.principalId,
+      job.connectionId,
+    );
+    if (!connection) {
+      return { result: "drop", reason: "connection no longer exists" };
+    }
+    await syncCalendarList(deps, connection, now);
+    return { result: "done" };
+  }
+
   if (
     job.kind !== "initialImport" &&
     job.kind !== "incrementalPull" &&

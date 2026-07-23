@@ -14,12 +14,15 @@ import {
   type ProviderEventReader,
   type ProviderEventReadInput,
 } from "@sync/providers/provider-event-reader.port";
+import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type JobRecord } from "@sync/storage/contracts/job.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
+import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
@@ -102,6 +105,31 @@ const notifications = {
   parseCallback: () => null,
 };
 
+// A calendar-discovery adapter that returns one active calendar, so a
+// calendarListSync dispatch runs without a network round-trip.
+const discovery = {
+  provider: "google" as const,
+  discoverCalendars: async () => ({
+    calendars: [
+      {
+        providerCalendarId: "primary@google.com",
+        displayName: "Google",
+        color: null,
+        primary: true,
+        active: true,
+        accessRole: "owner" as const,
+        capabilities: {
+          canReadEvents: true,
+          canWriteEvents: true,
+          canReadBusy: true,
+          canInviteAttendees: true,
+        },
+      },
+    ],
+    cursor: "cursor-1",
+  }),
+};
+
 describe("dispatchSyncJob", () => {
   const storage = setupSyncStorage(import.meta.url);
   let events: EventRepository;
@@ -109,6 +137,10 @@ describe("dispatchSyncJob", () => {
   let resources: SyncResourceRepository;
   let calendars: ProviderCalendarRepository;
   let commands: CommandRepository;
+  let jobs: JobRepository;
+  // Dispatch resolves the connection for a calendarListSync job; a test sets what
+  // findById returns without seeding a full connection record.
+  let stubbedConnection: ProviderConnectionRecord | null;
 
   beforeEach(() => {
     events = new EventRepository(storage.db());
@@ -116,13 +148,22 @@ describe("dispatchSyncJob", () => {
     resources = new SyncResourceRepository(storage.db());
     calendars = new ProviderCalendarRepository(storage.db());
     commands = new CommandRepository(storage.db());
+    jobs = new JobRepository(storage.db());
+    stubbedConnection = null;
   });
+
+  const connections = {
+    findById: async () => stubbedConnection,
+  } as unknown as SyncJobDispatchDeps["connections"];
 
   const deps = (reader: FakeReader): SyncJobDispatchDeps => ({
     events,
     occurrences,
     resources,
     calendars,
+    connections,
+    discovery,
+    jobs,
     commands,
     reader,
     custody: tokenSource,
@@ -350,5 +391,76 @@ describe("dispatchSyncJob", () => {
       resource._id,
     );
     expect(saved?.subscriptionResourceId).toBe("provider-resource");
+  });
+
+  const calendarListJob = (
+    connectionId: string,
+    tenantId: string,
+    principalId: string,
+  ): JobRecord =>
+    ({
+      _id: objectId(),
+      tenantId,
+      principalId,
+      connectionId,
+      resourceId: null,
+      commandId: null,
+      kind: "calendarListSync",
+      priority: 0,
+      state: "claimed",
+      runAfter: now(),
+      attempt: 0,
+      coalescingKey: `calendarListSync:${connectionId}`,
+      leaseOwner: "worker-1",
+      leaseExpiresAt: now(),
+      failureClass: null,
+      createdAt: now(),
+      updatedAt: now(),
+    }) as JobRecord;
+
+  it("routes calendarListSync to discovery and settles done", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const connectionId = objectId();
+    stubbedConnection = {
+      _id: connectionId,
+      tenantId,
+      principalId,
+    } as ProviderConnectionRecord;
+
+    const outcome = await dispatchSyncJob(
+      deps(new FakeReader([])),
+      calendarListJob(connectionId, tenantId, principalId),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+    // Discovery persisted the calendar and enqueued its initial import.
+    const persisted = await calendars.listByConnection(
+      tenantId as ProviderCalendarRecord["tenantId"],
+      principalId as ProviderCalendarRecord["principalId"],
+      connectionId as ProviderCalendarRecord["connectionId"],
+    );
+    expect(persisted).toHaveLength(1);
+    const importCount = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.jobs)
+      .countDocuments({ kind: "initialImport" });
+    expect(importCount).toBe(1);
+  });
+
+  it("drops a calendarListSync whose connection no longer exists", async () => {
+    stubbedConnection = null; // findById returns nothing
+
+    const outcome = await dispatchSyncJob(
+      deps(new FakeReader([])),
+      calendarListJob(objectId(), objectId(), objectId()),
+      now,
+    );
+
+    expect(outcome).toEqual({
+      result: "drop",
+      reason: "connection no longer exists",
+    });
   });
 });
