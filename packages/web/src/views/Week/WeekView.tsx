@@ -6,6 +6,7 @@ import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { DemoEventsBannerGate } from "@web/components/DemoEventsBanner/DemoEventsBannerGate";
+import { SidebarEventDetails } from "@web/components/Sidebar/EventDetails/SidebarEventDetails";
 import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";
 import { Sidebar } from "@web/components/Sidebar/Sidebar";
 import { useUpNextEventShortcut } from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
@@ -22,12 +23,9 @@ import {
   viewActions,
 } from "@web/events/stores/view.store";
 import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
-import { ConvertToStandaloneDialog } from "@web/views/Forms/EventForm/ConvertToStandaloneDialog";
-import { RecurrenceScopeDialog } from "@web/views/Forms/EventForm/RecurrenceScopeDialog";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 import { DraftProvider } from "@web/views/Week/components/Draft/context/DraftProvider";
 import { Draft } from "@web/views/Week/components/Draft/Draft";
-import { WeekSidebarEventDetails } from "@web/views/Week/components/Draft/sidebar/WeekSidebarEventDetails";
 import { Grid } from "@web/views/Week/components/Grid/Grid";
 import { WeekGridScrollArea } from "@web/views/Week/components/Grid/WeekGridScrollArea";
 import { DayLabels } from "@web/views/Week/components/Header/DayLabels";
@@ -198,7 +196,7 @@ export const WeekView = () => {
             <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
               <Sidebar
                 calendarDate={calendarDate}
-                eventDetails={<WeekSidebarEventDetails />}
+                eventDetails={<SidebarEventDetails />}
                 isEventDetailsOpen={isEventDetailsOpen}
                 isShortcutsOpen={isShortcutsOpen}
                 onCloseShortcuts={closeShortcuts}
@@ -210,9 +208,6 @@ export const WeekView = () => {
             </ResizableSidebarPanel>
           </ContextMenuWrapper>
         </Shortcuts>
-
-        <RecurrenceScopeDialog />
-        <ConvertToStandaloneDialog />
       </DraftProvider>
     </div>
   );

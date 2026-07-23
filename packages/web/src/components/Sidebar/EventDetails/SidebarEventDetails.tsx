@@ -13,6 +13,7 @@ import {
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import { ConvertToStandaloneDialog } from "@web/views/Forms/EventForm/ConvertToStandaloneDialog";
 import { RecurrenceScopeConfirmationDialog } from "@web/views/Forms/EventForm/RecurrenceScopeDialog";
 import { EventFormPanel } from "@web/views/Forms/EventFormPanel/EventFormPanel";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
@@ -21,10 +22,8 @@ import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
 
 /**
- * The Day view's event-details panel, docked in the sidebar.
- * Store-driven: renders the current grid draft whenever the draft store says
- * the form is open. Week wires its own panel through DraftContext — see
- * WeekSidebarEventDetails.
+ * Store-driven event-details panel for Day and Week sidebars. Renders the
+ * current grid draft whenever the draft store says the form is open.
  */
 export function SidebarEventDetails() {
   const draft = useDraftStore(selectGridDraft);
@@ -50,11 +49,14 @@ export function SidebarEventDetails() {
   const getDeleteContext = useCallback(() => ({ isRecurring }), [isRecurring]);
 
   const {
+    onCancelConvertToStandalone,
+    onConfirmConvertToStandalone,
     onDelete: deleteEvent,
     onSubmit,
     pendingAction,
     setRecurrenceUpdateScopeDialogOpen,
     onUpdateScopeChange,
+    standaloneDraft,
   } = useRecurrenceScopeConfirmation({
     getDeleteContext,
     getSaveContext,
@@ -78,14 +80,21 @@ export function SidebarEventDetails() {
     <EventFormPanel
       confirmation={{ onDelete: deleteEvent, onSubmit }}
       confirmationUi={
-        <RecurrenceScopeConfirmationDialog
-          draft={scopeDialogDraft}
-          pendingAction={pendingAction}
-          setRecurrenceUpdateScopeDialogOpen={
-            setRecurrenceUpdateScopeDialogOpen
-          }
-          onUpdateScopeChange={onUpdateScopeChange}
-        />
+        <>
+          <RecurrenceScopeConfirmationDialog
+            draft={scopeDialogDraft}
+            pendingAction={pendingAction}
+            setRecurrenceUpdateScopeDialogOpen={
+              setRecurrenceUpdateScopeDialogOpen
+            }
+            onUpdateScopeChange={onUpdateScopeChange}
+          />
+          <ConvertToStandaloneDialog
+            draft={standaloneDraft}
+            onCancel={onCancelConvertToStandalone}
+            onConfirm={onConfirmConvertToStandalone}
+          />
+        </>
       }
       draft={draft}
       isDraft={!existing}

@@ -114,6 +114,10 @@ export function editGridEventDraft(
 // uses (CalendarSelect's displayed default, useSaveEventForm.ts/
 // useDraftActions.ts's submit-time fallback) pick the default target
 // calendar instead.
+//
+// Series bases keep their RRULE on duplicate (legacy MapEvent.removeProviderData
+// behavior). Occurrences become standalone — they only carry a seriesId link,
+// not a rule of their own.
 export function duplicateGridEventDraft(
   event: Event,
   calendars: Calendar[],
@@ -137,7 +141,10 @@ export function duplicateGridEventDraft(
         event.content.kind === "details" ? event.content.description : "",
       schedule,
       calendarId,
-      recurrence: { kind: "single" },
+      recurrence:
+        event.recurrence.kind === "series"
+          ? { kind: "series", rules: [...event.recurrence.rules] }
+          : { kind: "single" },
     },
   };
 }

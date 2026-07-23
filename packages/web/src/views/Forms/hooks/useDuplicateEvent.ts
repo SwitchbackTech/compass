@@ -6,9 +6,7 @@ import { draftActions } from "@web/events/stores/draft.store";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 
 /**
- * useDuplicateEvent
- *
- * **important** use within Day View for now
+ * Opens a create draft based on an existing event (preserves series rules).
  */
 export function useDuplicateEvent(_id: string) {
   const event = useEventById(_id);

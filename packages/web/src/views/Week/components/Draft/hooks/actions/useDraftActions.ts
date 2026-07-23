@@ -299,29 +299,7 @@ export const useDraftActions = (
       return;
     }
 
-    // duplicateGridEventDraft always drops recurrence (built for Day, which
-    // has no recurring-series duplication UX). Week must preserve a
-    // series-base event's rule on duplicate — matching the legacy
-    // MapEvent.removeProviderData behavior this replaces, which kept
-    // `recurrence.rule` for a series but dropped an occurrence's `eventId`
-    // link (an occurrence's duplicate becomes standalone, since it carries
-    // no rule of its own).
-    const sourceRecurrence = gridDraftFromStore.source.recurrence;
-    const withRecurrence: GridEventDraft =
-      sourceRecurrence.kind === "series" && duplicate.kind === "create"
-        ? {
-            ...duplicate,
-            values: {
-              ...duplicate.values,
-              recurrence: {
-                kind: "series",
-                rules: [...sourceRecurrence.rules],
-              },
-            },
-          }
-        : duplicate;
-
-    void submit(withRecurrence);
+    void submit(duplicate);
     discard();
   }, [calendars, gridDraftFromStore, submit, discard]);
 
