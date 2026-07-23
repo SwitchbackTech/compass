@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { type Id } from "react-toastify";
-import { toastDefaultOptions } from "@web/common/constants/toast.constants";
+import { getToastDefaultOptions } from "@web/common/constants/toast.constants";
 import { getToast } from "@web/common/utils/toast/toast.port";
 
 /**
@@ -13,14 +13,15 @@ import { getToast } from "@web/common/utils/toast/toast.port";
  */
 export function showStatusToast(toastId: Id, message: ReactNode): void {
   const toast = getToast();
+  const options = getToastDefaultOptions();
   toast(message, {
-    ...toastDefaultOptions,
+    ...options,
     toastId,
     closeButton: false,
     hideProgressBar: true,
   });
   toast.update(toastId, {
     render: message,
-    autoClose: toastDefaultOptions.autoClose,
+    autoClose: options.autoClose,
   });
 }

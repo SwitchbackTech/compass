@@ -15,6 +15,7 @@ import { DeleteAccountConfirmationProvider } from "@web/components/DeleteAccount
 import { FeedbackDialogHost } from "@web/components/Feedback/FeedbackDialogHost";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
+import { selectTheme, useThemeStore } from "@web/settings/theme/theme.store";
 import { useUndoRedoShortcuts } from "@web/views/Week/hooks/shortcuts/useUndoRedoShortcuts";
 
 /**
@@ -24,6 +25,27 @@ import { useUndoRedoShortcuts } from "@web/views/Week/hooks/shortcuts/useUndoRed
 export function GlobalShortcutsHost() {
   useUndoRedoShortcuts();
   return null;
+}
+
+function ThemeAwareToastContainer() {
+  const theme = useThemeStore(selectTheme);
+
+  return (
+    <ToastContainer
+      position="bottom-left"
+      autoClose={5000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+      theme={theme === "dark-abyss" ? "dark" : "light"}
+      limit={1}
+      transition={Slide}
+    />
+  );
 }
 
 interface CompassRequiredProvidersProps extends PropsWithChildren {
@@ -46,20 +68,7 @@ export const CompassRequiredProviders = ({
                 <DeleteAccountConfirmationProvider>
                   {children}
                 </DeleteAccountConfirmationProvider>
-                <ToastContainer
-                  position="bottom-left"
-                  autoClose={5000}
-                  hideProgressBar={false}
-                  newestOnTop={false}
-                  closeOnClick
-                  rtl={false}
-                  pauseOnFocusLoss
-                  draggable
-                  pauseOnHover
-                  theme="dark"
-                  limit={1}
-                  transition={Slide}
-                />
+                <ThemeAwareToastContainer />
               </LogoutConfirmationProvider>
             </IconProvider>
           </GoogleOAuthProvider>

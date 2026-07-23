@@ -140,6 +140,7 @@ describe("Tailwind theme CSS", () => {
       {
         background: "background",
         text: "text",
+        textMuted: "text-muted",
         onAccent: "on-accent",
       };
 
