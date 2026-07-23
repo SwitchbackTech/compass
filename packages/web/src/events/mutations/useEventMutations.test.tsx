@@ -979,6 +979,54 @@ describe("undo history recording", () => {
     context.pending.resolve();
   });
 
+  test("records create snapshots but skips recurring creates", () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized());
+    const created = event({
+      content: { kind: "details", title: "Created", description: "" },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.create({
+        id: created.id,
+        calendarId: created.calendarId,
+        content: created.content as {
+          kind: "details";
+          title: string;
+          description: string;
+        },
+        schedule: created.schedule as never,
+        recurrence: { kind: "single" },
+      }),
+    );
+
+    const { past } = useUndoHistoryStore.getState();
+    expect(past).toHaveLength(1);
+    expect(past[0]).toMatchObject({
+      kind: "create",
+      event: { id: created.id, content: { title: "Created" } },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.create({
+        id: created.id,
+        calendarId: created.calendarId,
+        content: created.content as {
+          kind: "details";
+          title: string;
+          description: string;
+        },
+        schedule: created.schedule as never,
+        recurrence: {
+          kind: "series",
+          rules: [{ frequency: "weekly", interval: 1 }],
+        },
+      }),
+    );
+    expect(useUndoHistoryStore.getState().past).toHaveLength(1);
+    context.pending.resolve();
+  });
+
   test("records delete snapshots but skips recurring deletes", () => {
     const context = setup();
     const seriesId = event().id;
@@ -1026,6 +1074,19 @@ describe("undo history recording", () => {
         context.hook.result.current.mutations.delete({
           id: original.id,
           scope: "this",
+        }),
+      );
+      act(() =>
+        context.hook.result.current.mutations.create({
+          id: original.id,
+          calendarId: original.calendarId,
+          content: original.content as {
+            kind: "details";
+            title: string;
+            description: string;
+          },
+          schedule: original.schedule as never,
+          recurrence: { kind: "single" },
         }),
       );
     });

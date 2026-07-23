@@ -47,6 +47,7 @@ import {
 } from "./event.mutation.runtime";
 import {
   isRecurringEvent,
+  recordEventCreateHistory,
   recordEventDeleteHistory,
   recordEventEditHistory,
 } from "./event.mutation-history";
@@ -357,6 +358,7 @@ export function useEventMutations(
       create: (input: CreateEventInput) => {
         const id = input.id ?? (createObjectIdString() as EventId);
         const finalInput = { ...input, id };
+        recordEventCreateHistory({ event: optimisticEventFromCreate(finalInput) });
         createMutation.mutate({ input: finalInput, writeKey: id });
       },
       replace: (payload: { id: EventId; input: ReplaceEventInput }) => {
