@@ -76,10 +76,15 @@ const needsHookTimeout =
   profile === "sync-fast" ||
   profile === "scripts-fast";
 
+// Web uses jsdom + MSW XHR patching + module singletons that Bun's parallel
+// `--isolate` clears between files (MSW's oldXMLHttpRequest becomes undefined).
+// One process, sequential files is still far faster than the old per-file launcher.
+const parallelFlag = profile === "web" ? [] : ["--parallel"];
+
 const testTargets = [
   "bun",
   "test",
-  "--parallel",
+  ...parallelFlag,
   ...(needsHookTimeout ? ["--timeout", "60000"] : []),
   "--preload",
   preloadPath,

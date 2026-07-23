@@ -226,9 +226,12 @@ describe("CalendarList", () => {
       expect(buttonA.getAttribute("aria-pressed")).toBe("true");
     });
 
-    await waitFor(() => {
-      expect(putCalls).toHaveLength(1);
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(putCalls).toHaveLength(1);
+      },
+      { timeout: 3000 },
+    );
 
     const body = putCalls[0] as { calendarId: string; isVisible: boolean }[];
     expect(body).toHaveLength(2);

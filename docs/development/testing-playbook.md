@@ -47,7 +47,7 @@ E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` vi
 Every package runs on Bun's native test runner (Bun 1.3.14+); Jest has been removed.
 
 - `bun run test:core` — `test-parallel.ts core`: `bun test --parallel` with `core.preload.ts`.
-- `bun run test:web` — `test-parallel.ts web`: `bun test --parallel` with `web.preload.ts` (jsdom, MSW, Zustand reset, injectable test seams).
+- `bun run test:web` — `test-parallel.ts web`: one `bun test` process with `web.preload.ts` (jsdom, MSW, Zustand reset, injectable test seams). Files run sequentially — not `--parallel` — because MSW's XHR patch and jsdom globals do not survive Bun's per-file `--isolate`.
 - `bun run test:backend`, `bun run test:scripts`, and `bun run test:sync` — `test-mongo-env.ts` boots one shared in-memory Mongo replica set, then runs `bun test --parallel` with the package preload. Per-file DB names come from `setupTestDb(import.meta.url)`.
 - `bun run test:backend:fast`, `bun run test:sync:fast`, and `bun run test:scripts:fast` — `test-parallel.ts` with mongo-free preloads; excludes `*.db.test.*` via `--path-ignore-patterns`. No mongod boot — use these for day-to-day backend/sync/scripts work that does not touch persistence.
 - Backend and web SuperTokens, toast, and Google-auth behavior in tests use injectable seams (`TestGcalFixture`, `session.middleware`, `supertokens.registry`, `session.port`, `toast.port`, `useStartGoogleAuthorization.registry`, `LoggerFactory`) instead of preload `mock.module` clusters.
@@ -55,9 +55,11 @@ Every package runs on Bun's native test runner (Bun 1.3.14+); Jest has been remo
 
 ### Known infrastructure constraints
 
-**Web test seams.** Session, toast, and Google authorization use injectable ports registered in `@web/__tests__/helpers/web-test-seams.ts`. The preload lifecycle calls `installDefaultWebTestSeams()` in `beforeEach` and `resetWebTestSeams()` in `afterEach`, so web can run on native `bun test --parallel` like core/backend.
+**Web test seams.** Session, toast, and Google authorization use injectable ports registered in `@web/__tests__/helpers/web-test-seams.ts`. The preload lifecycle calls `installDefaultWebTestSeams()` in `beforeEach` and `resetWebTestSeams()` in `afterEach`, so web no longer needs preload `mock.module` clusters or a per-file process launcher.
 
-**IndexedDB under parallel.** Bun's `--isolate` resets `globalThis` between files in a worker. `ensureIndexedDbTestEnv()` in `indexeddb-env.ts` re-applies fake-indexeddb globals from `beforeAll` in the test lifecycle.
+**Web sequential runner.** Web runs in one Bun process with files executed sequentially. Native `--parallel` is intentionally disabled: Bun's `--isolate` clears jsdom/MSW globals between files, breaking XHR mocking (`oldXMLHttpRequest is undefined`). Core/backend still use `--parallel`.
+
+**IndexedDB in tests.** `ensureIndexedDbTestEnv()` re-applies fake-indexeddb globals when needed.
 
 **Store reset registry.** Zustand stores are module singletons. `@web/__tests__/utils/state/reset-stores.ts` registers every store that must reset between tests; `web.preload.ts` calls `resetAllStores()` in a global `afterEach`. When adding a new store, register it in both `reset-stores.ts` and `seed-stores.ts` or state will leak silently across tests.
 

@@ -11,6 +11,7 @@ import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
+import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization.registry";
 import { validateAuthSearch } from "@web/components/AuthModal/hooks/useAuthModal";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -26,14 +27,6 @@ mock.module("@web/auth/compass/session/useSession", () => ({
 
 // Mock Google authorization start hook
 const mockGoogleLogin = mock();
-mock.module(
-  "@web/auth/google/authorization/useStartGoogleAuthorization",
-  () => ({
-    useStartGoogleAuthorization: () => ({
-      startGoogleAuthorization: mockGoogleLogin,
-    }),
-  }),
-);
 
 const mockUseIsGoogleAvailable = mock(() => true);
 mock.module(
@@ -177,6 +170,10 @@ describe("AuthModal", () => {
   beforeEach(() => {
     mockUseSession.mockClear();
     mockGoogleLogin.mockClear();
+    registerUseStartGoogleAuthorizationForTests(() => ({
+      loading: false,
+      startGoogleAuthorization: mockGoogleLogin,
+    }));
     mockUseIsGoogleAvailable.mockClear();
     mockCompleteAuthentication.mockClear();
     mockEmailPassword.signUp.mockClear();

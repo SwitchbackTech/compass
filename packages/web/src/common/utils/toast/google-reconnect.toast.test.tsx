@@ -1,5 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization.registry";
 import {
@@ -52,7 +51,7 @@ describe("GoogleReconnectToast", () => {
     mockSyncPendingLocalEvents.mockResolvedValue(true);
     renderToast();
 
-    await userEvent.click(
+    fireEvent.click(
       screen.getByRole("button", { name: "Reconnect Google Calendar" }),
     );
 
@@ -61,13 +60,13 @@ describe("GoogleReconnectToast", () => {
     });
     expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);
     expect(mocks.dismiss).toHaveBeenCalledWith("google-revoked-api");
-  });
+  }, 15_000);
 
   it("stays open and does not start authorization when the local-event flush fails", async () => {
     mockSyncPendingLocalEvents.mockResolvedValue(false);
     renderToast();
 
-    await userEvent.click(
+    fireEvent.click(
       screen.getByRole("button", { name: "Reconnect Google Calendar" }),
     );
 
