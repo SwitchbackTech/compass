@@ -23,7 +23,9 @@ export const normalizeLocalEventRecords = (
   records: LocalEventRecord[],
 ): NormalizedEvents => ({
   ...normalizeEventList(records.map((record) => record.event)),
-  demoEventIds: records.filter((record) => record.isDemo).map((record) => record.id),
+  demoEventIds: records
+    .filter((record) => record.isDemo)
+    .map((record) => record.id),
 });
 
 /**

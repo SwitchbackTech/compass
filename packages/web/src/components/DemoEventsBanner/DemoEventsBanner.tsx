@@ -5,8 +5,9 @@ import { persistentBrowserStore } from "@web/common/storage/browser-key-value.st
 export function hasDismissedDemoEventsBanner(): boolean {
   if (!persistentBrowserStore.isAvailable()) return true;
   return (
-    persistentBrowserStore.get(STORAGE_KEYS.HAS_DISMISSED_DEMO_EVENTS_BANNER) ===
-    "true"
+    persistentBrowserStore.get(
+      STORAGE_KEYS.HAS_DISMISSED_DEMO_EVENTS_BANNER,
+    ) === "true"
   );
 }
 

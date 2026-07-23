@@ -2,10 +2,10 @@ import {
   ArrowUDownLeftIcon,
   CalendarDotsIcon,
   CalendarIcon,
+  CompassIcon,
   HourglassSimpleIcon,
   type Icon,
   KeyboardIcon,
-  CompassIcon,
 } from "@phosphor-icons/react";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 import {

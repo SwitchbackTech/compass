@@ -28,11 +28,7 @@ export function formatStartsIn(start: Dayjs, now: Dayjs): string {
  * for them.
  */
 export const UpNextCard: FC = () => {
-  const { now, openEventDetails, upNext, isPending } = useUpNextEvent();
-
-  if (isPending) {
-    return null;
-  }
+  const { now, openEventDetails, upNext } = useUpNextEvent();
 
   if (!upNext) {
     return (

@@ -1,6 +1,6 @@
-import { type EventId } from "@core/types/domain-primitives";
 import { Origin } from "@core/constants/core.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
+import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -128,15 +128,12 @@ const gridEventsFrom = (
   return withCalendarMetadata(scheduled, assembled, demoEventIds);
 };
 
-const timedEventsFrom = (
-  events: Event[],
-  demoEventIds?: readonly EventId[],
-) => gridEventsFrom(events, "timed", demoEventIds);
+const timedEventsFrom = (events: Event[], demoEventIds?: readonly EventId[]) =>
+  gridEventsFrom(events, "timed", demoEventIds);
 
-const allDayEventsFrom = (
-  events: Event[],
-  demoEventIds?: readonly EventId[],
-) => assignEventsToRow(gridEventsFrom(events, "allDay", demoEventIds)).allDayEvents;
+const allDayEventsFrom = (events: Event[], demoEventIds?: readonly EventId[]) =>
+  assignEventsToRow(gridEventsFrom(events, "allDay", demoEventIds))
+    .allDayEvents;
 
 const rowCountFrom = (events: GridEvent[]) => {
   const rows = events

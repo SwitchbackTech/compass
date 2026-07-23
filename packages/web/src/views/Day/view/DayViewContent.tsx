@@ -6,13 +6,13 @@ import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigati
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { DemoEventsBannerGate } from "@web/components/DemoEventsBanner/DemoEventsBannerGate";
-import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
 import { SidebarEventDetails } from "@web/components/Sidebar/EventDetails/SidebarEventDetails";
 import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";
 import { Sidebar } from "@web/components/Sidebar/Sidebar";
 import { useUpNextEventShortcut } from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
 import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
 import { focusFirstSidebarItem } from "@web/components/Sidebar/util/sidebarFocus.util";
+import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
 import {
   selectIsEventFormOpen,
   useDraftStore,

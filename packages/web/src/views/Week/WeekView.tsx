@@ -4,13 +4,13 @@ import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
-import { DemoEventsBannerGate } from "@web/components/DemoEventsBanner/DemoEventsBannerGate";
-import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
+import { DemoEventsBannerGate } from "@web/components/DemoEventsBanner/DemoEventsBannerGate";
 import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";
 import { Sidebar } from "@web/components/Sidebar/Sidebar";
 import { useUpNextEventShortcut } from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
 import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
+import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
 import {
   draftActions,
   selectIsEventFormOpen,

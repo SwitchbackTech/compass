@@ -20,7 +20,7 @@ describe("getNavigationCommandItems", () => {
       "Go to Day",
       "Go to Week",
       "Go to Life",
-      "Show Shortcuts",
+      "Show keyboard shortcuts",
     ]);
   });
 

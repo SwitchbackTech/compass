@@ -15,8 +15,8 @@ import { SessionContext } from "@web/auth/compass/session/session.context";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { maybeShowCmdPaletteHint } from "./cmd-palette-hint.util";
-import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { PixelPirate } from "./PixelPirate";
+import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
 
 export function WelcomeModal() {

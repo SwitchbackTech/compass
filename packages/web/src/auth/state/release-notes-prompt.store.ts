@@ -8,7 +8,7 @@ export const useReleaseNotesPromptStore = create<ReleaseNotesPromptState>()(
   () => ({ isOpen: false }),
 );
 
-let scheduleOpenTimeoutId: ReturnType<typeof window.setTimeout> | undefined;
+let scheduleOpenTimeoutId: number | undefined;
 
 const clearScheduledOpen = () => {
   if (scheduleOpenTimeoutId !== undefined) {

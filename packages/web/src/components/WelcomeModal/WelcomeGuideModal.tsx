@@ -5,8 +5,8 @@ import {
   useState,
 } from "react";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
-import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { PixelPirate } from "./PixelPirate";
+import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { welcomeGuideActions } from "./welcome.guide.store";
 
 export function WelcomeGuideModal() {
