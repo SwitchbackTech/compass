@@ -1,4 +1,5 @@
 import { type Request, type Response } from "express";
+import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
 import { httpLoggingMiddleware } from "@backend/common/middleware/http.logger.middleware";
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { EventEmitter } from "node:events";
@@ -29,7 +30,7 @@ describe("httpLoggingMiddleware", () => {
   const originalLogLevel = process.env["LOG_LEVEL"];
 
   afterEach(() => {
-    mock.restore();
+    restoreFileMocks();
     process.env["LOG_LEVEL"] = originalLogLevel;
   });
 

@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type Credentials, type TokenPayload } from "google-auth-library";
+import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
 import {
   type AuthDecision,
   type GoogleSignInSuccess,
@@ -12,7 +13,6 @@ import {
   describe,
   expect,
   it,
-  mock,
   spyOn,
 } from "bun:test";
 
@@ -82,7 +82,7 @@ describe("handleGoogleAuth", () => {
   });
 
   afterAll(() => {
-    mock.restore();
+    restoreFileMocks();
   });
 
   describe("signup path", () => {

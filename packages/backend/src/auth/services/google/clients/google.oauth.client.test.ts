@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import * as googleapisCalendar from "@googleapis/calendar";
 import * as googleAuthLibrary from "google-auth-library";
 import { BaseError } from "@core/errors/errors.base";
+import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import GoogleOAuthClient from "./google.oauth.client";
@@ -49,7 +50,7 @@ describe("GoogleOAuthClient", () => {
   });
 
   afterEach(() => {
-    mock.restore();
+    restoreFileMocks();
   });
 
   it("creates a calendar client using the oauth client instance", () => {

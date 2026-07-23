@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { type gSchema$Event } from "@core/types/gcal";
+import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
@@ -65,7 +66,7 @@ const asInstancePages = async function* (...pages: gSchema$Event[][]) {
 
 describe("GoogleEventSync", () => {
   beforeEach(() => {
-    mock.restore();
+    restoreFileMocks();
   });
 
   it("writes a page of standalone events in one batch", async () => {

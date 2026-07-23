@@ -7,6 +7,7 @@ import {
   type AvailabilityResponse,
   AvailabilityResponseSchema,
 } from "@core/types/event-command.contracts";
+import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
 import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import calendarController from "@backend/calendar/controllers/calendar.controller";
 import calendarService from "@backend/calendar/services/calendar.service";
@@ -27,7 +28,7 @@ describe("CalendarController availability", () => {
   const userId = "507f1f77bcf86cd799439011";
 
   beforeEach(() => {
-    mock.restore();
+    restoreFileMocks();
   });
 
   const buildReq = (query: Record<string, string>): SessionRequest =>
@@ -108,7 +109,7 @@ describe("CalendarController list", () => {
   const userId = "507f1f77bcf86cd799439011";
 
   beforeEach(() => {
-    mock.restore();
+    restoreFileMocks();
   });
 
   it("returns a CalendarListResponse-shaped body for the session user's calendars", async () => {

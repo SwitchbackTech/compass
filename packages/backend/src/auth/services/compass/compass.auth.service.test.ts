@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import supertokens from "supertokens-node";
 import Session from "supertokens-node/recipe/session";
+import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
 import compassAuthService from "./compass.auth.service";
 import {
   afterEach,
@@ -19,7 +20,7 @@ describe("CompassAuthService", () => {
   });
 
   afterEach(() => {
-    mock.restore();
+    restoreFileMocks();
   });
 
   describe("createSessionForUser", () => {

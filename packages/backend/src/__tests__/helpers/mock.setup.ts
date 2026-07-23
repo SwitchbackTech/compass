@@ -256,10 +256,20 @@ function ensureGcalWatchSpies(): void {
   }
 }
 
-export function mockNodeModules() {
+function applyPreloadSpies(): void {
   registerTestLoggerFactory();
   spyOn(superTokensNode, "init").mockImplementation(() => undefined);
   spyOn(superTokensNode, "getAllCORSHeaders").mockReturnValue([]);
+}
+
+/** Process-wide mock.restore() that keeps preload spies intact for parallel workers. */
+export function restoreFileMocks(): void {
+  mock.restore();
+  applyPreloadSpies();
+}
+
+export function mockNodeModules() {
+  applyPreloadSpies();
 
   beforeEach(() => {
     setupBackendTestSeams();

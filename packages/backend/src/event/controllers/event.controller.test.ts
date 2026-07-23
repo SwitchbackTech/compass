@@ -2,6 +2,7 @@ import { type Response } from "express";
 import { ObjectId } from "mongodb";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { EventListResponseSchema } from "@core/types/event-command.contracts";
+import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
 import eventController from "@backend/event/controllers/event.controller";
 import eventService from "@backend/event/services/event.service";
 import { buildEventRecord } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
@@ -17,7 +18,7 @@ describe("EventController readAll", () => {
   const userId = "507f1f77bcf86cd799439011";
 
   beforeEach(() => {
-    mock.restore();
+    restoreFileMocks();
   });
 
   it("returns an EventListResponse-shaped body for a range query", async () => {
