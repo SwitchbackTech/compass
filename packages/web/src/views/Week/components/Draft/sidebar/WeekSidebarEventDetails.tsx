@@ -1,4 +1,9 @@
-import { type Dispatch, type FC, type SetStateAction, useCallback } from "react";
+import {
+  type Dispatch,
+  type FC,
+  type SetStateAction,
+  useCallback,
+} from "react";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { draftActions } from "@web/events/stores/draft.store";
 import { EventFormPanel } from "@web/views/Forms/EventFormPanel/EventFormPanel";

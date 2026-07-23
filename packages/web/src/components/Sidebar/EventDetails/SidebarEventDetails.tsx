@@ -83,7 +83,9 @@ export function SidebarEventDetails() {
             setRecurrenceUpdateScopeDialogOpen={(isOpen) => {
               if (!isOpen) closeScopeDialog();
             }}
-            title={pendingAction.type === "delete" ? "Delete events" : undefined}
+            title={
+              pendingAction.type === "delete" ? "Delete events" : undefined
+            }
           />
         ) : null
       }
