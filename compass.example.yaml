@@ -56,6 +56,8 @@ supertokens:
 #   mongoUri: mongodb+srv://compass_sync:REPLACE_WITH_SYNC_MONGO_PASSWORD@cluster/compass_sync?retryWrites=true&w=majority
 #   internalAuthToken: REPLACE_WITH_SYNC_INTERNAL_AUTH_TOKEN # any string; must match the value the API uses
 #   callbackBaseUrl: http://localhost:3010 # public base URL for provider OAuth/webhook callbacks
+#   serviceUrl: http://localhost:3010 # base URL the API uses to reach this service; set only when delegating to sync
+#   connectionRouting: legacy # legacy (default) | sync; sync delegates provider-connection routes here and requires serviceUrl
 #   execution: passive # passive | active
 #   maxConcurrency: 4
 #   enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)
