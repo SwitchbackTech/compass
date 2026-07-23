@@ -9,12 +9,15 @@ paths change materially.
 
 Recorded on 2026-07-22 after removing the Jest compat shim and switching to
 `bun test --parallel` with package preloads (`test-mongo-env.ts` for
-mongo-backed packages). Local macOS, mongodb-memory-server.
+mongo-backed packages). **Web is an exception:** `test:web` runs sequentially
+in one process (MSW/jsdom + `--isolate` constraint — see
+`docs/development/testing-playbook.md#web-native-parallel-future--blocked`).
+Local macOS, mongodb-memory-server.
 
 | Script | Tests | Time |
 | --- | --- | --- |
 | `bun run test:core` | 496 / 496 | ~0.5s |
-| `bun run test:web` | 1319 / 1319 | ~14s |
+| `bun run test:web` | 1319 / 1319 | ~14–17s (sequential, one process) |
 | `bun run test:backend:fast` | 353 / 353 | ~3s |
 | `bun run test:sync` | 505 / 505 | ~31s |
 | `bun run test:scripts` | 40 / 40 | ~2s |
