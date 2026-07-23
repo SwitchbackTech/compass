@@ -111,6 +111,7 @@ export function resetSessionProviderForTests(): void {
   isCheckingSession = false;
   sessionEventVersion = 0;
   authStore.set(false);
+  sse.closeStream();
 }
 
 export function sessionInit() {
