@@ -1,5 +1,4 @@
 import { useCallback, useState } from "react";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
 import {
@@ -7,8 +6,11 @@ import {
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
-import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
-import { selectDraft, useDraftStore } from "@web/events/stores/draft.store";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import {
+  selectGridDraft,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 const UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
@@ -44,7 +46,7 @@ export function RecurrenceScopeDialog() {
 
   return (
     <RecurringEventUpdateScopeDialogContent
-      draft={draft ? gridEventDraftToSchemaEvent(draft) : null}
+      draft={draft}
       onUpdateScopeChange={onUpdateScopeChange}
       setRecurrenceUpdateScopeDialogOpen={setRecurrenceUpdateScopeDialogOpen}
     />
@@ -52,7 +54,7 @@ export function RecurrenceScopeDialog() {
 }
 
 interface RecurringEventUpdateScopeDialogContentProps {
-  draft: CompassEvent | null;
+  draft: GridEventDraft | null;
   onUpdateScopeChange: (applyTo: RecurringEventUpdateScope) => void;
   recurrenceChanged?: boolean;
   setRecurrenceUpdateScopeDialogOpen: (isOpen: boolean) => void;
@@ -66,12 +68,12 @@ export function RecurringEventUpdateScopeDialogContent({
   setRecurrenceUpdateScopeDialogOpen,
   title = "Apply changes to",
 }: RecurringEventUpdateScopeDialogContentProps) {
-  const draftFromStore = useDraftStore(selectDraft);
-  const currentDraft = draft ?? draftFromStore;
+  const originalDraft = useDraftStore(selectGridDraft);
+  const currentDraft = draft ?? originalDraft;
   const recurrenceChanged =
     recurrenceChangedOverride ??
-    (currentDraft && draftFromStore
-      ? DirtyParser.recurrenceChanged(currentDraft, draftFromStore)
+    (currentDraft && originalDraft
+      ? DirtyParser.gridDraftRecurrenceChanged(currentDraft, originalDraft)
       : false);
   const options = recurrenceChanged
     ? RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS

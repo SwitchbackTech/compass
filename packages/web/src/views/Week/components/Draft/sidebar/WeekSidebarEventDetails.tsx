@@ -1,12 +1,7 @@
-import {
-  type Dispatch,
-  type FC,
-  type SetStateAction,
-  useCallback,
-} from "react";
+import { type Dispatch, type FC, type SetStateAction } from "react";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { draftActions } from "@web/events/stores/draft.store";
-import { EventFormPanel } from "@web/views/Forms/EventFormPanel/EventFormPanel";
+import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 export const syncWeekGridDraft = (
@@ -30,23 +25,29 @@ export const WeekSidebarEventDetails: FC = () => {
   const { draft, isFormOpen } = state;
   const { onSubmit, onDelete } = confirmation;
 
-  const syncDraft = useCallback(
-    (resolved: GridEventDraft | null) => {
-      syncWeekGridDraft(resolved, setDraft);
-    },
-    [setDraft],
-  );
+  if (!isFormOpen || !draft) return null;
+
+  const setFormDraft: Dispatch<SetStateAction<GridEventDraft | null>> = (
+    nextDraft,
+  ) => {
+    const resolvedDraft =
+      typeof nextDraft === "function" ? nextDraft(draft) : nextDraft;
+
+    syncWeekGridDraft(resolvedDraft, setDraft);
+  };
 
   return (
-    <EventFormPanel
-      confirmation={{ onDelete, onSubmit }}
+    <EventForm
       draft={draft}
-      isDraft={draft?.kind === "create"}
-      isExistingEvent={draft?.kind === "edit"}
-      isFormOpen={isFormOpen}
+      isDraft={draft.kind === "create"}
+      isExistingEvent={draft.kind === "edit"}
       onClose={discard}
+      onDelete={onDelete}
       onDuplicate={duplicateEvent}
-      syncDraft={syncDraft}
+      onSubmit={(nextDraft) => {
+        if (nextDraft) void onSubmit(nextDraft);
+      }}
+      setDraft={setFormDraft}
     />
   );
 };

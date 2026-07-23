@@ -9,10 +9,13 @@ import {
   useState,
 } from "react";
 import { Frequency, type Options, RRule, type Weekday } from "rrule";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
-import { parseCompassEventDate } from "@core/util/event/event.util";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import {
+  patchGridDraftRecurrence,
+  resolveDraftRecurrenceRules,
+} from "@web/events/grid-event-draft.adapter";
 import {
   type FrequencyValues,
   WEEKDAY_RRULE_MAP,
@@ -63,25 +66,37 @@ const weekdayKeyFromByweekday = (
   return REVERSE_WEEKDAY_LABELS_MAP[WEEKDAY_MAP[weekday].toString()];
 };
 
+const scheduleDatesFromDraft = (draft: GridEventDraft) => {
+  const { schedule } = draft.values;
+
+  if (schedule.kind === "allDay") {
+    return {
+      startDate: dayjs(schedule.start).toYearMonthDayString(),
+      endDate: dayjs(schedule.end).toYearMonthDayString(),
+    };
+  }
+
+  return {
+    startDate: dayjs(schedule.start).format() || dayjs().toRFC3339OffsetString(),
+    endDate:
+      dayjs(schedule.end).format() ||
+      dayjs().add(1, "hour").toRFC3339OffsetString(),
+  };
+};
+
 export const useRecurrence = (
-  event: Partial<
-    Pick<CompassEvent, "startDate" | "endDate" | "recurrence">
-  > | null,
+  draft: GridEventDraft,
   {
-    setEvent,
+    setDraft,
   }: {
-    setEvent: Dispatch<SetStateAction<CompassEvent | null>>;
+    setDraft: Dispatch<SetStateAction<GridEventDraft | null>>;
   },
+  seriesRules?: readonly string[],
 ) => {
-  const { recurrence, endDate: _endDate } = event ?? {};
-  // `||`, not `??`: an undated draft-in-progress can carry `startDate: ""`
-  // (not yet assigned a real date), which `??` wouldn't catch and
-  // `parseCompassEventDate` throws on below.
-  const startDate = event?.startDate || dayjs().toRFC3339OffsetString();
-  const endDate = _endDate || dayjs().add(1, "hour").toRFC3339OffsetString();
-  const _startDate = parseCompassEventDate(startDate);
-  const hasRecurrence = (event?.recurrence?.rule?.length ?? 0) > 0;
-  const currentRule = event?.recurrence?.rule;
+  const currentRules = resolveDraftRecurrenceRules(draft, seriesRules);
+  const hasRecurrence = currentRules.length > 0;
+  const { startDate, endDate } = scheduleDatesFromDraft(draft);
+  const _startDate = dayjs(startDate);
 
   const { options } = useMemo(() => {
     if (!hasRecurrence) {
@@ -99,12 +114,12 @@ export const useRecurrence = (
     }
 
     return new CompassEventRRule({
-      _id: new ObjectId(), // we do not need the event's actual id here
-      startDate: startDate,
-      endDate: endDate,
-      recurrence: { rule: recurrence?.rule as string[] },
+      _id: new ObjectId(),
+      startDate,
+      endDate,
+      recurrence: { rule: currentRules },
     });
-  }, [_startDate, startDate, endDate, hasRecurrence, recurrence?.rule]);
+  }, [_startDate, startDate, endDate, hasRecurrence, currentRules]);
 
   const defaultWeekDay: typeof WEEKDAYS = useMemo(
     () => options?.byweekday?.map((day) => weekdayKeyFromByweekday(day)) ?? [],
@@ -122,6 +137,20 @@ export const useRecurrence = (
   const [count, setCount] = useState<number | null>(options.count);
   const [wkst, setWkst] = useState<Weekday | null>(defaultWkst);
   const [weekDays, setWeekDays] = useState<typeof WEEKDAYS>(defaultWeekDay);
+
+  const ruleSeedKey = `${hasRecurrence}:${JSON.stringify(normalizeRecurrenceRule(currentRules))}`;
+  const [syncedRuleSeedKey, setSyncedRuleSeedKey] = useState(ruleSeedKey);
+
+  if (ruleSeedKey !== syncedRuleSeedKey) {
+    setSyncedRuleSeedKey(ruleSeedKey);
+    setFreq(options.freq);
+    setInterval(options.interval);
+    setUntil(options.until);
+    setCount(options.count);
+    setWkst(defaultWkst);
+    setWeekDays(defaultWeekDay);
+  }
+
   const byweekday = useMemo(
     () => weekDays.map((day) => WEEKDAY_RRULE_MAP[day].weekday),
     [weekDays],
@@ -145,9 +174,9 @@ export const useRecurrence = (
     () =>
       new CompassEventRRule(
         {
-          _id: new ObjectId(), // we do not need the event's actual id here
-          startDate: startDate,
-          endDate: endDate,
+          _id: new ObjectId(),
+          startDate,
+          endDate,
           recurrence: { rule: [] },
         },
         rruleOptions,
@@ -158,28 +187,22 @@ export const useRecurrence = (
   const rule = useMemo(() => JSON.stringify(rrule.toRecurrence()), [rrule]);
 
   const toggleRecurrence = useCallback(() => {
-    setEvent((gridEvent): CompassEvent | null => {
-      if (!gridEvent) return gridEvent;
+    setDraft((currentDraft) => {
+      if (!currentDraft) return currentDraft;
 
-      const { recurrence, ...event } = gridEvent;
-      const { eventId, rule: _rule } = recurrence ?? {};
+      const rules = resolveDraftRecurrenceRules(currentDraft, seriesRules);
 
-      if (_rule) {
-        return {
-          ...event,
-          recurrence: {
-            ...(eventId ? { eventId } : {}),
-            rule: null as unknown as string[],
-          },
-        };
+      if (rules.length > 0) {
+        return patchGridDraftRecurrence(currentDraft, [], seriesRules);
       }
 
-      return {
-        ...event,
-        recurrence: { ...(recurrence ?? {}), rule: JSON.parse(rule) },
-      };
+      return patchGridDraftRecurrence(
+        currentDraft,
+        JSON.parse(rule),
+        seriesRules,
+      );
     });
-  }, [setEvent, rule]);
+  }, [setDraft, rule, seriesRules]);
 
   useEffect(() => {
     if (!hasRecurrence) return;
@@ -187,26 +210,27 @@ export const useRecurrence = (
     const nextRule = JSON.parse(rule);
     if (
       fastDeepEqual(
-        normalizeRecurrenceRule(currentRule),
+        normalizeRecurrenceRule(currentRules),
         normalizeRecurrenceRule(nextRule),
       )
     ) {
       return;
     }
 
-    setEvent((gridEvent): CompassEvent | null => {
-      if (!gridEvent) return gridEvent;
+    setDraft((currentDraft) => {
+      if (!currentDraft) return currentDraft;
 
-      if (fastDeepEqual(gridEvent.recurrence?.rule, nextRule)) {
-        return gridEvent;
+      const projectedRules = resolveDraftRecurrenceRules(
+        currentDraft,
+        seriesRules,
+      );
+      if (fastDeepEqual(projectedRules, nextRule)) {
+        return currentDraft;
       }
 
-      return {
-        ...gridEvent,
-        recurrence: { ...(gridEvent.recurrence ?? {}), rule: nextRule },
-      };
+      return patchGridDraftRecurrence(currentDraft, nextRule, seriesRules);
     });
-  }, [currentRule, rule, hasRecurrence, setEvent]);
+  }, [currentRules, hasRecurrence, rule, seriesRules, setDraft]);
 
   return {
     hasRecurrence,

@@ -3,14 +3,16 @@ import {
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
 import { type Event } from "@core/types/event.contracts";
+import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
-  applySchemaEventPatchToGridDraft,
   createGridEventDraft,
   duplicateGridEventDraft,
   editGridEventDraft,
   gridEventDraftToSchemaEvent,
   parseGridEventDraft,
+  patchGridDraftRecurrence,
   replaceGridDraftSchedule,
+  resolveDraftRecurrenceRules,
 } from "./grid-event-draft.adapter";
 import { expect, test } from "bun:test";
 
@@ -231,13 +233,9 @@ test("a patch that echoes the hydrated rule unchanged keeps the draft's recurren
   const draft = editGridEventDraft(occurrenceEvent);
   if (!draft) throw new Error("Expected scheduled event draft");
 
-  const echoedPatch = {
-    ...gridEventDraftToSchemaEvent(draft, SERIES_RULES),
-    title: "Retitled mid-edit",
-  };
-  const updated = applySchemaEventPatchToGridDraft(
-    draft,
-    echoedPatch,
+  const updated = patchGridDraftRecurrence(
+    { ...draft, values: { ...draft.values, title: "Retitled mid-edit" } } as GridEventDraft,
+    resolveDraftRecurrenceRules(draft, SERIES_RULES),
     SERIES_RULES,
   );
 
@@ -251,13 +249,9 @@ test("a patch with a genuinely different rule converts the draft to an explicit 
   const draft = editGridEventDraft(occurrenceEvent);
   if (!draft) throw new Error("Expected scheduled event draft");
 
-  const changedPatch = {
-    ...gridEventDraftToSchemaEvent(draft, SERIES_RULES),
-    recurrence: { rule: ["RRULE:FREQ=DAILY"], eventId: SERIES_ID },
-  };
-  const updated = applySchemaEventPatchToGridDraft(
+  const updated = patchGridDraftRecurrence(
     draft,
-    changedPatch,
+    ["RRULE:FREQ=DAILY"],
     SERIES_RULES,
   );
 

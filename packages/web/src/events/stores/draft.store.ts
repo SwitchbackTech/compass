@@ -9,10 +9,10 @@ import {
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 
-// TODO(packet-03-phase-3c): migrate remaining consumers from the legacy
-// `event` projection to `gridDraft`, then remove the projection. This store
-// remains the single draft store while Day, forms, sidebar, and legacy Week
-// interactions transition.
+// TODO(packet-03-phase-3c): migrate remaining grid rendering consumers from
+// the legacy `event` projection to `gridDraft`, then remove the projection.
+// The form hot path now reads/writes `gridDraft` directly; `event` remains
+// only for Day grid placeholders, context menu, and legacy Week drag paths.
 
 export type Activity_DraftEvent =
   | "createShortcut"
@@ -42,8 +42,8 @@ export interface State_DraftEvent {
   /** Canonical draft for migrated grid creation paths. */
   gridDraft: GridEventDraft | null;
   /**
-   * Temporary projection for Day, forms, sidebar, and legacy Week draft
-   * interactions. Do not add another store while those consumers migrate.
+   * Temporary projection for Day grid rendering, context menu, and legacy Week
+   * draft interactions. The form hot path reads/writes `gridDraft` directly.
    */
   event: CompassEvent | null;
 }
@@ -290,7 +290,7 @@ export const selectDraftId = (state: State_DraftEvent) => state.event?._id;
 export const selectDraftStatus = (state: State_DraftEvent) => state.status;
 
 export const selectIsEventFormOpen = (state: State_DraftEvent) =>
-  Boolean(state.status?.isFormOpen) && state.event !== null;
+  Boolean(state.status?.isFormOpen) && state.gridDraft !== null;
 
 export const selectIsDNDing = (state: State_DraftEvent) =>
   state.status?.activity === "dnd";
