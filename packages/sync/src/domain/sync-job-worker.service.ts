@@ -76,8 +76,8 @@ function jitteredBackoff(
 // (delete on success, reschedule on transient failure, mark failed once retries
 // are exhausted or the failure is permanent). One worker owns a lease; several
 // can run concurrently and never both win the same job (claimDueJob is atomic).
-// The lease heartbeat for a job outliving its lease is a later slice; this is the
-// claim -> dispatch -> settle core the scheduler drives.
+// A heartbeat keeps a long-running job's lease alive while it works (see
+// #process), so it is not reclaimed and re-run mid-flight.
 export class SyncJobWorker {
   readonly #deps: SyncJobWorkerDeps;
   readonly #owner: string;
