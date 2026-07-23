@@ -138,4 +138,44 @@ describe("config.constants", () => {
       "Google Calendar webhook notifications require TOKEN_GCAL_NOTIFICATION",
     );
   });
+
+  it("leaves Sync delegation unconfigured by default", () => {
+    const env = parseConfigFromEnv(validEnv);
+
+    expect(env.SYNC_SERVICE_URL).toBeUndefined();
+    expect(env.SYNC_INTERNAL_AUTH_TOKEN).toBeUndefined();
+  });
+
+  it("parses a fully configured Sync delegation", () => {
+    const env = parseConfigFromEnv({
+      ...validEnv,
+      SYNC_SERVICE_URL: "http://localhost:3010",
+      SYNC_INTERNAL_AUTH_TOKEN: "sync-internal-secret",
+    });
+
+    expect(env.SYNC_SERVICE_URL).toBe("http://localhost:3010");
+    expect(env.SYNC_INTERNAL_AUTH_TOKEN).toBe("sync-internal-secret");
+  });
+
+  it("rejects a Sync service URL without the internal auth token", () => {
+    expect(() =>
+      parseConfigFromEnv({
+        ...validEnv,
+        SYNC_SERVICE_URL: "http://localhost:3010",
+      }),
+    ).toThrow(
+      "Sync delegation requires both SYNC_SERVICE_URL and SYNC_INTERNAL_AUTH_TOKEN",
+    );
+  });
+
+  it("rejects a Sync auth token without the service URL", () => {
+    expect(() =>
+      parseConfigFromEnv({
+        ...validEnv,
+        SYNC_INTERNAL_AUTH_TOKEN: "sync-internal-secret",
+      }),
+    ).toThrow(
+      "Sync delegation requires both SYNC_SERVICE_URL and SYNC_INTERNAL_AUTH_TOKEN",
+    );
+  });
 });
