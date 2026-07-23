@@ -1,6 +1,10 @@
-import { DatabaseInitError } from "@web/common/utils/storage/db-errors.util";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import { DatabaseInitError } from "@web/common/utils/storage/db-errors.util";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
+import {
+  initializeDatabaseWithErrorHandling,
+  showDbInitErrorToast,
+} from "./app-init.util";
 import {
   afterEach,
   beforeEach,
@@ -10,10 +14,6 @@ import {
   mock,
   spyOn,
 } from "bun:test";
-import {
-  initializeDatabaseWithErrorHandling,
-  showDbInitErrorToast,
-} from "./app-init.util";
 
 describe("app-init.util", () => {
   const mockInitializeStorage = mock();

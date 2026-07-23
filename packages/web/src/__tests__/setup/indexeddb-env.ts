@@ -2,23 +2,9 @@ import { dom } from "./jsdom-env";
 
 let indexedDbReady: Promise<void> | undefined;
 
-export async function ensureIndexedDbTestEnv(): Promise<void> {
-  if (globalThis.indexedDB) {
-    return;
-  }
-
-  indexedDbReady ??= import("fake-indexeddb/auto").then(() => {});
-
-  await indexedDbReady;
-
+function mirrorIndexedDbGlobals(): void {
   const { window } = dom;
 
-  // fake-indexeddb/auto attaches indexedDB (and friends) to `typeof window
-  // !== "undefined" ? window : ...`, which resolves to the jsdom window set
-  // above. Dexie reads `globalThis.indexedDB`/`globalThis.IDBKeyRange`
-  // directly, so mirror them onto globalThis or `new Dexie(...).open()`
-  // throws MissingAPIError. Re-run this after Bun's parallel `--isolate`
-  // resets globals in a worker.
   globalThis.indexedDB = window.indexedDB;
   globalThis.IDBKeyRange = window.IDBKeyRange;
   globalThis.IDBCursor = window.IDBCursor;
@@ -31,6 +17,21 @@ export async function ensureIndexedDbTestEnv(): Promise<void> {
   globalThis.IDBRequest = window.IDBRequest;
   globalThis.IDBTransaction = window.IDBTransaction;
   globalThis.IDBVersionChangeEvent = window.IDBVersionChangeEvent;
+}
+
+export async function ensureIndexedDbTestEnv(): Promise<void> {
+  indexedDbReady ??= (async () => {
+    await import("fake-indexeddb/auto");
+    mirrorIndexedDbGlobals();
+  })();
+
+  await indexedDbReady;
+
+  // Bun parallel `--isolate` can clear globals after the first mirror while
+  // this module stays loaded, so re-apply whenever indexedDB is missing.
+  if (!globalThis.indexedDB) {
+    mirrorIndexedDbGlobals();
+  }
 }
 
 await ensureIndexedDbTestEnv();

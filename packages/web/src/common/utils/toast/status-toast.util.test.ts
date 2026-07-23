@@ -1,6 +1,6 @@
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
-import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { beforeEach, describe, expect, it } from "bun:test";
 
 describe("showStatusToast", () => {

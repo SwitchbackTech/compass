@@ -212,13 +212,19 @@ describe("CalendarList", () => {
     });
 
     await user.click(buttonA);
-    expect(buttonA.getAttribute("aria-pressed")).toBe("false");
+    await waitFor(() => {
+      expect(buttonA.getAttribute("aria-pressed")).toBe("false");
+    });
 
     await user.click(buttonB);
-    expect(buttonB.getAttribute("aria-pressed")).toBe("false");
+    await waitFor(() => {
+      expect(buttonB.getAttribute("aria-pressed")).toBe("false");
+    });
 
     await user.click(buttonA);
-    expect(buttonA.getAttribute("aria-pressed")).toBe("true");
+    await waitFor(() => {
+      expect(buttonA.getAttribute("aria-pressed")).toBe("true");
+    });
 
     await waitFor(() => {
       expect(putCalls).toHaveLength(1);

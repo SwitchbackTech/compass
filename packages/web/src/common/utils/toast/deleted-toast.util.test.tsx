@@ -1,7 +1,7 @@
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { EVENT_DELETED_TOAST_ID } from "@web/common/constants/toast.constants";
-import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { showRestoredToast } from "@web/common/utils/toast/deleted-toast.util";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { beforeEach, describe, expect, it } from "bun:test";
 
 describe("showRestoredToast", () => {

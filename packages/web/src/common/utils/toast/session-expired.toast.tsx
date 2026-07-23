@@ -1,4 +1,5 @@
-import { type Id, toast } from "react-toastify";
+import { type Id } from "react-toastify";
+import { getToast } from "@web/common/utils/toast/toast.port";
 import {
   type AuthView,
   VIEW_TO_PARAM,
@@ -31,7 +32,7 @@ async function openAuthModalFromOutsideRouter(
 export const SessionExpiredToast = ({ toastId }: SessionExpiredToastProps) => {
   const handleSignIn = () => {
     void openAuthModalFromOutsideRouter("login");
-    toast.dismiss(toastId);
+    getToast().dismiss(toastId);
   };
 
   return (
