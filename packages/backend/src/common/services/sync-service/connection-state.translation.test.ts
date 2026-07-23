@@ -3,8 +3,8 @@ import {
   type ConnectionStateReason,
   type ProviderConnection,
 } from "@core/types/sync/connection.contracts";
-import { describe, expect, it } from "bun:test";
 import { toGoogleConnectionState } from "./connection-state.translation";
+import { describe, expect, it } from "bun:test";
 
 // A ProviderConnection is a rich record, but the translation reads only state +
 // stateReason; the rest is filled with valid-enough placeholders. Built as the
@@ -45,9 +45,9 @@ describe("toGoogleConnectionState", () => {
   });
 
   it("maps delayed to ATTENTION", () => {
-    expect(toGoogleConnectionState([connection("delayed", "workOverdue")])).toBe(
-      "ATTENTION",
-    );
+    expect(
+      toGoogleConnectionState([connection("delayed", "workOverdue")]),
+    ).toBe("ATTENTION");
   });
 
   it("maps a disconnected connection to RECONNECT_REQUIRED, not NOT_CONNECTED", () => {
