@@ -5,7 +5,9 @@ import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
+import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import {
   type ParseEventDraftResult,
   parseEventDraft,
@@ -52,6 +54,31 @@ export function createGridEventDraft(
       recurrence: { kind: "single" },
     },
   };
+}
+
+export function createGridEventDraftFromGridEvent(
+  event: GridEvent,
+  sourceEvent?: Event | null,
+): GridEventDraft | null {
+  if (sourceEvent) {
+    return editGridEventDraft(sourceEvent);
+  }
+
+  if (!event.startDate || !event.endDate) {
+    return null;
+  }
+
+  return createGridEventDraft(
+    event.isAllDay
+      ? {
+          kind: "allDay",
+          start: new Date(event.startDate),
+          end: new Date(event.endDate),
+        }
+      : timedGridSchedule(new Date(event.startDate), new Date(event.endDate)),
+    event._id ? (event._id as EventId) : undefined,
+    event.calendarId ?? null,
+  );
 }
 
 export function editGridEventDraft(
@@ -220,6 +247,19 @@ function legacyRecurrenceFromDraft(
   // mirrors useRecurrence.ts's toggleRecurrence-off shape so `hasRecurrence`
   // reads false rather than falling through to a stale truthy rule.
   return { rule: null as unknown as string[] };
+}
+
+export function getGridDraftId(draft: GridEventDraft): string | undefined {
+  return draft.kind === "edit" ? draft.source.id : draft.clientId;
+}
+
+export function gridEventDraftToGridEvent(draft: GridEventDraft): GridEvent {
+  const schemaEvent = gridEventDraftToSchemaEvent(draft);
+  return assembleGridEvent({
+    ...schemaEvent,
+    startDate: schemaEvent.startDate!,
+    endDate: schemaEvent.endDate!,
+  });
 }
 
 // TODO(packet-03-phase-3c): remove once remaining grid consumers no longer

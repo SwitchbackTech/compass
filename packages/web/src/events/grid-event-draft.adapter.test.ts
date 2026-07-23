@@ -8,6 +8,7 @@ import {
   createGridEventDraft,
   duplicateGridEventDraft,
   editGridEventDraft,
+  gridEventDraftToGridEvent,
   gridEventDraftToSchemaEvent,
   parseGridEventDraft,
   patchGridDraftRecurrence,
@@ -130,6 +131,19 @@ test("duplicate defaults to the source event's calendar when it's still writable
     source: null,
     values: { calendarId: timedEvent.calendarId, title: "Focus" },
   });
+});
+
+test("projects a grid draft into a grid event", () => {
+  const draft = createGridEventDraft({
+    kind: "allDay",
+    start: new Date("2026-05-20"),
+    end: new Date("2026-05-21"),
+  });
+  const gridEvent = gridEventDraftToGridEvent(draft);
+
+  expect(gridEvent.startDate).toBe("2026-05-20");
+  expect(gridEvent.endDate).toBe("2026-05-21");
+  expect(gridEvent.isAllDay).toBe(true);
 });
 
 test("duplicate falls back to no calendar (later defaulted) when the source calendar is read-only", () => {

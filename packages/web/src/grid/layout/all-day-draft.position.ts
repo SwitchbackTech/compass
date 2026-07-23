@@ -1,28 +1,29 @@
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import {
-  assembleGridEvent,
-  hasEventDates,
-} from "@web/common/utils/event/event.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import {
+  getGridDraftId,
+  gridEventDraftToGridEvent,
+} from "@web/events/grid-event-draft.adapter";
 
 export const positionAllDayDraftEvent = ({
   draft,
   events,
 }: {
-  draft: CompassEvent | null;
+  draft: GridEventDraft | null;
   events: GridEvent[];
 }): {
   activeDraftEvent: GridEvent | null;
   events: GridEvent[];
 } => {
-  if (!draft?.isAllDay || !hasEventDates(draft)) {
+  if (!draft || draft.values.schedule.kind !== "allDay") {
     return { activeDraftEvent: null, events };
   }
 
-  const draftEvent = assembleGridEvent(draft);
-  const existingIndex = draftEvent._id
-    ? events.findIndex((event) => event._id === draftEvent._id)
+  const draftEvent = gridEventDraftToGridEvent(draft);
+  const draftId = getGridDraftId(draft);
+  const existingIndex = draftId
+    ? events.findIndex((event) => event._id === draftId)
     : -1;
   const eventForRows =
     existingIndex === -1

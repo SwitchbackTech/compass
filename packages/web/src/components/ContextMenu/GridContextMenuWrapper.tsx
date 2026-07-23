@@ -2,16 +2,15 @@ import { FloatingPortal, useFloating } from "@floating-ui/react";
 import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useState } from "react";
+import { getCalendarEventIdFromElement } from "@web/common/utils/event/event.util";
 import {
-  assembleGridEvent,
-  getCalendarEventIdFromElement,
-  hasEventDates,
-} from "@web/common/utils/event/event.util";
-import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
+  editGridEventDraft,
+  gridEventDraftToGridEvent,
+} from "@web/events/grid-event-draft.adapter";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
 import {
   draftActions,
-  selectDraft,
+  selectGridDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { ContextMenu } from "./ContextMenu";
@@ -29,8 +28,10 @@ export const ContextMenuWrapper = ({
   children: React.ReactNode;
 }) => {
   const queryClient = useQueryClient();
-
-  const draftEvent = useDraftStore(selectDraft);
+  const gridDraft = useDraftStore(selectGridDraft);
+  const contextMenuEvent = gridDraft
+    ? gridEventDraftToGridEvent(gridDraft)
+    : undefined;
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -99,11 +100,7 @@ export const ContextMenuWrapper = ({
         <FloatingPortal>
           <ContextMenu
             ref={refs.setFloating}
-            event={
-              draftEvent && hasEventDates(draftEvent)
-                ? assembleGridEvent(draftEvent)
-                : undefined
-            }
+            event={contextMenuEvent}
             style={contextMenuStyle(floatingStyles)}
             context={context}
             close={closeMenu}

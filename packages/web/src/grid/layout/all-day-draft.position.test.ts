@@ -1,6 +1,8 @@
 import { Origin } from "@core/constants/core.constants";
+import { EventIdSchema } from "@core/types/domain-primitives";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { positionAllDayDraftEvent } from "./all-day-draft.position";
 import { describe, expect, it } from "bun:test";
 
@@ -18,9 +20,10 @@ const createAllDayEvent = (overrides: Partial<GridEvent> = {}): GridEvent => ({
 
 describe("positionAllDayDraftEvent", () => {
   it("places a new all-day draft after existing same-day all-day events", () => {
-    const draft = createAllDayEvent({
-      _id: undefined,
-      title: "Draft",
+    const draft = createGridEventDraft({
+      kind: "allDay",
+      start: new Date("2026-05-25"),
+      end: new Date("2026-05-26"),
     });
 
     const { activeDraftEvent } = positionAllDayDraftEvent({
@@ -41,10 +44,16 @@ describe("positionAllDayDraftEvent", () => {
   });
 
   it("replaces an existing all-day event draft before assigning rows", () => {
-    const draft = createAllDayEvent({
-      _id: "second",
-      title: "Editing second",
-    });
+    const draftId = EventIdSchema.parse("0123456789abcdef01234567");
+    const draft = createGridEventDraft(
+      {
+        kind: "allDay",
+        start: new Date("2026-05-25"),
+        end: new Date("2026-05-26"),
+      },
+      draftId,
+    );
+    draft.values.title = "Editing second";
 
     const { activeDraftEvent } = positionAllDayDraftEvent({
       draft,
@@ -54,7 +63,7 @@ describe("positionAllDayDraftEvent", () => {
           title: "First",
         }),
         createAllDayEvent({
-          _id: "second",
+          _id: draftId,
           title: "Second",
         }),
       ],

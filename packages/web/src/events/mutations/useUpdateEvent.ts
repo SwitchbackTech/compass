@@ -27,21 +27,13 @@ import {
   removeEventFromQueries,
 } from "@web/events/queries/event.query.cache";
 import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
-import { draftActions } from "@web/events/stores/draft.store";
 
-// The persisted-write half builds a GridEventDraft from the cached strict
-// `Event` plus the incoming GridEvent's changed fields (schedule/
-// title/description), matching
+// Builds a GridEventDraft from the cached strict `Event` plus the incoming
+// GridEvent's changed fields (schedule/title/description), matching
 // WeekInteractionCoordinator.commitStrictSavedMutation (#2029), instead of
 // hand-rolling a ReplaceEventInput via zod. Recurrence always stays
 // "preserve" here — this hook only ever moves/resizes an existing event,
 // never edits its recurrence rule.
-//
-// draftActions.setEvent still writes into the draft store's legacy
-// `event: CompassEvent` projection: Day's grid rendering layers read the
-// in-progress drag/resize position via `selectDraft`, and GridEventDraft has
-// no field for that live pixel geometry (packet-03-phase-3c's documented
-// out-of-scope local drag-geometry state).
 export function useUpdateEvent(dependencies: EventMutationDependencies = {}) {
   const queryClient = useQueryClient();
   const { replace } = useEventMutations(dependencies);
@@ -58,8 +50,6 @@ export function useUpdateEvent(dependencies: EventMutationDependencies = {}) {
       const { event, shouldRemove, applyTo } = payload;
 
       if (!event._id) return;
-
-      draftActions.setEvent(event);
 
       if (!saveImmediate) return;
 

@@ -4,6 +4,7 @@ import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { type GridScheduleDraft } from "@web/events/event-draft.types";
 import {
+  createGridEventDraftFromGridEvent,
   editGridEventDraft,
   parseGridEventDraft,
   replaceGridDraftSchedule,
@@ -77,10 +78,9 @@ export const WeekInteractionCoordinator: FC<Props> = ({
 
   const openClickedGridEvent = (event: GridEvent) => {
     const sourceEvent = event._id ? eventsById.get(event._id) : undefined;
-    const draft = sourceEvent ? editGridEventDraft(sourceEvent) : null;
+    const draft = createGridEventDraftFromGridEvent(event, sourceEvent);
 
     if (!draft) {
-      draftActions.startGridClick(event);
       return;
     }
 

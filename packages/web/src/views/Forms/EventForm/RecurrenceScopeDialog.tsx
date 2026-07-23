@@ -8,8 +8,8 @@ import {
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
+import { useGridDraftSchemaOverlay } from "@web/events/hooks/useGridDraftSchemaOverlay";
 import { type RecurrenceScopePendingAction } from "@web/events/recurrence/useRecurrenceScopeConfirmation";
-import { selectDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 const UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
@@ -95,7 +95,7 @@ export function RecurringEventUpdateScopeDialogContent({
   setRecurrenceUpdateScopeDialogOpen,
   title = "Apply changes to",
 }: RecurringEventUpdateScopeDialogContentProps) {
-  const draftFromStore = useDraftStore(selectDraft);
+  const draftFromStore = useGridDraftSchemaOverlay();
   const currentDraft = draft ?? draftFromStore;
   const recurrenceChanged =
     recurrenceChangedOverride ??

@@ -234,8 +234,7 @@ export const draftActions = {
     ),
 
   // Writes the canonical draft directly, keeping the legacy `event`
-  // projection in sync for the remaining consumers (Day's grid-layer
-  // rendering) that still read it via `selectDraft`.
+  // projection in sync for Week draft actions that still read `selectDraft`.
   setGridDraft: (draft: GridEventDraft | null) =>
     useDraftStore.setState(
       (state) => ({
@@ -285,7 +284,12 @@ export const selectDraftActivity = (state: State_DraftEvent) =>
 export const selectDraftCategory = (state: State_DraftEvent) =>
   state.status?.eventType;
 
-export const selectDraftId = (state: State_DraftEvent) => state.event?._id;
+export const selectDraftId = (state: State_DraftEvent) =>
+  state.gridDraft
+    ? state.gridDraft.kind === "edit"
+      ? state.gridDraft.source.id
+      : state.gridDraft.clientId
+    : state.event?._id;
 
 export const selectDraftStatus = (state: State_DraftEvent) => state.status;
 
@@ -299,4 +303,4 @@ export const selectIsDrafting = (state: State_DraftEvent) =>
   state.status?.isDrafting;
 
 export const selectIsDraftingExisting = (state: State_DraftEvent) =>
-  state.event?._id !== undefined;
+  state.gridDraft?.kind === "edit" || state.event?._id !== undefined;
