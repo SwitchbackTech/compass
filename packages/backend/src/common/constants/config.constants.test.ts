@@ -1,6 +1,23 @@
-import { parseConfigFromEnv } from "@backend/common/constants/config.constants";
+import { type CompassConfig } from "@core/config/compass.config";
+import {
+  parseConfigFromEnv,
+  parseRawConfig,
+} from "@backend/common/constants/config.constants";
 import { isGoogleConfigured } from "@backend/common/constants/config.util";
 import { describe, expect, it } from "bun:test";
+
+// A minimal valid compass config file, mirroring the required fields
+// parseRawConfig reads. Tests spread a `sync` section onto it.
+const baseRawConfig: CompassConfig = {
+  web: { url: "http://localhost:9080" },
+  backend: {
+    apiUrl: "http://localhost:3000/api",
+    compassToken: "compass-token",
+  },
+  runtime: { nodeEnv: "development", timezone: "Etc/UTC" },
+  mongo: { uri: "mongodb://localhost:27017/compass" },
+  supertokens: { uri: "http://localhost:3567", key: "supertokens-key" },
+};
 
 const validEnv = {
   BASEURL: "http://localhost:3000/api",
@@ -137,5 +154,88 @@ describe("config.constants", () => {
     ).toThrow(
       "Google Calendar webhook notifications require TOKEN_GCAL_NOTIFICATION",
     );
+  });
+
+  it("leaves Sync delegation unconfigured by default", () => {
+    const env = parseConfigFromEnv(validEnv);
+
+    expect(env.SYNC_SERVICE_URL).toBeUndefined();
+    expect(env.SYNC_INTERNAL_AUTH_TOKEN).toBeUndefined();
+  });
+
+  it("parses a fully configured Sync delegation", () => {
+    const env = parseConfigFromEnv({
+      ...validEnv,
+      SYNC_SERVICE_URL: "http://localhost:3010",
+      SYNC_INTERNAL_AUTH_TOKEN: "sync-internal-secret",
+    });
+
+    expect(env.SYNC_SERVICE_URL).toBe("http://localhost:3010");
+    expect(env.SYNC_INTERNAL_AUTH_TOKEN).toBe("sync-internal-secret");
+  });
+
+  it("rejects a Sync service URL without the internal auth token", () => {
+    expect(() =>
+      parseConfigFromEnv({
+        ...validEnv,
+        SYNC_SERVICE_URL: "http://localhost:3010",
+      }),
+    ).toThrow(
+      "Sync delegation requires both SYNC_SERVICE_URL and SYNC_INTERNAL_AUTH_TOKEN",
+    );
+  });
+
+  it("rejects a Sync auth token without the service URL", () => {
+    expect(() =>
+      parseConfigFromEnv({
+        ...validEnv,
+        SYNC_INTERNAL_AUTH_TOKEN: "sync-internal-secret",
+      }),
+    ).toThrow(
+      "Sync delegation requires both SYNC_SERVICE_URL and SYNC_INTERNAL_AUTH_TOKEN",
+    );
+  });
+
+  it("treats blank Sync env vars as unconfigured rather than failing", () => {
+    const env = parseConfigFromEnv({
+      ...validEnv,
+      SYNC_SERVICE_URL: "",
+      SYNC_INTERNAL_AUTH_TOKEN: "",
+    });
+
+    expect(env.SYNC_SERVICE_URL).toBeUndefined();
+    expect(env.SYNC_INTERNAL_AUTH_TOKEN).toBeUndefined();
+  });
+
+  it("does not enable Sync delegation for a standalone Sync deployment without a serviceUrl", () => {
+    // A config running the standalone Sync service always sets internalAuthToken
+    // (it is required in the sync section) but need not set serviceUrl. That must
+    // NOT trip the backend's both-or-neither check and refuse to start.
+    const env = parseRawConfig({
+      ...baseRawConfig,
+      sync: {
+        mongoUri: "mongodb://localhost:27017/compass_sync",
+        internalAuthToken: "sync-internal-secret",
+        callbackBaseUrl: "http://localhost:3010",
+      },
+    });
+
+    expect(env.SYNC_SERVICE_URL).toBeUndefined();
+    expect(env.SYNC_INTERNAL_AUTH_TOKEN).toBeUndefined();
+  });
+
+  it("enables delegation when the config sets a Sync serviceUrl", () => {
+    const env = parseRawConfig({
+      ...baseRawConfig,
+      sync: {
+        mongoUri: "mongodb://localhost:27017/compass_sync",
+        internalAuthToken: "sync-internal-secret",
+        callbackBaseUrl: "http://localhost:3010",
+        serviceUrl: "http://localhost:3010",
+      },
+    });
+
+    expect(env.SYNC_SERVICE_URL).toBe("http://localhost:3010");
+    expect(env.SYNC_INTERNAL_AUTH_TOKEN).toBe("sync-internal-secret");
   });
 });

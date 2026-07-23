@@ -35,6 +35,11 @@ const ConfigSchema = z
     SUPERTOKENS_KEY: z.string().nonempty(),
     TOKEN_GCAL_NOTIFICATION: z.string().default(""),
     TOKEN_COMPASS_SYNC: z.string().nonempty(),
+    // Base URL + shared secret for the Sync service's internal API. Both present
+    // (delegation configured) or both absent (legacy-only deployment); a partial
+    // configuration is a mistake.
+    SYNC_SERVICE_URL: z.string().url().optional(),
+    SYNC_INTERNAL_AUTH_TOKEN: z.string().nonempty().optional(),
     POSTHOG_KEY: z.string().nonempty().optional(),
     POSTHOG_HOST: z.string().url().optional(),
   })
@@ -73,6 +78,22 @@ const ConfigSchema = z
         path: ["TOKEN_GCAL_NOTIFICATION"],
       });
     }
+
+    // Sync delegation needs both the service URL and the shared secret; one
+    // without the other cannot make an authenticated call, so fail loudly.
+    if (
+      Boolean(env.SYNC_SERVICE_URL) !== Boolean(env.SYNC_INTERNAL_AUTH_TOKEN)
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        fatal: true,
+        message:
+          "Sync delegation requires both SYNC_SERVICE_URL and SYNC_INTERNAL_AUTH_TOKEN, or neither",
+        path: env.SYNC_SERVICE_URL
+          ? ["SYNC_INTERNAL_AUTH_TOKEN"]
+          : ["SYNC_SERVICE_URL"],
+      });
+    }
   });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -84,7 +105,7 @@ const toStr = (
 const nonEmpty = (value: string | null | undefined): string | undefined =>
   value?.trim() ? value : undefined;
 
-function parseRawConfig(config: CompassConfig): Config {
+export function parseRawConfig(config: CompassConfig): Config {
   const nodeEnv = config.runtime.nodeEnv as NodeEnv;
 
   return ConfigSchema.parse({
@@ -108,6 +129,16 @@ function parseRawConfig(config: CompassConfig): Config {
     SUPERTOKENS_KEY: config.supertokens.key,
     TOKEN_GCAL_NOTIFICATION: nonEmpty(config.google?.notificationToken) ?? "",
     TOKEN_COMPASS_SYNC: config.backend.compassToken,
+    // `serviceUrl` is the sole delegation signal: a deployment running the
+    // standalone Sync service always sets `internalAuthToken`, but that alone
+    // must NOT enable backend delegation (it would trip the both-or-neither
+    // check and refuse to start). Only inherit the shared secret once a
+    // serviceUrl is present, so the backend targets the same secret Sync
+    // verifies with.
+    SYNC_SERVICE_URL: nonEmpty(config.sync?.serviceUrl),
+    SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(config.sync?.serviceUrl)
+      ? nonEmpty(config.sync?.internalAuthToken)
+      : undefined,
     POSTHOG_KEY: nonEmpty(config.posthog?.key),
     POSTHOG_HOST: nonEmpty(config.posthog?.host) || DEFAULT_POSTHOG_HOST,
   });
@@ -137,6 +168,11 @@ export function parseConfigFromEnv(
     SUPERTOKENS_KEY: rawEnv["SUPERTOKENS_KEY"],
     TOKEN_GCAL_NOTIFICATION: rawEnv["TOKEN_GCAL_NOTIFICATION"],
     TOKEN_COMPASS_SYNC: rawEnv["TOKEN_COMPASS_SYNC"],
+    // nonEmpty so a var set to "" reads as unset (not-configured) rather than
+    // failing url()/nonempty(); mirrors the config-file path and keeps the
+    // both-or-neither check honest.
+    SYNC_SERVICE_URL: nonEmpty(rawEnv["SYNC_SERVICE_URL"]),
+    SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(rawEnv["SYNC_INTERNAL_AUTH_TOKEN"]),
     POSTHOG_KEY: rawEnv["POSTHOG_KEY"],
     POSTHOG_HOST: rawEnv["POSTHOG_HOST"] || DEFAULT_POSTHOG_HOST,
   });

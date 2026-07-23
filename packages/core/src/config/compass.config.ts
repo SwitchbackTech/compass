@@ -72,6 +72,10 @@ const CompassConfigSchema = z
         port: z.union([z.string(), z.number()]).optional(),
         mongoUri: z.string(),
         internalAuthToken: z.string(),
+        // The base URL the backend uses to reach the Sync service (e.g.
+        // http://localhost:3010 in dev, an internal service URL in prod). Optional
+        // so a deployment that does not delegate to Sync omits it.
+        serviceUrl: z.string().optional(),
         callbackBaseUrl: z.string(),
         // Where the OAuth callback redirects the browser after connecting;
         // defaults to callbackBaseUrl when omitted.
