@@ -39,7 +39,7 @@ import {
 } from "@backend/common/services/gcal/gcal.test-context";
 import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 import { getChannelExpiration } from "@backend/sync/services/watch/google-watch-timing";
-import { beforeEach, mock, spyOn } from "bun:test";
+import { afterAll, afterEach, beforeEach, mock, spyOn } from "bun:test";
 import { randomUUID } from "node:crypto";
 
 const fixturesByFile = new Map<
@@ -166,34 +166,55 @@ function registerTestLoggerFactory(): void {
   registerLoggerFactory(factory);
 }
 
-export function mockEnv(env: Partial<typeof CONFIG>) {
-  const entries = Object.entries(env) as Array<
-    [keyof typeof env, (typeof env)[keyof typeof env]]
-  >;
+const configBaseline = Object.fromEntries(
+  Object.entries(CONFIG).map(([key, value]) => [key, value]),
+) as typeof CONFIG;
 
-  const replacements: Array<{ restore: () => void }> = [];
+let fileScopeEnv: Partial<typeof CONFIG> = {};
+let testScopeEnv: Partial<typeof CONFIG> = {};
+let insideTest = false;
 
-  for (const [key, value] of entries) {
-    const descriptor = Object.getOwnPropertyDescriptor(CONFIG, key);
+function restoreConfigBaseline(): void {
+  for (const [key, value] of Object.entries(configBaseline)) {
     Object.defineProperty(CONFIG, key, {
       configurable: true,
       enumerable: true,
       value,
     });
-    replacements.push({
-      restore: () => {
-        if (descriptor) {
-          Object.defineProperty(CONFIG, key, descriptor);
-        } else {
-          delete (CONFIG as Record<string, unknown>)[key as string];
-        }
-      },
+  }
+}
+
+function applyConfigOverrides(env: Partial<typeof CONFIG>): void {
+  for (const [key, value] of Object.entries(env)) {
+    Object.defineProperty(CONFIG, key, {
+      configurable: true,
+      enumerable: true,
+      value,
     });
   }
+}
+
+function applyMergedConfigOverrides(): void {
+  restoreConfigBaseline();
+  applyConfigOverrides({ ...fileScopeEnv, ...testScopeEnv });
+}
+
+export function mockEnv(env: Partial<typeof CONFIG>) {
+  const isTestScope = insideTest;
+  if (isTestScope) {
+    testScopeEnv = { ...testScopeEnv, ...env };
+  } else {
+    fileScopeEnv = { ...fileScopeEnv, ...env };
+  }
+  applyConfigOverrides(env);
 
   return {
     [Symbol.dispose]: () => {
-      for (const r of replacements) r.restore();
+      const scope = isTestScope ? testScopeEnv : fileScopeEnv;
+      for (const key of Object.keys(env)) {
+        delete scope[key as keyof typeof CONFIG];
+      }
+      applyMergedConfigOverrides();
     },
   };
 }
@@ -242,6 +263,20 @@ export function mockNodeModules() {
 
   beforeEach(() => {
     setupBackendTestSeams();
+    insideTest = true;
+    applyMergedConfigOverrides();
+  });
+
+  afterEach(() => {
+    insideTest = false;
+    testScopeEnv = {};
+    applyMergedConfigOverrides();
+  });
+
+  afterAll(() => {
+    fileScopeEnv = {};
+    testScopeEnv = {};
+    restoreConfigBaseline();
   });
 }
 
