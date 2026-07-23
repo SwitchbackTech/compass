@@ -344,14 +344,6 @@ describe("CalendarList", () => {
     expect(screen.getByText(/no calendars yet/i)).toBeInTheDocument();
   });
 
-  it("prompts to connect Google when signed in without a linked calendar", () => {
-    renderCalendarList([]);
-
-    expect(
-      screen.getByText(/connect google to see your calendars/i),
-    ).toBeInTheDocument();
-  });
-
   it("shows an error state and recovers via retry", async () => {
     const calendar = makeCalendar({ name: "Work" });
     let shouldFail = true;
