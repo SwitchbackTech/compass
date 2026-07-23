@@ -82,7 +82,9 @@ export namespace MapEvent {
 
   export const toGcal = (
     event: CompassEvent,
-    { status = "confirmed" }: Pick<gSchema$Event, "status"> = {},
+    { status = "confirmed" }: Pick<gSchema$Event, "status"> = {
+      status: "confirmed",
+    },
   ): gSchema$Event => {
     const timeZone = dayjs.tz.guess();
     const dateKey = isAllDay(event) ? "date" : "dateTime";
