@@ -1,73 +1,101 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useCallback, useState } from "react";
-import { Origin } from "@core/constants/core.constants";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
-import { type GridEvent } from "@web/common/types/web.event.types";
-import { assembleGridEvent } from "@web/common/utils/event/event.util";
-import { createRecurrenceSection } from "./RecurrenceSection";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useState,
+} from "react";
+import { EventScheduleSchema } from "@core/types/event.contracts";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import {
+  createGridEventDraft,
+  editGridEventDraft,
+} from "@web/events/grid-event-draft.adapter";
+import { createRecurrenceSection } from "./createRecurrenceSection";
 import { describe, expect, it, mock } from "bun:test";
 
-const baseEvent = (): GridEvent =>
-  assembleGridEvent({
-    _id: "event-1",
-    title: "Test Event",
-    description: "",
-    startDate: "2026-04-24T14:00:00.000Z",
-    endDate: "2026-04-24T15:00:00.000Z",
-    origin: Origin.COMPASS,
-    user: "user-1",
+const SCHEDULE = EventScheduleSchema.parse({
+  kind: "timed",
+  start: "2026-04-24T14:00:00.000Z",
+  end: "2026-04-24T15:00:00.000Z",
+  timeZone: "UTC",
+});
+
+const baseDraft = () =>
+  createGridEventDraft({
+    kind: "timed",
+    start: new Date("2026-04-24T14:00:00.000Z"),
+    end: new Date("2026-04-24T15:00:00.000Z"),
+    timeZone: "UTC",
   });
 
-const recurringEvent = (): GridEvent =>
-  assembleGridEvent({
-    _id: "event-2",
-    title: "Standup",
-    description: "",
-    startDate: "2026-04-27T14:00:00.000Z",
-    endDate: "2026-04-27T15:00:00.000Z",
-    origin: Origin.COMPASS,
-    user: "user-1",
-    recurrence: { rule: ["RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE"] },
+const recurringDraft = () => {
+  const source = createMockEvent({
+    schedule: SCHEDULE,
+    recurrence: {
+      kind: "series",
+      rules: ["RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE"],
+    },
   });
+  const draft = editGridEventDraft(source);
+  if (!draft) throw new Error("expected edit draft");
+
+  return {
+    ...draft,
+    values: {
+      ...draft.values,
+      recurrence: {
+        kind: "series" as const,
+        rules: ["RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE"],
+      },
+    },
+  } as GridEventDraft;
+};
 
 function renderRecurrenceSection({
   authenticated,
   isBackendUnavailable = false,
-  initialEvent = baseEvent(),
+  initialDraft = baseDraft(),
 }: {
   authenticated: boolean;
   isBackendUnavailable?: boolean;
-  initialEvent?: GridEvent;
+  initialDraft?: GridEventDraft;
 }) {
   const setAuthenticated = mock();
-  const setEventSpy = mock();
+  const setDraftSpy = mock();
   const RecurrenceSection = createRecurrenceSection({
     isBackendUnavailable: () => isBackendUnavailable,
     useSession: () => ({ authenticated, setAuthenticated }),
   });
 
   function Harness() {
-    const [event, setEvent] = useState<CompassEvent | null>(initialEvent);
-    const handleSetEvent = useCallback<typeof setEvent>((nextEvent) => {
-      setEventSpy(nextEvent);
-      setEvent(nextEvent);
+    const [draft, setDraft] = useState<GridEventDraft>(initialDraft);
+    const handleSetDraft = useCallback<
+      Dispatch<SetStateAction<GridEventDraft | null>>
+    >((nextDraft) => {
+      setDraftSpy(nextDraft);
+      setDraft((current) => {
+        const resolved =
+          typeof nextDraft === "function" ? nextDraft(current) : nextDraft;
+        if (!resolved) throw new Error("expected draft");
+        return resolved;
+      });
     }, []);
 
-    if (!event) return null;
-
-    return <RecurrenceSection event={event} setEvent={handleSetEvent} />;
+    return <RecurrenceSection draft={draft} setDraft={handleSetDraft} />;
   }
 
   const view = render(<Harness />);
 
-  return { ...view, setEventSpy };
+  return { ...view, setDraftSpy };
 }
 
 describe("RecurrenceSection", () => {
   it("keeps recurrence settings hidden for local users", async () => {
     const user = userEvent.setup();
-    const { setEventSpy } = renderRecurrenceSection({ authenticated: false });
+    const { setDraftSpy } = renderRecurrenceSection({ authenticated: false });
 
     const repeatButton = screen.getByRole("button", { name: /repeat/i });
 
@@ -90,7 +118,7 @@ describe("RecurrenceSection", () => {
 
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
-    expect(setEventSpy).not.toHaveBeenCalled();
+    expect(setDraftSpy).not.toHaveBeenCalled();
   });
 
   it("shows the sign-in requirement before sign-in when the backend is unavailable", async () => {
@@ -121,7 +149,7 @@ describe("RecurrenceSection", () => {
 
   it("keeps recurrence settings hidden with the sign-in message when a signed-in user's backend is unavailable", async () => {
     const user = userEvent.setup();
-    const { setEventSpy } = renderRecurrenceSection({
+    const { setDraftSpy } = renderRecurrenceSection({
       authenticated: true,
       isBackendUnavailable: true,
     });
@@ -148,7 +176,7 @@ describe("RecurrenceSection", () => {
 
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
-    expect(setEventSpy).not.toHaveBeenCalled();
+    expect(setDraftSpy).not.toHaveBeenCalled();
   });
 
   it("shows recurrence settings after signed-in users enable repeat", async () => {
@@ -170,19 +198,15 @@ describe("RecurrenceSection", () => {
   it("shows an existing recurring event's controls immediately, with the stored weekdays filled in", () => {
     const { container } = renderRecurrenceSection({
       authenticated: true,
-      initialEvent: recurringEvent(),
+      initialDraft: recurringDraft(),
     });
 
-    // No click on the Repeat toggle - an event that already has a rule must
-    // render its controls expanded from the first render.
     expect(screen.getByText("Every")).toBeInTheDocument();
     expect(screen.getByText("Ends on:")).toBeInTheDocument();
 
     const selected = [...container.querySelectorAll("[data-selected]")].map(
       (button) => button.getAttribute("data-selected"),
     );
-    // WEEKDAYS order is [sun, mon, tue, wed, thu, fri, sat]; the stored rule
-    // is BYDAY=MO,TU,WE.
     expect(selected).toEqual([
       "false",
       "true",

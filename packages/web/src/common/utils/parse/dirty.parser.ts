@@ -1,6 +1,10 @@
+import fastDeepEqual from "fast-deep-equal/react";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
+import {
+  editGridEventDraft,
+  resolveDraftRecurrenceRules,
+} from "@web/events/grid-event-draft.adapter";
 
 /**
  * Parser for determining if an event has been modified (is dirty)
@@ -55,6 +59,31 @@ export class DirtyParser {
       DirtyParser.isDateDifferent(curr, orig) ||
       DirtyParser.isRuleDifferent(curr, orig)
     );
+  }
+
+  public static gridDraftRecurrenceChanged(
+    current: GridEventDraft,
+    original: GridEventDraft,
+    seriesRules?: readonly string[],
+  ): boolean {
+    if (
+      current.values.schedule.start.getTime() !==
+      original.values.schedule.start.getTime()
+    ) {
+      return true;
+    }
+
+    if (
+      current.values.schedule.end.getTime() !==
+      original.values.schedule.end.getTime()
+    ) {
+      return true;
+    }
+
+    const currentRules = resolveDraftRecurrenceRules(current, seriesRules);
+    const originalRules = resolveDraftRecurrenceRules(original, seriesRules);
+
+    return !fastDeepEqual(currentRules, originalRules);
   }
 
   /**

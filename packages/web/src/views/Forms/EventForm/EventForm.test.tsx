@@ -53,7 +53,8 @@ mock.module(
 );
 
 interface CapturedRecurrenceSectionProps {
-  event: { recurrence?: { rule?: unknown; eventId?: unknown } };
+  draft: { values: { recurrence: { kind: string; rules?: string[] } } };
+  seriesRules?: readonly string[];
 }
 
 let capturedRecurrenceSectionProps: CapturedRecurrenceSectionProps | null =
@@ -825,10 +826,12 @@ describe("EventForm", () => {
     // passes once EventForm resolves the series base and threads its rules
     // through, which is what lets RecurrenceSection auto-expand with the
     // real rule instead of reading the event as non-recurring.
-    expect(capturedRecurrenceSectionProps?.event.recurrence).toMatchObject({
-      eventId: seriesId,
-      rule: seriesRules,
+    expect(
+      capturedRecurrenceSectionProps?.draft.values.recurrence,
+    ).toMatchObject({
+      kind: "preserve",
     });
+    expect(capturedRecurrenceSectionProps?.seriesRules).toEqual(seriesRules);
 
     const titleField = screen.getByPlaceholderText("Title");
     await user.clear(titleField);
