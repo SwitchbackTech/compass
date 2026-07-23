@@ -34,8 +34,8 @@ export const Grid: FC<Props> = ({
   // Subscribes to the same cache entry the event layers read, so this reports
   // their load without issuing a second fetch.
   const { isPending: isLoadingEvents } = useWeekEventsQueryStatus({
-    startOfView: weekProps.component.startOfView,
-    endOfView: weekProps.component.endOfView,
+    startOfView: weekProps.query.startOfView,
+    endOfView: weekProps.query.endOfView,
   });
 
   useDragEdgeNavigation(mainGridRef, weekProps);

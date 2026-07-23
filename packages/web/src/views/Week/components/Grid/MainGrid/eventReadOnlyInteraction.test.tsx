@@ -102,6 +102,10 @@ const createWeekProps = () => ({
       startOfView.add(index, "day"),
     ),
   },
+  query: {
+    endOfView: startOfView.add(6, "day").endOf("day"),
+    startOfView,
+  },
   state: { goToDate: mock() },
   util: {
     decrementWeek: mock(),
@@ -194,9 +198,9 @@ const renderAllDayEvents = () =>
         }
       >
         <AllDayEvents
-          endOfView={startOfView.endOf("week")}
           measurements={measurements}
-          startOfView={startOfView}
+          queryEndOfView={startOfView.add(6, "day").endOf("day")}
+          queryStartOfView={startOfView}
           weekDays={weekDaysInView}
         />
       </DraftContext.Provider>

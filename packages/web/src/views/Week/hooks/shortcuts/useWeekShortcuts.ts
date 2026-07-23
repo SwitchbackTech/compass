@@ -52,6 +52,8 @@ import {
 
 export interface ShortcutProps {
   isCurrentWeek: boolean;
+  queryEndOfView: Dayjs;
+  queryStartOfView: Dayjs;
   startOfView: Dayjs;
   endOfView: Dayjs;
   weekDays: Dayjs[];
@@ -67,6 +69,8 @@ const DRAFT_MOVEMENT_HOTKEY_OPTIONS = {
 
 export const useWeekShortcuts = ({
   isCurrentWeek,
+  queryEndOfView,
+  queryStartOfView,
   startOfView,
   endOfView,
   weekDays,
@@ -86,8 +90,8 @@ export const useWeekShortcuts = ({
 
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const { allDayEvents, entities, timedEvents } = useWeekEventViewModel({
-    startOfView,
-    endOfView,
+    startOfView: queryStartOfView,
+    endOfView: queryEndOfView,
   });
   const allDayEventsRef = useRef(allDayEvents);
   const timedEventsRef = useRef(timedEvents);

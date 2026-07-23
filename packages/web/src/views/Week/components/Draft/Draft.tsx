@@ -26,8 +26,8 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   useGridMouseMove();
 
   const { allDayEvents, timedEvents } = useWeekEventViewModel({
-    startOfView: weekProps.component.startOfView,
-    endOfView: weekProps.component.endOfView,
+    startOfView: weekProps.query.startOfView,
+    endOfView: weekProps.query.endOfView,
   });
   const { state } = useDraftContext();
   const { draft } = state;

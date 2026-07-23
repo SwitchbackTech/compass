@@ -1,6 +1,10 @@
 import { waitFor } from "@testing-library/react";
 import { type EventId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { normalizeEventList } from "@web/events/queries/event.query.normalize";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const fetchWeekEvents = mock(async () => ({
@@ -88,5 +92,42 @@ describe("useWeekEventsQuery", () => {
     await waitFor(() => {
       expect(result.result.current.error?.message).toBe("boom");
     });
+  });
+
+  it("serves overlapping placeholder data from cache while fetching a shifted range", async () => {
+    const queryClient = createCompassQueryClient();
+    const start = dayjs.utc("2025-11-10T00:00:00Z");
+    const end = start.add(6, "day").endOf("day");
+    const event = createMockEvent({
+      schedule: {
+        kind: "timed",
+        start: "2025-11-11T09:00:00",
+        end: "2025-11-11T10:00:00",
+        timeZone: "UTC",
+      },
+    });
+    queryClient.setQueryData(
+      eventQueryKeys.week({
+        source: "local",
+        start: toUTCOffset(start),
+        end: toUTCOffset(end),
+      }),
+      normalizeEventList([event]),
+    );
+
+    const shiftedStart = start.add(1, "day");
+    const shiftedEnd = shiftedStart.add(6, "day").endOf("day");
+
+    const result = renderHook(
+      () =>
+        useWeekEventsQuery({
+          startOfView: shiftedStart,
+          endOfView: shiftedEnd,
+        }),
+      { queryClient },
+    );
+
+    expect(result.result.current.data?.ids).toEqual([event.id]);
+    expect(result.result.current.isPlaceholderData).toBe(true);
   });
 });

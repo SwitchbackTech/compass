@@ -40,7 +40,7 @@ export const AllDayRow: FC<Props> = ({
   measurements,
   weekProps,
 }) => {
-  const { endOfView, startOfView } = weekProps.component;
+  const { endOfView, startOfView } = weekProps.query;
   const { rowCount: rowsCount } = useWeekEventViewModel({
     startOfView,
     endOfView,
@@ -156,16 +156,16 @@ const useAllDayEventsLayer = (
   useMemo(
     () => (
       <AllDayEvents
-        endOfView={weekProps.component.endOfView}
         measurements={measurements}
-        startOfView={weekProps.component.startOfView}
+        queryEndOfView={weekProps.query.endOfView}
+        queryStartOfView={weekProps.query.startOfView}
         weekDays={weekProps.component.weekDays}
       />
     ),
     [
       measurements,
-      weekProps.component.endOfView,
-      weekProps.component.startOfView,
       weekProps.component.weekDays,
+      weekProps.query.endOfView,
+      weekProps.query.startOfView,
     ],
   );

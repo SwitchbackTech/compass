@@ -171,6 +171,10 @@ const createWeekProps = () => ({
       startOfView.add(index, "day"),
     ),
   },
+  query: {
+    endOfView: startOfView.add(6, "day").endOf("day"),
+    startOfView,
+  },
   state: { goToDate: mock() },
   util: {
     decrementWeek: mock(),
@@ -587,9 +591,9 @@ describe("Week calendar accessibility", () => {
     render(
       <Provider>
         <AllDayEvents
-          endOfView={startOfView.endOf("week")}
           measurements={measurements}
-          startOfView={startOfView}
+          queryEndOfView={startOfView.add(6, "day").endOf("day")}
+          queryStartOfView={startOfView}
           weekDays={weekDaysInView}
         />
       </Provider>,
@@ -621,9 +625,9 @@ describe("Week calendar accessibility", () => {
     render(
       <Provider>
         <AllDayEvents
-          endOfView={startOfView.endOf("week")}
           measurements={measurements}
-          startOfView={startOfView}
+          queryEndOfView={startOfView.add(6, "day").endOf("day")}
+          queryStartOfView={startOfView}
           weekDays={weekDaysInView}
         />
       </Provider>,
@@ -774,9 +778,9 @@ describe("saved Week event ownership", () => {
     render(
       <Provider>
         <AllDayEvents
-          endOfView={startOfView.endOf("week")}
           measurements={measurements}
-          startOfView={startOfView}
+          queryEndOfView={startOfView.add(6, "day").endOf("day")}
+          queryStartOfView={startOfView}
           weekDays={weekDaysInView}
         />
       </Provider>,

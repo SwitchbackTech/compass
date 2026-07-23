@@ -97,6 +97,8 @@ export const WeekView = () => {
 
   const shortcutProps = {
     isCurrentWeek,
+    queryEndOfView: weekProps.query.endOfView,
+    queryStartOfView: weekProps.query.startOfView,
     startOfView: weekProps.component.startOfView,
     endOfView: weekProps.component.endOfView,
     weekDays: weekProps.component.weekDays,

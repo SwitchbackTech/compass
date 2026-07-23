@@ -25,14 +25,14 @@ import { isAllDayEventInVisibleDays } from "@web/views/Week/util/week-window.uti
 
 interface Props {
   measurements: Measurements_Grid;
-  startOfView: WeekProps["component"]["startOfView"];
-  endOfView: WeekProps["component"]["endOfView"];
+  queryEndOfView: WeekProps["query"]["endOfView"];
+  queryStartOfView: WeekProps["query"]["startOfView"];
   weekDays: WeekProps["component"]["weekDays"];
 }
 export const AllDayEvents = ({
   measurements,
-  startOfView,
-  endOfView,
+  queryEndOfView,
+  queryStartOfView,
   weekDays,
 }: Props) => {
   const draft = useDraftStore(selectDraft);
@@ -41,8 +41,8 @@ export const AllDayEvents = ({
     events: weekEvents,
     isPending: isLoadingWeekView,
   } = useWeekEventViewModel({
-    startOfView,
-    endOfView,
+    startOfView: queryStartOfView,
+    endOfView: queryEndOfView,
   });
 
   const draftId = useDraftStore(selectDraftId);

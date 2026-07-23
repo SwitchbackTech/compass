@@ -71,6 +71,10 @@ const createWeekProps = (): WeekProps =>
         dayjs("2026-05-24T00:00:00.000").add(index, "day"),
       ),
     },
+    query: {
+      endOfView: dayjs("2026-05-30T23:59:59.999"),
+      startOfView: dayjs("2026-05-24T00:00:00.000"),
+    },
   }) as WeekProps;
 
 const renderGridDraft = ({
