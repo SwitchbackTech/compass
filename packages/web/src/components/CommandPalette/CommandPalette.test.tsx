@@ -15,6 +15,7 @@ import {
   selectIsCmdPaletteOpen,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockNavigate = mock();
@@ -50,7 +51,7 @@ afterAll(() => {
 // stub would still evaluate (and permanently cache) the real module the first
 // time, binding its `UserApi` import ahead of useSubscribeCmdItems.test.ts's
 // own mock and breaking that file's assertions instead.
-const defaultCalendarCmdItems = [
+const defaultCalendarCmdItems: CommandItem[] = [
   {
     id: "connect-google-calendar",
     label: "Connect Google Calendar",
@@ -58,7 +59,7 @@ const defaultCalendarCmdItems = [
   },
 ];
 let mockSyncStatus: SyncStatus = null;
-let mockCalendarCmdItems = defaultCalendarCmdItems;
+let mockCalendarCmdItems: CommandItem[] = defaultCalendarCmdItems;
 mock.module(
   "@web/components/CommandPalette/hooks/useCalendarSyncCmdItems",
   () => ({
