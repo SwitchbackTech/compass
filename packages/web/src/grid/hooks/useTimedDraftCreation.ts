@@ -1,5 +1,6 @@
 import { type MouseEvent as ReactMouseEvent, useEffect, useRef } from "react";
-import { type CalendarId } from "@core/types/domain-primitives";
+import { type CalendarId, type EventId } from "@core/types/domain-primitives";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
@@ -79,7 +80,7 @@ export const useTimedDraftCreation = ({
         start.toDate(),
         start.add(DRAFT_DURATION_MIN, "minutes").toDate(),
       ),
-      undefined,
+      createObjectIdString() as EventId,
       columnCalendarId,
     );
     let hasMoved = false;
