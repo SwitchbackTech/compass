@@ -253,7 +253,8 @@ describe("EventForm", () => {
   it("lets long descriptions grow with content instead of capping height", () => {
     const longDescription = Array.from(
       { length: 12 },
-      (_, index) => `Paragraph ${index + 1}: event details that should remain visible without an inner scroll trap.`,
+      (_, index) =>
+        `Paragraph ${index + 1}: event details that should remain visible without an inner scroll trap.`,
     ).join("\n\n");
 
     renderWithStore(
