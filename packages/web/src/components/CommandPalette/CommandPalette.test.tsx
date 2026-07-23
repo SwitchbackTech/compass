@@ -394,9 +394,7 @@ describe("LifeCommandPalette", () => {
       { settings: { isCmdPaletteOpen: true } },
     );
 
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Calendar up-to-date",
-    );
+    expect(screen.getByRole("status")).toHaveTextContent("Calendar up-to-date");
   });
 });
 
