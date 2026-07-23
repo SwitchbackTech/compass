@@ -119,9 +119,7 @@ export function SidebarEventDetails() {
       />
       {pendingAction && (
         <RecurringEventUpdateScopeDialogContent
-          draft={
-            pendingAction.type === "save" ? pendingAction.draft : draft
-          }
+          draft={pendingAction.type === "save" ? pendingAction.draft : draft}
           onUpdateScopeChange={submitWithScope}
           setRecurrenceUpdateScopeDialogOpen={(isOpen) => {
             if (!isOpen) closeScopeDialog();
