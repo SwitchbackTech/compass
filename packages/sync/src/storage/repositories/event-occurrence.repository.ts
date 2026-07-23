@@ -37,6 +37,23 @@ export interface OccurrenceRangeQuery {
   after?: OccurrenceRangeCursor;
 }
 
+export interface BusyOverlapQuery {
+  tenantId: TenantId;
+  principalId: PrincipalId;
+  calendars: readonly CalendarGeneration[];
+  // Half-open window [start, end); an occurrence overlaps it when it starts
+  // before `end` and ends after `start`.
+  start: Date;
+  end: Date;
+}
+
+// One busy occurrence's normalized half-open interval — the only fields a busy
+// query needs. Titles and other content are never read here.
+export interface OccurrenceInterval {
+  startAt: Date;
+  endAt: Date;
+}
+
 // Repository for `event_occurrences`. Rebuilding a series' window
 // replaces exactly that event's occurrences for the given generation, so a
 // series edit rebuilds only the affected horizon. The range query is the
@@ -143,5 +160,38 @@ export class EventOccurrenceRepository {
       .limit(query.limit)
       .toArray();
     return records.map((r) => EventOccurrenceRecordSchema.parse(r));
+  }
+
+  // The busy occurrences overlapping [start, end) for the given calendars, each
+  // read at its active generation, projected to just the interval. Overlap (not
+  // start-in-range) so an occurrence that began before the window but ends inside
+  // it is included. Cancelled occurrences are not busy and are excluded; one with
+  // no endAt (predating the field and not yet reprojected) is excluded until it
+  // reprojects — the `endAt > start` filter never matches a missing field.
+  async listBusyOverlapping(
+    query: BusyOverlapQuery,
+  ): Promise<OccurrenceInterval[]> {
+    if (query.calendars.length === 0) return [];
+    const filter = {
+      tenantId: query.tenantId,
+      principalId: query.principalId,
+      busy: true,
+      cancelled: false,
+      $and: [
+        {
+          $or: query.calendars.map((c) => ({
+            calendarId: c.calendarId,
+            generation: c.generation,
+          })),
+        },
+        { startAt: { $lt: query.end } },
+        { endAt: { $gt: query.start } },
+      ],
+    };
+    return this.collection
+      .find(filter)
+      .project<OccurrenceInterval>({ startAt: 1, endAt: 1, _id: 0 })
+      .sort({ startAt: 1 })
+      .toArray();
   }
 }
