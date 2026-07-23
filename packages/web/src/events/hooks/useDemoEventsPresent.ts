@@ -2,14 +2,21 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { hasDemoEvents } from "@web/events/demo-events.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 
 export function useDemoEventsPresent(): boolean {
   const queryClient = useQueryClient();
+  const source = useEventRepositorySource();
   const [present, setPresent] = useState(false);
 
   const refresh = useCallback(() => {
+    if (source !== "local") {
+      setPresent(false);
+      return;
+    }
+
     void hasDemoEvents().then(setPresent);
-  }, []);
+  }, [source]);
 
   useEffect(() => {
     refresh();
