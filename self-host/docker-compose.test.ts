@@ -162,7 +162,7 @@ describe("self-host docker compose", () => {
       .split(/\n {2}\w/)[0];
     expect(backendBlock).toContain("mongo:");
     expect(backendBlock).toContain("condition: service_healthy");
-    expect(backendBlock).toContain("required: false");
+    expect(backendBlock).toMatch(/^\s+required: false\s*$/m);
   });
 });
 
