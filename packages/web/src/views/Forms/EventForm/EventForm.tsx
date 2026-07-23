@@ -41,7 +41,6 @@ import {
   patchGridDraftFields,
   patchGridDraftScheduleDates,
   replaceGridDraftSchedule,
-  resolveDraftRecurrenceRules,
 } from "@web/events/grid-event-draft.adapter";
 import { BUSY_EVENT_TITLE } from "@web/events/queries/event.view-model";
 import { useEventById } from "@web/events/queries/useEventById";
@@ -645,14 +644,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                 onToggleAllDay={onToggleAllDay}
               />
 
-              <RecurrenceSection
-                key={
-                  resolveDraftRecurrenceRules(draft, seriesRules).length > 0
-                    ? "recurring"
-                    : "single"
-                }
-                {...recurrenceSectionProps}
-              />
+              <RecurrenceSection {...recurrenceSectionProps} />
             </FormCard>
 
             <FormCard>
