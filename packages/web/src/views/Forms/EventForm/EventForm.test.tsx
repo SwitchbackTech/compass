@@ -251,6 +251,33 @@ describe("EventForm", () => {
     ).toBeTruthy();
   });
 
+  it("lets long descriptions grow with content instead of capping height", () => {
+    const longDescription = Array.from(
+      { length: 12 },
+      (_, index) =>
+        `Paragraph ${index + 1}: event details that should remain visible without an inner scroll trap.`,
+    ).join("\n\n");
+
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft({ description: longDescription })}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const description = screen.getByPlaceholderText("Description");
+
+    expect(description.className).not.toContain("max-h-45");
+    expect(description.className).not.toContain("overflow-y-auto");
+    expect(description).toHaveValue(longDescription);
+  });
+
   it("duplicates the event with Mod+D while the title field is focused", async () => {
     const draft = createEditDraft();
     const onDuplicate = mock();

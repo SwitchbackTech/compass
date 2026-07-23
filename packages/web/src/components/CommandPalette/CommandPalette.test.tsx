@@ -308,7 +308,7 @@ describe("CommandPalette", () => {
     // `[aria-hidden='true']` (not `.c-keycap`) because SelectView.test.tsx
     // mocks ShortcutHint process-wide (bun's mock.module leaks across
     // files); its stub keeps aria-hidden but drops the real class.
-    const row = screen.getByText("Show Shortcuts").closest("button");
+    const row = screen.getByText("Show keyboard shortcuts").closest("button");
     expect(row?.querySelector("[aria-hidden='true']")?.textContent).toBe("?");
 
     fireEvent.click(row as HTMLButtonElement);

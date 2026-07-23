@@ -51,6 +51,7 @@ export const GridEventSchema = WebEventSchema.extend({
   // calendars/useCalendarLookup.ts.
   calendarId: CalendarIdSchema.optional(),
   isBusy: z.boolean().optional(),
+  isDemo: z.boolean().optional(),
 });
 export type GridEvent = z.infer<typeof GridEventSchema>;
 

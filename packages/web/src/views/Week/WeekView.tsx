@@ -5,10 +5,12 @@ import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigati
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
+import { DemoEventsBannerGate } from "@web/components/DemoEventsBanner/DemoEventsBannerGate";
 import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";
 import { Sidebar } from "@web/components/Sidebar/Sidebar";
 import { useUpNextEventShortcut } from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
 import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
+import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
 import {
   draftActions,
   selectIsEventFormOpen,
@@ -137,12 +139,17 @@ export const WeekView = () => {
     [gridRefs.allDayColumnsRef, gridRefs.mainGridRef, gridRefs.timedColumnsRef],
   );
 
+  const openWelcomeGuide = useCallback(() => {
+    welcomeGuideActions.open();
+  }, []);
+
   return (
     <div id="cal" className="flex h-screen w-screen overflow-hidden">
       <CommandPalette
         currentView="week"
         onGoToToday={goToTodayViaCmd}
         onShowShortcuts={toggleShortcuts}
+        onShowWelcomeGuide={openWelcomeGuide}
         placeholder={getCommandPalettePlaceholder("week")}
       />
       <Dedication />
@@ -155,6 +162,7 @@ export const WeekView = () => {
             className="flex h-screen flex-1 flex-col overflow-hidden bg-background pt-5 pr-0 pb-0 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
           >
             <Header scrollUtil={scrollUtil} weekProps={weekProps} />
+            <DemoEventsBannerGate />
 
             <WeekGridScrollArea>
               <div

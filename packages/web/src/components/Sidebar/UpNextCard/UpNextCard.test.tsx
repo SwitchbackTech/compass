@@ -84,7 +84,7 @@ describe("UpNextCard", () => {
     expect(screen.getByText("N")).toBeInTheDocument();
   });
 
-  it("renders nothing when today has no upcoming timed events", () => {
+  it("shows an empty-state hint when today has no upcoming timed events", () => {
     render(<UpNextCard />, {
       events: [
         // Already underway, so nothing is "up next".
@@ -101,7 +101,10 @@ describe("UpNextCard", () => {
       ],
     });
 
-    expect(screen.queryByRole("region", { name: "Up next" })).toBeNull();
+    expect(screen.getByRole("region", { name: "Up next" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Nothing scheduled — press C to add an event."),
+    ).toBeInTheDocument();
     expect(screen.queryByText("Past Event")).toBeNull();
     expect(screen.queryByText("All Day Event")).toBeNull();
   });

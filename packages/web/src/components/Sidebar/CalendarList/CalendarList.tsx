@@ -1,6 +1,7 @@
 import { type FC } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { useSession } from "@web/auth/compass/session/useSession";
+import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { useCalendarVisibility } from "@web/calendars/useCalendarVisibility";
 import { CalendarListHeader } from "./CalendarListHeader";
@@ -30,6 +31,7 @@ export const CalendarList: FC<Props> = ({
   Header = CalendarListHeader,
 }) => {
   const { authenticated } = useSession();
+  const { isAvailable, state } = useConnectGoogle();
   const { data, isPending, isError, refetch } = useCalendarsQuery();
   const { toggleCalendarVisibility, failureAnnouncement } =
     useCalendarVisibility(coalesceDelayMs);
@@ -56,7 +58,11 @@ export const CalendarList: FC<Props> = ({
           </button>
         </div>
       ) : calendars.length === 0 ? (
-        <p className="text-text-muted text-xs">No calendars yet.</p>
+        <p className="text-text-muted text-xs">
+          {authenticated && state === "NOT_CONNECTED" && isAvailable
+            ? "Connect Google to see your calendars."
+            : "No calendars yet."}
+        </p>
       ) : (
         <ul className="flex flex-col gap-1.5">
           {calendars.map((calendar) => {

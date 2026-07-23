@@ -2,6 +2,7 @@ import {
   ArrowUDownLeftIcon,
   CalendarDotsIcon,
   CalendarIcon,
+  CompassIcon,
   HourglassSimpleIcon,
   type Icon,
   KeyboardIcon,
@@ -20,6 +21,7 @@ interface GetNavigationCommandItemsArgs {
   onGoToToday?: () => void;
   onNavigateToView: (viewName: CommandPaletteViewName) => void;
   onShowShortcuts?: () => void;
+  onShowWelcomeGuide?: () => void;
 }
 
 const commandPaletteViews: Record<
@@ -56,6 +58,7 @@ export const getNavigationCommandItems = ({
   onGoToToday,
   onNavigateToView,
   onShowShortcuts,
+  onShowWelcomeGuide,
 }: GetNavigationCommandItemsArgs): CommandItem[] => {
   const calendarItems: CommandItem[] = [];
 
@@ -87,10 +90,19 @@ export const getNavigationCommandItems = ({
   if (onShowShortcuts) {
     calendarItems.push({
       id: "show-shortcuts",
-      label: "Show Shortcuts",
+      label: "Show keyboard shortcuts",
       icon: KeyboardIcon,
       shortcut: "?",
       onClick: onShowShortcuts,
+    });
+  }
+
+  if (onShowWelcomeGuide) {
+    calendarItems.push({
+      id: "show-welcome-guide",
+      label: "Show welcome guide",
+      icon: CompassIcon,
+      onClick: onShowWelcomeGuide,
     });
   }
 

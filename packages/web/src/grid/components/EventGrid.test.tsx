@@ -1,4 +1,5 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { type RefCallback } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { afterEach, describe, expect, it, mock } from "bun:test";
@@ -62,6 +63,39 @@ describe("EventGrid", () => {
     expect(
       screen.getByRole("region", { name: "Timed events grid" }),
     ).toContainElement(screen.getByTestId("timed-events-layer"));
+  });
+
+  it("shows a grid-wide focus indicator when the timed grid is focused", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <div>
+        <button type="button">Before</button>
+        <EventGrid
+          allDayEventsLayer={<div />}
+          gridRefs={createGridRefs()}
+          onAllDayMouseDown={mock()}
+          onTimedMouseDown={mock()}
+          timedEventsLayer={<div />}
+          today={dayjs("2026-05-20T00:00:00.000")}
+          visibleDates={[
+            {
+              date: dayjs("2026-05-20T00:00:00.000"),
+              key: "date-0",
+            },
+          ]}
+        />
+      </div>,
+    );
+
+    await user.tab();
+    await user.tab();
+
+    const timedGrid = screen.getByRole("region", { name: "Timed events grid" });
+    expect(timedGrid).toHaveFocus();
+
+    const indicator = screen.getByTestId("grid-focus-indicator");
+    expect(getComputedStyle(indicator).display).not.toBe("none");
   });
 
   it("passes the all-day row count to the shared all-day surface", () => {

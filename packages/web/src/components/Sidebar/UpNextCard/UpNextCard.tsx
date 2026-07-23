@@ -30,7 +30,15 @@ export function formatStartsIn(start: Dayjs, now: Dayjs): string {
 export const UpNextCard: FC = () => {
   const { now, openEventDetails, upNext } = useUpNextEvent();
 
-  if (!upNext) return null;
+  if (!upNext) {
+    return (
+      <section aria-label="Up next">
+        <p className="text-text-muted text-xs">
+          Nothing scheduled — press C to add an event.
+        </p>
+      </section>
+    );
+  }
 
   const countdown = formatStartsIn(dayjs(upNext.startDate), now);
 

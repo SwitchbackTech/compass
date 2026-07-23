@@ -8,26 +8,22 @@ import {
   type MouseEvent,
   useContext,
   useEffect,
-  useId,
   useRef,
   useState,
 } from "react";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
-import { FAQ_ITEMS } from "./faq";
+import { maybeShowCmdPaletteHint } from "./cmd-palette-hint.util";
 import { PixelPirate } from "./PixelPirate";
+import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
 
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
   const { openModal, isOpen: isAuthModalOpen } = useAuthModal();
-  const disclosureIdPrefix = useId();
   const [isOpen, setIsOpen] = useState(
     () => !authenticated && !hasSeenWelcome(),
-  );
-  const [expandedFaqs, setExpandedFaqs] = useState<Set<string>>(
-    () => new Set(),
   );
   const [closing, setClosing] = useState(false);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -50,6 +46,7 @@ export function WelcomeModal() {
   const dismiss = () => {
     if (closing) return;
     markWelcomeSeen();
+    maybeShowCmdPaletteHint();
     setClosing(true);
     const reduceMotion =
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
@@ -58,7 +55,14 @@ export function WelcomeModal() {
 
   const handleLogIn = () => {
     markWelcomeSeen();
+    maybeShowCmdPaletteHint();
     openModal("login");
+  };
+
+  const handleSignUp = () => {
+    markWelcomeSeen();
+    maybeShowCmdPaletteHint();
+    openModal("signUp");
   };
 
   const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
@@ -71,20 +75,6 @@ export function WelcomeModal() {
     if (event.key === "Escape") {
       dismiss();
     }
-  };
-
-  const toggleFaq = (question: string) => {
-    setExpandedFaqs((currentFaqs) => {
-      const nextFaqs = new Set(currentFaqs);
-
-      if (nextFaqs.has(question)) {
-        nextFaqs.delete(question);
-      } else {
-        nextFaqs.add(question);
-      }
-
-      return nextFaqs;
-    });
   };
 
   return (
@@ -106,11 +96,10 @@ export function WelcomeModal() {
         data-closing={closing || undefined}
         className="flex w-120 max-w-[90vw] flex-col gap-6 rounded-xl bg-surface-panel p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-transform duration-400 ease-out data-closing:scale-105 motion-reduce:transition-none"
       >
-        {/* Top row: pirate top-left, log-in pill top-right */}
+        {/* Top row: pirate top-left, auth pills top-right */}
         <div className="flex items-center justify-between">
           <div className="group relative flex items-center">
             <PixelPirate className="h-14 w-14 shrink-0" />
-            {/* Speech bubble, revealed on hover; tail points at the pirate */}
             <div className="pointer-events-none absolute left-full ml-1 flex -translate-x-1 items-center opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100">
               <span
                 aria-hidden
@@ -121,26 +110,25 @@ export function WelcomeModal() {
               </span>
             </div>
           </div>
-          {/* bg matches the pirate's shirt gray (PixelPirate.tsx) */}
-          <button
-            type="button"
-            onClick={handleLogIn}
-            className="shrink-0 rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
-          >
-            Log in
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSignUp}
+              className="rounded-3xl bg-accent px-4 py-1.5 text-on-accent text-xs transition-all hover:brightness-110"
+            >
+              Sign up
+            </button>
+            <button
+              type="button"
+              onClick={handleLogIn}
+              className="rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
+            >
+              Log in
+            </button>
+          </div>
         </div>
 
-        {/* Header */}
-        <div className="flex flex-col gap-2">
-          <h2 className="font-bold text-2xl text-text leading-snug">
-            Compass Calendar helps you manage your time, simply.
-          </h2>
-          <p className="text-text-muted">
-            A small, but mighty calendar app. Built for busy minimalists who get
-            things done.
-          </p>
-        </div>
+        <WelcomeGuideBody />
 
         {/* CTA */}
         <div className="flex justify-center">
@@ -151,55 +139,6 @@ export function WelcomeModal() {
           >
             Start Now
           </button>
-        </div>
-
-        {/* FAQ */}
-        <div className="flex flex-col divide-y divide-border">
-          {FAQ_ITEMS.map((item, index) => {
-            const isExpanded = expandedFaqs.has(item.question);
-            const answerId = `${disclosureIdPrefix}-faq-answer-${index}`;
-            const state = isExpanded ? "open" : "closed";
-
-            return (
-              <div key={item.question} className="py-3">
-                <button
-                  type="button"
-                  aria-controls={answerId}
-                  aria-expanded={isExpanded}
-                  className="c-focus-ring w-full cursor-pointer select-none text-left font-medium text-sm text-text transition-colors hover:text-text-lightest"
-                  onClick={() => toggleFaq(item.question)}
-                >
-                  {item.question}
-                </button>
-                <div
-                  id={answerId}
-                  aria-hidden={!isExpanded}
-                  className="c-disclosure-content"
-                  data-state={state}
-                >
-                  <div>
-                    <div className="mt-2 text-sm text-text-muted leading-relaxed">
-                      {item.answer !== null ? (
-                        item.answer
-                      ) : (
-                        <>
-                          Yes! The repo includes the API, frontend, CLI, and
-                          more. You can run it yourself too; read the{" "}
-                          <a
-                            href="/blog/self-host"
-                            className="c-focus-ring font-medium text-accent underline-offset-4 hover:underline"
-                          >
-                            self-hosting guide
-                          </a>{" "}
-                          to set up your own instance.
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
         </div>
 
         {/* Footer: social + legal */}

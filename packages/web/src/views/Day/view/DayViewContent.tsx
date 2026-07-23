@@ -5,12 +5,14 @@ import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
+import { DemoEventsBannerGate } from "@web/components/DemoEventsBanner/DemoEventsBannerGate";
 import { SidebarEventDetails } from "@web/components/Sidebar/EventDetails/SidebarEventDetails";
 import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";
 import { Sidebar } from "@web/components/Sidebar/Sidebar";
 import { useUpNextEventShortcut } from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
 import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
 import { focusFirstSidebarItem } from "@web/components/Sidebar/util/sidebarFocus.util";
+import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
 import {
   selectIsEventFormOpen,
   useDraftStore,
@@ -116,12 +118,17 @@ export const DayViewContent = memo(() => {
     onGoToToday: handleGoToToday,
   });
 
+  const openWelcomeGuide = useCallback(() => {
+    welcomeGuideActions.open();
+  }, []);
+
   return (
     <div id="day" className="flex h-screen w-screen overflow-hidden">
       <CommandPalette
         currentView="day"
         onGoToToday={handleGoToToday}
         onShowShortcuts={toggleShortcuts}
+        onShowWelcomeGuide={openWelcomeGuide}
         placeholder={getCommandPalettePlaceholder("day")}
       />
       <Dedication />
@@ -132,6 +139,7 @@ export const DayViewContent = memo(() => {
         className="flex h-screen flex-1 flex-col overflow-hidden bg-background pt-5 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
       >
         <Header />
+        <DemoEventsBannerGate />
 
         <div className="flex w-full flex-1 overflow-hidden">
           <DayCalendarGrid />

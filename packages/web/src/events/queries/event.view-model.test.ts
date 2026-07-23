@@ -47,6 +47,22 @@ describe("Event query view models", () => {
     expect(result.events.map(({ id }) => id)).toEqual([base.id, occurrence.id]);
   });
 
+  test("marks demo events from normalized demoEventIds", () => {
+    const demo = createMockEvent();
+    const user = createMockEvent();
+    const data: NormalizedEventQueryData = {
+      ...normalized(demo, user),
+      demoEventIds: [demo.id],
+    };
+
+    const result = deriveCalendarEventViewModel(data);
+    const demoCard = result.timedEvents.find(({ _id }) => _id === demo.id);
+    const userCard = result.timedEvents.find(({ _id }) => _id === user.id);
+
+    expect(demoCard?.isDemo).toBe(true);
+    expect(userCard?.isDemo).toBe(false);
+  });
+
   test("returns stable empty shapes", () => {
     const week = deriveCalendarEventViewModel();
     expect(week).toEqual({
@@ -55,6 +71,7 @@ describe("Event query view models", () => {
       timedEvents: [],
       allDayEvents: [],
       rowCount: 1,
+      demoEventIds: undefined,
     });
   });
 });

@@ -44,6 +44,7 @@ import {
   type PrecedingEventWrites,
   precedingCreateOk,
   precedingDeleteOk,
+  showAnonymousSaveToastIfEligible,
   waitForPrecedingEventWrites,
 } from "./event.mutation.runtime";
 import {
@@ -150,6 +151,10 @@ export function useEventMutations(
     [dependencies.repository, source],
   );
   const markWrite = dependencies.markWrite ?? markAnonymousEventWrite;
+  const showAnonymousSaveToast =
+    dependencies.markWrite === undefined
+      ? showAnonymousSaveToastIfEligible
+      : undefined;
   const reportError = dependencies.reportError ?? handleError;
 
   // Backstop only - the real enforcement is the UI gates (cards, shortcuts,
@@ -237,8 +242,10 @@ export function useEventMutations(
       await markWrite();
       return;
     }
-    if (canWrite(preceding)) await write();
+    const wrote = canWrite(preceding);
+    if (wrote) await write();
     await markWrite();
+    if (wrote) await showAnonymousSaveToast?.();
   };
 
   const createMutation = useMutation(

@@ -41,8 +41,25 @@ mock.module("@web/auth/compass/session/useSession", () => ({
     isSessionMocked ? mockUseSession(...args) : actualUseSession(...args),
 }));
 
+const actualUseConnectGoogle = (
+  await import("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle")
+).useConnectGoogle;
+let isConnectGoogleMocked = true;
+const mockUseConnectGoogle = mock(() => ({
+  commandAction: null,
+  isAvailable: true,
+  state: "NOT_CONNECTED" as const,
+}));
+mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
+  useConnectGoogle: (...args: Parameters<typeof actualUseConnectGoogle>) =>
+    isConnectGoogleMocked
+      ? mockUseConnectGoogle(...args)
+      : actualUseConnectGoogle(...args),
+}));
+
 afterAll(() => {
   isSessionMocked = false;
+  isConnectGoogleMocked = false;
 });
 
 // CalendarList.tsx is already cached by the time this file runs -
@@ -339,7 +356,7 @@ describe("CalendarList", () => {
   });
 
   it("shows an empty state when there are no calendars", () => {
-    renderCalendarList([]);
+    renderCalendarList([], { authenticated: false });
 
     expect(screen.getByText(/no calendars yet/i)).toBeInTheDocument();
   });

@@ -15,7 +15,7 @@ import {
 } from "@web/components/Tooltip";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 
-const TEMPORARY_ACCOUNT_MESSAGE = "Sign up to save your changes";
+const ANONYMOUS_SAVE_MESSAGE = "Sign up to save your changes across devices";
 
 const TOOLTIP_ACTION_BUTTON_CLASSNAME =
   "c-focus-ring self-start rounded-xs bg-accent px-2 py-1 font-medium text-s text-on-accent hover:brightness-110";
@@ -23,34 +23,36 @@ const TOOLTIP_ACTION_BUTTON_CLASSNAME =
 const HEADING_CLASSNAME =
   "mb-2 flex min-w-0 font-semibold text-sm leading-none";
 
-// Keeps the temporary-account label keyboard-focusable while looking like plain text.
-const TEMPORARY_ACCOUNT_TRIGGER_CLASSNAME =
+const ANONYMOUS_ACCOUNT_TRIGGER_CLASSNAME =
   "min-w-0 truncate appearance-none border-0 bg-transparent p-0 text-left font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
+
+const CONNECT_GOOGLE_BUTTON_CLASSNAME =
+  "c-focus-ring mb-2 w-full rounded-xs bg-accent px-2 py-1.5 text-left font-medium text-on-accent text-xs hover:brightness-110";
 
 /**
  * The calendar list's heading is the account identity (email, or the
- * temporary-account label when anonymous) rather than a generic "Calendars"
+ * not-saved-yet label when anonymous) rather than a generic "Calendars"
  * title, and carries the syncing wave shimmer plus the sign-up-to-save CTA
- * for anonymous users. Detailed sync status lives in the command palette.
+ * for anonymous users. Google connect is surfaced inline when not linked.
  */
 export const CalendarListHeader: FC = () => {
   const { email } = useUser();
 
   if (!email) {
-    return <TemporaryAccountHeader />;
+    return <AnonymousAccountHeader />;
   }
 
   return <AuthenticatedAccountHeader email={email} />;
 };
 
-const TemporaryAccountHeader: FC = () => {
+const AnonymousAccountHeader: FC = () => {
   const { openModal } = useAuthModal();
   const isDirty = useSyncExternalStore(
     subscribeToAuthState,
     shouldShowAnonymousCalendarChangeSignUpPrompt,
     shouldShowAnonymousCalendarChangeSignUpPrompt,
   );
-  const accountLabel = "Temporary account";
+  const accountLabel = "Not saved yet";
   const handleOpenSignUp = useCallback(() => {
     openModal("signUp");
   }, [openModal]);
@@ -61,7 +63,7 @@ const TemporaryAccountHeader: FC = () => {
         <TooltipTrigger asChild>
           <button
             className={classNames(
-              TEMPORARY_ACCOUNT_TRIGGER_CLASSNAME,
+              ANONYMOUS_ACCOUNT_TRIGGER_CLASSNAME,
               isDirty ? "c-sync-text-wave" : "text-text",
             )}
             onClick={handleOpenSignUp}
@@ -71,7 +73,7 @@ const TemporaryAccountHeader: FC = () => {
           </button>
         </TooltipTrigger>
         <TooltipContent className="flex max-w-55 flex-col gap-1.5">
-          <span>{TEMPORARY_ACCOUNT_MESSAGE}</span>
+          <span>{ANONYMOUS_SAVE_MESSAGE}</span>
           <button
             className={TOOLTIP_ACTION_BUTTON_CLASSNAME}
             onClick={handleOpenSignUp}
@@ -86,11 +88,13 @@ const TemporaryAccountHeader: FC = () => {
 };
 
 const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
-  const { state } = useConnectGoogle();
+  const { commandAction, isAvailable, state } = useConnectGoogle();
   const hasPendingEventMutations = useHasPendingEventMutations();
   const isSyncing =
     getGoogleSyncStatus(state)?.variant === "syncing" ||
     hasPendingEventMutations;
+  const showConnectGoogle =
+    state === "NOT_CONNECTED" && isAvailable && commandAction != null;
 
   return (
     <>
@@ -105,6 +109,15 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
           {email}
         </span>
       </h2>
+      {showConnectGoogle ? (
+        <button
+          className={CONNECT_GOOGLE_BUTTON_CLASSNAME}
+          onClick={commandAction.onSelect}
+          type="button"
+        >
+          Connect Google Calendar
+        </button>
+      ) : null}
       {isSyncing ? (
         <span
           aria-label="Syncing…"

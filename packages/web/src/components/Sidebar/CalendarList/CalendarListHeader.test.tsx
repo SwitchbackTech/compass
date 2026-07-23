@@ -10,8 +10,14 @@ const mockOpenModal = mock();
 let mockEmail: string | undefined;
 let mockGoogleState: GoogleUiState = "NOT_CONNECTED";
 let mockIsAnonymousDirty = false;
+const mockConnectGoogle = mock();
 const mockUseConnectGoogle = mock(() => ({
   state: mockGoogleState,
+  isAvailable: true,
+  commandAction:
+    mockGoogleState === "NOT_CONNECTED"
+      ? { label: "Connect Google Calendar", onSelect: mockConnectGoogle }
+      : null,
 }));
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
@@ -90,23 +96,24 @@ describe("CalendarListHeader", () => {
     mockIsAnonymousDirty = false;
     mockOpenModal.mockClear();
     mockUseConnectGoogle.mockClear();
+    mockConnectGoogle.mockClear();
   });
 
-  it("shows a default-colored temporary account heading with a sign-up tooltip before any changes are made", async () => {
+  it("shows a default-colored not-saved-yet heading with a sign-up tooltip before any changes are made", async () => {
     const user = userEvent.setup();
 
     renderHeader();
 
     expect(
-      screen.getByRole("heading", { name: "Temporary account" }),
+      screen.getByRole("heading", { name: "Not saved yet" }),
     ).toBeInTheDocument();
-    const trigger = screen.getByRole("button", { name: "Temporary account" });
+    const trigger = screen.getByRole("button", { name: "Not saved yet" });
     expect(trigger).toHaveClass("text-text");
     expect(trigger).not.toHaveClass("c-sync-text-wave");
     expect(screen.queryByText("Sign up")).toBeNull();
 
     await user.hover(trigger);
-    await screen.findByText("Sign up to save your changes");
+    await screen.findByText("Sign up to save your changes across devices");
     const signUpButton = await screen.findByRole("button", { name: "Sign up" });
 
     await user.click(signUpButton);
@@ -114,26 +121,27 @@ describe("CalendarListHeader", () => {
     expect(mockUseConnectGoogle).not.toHaveBeenCalled();
   });
 
-  it("shows the wave shimmer on the temporary account label once the anonymous user makes a change", () => {
+  it("shows the wave shimmer on the not-saved-yet label once the anonymous user makes a change", () => {
     mockIsAnonymousDirty = true;
 
     renderHeader();
 
-    const trigger = screen.getByRole("button", { name: "Temporary account" });
+    const trigger = screen.getByRole("button", { name: "Not saved yet" });
     expect(trigger).toHaveClass("c-sync-text-wave");
     expect(trigger).not.toHaveClass("text-text");
   });
 
-  it("also opens sign up by clicking the temporary account label directly (keyboard path)", async () => {
+  it("also opens sign up by clicking the not-saved-yet label directly (keyboard path)", async () => {
     const user = userEvent.setup();
 
     renderHeader();
 
-    await user.click(screen.getByRole("button", { name: "Temporary account" }));
+    await user.click(screen.getByRole("button", { name: "Not saved yet" }));
     expect(mockOpenModal).toHaveBeenCalledWith("signUp");
   });
 
-  it("renders a plain, non-interactive email heading when Google is not connected", () => {
+  it("shows a connect Google button when authenticated and Google is not connected", async () => {
+    const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "NOT_CONNECTED";
 
@@ -142,15 +150,14 @@ describe("CalendarListHeader", () => {
     expect(
       screen.getByRole("heading", { name: "ahab@pequod.com" }),
     ).toBeInTheDocument();
-    const email = screen.getByText("ahab@pequod.com");
-    expect(email.tagName).toBe("SPAN");
-    expect(email).not.toHaveAttribute("tabindex");
-    expect(email).toHaveClass("text-text");
-    expect(screen.queryByRole("status")).toBeNull();
-    expect(screen.queryByRole("button")).toBeNull();
+    const connectButton = screen.getByRole("button", {
+      name: "Connect Google Calendar",
+    });
+    await user.click(connectButton);
+    expect(mockConnectGoogle).toHaveBeenCalledTimes(1);
   });
 
-  it("renders a plain, neutral email heading with no tooltip when healthy", async () => {
+  it("renders a plain email heading without a connect button when Google is healthy", async () => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "HEALTHY";

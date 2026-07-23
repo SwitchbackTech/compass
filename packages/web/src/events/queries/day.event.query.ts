@@ -1,5 +1,7 @@
 import { EventListQuerySchema } from "@core/types/event-command.contracts";
+import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
+import { fetchLocalEventsRange } from "./event.query.local";
 import { normalizeEventList } from "./event.query.normalize";
 import { type NormalizedEventQueryData } from "./event.query.types";
 
@@ -14,9 +16,14 @@ type FetchDayEventsPayload = { startDate: string; endDate: string };
 export async function fetchDayEvents(
   payload: FetchDayEventsPayload,
   repository: EventRepository,
+  source: EventRepositorySource = "remote",
 ): Promise<NormalizedEventQueryData> {
   if (!payload.startDate || !payload.endDate) {
     throw new Error("Event query requires startDate and endDate");
+  }
+
+  if (source === "local") {
+    return fetchLocalEventsRange(payload);
   }
 
   const query = EventListQuerySchema.parse({
