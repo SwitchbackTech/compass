@@ -1,9 +1,4 @@
-import {
-  type Dispatch,
-  type SetStateAction,
-  useCallback,
-  useState,
-} from "react";
+import { useCallback, useState } from "react";
 import { type RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
@@ -15,8 +10,8 @@ import {
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { RecurringEventUpdateScopeDialogContent } from "@web/views/Forms/EventForm/RecurrenceScopeDialog";
+import { EventFormPanel } from "@web/views/Forms/EventFormPanel/EventFormPanel";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
@@ -45,15 +40,9 @@ export function SidebarEventDetails() {
     existingEvent && existingEvent.recurrence.kind !== "single",
   );
 
-  const setDraft: Dispatch<SetStateAction<GridEventDraft | null>> = useCallback(
-    (next) => {
-      const resolved = typeof next === "function" ? next(draft) : next;
-      draftActions.setGridDraft(resolved);
-    },
-    [draft],
-  );
-
-  if (!isFormOpen || !draft) return null;
+  const syncDraft = useCallback((resolved: GridEventDraft | null) => {
+    draftActions.setGridDraft(resolved);
+  }, []);
 
   const closeScopeDialog = () => setPendingAction(null);
   const submitWithScope = (applyTo: RecurringEventUpdateScope) => {
@@ -64,8 +53,8 @@ export function SidebarEventDetails() {
     }
     setPendingAction(null);
   };
-  const submit = (nextDraft: GridEventDraft | null) => {
-    if (nextDraft && needsRecurrenceScope) {
+  const submit = (nextDraft: GridEventDraft) => {
+    if (needsRecurrenceScope) {
       setPendingAction({ draft: nextDraft, type: "save" });
       return;
     }
@@ -80,31 +69,33 @@ export function SidebarEventDetails() {
   };
 
   return (
-    <>
-      <EventForm
-        draft={draft}
-        isDraft={!existing}
-        isExistingEvent={existing}
-        onClose={onClose}
-        onDelete={deleteEvent}
-        onDuplicate={onDuplicate}
-        onSubmit={submit}
-        setDraft={setDraft}
-      />
-      {pendingAction && (
-        <RecurringEventUpdateScopeDialogContent
-          draft={
-            pendingAction.type === "save"
-              ? gridEventDraftToSchemaEvent(pendingAction.draft)
-              : gridEventDraftToSchemaEvent(draft)
-          }
-          onUpdateScopeChange={submitWithScope}
-          setRecurrenceUpdateScopeDialogOpen={(isOpen) => {
-            if (!isOpen) closeScopeDialog();
-          }}
-          title={pendingAction.type === "delete" ? "Delete events" : undefined}
-        />
-      )}
-    </>
+    <EventFormPanel
+      confirmation={{ onDelete: deleteEvent, onSubmit: submit }}
+      confirmationUi={
+        pendingAction && draft ? (
+          <RecurringEventUpdateScopeDialogContent
+            draft={
+              pendingAction.type === "save"
+                ? gridEventDraftToSchemaEvent(pendingAction.draft)
+                : gridEventDraftToSchemaEvent(draft)
+            }
+            onUpdateScopeChange={submitWithScope}
+            setRecurrenceUpdateScopeDialogOpen={(isOpen) => {
+              if (!isOpen) closeScopeDialog();
+            }}
+            title={
+              pendingAction.type === "delete" ? "Delete events" : undefined
+            }
+          />
+        ) : null
+      }
+      draft={draft}
+      isDraft={!existing}
+      isExistingEvent={existing}
+      isFormOpen={isFormOpen}
+      onClose={onClose}
+      onDuplicate={onDuplicate}
+      syncDraft={syncDraft}
+    />
   );
 }

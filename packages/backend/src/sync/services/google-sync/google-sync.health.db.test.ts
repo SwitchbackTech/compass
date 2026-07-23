@@ -13,7 +13,6 @@ import * as googleWatchConfig from "@backend/sync/services/watch/google-watch-co
 import { isGoogleCalendarSyncHealthy } from "./google-sync.health";
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,

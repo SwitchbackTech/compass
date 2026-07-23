@@ -1,6 +1,5 @@
 import { faker } from "@faker-js/faker";
 import { type Credentials, type TokenPayload } from "google-auth-library";
-import { LoggerFactory } from "@core/logger/logger.factory";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
   cleanupCollections,
@@ -27,7 +26,6 @@ import {
   describe,
   expect,
   it,
-  mock,
   spyOn,
 } from "bun:test";
 
@@ -68,16 +66,6 @@ describe("googleAuthService", () => {
       ({
         access_token: faker.internet.jwt(),
       }) as Pick<Credentials, "refresh_token" | "access_token">;
-    // LoggerFactory returns one stable mock logger per name in tests, so this
-    // is the instance the service captured at import.
-    const getMockLogger = () =>
-      authServiceLogger as unknown as {
-        debug: Mock;
-        error: Mock;
-        info: Mock;
-        verbose: Mock;
-        warn: Mock;
-      };
 
     beforeEach(() => {
       mockDetermineGoogleAuthMode().mockReset();
