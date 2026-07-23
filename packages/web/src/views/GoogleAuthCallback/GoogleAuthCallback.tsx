@@ -37,7 +37,7 @@ export async function completeGoogleAuthCallback({
   if (result.status === "failed") {
     showErrorToast(result.message);
   } else if (result.isNewUser) {
-    releaseNotesPromptActions.open();
+    releaseNotesPromptActions.scheduleOpen();
   }
 
   navigate(result.returnPath, { replace: true });

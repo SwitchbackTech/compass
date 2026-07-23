@@ -11,6 +11,11 @@ export const useReleaseNotesPromptStore = create<ReleaseNotesPromptState>()(
 export const releaseNotesPromptActions = {
   open: () => useReleaseNotesPromptStore.setState({ isOpen: true }),
   close: () => useReleaseNotesPromptStore.setState({ isOpen: false }),
+  scheduleOpen: (delayMs = 45_000) => {
+    window.setTimeout(() => {
+      useReleaseNotesPromptStore.setState({ isOpen: true });
+    }, delayMs);
+  },
 };
 
 export const selectReleaseNotesPromptOpen = (state: ReleaseNotesPromptState) =>

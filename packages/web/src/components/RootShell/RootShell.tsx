@@ -6,7 +6,12 @@ import {
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { ReleaseNotesPrompt } from "@web/components/ReleaseNotesPrompt/ReleaseNotesPrompt";
+import { WelcomeGuideModal } from "@web/components/WelcomeModal/WelcomeGuideModal";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
+import {
+  selectWelcomeGuideOpen,
+  useWelcomeGuideStore,
+} from "@web/components/WelcomeModal/welcome.guide.store";
 import {
   useCalendarShellShortcuts,
   useNavigationShortcuts,
@@ -22,6 +27,7 @@ export function RootShell() {
   const isReleaseNotesPromptOpen = useReleaseNotesPromptStore(
     selectReleaseNotesPromptOpen,
   );
+  const isWelcomeGuideOpen = useWelcomeGuideStore(selectWelcomeGuideOpen);
   useNavigationShortcuts();
   useCalendarShellShortcuts();
 
@@ -30,6 +36,7 @@ export function RootShell() {
       <Outlet />
       <AuthModal />
       <WelcomeModal />
+      {isWelcomeGuideOpen && <WelcomeGuideModal />}
       {isReleaseNotesPromptOpen && <ReleaseNotesPrompt />}
     </AuthModalProvider>
   );

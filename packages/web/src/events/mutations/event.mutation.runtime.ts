@@ -5,12 +5,14 @@ import {
   markAnonymousCalendarChangeForSignUpPrompt,
 } from "@web/auth/compass/state/auth.state.util";
 import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
+import { maybeShowAnonymousSaveToast } from "@web/common/utils/toast/anonymous-save.toast";
 import { eventMutationKeys } from "./event.mutation.keys";
 
 export async function markAnonymousEventWrite() {
   if (await session.doesSessionExist()) return;
   if (hasUserEverAuthenticated() || isGoogleRevoked()) return;
   markAnonymousCalendarChangeForSignUpPrompt();
+  maybeShowAnonymousSaveToast();
 }
 
 type AnyMutation = Mutation<unknown, Error, unknown, unknown>;

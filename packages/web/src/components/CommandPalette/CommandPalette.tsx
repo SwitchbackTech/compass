@@ -21,6 +21,7 @@ import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
 import { useCalendarSyncCmdItems } from "@web/components/CommandPalette/hooks/useCalendarSyncCmdItems";
 import { useDeleteAccountCmdItems } from "@web/components/CommandPalette/hooks/useDeleteAccountCmdItems";
+import { useDemoEventsCmdItems } from "@web/components/CommandPalette/hooks/useDemoEventsCmdItems";
 import { useExportDataCmdItems } from "@web/components/CommandPalette/hooks/useExportDataCmdItems";
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
 import { useSubscribeCmdItems } from "@web/components/CommandPalette/hooks/useSubscribeCmdItems";
@@ -47,6 +48,7 @@ interface CommandPaletteProps {
   currentView: ViewName;
   onGoToToday: () => void;
   onShowShortcuts: () => void;
+  onShowWelcomeGuide?: () => void;
   placeholder: string;
   mutationDependencies?: EventMutationDependencies;
 }
@@ -251,6 +253,7 @@ export const CommandPalette = ({
   currentView,
   onGoToToday,
   onShowShortcuts,
+  onShowWelcomeGuide,
   placeholder,
   mutationDependencies,
 }: CommandPaletteProps) => {
@@ -259,6 +262,7 @@ export const CommandPalette = ({
   const { items: calendarCmdItems, syncStatus } = useCalendarSyncCmdItems();
   const subscribeCmdItems = useSubscribeCmdItems(open);
   const exportDataCmdItems = useExportDataCmdItems();
+  const demoEventsCmdItems = useDemoEventsCmdItems();
   const authCmdItems = useAuthCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
   const deleteAccountCmdItems = useDeleteAccountCmdItems();
@@ -275,6 +279,7 @@ export const CommandPalette = ({
         onNavigateToView: (viewName) =>
           navigate({ to: getNavigationViewRoute(viewName) }),
         onShowShortcuts,
+        onShowWelcomeGuide,
       }),
     },
     {
@@ -282,6 +287,7 @@ export const CommandPalette = ({
       heading: "Common Tasks",
       items: [
         ...eventCommandPaletteItems,
+        ...demoEventsCmdItems,
         {
           id: "undo-last-change",
           label: "Undo last change",

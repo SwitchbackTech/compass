@@ -220,12 +220,13 @@ const TimedEventCardBase = (
   const baseAccessibleLabel = event.isAllDay
     ? `${recurringPrefix}All-day event: ${eventTitle}`
     : `${recurringPrefix}Timed event: ${eventTitle}, ${timeRange ?? "time not set"}`;
+  const samplePrefix = event.isDemo ? "Sample " : "";
   // Fill stays a flat neutral color; the accent + this suffix are the only
   // calendar signal, and the name (never color alone) is what makes it
   // accessible (A9).
   const accessibleLabel = calendarIdentity
-    ? `${baseAccessibleLabel}, ${calendarIdentity.name} calendar`
-    : baseAccessibleLabel;
+    ? `${samplePrefix}${baseAccessibleLabel}, ${calendarIdentity.name} calendar`
+    : `${samplePrefix}${baseAccessibleLabel}`;
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
@@ -240,6 +241,8 @@ const TimedEventCardBase = (
         "absolute min-h-2.5 select-none overflow-hidden rounded-xs pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
         "bg-(--event-bg) hover:bg-(--event-hover-bg)",
         "hover:cursor-pointer",
+        event.isDemo &&
+          "outline outline-1 outline-dashed outline-text-muted/50",
       )}
       style={eventStyle}
       onBlur={onBlur}

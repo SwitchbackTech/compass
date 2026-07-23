@@ -1,4 +1,5 @@
 import { type Event } from "@core/types/event.contracts";
+import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import { type NormalizedEvents } from "@web/events/event-view.types";
 
 /**
@@ -12,6 +13,17 @@ export const normalizeEventList = (events: Event[]): NormalizedEvents => ({
     entities[event.id] = event;
     return entities;
   }, {}),
+});
+
+/**
+ * Normalize local IndexedDB records, preserving demo-event metadata for grid
+ * styling and onboarding affordances.
+ */
+export const normalizeLocalEventRecords = (
+  records: LocalEventRecord[],
+): NormalizedEvents => ({
+  ...normalizeEventList(records.map((record) => record.event)),
+  demoEventIds: records.filter((record) => record.isDemo).map((record) => record.id),
 });
 
 /**

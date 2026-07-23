@@ -34,6 +34,7 @@ export function dayEventsQueryOptions({
       fetchDayEvents(
         { startDate, endDate },
         getEventRepositoryBySource(source),
+        source,
       ),
     ...EVENT_QUERY_CACHE_OPTIONS,
   });
@@ -50,6 +51,7 @@ export function weekEventsQueryOptions({
       fetchWeekEvents(
         { startDate, endDate },
         getEventRepositoryBySource(source),
+        source,
       ),
     ...EVENT_QUERY_CACHE_OPTIONS,
   });

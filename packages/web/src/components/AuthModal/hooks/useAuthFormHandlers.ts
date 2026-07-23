@@ -74,7 +74,7 @@ export function useAuthFormHandlers({
               email: response.user.emails[0] ?? data.email,
             });
             closeModal();
-            releaseNotesPromptActions.open();
+            releaseNotesPromptActions.scheduleOpen();
             return;
           case "FIELD_ERROR":
             setSubmitError(response.formFields[0]?.error ?? "Sign up failed");

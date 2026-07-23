@@ -75,7 +75,7 @@ function generateDemoData() {
     }),
     createEventRecord({
       title: "Try Compass",
-      description: `Welcome! Explore your calendar. When ready to bring in Google events, select 'Connect Google Calendar' from the command palette (${modKey}+K)`,
+      description: `Welcome! Click any empty time slot to create an event, or press C. When you're ready to sync Google Calendar, open the command palette (${modKey}+K) and choose Connect Google Calendar.`,
       schedule: {
         kind: "timed",
         start: todayAt(10, 0),
@@ -95,7 +95,8 @@ function generateDemoData() {
     }),
     createEventRecord({
       title: "Call a friend",
-      description: "Of all possessions, a friend is the most precious.",
+      description:
+        "Your calendar, your data. Sign up whenever you're ready to save across devices.",
       schedule: {
         kind: "timed",
         start: todayAt(17, 0),
@@ -116,7 +117,7 @@ function generateDemoData() {
     // Onboarding hints (previously seeded as tasks, now calendar events).
     createEventRecord({
       title: "Peek at your week",
-      description: `Press '${VIEW_SHORTCUTS.week.key}' to switch to Week view and see the whole week at a glance.`,
+      description: `Press '${VIEW_SHORTCUTS.week.key}' to switch to Week view and see the whole week at a glance. Press '?' anytime for all keyboard shortcuts.`,
       schedule: {
         kind: "timed",
         start: todayAt(14, 0),
@@ -126,7 +127,8 @@ function generateDemoData() {
     }),
     createEventRecord({
       title: "Create your daily plan",
-      description: "Block time for what matters most, then let the day flow.",
+      description:
+        "Press C to create an event, or drag across empty slots on the grid to block time for what matters most.",
       schedule: {
         kind: "timed",
         start: todayAt(15, 0),

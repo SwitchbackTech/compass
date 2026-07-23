@@ -1,3 +1,4 @@
+import { type EventId } from "@core/types/domain-primitives";
 import { Origin } from "@core/constants/core.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type Event } from "@core/types/event.contracts";
@@ -79,7 +80,9 @@ const isValidScheduledEvent = (event: Event): boolean => {
 const withCalendarMetadata = (
   events: Event[],
   gridEvents: GridEvent[],
+  demoEventIds?: readonly EventId[],
 ): GridEvent[] => {
+  const demoEventIdSet = new Set(demoEventIds ?? []);
   const metadataByEventId = new Map<
     string,
     { calendarId: Event["calendarId"]; isBusy: boolean }
@@ -97,6 +100,9 @@ const withCalendarMetadata = (
       ...gridEvent,
       calendarId: metadata?.calendarId,
       isBusy: metadata?.isBusy ?? false,
+      isDemo: gridEvent._id
+        ? demoEventIdSet.has(gridEvent._id as EventId)
+        : false,
     };
   });
 };
@@ -105,7 +111,11 @@ const withCalendarMetadata = (
 // datetime (kept so the RRULE and series id are reachable for editing), but
 // the first occurrence itself is a separately materialized doc that renders
 // the actual card. Rendering the base too would double the first day.
-const gridEventsFrom = (events: Event[], kind: "timed" | "allDay") => {
+const gridEventsFrom = (
+  events: Event[],
+  kind: "timed" | "allDay",
+  demoEventIds?: readonly EventId[],
+) => {
   const scheduled = events
     .filter(isValidScheduledEvent)
     .filter((event) => event.schedule.kind === kind)
@@ -115,13 +125,18 @@ const gridEventsFrom = (events: Event[], kind: "timed" | "allDay") => {
     .filter((event): event is EventWithDates => hasEventDates(event))
     .map(assembleGridEvent);
 
-  return withCalendarMetadata(scheduled, assembled);
+  return withCalendarMetadata(scheduled, assembled, demoEventIds);
 };
 
-const timedEventsFrom = (events: Event[]) => gridEventsFrom(events, "timed");
+const timedEventsFrom = (
+  events: Event[],
+  demoEventIds?: readonly EventId[],
+) => gridEventsFrom(events, "timed", demoEventIds);
 
-const allDayEventsFrom = (events: Event[]) =>
-  assignEventsToRow(gridEventsFrom(events, "allDay")).allDayEvents;
+const allDayEventsFrom = (
+  events: Event[],
+  demoEventIds?: readonly EventId[],
+) => assignEventsToRow(gridEventsFrom(events, "allDay", demoEventIds)).allDayEvents;
 
 const rowCountFrom = (events: GridEvent[]) => {
   const rows = events
@@ -136,20 +151,23 @@ type CalendarEventViewModel = {
   timedEvents: GridEvent[];
   allDayEvents: GridEvent[];
   rowCount: number;
+  demoEventIds?: readonly EventId[];
 };
 
 const computeCalendarEventViewModel = (
   data?: NormalizedEventQueryData,
 ): CalendarEventViewModel => {
   const events = eventsFrom(data);
-  const timedEvents = timedEventsFrom(events);
-  const allDayEvents = allDayEventsFrom(events);
+  const demoEventIds = data?.demoEventIds;
+  const timedEvents = timedEventsFrom(events, demoEventIds);
+  const allDayEvents = allDayEventsFrom(events, demoEventIds);
   return {
     entities: data?.entities ?? {},
     events,
     timedEvents,
     allDayEvents,
     rowCount: rowCountFrom(allDayEvents),
+    demoEventIds,
   };
 };
 

@@ -11,6 +11,8 @@ export type EventEntityMap = Record<EventId, Event>;
 export type NormalizedEvents = {
   ids: EventId[];
   entities: EventEntityMap;
+  /** Present when events are loaded from local IndexedDB records. */
+  demoEventIds?: readonly EventId[];
 };
 
 export type OptimisticEvent = {
