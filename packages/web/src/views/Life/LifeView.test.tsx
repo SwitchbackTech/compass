@@ -33,41 +33,20 @@ async function renderLifeViewWithSidebar() {
 }
 
 const mockNavigate = mock();
-// Snapshotted into a plain object because mock.module mutates the live module
-// in place. Bun's mock.module is process-wide and file order is non-deterministic,
-// so every overridden hook must honor `isRouterMocked` and fall through to the
-// real implementation after afterAll — otherwise later suites (e.g. AuthModal,
-// which drives modal open state via useSearch) see a stuck empty search forever.
+// Bun's mock.module is process-wide and file order is non-deterministic.
+// Gate every overridden hook so afterAll restores real useSearch — otherwise
+// AuthModal (URL-driven via ?auth=) never opens for later files in the process.
 const actualTanstackRouter = { ...(await import("@tanstack/react-router")) };
 let isRouterMocked = true;
 let mockedLifeSearch: Record<string, unknown> = {};
 
 mock.module("@tanstack/react-router", () => ({
   ...actualTanstackRouter,
-  // Check the flag on every render — mock.module's factory result is cached.
-  Link: ({
-    children,
-    to,
-    ...props
-  }: {
-    children: ReactNode;
-    to: string;
-    [key: string]: unknown;
-  }) => {
-    if (!isRouterMocked) {
-      const RealLink = actualTanstackRouter.Link;
-      return (
-        <RealLink to={to} {...props}>
-          {children}
-        </RealLink>
-      );
-    }
-    return (
-      <a href={to} {...props}>
-        {children}
-      </a>
-    );
-  },
+  Link: ({ children, to, ...props }: { children: ReactNode; to: string }) => (
+    <a href={to} {...props}>
+      {children}
+    </a>
+  ),
   useNavigate: (...args: unknown[]) =>
     isRouterMocked
       ? mockNavigate

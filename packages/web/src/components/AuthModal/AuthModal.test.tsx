@@ -1,4 +1,5 @@
 import {
+  type AnyRouter,
   createMemoryHistory,
   createRootRoute,
   createRoute,
@@ -10,18 +11,13 @@ import { act, type ReactElement } from "react";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-  waitForAuthModal,
-  waitForRouterIdle,
-} from "@web/__tests__/helpers/router-test.helpers";
-import {
-  createTestCompleteAuthenticationHook,
-  createTestEmailPasswordPort,
-  registerEmailPasswordPort,
-  registerUseCompleteAuthenticationForTests,
-} from "@web/__tests__/helpers/web-test-seams";
+import { createTestEmailPasswordPort } from "@web/__tests__/helpers/web-test-seams";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
-import { resetEmailPasswordPort } from "@web/auth/compass/hooks/emailpassword.port";
+import {
+  registerEmailPasswordPort,
+  resetEmailPasswordPort,
+} from "@web/auth/compass/hooks/emailpassword.port";
+import { registerUseCompleteAuthenticationForTests } from "@web/auth/compass/hooks/useCompleteAuthentication.registry";
 import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization.registry";
 import {
   resetGoogleAvailabilityForTests,
@@ -34,10 +30,24 @@ import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockGoogleLogin = mock();
 const mockCompleteAuthentication = mock().mockResolvedValue(undefined);
-const mockEmailPassword = createTestEmailPasswordPort();
+let mockEmailPassword = createTestEmailPasswordPort();
 
 const { redirectToToday, loadTodayData } = await import("@web/routers/loaders");
 const { ROOT_ROUTES } = await import("@web/common/constants/routes");
+
+async function waitForRouterIdle(router: AnyRouter) {
+  await waitFor(() => {
+    expect(router.state.status).toBe("idle");
+  });
+}
+
+async function waitForAuthModal(
+  heading: RegExp | string = /hey, welcome back/i,
+) {
+  await waitFor(() => {
+    expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+  });
+}
 
 const ModalTrigger = () => {
   const { openModal } = useAuthModal();
@@ -110,35 +120,13 @@ function installAuthModalTestSeams() {
   mockGoogleLogin.mockClear();
   mockCompleteAuthentication.mockClear();
   mockCompleteAuthentication.mockResolvedValue(undefined);
-
-  mockEmailPassword.signUp.mockClear();
-  mockEmailPassword.signIn.mockClear();
-  mockEmailPassword.sendPasswordResetEmail.mockClear();
-  mockEmailPassword.getResetPasswordTokenFromURL.mockClear();
-  mockEmailPassword.submitNewPassword.mockClear();
-  mockEmailPassword.signUp.mockResolvedValue({
-    status: "OK",
-    user: { emails: ["test@example.com"] },
-  });
-  mockEmailPassword.signIn.mockResolvedValue({
-    status: "OK",
-    user: { emails: ["test@example.com"] },
-  });
-  mockEmailPassword.sendPasswordResetEmail.mockResolvedValue({
-    status: "OK",
-  });
-  mockEmailPassword.getResetPasswordTokenFromURL.mockReturnValue("token");
-  mockEmailPassword.submitNewPassword.mockResolvedValue({
-    status: "OK",
-  });
+  mockEmailPassword = createTestEmailPasswordPort();
 
   registerUseStartGoogleAuthorizationForTests(() => ({
     loading: false,
     startGoogleAuthorization: mockGoogleLogin,
   }));
-  registerUseCompleteAuthenticationForTests(
-    createTestCompleteAuthenticationHook(mockCompleteAuthentication),
-  );
+  registerUseCompleteAuthenticationForTests(() => mockCompleteAuthentication);
   registerEmailPasswordPort(mockEmailPassword);
   resetGoogleAvailabilityForTests();
   setGoogleAvailabilityForTests("available");

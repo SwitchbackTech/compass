@@ -81,7 +81,7 @@ export function createGoogleAvailability({
     emit();
   };
 
-  /** Pins availability for tests and skips the config fetch so MSW is unnecessary. */
+  /** Pins availability for tests and skips the config fetch. */
   const setGoogleAvailabilityForTests = (
     availability: BackendGoogleAvailability,
   ) => {

@@ -229,7 +229,6 @@ Primary setup files:
 - `packages/web/src/__tests__/web.preload.ts` (orchestrator)
 - `packages/web/src/__tests__/web.test.init.ts` (API base URL, Google client id)
 - `packages/web/src/__tests__/helpers/web-test-seams.ts` (default session/toast/Google-auth test ports; helpers for emailpassword + complete-auth registration)
-- `packages/web/src/__tests__/helpers/router-test.helpers.ts` (`waitForRouterIdle`, `waitForAuthModal`)
 - `packages/web/src/__tests__/__mocks__/server/mock.handlers.ts`
 
 Current defaults worth knowing:

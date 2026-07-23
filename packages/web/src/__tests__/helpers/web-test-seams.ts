@@ -1,13 +1,6 @@
 import * as actualReactToastify from "react-toastify";
-import {
-  type EmailPasswordPort,
-  registerEmailPasswordPort,
-} from "@web/auth/compass/hooks/emailpassword.port";
-import {
-  registerUseCompleteAuthenticationForTests,
-  resetUseCompleteAuthenticationForTests,
-  type UseCompleteAuthentication,
-} from "@web/auth/compass/hooks/useCompleteAuthentication.registry";
+import { type EmailPasswordPort } from "@web/auth/compass/hooks/emailpassword.port";
+import { resetUseCompleteAuthenticationForTests } from "@web/auth/compass/hooks/useCompleteAuthentication.registry";
 import {
   registerSessionApiPort,
   resetSessionApiPort,
@@ -111,23 +104,13 @@ export function createTestEmailPasswordPort(): EmailPasswordPort {
   };
 }
 
-export function createTestCompleteAuthenticationHook(
-  completeAuthentication: ReturnType<UseCompleteAuthentication> = mock().mockResolvedValue(
-    undefined,
-  ) as ReturnType<UseCompleteAuthentication>,
-): UseCompleteAuthentication {
-  return () => completeAuthentication;
-}
-
 export function installDefaultWebTestSeams(): void {
   registerSessionApiPort(createDefaultTestSessionPort());
   registerToastPort(createTestToastPort().port);
   registerUseStartGoogleAuthorizationForTests(
     createDefaultTestGoogleAuthorizationHook(),
   );
-  // Pin availability and skip /config fetch (no MSW handler). Default
-  // "unavailable" matches the prior failed-fetch behavior when AuthModal's
-  // process-wide useIsGoogleAvailable mock was not loaded yet.
+  // Skip /config fetch (no MSW handler); "unavailable" matches prior failed-fetch default.
   resetGoogleAvailabilityForTests();
   setGoogleAvailabilityForTests("unavailable");
 }
@@ -136,11 +119,7 @@ export function resetWebTestSeams(): void {
   resetSessionApiPort();
   resetToastPort();
   resetUseStartGoogleAuthorizationForTests();
-  // Do not reset emailpassword here — restoring the production SuperTokens
-  // recipe patches XMLHttpRequest and fights MSW for every later file in the
-  // process. AuthModal tests call resetEmailPasswordPort in their own afterAll.
+  // AuthModal owns emailpassword reset — production SuperTokens patches XHR vs MSW.
   resetUseCompleteAuthenticationForTests();
   resetGoogleAvailabilityForTests();
 }
-
-export { registerEmailPasswordPort, registerUseCompleteAuthenticationForTests };
