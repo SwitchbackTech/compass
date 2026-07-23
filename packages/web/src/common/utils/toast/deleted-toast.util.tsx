@@ -1,6 +1,6 @@
 import {
   EVENT_DELETED_TOAST_ID,
-  toastDefaultOptions,
+  getToastDefaultOptions,
 } from "@web/common/constants/toast.constants";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { getToast } from "@web/common/utils/toast/toast.port";
@@ -35,6 +35,6 @@ export function showDeletedToast(withUndoHint: boolean): void {
 export function showRestoredToast(): void {
   getToast().update(EVENT_DELETED_TOAST_ID, {
     render: "Restored",
-    autoClose: toastDefaultOptions.autoClose,
+    autoClose: getToastDefaultOptions().autoClose,
   });
 }

@@ -412,8 +412,15 @@
 }
 
 @utility c-keycap {
-  @apply inline-flex items-center rounded border border-border bg-surface-panel px-1.5 py-0.5 font-medium text-text-muted leading-none;
+  @apply inline-flex min-h-4.5 items-center justify-center rounded border border-border bg-surface-panel px-1.5 py-0.5 font-medium text-text-muted leading-none;
+
   font-size: var(--font-size-s);
+
+  & svg {
+    width: 1em;
+    height: 1em;
+    flex-shrink: 0;
+  }
 }
 
 @utility c-context-menu-item {
