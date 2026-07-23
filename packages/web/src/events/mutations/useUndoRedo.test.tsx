@@ -189,7 +189,9 @@ describe("useUndoRedo", () => {
           ?.entities[created.id],
       ).toBeDefined();
     });
-    const createCalls = context.calls.filter(({ method }) => method === "create");
+    const createCalls = context.calls.filter(
+      ({ method }) => method === "create",
+    );
     expect(createCalls).toHaveLength(2);
     expect((createCalls.at(-1)?.value as CreateEventInput).id).toBe(created.id);
   });
