@@ -3,6 +3,7 @@ import {
   type ConnectionId,
   type PrincipalId,
   type ProviderCalendarId,
+  type ProviderCalendarSourceId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
@@ -64,6 +65,31 @@ export class ProviderCalendarRepository {
       throw new Error("Upsert did not return a calendar record");
     }
     return ProviderCalendarRecordSchema.parse(result);
+  }
+
+  // Mark inactive every calendar of a connection whose provider id is NOT in
+  // `presentProviderCalendarIds`, and return how many were changed. Used after a
+  // FULL discovery pass to retire calendars the account no longer lists (an
+  // incremental pass must not call this — absence there means "unchanged", not
+  // "removed"). Marking inactive rather than deleting keeps a calendar's Sync _id
+  // (and any downstream preferences) if it later returns. Owner-scoped.
+  async deactivateAbsent(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+    presentProviderCalendarIds: readonly ProviderCalendarSourceId[],
+  ): Promise<number> {
+    const result = await this.collection.updateMany(
+      {
+        tenantId,
+        principalId,
+        connectionId,
+        active: true,
+        providerCalendarId: { $nin: [...presentProviderCalendarIds] },
+      },
+      { $set: { active: false, updatedAt: new Date() } },
+    );
+    return result.modifiedCount;
   }
 
   async listByConnection(

@@ -11,6 +11,7 @@ import { ReadinessRegistry } from "@sync/lifecycle/readiness";
 import { ShutdownCoordinator } from "@sync/lifecycle/shutdown";
 import { deriveOAuthStateSecret } from "@sync/oauth/oauth-state";
 import { GoogleAuthAdapter } from "@sync/providers/google/google-auth.adapter";
+import { GoogleCalendarAdapter } from "@sync/providers/google/google-calendar.adapter";
 import { GoogleEventReaderAdapter } from "@sync/providers/google/google-event-reader.adapter";
 import { GoogleEventWriter } from "@sync/providers/google/google-event-writer.adapter";
 import { GoogleNotificationAdapter } from "@sync/providers/google/google-notifications.adapter";
@@ -25,6 +26,7 @@ import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { randomUUID } from "node:crypto";
@@ -252,6 +254,8 @@ function buildSchedulers(
       occurrences: new EventOccurrenceRepository(db, mongo.client),
       resources,
       calendars: new ProviderCalendarRepository(db),
+      connections: new ProviderConnectionRepository(db),
+      discovery: new GoogleCalendarAdapter(),
       commands: new CommandRepository(db),
       jobs,
       reader: new GoogleEventReaderAdapter(),

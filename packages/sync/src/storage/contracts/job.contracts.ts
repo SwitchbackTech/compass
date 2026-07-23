@@ -8,6 +8,7 @@ import {
 } from "@core/types/sync/identity.contracts";
 
 export const JobKindSchema = z.enum([
+  "calendarListSync",
   "initialImport",
   "incrementalPull",
   "commandApply",
