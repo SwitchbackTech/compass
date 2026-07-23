@@ -22,8 +22,9 @@ import { performance } from "node:perf_hooks";
  * Run explicitly and read the `[bench]` summary lines from stdout:
  *
  *   RUN_BENCH=1 TZ=UTC bun packages/scripts/src/testing/test-mongo-env.ts backend -- \
- *     './packages/backend/src/__tests__/bench/**/*.db.test.ts'
+ *     ./packages/backend/src/__tests__/bench/
  *
+ * (Pass only bench db test files under that directory.)
  * See docs/development/performance-baselines.md for the last recorded
  * numbers and the regression-investigation rule.
  */

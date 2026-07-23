@@ -239,27 +239,30 @@ describe("withGoogleRetry Retry-After handling", () => {
     ["absent", undefined],
     ["an HTTP-date", "Wed, 21 Oct 2015 07:28:00 GMT"],
     ["garbage", "soon-ish"],
-  ])("falls back to computed backoff when the hint is %s", async (_case, value) => {
-    const randomSpy = spyOn(Math, "random").mockReturnValue(0.5);
-    const sleep = mock(noopSleep);
-    const err = makeGaxiosError({
-      status: 429,
-      headers: value === undefined ? undefined : { "retry-after": value },
-    });
-    const fn = mock()
-      .mockImplementationOnce(() => Promise.reject(err))
-      .mockResolvedValueOnce("ok");
+  ])(
+    "falls back to computed backoff when the hint is %s",
+    async (_case, value) => {
+      const randomSpy = spyOn(Math, "random").mockReturnValue(0.5);
+      const sleep = mock(noopSleep);
+      const err = makeGaxiosError({
+        status: 429,
+        headers: value === undefined ? undefined : { "retry-after": value },
+      });
+      const fn = mock()
+        .mockImplementationOnce(() => Promise.reject(err))
+        .mockResolvedValueOnce("ok");
 
-    await expect(
-      withGoogleRetry(fn, { sleep, baseDelayMs: 500, maxDelayMs: 30_000 }),
-    ).resolves.toBe("ok");
+      await expect(
+        withGoogleRetry(fn, { sleep, baseDelayMs: 500, maxDelayMs: 30_000 }),
+      ).resolves.toBe("ok");
 
-    // computeBackoffDelayMs(0, {baseDelayMs: 500, maxDelayMs: 30000}) with
-    // Math.random() mocked to 0.5: cap = 500, delay = 0.5 * 500.
-    expect(sleep).toHaveBeenCalledWith(250);
+      // computeBackoffDelayMs(0, {baseDelayMs: 500, maxDelayMs: 30000}) with
+      // Math.random() mocked to 0.5: cap = 500, delay = 0.5 * 500.
+      expect(sleep).toHaveBeenCalledWith(250);
 
-    randomSpy.mockRestore();
-  });
+      randomSpy.mockRestore();
+    },
+  );
 });
 
 describe("withGoogleRetry observability logging", () => {
