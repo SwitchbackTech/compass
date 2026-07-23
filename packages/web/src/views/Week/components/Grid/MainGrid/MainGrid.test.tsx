@@ -22,7 +22,15 @@ import {
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
-import { useDraftStore } from "@web/events/stores/draft.store";
+import {
+  allDayGridSchedule,
+  createGridEventDraft,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
+import {
+  initialDraftState,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { DECK_INDENT, DRAFT_DURATION_MIN } from "@web/grid/grid.constants";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -101,6 +109,7 @@ afterEach(() => {
   weekEventRegistry.clear();
   pendingEventIds = [];
   seededWeekEvents = [];
+  useDraftStore.setState(initialDraftState);
 });
 
 const startOfView = dayjs("2024-01-14T00:00:00.000");
@@ -131,20 +140,36 @@ const seedGrid = (
 ) => {
   seededWeekEvents = events;
 
-  if (draftEvent) {
-    useDraftStore.setState({
-      event: draftEvent,
-      status: {
-        activity: "keyboardEdit",
-        dateToResize: null,
-        eventType: draftEvent.isAllDay
-          ? Categories_Event.ALLDAY
-          : Categories_Event.TIMED,
-        isDrafting: true,
-        isFormOpen: false,
-      },
-    });
+  if (!draftEvent) {
+    useDraftStore.setState(initialDraftState);
+    return;
   }
+
+  const schedule = draftEvent.isAllDay
+    ? allDayGridSchedule(draftEvent.startDate!, draftEvent.endDate!)
+    : timedGridSchedule(
+        new Date(draftEvent.startDate!),
+        new Date(draftEvent.endDate!),
+      );
+  const gridDraft = createGridEventDraft(
+    schedule,
+    EventIdSchema.parse(draftEvent._id!),
+    draftEvent.calendarId ?? null,
+  );
+
+  useDraftStore.setState({
+    event: draftEvent,
+    gridDraft,
+    status: {
+      activity: "keyboardEdit",
+      dateToResize: null,
+      eventType: draftEvent.isAllDay
+        ? Categories_Event.ALLDAY
+        : Categories_Event.TIMED,
+      isDrafting: true,
+      isFormOpen: false,
+    },
+  });
 };
 
 const createDateCalcs = () => ({

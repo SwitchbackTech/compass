@@ -56,9 +56,9 @@ export const AllDayEvents = ({
       allDayEvents.filter(
         (event: GridEvent) =>
           isAllDayEventInVisibleDays(event, weekDays) &&
-          !(event._id === draftId && !draft?.isAllDay),
+          !(event._id === draftId && !draftOverlay?.isAllDay),
       ),
-    [allDayEvents, draft?.isAllDay, draftId, weekDays],
+    [allDayEvents, draftOverlay?.isAllDay, draftId, weekDays],
   );
   // Resolved once per event here (not inside each card) and kept referentially
   // stable across renders where neither the events nor the calendars changed,

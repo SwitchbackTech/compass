@@ -53,9 +53,9 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
       timedEvents.filter(
         (event) =>
           isTimedEventInVisibleDays(event, weekDays) &&
-          !(event._id === draftId && draft?.isAllDay),
+          !(event._id === draftId && draftOverlay?.isAllDay),
       ),
-    [draft?.isAllDay, draftId, timedEvents, weekDays],
+    [draftOverlay?.isAllDay, draftId, timedEvents, weekDays],
   );
   const timedEventItems = useMemo(
     () => createTimedEventLayout(visibleTimedEvents),
