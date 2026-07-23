@@ -32,14 +32,7 @@ export function ShortCutLabel({ k }: { k: string; size?: number }) {
     const IconComponent = keyIconMap[key];
 
     if (IconComponent) {
-      return (
-        <IconComponent
-          key={key}
-          data-testid={testId}
-          weight="regular"
-          aria-hidden
-        />
-      );
+      return <IconComponent key={key} data-testid={testId} weight="regular" />;
     }
 
     return (
