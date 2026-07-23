@@ -685,7 +685,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                 onKeyDown={handleIgnoredKeys}
                 placeholder="Description"
                 value={event.description || ""}
-                className="relative max-h-45 w-full overflow-y-auto border-hidden bg-transparent"
+                className="relative w-full border-hidden bg-transparent"
               />
             </FormCard>
           </fieldset>
