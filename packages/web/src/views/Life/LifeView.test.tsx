@@ -33,24 +33,56 @@ async function renderLifeViewWithSidebar() {
 }
 
 const mockNavigate = mock();
+// Snapshotted into a plain object because mock.module mutates the live module
+// in place. Bun's mock.module is process-wide and file order is non-deterministic,
+// so every overridden hook must honor `isRouterMocked` and fall through to the
+// real implementation after afterAll — otherwise later suites (e.g. AuthModal,
+// which drives modal open state via useSearch) see a stuck empty search forever.
 const actualTanstackRouter = { ...(await import("@tanstack/react-router")) };
 let isRouterMocked = true;
 let mockedLifeSearch: Record<string, unknown> = {};
 
 mock.module("@tanstack/react-router", () => ({
   ...actualTanstackRouter,
-  Link: ({ children, to, ...props }: { children: ReactNode; to: string }) => (
-    <a href={to} {...props}>
-      {children}
-    </a>
-  ),
+  // Check the flag on every render — mock.module's factory result is cached.
+  Link: ({
+    children,
+    to,
+    ...props
+  }: {
+    children: ReactNode;
+    to: string;
+    [key: string]: unknown;
+  }) => {
+    if (!isRouterMocked) {
+      const RealLink = actualTanstackRouter.Link;
+      return (
+        <RealLink to={to} {...props}>
+          {children}
+        </RealLink>
+      );
+    }
+    return (
+      <a href={to} {...props}>
+        {children}
+      </a>
+    );
+  },
   useNavigate: (...args: unknown[]) =>
     isRouterMocked
       ? mockNavigate
       : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of this suite.
         actualTanstackRouter.useNavigate(...(args as [])),
-  useLocation: () => ({ pathname: "/life" }),
-  useSearch: () => mockedLifeSearch,
+  useLocation: (...args: unknown[]) =>
+    isRouterMocked
+      ? { pathname: "/life" }
+      : // biome-ignore lint/correctness/useHookAtTopLevel: mock.module factory; flag flips once in afterAll.
+        actualTanstackRouter.useLocation(...(args as [])),
+  useSearch: (...args: unknown[]) =>
+    isRouterMocked
+      ? mockedLifeSearch
+      : // biome-ignore lint/correctness/useHookAtTopLevel: mock.module factory; flag flips once in afterAll.
+        actualTanstackRouter.useSearch(...(args as [])),
 }));
 
 afterAll(() => {

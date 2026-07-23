@@ -7,5 +7,8 @@ const googleAvailability = createGoogleAvailability({
   isGoogleAuthConfigured: IS_GOOGLE_AUTH_CONFIGURED,
 });
 
-export const { resetGoogleAvailabilityForTests, useIsGoogleAvailable } =
-  googleAvailability;
+export const {
+  resetGoogleAvailabilityForTests,
+  setGoogleAvailabilityForTests,
+  useIsGoogleAvailable,
+} = googleAvailability;

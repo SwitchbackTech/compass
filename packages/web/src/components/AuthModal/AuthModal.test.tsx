@@ -10,83 +10,35 @@ import { act, type ReactElement } from "react";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import {
+  waitForAuthModal,
+  waitForRouterIdle,
+} from "@web/__tests__/helpers/router-test.helpers";
+import {
+  createTestCompleteAuthenticationHook,
+  createTestEmailPasswordPort,
+  registerEmailPasswordPort,
+  registerUseCompleteAuthenticationForTests,
+} from "@web/__tests__/helpers/web-test-seams";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
+import { resetEmailPasswordPort } from "@web/auth/compass/hooks/emailpassword.port";
 import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization.registry";
-import { validateAuthSearch } from "@web/components/AuthModal/hooks/useAuthModal";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  resetGoogleAvailabilityForTests,
+  setGoogleAvailabilityForTests,
+} from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
+import { AuthModal } from "./AuthModal";
+import { AuthModalProvider } from "./AuthModalProvider";
+import { useAuthModal, validateAuthSearch } from "./hooks/useAuthModal";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Mock useSession
-const mockUseSession = mock(() => ({
-  authenticated: false,
-  setAuthenticated: mock(),
-}));
-
-mock.module("@web/auth/compass/session/useSession", () => ({
-  useSession: () => mockUseSession(),
-}));
-
-// Mock Google authorization start hook
 const mockGoogleLogin = mock();
-
-const mockUseIsGoogleAvailable = mock(() => true);
-mock.module(
-  "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable",
-  () => ({
-    useIsGoogleAvailable: () => mockUseIsGoogleAvailable(),
-  }),
-);
-
-mock.module("@web/common/constants/env.constants", () => ({
-  ENV_WEB: {
-    GOOGLE_CLIENT_ID: "test-client-id",
-  },
-  IS_GOOGLE_AUTH_CONFIGURED: true,
-}));
-
-const mockCompleteAuthentication = mock();
-mock.module("@web/auth/compass/hooks/useCompleteAuthentication", () => ({
-  useCompleteAuthentication: () => mockCompleteAuthentication,
-}));
-
-const mockEmailPassword = {
-  getResetPasswordTokenFromURL: mock(),
-  sendPasswordResetEmail: mock(),
-  signIn: mock(),
-  signUp: mock(),
-  submitNewPassword: mock(),
-};
-
-mock.module("supertokens-web-js/recipe/emailpassword", () => ({
-  default: mockEmailPassword,
-  ...mockEmailPassword,
-}));
-
-// Mock GoogleButton - uses button with label for semantic queries (matches real component's aria-label)
-mock.module("@web/components/AuthModal/components/GoogleButton", () => ({
-  GoogleButton: ({
-    onClick,
-    label,
-  }: {
-    onClick: () => void;
-    label: string;
-  }) => (
-    <button type="button" onClick={onClick} aria-label={label}>
-      {label}
-    </button>
-  ),
-}));
+const mockCompleteAuthentication = mock().mockResolvedValue(undefined);
+const mockEmailPassword = createTestEmailPasswordPort();
 
 const { redirectToToday, loadTodayData } = await import("@web/routers/loaders");
 const { ROOT_ROUTES } = await import("@web/common/constants/routes");
 
-// Imported dynamically (after the mock.module calls above) so the mocked
-// session/Google/emailpassword modules are in place before AuthModal's
-// dependency chain (via useAuthFormHandlers) first resolves them.
-const { AuthModal } = await import("./AuthModal");
-const { AuthModalProvider } = await import("./AuthModalProvider");
-const { useAuthModal } = await import("./hooks/useAuthModal");
-
-// Helper component to trigger modal open
 const ModalTrigger = () => {
   const { openModal } = useAuthModal();
   return (
@@ -112,20 +64,9 @@ const renderWithProviders = async (
     { initialEntries: [initialRoute] },
   );
   const result = render(<RouterProvider router={router} />);
-
-  // TanStack's RouterProvider resolves the initial match asynchronously
-  // (even with no loaders), unlike react-router-dom's synchronous
-  // MemoryRouter, so tests must wait for it to settle before querying.
-  await waitFor(() => {
-    expect(router.state.status).toBe("idle");
-  });
-
+  await waitForRouterIdle(router);
   return { router, ...result };
 };
-
-async function flushEffects() {
-  await Promise.resolve();
-}
 
 const DayRedirectShell = () => (
   <AuthModalProvider>
@@ -134,7 +75,7 @@ const DayRedirectShell = () => (
   </AuthModalProvider>
 );
 
-const renderWithDayRedirectRoute = (initialRoute: string) => {
+const renderWithDayRedirectRoute = async (initialRoute: string) => {
   const dayRootRoute = createRootRoute({ validateSearch: validateAuthSearch });
   const dayRoute = createRoute({
     getParentRoute: () => dayRootRoute,
@@ -160,47 +101,56 @@ const renderWithDayRedirectRoute = (initialRoute: string) => {
     defaultPendingMs: 0,
   });
 
-  return {
-    router,
-    ...render(<RouterProvider router={router} />),
-  };
+  const result = render(<RouterProvider router={router} />);
+  await waitForRouterIdle(router);
+  return { router, ...result };
 };
+
+function installAuthModalTestSeams() {
+  mockGoogleLogin.mockClear();
+  mockCompleteAuthentication.mockClear();
+  mockCompleteAuthentication.mockResolvedValue(undefined);
+
+  mockEmailPassword.signUp.mockClear();
+  mockEmailPassword.signIn.mockClear();
+  mockEmailPassword.sendPasswordResetEmail.mockClear();
+  mockEmailPassword.getResetPasswordTokenFromURL.mockClear();
+  mockEmailPassword.submitNewPassword.mockClear();
+  mockEmailPassword.signUp.mockResolvedValue({
+    status: "OK",
+    user: { emails: ["test@example.com"] },
+  });
+  mockEmailPassword.signIn.mockResolvedValue({
+    status: "OK",
+    user: { emails: ["test@example.com"] },
+  });
+  mockEmailPassword.sendPasswordResetEmail.mockResolvedValue({
+    status: "OK",
+  });
+  mockEmailPassword.getResetPasswordTokenFromURL.mockReturnValue("token");
+  mockEmailPassword.submitNewPassword.mockResolvedValue({
+    status: "OK",
+  });
+
+  registerUseStartGoogleAuthorizationForTests(() => ({
+    loading: false,
+    startGoogleAuthorization: mockGoogleLogin,
+  }));
+  registerUseCompleteAuthenticationForTests(
+    createTestCompleteAuthenticationHook(mockCompleteAuthentication),
+  );
+  registerEmailPasswordPort(mockEmailPassword);
+  resetGoogleAvailabilityForTests();
+  setGoogleAvailabilityForTests("available");
+}
 
 describe("AuthModal", () => {
   beforeEach(() => {
-    mockUseSession.mockClear();
-    mockGoogleLogin.mockClear();
-    registerUseStartGoogleAuthorizationForTests(() => ({
-      loading: false,
-      startGoogleAuthorization: mockGoogleLogin,
-    }));
-    mockUseIsGoogleAvailable.mockClear();
-    mockCompleteAuthentication.mockClear();
-    mockEmailPassword.signUp.mockClear();
-    mockEmailPassword.signIn.mockClear();
-    mockEmailPassword.sendPasswordResetEmail.mockClear();
-    mockEmailPassword.getResetPasswordTokenFromURL.mockClear();
-    mockEmailPassword.submitNewPassword.mockClear();
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: mock(),
-    });
-    mockUseIsGoogleAvailable.mockReturnValue(true);
-    mockEmailPassword.signUp.mockResolvedValue({
-      status: "OK",
-      user: { emails: ["test@example.com"] },
-    });
-    mockEmailPassword.signIn.mockResolvedValue({
-      status: "OK",
-      user: { emails: ["test@example.com"] },
-    });
-    mockEmailPassword.sendPasswordResetEmail.mockResolvedValue({
-      status: "OK",
-    });
-    mockEmailPassword.getResetPasswordTokenFromURL.mockReturnValue("token");
-    mockEmailPassword.submitNewPassword.mockResolvedValue({
-      status: "OK",
-    });
+    installAuthModalTestSeams();
+  });
+
+  afterAll(() => {
+    resetEmailPasswordPort();
   });
 
   describe("Modal Open/Close", () => {
@@ -213,13 +163,7 @@ describe("AuthModal", () => {
       ).not.toBeInTheDocument();
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
-      await flushEffects();
-
-      await waitFor(() => {
-        expect(
-          screen.getByRole("heading", { name: /hey, welcome back/i }),
-        ).toBeInTheDocument();
-      });
+      await waitForAuthModal();
     });
 
     it("closes modal when backdrop is clicked", async () => {
@@ -227,20 +171,12 @@ describe("AuthModal", () => {
       await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
-      await flushEffects();
+      await waitForAuthModal();
 
-      await waitFor(() => {
-        expect(
-          screen.getByRole("heading", { name: /hey, welcome back/i }),
-        ).toBeInTheDocument();
-      });
-
-      // Click on backdrop using semantic role query
       const backdrop = screen.getByRole("presentation");
       expect(backdrop).toBeInTheDocument();
 
       await user.click(backdrop);
-      await flushEffects();
 
       await waitFor(() => {
         expect(
@@ -254,22 +190,14 @@ describe("AuthModal", () => {
       await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
-      await flushEffects();
+      await waitForAuthModal();
 
-      await waitFor(() => {
-        expect(
-          screen.getByRole("heading", { name: /hey, welcome back/i }),
-        ).toBeInTheDocument();
-      });
-
-      // Focus the backdrop so it can receive keyboard events
       const backdrop = screen.getByRole("presentation");
       await act(async () => {
         backdrop.focus();
       });
 
       await user.keyboard("{Escape}");
-      await flushEffects();
 
       await waitFor(() => {
         expect(
@@ -283,16 +211,11 @@ describe("AuthModal", () => {
       const { router } = await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
-      await flushEffects();
-
+      await waitForAuthModal();
       await waitFor(() => {
-        expect(
-          screen.getByRole("heading", { name: /hey, welcome back/i }),
-        ).toBeInTheDocument();
+        expect(router.state.location.searchStr).toBe("?auth=login");
       });
-      expect(router.state.location.searchStr).toBe("?auth=login");
 
-      // Simulate the browser back button popping the pushed entry
       await act(async () => {
         router.history.back();
       });
@@ -309,17 +232,20 @@ describe("AuthModal", () => {
       const { router } = await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
-      await flushEffects();
-      expect(router.state.location.searchStr).toBe("?auth=login");
+      await waitForAuthModal();
+      await waitFor(() => {
+        expect(router.state.location.searchStr).toBe("?auth=login");
+      });
 
       const backdrop = screen.getByRole("presentation");
       await act(async () => {
         backdrop.focus();
       });
       await user.keyboard("{Escape}");
-      await flushEffects();
 
-      expect(router.state.location.searchStr).toBe("");
+      await waitFor(() => {
+        expect(router.state.location.searchStr).toBe("");
+      });
     });
   });
 
@@ -832,16 +758,15 @@ describe("AuthModal", () => {
 
     it("hides Google sign in when backend Google support is unavailable", async () => {
       const user = userEvent.setup();
-      mockUseIsGoogleAvailable.mockReturnValue(false);
+      setGoogleAvailabilityForTests("unavailable");
       await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
+      await waitForAuthModal();
 
-      await waitFor(() => {
-        expect(
-          screen.queryByRole("button", { name: /continue with google/i }),
-        ).not.toBeInTheDocument();
-      });
+      expect(
+        screen.queryByRole("button", { name: /continue with google/i }),
+      ).not.toBeInTheDocument();
     });
 
     it("keeps consistent button label when switching views", async () => {
@@ -909,21 +834,7 @@ describe("AuthModal", () => {
 
 describe("URL Parameter Support", () => {
   beforeEach(() => {
-    mockUseSession.mockClear();
-    mockGoogleLogin.mockClear();
-    mockCompleteAuthentication.mockClear();
-    mockEmailPassword.signUp.mockClear();
-    mockEmailPassword.signIn.mockClear();
-    mockEmailPassword.sendPasswordResetEmail.mockClear();
-    mockEmailPassword.getResetPasswordTokenFromURL.mockClear();
-    mockEmailPassword.submitNewPassword.mockClear();
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: mock(),
-    });
-    mockEmailPassword.submitNewPassword.mockResolvedValue({
-      status: "OK",
-    });
+    installAuthModalTestSeams();
   });
 
   it("opens sign in modal when ?auth=login is present", async () => {
@@ -1001,7 +912,7 @@ describe("URL Parameter Support", () => {
     );
 
     await user.click(screen.getByRole("button", { name: /open modal/i }));
-    await flushEffects();
+    await waitForAuthModal();
     await waitFor(() => {
       expect(router.state.location.search as Record<string, unknown>).toEqual({
         ref: "newsletter",
@@ -1014,7 +925,6 @@ describe("URL Parameter Support", () => {
       backdrop.focus();
     });
     await user.keyboard("{Escape}");
-    await flushEffects();
 
     await waitFor(() => {
       expect(router.state.location.search as Record<string, unknown>).toEqual({
@@ -1026,16 +936,14 @@ describe("URL Parameter Support", () => {
   it("opens reset password after the /day redirect preserves auth params", async () => {
     const { dateString } = loadTodayData();
 
-    const { router } = renderWithDayRedirectRoute(
+    const { router } = await renderWithDayRedirectRoute(
       "/day?auth=reset&token=reset-token",
     );
 
     await waitFor(() => {
       expect(screen.getByText("Day route loaded")).toBeInTheDocument();
-      expect(
-        screen.getByRole("heading", { name: /set new password/i }),
-      ).toBeInTheDocument();
     });
+    await waitForAuthModal(/set new password/i);
 
     // The ?auth param stays in the URL while the modal is open (URL is the
     // modal's source of truth), so the redirect preserves both params

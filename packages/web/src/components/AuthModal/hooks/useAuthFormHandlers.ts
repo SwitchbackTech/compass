@@ -1,6 +1,6 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import EmailPassword from "supertokens-web-js/recipe/emailpassword";
+import { getEmailPasswordPort } from "@web/auth/compass/hooks/emailpassword.port";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import {
   type ForgotPasswordFormData,
@@ -56,7 +56,7 @@ export function useAuthFormHandlers({
       setSubmitError(null);
 
       try {
-        const response = await EmailPassword.signUp({
+        const response = await getEmailPasswordPort().signUp({
           // Same as signIn below: signing up is always a fresh identity, so
           // never link it to whatever session the browser still holds. A
           // stale cookie would otherwise attach the new account to it.
@@ -98,7 +98,7 @@ export function useAuthFormHandlers({
       setSubmitError(null);
 
       try {
-        const response = await EmailPassword.signIn({
+        const response = await getEmailPasswordPort().signIn({
           shouldTryLinkingWithSessionUser: false,
           formFields: [
             { id: "email", value: data.email },
@@ -137,7 +137,7 @@ export function useAuthFormHandlers({
       setIsSubmitting(true);
 
       try {
-        const response = await EmailPassword.sendPasswordResetEmail({
+        const response = await getEmailPasswordPort().sendPasswordResetEmail({
           formFields: [{ id: "email", value: data.email }],
         });
 
@@ -181,7 +181,7 @@ export function useAuthFormHandlers({
             search: (prev) => ({ ...prev, token }),
           });
         }
-        const response = await EmailPassword.submitNewPassword({
+        const response = await getEmailPasswordPort().submitNewPassword({
           formFields: [{ id: "password", value: data.password }],
         });
 

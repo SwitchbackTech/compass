@@ -79,6 +79,8 @@ const needsHookTimeout =
 // Web uses jsdom + MSW XHR patching + module singletons that Bun's parallel
 // `--isolate` clears between files (MSW's oldXMLHttpRequest becomes undefined).
 // One process, sequential files is still far faster than the old per-file launcher.
+// Do NOT expand web to an alphabetical file list: that order loads CompassProvider
+// (posthog) immediately after CommandPalette and trips SuperTokens' XHR wrapper.
 const parallelFlag = profile === "web" ? [] : ["--parallel"];
 
 const testTargets = [
