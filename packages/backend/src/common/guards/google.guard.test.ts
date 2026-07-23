@@ -5,7 +5,7 @@ import { type Schema_User } from "@core/types/user.types";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { requireGoogleConnection } from "@backend/common/guards/google.guard";
 import * as userQueries from "@backend/user/queries/user.queries";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const isGoogleConnected = async (userId: string): Promise<boolean> => {
   if (!IDSchema.safeParse(userId).success) {

@@ -5,7 +5,7 @@ import { type Schema_User } from "@core/types/user.types";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import * as userQueries from "@backend/user/queries/user.queries";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { describe, expect, it, spyOn } from "bun:test";
 
 describe("getGcalClient", () => {
   it("throws UserError.MissingGoogleRefreshToken when user exists but has no google", async () => {

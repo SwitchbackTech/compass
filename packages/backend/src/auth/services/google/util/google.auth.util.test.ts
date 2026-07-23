@@ -7,7 +7,7 @@ import {
   determineGoogleAuthMode,
   parseReconnectGoogleParams,
 } from "./google.auth.util";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { describe, expect, it, spyOn } from "bun:test";
 
 function makeCompassUser(overrides?: {
   googleId?: string;

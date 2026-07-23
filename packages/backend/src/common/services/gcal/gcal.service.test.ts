@@ -1,6 +1,5 @@
 import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
-import * as googleWatchToken from "@backend/sync/services/watch/google-watch-token";
-import { beforeAll, describe, expect, it, mock, spyOn } from "bun:test";
+import { beforeAll, describe, expect, it, mock } from "bun:test";
 
 beforeAll(() => {
   mockEnv({ GCAL_WEBHOOK_BASEURL: "https://example.trycloudflare.com/api" });

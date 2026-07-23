@@ -7,13 +7,11 @@ import {
   type VerifySessionOptions,
 } from "supertokens-node/lib/build/recipe/session/types";
 import {
-  LoggerFactory,
   type LoggerFactoryFn,
   registerLoggerFactory,
   resetLoggerFactory,
 } from "@core/logger/logger.factory";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
-import { type UserMetadata } from "@core/types/user.types";
 import { getTestIsolationKey } from "@backend/__tests__/helpers/test-file-context";
 import { getTestGcalFixture } from "@backend/__tests__/helpers/test-gcal-fixture";
 import {

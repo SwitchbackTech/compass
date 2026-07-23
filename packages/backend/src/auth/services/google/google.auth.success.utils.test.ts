@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import * as syncRecords from "@backend/sync/services/records/sync-records.repository";
 import * as userQueries from "@backend/user/queries/user.queries";
 import { determineGoogleAuthMode } from "./util/google.auth.util";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { describe, expect, it, spyOn } from "bun:test";
 
 function makeCompassUser(overrides?: {
   googleId?: string;

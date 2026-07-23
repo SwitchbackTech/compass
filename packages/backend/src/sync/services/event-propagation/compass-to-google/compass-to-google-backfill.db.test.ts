@@ -13,13 +13,11 @@ import { type EventRecord } from "@backend/event/event.record";
 import compassToGoogleBackfill from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google-backfill";
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,
   expect,
   it,
-  mock,
   spyOn,
 } from "bun:test";
 
