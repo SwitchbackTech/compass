@@ -1,3 +1,4 @@
+import { getCurrentTestFileUrl } from "@backend/__tests__/helpers/test-file-context";
 import { createMockCalendarListEntry as mockCalendarListCreate } from "@core/__tests__/helpers/gcal.factory";
 import { type gSchema$CalendarListEntry } from "@core/types/gcal";
 import { type gCalendar } from "@core/types/gcal";
@@ -11,7 +12,7 @@ export interface TestGcalFixtureState {
 
 /**
  * Mutable in-memory Google Calendar fixture for tests. One instance per test
- * file (keyed by import.meta.url) so parallel workers do not share state.
+ * file (keyed by the calling test file URL) so parallel workers do not share state.
  */
 export class TestGcalFixture {
   events: TestGcalFixtureState["events"];
@@ -43,7 +44,7 @@ const fixturesByFile = new Map<string, TestGcalFixture>();
 
 /** Per-file singleton so parallel test files never share gcal fixture state. */
 export function getTestGcalFixture(): TestGcalFixture {
-  const key = import.meta.url;
+  const key = getCurrentTestFileUrl();
   let fixture = fixturesByFile.get(key);
   if (!fixture) {
     fixture = new TestGcalFixture();

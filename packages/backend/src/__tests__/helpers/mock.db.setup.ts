@@ -1,3 +1,4 @@
+import { enterTestFileUrl } from "@backend/__tests__/helpers/test-file-context";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 import { createHash } from "node:crypto";
@@ -11,6 +12,7 @@ export function testDbName(testFileUrl: string): string {
  * Connect mongoService to a unique database for the calling test file.
  */
 export async function setupTestDb(testFileUrl: string): Promise<void> {
+  enterTestFileUrl(testFileUrl);
   const dbName = testDbName(testFileUrl);
 
   try {
@@ -25,6 +27,11 @@ export async function setupTestDb(testFileUrl: string): Promise<void> {
 
     throw error;
   }
+
+  const { setupBackendTestSeams } = await import(
+    "@backend/__tests__/helpers/mock.setup"
+  );
+  setupBackendTestSeams();
 }
 
 export async function cleanupCollections(): Promise<void> {

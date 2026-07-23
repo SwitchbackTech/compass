@@ -228,6 +228,7 @@ describe("CalendarService", () => {
 
   describe("getAvailability", () => {
     afterEach(() => {
+      mock.restore();
     });
 
     it("merges busy periods from multiple freeBusyReader calendars, mapped back to compass ids", async () => {

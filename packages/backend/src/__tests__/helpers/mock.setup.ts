@@ -13,6 +13,7 @@ import {
   type LoggerFactoryFn,
 } from "@core/logger/logger.factory";
 import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
+import { getCurrentTestFileUrl } from "@backend/__tests__/helpers/test-file-context";
 import { getTestGcalFixture } from "@backend/__tests__/helpers/test-gcal-fixture";
 import { enterTestGcalClient } from "@backend/common/services/gcal/gcal.test-context";
 import { CONFIG } from "@backend/common/constants/config.constants";
@@ -43,7 +44,7 @@ function getFileSupertokensStores(): {
   metadata: UserMetadataStore;
   mappings: UserIdMappingStore;
 } {
-  const key = import.meta.url;
+  const key = getCurrentTestFileUrl();
   let stores = fixturesByFile.get(key);
   if (!stores) {
     stores = {
@@ -199,9 +200,13 @@ export function setupBackendTestSeams(): void {
 
 export function mockNodeModules() {
   registerTestLoggerFactory();
-  setupBackendTestSeams();
 
   beforeEach(() => {
+    try {
+      getCurrentTestFileUrl();
+    } catch {
+      return;
+    }
     setupBackendTestSeams();
   });
 }

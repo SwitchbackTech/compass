@@ -67,16 +67,43 @@ export function createInMemoryUserIdMappingStore(): UserIdMappingStore {
 
   return {
     async getUserIdMapping(input) {
-      const superTokensUserId = input.userId;
-      const externalUserId = mappings.get(superTokensUserId);
-      if (!externalUserId) {
+      const userIdType = input.userIdType ?? "SUPERTOKENS";
+
+      if (userIdType === "EXTERNAL") {
+        for (const [superTokensUserId, externalUserId] of mappings) {
+          if (externalUserId === input.userId) {
+            return {
+              status: "OK",
+              superTokensUserId,
+              externalUserId,
+            };
+          }
+        }
         return { status: "UNKNOWN_MAPPING_ERROR" };
       }
-      return {
-        status: "OK",
-        superTokensUserId,
-        externalUserId,
-      };
+
+      const externalUserId = mappings.get(input.userId);
+      if (externalUserId) {
+        return {
+          status: "OK",
+          superTokensUserId: input.userId,
+          externalUserId,
+        };
+      }
+
+      if (userIdType === "ANY") {
+        for (const [superTokensUserId, mappedExternalUserId] of mappings) {
+          if (mappedExternalUserId === input.userId) {
+            return {
+              status: "OK",
+              superTokensUserId,
+              externalUserId: mappedExternalUserId,
+            };
+          }
+        }
+      }
+
+      return { status: "UNKNOWN_MAPPING_ERROR" };
     },
     async createUserIdMapping(input) {
       const existingExternal = mappings.get(input.superTokensUserId);
