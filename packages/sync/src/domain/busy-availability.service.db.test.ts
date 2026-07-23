@@ -212,4 +212,22 @@ describe("computeBusyAvailability", () => {
     expect(result.bookable).toBe(false); // connection not healthy
     expect(result.connections[0]?.state).toBe("importing");
   });
+
+  it("fails closed when a resource references a missing connection record", async () => {
+    // A fresh, fully-imported calendar whose connection row is gone (e.g. hard
+    // deleted) leaves an orphaned resource. bookable must NOT be true — we cannot
+    // verify the connection's health, so booking would risk a double-book.
+    const ghostConnection = objectId() as ConnectionId; // never seeded
+    const cal = await seedCalendar({
+      connectionId: ghostConnection,
+      lastSuccessAt: fresh,
+      intervals: [["2026-07-14T09:00Z", "2026-07-14T10:00Z"]],
+    });
+
+    const result = await run([cal]);
+
+    expect(result.complete).toBe(true); // the data itself is fresh
+    expect(result.bookable).toBe(false); // but the connection cannot be verified
+    expect(result.connections).toEqual([]); // no record to report freshness for
+  });
 });
