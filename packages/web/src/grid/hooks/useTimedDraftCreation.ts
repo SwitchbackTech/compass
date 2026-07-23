@@ -1,7 +1,7 @@
 import { type MouseEvent as ReactMouseEvent, useEffect, useRef } from "react";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
-import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraft,
