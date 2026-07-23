@@ -1,18 +1,25 @@
-import { AsyncLocalStorage } from "node:async_hooks";
+const UNIT_TEST_ISOLATION_KEY = "__unit__";
 
-const testFileUrlStorage = new AsyncLocalStorage<string>();
+// Per-worker module state: Bun's parallel pool runs one test file per worker at
+// a time, so a single active URL is enough (AsyncLocalStorage enterWith does
+// not reliably propagate into async test bodies on Bun 1.3.x).
+let activeTestFileUrl: string | undefined;
 
 /** Binds the calling test file URL for per-file fixture and store isolation. */
 export function enterTestFileUrl(testFileUrl: string): void {
-  testFileUrlStorage.enterWith(testFileUrl);
+  activeTestFileUrl = testFileUrl;
 }
 
 export function getCurrentTestFileUrl(): string {
-  const testFileUrl = testFileUrlStorage.getStore();
-  if (!testFileUrl) {
+  if (!activeTestFileUrl) {
     throw new Error(
       "Test file URL not set. Call setupTestDb(import.meta.url) in a beforeEach or beforeAll hook.",
     );
   }
-  return testFileUrl;
+  return activeTestFileUrl;
+}
+
+/** Per-file key when setupTestDb ran; shared key for lightweight unit tests. */
+export function getTestIsolationKey(): string {
+  return activeTestFileUrl ?? UNIT_TEST_ISOLATION_KEY;
 }

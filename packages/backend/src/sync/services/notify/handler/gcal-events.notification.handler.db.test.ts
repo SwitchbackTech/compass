@@ -1,6 +1,5 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
-import * as winstonLoggerModule from "@core/logger/winston.logger";
 import { ObjectId } from "mongodb";
+import * as winstonLoggerModule from "@core/logger/winston.logger";
 import { type gCalendar } from "@core/types/gcal";
 import {
   cleanupCollections,
@@ -12,6 +11,16 @@ import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const mockLogger = {
   debug: mock(),
@@ -100,10 +109,7 @@ describe("GCalEventsNotificationHandler", () => {
     );
   });
 
-  afterAll(() => {
-    mock.restore();
-    cleanupTestDb();
-  });
+  afterAll(cleanupTestDb);
 
   describe("handleNotification", () => {
     const mockEvents = [

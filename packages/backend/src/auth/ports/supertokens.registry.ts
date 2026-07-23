@@ -47,7 +47,4 @@ export function resetSupertokensStores(): void {
   userIdMappingStore = productionMappingStore;
 }
 
-export {
-  createInMemoryUserMetadataStore,
-  createInMemoryUserIdMappingStore,
-};
+export { createInMemoryUserIdMappingStore, createInMemoryUserMetadataStore };

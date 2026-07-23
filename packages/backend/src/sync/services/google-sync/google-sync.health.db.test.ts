@@ -1,13 +1,3 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  spyOn,
-} from "bun:test";
 import { Resource_Sync } from "@core/types/sync.types";
 import { GoogleWatchDriver } from "@backend/__tests__/drivers/google-watch.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
@@ -21,6 +11,16 @@ import { initSupertokens } from "@backend/common/middleware/supertokens.middlewa
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import * as googleWatchConfig from "@backend/sync/services/watch/google-watch-config";
 import { isGoogleCalendarSyncHealthy } from "./google-sync.health";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 
 describe("googleSyncHealth", () => {
   beforeAll(initSupertokens);

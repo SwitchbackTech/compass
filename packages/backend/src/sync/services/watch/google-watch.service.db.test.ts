@@ -1,13 +1,3 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  spyOn,
-} from "bun:test";
 import { faker } from "@faker-js/faker";
 import { type GaxiosResponse } from "gaxios";
 import { ObjectId } from "mongodb";
@@ -40,6 +30,16 @@ import {
   GoogleWatchStateStatus,
   inspectGoogleWatchState,
 } from "@backend/sync/services/watch/google-watch-state";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 
 const createWatch = async (
   user: string,
@@ -122,6 +122,18 @@ describe("googleWatchService", () => {
   beforeEach(cleanupCollections);
   beforeEach(() => {
     spyOn(googleWatchConfig, "isUsingGcalWebhookHttps").mockReturnValue(true);
+    spyOn(gcalService, "watchEvents").mockResolvedValue({
+      watch: {
+        resourceId: faker.string.uuid(),
+        expiration: String(Date.now() + 60_000),
+      },
+    });
+    spyOn(gcalService, "watchCalendars").mockResolvedValue({
+      watch: {
+        resourceId: faker.string.uuid(),
+        expiration: String(Date.now() + 60_000),
+      },
+    });
   });
   afterAll(cleanupTestDb);
 
@@ -153,8 +165,9 @@ describe("googleWatchService", () => {
     const user = await UserDriver.createUser();
     const watch = await createWatch(user._id.toString());
 
-    spyOn(gcalService, "stopWatch")
-      .mockImplementation(() => Promise.reject(invalidGrant400Error));
+    spyOn(gcalService, "stopWatch").mockImplementation(() =>
+      Promise.reject(invalidGrant400Error),
+    );
 
     await expect(
       googleWatchService.stopWatch(
@@ -171,10 +184,9 @@ describe("googleWatchService", () => {
     const user = await UserDriver.createUser();
     const watch = await createWatch(user._id.toString());
 
-    spyOn(gcalService, "stopWatch")
-      .mockImplementation(() =>
-        Promise.reject(createGoogleError({ code: "500", responseStatus: 500 })),
-      );
+    spyOn(gcalService, "stopWatch").mockImplementation(() =>
+      Promise.reject(createGoogleError({ code: "500", responseStatus: 500 })),
+    );
 
     await expect(
       googleWatchService.stopWatch(
@@ -190,8 +202,10 @@ describe("googleWatchService", () => {
   });
 
   it("ignores expired notifications when no local watch record remains", async () => {
-    const cleanupSpy = spyOn(googleWatchService, "cleanupStaleWatch")
-      .mockResolvedValue(false);
+    const cleanupSpy = spyOn(
+      googleWatchService,
+      "cleanupStaleWatch",
+    ).mockResolvedValue(false);
 
     await expect(
       googleWatchService.handleGoogleWatchNotification({
@@ -286,8 +300,10 @@ describe("googleWatchService", () => {
     const watch = await createWatch(userId, Resource_Sync.CALENDAR);
 
     const getEventsSpy = spyOn(gcalService, "getEvents");
-    const reconcileSpy = spyOn(googleCalendarListService, "reconcileCalendarList")
-      .mockResolvedValue({ outcome: "RECONCILED" });
+    const reconcileSpy = spyOn(
+      googleCalendarListService,
+      "reconcileCalendarList",
+    ).mockResolvedValue({ outcome: "RECONCILED" });
 
     await expect(
       googleWatchService.handleGoogleWatchNotification({
@@ -402,12 +418,11 @@ describe("googleWatchService", () => {
     await createWatch(userId, primaryGCalId);
     const secondaryWatch = await createWatch(userId, secondaryGCalId);
 
-    const getEventsSpy = spyOn(gcalService, "getEvents")
-      .mockResolvedValue({
-        status: 200,
-        statusText: "OK",
-        data: { items: [mockRegularGcalEvent({ summary: "Secondary event" })] },
-      } as unknown as GaxiosResponse);
+    const getEventsSpy = spyOn(gcalService, "getEvents").mockResolvedValue({
+      status: 200,
+      statusText: "OK",
+      data: { items: [mockRegularGcalEvent({ summary: "Secondary event" })] },
+    } as unknown as GaxiosResponse);
     const eventsChangedSpy = spyOn(sseServer, "publishEventsChanged");
 
     // The notification only names the secondary watch's channel/resource -
@@ -445,10 +460,7 @@ describe("googleWatchService", () => {
       googleWatchService,
       "startCalendarListWatch",
     );
-    const startEventWatchSpy = spyOn(
-      googleWatchService,
-      "startEventWatch",
-    );
+    const startEventWatchSpy = spyOn(googleWatchService, "startEventWatch");
 
     await expect(
       googleWatchService.startGoogleWatches(
@@ -563,8 +575,8 @@ describe("googleWatchService", () => {
       spyOn(gcalService, "watchCalendars").mockResolvedValue({
         watch: { resourceId: "resource-calendarlist", expiration: future() },
       });
-      spyOn(gcalService, "watchEvents")
-        .mockImplementation(async (_ctx, params) => {
+      spyOn(gcalService, "watchEvents").mockImplementation(
+        async (_ctx, params) => {
           if (params.gCalendarId === failingGCalId) {
             throw createGoogleError({ code: "500", responseStatus: 500 });
           }
@@ -575,7 +587,8 @@ describe("googleWatchService", () => {
               expiration: future(),
             },
           };
-        });
+        },
+      );
 
       const results = await googleWatchService.startGoogleWatches(
         userId,
@@ -652,8 +665,9 @@ describe("googleWatchService", () => {
           },
         };
       }
-      spyOn(gcalService, "watchEvents")
-        .mockImplementation(() => Promise.reject(unsupported));
+      spyOn(gcalService, "watchEvents").mockImplementation(() =>
+        Promise.reject(unsupported),
+      );
 
       await googleWatchService.startGoogleWatches(
         userId,
@@ -691,12 +705,9 @@ describe("googleWatchService", () => {
         nextSyncToken: faker.string.alphanumeric(16),
       });
 
-      spyOn(gcalService, "watchCalendars")
-        .mockImplementation(() =>
-          Promise.reject(
-            createGoogleError({ code: "500", responseStatus: 500 }),
-          ),
-        );
+      spyOn(gcalService, "watchCalendars").mockImplementation(() =>
+        Promise.reject(createGoogleError({ code: "500", responseStatus: 500 })),
+      );
       spyOn(gcalService, "watchEvents").mockResolvedValue({
         watch: { resourceId: `resource-${gCalendarId}`, expiration: future() },
       });

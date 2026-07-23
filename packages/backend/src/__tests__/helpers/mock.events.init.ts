@@ -1,4 +1,3 @@
-import { getTestGcalFixture } from "@backend/__tests__/helpers/test-gcal-fixture";
 import { ObjectId, type WithoutId } from "mongodb";
 import { type Options } from "rrule";
 import { Origin } from "@core/constants/core.constants";
@@ -11,6 +10,7 @@ import {
 } from "@core/types/gcal";
 import { type WithId } from "@core/types/type.utils";
 import { isBase } from "@core/util/event/event.util";
+import { getTestGcalFixture } from "@backend/__tests__/helpers/test-gcal-fixture";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";

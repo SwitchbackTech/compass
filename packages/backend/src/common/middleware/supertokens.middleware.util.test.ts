@@ -1,7 +1,6 @@
 import { faker } from "@faker-js/faker";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { createInMemoryUserIdMappingStore } from "@backend/auth/ports/supertokens.stores";
 import { registerUserIdMappingStore } from "@backend/auth/ports/supertokens.registry";
+import { createInMemoryUserIdMappingStore } from "@backend/auth/ports/supertokens.stores";
 import {
   buildResetPasswordLink,
   createGoogleSignInSuccess,
@@ -9,6 +8,7 @@ import {
   getFormFieldValue,
   maybeReplaceEmailPasswordSession,
 } from "@backend/common/middleware/supertokens.middleware.util";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 describe("supertokens.middleware.util", () => {
   beforeEach(() => {

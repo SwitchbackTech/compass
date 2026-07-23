@@ -1,13 +1,3 @@
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  spyOn,
-} from "bun:test";
-
 import { ObjectId } from "mongodb";
 import { type gCalendar, type gSchema$Event } from "@core/types/gcal";
 import {
@@ -25,6 +15,15 @@ import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { mapGoogleEvent } from "@backend/event/google-event.adapter";
 import { GoogleToCompassEventPropagation } from "@backend/sync/services/event-propagation/google-to-compass/google-to-compass.event-propagation";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 
 const asAsyncPage = async function* (items: gSchema$Event[]) {
   yield { items };
@@ -194,17 +193,17 @@ describe("GoogleToCompassEventPropagation", () => {
 
   it("creates an independent series when Google splits one via a new base id ('this and following')", async () => {
     const { base, instances } = mockRecurringGcalEvents();
-    (
-      gcalService.getBaseRecurringEventInstances as Mock
-    ).mockReturnValueOnce(asAsyncPage(instances));
+    (gcalService.getBaseRecurringEventInstances as Mock).mockReturnValueOnce(
+      asAsyncPage(instances),
+    );
     const propagation = new GoogleToCompassEventPropagation(context, calendar);
     await propagation.processEvents([base]);
 
     const { base: splitBase, instances: splitInstances } =
       mockRecurringGcalEvents();
-    (
-      gcalService.getBaseRecurringEventInstances as Mock
-    ).mockReturnValueOnce(asAsyncPage(splitInstances));
+    (gcalService.getBaseRecurringEventInstances as Mock).mockReturnValueOnce(
+      asAsyncPage(splitInstances),
+    );
     await propagation.processEvents([splitBase]);
 
     const bases = await mongoService.event

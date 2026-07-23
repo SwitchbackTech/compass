@@ -61,7 +61,9 @@ describe("google.guard", () => {
         locale: "en",
       };
 
-      spyOn(userQueries, "findCompassUserBy").mockResolvedValue(userWithoutGoogle);
+      spyOn(userQueries, "findCompassUserBy").mockResolvedValue(
+        userWithoutGoogle,
+      );
 
       const result = await isGoogleConnected(userId);
 
@@ -84,7 +86,9 @@ describe("google.guard", () => {
         },
       };
 
-      spyOn(userQueries, "findCompassUserBy").mockResolvedValue(userWithEmptyGoogle);
+      spyOn(userQueries, "findCompassUserBy").mockResolvedValue(
+        userWithEmptyGoogle,
+      );
 
       const result = await isGoogleConnected(userId);
 
@@ -154,7 +158,9 @@ describe("google.guard", () => {
         locale: "en",
       };
 
-      spyOn(userQueries, "findCompassUserBy").mockResolvedValue(userWithoutGoogle);
+      spyOn(userQueries, "findCompassUserBy").mockResolvedValue(
+        userWithoutGoogle,
+      );
 
       await expect(requireGoogleConnection(userId)).rejects.toMatchObject({
         description: UserError.MissingGoogleRefreshToken.description,

@@ -14,7 +14,16 @@ import {
   buildEventRecord,
   seedGoogleCalendar,
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
-import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const seedLocalCalendar = async (userId: ObjectId) => {
   const record = CalendarRecordSchema.parse({
@@ -597,20 +606,19 @@ describe("EventService (SSE suppression for invisible calendars, step 9)", () =>
     // (e.g. calendarService.list's ownership checks) passes through
     // untouched. notify() should still publish rather than silently drop it.
     const originalFind = mongoService.calendar.find.bind(mongoService.calendar);
-    spyOn(mongoService.calendar, "find")
-      .mockImplementation(
-        (...args: Parameters<typeof mongoService.calendar.find>) => {
-          const [filter] = args;
-          const idFilter = (filter as { _id?: { $in?: unknown[] } } | undefined)
-            ?._id?.$in;
-          if (idFilter) {
-            return { toArray: async () => [] } as ReturnType<
-              typeof mongoService.calendar.find
-            >;
-          }
-          return originalFind(...args);
-        },
-      );
+    spyOn(mongoService.calendar, "find").mockImplementation(
+      (...args: Parameters<typeof mongoService.calendar.find>) => {
+        const [filter] = args;
+        const idFilter = (filter as { _id?: { $in?: unknown[] } } | undefined)
+          ?._id?.$in;
+        if (idFilter) {
+          return { toArray: async () => [] } as ReturnType<
+            typeof mongoService.calendar.find
+          >;
+        }
+        return originalFind(...args);
+      },
+    );
     const publishSpy = spyOn(sseServer, "publishEventsChanged");
 
     await eventService.delete(user._id.toString(), created._id.toHexString(), {
@@ -870,10 +878,9 @@ describe("EventService (cross-calendar move)", () => {
     });
     await mongoService.event.insertOne(event);
 
-    spyOn(gcalService, "moveEvent")
-      .mockImplementation(() =>
-        Promise.reject(new Error("cannotChangeOrganizer")),
-      );
+    spyOn(gcalService, "moveEvent").mockImplementation(() =>
+      Promise.reject(new Error("cannotChangeOrganizer")),
+    );
 
     await expect(
       eventService.replace(
@@ -949,10 +956,12 @@ describe("EventService (cross-calendar move)", () => {
     });
     await mongoService.event.insertOne(event);
 
-    const moveSpy = spyOn(gcalService, "moveEvent")
-      .mockResolvedValue({} as never);
-    const patchSpy = spyOn(gcalService, "patchEvent")
-      .mockResolvedValue({} as never);
+    const moveSpy = spyOn(gcalService, "moveEvent").mockResolvedValue(
+      {} as never,
+    );
+    const patchSpy = spyOn(gcalService, "patchEvent").mockResolvedValue(
+      {} as never,
+    );
 
     await eventService.replace(
       user._id.toString(),

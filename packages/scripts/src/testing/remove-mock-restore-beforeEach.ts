@@ -8,7 +8,9 @@ const patterns = [
 ];
 
 let changed = 0;
-for (const file of new Glob("packages/backend/**/*.{test,spec}.ts").scanSync(".")) {
+for (const file of new Glob("packages/backend/**/*.{test,spec}.ts").scanSync(
+  ".",
+)) {
   const path = file.startsWith("./") ? file : `./${file}`;
   let content = readFileSync(path, "utf8");
   const original = content;

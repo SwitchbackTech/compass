@@ -1,3 +1,22 @@
+import { type UserMetadata } from "@core/types/user.types";
+import { GoogleWatchDriver } from "@backend/__tests__/drivers/google-watch.driver";
+import { UserDriver } from "@backend/__tests__/drivers/user.driver";
+import { UserMetadataServiceDriver } from "@backend/__tests__/drivers/user-metadata.service.driver";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import {
+  cleanupCollections,
+  cleanupTestDb,
+  setupTestDb,
+} from "@backend/__tests__/helpers/mock.db.setup";
+import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
+import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
+import {
+  endGoogleSync,
+  resetGoogleSyncActivityForTests,
+  tryBeginGoogleSync,
+} from "@backend/sync/services/google-sync/google-sync.activity";
+import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
+import * as googleWatchConfig from "@backend/sync/services/watch/google-watch-config";
 import {
   afterAll,
   afterEach,
@@ -8,24 +27,6 @@ import {
   it,
   spyOn,
 } from "bun:test";
-import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
-import { GoogleWatchDriver } from "@backend/__tests__/drivers/google-watch.driver";
-import { UserDriver } from "@backend/__tests__/drivers/user.driver";
-import { UserMetadataServiceDriver } from "@backend/__tests__/drivers/user-metadata.service.driver";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
-import {
-  cleanupCollections,
-  cleanupTestDb,
-  setupTestDb,
-} from "@backend/__tests__/helpers/mock.db.setup";
-import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
-import {
-  endGoogleSync,
-  resetGoogleSyncActivityForTests,
-  tryBeginGoogleSync,
-} from "@backend/sync/services/google-sync/google-sync.activity";
-import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
-import * as googleWatchConfig from "@backend/sync/services/watch/google-watch-config";
 
 describe("UserMetadataService", () => {
   const driver = new UserMetadataServiceDriver();
@@ -62,7 +63,7 @@ describe("UserMetadataService", () => {
         data: { subscribeToUpdates: true } as Partial<UserMetadata>,
       });
 
-      const stored = await SupertokensUserMetadata.getUserMetadata(userId);
+      const stored = await getUserMetadataStore().getUserMetadata(userId);
 
       expect(stored.metadata).not.toHaveProperty("subscribeToUpdates");
     });
@@ -87,9 +88,9 @@ describe("UserMetadataService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
 
-      await SupertokensUserMetadata.updateUserMetadata(userId, {
+      await getUserMetadataStore().updateUserMetadata(userId, {
         subscribeToUpdates: true,
-      });
+      } as Partial<UserMetadata>);
 
       const metadata = await driver.fetchUserMetadata(userId);
 
@@ -100,9 +101,9 @@ describe("UserMetadataService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
 
-      await SupertokensUserMetadata.updateUserMetadata(userId, {
+      await getUserMetadataStore().updateUserMetadata(userId, {
         subscribeToUpdates: true,
-      });
+      } as Partial<UserMetadata>);
 
       const metadata = await driver.updateUserMetadata({
         userId,

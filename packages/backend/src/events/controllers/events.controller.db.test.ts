@@ -12,7 +12,17 @@ import {
 } from "@backend/sync/services/watch/google-watch-repair.service";
 import { GoogleWatchStateStatus } from "@backend/sync/services/watch/google-watch-state";
 import userService from "@backend/user/services/user.service";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 describe("EventsController", () => {
   beforeAll(initSupertokens);
@@ -37,8 +47,10 @@ describe("EventsController", () => {
         incompleteCalendarIds: [],
       },
     };
-    const repairSpy = spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
-      .mockResolvedValue(noneResult);
+    const repairSpy = spyOn(
+      googleWatchRepairService,
+      "repairGoogleWatchesForUser",
+    ).mockResolvedValue(noneResult);
 
     const req = {
       session: { getUserId: () => userId },
@@ -60,10 +72,12 @@ describe("EventsController", () => {
 
   it("does not let a repair failure affect the SSE response", async () => {
     const userId = "507f1f77bcf86cd799439012";
-    spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
-      .mockImplementation(() =>
-        Promise.reject(new Error("simulated repair failure")),
-      );
+    spyOn(
+      googleWatchRepairService,
+      "repairGoogleWatchesForUser",
+    ).mockImplementation(() =>
+      Promise.reject(new Error("simulated repair failure")),
+    );
 
     const req = {
       session: { getUserId: () => userId },
@@ -105,8 +119,10 @@ describe("EventsController", () => {
         incompleteCalendarIds: [],
       },
     };
-    spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
-      .mockResolvedValue(noneResult);
+    spyOn(
+      googleWatchRepairService,
+      "repairGoogleWatchesForUser",
+    ).mockResolvedValue(noneResult);
     const touchSpy = spyOn(userService, "touchLastSeenAt");
 
     const req = {
@@ -129,26 +145,27 @@ describe("EventsController", () => {
 
   it("does not let a lastSeenAt touch failure affect the SSE response", async () => {
     const userId = "507f1f77bcf86cd799439014";
-    spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
-      .mockResolvedValue({
-        action: "NONE",
-        inspection: {
-          status: GoogleWatchStateStatus.NOT_APPLICABLE,
-          reason: "GOOGLE_NOT_CONNECTED",
-          expectedWatchCalendarIds: [],
-          activeWatches: [],
-          duplicateWatches: [],
-          expiredWatches: [],
-          missingWatchCalendarIds: [],
-          staleWatches: [],
-          watchesToRefresh: [],
-          incompleteCalendarIds: [],
-        },
-      });
-    spyOn(userService, "touchLastSeenAt")
-      .mockImplementation(() =>
-        Promise.reject(new Error("simulated touch failure")),
-      );
+    spyOn(
+      googleWatchRepairService,
+      "repairGoogleWatchesForUser",
+    ).mockResolvedValue({
+      action: "NONE",
+      inspection: {
+        status: GoogleWatchStateStatus.NOT_APPLICABLE,
+        reason: "GOOGLE_NOT_CONNECTED",
+        expectedWatchCalendarIds: [],
+        activeWatches: [],
+        duplicateWatches: [],
+        expiredWatches: [],
+        missingWatchCalendarIds: [],
+        staleWatches: [],
+        watchesToRefresh: [],
+        incompleteCalendarIds: [],
+      },
+    });
+    spyOn(userService, "touchLastSeenAt").mockImplementation(() =>
+      Promise.reject(new Error("simulated touch failure")),
+    );
 
     const req = {
       session: { getUserId: () => userId },

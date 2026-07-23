@@ -8,7 +8,6 @@ import * as userQueries from "@backend/user/queries/user.queries";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 describe("getGcalClient", () => {
-
   it("throws UserError.MissingGoogleRefreshToken when user exists but has no google", async () => {
     const userId = new ObjectId().toString();
     const userWithoutGoogle: Schema_User & { _id: ObjectId } = {
@@ -20,7 +19,9 @@ describe("getGcalClient", () => {
       locale: "en",
     };
 
-    spyOn(userQueries, "findCompassUserBy").mockResolvedValue(userWithoutGoogle);
+    spyOn(userQueries, "findCompassUserBy").mockResolvedValue(
+      userWithoutGoogle,
+    );
 
     await expect(getGcalClient(userId)).rejects.toMatchObject({
       description: UserError.MissingGoogleRefreshToken.description,
@@ -45,7 +46,9 @@ describe("getGcalClient", () => {
       },
     };
 
-    spyOn(userQueries, "findCompassUserBy").mockResolvedValue(userWithEmptyGoogle);
+    spyOn(userQueries, "findCompassUserBy").mockResolvedValue(
+      userWithEmptyGoogle,
+    );
 
     await expect(getGcalClient(userId)).rejects.toMatchObject({
       description: UserError.MissingGoogleRefreshToken.description,

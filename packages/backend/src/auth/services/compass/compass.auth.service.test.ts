@@ -1,8 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { faker } from "@faker-js/faker";
 import supertokens from "supertokens-node";
 import Session from "supertokens-node/recipe/session";
 import compassAuthService from "./compass.auth.service";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 describe("CompassAuthService", () => {
   beforeEach(() => {
@@ -27,7 +35,9 @@ describe("CompassAuthService", () => {
         getHandle: mock().mockReturnValue(sessionHandle),
       };
 
-      (Session.createNewSessionWithoutRequestResponse as Mock).mockResolvedValue(
+      (
+        Session.createNewSessionWithoutRequestResponse as Mock
+      ).mockResolvedValue(
         sessionMock as unknown as ReturnType<
           typeof Session.createNewSessionWithoutRequestResponse
         >,
@@ -61,9 +71,9 @@ describe("CompassAuthService", () => {
     it("throws a helpful error when session creation fails", async () => {
       const compassUserId = faker.database.mongodbObjectId();
 
-      (Session.createNewSessionWithoutRequestResponse as Mock).mockImplementation(
-        () => Promise.reject(new Error("boom")),
-      );
+      (
+        Session.createNewSessionWithoutRequestResponse as Mock
+      ).mockImplementation(() => Promise.reject(new Error("boom")));
 
       await expect(
         compassAuthService.createSessionForUser(compassUserId),

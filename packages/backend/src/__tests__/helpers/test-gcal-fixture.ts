@@ -1,7 +1,9 @@
-import { getCurrentTestFileUrl } from "@backend/__tests__/helpers/test-file-context";
 import { createMockCalendarListEntry as mockCalendarListCreate } from "@core/__tests__/helpers/gcal.factory";
-import { type gSchema$CalendarListEntry } from "@core/types/gcal";
-import { type gCalendar } from "@core/types/gcal";
+import {
+  type gCalendar,
+  type gSchema$CalendarListEntry,
+} from "@core/types/gcal";
+import { getTestIsolationKey } from "@backend/__tests__/helpers/test-file-context";
 import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { createMockGcalClient } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
 
@@ -28,7 +30,9 @@ export class TestGcalFixture {
     this.calendarlist = fresh.calendarlist;
   }
 
-  createGcalClient(config?: Parameters<typeof createMockGcalClient>[1]): gCalendar {
+  createGcalClient(
+    config?: Parameters<typeof createMockGcalClient>[1],
+  ): gCalendar {
     return createMockGcalClient(this, config);
   }
 
@@ -44,7 +48,7 @@ const fixturesByFile = new Map<string, TestGcalFixture>();
 
 /** Per-file singleton so parallel test files never share gcal fixture state. */
 export function getTestGcalFixture(): TestGcalFixture {
-  const key = getCurrentTestFileUrl();
+  const key = getTestIsolationKey();
   let fixture = fixturesByFile.get(key);
   if (!fixture) {
     fixture = new TestGcalFixture();

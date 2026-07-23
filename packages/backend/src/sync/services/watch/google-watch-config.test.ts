@@ -4,8 +4,7 @@ import { warnIfWebhookNotPublicHttps } from "@backend/sync/services/watch/google
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 describe("warnIfWebhookNotPublicHttps (packet 09 ops: self-host webhook check)", () => {
-  afterEach(() => {
-  });
+  afterEach(() => {});
 
   it("warns once when Google is configured but the webhook base URL is not public HTTPS", () => {
     mockEnv({

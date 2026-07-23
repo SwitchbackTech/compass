@@ -116,10 +116,11 @@ describe("CompassToGoogleEventPropagation - scope 'all' - full series", () => {
   it("does not call Google when deleting a series that was never synced", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const createSpy = spyOn(gcalService, "createEvent")
-      .mockImplementationOnce(async () => {
+    const createSpy = spyOn(gcalService, "createEvent").mockImplementationOnce(
+      async () => {
         throw new Error("simulated provider outage during create");
-      });
+      },
+    );
 
     await expect(
       eventService.create(

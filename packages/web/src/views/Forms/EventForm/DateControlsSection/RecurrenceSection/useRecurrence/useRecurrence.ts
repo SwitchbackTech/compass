@@ -107,8 +107,7 @@ export const useRecurrence = (
   }, [_startDate, startDate, endDate, hasRecurrence, recurrence?.rule]);
 
   const defaultWeekDay: typeof WEEKDAYS = useMemo(
-    () =>
-      options?.byweekday?.map((day) => weekdayKeyFromByweekday(day)) ?? [],
+    () => options?.byweekday?.map((day) => weekdayKeyFromByweekday(day)) ?? [],
     [options?.byweekday],
   );
 
@@ -186,7 +185,12 @@ export const useRecurrence = (
     if (!hasRecurrence) return;
 
     const nextRule = JSON.parse(rule);
-    if (fastDeepEqual(normalizeRecurrenceRule(currentRule), normalizeRecurrenceRule(nextRule))) {
+    if (
+      fastDeepEqual(
+        normalizeRecurrenceRule(currentRule),
+        normalizeRecurrenceRule(nextRule),
+      )
+    ) {
       return;
     }
 

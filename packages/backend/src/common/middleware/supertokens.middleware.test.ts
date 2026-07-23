@@ -1,4 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import * as corsLib from "cors";
 import { ObjectId } from "mongodb";
 import superTokensNode from "supertokens-node";
@@ -22,6 +21,15 @@ import {
   getFormFieldValue,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import userService from "@backend/user/services/user.service";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 type MockCallSource = { mock: { calls: unknown[][] } };
 
@@ -43,9 +51,10 @@ describe("supertokens.middleware", () => {
       "x-sut-header",
     ]);
     spyOn(superTokensNode, "convertToRecipeUserId").mockImplementation(
-      (id: string) => `recipe_${id}` as ReturnType<
-        typeof superTokensNode.convertToRecipeUserId
-      >,
+      (id: string) =>
+        `recipe_${id}` as ReturnType<
+          typeof superTokensNode.convertToRecipeUserId
+        >,
     );
     spyOn(Dashboard, "init");
     spyOn(EmailPassword, "init");
@@ -65,10 +74,21 @@ describe("supertokens.middleware", () => {
       user: { userId: "compass-user-id" },
       isNewUser: false,
     });
-    spyOn(supertokensMiddlewareUtil, "buildResetPasswordLink");
-    spyOn(supertokensMiddlewareUtil, "createGoogleSignInSuccess");
-    spyOn(supertokensMiddlewareUtil, "ensureExternalUserIdMapping");
-    spyOn(supertokensMiddlewareUtil, "getFormFieldValue");
+    spyOn(
+      supertokensMiddlewareUtil,
+      "buildResetPasswordLink",
+    ).mockImplementation((link) => link);
+    spyOn(
+      supertokensMiddlewareUtil,
+      "createGoogleSignInSuccess",
+    ).mockImplementation((payload) => payload as never);
+    spyOn(
+      supertokensMiddlewareUtil,
+      "ensureExternalUserIdMapping",
+    ).mockResolvedValue(undefined);
+    spyOn(supertokensMiddlewareUtil, "getFormFieldValue").mockReturnValue(
+      undefined,
+    );
 
     (corsLib.default as Mock).mockClear();
     (superTokensNode.init as Mock).mockClear();
@@ -92,7 +112,9 @@ describe("supertokens.middleware", () => {
 
     // Ensure recipe init methods return stable values so we can assert
     // the `recipeList` composition.
-    (ThirdParty.init as Mock).mockReturnValue({ recipe: "thirdparty" } as never);
+    (ThirdParty.init as Mock).mockReturnValue({
+      recipe: "thirdparty",
+    } as never);
     (EmailPassword.init as Mock).mockReturnValue({
       recipe: "emailpassword",
     } as never);
@@ -105,10 +127,6 @@ describe("supertokens.middleware", () => {
       null,
     );
     (userService.getCanonicalCompassUserId as Mock).mockResolvedValue(null);
-  });
-
-  afterEach(() => {
-    mock.restore();
   });
 
   describe("initSupertokens", () => {
@@ -618,7 +636,9 @@ describe("supertokens.middleware", () => {
       (createGoogleSignInSuccess as Mock).mockImplementation(
         buildSuccessFromResponse,
       );
-      userService.getCanonicalCompassUserId.mockResolvedValue("compass-user-id");
+      userService.getCanonicalCompassUserId.mockResolvedValue(
+        "compass-user-id",
+      );
       Session.createNewSession.mockResolvedValue(compassSession as never);
       Session.revokeSession.mockResolvedValue(true);
 
@@ -701,9 +721,7 @@ describe("supertokens.middleware", () => {
         }),
       };
 
-      (userService.handleLogoutCleanup as Mock).mockResolvedValue(
-        undefined,
-      );
+      (userService.handleLogoutCleanup as Mock).mockResolvedValue(undefined);
 
       initSupertokens();
 
@@ -774,9 +792,7 @@ describe("supertokens.middleware", () => {
         signOutPOST: mock().mockResolvedValue({ res: "ok" }),
       };
 
-      (userService.handleLogoutCleanup as Mock).mockResolvedValue(
-        undefined,
-      );
+      (userService.handleLogoutCleanup as Mock).mockResolvedValue(undefined);
 
       initSupertokens();
 

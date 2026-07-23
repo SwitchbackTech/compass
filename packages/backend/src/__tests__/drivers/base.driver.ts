@@ -1,21 +1,26 @@
+import { type Application } from "express";
 import { agent, type Request } from "supertest";
 import { initExpressServer } from "@backend/servers/express/express.server";
 import http from "node:http";
 
 export class BaseDriver {
-  private readonly app = initExpressServer();
-  private readonly http = http.createServer(this.app);
-  private readonly server = agent(this.http);
-
+  private app?: Application;
+  private http?: http.Server;
+  private server?: ReturnType<typeof agent>;
   private serverUri?: string;
 
   private getSessionCookie(session?: { userId: string }): string {
     return `session=${JSON.stringify(session)}`;
   }
 
-  constructor() {
+  private ensureServer(): void {
+    if (this.app) return;
+
+    this.app = initExpressServer();
+    this.http = http.createServer(this.app);
     this.http.timeout = 3000;
     this.http.keepAliveTimeout = 4000;
+    this.server = agent(this.http);
   }
 
   /**
@@ -24,17 +29,22 @@ export class BaseDriver {
    * @returns {string} the server's address
    */
   async listen(): Promise<string> {
+    this.ensureServer();
+    if (!this.http || !this.server) {
+      throw new Error("BaseDriver failed to initialize the HTTP server");
+    }
+
     this.serverUri = await new Promise((resolve, reject) => {
-      this.http.listen(0);
-      this.http.on("listening", () => {
-        const address = this.http.address();
+      this.http!.listen(0);
+      this.http!.on("listening", () => {
+        const address = this.http!.address();
         if (address && typeof address === "object") {
           resolve(`http://localhost:${address.port}`);
         } else {
           reject(new Error("Could not determine server address"));
         }
       });
-      this.http.on("error", reject);
+      this.http!.on("error", reject);
     });
 
     return this.serverUri;
@@ -47,6 +57,10 @@ export class BaseDriver {
   }
 
   getServer() {
+    this.ensureServer();
+    if (!this.server) {
+      throw new Error("BaseDriver failed to initialize supertest agent");
+    }
     return this.server;
   }
 
@@ -69,6 +83,19 @@ export class BaseDriver {
     if (!this.serverUri) throw new Error("did you forget to call `listen`?");
 
     const eventListeners = new Map<string, Array<(data: unknown) => void>>();
+    const pendingEvents = new Map<string, unknown[]>();
+
+    const dispatchEvent = (dispatchKey: string, parsed: unknown) => {
+      const listeners = eventListeners.get(dispatchKey) ?? [];
+      if (listeners.length === 0) {
+        const queue = pendingEvents.get(dispatchKey) ?? [];
+        queue.push(parsed);
+        pendingEvents.set(dispatchKey, queue);
+        return;
+      }
+
+      for (const cb of listeners) cb(parsed);
+    };
 
     const cookie = user ? this.getSessionCookie(user) : undefined;
 
@@ -121,8 +148,7 @@ export class BaseDriver {
                   typeof (parsed as { type: unknown }).type === "string"
                     ? (parsed as { type: string }).type
                     : eventName;
-                const listeners = eventListeners.get(dispatchKey) ?? [];
-                for (const cb of listeners) cb(parsed);
+                dispatchEvent(dispatchKey, parsed);
                 eventName = "message";
                 dataLine = "";
               }
@@ -140,6 +166,14 @@ export class BaseDriver {
       close: () => controller?.abort(),
       waitForEvent: (eventName: string, timeoutMs = 5000) =>
         new Promise((resolve, reject) => {
+          const queued = pendingEvents.get(eventName);
+          if (queued?.length) {
+            resolve(queued.shift());
+            if (queued.length === 0) pendingEvents.delete(eventName);
+            else pendingEvents.set(eventName, queued);
+            return;
+          }
+
           const timer = setTimeout(() => {
             reject(new Error(`Timeout waiting for SSE event: ${eventName}`));
           }, timeoutMs);
@@ -156,10 +190,10 @@ export class BaseDriver {
 
   async teardown() {
     try {
-      if (!this.http.listening) return;
+      if (!this.http?.listening) return;
 
       await new Promise<void>((resolve, reject) => {
-        this.http.close((err) => {
+        this.http!.close((err) => {
           if (err) return reject(err);
           resolve();
         });

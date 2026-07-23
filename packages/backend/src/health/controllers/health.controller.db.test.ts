@@ -5,7 +5,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import mongoService from "@backend/common/services/mongo.service";
-import { afterAll, beforeAll, describe, expect, it, spyOn} from "bun:test";
+import { afterAll, beforeAll, describe, expect, it, spyOn } from "bun:test";
 
 describe("HealthController", () => {
   const baseDriver = new BaseDriver();
@@ -84,10 +84,12 @@ describe("HealthController", () => {
     });
 
     it("should return 500 when database connectivity check fails", async () => {
-      const pingSpy = spyOn(Object.getPrototypeOf(mongoService.db.admin()), "ping")
-        .mockImplementation(() =>
-          Promise.reject(new Error("database unavailable")),
-        );
+      const pingSpy = spyOn(
+        Object.getPrototypeOf(mongoService.db.admin()),
+        "ping",
+      ).mockImplementation(() =>
+        Promise.reject(new Error("database unavailable")),
+      );
 
       try {
         const response = await baseDriver

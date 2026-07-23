@@ -1,7 +1,7 @@
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
-import { describe, expect, it, mock } from "bun:test";
 import authController from "./auth.controller";
+import { describe, expect, it, mock } from "bun:test";
 
 describe("auth.controller", () => {
   describe("connectGoogle", () => {

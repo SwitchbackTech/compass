@@ -1,7 +1,9 @@
 import { type UserMetadata } from "@core/types/user.types";
 
 export interface UserMetadataStore {
-  getUserMetadata(userId: string): Promise<{ status: "OK"; metadata: UserMetadata }>;
+  getUserMetadata(
+    userId: string,
+  ): Promise<{ status: "OK"; metadata: UserMetadata }>;
   updateUserMetadata(
     userId: string,
     data: Partial<UserMetadata>,

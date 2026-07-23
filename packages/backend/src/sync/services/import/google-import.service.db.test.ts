@@ -1,13 +1,3 @@
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  spyOn,
-} from "bun:test";
-
 import { ObjectId } from "mongodb";
 import { type gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
@@ -30,6 +20,15 @@ import {
   getSync,
   updateSync,
 } from "@backend/sync/services/records/sync-records.repository";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 
 const asPages = async function* (
   ...pages: Array<{
@@ -159,9 +158,7 @@ describe("SyncImport", () => {
         yield { items: [page1Event], nextPageToken: "page-2-token" };
         throw new Error("simulated network failure fetching page 2");
       };
-      (gcalService.getAllEvents as Mock).mockReturnValueOnce(
-        throwOnPage2(),
-      );
+      (gcalService.getAllEvents as Mock).mockReturnValueOnce(throwOnPage2());
 
       const syncImport = new SyncImport(context);
 

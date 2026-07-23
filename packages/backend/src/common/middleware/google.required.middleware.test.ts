@@ -36,7 +36,9 @@ describe("google.required.middleware", () => {
       mockReq = {
         session: { getUserId: () => userId },
       };
-      spyOn(googleGuard, "requireGoogleConnection").mockResolvedValue(undefined);
+      spyOn(googleGuard, "requireGoogleConnection").mockResolvedValue(
+        undefined,
+      );
 
       await requireGoogleConnectionSession(
         mockReq as Parameters<typeof requireGoogleConnectionSession>[0],
@@ -124,7 +126,9 @@ describe("google.required.middleware", () => {
       mockReq = {
         params: { userId },
       };
-      spyOn(googleGuard, "requireGoogleConnection").mockResolvedValue(undefined);
+      spyOn(googleGuard, "requireGoogleConnection").mockResolvedValue(
+        undefined,
+      );
 
       const middleware = requireGoogleConnectionFrom("userId");
       await middleware(mockReq as Request, mockRes as Response, mockNext);

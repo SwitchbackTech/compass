@@ -1,14 +1,3 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  spyOn,
-} from "bun:test";
-
 import { ObjectId } from "mongodb";
 import { Status } from "@core/errors/status.codes";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
@@ -26,6 +15,16 @@ import { UserError } from "@backend/common/errors/user/user.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 
 describe("UserController", () => {
   const baseDriver = new BaseDriver();
@@ -147,7 +146,6 @@ describe("UserController", () => {
   });
 
   describe("email updates", () => {
-
     it("returns the active Kit subscription state for the session user", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const getStatus = spyOn(

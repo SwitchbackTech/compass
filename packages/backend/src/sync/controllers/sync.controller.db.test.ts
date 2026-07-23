@@ -31,7 +31,15 @@ import { googleWatchService } from "@backend/sync/services/watch/google-watch.se
 import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 import { randomUUID } from "node:crypto";
 
 // B10: legacy IMPORT_GCAL_END/EVENT_CHANGED/USER_METADATA/GOOGLE_REVOKED SSE
@@ -64,6 +72,10 @@ describe("SyncController", () => {
 
   beforeAll(async () => {
     await setupTestDb(import.meta.url);
+    const { setupBackendTestSeams } = await import(
+      "@backend/__tests__/helpers/mock.setup"
+    );
+    setupBackendTestSeams();
     await baseDriver.listen();
   });
 
@@ -109,8 +121,10 @@ describe("SyncController", () => {
       // Setup
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const restartSpy = spyOn(googleCalendarSyncService, "repairGoogleCalendarSync")
-        .mockResolvedValue();
+      const restartSpy = spyOn(
+        googleCalendarSyncService,
+        "repairGoogleCalendarSync",
+      ).mockResolvedValue();
 
       const watch = await mongoService.watch.findOne({
         user: userId,
@@ -150,13 +164,15 @@ describe("SyncController", () => {
     it("should delegate repeated missing-sync-token recovery to the restart service", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const restartSpy = spyOn(googleCalendarSyncService, "repairGoogleCalendarSync")
-        .mockImplementation(async () => {
-          await userMetadataService.updateUserMetadata({
-            userId,
-            data: { sync: { importGCal: "IMPORTING" } },
-          });
+      const restartSpy = spyOn(
+        googleCalendarSyncService,
+        "repairGoogleCalendarSync",
+      ).mockImplementation(async () => {
+        await userMetadataService.updateUserMetadata({
+          userId,
+          data: { sync: { importGCal: "IMPORTING" } },
         });
+      });
 
       const watch = await mongoService.watch.findOne({
         user: userId,
@@ -240,12 +256,14 @@ describe("SyncController", () => {
       expect(watch).toBeDefined();
       expect(watch).not.toBeNull();
 
-      const notificationSpy = spyOn(GCalEventsNotificationHandler.prototype, "handleNotification")
-        .mockResolvedValue({
-          summary: "PROCESSED",
-          calendar: { _id: new ObjectId(), isVisible: true },
-          eventIds: [],
-        });
+      const notificationSpy = spyOn(
+        GCalEventsNotificationHandler.prototype,
+        "handleNotification",
+      ).mockResolvedValue({
+        summary: "PROCESSED",
+        calendar: { _id: new ObjectId(), isVisible: true },
+        eventIds: [],
+      });
       const backgroundChangeSpy = spyOn(sseServer, "publishEventsChanged");
       const importStartSpy = spyOn(sseServer, "publishSyncStatus");
 
@@ -297,11 +315,15 @@ describe("SyncController", () => {
       expect(watch).toBeDefined();
       expect(watch).not.toBeNull();
 
-      const handleGoogleWatchNotificationSpy = spyOn(googleWatchService, "handleGoogleWatchNotification")
-        .mockImplementation(() => Promise.reject(invalidGrant400Error));
+      const handleGoogleWatchNotificationSpy = spyOn(
+        googleWatchService,
+        "handleGoogleWatchNotification",
+      ).mockImplementation(() => Promise.reject(invalidGrant400Error));
 
-      const pruneGoogleDataSpy = spyOn(userService, "pruneGoogleData")
-        .mockResolvedValue();
+      const pruneGoogleDataSpy = spyOn(
+        userService,
+        "pruneGoogleData",
+      ).mockResolvedValue();
 
       const handleGoogleRevokedSpy = spyOn(sseServer, "publishSyncStatus");
 
@@ -351,8 +373,10 @@ describe("SyncController", () => {
       // is NOT mocked here - it runs for real so this test actually pins
       // local-data survival through the notification path, not just that
       // pruneGoogleData was called.
-      const handleGoogleWatchNotificationSpy = spyOn(googleWatchService, "handleGoogleWatchNotification")
-        .mockImplementation(() => Promise.reject(invalidGrant400Error));
+      const handleGoogleWatchNotificationSpy = spyOn(
+        googleWatchService,
+        "handleGoogleWatchNotification",
+      ).mockImplementation(() => Promise.reject(invalidGrant400Error));
 
       const response = await syncDriver.handleGoogleNotification(
         {
@@ -393,11 +417,15 @@ describe("SyncController", () => {
       expect(watch).toBeDefined();
       expect(watch).not.toBeNull();
 
-      const handleGoogleWatchNotificationSpy = spyOn(googleWatchService, "handleGoogleWatchNotification")
-        .mockImplementation(() => Promise.reject(missingRefreshTokenError));
+      const handleGoogleWatchNotificationSpy = spyOn(
+        googleWatchService,
+        "handleGoogleWatchNotification",
+      ).mockImplementation(() => Promise.reject(missingRefreshTokenError));
 
-      const pruneGoogleDataSpy = spyOn(userService, "pruneGoogleData")
-        .mockResolvedValue();
+      const pruneGoogleDataSpy = spyOn(
+        userService,
+        "pruneGoogleData",
+      ).mockResolvedValue();
 
       const handleGoogleRevokedSpy = spyOn(sseServer, "publishSyncStatus");
 
@@ -429,8 +457,10 @@ describe("SyncController", () => {
     });
 
     it("should return GONE status when missing refresh token and no watch record found", async () => {
-      const handleGoogleWatchNotificationSpy = spyOn(googleWatchService, "handleGoogleWatchNotification")
-        .mockImplementation(() => Promise.reject(missingRefreshTokenError));
+      const handleGoogleWatchNotificationSpy = spyOn(
+        googleWatchService,
+        "handleGoogleWatchNotification",
+      ).mockImplementation(() => Promise.reject(missingRefreshTokenError));
 
       const response = await syncDriver.handleGoogleNotification(
         {
@@ -460,11 +490,15 @@ describe("SyncController", () => {
       expect(watch).toBeDefined();
       expect(watch).not.toBeNull();
 
-      const handleGoogleWatchNotificationSpy = spyOn(googleWatchService, "handleGoogleWatchNotification")
-        .mockImplementation(() => Promise.reject(invalidSyncTokenError));
+      const handleGoogleWatchNotificationSpy = spyOn(
+        googleWatchService,
+        "handleGoogleWatchNotification",
+      ).mockImplementation(() => Promise.reject(invalidSyncTokenError));
 
-      const repairSpy = spyOn(googleCalendarSyncService, "repairGoogleCalendarSync")
-        .mockResolvedValue();
+      const repairSpy = spyOn(
+        googleCalendarSyncService,
+        "repairGoogleCalendarSync",
+      ).mockResolvedValue();
 
       const response = await syncDriver.handleGoogleNotification(
         {
@@ -540,10 +574,12 @@ describe("SyncController", () => {
         const repairStarted = new Promise<void>((resolve) => {
           notifyRepairStarted = resolve;
         });
-        const repairSpy = spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
-          .mockImplementation(async () => {
-            notifyRepairStarted();
-          });
+        const repairSpy = spyOn(
+          googleWatchRepairService,
+          "repairGoogleWatchesForUser",
+        ).mockImplementation(async () => {
+          notifyRepairStarted();
+        });
 
         await syncDriver.importGCal({ userId });
         await repairStarted;
@@ -588,8 +624,10 @@ describe("SyncController", () => {
       });
 
       it("retries a non-forced import after a restart is requested", async () => {
-        const getGCalEventsSyncPageTokenSpy = spyOn(syncQueries, "getGCalEventsSyncPageToken")
-          .mockResolvedValue("5");
+        const getGCalEventsSyncPageTokenSpy = spyOn(
+          syncQueries,
+          "getGCalEventsSyncPageToken",
+        ).mockResolvedValue("5");
         const getAllEventsSpy = spyOn(gcalService, "getAllEvents");
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
@@ -623,8 +661,10 @@ describe("SyncController", () => {
       });
 
       it("retries a non-forced import after a previous failure", async () => {
-        const getGCalEventsSyncPageTokenSpy = spyOn(syncQueries, "getGCalEventsSyncPageToken")
-          .mockResolvedValue("5");
+        const getGCalEventsSyncPageTokenSpy = spyOn(
+          syncQueries,
+          "getGCalEventsSyncPageToken",
+        ).mockResolvedValue("5");
         const getAllEventsSpy = spyOn(gcalService, "getAllEvents");
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
@@ -671,11 +711,13 @@ describe("SyncController", () => {
         const syncStarted = new Promise<void>((resolve) => {
           notifySyncStarted = resolve;
         });
-        const syncStatusSpy = spyOn(sseServer, "publishSyncStatus")
-          .mockImplementation((...args) => {
-            notifySyncStarted();
-            return realPublishSyncStatus(...args);
-          });
+        const syncStatusSpy = spyOn(
+          sseServer,
+          "publishSyncStatus",
+        ).mockImplementation((...args) => {
+          notifySyncStarted();
+          return realPublishSyncStatus(...args);
+        });
 
         await syncDriver.importGCal({ userId });
         await syncStarted;
@@ -720,11 +762,13 @@ describe("SyncController", () => {
         const eventsChanged = new Promise<void>((resolve) => {
           notifyEventsChanged = resolve;
         });
-        const eventsChangedSpy = spyOn(sseServer, "publishEventsChanged")
-          .mockImplementation((...args) => {
-            notifyEventsChanged();
-            return realPublishEventsChanged(...args);
-          });
+        const eventsChangedSpy = spyOn(
+          sseServer,
+          "publishEventsChanged",
+        ).mockImplementation((...args) => {
+          notifyEventsChanged();
+          return realPublishEventsChanged(...args);
+        });
 
         const stream = baseDriver.openSSEStream({
           userId,

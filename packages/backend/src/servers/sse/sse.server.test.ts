@@ -4,7 +4,6 @@
  * we do not need the database for this test
  */
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { ObjectId } from "mongodb";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import {
@@ -12,12 +11,23 @@ import {
   ServerMessageSchema,
 } from "@core/types/server-message.contracts";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
+import { setupBackendTestSeams } from "@backend/__tests__/helpers/mock.setup";
 import userMetadataService from "@backend/user/services/user-metadata.service";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 
 describe("SSE Server", () => {
   const baseDriver = new BaseDriver();
 
   beforeAll(async () => {
+    setupBackendTestSeams();
     await baseDriver.listen();
   });
 

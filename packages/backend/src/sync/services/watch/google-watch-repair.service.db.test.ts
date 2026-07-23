@@ -26,7 +26,17 @@ import {
 } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const FAR_FUTURE = () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
@@ -194,12 +204,14 @@ describe("googleWatchRepairService", () => {
       const repairStarted = new Promise<void>((resolve) => {
         notifyRepairStarted = resolve;
       });
-      const startGoogleWatchesSpy = spyOn(googleWatchService, "startGoogleWatches")
-        .mockImplementation(async (...args) => {
-          notifyRepairStarted();
-          await winnerGate;
-          return realStartGoogleWatches(...args);
-        });
+      const startGoogleWatchesSpy = spyOn(
+        googleWatchService,
+        "startGoogleWatches",
+      ).mockImplementation(async (...args) => {
+        notifyRepairStarted();
+        await winnerGate;
+        return realStartGoogleWatches(...args);
+      });
 
       const firstPromise =
         googleWatchRepairService.repairGoogleWatchesForUser(userId);
@@ -332,10 +344,13 @@ describe("googleWatchRepairService", () => {
     it("7: a 410 during catch-up import falls back to a full repair", async () => {
       const { userId } = await seedUserWithOneMissingWatch();
 
-      spyOn(gcalService, "getEvents")
-        .mockImplementationOnce(() => Promise.reject(invalidSyncTokenError));
-      const fullRepairSpy = spyOn(googleCalendarSyncService, "repairGoogleCalendarSync")
-        .mockResolvedValue(undefined);
+      spyOn(gcalService, "getEvents").mockImplementationOnce(() =>
+        Promise.reject(invalidSyncTokenError),
+      );
+      const fullRepairSpy = spyOn(
+        googleCalendarSyncService,
+        "repairGoogleCalendarSync",
+      ).mockResolvedValue(undefined);
 
       const result =
         await googleWatchRepairService.repairGoogleWatchesForUser(userId);
@@ -364,8 +379,9 @@ describe("googleWatchRepairService", () => {
         updatedAt: null,
       });
 
-      spyOn(gcalService, "getEvents")
-        .mockImplementationOnce(() => Promise.reject(invalidGrant400Error));
+      spyOn(gcalService, "getEvents").mockImplementationOnce(() =>
+        Promise.reject(invalidGrant400Error),
+      );
       const publishSyncStatusSpy = spyOn(sseServer, "publishSyncStatus");
 
       const result =

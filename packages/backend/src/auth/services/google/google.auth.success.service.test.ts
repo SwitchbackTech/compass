@@ -1,4 +1,3 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { faker } from "@faker-js/faker";
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import {
@@ -6,6 +5,16 @@ import {
   type GoogleSignInSuccess,
 } from "@backend/auth/services/google/google.auth.types";
 import * as googleAuthUtil from "@backend/auth/services/google/util/google.auth.util";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 let googleAuthService: Awaited<
   typeof import("@backend/auth/services/google/google.auth.service")
@@ -286,7 +295,10 @@ describe("handleGoogleAuth", () => {
       await googleAuthService.handleGoogleAuth(success);
 
       expect(googleAuthService.googleSignin).toHaveBeenCalledTimes(1);
-      expect(googleAuthService.googleSignin).toHaveBeenCalledWith(providerUser, oAuthTokens);
+      expect(googleAuthService.googleSignin).toHaveBeenCalledWith(
+        providerUser,
+        oAuthTokens,
+      );
       expect(googleAuthService.repairGoogleConnection).not.toHaveBeenCalled();
       expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
     });

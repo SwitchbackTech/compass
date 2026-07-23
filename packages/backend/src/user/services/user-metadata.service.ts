@@ -1,9 +1,9 @@
 import mergeWith from "lodash.mergewith";
-import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
 import {
   type GoogleConnectionState,
   type UserMetadata,
 } from "@core/types/user.types";
+import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
 import { isGoogleSyncActive } from "@backend/sync/services/google-sync/google-sync.activity";
 import { isGoogleCalendarSyncHealthy } from "@backend/sync/services/google-sync/google-sync.health";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";

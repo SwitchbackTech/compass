@@ -1,6 +1,6 @@
-import { beforeAll, describe, expect, it, mock, spyOn } from "bun:test";
 import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
 import * as googleWatchToken from "@backend/sync/services/watch/google-watch-token";
+import { beforeAll, describe, expect, it, mock, spyOn } from "bun:test";
 
 beforeAll(() => {
   mockEnv({ GCAL_WEBHOOK_BASEURL: "https://example.trycloudflare.com/api" });
@@ -213,8 +213,10 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
         get: mock().mockResolvedValue({ status: 200, data: {} }),
         insert: mock().mockResolvedValue({ status: 200, data: {} }),
         delete: mock().mockResolvedValue({ status: 204, data: {} }),
-        instances: mock()
-          .mockResolvedValue({ status: 200, data: { items: [] } }),
+        instances: mock().mockResolvedValue({
+          status: 200,
+          data: { items: [] },
+        }),
         list: mock().mockResolvedValue({
           status: 200,
           data: { items: [], nextSyncToken: "sync-token" },
@@ -240,8 +242,10 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
         stop: mock().mockResolvedValue({ status: 204, data: {} }),
       },
       freebusy: {
-        query: mock()
-          .mockResolvedValue({ status: 200, data: { calendars: {} } }),
+        query: mock().mockResolvedValue({
+          status: 200,
+          data: { calendars: {} },
+        }),
       },
     },
     quotaUser: QUOTA_USER,

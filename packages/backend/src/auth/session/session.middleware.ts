@@ -1,6 +1,6 @@
-import { verifySession as supertokensVerifySession } from "supertokens-node/recipe/session/framework/express";
-import { type VerifySessionOptions } from "supertokens-node/lib/build/recipe/session/types";
 import { type NextFunction, type Request, type Response } from "express";
+import { type VerifySessionOptions } from "supertokens-node/lib/build/recipe/session/types";
+import { verifySession as supertokensVerifySession } from "supertokens-node/recipe/session/framework/express";
 
 type VerifySessionMiddlewareFactory = typeof supertokensVerifySession;
 

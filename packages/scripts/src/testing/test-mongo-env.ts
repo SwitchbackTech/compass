@@ -15,24 +15,26 @@ import { resolve } from "node:path";
 
 type PackageName = "backend" | "scripts" | "sync";
 
-const PACKAGES: Record<PackageName, { preload: string; scan: string; glob: string }> =
-  {
-    backend: {
-      preload: "packages/backend/src/__tests__/backend.preload.ts",
-      scan: "./packages/backend/src",
-      glob: "packages/backend/src/**/*.{test,spec}.{ts,tsx}",
-    },
-    scripts: {
-      preload: "packages/scripts/src/testing/scripts.preload.ts",
-      scan: "./packages/scripts/src",
-      glob: "packages/scripts/src/**/*.{test,spec}.{ts,tsx}",
-    },
-    sync: {
-      preload: "packages/sync/src/__tests__/sync.preload.ts",
-      scan: "./packages/sync/src",
-      glob: "packages/sync/src/**/*.{test,spec}.{ts,tsx}",
-    },
-  };
+const PACKAGES: Record<
+  PackageName,
+  { preload: string; scan: string; glob: string }
+> = {
+  backend: {
+    preload: "packages/backend/src/__tests__/backend.preload.ts",
+    scan: "./packages/backend/src",
+    glob: "packages/backend/src/**/*.{test,spec}.{ts,tsx}",
+  },
+  scripts: {
+    preload: "packages/scripts/src/testing/scripts.preload.ts",
+    scan: "./packages/scripts/src",
+    glob: "packages/scripts/src/**/*.{test,spec}.{ts,tsx}",
+  },
+  sync: {
+    preload: "packages/sync/src/__tests__/sync.preload.ts",
+    scan: "./packages/sync/src",
+    glob: "packages/sync/src/**/*.{test,spec}.{ts,tsx}",
+  },
+};
 
 function parseExtraArgs(extraArgs: string[]): {
   bunFlags: string[];
@@ -68,14 +70,18 @@ function parseExtraArgs(extraArgs: string[]): {
       process.exit(1);
     }
 
-    // Pass the glob through to Bun — expanding many files into argv can hang the runner.
-    explicitPaths.push(arg.startsWith("./") ? arg : `./${arg}`);
+    for (const match of matches) {
+      explicitPaths.push(
+        match.startsWith("./") ? match : `./${match.replace(/^\.\//, "")}`,
+      );
+    }
   }
 
   return { bunFlags, ignorePattern, explicitPaths };
 }
 
 function resolveTestTargets(
+  pkg: PackageName,
   scan: string,
   extraArgs: string[],
 ): { targets: string[]; bunFlags: string[]; label: string } {
@@ -85,7 +91,7 @@ function resolveTestTargets(
     return {
       targets: explicitPaths,
       bunFlags,
-      label: explicitPaths.join(", "),
+      label: `${explicitPaths.length} ${pkg} test files`,
     };
   }
 
@@ -100,7 +106,9 @@ function resolveTestTargets(
 const pkg = process.argv[2] as PackageName;
 const separatorIndex = process.argv.indexOf("--");
 const extraArgs =
-  separatorIndex === -1 ? process.argv.slice(3) : process.argv.slice(separatorIndex + 1);
+  separatorIndex === -1
+    ? process.argv.slice(3)
+    : process.argv.slice(separatorIndex + 1);
 
 if (!pkg || !PACKAGES[pkg]) {
   console.error(
@@ -111,7 +119,7 @@ if (!pkg || !PACKAGES[pkg]) {
 
 const { preload, scan } = PACKAGES[pkg];
 const preloadPath = resolve(preload);
-const { targets, bunFlags, label } = resolveTestTargets(scan, extraArgs);
+const { targets, bunFlags, label } = resolveTestTargets(pkg, scan, extraArgs);
 
 const started = Date.now();
 
@@ -125,6 +133,10 @@ const testTargets = [
   "bun",
   "test",
   "--parallel",
+  // Db-heavy suites connect many workers to one shared mongod; the default 5s
+  // hook budget is too tight under parallel index installs.
+  "--timeout",
+  "60000",
   "--preload",
   preloadPath,
   ...bunFlags,

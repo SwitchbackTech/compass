@@ -1,13 +1,3 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  spyOn,
-} from "bun:test";
 import { faker } from "@faker-js/faker";
 import { ObjectId, type WithId } from "mongodb";
 import { Resource_Sync } from "@core/types/sync.types";
@@ -30,6 +20,16 @@ import {
   GoogleWatchStateStatus,
   inspectGoogleWatchState,
 } from "@backend/sync/services/watch/google-watch-state";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 
 // Comfortably outside SYNC_BUFFER_DAYS (3) so these watches never trip the
 // "expiring soon" bucket; SOON sits inside that buffer but still in the
@@ -329,7 +329,9 @@ describe("inspectGoogleWatchState", () => {
   it("case 2: NOT_APPLICABLE/PUBLIC_NOTIFICATIONS_DISABLED when the webhook baseurl isn't https", async () => {
     // Once: this test's single inspection call sees `false`; every other
     // test in the file falls through to the real (https) implementation.
-    (googleWatchConfig.isUsingGcalWebhookHttps as Mock).mockReturnValueOnce(false);
+    (googleWatchConfig.isUsingGcalWebhookHttps as Mock).mockReturnValueOnce(
+      false,
+    );
     const user = await UserDriver.createUser();
 
     const result = await inspectGoogleWatchState(user._id.toString());

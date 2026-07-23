@@ -1,22 +1,26 @@
+import { faker } from "@faker-js/faker";
 import { type NextFunction, type Response } from "express";
+import superTokensNode from "supertokens-node";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import {
   type SessionContainerInterface,
   type VerifySessionOptions,
 } from "supertokens-node/lib/build/recipe/session/types";
-import { StringV4Schema, zObjectId } from "@core/types/type.utils";
-import { type UserMetadata } from "@core/types/user.types";
 import {
   LoggerFactory,
+  type LoggerFactoryFn,
   registerLoggerFactory,
   resetLoggerFactory,
-  type LoggerFactoryFn,
 } from "@core/logger/logger.factory";
-import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
-import { getCurrentTestFileUrl } from "@backend/__tests__/helpers/test-file-context";
+import { StringV4Schema, zObjectId } from "@core/types/type.utils";
+import { type UserMetadata } from "@core/types/user.types";
+import { getTestIsolationKey } from "@backend/__tests__/helpers/test-file-context";
 import { getTestGcalFixture } from "@backend/__tests__/helpers/test-gcal-fixture";
-import { enterTestGcalClient } from "@backend/common/services/gcal/gcal.test-context";
-import { CONFIG } from "@backend/common/constants/config.constants";
+import {
+  registerUserIdMappingStore,
+  registerUserMetadataStore,
+  resetSupertokensStores,
+} from "@backend/auth/ports/supertokens.registry";
 import {
   createInMemoryUserIdMappingStore,
   createInMemoryUserMetadataStore,
@@ -24,15 +28,18 @@ import {
   type UserMetadataStore,
 } from "@backend/auth/ports/supertokens.stores";
 import {
-  registerUserIdMappingStore,
-  registerUserMetadataStore,
-  resetSupertokensStores,
-} from "@backend/auth/ports/supertokens.registry";
-import {
   registerTestVerifySession,
   resetVerifySession,
 } from "@backend/auth/session/session.middleware";
-import { beforeEach, mock } from "bun:test";
+import { CONFIG } from "@backend/common/constants/config.constants";
+import gcalService from "@backend/common/services/gcal/gcal.service";
+import {
+  enterTestGcalClient,
+  setTestGcalIsolationKey,
+} from "@backend/common/services/gcal/gcal.test-context";
+import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
+import { getChannelExpiration } from "@backend/sync/services/watch/google-watch-timing";
+import { beforeEach, mock, spyOn } from "bun:test";
 import { randomUUID } from "node:crypto";
 
 const fixturesByFile = new Map<
@@ -44,7 +51,7 @@ function getFileSupertokensStores(): {
   metadata: UserMetadataStore;
   mappings: UserIdMappingStore;
 } {
-  const key = getCurrentTestFileUrl();
+  const key = getTestIsolationKey();
   let stores = fixturesByFile.get(key);
   if (!stores) {
     stores = {
@@ -201,21 +208,39 @@ export function setupBackendTestSeams(): void {
   revokeSessionMock.mockClear();
   clearTestLoggerMocks();
 
+  setTestGcalIsolationKey(getTestIsolationKey());
   enterTestGcalClient(fixture.createGcalClient());
   registerUserMetadataStore(metadata);
   registerUserIdMappingStore(mappings);
   registerTestVerifySession(createTestVerifySession());
+  ensureGcalWatchSpies();
+}
+
+function ensureGcalWatchSpies(): void {
+  const mockWatch = {
+    watch: {
+      resourceId: faker.string.uuid(),
+      expiration: getChannelExpiration(),
+    },
+  };
+
+  for (const method of ["watchEvents", "watchCalendars"] as const) {
+    const fn = gcalService[method];
+    if (!("mock" in fn) || !fn.mock) {
+      spyOn(gcalService, method).mockResolvedValue(mockWatch);
+    } else {
+      fn.mockClear();
+      fn.mockResolvedValue(mockWatch);
+    }
+  }
 }
 
 export function mockNodeModules() {
   registerTestLoggerFactory();
+  spyOn(superTokensNode, "init").mockImplementation(() => undefined);
+  spyOn(superTokensNode, "getAllCORSHeaders").mockReturnValue([]);
 
   beforeEach(() => {
-    try {
-      getCurrentTestFileUrl();
-    } catch {
-      return;
-    }
     setupBackendTestSeams();
   });
 }
@@ -227,4 +252,7 @@ export function teardownBackendTestSeams(): void {
 }
 
 // Re-export for tests that mutate gcal fixture data directly.
-export { getTestGcalFixture, getTestGcalFixture as compassTestState } from "@backend/__tests__/helpers/test-gcal-fixture";
+export {
+  getTestGcalFixture,
+  getTestGcalFixture as compassTestState,
+} from "@backend/__tests__/helpers/test-gcal-fixture";

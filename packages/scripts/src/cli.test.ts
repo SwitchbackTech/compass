@@ -18,7 +18,9 @@ mock.module("@scripts/commands/migrate", () => ({
   runMigrator: mock((type: MigratorType) => mockRunMigrator(type)),
 }));
 
-const { default: CompassCLI } = requireActual("@scripts/cli") as typeof import("@scripts/cli");
+const { default: CompassCLI } = requireActual(
+  "@scripts/cli",
+) as typeof import("@scripts/cli");
 
 describe("CompassCLI", () => {
   afterEach(() => {

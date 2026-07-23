@@ -51,8 +51,8 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
     const calendar = await seedGoogleCalendar(user._id);
     let sawCommittedWriteDuringGoogleCall = false;
 
-    const createSpy = spyOn(gcalService, "createEvent")
-      .mockImplementationOnce(async () => {
+    const createSpy = spyOn(gcalService, "createEvent").mockImplementationOnce(
+      async () => {
         // Read through the *unmocked* driver (no session) -- if the Mongo
         // transaction had not actually committed yet, this read would race
         // it. Observing the row here proves propagate() runs strictly after
@@ -63,7 +63,8 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
           .toArray();
         sawCommittedWriteDuringGoogleCall = rows.length === 1;
         return { id: "gcal-id-1", recurringEventId: null };
-      });
+      },
+    );
 
     await eventService.create(
       user._id.toString(),
@@ -77,18 +78,17 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
   it("never calls propagate, and rolls back the partial write, when the Mongo transaction fails", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const propagateSpy = spyOn(
-      CompassToGoogleEventPropagation,
-      "propagate",
-    );
+    const propagateSpy = spyOn(CompassToGoogleEventPropagation, "propagate");
     const createEventSpy = spyOn(gcalService, "createEvent");
     propagateSpy.mockClear();
     createEventSpy.mockClear();
 
-    const bulkReplaceSpy = spyOn(eventRepository, "bulkReplace")
-      .mockImplementationOnce(async () => {
-        throw new Error("simulated write conflict inside the transaction");
-      });
+    const bulkReplaceSpy = spyOn(
+      eventRepository,
+      "bulkReplace",
+    ).mockImplementationOnce(async () => {
+      throw new Error("simulated write conflict inside the transaction");
+    });
 
     await expect(
       eventService.create(
@@ -111,10 +111,11 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
   it("surfaces PROVIDER_FAILURE on a Google error, but keeps the already-committed Mongo write", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const createSpy = spyOn(gcalService, "createEvent")
-      .mockImplementationOnce(async () => {
+    const createSpy = spyOn(gcalService, "createEvent").mockImplementationOnce(
+      async () => {
         throw new Error("simulated Google 500");
-      });
+      },
+    );
 
     await expect(
       eventService.create(

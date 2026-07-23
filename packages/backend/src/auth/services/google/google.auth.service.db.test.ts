@@ -1,4 +1,3 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { faker } from "@faker-js/faker";
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { LoggerFactory } from "@core/logger/logger.factory";
@@ -19,6 +18,17 @@ import {
   type AuthDecision,
   type GoogleSignInSuccess,
 } from "./google.auth.types";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 let googleAuthService: Awaited<
   typeof import("./google.auth.service")
@@ -70,12 +80,15 @@ describe("googleAuthService", () => {
 
     beforeEach(() => {
       mockDetermineGoogleAuthMode().mockReset();
-      spyOn(googleAuthService, "googleSignup")
-        .mockResolvedValue({ cUserId: "signup-id" });
-      spyOn(googleAuthService, "repairGoogleConnection")
-        .mockResolvedValue({ cUserId: "repair-id" });
-      spyOn(googleAuthService, "googleSignin")
-        .mockResolvedValue({ cUserId: "signin-id" });
+      spyOn(googleAuthService, "googleSignup").mockResolvedValue({
+        cUserId: "signup-id",
+      });
+      spyOn(googleAuthService, "repairGoogleConnection").mockResolvedValue({
+        cUserId: "repair-id",
+      });
+      spyOn(googleAuthService, "googleSignin").mockResolvedValue({
+        cUserId: "signin-id",
+      });
     });
 
     afterEach(() => {
@@ -290,8 +303,10 @@ describe("googleAuthService", () => {
         access_token: faker.internet.jwt(),
         refresh_token: faker.string.uuid(),
       };
-      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
-        .mockResolvedValue();
+      const restartSpy = spyOn(
+        googleCalendarSyncService,
+        "startGoogleCalendarSyncIfNeeded",
+      ).mockResolvedValue();
 
       await userService.pruneGoogleData(compassUserId);
 
@@ -332,8 +347,10 @@ describe("googleAuthService", () => {
         refresh_token: faker.string.uuid(),
       };
       const restartError = new Error("sync failed");
-      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
-        .mockImplementation(() => Promise.reject(restartError));
+      const restartSpy = spyOn(
+        googleCalendarSyncService,
+        "startGoogleCalendarSyncIfNeeded",
+      ).mockImplementation(() => Promise.reject(restartError));
 
       await userService.pruneGoogleData(compassUserId);
 
@@ -361,8 +378,10 @@ describe("googleAuthService", () => {
         sub: user.google?.googleId,
         picture: faker.image.url(),
       });
-      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
-        .mockResolvedValue();
+      const restartSpy = spyOn(
+        googleCalendarSyncService,
+        "startGoogleCalendarSyncIfNeeded",
+      ).mockResolvedValue();
 
       mockDetermineGoogleAuthMode().mockResolvedValue({
         authMode: "RECONNECT_REPAIR",
@@ -407,8 +426,10 @@ describe("googleAuthService", () => {
         sub: user.google?.googleId,
         picture: faker.image.url(),
       });
-      const importSpy = spyOn(googleCalendarSyncService, "importLatestGoogleCalendarChanges")
-        .mockResolvedValue(undefined);
+      const importSpy = spyOn(
+        googleCalendarSyncService,
+        "importLatestGoogleCalendarChanges",
+      ).mockResolvedValue(undefined);
 
       await expect(
         googleAuthService.googleSignin(providerUser, {
@@ -441,16 +462,20 @@ describe("googleAuthService", () => {
         picture: faker.image.url(),
       });
       const refreshToken = faker.string.uuid();
-      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
-        .mockResolvedValue();
-      const exchangeSpy = spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
-        .mockResolvedValue({
-          gUser,
-          tokens: {
-            access_token: faker.internet.jwt(),
-            refresh_token: refreshToken,
-          },
-        } as never);
+      const restartSpy = spyOn(
+        googleCalendarSyncService,
+        "startGoogleCalendarSyncIfNeeded",
+      ).mockResolvedValue();
+      const exchangeSpy = spyOn(
+        GoogleOAuthClient.prototype,
+        "exchangeAuthCode",
+      ).mockResolvedValue({
+        gUser,
+        tokens: {
+          access_token: faker.internet.jwt(),
+          refresh_token: refreshToken,
+        },
+      } as never);
 
       const result = await googleAuthService.connectGoogleToCurrentUser(
         compassUserId,
@@ -484,18 +509,22 @@ describe("googleAuthService", () => {
       const emailPasswordUser = await UserDriver.createUser({
         withGoogle: false,
       });
-      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
-        .mockResolvedValue();
-      const exchangeSpy = spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
-        .mockResolvedValue({
-          gUser: UserDriver.generateGoogleUser({
-            sub: connectedUser.google?.googleId,
-          }),
-          tokens: {
-            access_token: faker.internet.jwt(),
-            refresh_token: faker.string.uuid(),
-          },
-        } as never);
+      const restartSpy = spyOn(
+        googleCalendarSyncService,
+        "startGoogleCalendarSyncIfNeeded",
+      ).mockResolvedValue();
+      const exchangeSpy = spyOn(
+        GoogleOAuthClient.prototype,
+        "exchangeAuthCode",
+      ).mockResolvedValue({
+        gUser: UserDriver.generateGoogleUser({
+          sub: connectedUser.google?.googleId,
+        }),
+        tokens: {
+          access_token: faker.internet.jwt(),
+          refresh_token: faker.string.uuid(),
+        },
+      } as never);
 
       await expect(
         googleAuthService.connectGoogleToCurrentUser(
@@ -521,19 +550,23 @@ describe("googleAuthService", () => {
 
     it("rejects when the Google account email does not match the current Compass user", async () => {
       const user = await UserDriver.createUser({ withGoogle: false });
-      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
-        .mockResolvedValue();
-      const exchangeSpy = spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
-        .mockResolvedValue({
-          gUser: UserDriver.generateGoogleUser({
-            email: faker.internet.email(),
-            sub: faker.string.uuid(),
-          }),
-          tokens: {
-            access_token: faker.internet.jwt(),
-            refresh_token: faker.string.uuid(),
-          },
-        } as never);
+      const restartSpy = spyOn(
+        googleCalendarSyncService,
+        "startGoogleCalendarSyncIfNeeded",
+      ).mockResolvedValue();
+      const exchangeSpy = spyOn(
+        GoogleOAuthClient.prototype,
+        "exchangeAuthCode",
+      ).mockResolvedValue({
+        gUser: UserDriver.generateGoogleUser({
+          email: faker.internet.email(),
+          sub: faker.string.uuid(),
+        }),
+        tokens: {
+          access_token: faker.internet.jwt(),
+          refresh_token: faker.string.uuid(),
+        },
+      } as never);
 
       await expect(
         googleAuthService.connectGoogleToCurrentUser(user._id.toString(), {
@@ -566,8 +599,10 @@ describe("googleAuthService", () => {
         picture: faker.image.url(),
       } as TokenPayload;
       const refreshToken = faker.string.uuid();
-      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
-        .mockResolvedValue();
+      const restartSpy = spyOn(
+        googleCalendarSyncService,
+        "startGoogleCalendarSyncIfNeeded",
+      ).mockResolvedValue();
 
       const result = await googleAuthService.googleSignup(
         providerUser,
@@ -596,8 +631,10 @@ describe("googleAuthService", () => {
         picture: faker.image.url(),
       } as TokenPayload;
       const refreshToken = faker.string.uuid();
-      const restartSpy = spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
-        .mockResolvedValue();
+      const restartSpy = spyOn(
+        googleCalendarSyncService,
+        "startGoogleCalendarSyncIfNeeded",
+      ).mockResolvedValue();
 
       const result = await googleAuthService.googleSignup(
         providerUser,

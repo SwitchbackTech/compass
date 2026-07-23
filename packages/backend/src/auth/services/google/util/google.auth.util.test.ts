@@ -24,7 +24,6 @@ function makeCompassUser(overrides?: {
 }
 
 describe("determineGoogleAuthMode", () => {
-
   it("returns SIGNUP when there is no linked Compass user", async () => {
     const googleUserId = faker.string.uuid();
     spyOn(userQueries, "findCanonicalCompassUser").mockResolvedValue(null);

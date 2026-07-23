@@ -13,6 +13,8 @@
     "cors": "^2.8.5",
     "exponential-backoff": "^3.1.2",
     "express": "^4.17.1",
+    "gaxios": "^6.7.1",
+    "google-auth-library": "^9.15.1",
     "helmet": "^7.0.0",
     "lodash.mergewith": "^4.6.2",
     "mongodb": "^7.2.0",

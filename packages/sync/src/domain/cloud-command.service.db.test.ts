@@ -1,4 +1,3 @@
-import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { faker } from "@faker-js/faker";
 import { type SyncCommandInput } from "@core/types/sync/command.contracts";
 import {
@@ -27,6 +26,7 @@ import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const storage = setupSyncStorage(import.meta.url);
 const objectId = () => faker.database.mongodbObjectId();
@@ -737,11 +737,12 @@ describe("submitCloudCommand provider dispatch", () => {
     const order: string[] = [];
     const realClear = occurrences.replaceForEvent.bind(occurrences);
     const realDelete = events.deleteById.bind(events);
-    spyOn(occurrences, "replaceForEvent")
-      .mockImplementation(async (...args) => {
+    spyOn(occurrences, "replaceForEvent").mockImplementation(
+      async (...args) => {
         order.push("clear");
         return realClear(...args);
-      });
+      },
+    );
     spyOn(events, "deleteById").mockImplementation(async (...args) => {
       order.push("delete");
       return realDelete(...args);

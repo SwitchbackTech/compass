@@ -12,7 +12,16 @@ import calendarService from "@backend/calendar/services/calendar.service";
 import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 describe("CalendarService", () => {
   beforeEach(() => setupTestDb(import.meta.url));
@@ -227,10 +236,6 @@ describe("CalendarService", () => {
   });
 
   describe("getAvailability", () => {
-    afterEach(() => {
-      mock.restore();
-    });
-
     it("merges busy periods from multiple freeBusyReader calendars, mapped back to compass ids", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const calendarA = await seedGoogleCalendar(user._id, {
@@ -332,19 +337,21 @@ describe("CalendarService", () => {
         googleCalendarId: "google-hidden",
         isVisible: false,
       });
-      const queryFreeBusySpy = spyOn(gcalService, "queryFreeBusy")
-        .mockResolvedValue({
-          calendars: {
-            "google-visible": {
-              busy: [
-                {
-                  start: "2024-01-15T09:00:00.000Z",
-                  end: "2024-01-15T10:00:00.000Z",
-                },
-              ],
-            },
+      const queryFreeBusySpy = spyOn(
+        gcalService,
+        "queryFreeBusy",
+      ).mockResolvedValue({
+        calendars: {
+          "google-visible": {
+            busy: [
+              {
+                start: "2024-01-15T09:00:00.000Z",
+                end: "2024-01-15T10:00:00.000Z",
+              },
+            ],
           },
-        });
+        },
+      });
 
       const query = AvailabilityQuerySchema.parse({
         calendarIds: [

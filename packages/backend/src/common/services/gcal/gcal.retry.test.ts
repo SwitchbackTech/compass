@@ -1,23 +1,14 @@
 import { GaxiosError, type GaxiosResponse } from "gaxios";
-import { LoggerFactory } from "@core/logger/logger.factory";
+import {
+  type LoggerFactory,
+  registerLoggerFactory,
+} from "@core/logger/logger.factory";
 import {
   computeBackoffDelayMs,
   isRetryableGoogleError,
   withGoogleRetry,
 } from "@backend/common/services/gcal/gcal.retry";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
-
-// The repo-wide winston mock (see mock.setup.ts) returns one stable logger per
-// name, so this is the very instance the retry module captured at import time
-// (`Logger("app:gcal.retry")`). Grabbing it by the same name lets the
-// observability tests assert on it directly.
-const mockLogger = LoggerFactory("app:gcal.retry") as unknown as {
-  debug: Mock;
-  info: Mock;
-  warn: Mock;
-  error: Mock;
-  verbose: Mock;
-};
 
 const makeGaxiosError = ({
   status,
@@ -273,13 +264,23 @@ describe("withGoogleRetry Retry-After handling", () => {
 
 describe("withGoogleRetry observability logging", () => {
   const noopSleep = async () => undefined;
+  let mockLogger: {
+    debug: Mock;
+    info: Mock;
+    warn: Mock;
+    error: Mock;
+    verbose: Mock;
+  };
 
   beforeEach(() => {
-    mockLogger.debug.mockClear();
-    mockLogger.info.mockClear();
-    mockLogger.warn.mockClear();
-    mockLogger.error.mockClear();
-    mockLogger.verbose.mockClear();
+    mockLogger = {
+      debug: mock(),
+      info: mock(),
+      warn: mock(),
+      error: mock(),
+      verbose: mock(),
+    };
+    registerLoggerFactory(() => mockLogger as ReturnType<typeof LoggerFactory>);
   });
 
   it("logs nothing on the common first-try-success path", async () => {

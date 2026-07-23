@@ -23,7 +23,17 @@ import { googleCalendarListService } from "@backend/sync/services/calendarlist/g
 import { seedLocalCalendar } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 import * as syncImportService from "@backend/sync/services/import/google-import.service";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const buildGoogleCalendar = (
   userId: ObjectId,
@@ -143,10 +153,7 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      const calendarsChangedSpy = spyOn(
-        sseServer,
-        "publishCalendarsChanged",
-      );
+      const calendarsChangedSpy = spyOn(sseServer, "publishCalendarsChanged");
       const eventsChangedSpy = spyOn(sseServer, "publishEventsChanged");
 
       const result = await reconcile(userId);
@@ -262,10 +269,7 @@ describe("googleCalendarListService", () => {
       ];
 
       const stopWatchSpy = spyOn(gcalService, "stopWatch");
-      const calendarsChangedSpy = spyOn(
-        sseServer,
-        "publishCalendarsChanged",
-      );
+      const calendarsChangedSpy = spyOn(sseServer, "publishCalendarsChanged");
 
       await expect(reconcile(userId)).resolves.toEqual({
         outcome: "RECONCILED",
@@ -597,10 +601,9 @@ describe("googleCalendarListService", () => {
       ];
 
       spyOn(syncImportService, "createSyncImport").mockResolvedValue({
-        importAllEvents: mock()
-          .mockImplementation(() =>
-            Promise.reject(new Error("simulated import failure")),
-          ),
+        importAllEvents: mock().mockImplementation(() =>
+          Promise.reject(new Error("simulated import failure")),
+        ),
       } as unknown as Awaited<
         ReturnType<typeof syncImportService.createSyncImport>
       >);
@@ -620,10 +623,7 @@ describe("googleCalendarListService", () => {
 
       compassTestState().calendarlist = [];
 
-      const calendarsChangedSpy = spyOn(
-        sseServer,
-        "publishCalendarsChanged",
-      );
+      const calendarsChangedSpy = spyOn(sseServer, "publishCalendarsChanged");
       const eventsChangedSpy = spyOn(sseServer, "publishEventsChanged");
 
       await expect(reconcile(userId)).resolves.toEqual({
@@ -716,10 +716,11 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      spyOn(gcalService, "getAllCalendarListPages")
-        .mockImplementationOnce(() => {
+      spyOn(gcalService, "getAllCalendarListPages").mockImplementationOnce(
+        () => {
           throw invalidSyncTokenError;
-        });
+        },
+      );
 
       const stopWatchSpy = spyOn(gcalService, "stopWatch");
 
@@ -783,10 +784,11 @@ describe("googleCalendarListService", () => {
       const userId = user._id.toString();
       const initialToken = await seedCalendarlistToken(userId);
 
-      spyOn(gcalService, "getAllCalendarListPages")
-        .mockImplementationOnce(() => {
+      spyOn(gcalService, "getAllCalendarListPages").mockImplementationOnce(
+        () => {
           throw createGoogleError({ code: "500", responseStatus: 500 });
-        });
+        },
+      );
 
       await expect(reconcile(userId)).rejects.toMatchObject({ code: "500" });
 
