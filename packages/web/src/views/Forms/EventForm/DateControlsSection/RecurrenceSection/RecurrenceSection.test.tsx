@@ -1,6 +1,11 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useState,
+} from "react";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type GridEventDraft } from "@web/events/event-draft.types";
@@ -79,9 +84,7 @@ function renderRecurrenceSection({
       });
     }, []);
 
-    return (
-      <RecurrenceSection draft={draft} setDraft={handleSetDraft} />
-    );
+    return <RecurrenceSection draft={draft} setDraft={handleSetDraft} />;
   }
 
   const view = render(<Harness />);

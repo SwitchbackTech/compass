@@ -333,7 +333,10 @@ export function patchGridDraftScheduleDates(
         };
 
   if (current.kind === "create") {
-    return { ...current, values: { ...current.values, schedule: nextSchedule } };
+    return {
+      ...current,
+      values: { ...current.values, schedule: nextSchedule },
+    };
   }
 
   return { ...current, values: { ...current.values, schedule: nextSchedule } };
@@ -349,7 +352,9 @@ export function patchGridDraftFields(
       values: {
         ...current.values,
         ...(patch.title !== undefined ? { title: patch.title } : {}),
-        ...(patch.description !== undefined ? { description: patch.description } : {}),
+        ...(patch.description !== undefined
+          ? { description: patch.description }
+          : {}),
       },
     };
   }
@@ -359,7 +364,9 @@ export function patchGridDraftFields(
     values: {
       ...current.values,
       ...(patch.title !== undefined ? { title: patch.title } : {}),
-      ...(patch.description !== undefined ? { description: patch.description } : {}),
+      ...(patch.description !== undefined
+        ? { description: patch.description }
+        : {}),
     },
   };
 }

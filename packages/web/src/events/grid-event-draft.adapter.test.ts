@@ -234,7 +234,10 @@ test("a patch that echoes the hydrated rule unchanged keeps the draft's recurren
   if (!draft) throw new Error("Expected scheduled event draft");
 
   const updated = patchGridDraftRecurrence(
-    { ...draft, values: { ...draft.values, title: "Retitled mid-edit" } } as GridEventDraft,
+    {
+      ...draft,
+      values: { ...draft.values, title: "Retitled mid-edit" },
+    } as GridEventDraft,
     resolveDraftRecurrenceRules(draft, SERIES_RULES),
     SERIES_RULES,
   );

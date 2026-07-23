@@ -1,8 +1,8 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { Frequency } from "rrule";
-import { EventScheduleSchema } from "@core/types/event.contracts";
 import { EventIdSchema } from "@core/types/domain-primitives";
+import { EventScheduleSchema } from "@core/types/event.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
@@ -31,9 +31,7 @@ describe("useRecurrence hook", () => {
   it("initializes with no recurrence", () => {
     const draft = baseDraft();
     const setDraft = mock();
-    const { result } = renderHook(() =>
-      useRecurrence(draft, { setDraft }),
-    );
+    const { result } = renderHook(() => useRecurrence(draft, { setDraft }));
 
     expect(result.current.hasRecurrence).toBe(false);
     expect(result.current.interval).toBe(1);
@@ -45,9 +43,7 @@ describe("useRecurrence hook", () => {
   it("can toggle recurrence", () => {
     const draft = baseDraft();
     const setDraft = mock();
-    const { result } = renderHook(() =>
-      useRecurrence(draft, { setDraft }),
-    );
+    const { result } = renderHook(() => useRecurrence(draft, { setDraft }));
     act(() => {
       result.current.toggleRecurrence();
     });
@@ -57,9 +53,7 @@ describe("useRecurrence hook", () => {
   it("can set interval", () => {
     const draft = baseDraft();
     const setDraft = mock();
-    const { result } = renderHook(() =>
-      useRecurrence(draft, { setDraft }),
-    );
+    const { result } = renderHook(() => useRecurrence(draft, { setDraft }));
 
     act(() => {
       result.current.toggleRecurrence();
@@ -73,9 +67,7 @@ describe("useRecurrence hook", () => {
   it("can set frequency", () => {
     const draft = baseDraft();
     const setDraft = mock();
-    const { result } = renderHook(() =>
-      useRecurrence(draft, { setDraft }),
-    );
+    const { result } = renderHook(() => useRecurrence(draft, { setDraft }));
 
     act(() => {
       result.current.toggleRecurrence();
@@ -89,9 +81,7 @@ describe("useRecurrence hook", () => {
   it("can set weekDays", () => {
     const draft = baseDraft();
     const setDraft = mock();
-    const { result } = renderHook(() =>
-      useRecurrence(draft, { setDraft }),
-    );
+    const { result } = renderHook(() => useRecurrence(draft, { setDraft }));
 
     act(() => {
       result.current.toggleRecurrence();
@@ -105,9 +95,7 @@ describe("useRecurrence hook", () => {
   it("can set until date", () => {
     const draft = baseDraft();
     const setDraft = mock();
-    const { result } = renderHook(() =>
-      useRecurrence(draft, { setDraft }),
-    );
+    const { result } = renderHook(() => useRecurrence(draft, { setDraft }));
     const date = new Date();
 
     act(() => {
@@ -132,9 +120,7 @@ describe("useRecurrence hook", () => {
     } as GridEventDraft;
 
     const setDraft = mock();
-    const { result } = renderHook(() =>
-      useRecurrence(draft, { setDraft }),
-    );
+    const { result } = renderHook(() => useRecurrence(draft, { setDraft }));
 
     expect(result.current.hasRecurrence).toBe(true);
     expect(result.current.freq).toBe(Frequency.MONTHLY);

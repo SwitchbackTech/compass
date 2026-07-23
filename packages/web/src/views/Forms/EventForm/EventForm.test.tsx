@@ -826,7 +826,9 @@ describe("EventForm", () => {
     // passes once EventForm resolves the series base and threads its rules
     // through, which is what lets RecurrenceSection auto-expand with the
     // real rule instead of reading the event as non-recurring.
-    expect(capturedRecurrenceSectionProps?.draft.values.recurrence).toMatchObject({
+    expect(
+      capturedRecurrenceSectionProps?.draft.values.recurrence,
+    ).toMatchObject({
       kind: "preserve",
     });
     expect(capturedRecurrenceSectionProps?.seriesRules).toEqual(seriesRules);

@@ -77,7 +77,8 @@ const scheduleDatesFromDraft = (draft: GridEventDraft) => {
   }
 
   return {
-    startDate: dayjs(schedule.start).format() || dayjs().toRFC3339OffsetString(),
+    startDate:
+      dayjs(schedule.start).format() || dayjs().toRFC3339OffsetString(),
     endDate:
       dayjs(schedule.end).format() ||
       dayjs().add(1, "hour").toRFC3339OffsetString(),

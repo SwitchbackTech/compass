@@ -306,7 +306,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     );
 
     const patchDraftFields = useCallback(
-      (patch: Partial<Pick<GridEventDraft["values"], "title" | "description">>) => {
+      (
+        patch: Partial<Pick<GridEventDraft["values"], "title" | "description">>,
+      ) => {
         setLatestDraft((current) => {
           if (!current) return current;
           return patchGridDraftFields(current, patch);

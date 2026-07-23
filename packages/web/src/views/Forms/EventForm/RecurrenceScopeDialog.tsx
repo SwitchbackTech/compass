@@ -7,10 +7,7 @@ import {
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import {
-  selectGridDraft,
-  useDraftStore,
-} from "@web/events/stores/draft.store";
+import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 const UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [

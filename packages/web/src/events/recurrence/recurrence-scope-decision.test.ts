@@ -45,7 +45,10 @@ const buildEditDraft = ({
   liveRecurrence = { kind: "preserve" as const },
 }: {
   id?: string;
-  recurrence?: Extract<GridEventDraft, { kind: "edit" }>["source"]["recurrence"];
+  recurrence?: Extract<
+    GridEventDraft,
+    { kind: "edit" }
+  >["source"]["recurrence"];
   liveRecurrence?: EditEventRecurrenceDraft;
 } = {}): GridEventDraft => {
   const source = createMockEvent({
