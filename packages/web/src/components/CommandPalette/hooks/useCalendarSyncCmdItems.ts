@@ -1,7 +1,7 @@
 import { CloudArrowUpIcon } from "@phosphor-icons/react";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { getGoogleSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import { getGoogleSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { type SyncStatus } from "@web/calendars/sync-status.types";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 
