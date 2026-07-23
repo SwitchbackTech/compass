@@ -50,18 +50,21 @@ mock.module("@tanstack/react-router", () => ({
   useNavigate: (...args: unknown[]) =>
     isRouterMocked
       ? mockNavigate
-      : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of this suite.
-        actualTanstackRouter.useNavigate(...(args as [])),
+      : (actualTanstackRouter.useNavigate as (...a: unknown[]) => unknown)(
+          ...args,
+        ),
   useLocation: (...args: unknown[]) =>
     isRouterMocked
       ? { pathname: "/life" }
-      : // biome-ignore lint/correctness/useHookAtTopLevel: mock.module factory; flag flips once in afterAll.
-        actualTanstackRouter.useLocation(...(args as [])),
+      : (actualTanstackRouter.useLocation as (...a: unknown[]) => unknown)(
+          ...args,
+        ),
   useSearch: (...args: unknown[]) =>
     isRouterMocked
       ? mockedLifeSearch
-      : // biome-ignore lint/correctness/useHookAtTopLevel: mock.module factory; flag flips once in afterAll.
-        actualTanstackRouter.useSearch(...(args as [])),
+      : (actualTanstackRouter.useSearch as (...a: unknown[]) => unknown)(
+          ...args,
+        ),
 }));
 
 afterAll(() => {

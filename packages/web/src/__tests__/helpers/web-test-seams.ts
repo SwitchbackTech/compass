@@ -1,5 +1,4 @@
 import * as actualReactToastify from "react-toastify";
-import { type EmailPasswordPort } from "@web/auth/compass/hooks/emailpassword.port";
 import { resetUseCompleteAuthenticationForTests } from "@web/auth/compass/hooks/useCompleteAuthentication.registry";
 import {
   registerSessionApiPort,
@@ -88,18 +87,18 @@ export function createDefaultTestGoogleAuthorizationHook(): UseStartGoogleAuthor
   });
 }
 
-export function createTestEmailPasswordPort(): EmailPasswordPort {
+export function createTestEmailPasswordPort() {
   return {
     signUp: mock().mockResolvedValue({
-      status: "OK",
+      status: "OK" as const,
       user: { emails: ["test@example.com"] },
     }),
     signIn: mock().mockResolvedValue({
-      status: "OK",
+      status: "OK" as const,
       user: { emails: ["test@example.com"] },
     }),
-    sendPasswordResetEmail: mock().mockResolvedValue({ status: "OK" }),
-    submitNewPassword: mock().mockResolvedValue({ status: "OK" }),
+    sendPasswordResetEmail: mock().mockResolvedValue({ status: "OK" as const }),
+    submitNewPassword: mock().mockResolvedValue({ status: "OK" as const }),
     getResetPasswordTokenFromURL: mock().mockReturnValue("token"),
   };
 }
