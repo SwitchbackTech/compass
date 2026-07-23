@@ -33,6 +33,7 @@ import { type EventRepositorySource } from "@web/events/repositories/event.repos
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import { getEventRepositoryBySource } from "@web/events/repositories/event.repository.util";
+import { isRestoringHistory } from "@web/events/stores/undo.store";
 import {
   type EventMutationOperation,
   eventMutationKeys,
@@ -47,6 +48,7 @@ import {
 } from "./event.mutation.runtime";
 import {
   isRecurringEvent,
+  recordEventCreateHistory,
   recordEventDeleteHistory,
   recordEventEditHistory,
 } from "./event.mutation-history";
@@ -357,6 +359,9 @@ export function useEventMutations(
       create: (input: CreateEventInput) => {
         const id = input.id ?? (createObjectIdString() as EventId);
         const finalInput = { ...input, id };
+        recordEventCreateHistory({
+          event: optimisticEventFromCreate(finalInput),
+        });
         createMutation.mutate({ input: finalInput, writeKey: id });
       },
       replace: (payload: { id: EventId; input: ReplaceEventInput }) => {
@@ -385,6 +390,7 @@ export function useEventMutations(
       },
       delete: (payload: { id: EventId; scope: RecurrenceScope }) => {
         if (
+          !isRestoringHistory() &&
           isTargetReadOnly(findEventInCache(queryClient, payload.id, source))
         ) {
           console.warn(
