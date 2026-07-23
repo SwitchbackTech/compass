@@ -1,6 +1,4 @@
 /**
- * @jest-environment node
- *
  * we do not need the database for this test
  */
 

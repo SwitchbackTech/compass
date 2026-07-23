@@ -46,18 +46,29 @@ E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` vi
 
 Every package runs on Bun's native test runner (Bun 1.3.14+); Jest has been removed.
 
-- `bun run test:core` — `bun test --parallel` with `packages/scripts/src/testing/core.preload.ts`.
-- `bun run test:web` — `bun test --parallel` with `packages/web/src/__tests__/web.preload.ts` (jsdom, MSW, Zustand reset).
-- `bun run test:backend`, `bun run test:scripts`, and `bun run test:sync` — `packages/scripts/src/testing/test-mongo-env.ts` boots one shared in-memory Mongo replica set, then runs `bun test --parallel` with the package preload. Per-file DB names come from `setupTestDb(import.meta.url)`.
+- `bun run test:core` — `test-parallel.ts core`: `bun test --parallel` with `core.preload.ts`.
+- `bun run test:web` — `test-isolated.ts`: one Bun process per test file with `web.preload.ts` (jsdom, MSW, Zustand reset). Required because preload `mock.module` mocks are process-global and Bun's `--parallel`/`--isolate` clears them between files.
+- `bun run test:backend`, `bun run test:scripts`, and `bun run test:sync` — `test-mongo-env.ts` boots one shared in-memory Mongo replica set, then runs `bun test --parallel` with the package preload. Per-file DB names come from `setupTestDb(import.meta.url)`.
+- `bun run test:backend:fast`, `bun run test:sync:fast`, and `bun run test:scripts:fast` — `test-parallel.ts` with mongo-free preloads; excludes `*.db.test.*` via `--path-ignore-patterns`. No mongod boot — use these for day-to-day backend/sync/scripts work that does not touch persistence.
 - Backend Google Calendar and SuperTokens behavior in tests use injectable seams (`TestGcalFixture`, `session.middleware`, `supertokens.registry`, `LoggerFactory`) instead of preload `mock.module` clusters.
 - Test files import lifecycle/assertion APIs from `bun:test` only (`mock`, `spyOn`, `mock.module` where unavoidable).
+
+### Known infrastructure constraints
+
+**Web per-file isolation.** `test-isolated.ts` spawns one `bun test` process per web test file (up to 8 concurrent). This is not optional today: the web preload registers process-wide `mock.module` mocks for SuperTokens, react-toastify, and Google auth. Bun's native `--parallel` enables `--isolate`, which clears `mock.module` state and causes cross-file leaks. Eliminating the launcher requires either a Bun fix or migrating those deps to injectable seams (as backend already does).
+
+**Store reset registry.** Zustand stores are module singletons. `@web/__tests__/utils/state/reset-stores.ts` registers every store that must reset between tests; `web.preload.ts` calls `resetAllStores()` in a global `afterEach`. When adding a new store, register it in both `reset-stores.ts` and `seed-stores.ts` or state will leak silently across tests.
+
+**Fast vs full mongo tiers.** Files named `*.db.test.ts(x)` connect to the shared in-memory replica set started by `test-mongo-env.ts`. Everything else is "fast" and can run without mongod via the `:fast` scripts. Full-suite commands (`test:backend`, etc.) still boot mongod because some non-db tests import backend modules that expect `MONGO_URI` to be set even when they do not connect.
+
+**Web preload modules.** Setup lives under `packages/web/src/__tests__/setup/` (jsdom env, browser polyfills, asset stubs, indexedDB, test lifecycle). The entry point is `web.preload.ts`, which calls `mockNodeModules()` before dynamically importing the lifecycle module so `mock.module` registration is not hoisted past SuperTokens mocks.
 
 ### Test file naming and tiers
 
 Mongo-backed tests use the `*.db.test.ts` / `*.db.test.tsx` suffix. Everything else is "fast".
 
 - `bun run test:backend` / `bun run test:scripts` / `bun run test:sync` — full package suite.
-- `bun run test:backend:fast` / `bun run test:scripts:fast` — excludes `*.db.test.*` via the mongo wrapper's file filter (still uses shared mongod when non-db tests need it).
+- `bun run test:backend:fast` / `bun run test:scripts:fast` / `bun run test:sync:fast` — excludes `*.db.test.*` and skips mongod boot (parallel, mongo-free preloads).
 - `bun run test:backend:db` / `bun run test:scripts:db` — only `*.db.test.*` files.
 - `bun run test:migrations` — migration suites under `packages/scripts/src/migrations`.
 - Focus a run: `bun packages/scripts/src/testing/test-mongo-env.ts backend -- ./packages/backend/src/user/controllers/user.controller.db.test.ts`.
@@ -126,11 +137,13 @@ Isolation rules:
 - To focus an element on mount in this jsdom setup, use React's `autoFocus` prop or a stable callback ref (`ref={useCallback(n => n?.focus(), [])}`) — both fire in the commit phase. A `useEffect(() => ref.current?.focus())` does **not** make the element `document.activeElement` in tests. `autoFocus` trips biome's `lint/a11y/noAutofocus` (error) and a JSX-attribute `biome-ignore` comment breaks the formatter, so prefer the callback ref.
 - `FloatingFocusManager` fights virtual-focus combobox palettes: for a component that keeps real focus in one input while using `useListNavigation({ virtual: true })` + `aria-activedescendant` (a command-palette style pattern), `FloatingFocusManager` asynchronously grabs focus to the panel container and steals it back from the input. Drop it — `useDismiss` still handles Escape/outside-press without it. It belongs on anchored forms with a real reference element instead (e.g. `FloatingEventForm`).
 
-### Web Jest Harness Defaults (MSW + Globals)
+### Web test harness (MSW + globals)
 
 Primary setup files:
 
-- `packages/web/src/__tests__/web.test.start.ts`
+- `packages/web/src/__tests__/web.preload.ts` (orchestrator)
+- `packages/web/src/__tests__/web.test.init.ts` (API base URL, Google client id)
+- `packages/web/src/__tests__/__mocks__/mock.setup.ts` (SuperTokens, toastify, Google auth module mocks)
 - `packages/web/src/__tests__/__mocks__/server/mock.handlers.ts`
 
 Current defaults worth knowing:
@@ -250,15 +263,11 @@ Pass `initialEntries` when asserting nested or non-root routes.
 
 If a test overrides globals (for example `window.location` or `window.indexedDB`) or spies on `console.*`, always restore them in teardown (`afterEach`/`afterAll`) to prevent cross-test leakage and noisy output.
 
-### Floating UI-Dependent Tests
+### Floating UI-dependent tests
 
-If a test exercises components that rely on `@floating-ui/react` refs/styles (for example Day view context-menu interactions), import the shared setup:
+Web tests exercise `@floating-ui/react` components on production code paths in jsdom. No separate floating-ui setup file is required — the jsdom polyfills in `packages/web/src/__tests__/setup/` provide enough layout stubs. See the FloatingFocusManager note under isolation rules above when testing combobox/command-palette patterns.
 
-- `@web/__tests__/floating-ui.setup`
-
-This keeps tests on production code paths while avoiding brittle layout coupling in JSDOM.
-
-### Jest Unbound-Method Rule In Tests
+### Unbound method assertions in tests
 
 If you need to assert method calls on non-mock objects, spy on the method first (`spyOn(...)` from `bun:test`) so the assertion is bound to a real mock/spy rather than an unbound method reference.
 
