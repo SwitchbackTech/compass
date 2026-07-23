@@ -65,12 +65,12 @@ const getFocusShortcuts = (view: ShortcutMenuView): Shortcut[] =>
     ? []
     : view === "day"
       ? [
-          { keys: ["u"], label: "Focus sidebar" },
-          { keys: ["i"], label: "Focus calendar" },
+          { keys: ["i"], label: "Focus sidebar" },
+          { keys: ["u"], label: "Focus calendar" },
         ]
       : [
-          { keys: ["u"], label: "Focus sidebar" },
-          { keys: ["i"], label: "Focus calendar event" },
+          { keys: ["i"], label: "Focus sidebar" },
+          { keys: ["u"], label: "Focus calendar event" },
         ];
 
 const getEditShortcuts = (view: ShortcutMenuView): Shortcut[] =>

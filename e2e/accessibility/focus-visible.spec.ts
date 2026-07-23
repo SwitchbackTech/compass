@@ -5,11 +5,11 @@ import {
 } from "../utils/event-test-utils";
 
 // Regression guard for "feat(web): ensure all focus areas have visible
-// feedback". The "u" shortcut used to move focus into the sidebar with no
+// feedback". The "i" shortcut used to move focus into the sidebar with no
 // visible indicator (it landed on a month-nav chevron that had no focus
 // style, and a global outline reset stripped the fallback). It now lands on
 // the month picker's tab-stoppable day, which shows an accent focus ring.
-test("the 'u' shortcut moves focus to a visibly-focused sidebar day", async ({
+test("the 'i' shortcut moves focus to a visibly-focused sidebar day", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
@@ -18,7 +18,7 @@ test("the 'u' shortcut moves focus to a visibly-focused sidebar day", async ({
   // A real (trusted) keypress so :focus-visible resolves as it would for a
   // keyboard user, and so the app's keyup shortcut handler fires.
   await page.locator("#mainGrid").focus();
-  await page.keyboard.press("u");
+  await page.keyboard.press("i");
 
   const focused = page.locator(".react-datepicker__day:focus");
   await expect(focused).toBeVisible();

@@ -123,12 +123,12 @@ describe("shortcuts.data", () => {
         );
 
       expect(findFocus("day")?.shortcuts).toEqual([
-        { keys: ["u"], label: "Focus sidebar" },
-        { keys: ["i"], label: "Focus calendar" },
+        { keys: ["i"], label: "Focus sidebar" },
+        { keys: ["u"], label: "Focus calendar" },
       ]);
       expect(findFocus("week")?.shortcuts).toEqual([
-        { keys: ["u"], label: "Focus sidebar" },
-        { keys: ["i"], label: "Focus calendar event" },
+        { keys: ["i"], label: "Focus sidebar" },
+        { keys: ["u"], label: "Focus calendar event" },
       ]);
     });
 
