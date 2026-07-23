@@ -27,7 +27,8 @@ export function createDefaultTestSessionPort(): SessionApiPort {
     getClaimValue: mock(),
     PrimitiveClaim: mock() as unknown as SessionApiPort["PrimitiveClaim"],
     BooleanClaim: mock() as unknown as SessionApiPort["BooleanClaim"],
-    PrimitiveArrayClaim: mock() as unknown as SessionApiPort["PrimitiveArrayClaim"],
+    PrimitiveArrayClaim:
+      mock() as unknown as SessionApiPort["PrimitiveArrayClaim"],
     attemptRefreshingSession: mock().mockResolvedValue(true),
     getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
     getAccessTokenPayloadSecurely: mock().mockResolvedValue({
@@ -74,10 +75,6 @@ export function createTestToastPort() {
   };
 }
 
-export function createDefaultTestToastPort(): ToastPort {
-  return createTestToastPort().port;
-}
-
 export function createDefaultTestGoogleAuthorizationHook(): UseStartGoogleAuthorization {
   return () => ({
     loading: false,
@@ -87,7 +84,7 @@ export function createDefaultTestGoogleAuthorizationHook(): UseStartGoogleAuthor
 
 export function installDefaultWebTestSeams(): void {
   registerSessionApiPort(createDefaultTestSessionPort());
-  registerToastPort(createDefaultTestToastPort());
+  registerToastPort(createTestToastPort().port);
   registerUseStartGoogleAuthorizationForTests(
     createDefaultTestGoogleAuthorizationHook(),
   );

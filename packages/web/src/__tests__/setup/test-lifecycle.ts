@@ -75,6 +75,6 @@ afterAll(() => {
   resetBrowserState();
   resetAllStores();
   resetWebTestSeams();
+  server.close();
+  mock.restore();
 });
-afterAll(() => server.close());
-afterAll(() => mock.restore());
