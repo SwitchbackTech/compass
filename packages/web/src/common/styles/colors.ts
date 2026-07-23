@@ -37,5 +37,6 @@ export const colors = {
 export const lightColors = {
   background: "#F3EEE2",
   text: "#403A2F",
+  textMuted: "#5E5847",
   onAccent: "#F6F3EA",
 };

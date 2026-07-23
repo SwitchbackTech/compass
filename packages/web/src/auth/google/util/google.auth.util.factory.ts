@@ -1,7 +1,7 @@
 import { type toast } from "react-toastify";
 import { Status } from "@core/errors/status.codes";
 import { type ApiError } from "@web/api/api.types";
-import { toastDefaultOptions } from "@web/common/constants/toast.constants";
+import { getToastDefaultOptions } from "@web/common/constants/toast.constants";
 export interface SyncLocalEventsResult {
   syncedCount: number;
   success: boolean;
@@ -69,7 +69,7 @@ export function createGoogleAuthUtil({
         ? LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE
         : LOCAL_EVENTS_SYNC_ERROR_MESSAGE;
 
-    toastError(message, toastDefaultOptions);
+    toastError(message, getToastDefaultOptions());
     console.error(error);
   };
 

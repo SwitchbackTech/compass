@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { type Id, type ToastContent, type ToastOptions } from "react-toastify";
-import { toastDefaultOptions } from "@web/common/constants/toast.constants";
+import { getToastDefaultOptions } from "@web/common/constants/toast.constants";
 import { SessionExpiredToast } from "@web/common/utils/toast/session-expired.toast";
 import { getToast } from "@web/common/utils/toast/toast.port";
 
@@ -38,7 +38,7 @@ export function showErrorToast(
     severity === ErrorToastSeverity.CRITICAL ? criticalErrorToastOptions : {};
 
   return toast.error(message, {
-    ...toastDefaultOptions,
+    ...getToastDefaultOptions(),
     ...severityOptions,
     ...options,
     ...(toastId ? { toastId } : {}),

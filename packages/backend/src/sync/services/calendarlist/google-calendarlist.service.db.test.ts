@@ -25,7 +25,6 @@ import * as syncImportService from "@backend/sync/services/import/google-import.
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,
