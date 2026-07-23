@@ -1,11 +1,12 @@
 import { createElement } from "react";
-import { type Id, toast } from "react-toastify";
+import { type Id } from "react-toastify";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import {
   ErrorToastSeverity,
   showErrorToast,
 } from "@web/common/utils/toast/error-toast.util";
+import { getToast } from "@web/common/utils/toast/toast.port";
 
 // Imported dynamically to avoid a module cycle: google.auth.util shows this
 // toast, and the reconnect flow needs google.auth.util's local-event flush.
@@ -43,7 +44,7 @@ export const GoogleReconnectToast = ({
       return;
     }
 
-    toast.dismiss(toastId);
+    getToast().dismiss(toastId);
     void startGoogleAuthorization();
   };
 

@@ -1,27 +1,21 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-
-const toast = Object.assign(mock(), {
-  update: mock(),
-});
-
-mock.module("react-toastify", () => ({
-  ToastContainer: () => null,
-  toast,
-}));
-
-const { showStatusToast } =
-  require("@web/common/utils/toast/status-toast.util") as typeof import("@web/common/utils/toast/status-toast.util");
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
+import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 describe("showStatusToast", () => {
+  const { port, mocks } = createTestToastPort();
+
   beforeEach(() => {
-    toast.mockClear();
-    toast.update.mockClear();
+    mocks.toast.mockClear();
+    mocks.update.mockClear();
+    registerToastPort(port);
   });
 
   it("shows the message with the given toast id", () => {
     showStatusToast("task-migration", "Migrated forward");
 
-    expect(toast).toHaveBeenCalledWith(
+    expect(mocks.toast).toHaveBeenCalledWith(
       "Migrated forward",
       expect.objectContaining({ toastId: "task-migration" }),
     );
@@ -30,7 +24,7 @@ describe("showStatusToast", () => {
   it("hides the close button and progress bar", () => {
     showStatusToast("task-deleted", "Deleted");
 
-    expect(toast).toHaveBeenCalledWith(
+    expect(mocks.toast).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
         closeButton: false,
@@ -43,8 +37,7 @@ describe("showStatusToast", () => {
     showStatusToast("task-migration", "Migrated forward");
     showStatusToast("task-migration", "Migrated backward");
 
-    // Both calls use the same toastId, so react-toastify keeps a single toast
-    expect(toast.update).toHaveBeenNthCalledWith(
+    expect(mocks.update).toHaveBeenNthCalledWith(
       2,
       "task-migration",
       expect.objectContaining({

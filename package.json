@@ -38,7 +38,7 @@
     "test:core": "bun packages/scripts/src/testing/test-parallel.ts core --",
     "test:sync": "bun packages/scripts/src/testing/test-mongo-env.ts sync --",
     "test:sync:fast": "bun packages/scripts/src/testing/test-parallel.ts sync-fast -- --path-ignore-patterns '**/*.db.test.ts'",
-    "test:web": "bun packages/scripts/src/testing/test-isolated.ts",
+    "test:web": "bun packages/scripts/src/testing/test-parallel.ts web --",
     "test:scripts": "bun packages/scripts/src/testing/test-mongo-env.ts scripts --",
     "test:scripts:fast": "bun packages/scripts/src/testing/test-parallel.ts scripts-fast -- --path-ignore-patterns '**/*.db.test.ts'",
     "test:scripts:db": "bun packages/scripts/src/testing/test-mongo-env.ts scripts -- './packages/scripts/src/**/*.db.test.ts'",

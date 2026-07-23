@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
-import { type Id, toast } from "react-toastify";
+import { type Id } from "react-toastify";
 import { toastDefaultOptions } from "@web/common/constants/toast.constants";
+import { getToast } from "@web/common/utils/toast/toast.port";
 
 /**
  * Show a lightweight, self-dismissing status toast (no close button, no
@@ -11,6 +12,7 @@ import { toastDefaultOptions } from "@web/common/constants/toast.constants";
  * toasts created earlier in the same tick.
  */
 export function showStatusToast(toastId: Id, message: ReactNode): void {
+  const toast = getToast();
   toast(message, {
     ...toastDefaultOptions,
     toastId,

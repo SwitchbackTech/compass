@@ -1,5 +1,5 @@
-import { toast } from "react-toastify";
 import { initializeOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
+import { getToast } from "@web/common/utils/toast/toast.port";
 import { DatabaseInitError } from "./storage/db-errors.util";
 
 export interface AppInitResult {
@@ -41,7 +41,7 @@ export async function initializeDatabaseWithErrorHandling(
 export function showDbInitErrorToast(dbInitError: DatabaseInitError): void {
   // Use setTimeout to ensure toast container is mounted
   setTimeout(() => {
-    toast.error(
+    getToast().error(
       `Compass can't use offline storage right now: ${dbInitError.message}. Your changes won't be saved on this device.`,
       {
         autoClose: false,

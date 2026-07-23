@@ -1,28 +1,22 @@
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { EVENT_DELETED_TOAST_ID } from "@web/common/constants/toast.constants";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-
-const toast = Object.assign(mock(), {
-  update: mock(),
-});
-
-mock.module("react-toastify", () => ({
-  ToastContainer: () => null,
-  toast,
-}));
-
-const { showRestoredToast } =
-  require("@web/common/utils/toast/deleted-toast.util") as typeof import("@web/common/utils/toast/deleted-toast.util");
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
+import { showRestoredToast } from "@web/common/utils/toast/deleted-toast.util";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 describe("showRestoredToast", () => {
+  const { port, mocks } = createTestToastPort();
+
   beforeEach(() => {
-    toast.mockClear();
-    toast.update.mockClear();
+    mocks.toast.mockClear();
+    mocks.update.mockClear();
+    registerToastPort(port);
   });
 
   it('updates the "Deleted" toast in place to "Restored"', () => {
     showRestoredToast();
 
-    expect(toast.update).toHaveBeenCalledWith(
+    expect(mocks.update).toHaveBeenCalledWith(
       EVENT_DELETED_TOAST_ID,
       expect.objectContaining({
         render: "Restored",
@@ -32,11 +26,8 @@ describe("showRestoredToast", () => {
   });
 
   it("never creates a new toast, so it's a no-op once the toast is gone", () => {
-    // `toast.update` on a dismissed id is a no-op in react-toastify; we must not
-    // fall back to `toast(...)`, which would stack a fresh "Restored" toast even
-    // after the "Deleted" toast disappeared.
     showRestoredToast();
 
-    expect(toast).not.toHaveBeenCalled();
+    expect(mocks.toast).not.toHaveBeenCalled();
   });
 });

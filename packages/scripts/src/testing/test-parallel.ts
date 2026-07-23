@@ -10,7 +10,12 @@ import { backendTestSpawnEnv } from "./backend-test-env";
 import { formatDuration, resolveTestTargets } from "./runner-utils";
 import { resolve } from "node:path";
 
-type ProfileName = "core" | "backend-fast" | "sync-fast" | "scripts-fast";
+type ProfileName =
+  | "core"
+  | "web"
+  | "backend-fast"
+  | "sync-fast"
+  | "scripts-fast";
 
 /** Synthetic URI for :fast tiers — env contract only, no mongod connection. */
 const FAST_MONGO_URI = "mongodb://127.0.0.1:27017/unused-compass-test";
@@ -23,6 +28,11 @@ const PROFILES: Record<
     preload: "packages/scripts/src/testing/core.preload.ts",
     scan: "./packages/core/src",
     label: "core",
+  },
+  web: {
+    preload: "packages/web/src/__tests__/web.preload.ts",
+    scan: "./packages/web/src",
+    label: "web",
   },
   "backend-fast": {
     preload: "packages/backend/src/__tests__/backend.preload.fast.ts",
@@ -50,7 +60,7 @@ const extraArgs =
 
 if (!profile || !PROFILES[profile]) {
   console.error(
-    "Usage: test-parallel.ts <core|backend-fast|sync-fast|scripts-fast> -- [bun test flags/paths...]",
+    "Usage: test-parallel.ts <core|web|backend-fast|sync-fast|scripts-fast> -- [bun test flags/paths...]",
   );
   process.exit(2);
 }

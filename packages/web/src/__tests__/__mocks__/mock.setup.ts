@@ -1,15 +1,8 @@
-import * as actualReactToastify from "react-toastify";
 import { mock } from "bun:test";
 
 type RestorableMock = {
   mockRestore: () => void;
 };
-
-type MockFn = ReturnType<typeof mock>;
-
-function mockModule<T>(mockPath: string, mockFactory: () => T) {
-  mock.module(mockPath, mockFactory);
-}
 
 function mockNavigatorReadonlyValue(
   key: "platform" | "userAgent",
@@ -88,97 +81,4 @@ export function mockLinuxUserAgent() {
     originalUaRestore();
   };
   return uaSpy;
-}
-
-export function mockUseStartGoogleAuthorization() {
-  mockModule(
-    "@web/auth/google/authorization/useStartGoogleAuthorization",
-    () => ({
-      useStartGoogleAuthorization: mock(() => ({
-        loading: false,
-        startGoogleAuthorization: mock(),
-      })),
-    }),
-  );
-}
-
-export function mockSuperTokens() {
-  const defaultSession = {
-    init: mock(() => ({})),
-    doesSessionExist: mock().mockResolvedValue(true),
-    getUserId: mock().mockResolvedValue("mock-user-id"),
-    signOut: mock().mockResolvedValue(undefined),
-    getAccessToken: mock().mockResolvedValue("mock-access-token"),
-    validateClaims: mock().mockResolvedValue([]),
-    getClaimValue: mock(),
-    PrimitiveClaim: mock(),
-    BooleanClaim: mock(),
-    PrimitiveArrayClaim: mock(),
-    attemptRefreshingSession: mock().mockResolvedValue(true),
-    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
-    getAccessTokenPayloadSecurely: mock().mockResolvedValue({
-      mockKey: "mockValue",
-    }),
-  };
-
-  mockModule("supertokens-web-js/recipe/session", () => ({
-    default: defaultSession,
-    ...defaultSession,
-  }));
-
-  const mockRecipe = () => {
-    const recipe = {
-      init: mock(() => ({})),
-    };
-
-    return {
-      default: recipe,
-      ...recipe,
-    };
-  };
-
-  mockModule("supertokens-web-js", () => ({
-    default: { init: mock(() => ({})) },
-    init: mock(() => ({})),
-  }));
-  mockModule("supertokens-web-js/recipe/emailpassword", mockRecipe);
-  mockModule("supertokens-web-js/recipe/emailverification", mockRecipe);
-  mockModule("supertokens-web-js/recipe/thirdparty", mockRecipe);
-}
-
-function mockReactToastify() {
-  const toastFn = mock(
-    () => "mock-toast-id",
-  ) as typeof actualReactToastify.toast & MockFn;
-
-  toastFn.POSITION = actualReactToastify.toast.POSITION;
-  toastFn.TYPE = actualReactToastify.toast.TYPE;
-  toastFn.dismiss = mock();
-  toastFn.error = mock();
-  toastFn.info = mock();
-  toastFn.isActive = mock();
-  toastFn.success = mock();
-  toastFn.update = mock();
-  toastFn.warning = mock();
-  toastFn.warn = mock();
-  toastFn.loading = mock();
-  toastFn.promise = mock();
-  toastFn.dark = mock();
-  toastFn.done = mock();
-  toastFn.onChange = mock();
-  toastFn.clearWaitingQueue = mock();
-
-  mockModule("react-toastify", () => {
-    return {
-      ...actualReactToastify,
-      default: toastFn,
-      toast: toastFn,
-    };
-  });
-}
-
-export function mockNodeModules() {
-  mockUseStartGoogleAuthorization();
-  mockSuperTokens();
-  mockReactToastify();
 }
