@@ -43,6 +43,7 @@ import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-ca
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
@@ -545,6 +546,26 @@ async function linkConnection(
       .catch(() => undefined);
     throw error;
   }
+
+  // Bootstrap the connection's sync: enqueue a calendar-list discovery, which
+  // discovers the account's calendars and, per active calendar, enqueues the
+  // initial import (whose followup opens the push channel). This is the ONLY
+  // trigger that starts the sync chain for a new connection. Coalesced per
+  // connection, so a reconnect (which re-links) collapses into one discovery
+  // rather than piling up. A failure throws so the connect is reported failed and
+  // retried, rather than silently leaving a connection that never syncs.
+  const jobs = new JobRepository(deps.mongo.db);
+  await jobs.enqueue({
+    tenantId: state.tenantId,
+    principalId: state.principalId,
+    connectionId: connection._id,
+    resourceId: null,
+    commandId: null,
+    kind: "calendarListSync",
+    priority: 0,
+    runAfter: new Date(),
+    coalescingKey: `calendarListSync:${connection._id}`,
+  });
 }
 
 // Map a stored connection record (string ids, Date timestamps) to the wire
