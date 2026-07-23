@@ -222,7 +222,7 @@ const CommandPaletteContent = ({
                           onClick() {
                             if (item.disabled) return;
                             item.onClick?.();
-                            close();
+                            if (!item.keepOpen) close();
                           },
                         })}
                         type="button"

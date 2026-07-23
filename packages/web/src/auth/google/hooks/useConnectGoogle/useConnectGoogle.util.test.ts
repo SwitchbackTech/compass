@@ -23,7 +23,7 @@ describe("getGoogleSyncStatus", () => {
   ] as const)("returns syncing copy for %s", (state) => {
     expect(getGoogleSyncStatus(state)).toEqual({
       variant: "syncing",
-      text: "Syncing calendar…",
+      text: "Syncing your calendar…",
     });
   });
 

@@ -53,7 +53,7 @@ export const getGoogleSyncStatus = (state: GoogleUiState): SyncStatus => {
     case "IMPORTING":
     case "repairing":
     case "checking":
-      return { variant: "syncing", text: "Syncing calendar…" };
+      return { variant: "syncing", text: "Syncing your calendar…" };
     case "ATTENTION":
       return { variant: "warning", text: "Calendar is out of date" };
     case "RECONNECT_REQUIRED":
