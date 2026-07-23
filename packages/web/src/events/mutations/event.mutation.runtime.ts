@@ -12,6 +12,11 @@ export async function markAnonymousEventWrite() {
   if (await session.doesSessionExist()) return;
   if (hasUserEverAuthenticated() || isGoogleRevoked()) return;
   markAnonymousCalendarChangeForSignUpPrompt();
+}
+
+export async function showAnonymousSaveToastIfEligible(): Promise<void> {
+  if (await session.doesSessionExist()) return;
+  if (hasUserEverAuthenticated() || isGoogleRevoked()) return;
   maybeShowAnonymousSaveToast();
 }
 
