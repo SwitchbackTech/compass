@@ -130,7 +130,8 @@ function mapConference(item: gSchema$Event): Conference | null {
   const url =
     item.hangoutLink ??
     item.conferenceData?.entryPoints?.find(
-      (entry) => entry.entryPointType === "video",
+      (entry: calendar_v3.Schema$EntryPoint) =>
+        entry.entryPointType === "video",
     )?.uri;
   if (!url) return null;
 

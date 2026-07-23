@@ -58,7 +58,7 @@ export const isInvalidGoogleToken = (e: unknown) => {
   const code = err.code;
   const is400 =
     code === "400" ||
-    code === 400 ||
+    Number(code) === 400 ||
     err.response?.status === 400 ||
     (err as unknown as { status?: number }).status === 400;
   const hasInvalidMsg = err.message === "invalid_grant";

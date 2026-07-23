@@ -67,8 +67,8 @@ class GCalService {
     { gcal, quotaUser }: GoogleRequestContext,
     calendarId: string,
     gcalEventId: string,
-  ) {
-    const response = await withGoogleRetry(() =>
+  ): Promise<void> {
+    await withGoogleRetry(() =>
       gcal.events.delete({
         calendarId,
         eventId: gcalEventId,
@@ -76,8 +76,6 @@ class GCalService {
         sendUpdates: "all",
       }),
     );
-
-    return response;
   }
 
   /**

@@ -80,7 +80,7 @@ export const getGcalClient = async (userId: string): Promise<gCalendar> => {
         },
         statusText: "BAD_REQUEST Cannot initialize Gcal client",
         headers: new Headers(),
-      } as GaxiosResponse<{ userId: string }>,
+      } as unknown as GaxiosResponse<{ userId: string }>,
     );
     gaxiosErr.code = "400";
     throw gaxiosErr;
