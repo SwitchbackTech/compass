@@ -1,5 +1,5 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
-import { Logger } from "@core/logger/winston.logger";
+import { LoggerFactory } from "@core/logger/logger.factory";
 import { type GoogleAuthCodeRequest } from "@core/types/auth.types";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oauth.client";
@@ -25,7 +25,7 @@ import {
 } from "./google.auth.types";
 import { createHmac } from "node:crypto";
 
-const logger = Logger("app:auth.google.service");
+const logger = LoggerFactory("app:auth.google.service");
 const AUTH_TRACE_ID_LENGTH = 16;
 
 // Keep auth traces searchable without putting raw user identifiers in production logs.

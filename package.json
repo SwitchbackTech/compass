@@ -37,7 +37,7 @@
     "test:backend:db": "bun packages/scripts/src/testing/test-mongo-env.ts backend -- './packages/backend/src/**/*.db.test.ts'",
     "test:core": "TZ=Etc/UTC bun test --parallel --preload ./packages/scripts/src/testing/core.preload.ts ./packages/core/src",
     "test:sync": "bun packages/scripts/src/testing/test-mongo-env.ts sync --",
-    "test:web": "TZ=Etc/UTC bun test --parallel --preload ./packages/web/src/__tests__/web.preload.ts ./packages/web/src",
+    "test:web": "bun packages/scripts/src/testing/test-isolated.ts",
     "test:scripts": "bun packages/scripts/src/testing/test-mongo-env.ts scripts --",
     "test:scripts:fast": "bun packages/scripts/src/testing/test-mongo-env.ts scripts -- --path-ignore-patterns '**/*.db.test.ts'",
     "test:scripts:db": "bun packages/scripts/src/testing/test-mongo-env.ts scripts -- './packages/scripts/src/**/*.db.test.ts'",

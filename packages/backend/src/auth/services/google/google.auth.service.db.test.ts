@@ -1,7 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { faker } from "@faker-js/faker";
 import { type Credentials, type TokenPayload } from "google-auth-library";
-import { Logger } from "@core/logger/winston.logger";
+import { LoggerFactory } from "@core/logger/logger.factory";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
   cleanupCollections,
@@ -57,10 +57,10 @@ describe("googleAuthService", () => {
       ({
         access_token: faker.internet.jwt(),
       }) as Pick<Credentials, "refresh_token" | "access_token">;
-    // The repo-wide winston mock returns one stable logger per name, so this
-    // is the instance the service captured at import (`Logger("app:auth.google.service")`).
+    // LoggerFactory returns one stable mock logger per name in tests, so this
+    // is the instance the service captured at import.
     const getMockLogger = () =>
-      Logger("app:auth.google.service") as unknown as {
+      LoggerFactory("app:auth.google.service") as unknown as {
         debug: Mock;
         error: Mock;
         info: Mock;

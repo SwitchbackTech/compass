@@ -27,7 +27,10 @@ import {
   registerUserMetadataStore,
   resetSupertokensStores,
 } from "@backend/auth/ports/supertokens.registry";
-import { registerTestVerifySession } from "@backend/auth/session/session.middleware";
+import {
+  registerTestVerifySession,
+  resetVerifySession,
+} from "@backend/auth/session/session.middleware";
 import { beforeEach, mock } from "bun:test";
 import { randomUUID } from "node:crypto";
 
@@ -206,6 +209,7 @@ export function mockNodeModules() {
 export function teardownBackendTestSeams(): void {
   resetLoggerFactory();
   resetSupertokensStores();
+  resetVerifySession();
 }
 
 // Re-export for tests that mutate gcal fixture data directly.
