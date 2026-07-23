@@ -1,6 +1,6 @@
 import { type ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { createConcurrencyLimiter } from "@backend/common/util/concurrency-limiter.util";
 import {
@@ -16,7 +16,7 @@ import { findCompassUserBy } from "@backend/user/queries/user.queries";
 const logger = Logger("app:google-watch-maintenance.service");
 
 async function runMaintenance() {
-  const cursor = mongoService.user.find().batchSize(MONGO_BATCH_SIZE);
+  const cursor = mongoService.user.find().batchSize(CONFIG.MONGO_BATCH_SIZE);
   const users: ObjectId[] = [];
   const result = {
     deleted: 0,

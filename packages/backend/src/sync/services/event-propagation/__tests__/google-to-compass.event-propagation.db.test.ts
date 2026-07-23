@@ -22,14 +22,8 @@ import {
   describe,
   expect,
   it,
+  spyOn,
 } from "bun:test";
-
-jest.mock("@backend/common/services/gcal/gcal.service", () => ({
-  __esModule: true,
-  default: {
-    getBaseRecurringEventInstances: jest.fn(),
-  },
-}));
 
 const asAsyncPage = async function* (items: gSchema$Event[]) {
   yield { items };
@@ -72,7 +66,7 @@ describe("GoogleToCompassEventPropagation", () => {
       updatedAt: null,
     };
     await mongoService.calendar.insertOne(calendar);
-    (gcalService.getBaseRecurringEventInstances as jest.Mock).mockReset();
+    spyOn(gcalService, "getBaseRecurringEventInstances");
   });
 
   it("creates a standalone event", async () => {
@@ -130,7 +124,7 @@ describe("GoogleToCompassEventPropagation", () => {
 
   it("creates a series base and materializes its instances", async () => {
     const { base, instances } = mockRecurringGcalEvents();
-    (gcalService.getBaseRecurringEventInstances as jest.Mock).mockReturnValue(
+    (gcalService.getBaseRecurringEventInstances as Mock).mockReturnValue(
       asAsyncPage(instances),
     );
     const propagation = new GoogleToCompassEventPropagation(context, calendar);
@@ -161,7 +155,7 @@ describe("GoogleToCompassEventPropagation", () => {
 
   it("deletes the base and every instance when the whole series is cancelled", async () => {
     const { base, instances } = mockRecurringGcalEvents();
-    (gcalService.getBaseRecurringEventInstances as jest.Mock).mockReturnValue(
+    (gcalService.getBaseRecurringEventInstances as Mock).mockReturnValue(
       asAsyncPage(instances),
     );
     const propagation = new GoogleToCompassEventPropagation(context, calendar);
@@ -179,7 +173,7 @@ describe("GoogleToCompassEventPropagation", () => {
 
   it("deletes only the matching occurrence when a single instance is cancelled", async () => {
     const { base, instances } = mockRecurringGcalEvents();
-    (gcalService.getBaseRecurringEventInstances as jest.Mock).mockReturnValue(
+    (gcalService.getBaseRecurringEventInstances as Mock).mockReturnValue(
       asAsyncPage(instances),
     );
     const propagation = new GoogleToCompassEventPropagation(context, calendar);
@@ -199,17 +193,17 @@ describe("GoogleToCompassEventPropagation", () => {
 
   it("creates an independent series when Google splits one via a new base id ('this and following')", async () => {
     const { base, instances } = mockRecurringGcalEvents();
-    (
-      gcalService.getBaseRecurringEventInstances as jest.Mock
-    ).mockReturnValueOnce(asAsyncPage(instances));
+    (gcalService.getBaseRecurringEventInstances as Mock).mockReturnValueOnce(
+      asAsyncPage(instances),
+    );
     const propagation = new GoogleToCompassEventPropagation(context, calendar);
     await propagation.processEvents([base]);
 
     const { base: splitBase, instances: splitInstances } =
       mockRecurringGcalEvents();
-    (
-      gcalService.getBaseRecurringEventInstances as jest.Mock
-    ).mockReturnValueOnce(asAsyncPage(splitInstances));
+    (gcalService.getBaseRecurringEventInstances as Mock).mockReturnValueOnce(
+      asAsyncPage(splitInstances),
+    );
     await propagation.processEvents([splitBase]);
 
     const bases = await mongoService.event
@@ -373,7 +367,7 @@ describe("GoogleToCompassEventPropagation", () => {
         seeded.push(await seedUnlinkedOccurrence(gInstance, base._id));
       }
 
-      (gcalService.getBaseRecurringEventInstances as jest.Mock).mockReturnValue(
+      (gcalService.getBaseRecurringEventInstances as Mock).mockReturnValue(
         asAsyncPage(gInstances),
       );
       const propagation = new GoogleToCompassEventPropagation(

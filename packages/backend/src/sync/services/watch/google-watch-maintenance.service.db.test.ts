@@ -30,13 +30,14 @@ import {
   describe,
   expect,
   it,
+  mock,
+  spyOn,
 } from "bun:test";
 
 describe("googleWatchMaintenanceService", () => {
   beforeAll(initSupertokens);
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
   it("returns maintenance buckets in dry mode without mutating watches", async () => {
@@ -84,19 +85,16 @@ describe("googleWatchMaintenanceService", () => {
       }),
     );
 
-    const deleteCompassDataSpy = jest.spyOn(
-      userService,
-      "deleteCompassDataForUser",
-    );
+    const deleteCompassDataSpy = spyOn(userService, "deleteCompassDataForUser");
     // stopWatch already swallows an invalid_grant Google response
     // internally (see google-watch.service.test.ts), deleting the local
     // watch without throwing - mocking stopWatch directly here isolates
     // the planner's OWN catch/A29 handling instead of re-proving
     // stopWatch's already-covered behavior.
-    jest
-      .spyOn(googleWatchService, "stopWatch")
-      .mockImplementation(() => Promise.reject(invalidGrant400Error));
-    const publishSyncStatusSpy = jest.spyOn(sseServer, "publishSyncStatus");
+    spyOn(googleWatchService, "stopWatch").mockImplementation(() =>
+      Promise.reject(invalidGrant400Error),
+    );
+    const publishSyncStatusSpy = spyOn(sseServer, "publishSyncStatus");
 
     const result =
       await googleWatchMaintenanceService.runMaintenanceByUser(userId);
@@ -146,7 +144,7 @@ describe("googleWatchMaintenanceService", () => {
       }),
     );
 
-    const repairSpy = jest.spyOn(
+    const repairSpy = spyOn(
       googleWatchRepairService,
       "repairGoogleWatchesForUser",
     );

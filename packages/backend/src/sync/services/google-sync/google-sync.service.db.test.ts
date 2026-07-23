@@ -31,6 +31,8 @@ import {
   describe,
   expect,
   it,
+  mock,
+  spyOn,
 } from "bun:test";
 
 const seedPrimaryGoogleCalendar = async (userId: ObjectId) => {
@@ -58,7 +60,6 @@ describe("googleCalendarSyncService", () => {
   beforeEach(cleanupCollections);
   afterEach(() => {
     resetGoogleSyncActivityForTests();
-    jest.restoreAllMocks();
   });
   afterAll(cleanupTestDb);
 
@@ -66,12 +67,9 @@ describe("googleCalendarSyncService", () => {
     it("skips a completed incremental import without publishing status", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
-      const syncStatusSpy = jest.spyOn(sseServer, "publishSyncStatus");
-      const createSyncImportSpy = jest.spyOn(
-        syncImportService,
-        "createSyncImport",
-      );
+      const importEndSpy = spyOn(sseServer, "publishImportCompleted");
+      const syncStatusSpy = spyOn(sseServer, "publishSyncStatus");
+      const createSyncImportSpy = spyOn(syncImportService, "createSyncImport");
 
       await userMetadataService.updateUserMetadata({
         userId,
@@ -91,11 +89,11 @@ describe("googleCalendarSyncService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       await seedPrimaryGoogleCalendar(user._id);
-      const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
-      const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
+      const importEndSpy = spyOn(sseServer, "publishImportCompleted");
+      const eventsChangedSpy = spyOn(sseServer, "publishEventsChanged");
 
-      jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
-        importLatestEvents: jest.fn().mockResolvedValue({
+      spyOn(syncImportService, "createSyncImport").mockResolvedValue({
+        importLatestEvents: mock().mockResolvedValue({
           totalProcessed: 1,
           totalSaved: 1,
           totalDeleted: 0,
@@ -123,7 +121,7 @@ describe("googleCalendarSyncService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       await seedPrimaryGoogleCalendar(user._id);
-      const importLatestEvents = jest.fn().mockResolvedValue({
+      const importLatestEvents = mock().mockResolvedValue({
         totalProcessed: 0,
         totalSaved: 0,
         totalDeleted: 0,
@@ -135,7 +133,7 @@ describe("googleCalendarSyncService", () => {
         userId,
         data: { sync: { incrementalGCalSync: "IMPORTING" } },
       });
-      jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
+      spyOn(syncImportService, "createSyncImport").mockResolvedValue({
         importLatestEvents,
       } as unknown as Awaited<
         ReturnType<typeof syncImportService.createSyncImport>
@@ -155,8 +153,8 @@ describe("googleCalendarSyncService", () => {
       const callOrder: string[] = [];
       const startWatching = googleWatchService.startGoogleWatches;
 
-      jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
-        importAllEvents: jest.fn().mockImplementation(async () => {
+      spyOn(syncImportService, "createSyncImport").mockResolvedValue({
+        importAllEvents: mock().mockImplementation(async () => {
           callOrder.push("importFull");
           return {
             nextSyncToken: "next-sync-token",
@@ -170,12 +168,12 @@ describe("googleCalendarSyncService", () => {
       } as unknown as Awaited<
         ReturnType<typeof syncImportService.createSyncImport>
       >);
-      jest
-        .spyOn(googleWatchService, "startGoogleWatches")
-        .mockImplementation(async (...args) => {
+      spyOn(googleWatchService, "startGoogleWatches").mockImplementation(
+        async (...args) => {
           callOrder.push("startWatching");
           return startWatching(...args);
-        });
+        },
+      );
 
       await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
 
@@ -204,22 +202,20 @@ describe("googleCalendarSyncService", () => {
         }),
       ];
 
-      const importAllEvents = jest
-        .fn()
-        .mockImplementation(
-          async (
-            _userId: string,
-            calendar: { source: { calendarId: string } },
-          ) => ({
-            totalProcessed: 1,
-            totalSaved: 1,
-            totalDeleted: 0,
-            totalIgnored: 0,
-            totalInvalid: 0,
-            nextSyncToken: `token-${calendar.source.calendarId}`,
-          }),
-        );
-      jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
+      const importAllEvents = mock().mockImplementation(
+        async (
+          _userId: string,
+          calendar: { source: { calendarId: string } },
+        ) => ({
+          totalProcessed: 1,
+          totalSaved: 1,
+          totalDeleted: 0,
+          totalIgnored: 0,
+          totalInvalid: 0,
+          nextSyncToken: `token-${calendar.source.calendarId}`,
+        }),
+      );
+      spyOn(syncImportService, "createSyncImport").mockResolvedValue({
         importAllEvents,
       } as unknown as Awaited<
         ReturnType<typeof syncImportService.createSyncImport>
@@ -271,25 +267,23 @@ describe("googleCalendarSyncService", () => {
       ];
 
       const seenCalendarIds: string[] = [];
-      const importAllEvents = jest
-        .fn()
-        .mockImplementation(
-          async (
-            _userId: string,
-            calendar: { _id: ObjectId; source: { calendarId: string } },
-          ) => {
-            seenCalendarIds.push(calendar._id.toHexString());
-            return {
-              totalProcessed: 1,
-              totalSaved: 1,
-              totalDeleted: 0,
-              totalIgnored: 0,
-              totalInvalid: 0,
-              nextSyncToken: `token-${calendar.source.calendarId}`,
-            };
-          },
-        );
-      jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
+      const importAllEvents = mock().mockImplementation(
+        async (
+          _userId: string,
+          calendar: { _id: ObjectId; source: { calendarId: string } },
+        ) => {
+          seenCalendarIds.push(calendar._id.toHexString());
+          return {
+            totalProcessed: 1,
+            totalSaved: 1,
+            totalDeleted: 0,
+            totalIgnored: 0,
+            totalInvalid: 0,
+            nextSyncToken: `token-${calendar.source.calendarId}`,
+          };
+        },
+      );
+      spyOn(syncImportService, "createSyncImport").mockResolvedValue({
         importAllEvents,
       } as unknown as Awaited<
         ReturnType<typeof syncImportService.createSyncImport>
@@ -325,34 +319,33 @@ describe("googleCalendarSyncService", () => {
         }),
       ];
 
-      const importAllEvents = jest
-        .fn()
-        .mockImplementation(
-          async (
-            _userId: string,
-            calendar: { source: { calendarId: string } },
-          ) => {
-            if (calendar.source.calendarId === "broken-cal") {
-              throw new Error("simulated calendar import failure");
-            }
-            return {
-              totalProcessed: 1,
-              totalSaved: 1,
-              totalDeleted: 0,
-              totalIgnored: 0,
-              totalInvalid: 0,
-              nextSyncToken: "token-primary-cal",
-            };
-          },
-        );
-      jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
+      const importAllEvents = mock().mockImplementation(
+        async (
+          _userId: string,
+          calendar: { source: { calendarId: string } },
+        ) => {
+          if (calendar.source.calendarId === "broken-cal") {
+            throw new Error("simulated calendar import failure");
+          }
+          return {
+            totalProcessed: 1,
+            totalSaved: 1,
+            totalDeleted: 0,
+            totalIgnored: 0,
+            totalInvalid: 0,
+            nextSyncToken: "token-primary-cal",
+          };
+        },
+      );
+      spyOn(syncImportService, "createSyncImport").mockResolvedValue({
         importAllEvents,
       } as unknown as Awaited<
         ReturnType<typeof syncImportService.createSyncImport>
       >);
-      const startWatchesSpy = jest
-        .spyOn(googleWatchService, "startGoogleWatches")
-        .mockResolvedValue(undefined as never);
+      const startWatchesSpy = spyOn(
+        googleWatchService,
+        "startGoogleWatches",
+      ).mockResolvedValue(undefined as never);
 
       const result =
         await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
@@ -399,34 +392,33 @@ describe("googleCalendarSyncService", () => {
         }),
       ];
 
-      const importAllEvents = jest
-        .fn()
-        .mockImplementation(
-          async (
-            _userId: string,
-            calendar: { source: { calendarId: string } },
-          ) => {
-            if (calendar.source.calendarId === "broken-cal") {
-              throw new Error("simulated calendar import failure");
-            }
-            return {
-              totalProcessed: 1,
-              totalSaved: 1,
-              totalDeleted: 0,
-              totalIgnored: 0,
-              totalInvalid: 0,
-              nextSyncToken: `token-${calendar.source.calendarId}`,
-            };
-          },
-        );
-      jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
+      const importAllEvents = mock().mockImplementation(
+        async (
+          _userId: string,
+          calendar: { source: { calendarId: string } },
+        ) => {
+          if (calendar.source.calendarId === "broken-cal") {
+            throw new Error("simulated calendar import failure");
+          }
+          return {
+            totalProcessed: 1,
+            totalSaved: 1,
+            totalDeleted: 0,
+            totalIgnored: 0,
+            totalInvalid: 0,
+            nextSyncToken: `token-${calendar.source.calendarId}`,
+          };
+        },
+      );
+      spyOn(syncImportService, "createSyncImport").mockResolvedValue({
         importAllEvents,
       } as unknown as Awaited<
         ReturnType<typeof syncImportService.createSyncImport>
       >);
-      const startWatchesSpy = jest
-        .spyOn(googleWatchService, "startGoogleWatches")
-        .mockResolvedValue(undefined as never);
+      const startWatchesSpy = spyOn(
+        googleWatchService,
+        "startGoogleWatches",
+      ).mockResolvedValue(undefined as never);
 
       await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
 
@@ -456,12 +448,10 @@ describe("googleCalendarSyncService", () => {
         }),
       ];
 
-      jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
-        importAllEvents: jest
-          .fn()
-          .mockImplementation(() =>
-            Promise.reject(new Error("primary calendar import failure")),
-          ),
+      spyOn(syncImportService, "createSyncImport").mockResolvedValue({
+        importAllEvents: mock().mockImplementation(() =>
+          Promise.reject(new Error("primary calendar import failure")),
+        ),
       } as unknown as Awaited<
         ReturnType<typeof syncImportService.createSyncImport>
       >);
@@ -476,15 +466,15 @@ describe("googleCalendarSyncService", () => {
     it("skips sync setup when import is completed", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
+      const importEndSpy = spyOn(sseServer, "publishImportCompleted");
 
       await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "COMPLETED" } },
       });
 
-      const stopSpy = jest.spyOn(userService, "stopGoogleCalendarSync");
-      const startSpy = jest.spyOn(
+      const stopSpy = spyOn(userService, "stopGoogleCalendarSync");
+      const startSpy = spyOn(
         googleCalendarSyncService,
         "initializeGoogleCalendarSync",
       );
@@ -499,20 +489,21 @@ describe("googleCalendarSyncService", () => {
     it("restarts an abandoned full import and reports a full completion", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
+      const importEndSpy = spyOn(sseServer, "publishImportCompleted");
 
       await userMetadataService.updateUserMetadata({
         userId,
         data: { sync: { importGCal: "IMPORTING" } },
       });
-      jest.spyOn(userService, "stopGoogleCalendarSync").mockResolvedValue();
-      jest
-        .spyOn(googleCalendarSyncService, "initializeGoogleCalendarSync")
-        .mockResolvedValue({
-          eventsCount: 2,
-          calendarsCount: 1,
-          failedCalendars: [],
-        });
+      spyOn(userService, "stopGoogleCalendarSync").mockResolvedValue();
+      spyOn(
+        googleCalendarSyncService,
+        "initializeGoogleCalendarSync",
+      ).mockResolvedValue({
+        eventsCount: 2,
+        calendarsCount: 1,
+        failedCalendars: [],
+      });
 
       await googleCalendarSyncService.startGoogleCalendarSyncIfNeeded(userId);
 
@@ -535,16 +526,18 @@ describe("googleCalendarSyncService", () => {
         data: { sync: { importGCal: "COMPLETED" } },
       });
 
-      const stopSpy = jest
-        .spyOn(userService, "stopGoogleCalendarSync")
-        .mockResolvedValue();
-      const startSpy = jest
-        .spyOn(googleCalendarSyncService, "initializeGoogleCalendarSync")
-        .mockResolvedValue({
-          eventsCount: 0,
-          calendarsCount: 0,
-          failedCalendars: [],
-        });
+      const stopSpy = spyOn(
+        userService,
+        "stopGoogleCalendarSync",
+      ).mockResolvedValue();
+      const startSpy = spyOn(
+        googleCalendarSyncService,
+        "initializeGoogleCalendarSync",
+      ).mockResolvedValue({
+        eventsCount: 0,
+        calendarsCount: 0,
+        failedCalendars: [],
+      });
 
       await googleCalendarSyncService.repairGoogleCalendarSync(userId);
 
@@ -555,12 +548,9 @@ describe("googleCalendarSyncService", () => {
     it("does not overlap either sync mode with active Google sync work", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const syncStatusSpy = jest.spyOn(sseServer, "publishSyncStatus");
-      const stopSpy = jest.spyOn(userService, "stopGoogleCalendarSync");
-      const createSyncImportSpy = jest.spyOn(
-        syncImportService,
-        "createSyncImport",
-      );
+      const syncStatusSpy = spyOn(sseServer, "publishSyncStatus");
+      const stopSpy = spyOn(userService, "stopGoogleCalendarSync");
+      const createSyncImportSpy = spyOn(syncImportService, "createSyncImport");
 
       expect(tryBeginGoogleSync(userId)).toBe(true);
 
@@ -577,13 +567,11 @@ describe("googleCalendarSyncService", () => {
     it("publishes attention and releases activity when error metadata cannot persist", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const syncStatusSpy = jest.spyOn(sseServer, "publishSyncStatus");
+      const syncStatusSpy = spyOn(sseServer, "publishSyncStatus");
 
-      jest
-        .spyOn(userMetadataService, "updateUserMetadata")
-        .mockImplementation(() =>
-          Promise.reject(new Error("metadata unavailable")),
-        );
+      spyOn(userMetadataService, "updateUserMetadata").mockImplementation(() =>
+        Promise.reject(new Error("metadata unavailable")),
+      );
 
       await googleCalendarSyncService.repairGoogleCalendarSync(userId);
 

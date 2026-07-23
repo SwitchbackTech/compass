@@ -12,10 +12,20 @@ import { compassTestState } from "@backend/__tests__/helpers/mock.setup";
 import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { getCalendarsToSync } from "@backend/sync/services/init/google-sync-init";
-import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 
 describe("getCalendarsToSync", () => {
-  beforeEach(() => setupTestDb(import.meta.url));
+  beforeAll(async () => {
+    await setupTestDb(import.meta.url);
+  });
   beforeEach(cleanupCollections);
   afterAll(cleanupTestDb);
 
@@ -177,7 +187,7 @@ describe("getCalendarsToSync", () => {
     const context = await createGoogleRequestContext(user._id.toString());
     const getAllCalendarListPages =
       gcalService.getAllCalendarListPages.bind(gcalService);
-    const getAllCalendarListPagesSpy = jest.spyOn(
+    const getAllCalendarListPagesSpy = spyOn(
       gcalService,
       "getAllCalendarListPages",
     );

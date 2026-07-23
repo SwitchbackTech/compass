@@ -1,24 +1,24 @@
 import { faker } from "@faker-js/faker";
 import { type Credentials, type TokenPayload } from "google-auth-library";
-import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
+import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
 import {
   type AuthDecision,
   type GoogleSignInSuccess,
 } from "@backend/auth/services/google/google.auth.types";
-import type * as GoogleAuthUtilModule from "@backend/auth/services/google/util/google.auth.util";
-import { determineGoogleAuthMode } from "@backend/auth/services/google/util/google.auth.util";
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import * as googleAuthUtil from "@backend/auth/services/google/util/google.auth.util";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 
-jest.mock("@backend/auth/services/google/util/google.auth.util", () => {
-  const actual = jest.requireActual<typeof GoogleAuthUtilModule>(
-    "@backend/auth/services/google/util/google.auth.util",
-  );
-
-  return {
-    ...actual,
-    determineGoogleAuthMode: jest.fn(),
-  };
-});
+let googleAuthService: Awaited<
+  typeof import("@backend/auth/services/google/google.auth.service")
+>["googleAuthService"];
 
 function makeProviderUser(overrides?: Partial<TokenPayload>): TokenPayload {
   return {
@@ -51,31 +51,38 @@ function makeDecision(overrides: Partial<AuthDecision>): AuthDecision {
 }
 
 describe("handleGoogleAuth", () => {
-  const mockDetermineGoogleAuthMode =
-    determineGoogleAuthMode as unknown as jest.MockedFunction<
-      typeof determineGoogleAuthMode
-    >;
+  let mockDetermineGoogleAuthMode: Mock<
+    typeof googleAuthUtil.determineGoogleAuthMode
+  >;
 
-  let mockRepairGoogleConnection: jest.SpyInstance;
-  let mockGoogleSignup: jest.SpyInstance;
-  let mockGoogleSignin: jest.SpyInstance;
+  beforeAll(async () => {
+    mockDetermineGoogleAuthMode = spyOn(
+      googleAuthUtil,
+      "determineGoogleAuthMode",
+    );
+    ({ googleAuthService } = await import(
+      "@backend/auth/services/google/google.auth.service"
+    ));
+    spyOn(googleAuthService, "repairGoogleConnection").mockResolvedValue({
+      cUserId: "repair-id",
+    });
+    spyOn(googleAuthService, "googleSignup").mockResolvedValue({
+      cUserId: "signup-id",
+    });
+    spyOn(googleAuthService, "googleSignin").mockResolvedValue({
+      cUserId: "signin-id",
+    });
+  });
 
   beforeEach(() => {
     mockDetermineGoogleAuthMode.mockReset();
-
-    mockRepairGoogleConnection = jest
-      .spyOn(googleAuthService, "repairGoogleConnection")
-      .mockResolvedValue({ cUserId: "repair-id" });
-    mockGoogleSignup = jest
-      .spyOn(googleAuthService, "googleSignup")
-      .mockResolvedValue({ cUserId: "signup-id" });
-    mockGoogleSignin = jest
-      .spyOn(googleAuthService, "googleSignin")
-      .mockResolvedValue({ cUserId: "signin-id" });
+    (googleAuthService.repairGoogleConnection as Mock).mockClear();
+    (googleAuthService.googleSignup as Mock).mockClear();
+    (googleAuthService.googleSignin as Mock).mockClear();
   });
 
-  afterEach(() => {
-    jest.restoreAllMocks();
+  afterAll(() => {
+    restoreFileMocks();
   });
 
   describe("signup path", () => {
@@ -98,14 +105,14 @@ describe("handleGoogleAuth", () => {
 
       await googleAuthService.handleGoogleAuth(success);
 
-      expect(mockGoogleSignup).toHaveBeenCalledTimes(1);
-      expect(mockGoogleSignup).toHaveBeenCalledWith(
+      expect(googleAuthService.googleSignup).toHaveBeenCalledTimes(1);
+      expect(googleAuthService.googleSignup).toHaveBeenCalledWith(
         providerUser,
         oAuthTokens.refresh_token,
         recipeUserId,
       );
-      expect(mockRepairGoogleConnection).not.toHaveBeenCalled();
-      expect(mockGoogleSignin).not.toHaveBeenCalled();
+      expect(googleAuthService.repairGoogleConnection).not.toHaveBeenCalled();
+      expect(googleAuthService.googleSignin).not.toHaveBeenCalled();
     });
 
     it("throws when refresh_token is missing for new user", async () => {
@@ -125,7 +132,7 @@ describe("handleGoogleAuth", () => {
         "Refresh token expected for new user sign-up",
       );
 
-      expect(mockGoogleSignup).not.toHaveBeenCalled();
+      expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
     });
   });
 
@@ -155,14 +162,14 @@ describe("handleGoogleAuth", () => {
 
       await googleAuthService.handleGoogleAuth(success);
 
-      expect(mockRepairGoogleConnection).toHaveBeenCalledTimes(1);
-      expect(mockRepairGoogleConnection).toHaveBeenCalledWith(
+      expect(googleAuthService.repairGoogleConnection).toHaveBeenCalledTimes(1);
+      expect(googleAuthService.repairGoogleConnection).toHaveBeenCalledWith(
         compassUserId,
         providerUser,
         oAuthTokens,
       );
-      expect(mockGoogleSignup).not.toHaveBeenCalled();
-      expect(mockGoogleSignin).not.toHaveBeenCalled();
+      expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
+      expect(googleAuthService.googleSignin).not.toHaveBeenCalled();
     });
 
     it("calls repairGoogleConnection when user exists but sync is unhealthy", async () => {
@@ -190,14 +197,14 @@ describe("handleGoogleAuth", () => {
 
       await googleAuthService.handleGoogleAuth(success);
 
-      expect(mockRepairGoogleConnection).toHaveBeenCalledTimes(1);
-      expect(mockRepairGoogleConnection).toHaveBeenCalledWith(
+      expect(googleAuthService.repairGoogleConnection).toHaveBeenCalledTimes(1);
+      expect(googleAuthService.repairGoogleConnection).toHaveBeenCalledWith(
         compassUserId,
         providerUser,
         oAuthTokens,
       );
-      expect(mockGoogleSignup).not.toHaveBeenCalled();
-      expect(mockGoogleSignin).not.toHaveBeenCalled();
+      expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
+      expect(googleAuthService.googleSignin).not.toHaveBeenCalled();
     });
 
     it("calls repairGoogleConnection when both refresh token is missing and sync is unhealthy", async () => {
@@ -225,9 +232,9 @@ describe("handleGoogleAuth", () => {
 
       await googleAuthService.handleGoogleAuth(success);
 
-      expect(mockRepairGoogleConnection).toHaveBeenCalledTimes(1);
-      expect(mockGoogleSignup).not.toHaveBeenCalled();
-      expect(mockGoogleSignin).not.toHaveBeenCalled();
+      expect(googleAuthService.repairGoogleConnection).toHaveBeenCalledTimes(1);
+      expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
+      expect(googleAuthService.googleSignin).not.toHaveBeenCalled();
     });
 
     it("calls repairGoogleConnection when no sync record exists", async () => {
@@ -255,9 +262,9 @@ describe("handleGoogleAuth", () => {
 
       await googleAuthService.handleGoogleAuth(success);
 
-      expect(mockRepairGoogleConnection).toHaveBeenCalledTimes(1);
-      expect(mockGoogleSignup).not.toHaveBeenCalled();
-      expect(mockGoogleSignin).not.toHaveBeenCalled();
+      expect(googleAuthService.repairGoogleConnection).toHaveBeenCalledTimes(1);
+      expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
+      expect(googleAuthService.googleSignin).not.toHaveBeenCalled();
     });
   });
 
@@ -287,10 +294,13 @@ describe("handleGoogleAuth", () => {
 
       await googleAuthService.handleGoogleAuth(success);
 
-      expect(mockGoogleSignin).toHaveBeenCalledTimes(1);
-      expect(mockGoogleSignin).toHaveBeenCalledWith(providerUser, oAuthTokens);
-      expect(mockRepairGoogleConnection).not.toHaveBeenCalled();
-      expect(mockGoogleSignup).not.toHaveBeenCalled();
+      expect(googleAuthService.googleSignin).toHaveBeenCalledTimes(1);
+      expect(googleAuthService.googleSignin).toHaveBeenCalledWith(
+        providerUser,
+        oAuthTokens,
+      );
+      expect(googleAuthService.repairGoogleConnection).not.toHaveBeenCalled();
+      expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
     });
   });
 
@@ -306,9 +316,7 @@ describe("handleGoogleAuth", () => {
         recipeUserId: faker.database.mongodbObjectId(),
         loginMethodsLength: 1,
       });
-      expect(mockGoogleSignup).toHaveBeenCalled();
-
-      jest.clearAllMocks();
+      expect(googleAuthService.googleSignup).toHaveBeenCalled();
 
       const reconnectUserId = faker.database.mongodbObjectId();
       mockDetermineGoogleAuthMode.mockResolvedValueOnce(
@@ -327,9 +335,7 @@ describe("handleGoogleAuth", () => {
         recipeUserId: reconnectUserId,
         loginMethodsLength: 1,
       });
-      expect(mockRepairGoogleConnection).toHaveBeenCalled();
-
-      jest.clearAllMocks();
+      expect(googleAuthService.repairGoogleConnection).toHaveBeenCalled();
 
       const signinUserId = faker.database.mongodbObjectId();
       mockDetermineGoogleAuthMode.mockResolvedValueOnce(
@@ -348,7 +354,7 @@ describe("handleGoogleAuth", () => {
         recipeUserId: signinUserId,
         loginMethodsLength: 1,
       });
-      expect(mockGoogleSignin).toHaveBeenCalled();
+      expect(googleAuthService.googleSignin).toHaveBeenCalled();
     });
   });
 });

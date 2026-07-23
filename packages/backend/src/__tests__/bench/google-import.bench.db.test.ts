@@ -10,7 +10,7 @@ import { generateProductionShapedEvents } from "@backend/__tests__/mocks.gcal/fa
 import mongoService from "@backend/common/services/mongo.service";
 import { GoogleEventSync } from "@backend/event/google-event-sync.service";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
-import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { performance } from "node:perf_hooks";
 
 /**
@@ -79,16 +79,16 @@ async function runScenario(
   // gcalService.getAllEvents always yields a single page).
   const originalApply = GoogleEventSync.prototype.apply;
   const heapSamples: number[] = [];
-  const applySpy = jest
-    .spyOn(GoogleEventSync.prototype, "apply")
-    .mockImplementation(async function (
+  const applySpy = spyOn(GoogleEventSync.prototype, "apply").mockImplementation(
+    async function (
       this: GoogleEventSync,
       ...args: Parameters<typeof originalApply>
     ) {
       const result = await originalApply.call(this, ...args);
       heapSamples.push(sampleHeap());
       return result;
-    });
+    },
+  );
 
   const baselineHeap = sampleHeap();
   const start = performance.now();

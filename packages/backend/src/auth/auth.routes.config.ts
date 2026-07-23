@@ -1,5 +1,5 @@
 import type express from "express";
-import { verifySession } from "supertokens-node/recipe/session/framework/express";
+import { verifySession } from "@backend/auth/session/session.middleware";
 import { CommonRoutesConfig } from "@backend/common/common.routes.config";
 import authController from "./controllers/auth.controller";
 import authMiddleware from "./middleware/auth.middleware";

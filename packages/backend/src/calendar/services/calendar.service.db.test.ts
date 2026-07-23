@@ -19,6 +19,8 @@ import {
   describe,
   expect,
   it,
+  mock,
+  spyOn,
 } from "bun:test";
 
 describe("CalendarService", () => {
@@ -234,10 +236,6 @@ describe("CalendarService", () => {
   });
 
   describe("getAvailability", () => {
-    afterEach(() => {
-      jest.restoreAllMocks();
-    });
-
     it("merges busy periods from multiple freeBusyReader calendars, mapped back to compass ids", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const calendarA = await seedGoogleCalendar(user._id, {
@@ -246,7 +244,7 @@ describe("CalendarService", () => {
       const calendarB = await seedGoogleCalendar(user._id, {
         googleCalendarId: "google-b",
       });
-      jest.spyOn(gcalService, "queryFreeBusy").mockResolvedValue({
+      spyOn(gcalService, "queryFreeBusy").mockResolvedValue({
         calendars: {
           "google-a": {
             busy: [
@@ -300,7 +298,7 @@ describe("CalendarService", () => {
       const writerCalendar = await seedGoogleCalendar(user._id, {
         access: "writer",
       });
-      const queryFreeBusySpy = jest.spyOn(gcalService, "queryFreeBusy");
+      const queryFreeBusySpy = spyOn(gcalService, "queryFreeBusy");
 
       const query = AvailabilityQuerySchema.parse({
         calendarIds: [writerCalendar._id.toHexString()],
@@ -339,20 +337,21 @@ describe("CalendarService", () => {
         googleCalendarId: "google-hidden",
         isVisible: false,
       });
-      const queryFreeBusySpy = jest
-        .spyOn(gcalService, "queryFreeBusy")
-        .mockResolvedValue({
-          calendars: {
-            "google-visible": {
-              busy: [
-                {
-                  start: "2024-01-15T09:00:00.000Z",
-                  end: "2024-01-15T10:00:00.000Z",
-                },
-              ],
-            },
+      const queryFreeBusySpy = spyOn(
+        gcalService,
+        "queryFreeBusy",
+      ).mockResolvedValue({
+        calendars: {
+          "google-visible": {
+            busy: [
+              {
+                start: "2024-01-15T09:00:00.000Z",
+                end: "2024-01-15T10:00:00.000Z",
+              },
+            ],
           },
-        });
+        },
+      });
 
       const query = AvailabilityQuerySchema.parse({
         calendarIds: [
@@ -387,7 +386,7 @@ describe("CalendarService", () => {
       const erroringCalendar = await seedGoogleCalendar(user._id, {
         googleCalendarId: "google-erroring",
       });
-      jest.spyOn(gcalService, "queryFreeBusy").mockResolvedValue({
+      spyOn(gcalService, "queryFreeBusy").mockResolvedValue({
         calendars: {
           "google-ok": {
             busy: [

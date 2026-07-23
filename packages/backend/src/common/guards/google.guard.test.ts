@@ -4,28 +4,25 @@ import { IDSchema } from "@core/types/type.utils";
 import { type Schema_User } from "@core/types/user.types";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { requireGoogleConnection } from "@backend/common/guards/google.guard";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import { beforeEach, describe, expect, it } from "bun:test";
+import * as userQueries from "@backend/user/queries/user.queries";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 const isGoogleConnected = async (userId: string): Promise<boolean> => {
   if (!IDSchema.safeParse(userId).success) {
     return false;
   }
-  const user = await findCompassUserBy("_id", userId);
+  const user = await userQueries.findCompassUserBy("_id", userId);
   return !!user?.google?.gRefreshToken;
 };
 
-jest.mock("@backend/user/queries/user.queries", () => ({
-  findCompassUserBy: jest.fn(),
-}));
-
-const mockFindCompassUserBy = findCompassUserBy as jest.MockedFunction<
-  typeof findCompassUserBy
->;
-
 describe("google.guard", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    if (
+      typeof (userQueries.findCompassUserBy as { mockClear?: () => void })
+        .mockClear === "function"
+    ) {
+      (userQueries.findCompassUserBy as Mock).mockClear();
+    }
   });
 
   describe("isGoogleConnected", () => {
@@ -45,12 +42,12 @@ describe("google.guard", () => {
         },
       };
 
-      mockFindCompassUserBy.mockResolvedValue(userWithGoogle);
+      spyOn(userQueries, "findCompassUserBy").mockResolvedValue(userWithGoogle);
 
       const result = await isGoogleConnected(userId);
 
       expect(result).toBe(true);
-      expect(mockFindCompassUserBy).toHaveBeenCalledWith("_id", userId);
+      expect(userQueries.findCompassUserBy).toHaveBeenCalledWith("_id", userId);
     });
 
     it("returns false when user has no google", async () => {
@@ -64,7 +61,9 @@ describe("google.guard", () => {
         locale: "en",
       };
 
-      mockFindCompassUserBy.mockResolvedValue(userWithoutGoogle);
+      spyOn(userQueries, "findCompassUserBy").mockResolvedValue(
+        userWithoutGoogle,
+      );
 
       const result = await isGoogleConnected(userId);
 
@@ -87,7 +86,9 @@ describe("google.guard", () => {
         },
       };
 
-      mockFindCompassUserBy.mockResolvedValue(userWithEmptyGoogle);
+      spyOn(userQueries, "findCompassUserBy").mockResolvedValue(
+        userWithEmptyGoogle,
+      );
 
       const result = await isGoogleConnected(userId);
 
@@ -96,7 +97,7 @@ describe("google.guard", () => {
 
     it("returns false when user is not found", async () => {
       const userId = new ObjectId().toString();
-      mockFindCompassUserBy.mockResolvedValue(null);
+      spyOn(userQueries, "findCompassUserBy").mockResolvedValue(null);
 
       const result = await isGoogleConnected(userId);
 
@@ -121,23 +122,25 @@ describe("google.guard", () => {
         },
       };
 
-      mockFindCompassUserBy.mockResolvedValue(userWithGoogle);
+      spyOn(userQueries, "findCompassUserBy").mockResolvedValue(userWithGoogle);
 
       await expect(requireGoogleConnection(userId)).resolves.toBeUndefined();
     });
 
     it("throws when userId is not a valid ObjectId", async () => {
+      const findSpy = spyOn(userQueries, "findCompassUserBy");
+
       await expect(
         requireGoogleConnection("not-an-object-id"),
       ).rejects.toMatchObject({
         description: UserError.InvalidValue.description,
       });
-      expect(mockFindCompassUserBy).not.toHaveBeenCalled();
+      expect(findSpy).not.toHaveBeenCalled();
     });
 
     it("throws UserError.UserNotFound when user does not exist", async () => {
       const userId = new ObjectId().toString();
-      mockFindCompassUserBy.mockResolvedValue(null);
+      spyOn(userQueries, "findCompassUserBy").mockResolvedValue(null);
 
       await expect(requireGoogleConnection(userId)).rejects.toMatchObject({
         description: UserError.UserNotFound.description,
@@ -155,7 +158,9 @@ describe("google.guard", () => {
         locale: "en",
       };
 
-      mockFindCompassUserBy.mockResolvedValue(userWithoutGoogle);
+      spyOn(userQueries, "findCompassUserBy").mockResolvedValue(
+        userWithoutGoogle,
+      );
 
       await expect(requireGoogleConnection(userId)).rejects.toMatchObject({
         description: UserError.MissingGoogleRefreshToken.description,

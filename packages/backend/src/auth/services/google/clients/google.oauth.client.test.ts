@@ -1,43 +1,41 @@
 import { faker } from "@faker-js/faker";
-import { calendar } from "@googleapis/calendar";
-import { OAuth2Client } from "google-auth-library";
+import * as googleapisCalendar from "@googleapis/calendar";
+import * as googleAuthLibrary from "google-auth-library";
 import { BaseError } from "@core/errors/errors.base";
+import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import GoogleOAuthClient from "./google.oauth.client";
-import { beforeEach, describe, expect, it } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
-jest.mock("@googleapis/calendar", () => ({
-  calendar: jest.fn(),
-}));
-
-jest.mock("google-auth-library", () => {
-  class MockOAuth2Client {
-    credentials: Record<string, unknown> = {};
-    _clientId = "mock-client-id";
-    getToken = jest.fn();
-    setCredentials = jest.fn((credentials: Record<string, unknown>) => {
-      this.credentials = credentials;
-    });
-    verifyIdToken = jest.fn();
-    getAccessToken = jest.fn();
-  }
-
-  return {
-    OAuth2Client: jest.fn(() => new MockOAuth2Client()),
-  };
-});
+class MockOAuth2Client {
+  credentials: Record<string, unknown> = {};
+  _clientId = "mock-client-id";
+  getToken = mock();
+  setCredentials = mock((credentials: Record<string, unknown>) => {
+    this.credentials = credentials;
+  });
+  verifyIdToken = mock();
+  getAccessToken = mock();
+}
 
 type MockOAuthClientInstance = {
   credentials: Record<string, unknown>;
   _clientId: string;
-  getToken: jest.Mock;
-  setCredentials: jest.Mock;
-  verifyIdToken: jest.Mock;
-  getAccessToken: jest.Mock;
+  getToken: Mock;
+  setCredentials: Mock;
+  verifyIdToken: Mock;
+  getAccessToken: Mock;
 };
 
-const mockCalendar = jest.mocked(calendar);
 const getMockOAuthClient = (
   client: GoogleOAuthClient,
 ): MockOAuthClientInstance =>
@@ -45,22 +43,29 @@ const getMockOAuthClient = (
 
 describe("GoogleOAuthClient", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    spyOn(googleAuthLibrary, "OAuth2Client").mockImplementation(
+      () => new MockOAuth2Client() as unknown as googleAuthLibrary.OAuth2Client,
+    );
+    spyOn(googleapisCalendar, "calendar");
+  });
+
+  afterEach(() => {
+    restoreFileMocks();
   });
 
   it("creates a calendar client using the oauth client instance", () => {
     const gcalClient = { calendars: true };
-    mockCalendar.mockReturnValue(gcalClient);
+    (googleapisCalendar.calendar as Mock).mockReturnValue(gcalClient);
 
     const client = new GoogleOAuthClient();
 
-    expect(OAuth2Client).toHaveBeenCalledWith(
+    expect(googleAuthLibrary.OAuth2Client).toHaveBeenCalledWith(
       CONFIG.GOOGLE_CLIENT_ID,
       CONFIG.GOOGLE_CLIENT_SECRET,
       "http://localhost:9080/auth/google/callback",
     );
     expect(client.getGcalClient()).toBe(gcalClient);
-    expect(mockCalendar).toHaveBeenCalledWith({
+    expect(googleapisCalendar.calendar).toHaveBeenCalledWith({
       version: "v3",
       auth: client.oauthClient,
     });

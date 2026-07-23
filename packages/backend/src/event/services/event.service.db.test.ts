@@ -21,6 +21,8 @@ import {
   describe,
   expect,
   it,
+  mock,
+  spyOn,
 } from "bun:test";
 
 const seedLocalCalendar = async (userId: ObjectId) => {
@@ -538,7 +540,7 @@ describe("EventService (SSE suppression for invisible calendars, step 9)", () =>
       { _id: calendar._id },
       { $set: { isVisible: false } },
     );
-    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
+    const publishSpy = spyOn(sseServer, "publishEventsChanged");
 
     await eventService.create(user._id.toString(), {
       calendarId: calendar._id.toHexString() as never,
@@ -558,7 +560,7 @@ describe("EventService (SSE suppression for invisible calendars, step 9)", () =>
   it("publishes eventsChanged for a create on a visible calendar", async () => {
     const { user } = await UtilDriver.setupTestUser();
     const calendar = await seedLocalCalendar(user._id);
-    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
+    const publishSpy = spyOn(sseServer, "publishEventsChanged");
 
     const created = await eventService.create(user._id.toString(), {
       calendarId: calendar._id.toHexString() as never,
@@ -604,22 +606,20 @@ describe("EventService (SSE suppression for invisible calendars, step 9)", () =>
     // (e.g. calendarService.list's ownership checks) passes through
     // untouched. notify() should still publish rather than silently drop it.
     const originalFind = mongoService.calendar.find.bind(mongoService.calendar);
-    jest
-      .spyOn(mongoService.calendar, "find")
-      .mockImplementation(
-        (...args: Parameters<typeof mongoService.calendar.find>) => {
-          const [filter] = args;
-          const idFilter = (filter as { _id?: { $in?: unknown[] } } | undefined)
-            ?._id?.$in;
-          if (idFilter) {
-            return { toArray: async () => [] } as ReturnType<
-              typeof mongoService.calendar.find
-            >;
-          }
-          return originalFind(...args);
-        },
-      );
-    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
+    spyOn(mongoService.calendar, "find").mockImplementation(
+      (...args: Parameters<typeof mongoService.calendar.find>) => {
+        const [filter] = args;
+        const idFilter = (filter as { _id?: { $in?: unknown[] } } | undefined)
+          ?._id?.$in;
+        if (idFilter) {
+          return { toArray: async () => [] } as ReturnType<
+            typeof mongoService.calendar.find
+          >;
+        }
+        return originalFind(...args);
+      },
+    );
+    const publishSpy = spyOn(sseServer, "publishEventsChanged");
 
     await eventService.delete(user._id.toString(), created._id.toHexString(), {
       scope: "this",
@@ -746,7 +746,6 @@ describe("EventService (visibility filtering for list reads, packet 08)", () => 
 describe("EventService (cross-calendar move)", () => {
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
   const moveInput = (calendarId: string) => ({
@@ -879,11 +878,9 @@ describe("EventService (cross-calendar move)", () => {
     });
     await mongoService.event.insertOne(event);
 
-    jest
-      .spyOn(gcalService, "moveEvent")
-      .mockImplementation(() =>
-        Promise.reject(new Error("cannotChangeOrganizer")),
-      );
+    spyOn(gcalService, "moveEvent").mockImplementation(() =>
+      Promise.reject(new Error("cannotChangeOrganizer")),
+    );
 
     await expect(
       eventService.replace(
@@ -924,7 +921,7 @@ describe("EventService (cross-calendar move)", () => {
     const destination = await seedLocalCalendar(user._id);
     const event = buildEventRecord(source._id);
     await mongoService.event.insertOne(event);
-    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
+    const publishSpy = spyOn(sseServer, "publishEventsChanged");
 
     await eventService.replace(
       user._id.toString(),
@@ -959,12 +956,12 @@ describe("EventService (cross-calendar move)", () => {
     });
     await mongoService.event.insertOne(event);
 
-    const moveSpy = jest
-      .spyOn(gcalService, "moveEvent")
-      .mockResolvedValue({} as never);
-    const patchSpy = jest
-      .spyOn(gcalService, "patchEvent")
-      .mockResolvedValue({} as never);
+    const moveSpy = spyOn(gcalService, "moveEvent").mockResolvedValue(
+      {} as never,
+    );
+    const patchSpy = spyOn(gcalService, "patchEvent").mockResolvedValue(
+      {} as never,
+    );
 
     await eventService.replace(
       user._id.toString(),

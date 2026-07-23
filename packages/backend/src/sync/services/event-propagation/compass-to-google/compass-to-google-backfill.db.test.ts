@@ -19,6 +19,8 @@ import {
   describe,
   expect,
   it,
+  mock,
+  spyOn,
 } from "bun:test";
 
 const buildGoogleCalendar = (
@@ -66,7 +68,6 @@ describe("compassToGoogleBackfill", () => {
   beforeAll(initSupertokens);
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
   it("creates a Google event for Compass-owned events without a provider reference", async () => {
@@ -77,7 +78,7 @@ describe("compassToGoogleBackfill", () => {
     const event = buildEvent(calendar._id);
     await mongoService.event.insertOne(event);
 
-    jest.spyOn(gcalService, "createEvent").mockResolvedValue({
+    spyOn(gcalService, "createEvent").mockResolvedValue({
       id: "google-event-id",
     } as never);
 
@@ -114,7 +115,7 @@ describe("compassToGoogleBackfill", () => {
       }),
     ]);
 
-    const createSpy = jest.spyOn(gcalService, "createEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
 
     await expect(
       compassToGoogleBackfill.syncCompassEventsToGoogle(userId),
@@ -133,7 +134,7 @@ describe("compassToGoogleBackfill", () => {
     await mongoService.calendar.insertOne(localCalendar);
     await mongoService.event.insertOne(buildEvent(localCalendar._id));
 
-    const createSpy = jest.spyOn(gcalService, "createEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
 
     await expect(
       compassToGoogleBackfill.syncCompassEventsToGoogle(userId),

@@ -31,6 +31,8 @@ import {
   describe,
   expect,
   it,
+  mock,
+  spyOn,
 } from "bun:test";
 
 const buildGoogleCalendar = (
@@ -134,7 +136,6 @@ describe("googleCalendarListService", () => {
   beforeAll(initSupertokens);
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
   describe("reconcileCalendarList", () => {
@@ -152,11 +153,8 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      const calendarsChangedSpy = jest.spyOn(
-        sseServer,
-        "publishCalendarsChanged",
-      );
-      const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
+      const calendarsChangedSpy = spyOn(sseServer, "publishCalendarsChanged");
+      const eventsChangedSpy = spyOn(sseServer, "publishEventsChanged");
 
       const result = await reconcile(userId);
 
@@ -224,7 +222,7 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      const getEventsSpy = jest.spyOn(gcalService, "getEvents");
+      const getEventsSpy = spyOn(gcalService, "getEvents");
 
       const result = await reconcile(userId);
 
@@ -270,11 +268,8 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      const stopWatchSpy = jest.spyOn(gcalService, "stopWatch");
-      const calendarsChangedSpy = jest.spyOn(
-        sseServer,
-        "publishCalendarsChanged",
-      );
+      const stopWatchSpy = spyOn(gcalService, "stopWatch");
+      const calendarsChangedSpy = spyOn(sseServer, "publishCalendarsChanged");
 
       await expect(reconcile(userId)).resolves.toEqual({
         outcome: "RECONCILED",
@@ -336,7 +331,7 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      const stopWatchSpy = jest.spyOn(gcalService, "stopWatch");
+      const stopWatchSpy = spyOn(gcalService, "stopWatch");
 
       await expect(reconcile(userId)).resolves.toEqual({
         outcome: "RECONCILED",
@@ -605,12 +600,10 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
-        importAllEvents: jest
-          .fn()
-          .mockImplementation(() =>
-            Promise.reject(new Error("simulated import failure")),
-          ),
+      spyOn(syncImportService, "createSyncImport").mockResolvedValue({
+        importAllEvents: mock().mockImplementation(() =>
+          Promise.reject(new Error("simulated import failure")),
+        ),
       } as unknown as Awaited<
         ReturnType<typeof syncImportService.createSyncImport>
       >);
@@ -630,11 +623,8 @@ describe("googleCalendarListService", () => {
 
       compassTestState().calendarlist = [];
 
-      const calendarsChangedSpy = jest.spyOn(
-        sseServer,
-        "publishCalendarsChanged",
-      );
-      const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
+      const calendarsChangedSpy = spyOn(sseServer, "publishCalendarsChanged");
+      const eventsChangedSpy = spyOn(sseServer, "publishEventsChanged");
 
       await expect(reconcile(userId)).resolves.toEqual({
         outcome: "IGNORED",
@@ -726,13 +716,13 @@ describe("googleCalendarListService", () => {
         }),
       ];
 
-      jest
-        .spyOn(gcalService, "getAllCalendarListPages")
-        .mockImplementationOnce(() => {
+      spyOn(gcalService, "getAllCalendarListPages").mockImplementationOnce(
+        () => {
           throw invalidSyncTokenError;
-        });
+        },
+      );
 
-      const stopWatchSpy = jest.spyOn(gcalService, "stopWatch");
+      const stopWatchSpy = spyOn(gcalService, "stopWatch");
 
       const result = await reconcile(userId);
 
@@ -794,11 +784,11 @@ describe("googleCalendarListService", () => {
       const userId = user._id.toString();
       const initialToken = await seedCalendarlistToken(userId);
 
-      jest
-        .spyOn(gcalService, "getAllCalendarListPages")
-        .mockImplementationOnce(() => {
+      spyOn(gcalService, "getAllCalendarListPages").mockImplementationOnce(
+        () => {
           throw createGoogleError({ code: "500", responseStatus: 500 });
-        });
+        },
+      );
 
       await expect(reconcile(userId)).rejects.toMatchObject({ code: "500" });
 

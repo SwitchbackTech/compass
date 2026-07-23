@@ -2,6 +2,7 @@
   "extends": "./tsconfig.json",
   "include": [
     "./declaration.d.ts",
+    "./src/__tests__/jest-dom.d.ts",
     "./src/**/*.d.ts",
     "./src/**/*.test.ts",
     "./src/**/*.test.tsx",

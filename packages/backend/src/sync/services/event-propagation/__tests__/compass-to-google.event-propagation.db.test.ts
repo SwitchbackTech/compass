@@ -14,7 +14,7 @@ import {
   setupNoGoogleUser,
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 import { CompassToGoogleEventPropagation } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
-import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 /**
  * The transaction envelope (B7) -- ported from the deleted
@@ -51,9 +51,8 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
     const calendar = await seedGoogleCalendar(user._id);
     let sawCommittedWriteDuringGoogleCall = false;
 
-    const createSpy = jest
-      .spyOn(gcalService, "createEvent")
-      .mockImplementationOnce(async () => {
+    const createSpy = spyOn(gcalService, "createEvent").mockImplementationOnce(
+      async () => {
         // Read through the *unmocked* driver (no session) -- if the Mongo
         // transaction had not actually committed yet, this read would race
         // it. Observing the row here proves propagate() runs strictly after
@@ -64,7 +63,8 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
           .toArray();
         sawCommittedWriteDuringGoogleCall = rows.length === 1;
         return { id: "gcal-id-1", recurringEventId: null };
-      });
+      },
+    );
 
     await eventService.create(
       user._id.toString(),
@@ -78,19 +78,17 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
   it("never calls propagate, and rolls back the partial write, when the Mongo transaction fails", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const propagateSpy = jest.spyOn(
-      CompassToGoogleEventPropagation,
-      "propagate",
-    );
-    const createEventSpy = jest.spyOn(gcalService, "createEvent");
+    const propagateSpy = spyOn(CompassToGoogleEventPropagation, "propagate");
+    const createEventSpy = spyOn(gcalService, "createEvent");
     propagateSpy.mockClear();
     createEventSpy.mockClear();
 
-    const bulkReplaceSpy = jest
-      .spyOn(eventRepository, "bulkReplace")
-      .mockImplementationOnce(async () => {
-        throw new Error("simulated write conflict inside the transaction");
-      });
+    const bulkReplaceSpy = spyOn(
+      eventRepository,
+      "bulkReplace",
+    ).mockImplementationOnce(async () => {
+      throw new Error("simulated write conflict inside the transaction");
+    });
 
     await expect(
       eventService.create(
@@ -113,11 +111,11 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
   it("surfaces PROVIDER_FAILURE on a Google error, but keeps the already-committed Mongo write", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const createSpy = jest
-      .spyOn(gcalService, "createEvent")
-      .mockImplementationOnce(async () => {
+    const createSpy = spyOn(gcalService, "createEvent").mockImplementationOnce(
+      async () => {
         throw new Error("simulated Google 500");
-      });
+      },
+    );
 
     await expect(
       eventService.create(
@@ -154,8 +152,8 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
 
   it("propagate() is a no-op when the change set is empty", async () => {
     const { user } = await setupGoogleUser();
-    const createSpy = jest.spyOn(gcalService, "createEvent");
-    const calendarFindSpy = jest.spyOn(mongoService.calendar, "find");
+    const createSpy = spyOn(gcalService, "createEvent");
+    const calendarFindSpy = spyOn(mongoService.calendar, "find");
     createSpy.mockClear();
     calendarFindSpy.mockClear();
 
@@ -171,7 +169,7 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
 
   it("does not call Google for a delete when the deleted record's calendar is unknown/inactive", async () => {
     const { user } = await setupGoogleUser();
-    const deleteSpy = jest.spyOn(gcalService, "deleteEvent");
+    const deleteSpy = spyOn(gcalService, "deleteEvent");
     deleteSpy.mockClear();
 
     const orphanedRecord = {

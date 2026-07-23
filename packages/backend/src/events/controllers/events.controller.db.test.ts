@@ -20,13 +20,14 @@ import {
   describe,
   expect,
   it,
+  mock,
+  spyOn,
 } from "bun:test";
 
 describe("EventsController", () => {
   beforeAll(initSupertokens);
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
   it("11: fire-and-forgets the watch repair coordinator after subscribing and replaying metadata", async () => {
@@ -46,20 +47,21 @@ describe("EventsController", () => {
         incompleteCalendarIds: [],
       },
     };
-    const repairSpy = jest
-      .spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
-      .mockResolvedValue(noneResult);
+    const repairSpy = spyOn(
+      googleWatchRepairService,
+      "repairGoogleWatchesForUser",
+    ).mockResolvedValue(noneResult);
 
     const req = {
       session: { getUserId: () => userId },
-      on: jest.fn(),
+      on: mock(),
     } as unknown as Request;
     const res = {
-      setHeader: jest.fn(),
-      flushHeaders: jest.fn(),
-      write: jest.fn(),
-      status: jest.fn().mockReturnThis(),
-      end: jest.fn(),
+      setHeader: mock(),
+      flushHeaders: mock(),
+      write: mock(),
+      status: mock().mockReturnThis(),
+      end: mock(),
       headersSent: false,
     } as unknown as Response;
 
@@ -70,22 +72,23 @@ describe("EventsController", () => {
 
   it("does not let a repair failure affect the SSE response", async () => {
     const userId = "507f1f77bcf86cd799439012";
-    jest
-      .spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
-      .mockImplementation(() =>
-        Promise.reject(new Error("simulated repair failure")),
-      );
+    spyOn(
+      googleWatchRepairService,
+      "repairGoogleWatchesForUser",
+    ).mockImplementation(() =>
+      Promise.reject(new Error("simulated repair failure")),
+    );
 
     const req = {
       session: { getUserId: () => userId },
-      on: jest.fn(),
+      on: mock(),
     } as unknown as Request;
     const res = {
-      setHeader: jest.fn(),
-      flushHeaders: jest.fn(),
-      write: jest.fn(),
-      status: jest.fn().mockReturnThis(),
-      end: jest.fn(),
+      setHeader: mock(),
+      flushHeaders: mock(),
+      write: mock(),
+      status: mock().mockReturnThis(),
+      end: mock(),
       headersSent: false,
     } as unknown as Response;
 
@@ -116,21 +119,22 @@ describe("EventsController", () => {
         incompleteCalendarIds: [],
       },
     };
-    jest
-      .spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
-      .mockResolvedValue(noneResult);
-    const touchSpy = jest.spyOn(userService, "touchLastSeenAt");
+    spyOn(
+      googleWatchRepairService,
+      "repairGoogleWatchesForUser",
+    ).mockResolvedValue(noneResult);
+    const touchSpy = spyOn(userService, "touchLastSeenAt");
 
     const req = {
       session: { getUserId: () => userId },
-      on: jest.fn(),
+      on: mock(),
     } as unknown as Request;
     const res = {
-      setHeader: jest.fn(),
-      flushHeaders: jest.fn(),
-      write: jest.fn(),
-      status: jest.fn().mockReturnThis(),
-      end: jest.fn(),
+      setHeader: mock(),
+      flushHeaders: mock(),
+      write: mock(),
+      status: mock().mockReturnThis(),
+      end: mock(),
       headersSent: false,
     } as unknown as Response;
 
@@ -141,39 +145,38 @@ describe("EventsController", () => {
 
   it("does not let a lastSeenAt touch failure affect the SSE response", async () => {
     const userId = "507f1f77bcf86cd799439014";
-    jest
-      .spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
-      .mockResolvedValue({
-        action: "NONE",
-        inspection: {
-          status: GoogleWatchStateStatus.NOT_APPLICABLE,
-          reason: "GOOGLE_NOT_CONNECTED",
-          expectedWatchCalendarIds: [],
-          activeWatches: [],
-          duplicateWatches: [],
-          expiredWatches: [],
-          missingWatchCalendarIds: [],
-          staleWatches: [],
-          watchesToRefresh: [],
-          incompleteCalendarIds: [],
-        },
-      });
-    jest
-      .spyOn(userService, "touchLastSeenAt")
-      .mockImplementation(() =>
-        Promise.reject(new Error("simulated touch failure")),
-      );
+    spyOn(
+      googleWatchRepairService,
+      "repairGoogleWatchesForUser",
+    ).mockResolvedValue({
+      action: "NONE",
+      inspection: {
+        status: GoogleWatchStateStatus.NOT_APPLICABLE,
+        reason: "GOOGLE_NOT_CONNECTED",
+        expectedWatchCalendarIds: [],
+        activeWatches: [],
+        duplicateWatches: [],
+        expiredWatches: [],
+        missingWatchCalendarIds: [],
+        staleWatches: [],
+        watchesToRefresh: [],
+        incompleteCalendarIds: [],
+      },
+    });
+    spyOn(userService, "touchLastSeenAt").mockImplementation(() =>
+      Promise.reject(new Error("simulated touch failure")),
+    );
 
     const req = {
       session: { getUserId: () => userId },
-      on: jest.fn(),
+      on: mock(),
     } as unknown as Request;
     const res = {
-      setHeader: jest.fn(),
-      flushHeaders: jest.fn(),
-      write: jest.fn(),
-      status: jest.fn().mockReturnThis(),
-      end: jest.fn(),
+      setHeader: mock(),
+      flushHeaders: mock(),
+      write: mock(),
+      status: mock().mockReturnThis(),
+      end: mock(),
       headersSent: false,
     } as unknown as Response;
 

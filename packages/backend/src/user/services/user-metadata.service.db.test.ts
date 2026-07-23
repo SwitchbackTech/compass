@@ -1,4 +1,4 @@
-import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
+import { type UserMetadata } from "@core/types/user.types";
 import { GoogleWatchDriver } from "@backend/__tests__/drivers/google-watch.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UserMetadataServiceDriver } from "@backend/__tests__/drivers/user-metadata.service.driver";
@@ -8,6 +8,7 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import {
   endGoogleSync,
@@ -15,7 +16,7 @@ import {
   tryBeginGoogleSync,
 } from "@backend/sync/services/google-sync/google-sync.activity";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
-import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
+import * as googleWatchConfig from "@backend/sync/services/watch/google-watch-config";
 import {
   afterAll,
   afterEach,
@@ -24,13 +25,8 @@ import {
   describe,
   expect,
   it,
+  spyOn,
 } from "bun:test";
-
-// eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock factory spreads requireActual
-jest.mock("@backend/sync/services/watch/google-watch-config", () => ({
-  ...jest.requireActual("@backend/sync/services/watch/google-watch-config"),
-  isUsingGcalWebhookHttps: jest.fn(),
-}));
 
 describe("UserMetadataService", () => {
   const driver = new UserMetadataServiceDriver();
@@ -67,7 +63,7 @@ describe("UserMetadataService", () => {
         data: { subscribeToUpdates: true } as Partial<UserMetadata>,
       });
 
-      const stored = await SupertokensUserMetadata.getUserMetadata(userId);
+      const stored = await getUserMetadataStore().getUserMetadata(userId);
 
       expect(stored.metadata).not.toHaveProperty("subscribeToUpdates");
     });
@@ -92,9 +88,9 @@ describe("UserMetadataService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
 
-      await SupertokensUserMetadata.updateUserMetadata(userId, {
+      await getUserMetadataStore().updateUserMetadata(userId, {
         subscribeToUpdates: true,
-      });
+      } as Partial<UserMetadata>);
 
       const metadata = await driver.fetchUserMetadata(userId);
 
@@ -105,9 +101,9 @@ describe("UserMetadataService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
 
-      await SupertokensUserMetadata.updateUserMetadata(userId, {
+      await getUserMetadataStore().updateUserMetadata(userId, {
         subscribeToUpdates: true,
-      });
+      } as Partial<UserMetadata>);
 
       const metadata = await driver.updateUserMetadata({
         userId,
@@ -150,8 +146,10 @@ describe("UserMetadataService", () => {
     it("returns HEALTHY without active watches when running without an HTTPS Google webhook URL", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const isUsingGcalWebhookHttpsSpy = isUsingGcalWebhookHttps as jest.Mock;
-      isUsingGcalWebhookHttpsSpy.mockReturnValue(false);
+      const isUsingGcalWebhookHttpsSpy = spyOn(
+        googleWatchConfig,
+        "isUsingGcalWebhookHttps",
+      ).mockReturnValue(false);
 
       await GoogleWatchDriver.removeActiveGoogleWatchesForUser(userId);
 
@@ -165,8 +163,10 @@ describe("UserMetadataService", () => {
     it("returns ATTENTION without active watches when using an HTTPS Google webhook URL", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const isUsingGcalWebhookHttpsSpy = isUsingGcalWebhookHttps as jest.Mock;
-      isUsingGcalWebhookHttpsSpy.mockReturnValue(true);
+      const isUsingGcalWebhookHttpsSpy = spyOn(
+        googleWatchConfig,
+        "isUsingGcalWebhookHttps",
+      ).mockReturnValue(true);
 
       await GoogleWatchDriver.removeActiveGoogleWatchesForUser(userId);
 
@@ -180,9 +180,10 @@ describe("UserMetadataService", () => {
     it("returns ATTENTION without scheduling repair when connected sync state is broken", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const restartSpy = jest
-        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
-        .mockResolvedValue();
+      const restartSpy = spyOn(
+        googleCalendarSyncService,
+        "startGoogleCalendarSyncIfNeeded",
+      ).mockResolvedValue();
 
       const metadata = await driver.fetchUserMetadata(userId);
 
@@ -209,9 +210,10 @@ describe("UserMetadataService", () => {
     it("returns ATTENTION when stored importing metadata has no active sync", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const restartSpy = jest
-        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
-        .mockResolvedValue();
+      const restartSpy = spyOn(
+        googleCalendarSyncService,
+        "startGoogleCalendarSyncIfNeeded",
+      ).mockResolvedValue();
 
       await driver.updateUserMetadata({
         userId,

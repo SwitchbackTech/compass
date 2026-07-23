@@ -15,10 +15,9 @@ import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import {
   type FrequencyValues,
-  type WEEKDAY_RRULE_MAP,
+  WEEKDAY_RRULE_MAP,
   type WEEKDAYS,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
-import { toWeekDays } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/util/recurrence.util";
 
 const WEEKDAY_LABELS_MAP: Record<keyof typeof WEEKDAY_RRULE_MAP, string> = {
   sunday: RRule.SU.toString(),
@@ -32,6 +31,7 @@ const WEEKDAY_LABELS_MAP: Record<keyof typeof WEEKDAY_RRULE_MAP, string> = {
 const REVERSE_WEEKDAY_LABELS_MAP = Object.fromEntries(
   Object.entries(WEEKDAY_LABELS_MAP).map(([key, value]) => [value, key]),
 ) as Record<string, keyof typeof WEEKDAY_RRULE_MAP>;
+
 const WEEKDAY_MAP: Record<
   number | string | keyof typeof WEEKDAY_RRULE_MAP,
   Weekday
@@ -52,6 +52,16 @@ const WEEKDAY_MAP: Record<
   },
   {} as Record<number | string | keyof typeof WEEKDAY_RRULE_MAP, Weekday>,
 );
+
+const normalizeRecurrenceRule = (rule: string[] | null | undefined): string[] =>
+  (rule ?? []).map((entry) => entry.replace(/;WKST=[A-Z]{2}/, ""));
+
+const weekdayKeyFromByweekday = (
+  day: number | Weekday,
+): keyof typeof WEEKDAY_RRULE_MAP => {
+  const weekday = typeof day === "number" ? day : day.weekday;
+  return REVERSE_WEEKDAY_LABELS_MAP[WEEKDAY_MAP[weekday].toString()];
+};
 
 export const useRecurrence = (
   event: Partial<
@@ -97,10 +107,7 @@ export const useRecurrence = (
   }, [_startDate, startDate, endDate, hasRecurrence, recurrence?.rule]);
 
   const defaultWeekDay: typeof WEEKDAYS = useMemo(
-    () =>
-      options?.byweekday?.map(
-        (day) => REVERSE_WEEKDAY_LABELS_MAP[WEEKDAY_MAP[day].toString()],
-      ) ?? [],
+    () => options?.byweekday?.map((day) => weekdayKeyFromByweekday(day)) ?? [],
     [options?.byweekday],
   );
 
@@ -115,7 +122,10 @@ export const useRecurrence = (
   const [count, setCount] = useState<number | null>(options.count);
   const [wkst, setWkst] = useState<Weekday | null>(defaultWkst);
   const [weekDays, setWeekDays] = useState<typeof WEEKDAYS>(defaultWeekDay);
-  const byweekday = useMemo<Weekday[]>(() => toWeekDays(weekDays), [weekDays]);
+  const byweekday = useMemo(
+    () => weekDays.map((day) => WEEKDAY_RRULE_MAP[day].weekday),
+    [weekDays],
+  );
   const dtstart = useMemo<Date>(() => _startDate.toDate(), [_startDate]);
 
   const rruleOptions = useMemo<Partial<Options>>(
@@ -123,7 +133,7 @@ export const useRecurrence = (
       freq,
       dtstart,
       interval,
-      wkst,
+      wkst: wkst?.weekday ?? undefined,
       byweekday,
       until,
       count,
@@ -175,7 +185,14 @@ export const useRecurrence = (
     if (!hasRecurrence) return;
 
     const nextRule = JSON.parse(rule);
-    if (fastDeepEqual(currentRule, nextRule)) return;
+    if (
+      fastDeepEqual(
+        normalizeRecurrenceRule(currentRule),
+        normalizeRecurrenceRule(nextRule),
+      )
+    ) {
+      return;
+    }
 
     setEvent((gridEvent): CompassEvent | null => {
       if (!gridEvent) return gridEvent;

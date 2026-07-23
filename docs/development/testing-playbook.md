@@ -44,22 +44,23 @@ E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` vi
 
 ## Current Test Strategy
 
-Every package runs on Bun's native test runner; Jest has been removed.
+Every package runs on Bun's native test runner (Bun 1.3.14+); Jest has been removed.
 
-- `bun run test:core` uses `bun test --parallel` with a small compatibility preload.
-- `bun run test:web` uses [`test-isolated.ts`](../../packages/scripts/src/testing/test-isolated.ts) — one subprocess per file so preload `mock.module` mocks are not cleared by Bun's `--isolate` (which `--parallel` enables).
-- `bun run test:backend`, `bun run test:scripts`, and `bun run test:sync` use [`test-with-mongo.ts`](../../packages/scripts/src/testing/test-with-mongo.ts) — the same per-file subprocess model plus one shared in-memory Mongo replica set (`COMPASS_TEST_MONGO_URI`).
-- Test files import lifecycle/assertion APIs from `bun:test` (never `jest` — the ambient `jest` global is a compatibility shim from `packages/scripts/src/testing/apply-bun-jest-compat.cjs`).
+- `bun run test:core` — `bun test --parallel` with `packages/scripts/src/testing/core.preload.ts`.
+- `bun run test:web` — `bun test --parallel` with `packages/web/src/__tests__/web.preload.ts` (jsdom, MSW, Zustand reset).
+- `bun run test:backend`, `bun run test:scripts`, and `bun run test:sync` — `packages/scripts/src/testing/test-mongo-env.ts` boots one shared in-memory Mongo replica set, then runs `bun test --parallel` with the package preload. Per-file DB names come from `setupTestDb(import.meta.url)`.
+- Backend Google Calendar and SuperTokens behavior in tests use injectable seams (`TestGcalFixture`, `session.middleware`, `supertokens.registry`, `LoggerFactory`) instead of preload `mock.module` clusters.
+- Test files import lifecycle/assertion APIs from `bun:test` only (`mock`, `spyOn`, `mock.module` where unavoidable).
 
 ### Test file naming and tiers
 
 Mongo-backed tests use the `*.db.test.ts` / `*.db.test.tsx` suffix. Everything else is "fast".
 
 - `bun run test:backend` / `bun run test:scripts` / `bun run test:sync` — full package suite.
-- `bun run test:backend:fast` / `bun run test:scripts:fast` — single-process run excluding `*.db.test.*` (no Mongo harness).
+- `bun run test:backend:fast` / `bun run test:scripts:fast` — excludes `*.db.test.*` via the mongo wrapper's file filter (still uses shared mongod when non-db tests need it).
 - `bun run test:backend:db` / `bun run test:scripts:db` — only `*.db.test.*` files.
 - `bun run test:migrations` — migration suites under `packages/scripts/src/migrations`.
-- Focus a run by passing a path: `bun packages/scripts/src/testing/test-with-mongo.ts backend ./packages/backend/src/user/controllers/user.controller.db.test.ts`.
+- Focus a run: `bun packages/scripts/src/testing/test-mongo-env.ts backend -- ./packages/backend/src/user/controllers/user.controller.db.test.ts`.
 
 ## What To Run By Change Type
 
@@ -259,7 +260,7 @@ This keeps tests on production code paths while avoiding brittle layout coupling
 
 ### Jest Unbound-Method Rule In Tests
 
-If you need to assert method calls on non-mock objects, spy on the method first (`jest.spyOn(...)`, backed by `bun:test`) so the assertion is bound to a real mock/spy rather than an unbound method reference.
+If you need to assert method calls on non-mock objects, spy on the method first (`spyOn(...)` from `bun:test`) so the assertion is bound to a real mock/spy rather than an unbound method reference.
 
 Useful anchors:
 

@@ -13,7 +13,7 @@ import {
   setupNoGoogleUser,
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 import { CompassToGoogleEventPropagation } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
-import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 /**
  * Scope "this" applied to a standalone (non-recurring) event -- ported from
@@ -42,7 +42,7 @@ describe("CompassToGoogleEventPropagation - scope 'this' - standalone event", ()
   it("creates a Google event and persists the returned externalReference", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const createSpy = jest.spyOn(gcalService, "createEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
 
     const created = await eventService.create(
       user._id.toString(),
@@ -71,7 +71,7 @@ describe("CompassToGoogleEventPropagation - scope 'this' - standalone event", ()
       user._id.toString(),
       createInput(calendar._id.toHexString()),
     );
-    const patchSpy = jest.spyOn(gcalService, "patchEvent");
+    const patchSpy = spyOn(gcalService, "patchEvent");
     const before = await eventService.readById(
       user._id.toString(),
       created._id.toHexString(),
@@ -103,7 +103,7 @@ describe("CompassToGoogleEventPropagation - scope 'this' - standalone event", ()
       user._id.toString(),
       created._id.toHexString(),
     );
-    const deleteSpy = jest.spyOn(gcalService, "deleteEvent");
+    const deleteSpy = spyOn(gcalService, "deleteEvent");
 
     await eventService.delete(user._id.toString(), created._id.toHexString(), {
       scope: "this",
@@ -118,12 +118,12 @@ describe("CompassToGoogleEventPropagation - scope 'this' - standalone event", ()
   it("does not call Google to delete a record that was never synced (no externalReference)", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const createSpy = jest
-      .spyOn(gcalService, "createEvent")
-      .mockImplementationOnce(async () => {
+    const createSpy = spyOn(gcalService, "createEvent").mockImplementationOnce(
+      async () => {
         throw new Error("simulated provider outage during create");
-      });
-    const deleteSpy = jest.spyOn(gcalService, "deleteEvent");
+      },
+    );
+    const deleteSpy = spyOn(gcalService, "deleteEvent");
 
     // The create's Google effect fails, but the Mongo write already
     // committed (B7) -- the event exists locally with no externalReference.
@@ -153,9 +153,9 @@ describe("CompassToGoogleEventPropagation - scope 'this' - standalone event", ()
   it("does not call Google for events on a non-google (local) calendar", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedLocalCalendar(user._id);
-    const createSpy = jest.spyOn(gcalService, "createEvent");
-    const patchSpy = jest.spyOn(gcalService, "patchEvent");
-    const deleteSpy = jest.spyOn(gcalService, "deleteEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
+    const patchSpy = spyOn(gcalService, "patchEvent");
+    const deleteSpy = spyOn(gcalService, "deleteEvent");
 
     const created = await eventService.create(
       user._id.toString(),
@@ -179,7 +179,7 @@ describe("CompassToGoogleEventPropagation - scope 'this' - standalone event", ()
   it("does not call Google for a busy-content record (not writable)", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const createSpy = jest.spyOn(gcalService, "createEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
     // Busy-content records are a reader-only privacy placeholder that never
     // originates from a create/replace input (EditableContentSchema only
     // allows "details"); they can still reach propagateUpsert via a

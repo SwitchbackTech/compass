@@ -5,6 +5,24 @@ explains) and 6 (memory boundedness). Re-run both suites and update this
 file whenever the Google import/sync path or `event.repository.ts`'s read
 paths change materially.
 
+## Native parallel test suite timings (Bun 1.3.14)
+
+Recorded on 2026-07-22 after removing the Jest compat shim and switching to
+`bun test --parallel` with package preloads (`test-mongo-env.ts` for
+mongo-backed packages). Local macOS, mongodb-memory-server.
+
+| Script | Tests | Time |
+| --- | --- | --- |
+| `bun run test:core` | 496 / 496 | ~0.5s |
+| `bun run test:web` | 1319 / 1319 | ~14s |
+| `bun run test:backend:fast` | 353 / 353 | ~3s |
+| `bun run test:sync` | 505 / 505 | ~31s |
+| `bun run test:scripts` | 40 / 40 | ~2s |
+
+`bun run test:backend` (fast + `.db.test.ts`) still has failing DB specs
+from the ongoing `jest` → `spyOn` migration; use `test:backend:fast` as
+the green gate until the full suite is restored.
+
 ## Import benchmark
 
 `packages/backend/src/__tests__/bench/google-import.bench.db.test.ts` runs
@@ -20,7 +38,7 @@ never pay for it.
 bun run test:backend
 
 # the real run -- prints one `[bench]` summary line per scenario.
-RUN_BENCH=1 bun packages/scripts/src/testing/test-with-mongo.ts backend ./packages/backend/src/__tests__/bench/google-import.bench.db.test.ts
+RUN_BENCH=1 bun packages/scripts/src/testing/test-mongo-env.ts backend ./packages/backend/src/__tests__/bench/google-import.bench.db.test.ts
 ```
 
 ### Last recorded numbers

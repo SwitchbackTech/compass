@@ -1,19 +1,19 @@
 import { faker } from "@faker-js/faker";
 import { Resource_Sync } from "@core/types/sync.types";
+import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
   decodeChannelToken,
   encodeChannelToken,
 } from "@backend/sync/services/watch/google-watch-token";
-import { describe, expect, it } from "bun:test";
-
-// Mock CONFIG
-jest.mock("@backend/common/constants/config.constants", () => ({
-  CONFIG: { TOKEN_GCAL_NOTIFICATION: "test-notification-token" },
-}));
+import { beforeAll, describe, expect, it } from "bun:test";
 
 describe("google-watch-token", () => {
-  const notificationToken = CONFIG.TOKEN_GCAL_NOTIFICATION;
+  beforeAll(() => {
+    mockEnv({ TOKEN_GCAL_NOTIFICATION: "test-notification-token" });
+  });
+
+  const getNotificationToken = () => CONFIG.TOKEN_GCAL_NOTIFICATION;
 
   describe("encodeChannelToken", () => {
     it.each([
@@ -29,7 +29,7 @@ describe("google-watch-token", () => {
       // Decoding should yield a valid ChannelToken
       const decoded = Buffer.from(token, "base64").toString("utf-8");
 
-      expect(decoded).toContain(`token=${notificationToken}`);
+      expect(decoded).toContain(`token=${getNotificationToken()}`);
       expect(decoded).toContain(`resource=${resource}`);
     });
 
@@ -81,7 +81,7 @@ describe("google-watch-token", () => {
 
       // Should match the original data plus the token from CONFIG
       expect(result).toEqual({
-        token: notificationToken,
+        token: getNotificationToken(),
         resource,
       });
     });

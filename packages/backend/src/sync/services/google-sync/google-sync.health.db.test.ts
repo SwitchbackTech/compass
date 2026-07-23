@@ -9,7 +9,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
-import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
+import * as googleWatchConfig from "@backend/sync/services/watch/google-watch-config";
 import { isGoogleCalendarSyncHealthy } from "./google-sync.health";
 import {
   afterAll,
@@ -19,21 +19,16 @@ import {
   describe,
   expect,
   it,
+  spyOn,
 } from "bun:test";
-
-jest.mock("@backend/sync/services/watch/google-watch-config", () => ({
-  ...jest.requireActual("@backend/sync/services/watch/google-watch-config"),
-  isUsingGcalWebhookHttps: jest.fn(() => true),
-}));
 
 describe("googleSyncHealth", () => {
   beforeAll(initSupertokens);
   beforeAll(() => setupTestDb(import.meta.url));
   beforeEach(() => {
-    (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(true);
+    spyOn(googleWatchConfig, "isUsingGcalWebhookHttps").mockReturnValue(true);
   });
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
   it("returns false when the user has no sync record", async () => {
@@ -67,7 +62,7 @@ describe("googleSyncHealth", () => {
     const { user } = await UtilDriver.setupTestUser();
     const userId = user._id.toString();
 
-    (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(false);
+    (googleWatchConfig.isUsingGcalWebhookHttps as Mock).mockReturnValue(false);
     await GoogleWatchDriver.removeActiveGoogleWatchesForUser(userId);
 
     await expect(isGoogleCalendarSyncHealthy(userId)).resolves.toBe(true);
@@ -77,7 +72,7 @@ describe("googleSyncHealth", () => {
     const { user } = await UtilDriver.setupTestUser();
     const userId = user._id.toString();
 
-    (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(true);
+    (googleWatchConfig.isUsingGcalWebhookHttps as Mock).mockReturnValue(true);
     await GoogleWatchDriver.removeActiveGoogleWatchesForUser(userId);
 
     await expect(isGoogleCalendarSyncHealthy(userId)).resolves.toBe(false);

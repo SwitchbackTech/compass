@@ -11,7 +11,7 @@ import {
   seedLocalCalendar,
   setupGoogleUser,
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
-import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 /**
  * Series base propagation -- ported from the deleted
@@ -60,7 +60,7 @@ describe("CompassToGoogleEventPropagation - series base", () => {
   it("creates exactly one Google event for a new series (the base, not each materialized instance)", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const createSpy = jest.spyOn(gcalService, "createEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
 
     const created = await eventService.create(
       user._id.toString(),
@@ -110,8 +110,8 @@ describe("CompassToGoogleEventPropagation - series base", () => {
     // the file's global afterAll -- so the series `create` above already
     // ran through this same spy. Clear it here so only the replace below is
     // observed.
-    const patchSpy = jest.spyOn(gcalService, "patchEvent");
-    const createSpy = jest.spyOn(gcalService, "createEvent");
+    const patchSpy = spyOn(gcalService, "patchEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
     patchSpy.mockClear();
     createSpy.mockClear();
 
@@ -137,7 +137,7 @@ describe("CompassToGoogleEventPropagation - series base", () => {
   it("does not create Google events for a series on a non-google calendar", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedLocalCalendar(user._id);
-    const createSpy = jest.spyOn(gcalService, "createEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
 
     await eventService.create(
       user._id.toString(),

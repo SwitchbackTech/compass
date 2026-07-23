@@ -13,6 +13,8 @@
     "cors": "^2.8.5",
     "exponential-backoff": "^3.1.2",
     "express": "^4.17.1",
+    "gaxios": "^6.7.1",
+    "google-auth-library": "^9.15.1",
     "helmet": "^7.0.0",
     "lodash.mergewith": "^4.6.2",
     "mongodb": "^7.2.0",
@@ -28,8 +30,11 @@
     "@types/jest": "^29.0.0",
     "@types/lodash.mergewith": "^4.6.9",
     "@types/node": "^22.13.10",
+    "@types/qs": "^6.9.18",
     "@types/supertest": "^6.0.3",
+    "bson": "^7.2.0",
     "mongodb-memory-server": "^9.2.0",
+    "qs": "^6.14.0",
     "supertest": "^7.1.0"
   }
 }

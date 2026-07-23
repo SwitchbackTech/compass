@@ -11,52 +11,33 @@ import {
   ServerMessageSchema,
 } from "@core/types/server-message.contracts";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
-import { afterAll, beforeAll, describe, expect, it } from "bun:test";
-
-jest.mock("supertokens-node/recipe/session/framework/express", () => ({
-  verifySession:
-    () =>
-    (
-      req: { headers?: { cookie?: string }; session?: unknown },
-      _res: unknown,
-      next: () => void,
-    ) => {
-      const cookieHeader = req.headers?.cookie ?? "";
-      const sessionMatch = cookieHeader.match(/session=([^;]+)/);
-      if (sessionMatch) {
-        try {
-          const session = JSON.parse(decodeURIComponent(sessionMatch[1])) as {
-            userId: string;
-          };
-          req.session = {
-            getUserId: () => session.userId,
-            getHandle: () => "test-session-handle",
-          };
-        } catch {
-          // ignore invalid cookie
-        }
-      }
-      next();
-    },
-}));
-
-jest.mock("@backend/user/services/user-metadata.service", () => ({
-  __esModule: true,
-  default: {
-    fetchUserMetadata: jest.fn().mockResolvedValue({
-      sync: { importGCal: null },
-    }),
-  },
-}));
+import { setupBackendTestSeams } from "@backend/__tests__/helpers/mock.setup";
+import userMetadataService from "@backend/user/services/user-metadata.service";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 
 describe("SSE Server", () => {
   const baseDriver = new BaseDriver();
 
   beforeAll(async () => {
+    setupBackendTestSeams();
     await baseDriver.listen();
   });
 
   afterAll(async () => baseDriver.teardown());
+
+  beforeEach(() => {
+    spyOn(userMetadataService, "fetchUserMetadata").mockResolvedValue({
+      sync: { importGCal: null },
+    });
+  });
 
   describe("Subscription and events (B10 — single `message` event, dispatched by payload.type):", () => {
     it("delivers eventsChanged to a subscribed user", async () => {

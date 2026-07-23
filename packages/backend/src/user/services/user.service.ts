@@ -1,8 +1,6 @@
 import { type TokenPayload } from "google-auth-library";
 import { type ClientSession, ObjectId, type WithId } from "mongodb";
-import SupertokensUserMetadata, {
-  type JSONObject,
-} from "supertokens-node/recipe/usermetadata";
+import { type JSONObject } from "supertokens-node/recipe/usermetadata";
 import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
 import { zObjectId } from "@core/types/type.utils";
@@ -11,6 +9,7 @@ import {
   type UserMetadata,
   type UserProfile,
 } from "@core/types/user.types";
+import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import { revokeGoogleGrant } from "@backend/auth/services/google/google.revoke.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
@@ -414,11 +413,10 @@ class UserService {
 
   fetchUserMetadata = async (
     userId: string,
-    userContext?: Record<string, JSONObject>,
+    _userContext?: Record<string, JSONObject>,
   ): Promise<UserMetadata> => {
-    const { status, metadata } = (await SupertokensUserMetadata.getUserMetadata(
+    const { status, metadata } = (await getUserMetadataStore().getUserMetadata(
       userId,
-      userContext,
     )) as GetUserMetadataResponse;
 
     if (status !== "OK") throw new Error("Failed to fetch user metadata");

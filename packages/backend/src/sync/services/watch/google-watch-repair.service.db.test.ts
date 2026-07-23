@@ -34,6 +34,8 @@ import {
   describe,
   expect,
   it,
+  mock,
+  spyOn,
 } from "bun:test";
 
 const FAR_FUTURE = () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -157,17 +159,16 @@ describe("googleWatchRepairService", () => {
   beforeAll(initSupertokens);
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
   describe("repairGoogleWatchesForUser", () => {
     it("1: HEALTHY makes zero Google calls and zero lease writes", async () => {
       const { userId } = await seedHealthyUser(2);
 
-      const getEventsSpy = jest.spyOn(gcalService, "getEvents");
-      const watchEventsSpy = jest.spyOn(gcalService, "watchEvents");
-      const watchCalendarsSpy = jest.spyOn(gcalService, "watchCalendars");
-      const stopWatchSpy = jest.spyOn(gcalService, "stopWatch");
+      const getEventsSpy = spyOn(gcalService, "getEvents");
+      const watchEventsSpy = spyOn(gcalService, "watchEvents");
+      const watchCalendarsSpy = spyOn(gcalService, "watchCalendars");
+      const stopWatchSpy = spyOn(gcalService, "stopWatch");
 
       const result =
         await googleWatchRepairService.repairGoogleWatchesForUser(userId);
@@ -203,13 +204,14 @@ describe("googleWatchRepairService", () => {
       const repairStarted = new Promise<void>((resolve) => {
         notifyRepairStarted = resolve;
       });
-      const startGoogleWatchesSpy = jest
-        .spyOn(googleWatchService, "startGoogleWatches")
-        .mockImplementation(async (...args) => {
-          notifyRepairStarted();
-          await winnerGate;
-          return realStartGoogleWatches(...args);
-        });
+      const startGoogleWatchesSpy = spyOn(
+        googleWatchService,
+        "startGoogleWatches",
+      ).mockImplementation(async (...args) => {
+        notifyRepairStarted();
+        await winnerGate;
+        return realStartGoogleWatches(...args);
+      });
 
       const firstPromise =
         googleWatchRepairService.repairGoogleWatchesForUser(userId);
@@ -270,7 +272,7 @@ describe("googleWatchRepairService", () => {
         { $set: { "googleWatchRepair.lastAttemptAt": new Date() } },
       );
 
-      const startGoogleWatchesSpy = jest.spyOn(
+      const startGoogleWatchesSpy = spyOn(
         googleWatchService,
         "startGoogleWatches",
       );
@@ -342,12 +344,13 @@ describe("googleWatchRepairService", () => {
     it("7: a 410 during catch-up import falls back to a full repair", async () => {
       const { userId } = await seedUserWithOneMissingWatch();
 
-      jest
-        .spyOn(gcalService, "getEvents")
-        .mockImplementationOnce(() => Promise.reject(invalidSyncTokenError));
-      const fullRepairSpy = jest
-        .spyOn(googleCalendarSyncService, "repairGoogleCalendarSync")
-        .mockResolvedValue(undefined);
+      spyOn(gcalService, "getEvents").mockImplementationOnce(() =>
+        Promise.reject(invalidSyncTokenError),
+      );
+      const fullRepairSpy = spyOn(
+        googleCalendarSyncService,
+        "repairGoogleCalendarSync",
+      ).mockResolvedValue(undefined);
 
       const result =
         await googleWatchRepairService.repairGoogleWatchesForUser(userId);
@@ -376,10 +379,10 @@ describe("googleWatchRepairService", () => {
         updatedAt: null,
       });
 
-      jest
-        .spyOn(gcalService, "getEvents")
-        .mockImplementationOnce(() => Promise.reject(invalidGrant400Error));
-      const publishSyncStatusSpy = jest.spyOn(sseServer, "publishSyncStatus");
+      spyOn(gcalService, "getEvents").mockImplementationOnce(() =>
+        Promise.reject(invalidGrant400Error),
+      );
+      const publishSyncStatusSpy = spyOn(sseServer, "publishSyncStatus");
 
       const result =
         await googleWatchRepairService.repairGoogleWatchesForUser(userId);

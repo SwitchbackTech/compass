@@ -25,7 +25,7 @@ import {
   updateSync,
 } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
-import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
+import * as googleWatchConfig from "@backend/sync/services/watch/google-watch-config";
 import {
   GoogleWatchStateStatus,
   inspectGoogleWatchState,
@@ -38,17 +38,8 @@ import {
   describe,
   expect,
   it,
+  spyOn,
 } from "bun:test";
-
-jest.mock("@backend/sync/services/watch/google-watch-config", () => {
-  const actual = jest.requireActual(
-    "@backend/sync/services/watch/google-watch-config",
-  );
-  return {
-    ...actual,
-    isUsingGcalWebhookHttps: jest.fn(() => actual.isUsingGcalWebhookHttps()),
-  };
-});
 
 const createWatch = async (
   user: string,
@@ -106,12 +97,12 @@ const seedEventsNotification = async (options: {
   // further change (nextSyncToken === the now-current stored token) -- the
   // real dedupe path handleNotification/getLatestChanges relies on.
   const nextSyncToken = faker.string.alphanumeric(20);
-  jest.spyOn(gcalService, "getEvents").mockResolvedValue({
+  spyOn(gcalService, "getEvents").mockResolvedValue({
     status: 200,
     statusText: "OK",
     data: { items: options.gcalItems, nextSyncToken },
   } as unknown as GaxiosResponse);
-  const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
+  const eventsChangedSpy = spyOn(sseServer, "publishEventsChanged");
 
   const notify = () =>
     googleWatchService.handleGoogleWatchNotification({
@@ -129,7 +120,21 @@ describe("googleWatchService", () => {
   beforeAll(initSupertokens);
   beforeEach(() => setupTestDb(import.meta.url));
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
+  beforeEach(() => {
+    spyOn(googleWatchConfig, "isUsingGcalWebhookHttps").mockReturnValue(true);
+    spyOn(gcalService, "watchEvents").mockResolvedValue({
+      watch: {
+        resourceId: faker.string.uuid(),
+        expiration: String(Date.now() + 60_000),
+      },
+    });
+    spyOn(gcalService, "watchCalendars").mockResolvedValue({
+      watch: {
+        resourceId: faker.string.uuid(),
+        expiration: String(Date.now() + 60_000),
+      },
+    });
+  });
   afterAll(cleanupTestDb);
 
   it("deletes only the target user's watch records and returns their identities", async () => {
@@ -160,9 +165,9 @@ describe("googleWatchService", () => {
     const user = await UserDriver.createUser();
     const watch = await createWatch(user._id.toString());
 
-    jest
-      .spyOn(gcalService, "stopWatch")
-      .mockImplementation(() => Promise.reject(invalidGrant400Error));
+    spyOn(gcalService, "stopWatch").mockImplementation(() =>
+      Promise.reject(invalidGrant400Error),
+    );
 
     await expect(
       googleWatchService.stopWatch(
@@ -179,11 +184,9 @@ describe("googleWatchService", () => {
     const user = await UserDriver.createUser();
     const watch = await createWatch(user._id.toString());
 
-    jest
-      .spyOn(gcalService, "stopWatch")
-      .mockImplementation(() =>
-        Promise.reject(createGoogleError({ code: "500", responseStatus: 500 })),
-      );
+    spyOn(gcalService, "stopWatch").mockImplementation(() =>
+      Promise.reject(createGoogleError({ code: "500", responseStatus: 500 })),
+    );
 
     await expect(
       googleWatchService.stopWatch(
@@ -199,9 +202,10 @@ describe("googleWatchService", () => {
   });
 
   it("ignores expired notifications when no local watch record remains", async () => {
-    const cleanupSpy = jest
-      .spyOn(googleWatchService, "cleanupStaleWatch")
-      .mockResolvedValue(false);
+    const cleanupSpy = spyOn(
+      googleWatchService,
+      "cleanupStaleWatch",
+    ).mockResolvedValue(false);
 
     await expect(
       googleWatchService.handleGoogleWatchNotification({
@@ -220,8 +224,8 @@ describe("googleWatchService", () => {
     const user = await UserDriver.createUser();
     const watch = await createWatch(user._id.toString());
 
-    const cleanupSpy = jest.spyOn(googleWatchService, "cleanupStaleWatch");
-    const stopWatchSpy = jest.spyOn(gcalService, "stopWatch");
+    const cleanupSpy = spyOn(googleWatchService, "cleanupStaleWatch");
+    const stopWatchSpy = spyOn(gcalService, "stopWatch");
 
     await expect(
       googleWatchService.handleGoogleWatchNotification({
@@ -264,7 +268,7 @@ describe("googleWatchService", () => {
     };
     await mongoService.watch.insertOne(expiredWatch);
 
-    const stopWatchSpy = jest.spyOn(gcalService, "stopWatch");
+    const stopWatchSpy = spyOn(gcalService, "stopWatch");
 
     await expect(
       googleWatchService.handleGoogleWatchNotification({
@@ -295,10 +299,11 @@ describe("googleWatchService", () => {
     });
     const watch = await createWatch(userId, Resource_Sync.CALENDAR);
 
-    const getEventsSpy = jest.spyOn(gcalService, "getEvents");
-    const reconcileSpy = jest
-      .spyOn(googleCalendarListService, "reconcileCalendarList")
-      .mockResolvedValue({ outcome: "RECONCILED" });
+    const getEventsSpy = spyOn(gcalService, "getEvents");
+    const reconcileSpy = spyOn(
+      googleCalendarListService,
+      "reconcileCalendarList",
+    ).mockResolvedValue({ outcome: "RECONCILED" });
 
     await expect(
       googleWatchService.handleGoogleWatchNotification({
@@ -413,14 +418,12 @@ describe("googleWatchService", () => {
     await createWatch(userId, primaryGCalId);
     const secondaryWatch = await createWatch(userId, secondaryGCalId);
 
-    const getEventsSpy = jest
-      .spyOn(gcalService, "getEvents")
-      .mockResolvedValue({
-        status: 200,
-        statusText: "OK",
-        data: { items: [mockRegularGcalEvent({ summary: "Secondary event" })] },
-      } as unknown as GaxiosResponse);
-    const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
+    const getEventsSpy = spyOn(gcalService, "getEvents").mockResolvedValue({
+      status: 200,
+      statusText: "OK",
+      data: { items: [mockRegularGcalEvent({ summary: "Secondary event" })] },
+    } as unknown as GaxiosResponse);
+    const eventsChangedSpy = spyOn(sseServer, "publishEventsChanged");
 
     // The notification only names the secondary watch's channel/resource -
     // no calendar id travels with it anywhere else. The stored watch is the
@@ -452,15 +455,12 @@ describe("googleWatchService", () => {
   });
 
   it("skips direct Google watch setup when the Google webhook URL is not HTTPS", async () => {
-    (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(false);
-    const startCalendarWatchSpy = jest.spyOn(
+    (googleWatchConfig.isUsingGcalWebhookHttps as Mock).mockReturnValue(false);
+    const startCalendarWatchSpy = spyOn(
       googleWatchService,
       "startCalendarListWatch",
     );
-    const startEventWatchSpy = jest.spyOn(
-      googleWatchService,
-      "startEventWatch",
-    );
+    const startEventWatchSpy = spyOn(googleWatchService, "startEventWatch");
 
     await expect(
       googleWatchService.startGoogleWatches(
@@ -483,7 +483,7 @@ describe("googleWatchService", () => {
     // the persisted value came from Google's response.
     const googleExpiration = (Date.now() + 30 * 24 * 60 * 60 * 1000).toString();
 
-    jest.spyOn(gcalService, "watchEvents").mockResolvedValueOnce({
+    spyOn(gcalService, "watchEvents").mockResolvedValueOnce({
       watch: {
         resourceId: "resource-from-google",
         expiration: googleExpiration,
@@ -508,7 +508,7 @@ describe("googleWatchService", () => {
     const context = await createGoogleRequestContext(userId);
     const googleExpiration = (Date.now() + 30 * 24 * 60 * 60 * 1000).toString();
 
-    jest.spyOn(gcalService, "watchCalendars").mockResolvedValueOnce({
+    spyOn(gcalService, "watchCalendars").mockResolvedValueOnce({
       watch: {
         resourceId: "resource-from-google",
         expiration: googleExpiration,
@@ -530,13 +530,8 @@ describe("googleWatchService", () => {
     const future = () => String(Date.now() + 60 * 60 * 1000);
 
     beforeEach(() => {
-      // isUsingGcalWebhookHttps is a jest.fn() from the jest.mock() factory
-      // at the top of this file, not a jest.spyOn() - the file's
-      // `afterEach(() => jest.restoreAllMocks())` doesn't reset it, and the
-      // "skips direct Google watch setup..." test above permanently stubs
-      // it to false. These tests exercise startGoogleWatches's gated path
-      // directly, so restore its HTTPS-configured default first.
-      (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(true);
+      // Restore the HTTPS-configured default for startGoogleWatches tests.
+      (googleWatchConfig.isUsingGcalWebhookHttps as Mock).mockReturnValue(true);
     });
 
     it("contains a single event-watch failure: the other watches still start, no watch record persists for the failed calendar, and the inspector reports WATCHES_MISSING for it", async () => {
@@ -577,12 +572,11 @@ describe("googleWatchService", () => {
         nextSyncToken: faker.string.alphanumeric(16),
       });
 
-      jest.spyOn(gcalService, "watchCalendars").mockResolvedValue({
+      spyOn(gcalService, "watchCalendars").mockResolvedValue({
         watch: { resourceId: "resource-calendarlist", expiration: future() },
       });
-      jest
-        .spyOn(gcalService, "watchEvents")
-        .mockImplementation(async (_ctx, params) => {
+      spyOn(gcalService, "watchEvents").mockImplementation(
+        async (_ctx, params) => {
           if (params.gCalendarId === failingGCalId) {
             throw createGoogleError({ code: "500", responseStatus: 500 });
           }
@@ -593,7 +587,8 @@ describe("googleWatchService", () => {
               expiration: future(),
             },
           };
-        });
+        },
+      );
 
       const results = await googleWatchService.startGoogleWatches(
         userId,
@@ -651,7 +646,7 @@ describe("googleWatchService", () => {
         nextSyncToken: faker.string.alphanumeric(16),
       });
 
-      jest.spyOn(gcalService, "watchCalendars").mockResolvedValue({
+      spyOn(gcalService, "watchCalendars").mockResolvedValue({
         watch: {
           resourceId: "resource-calendarlist",
           expiration: String(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -670,9 +665,9 @@ describe("googleWatchService", () => {
           },
         };
       }
-      jest
-        .spyOn(gcalService, "watchEvents")
-        .mockImplementation(() => Promise.reject(unsupported));
+      spyOn(gcalService, "watchEvents").mockImplementation(() =>
+        Promise.reject(unsupported),
+      );
 
       await googleWatchService.startGoogleWatches(
         userId,
@@ -710,14 +705,10 @@ describe("googleWatchService", () => {
         nextSyncToken: faker.string.alphanumeric(16),
       });
 
-      jest
-        .spyOn(gcalService, "watchCalendars")
-        .mockImplementation(() =>
-          Promise.reject(
-            createGoogleError({ code: "500", responseStatus: 500 }),
-          ),
-        );
-      jest.spyOn(gcalService, "watchEvents").mockResolvedValue({
+      spyOn(gcalService, "watchCalendars").mockImplementation(() =>
+        Promise.reject(createGoogleError({ code: "500", responseStatus: 500 })),
+      );
+      spyOn(gcalService, "watchEvents").mockResolvedValue({
         watch: { resourceId: `resource-${gCalendarId}`, expiration: future() },
       });
 

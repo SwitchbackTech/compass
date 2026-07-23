@@ -1,12 +1,13 @@
 import { ObjectId } from "mongodb";
 import { type gSchema$Event } from "@core/types/gcal";
+import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { type EventRecord } from "@backend/event/event.record";
 import { eventRepository } from "@backend/event/event.repository";
 import { GoogleEventSync } from "@backend/event/google-event-sync.service";
-import { afterEach, describe, expect, it } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 const calendar: CalendarRecord = {
   _id: new ObjectId(),
@@ -64,21 +65,23 @@ const asInstancePages = async function* (...pages: gSchema$Event[][]) {
 };
 
 describe("GoogleEventSync", () => {
-  afterEach(() => jest.restoreAllMocks());
+  beforeEach(() => {
+    restoreFileMocks();
+  });
 
   it("writes a page of standalone events in one batch", async () => {
-    const findSpy = jest
-      .spyOn(eventRepository, "findByExternalReference")
-      .mockResolvedValue(null);
-    const findManySpy = jest
-      .spyOn(eventRepository, "findByExternalReferences")
-      .mockResolvedValue([]);
-    const insertSpy = jest
-      .spyOn(eventRepository, "insertOne")
-      .mockImplementation(async (record) => record);
-    const bulkSpy = jest
-      .spyOn(eventRepository, "bulkReplace")
-      .mockResolvedValue();
+    const findSpy = spyOn(
+      eventRepository,
+      "findByExternalReference",
+    ).mockResolvedValue(null);
+    const findManySpy = spyOn(
+      eventRepository,
+      "findByExternalReferences",
+    ).mockResolvedValue([]);
+    const insertSpy = spyOn(eventRepository, "insertOne").mockImplementation(
+      async (record) => record,
+    );
+    const bulkSpy = spyOn(eventRepository, "bulkReplace").mockResolvedValue();
     const sync = new GoogleEventSync({} as GoogleRequestContext, calendar);
 
     const page = Array.from({ length: 2500 }, (_, index) =>
@@ -94,16 +97,13 @@ describe("GoogleEventSync", () => {
   });
 
   it("keeps cancellation handling on the individual event path", async () => {
-    jest
-      .spyOn(eventRepository, "findByExternalReferences")
-      .mockResolvedValue([]);
-    const bulkSpy = jest
-      .spyOn(eventRepository, "bulkReplace")
-      .mockResolvedValue();
+    spyOn(eventRepository, "findByExternalReferences").mockResolvedValue([]);
+    const bulkSpy = spyOn(eventRepository, "bulkReplace").mockResolvedValue();
     const deletedId = new ObjectId();
-    const deleteSpy = jest
-      .spyOn(eventRepository, "deleteByExternalReference")
-      .mockResolvedValue({ deletedIds: [deletedId] });
+    const deleteSpy = spyOn(
+      eventRepository,
+      "deleteByExternalReference",
+    ).mockResolvedValue({ deletedIds: [deletedId] });
     const sync = new GoogleEventSync({} as GoogleRequestContext, calendar);
 
     const result = await sync.apply([
@@ -128,24 +128,24 @@ describe("GoogleEventSync", () => {
     const instances = Array.from({ length: 2500 }, (_, index) =>
       googleInstance("series", index),
     );
-    const findSpy = jest
-      .spyOn(eventRepository, "findByExternalReference")
-      .mockResolvedValue(null);
-    jest
-      .spyOn(eventRepository, "findByExternalReferences")
-      .mockResolvedValue([]);
-    const unlinkedSpy = jest
-      .spyOn(eventRepository, "findUnlinkedOccurrences")
-      .mockResolvedValue([]);
-    const insertSpy = jest
-      .spyOn(eventRepository, "insertOne")
-      .mockImplementation(async (record) => record);
-    const bulkSpy = jest
-      .spyOn(eventRepository, "bulkReplace")
-      .mockResolvedValue();
-    jest
-      .spyOn(gcalService, "getBaseRecurringEventInstances")
-      .mockReturnValue(asInstancePages(instances));
+    const findSpy = spyOn(
+      eventRepository,
+      "findByExternalReference",
+    ).mockResolvedValue(null);
+
+    spyOn(eventRepository, "findByExternalReferences").mockResolvedValue([]);
+    const unlinkedSpy = spyOn(
+      eventRepository,
+      "findUnlinkedOccurrences",
+    ).mockResolvedValue([]);
+    const insertSpy = spyOn(eventRepository, "insertOne").mockImplementation(
+      async (record) => record,
+    );
+    const bulkSpy = spyOn(eventRepository, "bulkReplace").mockResolvedValue();
+
+    spyOn(gcalService, "getBaseRecurringEventInstances").mockReturnValue(
+      asInstancePages(instances),
+    );
     const sync = new GoogleEventSync({} as GoogleRequestContext, calendar);
 
     const result = await sync.apply([base], 2500);
@@ -179,24 +179,23 @@ describe("GoogleEventSync", () => {
       createdAt: new Date("2025-01-01T00:00:00.000Z"),
       updatedAt: null,
     };
-    jest
-      .spyOn(eventRepository, "findByExternalReference")
-      .mockResolvedValue(null);
-    jest
-      .spyOn(eventRepository, "findByExternalReferences")
-      .mockResolvedValue([]);
-    jest
-      .spyOn(eventRepository, "findUnlinkedOccurrences")
-      .mockResolvedValue([unlinked]);
-    jest
-      .spyOn(eventRepository, "insertOne")
-      .mockImplementation(async (record) => record);
-    const bulkSpy = jest
-      .spyOn(eventRepository, "bulkReplace")
-      .mockResolvedValue();
-    jest
-      .spyOn(gcalService, "getBaseRecurringEventInstances")
-      .mockReturnValue(asInstancePages([instance]));
+
+    spyOn(eventRepository, "findByExternalReference").mockResolvedValue(null);
+
+    spyOn(eventRepository, "findByExternalReferences").mockResolvedValue([]);
+
+    spyOn(eventRepository, "findUnlinkedOccurrences").mockResolvedValue([
+      unlinked,
+    ]);
+
+    spyOn(eventRepository, "insertOne").mockImplementation(
+      async (record) => record,
+    );
+    const bulkSpy = spyOn(eventRepository, "bulkReplace").mockResolvedValue();
+
+    spyOn(gcalService, "getBaseRecurringEventInstances").mockReturnValue(
+      asInstancePages([instance]),
+    );
     const sync = new GoogleEventSync({} as GoogleRequestContext, calendar);
 
     await sync.apply([base]);
@@ -228,12 +227,11 @@ describe("GoogleEventSync", () => {
       createdAt: new Date("2025-01-01T00:00:00.000Z"),
       updatedAt: null,
     };
-    jest
-      .spyOn(eventRepository, "findByExternalReferences")
-      .mockResolvedValue([existing]);
-    const bulkSpy = jest
-      .spyOn(eventRepository, "bulkReplace")
-      .mockResolvedValue();
+
+    spyOn(eventRepository, "findByExternalReferences").mockResolvedValue([
+      existing,
+    ]);
+    const bulkSpy = spyOn(eventRepository, "bulkReplace").mockResolvedValue();
     const sync = new GoogleEventSync({} as GoogleRequestContext, calendar);
 
     await sync.apply([googleEvent("event-1")]);
@@ -247,15 +245,11 @@ describe("GoogleEventSync", () => {
   });
 
   it("counts ignored and invalid standalone events without individual writes", async () => {
-    jest
-      .spyOn(eventRepository, "findByExternalReferences")
-      .mockResolvedValue([]);
-    const insertSpy = jest
-      .spyOn(eventRepository, "insertOne")
-      .mockImplementation(async (record) => record);
-    const bulkSpy = jest
-      .spyOn(eventRepository, "bulkReplace")
-      .mockResolvedValue();
+    spyOn(eventRepository, "findByExternalReferences").mockResolvedValue([]);
+    const insertSpy = spyOn(eventRepository, "insertOne").mockImplementation(
+      async (record) => record,
+    );
+    const bulkSpy = spyOn(eventRepository, "bulkReplace").mockResolvedValue();
     const missingId = googleEvent("missing-id");
     delete missingId.id;
     const sync = new GoogleEventSync({} as GoogleRequestContext, calendar);

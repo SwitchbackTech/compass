@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
-import { createUserIdMapping, getUserIdMapping } from "supertokens-node";
 import { type SessionContainerInterface } from "supertokens-node/recipe/session/types";
+import { getUserIdMappingStore } from "@backend/auth/ports/supertokens.registry";
 import { type GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
 import {
   type AuthFormField,
@@ -46,7 +46,7 @@ export function buildResetPasswordLink(
 export async function ensureExternalUserIdMapping(
   recipeUserId: string,
 ): Promise<string> {
-  const existingMapping = await getUserIdMapping({
+  const existingMapping = await getUserIdMappingStore().getUserIdMapping({
     userId: recipeUserId,
     userIdType: "SUPERTOKENS",
   });
@@ -56,7 +56,7 @@ export async function ensureExternalUserIdMapping(
   }
 
   const externalUserId = new ObjectId().toString();
-  await createUserIdMapping({
+  await getUserIdMappingStore().createUserIdMapping({
     superTokensUserId: recipeUserId,
     externalUserId,
   });

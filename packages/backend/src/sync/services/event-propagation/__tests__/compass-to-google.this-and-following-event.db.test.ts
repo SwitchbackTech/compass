@@ -10,7 +10,7 @@ import {
   seedGoogleCalendar,
   setupGoogleUser,
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
-import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 /**
  * Scope "thisAndFollowing" -- ported from the deleted
@@ -65,8 +65,8 @@ describe("CompassToGoogleEventPropagation - scope 'thisAndFollowing'", () => {
     );
     const splitPoint = instances[1]!; // third occurrence overall
 
-    const patchSpy = jest.spyOn(gcalService, "patchEvent");
-    const createSpy = jest.spyOn(gcalService, "createEvent");
+    const patchSpy = spyOn(gcalService, "patchEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
     patchSpy.mockClear();
     createSpy.mockClear();
 
@@ -128,9 +128,9 @@ describe("CompassToGoogleEventPropagation - scope 'thisAndFollowing'", () => {
     );
     const splitPoint = instances[1]!;
 
-    const patchSpy = jest.spyOn(gcalService, "patchEvent");
-    const createSpy = jest.spyOn(gcalService, "createEvent");
-    const deleteSpy = jest.spyOn(gcalService, "deleteEvent");
+    const patchSpy = spyOn(gcalService, "patchEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
+    const deleteSpy = spyOn(gcalService, "deleteEvent");
     patchSpy.mockClear();
     createSpy.mockClear();
     deleteSpy.mockClear();
@@ -159,11 +159,12 @@ describe("CompassToGoogleEventPropagation - scope 'thisAndFollowing'", () => {
   it("creates (never patches) both halves of a split when the original series was never synced", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);
-    const createFailSpy = jest
-      .spyOn(gcalService, "createEvent")
-      .mockImplementationOnce(async () => {
-        throw new Error("simulated provider outage during create");
-      });
+    const createFailSpy = spyOn(
+      gcalService,
+      "createEvent",
+    ).mockImplementationOnce(async () => {
+      throw new Error("simulated provider outage during create");
+    });
     await expect(
       eventService.create(
         user._id.toString(),
@@ -185,8 +186,8 @@ describe("CompassToGoogleEventPropagation - scope 'thisAndFollowing'", () => {
     // matching the other tests in this file.
     const splitPoint = instances[1];
 
-    const patchSpy = jest.spyOn(gcalService, "patchEvent");
-    const createSpy = jest.spyOn(gcalService, "createEvent");
+    const patchSpy = spyOn(gcalService, "patchEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
     patchSpy.mockClear();
     createSpy.mockClear();
 

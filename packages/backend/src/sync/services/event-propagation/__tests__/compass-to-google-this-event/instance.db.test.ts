@@ -16,7 +16,7 @@ import {
   seedLocalCalendar,
   setupGoogleUser,
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
-import { afterAll, beforeEach, describe, expect, it } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 /**
  * Scope "this" applied to a single series occurrence -- packet 05 step 4
@@ -122,8 +122,8 @@ describe("CompassToGoogleEventPropagation - scope 'this' - series occurrence", (
       originalStart,
     );
 
-    const findInstanceSpy = jest.spyOn(gcalService, "findEventInstance");
-    const patchSpy = jest.spyOn(gcalService, "patchEvent");
+    const findInstanceSpy = spyOn(gcalService, "findEventInstance");
+    const patchSpy = spyOn(gcalService, "patchEvent");
 
     await eventService.replace(user._id.toString(), target._id.toHexString(), {
       content: {
@@ -181,8 +181,8 @@ describe("CompassToGoogleEventPropagation - scope 'this' - series occurrence", (
       originalStart,
     );
 
-    const findInstanceSpy = jest.spyOn(gcalService, "findEventInstance");
-    const deleteSpy = jest.spyOn(gcalService, "deleteEvent");
+    const findInstanceSpy = spyOn(gcalService, "findEventInstance");
+    const deleteSpy = spyOn(gcalService, "deleteEvent");
 
     await eventService.delete(user._id.toString(), target._id.toHexString(), {
       scope: "this",
@@ -228,8 +228,8 @@ describe("CompassToGoogleEventPropagation - scope 'this' - series occurrence", (
       scope: "this",
     });
 
-    const findInstanceSpy = jest.spyOn(gcalService, "findEventInstance");
-    const patchSpy = jest.spyOn(gcalService, "patchEvent");
+    const findInstanceSpy = spyOn(gcalService, "findEventInstance");
+    const patchSpy = spyOn(gcalService, "patchEvent");
     findInstanceSpy.mockClear();
     patchSpy.mockClear();
 
@@ -270,10 +270,10 @@ describe("CompassToGoogleEventPropagation - scope 'this' - series occurrence", (
     });
     await mongoService.event.insertMany([base, occurrence]);
 
-    const findInstanceSpy = jest.spyOn(gcalService, "findEventInstance");
-    const patchSpy = jest.spyOn(gcalService, "patchEvent");
-    const createSpy = jest.spyOn(gcalService, "createEvent");
-    const deleteSpy = jest.spyOn(gcalService, "deleteEvent");
+    const findInstanceSpy = spyOn(gcalService, "findEventInstance");
+    const patchSpy = spyOn(gcalService, "patchEvent");
+    const createSpy = spyOn(gcalService, "createEvent");
+    const deleteSpy = spyOn(gcalService, "deleteEvent");
 
     await eventService.replace(
       user._id.toString(),
@@ -307,7 +307,7 @@ describe("CompassToGoogleEventPropagation - scope 'this' - series occurrence", (
     const target = instances[0]!;
     // No Google-side instance seeded -- the lookup will find nothing.
 
-    const patchSpy = jest.spyOn(gcalService, "patchEvent");
+    const patchSpy = spyOn(gcalService, "patchEvent");
 
     await expect(
       eventService.replace(user._id.toString(), target._id.toHexString(), {

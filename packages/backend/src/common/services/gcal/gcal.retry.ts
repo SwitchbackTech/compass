@@ -1,7 +1,7 @@
 import { GaxiosError } from "gaxios";
-import { Logger } from "@core/logger/winston.logger";
+import { LoggerFactory } from "@core/logger/logger.factory";
 
-const logger = Logger("app:gcal.retry");
+const getLogger = () => LoggerFactory("app:gcal.retry");
 
 /** 403 reasons Google returns for quota/rate-limit rejections (retryable). */
 const RETRYABLE_403_REASONS = new Set([
@@ -206,7 +206,7 @@ export const withGoogleRetry = async <T>(
       const result = await fn();
 
       if (attempt > 0) {
-        logger.info("Google API call succeeded after retrying", {
+        getLogger().info("Google API call succeeded after retrying", {
           attempts: attempt + 1,
           elapsedMs: Date.now() - startedAt,
           outcome: "success",
@@ -222,7 +222,7 @@ export const withGoogleRetry = async <T>(
 
       if (!isRetryableGoogleError(err) || isLastAttempt) {
         if (attempt > 0) {
-          logger.error("Google API call failed after retrying", {
+          getLogger().error("Google API call failed after retrying", {
             attempts: attempt + 1,
             elapsedMs: Date.now() - startedAt,
             outcome: "failure",
@@ -237,7 +237,7 @@ export const withGoogleRetry = async <T>(
         getRetryAfterDelayMs(err, maxDelayMs) ??
         computeBackoffDelayMs(attempt, { baseDelayMs, maxDelayMs });
 
-      logger.warn(
+      getLogger().warn(
         `Retrying Google API call after retryable error (attempt ${attempt + 1}/${maxAttempts}), waiting ${Math.round(delayMs)}ms`,
         err,
       );
