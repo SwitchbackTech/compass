@@ -4,11 +4,16 @@ import {
   type BusyAvailabilityResponse,
   BusyAvailabilityResponseSchema,
 } from "@core/types/sync/availability.contracts";
+import {
+  type ConnectionListResponse,
+  ConnectionListResponseSchema,
+} from "@core/types/sync/connection.contracts";
 import { createHmac, randomUUID } from "node:crypto";
 
 // The internal endpoints this client calls. Kept in sync with the Sync service's
 // route paths; a contract test asserts they match.
 const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
+const CONNECTIONS_PATH = "/internal/connections";
 
 const DEFAULT_TIMEOUT_MS = 5000;
 
@@ -102,6 +107,22 @@ export class SyncServiceClient {
     this.#fetch = options.fetch ?? (globalThis.fetch as unknown as FetchFn);
     this.#now = options.now ?? Date.now;
     this.#newCorrelationId = options.newCorrelationId ?? randomUUID;
+  }
+
+  // The caller's provider connections, scoped to the signed principal. A read;
+  // served in the Sync service's passive mode too, so it is safe to call before
+  // any provider work has run.
+  listConnections(
+    principal: SyncPrincipal,
+    correlationId?: string,
+  ): Promise<SyncClientResult<ConnectionListResponse>> {
+    return this.#request({
+      method: "GET",
+      path: CONNECTIONS_PATH,
+      principal,
+      schema: ConnectionListResponseSchema,
+      correlationId,
+    });
   }
 
   // Merged busy intervals plus freshness/bookability evidence for a set of
