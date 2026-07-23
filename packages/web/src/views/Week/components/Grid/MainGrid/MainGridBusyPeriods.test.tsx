@@ -46,6 +46,10 @@ const weekProps = {
       startOfView.add(index, "day"),
     ),
   },
+  query: {
+    endOfView: startOfView.add(6, "day").endOf("day"),
+    startOfView,
+  },
   state: { goToDate: mock() },
   util: {
     decrementWeek: mock(),

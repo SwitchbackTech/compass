@@ -118,16 +118,27 @@ sides call the **same** predicate:
 
 ## Navigation: placeholder data + prefetch
 
-A small TanStack feature makes prev/next navigation feel instant:
+Two TanStack features make week navigation feel instant:
 
-- **The adjacent day/week is prefetched** as soon as the current one renders
-  (`usePrefetchAdjacentEvents`, wired into `useWeek`/`useDayEvents`). It calls
-  `queryClient.prefetchQuery` with the *same* options builder and date
-  formatting the real read hook uses, so the warmed entry lands under the
-  exact key a subsequent read looks up. `prefetchQuery` is a no-op for
-  entries that are already cached and fresh, so this adds no extra fetches on
-  repeat renders of the same range — only the next click resolves from cache
-  instead of paying a fetch.
+- **Stable fetch window.** `useWeek` always reads events for a 7-day window
+  from the anchor (`weekProps.query`), while the visible columns still clip
+  to `weekProps.component`. Resize-driven column changes no longer re-key the
+  query, so cached data survives layout changes.
+
+- **Overlap-based placeholder data.** `useWeekEventsQuery` supplies
+  `placeholderData` from `deriveOverlappingEventQueryData`, merging events
+  from any cached week entries whose stored range overlaps the requested
+  range. Shift+J/K can render overlapping events immediately while the
+  background fetch completes.
+
+- **Adjacent prefetch.** The previous and next paged windows are prefetched
+  as soon as the current one renders (`usePrefetchAdjacentEvents`, wired into
+  `useWeek`/`useDayEvents`). It calls `queryClient.prefetchQuery` with the
+  *same* options builder and date formatting the real read hook uses, so the
+  warmed entry lands under the exact key a subsequent read looks up.
+  `prefetchQuery` is a no-op for entries that are already cached and fresh,
+  so this adds no extra fetches on repeat renders of the same range — only
+  the next click resolves from cache instead of paying a fetch.
 
 ## What the cache is *not*
 

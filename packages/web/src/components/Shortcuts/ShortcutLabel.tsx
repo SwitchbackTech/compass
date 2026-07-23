@@ -23,7 +23,7 @@ const keyIconMap: Record<string, Icon> = {
   ArrowLeft: ArrowLeftIcon,
   ArrowRight: ArrowRightIcon,
 };
-export function ShortCutLabel({ k, size = 14 }: { k: string; size?: number }) {
+export function ShortCutLabel({ k }: { k: string; size?: number }) {
   const display = expandModInShortcutDisplay(k);
 
   return display.split("+").map((_key) => {
@@ -32,11 +32,11 @@ export function ShortCutLabel({ k, size = 14 }: { k: string; size?: number }) {
     const IconComponent = keyIconMap[key];
 
     if (IconComponent) {
-      return <IconComponent key={key} size={size} data-testid={testId} />;
+      return <IconComponent key={key} data-testid={testId} weight="regular" />;
     }
 
     return (
-      <span key={key} data-testid={testId}>
+      <span key={key} data-testid={testId} className="leading-none">
         {key}
       </span>
     );

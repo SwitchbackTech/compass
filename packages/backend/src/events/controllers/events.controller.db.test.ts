@@ -14,7 +14,6 @@ import { GoogleWatchStateStatus } from "@backend/sync/services/watch/google-watc
 import userService from "@backend/user/services/user.service";
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,

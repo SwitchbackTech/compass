@@ -105,7 +105,7 @@ Use this document to find the first files to inspect for common Compass changes.
 ## Test Anchors
 
 - Per-file test launchers: `packages/scripts/src/testing/test-mongo-env.ts` (Mongo packages), `packages/scripts/src/testing/test-parallel.ts` (core + web + fast tiers)
-- Bun/Jest compatibility shim used by every package's tests: `packages/scripts/src/testing/apply-bun-jest-compat.cjs`
+- Web injectable test seams (session, toast, Google auth): `packages/web/src/__tests__/helpers/web-test-seams.ts`
 - Core test setup: `packages/core/src/__tests__`
 - Web test setup: `packages/web/src/__tests__`
 - Web mock server handlers: `packages/web/src/__tests__/__mocks__/server/mock.handlers.ts`

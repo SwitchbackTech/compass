@@ -28,13 +28,11 @@ import { googleWatchService } from "@backend/sync/services/watch/google-watch.se
 import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,
   expect,
   it,
-  mock,
   spyOn,
 } from "bun:test";
 

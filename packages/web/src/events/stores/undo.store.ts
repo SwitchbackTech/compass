@@ -6,7 +6,8 @@ import { IS_DEV } from "@web/common/constants/env.constants";
 /**
  * One undoable event change. Edits keep full before/after snapshots so
  * undo/redo are symmetric `replace` replays; deletes keep the full event so
- * undo can recreate it with the same Compass id (A25).
+ * undo can recreate it with the same Compass id (A25); creates keep the full
+ * optimistic event so undo can delete it and redo can recreate it.
  */
 export type UndoHistoryEntry =
   | {
@@ -15,7 +16,8 @@ export type UndoHistoryEntry =
       before: Event;
       after: Event;
     }
-  | { kind: "delete"; event: Event };
+  | { kind: "delete"; event: Event }
+  | { kind: "create"; event: Event };
 
 export interface State_UndoHistory {
   past: UndoHistoryEntry[];

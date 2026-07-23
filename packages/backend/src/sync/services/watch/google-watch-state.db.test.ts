@@ -22,7 +22,6 @@ import {
 } from "@backend/sync/services/watch/google-watch-state";
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,

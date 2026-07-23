@@ -43,6 +43,11 @@ export function recordEventEditHistory({
   undoHistoryActions.record({ kind: "edit", id, before, after });
 }
 
+export function recordEventCreateHistory({ event }: { event: Event }): void {
+  if (isRestoringHistory() || isRecurringEvent(event)) return;
+  undoHistoryActions.record({ kind: "create", event });
+}
+
 export function recordEventDeleteHistory({
   id,
   scope,

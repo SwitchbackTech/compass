@@ -56,7 +56,7 @@ export function ShortcutKeys({ keys, title, className }: Props) {
     >
       {cleaned.map((key) => (
         <ShortcutHint key={key} variant="keycap">
-          <ShortCutLabel k={normalizeKeyToken(key)} size={13} />
+          <ShortCutLabel k={normalizeKeyToken(key)} />
         </ShortcutHint>
       ))}
     </span>

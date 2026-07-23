@@ -263,70 +263,37 @@ export function gridEventDraftToSchemaEvent(
   };
 }
 
-// The reverse direction of gridEventDraftToSchemaEvent, scoped to the one
-// boundary that needs it: EventForm/RecurrenceSection write back into a
-// legacy CompassEvent-shaped `setEvent`, which this reapplies onto the
-// canonical GridEventDraft (preserving `kind`/`source`/`clientId`, which a
-// CompassEvent patch has no way to express).
-export function applySchemaEventPatchToGridDraft(
-  current: GridEventDraft,
-  patch: CompassEvent,
+// The reverse direction of gridEventDraftToSchemaEvent for recurrence rule
+// resolution on the form hot path. Grid rendering consumers still use the
+// CompassEvent projection above; the form reads/writes GridEventDraft directly.
+export function resolveDraftRecurrenceRules(
+  draft: GridEventDraft,
+  seriesRules?: readonly string[],
+): string[] {
+  const rule = legacyRecurrenceFromDraft(draft, seriesRules)?.rule;
+  return Array.isArray(rule) ? [...rule] : [];
+}
+
+export function patchGridDraftRecurrence(
+  draft: GridEventDraft,
+  nextRules: readonly string[],
   seriesRules?: readonly string[],
 ): GridEventDraft {
-  const rule = patch.recurrence?.rule;
-  // A patch that merely echoes the draft's current projected rule (e.g. a
-  // title keystroke, which spreads the whole projected event through
-  // unchanged) must not flip the draft's recurrence away from "preserve" -
-  // otherwise every field edit on a recurring event would silently convert
-  // it into an explicit series-scope change. Only a rule that actually
-  // differs (the user edited recurrence) converts the draft.
-  const currentRule = legacyRecurrenceFromDraft(current, seriesRules)?.rule;
-  const ruleUnchanged =
-    Array.isArray(rule) &&
-    Array.isArray(currentRule) &&
-    fastDeepEqual(rule, currentRule);
+  const currentRules = resolveDraftRecurrenceRules(draft, seriesRules);
+  const ruleUnchanged = fastDeepEqual(currentRules, [...nextRules]);
   const recurrence = ruleUnchanged
-    ? current.values.recurrence
-    : Array.isArray(rule) && rule.length > 0
-      ? ({ kind: "series", rules: rule } as const)
-      : current.kind === "edit"
+    ? draft.values.recurrence
+    : nextRules.length > 0
+      ? { kind: "series" as const, rules: [...nextRules] }
+      : draft.kind === "edit"
         ? ({ kind: "preserve" } as const)
         : ({ kind: "single" } as const);
 
-  const scheduleDates: GridScheduleDraft =
-    current.values.schedule.kind === "allDay"
-      ? {
-          kind: "allDay",
-          start: patch.startDate
-            ? dayjs(patch.startDate).toDate()
-            : current.values.schedule.start,
-          end: patch.endDate
-            ? dayjs(patch.endDate).toDate()
-            : current.values.schedule.end,
-        }
-      : {
-          kind: "timed",
-          start: patch.startDate
-            ? dayjs(patch.startDate).toDate()
-            : current.values.schedule.start,
-          end: patch.endDate
-            ? dayjs(patch.endDate).toDate()
-            : current.values.schedule.end,
-          timeZone: current.values.schedule.timeZone,
-        };
-
-  const sharedValues = {
-    title: patch.title ?? "",
-    description: patch.description ?? "",
-    schedule: scheduleDates,
-  };
-
-  if (current.kind === "create") {
+  if (draft.kind === "create") {
     return {
-      ...current,
+      ...draft,
       values: {
-        ...sharedValues,
-        calendarId: current.values.calendarId,
+        ...draft.values,
         recurrence:
           recurrence.kind === "preserve" ? { kind: "single" } : recurrence,
       },
@@ -334,12 +301,72 @@ export function applySchemaEventPatchToGridDraft(
   }
 
   return {
+    ...draft,
+    values: {
+      ...draft.values,
+      recurrence,
+    },
+  };
+}
+
+export function patchGridDraftScheduleDates(
+  current: GridEventDraft,
+  patch: { startDate?: string; endDate?: string },
+): GridEventDraft {
+  const { schedule } = current.values;
+  const nextSchedule: GridScheduleDraft =
+    schedule.kind === "allDay"
+      ? {
+          kind: "allDay",
+          start: patch.startDate
+            ? dayjs(patch.startDate).toDate()
+            : schedule.start,
+          end: patch.endDate ? dayjs(patch.endDate).toDate() : schedule.end,
+        }
+      : {
+          kind: "timed",
+          start: patch.startDate
+            ? dayjs(patch.startDate).toDate()
+            : schedule.start,
+          end: patch.endDate ? dayjs(patch.endDate).toDate() : schedule.end,
+          timeZone: schedule.timeZone,
+        };
+
+  if (current.kind === "create") {
+    return {
+      ...current,
+      values: { ...current.values, schedule: nextSchedule },
+    };
+  }
+
+  return { ...current, values: { ...current.values, schedule: nextSchedule } };
+}
+
+export function patchGridDraftFields(
+  current: GridEventDraft,
+  patch: Partial<Pick<GridEventDraft["values"], "title" | "description">>,
+): GridEventDraft {
+  if (current.kind === "create") {
+    return {
+      ...current,
+      values: {
+        ...current.values,
+        ...(patch.title !== undefined ? { title: patch.title } : {}),
+        ...(patch.description !== undefined
+          ? { description: patch.description }
+          : {}),
+      },
+    };
+  }
+
+  return {
     ...current,
     values: {
-      ...sharedValues,
-      calendarId: current.values.calendarId,
-      recurrence,
-      scope: current.values.scope,
+      ...current.values,
+      ...(patch.title !== undefined ? { title: patch.title } : {}),
+      ...(patch.description !== undefined
+        ? { description: patch.description }
+        : {}),
     },
   };
 }

@@ -1,13 +1,14 @@
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { GOOGLE_AUTH_SCOPES_REQUIRED } from "@web/auth/google/authorization/google-authorization.constants";
 import {
   readGoogleAuthorizationIntent,
   writeGoogleAuthorizationIntent,
 } from "@web/auth/google/authorization/google-authorization.storage";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockLoginOrSignup = mock();
 const mockConnectGoogle = mock();
-const mockShowErrorToast = mock();
 
 mock.module("@web/api/auth.api", () => ({
   AuthApi: {
@@ -16,16 +17,7 @@ mock.module("@web/api/auth.api", () => ({
   },
 }));
 
-mock.module("@web/common/utils/toast/error-toast.util", () => ({
-  ErrorToastSeverity: {
-    DEFAULT: "default",
-    CRITICAL: "critical",
-  },
-  SESSION_EXPIRED_TOAST_ID: "session-expired-api",
-  dismissErrorToast: mock(),
-  showErrorToast: mockShowErrorToast,
-  showSessionExpiredToast: mock(),
-}));
+const { port, mocks } = createTestToastPort();
 
 const { completeGoogleAuthCallback } =
   require("./GoogleAuthCallback") as typeof import("./GoogleAuthCallback");
@@ -55,10 +47,11 @@ describe("completeGoogleAuthCallback", () => {
   const navigate = mock();
 
   beforeEach(() => {
+    mocks.error.mockClear();
+    registerToastPort(port);
     sessionStorage.clear();
     mockLoginOrSignup.mockClear();
     mockConnectGoogle.mockClear();
-    mockShowErrorToast.mockClear();
     completeAuthentication.mockClear();
     navigate.mockClear();
     mockLoginOrSignup.mockResolvedValue({
@@ -91,7 +84,7 @@ describe("completeGoogleAuthCallback", () => {
     expect(completeAuthentication).toHaveBeenCalledWith({
       email: "user@example.com",
     });
-    expect(mockShowErrorToast).not.toHaveBeenCalled();
+    expect(mocks.error).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
     expect(readGoogleAuthorizationIntent("sign-in-state")).toBeNull();
   });
@@ -111,8 +104,9 @@ describe("completeGoogleAuthCallback", () => {
     expect(mockLoginOrSignup).not.toHaveBeenCalled();
     expect(mockConnectGoogle).not.toHaveBeenCalled();
     expect(completeAuthentication).not.toHaveBeenCalled();
-    expect(mockShowErrorToast).toHaveBeenCalledWith(
+    expect(mocks.error).toHaveBeenCalledWith(
       "Compass needs all the requested permissions to sync your calendar. Please allow them and try again.",
+      expect.any(Object),
     );
     expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
   });
@@ -127,8 +121,9 @@ describe("completeGoogleAuthCallback", () => {
     expect(mockLoginOrSignup).not.toHaveBeenCalled();
     expect(mockConnectGoogle).not.toHaveBeenCalled();
     expect(completeAuthentication).not.toHaveBeenCalled();
-    expect(mockShowErrorToast).toHaveBeenCalledWith(
+    expect(mocks.error).toHaveBeenCalledWith(
       "We couldn't connect your Google account. Please try again.",
+      expect.any(Object),
     );
     expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
   });

@@ -14,6 +14,7 @@ import {
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import {
   draftActions,
   selectIsEventFormOpen,
@@ -139,9 +140,15 @@ const installFrameScheduler = () => {
   return { flushFrame };
 };
 
-const openFloatingForm = (event: GridEvent) => {
+const openEventForm = () => {
+  const draft = editGridEventDraft(timedEventContract);
+
+  if (!draft) {
+    throw new Error("Expected edit draft for timed event");
+  }
+
   act(() => {
-    draftActions.startGridClick(event);
+    draftActions.startGridDraft({ activity: "gridClick", draft });
     draftActions.setFormOpen(true);
   });
 };
@@ -164,9 +171,8 @@ const renderCoordinator = () => {
         mainGridElement,
         timedColumnsElement,
       })}
-      onOpenEvent={(event) => {
-        draftActions.startGridClick(event);
-        draftActions.setFormOpen(true);
+      onOpenEvent={() => {
+        openEventForm();
       }}
       timedEvents={[timedEvent]}
     >
@@ -194,7 +200,7 @@ describe("DayInteractionCoordinator", () => {
 
     const child = screen.getByTestId("timed-child");
 
-    openFloatingForm(timedEvent);
+    openEventForm();
     fireEvent.pointerDown(child, {
       button: 0,
       clientX: 160,
@@ -258,6 +264,8 @@ describe("DayInteractionCoordinator", () => {
     await waitFor(() => {
       expect(isFormOpen()).toBe(true);
     });
-    expect(useDraftStore.getState().event?._id).toBe(timedEvent._id);
+    expect(useDraftStore.getState().gridDraft?.values.title).toBe(
+      timedEvent.title,
+    );
   });
 });
