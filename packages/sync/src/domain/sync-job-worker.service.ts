@@ -10,12 +10,20 @@ export interface SyncJobWorkerDeps extends SyncJobDispatchDeps {
 }
 
 export interface SyncJobWorkerOptions {
-  // How long a claimed job's lease lasts. Generous by default: a heartbeat that
-  // extends the lease of a long-running job is a later slice, so the lease alone
-  // must outlast a normal import/pull/repair. A job that outlives its lease is
-  // reclaimed and re-run — safe, because every engine is idempotent, just
-  // wasteful.
+  // How long a claimed job's lease lasts. A job still making progress keeps its
+  // lease alive via the heartbeat below, so this only needs to outlast the gap
+  // between heartbeats. A job that outlives its lease anyway (its worker stalled
+  // or crashed) is reclaimed and re-run — safe, because every engine is
+  // idempotent, just wasteful.
   leaseMs?: number;
+  // How often to extend a claimed job's lease while it is still running. Must be
+  // comfortably shorter than leaseMs so the lease never lapses under a long
+  // import/repair. Defaults to a third of the lease.
+  heartbeatMs?: number;
+  // Injectable timer so tests can drive the heartbeat deterministically. Given a
+  // callback and an interval, it returns a function that stops the timer.
+  // Defaults to setInterval/clearInterval.
+  scheduleHeartbeat?: (beat: () => void, everyMs: number) => () => void;
   // When to retry a job that asked to be retried, from its attempt count. The
   // default is a capped exponential with jitter (so a burst of jobs that failed
   // together do not all retry in lockstep). Tests inject a deterministic one.
@@ -31,7 +39,19 @@ export interface SyncJobWorkerOptions {
 }
 
 const DEFAULT_LEASE_MS = 5 * 60_000;
+// A third of the lease: up to two heartbeats can be missed before the lease
+// lapses, so a single hiccup does not trigger a spurious reclaim.
+const DEFAULT_HEARTBEAT_DIVISOR = 3;
 const DEFAULT_MAX_ATTEMPTS = 20;
+
+// Real timer used when the caller injects none.
+const setIntervalHeartbeat = (
+  beat: () => void,
+  everyMs: number,
+): (() => void) => {
+  const id = setInterval(beat, everyMs);
+  return () => clearInterval(id);
+};
 const BACKOFF_BASE_MS = 10_000;
 const BACKOFF_CAP_MS = 10 * 60_000;
 const BACKOFF_JITTER_RATIO = 0.2;
@@ -56,12 +76,17 @@ function jitteredBackoff(
 // (delete on success, reschedule on transient failure, mark failed once retries
 // are exhausted or the failure is permanent). One worker owns a lease; several
 // can run concurrently and never both win the same job (claimDueJob is atomic).
-// The lease heartbeat for a job outliving its lease is a later slice; this is the
-// claim -> dispatch -> settle core the scheduler drives.
+// A heartbeat keeps a long-running job's lease alive while it works (see
+// #process), so it is not reclaimed and re-run mid-flight.
 export class SyncJobWorker {
   readonly #deps: SyncJobWorkerDeps;
   readonly #owner: string;
   readonly #leaseMs: number;
+  readonly #heartbeatMs: number;
+  readonly #scheduleHeartbeat: (
+    beat: () => void,
+    everyMs: number,
+  ) => () => void;
   readonly #maxAttempts: number;
   readonly #backoff: (attempt: number, now: Date) => Date;
   readonly #now: () => Date;
@@ -74,6 +99,10 @@ export class SyncJobWorker {
     this.#deps = deps;
     this.#owner = owner;
     this.#leaseMs = options.leaseMs ?? DEFAULT_LEASE_MS;
+    this.#heartbeatMs =
+      options.heartbeatMs ??
+      Math.floor(this.#leaseMs / DEFAULT_HEARTBEAT_DIVISOR);
+    this.#scheduleHeartbeat = options.scheduleHeartbeat ?? setIntervalHeartbeat;
     this.#maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
     const random = options.random ?? Math.random;
     this.#backoff =
@@ -107,6 +136,29 @@ export class SyncJobWorker {
   }
 
   async #process(job: JobRecord): Promise<void> {
+    // Keep the lease alive while the job runs, so a long import/repair that
+    // outlasts a single lease is not reclaimed and redundantly re-run (wasting
+    // provider quota) by another worker. A heartbeat failure is non-fatal — the
+    // lease simply lapses and the job is reclaimed, same as before this existed.
+    // The beat returns the heartbeat promise (so a test can await one tick); the
+    // default setInterval ignores it. A heartbeat rejection is swallowed here so
+    // an unhandled rejection can never crash the worker.
+    const stopHeartbeat = this.#scheduleHeartbeat(
+      () =>
+        this.#deps.jobs
+          .heartbeat(job._id, this.#owner, this.#now(), this.#leaseMs)
+          .then(() => {})
+          .catch(() => {}),
+      this.#heartbeatMs,
+    );
+    try {
+      await this.#runJob(job);
+    } finally {
+      stopHeartbeat();
+    }
+  }
+
+  async #runJob(job: JobRecord): Promise<void> {
     let outcome: Awaited<ReturnType<typeof dispatchSyncJob>>;
     try {
       outcome = await dispatchSyncJob(this.#deps, job, this.#now);
