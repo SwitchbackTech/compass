@@ -76,6 +76,12 @@ const CompassConfigSchema = z
         // http://localhost:3010 in dev, an internal service URL in prod). Optional
         // so a deployment that does not delegate to Sync omits it.
         serviceUrl: z.string().optional(),
+        // Which implementation serves the browser-facing provider-connection
+        // routes. "legacy" (default) keeps today's in-backend flow; "sync"
+        // delegates to the standalone Sync service. A single global switch, so
+        // every connection is owned end-to-end by one implementation. "sync"
+        // requires serviceUrl (validated backend-side).
+        connectionRouting: z.enum(["legacy", "sync"]).optional(),
         callbackBaseUrl: z.string(),
         // Where the OAuth callback redirects the browser after connecting;
         // defaults to callbackBaseUrl when omitted.

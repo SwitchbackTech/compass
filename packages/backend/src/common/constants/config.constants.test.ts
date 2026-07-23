@@ -238,4 +238,80 @@ describe("config.constants", () => {
     expect(env.SYNC_SERVICE_URL).toBe("http://localhost:3010");
     expect(env.SYNC_INTERNAL_AUTH_TOKEN).toBe("sync-internal-secret");
   });
+
+  it("defaults connection routing to legacy", () => {
+    const env = parseConfigFromEnv(validEnv);
+
+    expect(env.SYNC_CONNECTION_ROUTING).toBe("legacy");
+  });
+
+  it("treats a blank connection-routing env var as the legacy default", () => {
+    const env = parseConfigFromEnv({
+      ...validEnv,
+      SYNC_CONNECTION_ROUTING: "",
+    });
+
+    expect(env.SYNC_CONNECTION_ROUTING).toBe("legacy");
+  });
+
+  it("rejects an unknown connection-routing value", () => {
+    expect(() =>
+      parseConfigFromEnv({
+        ...validEnv,
+        SYNC_CONNECTION_ROUTING: "both",
+      }),
+    ).toThrow();
+  });
+
+  it("rejects connection routing = sync without a Sync service URL", () => {
+    expect(() =>
+      parseConfigFromEnv({
+        ...validEnv,
+        SYNC_CONNECTION_ROUTING: "sync",
+      }),
+    ).toThrow("SYNC_CONNECTION_ROUTING=sync requires SYNC_SERVICE_URL");
+  });
+
+  it("accepts connection routing = sync when a Sync client is configured", () => {
+    const env = parseConfigFromEnv({
+      ...validEnv,
+      SYNC_CONNECTION_ROUTING: "sync",
+      SYNC_SERVICE_URL: "http://localhost:3010",
+      SYNC_INTERNAL_AUTH_TOKEN: "sync-internal-secret",
+    });
+
+    expect(env.SYNC_CONNECTION_ROUTING).toBe("sync");
+  });
+
+  it("rejects config-file connection routing = sync without a serviceUrl", () => {
+    // The config-file path couples connectionRouting to serviceUrl the same way
+    // the flat env path does; assert the coupling here too, since a required
+    // sibling field (internalAuthToken) alone must not satisfy it.
+    expect(() =>
+      parseRawConfig({
+        ...baseRawConfig,
+        sync: {
+          mongoUri: "mongodb://localhost:27017/compass_sync",
+          internalAuthToken: "sync-internal-secret",
+          callbackBaseUrl: "http://localhost:3010",
+          connectionRouting: "sync",
+        },
+      }),
+    ).toThrow("SYNC_CONNECTION_ROUTING=sync requires SYNC_SERVICE_URL");
+  });
+
+  it("enables sync connection routing from the config file with a serviceUrl", () => {
+    const env = parseRawConfig({
+      ...baseRawConfig,
+      sync: {
+        mongoUri: "mongodb://localhost:27017/compass_sync",
+        internalAuthToken: "sync-internal-secret",
+        callbackBaseUrl: "http://localhost:3010",
+        serviceUrl: "http://localhost:3010",
+        connectionRouting: "sync",
+      },
+    });
+
+    expect(env.SYNC_CONNECTION_ROUTING).toBe("sync");
+  });
 });

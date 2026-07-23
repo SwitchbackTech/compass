@@ -40,6 +40,9 @@ const ConfigSchema = z
     // configuration is a mistake.
     SYNC_SERVICE_URL: z.string().url().optional(),
     SYNC_INTERNAL_AUTH_TOKEN: z.string().nonempty().optional(),
+    // Which implementation serves the browser-facing provider-connection routes.
+    // Global, not per-request: legacy (default) or delegate to the Sync service.
+    SYNC_CONNECTION_ROUTING: z.enum(["legacy", "sync"]).default("legacy"),
     POSTHOG_KEY: z.string().nonempty().optional(),
     POSTHOG_HOST: z.string().url().optional(),
   })
@@ -94,6 +97,19 @@ const ConfigSchema = z
           : ["SYNC_SERVICE_URL"],
       });
     }
+
+    // Delegating connection routes to Sync is meaningless without a Sync client
+    // to reach, so refuse to start rather than silently fall back to legacy and
+    // hide an operator's misconfigured switch.
+    if (env.SYNC_CONNECTION_ROUTING === "sync" && !env.SYNC_SERVICE_URL) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        fatal: true,
+        message:
+          "SYNC_CONNECTION_ROUTING=sync requires SYNC_SERVICE_URL (and SYNC_INTERNAL_AUTH_TOKEN) to be configured",
+        path: ["SYNC_SERVICE_URL"],
+      });
+    }
   });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -139,6 +155,7 @@ export function parseRawConfig(config: CompassConfig): Config {
     SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(config.sync?.serviceUrl)
       ? nonEmpty(config.sync?.internalAuthToken)
       : undefined,
+    SYNC_CONNECTION_ROUTING: config.sync?.connectionRouting,
     POSTHOG_KEY: nonEmpty(config.posthog?.key),
     POSTHOG_HOST: nonEmpty(config.posthog?.host) || DEFAULT_POSTHOG_HOST,
   });
@@ -173,6 +190,7 @@ export function parseConfigFromEnv(
     // both-or-neither check honest.
     SYNC_SERVICE_URL: nonEmpty(rawEnv["SYNC_SERVICE_URL"]),
     SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(rawEnv["SYNC_INTERNAL_AUTH_TOKEN"]),
+    SYNC_CONNECTION_ROUTING: nonEmpty(rawEnv["SYNC_CONNECTION_ROUTING"]),
     POSTHOG_KEY: rawEnv["POSTHOG_KEY"],
     POSTHOG_HOST: rawEnv["POSTHOG_HOST"] || DEFAULT_POSTHOG_HOST,
   });
