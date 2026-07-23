@@ -312,18 +312,6 @@ export function registerConnectionRoutes(
         new Date(query.end),
         dayjs(now).add(HORIZON_FUTURE_MONTHS, "month").toDate(),
       );
-      if (start >= end) {
-        const empty: BusyAvailabilityResponse = {
-          intervals: [],
-          computedAt: new Date(now).toISOString(),
-          connections: [],
-          complete: false,
-          issues: [],
-          bookable: false,
-        };
-        res.status(Status.OK).json(empty);
-        return;
-      }
 
       try {
         const availability = await computeBusyAvailability(
