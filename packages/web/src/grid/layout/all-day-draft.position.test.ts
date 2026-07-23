@@ -53,12 +53,10 @@ describe("positionAllDayDraftEvent", () => {
       },
       draftId,
     );
+    draft.values.title = "Editing second";
 
     const { activeDraftEvent } = positionAllDayDraftEvent({
-      draft: {
-        ...draft,
-        values: { ...draft.values, title: "Editing second" },
-      },
+      draft,
       events: [
         createAllDayEvent({
           _id: "first",

@@ -154,7 +154,6 @@ const seedGrid = (
   const gridDraft = createGridEventDraft(
     schedule,
     EventIdSchema.parse(draftEvent._id!),
-    draftEvent.calendarId ?? null,
   );
 
   useDraftStore.setState({

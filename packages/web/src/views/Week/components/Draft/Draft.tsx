@@ -52,10 +52,10 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   const activeAllDayDraftEvent = useMemo(
     () =>
       positionAllDayDraftEvent({
-        draft: draftSchemaEvent,
+        draft,
         events: allDayEvents,
       }).activeDraftEvent,
-    [allDayEvents, draftSchemaEvent],
+    [allDayEvents, draft],
   );
   const deckLayout = useMemo(
     () =>

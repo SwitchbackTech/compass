@@ -270,15 +270,12 @@ const setDraftEvent = (event: CompassEvent) => {
         }
       : timedGridSchedule(new Date(event.startDate), new Date(event.endDate)),
     event._id ? EventIdSchema.parse(event._id) : undefined,
-    event.calendarId ?? null,
   );
+  draft.values.title = event.title ?? "";
 
   draftActions.startGridDraft({
     activity: "gridClick",
-    draft: {
-      ...draft,
-      values: { ...draft.values, title: event.title ?? "" },
-    },
+    draft,
   });
 };
 
