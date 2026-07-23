@@ -43,9 +43,18 @@ function translateConnection(
       return "IMPORTING";
     // A connection record exists but its credential is gone: the user must
     // reconnect. That is more actionable than NOT_CONNECTED, which the browser
-    // treats as never-connected.
+    // treats as never-connected. NOTE for when this feeds the browser: today
+    // `disconnected` only results from a deliberate self-serve disconnect, so a
+    // user who intentionally disconnects would see a persistent "needs
+    // reconnecting" status rather than a neutral connect prompt. Confirm that
+    // intent before the status route ships.
     case "disconnected":
       return "RECONNECT_REQUIRED";
+    // actionRequired always needs the user to act. Re-auth reasons map to
+    // RECONNECT_REQUIRED; other reasons (today only permanentConflict) fall to
+    // the softer ATTENTION. NOTE: ATTENTION's browser affordance is a resync,
+    // which won't resolve a permanent conflict — revisit the remediation when
+    // the status route is wired.
     case "actionRequired":
       return reason && REAUTH_REASONS.has(reason)
         ? "RECONNECT_REQUIRED"
