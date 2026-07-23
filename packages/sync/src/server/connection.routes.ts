@@ -313,15 +313,19 @@ export function registerConnectionRoutes(
         dayjs(now).add(HORIZON_FUTURE_MONTHS, "month").toDate(),
       );
       if (start >= end) {
-        const empty: BusyAvailabilityResponse = {
-          intervals: [],
-          computedAt: new Date(now).toISOString(),
-          connections: [],
-          complete: false,
-          issues: [],
-          bookable: false,
-        };
-        res.status(Status.OK).json(empty);
+        // The window collapsed entirely outside the horizon: nothing to read, and
+        // nothing verified, so fail closed. Build it through the mapper so the
+        // ISO timestamps are branded like every other response.
+        res.status(Status.OK).json(
+          toBusyAvailabilityResponse({
+            intervals: [],
+            computedAt: new Date(now),
+            connections: [],
+            complete: false,
+            issues: [],
+            bookable: false,
+          }),
+        );
         return;
       }
 
