@@ -17,7 +17,6 @@ import EmailService from "@backend/email/email.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,

@@ -1,5 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockUseSession = mock();
@@ -7,38 +9,9 @@ mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
 }));
 
-// Same fragility as useSubscribeCmdItems.test.ts: react-toastify's binding
-// is process-wide and shared across suites, so mock the two util modules
-// useExportDataCmdItems.ts imports directly instead.
-const actualShowStatusToast = (
-  await import("@web/common/utils/toast/status-toast.util")
-).showStatusToast;
-const mockShowStatusToast = mock();
-let isStatusToastMocked = true;
-
-mock.module("@web/common/utils/toast/status-toast.util", () => ({
-  showStatusToast: (...args: Parameters<typeof actualShowStatusToast>) =>
-    isStatusToastMocked
-      ? mockShowStatusToast(...args)
-      : actualShowStatusToast(...args),
-}));
-
-const actualShowErrorToast = (
-  await import("@web/common/utils/toast/error-toast.util")
-).showErrorToast;
-const mockShowErrorToast = mock();
-let isErrorToastMocked = true;
-
-mock.module("@web/common/utils/toast/error-toast.util", () => ({
-  showErrorToast: (...args: Parameters<typeof actualShowErrorToast>) =>
-    isErrorToastMocked
-      ? mockShowErrorToast(...args)
-      : actualShowErrorToast(...args),
-}));
+const { port, mocks } = createTestToastPort();
 
 afterAll(() => {
-  isStatusToastMocked = false;
-  isErrorToastMocked = false;
   mockUseSession.mockReturnValue({
     authenticated: false,
     setAuthenticated: () => {},
@@ -74,10 +47,11 @@ describe("useExportDataCmdItems", () => {
   };
 
   beforeEach(() => {
+    mocks.toast.mockClear();
+    mocks.error.mockClear();
+    registerToastPort(port);
     mockUseSession.mockClear();
     mockRunExportMyData.mockClear();
-    mockShowStatusToast.mockClear();
-    mockShowErrorToast.mockClear();
 
     mockUseSession.mockReturnValue({ authenticated: true });
     mockRunExportMyData.mockResolvedValue(undefined);
@@ -103,14 +77,14 @@ describe("useExportDataCmdItems", () => {
     });
 
     await waitFor(() => {
-      expect(mockShowStatusToast).toHaveBeenCalledWith(
-        "export-my-data",
+      expect(mocks.toast).toHaveBeenCalledWith(
         "Data exported",
+        expect.objectContaining({ toastId: "export-my-data" }),
       );
     });
 
     expect(mockRunExportMyData).toHaveBeenCalledTimes(1);
-    expect(mockShowErrorToast).not.toHaveBeenCalled();
+    expect(mocks.error).not.toHaveBeenCalled();
   });
 
   it("shows an error toast when the export fails", async () => {
@@ -125,11 +99,11 @@ describe("useExportDataCmdItems", () => {
     });
 
     await waitFor(() => {
-      expect(mockShowErrorToast).toHaveBeenCalledWith(
+      expect(mocks.error).toHaveBeenCalledWith(
         "Couldn't export your data. Please try again.",
-        { toastId: "export-my-data" },
+        expect.objectContaining({ toastId: "export-my-data" }),
       );
     });
-    expect(mockShowStatusToast).not.toHaveBeenCalled();
+    expect(mocks.toast).not.toHaveBeenCalled();
   });
 });

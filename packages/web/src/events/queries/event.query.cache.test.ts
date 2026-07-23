@@ -1,8 +1,10 @@
 import { QueryClient } from "@tanstack/react-query";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
+import { EventScheduleSchema } from "@core/types/event.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
+  deriveOverlappingEventQueryData,
   findEventInCache,
   getEventQueryEntries,
   insertEventIntoQueries,
@@ -11,6 +13,7 @@ import {
   removeEventsByCalendarFromQueries,
 } from "./event.query.cache";
 import { eventQueryKeys } from "./event.query.keys";
+import { normalizeEventList } from "./event.query.normalize";
 import { type NormalizedEventQueryData } from "./event.query.types";
 
 const normalized = (
@@ -110,5 +113,38 @@ describe("event query cache", () => {
     expect(
       client.getQueryData<NormalizedEventQueryData>(keys.localWeek),
     ).toEqual(normalized(kept));
+  });
+
+  test("derives a subset from a cached superset range", () => {
+    const client = new QueryClient();
+    const event = createMockEvent({
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-07-03T09:00:00.000Z",
+        end: "2026-07-03T10:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
+    client.setQueryData(keys.localWeek, normalizeEventList([event]));
+
+    const result = deriveOverlappingEventQueryData(client, {
+      source: "local",
+      startDate: "2026-07-02T00:00:00.000Z",
+      endDate: "2026-07-04T23:59:59.999Z",
+    });
+
+    expect(result?.ids).toEqual([event.id]);
+  });
+
+  test("returns undefined when no cached range overlaps", () => {
+    const client = new QueryClient();
+
+    expect(
+      deriveOverlappingEventQueryData(client, {
+        source: "local",
+        startDate: "2026-07-01T00:00:00.000Z",
+        endDate: "2026-07-08T00:00:00.000Z",
+      }),
+    ).toBeUndefined();
   });
 });

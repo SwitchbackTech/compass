@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { handleError } from "@web/common/utils/event/event.util";
+import { deriveOverlappingEventQueryData } from "@web/events/queries/event.query.cache";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { deriveCalendarEventViewModel } from "./event.view-model";
@@ -17,11 +18,20 @@ function useWeekEventsQueryInternal({
   startOfView,
   endOfView,
 }: WeekEventsQueryArgs) {
+  const queryClient = useQueryClient();
   const source = useEventRepositorySource();
   const startDate = toUTCOffset(startOfView);
   const endDate = toUTCOffset(endOfView);
 
-  return useQuery(weekEventsQueryOptions({ source, startDate, endDate }));
+  return useQuery({
+    ...weekEventsQueryOptions({ source, startDate, endDate }),
+    placeholderData: () =>
+      deriveOverlappingEventQueryData(queryClient, {
+        source,
+        startDate,
+        endDate,
+      }),
+  });
 }
 
 /**

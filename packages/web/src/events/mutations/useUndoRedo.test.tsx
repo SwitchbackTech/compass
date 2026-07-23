@@ -140,6 +140,62 @@ describe("useUndoRedo", () => {
     expect(context.hook.result.current.undoRedo.canUndo).toBe(true);
   });
 
+  test("undoes a create by deleting the event, redoes with create", async () => {
+    const context = setup();
+    const created = event({
+      content: { kind: "details", title: "New event", description: "" },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized());
+
+    act(() =>
+      context.hook.result.current.mutations.create({
+        id: created.id,
+        calendarId: created.calendarId,
+        content: created.content as {
+          kind: "details";
+          title: string;
+          description: string;
+        },
+        schedule: created.schedule as never,
+        recurrence: { kind: "single" },
+      }),
+    );
+    await waitFor(() => {
+      expect(context.hook.result.current.undoRedo.canUndo).toBe(true);
+      expect(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[created.id],
+      ).toBeDefined();
+    });
+
+    act(() => context.hook.result.current.undoRedo.undo());
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.ids,
+      ).toEqual([]);
+    });
+    const deleteCall = context.calls.find(({ method }) => method === "delete");
+    expect(deleteCall?.value).toEqual({ id: created.id, scope: "this" });
+    expect(useUndoHistoryStore.getState().past).toHaveLength(0);
+    expect(context.hook.result.current.undoRedo.canRedo).toBe(true);
+
+    act(() => context.hook.result.current.undoRedo.redo());
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[created.id],
+      ).toBeDefined();
+    });
+    const createCalls = context.calls.filter(
+      ({ method }) => method === "create",
+    );
+    expect(createCalls).toHaveLength(2);
+    expect((createCalls.at(-1)?.value as CreateEventInput).id).toBe(created.id);
+  });
+
   test("undoes a delete by recreating the snapshot with its original id", async () => {
     const context = setup();
     const original = event();

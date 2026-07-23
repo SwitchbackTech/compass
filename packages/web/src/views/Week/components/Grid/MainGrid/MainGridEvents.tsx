@@ -39,8 +39,8 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     isPending: isLoadingWeekView,
     timedEvents,
   } = useWeekEventViewModel({
-    startOfView: weekProps.component.startOfView,
-    endOfView: weekProps.component.endOfView,
+    startOfView: weekProps.query.startOfView,
+    endOfView: weekProps.query.endOfView,
   });
   const draftId = useDraftStore(selectDraftId);
   const weekDays = weekProps.component.weekDays;

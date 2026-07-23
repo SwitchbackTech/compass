@@ -6,7 +6,7 @@ import { dateIsValid } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentDate } from "@web/common/utils/datetime/web.datetime.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
-import { type SetEventFormField } from "@web/views/Forms/EventForm/types";
+import { type SetEventFormSchedule } from "@web/views/Forms/EventForm/types";
 
 const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
   e.stopPropagation();
@@ -28,7 +28,7 @@ interface Props {
   isStartDatePickerOpen: boolean;
   selectedEndDate: Date;
   selectedStartDate: Date;
-  onSetEventField: SetEventFormField;
+  onSetScheduleField: SetEventFormSchedule;
   setDisplayEndDate: (value: Date) => void;
   setSelectedEndDate: (value: Date) => void;
   setSelectedStartDate: (value: Date) => void;
@@ -42,7 +42,7 @@ export const DatePickers: FC<Props> = ({
   isStartDatePickerOpen,
   selectedEndDate,
   selectedStartDate,
-  onSetEventField,
+  onSetScheduleField,
   setDisplayEndDate,
   setIsEndDatePickerOpen,
   setIsStartDatePickerOpen,
@@ -148,13 +148,13 @@ export const DatePickers: FC<Props> = ({
 
       setSelectedEndDate(compliment);
 
-      onSetEventField({
+      onSetScheduleField({
         startDate: formatDate(start),
         endDate: formatDate(compliment),
       });
     } else {
       const newStartDate = formatDate(start);
-      onSetEventField({ startDate: newStartDate });
+      onSetScheduleField({ startDate: newStartDate });
     }
   };
 
@@ -170,12 +170,12 @@ export const DatePickers: FC<Props> = ({
       setSelectedStartDate(compliment);
       setSelectedEndDate(compliment);
       setDisplayEndDate(compliment);
-      onSetEventField({
+      onSetScheduleField({
         startDate: formatDate(compliment),
         endDate: formatDate(compliment),
       });
     } else {
-      onSetEventField({
+      onSetScheduleField({
         endDate: formatDate(dayjs(end).add(1, "day").toDate()),
       });
     }

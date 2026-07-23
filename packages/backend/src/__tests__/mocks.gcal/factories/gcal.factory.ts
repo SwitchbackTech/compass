@@ -33,7 +33,7 @@ import {
 } from "@backend/__tests__/helpers/test-gcal-fixture";
 import { generateGcalId } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
-import { mock, spyOn } from "bun:test";
+import { mock } from "bun:test";
 
 /**
  * Creates a mock GaxiosResponse object with all required Response properties

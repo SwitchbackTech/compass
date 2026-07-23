@@ -21,15 +21,7 @@ import {
   getFormFieldValue,
 } from "@backend/common/middleware/supertokens.middleware.util";
 import userService from "@backend/user/services/user.service";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 type MockCallSource = { mock: { calls: unknown[][] } };
 

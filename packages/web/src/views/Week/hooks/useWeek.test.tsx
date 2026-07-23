@@ -223,4 +223,25 @@ describe("useWeek", () => {
       params: { dateString: "2026-05-23" },
     });
   });
+
+  it("keeps the query fetch window stable when visible day count changes", () => {
+    mockParams.dateString = "2026-05-20";
+    const today = dayjs("2026-05-20", DATE_FORMAT);
+    const { result, rerender } = renderHook(
+      ({ visibleDayCount }: { visibleDayCount: number }) =>
+        useWeek(today, visibleDayCount),
+      { initialProps: { visibleDayCount: 7 } },
+    );
+
+    const queryEndAtSeven = result.current.query.endOfView.format(DATE_FORMAT);
+
+    rerender({ visibleDayCount: 3 });
+
+    expect(result.current.query.endOfView.format(DATE_FORMAT)).toBe(
+      queryEndAtSeven,
+    );
+    expect(result.current.component.endOfView.format(DATE_FORMAT)).not.toBe(
+      queryEndAtSeven,
+    );
+  });
 });

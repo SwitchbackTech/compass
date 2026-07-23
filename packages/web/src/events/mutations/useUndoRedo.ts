@@ -16,13 +16,18 @@ import {
   useUndoHistoryStore,
 } from "@web/events/stores/undo.store";
 
+const isCreateEntry = (
+  entry: UndoHistoryEntry,
+): entry is Extract<UndoHistoryEntry, { kind: "create" }> =>
+  entry.kind === "create";
+
 const isDeleteEntry = (
   entry: UndoHistoryEntry,
 ): entry is Extract<UndoHistoryEntry, { kind: "delete" }> =>
   entry.kind === "delete";
 
 const entryEventId = (entry: UndoHistoryEntry): string =>
-  isDeleteEntry(entry) ? entry.event.id : entry.id;
+  isDeleteEntry(entry) || isCreateEntry(entry) ? entry.event.id : entry.id;
 
 // Not `refocusEventElement`: that helper waits for the DOM node to be
 // *replaced*, but an edit replay updates the node in place (same React key),
@@ -49,7 +54,8 @@ const refocusAfterReplay = (eventId: string) => {
  * Replays undo history through the regular event mutations. Edits are
  * symmetric `replace` replays of the full before/after snapshots; deletes are
  * undone by recreating the snapshot under its original id (A25), which
- * resurrects the same provider-linked event server-side.
+ * resurrects the same provider-linked event server-side; creates are undone by
+ * deleting the optimistic event and redone by recreating it.
  */
 export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
   const mutations = useEventMutations(dependencies);
@@ -97,6 +103,8 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
               ? { kind: "series", rules: event.recurrence.rules }
               : { kind: "single" },
         });
+      } else if (isCreateEntry(entry)) {
+        mutations.delete({ id: entry.event.id as EventId, scope: "this" });
       } else {
         replaySnapshot(entry.id as EventId, entry.before);
       }
@@ -104,7 +112,7 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
     // A delete surfaced a "Deleted" toast; if it's still up, flip it to
     // "Restored" so it can't keep claiming the event is gone.
     if (isDeleteEntry(entry)) showRestoredToast();
-    refocusAfterReplay(entryEventId(entry));
+    if (!isCreateEntry(entry)) refocusAfterReplay(entryEventId(entry));
   }, [mutations, replaySnapshot]);
 
   const redo = useCallback(() => {
@@ -114,11 +122,23 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
     runHistoryRestore(() => {
       if (isDeleteEntry(entry)) {
         mutations.delete({ id: entry.event.id as EventId, scope: "this" });
+      } else if (isCreateEntry(entry)) {
+        const { event } = entry;
+        if (event.content.kind !== "details") return;
+        mutations.create({
+          id: event.id,
+          calendarId: event.calendarId,
+          content: event.content,
+          schedule: event.schedule,
+          recurrence: { kind: "single" },
+        });
       } else {
         replaySnapshot(entry.id as EventId, entry.after);
       }
     });
-    if (!isDeleteEntry(entry)) {
+    if (isCreateEntry(entry)) {
+      refocusAfterReplay(entry.event.id);
+    } else if (!isDeleteEntry(entry)) {
       refocusAfterReplay(entry.id);
     }
   }, [mutations, replaySnapshot]);

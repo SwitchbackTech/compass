@@ -12,7 +12,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import {
@@ -39,8 +38,8 @@ import {
 import { Textarea } from "@web/components/Textarea/Textarea";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
-  applySchemaEventPatchToGridDraft,
-  gridEventDraftToSchemaEvent,
+  patchGridDraftFields,
+  patchGridDraftScheduleDates,
   replaceGridDraftSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { BUSY_EVENT_TITLE } from "@web/events/queries/event.view-model";
@@ -55,7 +54,7 @@ import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
   type GridEventFormProps,
-  type SetEventFormField,
+  type SetEventFormSchedule,
 } from "@web/views/Forms/EventForm/types";
 import { EventFormShell } from "@web/views/Forms/EventFormShell";
 import { useEscapeToCloseForm } from "@web/views/Forms/hooks/useEscapeToCloseForm";
@@ -134,6 +133,22 @@ const handleEventFormDelete = ({
   onDelete();
 };
 
+const scheduleDateStrings = (draft: GridEventDraft) => {
+  const { schedule } = draft.values;
+
+  if (schedule.kind === "allDay") {
+    return {
+      startDate: dayjs(schedule.start).toYearMonthDayString(),
+      endDate: dayjs(schedule.end).toYearMonthDayString(),
+    };
+  }
+
+  return {
+    startDate: dayjs(schedule.start).format(),
+    endDate: dayjs(schedule.end).format(),
+  };
+};
+
 export const EventForm: React.FC<GridEventFormProps> = memo(
   ({
     draft,
@@ -148,9 +163,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
   }) => {
     // An occurrence's own recurrence pointer carries no rule (only the
     // series base does — see grid-event-draft.adapter.ts), so resolve the
-    // base from the cache and thread its rules through every CompassEvent
-    // projection below. This is what lets RecurrenceSection show an
-    // existing repeat event's real rule instead of reading as non-recurring.
+    // base from the cache and thread its rules through RecurrenceSection.
     const seriesBase = useEventById(
       draft.kind === "edit" && draft.source.recurrence.kind === "occurrence"
         ? draft.source.recurrence.seriesId
@@ -161,15 +174,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         ? seriesBase.recurrence.rules
         : undefined;
 
-    // CompassEvent-shaped projection of the canonical draft, for the
-    // still-unconverted DatePickers field-patch API and RecurrenceSection's
-    // CompassEvent contract — see grid-event-draft.adapter.ts's
-    // gridEventDraftToSchemaEvent doc comment.
-    const event = useMemo(
-      () => gridEventDraftToSchemaEvent(draft, seriesRules),
-      [draft, seriesRules],
-    );
-    const { title } = event;
+    const { title, description } = draft.values;
     const { base: eventColor } = useEventPalette();
     const category =
       draft.values.schedule.kind === "allDay"
@@ -195,10 +200,10 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     const isReadOnly =
       draft.kind === "edit" &&
       isEventReadOnly(calendarLookup, draft.source.calendarId, isBusy);
-    const displayTitle = isBusy ? BUSY_EVENT_TITLE : (title ?? "");
+    const displayTitle = isBusy ? BUSY_EVENT_TITLE : title;
     const latestDraftRef = useRef(draft);
-    const eventStartDate = event.startDate as string;
-    const eventEndDate = event.endDate as string;
+    const { startDate: eventStartDate, endDate: eventEndDate } =
+      scheduleDateStrings(draft);
 
     /********
      * State
@@ -300,30 +305,26 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       [setLatestDraft],
     );
 
-    // CompassEvent-shaped writer for the still-unconverted DatePickers
-    // field-patch API and RecurrenceSection's setEvent contract: merges the
-    // patch onto the current draft's CompassEvent projection, then
-    // reapplies it onto the canonical GridEventDraft.
-    const setLatestEvent = useCallback(
-      (nextEvent: SetStateAction<CompassEvent | null>) => {
-        const currentEvent = gridEventDraftToSchemaEvent(
-          latestDraftRef.current,
-          seriesRules,
-        );
-        const resolvedEvent =
-          typeof nextEvent === "function" ? nextEvent(currentEvent) : nextEvent;
-
-        if (!resolvedEvent) return;
-
-        setLatestDraft(
-          applySchemaEventPatchToGridDraft(
-            latestDraftRef.current,
-            resolvedEvent,
-            seriesRules,
-          ),
-        );
+    const patchDraftFields = useCallback(
+      (
+        patch: Partial<Pick<GridEventDraft["values"], "title" | "description">>,
+      ) => {
+        setLatestDraft((current) => {
+          if (!current) return current;
+          return patchGridDraftFields(current, patch);
+        });
       },
-      [setLatestDraft, seriesRules],
+      [setLatestDraft],
+    );
+
+    const onSetScheduleField: SetEventFormSchedule = useCallback(
+      (patch) => {
+        setLatestDraft((current) => {
+          if (!current) return current;
+          return patchGridDraftScheduleDates(current, patch);
+        });
+      },
+      [setLatestDraft],
     );
 
     useEffect(() => {
@@ -338,7 +339,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       <T extends HTMLInputElement | HTMLTextAreaElement = HTMLTextAreaElement>(
         e: React.ChangeEvent<T>,
       ) => {
-        onSetEventField({ [fieldName]: e.target.value });
+        patchDraftFields({ [fieldName]: e.target.value });
       };
 
     const onClose = useCallback(() => {
@@ -433,13 +434,6 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       onSubmit(withSchedule);
     };
 
-    const onSetEventField: SetEventFormField = (field) => {
-      setLatestEvent({
-        ...gridEventDraftToSchemaEvent(latestDraftRef.current, seriesRules),
-        ...field,
-      });
-    };
-
     const onToggleAllDay = (isAllDay: boolean) => {
       const currentDraft = latestDraftRef.current;
       const isCurrentlyAllDay = currentDraft.values.schedule.kind === "allDay";
@@ -510,7 +504,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       endTime,
       isEndDatePickerOpen,
       isStartDatePickerOpen,
-      onSetEventField,
+      onSetScheduleField,
       selectedEndDate,
       selectedStartDate,
       setEndTime,
@@ -525,8 +519,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     };
 
     const recurrenceSectionProps = {
-      event,
-      setEvent: setLatestEvent,
+      draft,
+      setDraft: setLatestDraft,
+      seriesRules,
     };
 
     useAppShortcut(
@@ -651,18 +646,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                 onToggleAllDay={onToggleAllDay}
               />
 
-              <RecurrenceSection
-                // Remount (not re-sync) when the rule appears/disappears -
-                // useRecurrence seeds its freq/interval/weekday state once,
-                // so a hydrated rule arriving after first render (or the
-                // user's own toggle) needs a fresh mount to re-seed from it.
-                key={
-                  (event.recurrence?.rule?.length ?? 0) > 0
-                    ? "recurring"
-                    : "single"
-                }
-                {...recurrenceSectionProps}
-              />
+              <RecurrenceSection {...recurrenceSectionProps} />
             </FormCard>
 
             <FormCard>
@@ -684,7 +668,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                 onChange={onChangeEventTextField("description")}
                 onKeyDown={handleIgnoredKeys}
                 placeholder="Description"
-                value={event.description || ""}
+                value={description}
                 className="relative w-full border-hidden bg-transparent"
               />
             </FormCard>

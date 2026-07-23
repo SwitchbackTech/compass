@@ -195,6 +195,8 @@ const renderShortcuts = (options?: {
       useWeekShortcuts({
         endOfView: dayjs("2026-05-24T00:00:00.000"),
         isCurrentWeek: true,
+        queryEndOfView: dayjs("2026-05-24T23:59:59.999"),
+        queryStartOfView: dayjs("2026-05-18T00:00:00.000"),
         scrollUtil: { scrollToNow: mock() } as never,
         startOfView: dayjs("2026-05-18T00:00:00.000"),
         weekDays: Array.from({ length: 7 }, (_, index) =>
@@ -233,11 +235,11 @@ describe("useWeekShortcuts day shifting", () => {
 });
 
 describe("useWeekShortcuts calendar event targeting", () => {
-  it("focuses the first visible calendar event with I", async () => {
+  it("focuses the first visible calendar event with U", async () => {
     const button = addCalendarTarget();
 
     renderShortcuts();
-    pressKey("I");
+    pressKey("U");
 
     await waitFor(() => {
       expect(document.activeElement).toBe(button);
@@ -566,11 +568,11 @@ const addSidebarFixture = (options?: { includeItem?: boolean }) => {
 };
 
 describe("useWeekShortcuts sidebar focus", () => {
-  it("focuses the first interactive sidebar item with U", async () => {
+  it("focuses the first interactive sidebar item with I", async () => {
     const { weekItem } = addSidebarFixture({ includeItem: true });
 
     renderShortcuts();
-    pressKey("U");
+    pressKey("I");
 
     await waitFor(() => {
       expect(document.activeElement).toBe(weekItem);
