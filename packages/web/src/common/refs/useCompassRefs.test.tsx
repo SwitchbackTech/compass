@@ -1,4 +1,5 @@
 import { renderHook } from "@testing-library/react";
+import { describe, expect, it, spyOn } from "bun:test";
 import { type PropsWithChildren } from "react";
 import { CompassRefsProvider } from "@web/common/refs/compass-refs";
 import { useCompassRefs } from "@web/common/refs/useCompassRefs";
@@ -18,9 +19,7 @@ describe("useCompassRefs", () => {
   });
 
   it("throws when used outside CompassRefsProvider", () => {
-    const consoleSpy = jest
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
+    const consoleSpy = spyOn(console, "error").mockImplementation(() => {});
 
     expect(() => {
       renderHook(() => useCompassRefs());

@@ -6,9 +6,7 @@ if (sharedMongoUri) {
   applyBackendTestEnv(sharedMongoUri);
 }
 
-// Bun preload for the backend test suite. Replaces the Jest project config
-// (setupFiles + setupFilesAfterEnv + @shelf/jest-mongodb preset) with one
-// ordered, single-process setup:
+// Bun preload for the backend test suite. Ordered, single-process setup:
 //   1. Core env (NODE_ENV=test) so CONFIG resolves from env, not compass.yaml.
 //   2. Start one in-memory Mongo replica set and publish its URI.
 //   3. Backend env (reads the URI) + injectable test seams via backend.test.start.

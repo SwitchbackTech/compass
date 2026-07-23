@@ -21,7 +21,8 @@ import { performance } from "node:perf_hooks";
  * Skipped by default -- CI and `bun run test:backend` never pay for this.
  * Run explicitly and read the `[bench]` summary lines from stdout:
  *
- *   RUN_BENCH=1 TZ=UTC ./node_modules/.bin/jest --selectProjects backend bench
+ *   RUN_BENCH=1 TZ=UTC bun packages/scripts/src/testing/test-mongo-env.ts backend -- \
+ *     './packages/backend/src/__tests__/bench/**/*.db.test.ts'
  *
  * See docs/development/performance-baselines.md for the last recorded
  * numbers and the regression-investigation rule.
