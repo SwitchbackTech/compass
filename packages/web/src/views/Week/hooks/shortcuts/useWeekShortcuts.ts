@@ -336,8 +336,8 @@ export const useWeekShortcuts = ({
   useAppShortcutUp("T", toToday);
   useAppShortcutUp("A", createAllDayDraftEvent);
   useAppShortcutUp("C", createTimedDraftEvent);
-  useAppShortcutUp("U", focusSidebar);
-  useAppShortcutUp("I", focusFirstCalendarEvent);
+  useAppShortcutUp("I", focusSidebar);
+  useAppShortcutUp("U", focusFirstCalendarEvent);
   useAppShortcut("Delete", deleteTargetedCalendarEvent, {
     ignoreInputs: false,
   });

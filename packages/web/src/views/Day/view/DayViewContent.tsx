@@ -59,7 +59,7 @@ export const DayViewContent = memo(() => {
     viewActions.toggleSidebar();
   }, []);
 
-  // "u" implies the user wants the sidebar; open it first and defer focus a
+  // "i" implies the user wants the sidebar; open it first and defer focus a
   // frame so the sidebar exists in the DOM before we target it.
   const handleFocusSidebar = useCallback(() => {
     if (selectIsSidebarOpen(useViewStore.getState())) {

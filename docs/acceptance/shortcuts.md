@@ -47,8 +47,8 @@ Helpful notes:
 | `J`                         | Day view  | Previous day                      |
 | `K`                         | Day view  | Next day                          |
 | `T`                         | Day view  | Go to today                       |
-| `U`                         | Day view  | Focus sidebar                     |
-| `I`                         | Day view  | Focus calendar                    |
+| `I`                         | Day view  | Focus sidebar                     |
+| `U`                         | Day view  | Focus calendar                    |
 | `C`                         | Day view  | Create timed event                |
 | `A`                         | Day view  | Create all-day event              |
 | `Shift+ArrowUp` / `Shift+ArrowDown` | Day view | Move focused timed event 15 min earlier/later |
@@ -57,8 +57,8 @@ Helpful notes:
 | `T`                         | Week view | Go to today                       |
 | `C`                         | Week view | Create timed event                |
 | `A`                         | Week view | Create all-day event              |
-| `U`                         | Week view | Focus sidebar                     |
-| `I`                         | Week view | Focus first calendar event        |
+| `I`                         | Week view | Focus sidebar                     |
+| `U`                         | Week view | Focus first calendar event        |
 | `Delete`                    | Week view | Delete focused/hovered event      |
 | `Shift+ArrowLeft`           | Week view | Move focused event to previous day |
 | `Shift+ArrowRight`          | Week view | Move focused event to next day    |
