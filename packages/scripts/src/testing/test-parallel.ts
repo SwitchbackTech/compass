@@ -71,10 +71,16 @@ const { targets, bunFlags } = resolveTestTargets(scan, extraArgs);
 
 const started = Date.now();
 
+const needsHookTimeout =
+  profile === "backend-fast" ||
+  profile === "sync-fast" ||
+  profile === "scripts-fast";
+
 const testTargets = [
   "bun",
   "test",
   "--parallel",
+  ...(needsHookTimeout ? ["--timeout", "60000"] : []),
   "--preload",
   preloadPath,
   ...bunFlags,
