@@ -252,7 +252,7 @@ case $command_name in
   update)
     require_stack
     compose pull || fail "Could not pull updated Compass images from Docker Hub."
-    compose up -d || fail "Docker Compose failed to start updated Compass."
+    compose up -d --remove-orphans --wait || fail "Docker Compose failed to start updated Compass."
     if wait_for_health; then
       info "Compass updated and running at $APP_URL"
     else

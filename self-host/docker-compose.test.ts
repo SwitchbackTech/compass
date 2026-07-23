@@ -132,6 +132,17 @@ describe("self-host docker compose", () => {
     expect(syncBlock).toContain("compass_sync_logs:/app/logs");
     expect(compose).toContain("compass_sync_logs:");
   });
+
+  it("waits for mongo before starting backend when the selfhosted profile is active", () => {
+    const compose = readFileSync(join(import.meta.dir, "compose.yaml"), {
+      encoding: "utf8",
+    });
+
+    expect(compose).toContain("depends_on:");
+    expect(compose).toContain("condition: service_healthy");
+    expect(compose).toContain("stop_grace_period: 30s");
+    expect(compose).toContain("start_period: 90s");
+  });
 });
 
 describe("self-host installer", () => {
@@ -171,6 +182,12 @@ describe("self-host helper", () => {
     expect(helper).toContain("read_config_value runtime.version");
     expect(helper).not.toContain("read_config_value compose.version");
   });
+
+  it("updates in place with compose wait", () => {
+    const helper = readRepoFile("self-host/compass");
+
+    expect(helper).toContain("compose up -d --remove-orphans --wait");
+  });
 });
 
 describe("staging deploy workflow", () => {
@@ -188,6 +205,14 @@ describe("staging deploy workflow", () => {
       'COMPOSE_GIT_REF="$'.concat("{COMPOSE_GIT_REF:-$", '{RELEASE_TAG}}"'),
     );
     expect(workflow).toContain('COMPOSE_GIT_REF="$'.concat('{RELEASE_TAG}"'));
+  });
+
+  it("updates the stack in place without tearing down data services first", () => {
+    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
+
+    expect(workflow).not.toContain(
+      "docker compose --project-name compass -f compose.yaml down",
+    );
   });
 
   it("writes the Google Calendar notification token with Google credentials", () => {

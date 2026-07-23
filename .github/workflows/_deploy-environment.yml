@@ -183,7 +183,6 @@ jobs:
           if [ -n "$SYNC_ENABLED" ]; then
             DEPLOY_PROFILES="${DEPLOY_PROFILES:+${DEPLOY_PROFILES},}sync"
           fi
-          ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && COMPOSE_PROFILES=selfhosted,sync docker compose --project-name compass -f compose.yaml down 2>/dev/null || true"
           if [ -n "$DEPLOY_PROFILES" ]; then
             ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && COMPOSE_PROFILES='${DEPLOY_PROFILES}' ./compass update"
           else

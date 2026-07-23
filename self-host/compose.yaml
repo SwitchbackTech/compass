@@ -24,6 +24,9 @@ services:
 
   backend:
     image: switchbacktech/compass-backend:${COMPASS_VERSION:-latest}
+    depends_on:
+      mongo:
+        condition: service_healthy
     environment:
       COMPASS_CONFIG_FILE: /app/compass.yaml
       # Default to info so health-check requests stay out of the tail. Reveal
@@ -47,8 +50,8 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 12
+      start_period: 90s
 
   sync:
     image: switchbacktech/compass-sync:${COMPASS_VERSION:-latest}
@@ -94,6 +97,7 @@ services:
     volumes:
       - compass_mongo_data:/data/db
       - compass_mongo_configdb:/data/configdb
+    stop_grace_period: 30s
     restart: unless-stopped
     healthcheck:
       test:
@@ -103,8 +107,8 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 12
+      start_period: 60s
 
   supertokens:
     image: supertokens/supertokens-postgresql:11.0.2
@@ -124,8 +128,8 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 12
+      start_period: 60s
 
   supertokens-db:
     image: postgres:16-alpine
@@ -136,6 +140,7 @@ services:
       POSTGRES_DB: ${SUPERTOKENS_POSTGRES_DB:-supertokens}
     volumes:
       - compass_supertokens_postgres_data:/var/lib/postgresql/data
+    stop_grace_period: 30s
     restart: unless-stopped
     healthcheck:
       test:
@@ -145,8 +150,8 @@ services:
         ]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 20s
+      retries: 12
+      start_period: 60s
 
 volumes:
   compass_backend_logs:
