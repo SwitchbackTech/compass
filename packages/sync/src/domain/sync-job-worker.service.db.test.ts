@@ -324,6 +324,90 @@ describe("SyncJobWorker", () => {
     expect(after?.runAfter).toEqual(new Date(now().getTime() + 8_000));
   });
 
+  it("schedules a heartbeat per job and stops it once the job settles", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    await enqueue(resource, "incrementalPull");
+
+    let everyMs = 0;
+    let stopped = false;
+    const w = new SyncJobWorker(
+      deps(new FakeReader([pageOf([single("a")], "cursor-1")])),
+      OWNER,
+      {
+        now,
+        leaseMs: 30_000,
+        heartbeatMs: 10_000,
+        scheduleHeartbeat: (_beat, ms) => {
+          everyMs = ms;
+          return () => {
+            stopped = true;
+          };
+        },
+      },
+    );
+
+    await w.runOnce();
+
+    expect(everyMs).toBe(10_000);
+    expect(stopped).toBe(true); // cleaned up in the finally, even on success
+  });
+
+  it("extends the lease of a running job through the heartbeat", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    await enqueue(resource, "incrementalPull");
+
+    // A mutable clock so a heartbeat's new expiry differs from the claim's.
+    let clock = now().getTime();
+    const movingNow = () => new Date(clock);
+
+    // A reader that blocks the pull mid-flight until released, so the job stays
+    // claimed while we fire a heartbeat.
+    let releaseRead: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      releaseRead = resolve;
+    });
+    const gatedReader = {
+      provider: "google" as const,
+      async listEventPage() {
+        await gate;
+        return pageOf([single("x")], "cursor-1");
+      },
+    } as unknown as FakeReader;
+
+    let beat: (() => void | Promise<void>) | null = null;
+    const w = new SyncJobWorker(deps(gatedReader), OWNER, {
+      now: movingNow,
+      leaseMs: 300_000,
+      scheduleHeartbeat: (b) => {
+        beat = b;
+        return () => {};
+      },
+    });
+
+    const run = w.runOnce();
+    // Wait until the worker has claimed the job and scheduled its heartbeat
+    // (claimDueJob is a real round-trip, so a bare setTimeout(0) can beat it).
+    while (!beat) await new Promise((r) => setTimeout(r, 5));
+
+    const claimed = await jobByKey(`incrementalPull:${resource._id}`);
+    const claimedLease = (claimed?.leaseExpiresAt as Date).getTime();
+
+    // Advance time and fire one heartbeat; the lease must move forward.
+    clock += 60_000;
+    await beat?.();
+
+    const beaten = await jobByKey(`incrementalPull:${resource._id}`);
+    expect((beaten?.leaseExpiresAt as Date).getTime()).toBe(clock + 300_000);
+    expect((beaten?.leaseExpiresAt as Date).getTime()).toBeGreaterThan(
+      claimedLease,
+    );
+
+    releaseRead();
+    await run;
+  });
+
   it("drops a job whose resource no longer exists", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
