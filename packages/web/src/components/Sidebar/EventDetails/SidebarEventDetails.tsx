@@ -77,7 +77,7 @@ export function SidebarEventDetails() {
       baseEvent,
       isInstance:
         nextDraft.kind === "edit" &&
-        nextDraft.source.recurrence.kind === "occurrence",
+        nextDraft.source.recurrence.kind !== "single",
       isRecurrence:
         nextDraft.kind === "edit" &&
         nextDraft.source.recurrence.kind === "series",
