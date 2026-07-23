@@ -27,6 +27,7 @@ import {
   EVENTS_PATH,
   OAUTH_CALLBACK_PATH,
 } from "@sync/server/connection.routes";
+import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
   type EventOccurrenceRecord,
   EventOccurrenceRecordSchema,
@@ -587,6 +588,29 @@ describe("GET /oauth/google/callback", () => {
 
     const stored = await credentials.findByConnection(linked[0]._id);
     expect(stored?.refreshToken).toBe("granted-refresh-token");
+  });
+
+  it("enqueues calendar-list discovery to bootstrap the new connection", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await startService(activeConfig(), adapter);
+
+    await hitCallback(
+      `code=auth-code&state=${encodeURIComponent(validState(tenantId, principalId))}`,
+    );
+
+    const [linked] = await connections.listByPrincipal(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+    );
+    // The connect enqueues one calendarListSync job for the new connection; it is
+    // the only trigger that starts the sync chain.
+    const job = await mongo.db
+      .collection(SYNC_COLLECTIONS.jobs)
+      .findOne({ coalescingKey: `calendarListSync:${linked._id}` });
+    expect(job?.kind).toBe("calendarListSync");
+    expect(job?.connectionId).toBe(linked._id);
+    expect(job?.resourceId).toBeNull();
   });
 
   it("redirects with an error and links nothing when the state is invalid", async () => {
