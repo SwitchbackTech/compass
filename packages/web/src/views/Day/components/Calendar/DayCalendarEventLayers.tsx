@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import {
   isEventReadOnly,
   resolveCalendarCardIdentity,
@@ -10,6 +9,7 @@ import {
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import { type GridEventDraft } from "@web/events/event-draft.types";
 import { GRID_MARGIN_LEFT } from "@web/grid/grid.constants";
 import { createTimedEventLayout } from "@web/grid/layout/timed-deck.layout";
 import {
@@ -29,7 +29,7 @@ import {
 
 interface DayEventsProps {
   getCalendarColumnIndex: (event: GridEvent) => number;
-  draft: CompassEvent | null;
+  draft: GridEventDraft | null;
   events: GridEvent[];
   measurements: GridMeasurements;
   onOpenEvent: (event: GridEvent) => void;

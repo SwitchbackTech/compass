@@ -1,11 +1,19 @@
 import { act, renderHook } from "@testing-library/react";
 import { session } from "@web/auth/compass/session/Session";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const clearAuthenticationState = mock();
 const setAuthenticated = mock();
 const mockUseSession = mock();
-const signOut = spyOn(session, "signOut");
+let signOut = spyOn(session, "signOut");
 
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
@@ -19,15 +27,18 @@ const { useLogout } = await import("./useLogout");
 
 describe("useLogout", () => {
   beforeEach(() => {
+    signOut = spyOn(session, "signOut").mockResolvedValue(undefined);
     clearAuthenticationState.mockClear();
     setAuthenticated.mockClear();
-    signOut.mockReset();
     mockUseSession.mockReset();
     mockUseSession.mockReturnValue({
       authenticated: true,
       setAuthenticated,
     });
-    signOut.mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    signOut.mockRestore();
   });
 
   it("signs out and clears authenticated state immediately", () => {

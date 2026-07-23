@@ -23,6 +23,11 @@ import {
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
+  createGridEventDraft,
+  gridEventDraftToSchemaEvent,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
+import {
   draftActions,
   selectIsEventFormOpen,
   useDraftStore,
@@ -222,7 +227,10 @@ const setDayEvents = (events: CompassEvent[]) => {
   seededEvents = events.map(toStrictEvent);
 };
 
-const getDraft = () => useDraftStore.getState().event;
+const getDraft = () => {
+  const { gridDraft } = useDraftStore.getState();
+  return gridDraft ? gridEventDraftToSchemaEvent(gridDraft) : null;
+};
 const getGridDraft = () => useDraftStore.getState().gridDraft;
 const getIsFormOpen = () => selectIsEventFormOpen(useDraftStore.getState());
 
@@ -249,7 +257,29 @@ const getAllDayRegion = () =>
   screen.getByRole("region", { name: "All-day events" });
 
 const setDraftEvent = (event: CompassEvent) => {
-  draftActions.startGridClick(event);
+  if (!event.startDate || !event.endDate) {
+    return;
+  }
+
+  const draft = createGridEventDraft(
+    event.isAllDay
+      ? {
+          kind: "allDay",
+          start: new Date(event.startDate),
+          end: new Date(event.endDate),
+        }
+      : timedGridSchedule(new Date(event.startDate), new Date(event.endDate)),
+    event._id ? EventIdSchema.parse(event._id) : undefined,
+    event.calendarId ?? null,
+  );
+
+  draftActions.startGridDraft({
+    activity: "gridClick",
+    draft: {
+      ...draft,
+      values: { ...draft.values, title: event.title ?? "" },
+    },
+  });
 };
 
 beforeEach(() => {

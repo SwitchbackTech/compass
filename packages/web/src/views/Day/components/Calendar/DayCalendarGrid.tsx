@@ -6,32 +6,21 @@ import {
 } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Calendar } from "@core/types/calendar.contracts";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
-import {
-  Categories_Event,
-  type GridEvent,
-} from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
-import { getDraftTimes } from "@web/common/utils/draft/draft.util";
 import {
-  addId,
-  assembleDefaultEvent,
-  assembleGridEvent,
-  hasEventDates,
-} from "@web/common/utils/event/event.util";
+  createAlldayDraft,
+  createTimedDraft,
+} from "@web/common/utils/draft/draft.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
-import {
-  allDayGridSchedule,
-  createGridEventDraft,
-  editGridEventDraft,
-  timedGridSchedule,
-} from "@web/events/grid-event-draft.adapter";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import { createGridEventDraftFromGridEvent } from "@web/events/grid-event-draft.adapter";
 import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import {
   draftActions,
-  selectDraft,
+  selectGridDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { EventGrid } from "@web/grid/components/EventGrid";
@@ -93,7 +82,7 @@ export function DayCalendarGrid() {
     visibleDates,
   );
   useDayEventNudgeShortcuts({ timedEvents: displayedTimedEvents });
-  const draft = useDraftStore(selectDraft);
+  const gridDraft = useDraftStore(selectGridDraft);
 
   const calendarColumnKeys = useMemo(
     () => displayedCalendars.map((calendar) => calendar.id),
@@ -110,6 +99,11 @@ export function DayCalendarGrid() {
 
   useDayCalendarScrollToNow(gridRefs.mainGridRef);
 
+  const openGridDraftForm = useCallback((draft: GridEventDraft) => {
+    draftActions.startGridDraft({ activity: "gridClick", draft });
+    draftActions.setFormOpen(true);
+  }, []);
+
   const openEventFormForEvent = useCallback(
     (event: GridEvent) => {
       if (!event._id) {
@@ -119,26 +113,14 @@ export function DayCalendarGrid() {
       const sourceEvent = dayEvents.find(
         (candidate) => candidate.id === event._id,
       );
-      const draft = sourceEvent
-        ? editGridEventDraft(sourceEvent)
-        : createGridEventDraft(
-            event.isAllDay
-              ? allDayGridSchedule(event.startDate, event.endDate)
-              : timedGridSchedule(
-                  new Date(event.startDate),
-                  new Date(event.endDate),
-                ),
-            undefined,
-            event.calendarId ?? null,
-          );
+      const draft = createGridEventDraftFromGridEvent(event, sourceEvent);
       if (!draft) {
         return;
       }
 
-      draftActions.startGridDraft({ activity: "gridClick", draft });
-      draftActions.setFormOpen(true);
+      openGridDraftForm(draft);
     },
-    [dayEvents],
+    [dayEvents, openGridDraftForm],
   );
 
   // timedEvents/allDayEvents are the same GridEvent objects the grid
@@ -169,47 +151,38 @@ export function DayCalendarGrid() {
 
   const getAllDayDraftStartDate = (clientX: number) =>
     dateCalcs.getDateStrByXY(clientX, 0, YEAR_MONTH_DAY_FORMAT);
-  // Schedule-agnostic: opens the floating form for a freshly-built draft event,
-  // whether all-day or timed (openEventFormForEvent branches on isAllDay).
-  const openDraftEventForm = useCallback(
-    (event: CompassEvent) => {
-      if (!hasEventDates(event)) {
+
+  const openShortcutDraft = useCallback(
+    (createDraft: () => void) => {
+      if (gridDraft) {
         return;
       }
 
-      openEventFormForEvent(addId(assembleGridEvent(event)));
+      createDraft();
+      draftActions.setFormOpen(true);
     },
-    [openEventFormForEvent],
+    [gridDraft],
   );
 
-  const createAllDayDraftFromShortcut = useCallback(() => {
-    if (draft) {
-      return;
-    }
+  const createAllDayDraftFromShortcut = useCallback(
+    () =>
+      openShortcutDraft(() =>
+        createAlldayDraft(dateInView, dateInView, "createShortcut"),
+      ),
+    [dateInView, openShortcutDraft],
+  );
 
-    const startDate = dateInView.format(YEAR_MONTH_DAY_FORMAT);
-    const endDate = dateInView.add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
-
-    void assembleDefaultEvent(Categories_Event.ALLDAY, startDate, endDate).then(
-      openDraftEventForm,
-    );
-  }, [dateInView, draft, openDraftEventForm]);
-
-  // "c" shortcut: create a timed draft on the day in view, defaulting to the
-  // next quarter-hour (or the current time when viewing today), mirroring the
-  // Week view's timed-create behavior.
-  const createTimedDraftFromShortcut = useCallback(() => {
-    if (draft) {
-      return;
-    }
-
-    const isViewingToday = dateInView.isSame(dayjs(), "day");
-    const { startDate, endDate } = getDraftTimes(isViewingToday, dateInView);
-
-    void assembleDefaultEvent(Categories_Event.TIMED, startDate, endDate).then(
-      openDraftEventForm,
-    );
-  }, [dateInView, draft, openDraftEventForm]);
+  const createTimedDraftFromShortcut = useCallback(
+    () =>
+      openShortcutDraft(() =>
+        createTimedDraft(
+          dateInView.isSame(dayjs(), "day"),
+          dateInView,
+          "createShortcut",
+        ),
+      ),
+    [dateInView, openShortcutDraft],
+  );
 
   // onViewCommand returns its own unsubscribe and emitViewCommand reads the
   // listener set at emit time, so re-subscribing when the handler identity
@@ -224,13 +197,12 @@ export function DayCalendarGrid() {
   );
   const onAllDayMouseDown = useAllDayDraftCreation({
     getStartDate: getAllDayDraftStartDate,
-    onCreateDraft: openDraftEventForm,
+    onCreateGridDraft: openGridDraftForm,
   });
 
   const { startTimedDraftCreation } = useDayTimedDraftCreation({
     dateCalcs,
-    draft,
-    onOpenEvent: openEventFormForEvent,
+    onOpenDraft: openGridDraftForm,
   });
   const getCalendarAtX = useCallback(
     (clientX: number) =>
@@ -274,7 +246,7 @@ export function DayCalendarGrid() {
       <DayCalendarAllDayEventsLayer
         events={displayedAllDayEvents}
         getCalendarColumnIndex={getCalendarColumnIndex}
-        draft={draft}
+        draft={gridDraft}
         measurements={measurements}
         onOpenEvent={openEventFormForEvent}
         visibleDates={visibleDates}
@@ -282,7 +254,7 @@ export function DayCalendarGrid() {
     ),
     [
       displayedAllDayEvents,
-      draft,
+      gridDraft,
       getCalendarColumnIndex,
       measurements,
       openEventFormForEvent,
@@ -301,7 +273,7 @@ export function DayCalendarGrid() {
         <DayCalendarTimedEventsLayer
           events={displayedTimedEvents}
           getCalendarColumnIndex={getCalendarColumnIndex}
-          draft={draft}
+          draft={gridDraft}
           measurements={measurements}
           onOpenEvent={openEventFormForEvent}
           visibleDates={visibleDates}
@@ -312,7 +284,7 @@ export function DayCalendarGrid() {
       calendarColumnIndexById,
       dateInView,
       displayedTimedEvents,
-      draft,
+      gridDraft,
       getCalendarColumnIndex,
       measurements,
       openEventFormForEvent,

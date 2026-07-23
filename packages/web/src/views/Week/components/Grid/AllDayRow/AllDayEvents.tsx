@@ -7,12 +7,12 @@ import {
 } from "@web/calendars/useCalendarLookup";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import {
-  selectDraft,
-  selectDraftId,
-  useDraftStore,
-} from "@web/events/stores/draft.store";
+  mergeGridEventWithDraftOverlay,
+  useGridDraftSchemaOverlay,
+} from "@web/events/hooks/useGridDraftSchemaOverlay";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import { selectDraftId, useDraftStore } from "@web/events/stores/draft.store";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
 import { useGridEventDraftHandlers } from "@web/views/Week/components/Grid/useGridEventDraftHandlers";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -35,7 +35,7 @@ export const AllDayEvents = ({
   queryStartOfView,
   weekDays,
 }: Props) => {
-  const draft = useDraftStore(selectDraft);
+  const draftOverlay = useGridDraftSchemaOverlay();
   const {
     allDayEvents,
     events: weekEvents,
@@ -96,10 +96,11 @@ export const AllDayEvents = ({
         visibleAllDayEventsWithIdentity.map(
           ({ event, calendarIdentity, isReadOnly }) => {
             const isPlaceholder = event._id === draftId;
-            const eventForDisplay =
-              isPlaceholder && draft && draft._id === event._id
-                ? { ...event, ...draft }
-                : event;
+            const eventForDisplay = mergeGridEventWithDraftOverlay(
+              event,
+              draftId,
+              draftOverlay,
+            );
             // The placeholder can carry a live (dragging/resizing) calendarId
             // from the draft store; everything else reuses the stable,
             // list-level resolved identity above.
