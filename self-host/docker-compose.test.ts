@@ -143,6 +143,27 @@ describe("self-host docker compose", () => {
     expect(compose).toContain("stop_grace_period: 30s");
     expect(compose).toContain("start_period: 90s");
   });
+
+  it("keeps the backend mongo dependency optional so cloud/Atlas deploys stay a valid project", () => {
+    const compose = readFileSync(join(import.meta.dir, "compose.yaml"), {
+      encoding: "utf8",
+    });
+
+    // mongo is gated behind the `selfhosted` profile, so a profile-less
+    // cloud/Atlas deploy has no mongo container. Without `required: false` the
+    // backend's dependency on the (absent) mongo service makes the compose
+    // project invalid ("depends on undefined service mongo"), which breaks the
+    // staging-cloud/production deploy.
+    // Match the top-level service definition ("\n  backend:\n", exactly two
+    // spaces of indent), not the x-local-bindings anchor ("  backend:
+    // &backend-port ...") nor the web service's nested "depends_on: backend:".
+    const backendBlock = compose
+      .slice(compose.indexOf("\n  backend:\n") + 1)
+      .split(/\n {2}\w/)[0];
+    expect(backendBlock).toContain("mongo:");
+    expect(backendBlock).toContain("condition: service_healthy");
+    expect(backendBlock).toMatch(/^\s+required: false\s*$/m);
+  });
 });
 
 describe("self-host installer", () => {
