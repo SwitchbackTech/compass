@@ -4,7 +4,7 @@ import { Categories_Event } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { DatePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DatePickers/DatePickers";
 import { TimePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/TimePickers";
-import { type SetEventFormField } from "@web/views/Forms/EventForm/types";
+import { type SetEventFormSchedule } from "@web/views/Forms/EventForm/types";
 
 export interface Props {
   category: Categories_Event;
@@ -13,7 +13,7 @@ export interface Props {
   endTime: SelectOption<string>;
   isEndDatePickerOpen: boolean;
   isStartDatePickerOpen: boolean;
-  onSetEventField: SetEventFormField;
+  onSetScheduleField: SetEventFormSchedule;
   selectedEndDate: Date;
   selectedStartDate: Date;
   setDisplayEndDate: (value: Date) => void;
@@ -35,7 +35,7 @@ export const DateTimeSection: FC<Props> = ({
   isStartDatePickerOpen,
   selectedEndDate,
   selectedStartDate,
-  onSetEventField,
+  onSetScheduleField,
   setDisplayEndDate,
   setIsStartDatePickerOpen,
   setIsEndDatePickerOpen,
@@ -56,7 +56,7 @@ export const DateTimeSection: FC<Props> = ({
           isStartDatePickerOpen={isStartDatePickerOpen}
           selectedEndDate={selectedEndDate}
           selectedStartDate={selectedStartDate}
-          onSetEventField={onSetEventField}
+          onSetScheduleField={onSetScheduleField}
           setDisplayEndDate={setDisplayEndDate}
           setSelectedEndDate={setSelectedEndDate}
           setSelectedStartDate={setSelectedStartDate}
