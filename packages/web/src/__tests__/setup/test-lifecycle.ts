@@ -24,6 +24,7 @@ expect.extend(jestDomMatchers);
 
 const { cleanup, configure } = await import("@testing-library/react");
 const { resetAllStores } = await import("../utils/state/reset-stores");
+const { BaseApi } = await import("@web/api/base/base.api");
 
 configure({ asyncUtilTimeout: 5000 });
 
@@ -68,6 +69,7 @@ afterEach(async () => {
   resetBrowserState();
   resetAllStores();
   resetWebTestSeams();
+  BaseApi.defaults.adapter = undefined;
   server.resetHandlers();
 });
 afterAll(() => {
