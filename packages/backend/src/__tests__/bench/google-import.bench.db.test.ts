@@ -79,16 +79,16 @@ async function runScenario(
   // gcalService.getAllEvents always yields a single page).
   const originalApply = GoogleEventSync.prototype.apply;
   const heapSamples: number[] = [];
-  const applySpy = jest
-    .spyOn(GoogleEventSync.prototype, "apply")
-    .mockImplementation(async function (
+  const applySpy = spyOn(GoogleEventSync.prototype, "apply").mockImplementation(
+    async function (
       this: GoogleEventSync,
       ...args: Parameters<typeof originalApply>
     ) {
       const result = await originalApply.call(this, ...args);
       heapSamples.push(sampleHeap());
       return result;
-    });
+    },
+  );
 
   const baselineHeap = sampleHeap();
   const start = performance.now();
