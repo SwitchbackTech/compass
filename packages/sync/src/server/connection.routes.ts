@@ -1,6 +1,11 @@
 import { type Express, type RequestHandler, type Response } from "express";
 import { Status } from "@core/errors/status.codes";
 import {
+  BusyAvailabilityRequestSchema,
+  type BusyAvailabilityResponse,
+  BusyAvailabilityResponseSchema,
+} from "@core/types/sync/availability.contracts";
+import {
   type CalendarListResponse,
   type ConnectionListResponse,
   type ProviderCalendar,
@@ -23,6 +28,10 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
+import {
+  type BusyAvailability,
+  computeBusyAvailability,
+} from "@sync/domain/busy-query.service";
 import { deriveConnectionState } from "@sync/domain/connection-state";
 import {
   HORIZON_FUTURE_MONTHS,
@@ -52,6 +61,7 @@ import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 export const CONNECTIONS_PATH = "/internal/connections";
 export const CALENDARS_PATH = "/internal/calendars";
 export const EVENTS_PATH = "/internal/events";
+export const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 export const BEGIN_PATH = "/internal/connections/begin";
 // Where the provider redirects the browser after consent; `begin` builds the
 // redirect_uri from it and the public callback route below mounts on it.
@@ -263,6 +273,55 @@ export function registerConnectionRoutes(
               : null,
         };
         res.status(Status.OK).json(response);
+      } catch {
+        respondInternalError(res);
+      }
+    },
+  );
+
+  // Merged busy intervals for a set of blocking calendars over a bounded window,
+  // plus the freshness/completeness/bookability evidence the caller needs to
+  // decide whether to display or to confirm a booking against them. A POST
+  // because the query carries a structured body (calendar list + window +
+  // policy). Scoped to the signed principal; served in passive mode too (a read).
+  // The response carries intervals and freshness only — never event content.
+  app.post(
+    AVAILABILITY_BUSY_PATH,
+    internalRateLimit,
+    deps.authMiddleware,
+    async (req, res) => {
+      const auth = requireAuth(req, res);
+      if (!auth) return;
+      if (!ensureConnected(deps.mongo, res)) return;
+
+      const parsed = BusyAvailabilityRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(Status.BAD_REQUEST).json({ error: "invalid_query" });
+        return;
+      }
+      const query = parsed.data;
+
+      try {
+        const availability = await computeBusyAvailability(
+          {
+            occurrences: new EventOccurrenceRepository(
+              deps.mongo.db,
+              deps.mongo.client,
+            ),
+            resources: new SyncResourceRepository(deps.mongo.db),
+            connections: new ProviderConnectionRepository(deps.mongo.db),
+          },
+          {
+            tenantId: auth.tenantId,
+            principalId: auth.principalId,
+            calendarIds: query.calendarIds,
+            start: new Date(query.start),
+            end: new Date(query.end),
+            maxAgeMs: query.maxAgeMs,
+            now: deps.now ? new Date(deps.now()) : new Date(),
+          },
+        );
+        res.status(Status.OK).json(toBusyAvailabilityResponse(availability));
       } catch {
         respondInternalError(res);
       }
@@ -565,6 +624,35 @@ async function linkConnection(
     priority: 0,
     runAfter: new Date(),
     coalescingKey: `calendarListSync:${connection._id}`,
+  });
+}
+
+// Map the busy-availability domain result (Date instants) to the wire contract
+// (ISO strings). The domain already excludes event content, so this only
+// reshapes timestamps.
+function toBusyAvailabilityResponse(
+  availability: BusyAvailability,
+): BusyAvailabilityResponse {
+  // Parse through the schema so ISO strings are validated and branded, and any
+  // shape drift fails loudly here rather than reaching the caller malformed.
+  return BusyAvailabilityResponseSchema.parse({
+    intervals: availability.intervals.map((i) => ({
+      start: i.start.toISOString(),
+      end: i.end.toISOString(),
+    })),
+    computedAt: availability.computedAt.toISOString(),
+    connections: availability.connections.map((c) => ({
+      connectionId: c.connectionId,
+      state: c.state,
+      lastSyncedAt: c.lastSyncedAt?.toISOString() ?? null,
+      lastHealthyAt: c.lastHealthyAt?.toISOString() ?? null,
+    })),
+    complete: availability.complete,
+    issues: availability.issues.map((issue) => ({
+      calendarId: issue.calendarId,
+      reason: issue.reason,
+    })),
+    bookable: availability.bookable,
   });
 }
 
