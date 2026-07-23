@@ -1,8 +1,8 @@
 import { renderHook } from "@testing-library/react";
-import { describe, expect, it, spyOn } from "bun:test";
 import { type PropsWithChildren } from "react";
 import { CompassRefsProvider } from "@web/common/refs/compass-refs";
 import { useCompassRefs } from "@web/common/refs/useCompassRefs";
+import { describe, expect, it, spyOn } from "bun:test";
 
 describe("useCompassRefs", () => {
   it("returns the compass refs from context", () => {
