@@ -1,3 +1,5 @@
+import { afterAll } from "bun:test";
+
 const UNIT_TEST_ISOLATION_KEY = "__unit__";
 
 // Per-worker module state: Bun's parallel pool runs one test file per worker at
@@ -9,6 +11,13 @@ let activeTestFileUrl: string | undefined;
 export function enterTestFileUrl(testFileUrl: string): void {
   activeTestFileUrl = testFileUrl;
 }
+
+/** Clears the active test file URL when a test file finishes on this worker. */
+export function leaveTestFileUrl(): void {
+  activeTestFileUrl = undefined;
+}
+
+afterAll(leaveTestFileUrl);
 
 export function getCurrentTestFileUrl(): string {
   if (!activeTestFileUrl) {
