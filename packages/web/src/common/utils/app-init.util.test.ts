@@ -1,4 +1,10 @@
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { DatabaseInitError } from "@web/common/utils/storage/db-errors.util";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
+import {
+  initializeDatabaseWithErrorHandling,
+  showDbInitErrorToast,
+} from "./app-init.util";
 import {
   afterEach,
   beforeEach,
@@ -9,33 +15,19 @@ import {
   spyOn,
 } from "bun:test";
 
-// The initializer is injected as an argument; only the toast needs a mock.
-const mockInitializeStorage = mock();
-const mockToastError = mock();
-
-// Mock react-toastify. mock.module leaks process-wide, and other suites call
-// `toast(...)` directly (e.g. the Deleted toast fired by event delete
-// mutations), so the mock must stay callable — same shape as the sibling
-// react-toastify mocks.
-mock.module("react-toastify", () => ({
-  ToastContainer: () => null,
-  toast: Object.assign(mock(), {
-    error: mockToastError,
-    update: mock(),
-  }),
-}));
-
-const { initializeDatabaseWithErrorHandling, showDbInitErrorToast } =
-  require("./app-init.util") as typeof import("./app-init.util");
-
 describe("app-init.util", () => {
+  const mockInitializeStorage = mock();
+  const { port, mocks } = createTestToastPort();
+
   const timeoutId = {} as ReturnType<typeof setTimeout>;
   let setTimeoutSpy: ReturnType<typeof spyOn>;
   let timeoutCallback: (() => void) | undefined;
 
   beforeEach(() => {
     mockInitializeStorage.mockClear();
-    mockToastError.mockClear();
+    mocks.error.mockClear();
+    mocks.toast.mockClear();
+    registerToastPort(port);
     timeoutCallback = undefined;
     setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
       callback: TimerHandler,
@@ -94,7 +86,6 @@ describe("app-init.util", () => {
       const dbError = new DatabaseInitError("Database version mismatch");
       mockInitializeStorage.mockRejectedValue(dbError);
 
-      // Should not throw - just return the error
       await expect(
         initializeDatabaseWithErrorHandling(mockInitializeStorage),
       ).resolves.toEqual({
@@ -109,13 +100,11 @@ describe("app-init.util", () => {
 
       showDbInitErrorToast(dbError);
 
-      // Toast should not be called immediately
-      expect(mockToastError).not.toHaveBeenCalled();
+      expect(mocks.error).not.toHaveBeenCalled();
 
       runToastTimeout();
 
-      // Now toast should be called
-      expect(mockToastError).toHaveBeenCalledWith(
+      expect(mocks.error).toHaveBeenCalledWith(
         "Compass can't use offline storage right now: Storage quota exceeded. Your changes won't be saved on this device.",
         {
           autoClose: false,
@@ -130,7 +119,7 @@ describe("app-init.util", () => {
       showDbInitErrorToast(dbError);
       runToastTimeout();
 
-      expect(mockToastError).toHaveBeenCalledWith(
+      expect(mocks.error).toHaveBeenCalledWith(
         expect.stringContaining("Database version mismatch"),
         expect.any(Object),
       );
@@ -142,7 +131,7 @@ describe("app-init.util", () => {
       showDbInitErrorToast(dbError);
       runToastTimeout();
 
-      expect(mockToastError).toHaveBeenCalledWith(
+      expect(mocks.error).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({ autoClose: false }),
       );
@@ -156,7 +145,6 @@ describe("app-init.util", () => {
       );
       mockInitializeStorage.mockRejectedValue(dbError);
 
-      // Simulate what index.tsx does
       const { dbInitError } = await initializeDatabaseWithErrorHandling(
         mockInitializeStorage,
       );
@@ -167,7 +155,7 @@ describe("app-init.util", () => {
         showDbInitErrorToast(dbInitError);
         runToastTimeout();
 
-        expect(mockToastError).toHaveBeenCalledWith(
+        expect(mocks.error).toHaveBeenCalledWith(
           "Compass can't use offline storage right now: Failed to initialize IndexedDB after 3 attempts. Your changes won't be saved on this device.",
           expect.objectContaining({
             autoClose: false,
@@ -186,9 +174,8 @@ describe("app-init.util", () => {
 
       expect(dbInitError).toBeNull();
 
-      // No toast should be shown
       runToastTimeout();
-      expect(mockToastError).not.toHaveBeenCalled();
+      expect(mocks.error).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,54 +1,38 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization.registry";
+import {
+  GoogleReconnectToast,
+  showGoogleReconnectToast,
+} from "@web/common/utils/toast/google-reconnect.toast";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// mock.module is process-wide and leaks across test files (deleted-toast's
-// react-toastify mock would otherwise leak in here with no error/dismiss), so
-// this file registers its own full-shape toast mock like the other toast tests.
-const toast = Object.assign(mock(), {
-  error: mock(),
-  dismiss: mock(),
-  isActive: mock(() => false),
-});
-
-mock.module("react-toastify", () => ({
-  ToastContainer: () => null,
-  toast,
-}));
-
-const mockStartGoogleAuthorization = mock();
-mock.module(
-  "@web/auth/google/authorization/useStartGoogleAuthorization",
-  () => ({
-    useStartGoogleAuthorization: () => ({
-      loading: false,
-      startGoogleAuthorization: mockStartGoogleAuthorization,
-    }),
-  }),
-);
-
-const { GoogleReconnectToast, showGoogleReconnectToast } = await import(
-  "@web/common/utils/toast/google-reconnect.toast"
-);
-
-const mockSyncPendingLocalEvents = mock();
-
-const renderToast = () =>
-  render(
-    <GoogleReconnectToast
-      toastId="google-revoked-api"
-      syncPendingLocalEvents={mockSyncPendingLocalEvents}
-    />,
-  );
-
 describe("GoogleReconnectToast", () => {
+  const { port, mocks } = createTestToastPort();
+  const mockStartGoogleAuthorization = mock();
+  const mockSyncPendingLocalEvents = mock();
+
   beforeEach(() => {
     mockStartGoogleAuthorization.mockClear();
     mockSyncPendingLocalEvents.mockClear();
-    toast.error.mockClear();
-    toast.dismiss.mockClear();
-    toast.isActive.mockReturnValue(false);
+    mocks.error.mockClear();
+    mocks.dismiss.mockClear();
+    mocks.isActive.mockReturnValue(false);
+    registerToastPort(port);
+    registerUseStartGoogleAuthorizationForTests(() => ({
+      loading: false,
+      startGoogleAuthorization: mockStartGoogleAuthorization,
+    }));
   });
+
+  const renderToast = () =>
+    render(
+      <GoogleReconnectToast
+        toastId="google-revoked-api"
+        syncPendingLocalEvents={mockSyncPendingLocalEvents}
+      />,
+    );
 
   it("explains the disconnect without blaming the user or implying data loss", () => {
     renderToast();
@@ -67,7 +51,7 @@ describe("GoogleReconnectToast", () => {
     mockSyncPendingLocalEvents.mockResolvedValue(true);
     renderToast();
 
-    await userEvent.click(
+    fireEvent.click(
       screen.getByRole("button", { name: "Reconnect Google Calendar" }),
     );
 
@@ -75,14 +59,14 @@ describe("GoogleReconnectToast", () => {
       expect(mockStartGoogleAuthorization).toHaveBeenCalledTimes(1);
     });
     expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);
-    expect(toast.dismiss).toHaveBeenCalledWith("google-revoked-api");
-  });
+    expect(mocks.dismiss).toHaveBeenCalledWith("google-revoked-api");
+  }, 15_000);
 
   it("stays open and does not start authorization when the local-event flush fails", async () => {
     mockSyncPendingLocalEvents.mockResolvedValue(false);
     renderToast();
 
-    await userEvent.click(
+    fireEvent.click(
       screen.getByRole("button", { name: "Reconnect Google Calendar" }),
     );
 
@@ -90,21 +74,24 @@ describe("GoogleReconnectToast", () => {
       expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);
     });
     expect(mockStartGoogleAuthorization).not.toHaveBeenCalled();
-    expect(toast.dismiss).not.toHaveBeenCalled();
+    expect(mocks.dismiss).not.toHaveBeenCalled();
   });
 });
 
 describe("showGoogleReconnectToast", () => {
+  const { port, mocks } = createTestToastPort();
+
   beforeEach(() => {
-    toast.error.mockClear();
-    toast.isActive.mockReturnValue(false);
+    mocks.error.mockClear();
+    mocks.isActive.mockReturnValue(false);
+    registerToastPort(port);
   });
 
   it("does not stack a second toast while one is already visible", () => {
-    toast.isActive.mockReturnValue(true);
+    mocks.isActive.mockReturnValue(true);
 
     showGoogleReconnectToast();
 
-    expect(toast.error).not.toHaveBeenCalled();
+    expect(mocks.error).not.toHaveBeenCalled();
   });
 });

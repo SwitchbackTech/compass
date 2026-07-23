@@ -9,10 +9,4 @@ import "./setup/jsdom-env";
 import "./setup/browser-polyfills";
 import "./setup/indexeddb-env";
 
-import { mockNodeModules } from "./__mocks__/mock.setup";
-
-mockNodeModules();
-
-// Dynamic import keeps lifecycle hooks (and session import) after mock.module
-// registration — static imports are hoisted and would run mockNodeModules too late.
 await import("./setup/test-lifecycle");

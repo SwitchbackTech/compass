@@ -1,4 +1,9 @@
 import { server } from "../__mocks__/server/mock.server";
+import {
+  installDefaultWebTestSeams,
+  resetWebTestSeams,
+} from "../helpers/web-test-seams";
+import { ensureIndexedDbTestEnv } from "./indexeddb-env";
 import { dom } from "./jsdom-env";
 import {
   afterAll,
@@ -17,17 +22,10 @@ const jestDomMatchers = requireMatchers(
 expect.extend(jestDomMatchers);
 (globalThis as typeof globalThis & { expect: typeof expect }).expect = expect;
 
-const sessionModule = await import("supertokens-web-js/recipe/session");
 const { cleanup, configure } = await import("@testing-library/react");
 const { resetAllStores } = await import("../utils/state/reset-stores");
+const { BaseApi } = await import("@web/api/base/base.api");
 
-// Give async queries (findBy*, waitFor) real headroom. The default 1000ms is
-// fine locally (the whole suite runs in ~16s) but too tight on CI, where every
-// matrix job shares the runner's cores: under that contention a component that
-// resolves in tens of ms locally can take past a second, timing out queries in
-// tests that are otherwise correct (AuthModal/SelectView flaked this way). A
-// genuinely stuck async never resolves regardless, so this only widens the
-// window for slow-but-correct ones — it cannot mask a real hang.
 configure({ asyncUtilTimeout: 5000 });
 
 function resetDocument() {
@@ -57,24 +55,28 @@ function resetBrowserState() {
 }
 
 beforeEach(() => {
-  sessionModule.doesSessionExist?.mockResolvedValue(true);
+  installDefaultWebTestSeams();
 });
 
-beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+beforeAll(async () => {
+  await ensureIndexedDbTestEnv();
+  server.listen({ onUnhandledRequest: "error" });
+});
 afterEach(async () => {
   await Promise.resolve();
   cleanup();
   resetDocument();
   resetBrowserState();
   resetAllStores();
+  resetWebTestSeams();
+  BaseApi.defaults.adapter = undefined;
   server.resetHandlers();
 });
-// Safety net when multiple files share a --parallel worker: the last test in a
-// file runs afterEach above; this mirrors that reset if Bun ever skips it.
 afterAll(() => {
   resetDocument();
   resetBrowserState();
   resetAllStores();
+  resetWebTestSeams();
+  server.close();
+  mock.restore();
 });
-afterAll(() => server.close());
-afterAll(() => mock.restore());

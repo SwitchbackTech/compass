@@ -1,4 +1,3 @@
-import { toast } from "react-toastify";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { queryClient } from "@web/api/query-client";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
@@ -7,6 +6,7 @@ import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
 import { showGoogleReconnectToast } from "@web/common/utils/toast/google-reconnect.toast";
+import { getToast } from "@web/common/utils/toast/toast.port";
 import { removeEventsByCalendarFromQueries } from "@web/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { refreshEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
@@ -57,7 +57,7 @@ const googleAuthUtil = createGoogleAuthUtil({
     }),
   showReconnectToast: showGoogleReconnectToast,
   syncLocalEventsToCloud: () => syncLocalEventsToCloud(),
-  toastError: toast.error,
+  toastError: (content, options) => getToast().error(content, options),
 });
 
 const {

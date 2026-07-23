@@ -47,21 +47,25 @@ E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` vi
 Every package runs on Bun's native test runner (Bun 1.3.14+); Jest has been removed.
 
 - `bun run test:core` — `test-parallel.ts core`: `bun test --parallel` with `core.preload.ts`.
-- `bun run test:web` — `test-isolated.ts`: one Bun process per test file with `web.preload.ts` (jsdom, MSW, Zustand reset). Required because preload `mock.module` mocks are process-global and Bun's `--parallel`/`--isolate` clears them between files.
+- `bun run test:web` — `test-parallel.ts web`: one `bun test` process with `web.preload.ts` (jsdom, MSW, Zustand reset, injectable test seams). Files run sequentially — not `--parallel` — because MSW's XHR patch and jsdom globals do not survive Bun's per-file `--isolate`.
 - `bun run test:backend`, `bun run test:scripts`, and `bun run test:sync` — `test-mongo-env.ts` boots one shared in-memory Mongo replica set, then runs `bun test --parallel` with the package preload. Per-file DB names come from `setupTestDb(import.meta.url)`.
 - `bun run test:backend:fast`, `bun run test:sync:fast`, and `bun run test:scripts:fast` — `test-parallel.ts` with mongo-free preloads; excludes `*.db.test.*` via `--path-ignore-patterns`. No mongod boot — use these for day-to-day backend/sync/scripts work that does not touch persistence.
-- Backend Google Calendar and SuperTokens behavior in tests use injectable seams (`TestGcalFixture`, `session.middleware`, `supertokens.registry`, `LoggerFactory`) instead of preload `mock.module` clusters.
+- Backend and web SuperTokens, toast, and Google-auth behavior in tests use injectable seams (`TestGcalFixture`, `session.middleware`, `supertokens.registry`, `session.port`, `toast.port`, `useStartGoogleAuthorization.registry`, `LoggerFactory`) instead of preload `mock.module` clusters.
 - Test files import lifecycle/assertion APIs from `bun:test` only (`mock`, `spyOn`, `mock.module` where unavoidable).
 
 ### Known infrastructure constraints
 
-**Web per-file isolation.** `test-isolated.ts` spawns one `bun test` process per web test file (up to 8 concurrent). This is not optional today: the web preload registers process-wide `mock.module` mocks for SuperTokens, react-toastify, and Google auth. Bun's native `--parallel` enables `--isolate`, which clears `mock.module` state and causes cross-file leaks. Eliminating the launcher requires either a Bun fix or migrating those deps to injectable seams (as backend already does).
+**Web test seams.** Session, toast, and Google authorization use injectable ports registered in `@web/__tests__/helpers/web-test-seams.ts`. The preload lifecycle calls `installDefaultWebTestSeams()` in `beforeEach` and `resetWebTestSeams()` in `afterEach`, so web no longer needs preload `mock.module` clusters or a per-file process launcher.
+
+**Web sequential runner.** Web runs in one Bun process with files executed sequentially. Native `--parallel` is intentionally disabled: Bun's `--isolate` clears jsdom/MSW globals between files, breaking XHR mocking (`oldXMLHttpRequest is undefined`). Core/backend still use `--parallel`.
+
+**IndexedDB in tests.** `ensureIndexedDbTestEnv()` re-applies fake-indexeddb globals when needed.
 
 **Store reset registry.** Zustand stores are module singletons. `@web/__tests__/utils/state/reset-stores.ts` registers every store that must reset between tests; `web.preload.ts` calls `resetAllStores()` in a global `afterEach`. When adding a new store, register it in both `reset-stores.ts` and `seed-stores.ts` or state will leak silently across tests.
 
 **Fast vs full mongo tiers.** Files named `*.db.test.ts(x)` connect to the shared in-memory replica set started by `test-mongo-env.ts`. Everything else is "fast" and can run without mongod via the `:fast` scripts. Full-suite commands (`test:backend`, etc.) still boot mongod because some non-db tests import backend modules that expect `MONGO_URI` to be set even when they do not connect.
 
-**Web preload modules.** Setup lives under `packages/web/src/__tests__/setup/` (jsdom env, browser polyfills, asset stubs, indexedDB, test lifecycle). The entry point is `web.preload.ts`, which calls `mockNodeModules()` before dynamically importing the lifecycle module so `mock.module` registration is not hoisted past SuperTokens mocks.
+**Web preload modules.** Setup lives under `packages/web/src/__tests__/setup/` (jsdom env, browser polyfills, asset stubs, indexedDB, test lifecycle). The entry point is `web.preload.ts`, which loads setup side effects then dynamically imports the lifecycle module.
 
 ### Test file naming and tiers
 
@@ -132,8 +136,8 @@ Isolation rules:
 - Avoid mocking shared UI primitives such as `TooltipWrapper`, `@floating-ui/react`, or session hooks in broad component tests. Even with per-file isolation, broad mocks can hide integration behavior inside that file.
 - If a test replaces globals (`fetch`, `document.getElementById`, storage, timers, console methods), restore the original value in teardown.
 - Prefer `renderWithStore`, `createStoreWrapper`, or a focused provider harness over mocking `@web/store` or `store.hooks`.
-- `bun run test:web` is the acceptance check for web test isolation. It runs every file in a fresh process via `test-isolated.ts`; a focused test can still miss interactions within its own file.
-- `mock.module` is process-global, not test-scoped. The per-file runner prevents cross-file leaks, and the web preload restores mocks when each file finishes, but tests within one file still share that file's module registry.
+- `bun run test:web` is the acceptance check for the web suite. It runs the full package on native `bun test --parallel`; a focused single-file run can still miss cross-file interactions.
+- `mock.module` is process-global within a test file, not test-scoped. Prefer injectable seams (`session.port`, `toast.port`, hook registries) or `spyOn` with teardown. File-level `mock.module` remains acceptable for one-off module substitution when a seam does not exist yet.
 - To focus an element on mount in this jsdom setup, use React's `autoFocus` prop or a stable callback ref (`ref={useCallback(n => n?.focus(), [])}`) — both fire in the commit phase. A `useEffect(() => ref.current?.focus())` does **not** make the element `document.activeElement` in tests. `autoFocus` trips biome's `lint/a11y/noAutofocus` (error) and a JSX-attribute `biome-ignore` comment breaks the formatter, so prefer the callback ref.
 - `FloatingFocusManager` fights virtual-focus combobox palettes: for a component that keeps real focus in one input while using `useListNavigation({ virtual: true })` + `aria-activedescendant` (a command-palette style pattern), `FloatingFocusManager` asynchronously grabs focus to the panel container and steals it back from the input. Drop it — `useDismiss` still handles Escape/outside-press without it. It belongs on anchored forms with a real reference element instead (e.g. `FloatingEventForm`).
 
@@ -143,7 +147,7 @@ Primary setup files:
 
 - `packages/web/src/__tests__/web.preload.ts` (orchestrator)
 - `packages/web/src/__tests__/web.test.init.ts` (API base URL, Google client id)
-- `packages/web/src/__tests__/__mocks__/mock.setup.ts` (SuperTokens, toastify, Google auth module mocks)
+- `packages/web/src/__tests__/helpers/web-test-seams.ts` (default session/toast/Google-auth test ports)
 - `packages/web/src/__tests__/__mocks__/server/mock.handlers.ts`
 
 Current defaults worth knowing:
@@ -152,7 +156,7 @@ Current defaults worth knowing:
 - unhandled HTTP requests fail the test (instead of silently passing)
 - IndexedDB is provided by `fake-indexeddb/auto`
 - `structuredClone` is polyfilled for test environments that do not provide it
-- SuperTokens session existence is reset to `true` in `beforeEach`
+- SuperTokens session existence defaults to `true` via `installDefaultWebTestSeams()` in `beforeEach`
 
 Important built-in handlers include:
 

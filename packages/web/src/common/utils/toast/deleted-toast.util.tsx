@@ -1,9 +1,9 @@
-import { toast } from "react-toastify";
 import {
   EVENT_DELETED_TOAST_ID,
   toastDefaultOptions,
 } from "@web/common/constants/toast.constants";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
+import { getToast } from "@web/common/utils/toast/toast.port";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 
 /**
@@ -33,7 +33,7 @@ export function showDeletedToast(withUndoHint: boolean): void {
  * existing toast in place rather than stacking a second one.
  */
 export function showRestoredToast(): void {
-  toast.update(EVENT_DELETED_TOAST_ID, {
+  getToast().update(EVENT_DELETED_TOAST_ID, {
     render: "Restored",
     autoClose: toastDefaultOptions.autoClose,
   });

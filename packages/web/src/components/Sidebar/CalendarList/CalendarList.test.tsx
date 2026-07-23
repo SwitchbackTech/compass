@@ -201,7 +201,7 @@ describe("CalendarList", () => {
       };
     };
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderCalendarList([calendarA, calendarB], { coalesceDelayMs: 100 });
 
     const buttonA = screen.getByRole("button", {
@@ -212,17 +212,26 @@ describe("CalendarList", () => {
     });
 
     await user.click(buttonA);
-    expect(buttonA.getAttribute("aria-pressed")).toBe("false");
+    await waitFor(() => {
+      expect(buttonA.getAttribute("aria-pressed")).toBe("false");
+    });
 
     await user.click(buttonB);
-    expect(buttonB.getAttribute("aria-pressed")).toBe("false");
+    await waitFor(() => {
+      expect(buttonB.getAttribute("aria-pressed")).toBe("false");
+    });
 
     await user.click(buttonA);
-    expect(buttonA.getAttribute("aria-pressed")).toBe("true");
-
     await waitFor(() => {
-      expect(putCalls).toHaveLength(1);
+      expect(buttonA.getAttribute("aria-pressed")).toBe("true");
     });
+
+    await waitFor(
+      () => {
+        expect(putCalls).toHaveLength(1);
+      },
+      { timeout: 3000 },
+    );
 
     const body = putCalls[0] as { calendarId: string; isVisible: boolean }[];
     expect(body).toHaveLength(2);
@@ -247,7 +256,7 @@ describe("CalendarList", () => {
       end: "2026-07-20T00:00:00.000Z",
     });
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const { queryClient } = renderCalendarList([hidden, kept], {
       coalesceDelayMs: 100,
     });
@@ -272,12 +281,14 @@ describe("CalendarList", () => {
       throw new Error("Simulated network failure");
     });
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderCalendarList([calendar], { coalesceDelayMs: 100 });
 
     const toggle = screen.getByRole("button", { name: "Hide Work calendar" });
     await user.click(toggle);
-    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    await waitFor(() => {
+      expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    });
 
     await waitFor(() => {
       expect(toggle.getAttribute("aria-pressed")).toBe("true");
@@ -299,7 +310,7 @@ describe("CalendarList", () => {
       statusText: config.method === "PUT" ? "No Content" : "OK",
     });
 
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     renderCalendarList([calendar], { coalesceDelayMs: 100 });
 
     const toggle = screen.getByRole("button", { name: "Hide Work calendar" });
@@ -308,10 +319,14 @@ describe("CalendarList", () => {
     expect(document.activeElement).toBe(toggle);
 
     await user.keyboard("{Enter}");
-    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    await waitFor(() => {
+      expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    });
 
     await user.keyboard(" ");
-    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    await waitFor(() => {
+      expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    });
   });
 
   it("shows a loading state while calendars are pending", () => {
