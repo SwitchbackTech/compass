@@ -1,7 +1,10 @@
 import { faker } from "@faker-js/faker";
 import { type BusyAvailabilityRequest } from "@core/types/sync/availability.contracts";
 import { verifyInternalRequest } from "@sync/auth/internal-auth";
-import { AVAILABILITY_BUSY_PATH } from "@sync/server/connection.routes";
+import {
+  AVAILABILITY_BUSY_PATH,
+  CONNECTIONS_PATH,
+} from "@sync/server/connection.routes";
 import {
   SyncServiceClient,
   type SyncServiceClientOptions,
@@ -104,6 +107,46 @@ describe("SyncServiceClient", () => {
     if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
     expect(verdict.context.tenantId).toBe(who.tenantId);
     expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("lists connections with a signed GET the real Sync verifier accepts", async () => {
+    const who = principal();
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({ connections: [] }),
+    }));
+
+    const result = await client(fn).listConnections(who);
+
+    if (!result.ok) throw new Error(`expected ok, got ${result.error.kind}`);
+    expect(result.value.connections).toEqual([]);
+
+    const sent = calls[0];
+    expect(sent?.url).toBe(`${BASE_URL}${CONNECTIONS_PATH}`);
+    expect(sent?.method).toBe("GET");
+    expect(sent?.body).toBeUndefined();
+
+    const verdict = verifyInternalRequest({
+      secret: SECRET,
+      headers: sent?.headers ?? {},
+      now: NOW,
+    });
+    if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
+    expect(verdict.context.tenantId).toBe(who.tenantId);
+    expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("rejects a connections body that does not match the contract", async () => {
+    const { fn } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({ connections: [{ bogus: true }] }),
+    }));
+
+    const result = await client(fn).listConnections(principal());
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.kind).toBe("invalidResponse");
   });
 
   it("maps a 401 to an unauthorized error", async () => {
