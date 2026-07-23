@@ -98,7 +98,6 @@ export const AllDayEvents = ({
             const isPlaceholder = event._id === draftId;
             const eventForDisplay = mergeGridEventWithDraftOverlay(
               event,
-              draftId,
               draftOverlay,
             );
             // The placeholder can carry a live (dragging/resizing) calendarId

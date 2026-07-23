@@ -1,7 +1,7 @@
 import { FloatingPortal, useFloating } from "@floating-ui/react";
 import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { getCalendarEventIdFromElement } from "@web/common/utils/event/event.util";
 import {
   editGridEventDraft,
@@ -29,10 +29,9 @@ export const ContextMenuWrapper = ({
 }) => {
   const queryClient = useQueryClient();
   const gridDraft = useDraftStore(selectGridDraft);
-  const contextMenuEvent = useMemo(
-    () => (gridDraft ? gridEventDraftToGridEvent(gridDraft) : undefined),
-    [gridDraft],
-  );
+  const contextMenuEvent = gridDraft
+    ? gridEventDraftToGridEvent(gridDraft)
+    : undefined;
 
   const [isOpen, setIsOpen] = useState(false);
 
