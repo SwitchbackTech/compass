@@ -8,11 +8,28 @@ export const useReleaseNotesPromptStore = create<ReleaseNotesPromptState>()(
   () => ({ isOpen: false }),
 );
 
+let scheduleOpenTimeoutId: ReturnType<typeof window.setTimeout> | undefined;
+
+const clearScheduledOpen = () => {
+  if (scheduleOpenTimeoutId !== undefined) {
+    window.clearTimeout(scheduleOpenTimeoutId);
+    scheduleOpenTimeoutId = undefined;
+  }
+};
+
 export const releaseNotesPromptActions = {
-  open: () => useReleaseNotesPromptStore.setState({ isOpen: true }),
-  close: () => useReleaseNotesPromptStore.setState({ isOpen: false }),
+  open: () => {
+    clearScheduledOpen();
+    useReleaseNotesPromptStore.setState({ isOpen: true });
+  },
+  close: () => {
+    clearScheduledOpen();
+    useReleaseNotesPromptStore.setState({ isOpen: false });
+  },
   scheduleOpen: (delayMs = 45_000) => {
-    window.setTimeout(() => {
+    clearScheduledOpen();
+    scheduleOpenTimeoutId = window.setTimeout(() => {
+      scheduleOpenTimeoutId = undefined;
       useReleaseNotesPromptStore.setState({ isOpen: true });
     }, delayMs);
   },

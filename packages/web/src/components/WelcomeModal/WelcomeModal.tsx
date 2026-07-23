@@ -55,11 +55,13 @@ export function WelcomeModal() {
 
   const handleLogIn = () => {
     markWelcomeSeen();
+    maybeShowCmdPaletteHint();
     openModal("login");
   };
 
   const handleSignUp = () => {
     markWelcomeSeen();
+    maybeShowCmdPaletteHint();
     openModal("signUp");
   };
 
