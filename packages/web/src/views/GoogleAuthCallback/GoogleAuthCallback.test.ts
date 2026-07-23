@@ -1,9 +1,9 @@
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { GOOGLE_AUTH_SCOPES_REQUIRED } from "@web/auth/google/authorization/google-authorization.constants";
 import {
   readGoogleAuthorizationIntent,
   writeGoogleAuthorizationIntent,
 } from "@web/auth/google/authorization/google-authorization.storage";
-import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -47,7 +47,7 @@ describe("completeGoogleAuthCallback", () => {
   const navigate = mock();
 
   beforeEach(() => {
-    mocks.toast.error.mockClear();
+    mocks.error.mockClear();
     registerToastPort(port);
     sessionStorage.clear();
     mockLoginOrSignup.mockClear();
@@ -84,7 +84,7 @@ describe("completeGoogleAuthCallback", () => {
     expect(completeAuthentication).toHaveBeenCalledWith({
       email: "user@example.com",
     });
-    expect(mocks.toast.error).not.toHaveBeenCalled();
+    expect(mocks.error).not.toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
     expect(readGoogleAuthorizationIntent("sign-in-state")).toBeNull();
   });
@@ -104,7 +104,7 @@ describe("completeGoogleAuthCallback", () => {
     expect(mockLoginOrSignup).not.toHaveBeenCalled();
     expect(mockConnectGoogle).not.toHaveBeenCalled();
     expect(completeAuthentication).not.toHaveBeenCalled();
-    expect(mocks.toast.error).toHaveBeenCalledWith(
+    expect(mocks.error).toHaveBeenCalledWith(
       "Compass needs all the requested permissions to sync your calendar. Please allow them and try again.",
       expect.any(Object),
     );
@@ -121,7 +121,7 @@ describe("completeGoogleAuthCallback", () => {
     expect(mockLoginOrSignup).not.toHaveBeenCalled();
     expect(mockConnectGoogle).not.toHaveBeenCalled();
     expect(completeAuthentication).not.toHaveBeenCalled();
-    expect(mocks.toast.error).toHaveBeenCalledWith(
+    expect(mocks.error).toHaveBeenCalledWith(
       "We couldn't connect your Google account. Please try again.",
       expect.any(Object),
     );

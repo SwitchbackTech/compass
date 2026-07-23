@@ -48,7 +48,7 @@ describe("useExportDataCmdItems", () => {
 
   beforeEach(() => {
     mocks.toast.mockClear();
-    mocks.toast.error.mockClear();
+    mocks.error.mockClear();
     registerToastPort(port);
     mockUseSession.mockClear();
     mockRunExportMyData.mockClear();
@@ -84,7 +84,7 @@ describe("useExportDataCmdItems", () => {
     });
 
     expect(mockRunExportMyData).toHaveBeenCalledTimes(1);
-    expect(mocks.toast.error).not.toHaveBeenCalled();
+    expect(mocks.error).not.toHaveBeenCalled();
   });
 
   it("shows an error toast when the export fails", async () => {
@@ -99,7 +99,7 @@ describe("useExportDataCmdItems", () => {
     });
 
     await waitFor(() => {
-      expect(mocks.toast.error).toHaveBeenCalledWith(
+      expect(mocks.error).toHaveBeenCalledWith(
         "Couldn't export your data. Please try again.",
         expect.objectContaining({ toastId: "export-my-data" }),
       );
