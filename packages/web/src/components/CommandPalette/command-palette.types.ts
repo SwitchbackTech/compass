@@ -7,6 +7,8 @@ export interface CommandItem {
   iconClassName?: string;
   onClick?: () => void;
   disabled?: boolean;
+  /** When true, selecting the item does not close the palette. */
+  keepOpen?: boolean;
   /** A single key (`"?"`) or one key per combo entry (`["Shift", "W"]`), rendered as keycap chips. */
   shortcut?: string | string[];
 }

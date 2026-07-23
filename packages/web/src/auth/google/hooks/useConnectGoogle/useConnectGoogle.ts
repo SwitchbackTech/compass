@@ -40,7 +40,6 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
 
   const onRepairGoogle = useCallback(() => {
     const startRepair = async () => {
-      settingsActions.closeCmdPalette();
       setRepairingSyncIndicatorOverride();
 
       try {
