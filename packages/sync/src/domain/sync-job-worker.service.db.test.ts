@@ -116,6 +116,11 @@ describe("SyncJobWorker", () => {
   const worker = (reader: FakeReader) =>
     new SyncJobWorker(deps(reader), OWNER, { now });
 
+  const workerWith = (
+    reader: FakeReader,
+    options: { maxAttempts?: number; random?: () => number },
+  ) => new SyncJobWorker(deps(reader), OWNER, { now, ...options });
+
   const seedCalendar = (): Promise<ProviderCalendarRecord> =>
     calendars.upsertByProviderCalendar({
       tenantId: objectId() as ProviderCalendarRecord["tenantId"],
@@ -255,6 +260,68 @@ describe("SyncJobWorker", () => {
     );
     expect(after?.state).toBe("pending");
     expect(after!.runAfter.getTime()).toBeGreaterThan(now().getTime());
+  });
+
+  it("fails a transient job once its retries are exhausted", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const job = await enqueue(resource, "incrementalPull");
+
+    // maxAttempts: 1 means the first (attempt 1) transient failure is terminal.
+    await workerWith(
+      new FakeReader([], new ProviderEventReadError("transient", "flaky")),
+      { maxAttempts: 1 },
+    ).runOnce();
+
+    const after = await jobs.findById(
+      resource.tenantId,
+      resource.principalId,
+      job._id,
+    );
+    expect(after?.state).toBe("failed");
+    expect(after?.failureClass).toBe("retryableTransient");
+    expect(after?.leaseOwner).toBeNull();
+  });
+
+  it("keeps a failed job's coalescing key so enqueue does not replace it", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    await enqueue(resource, "incrementalPull");
+
+    await workerWith(
+      new FakeReader([], new ProviderEventReadError("transient", "flaky")),
+      { maxAttempts: 1 },
+    ).runOnce();
+
+    // A fresh trigger for the same resource coalesces onto the failed job rather
+    // than creating a new pending one — the failure needs attention first.
+    const reenqueued = await enqueue(resource, "incrementalPull");
+    expect(reenqueued.state).toBe("failed");
+    expect(
+      await storage
+        .db()
+        .collection(SYNC_COLLECTIONS.jobs)
+        .countDocuments({ coalescingKey: `incrementalPull:${resource._id}` }),
+    ).toBe(1);
+  });
+
+  it("applies bounded jitter to the retry backoff", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, null);
+    const job = await enqueue(resource, "repair");
+
+    // random 0 => the low end of the +/-20% jitter on the 10s base (attempt 1).
+    await workerWith(new FakeReader([pageOf([single("keep")], null)]), {
+      random: () => 0,
+    }).runOnce();
+
+    const after = await jobs.findById(
+      resource.tenantId,
+      resource.principalId,
+      job._id,
+    );
+    // base 10_000ms * (1 - 0.2) = 8_000ms after now.
+    expect(after?.runAfter).toEqual(new Date(now().getTime() + 8_000));
   });
 
   it("drops a job whose resource no longer exists", async () => {
