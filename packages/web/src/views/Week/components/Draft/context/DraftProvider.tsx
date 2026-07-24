@@ -19,7 +19,7 @@ export const DraftProvider = ({
   const actions = useDraftActions(state, setters, dateCalcs, weekProps);
 
   return (
-    <DraftContext.Provider value={{ state, setters, actions }}>
+    <DraftContext.Provider value={{ state, actions }}>
       {children}
     </DraftContext.Provider>
   );

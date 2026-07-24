@@ -34,9 +34,9 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
-  const { setters, state } = useDraftContext();
+  const { actions, state } = useDraftContext();
   const { draft, isDragging, isFormOpen, isResizing } = state;
-  const { setDraft } = setters;
+  const { setLocalDraft } = actions;
   const gridDraftFromStore = useDraftStore(selectGridDraft);
   const activity = useDraftStore(selectDraftActivity);
 
@@ -53,7 +53,7 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
     gridDraftFromStore &&
     (draft === null || activity === "eventRightClick")
   ) {
-    setDraft(gridDraftFromStore);
+    setLocalDraft(gridDraftFromStore);
   }
 
   // Sidebar edits write the shared draft store. Mirror into Week local draft
@@ -63,8 +63,8 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
       return;
     }
 
-    setDraft(gridDraftFromStore);
-  }, [gridDraftFromStore, isDragging, isFormOpen, isResizing, setDraft]);
+    setLocalDraft(gridDraftFromStore);
+  }, [gridDraftFromStore, isDragging, isFormOpen, isResizing, setLocalDraft]);
 
   // GridEvent-shaped projection of the canonical GridEventDraft, for
   // the still-unconverted grid-layout helpers below (deck layout, all-day

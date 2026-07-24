@@ -170,7 +170,6 @@ const renderMainGridEvents = () =>
         value={
           {
             actions: { stopDragging: mock(), stopResizing: mock() },
-            setters: {},
             state: {},
           } as never
         }
@@ -190,7 +189,6 @@ const renderAllDayEvents = () =>
         value={
           {
             actions: { stopDragging: mock(), stopResizing: mock() },
-            setters: {},
             state: {},
           } as never
         }
