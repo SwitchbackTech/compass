@@ -64,13 +64,8 @@ if (typeof window !== "undefined") {
   };
 }
 
-export const selectUserMetadata = (state: UserMetadataState) => state.current;
-
 export const selectUserMetadataStatus = (state: UserMetadataState) =>
   state.status;
-
-export const selectGoogleMetadata = (state: UserMetadataState) =>
-  state.current?.google;
 
 /**
  * Selects the unified Google connection state computed by the server.

@@ -14,11 +14,10 @@ export interface AvailabilityRange {
 
 /**
  * The calendars whose busy time is worth querying: active, currently
- * VISIBLE (packet 08 step 4's read filtering applies here too - a hidden
- * calendar's busy time must not render), and freeBusyReader specifically -
+ * VISIBLE, and freeBusyReader specifically -
  * an owner/writer/reader calendar already surfaces its busy time as real
  * synced events, so re-querying free/busy for it here would just double it
- * up (A7). Exported standalone (not inlined into the hook below) so a test
+ * up. Exported standalone (not inlined into the hook below) so a test
  * can derive the exact same id set - and therefore the exact same query key -
  * from a seeded calendars list without duplicating this filter.
  */

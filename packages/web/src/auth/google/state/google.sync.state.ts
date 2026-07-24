@@ -1,5 +1,5 @@
 // Transient Google sync UI overrides (e.g. repairing, post-connect syncing) live outside
-// Redux so auth/sync helpers can update them from async callbacks without dispatch.
+// store so auth/sync helpers can update them from async callbacks without dispatch.
 // This module is a minimal external store (mutable snapshot + listener set). Consumers
 // subscribe with useSyncExternalStore(subscribeToGoogleSyncUIState, getGoogleSyncIndicatorOverride, …).
 

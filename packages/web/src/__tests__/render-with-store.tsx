@@ -44,14 +44,3 @@ export function renderWithStore(
 
   return render(ui, { wrapper });
 }
-
-export function renderHookWithStore<Result, Props>(
-  hook: (initialProps: Props) => Result,
-  state?: TestAppState,
-  options?: Omit<RenderHookOptions<Props>, "wrapper"> & StoreOptions,
-) {
-  const { events, ...renderHookOptions } = options ?? {};
-  const { wrapper } = createStoreWrapper(state, { events });
-
-  return renderHook(hook, { ...renderHookOptions, wrapper });
-}

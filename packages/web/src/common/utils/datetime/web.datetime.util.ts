@@ -6,10 +6,17 @@
  */
 import { YMDHAM_FORMAT } from "@core/constants/date.constants";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import {
-  type Params_DateChange,
-  type Params_TimeChange,
-} from "@web/common/types/util.types";
+
+interface Params_DateChange {
+  start: Date;
+  end: Date;
+}
+interface Params_TimeChange {
+  oldStart: string;
+  oldEnd: string;
+  start: string;
+  end: string;
+}
 
 export const shouldAdjustComplimentDate = (
   changed: "start" | "end",

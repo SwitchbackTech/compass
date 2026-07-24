@@ -2,10 +2,7 @@
  * Zustand stores (and other module-level singleton stores, e.g. the
  * repository-source cache) persist across test files within a worker, so
  * test isolation comes from resetting them between tests instead of building
- * a fresh store per render. Every store migrated off Redux, plus any other
- * module-level store that leaks across test files, registers a reset here;
- * web.preload.ts calls resetAllStores() in a global afterEach so individual
- * test files never need to remember it.
+ * a fresh store per render.
  */
 import { resetBackendAvailabilityForTests } from "@web/api/util/backend-unavailable-error.util";
 import {
