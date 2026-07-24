@@ -1362,6 +1362,61 @@ describe("GET /internal/events/full", () => {
     expect(kinds).toEqual(["occurrence", "series"]);
   });
 
+  it("second-hops to back-fill a master reachable only via an exception", async () => {
+    // The only in-range row is an OVERRIDDEN instance whose occurrence points at
+    // the exception event, not the master. The master is fetched only by the
+    // route's second findByIds hop (via the exception's seriesId), so this proves
+    // that hop actually runs and merges.
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId() as EventRecord["calendarId"];
+    const master = await seedEvent(tenantId, principalId, {
+      calendarId,
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=DAILY"] },
+    });
+    const exception = await seedEvent(tenantId, principalId, {
+      calendarId,
+      recurrence: {
+        kind: "exception",
+        seriesId: master._id,
+        recurrenceId: "2026-07-14T15:00:00.000Z" as never,
+        cancelled: false,
+      },
+    });
+    // Occurrence for the exception only — no occurrence for the master in range.
+    await seedOccurrence(tenantId, principalId, {
+      eventId: exception._id,
+      calendarId: calendarId as EventOccurrenceRecord["calendarId"],
+      startAt: new Date(),
+    });
+    await startService();
+
+    const body = (await (
+      await get(
+        tenantId,
+        principalId,
+        `calendarIds=${calendarId}&${wideRange()}`,
+      )
+    ).json()) as {
+      instances: Array<{
+        eventId: string;
+        recurrence: { kind: string; recurrenceId?: string };
+      }>;
+    };
+
+    const occurrence = body.instances.find(
+      (i) => i.recurrence.kind === "occurrence",
+    );
+    const series = body.instances.find((i) => i.recurrence.kind === "series");
+    // The overridden instance links to the master and is addressed by its
+    // ORIGINAL start, and the master row was back-filled via the second hop.
+    expect(occurrence?.eventId).toBe(master._id);
+    expect(occurrence?.recurrence.recurrenceId).toBe(
+      "2026-07-14T15:00:00.000Z",
+    );
+    expect(series?.eventId).toBe(master._id);
+  });
+
   it("scopes the read to the signed principal", async () => {
     const tenantId = objectId();
     const owner = objectId();
