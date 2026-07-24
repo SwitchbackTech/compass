@@ -1,18 +1,8 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { IS_DEV } from "@web/common/constants/env.constants";
-import {
-  Categories_Event,
-  type GridEvent,
-} from "@web/common/types/web.event.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
-
-// TODO(packet-03-phase-3c): migrate remaining grid rendering consumers from
-// the legacy `event` projection to `gridDraft`, then remove the projection.
-// The form hot path now reads/writes `gridDraft` directly; `event` remains
-// only for Day grid placeholders, context menu, and legacy Week drag paths.
 
 export type Activity_DraftEvent =
   | "createShortcut"
@@ -39,30 +29,8 @@ export interface Status_DraftEvent {
 
 export interface State_DraftEvent {
   status: Status_DraftEvent | null;
-  /** Canonical draft for migrated grid creation paths. */
+  /** Canonical draft for grid creation, editing, and form paths. */
   gridDraft: GridEventDraft | null;
-  /**
-   * Temporary projection for Day grid rendering, context menu, and legacy Week
-   * draft interactions. The form hot path reads/writes `gridDraft` directly.
-   */
-  event: CompassEvent | null;
-}
-
-export interface Payload_DraftEvent {
-  activity: Activity_DraftEvent;
-  event: CompassEvent | null;
-  eventType: Categories_Event;
-}
-
-export interface Payload_Draft_Resize {
-  category: Categories_Event;
-  event: CompassEvent;
-  dateToChange: "startDate" | "endDate";
-}
-
-export interface Payload_Draft_Swap {
-  event: GridEvent;
-  category: Categories_Event;
 }
 
 const initialDraftStatus: Status_DraftEvent = {
@@ -76,11 +44,7 @@ const initialDraftStatus: Status_DraftEvent = {
 export const initialDraftState: State_DraftEvent = {
   status: initialDraftStatus,
   gridDraft: null,
-  event: null,
 };
-
-const getEventType = (event: CompassEvent) =>
-  event.isAllDay ? Categories_Event.ALLDAY : Categories_Event.TIMED;
 
 // Selectors passed to this hook must return primitives or stable references;
 // a selector that builds a new object/array each call needs `useShallow`.
@@ -94,108 +58,6 @@ export const useDraftStore = create<State_DraftEvent>()(
 export const draftActions = {
   discard: () =>
     useDraftStore.setState(initialDraftState, true, { type: "discard" }),
-
-  start: ({ activity, event, eventType }: Payload_DraftEvent) =>
-    useDraftStore.setState(
-      (state) => ({
-        gridDraft: null,
-        event,
-        status: {
-          ...(state.status ?? initialDraftStatus),
-          activity,
-          isDrafting: true,
-          isFormOpen: false,
-          eventType,
-        },
-      }),
-      false,
-      { type: "start" },
-    ),
-
-  startResizing: ({ category, event, dateToChange }: Payload_Draft_Resize) =>
-    useDraftStore.setState(
-      (state) => ({
-        gridDraft: null,
-        event,
-        status: {
-          ...state.status,
-          activity: "resizing" as const,
-          dateToResize: dateToChange,
-          eventType: category,
-          isDrafting: true,
-          isFormOpen: false,
-        },
-      }),
-      false,
-      { type: "startResizing" },
-    ),
-
-  startDnd: () =>
-    useDraftStore.setState(
-      (state) => ({
-        status: {
-          ...state.status,
-          activity: "dnd" as const,
-          isDrafting: true,
-          isFormOpen: false,
-        },
-      }),
-      false,
-      { type: "startDnd" },
-    ),
-
-  startGridClick: (event: CompassEvent) =>
-    useDraftStore.setState(
-      {
-        gridDraft: null,
-        event,
-        status: {
-          ...initialDraftStatus,
-          activity: "gridClick",
-          eventType: getEventType(event),
-          isDrafting: true,
-        },
-      },
-      false,
-      { type: "startGridClick" },
-    ),
-
-  setEvent: (event: CompassEvent | null) =>
-    useDraftStore.setState(
-      (state) => {
-        if (!event) {
-          return { gridDraft: null, event, status: initialDraftStatus };
-        }
-
-        return {
-          gridDraft: null,
-          event,
-          status: {
-            ...(state.status ?? initialDraftStatus),
-            activity: state.status?.activity ?? "gridClick",
-            eventType: getEventType(event),
-            isDrafting: true,
-          },
-        };
-      },
-      false,
-      { type: "setEvent" },
-    ),
-
-  swap: ({ category, event }: Payload_Draft_Swap) =>
-    useDraftStore.setState(
-      {
-        gridDraft: null,
-        event,
-        status: {
-          ...initialDraftStatus,
-          isDrafting: true,
-          eventType: category,
-        },
-      },
-      false,
-      { type: "swap" },
-    ),
 
   startGridDraft: ({
     activity,
@@ -216,7 +78,6 @@ export const draftActions = {
     useDraftStore.setState(
       (state) => ({
         gridDraft: draft,
-        event: gridEventDraftToSchemaEvent(draft),
         status: {
           ...(state.status ?? initialDraftStatus),
           activity,
@@ -233,13 +94,10 @@ export const draftActions = {
       { type: "startGridDraft" },
     ),
 
-  // Writes the canonical draft directly, keeping the legacy `event`
-  // projection in sync for Week draft actions that still read `selectDraft`.
   setGridDraft: (draft: GridEventDraft | null) =>
     useDraftStore.setState(
       (state) => ({
         gridDraft: draft,
-        event: draft ? gridEventDraftToSchemaEvent(draft) : null,
         status: draft
           ? {
               ...(state.status ?? initialDraftStatus),
@@ -274,8 +132,6 @@ export const draftActions = {
     ),
 };
 
-export const selectDraft = (state: State_DraftEvent) => state.event;
-
 export const selectGridDraft = (state: State_DraftEvent) => state.gridDraft;
 
 export const selectDraftActivity = (state: State_DraftEvent) =>
@@ -289,7 +145,7 @@ export const selectDraftId = (state: State_DraftEvent) =>
     ? state.gridDraft.kind === "edit"
       ? state.gridDraft.source.id
       : state.gridDraft.clientId
-    : state.event?._id;
+    : undefined;
 
 export const selectDraftStatus = (state: State_DraftEvent) => state.status;
 
@@ -303,4 +159,4 @@ export const selectIsDrafting = (state: State_DraftEvent) =>
   state.status?.isDrafting;
 
 export const selectIsDraftingExisting = (state: State_DraftEvent) =>
-  state.gridDraft?.kind === "edit" || state.event?._id !== undefined;
+  state.gridDraft?.kind === "edit";

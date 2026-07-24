@@ -8,7 +8,6 @@ import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraft,
   editGridEventDraft,
-  gridEventDraftToSchemaEvent,
 } from "@web/events/grid-event-draft.adapter";
 import { type Activity_DraftEvent } from "@web/events/stores/draft.store";
 import {
@@ -195,7 +194,6 @@ const renderDraftActions = (draft: GridEventDraft) => {
   currentState.events!.draft = {
     ...currentState.events!.draft,
     gridDraft: draft,
-    event: gridEventDraftToSchemaEvent(draft),
   };
   const { wrapper } = createStoreWrapper(currentState);
   const { result } = renderHook(
@@ -231,7 +229,6 @@ describe("useDraftActions", () => {
     currentState = createInitialState();
     currentState.events!.draft = {
       gridDraft: draft,
-      event: gridEventDraftToSchemaEvent(draft),
       status: {
         activity: "eventRightClick",
         dateToResize: null,

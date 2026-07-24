@@ -29,6 +29,7 @@ import {
 } from "@web/events/grid-event-draft.adapter";
 import {
   initialDraftState,
+  selectGridDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { DECK_INDENT, DRAFT_DURATION_MIN } from "@web/grid/grid.constants";
@@ -157,7 +158,6 @@ const seedGrid = (
   );
 
   useDraftStore.setState({
-    event: draftEvent,
     gridDraft,
     status: {
       activity: "keyboardEdit",
@@ -372,12 +372,13 @@ const clickEmptyGrid = (row: HTMLElement, minute: number) => {
 
 const expectDraftRange = async (startDate: string, endDate: string) => {
   await waitFor(() => {
-    const draft = useDraftStore.getState().event;
+    const draft = selectGridDraft(useDraftStore.getState());
 
-    expect(new Date(draft?.startDate ?? "").toISOString()).toBe(
+    expect(draft).not.toBeNull();
+    expect(dayjs(draft!.values.schedule.start).toISOString()).toBe(
       new Date(startDate).toISOString(),
     );
-    expect(new Date(draft?.endDate ?? "").toISOString()).toBe(
+    expect(dayjs(draft!.values.schedule.end).toISOString()).toBe(
       new Date(endDate).toISOString(),
     );
   });
@@ -477,15 +478,15 @@ describe("Week calendar accessibility", () => {
       { button: 0, clientX: 100, clientY: 0 },
     );
 
-    await waitFor(() =>
-      expect(useDraftStore.getState().event).toEqual(
-        expect.objectContaining({
-          endDate: "2024-01-15",
-          isAllDay: true,
-          startDate: "2024-01-14",
-        }),
-      ),
-    );
+    await waitFor(() => {
+      const draft = selectGridDraft(useDraftStore.getState());
+
+      expect(draft?.values.schedule).toEqual({
+        end: new Date("2024-01-15"),
+        kind: "allDay",
+        start: new Date("2024-01-14"),
+      });
+    });
   });
 
   it("labels timed and all-day calendar regions", () => {

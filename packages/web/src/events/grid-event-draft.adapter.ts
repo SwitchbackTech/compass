@@ -269,22 +269,11 @@ export function gridEventDraftToGridEvent(draft: GridEventDraft): GridEvent {
   });
 }
 
-// TODO(packet-03-phase-3c): remove once remaining grid consumers no longer
-// require CompassEvent. Keeping this projection beside the GridEventDraft
-// adapter lets the draft store expose one canonical grid draft without a
-// second store while legacy consumers are migrated incrementally.
-//
-// Return type is widened (rather than adding calendarId/isBusy to the shared,
-// hand-written core `CompassEvent` interface, which 10+ unrelated consumers
-// also use) so the calendar-colored card accent/label stays correct on a
-// dragging/resizing existing-event placeholder (draft.store.ts stores this
-// projection for that display path) without touching CompassEvent itself.
-// isBusy is derived straight from the edit draft's real source event (never
-// from `values.title`, which stays "" for a busy source - see
-// editGridEventDraft) - it's what lets the right-click context menu
-// (GridContextMenuWrapper.tsx -> draft store -> ContextMenu's `event` prop)
-// resolve the read-only gate without a second, separate lookup (packet 08
-// step 8).
+// Converts a grid draft to the CompassEvent-shaped view used by schema
+// overlays, Day placeholders, and context-menu props. calendarId/isBusy are
+// widened onto the return (rather than adding them to the shared core
+// CompassEvent interface) so colored accents and the busy read-only gate stay
+// correct without a second lookup.
 export function gridEventDraftToSchemaEvent(
   draft: GridEventDraft,
   seriesRules?: readonly string[],

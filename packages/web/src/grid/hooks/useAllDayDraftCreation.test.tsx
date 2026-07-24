@@ -6,32 +6,29 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { useEffect } from "react";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type GridEventDraft } from "@web/events/event-draft.types";
+import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { useAllDayDraftCreation } from "./useAllDayDraftCreation";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-const existingDraft: CompassEvent = {
-  _id: "existing-draft",
-  endDate: "2026-05-21",
-  isAllDay: true,
-  startDate: "2026-05-20",
-  title: "Existing draft",
-  user: "user",
-};
+const existingDraft = createGridEventDraft({
+  kind: "allDay",
+  start: new Date("2026-05-20"),
+  end: new Date("2026-05-21"),
+});
 
 const renderHarness = ({
   draft = null,
   onCreateGridDraft = mock(),
   onParentMouseDown = mock(),
 }: {
-  draft?: CompassEvent | null;
+  draft?: GridEventDraft | null;
   onCreateGridDraft?: (draft: GridEventDraft) => void;
   onParentMouseDown?: () => void;
 } = {}) => {
   if (draft) {
-    draftActions.startGridClick(draft);
+    draftActions.startGridDraft({ activity: "gridClick", draft });
   }
 
   const Harness = () => {
@@ -106,7 +103,7 @@ describe("useAllDayDraftCreation", () => {
       { button: 0 },
     );
 
-    await waitFor(() => expect(useDraftStore.getState().event).toBeNull());
+    await waitFor(() => expect(useDraftStore.getState().gridDraft).toBeNull());
     expect(onCreateGridDraft).not.toHaveBeenCalled();
     expect(onParentMouseDown).not.toHaveBeenCalled();
   });

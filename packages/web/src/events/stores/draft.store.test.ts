@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 describe("draftActions.startGridDraft", () => {
-  it("stores the canonical draft and projects it for legacy consumers", () => {
+  it("stores the canonical draft", () => {
     const draft = createGridEventDraft({
       kind: "allDay",
       start: new Date("2026-05-20"),
@@ -23,10 +23,11 @@ describe("draftActions.startGridDraft", () => {
 
     const state = useDraftStore.getState();
     expect(selectGridDraft(state)).toBe(draft);
-    expect(state.event).toMatchObject({
-      endDate: "2026-05-21",
-      isAllDay: true,
-      startDate: "2026-05-20",
+    expect(state.status).toMatchObject({
+      activity: "gridClick",
+      eventType: "allday",
+      isDrafting: true,
+      isFormOpen: false,
     });
   });
 });

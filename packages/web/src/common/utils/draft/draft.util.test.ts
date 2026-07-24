@@ -21,7 +21,7 @@ import {
   setSystemTime,
 } from "bun:test";
 
-const expectSameTime = (actual: string, expected: string) => {
+const expectSameTime = (actual: Date | undefined, expected: string) => {
   expect(dayjs(actual).isSame(dayjs(expected))).toBe(true);
 };
 
@@ -48,11 +48,14 @@ describe("shortcut draft creation", () => {
       "createShortcut",
     );
 
-    const { event, status } = useDraftStore.getState();
+    const { gridDraft, status } = useDraftStore.getState();
 
     expect(status?.eventType).toBe(Categories_Event.ALLDAY);
-    expectSameTime(event?.startDate as string, "2026-05-20T00:00:00.000Z");
-    expectSameTime(event?.endDate as string, "2026-05-21T00:00:00.000Z");
+    expectSameTime(
+      gridDraft?.values.schedule.start,
+      "2026-05-20T00:00:00.000Z",
+    );
+    expectSameTime(gridDraft?.values.schedule.end, "2026-05-21T00:00:00.000Z");
   });
 
   it("creates a one-day all-day draft on the visible week anchor when today is outside the visible week", async () => {
@@ -64,11 +67,14 @@ describe("shortcut draft creation", () => {
       "createShortcut",
     );
 
-    const { event, status } = useDraftStore.getState();
+    const { gridDraft, status } = useDraftStore.getState();
 
     expect(status?.eventType).toBe(Categories_Event.ALLDAY);
-    expectSameTime(event?.startDate as string, "2026-06-01T00:00:00.000Z");
-    expectSameTime(event?.endDate as string, "2026-06-02T00:00:00.000Z");
+    expectSameTime(
+      gridDraft?.values.schedule.start,
+      "2026-06-01T00:00:00.000Z",
+    );
+    expectSameTime(gridDraft?.values.schedule.end, "2026-06-02T00:00:00.000Z");
   });
 
   it("creates timed drafts on the visible week anchor when today is outside the visible week", async () => {
@@ -80,11 +86,14 @@ describe("shortcut draft creation", () => {
       "createShortcut",
     );
 
-    const { event, status } = useDraftStore.getState();
+    const { gridDraft, status } = useDraftStore.getState();
 
     expect(status?.eventType).toBe(Categories_Event.TIMED);
-    expectSameTime(event?.startDate as string, "2026-06-01T10:15:00.000Z");
-    expectSameTime(event?.endDate as string, "2026-06-01T11:15:00.000Z");
+    expectSameTime(
+      gridDraft?.values.schedule.start,
+      "2026-06-01T10:15:00.000Z",
+    );
+    expectSameTime(gridDraft?.values.schedule.end, "2026-06-01T11:15:00.000Z");
   });
 });
 
