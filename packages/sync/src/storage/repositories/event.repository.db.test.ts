@@ -167,6 +167,56 @@ describe("EventRepository", () => {
     ).not.toBeNull();
   });
 
+  describe("findByIds", () => {
+    it("batch-hydrates several events by id, owner-scoped", async () => {
+      const tenantId = objectId() as EventRecord["tenantId"];
+      const principalId = objectId() as EventRecord["principalId"];
+      const a = await repo.put(compassRecord({ tenantId, principalId }));
+      const b = await repo.put(compassRecord({ tenantId, principalId }));
+
+      const found = await repo.findByIds(tenantId, principalId, [a._id, b._id]);
+
+      expect(found.map((e) => e._id).sort()).toEqual([a._id, b._id].sort());
+    });
+
+    it("excludes ids owned by a different principal", async () => {
+      const tenantId = objectId() as EventRecord["tenantId"];
+      const mine = objectId() as EventRecord["principalId"];
+      const theirs = objectId() as EventRecord["principalId"];
+      const own = await repo.put(
+        compassRecord({ tenantId, principalId: mine }),
+      );
+      const foreign = await repo.put(
+        compassRecord({ tenantId, principalId: theirs }),
+      );
+
+      const found = await repo.findByIds(tenantId, mine, [
+        own._id,
+        foreign._id,
+      ]);
+
+      expect(found.map((e) => e._id)).toEqual([own._id]);
+    });
+
+    it("returns an empty array for an empty id list without querying", async () => {
+      const tenantId = objectId() as EventRecord["tenantId"];
+      const principalId = objectId() as EventRecord["principalId"];
+      expect(await repo.findByIds(tenantId, principalId, [])).toEqual([]);
+    });
+
+    it("silently omits ids that do not exist", async () => {
+      const saved = await repo.put(compassRecord());
+      const missing = objectId() as EventRecord["_id"];
+
+      const found = await repo.findByIds(saved.tenantId, saved.principalId, [
+        saved._id,
+        missing,
+      ]);
+
+      expect(found.map((e) => e._id)).toEqual([saved._id]);
+    });
+  });
+
   it("deleteById removes only the owner's event and is idempotent", async () => {
     const saved = await repo.put(compassRecord());
     const other = objectId() as EventRecord["principalId"];
