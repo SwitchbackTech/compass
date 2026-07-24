@@ -5,6 +5,11 @@ import {
   BusyAvailabilityResponseSchema,
 } from "@core/types/sync/availability.contracts";
 import {
+  type CommandSubmitRequest,
+  type CommandSubmitResponse,
+  CommandSubmitResponseSchema,
+} from "@core/types/sync/command.contracts";
+import {
   type ConnectionBeginRequest,
   type ConnectionBeginResponse,
   ConnectionBeginResponseSchema,
@@ -24,6 +29,7 @@ const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 const CONNECTIONS_PATH = "/internal/connections";
 const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
 const EVENTS_PATH = "/internal/events";
+const COMMANDS_PATH = "/internal/commands";
 
 const DEFAULT_TIMEOUT_MS = 5000;
 
@@ -180,6 +186,27 @@ export class SyncServiceClient {
       query: params,
       principal,
       schema: EventOccurrenceListResponseSchema,
+      correlationId,
+    });
+  }
+
+  // Durably record one event-mutation command (create/update/move/delete),
+  // scoped to the signed principal. Idempotent on the request's idempotencyKey:
+  // a retry with the same key maps to the same command rather than duplicating
+  // it. Because Sync may have already accepted a submission whose response we
+  // never saw (timeout/unavailable), a caller MUST retry with the SAME key and
+  // never fall back to a legacy write.
+  submitCommand(
+    principal: SyncPrincipal,
+    request: CommandSubmitRequest,
+    correlationId?: string,
+  ): Promise<SyncClientResult<CommandSubmitResponse>> {
+    return this.#request({
+      method: "POST",
+      path: COMMANDS_PATH,
+      principal,
+      body: request,
+      schema: CommandSubmitResponseSchema,
       correlationId,
     });
   }

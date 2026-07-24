@@ -1,8 +1,10 @@
 import { faker } from "@faker-js/faker";
 import { type BusyAvailabilityRequest } from "@core/types/sync/availability.contracts";
+import { type CommandSubmitRequest } from "@core/types/sync/command.contracts";
 import { type EventOccurrenceListQuery } from "@core/types/sync/event.contracts";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { verifyInternalRequest } from "@sync/auth/internal-auth";
+import { COMMANDS_PATH } from "@sync/server/command.routes";
 import {
   AVAILABILITY_BUSY_PATH,
   BEGIN_PATH,
@@ -230,6 +232,96 @@ describe("SyncServiceClient", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.kind).toBe("invalidResponse");
+  });
+
+  it("submits a command with a signed POST the real Sync verifier accepts", async () => {
+    const who = principal();
+    const eventId = objectId();
+    const submitRequest = {
+      idempotencyKey: "client-generated-key-1",
+      eventId,
+      input: { kind: "move", calendarId: objectId() },
+      expectedVersion: null,
+    } as CommandSubmitRequest;
+    // A minimal valid command envelope the Sync service would return.
+    const commandBody = {
+      id: objectId(),
+      tenantId: who.tenantId,
+      principalId: who.principalId,
+      idempotencyKey: "client-generated-key-1",
+      eventId,
+      input: submitRequest.input,
+      expectedVersion: null,
+      outcome: { state: "pending" },
+      attemptCount: 0,
+      createdAt: "2026-07-01T00:00:00.000Z",
+      updatedAt: "2026-07-01T00:00:00.000Z",
+    };
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({ command: commandBody }),
+    }));
+
+    const result = await client(fn).submitCommand(who, submitRequest);
+
+    if (!result.ok) throw new Error(`expected ok, got ${result.error.kind}`);
+    expect(result.value.command.outcome.state).toBe("pending");
+    expect(result.value.command.eventId).toBe(eventId);
+
+    const sent = calls[0];
+    expect(sent?.url).toBe(`${BASE_URL}${COMMANDS_PATH}`);
+    expect(sent?.method).toBe("POST");
+    // The body is the request verbatim: tenant/principal are signed, never sent.
+    const body = JSON.parse(sent?.body ?? "{}");
+    expect(body.idempotencyKey).toBe("client-generated-key-1");
+    expect(body.input.kind).toBe("move");
+    expect(body).not.toHaveProperty("tenantId");
+    expect(body).not.toHaveProperty("principalId");
+
+    const verdict = verifyInternalRequest({
+      secret: SECRET,
+      headers: sent?.headers ?? {},
+      now: NOW,
+    });
+    if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
+    expect(verdict.context.tenantId).toBe(who.tenantId);
+    expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("rejects a command-submit body that does not match the contract", async () => {
+    const { fn } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({ command: { bogus: true } }),
+    }));
+
+    const result = await client(fn).submitCommand(principal(), {
+      idempotencyKey: "client-generated-key-2",
+      eventId: objectId(),
+      input: { kind: "move", calendarId: objectId() },
+      expectedVersion: null,
+    } as CommandSubmitRequest);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.kind).toBe("invalidResponse");
+  });
+
+  it("maps a 400 command rejection to badRequest without throwing", async () => {
+    const { fn } = fakeFetch(async () => ({
+      status: 400,
+      json: async () => ({ error: "invalid_command" }),
+    }));
+
+    const result = await client(fn).submitCommand(principal(), {
+      idempotencyKey: "client-generated-key-3",
+      eventId: objectId(),
+      input: { kind: "move", calendarId: objectId() },
+      expectedVersion: null,
+    } as CommandSubmitRequest);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.kind).toBe("badRequest");
   });
 
   it("begins a connection with a signed POST the real Sync verifier accepts", async () => {
