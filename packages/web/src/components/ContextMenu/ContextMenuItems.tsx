@@ -8,6 +8,8 @@ import {
 import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
+import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
+import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 export interface ContextMenuAction {
@@ -124,9 +126,12 @@ export function ContextMenuItemsView({
 }
 
 export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
-  const { actions, setters, confirmation } = useDraftContext();
-  const { openForm, duplicateEvent } = actions;
+  const { actions, setters } = useDraftContext();
+  const { openForm } = actions;
   const { setDraft } = setters;
+  const eventId = event._id ?? "";
+  const deleteEvent = useDeleteEvent(eventId);
+  const duplicateEvent = useDuplicateEvent(eventId);
   // The right-click flow (GridContextMenuWrapper.tsx) already builds a
   // GridEventDraft via editGridEventDraft and pushes it into the store, so
   // this reads that canonical draft rather than re-deriving one from
@@ -134,8 +139,12 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   const gridDraft = useDraftStore(selectGridDraft);
 
   const menuActions: ContextMenuItemsActions = {
-    delete: confirmation.onDelete,
-    duplicate: duplicateEvent,
+    delete: () => {
+      deleteEvent();
+    },
+    duplicate: () => {
+      duplicateEvent();
+    },
     edit: () => {
       if (gridDraft) setDraft(gridDraft);
       openForm();

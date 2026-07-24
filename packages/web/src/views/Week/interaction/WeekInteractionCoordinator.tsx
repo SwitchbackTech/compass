@@ -6,11 +6,10 @@ import { type GridScheduleDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraftFromGridEvent,
   editGridEventDraft,
-  parseGridEventDraft,
   replaceGridDraftSchedule,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
-import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
 import { PointerCaptureBoundary } from "@web/interaction/react/PointerCaptureBoundary";
@@ -41,8 +40,8 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
-  const { actions, confirmation, setters, state } = useDraftContext();
-  const mutations = useEventMutations();
+  const { actions, setters, state } = useDraftContext();
+  const updateEvent = useUpdateEvent();
   const activeInteractionEventRef = useRef<Event | null>(null);
   const layoutSourcesRef = useRef(getLayoutSources);
   const timedEventsById = useMemo(() => {
@@ -122,22 +121,10 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     return replaceGridDraftSchedule(draft, schedule);
   };
 
-  // Non-recurring saved events skip the Draft confirmation flow entirely and
-  // commit straight through the strict mutation. Recurring events (source
-  // event carries `recurrence`) still need the scope-confirmation dialog,
-  // which lives in useDraftConfirmation (out of scope here) — those keep
-  // going through the legacy confirmation.onSubmit path below.
-  const commitStrictSavedMutation = (event: GridEvent) => {
-    const draft = gridEventDraftFromSavedResult(event);
-    if (!draft) return;
-
-    const parsed = parseGridEventDraft(draft);
-
-    if (parsed.ok && parsed.mode === "edit") {
-      mutations.replace({ id: parsed.eventId, input: parsed.input });
-    }
-  };
-
+  // Matches DayInteractionCoordinator: drag/resize commits go through
+  // useUpdateEvent (including recurring events) with no scope dialog.
+  // When the form was open before the gesture, keep the draft in the Week
+  // local state and reopen the form instead of writing immediately.
   const commitSavedMutation = (
     result:
       | WeekAllDayDragCommitResult
@@ -162,13 +149,8 @@ export const WeekInteractionCoordinator: FC<Props> = ({
       return;
     }
 
-    if (result.event.recurrence) {
-      const draft = gridEventDraftFromSavedResult(result.event);
-      if (draft) void confirmation.onSubmit(draft);
-      return;
-    }
-
-    commitStrictSavedMutation(result.event);
+    updateEvent({ event: result.event }, true);
+    draftActions.discard();
   };
 
   runtimeRef.current = {

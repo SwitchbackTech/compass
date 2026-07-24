@@ -72,8 +72,7 @@ const DraftStub = ({ children }: PropsWithChildren) => (
   <DraftContext.Provider
     value={
       {
-        actions: { duplicateEvent: mock(), openForm: mock() },
-        confirmation: { onDelete: mock() },
+        actions: { openForm: mock() },
         setters: { setDraft: mock() },
       } as never
     }

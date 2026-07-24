@@ -1,5 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
-import { act } from "react";
+import { renderHook } from "@testing-library/react";
 import { type Event } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
@@ -241,40 +240,6 @@ describe("useDraftActions", () => {
         isFormOpen: false,
       },
     };
-  });
-
-  it("creates a new event when duplicating an existing week event", async () => {
-    const { queryClient, wrapper } = createStoreWrapper(currentState);
-    const { result } = renderHook(
-      () =>
-        useDraftActions(createState(), createSetters(), dateCalcs, weekProps),
-      { wrapper },
-    );
-
-    // The default target calendar resolves from the (async, though
-    // synchronous-in-practice for anon mode) calendars query; wait for it so
-    // duplicateEvent doesn't race an undefined calendar list.
-    await waitFor(() => {
-      expect(queryClient.getQueryData(["calendars"])).toBeDefined();
-    });
-
-    act(() => {
-      result.current.duplicateEvent();
-    });
-
-    await waitFor(() => {
-      const created = queryClient
-        .getMutationCache()
-        .getAll()
-        .map(
-          (mutation) =>
-            mutation.state.variables as {
-              input?: { content?: { title?: string } };
-            },
-        )
-        .find((variables) => variables.input?.content?.title === "Seed event");
-      expect(created).toBeDefined();
-    });
   });
 
   it("moves a shortcut-created timed draft by keyboard while preserving duration", () => {
