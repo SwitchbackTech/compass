@@ -125,7 +125,7 @@ const AllDayEventCardBase = (
         "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-260 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
         {
           "hover:cursor-pointer": !isPlaceholder,
-          "outline outline-1 outline-dashed outline-text-muted/50":
+          "outline outline-dashed outline-1 outline-text-muted/50":
             event.isDemo,
         },
       )}

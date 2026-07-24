@@ -175,7 +175,7 @@ export const AuthModal: FC = () => {
           />
         )}
         {showSubmitError ? (
-          <p className="text-center text-sm text-error" role="alert">
+          <p className="text-center text-error text-sm" role="alert">
             {submitError}
           </p>
         ) : null}

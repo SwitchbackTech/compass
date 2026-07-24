@@ -242,7 +242,7 @@ const TimedEventCardBase = (
         "bg-(--event-bg) hover:bg-(--event-hover-bg)",
         "hover:cursor-pointer",
         event.isDemo &&
-          "outline outline-1 outline-dashed outline-text-muted/50",
+          "outline outline-dashed outline-1 outline-text-muted/50",
       )}
       style={eventStyle}
       onBlur={onBlur}

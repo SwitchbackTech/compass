@@ -54,7 +54,7 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
           {...inputProps}
         />
         {showError && (
-          <span id={errorId} className="text-sm text-error" role="alert">
+          <span id={errorId} className="text-error text-sm" role="alert">
             {error}
           </span>
         )}

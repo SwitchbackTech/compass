@@ -76,7 +76,7 @@ export function createTasksRemovalNotice({
         </div>
 
         <button
-          className="c-focus-ring self-start rounded-xs bg-accent px-2 py-1 font-medium text-s text-on-accent hover:brightness-110 disabled:opacity-60"
+          className="c-focus-ring self-start rounded-xs bg-accent px-2 py-1 font-medium text-on-accent text-s hover:brightness-110 disabled:opacity-60"
           disabled={exportStatus === "exporting"}
           onClick={handleExport}
           type="button"

@@ -45,7 +45,7 @@ export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
       />
 
       {error ? (
-        <p className="text-center text-sm text-error" role="alert">
+        <p className="text-center text-error text-sm" role="alert">
           {error}
         </p>
       ) : null}
