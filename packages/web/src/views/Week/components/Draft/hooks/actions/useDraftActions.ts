@@ -30,6 +30,7 @@ import {
 import { GRID_TIME_STEP } from "@web/grid/grid.constants";
 import { useDraftEffects } from "@web/views/Week/components/Draft/hooks/effects/useDraftEffects";
 import {
+  type DragOffset,
   type Setters_Draft,
   type State_Draft_Local,
   type Status_Drag,
@@ -80,6 +81,7 @@ export const useDraftActions = (
   const {
     setIsDragging,
     setIsResizing,
+    setDragOffset,
     setDragStatus,
     setResizeStatus,
     setDateBeingChanged,
@@ -88,14 +90,23 @@ export const useDraftActions = (
     setIsFormOpenBeforeDragging,
   } = setters;
 
-  const startDragging = useCallback(() => {
-    setIsDragging(true);
-  }, [setIsDragging]);
+  const startDragging = useCallback(
+    (offset?: DragOffset) => {
+      if (offset) {
+        setDragOffset(offset);
+      }
+      setIsDragging(true);
+    },
+    [setDragOffset, setIsDragging],
+  );
 
-  const startResizing = useCallback(() => {
-    setIsResizing(true);
-    setDateBeingChanged(dateToResize ?? null);
-  }, [setIsResizing, setDateBeingChanged, dateToResize]);
+  const startResizing = useCallback(
+    (dateBeingChanged: "startDate" | "endDate") => {
+      setIsResizing(true);
+      setDateBeingChanged(dateBeingChanged);
+    },
+    [setIsResizing, setDateBeingChanged],
+  );
 
   const stopDragging = useCallback(() => {
     setIsDragging(false);
@@ -587,12 +598,15 @@ export const useDraftActions = (
     }
     if (activity === "resizing") {
       if (gridDraftFromStore) setDraft(gridDraftFromStore);
-      startResizing();
+      if (dateToResize === "startDate" || dateToResize === "endDate") {
+        startResizing(dateToResize);
+      }
     }
   }, [
     isDrafting,
     activity,
     create,
+    dateToResize,
     setDraft,
     gridDraftFromStore,
     startResizing,
@@ -606,14 +620,15 @@ export const useDraftActions = (
     openForm,
     repositionDraftByKeyboard,
     resize,
-    startDragging: () => {
+    startDragging: (offset?: DragOffset) => {
       // Placing `setIsFormOpenBeforeDragging` here rather than inside `startDragging`
       // because `setIsFormOpenBeforeDragging` depends on `isFormOpen` and re-calculates
       // `startDragging` (due to it being a react callback) which causes issues.
       // This is a hacky solution to the issue.
       setIsFormOpenBeforeDragging(isFormOpen);
-      startDragging();
+      startDragging(offset);
     },
+    startResizing,
     stopDragging,
     stopResizing,
   };
