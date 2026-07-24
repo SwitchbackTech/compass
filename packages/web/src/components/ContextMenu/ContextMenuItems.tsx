@@ -7,10 +7,9 @@ import {
 } from "@web/calendars/useCalendarLookup";
 import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
+import { draftActions } from "@web/events/stores/draft.store";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
-import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 export interface ContextMenuAction {
   id: string;
@@ -126,17 +125,9 @@ export function ContextMenuItemsView({
 }
 
 export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
-  const { actions, setters } = useDraftContext();
-  const { openForm } = actions;
-  const { setDraft } = setters;
   const eventId = event._id ?? "";
   const deleteEvent = useDeleteEvent(eventId);
   const duplicateEvent = useDuplicateEvent(eventId);
-  // The right-click flow (GridContextMenuWrapper.tsx) already builds a
-  // GridEventDraft via editGridEventDraft and pushes it into the store, so
-  // this reads that canonical draft rather than re-deriving one from
-  // `event` (a GridEvent render projection with no strict source).
-  const gridDraft = useDraftStore(selectGridDraft);
 
   const menuActions: ContextMenuItemsActions = {
     delete: () => {
@@ -145,9 +136,11 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
     duplicate: () => {
       duplicateEvent();
     },
+    // Right-click already seeded `gridDraft` via startGridDraft. Form open is
+    // store-owned; Week's Draft hydrates the local portal draft from the store
+    // when isFormOpen flips (handleChange skips eventRightClick on purpose).
     edit: () => {
-      if (gridDraft) setDraft(gridDraft);
-      openForm();
+      draftActions.setFormOpen(true);
     },
   };
 

@@ -24,12 +24,9 @@ import {
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockClose = mock();
-const mockOpenForm = mock();
-const mockSetDraft = mock();
 
 const EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
 
@@ -59,10 +56,9 @@ const createSourceEvent = (event: GridEvent) =>
     }),
   });
 
-// GridContextMenuWrapper.tsx (the real right-click flow, unconverted here)
-// already pushes a GridEventDraft into the store's `gridDraft` field before
-// ContextMenuItems mounts; seed the same field directly so edit has a
-// canonical draft to read.
+// GridContextMenuWrapper.tsx (the real right-click flow) already pushes a
+// GridEventDraft into the store's `gridDraft` field before ContextMenuItems
+// mounts; seed the same field so edit can open the store-owned form.
 const seedGridDraftForEvent = (event: GridEvent) => {
   const draft = editGridEventDraft(createSourceEvent(event));
   useDraftStore.setState({ gridDraft: draft });
@@ -98,24 +94,7 @@ const renderWithTheme = (
   }
 
   return {
-    ...render(
-      <DraftContext.Provider
-        value={
-          {
-            actions: {
-              openForm: mockOpenForm,
-              repositionDraftByKeyboard: mock(() => false),
-            },
-            setters: {
-              setDraft: mockSetDraft,
-            },
-          } as never
-        }
-      >
-        {ui}
-      </DraftContext.Provider>,
-      { queryClient },
-    ),
+    ...render(ui, { queryClient }),
     queryClient,
   };
 };
@@ -123,8 +102,6 @@ const renderWithTheme = (
 describe("ContextMenuItems", () => {
   beforeEach(() => {
     mockClose.mockClear();
-    mockOpenForm.mockClear();
-    mockSetDraft.mockClear();
     useDraftStore.setState({ gridDraft: null, status: null });
   });
 
@@ -156,8 +133,7 @@ describe("ContextMenuItems", () => {
     const editButton = screen.getByRole("menuitem", { name: "Edit" });
     await user.click(editButton);
 
-    expect(mockSetDraft).toHaveBeenCalled();
-    expect(mockOpenForm).toHaveBeenCalled();
+    expect(selectIsEventFormOpen(useDraftStore.getState())).toBe(true);
     expect(mockClose).toHaveBeenCalled();
   });
 
@@ -205,8 +181,7 @@ describe("ContextMenuItems", () => {
     const editButton = screen.getByRole("menuitem", { name: "Edit" });
     await user.click(editButton);
 
-    expect(mockSetDraft).toHaveBeenCalled();
-    expect(mockOpenForm).toHaveBeenCalled();
+    expect(selectIsEventFormOpen(useDraftStore.getState())).toBe(true);
     expect(mockClose).toHaveBeenCalled();
   });
 

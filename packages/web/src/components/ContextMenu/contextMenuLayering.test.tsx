@@ -1,4 +1,3 @@
-import { type PropsWithChildren } from "react";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
 import {
   cleanup,
@@ -19,8 +18,7 @@ import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuW
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { draftActions } from "@web/events/stores/draft.store";
 import { useDayCalendarContextMenu } from "@web/views/Day/components/Calendar/DayCalendarContextMenu";
-import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 
 // The menu used to render inline with a hardcoded z-2, so any event card
@@ -66,21 +64,6 @@ const seedCacheEntry = () => {
   return queryClient;
 };
 
-// The menu's items read the draft context; this test is only about where the
-// menu renders, so a stub is enough.
-const DraftStub = ({ children }: PropsWithChildren) => (
-  <DraftContext.Provider
-    value={
-      {
-        actions: { openForm: mock() },
-        setters: { setDraft: mock() },
-      } as never
-    }
-  >
-    {children}
-  </DraftContext.Provider>
-);
-
 afterEach(() => {
   draftActions.discard();
   cleanup();
@@ -101,7 +84,7 @@ describe("context menu layering", () => {
             right-clicked element. */}
         <div {...{ [DATA_EVENT_ELEMENT_ID]: event.id }}>Stacked event</div>
       </ContextMenuWrapper>,
-      { queryClient: seedCacheEntry(), wrapper: DraftStub },
+      { queryClient: seedCacheEntry() },
     );
 
     fireEvent.contextMenu(screen.getByText("Stacked event"));
@@ -130,7 +113,6 @@ describe("context menu layering", () => {
 
     render(<DayHarness />, {
       queryClient: seedCacheEntry(),
-      wrapper: DraftStub,
     });
 
     fireEvent.contextMenu(screen.getByText("Stacked event"));
