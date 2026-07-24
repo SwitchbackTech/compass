@@ -9,7 +9,6 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
-import { CompassRefsProvider } from "@web/common/refs/compass-refs";
 import { queryClient as defaultQueryClient } from "@web/api/query-client";
 import { DeleteAccountConfirmationProvider } from "@web/components/DeleteAccountConfirmation/DeleteAccountConfirmationProvider";
 import { FeedbackDialogHost } from "@web/components/Feedback/FeedbackDialogHost";
@@ -58,22 +57,20 @@ export const CompassRequiredProviders = ({
 }: CompassRequiredProvidersProps) => (
   <QueryClientProvider client={queryClient}>
     <HotkeysProvider>
-      <CompassRefsProvider>
-        <SessionProvider>
-          <GoogleOAuthProvider
-            clientId={ENV_WEB.GOOGLE_CLIENT_ID || "google-not-configured"}
-          >
-            <IconProvider>
-              <LogoutConfirmationProvider>
-                <DeleteAccountConfirmationProvider>
-                  {children}
-                </DeleteAccountConfirmationProvider>
-                <ThemeAwareToastContainer />
-              </LogoutConfirmationProvider>
-            </IconProvider>
-          </GoogleOAuthProvider>
-        </SessionProvider>
-      </CompassRefsProvider>
+      <SessionProvider>
+        <GoogleOAuthProvider
+          clientId={ENV_WEB.GOOGLE_CLIENT_ID || "google-not-configured"}
+        >
+          <IconProvider>
+            <LogoutConfirmationProvider>
+              <DeleteAccountConfirmationProvider>
+                {children}
+              </DeleteAccountConfirmationProvider>
+              <ThemeAwareToastContainer />
+            </LogoutConfirmationProvider>
+          </IconProvider>
+        </GoogleOAuthProvider>
+      </SessionProvider>
     </HotkeysProvider>
     <ReactQueryDevtools initialIsOpen={false} />
   </QueryClientProvider>

@@ -313,8 +313,7 @@ per-domain Zustand stores (see
 Seed both explicitly rather than reaching into module internals:
 
 - The render harnesses (`mock.render.tsx`'s `render`/`renderHook`, and
-  `render-with-store.tsx`'s `createStoreWrapper`/`renderWithStore`/
-  `renderHookWithStore`) take an `events` option that calls
+  `render-with-store.tsx`'s `createStoreWrapper`/`renderWithStore`) take an `events` option that calls
   `seedEventQueries(queryClient, events)`
   (`@web/__tests__/utils/event-query-test-data.ts`).
 - They take a `state` option (shape mirrors the old Redux `RootState`:

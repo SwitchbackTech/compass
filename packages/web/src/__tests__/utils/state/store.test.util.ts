@@ -20,7 +20,7 @@ export const createInitialState = (
   };
 };
 
-/** Seed the Zustand stores directly (outside the render helpers). */
+/** Seed the stores directly (outside the render helpers). */
 export const seedInitialState = (partialState: Partial<TestAppState> = {}) => {
   seedStoresFromState(createInitialState(partialState));
 };

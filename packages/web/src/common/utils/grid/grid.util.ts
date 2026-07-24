@@ -1,9 +1,5 @@
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
-  type AssignResult,
-  type WidthPercentages,
-} from "@web/common/types/util.types";
-import {
   AFTER_TMRW_MULTIPLE,
   DIVIDER_GRID,
   FLEX_EQUAL,
@@ -11,6 +7,14 @@ import {
   FLEX_TODAY,
 } from "@web/views/Week/layout.constants";
 
+interface AssignResult {
+  fits: boolean;
+  rowNum?: number;
+}
+interface WidthPercentages {
+  current: number[];
+  pastFuture: number[];
+}
 export const assignEventToRow = (
   eventDays: number[],
   rows: number[][],

@@ -10,7 +10,7 @@ const STORAGE_KEY = "compass.localCalendarId";
 
 // A client-generated id for the browser's local (offline/anonymous) calendar,
 // persisted so IndexedDB rows and the synthesized Calendar object agree on the
-// same id across reloads (B13). The server's own local calendar (used once
+// same id across reloads. The server's own local calendar (used once
 // signed in) has a different, server-assigned id; syncLocalEventsToCloud maps
 // this sentinel onto it before pushing.
 export function getLocalCalendarSentinelId(): CalendarId {

@@ -1,7 +1,7 @@
 import { type FC, useState } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { type SelectOption } from "@web/common/types/component.types";
-import { type Option_Time } from "@web/common/types/util.types";
+import { type TimeOption } from "@web/common/types/util.types";
 import {
   getTimeOptionByValue,
   getTimeOptions,
@@ -40,7 +40,7 @@ export const TimePickers: FC<Props> = ({
   const adjustComplimentTimeIfNeeded = (
     changed: "start" | "end",
     value: string,
-  ): Option_Time => {
+  ): TimeOption => {
     const start = changed === "start" ? value : startTime.value;
     const end = changed === "end" ? value : endTime.value;
 

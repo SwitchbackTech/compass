@@ -10,7 +10,7 @@ import {
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { describe, expect, it } from "bun:test";
 
-// Pure unit coverage for the shared read-only rule (packet 08 step 8) - the
+// Pure unit coverage for the shared read-only rule - the
 // component-level tests (grid cards, shortcuts, context menu, form) each
 // exercise this indirectly, but the rule itself is small enough to pin down
 // directly: writable calendar -> false, unwritable -> true, busy content

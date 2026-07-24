@@ -1,6 +1,6 @@
 import type EmailPassword from "supertokens-web-js/recipe/emailpassword";
 
-export type EmailPasswordPort = Pick<
+type EmailPasswordPort = Pick<
   typeof EmailPassword,
   | "signUp"
   | "signIn"

@@ -12,13 +12,19 @@ import {
 } from "@core/types/event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
-import { type Option_Time } from "@web/common/types/util.types";
-import {
-  type Categories_Event,
-  type SelectedDates,
-} from "@web/common/types/web.event.types";
+import { type SelectOption } from "@web/common/types/component.types";
+import { type TimeOption } from "@web/common/types/util.types";
+import { type Categories_Event } from "@web/common/types/web.event.types";
 import { roundToNext } from "@web/common/utils/round/round.util";
 import { GRID_TIME_STEP } from "@web/grid/grid.constants";
+
+interface SelectedDates {
+  startDate: Date;
+  startTime: SelectOption<string>;
+  endDate: Date;
+  endTime: SelectOption<string>;
+  isAllDay: boolean;
+}
 
 export const dateIsValid = (date: string) => {
   const notNaN = !Number.isNaN(new Date(date).getTime());
@@ -73,7 +79,7 @@ export const getDurationLabel = (start: string, end: string) => {
   return _end.diff(_start, "minutes");
 };
 
-export const getEndTimeOptions = (): Option_Time[] => {
+export const getEndTimeOptions = (): TimeOption[] => {
   const options = ACCEPTED_TIMES.map((value) => {
     const day = dayjs(`2000-00-00 ${value}`, YMDHM_FORMAT);
 
@@ -109,7 +115,7 @@ export const getNextIntervalTimes = () => {
 
 export const getTimeLabel = (value: string) => value.replace(":00", "");
 
-export const getTimeOptionByValue = (date: Dayjs): Option_Time => {
+export const getTimeOptionByValue = (date: Dayjs): TimeOption => {
   const value = dayjs(date).format(HOURS_AM_FORMAT);
   const label = getTimeLabel(value);
 
@@ -119,7 +125,7 @@ export const getTimeOptionByValue = (date: Dayjs): Option_Time => {
   };
 };
 
-export const getTimeOptions = (): Option_Time[] => {
+export const getTimeOptions = (): TimeOption[] => {
   const options = ACCEPTED_TIMES.map((value) => {
     const label = getTimeLabel(value);
 

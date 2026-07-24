@@ -1,7 +1,7 @@
 import { z } from "zod/v4";
 import { EventSchema } from "@core/types/event.contracts";
 
-// There is no syncState field (A35): local sync is push-all-then-clear on
+// There is no syncState field: local sync is push-all-then-clear on
 // connect, so a per-record state machine models a queue that does not exist.
 export const LocalEventRecordSchema = z
   .strictObject({

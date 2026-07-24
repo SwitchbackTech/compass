@@ -5,9 +5,21 @@ import {
   forwardRef,
   useRef,
 } from "react";
-import TextareaAutoSize from "react-textarea-autosize";
+import TextareaAutoSize, {
+  type TextareaAutosizeProps,
+} from "react-textarea-autosize";
+import {
+  type ClassNamedComponent,
+  type UnderlinedInput,
+} from "@web/common/types/component.types";
 import { Focusable } from "@web/components/Focusable/Focusable";
-import { type TextareaProps } from "./types";
+
+interface TextareaProps
+  extends UnderlinedInput,
+    ClassNamedComponent,
+    TextareaAutosizeProps {
+  heightFitsContent?: boolean;
+}
 
 const TextareaBase = forwardRef<HTMLTextAreaElement, TextareaProps>(
   (

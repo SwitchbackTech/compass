@@ -1,4 +1,4 @@
-export type CompleteAuthenticationDependencies = {
+type CompleteAuthenticationDependencies = {
   clearAnonymousCalendarChangeSignUpPrompt: () => void;
   markUserAsAuthenticated: (email?: string) => void;
   onEventSourceChanged: () => void;

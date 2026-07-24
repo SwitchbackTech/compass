@@ -23,7 +23,7 @@ type LocalEventSyncDependencies = {
 
 // Maps a locally-stored record (calendarId = the client-generated sentinel)
 // onto the server's own local calendar id, preserving the client-generated
-// event id (A25).
+// event id.
 function toCreateInput(
   record: LocalEventRecord,
   serverLocalCalendarId: string,

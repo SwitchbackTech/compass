@@ -3,7 +3,13 @@ import type React from "react";
 import { type HTMLAttributes, useEffect, useState } from "react";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { getGradient } from "@web/common/styles/theme.util";
-import { type Props } from "./types";
+
+interface Props {
+  color?: string;
+  toggled?: boolean;
+  width?: string;
+  withAnimation?: boolean;
+}
 
 export const Divider: React.FC<Props & HTMLAttributes<HTMLDivElement>> = ({
   className,

@@ -80,7 +80,7 @@ export const signOut = async (status: SignoutStatus) => {
   if (status === Status.UNAUTHORIZED) {
     showSessionExpiredToast();
   } else {
-    showErrorToast("Login required, cuz security 😇");
+    showErrorToast("Login required, cuz security");
   }
 
   await session.signOut();
