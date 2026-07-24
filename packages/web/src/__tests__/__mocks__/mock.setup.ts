@@ -1,5 +1,3 @@
-import { mock } from "bun:test";
-
 type RestorableMock = {
   mockRestore: () => void;
 };

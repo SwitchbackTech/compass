@@ -17,7 +17,8 @@ export function useDemoEventsPresent(): boolean {
       return;
     }
 
-    const generation = (refreshGenerationRef.current += 1);
+    refreshGenerationRef.current += 1;
+    const generation = refreshGenerationRef.current;
     void hasDemoEvents().then((result) => {
       if (generation === refreshGenerationRef.current) {
         setPresent(result);
