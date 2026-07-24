@@ -4,6 +4,10 @@ import {
   type UserMetadata,
 } from "@core/types/user.types";
 import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
+import { getConnectionDelegation } from "@backend/common/services/sync-service/connection-routing";
+import { resolveGoogleConnectionStateFromSync } from "@backend/common/services/sync-service/google-connection-status";
+import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
+import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import { isGoogleSyncActive } from "@backend/sync/services/google-sync/google-sync.activity";
 import { isGoogleCalendarSyncHealthy } from "@backend/sync/services/google-sync/google-sync.health";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
@@ -49,6 +53,22 @@ class UserMetadataService {
     userId: string,
     metadata?: UserMetadata,
   ): Promise<GoogleMetadataAssessment> => {
+    // When this deployment routes provider connections to the sync service, the
+    // connection state is owned there, not by the legacy google sub-doc, so
+    // derive it from sync. getConnectionDelegation() only returns "sync" once a
+    // client is configured (it fails safe to "legacy" otherwise), so a client is
+    // present here; the guard keeps this defensive.
+    if (getConnectionDelegation() === "sync") {
+      const client = getSyncServiceClient();
+      if (client) {
+        const connectionState = await resolveGoogleConnectionStateFromSync(
+          client,
+          toSyncPrincipal(userId),
+        );
+        return { connectionState };
+      }
+    }
+
     const storedMetadata =
       metadata ?? (await this.getStoredUserMetadata(userId));
     const user = await findCompassUserBy("_id", userId);
