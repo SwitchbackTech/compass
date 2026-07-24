@@ -26,6 +26,7 @@ import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 import { DraftProvider } from "@web/views/Week/components/Draft/context/DraftProvider";
 import { Draft } from "@web/views/Week/components/Draft/Draft";
+import { WeekDraftScopeDialogs } from "@web/views/Week/components/Draft/WeekDraftScopeDialogs";
 import { Grid } from "@web/views/Week/components/Grid/Grid";
 import { WeekGridScrollArea } from "@web/views/Week/components/Grid/WeekGridScrollArea";
 import { DayLabels } from "@web/views/Week/components/Header/DayLabels";
@@ -208,6 +209,7 @@ export const WeekView = () => {
             </ResizableSidebarPanel>
           </ContextMenuWrapper>
         </Shortcuts>
+        <WeekDraftScopeDialogs />
       </DraftProvider>
     </div>
   );
