@@ -82,7 +82,15 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
         const metadata = message.metadata as UserMetadata;
         dependencies.setUserMetadata(metadata);
 
-        if (metadata.google?.connectionState !== "IMPORTING") {
+        // Prefer Sync's in-progress states when present; otherwise the collapsed
+        // product enum. Never clear syncing from local optimism alone (S41).
+        const syncState = metadata.google?.connection?.state;
+        const syncInProgress =
+          syncState === "connecting" ||
+          syncState === "importing" ||
+          syncState === "catchingUp";
+        const enumImporting = metadata.google?.connectionState === "IMPORTING";
+        if (!syncInProgress && !enumImporting) {
           clearSyncingSyncIndicatorOverride();
         }
       },

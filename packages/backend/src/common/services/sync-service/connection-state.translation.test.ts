@@ -3,7 +3,11 @@ import {
   type ConnectionStateReason,
   type ProviderConnection,
 } from "@core/types/sync/connection.contracts";
-import { toGoogleConnectionState } from "./connection-state.translation";
+import {
+  selectPrimaryGoogleConnection,
+  toGoogleConnectionState,
+  toGoogleSyncConnectionSummary,
+} from "./connection-state.translation";
 import { describe, expect, it } from "bun:test";
 
 // A ProviderConnection is a rich record, but the translation reads only state +
@@ -113,6 +117,45 @@ describe("toGoogleConnectionState", () => {
       expect(
         toGoogleConnectionState([connection("healthy"), connection("healthy")]),
       ).toBe("HEALTHY");
+    });
+  });
+});
+
+describe("selectPrimaryGoogleConnection", () => {
+  it("returns null when there are no connections", () => {
+    expect(selectPrimaryGoogleConnection([])).toBeNull();
+  });
+
+  it("selects the precedence-winning connection for reconnect", () => {
+    const healthy = { ...connection("healthy"), id: "healthy" };
+    const broken = {
+      ...connection("actionRequired", "authorizationRevoked"),
+      id: "broken",
+    };
+    expect(selectPrimaryGoogleConnection([healthy, broken])?.id).toBe("broken");
+  });
+});
+
+describe("toGoogleSyncConnectionSummary", () => {
+  it("maps id, state, timestamps, and account email only", () => {
+    const record = {
+      ...connection("delayed", "workOverdue"),
+      id: "c-summary",
+      account: {
+        providerAccountId: "a1",
+        email: "user@example.com",
+        displayName: "User",
+      },
+      lastSyncedAt: "2026-07-24T10:00:00.000Z",
+      lastHealthyAt: "2026-07-23T10:00:00.000Z",
+    };
+    expect(toGoogleSyncConnectionSummary(record)).toEqual({
+      id: "c-summary",
+      state: "delayed",
+      stateReason: "workOverdue",
+      lastSyncedAt: "2026-07-24T10:00:00.000Z",
+      lastHealthyAt: "2026-07-23T10:00:00.000Z",
+      accountEmail: "user@example.com",
     });
   });
 });

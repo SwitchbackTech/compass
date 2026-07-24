@@ -1,4 +1,5 @@
 import { CloudArrowUpIcon } from "@phosphor-icons/react";
+import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { type SyncStatus } from "@web/calendars/sync-status.types";
 import {
   type CommandActionIcon,
@@ -46,7 +47,30 @@ export const getGoogleConnectionConfig = (
   }
 };
 
-export const getGoogleSyncStatus = (state: GoogleUiState): SyncStatus => {
+// Prefer Sync vocabulary when a connection summary is present; fall back to the
+// collapsed product enum for legacy deployments.
+export const getGoogleSyncStatus = (
+  state: GoogleUiState,
+  connection?: GoogleSyncConnectionSummary | null,
+): SyncStatus => {
+  if (connection) {
+    switch (connection.state) {
+      case "healthy":
+        return { variant: "healthy", text: "Calendar up-to-date" };
+      case "connecting":
+      case "importing":
+        return { variant: "syncing", text: "Syncing your calendar…" };
+      case "catchingUp":
+        return { variant: "syncing", text: "Catching up your calendar…" };
+      case "delayed":
+        return { variant: "warning", text: "Calendar sync is delayed" };
+      case "actionRequired":
+      case "disconnected":
+        // Product enum already distinguishes reconnect vs soft attention.
+        break;
+    }
+  }
+
   switch (state) {
     case "HEALTHY":
       return { variant: "healthy", text: "Calendar up-to-date" };

@@ -3,7 +3,10 @@ import {
   type ConnectionStateReason,
   type ProviderConnection,
 } from "@core/types/sync/connection.contracts";
-import { type GoogleConnectionState } from "@core/types/user.types";
+import {
+  type GoogleConnectionState,
+  type GoogleSyncConnectionSummary,
+} from "@core/types/user.types";
 
 /**
  * Translate the sync service's multi-connection health model into the single
@@ -91,4 +94,31 @@ export function toGoogleConnectionState(
   // Unreachable: translateConnection never returns NOT_CONNECTED, so a non-empty
   // list always matches a precedence value. Defensive only.
   return "NOT_CONNECTED";
+}
+
+// The connection whose translated enum matches the product precedence winner.
+// Used so reconnect can target the broken account, not a healthy sibling.
+export function selectPrimaryGoogleConnection(
+  connections: readonly ProviderConnection[],
+): ProviderConnection | null {
+  if (connections.length === 0) return null;
+  const target = toGoogleConnectionState(connections);
+  const primary = connections.find(
+    (connection) =>
+      translateConnection(connection.state, connection.stateReason) === target,
+  );
+  return primary ?? connections[0] ?? null;
+}
+
+export function toGoogleSyncConnectionSummary(
+  connection: ProviderConnection,
+): GoogleSyncConnectionSummary {
+  return {
+    id: connection.id,
+    state: connection.state,
+    stateReason: connection.stateReason,
+    lastSyncedAt: connection.lastSyncedAt,
+    lastHealthyAt: connection.lastHealthyAt,
+    accountEmail: connection.account.email,
+  };
 }

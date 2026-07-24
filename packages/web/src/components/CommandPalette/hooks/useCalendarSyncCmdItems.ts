@@ -1,37 +1,37 @@
 import { CloudArrowUpIcon } from "@phosphor-icons/react";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { getGoogleSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import {
+  selectGoogleSyncConnection,
+  useUserMetadataStore,
+} from "@web/auth/state/user-metadata.store";
 import { type SyncStatus } from "@web/calendars/sync-status.types";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
-
-const SYNCING_CALENDAR_LABEL = "Syncing your calendar…";
-
-const isCalendarSyncing = (state: GoogleUiState) =>
-  state === "repairing" || state === "IMPORTING" || state === "checking";
 
 export const useCalendarSyncCmdItems = (): {
   items: CommandItem[];
   syncStatus: SyncStatus;
 } => {
   const { commandAction, isAvailable, state } = useConnectGoogle();
+  const syncConnection = useUserMetadataStore(selectGoogleSyncConnection);
+  const syncStatus = getGoogleSyncStatus(state, syncConnection);
 
   if (!isAvailable) {
     return { items: [], syncStatus: null };
   }
 
-  if (isCalendarSyncing(state)) {
+  if (syncStatus?.variant === "syncing") {
     return {
       items: [
         {
           id: "connect-google-calendar",
-          label: SYNCING_CALENDAR_LABEL,
+          label: syncStatus.text,
           icon: CloudArrowUpIcon,
           iconClassName: "c-sync-icon-wave",
           disabled: true,
         },
       ],
-      syncStatus: getGoogleSyncStatus(state),
+      syncStatus,
     };
   }
 
@@ -47,6 +47,6 @@ export const useCalendarSyncCmdItems = (): {
           },
         ]
       : [],
-    syncStatus: getGoogleSyncStatus(state),
+    syncStatus,
   };
 };

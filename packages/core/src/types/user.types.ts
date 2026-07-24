@@ -33,7 +33,23 @@ export type GoogleConnectionState =
   | "HEALTHY"
   | "ATTENTION";
 
-export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
+// Sync-backed primary connection summary for the browser (S41). Present only
+// when connection routing is delegated to Sync. IDs/timestamps/state only —
+// never credentials or event content. Plain strings so the payload stays a
+// SuperTokens JSONObject (no Zod brands on the metadata wire).
+export interface GoogleSyncConnectionSummary {
+  id: string;
+  state: string;
+  stateReason: string | null;
+  lastSyncedAt: string | null;
+  lastHealthyAt: string | null;
+  accountEmail: string | null;
+}
+
+// Intersection (not extends): SuperTokens JSONObject's string index signature
+// rejects a nested `google.connection` object on an interface extends clause,
+// even though every field is JSON-safe.
+export type UserMetadata = SupertokensUserMetadata.JSONObject & {
   skipOnboarding?: boolean;
   sync?: {
     importGCal?: SyncStatus;
@@ -41,8 +57,9 @@ export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
   };
   google?: {
     connectionState?: GoogleConnectionState;
+    connection?: GoogleSyncConnectionSummary | null;
   };
-}
+};
 
 export interface UserProfile
   extends Pick<
