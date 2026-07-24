@@ -1,12 +1,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { handleError } from "@web/common/utils/event/event.util";
 import { deriveOverlappingEventQueryData } from "@web/events/queries/event.query.cache";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { deriveCalendarEventViewModel } from "./event.view-model";
+import { filterEventsByVisibleCalendars } from "./filter-events-by-visible-calendars";
 
 type WeekEventsQueryArgs = {
   startOfView: Dayjs;
@@ -53,9 +55,13 @@ export function useWeekEventsQuery(args: WeekEventsQueryArgs) {
 
 export function useWeekEventViewModel(args: WeekEventsQueryArgs) {
   const query = useWeekEventsQuery(args);
+  const { data: calendars } = useCalendarsQuery();
   const viewModel = useMemo(
-    () => deriveCalendarEventViewModel(query.data),
-    [query.data],
+    () =>
+      deriveCalendarEventViewModel(
+        filterEventsByVisibleCalendars(query.data, calendars),
+      ),
+    [query.data, calendars],
   );
   return { ...query, ...viewModel };
 }

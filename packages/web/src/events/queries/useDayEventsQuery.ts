@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { handleError } from "@web/common/utils/event/event.util";
 import { dayEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { deriveCalendarEventViewModel } from "./event.view-model";
+import { filterEventsByVisibleCalendars } from "./filter-events-by-visible-calendars";
 
 type DayEventsQueryArgs = {
   startDate: string;
@@ -29,9 +31,13 @@ export function useDayEventsQuery({ startDate, endDate }: DayEventsQueryArgs) {
 
 export function useDayEventViewModel(args: DayEventsQueryArgs) {
   const query = useDayEventsQuery(args);
+  const { data: calendars } = useCalendarsQuery();
   const viewModel = useMemo(
-    () => deriveCalendarEventViewModel(query.data),
-    [query.data],
+    () =>
+      deriveCalendarEventViewModel(
+        filterEventsByVisibleCalendars(query.data, calendars),
+      ),
+    [query.data, calendars],
   );
   return { ...query, ...viewModel };
 }
