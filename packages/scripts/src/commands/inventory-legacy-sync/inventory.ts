@@ -165,7 +165,9 @@ export function inventoryLegacySyncData(
   }
 
   // --- orphans ---
-  const calendarIds = new Set(calendars.map((c) => c._id.toHexString()));
+  const calendarById = new Map(
+    calendars.map((calendar) => [calendar._id.toHexString(), calendar]),
+  );
   const googleCalByUser = new Map<string, Set<string>>();
   for (const calendar of calendars) {
     if (calendar.source.provider !== "google") continue;
@@ -192,16 +194,20 @@ export function inventoryLegacySyncData(
 
   for (const event of events) {
     const calendarId = event.calendarId.toHexString();
-    if (calendarIds.has(calendarId)) continue;
+    const calendar = calendarById.get(calendarId);
+    if (calendar && userIds.has(calendar.userId.toHexString())) continue;
+    const reason = calendar
+      ? `event.calendarId=${calendarId} calendar.userId=${calendar.userId.toHexString()} has no user`
+      : `event.calendarId=${calendarId} has no calendar`;
     orphans.push({
       kind: "event",
       id: event._id.toHexString(),
-      reason: `event.calendarId=${calendarId} has no calendar`,
+      reason,
     });
     skips.push({
       category: "orphan_event",
       id: event._id.toHexString(),
-      detail: `event.calendarId=${calendarId} has no calendar`,
+      detail: reason,
     });
   }
 
