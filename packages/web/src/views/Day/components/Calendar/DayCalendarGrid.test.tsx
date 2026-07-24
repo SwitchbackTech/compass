@@ -640,11 +640,18 @@ describe("DayCalendarGrid", () => {
   it("opens the form for a new all-day draft", async () => {
     const { user } = renderDayCalendarGrid();
 
-    await user.pointer({
-      coords: { clientX: 100, clientY: 1 },
-      keys: "[MouseLeft>]",
-      target: getAllDayRegion(),
-    });
+    await user.pointer([
+      {
+        coords: { clientX: 100, clientY: 1 },
+        keys: "[MouseLeft>]",
+        target: getAllDayRegion(),
+      },
+      {
+        coords: { clientX: 100, clientY: 1 },
+        keys: "[/MouseLeft]",
+        target: getAllDayRegion(),
+      },
+    ]);
 
     await waitFor(() => {
       expect(
@@ -657,8 +664,6 @@ describe("DayCalendarGrid", () => {
         screen.getByRole("textbox", { name: "Event Title" }),
       ).toHaveFocus();
     });
-
-    await user.pointer({ keys: "[/MouseLeft]" });
   });
 
   it("creates an all-day draft in the clicked calendar column", async () => {

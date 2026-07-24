@@ -1,4 +1,10 @@
 import {
+  applySmartScroll as applySmartScrollFrame,
+  getSavedEventInteractionCursor,
+  getSavedEventOwnershipReason,
+  readElementRect,
+} from "@web/grid/interaction/adapter.helpers";
+import {
   createDraftEventMount,
   getResizeHandleEdge,
   hideDraftEventTimeLabel,
@@ -8,7 +14,6 @@ import {
   getDragRowLayouts,
   resolveDragRow,
 } from "@web/grid/interaction/math/cross-row.drag";
-import { getSmartScrollFrame } from "@web/grid/interaction/math/smart-scroll";
 import {
   type CrossRowSize,
   type VisualPoint,
@@ -163,7 +168,7 @@ export const createWeekInteractionAdapter = ({
     setWeekInteractionMotionActive(true);
 
     return {
-      reason: getOwnershipReason(target),
+      reason: getSavedEventOwnershipReason(target.type),
       shouldOwn: true,
     };
   }
@@ -321,7 +326,7 @@ export const createWeekInteractionAdapter = ({
       },
       getDraftEventMount: ({ sourceElement, target }) =>
         createDraftEventMount({
-          cursor: getInteractionCursor(target),
+          cursor: getSavedEventInteractionCursor(target.type),
           source: sourceElement,
         }),
       getSourceElement: (target) => target.registered.element,
@@ -637,26 +642,11 @@ export const createWeekInteractionAdapter = ({
   }
 
   function applySmartScroll(pointer: VisualPoint) {
-    if (!layout?.smartScroll || scrollTop === null) {
-      return { isScrolling: false, scrollDeltaPx: 0 };
-    }
-
-    scrollTop = layout.smartScroll.element.scrollTop;
-
-    const frame = getSmartScrollFrame({
-      cache: layout.smartScroll,
-      pointerY: pointer.y,
-      scrollTop,
-    });
-
-    if (frame.scrollTop !== scrollTop) {
-      layout.smartScroll.element.scrollTop = frame.scrollTop;
-      scrollTop = frame.scrollTop;
-    }
-
+    const result = applySmartScrollFrame({ layout, pointer, scrollTop });
+    scrollTop = result.scrollTop;
     return {
-      isScrolling: frame.velocityPx !== 0,
-      scrollDeltaPx: scrollTop - layout.smartScroll.initialScrollTop,
+      isScrolling: result.isScrolling,
+      scrollDeltaPx: result.scrollDeltaPx,
     };
   }
 
@@ -757,31 +747,6 @@ const isDragTarget = (
 ): target is WeekAllDayDragTarget | WeekTimedDragTarget =>
   target.type === "allDayDrag" || target.type === "timedDrag";
 
-const getOwnershipReason = (target: WeekInteractionTarget) => {
-  switch (target.type) {
-    case "allDayDrag":
-      return "saved-all-day-drag";
-    case "allDayResize":
-      return "saved-all-day-resize";
-    case "timedResize":
-      return "saved-timed-resize";
-    case "timedDrag":
-      return "saved-timed-drag";
-  }
-};
-
-const getInteractionCursor = (target: WeekInteractionTarget) => {
-  switch (target.type) {
-    case "allDayResize":
-      return "col-resize";
-    case "timedResize":
-      return "row-resize";
-    case "allDayDrag":
-    case "timedDrag":
-      return "move";
-  }
-};
-
 // Drags cache both rows so they can be dropped across them; resizes stay within
 // one row and only need their own.
 const buildWeekLayoutCacheForTarget = (
@@ -813,14 +778,3 @@ const getDraftEventSize = (visual: {
   };
 
 const isEligibleWeekPointerDown = isEligibleInteractionPointerDown;
-
-const readElementRect = (element: HTMLElement): VisualRect => {
-  const rect = element.getBoundingClientRect();
-
-  return {
-    height: rect.height,
-    left: rect.left,
-    top: rect.top,
-    width: rect.width,
-  };
-};

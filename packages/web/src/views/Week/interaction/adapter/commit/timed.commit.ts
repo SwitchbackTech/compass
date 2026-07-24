@@ -1,12 +1,13 @@
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import {
+  hasTimedDragVisualMoved,
+  hasTimedResizeVisualMoved,
+} from "@web/grid/interaction/commit/timed-moved";
 import { type TimedDragVisual } from "@web/grid/interaction/types/timed-drag.types";
 import { type TimedResizeVisual } from "@web/grid/interaction/types/timed-resize.types";
 
-export const hasTimedDragVisualMoved = (visual: TimedDragVisual) =>
-  visual.dayDate !== visual.initialDayDate ||
-  visual.startMinutes !== visual.initialStartMinutes ||
-  visual.endMinutes !== visual.initialEndMinutes;
+export { hasTimedDragVisualMoved, hasTimedResizeVisualMoved };
 
 export const timedDragVisualToGridEvent = (
   event: GridEvent,
@@ -22,10 +23,6 @@ export const timedDragVisualToGridEvent = (
     startDate: movedDay.add(visual.startMinutes, "minutes").format(),
   };
 };
-
-export const hasTimedResizeVisualMoved = (visual: TimedResizeVisual) =>
-  visual.startMinutes !== visual.initialStartMinutes ||
-  visual.endMinutes !== visual.initialEndMinutes;
 
 export const timedResizeVisualToGridEvent = (
   event: GridEvent,

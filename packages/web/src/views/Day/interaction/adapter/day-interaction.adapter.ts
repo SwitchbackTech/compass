@@ -1,25 +1,18 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { type CalendarId } from "@core/types/domain-primitives";
-import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import dayjs from "@core/util/date/dayjs";
 import {
-  ID_ALLDAY_COLUMNS,
-  ID_GRID_COLUMNS_TIMED,
-  ID_GRID_MAIN,
-} from "@web/common/constants/web.constants";
-import { type GridEvent } from "@web/common/types/web.event.types";
-import { GRID_TIME_STEP, TIMED_VISIBLE_HOURS } from "@web/grid/grid.constants";
+  applySmartScroll as applySmartScrollFrame,
+  getSavedEventInteractionCursor,
+  getSavedEventOwnershipReason,
+  readElementRect,
+} from "@web/grid/interaction/adapter.helpers";
 import { getLocalMinutes } from "@web/grid/interaction/date";
 import {
   createDraftEventMount,
   getResizeHandleEdge,
   updateDraftEventTimeLabel,
 } from "@web/grid/interaction/dom";
-import {
-  buildAllDayGridLayoutCache,
-  buildTimedGridLayoutCache,
-  type GridLayoutCache,
-  type GridLayoutCacheSources,
-} from "@web/grid/interaction/layout.cache";
+import { type GridLayoutCache } from "@web/grid/interaction/layout.cache";
 import {
   createAllDayDragVisual,
   updateAllDayDragVisual,
@@ -28,7 +21,6 @@ import {
   createAllDayResizeVisual,
   updateAllDayResizeVisual,
 } from "@web/grid/interaction/math/all-day.resize";
-import { getSmartScrollFrame } from "@web/grid/interaction/math/smart-scroll";
 import {
   createTimedDragVisual,
   updateTimedDragVisual,
@@ -37,13 +29,7 @@ import {
   createTimedResizeVisual,
   updateTimedResizeVisual,
 } from "@web/grid/interaction/math/timed.resize";
-import { type AllDayDragVisual } from "@web/grid/interaction/types/all-day-drag.types";
-import { type AllDayResizeVisual } from "@web/grid/interaction/types/all-day-resize.types";
-import {
-  type TimedDragVisual,
-  type VisualPoint,
-} from "@web/grid/interaction/types/timed-drag.types";
-import { type TimedResizeVisual } from "@web/grid/interaction/types/timed-resize.types";
+import { type VisualPoint } from "@web/grid/interaction/types/timed-drag.types";
 import { type InteractionAdapter } from "@web/interaction/interaction.adapter.types";
 import {
   createInteractionEngine,
@@ -56,9 +42,17 @@ import {
   dayEventRegistry,
 } from "../registry/day-event.registry";
 import {
-  type DayAllDayDragCommitResult,
+  commitAllDayDragInteraction,
+  commitAllDayResizeInteraction,
+} from "./commit/all-day.commit";
+import {
+  commitTimedDragInteraction,
+  commitTimedResizeInteraction,
+  timedDragVisualToDayGridEvent,
+  timedResizeVisualToDayGridEvent,
+} from "./commit/timed.commit";
+import {
   type DayAllDayDragTarget,
-  type DayAllDayResizeCommitResult,
   type DayAllDayResizeTarget,
   type DayInteractionAdapter,
   type DayInteractionAdapterOptions,
@@ -68,11 +62,13 @@ import {
   type DayInteractionTarget,
   type DayInteractionVisual,
   type DayResolvedEventTarget,
-  type DayTimedDragCommitResult,
   type DayTimedDragTarget,
-  type DayTimedResizeCommitResult,
   type DayTimedResizeTarget,
 } from "./day-interaction.adapter.types";
+import {
+  buildDayLayoutCacheForTarget,
+  isDayDragTarget,
+} from "./geometry/day-layout.cache";
 
 export type {
   DayAllDayDragCommitResult,
@@ -82,10 +78,6 @@ export type {
   DayTimedDragCommitResult,
   DayTimedResizeCommitResult,
 } from "./day-interaction.adapter.types";
-
-const DAY_SMART_SCROLL_EDGE_THRESHOLD_PX = 50;
-const SMART_SCROLL_BOTTOM_INSET_PX = 100;
-const SMART_SCROLL_SPEED_PX = 10;
 
 const inertRuntime: DayInteractionRuntime = {
   getTimedEventById: () => null,
@@ -147,7 +139,7 @@ export const createDayInteractionAdapter = ({
     }
 
     return {
-      reason: getOwnershipReason(target),
+      reason: getSavedEventOwnershipReason(target.type),
       shouldOwn: true,
     };
   }
@@ -259,7 +251,9 @@ export const createDayInteractionAdapter = ({
         // and events momentarily out of sync) also falls back to the single
         // column: anchoring it to column 0 would make a purely vertical drag
         // commit a calendar move the user never made.
-        const calendarColumnKeys = isDragTarget(target) ? getColumnKeys() : [];
+        const calendarColumnKeys = isDayDragTarget(target)
+          ? getColumnKeys()
+          : [];
         const eventColumnIndex = calendarColumnKeys.indexOf(
           target.event.calendarId ?? "",
         );
@@ -327,12 +321,12 @@ export const createDayInteractionAdapter = ({
       },
       getDraftEventMount: ({ sourceElement, target }) =>
         createDraftEventMount({
-          cursor: getInteractionCursor(target),
+          cursor: getSavedEventInteractionCursor(target.type),
           source: sourceElement,
         }),
       getSourceElement: (target) => target.registered.element,
       getSourceElementDraftEventMode: (target) =>
-        isDragTarget(target) ? "dim-source" : "hide-source",
+        isDayDragTarget(target) ? "dim-source" : "hide-source",
       getTarget: (event) => getInteractionTarget(event),
       updateVisual: ({ pointer, target, visual }) => {
         if (!layout) {
@@ -429,26 +423,11 @@ export const createDayInteractionAdapter = ({
   }
 
   function applySmartScroll(pointer: VisualPoint) {
-    if (!layout?.smartScroll || scrollTop === null) {
-      return { isScrolling: false, scrollDeltaPx: 0 };
-    }
-
-    scrollTop = layout.smartScroll.element.scrollTop;
-
-    const frame = getSmartScrollFrame({
-      cache: layout.smartScroll,
-      pointerY: pointer.y,
-      scrollTop,
-    });
-
-    if (frame.scrollTop !== scrollTop) {
-      layout.smartScroll.element.scrollTop = frame.scrollTop;
-      scrollTop = frame.scrollTop;
-    }
-
+    const result = applySmartScrollFrame({ layout, pointer, scrollTop });
+    scrollTop = result.scrollTop;
     return {
-      isScrolling: frame.velocityPx !== 0,
-      scrollDeltaPx: scrollTop - layout.smartScroll.initialScrollTop,
+      isScrolling: result.isScrolling,
+      scrollDeltaPx: result.scrollDeltaPx,
     };
   }
 
@@ -622,237 +601,7 @@ export const createDayInteractionAdapter = ({
   };
 };
 
-const buildDayTimedLayoutCache = (
-  sources: GridLayoutCacheSources,
-  visibleDates: string[],
-) =>
-  buildTimedGridLayoutCache({
-    ...sources,
-    edgeThresholdPx: DAY_SMART_SCROLL_EDGE_THRESHOLD_PX,
-    mainGridElementId: ID_GRID_MAIN,
-    smartScroll: {
-      bottomInsetPx: SMART_SCROLL_BOTTOM_INSET_PX,
-      speedPx: SMART_SCROLL_SPEED_PX,
-    },
-    snapMinutes: GRID_TIME_STEP,
-    timedColumnsElementId: ID_GRID_COLUMNS_TIMED,
-    timedVisibleHours: TIMED_VISIBLE_HOURS,
-    visibleDates,
-  });
-
-const buildDayAllDayLayoutCache = (
-  sources: GridLayoutCacheSources,
-  visibleDates: string[],
-) =>
-  buildAllDayGridLayoutCache({
-    ...sources,
-    allDayColumnsElementId: ID_ALLDAY_COLUMNS,
-    edgeThresholdPx: 0,
-    snapMinutes: GRID_TIME_STEP,
-    timedVisibleHours: TIMED_VISIBLE_HOURS,
-    visibleDates,
-  });
-
-const buildDayLayoutCacheForTarget = (
-  target: DayInteractionTarget,
-  sources: GridLayoutCacheSources,
-  visibleDates: string[],
-) =>
-  isAllDayTarget(target)
-    ? buildDayAllDayLayoutCache(sources, visibleDates)
-    : buildDayTimedLayoutCache(sources, visibleDates);
-
-const commitTimedDragInteraction = (
-  target: DayTimedDragTarget,
-  visual: TimedDragVisual,
-  visibleDate: Dayjs,
-): DayTimedDragCommitResult => {
-  const hasMoved = hasTimedDragVisualMoved(visual);
-
-  return {
-    event: hasMoved
-      ? timedDragVisualToDayGridEvent(target.event, visual, visibleDate)
-      : target.event,
-    eventId: target.event._id!,
-    hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
-    hasMoved,
-    type: "timedDragEnd",
-  };
-};
-
-const commitTimedResizeInteraction = (
-  target: DayTimedResizeTarget,
-  visual: TimedResizeVisual,
-  visibleDate: Dayjs,
-): DayTimedResizeCommitResult => {
-  const hasMoved = hasTimedResizeVisualMoved(visual);
-
-  return {
-    event: hasMoved
-      ? timedResizeVisualToDayGridEvent(target.event, visual, visibleDate)
-      : target.event,
-    eventId: target.event._id!,
-    hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
-    hasMoved,
-    type: "timedResizeEnd",
-  };
-};
-
-const commitAllDayDragInteraction = (
-  target: DayAllDayDragTarget,
-  visual: AllDayDragVisual,
-): DayAllDayDragCommitResult => {
-  const hasMoved =
-    "dayDate" in visual ? visual.dayDate !== visual.initialDayDate : false;
-
-  // In the Day view every column shares the visible date, so an all-day drag
-  // that "moved" can only have changed COLUMN, i.e. calendar. Keep the
-  // event's own dates: rewriting them to the visible date would truncate a
-  // multi-day all-day event to a single day.
-  return {
-    event: hasMoved
-      ? {
-          ...target.event,
-          calendarId: columnMoveCalendarId(visual, target.event),
-        }
-      : target.event,
-    eventId: target.event._id!,
-    hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
-    hasMoved,
-    type: "allDayDragEnd",
-  };
-};
-
-const commitAllDayResizeInteraction = (
-  target: DayAllDayResizeTarget,
-  visual: AllDayResizeVisual,
-  visibleDate: Dayjs,
-): DayAllDayResizeCommitResult => {
-  const hasMoved =
-    visual.startDayIndex !== visual.initialStartDayIndex ||
-    visual.endDayIndex !== visual.initialEndDayIndex;
-
-  return {
-    event: hasMoved
-      ? allDayVisualToDayGridEvent(target.event, visibleDate)
-      : target.event,
-    eventId: target.event._id!,
-    hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
-    hasMoved,
-    type: "allDayResizeEnd",
-  };
-};
-
-const timedDragVisualToDayGridEvent = (
-  event: GridEvent,
-  visual: TimedDragVisual,
-  visibleDate: Dayjs,
-): GridEvent => ({
-  ...event,
-  calendarId: columnMoveCalendarId(visual, event),
-  isAllDay: false,
-  endDate: visibleDate
-    .startOf("day")
-    .add(visual.endMinutes, "minutes")
-    .format(),
-  startDate: visibleDate
-    .startOf("day")
-    .add(visual.startMinutes, "minutes")
-    .format(),
-});
-
-/**
- * Day-view drag column keys are calendar ids (see createVisual), so a drop
- * on a different column is a cross-calendar move. Same-column drops (and the
- * single-column fallback, whose one key is a date string that never changes)
- * keep the event's own calendarId.
- */
-const columnMoveCalendarId = (
-  visual: Pick<TimedDragVisual, "dayDate" | "initialDayDate">,
-  event: GridEvent,
-): CalendarId | undefined =>
-  visual.dayDate !== visual.initialDayDate
-    ? (visual.dayDate as CalendarId)
-    : event.calendarId;
-
-const timedResizeVisualToDayGridEvent = (
-  event: GridEvent,
-  visual: TimedResizeVisual,
-  visibleDate: Dayjs,
-): GridEvent => ({
-  ...event,
-  isAllDay: false,
-  endDate: visibleDate
-    .startOf("day")
-    .add(visual.endMinutes, "minutes")
-    .format(),
-  startDate: visibleDate
-    .startOf("day")
-    .add(visual.startMinutes, "minutes")
-    .format(),
-});
-
-const allDayVisualToDayGridEvent = (
-  event: GridEvent,
-  visibleDate: Dayjs,
-): GridEvent => ({
-  ...event,
-  isAllDay: true,
-  endDate: visibleDate.add(1, "day").format(YEAR_MONTH_DAY_FORMAT),
-  startDate: visibleDate.format(YEAR_MONTH_DAY_FORMAT),
-});
-
-const hasTimedDragVisualMoved = (visual: TimedDragVisual) =>
-  visual.dayDate !== visual.initialDayDate ||
-  visual.startMinutes !== visual.initialStartMinutes ||
-  visual.endMinutes !== visual.initialEndMinutes;
-
-const hasTimedResizeVisualMoved = (visual: TimedResizeVisual) =>
-  visual.startMinutes !== visual.initialStartMinutes ||
-  visual.endMinutes !== visual.initialEndMinutes;
-
 const isAllDayTarget = (
   target: DayInteractionTarget,
 ): target is DayAllDayDragTarget | DayAllDayResizeTarget =>
   target.type === "allDayDrag" || target.type === "allDayResize";
-
-const isDragTarget = (
-  target: DayInteractionTarget,
-): target is DayAllDayDragTarget | DayTimedDragTarget =>
-  target.type === "allDayDrag" || target.type === "timedDrag";
-
-const getOwnershipReason = (target: DayInteractionTarget) => {
-  switch (target.type) {
-    case "allDayDrag":
-      return "saved-all-day-drag";
-    case "allDayResize":
-      return "saved-all-day-resize";
-    case "timedResize":
-      return "saved-timed-resize";
-    case "timedDrag":
-      return "saved-timed-drag";
-  }
-};
-
-const getInteractionCursor = (target: DayInteractionTarget) => {
-  switch (target.type) {
-    case "allDayResize":
-      return "col-resize";
-    case "timedResize":
-      return "row-resize";
-    case "allDayDrag":
-    case "timedDrag":
-      return "move";
-  }
-};
-
-const readElementRect = (element: HTMLElement) => {
-  const rect = element.getBoundingClientRect();
-
-  return {
-    height: rect.height,
-    left: rect.left,
-    top: rect.top,
-    width: rect.width,
-  };
-};
