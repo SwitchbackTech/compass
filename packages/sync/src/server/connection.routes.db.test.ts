@@ -40,6 +40,7 @@ import {
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
+import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
 
@@ -146,6 +147,8 @@ const signedHeaders = (
 describe("GET /internal/connections", () => {
   let mongo: SyncMongoService;
   let repo: ProviderConnectionRepository;
+  let credentials: CredentialRepository;
+  let resources: SyncResourceRepository;
   let service: SyncService;
   let base: string;
 
@@ -159,9 +162,43 @@ describe("GET /internal/connections", () => {
     base = `http://127.0.0.1:${port}`;
   };
 
+  // List refreshes stored state from live evidence. Healthy requires a valid
+  // credential and a finished calendar-list discovery (no active calendars is
+  // enough for the import settle check).
+  const seedHealthyConnection = async (
+    tenantId: string,
+    principalId: string,
+    email: string,
+  ) => {
+    const connection = await seedConnection(repo, tenantId, principalId, email);
+    await credentials.store({
+      connectionId: connection._id,
+      provider: "google",
+      refreshToken: "stored-refresh-token",
+      scopes: ["https://www.googleapis.com/auth/calendar.events"],
+    });
+    const listResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      "list-cursor",
+      new Date(),
+    );
+    return connection;
+  };
+
   beforeEach(() => {
     mongo = storage.mongo();
     repo = new ProviderConnectionRepository(mongo.db);
+    credentials = new CredentialRepository(mongo.db);
+    resources = new SyncResourceRepository(mongo.db);
   });
 
   afterEach(async () => {
@@ -171,7 +208,7 @@ describe("GET /internal/connections", () => {
   it("returns the caller's connections mapped to the wire contract", async () => {
     const tenantId = objectId();
     const principalId = objectId();
-    await seedConnection(repo, tenantId, principalId, "me@example.com");
+    await seedHealthyConnection(tenantId, principalId, "me@example.com");
     await startService();
 
     const res = await fetch(`${base}${CONNECTIONS_PATH}`, {

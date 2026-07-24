@@ -1,15 +1,15 @@
-import { beforeEach, describe, expect, it } from "bun:test";
 import { faker } from "@faker-js/faker";
-import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
-import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
 import {
   type ProviderCalendarId,
   type ProviderCalendarSourceId,
 } from "@core/types/sync/identity.contracts";
+import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
+import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 const objectId = () => faker.database.mongodbObjectId();
 

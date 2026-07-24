@@ -1,7 +1,7 @@
 import {
-  deriveConnectionState,
   type ConnectionStateEvidence,
   type CredentialState,
+  deriveConnectionState,
 } from "@sync/domain/connection-state";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { type CredentialRepository } from "@sync/storage/repositories/credential.repository";
@@ -33,7 +33,9 @@ export async function refreshConnectionState(
     ...evidence.resourceSuccessAts,
   );
   const lastHealthyAt =
-    derived.state === "healthy" ? (connection.lastHealthyAt ?? at) : connection.lastHealthyAt;
+    derived.state === "healthy"
+      ? (connection.lastHealthyAt ?? at)
+      : connection.lastHealthyAt;
 
   if (
     connection.state === derived.state &&
@@ -86,7 +88,9 @@ export async function gatherConnectionStateEvidence(
   const discoveryDone = calendarList?.lastSuccessAt != null;
   const allActiveImported =
     activeCalendars.length === 0 ||
-    activeCalendars.every((c) => eventsByCalendar.get(c._id)?.syncCursor != null);
+    activeCalendars.every(
+      (c) => eventsByCalendar.get(c._id)?.syncCursor != null,
+    );
 
   const resourceSuccessAts = resources
     .map((r) => r.lastSuccessAt)
