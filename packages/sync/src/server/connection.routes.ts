@@ -35,6 +35,7 @@ import {
   computeBusyAvailability,
 } from "@sync/domain/busy-query.service";
 import { deriveConnectionState } from "@sync/domain/connection-state";
+import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
 import { assembleEventInstances } from "@sync/domain/event-instance-assembly";
 import {
   HORIZON_FUTURE_MONTHS,
@@ -107,8 +108,8 @@ export interface ConnectionApiDeps {
 // Internal, authenticated connection endpoints. The tenant/principal comes from
 // the signed auth context, never the request, so every query is scoped to the
 // caller's own principal. Reads are allowed in passive mode — they touch no
-// provider. The record's stored state is authoritative (it was derived from
-// evidence at write time), so this layer only reshapes it to the wire contract.
+// provider. Stored state can lag (OAuth link writes "importing"); list refreshes
+// each row from live evidence before shaping the wire contract.
 export function registerConnectionRoutes(
   app: Express,
   deps: ConnectionApiDeps,
@@ -123,13 +124,22 @@ export function registerConnectionRoutes(
       if (!ensureConnected(deps.mongo, res)) return;
 
       try {
-        const repo = new ProviderConnectionRepository(deps.mongo.db);
-        const records = await repo.listByPrincipal(
+        const connections = new ProviderConnectionRepository(deps.mongo.db);
+        const refreshDeps = {
+          connections,
+          calendars: new ProviderCalendarRepository(deps.mongo.db),
+          resources: new SyncResourceRepository(deps.mongo.db),
+          credentials: new CredentialRepository(deps.mongo.db),
+        };
+        const records = await connections.listByPrincipal(
           auth.tenantId,
           auth.principalId,
         );
+        const refreshed = await Promise.all(
+          records.map((record) => refreshConnectionState(refreshDeps, record)),
+        );
         const response: ConnectionListResponse = {
-          connections: records.map(toProviderConnection),
+          connections: refreshed.map(toProviderConnection),
         };
         res.status(Status.OK).json(response);
       } catch {

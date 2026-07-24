@@ -1,5 +1,9 @@
 import { type Collection, type Db, ObjectId } from "mongodb";
 import {
+  type ConnectionState,
+  type ConnectionStateReason,
+} from "@core/types/sync/connection.contracts";
+import {
   type ConnectionId,
   type PrincipalId,
   type TenantId,
@@ -119,5 +123,39 @@ export class ProviderConnectionRepository {
       },
     );
     return result.matchedCount === 1;
+  }
+
+  // Persist a freshly derived user-facing state (and sync health timestamps).
+  // Callers must pass a state already produced by deriveConnectionState — this
+  // does not re-derive. Owner-scoped; returns the updated row.
+  async updateDerivedState(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: ConnectionId,
+    fields: {
+      state: ConnectionState;
+      stateReason: ConnectionStateReason | null;
+      lastSyncedAt: Date | null;
+      lastHealthyAt: Date | null;
+    },
+    now: Date = new Date(),
+  ): Promise<ProviderConnectionRecord> {
+    const result = await this.collection.findOneAndUpdate(
+      { _id: id, tenantId, principalId },
+      {
+        $set: {
+          state: fields.state,
+          stateReason: fields.stateReason,
+          lastSyncedAt: fields.lastSyncedAt,
+          lastHealthyAt: fields.lastHealthyAt,
+          updatedAt: now,
+        },
+      },
+      { returnDocument: "after" },
+    );
+    if (!result) {
+      throw new Error("Connection not found while updating derived state");
+    }
+    return ProviderConnectionRecordSchema.parse(result);
   }
 }
