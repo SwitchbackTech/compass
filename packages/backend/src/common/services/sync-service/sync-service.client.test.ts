@@ -7,6 +7,7 @@ import {
 } from "@core/types/sync/event.contracts";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { verifyInternalRequest } from "@sync/auth/internal-auth";
+import { CHANGES_PATH } from "@sync/server/change-feed.routes";
 import { COMMANDS_PATH } from "@sync/server/command.routes";
 import {
   AVAILABILITY_BUSY_PATH,
@@ -172,6 +173,42 @@ describe("SyncServiceClient", () => {
     if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
     expect(verdict.context.tenantId).toBe(who.tenantId);
     expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("polls the change feed from now and with a resume cursor", async () => {
+    const who = principal();
+    const cursor = objectId();
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({
+        kind: "ok",
+        invalidations: [],
+        nextCursor: cursor,
+      }),
+    }));
+
+    const fromNow = await client(fn).getChanges(who, null);
+    if (!fromNow.ok) throw new Error(`expected ok, got ${fromNow.error.kind}`);
+    expect(fromNow.value).toEqual({
+      kind: "ok",
+      invalidations: [],
+      nextCursor: cursor,
+    });
+    expect(calls[0]?.url).toBe(`${BASE_URL}${CHANGES_PATH}`);
+    expect(calls[0]?.method).toBe("GET");
+
+    const resumed = await client(fn).getChanges(who, cursor as never);
+    if (!resumed.ok) throw new Error(`expected ok, got ${resumed.error.kind}`);
+    expect(calls[1]?.url).toBe(
+      `${BASE_URL}${CHANGES_PATH}?cursor=${encodeURIComponent(cursor)}`,
+    );
+
+    const verdict = verifyInternalRequest({
+      secret: SECRET,
+      headers: calls[0]?.headers ?? {},
+      now: NOW,
+    });
+    if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
   });
 
   it("rejects a calendars body that does not match the contract", async () => {

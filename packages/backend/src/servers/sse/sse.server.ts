@@ -54,6 +54,12 @@ class SSEServer {
     };
   }
 
+  // Active SSE connections for a user. The Sync change-feed bridge uses this
+  // to stop polling when the last tab closes.
+  subscriberCount(userId: string): number {
+    return this.connections.get(userId)?.size ?? 0;
+  }
+
   publish(userId: string, message: ServerMessage): void {
     const conns = this.connections.get(userId);
     if (!conns?.size) return;

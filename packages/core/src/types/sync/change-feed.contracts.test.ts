@@ -81,8 +81,12 @@ describe("Sync change-feed contracts", () => {
       expect(SyncInvalidationSchema.safeParse(invalidation).success).toBe(true);
     });
 
-    it("accepts an event invalidation carrying only an id", () => {
-      const invalidation = { kind: "event", eventId: objectId() };
+    it("accepts an event invalidation carrying event and calendar ids", () => {
+      const invalidation = {
+        kind: "event",
+        eventId: objectId(),
+        calendarId: objectId(),
+      };
       expect(SyncInvalidationSchema.safeParse(invalidation).success).toBe(true);
     });
 
@@ -90,6 +94,7 @@ describe("Sync change-feed contracts", () => {
       const invalidation = {
         kind: "event",
         eventId: objectId(),
+        calendarId: objectId(),
         title: "Therapy",
       };
       expect(SyncInvalidationSchema.safeParse(invalidation).success).toBe(
@@ -125,7 +130,11 @@ describe("Sync change-feed contracts", () => {
   describe("InvalidationEnvelopeSchema", () => {
     it("accepts an envelope with no tenant/principal identifiers", () => {
       const envelope = {
-        invalidation: { kind: "event", eventId: objectId() },
+        invalidation: {
+          kind: "event",
+          eventId: objectId(),
+          calendarId: objectId(),
+        },
         emittedAt: "2026-07-20T12:00:00.000Z",
       };
       expect(InvalidationEnvelopeSchema.safeParse(envelope).success).toBe(true);
@@ -133,7 +142,11 @@ describe("Sync change-feed contracts", () => {
 
     it("rejects a leaked tenantId field", () => {
       const envelope = {
-        invalidation: { kind: "event", eventId: objectId() },
+        invalidation: {
+          kind: "event",
+          eventId: objectId(),
+          calendarId: objectId(),
+        },
         emittedAt: "2026-07-20T12:00:00.000Z",
         tenantId: objectId(),
       };
@@ -172,7 +185,11 @@ describe("Sync change-feed contracts", () => {
         kind: "ok",
         invalidations: [
           {
-            invalidation: { kind: "event", eventId: objectId() },
+            invalidation: {
+              kind: "event",
+              eventId: objectId(),
+              calendarId: objectId(),
+            },
             emittedAt: "2026-07-20T12:00:00.000Z",
           },
         ],

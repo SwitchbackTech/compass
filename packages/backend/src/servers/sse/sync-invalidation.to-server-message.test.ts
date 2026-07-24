@@ -1,0 +1,90 @@
+import { faker } from "@faker-js/faker";
+import { syncInvalidationToServerMessages } from "@backend/servers/sse/sync-invalidation.to-server-message";
+
+const objectId = () => faker.database.mongodbObjectId();
+
+describe("syncInvalidationToServerMessages", () => {
+  it("maps an event invalidation to eventsChanged", () => {
+    const eventId = objectId();
+    const calendarId = objectId();
+    expect(
+      syncInvalidationToServerMessages({
+        kind: "event",
+        eventId: eventId as never,
+        calendarId: calendarId as never,
+      }),
+    ).toEqual([
+      {
+        type: "eventsChanged",
+        calendarId,
+        eventIds: [eventId],
+        reason: "reconciled",
+      },
+    ]);
+  });
+
+  it("maps a calendar invalidation to calendarsChanged", () => {
+    const calendarId = objectId();
+    expect(
+      syncInvalidationToServerMessages({
+        kind: "calendar",
+        connectionId: objectId() as never,
+        calendarId: calendarId as never,
+      }),
+    ).toEqual([{ type: "calendarsChanged", calendarIds: [calendarId] }]);
+  });
+
+  it("maps a connection invalidation to a calendarsChanged refetch signal", () => {
+    expect(
+      syncInvalidationToServerMessages({
+        kind: "connection",
+        connectionId: objectId() as never,
+      }),
+    ).toEqual([{ type: "calendarsChanged", calendarIds: [] }]);
+  });
+
+  it("maps incomplete import progress to syncing", () => {
+    expect(
+      syncInvalidationToServerMessages({
+        kind: "importProgress",
+        connectionId: objectId() as never,
+        progress: {
+          calendarsTotal: 2,
+          calendarsCompleted: 1,
+          complete: false,
+        },
+      }),
+    ).toEqual([{ type: "syncStatusChanged", sync: { status: "syncing" } }]);
+  });
+
+  it("maps complete import progress to healthy + importCompleted", () => {
+    expect(
+      syncInvalidationToServerMessages({
+        kind: "importProgress",
+        connectionId: objectId() as never,
+        progress: {
+          calendarsTotal: 2,
+          calendarsCompleted: 2,
+          complete: true,
+        },
+      }),
+    ).toEqual([
+      { type: "syncStatusChanged", sync: { status: "healthy" } },
+      {
+        type: "importCompleted",
+        operation: "full",
+        eventsCount: 0,
+        calendarsCount: 2,
+      },
+    ]);
+  });
+
+  it("skips command invalidations (paired with event on the write path)", () => {
+    expect(
+      syncInvalidationToServerMessages({
+        kind: "command",
+        commandId: objectId() as never,
+      }),
+    ).toEqual([]);
+  });
+});

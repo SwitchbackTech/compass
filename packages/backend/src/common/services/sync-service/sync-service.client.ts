@@ -5,6 +5,11 @@ import {
   BusyAvailabilityResponseSchema,
 } from "@core/types/sync/availability.contracts";
 import {
+  type ChangeFeedCursor,
+  type ChangeFeedResponse,
+  ChangeFeedResponseSchema,
+} from "@core/types/sync/change-feed.contracts";
+import {
   type CommandSubmitRequest,
   type CommandSubmitResponse,
   CommandSubmitResponseSchema,
@@ -32,6 +37,7 @@ import { createHmac, randomUUID } from "node:crypto";
 // route paths; a contract test asserts they match.
 const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 const CALENDARS_PATH = "/internal/calendars";
+const CHANGES_PATH = "/internal/changes";
 const CONNECTIONS_PATH = "/internal/connections";
 const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
 const EVENTS_PATH = "/internal/events";
@@ -277,6 +283,26 @@ export class SyncServiceClient {
       principal,
       body: request,
       schema: BusyAvailabilityResponseSchema,
+      correlationId,
+    });
+  }
+
+  // Resumable content-free invalidation page for the signed principal. Pass
+  // `null` to resume from now (empty page + watermark). A stale/unknown cursor
+  // returns `{ kind: "resyncRequired" }` rather than a partial replay.
+  getChanges(
+    principal: SyncPrincipal,
+    cursor: ChangeFeedCursor | null,
+    correlationId?: string,
+  ): Promise<SyncClientResult<ChangeFeedResponse>> {
+    const params = new URLSearchParams();
+    if (cursor !== null) params.set("cursor", cursor);
+    return this.#request({
+      method: "GET",
+      path: CHANGES_PATH,
+      query: params,
+      principal,
+      schema: ChangeFeedResponseSchema,
       correlationId,
     });
   }

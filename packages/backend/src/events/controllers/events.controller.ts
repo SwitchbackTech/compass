@@ -1,6 +1,7 @@
 import { type Request, type Response } from "express";
 import { Logger } from "@core/logger/winston.logger";
 import { sseServer } from "@backend/servers/sse/sse.server";
+import { syncChangeFeedBridge } from "@backend/servers/sse/sync-change-feed.bridge";
 import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -14,7 +15,13 @@ class EventsController {
     try {
       // Subscribe immediately so no events are missed during the metadata fetch.
       const unsubscribe = sseServer.subscribe(userId, res);
-      req.on("close", unsubscribe);
+      // When Sync is configured, poll its invalidation outbox for this user and
+      // publish typed browser SSE. No-op when Sync is not wired (legacy-only).
+      syncChangeFeedBridge.onSubscribe(userId);
+      req.on("close", () => {
+        unsubscribe();
+        syncChangeFeedBridge.onUnsubscribe(userId);
+      });
 
       // Replay current state after subscribing — client is never stuck on reconnect.
       const metadata = await userMetadataService.fetchUserMetadata(userId);
