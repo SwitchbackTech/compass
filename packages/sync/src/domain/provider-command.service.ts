@@ -14,6 +14,7 @@ import {
   type ConnectionId,
   type ProviderEventId,
 } from "@core/types/sync/identity.contracts";
+import { mergeUpdateContent } from "@sync/domain/merge-update-content";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
@@ -273,11 +274,14 @@ export async function executeProviderUpdate(
   }
   if (!current) return failCommand(deps, command, "permanentProviderError");
 
+  // Merge so a title/description edit cannot wipe provider-sourced attendees.
+  const content = mergeUpdateContent(event.content, input.content);
+
   // Replay: the provider already holds this edit, so confirm at its version
   // rather than writing again. A single-event update always writes recurrence
   // "single", so that is the intended recurrence to compare against.
   if (
-    matchesIntendedEdit(current, input.content, input.schedule, {
+    matchesIntendedEdit(current, content, input.schedule, {
       kind: "single",
     })
   ) {
@@ -285,6 +289,7 @@ export async function executeProviderUpdate(
       deps,
       command,
       event,
+      content,
       current.providerVersion,
       now,
     );
@@ -295,7 +300,7 @@ export async function executeProviderUpdate(
     result = await deps.writer.patchEvent({
       ...location,
       expectedVersion: command.expectedVersion,
-      content: input.content,
+      content,
       schedule: input.schedule,
       recurrence: { kind: "single" },
       invitation: input.invitation,
@@ -312,6 +317,7 @@ export async function executeProviderUpdate(
     deps,
     command,
     event,
+    content,
     result.providerVersion,
     now,
   );
@@ -325,6 +331,7 @@ async function commitProviderUpdate(
   deps: ProviderMutationDeps,
   command: CommandRecord,
   event: EventRecord,
+  content: SyncEventContent,
   providerVersion: string,
   now: () => Date,
 ): Promise<CommandRecord> {
@@ -334,7 +341,7 @@ async function commitProviderUpdate(
   const { input } = command;
   const updated: EventRecord = {
     ...event,
-    content: input.content,
+    content,
     schedule: input.schedule,
     providerVersion: providerVersion as ProviderEventVersion,
     providerUpdatedAt: null,
@@ -427,20 +434,18 @@ export async function executeProviderSeriesUpdate(
   }
   if (!current) return failCommand(deps, command, "permanentProviderError");
 
+  const content = mergeUpdateContent(master.content, input.content);
+
   // Replay: the provider already holds this series edit (rules included), so
   // confirm at its version rather than writing again.
   if (
-    matchesIntendedEdit(
-      current,
-      input.content,
-      input.schedule,
-      intendedRecurrence,
-    )
+    matchesIntendedEdit(current, content, input.schedule, intendedRecurrence)
   ) {
     return commitProviderSeriesUpdate(
       deps,
       command,
       master,
+      content,
       current.providerVersion,
       now,
     );
@@ -451,7 +456,7 @@ export async function executeProviderSeriesUpdate(
     result = await deps.writer.patchEvent({
       ...location,
       expectedVersion: command.expectedVersion,
-      content: input.content,
+      content,
       schedule: input.schedule,
       recurrence: intendedRecurrence,
       invitation: input.invitation,
@@ -468,6 +473,7 @@ export async function executeProviderSeriesUpdate(
     deps,
     command,
     master,
+    content,
     result.providerVersion,
     now,
   );
@@ -491,6 +497,7 @@ async function commitProviderSeriesUpdate(
   deps: ProviderMutationDeps,
   command: CommandRecord,
   master: EventRecord,
+  content: SyncEventContent,
   providerVersion: string,
   now: () => Date,
 ): Promise<CommandRecord> {
@@ -536,7 +543,7 @@ async function commitProviderSeriesUpdate(
 
   const updated: EventRecord = {
     ...master,
-    content: input.content,
+    content,
     schedule: input.schedule,
     recurrence: storedSeriesRecurrence(input.recurrence, master),
     providerVersion: providerVersion as ProviderEventVersion,

@@ -29,7 +29,10 @@ const UNKNOWN_CALENDAR_ID = CalendarIdSchema.parse("000000000000000000000000");
 
 // Expand browser details-content into sync's fuller content shape. Browser
 // edits never touch location/organizer/attendees/conference — pad with nulls
-// so a strict sync write can't fail validation or wipe fields Sync stores.
+// so the strict SyncEventContent schema accepts the wire payload. On create
+// those nulls are correct (new event). On update, sync's apply path merges
+// title/description onto the existing record (mergeUpdateContent) so a rename
+// cannot wipe provider-sourced attendees/location/conference.
 export const toSyncContent = (content: {
   title: string;
   description: string;
