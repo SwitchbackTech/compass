@@ -3,7 +3,7 @@ import { type EventId } from "@core/types/domain-primitives";
 import { type EventListQuery } from "@core/types/event-command.contracts";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import { transformLegacyEvents } from "@web/common/storage/migrations/data/legacy-event-to-local-record.transform";
-import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
+import { type LocalEventRecord } from "@web/events/types/local-event.record";
 import {
   deleteCompassLocalDb,
   extractDataFromLegacySchema,

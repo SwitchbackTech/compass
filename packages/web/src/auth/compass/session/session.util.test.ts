@@ -1,4 +1,4 @@
-import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
+import { UNAUTHENTICATED_USER } from "@web/auth/compass/session/session.util";
 import { session } from "./Session";
 import { getUserId } from "./session.util";
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";

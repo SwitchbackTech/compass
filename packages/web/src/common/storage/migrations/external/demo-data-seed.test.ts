@@ -4,7 +4,7 @@
 import { EventSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { createMockOfflineDataStore } from "@web/__tests__/utils/storage/mock-offline-data-store.util";
-import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
+import { type LocalEventRecord } from "@web/events/types/local-event.record";
 import { demoDataSeedMigration } from "./demo-data-seed";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 

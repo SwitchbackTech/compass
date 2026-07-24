@@ -5,9 +5,9 @@ import {
   useState,
 } from "react";
 import { UserApi } from "@web/api/user.api";
-import { releaseNotesPromptActions } from "@web/auth/state/release-notes-prompt.store";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import { releaseNotesPromptActions } from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
 import { PixelPirate } from "@web/components/WelcomeModal/PixelPirate";
 
 type PromptState =

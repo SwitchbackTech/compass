@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
-import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization.registry";
+import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
   GoogleReconnectToast,
   showGoogleReconnectToast,

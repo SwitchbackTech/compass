@@ -1,12 +1,12 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { act, useContext } from "react";
 import { session } from "@web/auth/compass/session/Session";
+import { DEFAULT_AUTH_STATE } from "@web/auth/compass/state/auth.state.util";
 import {
   initialUserMetadataState,
   userMetadataActions,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
-import { DEFAULT_AUTH_STATE } from "@web/common/constants/auth.constants";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 // Create mocks at module level

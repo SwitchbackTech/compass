@@ -11,13 +11,8 @@ import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useRef, useState } from "react";
 import { type SyncStatusVariant } from "@web/calendars/sync-status.types";
-import { eventCommandPaletteItems } from "@web/common/constants/event.cmd.constants";
-import { getMoreCommandPaletteSections } from "@web/common/constants/more.cmd.constants";
-import {
-  getNavigationCommandItems,
-  getNavigationViewRoute,
-} from "@web/common/constants/navigation.cmd.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
+import { eventCommandPaletteItems } from "@web/components/CommandPalette/event.cmd.constants";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
 import { useCalendarSyncCmdItems } from "@web/components/CommandPalette/hooks/useCalendarSyncCmdItems";
 import { useDeleteAccountCmdItems } from "@web/components/CommandPalette/hooks/useDeleteAccountCmdItems";
@@ -26,6 +21,11 @@ import { useExportDataCmdItems } from "@web/components/CommandPalette/hooks/useE
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
 import { useSubscribeCmdItems } from "@web/components/CommandPalette/hooks/useSubscribeCmdItems";
 import { useThemeCmdItems } from "@web/components/CommandPalette/hooks/useThemeCmdItems";
+import { getMoreCommandPaletteSections } from "@web/components/CommandPalette/more.cmd.constants";
+import {
+  getNavigationCommandItems,
+  getNavigationViewRoute,
+} from "@web/components/CommandPalette/navigation.cmd.constants";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { useUndoRedo } from "@web/events/mutations/useUndoRedo";

@@ -11,8 +11,8 @@ import {
   getOfflineDataStore,
   type OfflineDataStore,
 } from "@web/common/storage/offline-data/offline-data.store.registry";
-import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { type LocalEventRecord } from "@web/events/types/local-event.record";
 import { type EventRepository } from "./event.repository.types";
 
 /**

@@ -9,7 +9,7 @@ import {
   registerUseStartGoogleAuthorizationForTests,
   resetUseStartGoogleAuthorizationForTests,
   type UseStartGoogleAuthorization,
-} from "@web/auth/google/authorization/useStartGoogleAuthorization.registry";
+} from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
   resetGoogleAvailabilityForTests,
   setGoogleAvailabilityForTests,

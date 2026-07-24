@@ -41,10 +41,3 @@ export const ENV_WEB = webEnvSchema.parse({
 });
 
 export const IS_DEV = isDev(ENV_WEB.NODE_ENV);
-
-export const isGoogleAuthConfigured = (clientId?: string): boolean =>
-  Boolean(clientId && clientId !== "undefined");
-
-export const IS_GOOGLE_AUTH_CONFIGURED = isGoogleAuthConfigured(
-  ENV_WEB.GOOGLE_CLIENT_ID,
-);

@@ -1,11 +1,11 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getCommandPalettePlaceholder } from "@web/common/constants/more.cmd.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useResponsiveLayout } from "@web/components/AuthenticatedLayout/useResponsiveLayout";
 import { CalendarHeader } from "@web/components/CalendarHeader/CalendarHeader";
 import { LifeCommandPalette } from "@web/components/CommandPalette/CommandPalette";
+import { getCommandPalettePlaceholder } from "@web/components/CommandPalette/more.cmd.constants";
 import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";
 import { SidebarShell } from "@web/components/Sidebar/SidebarShell";
 import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";

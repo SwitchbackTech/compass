@@ -7,7 +7,6 @@ import { darken, isDark } from "@web/common/styles/color.utils";
 import { colors, lightColors } from "@web/common/styles/colors";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { theme } from "@web/common/styles/theme";
-import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/components/Icons/ChevronRightIcon";
@@ -33,9 +32,14 @@ export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
 
 type ReactDatePickerComponent = typeof ReactDatePickerModule.default;
 
-const ReactDatePicker = resolveDefaultExport<ReactDatePickerComponent>(
-  ReactDatePickerModule.default,
-);
+// Bun's __toESM(mod, nodeInterop=1) can wrap CJS+__esModule modules so
+// .default points at the whole export object. Unwrap one level to reach the
+// actual component function.
+const reactDatePickerExport =
+  ReactDatePickerModule.default as ReactDatePickerComponent & {
+    default?: ReactDatePickerComponent;
+  };
+const ReactDatePicker = reactDatePickerExport.default ?? reactDatePickerExport;
 
 export const DatePicker: React.FC<Props> = (datePickerProps) => {
   const {

@@ -1,11 +1,11 @@
 import { Outlet } from "@tanstack/react-router";
-import {
-  selectReleaseNotesPromptOpen,
-  useReleaseNotesPromptStore,
-} from "@web/auth/state/release-notes-prompt.store";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { ReleaseNotesPrompt } from "@web/components/ReleaseNotesPrompt/ReleaseNotesPrompt";
+import {
+  selectReleaseNotesPromptOpen,
+  useReleaseNotesPromptStore,
+} from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
 import { WelcomeGuideModal } from "@web/components/WelcomeModal/WelcomeGuideModal";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
 import {

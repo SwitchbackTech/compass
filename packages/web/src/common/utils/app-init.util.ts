@@ -1,21 +1,21 @@
 import { initializeOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { getToast } from "@web/common/utils/toast/toast.port";
-import { DatabaseInitError } from "./storage/db-errors.util";
+
+export class DatabaseInitError extends Error {
+  constructor(
+    message: string,
+    public readonly cause?: unknown,
+  ) {
+    super(message);
+    this.name = "DatabaseInitError";
+  }
+}
 
 export interface AppInitResult {
   dbInitError: DatabaseInitError | null;
 }
 
-/**
- * Initialize storage for the application.
- *
- * This:
- * 1. Initializes the offline data store (IndexedDB with Dexie schema migrations)
- * 2. Runs data migrations (storage-agnostic transformations)
- * 3. Runs external migrations (imports from localStorage, etc.)
- *
- * Returns any initialization error so the caller can handle it appropriately.
- */
+/** Initialize offline storage; return any init error so the app can keep running. */
 export async function initializeDatabaseWithErrorHandling(
   initialize: typeof initializeOfflineDataStore = initializeOfflineDataStore,
 ): Promise<AppInitResult> {
@@ -27,19 +27,14 @@ export async function initializeDatabaseWithErrorHandling(
     if (error instanceof DatabaseInitError) {
       dbInitError = error;
     }
-    // Continue app initialization - the app can still work without local storage
-    // by falling back to remote-only mode when authenticated
+    // Continue without local storage — authenticated users can use remote-only mode
   }
 
   return { dbInitError };
 }
 
-/**
- * Show a toast notification for database initialization errors.
- * Should be called after the app renders so the toast container is available.
- */
+/** Defer toast until after render so the toast container is mounted. */
 export function showDbInitErrorToast(dbInitError: DatabaseInitError): void {
-  // Use setTimeout to ensure toast container is mounted
   setTimeout(() => {
     getToast().error(
       `Compass can't use offline storage right now: ${dbInitError.message}. Your changes won't be saved on this device.`,

@@ -1,7 +1,7 @@
 import {
   type CommandPaletteViewName,
   getNavigationCommandItems,
-} from "@web/common/constants/navigation.cmd.constants";
+} from "@web/components/CommandPalette/navigation.cmd.constants";
 import { describe, expect, it } from "bun:test";
 
 describe("getNavigationCommandItems", () => {

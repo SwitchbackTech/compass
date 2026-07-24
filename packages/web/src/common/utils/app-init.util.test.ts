@@ -1,7 +1,7 @@
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
-import { DatabaseInitError } from "@web/common/utils/storage/db-errors.util";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import {
+  DatabaseInitError,
   initializeDatabaseWithErrorHandling,
   showDbInitErrorToast,
 } from "./app-init.util";

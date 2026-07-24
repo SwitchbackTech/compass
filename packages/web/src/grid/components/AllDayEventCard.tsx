@@ -17,7 +17,6 @@ import { brighten, darken, isDark } from "@web/common/styles/color.utils";
 import { theme } from "@web/common/styles/theme";
 import { useEventPalette } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { EVENT_RESIZE_HANDLE_ATTRIBUTE } from "@web/grid/interaction/dom";
 import { type EventPosition } from "@web/grid/types/grid.types";
 import { EventRepeatIcon } from "./EventRepeatIcon";
@@ -168,7 +167,7 @@ const AllDayEventCardBase = (
           style={{ color: titleColor }}
         >
           {event.title}
-          <SpaceCharacter />
+          {"\u00A0"}
         </span>
       </div>
       {showRepeatIcon && <EventRepeatIcon baseColor={bgColor} />}

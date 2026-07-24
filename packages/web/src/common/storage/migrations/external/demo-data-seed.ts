@@ -6,9 +6,9 @@ import {
 } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
-import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { type LocalEventRecord } from "@web/events/types/local-event.record";
 import { getModifierKeyLabel } from "@web/shortcuts/shortcut.util";
 import { VIEW_SHORTCUTS } from "@web/shortcuts/shortcuts.constants";
 import { type OfflineDataStore } from "../../offline-data/offline-data.store";
