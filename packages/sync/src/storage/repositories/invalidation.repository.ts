@@ -70,7 +70,7 @@ export class InvalidationRepository {
   ): Promise<InvalidationRecord[]> {
     const filter: Record<string, unknown> = { tenantId, principalId };
     if (afterId !== null) {
-      filter._id = { $gt: afterId };
+      filter["_id"] = { $gt: afterId };
     }
     const rows = await this.collection
       .find(filter)

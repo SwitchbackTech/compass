@@ -68,8 +68,8 @@ export async function readChangeFeed(
     emittedAt: row.emittedAt.toISOString() as InvalidationEnvelope["emittedAt"],
   }));
 
-  const nextCursor =
-    rows.length > 0 ? asCursor(rows[rows.length - 1]._id) : asCursor(cursor);
+  const last = rows.at(-1);
+  const nextCursor = last ? asCursor(last._id) : asCursor(cursor);
 
   return { kind: "ok", invalidations: envelopes, nextCursor };
 }
