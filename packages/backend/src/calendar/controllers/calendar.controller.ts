@@ -86,16 +86,26 @@ class CalendarController {
         error: () => error(AuthError.InadequatePermissions, "List Failed"),
       });
 
-      const response =
-        getEventDelegation() === "sync"
-          ? await listCalendarsFromSync(userId.toString())
-          : {
-              calendars: (await calendarService.list(userId)).map(
-                mapCalendarRecord,
-              ),
-            };
+      if (getEventDelegation() === "sync") {
+        const [syncResponse, localCalendar] = await Promise.all([
+          listCalendarsFromSync(userId.toString()),
+          calendarService.getLocalCalendar(userId),
+        ]);
 
-      res.promise(response);
+        res.promise({
+          calendars: localCalendar
+            ? [
+                ...syncResponse.calendars,
+                mapCalendarRecord(localCalendar),
+              ]
+            : syncResponse.calendars,
+        });
+        return;
+      }
+
+      res.promise({
+        calendars: (await calendarService.list(userId)).map(mapCalendarRecord),
+      });
     } catch (e) {
       res.promise(Promise.reject(e));
     }
