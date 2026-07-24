@@ -127,6 +127,8 @@ describe("self-host docker compose", () => {
     // The `sync` profile lets a deploy start the container only where an
     // isolated sync database is provisioned.
     expect(syncBlock).toContain("profiles: [sync]");
+    // Loopback-only publish so host Caddy can proxy `/sync/*` OAuth/webhooks.
+    expect(syncBlock).toContain('"127.0.0.1:3010:3010"');
     // The read-only root fs needs a writable mount for the logger's log file,
     // or the container crashes on startup.
     expect(syncBlock).toContain("compass_sync_logs:/app/logs");
@@ -322,6 +324,18 @@ describe("staging deploy workflow", () => {
     expect(workflow).toContain("'sync:'");
     expect(workflow).toContain('mongoUri: \\"$'.concat('{SYNC_MONGO_URI}\\"'));
     expect(workflow).toContain("enforceLeastPrivilege: true");
+    // Backend reaches sync on the compose network; routing stays opt-in via
+    // GitHub Environment vars (prod must leave them unset = legacy).
+    expect(workflow).toContain('serviceUrl: "http://sync:3010"');
+    expect(workflow).toContain(
+      "SYNC_CONNECTION_ROUTING: $".concat("{{ vars.SYNC_CONNECTION_ROUTING }}"),
+    );
+    expect(workflow).toContain(
+      "SYNC_EVENT_ROUTING: $".concat("{{ vars.SYNC_EVENT_ROUTING }}"),
+    );
+    expect(workflow).toContain(
+      "SYNC_EXECUTION: $".concat("{{ vars.SYNC_EXECUTION }}"),
+    );
     expect(workflow).toContain(
       'DEPLOY_PROFILES="$'.concat(
         "{DEPLOY_PROFILES:+$",

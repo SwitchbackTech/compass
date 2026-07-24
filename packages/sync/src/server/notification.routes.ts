@@ -10,7 +10,9 @@ import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 
-export const NOTIFICATIONS_PATH = "/oauth/google/notifications";
+// Public reverse-proxy path under the same `/sync/*` prefix as the OAuth
+// callback (no Google Console registration required for webhooks).
+export const NOTIFICATIONS_PATH = "/sync/notifications/google";
 
 // Public callbacks arrive fast and in bursts (Google fans out per change); this
 // backstop bounds a flood or a spoof storm without shaping normal delivery.
