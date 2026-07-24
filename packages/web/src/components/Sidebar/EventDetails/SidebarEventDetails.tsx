@@ -1,4 +1,5 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useContext, useMemo } from "react";
+import { type Event } from "@core/types/event.contracts";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { useEventById } from "@web/events/queries/useEventById";
@@ -20,12 +21,14 @@ import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
+import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 
 /**
  * Store-driven event-details panel for Day and Week sidebars. Renders the
  * current grid draft whenever the draft store says the form is open.
  */
 export function SidebarEventDetails() {
+  const weekDraft = useContext(DraftContext);
   const draft = useDraftStore(selectGridDraft);
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const _id = draft?.kind === "edit" ? draft.source.id : undefined;
@@ -36,14 +39,35 @@ export function SidebarEventDetails() {
   const existingEvent = useEventById(_id);
   const existing = Boolean(existingEvent);
   const isRecurring = isExistingEventRecurring(existingEvent);
+  const baseEventId =
+    draft?.kind === "edit" && draft.source.recurrence.kind === "occurrence"
+      ? draft.source.recurrence.seriesId
+      : undefined;
+  const baseEvent = useEventById(baseEventId);
 
   const getSaveContext = useCallback(
-    () => ({
-      confirmAllRecurringEdits: true,
-      isInstance: false,
-      isRecurring,
-    }),
-    [isRecurring],
+    (saveDraft: GridEventDraft) => {
+      if (weekDraft) {
+        const isEditDraft = saveDraft.kind === "edit";
+        const draftIsInstance =
+          isEditDraft && saveDraft.source.recurrence.kind === "occurrence";
+
+        return {
+          baseEvent: baseEvent as Event | null | undefined,
+          isInstance: weekDraft.actions.isInstance() || draftIsInstance,
+          isRecurring:
+            isEditDraft &&
+            (weekDraft.actions.isRecurrence() || draftIsInstance),
+        };
+      }
+
+      return {
+        confirmAllRecurringEdits: true,
+        isInstance: false,
+        isRecurring,
+      };
+    },
+    [baseEvent, isRecurring, weekDraft],
   );
 
   const getDeleteContext = useCallback(() => ({ isRecurring }), [isRecurring]);
@@ -64,9 +88,13 @@ export function SidebarEventDetails() {
     onSave,
   });
 
-  const syncDraft = useCallback((resolved: GridEventDraft | null) => {
-    draftActions.setGridDraft(resolved);
-  }, []);
+  const syncDraft = useCallback(
+    (resolved: GridEventDraft | null) => {
+      draftActions.setGridDraft(resolved);
+      weekDraft?.setters.setDraft(resolved);
+    },
+    [weekDraft],
+  );
 
   const scopeDialogDraft = useMemo(() => {
     if (!pendingAction || !draft) return null;
