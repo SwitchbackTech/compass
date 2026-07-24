@@ -16,12 +16,18 @@ describe("Domain Primitives", () => {
       ).toBe(true);
     });
 
-    it("rejects a short id", () => {
-      expect(EventIdSchema.safeParse("abc123").success).toBe(false);
+    it("accepts a composed occurrence id", () => {
+      // S39 D1=II: projected instances use `${eventId}::${recurrenceId}`.
+      const composed = `${faker.database.mongodbObjectId()}::2026-07-14T15:00:00.000Z`;
+      expect(EventIdSchema.safeParse(composed).success).toBe(true);
     });
 
-    it("rejects a non-hex id", () => {
-      expect(EventIdSchema.safeParse("g".repeat(24)).success).toBe(false);
+    it("rejects an empty id", () => {
+      expect(EventIdSchema.safeParse("").success).toBe(false);
+    });
+
+    it("rejects a whitespace-only id", () => {
+      expect(EventIdSchema.safeParse("   ").success).toBe(false);
     });
   });
 

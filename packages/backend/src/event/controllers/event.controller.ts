@@ -8,6 +8,19 @@ import {
   EventListQuerySchema,
   ReplaceEventInputSchema,
 } from "@core/types/event-command.contracts";
+import {
+  type EventInstanceListQuery,
+  type SyncEventCalendarId,
+  SyncEventCalendarIdSchema,
+} from "@core/types/sync/event.contracts";
+import calendarService from "@backend/calendar/services/calendar.service";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import { syncEventInstanceToBrowser } from "@backend/common/services/sync-service/event-list.translation";
+import { getEventDelegation } from "@backend/common/services/sync-service/event-routing";
+import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
+import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
+import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import { toEventMutationError } from "@backend/event/event.error";
 import { mapEventRecord } from "@backend/event/event.record.mapper";
 import eventService from "@backend/event/services/event.service";
@@ -25,14 +38,102 @@ const parseListQuery = (query: Request["query"]): EventListQuery => {
   });
 };
 
+// Resolve every calendar the principal owns under sync delegation: provider
+// calendars from sync, plus the Compass-native local calendar (local-first
+// events are keyed by its legacy CalendarId). V1 queries ALL of them — the
+// web filters by localStorage visibility client-side (A2). Empty means the
+// user has nothing to read yet; return [] rather than calling sync with an
+// invalid empty calendarIds.
+const resolveSyncCalendarIds = async (
+  client: SyncServiceClient,
+  userId: string,
+): Promise<SyncEventCalendarId[]> => {
+  const principal = toSyncPrincipal(userId);
+  const [calendarsResult, localCalendar] = await Promise.all([
+    client.listCalendars(principal),
+    calendarService.getLocalCalendar(userId),
+  ]);
+
+  if (!calendarsResult.ok) {
+    throw error(
+      GenericError.NotSure,
+      `Failed to list calendars from sync (${calendarsResult.error.kind})`,
+    );
+  }
+
+  const ids: SyncEventCalendarId[] = [
+    ...calendarsResult.value.calendars.map((c) => c.id),
+  ];
+  if (localCalendar) {
+    ids.push(SyncEventCalendarIdSchema.parse(localCalendar._id.toHexString()));
+  }
+  return ids;
+};
+
+// Drain every page of full-fidelity instances for the range. Sync pages at
+// most 500; legacy readAll was unbounded within the view window, so we follow
+// nextCursor until exhausted. Horizon note: sync clamps 12mo past / 18mo
+// future — the browser only views inside that window.
+const listAllFullEvents = async (
+  client: SyncServiceClient,
+  userId: string,
+  query: EventListQuery,
+  calendarIds: readonly SyncEventCalendarId[],
+) => {
+  const principal = toSyncPrincipal(userId);
+  const instances = [];
+  let cursor: string | undefined;
+
+  for (;;) {
+    const pageQuery: EventInstanceListQuery = {
+      calendarIds,
+      start: query.start,
+      end: query.end,
+      ...(cursor !== undefined ? { cursor } : {}),
+    };
+    const result = await client.listFullEvents(principal, pageQuery);
+    if (!result.ok) {
+      throw error(
+        GenericError.NotSure,
+        `Failed to list events from sync (${result.error.kind})`,
+      );
+    }
+    instances.push(...result.value.instances);
+    if (result.value.nextCursor === null) break;
+    cursor = result.value.nextCursor;
+  }
+
+  return instances;
+};
+
+// GET /api/event under SYNC_EVENT_ROUTING=sync: fetch full-fidelity instances
+// from sync and translate to the browser Event contract. Fail-closed — a sync
+// outage surfaces as an error rather than silently falling back to legacy
+// (which would show a different, stale store).
+const readAllFromSync = async (userId: string, query: EventListQuery) => {
+  const client = getSyncServiceClient();
+  if (!client) {
+    throw error(GenericError.NotSure, "Sync event listing unavailable");
+  }
+
+  const calendarIds = await resolveSyncCalendarIds(client, userId);
+  if (calendarIds.length === 0) return [];
+
+  const instances = await listAllFullEvents(client, userId, query, calendarIds);
+  return instances.map(syncEventInstanceToBrowser);
+};
+
 class EventController {
   readAll = async (req: SessionRequest, res: Response) => {
     try {
       const userId = req.session?.getUserId() as string;
       const query = parseListQuery(req.query);
-      const events = await eventService.readAll(userId, query);
+      const events =
+        getEventDelegation() === "sync"
+          ? await readAllFromSync(userId, query)
+          : (await eventService.readAll(userId, query)).map(mapEventRecord);
 
-      res.status(Status.OK).json({ events: events.map(mapEventRecord) });
+      res.status(Status.OK).json({ events });
     } catch (e) {
       send(res, e);
     }
