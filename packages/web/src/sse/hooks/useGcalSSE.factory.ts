@@ -31,6 +31,9 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
   return function useGcalSSEWithDependencies() {
     // B10 folds import start/progress/end into syncStatusChanged
     // (syncing/healthy/attention) plus a separate importCompleted summary.
+    // Do not clear the syncing override from a healthy/importCompleted SSE
+    // alone — only metadata that leaves IMPORTING may end the loading UI
+    // (S41: no healthy-from-local-optimism).
     const onSyncStatusChanged = useCallback((message: SyncStatusMessage) => {
       if (message.sync.status === "syncing") {
         if (getGoogleSyncIndicatorOverride() !== null) return;
@@ -39,7 +42,7 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
       }
 
       if (message.sync.status === "healthy") {
-        clearGoogleSyncIndicatorOverride();
+        void dependencies.refreshUserMetadata();
         return;
       }
 
@@ -61,9 +64,14 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
     }, []);
 
     const onImportCompleted = useCallback((_message: ImportResultMessage) => {
-      clearGoogleSyncIndicatorOverride();
       void dependencies.refreshUserMetadata();
       dependencies.invalidateEventQueries();
+    }, []);
+
+    // Sync connection/calendar invalidations arrive as calendarsChanged. Refetch
+    // metadata so IMPORTING → HEALTHY (or RECONNECT/ATTENTION) reaches the UI.
+    const onCalendarsChanged = useCallback(() => {
+      void dependencies.refreshUserMetadata();
     }, []);
 
     const onUserMetadataChanged = useCallback(
@@ -90,6 +98,10 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
         "importCompleted",
         onImportCompleted,
       );
+      const unsubscribeCalendars = dependencies.onServerMessage(
+        "calendarsChanged",
+        onCalendarsChanged,
+      );
       const unsubscribeUserMetadata = dependencies.onServerMessage(
         "userMetadataChanged",
         onUserMetadataChanged,
@@ -98,8 +110,14 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
       return () => {
         unsubscribeSyncStatus();
         unsubscribeImportCompleted();
+        unsubscribeCalendars();
         unsubscribeUserMetadata();
       };
-    }, [onSyncStatusChanged, onImportCompleted, onUserMetadataChanged]);
+    }, [
+      onSyncStatusChanged,
+      onImportCompleted,
+      onCalendarsChanged,
+      onUserMetadataChanged,
+    ]);
   };
 };
