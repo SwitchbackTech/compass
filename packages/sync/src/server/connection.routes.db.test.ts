@@ -24,10 +24,15 @@ import {
   BEGIN_PATH,
   CALENDARS_PATH,
   CONNECTIONS_PATH,
+  EVENTS_FULL_PATH,
   EVENTS_PATH,
   OAUTH_CALLBACK_PATH,
 } from "@sync/server/connection.routes";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
+import {
+  type EventRecord,
+  EventRecordSchema,
+} from "@sync/storage/contracts/event.contracts";
 import {
   type EventOccurrenceRecord,
   EventOccurrenceRecordSchema,
@@ -1188,6 +1193,255 @@ describe("GET /internal/events", () => {
     await startService();
 
     const res = await fetch(`${base}${EVENTS_PATH}?calendarIds=${objectId()}`);
+
+    expect(res.status).toBe(401);
+  });
+});
+
+describe("GET /internal/events/full", () => {
+  let mongo: SyncMongoService;
+  let service: SyncService;
+  let base: string;
+
+  const startService = async (config: SyncConfig = testConfig()) => {
+    service = createSyncService(config, { mongo });
+    await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
+    const { port } = service.httpServer.address() as AddressInfo;
+    base = `http://127.0.0.1:${port}`;
+  };
+
+  const timed = {
+    kind: "timed" as const,
+    start: "2026-07-14T09:00:00-06:00",
+    end: "2026-07-14T10:00:00-06:00",
+    timeZone: "America/Denver",
+  };
+
+  // Seed a full event record, validated through its schema.
+  const seedEvent = (
+    tenantId: string,
+    principalId: string,
+    overrides: Partial<EventRecord> = {},
+  ) => {
+    const record = EventRecordSchema.parse({
+      _id: objectId(),
+      tenantId,
+      principalId,
+      origin: "compass",
+      calendarId: objectId(),
+      clientEventId: null,
+      connectionId: null,
+      providerEventId: null,
+      providerVersion: null,
+      providerUpdatedAt: null,
+      deliveryState: null,
+      providerMetadata: null,
+      content: {
+        title: "Standup",
+        description: "Daily sync",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      },
+      schedule: timed,
+      recurrence: { kind: "single" },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: new Date("2026-07-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-07-02T00:00:00.000Z"),
+      confirmedAt: null,
+      ...overrides,
+    });
+    return mongo.db
+      .collection<EventRecord>("events")
+      .insertOne(record)
+      .then(() => record);
+  };
+
+  const seedOccurrence = (
+    tenantId: string,
+    principalId: string,
+    overrides: Partial<EventOccurrenceRecord> = {},
+  ) => {
+    const start = overrides.startAt ?? new Date();
+    const record = EventOccurrenceRecordSchema.parse({
+      _id: objectId(),
+      tenantId,
+      principalId,
+      eventId: objectId(),
+      occurrenceKey: `${objectId()}:${start.toISOString()}`,
+      calendarId: objectId(),
+      schedule: timed,
+      startAt: start,
+      busy: true,
+      title: "Standup",
+      cancelled: false,
+      generation: 0,
+      ...overrides,
+    });
+    return mongo.db
+      .collection<EventOccurrenceRecord>("event_occurrences")
+      .insertOne(record);
+  };
+
+  const wideRange = () =>
+    `start=${dayjs().subtract(1, "day").toISOString()}&end=${dayjs()
+      .add(1, "day")
+      .toISOString()}`;
+
+  const get = (tenantId: string, principalId: string, query: string) =>
+    fetch(`${base}${EVENTS_FULL_PATH}?${query}`, {
+      headers: signedHeaders(tenantId, principalId),
+    });
+
+  beforeEach(() => {
+    mongo = storage.mongo();
+  });
+
+  afterEach(async () => {
+    await service?.stop();
+  });
+
+  it("joins an occurrence to its single event and returns full content", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId() as EventRecord["calendarId"];
+    const event = await seedEvent(tenantId, principalId, {
+      calendarId,
+      recurrence: { kind: "single" },
+    });
+    await seedOccurrence(tenantId, principalId, {
+      eventId: event._id,
+      calendarId: calendarId as EventOccurrenceRecord["calendarId"],
+    });
+    await startService();
+
+    const body = (await (
+      await get(
+        tenantId,
+        principalId,
+        `calendarIds=${calendarId}&${wideRange()}`,
+      )
+    ).json()) as { instances: unknown[]; nextCursor: string | null };
+
+    expect(body.instances).toHaveLength(1);
+    expect(body.instances[0]).toMatchObject({
+      eventId: event._id,
+      recurrence: { kind: "single" },
+      content: { title: "Standup", description: "Daily sync" },
+    });
+  });
+
+  it("returns instance rows plus one back-filled series master row", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId() as EventRecord["calendarId"];
+    const master = await seedEvent(tenantId, principalId, {
+      calendarId,
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=DAILY"] },
+    });
+    await seedOccurrence(tenantId, principalId, {
+      eventId: master._id,
+      calendarId: calendarId as EventOccurrenceRecord["calendarId"],
+      startAt: new Date(),
+    });
+    await startService();
+
+    const body = (await (
+      await get(
+        tenantId,
+        principalId,
+        `calendarIds=${calendarId}&${wideRange()}`,
+      )
+    ).json()) as {
+      instances: Array<{ recurrence: { kind: string } }>;
+    };
+
+    const kinds = body.instances.map((i) => i.recurrence.kind).sort();
+    expect(kinds).toEqual(["occurrence", "series"]);
+  });
+
+  it("second-hops to back-fill a master reachable only via an exception", async () => {
+    // The only in-range row is an OVERRIDDEN instance whose occurrence points at
+    // the exception event, not the master. The master is fetched only by the
+    // route's second findByIds hop (via the exception's seriesId), so this proves
+    // that hop actually runs and merges.
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId() as EventRecord["calendarId"];
+    const master = await seedEvent(tenantId, principalId, {
+      calendarId,
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=DAILY"] },
+    });
+    const exception = await seedEvent(tenantId, principalId, {
+      calendarId,
+      recurrence: {
+        kind: "exception",
+        seriesId: master._id,
+        recurrenceId: "2026-07-14T15:00:00.000Z" as never,
+        cancelled: false,
+      },
+    });
+    // Occurrence for the exception only — no occurrence for the master in range.
+    await seedOccurrence(tenantId, principalId, {
+      eventId: exception._id,
+      calendarId: calendarId as EventOccurrenceRecord["calendarId"],
+      startAt: new Date(),
+    });
+    await startService();
+
+    const body = (await (
+      await get(
+        tenantId,
+        principalId,
+        `calendarIds=${calendarId}&${wideRange()}`,
+      )
+    ).json()) as {
+      instances: Array<{
+        eventId: string;
+        recurrence: { kind: string; recurrenceId?: string };
+      }>;
+    };
+
+    const occurrence = body.instances.find(
+      (i) => i.recurrence.kind === "occurrence",
+    );
+    const series = body.instances.find((i) => i.recurrence.kind === "series");
+    // The overridden instance links to the master and is addressed by its
+    // ORIGINAL start, and the master row was back-filled via the second hop.
+    expect(occurrence?.eventId).toBe(master._id);
+    expect(occurrence?.recurrence.recurrenceId).toBe(
+      "2026-07-14T15:00:00.000Z",
+    );
+    expect(series?.eventId).toBe(master._id);
+  });
+
+  it("scopes the read to the signed principal", async () => {
+    const tenantId = objectId();
+    const owner = objectId();
+    const stranger = objectId();
+    const calendarId = objectId() as EventRecord["calendarId"];
+    const event = await seedEvent(tenantId, owner, { calendarId });
+    await seedOccurrence(tenantId, owner, {
+      eventId: event._id,
+      calendarId: calendarId as EventOccurrenceRecord["calendarId"],
+    });
+    await startService();
+
+    const body = (await (
+      await get(tenantId, stranger, `calendarIds=${calendarId}&${wideRange()}`)
+    ).json()) as { instances: unknown[] };
+
+    expect(body.instances).toEqual([]);
+  });
+
+  it("rejects an unsigned request", async () => {
+    await startService();
+
+    const res = await fetch(
+      `${base}${EVENTS_FULL_PATH}?calendarIds=${objectId()}`,
+    );
 
     expect(res.status).toBe(401);
   });

@@ -14,6 +14,8 @@ import {
   ProviderConnectionSchema,
 } from "@core/types/sync/connection.contracts";
 import {
+  EventInstanceListQuerySchema,
+  type EventInstanceListResponse,
   EventOccurrenceListQuerySchema,
   type EventOccurrenceListResponse,
   type SyncEventOccurrence,
@@ -33,6 +35,7 @@ import {
   computeBusyAvailability,
 } from "@sync/domain/busy-query.service";
 import { deriveConnectionState } from "@sync/domain/connection-state";
+import { assembleEventInstances } from "@sync/domain/event-instance-assembly";
 import {
   HORIZON_FUTURE_MONTHS,
   HORIZON_PAST_MONTHS,
@@ -51,6 +54,7 @@ import { type EventOccurrenceRecord } from "@sync/storage/contracts/event-occurr
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
+import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
@@ -61,6 +65,7 @@ import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 export const CONNECTIONS_PATH = "/internal/connections";
 export const CALENDARS_PATH = "/internal/calendars";
 export const EVENTS_PATH = "/internal/events";
+export const EVENTS_FULL_PATH = "/internal/events/full";
 export const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 export const BEGIN_PATH = "/internal/connections/begin";
 // Where the provider redirects the browser after consent; `begin` builds the
@@ -267,6 +272,135 @@ export function registerConnectionRoutes(
         const last = records.at(-1);
         const response: EventOccurrenceListResponse = {
           occurrences: records.map(toSyncEventOccurrence),
+          nextCursor:
+            records.length === limit && last
+              ? encodeOccurrenceCursor(last)
+              : null,
+        };
+        res.status(Status.OK).json(response);
+      } catch {
+        respondInternalError(res);
+      }
+    },
+  );
+
+  // The full-fidelity event read backing the browser calendar. Same range/paging
+  // shape as the occurrence feed, but each row carries the content, timestamps,
+  // and series linkage needed to render AND edit — the occurrence page is joined
+  // back to its owning events (and their series masters) and assembled into the
+  // legacy-equivalent row-set. Scoped to the signed principal; a read, served in
+  // passive mode too.
+  app.get(
+    EVENTS_FULL_PATH,
+    internalRateLimit,
+    deps.authMiddleware,
+    async (req, res) => {
+      const auth = requireAuth(req, res);
+      if (!auth) return;
+      if (!ensureConnected(deps.mongo, res)) return;
+
+      const parsed = EventInstanceListQuerySchema.safeParse({
+        calendarIds: toQueryArray(req.query["calendarIds"]),
+        start: req.query["start"],
+        end: req.query["end"],
+        cursor: req.query["cursor"],
+        limit:
+          req.query["limit"] === undefined
+            ? undefined
+            : Number(req.query["limit"]),
+      });
+      if (!parsed.success) {
+        res.status(Status.BAD_REQUEST).json({ error: "invalid_query" });
+        return;
+      }
+      const query = parsed.data;
+
+      const after = decodeOccurrenceCursor(query.cursor);
+      if (query.cursor !== undefined && !after) {
+        res.status(Status.BAD_REQUEST).json({ error: "invalid_cursor" });
+        return;
+      }
+
+      const now = deps.now ? deps.now() : Date.now();
+      const start = maxDate(
+        new Date(query.start),
+        dayjs(now).subtract(HORIZON_PAST_MONTHS, "month").toDate(),
+      );
+      const end = minDate(
+        new Date(query.end),
+        dayjs(now).add(HORIZON_FUTURE_MONTHS, "month").toDate(),
+      );
+      if (start >= end) {
+        const empty: EventInstanceListResponse = {
+          instances: [],
+          nextCursor: null,
+        };
+        res.status(Status.OK).json(empty);
+        return;
+      }
+
+      const limit = query.limit ?? DEFAULT_EVENT_PAGE_LIMIT;
+      try {
+        const occurrenceRepo = new EventOccurrenceRepository(
+          deps.mongo.db,
+          deps.mongo.client,
+        );
+        const eventRepo = new EventRepository(deps.mongo.db);
+        const resources = new SyncResourceRepository(deps.mongo.db);
+        const activeByCalendar = await resources.activeGenerationByCalendar(
+          auth.tenantId,
+          auth.principalId,
+          [...query.calendarIds],
+        );
+        const calendars = [...query.calendarIds].map((calendarId) => ({
+          calendarId,
+          generation: activeByCalendar.get(calendarId) ?? 0,
+        }));
+        const records = await occurrenceRepo.listByCalendarRange({
+          tenantId: auth.tenantId,
+          principalId: auth.principalId,
+          calendars,
+          start,
+          end,
+          limit,
+          after,
+        });
+
+        // Hydrate the owning event of every occurrence in the page, then a
+        // second hop for any series master referenced only by an exception (an
+        // exception's occurrence points at the exception, whose seriesId names a
+        // master that may not otherwise be in the page).
+        const eventIds = [...new Set(records.map((record) => record.eventId))];
+        const events = await eventRepo.findByIds(
+          auth.tenantId,
+          auth.principalId,
+          eventIds,
+        );
+        const eventsById = new Map(events.map((event) => [event._id, event]));
+        const missingMasterIds = [
+          ...new Set(
+            events.flatMap((event) =>
+              event.recurrence.kind === "exception" &&
+              !eventsById.has(event.recurrence.seriesId)
+                ? [event.recurrence.seriesId]
+                : [],
+            ),
+          ),
+        ];
+        if (missingMasterIds.length > 0) {
+          const masters = await eventRepo.findByIds(
+            auth.tenantId,
+            auth.principalId,
+            missingMasterIds,
+          );
+          for (const master of masters) eventsById.set(master._id, master);
+        }
+
+        // The cursor tracks only the occurrence page (back-filled master rows are
+        // appended out-of-band by the assembler, so they never affect paging).
+        const last = records.at(-1);
+        const response: EventInstanceListResponse = {
+          instances: assembleEventInstances(records, eventsById),
           nextCursor:
             records.length === limit && last
               ? encodeOccurrenceCursor(last)
