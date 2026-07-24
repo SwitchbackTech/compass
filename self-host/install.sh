@@ -13,6 +13,7 @@ CONFIG_FILE=$COMPASS_HOME/compass.yaml
 MARKER_FILE=$COMPASS_HOME/.compass-self-host
 HELPER_FILE=$COMPASS_HOME/compass
 COMPOSE_FILE=$COMPASS_HOME/compose.yaml
+COMPOSE_SELFHOSTED_FILE=$COMPASS_HOME/compose.selfhosted.yaml
 
 PROJECT_NAME=$(basename "$COMPASS_HOME")
 WEB_PORT_VALUE=9080
@@ -502,6 +503,15 @@ set_compose_env() {
 
 compose_base() {
   set_compose_env
+  case ",${COMPOSE_PROFILES}," in
+    *,selfhosted,*)
+      if [ -f "$COMPOSE_SELFHOSTED_FILE" ]; then
+        docker compose --project-name "$PROJECT_NAME" \
+          -f "$COMPOSE_FILE" -f "$COMPOSE_SELFHOSTED_FILE" "$@"
+        return
+      fi
+      ;;
+  esac
   docker compose --project-name "$PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
 }
 

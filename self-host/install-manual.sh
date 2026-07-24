@@ -47,6 +47,7 @@ CONFIG_FILE=$COMPASS_HOME/compass.yaml      # Your configuration (secrets, ports
 MARKER_FILE=$COMPASS_HOME/.compass-self-host # Marks this as a Compass install directory
 HELPER_FILE=$COMPASS_HOME/compass            # CLI helper script for day-to-day management
 COMPOSE_FILE=$COMPASS_HOME/compose.yaml      # Docker Compose configuration
+COMPOSE_SELFHOSTED_FILE=$COMPASS_HOME/compose.selfhosted.yaml
 
 # The project name is derived from the install directory name.
 # Docker Compose uses this to namespace containers and volumes.
@@ -364,6 +365,19 @@ export SUPERTOKENS_POSTGRES_DB="$(strip_quotes "$(read_config_value supertokens.
 
 echo "  ✓ Environment variables exported"
 
+compose_base() {
+  case ",${COMPOSE_PROFILES}," in
+    *,selfhosted,*)
+      if [ -f "$COMPOSE_SELFHOSTED_FILE" ]; then
+        docker compose --project-name "$PROJECT_NAME" \
+          -f "$COMPOSE_FILE" -f "$COMPOSE_SELFHOSTED_FILE" "$@"
+        return
+      fi
+      ;;
+  esac
+  docker compose --project-name "$PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
+}
+
 # ── Section 10: Start Stack ───────────────────────────────────────────────────
 # Start all Compass services using Docker Compose.
 # On first run, this will download container images (may take a few minutes).
@@ -378,7 +392,7 @@ echo "  ✓ Environment variables exported"
 echo "Starting Compass..."
 echo "  (First run will download images - this may take a few minutes)"
 
-docker compose --project-name "$PROJECT_NAME" -f "$COMPOSE_FILE" up -d \
+compose_base up -d \
   || { echo "ERROR: Docker Compose failed to start Compass"; exit 1; }
 
 echo "  ✓ Compass containers started"
