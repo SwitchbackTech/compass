@@ -1,7 +1,7 @@
 // Plain pub/sub for view commands issued outside the components that handle
 // them (shortcuts, command palette). No payloads, so a listener Set per
 // command is all that's needed.
-export type ViewCommand =
+type ViewCommand =
   | "CREATE_ALLDAY_DRAFT"
   | "CREATE_TIMED_DRAFT"
   | "SCROLL_TO_NOW_LINE";
