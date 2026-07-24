@@ -11,6 +11,11 @@ import {
   type ConnectionListResponse,
   ConnectionListResponseSchema,
 } from "@core/types/sync/connection.contracts";
+import {
+  type EventOccurrenceListQuery,
+  type EventOccurrenceListResponse,
+  EventOccurrenceListResponseSchema,
+} from "@core/types/sync/event.contracts";
 import { createHmac, randomUUID } from "node:crypto";
 
 // The internal endpoints this client calls. Kept in sync with the Sync service's
@@ -18,6 +23,7 @@ import { createHmac, randomUUID } from "node:crypto";
 const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 const CONNECTIONS_PATH = "/internal/connections";
 const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
+const EVENTS_PATH = "/internal/events";
 
 const DEFAULT_TIMEOUT_MS = 5000;
 
@@ -149,6 +155,35 @@ export class SyncServiceClient {
     });
   }
 
+  // A page of canonical event occurrences for the given calendars and range,
+  // scoped to the signed principal. A read; served in the Sync service's passive
+  // mode too. `calendarIds` is serialized as repeated query params so the Sync
+  // route parses it back into an array; pass `query.cursor` from a prior
+  // response's `nextCursor` to page.
+  listEventOccurrences(
+    principal: SyncPrincipal,
+    query: EventOccurrenceListQuery,
+    correlationId?: string,
+  ): Promise<SyncClientResult<EventOccurrenceListResponse>> {
+    const params = new URLSearchParams();
+    for (const calendarId of query.calendarIds) {
+      params.append("calendarIds", calendarId);
+    }
+    params.set("start", query.start);
+    params.set("end", query.end);
+    if (query.cursor !== undefined) params.set("cursor", query.cursor);
+    if (query.limit !== undefined) params.set("limit", String(query.limit));
+
+    return this.#request({
+      method: "GET",
+      path: EVENTS_PATH,
+      query: params,
+      principal,
+      schema: EventOccurrenceListResponseSchema,
+      correlationId,
+    });
+  }
+
   // Merged busy intervals plus freshness/bookability evidence for a set of
   // blocking calendars.
   queryBusyAvailability(
@@ -169,6 +204,7 @@ export class SyncServiceClient {
   async #request<T>(input: {
     method: "GET" | "POST";
     path: string;
+    query?: URLSearchParams;
     principal: SyncPrincipal;
     body?: unknown;
     schema: z.ZodType<T>;
@@ -185,11 +221,17 @@ export class SyncServiceClient {
       "x-correlation-id": correlationId,
     };
 
+    const queryString = input.query?.toString();
+    const url =
+      queryString !== undefined && queryString.length > 0
+        ? `${this.#baseUrl}${input.path}?${queryString}`
+        : `${this.#baseUrl}${input.path}`;
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.#timeoutMs);
     let response: { status: number; json: () => Promise<unknown> };
     try {
-      response = await this.#fetch(`${this.#baseUrl}${input.path}`, {
+      response = await this.#fetch(url, {
         method: input.method,
         headers,
         body: input.body === undefined ? undefined : JSON.stringify(input.body),

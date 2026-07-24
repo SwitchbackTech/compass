@@ -1,11 +1,13 @@
 import { faker } from "@faker-js/faker";
 import { type BusyAvailabilityRequest } from "@core/types/sync/availability.contracts";
+import { type EventOccurrenceListQuery } from "@core/types/sync/event.contracts";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { verifyInternalRequest } from "@sync/auth/internal-auth";
 import {
   AVAILABILITY_BUSY_PATH,
   BEGIN_PATH,
   CONNECTIONS_PATH,
+  EVENTS_PATH,
 } from "@sync/server/connection.routes";
 import {
   SyncServiceClient,
@@ -145,6 +147,85 @@ describe("SyncServiceClient", () => {
     }));
 
     const result = await client(fn).listConnections(principal());
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.kind).toBe("invalidResponse");
+  });
+
+  it("lists event occurrences with a signed GET the real Sync verifier accepts", async () => {
+    const who = principal();
+    const calendarA = objectId();
+    const calendarB = objectId();
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({ occurrences: [], nextCursor: null }),
+    }));
+
+    const result = await client(fn).listEventOccurrences(who, {
+      calendarIds: [
+        calendarA,
+        calendarB,
+      ] as EventOccurrenceListQuery["calendarIds"],
+      start: "2026-07-14T09:00:00.000Z" as EventOccurrenceListQuery["start"],
+      end: "2026-07-14T17:00:00.000Z" as EventOccurrenceListQuery["end"],
+      limit: 100,
+    });
+
+    if (!result.ok) throw new Error(`expected ok, got ${result.error.kind}`);
+    expect(result.value.occurrences).toEqual([]);
+    expect(result.value.nextCursor).toBeNull();
+
+    const sent = calls[0];
+    expect(sent?.method).toBe("GET");
+    expect(sent?.body).toBeUndefined();
+    // Path parity with the Sync route, plus repeated calendarIds params (the
+    // Sync route parses them back into an array) and the range + limit.
+    expect(sent?.url.startsWith(`${BASE_URL}${EVENTS_PATH}?`)).toBe(true);
+    const query = new URL(sent?.url ?? "").searchParams;
+    expect(query.getAll("calendarIds")).toEqual([calendarA, calendarB]);
+    expect(query.get("start")).toBe("2026-07-14T09:00:00.000Z");
+    expect(query.get("end")).toBe("2026-07-14T17:00:00.000Z");
+    expect(query.get("limit")).toBe("100");
+
+    const verdict = verifyInternalRequest({
+      secret: SECRET,
+      headers: sent?.headers ?? {},
+      now: NOW,
+    });
+    if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
+    expect(verdict.context.tenantId).toBe(who.tenantId);
+    expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("omits the cursor param when no cursor is given", async () => {
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({ occurrences: [], nextCursor: null }),
+    }));
+
+    await client(fn).listEventOccurrences(principal(), {
+      calendarIds: [objectId()] as EventOccurrenceListQuery["calendarIds"],
+      start: "2026-07-14T09:00:00.000Z" as EventOccurrenceListQuery["start"],
+      end: "2026-07-14T17:00:00.000Z" as EventOccurrenceListQuery["end"],
+    });
+
+    const query = new URL(calls[0]?.url ?? "").searchParams;
+    expect(query.has("cursor")).toBe(false);
+    expect(query.has("limit")).toBe(false);
+  });
+
+  it("rejects an event-occurrence body that does not match the contract", async () => {
+    const { fn } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({ occurrences: [{ bogus: true }], nextCursor: null }),
+    }));
+
+    const result = await client(fn).listEventOccurrences(principal(), {
+      calendarIds: [objectId()] as EventOccurrenceListQuery["calendarIds"],
+      start: "2026-07-14T09:00:00.000Z" as EventOccurrenceListQuery["start"],
+      end: "2026-07-14T17:00:00.000Z" as EventOccurrenceListQuery["end"],
+    });
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
