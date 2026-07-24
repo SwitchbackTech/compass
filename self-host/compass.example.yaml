@@ -53,6 +53,7 @@ supertokens:
 #   callbackBaseUrl: https://cal.yourdomain.com # public base URL for provider OAuth/webhook callbacks
 #   serviceUrl: http://sync:3010 # base URL the API uses to reach this service; set only when delegating to sync
 #   connectionRouting: legacy # legacy (default) | sync; sync delegates provider-connection routes here and requires serviceUrl
+#   eventRouting: legacy # legacy (default) | sync; sync delegates calendar/event reads + commands here and requires serviceUrl
 #   execution: passive # passive | active
 #   maxConcurrency: 4
 #   enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)

@@ -314,4 +314,70 @@ describe("config.constants", () => {
 
     expect(env.SYNC_CONNECTION_ROUTING).toBe("sync");
   });
+
+  it("defaults event routing to legacy", () => {
+    const env = parseConfigFromEnv(validEnv);
+
+    expect(env.SYNC_EVENT_ROUTING).toBe("legacy");
+  });
+
+  it("treats a blank event-routing env var as the legacy default", () => {
+    const env = parseConfigFromEnv({
+      ...validEnv,
+      SYNC_EVENT_ROUTING: "",
+    });
+
+    expect(env.SYNC_EVENT_ROUTING).toBe("legacy");
+  });
+
+  it("rejects event routing = sync without a Sync service URL", () => {
+    expect(() =>
+      parseConfigFromEnv({
+        ...validEnv,
+        SYNC_EVENT_ROUTING: "sync",
+      }),
+    ).toThrow("SYNC_EVENT_ROUTING=sync requires SYNC_SERVICE_URL");
+  });
+
+  it("accepts event routing = sync when a Sync client is configured", () => {
+    const env = parseConfigFromEnv({
+      ...validEnv,
+      SYNC_EVENT_ROUTING: "sync",
+      SYNC_SERVICE_URL: "http://localhost:3010",
+      SYNC_INTERNAL_AUTH_TOKEN: "sync-internal-secret",
+    });
+
+    expect(env.SYNC_EVENT_ROUTING).toBe("sync");
+  });
+
+  it("routes events and connections independently", () => {
+    // The two switches must not be coupled: an operator can delegate events to
+    // sync while keeping connections on legacy (or the reverse). Both share the
+    // same serviceUrl but resolve independently.
+    const env = parseConfigFromEnv({
+      ...validEnv,
+      SYNC_CONNECTION_ROUTING: "legacy",
+      SYNC_EVENT_ROUTING: "sync",
+      SYNC_SERVICE_URL: "http://localhost:3010",
+      SYNC_INTERNAL_AUTH_TOKEN: "sync-internal-secret",
+    });
+
+    expect(env.SYNC_CONNECTION_ROUTING).toBe("legacy");
+    expect(env.SYNC_EVENT_ROUTING).toBe("sync");
+  });
+
+  it("enables sync event routing from the config file with a serviceUrl", () => {
+    const env = parseRawConfig({
+      ...baseRawConfig,
+      sync: {
+        mongoUri: "mongodb://localhost:27017/compass_sync",
+        internalAuthToken: "sync-internal-secret",
+        callbackBaseUrl: "http://localhost:3010",
+        serviceUrl: "http://localhost:3010",
+        eventRouting: "sync",
+      },
+    });
+
+    expect(env.SYNC_EVENT_ROUTING).toBe("sync");
+  });
 });
