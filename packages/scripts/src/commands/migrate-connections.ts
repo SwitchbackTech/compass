@@ -79,12 +79,22 @@ export async function runMigrateConnections(): Promise<void> {
       { dryRun, userIds },
     );
 
-    const json = `${JSON.stringify(report, null, 2)}\n`;
-    if (outPath) {
-      writeFileSync(outPath, json, "utf8");
-      logger.info(`Wrote connection migration report to ${outPath}`);
-    } else {
-      process.stdout.write(json);
+    try {
+      const json = `${JSON.stringify(report, null, 2)}\n`;
+      if (outPath) {
+        writeFileSync(outPath, json, "utf8");
+        logger.info(`Wrote connection migration report to ${outPath}`);
+      } else {
+        process.stdout.write(json);
+      }
+    } catch (outputError) {
+      logger.error(outputError);
+      if (dryRun) {
+        throw outputError;
+      }
+      logger.error(
+        "migrate-connections apply completed but report output failed; database changes were persisted",
+      );
     }
 
     logger.info(
