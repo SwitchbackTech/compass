@@ -123,6 +123,7 @@ describe("GET /internal/changes", () => {
       invalidation: {
         kind: "event",
         eventId: objectId() as never,
+        calendarId: objectId() as never,
       },
       emittedAt: new Date(),
     });

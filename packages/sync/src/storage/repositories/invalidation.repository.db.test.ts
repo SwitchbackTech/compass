@@ -64,6 +64,7 @@ describe("InvalidationRepository", () => {
       invalidation: {
         kind: "event",
         eventId: objectId() as never,
+        calendarId: objectId() as never,
       },
       emittedAt: new Date(),
     });

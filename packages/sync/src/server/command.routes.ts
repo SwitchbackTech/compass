@@ -115,15 +115,33 @@ export function registerCommandRoutes(
         // Emitted only when this request durably changed command/event state,
         // so an idempotent replay does not duplicate outbox rows.
         if (changed) {
+          const events = new EventRepository(deps.mongo.db);
+          const event = await events.findById(
+            auth.tenantId,
+            auth.principalId,
+            command.eventId,
+          );
           const invalidations = new InvalidationRepository(deps.mongo.db);
           const emittedAt = deps.now ? new Date(deps.now()) : new Date();
+          const notices = [
+            {
+              kind: "command" as const,
+              commandId: command._id,
+            },
+            ...(event
+              ? [
+                  {
+                    kind: "event" as const,
+                    eventId: command.eventId,
+                    calendarId: event.calendarId,
+                  },
+                ]
+              : []),
+          ];
           await invalidations.appendMany(
             auth.tenantId,
             auth.principalId,
-            [
-              { kind: "command", commandId: command._id },
-              { kind: "event", eventId: command.eventId },
-            ],
+            notices,
             emittedAt,
           );
         }

@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
 import { DateTimeSchema, EventIdSchema } from "@core/types/domain-primitives";
+import { SyncEventCalendarIdSchema } from "@core/types/sync/event.contracts";
 import {
   ConnectionIdSchema,
   ProviderCalendarIdSchema,
@@ -54,6 +55,9 @@ const CalendarInvalidationSchema = z.strictObject({
 const EventInvalidationSchema = z.strictObject({
   kind: z.literal("event"),
   eventId: EventIdSchema,
+  // Needed so Compass API can emit typed browser `eventsChanged` without a
+  // second Sync round-trip. Still content-free (ids only).
+  calendarId: SyncEventCalendarIdSchema,
 });
 
 const CommandInvalidationSchema = z.strictObject({
