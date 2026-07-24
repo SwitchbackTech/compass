@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type BusyAvailabilityRequest } from "@core/types/sync/availability.contracts";
+import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { verifyInternalRequest } from "@sync/auth/internal-auth";
 import {
   AVAILABILITY_BUSY_PATH,
@@ -190,7 +191,7 @@ describe("SyncServiceClient", () => {
 
     const connectionId = objectId();
     await client(fn).beginConnection(principal(), {
-      connectionId: connectionId as never,
+      connectionId: connectionId as ConnectionId,
     });
 
     expect(JSON.parse(calls[0]?.body ?? "{}")).toEqual({ connectionId });
