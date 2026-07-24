@@ -136,6 +136,26 @@ export type ConnectionListResponse = z.infer<
   typeof ConnectionListResponseSchema
 >;
 
+// Start an OAuth authorization flow for the caller's principal. An optional
+// connectionId means reconnect (rebind consent to that existing connection);
+// omit it for a fresh connection. Principal scope always comes from the
+// authenticated context, never the body.
+export const ConnectionBeginRequestSchema = z.strictObject({
+  connectionId: ConnectionIdSchema.optional(),
+});
+export type ConnectionBeginRequest = z.infer<
+  typeof ConnectionBeginRequestSchema
+>;
+
+// The provider consent URL the browser is sent to. `begin` only mints the URL;
+// the connection is created/updated when the provider calls back.
+export const ConnectionBeginResponseSchema = z.strictObject({
+  authorizationUrl: z.string().url(),
+});
+export type ConnectionBeginResponse = z.infer<
+  typeof ConnectionBeginResponseSchema
+>;
+
 export const CalendarListQuerySchema = z.strictObject({
   // Optional narrowing; principal scope always comes from authenticated
   // context, never from the request body.

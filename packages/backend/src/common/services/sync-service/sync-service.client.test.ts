@@ -3,6 +3,7 @@ import { type BusyAvailabilityRequest } from "@core/types/sync/availability.cont
 import { verifyInternalRequest } from "@sync/auth/internal-auth";
 import {
   AVAILABILITY_BUSY_PATH,
+  BEGIN_PATH,
   CONNECTIONS_PATH,
 } from "@sync/server/connection.routes";
 import {
@@ -143,6 +144,65 @@ describe("SyncServiceClient", () => {
     }));
 
     const result = await client(fn).listConnections(principal());
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.kind).toBe("invalidResponse");
+  });
+
+  it("begins a connection with a signed POST the real Sync verifier accepts", async () => {
+    const who = principal();
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({
+        authorizationUrl:
+          "https://accounts.google.com/o/oauth2/v2/auth?state=x",
+      }),
+    }));
+
+    const result = await client(fn).beginConnection(who);
+
+    if (!result.ok) throw new Error(`expected ok, got ${result.error.kind}`);
+    expect(result.value.authorizationUrl).toContain("accounts.google.com");
+
+    const sent = calls[0];
+    expect(sent?.url).toBe(`${BASE_URL}${BEGIN_PATH}`);
+    expect(sent?.method).toBe("POST");
+    // No connectionId given: a fresh connection sends an empty body.
+    expect(JSON.parse(sent?.body ?? "{}")).toEqual({});
+
+    const verdict = verifyInternalRequest({
+      secret: SECRET,
+      headers: sent?.headers ?? {},
+      now: NOW,
+    });
+    if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
+    expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("forwards a connectionId for reconnect", async () => {
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({
+        authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+      }),
+    }));
+
+    const connectionId = objectId();
+    await client(fn).beginConnection(principal(), {
+      connectionId: connectionId as never,
+    });
+
+    expect(JSON.parse(calls[0]?.body ?? "{}")).toEqual({ connectionId });
+  });
+
+  it("rejects a begin body that does not match the contract", async () => {
+    const { fn } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({ authorizationUrl: "not-a-url" }),
+    }));
+
+    const result = await client(fn).beginConnection(principal());
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
