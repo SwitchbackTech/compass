@@ -620,6 +620,7 @@ export const useDraftActions = (
     openForm,
     repositionDraftByKeyboard,
     resize,
+    setLocalDraft: setDraft,
     startDragging: (offset?: DragOffset) => {
       // Placing `setIsFormOpenBeforeDragging` here rather than inside `startDragging`
       // because `setIsFormOpenBeforeDragging` depends on `isFormOpen` and re-calculates

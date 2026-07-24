@@ -191,7 +191,6 @@ const renderShortcuts = (options?: {
             value={
               {
                 actions: { repositionDraftByKeyboard },
-                setters: {},
                 state: {},
               } as never
             }

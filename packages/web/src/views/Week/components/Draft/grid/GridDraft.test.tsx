@@ -95,9 +95,6 @@ const renderGridDraft = ({
       startDragging: mock(),
       startResizing: mock(),
     },
-    setters: {
-      setDraft: mock(),
-    },
     state: {
       draft,
       dragOffset: { x: 0, y: 0 },
