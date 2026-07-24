@@ -6,10 +6,7 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
-import {
-  Categories_Event,
-  RecurringEventUpdateScope,
-} from "@web/common/types/web.event.types";
+import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import {
   getArrowKeyMovement,
   isTimedEventInsideOneDay,
@@ -20,15 +17,12 @@ import {
   type GridScheduleDraft,
 } from "@web/events/event-draft.types";
 import {
-  createGridEventDraft,
   parseGridEventDraft,
   replaceGridDraftSchedule,
-  timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import {
   draftActions,
-  selectDraft,
   selectDraftStatus,
   selectGridDraft,
   useDraftStore,
@@ -66,10 +60,9 @@ export const useDraftActions = (
 ) => {
   const mutations = useEventMutations();
   const { data: calendars } = useCalendarsQuery();
-  const draftFromStore = useDraftStore(selectDraft);
   const gridDraftFromStore = useDraftStore(selectGridDraft);
 
-  const { activity, dateToResize, eventType, isDrafting } =
+  const { activity, dateToResize, isDrafting } =
     useDraftStore(selectDraftStatus)!;
 
   const {
@@ -142,10 +135,10 @@ export const useDraftActions = (
   const discard = useCallback(() => {
     reset();
 
-    if (draftFromStore || eventType) {
+    if (gridDraftFromStore || isDrafting) {
       draftActions.discard();
     }
-  }, [draftFromStore, eventType, reset]);
+  }, [gridDraftFromStore, isDrafting, reset]);
 
   const openForm = useCallback(() => {
     setIsFormOpen(true);
@@ -412,7 +405,9 @@ export const useDraftActions = (
 
   const resize = useCallback(
     (e: MouseEvent) => {
-      if (!draft || !draftFromStore) return; // TS Guard
+      // Freeze the origin against the store draft: local `setDraft` updates
+      // mid-gesture must not shift the resize baseline.
+      if (!draft || !gridDraftFromStore) return;
 
       const isAllDay = draft.values.schedule.kind === "allDay";
       const _dateBeingChanged = dateBeingChanged as "startDate" | "endDate";
@@ -432,6 +427,10 @@ export const useDraftActions = (
       const draftDates: Record<"startDate" | "endDate", string> = {
         startDate: formatDraftDate(draft.values.schedule.start),
         endDate: formatDraftDate(draft.values.schedule.end),
+      };
+      const originDates: Record<"startDate" | "endDate", string> = {
+        startDate: formatDraftDate(gridDraftFromStore.values.schedule.start),
+        endDate: formatDraftDate(gridDraftFromStore.values.schedule.end),
       };
 
       const flipIfNeeded = (currTime: Dayjs) => {
@@ -520,7 +519,7 @@ export const useDraftActions = (
       const justFlipped = flipIfNeeded(currTime);
       const dateChanged = justFlipped ? oppositeKey : _dateBeingChanged;
 
-      const origTime = dayjs(draftFromStore[dateChanged]).add(-1, "day");
+      const origTime = dayjs(originDates[dateChanged]).add(-1, "day");
 
       let updatedTime: string;
       let hasMoved: boolean;
@@ -561,7 +560,7 @@ export const useDraftActions = (
       dateBeingChanged,
       dateCalcs,
       draft,
-      draftFromStore,
+      gridDraftFromStore,
       isResizing,
       isValidMovement,
       resizeStatus?.hasMoved,
@@ -573,44 +572,12 @@ export const useDraftActions = (
   );
 
   const create = useCallback(async () => {
+    if (!gridDraftFromStore) return;
+
     setDraftSessionKey((key) => key + 1);
-
-    if (gridDraftFromStore) {
-      setDraft(gridDraftFromStore);
-    } else {
-      // Rare fallback: a "gridClick" activity started via
-      // draftActions.startGridClick (a source event not yet in the query
-      // cache), which has no GridEventDraft to hand off. Build a default
-      // from the legacy CompassEvent mirror's dates instead.
-      const startDate = draftFromStore?.startDate;
-      const endDate = draftFromStore?.endDate;
-      const isAllDay = eventType === Categories_Event.ALLDAY;
-
-      const schedule: GridScheduleDraft = isAllDay
-        ? {
-            kind: "allDay",
-            start: startDate ? dayjs(startDate).toDate() : dayjs().toDate(),
-            end: endDate
-              ? dayjs(endDate).toDate()
-              : dayjs().add(1, "day").toDate(),
-          }
-        : timedGridSchedule(
-            startDate ? dayjs(startDate).toDate() : dayjs().toDate(),
-            endDate ? dayjs(endDate).toDate() : dayjs().add(1, "hour").toDate(),
-          );
-
-      setDraft(createGridEventDraft(schedule));
-    }
-
+    setDraft(gridDraftFromStore);
     openForm();
-  }, [
-    openForm,
-    gridDraftFromStore,
-    draftFromStore,
-    eventType,
-    setDraft,
-    setDraftSessionKey,
-  ]);
+  }, [openForm, gridDraftFromStore, setDraft, setDraftSessionKey]);
 
   const handleChange = useCallback(async () => {
     if (!isDrafting) return;

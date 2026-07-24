@@ -179,7 +179,7 @@ describe("MainGridBusyPeriods", () => {
     expect(draftAfter.status?.activity ?? null).toBe(
       draftBefore.status?.activity ?? null,
     );
-    expect(draftAfter.event).toBe(draftBefore.event);
+    expect(draftAfter.gridDraft).toBe(draftBefore.gridDraft);
   });
 
   it("splits a multi-day busy period into one block per day column", () => {

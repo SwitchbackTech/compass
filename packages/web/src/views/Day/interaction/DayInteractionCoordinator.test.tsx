@@ -241,7 +241,7 @@ describe("DayInteractionCoordinator", () => {
     });
 
     expect(isFormOpen()).toBe(false);
-    expect(useDraftStore.getState().event).toBeNull();
+    expect(useDraftStore.getState().gridDraft).toBeNull();
   });
 
   it("opens the event form when pointer interaction does not move the event", async () => {
