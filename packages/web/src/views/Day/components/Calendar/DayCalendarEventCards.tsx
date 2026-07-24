@@ -1,4 +1,4 @@
-import { type MouseEvent, useCallback, useMemo, useRef, useState } from "react";
+import { type MouseEvent, useMemo, useState } from "react";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -17,9 +17,8 @@ import {
   type GridVisibleDate,
 } from "@web/grid/types/grid.types";
 import {
-  type DayInteractionEventType,
-  dayEventRegistry,
   getDayInteractionTargetAttributes,
+  useDayEventRegistrationRef,
 } from "@web/views/Day/interaction/registry/day-event.registry";
 import {
   clearHoveredDayGridEventTarget,
@@ -229,34 +228,4 @@ const getDayTimedEventPosition = ({
   });
 
   return applyTimedEventDisplayPosition(position, deckLayout);
-};
-
-const useDayEventRegistrationRef = ({
-  eventId,
-  eventType,
-  isEnabled,
-}: {
-  eventId: string | undefined;
-  eventType: DayInteractionEventType;
-  isEnabled: boolean;
-}) => {
-  const unregisterRef = useRef<(() => void) | null>(null);
-
-  return useCallback(
-    (node: HTMLDivElement | null) => {
-      unregisterRef.current?.();
-      unregisterRef.current = null;
-
-      if (!node || !eventId || !isEnabled) {
-        return;
-      }
-
-      unregisterRef.current = dayEventRegistry.register({
-        element: node,
-        eventId,
-        eventType,
-      });
-    },
-    [eventId, eventType, isEnabled],
-  );
 };
