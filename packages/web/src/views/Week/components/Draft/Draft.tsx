@@ -6,7 +6,11 @@ import { getDraftContainer } from "@web/common/utils/draft/draft.util";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
-import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
+import {
+  selectDraftActivity,
+  selectGridDraft,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { positionAllDayDraftEvent } from "@web/grid/layout/all-day-draft.position";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -34,10 +38,26 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   const { draft, isDragging, isFormOpen, isResizing } = state;
   const { setDraft } = setters;
   const gridDraftFromStore = useDraftStore(selectGridDraft);
+  const activity = useDraftStore(selectDraftActivity);
+
+  // Context-menu Edit only flips store isFormOpen (handleChange skips
+  // eventRightClick), so hydrate local draft during render — otherwise the
+  // portal would lag a frame behind the sidebar form. Allow a non-null
+  // overwrite only for eventRightClick: an earlier create/nudge can leave
+  // stale local state, but keyboard repositioning (other activities) updates
+  // local only and must not be undone here.
+  if (
+    !isDragging &&
+    !isResizing &&
+    isFormOpen &&
+    gridDraftFromStore &&
+    (draft === null || activity === "eventRightClick")
+  ) {
+    setDraft(gridDraftFromStore);
+  }
 
   // Sidebar edits write the shared draft store. Mirror into Week local draft
-  // while the form is idle so the portal overlay stays in sync without
-  // SidebarEventDetails depending on DraftContext.
+  // when the store draft changes while the form is idle.
   useEffect(() => {
     if (isDragging || isResizing || !isFormOpen || !gridDraftFromStore) {
       return;
