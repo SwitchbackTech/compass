@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { Categories_Event } from "@web/common/types/web.event.types";
 import { getElemById } from "@web/common/utils/grid/grid.util";
 import {
+  draftActions,
   selectDraftStatus,
   useDraftStore,
 } from "@web/events/stores/draft.store";
@@ -11,7 +12,7 @@ import { useDraftContext } from "../../context/useDraftContext";
 export const useGridMouseUp = () => {
   const { actions, state } = useDraftContext();
   const { draft, dragStatus, isDragging, isResizing, resizeStatus } = state;
-  const { discard, openForm, stopDragging, stopResizing, submit } = actions;
+  const { discard, stopDragging, stopResizing, submit } = actions;
 
   const draftStatus = useDraftStore(selectDraftStatus);
   const draftType = draftStatus?.eventType;
@@ -59,14 +60,14 @@ export const useGridMouseUp = () => {
     );
 
     if (shouldOpenForm) {
-      openForm();
+      draftActions.setFormOpen(true);
       return;
     }
 
     if (shouldSubmit) {
       submit(draft);
     }
-  }, [draft, getNextAction, stopMotion, openForm, submit]);
+  }, [draft, getNextAction, stopMotion, submit]);
 
   const handleMainGridMouseUp = useCallback(() => {
     if (!draft || !isDrafting) return;
@@ -83,7 +84,7 @@ export const useGridMouseUp = () => {
     );
 
     if (shouldOpenForm) {
-      openForm();
+      draftActions.setFormOpen(true);
       return;
     }
 
@@ -97,7 +98,6 @@ export const useGridMouseUp = () => {
     getNextAction,
     discard,
     stopMotion,
-    openForm,
     submit,
   ]);
 

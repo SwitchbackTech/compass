@@ -144,10 +144,6 @@ export const useDraftActions = (
     setResizeStatus,
   ]);
 
-  const openForm = useCallback(() => {
-    setIsFormOpen(true);
-  }, [setIsFormOpen]);
-
   const determineSubmitAction = useCallback(
     (draft: GridEventDraft) => {
       if (draft.kind !== "edit") return "CREATE";
@@ -175,7 +171,7 @@ export const useDraftActions = (
       const action = determineSubmitAction(draft);
       switch (action) {
         case "OPEN_FORM":
-          openForm();
+          setIsFormOpen(true);
           return;
         case "DISCARD":
           discard();
@@ -218,7 +214,7 @@ export const useDraftActions = (
           }
 
           if (isFormOpenBeforeDragging) {
-            openForm();
+            setIsFormOpen(true);
           } else {
             discard();
           }
@@ -234,7 +230,7 @@ export const useDraftActions = (
       discard,
       isFormOpenBeforeDragging,
       mutations,
-      openForm,
+      setIsFormOpen,
     ],
   );
 
@@ -579,8 +575,8 @@ export const useDraftActions = (
     if (!gridDraftFromStore) return;
 
     setDraft(gridDraftFromStore);
-    openForm();
-  }, [openForm, gridDraftFromStore, setDraft]);
+    setIsFormOpen(true);
+  }, [gridDraftFromStore, setDraft, setIsFormOpen]);
 
   const handleChange = useCallback(async () => {
     if (!isDrafting) return;
@@ -589,7 +585,7 @@ export const useDraftActions = (
     }
     if (activity === "keyboardEdit") {
       if (gridDraftFromStore) setDraft(gridDraftFromStore);
-      openForm();
+      setIsFormOpen(true);
       return;
     }
     if (activity === "createShortcut" || activity === "gridClick") {
@@ -609,15 +605,14 @@ export const useDraftActions = (
     dateToResize,
     setDraft,
     gridDraftFromStore,
+    setIsFormOpen,
     startResizing,
-    openForm,
   ]);
 
   const actions = {
     submit,
     discard,
     drag,
-    openForm,
     repositionDraftByKeyboard,
     resize,
     setLocalDraft: setDraft,
