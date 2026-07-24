@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { AuthApi } from "@web/api/auth.api";
 import { SyncApi } from "@web/api/sync.api";
 import { getApiErrorCode, isApiError } from "@web/api/util/api.util";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
@@ -7,16 +8,23 @@ import {
   setRepairingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
 import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
-import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
+import {
+  GOOGLE_CONNECT_FAILED_TOAST_ID,
+  GOOGLE_REPAIR_FAILED_TOAST_ID,
+} from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { settingsActions } from "@web/settings/settings.store";
-import { useIsGoogleAvailable } from "../useIsGoogleAvailable/useIsGoogleAvailable";
+import {
+  useIsConnectDelegatedToSync,
+  useIsGoogleAvailable,
+} from "../useIsGoogleAvailable/useIsGoogleAvailable";
 import { type UseConnectGoogleResult } from "./useConnectGoogle.types";
 import { getGoogleConnectionConfig } from "./useConnectGoogle.util";
 import { useGoogleUiState } from "./useGoogleUiState";
 
 export const useConnectGoogle = (): UseConnectGoogleResult => {
   const isAvailable = useIsGoogleAvailable();
+  const isConnectDelegatedToSync = useIsConnectDelegatedToSync();
   const state = useGoogleUiState();
   const { startGoogleAuthorization } = useStartGoogleAuthorization({
     intent: "connectCalendar",
@@ -32,11 +40,29 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
       }
 
       settingsActions.closeCmdPalette();
-      void startGoogleAuthorization();
+
+      if (!isConnectDelegatedToSync) {
+        void startGoogleAuthorization();
+        return;
+      }
+
+      // Sync-delegated connect: the sync service owns the OAuth round-trip, so
+      // the browser just navigates to the consent URL it mints. No client-side
+      // code exchange happens here; the connection is linked when Google calls
+      // back to the sync service.
+      try {
+        const { authorizationUrl } = await AuthApi.beginGoogleConnection();
+        window.location.assign(authorizationUrl);
+      } catch {
+        showErrorToast(
+          "We couldn't start connecting your Google Calendar. Please try again.",
+          { toastId: GOOGLE_CONNECT_FAILED_TOAST_ID },
+        );
+      }
     };
 
     void start();
-  }, [startGoogleAuthorization]);
+  }, [isConnectDelegatedToSync, startGoogleAuthorization]);
 
   const onRepairGoogle = useCallback(() => {
     const startRepair = async () => {
