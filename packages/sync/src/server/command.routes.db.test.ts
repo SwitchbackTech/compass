@@ -157,6 +157,7 @@ describe("POST /internal/commands", () => {
     expect(second.command.outcome.state).toBe("confirmed");
     expect(await mongo.db.collection("commands").countDocuments()).toBe(1);
     expect(await mongo.db.collection("events").countDocuments()).toBe(1);
+    expect(await mongo.db.collection("invalidations").countDocuments()).toBe(2);
   });
 
   it("recovers an interrupted acknowledgement by confirming on retry", async () => {
@@ -168,7 +169,7 @@ describe("POST /internal/commands", () => {
     // Simulate a crash after the command persisted but before it was applied:
     // the command already exists as pending with no event written.
     const commands = new CommandRepository(mongo.db);
-    const pending = await commands.submit({
+    const { record: pending } = await commands.submit({
       tenantId: tenantId as TenantId,
       principalId: principalId as PrincipalId,
       idempotencyKey: request.idempotencyKey as never,

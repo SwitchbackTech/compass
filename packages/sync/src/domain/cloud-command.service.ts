@@ -66,19 +66,28 @@ export async function submitCloudCommand(
   deps: CloudCommandDeps,
   submit: CommandSubmit,
   now: () => Date,
-): Promise<CommandRecord> {
-  const command = await deps.commands.submit(submit);
+): Promise<{ command: CommandRecord; changed: boolean }> {
+  const { record: command, inserted } = await deps.commands.submit(submit);
 
   // Only a freshly-persisted create is applied here. A command already past
   // pending (a confirmed replay, or a kind we don't apply yet) is returned as
   // it stands, so a repeated submit never re-applies or overwrites an outcome.
-  if (command.outcome.state !== "pending") return command;
+  if (command.outcome.state !== "pending") {
+    return { command, changed: false };
+  }
+  const initialOutcomeState = command.outcome.state;
+  const finish = (
+    final: CommandRecord,
+  ): { command: CommandRecord; changed: boolean } => ({
+    command: final,
+    changed: inserted || final.outcome.state !== initialOutcomeState,
+  });
 
   // update/delete apply to an existing event; move is not handled yet.
   if (command.input.kind === "update" || command.input.kind === "delete") {
-    return applyCloudMutation(deps, command, now);
+    return finish(await applyCloudMutation(deps, command, now));
   }
-  if (command.input.kind !== "create") return command;
+  if (command.input.kind !== "create") return finish(command);
 
   // A create whose target calendar is a connected provider calendar must go to
   // the provider, not be confirmed as a local cloud event. Execute it now when
@@ -92,26 +101,28 @@ export async function submitCloudCommand(
   );
   if (providerCalendar) {
     if (deps.execution === "active" && deps.provider) {
-      return executeProviderCreate(
-        {
-          commands: deps.commands,
-          events: deps.events,
-          occurrences: deps.occurrences,
-          writer: deps.provider.writer,
-          custody: deps.provider.custody,
-        },
-        command,
-        providerCalendar,
-        now,
+      return finish(
+        await executeProviderCreate(
+          {
+            commands: deps.commands,
+            events: deps.events,
+            occurrences: deps.occurrences,
+            writer: deps.provider.writer,
+            custody: deps.provider.custody,
+          },
+          command,
+          providerCalendar,
+          now,
+        ),
       );
     }
-    return command;
+    return finish(command);
   }
 
   const record = buildCloudEventRecord(command, now());
   await deps.events.put(record);
   await reprojectOccurrences(deps.occurrences, record, now);
-  return confirmCloud(deps, command);
+  return finish(await confirmCloud(deps, command));
 }
 
 // Apply a cloud-only update or delete to an existing event. Only single,

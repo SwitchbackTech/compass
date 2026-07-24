@@ -87,7 +87,7 @@ export function registerCommandRoutes(
               }
             : undefined;
 
-        const command = await submitCloudCommand(
+        const { command, changed } = await submitCloudCommand(
           {
             commands: new CommandRepository(deps.mongo.db),
             events: new EventRepository(deps.mongo.db),
@@ -112,19 +112,21 @@ export function registerCommandRoutes(
         );
 
         // Content-free change-feed notice for Compass API → browser SSE.
-        // Emitted after the durable command write so a crash drops the row
-        // (reconnect refetch covers the gap) rather than inventing a phantom.
-        const invalidations = new InvalidationRepository(deps.mongo.db);
-        const emittedAt = deps.now ? new Date(deps.now()) : new Date();
-        await invalidations.appendMany(
-          auth.tenantId,
-          auth.principalId,
-          [
-            { kind: "command", commandId: command._id },
-            { kind: "event", eventId: command.eventId },
-          ],
-          emittedAt,
-        );
+        // Emitted only when this request durably changed command/event state,
+        // so an idempotent replay does not duplicate outbox rows.
+        if (changed) {
+          const invalidations = new InvalidationRepository(deps.mongo.db);
+          const emittedAt = deps.now ? new Date(deps.now()) : new Date();
+          await invalidations.appendMany(
+            auth.tenantId,
+            auth.principalId,
+            [
+              { kind: "command", commandId: command._id },
+              { kind: "event", eventId: command.eventId },
+            ],
+            emittedAt,
+          );
+        }
 
         const response: CommandSubmitResponse = {
           command: toSyncCommand(command),

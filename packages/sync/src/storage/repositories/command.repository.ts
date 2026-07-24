@@ -28,7 +28,9 @@ export class CommandRepository {
   // Insert the command if its idempotency key is new; otherwise return the
   // command already stored for that key unchanged. New commands start pending
   // with a zero attempt count.
-  async submit(input: CommandSubmit): Promise<CommandRecord> {
+  async submit(
+    input: CommandSubmit,
+  ): Promise<{ record: CommandRecord; inserted: boolean }> {
     const fields = CommandSubmitSchema.parse(input);
     const now = new Date();
 
@@ -52,10 +54,15 @@ export class CommandRepository {
           updatedAt: now,
         },
       },
-      { upsert: true, returnDocument: "after" },
+      { upsert: true, returnDocument: "after", includeResultMetadata: true },
     );
-    if (!result) throw new Error("Submit did not return a command record");
-    return CommandRecordSchema.parse(result);
+    if (!result.value) {
+      throw new Error("Submit did not return a command record");
+    }
+    return {
+      record: CommandRecordSchema.parse(result.value),
+      inserted: result.lastErrorObject?.["upserted"] != null,
+    };
   }
 
   async findById(
