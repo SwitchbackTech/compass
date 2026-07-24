@@ -219,6 +219,14 @@ describe("self-host helper", () => {
     expect(helper).toContain("compose up -d --remove-orphans --wait");
   });
 
+  it("prunes unused images around update so release tags cannot fill the disk", () => {
+    const helper = readRepoFile("self-host/compass");
+    const updateBlock = helper.slice(helper.indexOf("\n  update)"));
+
+    expect(updateBlock).toContain("docker image prune -af");
+    expect(updateBlock).toContain("compose logs --tail=100 mongo backend");
+  });
+
   it("applies the selfhosted mongo overlay when the selfhosted profile is active", () => {
     const helper = readRepoFile("self-host/compass");
 
