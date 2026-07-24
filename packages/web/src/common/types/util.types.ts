@@ -1,47 +1,6 @@
-import { type Dayjs } from "@core/util/date/dayjs";
-
-export interface AssignResult {
-  fits: boolean;
-  rowNum?: number;
-}
-export interface Coordinates {
-  x: number;
-  y: number;
-}
-export interface Option_Time {
+export interface TimeOption {
   label: string;
   value: string;
-}
-export interface Params_DateChange {
-  start: Date;
-  end: Date;
-}
-export interface Params_TimeChange {
-  oldStart: string;
-  oldEnd: string;
-  start: string;
-  end: string;
-}
-
-export interface Range_Week {
-  weekStart: Dayjs;
-  weekEnd: Dayjs;
-}
-
-export interface WidthPercentages {
-  current: number[];
-  pastFuture: number[];
-}
-
-export interface WidthPixels {
-  current: {
-    sidebarOpen: number[];
-    sidebarClosed: number[];
-  };
-  pastFuture: {
-    sidebarOpen: number;
-    sidebarClosed: number;
-  };
 }
 
 export type PartialMouseEvent = Pick<

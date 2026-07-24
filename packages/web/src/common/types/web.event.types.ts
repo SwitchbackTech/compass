@@ -1,7 +1,6 @@
 import { z } from "zod/v4";
 import { ValidatedCompassEventSchema } from "@core/types/compass-event.contracts";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
-import { type SelectOption } from "@web/common/types/component.types";
 
 /** Event category, based on its display type */
 export enum Categories_Event {
@@ -54,11 +53,3 @@ export const GridEventSchema = WebEventSchema.extend({
   isDemo: z.boolean().optional(),
 });
 export type GridEvent = z.infer<typeof GridEventSchema>;
-
-export interface SelectedDates {
-  startDate: Date;
-  startTime: SelectOption<string>;
-  endDate: Date;
-  endTime: SelectOption<string>;
-  isAllDay: boolean;
-}
