@@ -1,5 +1,5 @@
 import { type MutableRefObject, useEffect, useRef } from "react";
-import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
+import { useDraftDragMotion } from "@web/views/Week/components/Draft/context/useDraftDragMotion";
 import {
   createWeekEdgeNavigationController,
   WEEK_EDGE_NAVIGATION_THRESHOLD_PX,
@@ -15,18 +15,15 @@ export const useDragEdgeNavigation = (
   mainGridRef: MutableRefObject<HTMLElement | null>,
   weekProps: WeekProps,
 ) => {
-  const { state: draftState } = useDraftContext();
-  const isDragging = draftState.isDragging;
-  const currentDraft = draftState.draft;
-  const hasCurrentDraft = Boolean(currentDraft);
+  const { hasDraft, isDragging } = useDraftDragMotion();
   const controllerRef = useRef(createWeekEdgeNavigationController());
-  const currentDraftRef = useRef(currentDraft);
   const frameRef = useRef<number | null>(null);
+  const hasDraftRef = useRef(hasDraft);
   const isDraggingRef = useRef(isDragging);
   const pointerRef = useRef<WeekEdgeNavigationPoint | null>(null);
   const weekUtilRef = useRef(weekProps.util);
 
-  currentDraftRef.current = currentDraft;
+  hasDraftRef.current = hasDraft;
   isDraggingRef.current = isDragging;
   weekUtilRef.current = weekProps.util;
 
@@ -55,7 +52,7 @@ export const useDragEdgeNavigation = (
 
       if (
         !isDraggingRef.current ||
-        !currentDraftRef.current ||
+        !hasDraftRef.current ||
         !mainGridRef.current ||
         !pointerRef.current
       ) {
@@ -89,7 +86,7 @@ export const useDragEdgeNavigation = (
       }
     };
 
-    if (!isDragging || !hasCurrentDraft) {
+    if (!isDragging || !hasDraft) {
       resetDraftEdgeNavigation();
       return;
     }
@@ -106,7 +103,7 @@ export const useDragEdgeNavigation = (
       window.removeEventListener("mousemove", updatePointer);
       resetDraftEdgeNavigation();
     };
-  }, [hasCurrentDraft, isDragging, mainGridRef]);
+  }, [hasDraft, isDragging, mainGridRef]);
 
   useEffect(() => {
     return () => {
