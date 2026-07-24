@@ -728,7 +728,7 @@ async function migrateCalendarListResource(args: {
     resourceKind: "calendarList",
     calendarId: null,
   });
-  if (cursor) {
+  if (cursor && resource.syncCursor === null) {
     await args.deps.resources.advanceCursor(
       args.tenantId,
       args.principalId,
@@ -777,7 +777,7 @@ async function migrateEventsResource(args: {
     resourceKind: "events",
     calendarId: args.calendarId,
   });
-  if (args.cursor) {
+  if (args.cursor && resource.syncCursor === null) {
     await args.deps.resources.advanceCursor(
       args.tenantId,
       args.principalId,
