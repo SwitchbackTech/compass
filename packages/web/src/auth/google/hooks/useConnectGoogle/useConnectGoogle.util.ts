@@ -9,6 +9,49 @@ import {
 
 const COMMAND_ICON: CommandActionIcon = CloudArrowUpIcon;
 
+/** Short relative label for Sync connection `lastSyncedAt` (ISO). */
+export const formatLastSyncedLabel = (
+  lastSyncedAt: string | null | undefined,
+  nowMs: number = Date.now(),
+): string | null => {
+  if (!lastSyncedAt) {
+    return null;
+  }
+
+  const syncedMs = Date.parse(lastSyncedAt);
+  if (Number.isNaN(syncedMs)) {
+    return null;
+  }
+
+  const deltaSec = Math.max(0, Math.floor((nowMs - syncedMs) / 1000));
+  if (deltaSec < 60) {
+    return "Last synced just now";
+  }
+
+  const deltaMin = Math.floor(deltaSec / 60);
+  if (deltaMin < 60) {
+    return deltaMin === 1
+      ? "Last synced 1 minute ago"
+      : `Last synced ${deltaMin} minutes ago`;
+  }
+
+  const deltaHr = Math.floor(deltaMin / 60);
+  if (deltaHr < 24) {
+    return deltaHr === 1
+      ? "Last synced 1 hour ago"
+      : `Last synced ${deltaHr} hours ago`;
+  }
+
+  const deltaDay = Math.floor(deltaHr / 24);
+  if (deltaDay < 7) {
+    return deltaDay === 1
+      ? "Last synced 1 day ago"
+      : `Last synced ${deltaDay} days ago`;
+  }
+
+  return `Last synced ${new Date(syncedMs).toLocaleDateString()}`;
+};
+
 export const getGoogleConnectionConfig = (
   state: GoogleUiState,
   onConnectGoogle: () => void,
