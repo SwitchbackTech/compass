@@ -68,6 +68,15 @@ describe("syncCalendarToBrowser", () => {
     expect(result.backgroundColor).toBe("#9e9e9e");
   });
 
+  it("falls back to the default colour when the provider colour is not hex", () => {
+    // Sync stores colour as a loose string; a non-hex value must not 500 the
+    // whole calendar list.
+    const result = syncCalendarToBrowser(
+      providerCalendar({ color: "cornflower" }),
+    );
+    expect(result.backgroundColor).toBe("#9e9e9e");
+  });
+
   it("always reports the calendar visible (visibility is client-side now)", () => {
     const result = syncCalendarToBrowser(providerCalendar({ active: false }));
     expect(result.isVisible).toBe(true);

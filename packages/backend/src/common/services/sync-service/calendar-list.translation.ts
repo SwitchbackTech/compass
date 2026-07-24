@@ -4,6 +4,7 @@ import {
   CalendarSchema,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
+import { HexColorSchema } from "@core/types/domain-primitives";
 import { type ProviderCalendar } from "@core/types/sync/connection.contracts";
 
 // Legacy's default calendar colours (map.calendar.ts), reused so a sync-served
@@ -42,13 +43,20 @@ const mapCalendarAccessRole = (
 // visible and the web applies its own hidden set.
 export const syncCalendarToBrowser = (calendar: ProviderCalendar): Calendar => {
   const access = mapCalendarAccessRole(calendar.accessRole);
+  // Sync stores the provider colour as a loose string; the browser Calendar
+  // requires a hex colour. Fall back to the default rather than 500 the whole
+  // list if a provider ever hands back a non-hex value.
+  const backgroundColor =
+    calendar.color && HexColorSchema.safeParse(calendar.color).success
+      ? calendar.color
+      : DEFAULT_BACKGROUND;
   return CalendarSchema.parse({
     id: calendar.id,
     name: calendar.displayName,
     description: "",
     timeZone: null,
     foregroundColor: DEFAULT_FOREGROUND,
-    backgroundColor: calendar.color ?? DEFAULT_BACKGROUND,
+    backgroundColor,
     provider: "google",
     access,
     capabilities: getCalendarCapabilities(access),
