@@ -653,19 +653,10 @@ describe("DayCalendarGrid", () => {
         }),
       ).toBeVisible();
       expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
+      expect(
+        screen.getByRole("textbox", { name: "Event Title" }),
+      ).toHaveFocus();
     });
-
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    });
-
-    expect(
-      screen.getByRole("button", {
-        name: /all-day event: untitled event/i,
-      }),
-    ).toBeVisible();
-    expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
-    expect(screen.getByRole("textbox", { name: "Event Title" })).toHaveFocus();
 
     await user.pointer({ keys: "[/MouseLeft]" });
   });
