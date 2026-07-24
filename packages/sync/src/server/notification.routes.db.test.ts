@@ -44,7 +44,7 @@ const googHeaders = (
   ...overrides,
 });
 
-describe("POST /oauth/google/notifications", () => {
+describe("POST /sync/notifications/google", () => {
   let mongo: SyncMongoService;
   let resources: SyncResourceRepository;
   let service: SyncService;

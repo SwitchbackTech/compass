@@ -70,7 +70,9 @@ export const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 export const BEGIN_PATH = "/internal/connections/begin";
 // Where the provider redirects the browser after consent; `begin` builds the
 // redirect_uri from it and the public callback route below mounts on it.
-export const OAUTH_CALLBACK_PATH = "/oauth/google/callback";
+// Public reverse-proxy path (Caddy `/sync/*` → sync). Must match the Google
+// OAuth client authorized redirect URI (`/sync/google`).
+export const OAUTH_CALLBACK_PATH = "/sync/google";
 
 // The rolling window Sync materializes occurrences for (shared with the
 // projection layer via @sync/domain/horizon). A query's range is clamped to it

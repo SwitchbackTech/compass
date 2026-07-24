@@ -76,6 +76,11 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
           SSH_HOST: ${{ vars.SSH_HOST }}
           SSH_USER: ${{ vars.SSH_USER }}
+          # Sync routing (optional; omit → legacy/passive defaults). Prod must
+          # stay unset until cutover. Staging-cloud sets these to prove S38/S39.
+          SYNC_CONNECTION_ROUTING: ${{ vars.SYNC_CONNECTION_ROUTING }}
+          SYNC_EVENT_ROUTING: ${{ vars.SYNC_EVENT_ROUTING }}
+          SYNC_EXECUTION: ${{ vars.SYNC_EXECUTION }}
           WEB_IMAGE: switchbacktech/compass-web:${{ inputs.environment }}-${{ steps.version.outputs.image_version }}
           # Sensitive
           COMPASS_SYNC_TOKEN: ${{ secrets.COMPASS_SYNC_TOKEN }}
@@ -164,7 +169,19 @@ jobs:
                 "  mongoUri: \"${SYNC_MONGO_URI}\"" \
                 "  internalAuthToken: \"${SYNC_INTERNAL_AUTH_TOKEN}\"" \
                 "  callbackBaseUrl: \"${FRONTEND_URL}\"" \
+                '  serviceUrl: "http://sync:3010"' \
                 '  enforceLeastPrivilege: true'
+              # Optional per-environment routing/execution (GitHub Environment
+              # vars). Empty → schema defaults (legacy / passive).
+              if [ -n "$SYNC_CONNECTION_ROUTING" ]; then
+                printf '%s\n' "  connectionRouting: \"${SYNC_CONNECTION_ROUTING}\""
+              fi
+              if [ -n "$SYNC_EVENT_ROUTING" ]; then
+                printf '%s\n' "  eventRouting: \"${SYNC_EVENT_ROUTING}\""
+              fi
+              if [ -n "$SYNC_EXECUTION" ]; then
+                printf '%s\n' "  execution: \"${SYNC_EXECUTION}\""
+              fi
             fi
           } | ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" \
                 "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml && chmod 644 ~/compass/compass.yaml"

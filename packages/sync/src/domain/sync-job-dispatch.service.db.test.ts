@@ -168,7 +168,7 @@ describe("dispatchSyncJob", () => {
     reader,
     custody: tokenSource,
     notifications,
-    callbackUrl: "https://sync.example/oauth/google/notifications",
+    callbackUrl: "https://sync.example/sync/notifications/google",
   });
 
   const seedCalendar = (): Promise<ProviderCalendarRecord> =>

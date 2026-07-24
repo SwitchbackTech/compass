@@ -168,6 +168,12 @@ compass.example.com {  # <- this is the only line you need to change
   reverse_proxy 127.0.0.1:3000
  }
 
+ # Sync public surface (OAuth callback + Google push). Only needed when the
+ # compose `sync` profile is enabled; safe to omit otherwise.
+ handle /sync/* {
+  reverse_proxy 127.0.0.1:3010
+ }
+
  handle {
   reverse_proxy 127.0.0.1:9080
  }
@@ -175,8 +181,9 @@ compass.example.com {  # <- this is the only line you need to change
 ```
 
 This tells Caddy to serve your public domain over HTTPS, send `/api/*` requests
-to the Compass backend on `127.0.0.1:3000`, and send everything else to the web
-app on `127.0.0.1:9080`.
+to the Compass backend on `127.0.0.1:3000`, send `/sync/*` to the Sync service
+on `127.0.0.1:3010` (Google OAuth redirect `/sync/google` and push notifications),
+and send everything else to the web app on `127.0.0.1:9080`.
 
 Save the file and validate your changes:
 

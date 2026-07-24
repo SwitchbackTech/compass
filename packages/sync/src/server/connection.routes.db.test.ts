@@ -521,7 +521,7 @@ describe("POST /internal/connections/begin", () => {
   });
 });
 
-describe("GET /oauth/google/callback", () => {
+describe("GET /sync/google", () => {
   let mongo: SyncMongoService;
   let connections: ProviderConnectionRepository;
   let credentials: CredentialRepository;

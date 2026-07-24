@@ -64,11 +64,13 @@ services:
     # isolated sync database is provisioned, so environments without one never
     # start a crash-looping container. Where enabled, Sync stays passive
     # (serves health, does no provider work) until explicitly activated.
-    # No published host port and no Caddy route: reachable only on the internal
-    # compose network. No depends_on mongo: Atlas environments have no mongo
-    # container, and the service tolerates a not-yet-ready store (liveness stays
-    # up, readiness 503).
+    # Bound to loopback only so the host Caddy can reverse-proxy the public
+    # `/sync/*` OAuth + webhook paths; not exposed on a public interface.
+    # No depends_on mongo: Atlas environments have no mongo container, and the
+    # service tolerates a not-yet-ready store (liveness stays up, readiness 503).
     profiles: [sync]
+    ports:
+      - "127.0.0.1:3010:3010"
     environment:
       COMPASS_CONFIG_FILE: /app/compass.yaml
       LOG_LEVEL: ${LOG_LEVEL:-info}
