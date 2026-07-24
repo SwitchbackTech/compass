@@ -5,6 +5,10 @@ import {
   GoogleAuthCodeRequestSchema,
   GoogleConnectResponseSchema,
 } from "@core/types/auth.types";
+import {
+  type ConnectionBeginRequest,
+  ConnectionBeginRequestSchema,
+} from "@core/types/sync/connection.contracts";
 import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
@@ -12,6 +16,10 @@ import { CONFIG } from "@backend/common/constants/config.constants";
 import { isGoogleConfigured } from "@backend/common/constants/config.util";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { getConnectionDelegation } from "@backend/common/services/sync-service/connection-routing";
+import { beginSyncConnection } from "@backend/common/services/sync-service/sync-connection-begin";
+import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
+import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import {
   type ReqBody,
   type Res_Promise,
@@ -69,6 +77,31 @@ class AuthController {
         .connectGoogleToCurrentUser(userId, input)
         .then(() => GoogleConnectResponseSchema.parse({ status: "OK" })),
     );
+  };
+
+  // Start a sync-delegated Google connection: return the provider consent URL
+  // the browser should navigate to. Only applies where this deployment
+  // delegates provider connections to the sync service (the redirect flow); the
+  // legacy code-exchange flow uses connectGoogle above instead.
+  beginGoogleConnection = (
+    req: SReqBody<ConnectionBeginRequest>,
+    res: Res_Promise,
+  ): void => {
+    const client =
+      getConnectionDelegation() === "sync" ? getSyncServiceClient() : null;
+    if (!client) {
+      res.promise(
+        Promise.reject(
+          error(AuthError.ConnectNotDelegated, "Connect begin unavailable"),
+        ),
+      );
+      return;
+    }
+
+    const userId = zObjectId.parse(req.session?.getUserId()).toString();
+    const request = ConnectionBeginRequestSchema.parse(req.body ?? {});
+
+    res.promise(beginSyncConnection(client, toSyncPrincipal(userId), request));
   };
 }
 
