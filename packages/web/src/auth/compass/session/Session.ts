@@ -5,7 +5,7 @@ import {
 } from "@web/auth/compass/session/session.port";
 
 class Session {
-  #listeners = new Set<(event: Event) => void>();
+  listeners = new Set<(event: Event) => void>();
 
   doesSessionExist: SessionApiPort["doesSessionExist"] = (...args) =>
     getSessionApiPort().doesSessionExist(...args);
@@ -42,13 +42,13 @@ class Session {
    * Returns an unsubscribe function.
    */
   onAnyEvent(listener: (event: Event) => void): () => void {
-    this.#listeners.add(listener);
+    this.listeners.add(listener);
 
-    return () => this.#listeners.delete(listener);
+    return () => this.listeners.delete(listener);
   }
 
   emit(payload: Event) {
-    for (const listener of this.#listeners) listener(payload);
+    for (const listener of this.listeners) listener(payload);
   }
 }
 
