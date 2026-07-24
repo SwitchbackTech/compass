@@ -19,9 +19,9 @@ import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { SidebarEventDetails } from "@web/components/Sidebar/EventDetails/SidebarEventDetails";
 import { draftActions } from "@web/events/stores/draft.store";
 import { DraftProvider } from "@web/views/Week/components/Draft/context/DraftProvider";
-import { WeekSidebarEventDetails } from "@web/views/Week/components/Draft/sidebar/WeekSidebarEventDetails";
 import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/week-event.registry";
@@ -120,7 +120,7 @@ function GridWithSidebar() {
           weekProps={weekProps as never}
         />
       </div>
-      <WeekSidebarEventDetails />
+      <SidebarEventDetails />
     </DraftProvider>
   );
 }

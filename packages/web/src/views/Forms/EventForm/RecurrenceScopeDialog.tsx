@@ -7,10 +7,8 @@ import {
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
-import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { useGridDraftSchemaOverlay } from "@web/events/hooks/useGridDraftSchemaOverlay";
 import { type RecurrenceScopePendingAction } from "@web/events/recurrence/useRecurrenceScopeConfirmation";
-import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 const UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
   RecurringEventUpdateScope.THIS_EVENT,
@@ -30,30 +28,6 @@ const selectedUpdateScopeOptionClassName = "bg-surface-overlay";
 
 const radioDotClassName =
   "relative flex size-[18px] flex-none rounded-full border-2 border-border-strong transition-colors after:absolute after:inset-0 after:m-auto after:size-2 after:scale-0 after:rounded-full after:bg-accent after:transition-transform peer-checked:border-accent peer-checked:after:scale-100 peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-surface-panel";
-
-export function RecurrenceScopeDialog() {
-  const {
-    confirmation,
-    state: { draft },
-  } = useDraftContext();
-  const {
-    isRecurrenceUpdateScopeDialogOpen,
-    onUpdateScopeChange,
-    pendingAction,
-    setRecurrenceUpdateScopeDialogOpen,
-  } = confirmation;
-
-  if (!isRecurrenceUpdateScopeDialogOpen) return null;
-
-  return (
-    <RecurrenceScopeConfirmationDialog
-      draft={draft ? gridEventDraftToSchemaEvent(draft) : null}
-      pendingAction={pendingAction}
-      setRecurrenceUpdateScopeDialogOpen={setRecurrenceUpdateScopeDialogOpen}
-      onUpdateScopeChange={onUpdateScopeChange}
-    />
-  );
-}
 
 type RecurrenceScopeConfirmationDialogProps = {
   draft: CompassEvent | null;

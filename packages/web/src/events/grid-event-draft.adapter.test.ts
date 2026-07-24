@@ -159,6 +159,31 @@ test("duplicate falls back to no calendar (later defaulted) when the source cale
   expect(duplicate?.values.calendarId).toBeNull();
 });
 
+test("duplicate preserves series rules and drops occurrence links", () => {
+  const writableSourceCalendar = {
+    id: timedEvent.calendarId,
+    capabilities: getCalendarCapabilities("owner"),
+  } as unknown as Calendar;
+
+  const seriesEvent = {
+    ...(timedEvent as object),
+    recurrence: { kind: "series" as const, rules: SERIES_RULES },
+  } as unknown as Event;
+
+  const seriesDuplicate = duplicateGridEventDraft(seriesEvent, [
+    writableSourceCalendar,
+  ]);
+  expect(seriesDuplicate?.values.recurrence).toEqual({
+    kind: "series",
+    rules: SERIES_RULES,
+  });
+
+  const occurrenceDuplicate = duplicateGridEventDraft(occurrenceEvent, [
+    writableSourceCalendar,
+  ]);
+  expect(occurrenceDuplicate?.values.recurrence).toEqual({ kind: "single" });
+});
+
 test("duplicate falls back to no calendar when the source calendar isn't in the given list", () => {
   const duplicate = duplicateGridEventDraft(timedEvent, []);
 

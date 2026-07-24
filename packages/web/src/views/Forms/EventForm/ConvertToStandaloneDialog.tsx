@@ -3,35 +3,35 @@ import {
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
-import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
+import { type GridEventDraft } from "@web/events/event-draft.types";
 
-export function ConvertToStandaloneDialog() {
-  const { confirmation } = useDraftContext();
-  const {
-    standaloneDraft,
-    onConfirmConvertToStandalone,
-    onCancelConvertToStandalone,
-  } = confirmation;
+export type ConvertToStandaloneDialogProps = {
+  draft: GridEventDraft | null;
+  onCancel: () => void;
+  onConfirm: () => void;
+};
 
-  if (!standaloneDraft) return null;
+export function ConvertToStandaloneDialog({
+  draft,
+  onCancel,
+  onConfirm,
+}: ConvertToStandaloneDialogProps) {
+  if (!draft) return null;
 
-  const eventName = standaloneDraft.values.title || "this event";
+  const eventName = draft.values.title || "this event";
 
   return (
     <OverlayPanel
       title="Convert to standalone event?"
       message={`“${eventName}” will be removed from its recurring series.`}
-      onDismiss={onCancelConvertToStandalone}
+      onDismiss={onCancel}
       variant="modal"
     >
       <OverlayPanelActions>
-        <OverlayPanelActionButton onClick={onCancelConvertToStandalone}>
+        <OverlayPanelActionButton onClick={onCancel}>
           Cancel
         </OverlayPanelActionButton>
-        <OverlayPanelActionButton
-          variant="primary"
-          onClick={onConfirmConvertToStandalone}
-        >
+        <OverlayPanelActionButton variant="primary" onClick={onConfirm}>
           Convert
         </OverlayPanelActionButton>
       </OverlayPanelActions>

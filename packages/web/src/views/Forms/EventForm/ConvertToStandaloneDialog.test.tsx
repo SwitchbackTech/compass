@@ -1,10 +1,8 @@
 import userEvent from "@testing-library/user-event";
-import { type ReactElement } from "react";
 import { render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { ConvertToStandaloneDialog } from "@web/views/Forms/EventForm/ConvertToStandaloneDialog";
-import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { describe, expect, it, mock } from "bun:test";
 
 const onConfirm = mock();
@@ -19,28 +17,18 @@ const draftWithTitle = (title: string): GridEventDraft => {
   });
   if (draft.kind !== "create") throw new Error("Expected a create draft");
 
-  return { ...draft, values: { ...draft.values, title } };
+  draft.values.title = title;
+  return draft;
 };
 
-const renderDialog = (standaloneDraft: GridEventDraft | null) => {
-  const ui: ReactElement = (
-    <DraftContext.Provider
-      value={
-        {
-          confirmation: {
-            standaloneDraft,
-            onConfirmConvertToStandalone: onConfirm,
-            onCancelConvertToStandalone: onCancel,
-          },
-        } as never
-      }
-    >
-      <ConvertToStandaloneDialog />
-    </DraftContext.Provider>
+const renderDialog = (draft: GridEventDraft | null) =>
+  render(
+    <ConvertToStandaloneDialog
+      draft={draft}
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+    />,
   );
-
-  return render(ui);
-};
 
 describe("ConvertToStandaloneDialog", () => {
   it("renders nothing when there is no pending standalone draft", () => {
