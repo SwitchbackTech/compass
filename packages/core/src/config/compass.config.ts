@@ -82,6 +82,13 @@ const CompassConfigSchema = z
         // every connection is owned end-to-end by one implementation. "sync"
         // requires serviceUrl (validated backend-side).
         connectionRouting: z.enum(["legacy", "sync"]).optional(),
+        // Which implementation serves the browser-facing calendar/event reads
+        // and durable write commands. Independent of connectionRouting so the
+        // riskier event path can be rolled out (and rolled back) on its own
+        // schedule. "legacy" (default) keeps today's in-backend event store;
+        // "sync" delegates to the standalone Sync service and requires
+        // serviceUrl (validated backend-side).
+        eventRouting: z.enum(["legacy", "sync"]).optional(),
         callbackBaseUrl: z.string(),
         // Where the OAuth callback redirects the browser after connecting;
         // defaults to callbackBaseUrl when omitted.

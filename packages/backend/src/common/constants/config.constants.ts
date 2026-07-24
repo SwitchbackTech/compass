@@ -43,6 +43,10 @@ const ConfigSchema = z
     // Which implementation serves the browser-facing provider-connection routes.
     // Global, not per-request: legacy (default) or delegate to the Sync service.
     SYNC_CONNECTION_ROUTING: z.enum(["legacy", "sync"]).default("legacy"),
+    // Which implementation serves the browser-facing calendar/event reads and
+    // durable write commands. Independent of SYNC_CONNECTION_ROUTING so the
+    // riskier event path rolls out separately. Global, not per-request.
+    SYNC_EVENT_ROUTING: z.enum(["legacy", "sync"]).default("legacy"),
     POSTHOG_KEY: z.string().nonempty().optional(),
     POSTHOG_HOST: z.string().url().optional(),
   })
@@ -110,6 +114,18 @@ const ConfigSchema = z
         path: ["SYNC_SERVICE_URL"],
       });
     }
+
+    // Same guard for event delegation: a "sync" switch without a client to
+    // reach is a misconfiguration, not a silent fall-back to legacy.
+    if (env.SYNC_EVENT_ROUTING === "sync" && !env.SYNC_SERVICE_URL) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        fatal: true,
+        message:
+          "SYNC_EVENT_ROUTING=sync requires SYNC_SERVICE_URL (and SYNC_INTERNAL_AUTH_TOKEN) to be configured",
+        path: ["SYNC_SERVICE_URL"],
+      });
+    }
   });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -156,6 +172,7 @@ export function parseRawConfig(config: CompassConfig): Config {
       ? nonEmpty(config.sync?.internalAuthToken)
       : undefined,
     SYNC_CONNECTION_ROUTING: config.sync?.connectionRouting,
+    SYNC_EVENT_ROUTING: config.sync?.eventRouting,
     POSTHOG_KEY: nonEmpty(config.posthog?.key),
     POSTHOG_HOST: nonEmpty(config.posthog?.host) || DEFAULT_POSTHOG_HOST,
   });
@@ -191,6 +208,7 @@ export function parseConfigFromEnv(
     SYNC_SERVICE_URL: nonEmpty(rawEnv["SYNC_SERVICE_URL"]),
     SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(rawEnv["SYNC_INTERNAL_AUTH_TOKEN"]),
     SYNC_CONNECTION_ROUTING: nonEmpty(rawEnv["SYNC_CONNECTION_ROUTING"]),
+    SYNC_EVENT_ROUTING: nonEmpty(rawEnv["SYNC_EVENT_ROUTING"]),
     POSTHOG_KEY: rawEnv["POSTHOG_KEY"],
     POSTHOG_HOST: rawEnv["POSTHOG_HOST"] || DEFAULT_POSTHOG_HOST,
   });
