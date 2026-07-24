@@ -1,7 +1,7 @@
 import {
   getCommandPalettePlaceholder,
   getMoreCommandPaletteSections,
-} from "@web/common/constants/more.cmd.constants";
+} from "@web/components/CommandPalette/more.cmd.constants";
 import {
   feedbackActions,
   selectFeedbackRequest,

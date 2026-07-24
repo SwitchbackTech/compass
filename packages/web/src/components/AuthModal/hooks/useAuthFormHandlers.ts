@@ -8,7 +8,7 @@ import {
   type ResetPasswordFormData,
   type SignUpFormData,
 } from "@web/auth/compass/schemas/auth.schemas";
-import { releaseNotesPromptActions } from "@web/auth/state/release-notes-prompt.store";
+import { releaseNotesPromptActions } from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
 import { getAuthSubmitErrorMessage } from "./useAuthFormHandlers.util";
 import { type AuthView } from "./useAuthModal";
 

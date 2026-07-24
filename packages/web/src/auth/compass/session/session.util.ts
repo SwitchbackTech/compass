@@ -1,5 +1,6 @@
 import { session } from "@web/auth/compass/session/Session";
-import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
+
+export const UNAUTHENTICATED_USER = "UNAUTHENTICATED_USER";
 
 interface AccessTokenPayload {
   sub: string;

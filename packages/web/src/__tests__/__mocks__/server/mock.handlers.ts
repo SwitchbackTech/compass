@@ -1,13 +1,8 @@
 import { faker } from "@faker-js/faker";
 import { rest } from "msw";
-import {
-  CLIMB,
-  GROCERIES,
-  MARCH_1,
-  MULTI_WEEK,
-  TY_TIM,
-} from "@core/__mocks__/v1/events/events.misc";
+import { Origin } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
+import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { freshenEventStartEndDate } from "@web/views/Week/week-view.render.test.utils";
 
@@ -17,12 +12,17 @@ export const globalHandlers = [
   }),
   rest.get(`${ENV_WEB.API_BASEURL}/event`, (_req, res, ctx) => {
     const events = [
-      CLIMB,
-      MARCH_1,
-      MULTI_WEEK,
-      TY_TIM,
-      // TODO: Need some way to inject the event into globalHandlers.events in a more dynamic way.
-      freshenEventStartEndDate(GROCERIES),
+      createMockStandaloneEvent({ origin: Origin.GOOGLE_IMPORT }),
+      createMockStandaloneEvent({ origin: Origin.GOOGLE_IMPORT }, true),
+      createMockStandaloneEvent(
+        { origin: Origin.GOOGLE_IMPORT, isAllDay: true },
+        true,
+        { value: 21, unit: "days" },
+      ),
+      createMockStandaloneEvent({ origin: Origin.GOOGLE_IMPORT }),
+      freshenEventStartEndDate(
+        createMockStandaloneEvent({ origin: Origin.GOOGLE_IMPORT }),
+      ),
     ];
     return res(ctx.json(events));
   }),

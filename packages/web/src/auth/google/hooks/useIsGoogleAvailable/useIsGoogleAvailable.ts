@@ -1,5 +1,5 @@
 import { AppConfigApi } from "@web/api/app-config.api";
-import { IS_GOOGLE_AUTH_CONFIGURED } from "@web/common/constants/env.constants";
+import { IS_GOOGLE_AUTH_CONFIGURED } from "@web/auth/google/google-auth-config";
 import { createGoogleAvailability } from "./useIsGoogleAvailable.factory";
 
 const googleAvailability = createGoogleAvailability({

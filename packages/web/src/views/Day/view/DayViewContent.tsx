@@ -1,10 +1,10 @@
 import { memo, useCallback, useMemo, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { getCommandPalettePlaceholder } from "@web/common/constants/more.cmd.constants";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
+import { getCommandPalettePlaceholder } from "@web/components/CommandPalette/more.cmd.constants";
 import { DemoEventsBannerGate } from "@web/components/DemoEventsBanner/DemoEventsBannerGate";
 import { SidebarEventDetails } from "@web/components/Sidebar/EventDetails/SidebarEventDetails";
 import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";

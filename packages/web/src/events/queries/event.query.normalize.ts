@@ -1,6 +1,6 @@
 import { type Event } from "@core/types/event.contracts";
-import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import { type NormalizedEvents } from "@web/events/event-view.types";
+import { type LocalEventRecord } from "@web/events/types/local-event.record";
 
 /**
  * Normalize a list of events into the `{ ids, entities }` shape the query

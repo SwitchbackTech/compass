@@ -1,13 +1,13 @@
 import { type CreateEventInput } from "@core/types/event-command.contracts";
-import { CalendarApi } from "@web/calendars/calendar.api";
+import { CalendarApi } from "@web/api/calendar.api";
 import { getLocalCalendar } from "@web/calendars/calendar.util";
 import { type OfflineDataStore } from "@web/common/storage/offline-data/offline-data.store";
 import {
   ensureOfflineDataStoreReady,
   getOfflineDataStore,
 } from "@web/common/storage/offline-data/offline-data.store.registry";
-import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import { EventApi } from "@web/events/event.api";
+import { type LocalEventRecord } from "@web/events/types/local-event.record";
 
 type LocalEventSyncStorage = Pick<
   OfflineDataStore,

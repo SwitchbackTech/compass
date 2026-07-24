@@ -5,8 +5,8 @@ import {
   EventIdSchema,
 } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
-import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { type LocalEventRecord } from "@web/events/types/local-event.record";
 
 const DEFAULT_CALENDAR_ID: CalendarId = CalendarIdSchema.parse(
   createObjectIdString(),

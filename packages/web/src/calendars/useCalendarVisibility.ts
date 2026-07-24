@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
-import { CalendarApi } from "@web/calendars/calendar.api";
+import { CalendarApi } from "@web/api/calendar.api";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { removeEventsByCalendarFromQueries } from "@web/events/queries/event.query.cache";

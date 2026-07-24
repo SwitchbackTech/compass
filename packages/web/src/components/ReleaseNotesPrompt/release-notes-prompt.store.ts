@@ -9,51 +9,45 @@ export const useReleaseNotesPromptStore = create<ReleaseNotesPromptState>()(
   () => ({ isOpen: false }),
 );
 
-const SCHEDULED_OPEN_AT_STORAGE_KEY =
+const SCHEDULED_OPEN_AT_KEY =
   "compass.onboarding.release-notes-prompt-scheduled-at";
 
-let scheduleOpenTimeoutId: number | undefined;
+let timeoutId: number | undefined;
 
-const clearScheduledOpenStorage = () => {
-  persistentBrowserStore.remove(SCHEDULED_OPEN_AT_STORAGE_KEY);
-};
-
-const clearScheduledOpen = () => {
-  if (scheduleOpenTimeoutId !== undefined) {
-    window.clearTimeout(scheduleOpenTimeoutId);
-    scheduleOpenTimeoutId = undefined;
+const clearTimer = () => {
+  if (timeoutId !== undefined) {
+    window.clearTimeout(timeoutId);
+    timeoutId = undefined;
   }
 };
 
+const clearSchedule = () => {
+  clearTimer();
+  persistentBrowserStore.remove(SCHEDULED_OPEN_AT_KEY);
+};
+
 const openPrompt = () => {
-  clearScheduledOpen();
-  clearScheduledOpenStorage();
+  clearSchedule();
   useReleaseNotesPromptStore.setState({ isOpen: true });
 };
 
-const startScheduledOpenTimer = (delayMs: number) => {
-  clearScheduledOpen();
-  scheduleOpenTimeoutId = window.setTimeout(() => {
-    scheduleOpenTimeoutId = undefined;
+const startTimer = (delayMs: number) => {
+  clearTimer();
+  timeoutId = window.setTimeout(() => {
+    timeoutId = undefined;
     openPrompt();
   }, delayMs);
 };
 
 const resumeScheduledOpen = () => {
-  if (!persistentBrowserStore.isAvailable()) {
-    return;
-  }
+  if (!persistentBrowserStore.isAvailable()) return;
 
-  const storedOpenAt = persistentBrowserStore.get(
-    SCHEDULED_OPEN_AT_STORAGE_KEY,
-  );
-  if (storedOpenAt === null) {
-    return;
-  }
+  const storedOpenAt = persistentBrowserStore.get(SCHEDULED_OPEN_AT_KEY);
+  if (storedOpenAt === null) return;
 
   const openAtMs = Number(storedOpenAt);
   if (!Number.isFinite(openAtMs)) {
-    clearScheduledOpenStorage();
+    persistentBrowserStore.remove(SCHEDULED_OPEN_AT_KEY);
     return;
   }
 
@@ -63,35 +57,31 @@ const resumeScheduledOpen = () => {
     return;
   }
 
-  startScheduledOpenTimer(remainingMs);
+  startTimer(remainingMs);
 };
 
 export const releaseNotesPromptActions = {
-  open: () => {
-    openPrompt();
-  },
+  open: openPrompt,
   close: () => {
-    clearScheduledOpen();
-    clearScheduledOpenStorage();
+    clearSchedule();
     useReleaseNotesPromptStore.setState({ isOpen: false });
   },
   scheduleOpen: (delayMs = 45_000) => {
     if (persistentBrowserStore.isAvailable()) {
       persistentBrowserStore.set(
-        SCHEDULED_OPEN_AT_STORAGE_KEY,
+        SCHEDULED_OPEN_AT_KEY,
         String(Date.now() + delayMs),
       );
     }
-    startScheduledOpenTimer(delayMs);
+    startTimer(delayMs);
   },
 };
 
 export const selectReleaseNotesPromptOpen = (state: ReleaseNotesPromptState) =>
   state.isOpen;
 
-// Semantic bridge for e2e tests, mirroring the user-metadata store. Lets tests
-// raise the post-signup prompt without completing a real (backend-dependent)
-// signup. Merge (don't overwrite) so sibling stores' bridges survive.
+// E2e bridge: raise the post-signup prompt without a real signup. Merge so
+// sibling store bridges survive.
 if (typeof window !== "undefined") {
   resumeScheduledOpen();
 

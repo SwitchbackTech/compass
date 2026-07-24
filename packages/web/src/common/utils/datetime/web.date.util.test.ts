@@ -1,7 +1,6 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs from "@core/util/date/dayjs";
-import { arraysAreEqual } from "@web/__tests__/utils/web.test.util";
 import {
   computeCurrentEventDateRange,
   computeRelativeEventDateRange,
@@ -371,8 +370,7 @@ describe("getColorsByHour", () => {
     const day1Colors = getColorsByHour(day1.hour());
     const day2Colors = getColorsByHour(day2.hour());
 
-    const sameOrder = arraysAreEqual(day1Colors, day2Colors);
-    expect(sameOrder).toBe(true);
+    expect(day1Colors).toEqual(day2Colors);
   });
 
   it("changes at the top of the hour", () => {
@@ -381,8 +379,7 @@ describe("getColorsByHour", () => {
     const day1Colors = getColorsByHour(day1);
     const day2Colors = getColorsByHour(day2);
 
-    const sameOrder = arraysAreEqual(day1Colors, day2Colors);
-    expect(sameOrder).toBe(false);
+    expect(day1Colors).not.toEqual(day2Colors);
   });
 });
 

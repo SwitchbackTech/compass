@@ -1,7 +1,7 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { type Calendar } from "@core/types/calendar.contracts";
+import { CalendarApi } from "@web/api/calendar.api";
 import { useSession } from "@web/auth/compass/session/useSession";
-import { CalendarApi } from "@web/calendars/calendar.api";
 import {
   getLocalCalendarSentinelId,
   synthesizeLocalCalendar,

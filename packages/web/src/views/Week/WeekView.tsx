@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useRef } from "react";
-import { getCommandPalettePlaceholder } from "@web/common/constants/more.cmd.constants";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
+import { getCommandPalettePlaceholder } from "@web/components/CommandPalette/more.cmd.constants";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { DemoEventsBannerGate } from "@web/components/DemoEventsBanner/DemoEventsBannerGate";
 import { SidebarEventDetails } from "@web/components/Sidebar/EventDetails/SidebarEventDetails";

@@ -18,7 +18,7 @@ import {
   resetEmailPasswordPort,
 } from "@web/auth/compass/hooks/emailpassword.port";
 import { registerUseCompleteAuthenticationForTests } from "@web/auth/compass/hooks/useCompleteAuthentication.registry";
-import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization.registry";
+import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
   resetGoogleAvailabilityForTests,
   setGoogleAvailabilityForTests,

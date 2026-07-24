@@ -1,6 +1,6 @@
 import { type EventId } from "@core/types/domain-primitives";
 import { type EventListQuery } from "@core/types/event-command.contracts";
-import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
+import { type LocalEventRecord } from "@web/events/types/local-event.record";
 
 /**
  * Record of a completed migration.

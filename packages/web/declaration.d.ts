@@ -48,7 +48,7 @@ interface Window {
       clear: () => void;
     };
     releaseNotesPrompt?: {
-      getState: () => import("@web/auth/state/release-notes-prompt.store").ReleaseNotesPromptState;
+      getState: () => import("@web/components/ReleaseNotesPrompt/release-notes-prompt.store").ReleaseNotesPromptState;
       open: () => void;
       close: () => void;
     };

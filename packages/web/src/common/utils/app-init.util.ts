@@ -1,6 +1,15 @@
 import { initializeOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { getToast } from "@web/common/utils/toast/toast.port";
-import { DatabaseInitError } from "./storage/db-errors.util";
+
+export class DatabaseInitError extends Error {
+  constructor(
+    message: string,
+    public readonly cause?: unknown,
+  ) {
+    super(message);
+    this.name = "DatabaseInitError";
+  }
+}
 
 export interface AppInitResult {
   dbInitError: DatabaseInitError | null;

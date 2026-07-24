@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { EventSchema } from "@core/types/event.contracts";
-import { LocalEventRecordSchema } from "@web/common/storage/types/local-event.record";
+import { LocalEventRecordSchema } from "@web/events/types/local-event.record";
 
 const validEvent = () => {
   const id = faker.database.mongodbObjectId();

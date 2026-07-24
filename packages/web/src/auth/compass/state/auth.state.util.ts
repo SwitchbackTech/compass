@@ -1,11 +1,20 @@
-import {
-  type AuthState,
-  AuthStateSchema,
-  DEFAULT_AUTH_STATE,
-} from "@web/common/constants/auth.constants";
+import { z } from "zod";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { clearGoogleRevokedState } from "../../google/state/google.auth.state";
+
+export const AuthStateSchema = z.object({
+  hasAuthenticated: z.boolean().default(false),
+  lastKnownEmail: z.string().email().optional(),
+  shouldPromptSignUpAfterAnonymousCalendarChange: z.boolean().default(false),
+});
+
+export type AuthState = z.infer<typeof AuthStateSchema>;
+
+export const DEFAULT_AUTH_STATE: AuthState = {
+  hasAuthenticated: false,
+  shouldPromptSignUpAfterAnonymousCalendarChange: false,
+};
 
 const authStateListeners = new Set<() => void>();
 
