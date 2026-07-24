@@ -20,11 +20,21 @@ import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
 
+type SidebarEventDetailsProps = {
+  /**
+   * Day view always prompts before saving recurring edits. Week view applies
+   * occurrence-count and instance heuristics instead.
+   */
+  confirmAllRecurringEdits?: boolean;
+};
+
 /**
  * Store-driven event-details panel for Day and Week sidebars. Renders the
  * current grid draft whenever the draft store says the form is open.
  */
-export function SidebarEventDetails() {
+export function SidebarEventDetails({
+  confirmAllRecurringEdits = true,
+}: SidebarEventDetailsProps = {}) {
   const draft = useDraftStore(selectGridDraft);
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const _id = draft?.kind === "edit" ? draft.source.id : undefined;
@@ -35,14 +45,35 @@ export function SidebarEventDetails() {
   const existingEvent = useEventById(_id);
   const existing = Boolean(existingEvent);
   const isRecurring = isExistingEventRecurring(existingEvent);
+  const seriesBaseEventId =
+    draft?.kind === "edit" && draft.source.recurrence.kind === "occurrence"
+      ? draft.source.recurrence.seriesId
+      : undefined;
+  const seriesBaseEvent = useEventById(seriesBaseEventId);
 
   const getSaveContext = useCallback(
-    () => ({
-      confirmAllRecurringEdits: true,
-      isInstance: false,
-      isRecurring,
-    }),
-    [isRecurring],
+    (editDraft: NonNullable<typeof draft>) => {
+      if (confirmAllRecurringEdits) {
+        return {
+          confirmAllRecurringEdits: true as const,
+          isInstance: false,
+          isRecurring,
+        };
+      }
+
+      const isEditDraft = editDraft.kind === "edit";
+      const draftIsInstance =
+        isEditDraft && editDraft.source.recurrence.kind === "occurrence";
+
+      return {
+        baseEvent: seriesBaseEvent,
+        isInstance: draftIsInstance,
+        isRecurring:
+          isEditDraft &&
+          (isExistingEventRecurring(existingEvent) || draftIsInstance),
+      };
+    },
+    [confirmAllRecurringEdits, existingEvent, isRecurring, seriesBaseEvent],
   );
 
   const getDeleteContext = useCallback(() => ({ isRecurring }), [isRecurring]);
