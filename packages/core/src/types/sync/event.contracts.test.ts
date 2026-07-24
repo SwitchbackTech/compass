@@ -474,11 +474,19 @@ describe("Sync event contracts", () => {
       expect(SyncEventInstanceSchema.safeParse(instance).success).toBe(true);
     });
 
-    it("carries the full content the browser needs to render and edit", () => {
-      // Unlike the stripped occurrence feed (title only), an instance carries
-      // the description too — the whole point of the full-fidelity read.
-      const instance = baseInstance();
-      expect("description" in instance.content).toBe(true);
+    it("preserves the description through validation (full-fidelity read)", () => {
+      // Unlike the stripped occurrence feed (title only), the schema must keep
+      // the description — the whole point of the full-fidelity read. Assert on
+      // the PARSED output, not the input object, so this proves the schema.
+      const parsed = SyncEventInstanceSchema.safeParse(
+        baseInstance({
+          content: { title: "Standup", description: "Daily sync" },
+        }),
+      );
+      expect(parsed.success).toBe(true);
+      if (parsed.success) {
+        expect(parsed.data.content.description).toBe("Daily sync");
+      }
     });
 
     it("rejects an instance whose content is missing the description", () => {
