@@ -176,6 +176,7 @@ async function findExistingProviderEvent(
     providerEventId: string;
   },
   skips: MigrateProviderStateSkip[],
+  dryRun: boolean,
 ): Promise<SyncEventRecord | null> {
   const { record, corruptDeletedId } = await events.findByProviderIdentitySafe(
     tenantId,
@@ -185,13 +186,15 @@ async function findExistingProviderEvent(
       calendarId: identity.calendarId,
       providerEventId: identity.providerEventId as never,
     },
+    { deleteCorrupt: !dryRun },
   );
   if (corruptDeletedId) {
     skips.push({
       category: "corrupt_sync_event",
       id: corruptDeletedId,
-      detail:
-        "deleted Sync event that failed EventRecordSchema; will recreate from legacy if present",
+      detail: dryRun
+        ? "Sync event failed EventRecordSchema; would delete and recreate from legacy if present"
+        : "deleted Sync event that failed EventRecordSchema; will recreate from legacy if present",
     });
   }
   return record;
@@ -638,6 +641,7 @@ export async function migrateProviderSyncState(
                 providerEventId: plan.seriesProviderId,
               },
               skips,
+              options.dryRun,
             ));
           if (!master || master.recurrence.kind !== "seriesMaster") {
             localCounts.eventsSkipped += 1;
@@ -668,6 +672,7 @@ export async function migrateProviderSyncState(
             providerEventId,
           },
           skips,
+          options.dryRun,
         );
 
         let content: ReturnType<typeof toSyncContent>;

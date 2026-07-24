@@ -162,6 +162,7 @@ export class EventRepository {
       calendarId: EventRecord["calendarId"];
       providerEventId: NonNullable<EventRecord["providerEventId"]>;
     },
+    options?: { deleteCorrupt?: boolean },
   ): Promise<{ record: EventRecord | null; corruptDeletedId: string | null }> {
     const record = await this.collection.findOne({
       tenantId,
@@ -174,7 +175,9 @@ export class EventRepository {
     const parsed = EventRecordSchema.safeParse(record);
     if (parsed.success) return { record: parsed.data, corruptDeletedId: null };
     const id = String(record._id);
-    await this.collection.deleteOne({ _id: record._id });
+    if (options?.deleteCorrupt !== false) {
+      await this.collection.deleteOne({ _id: record._id });
+    }
     return { record: null, corruptDeletedId: id };
   }
 
