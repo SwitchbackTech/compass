@@ -20,7 +20,6 @@ export interface DragOffset {
 export interface State_Draft_Local {
   dateBeingChanged: "startDate" | "endDate" | null;
   draft: GridEventDraft | null;
-  draftSessionKey: number;
   dragOffset: DragOffset;
   dragStatus: Status_Drag | null;
   isDragging: boolean;
@@ -38,7 +37,6 @@ export interface Setters_Draft {
   setDragStatus: Dispatch<SetStateAction<Status_Drag | null>>;
   setResizeStatus: (value: Status_Resize | null) => void;
   setDateBeingChanged: (value: "startDate" | "endDate" | null) => void;
-  setDraftSessionKey: Dispatch<SetStateAction<number>>;
   setIsFormOpen: (value: boolean) => void;
   setIsFormOpenBeforeDragging: (value: boolean | null) => void;
 }
@@ -66,7 +64,6 @@ export const useDraftState = () => {
   // persisted-shape contract (dates + form fields) and has no grid-layout
   // concept of a cursor offset.
   const [dragOffset, setDragOffset] = useState<DragOffset>(ZERO_DRAG_OFFSET);
-  const [draftSessionKey, setDraftSessionKey] = useState(0);
   const [dragStatus, setDragStatus] = useState<Status_Drag | null>(null);
   const [resizeStatus, setResizeStatus] = useState<Status_Resize | null>(null);
   const [dateBeingChanged, setDateBeingChanged] = useState<
@@ -86,7 +83,6 @@ export const useDraftState = () => {
 
   const state: State_Draft_Local = {
     draft,
-    draftSessionKey,
     dragOffset,
     dragStatus,
     isDragging,
@@ -105,7 +101,6 @@ export const useDraftState = () => {
     setDragStatus,
     setResizeStatus,
     setDateBeingChanged,
-    setDraftSessionKey,
     setIsFormOpen,
     setIsFormOpenBeforeDragging,
   };

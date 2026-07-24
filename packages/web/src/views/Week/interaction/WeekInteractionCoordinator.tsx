@@ -176,7 +176,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
         : null;
 
       if (target.hadFormOpenBeforeInteraction) {
-        actions.closeForm();
+        draftActions.setFormOpen(false);
       }
     },
     onRequestWeekNavigation: (direction) => {
