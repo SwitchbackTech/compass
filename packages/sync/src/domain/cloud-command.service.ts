@@ -4,6 +4,7 @@ import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { type CredentialCustody } from "@sync/credentials/credential-custody.service";
+import { mergeUpdateContent } from "@sync/domain/merge-update-content";
 import {
   occurrenceScheduleAt,
   scheduleStartAt,
@@ -463,7 +464,7 @@ async function updateCloudOccurrence(
     master,
     command.input.recurrenceId,
     {
-      content: command.input.content,
+      content: mergeUpdateContent(master.content, command.input.content),
       schedule: command.input.schedule,
       cancelled: false,
     },
@@ -625,7 +626,7 @@ function buildRemainderMaster(
     ...master,
     _id: remainderMasterId(master._id, command.input.recurrenceId as DateTime),
     clientEventId: null,
-    content: input.content,
+    content: mergeUpdateContent(master.content, input.content),
     schedule: input.schedule,
     recurrence,
     createdAt: now,
@@ -664,7 +665,8 @@ async function confirmCloud(
 
 // Apply an update command's content/schedule/recurrence to an existing cloud
 // event, preserving its identity and provider fields. "preserve" keeps the
-// current recurrence; "single"/"series" set it.
+// current recurrence; "single"/"series" set it. Content merges so a
+// title/description edit cannot wipe provider-sourced attendees/etc.
 function applyCloudUpdate(
   existing: EventRecord,
   command: CommandRecord,
@@ -676,7 +678,7 @@ function applyCloudUpdate(
   const { input } = command;
   return {
     ...existing,
-    content: input.content,
+    content: mergeUpdateContent(existing.content, input.content),
     schedule: input.schedule,
     recurrence:
       input.recurrence.kind === "preserve"
