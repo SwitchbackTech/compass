@@ -13,9 +13,7 @@ type SettingsState = ReturnType<typeof useSettingsStore.getState>;
 type ViewState = ReturnType<typeof useViewStore.getState>;
 
 /**
- * State shape accepted by the render helpers' `state` option. The shape
- * mirrors the historical Redux RootState (draft nested under `events`) so
- * long-lived tests keep working against the Zustand stores.
+ * State shape accepted by the render helpers' `state` option.
  */
 export type TestAppState = {
   events?: { draft?: Partial<State_DraftEvent> };
@@ -24,7 +22,7 @@ export type TestAppState = {
   view?: Partial<ViewState>;
 };
 
-/** Seed the Zustand stores from the test state. */
+/** Seed the stores from the test state. */
 export function seedStoresFromState(state?: TestAppState): void {
   if (!state) return;
 

@@ -19,7 +19,6 @@ const DEFAULT_TIMED_SCHEDULE = EventScheduleSchema.parse({
   timeZone: "America/Chicago",
 });
 
-/** Factory for a strict-contract `Event` (new event.contracts shape). */
 export function createMockEvent(overrides: Partial<Event> = {}): Event {
   return {
     id: EventIdSchema.parse(createObjectIdString()),
@@ -33,7 +32,6 @@ export function createMockEvent(overrides: Partial<Event> = {}): Event {
   };
 }
 
-/** Factory for a `LocalEventRecord` (B13 IndexedDB row shape). */
 export function createMockLocalEventRecord(
   overrides: Partial<Event> = {},
   isDemo = false,
