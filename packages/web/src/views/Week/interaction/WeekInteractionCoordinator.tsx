@@ -143,7 +143,10 @@ export const WeekInteractionCoordinator: FC<Props> = ({
 
     if (result.hadFormOpenBeforeInteraction) {
       const draft = gridEventDraftFromSavedResult(result.event);
-      if (draft) setters.setDraft(draft);
+      if (draft) {
+        setters.setDraft(draft);
+        draftActions.setGridDraft(draft);
+      }
 
       actions.openForm();
       return;
