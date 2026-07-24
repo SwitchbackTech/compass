@@ -13,6 +13,10 @@ import calendarService from "@backend/calendar/services/calendar.service";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { syncCalendarToBrowser } from "@backend/common/services/sync-service/calendar-list.translation";
+import { getEventDelegation } from "@backend/common/services/sync-service/event-routing";
+import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
+import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import {
   type Res_Promise,
   type SReqBody,
@@ -52,6 +56,29 @@ const parseAvailabilityQuery = (query: SessionRequest["query"]) => {
   });
 };
 
+// List the caller's calendars from the sync service and translate them to the
+// browser Calendar contract. A sync failure rejects (rather than returning an
+// empty list) so the browser surfaces a load error and retries, instead of
+// silently hiding every calendar.
+const listCalendarsFromSync = async (
+  userId: string,
+): Promise<CalendarListResponse> => {
+  const client = getSyncServiceClient();
+  if (!client) {
+    throw error(GenericError.NotSure, "Sync calendar listing unavailable");
+  }
+
+  const result = await client.listCalendars(toSyncPrincipal(userId));
+  if (!result.ok) {
+    throw error(
+      GenericError.NotSure,
+      `Failed to list calendars from sync (${result.error.kind})`,
+    );
+  }
+
+  return { calendars: result.value.calendars.map(syncCalendarToBrowser) };
+};
+
 class CalendarController {
   list = async (req: SessionRequest, res: Res_Promise) => {
     try {
@@ -59,10 +86,14 @@ class CalendarController {
         error: () => error(AuthError.InadequatePermissions, "List Failed"),
       });
 
-      const records = await calendarService.list(userId);
-      const response: CalendarListResponse = {
-        calendars: records.map(mapCalendarRecord),
-      };
+      const response =
+        getEventDelegation() === "sync"
+          ? await listCalendarsFromSync(userId.toString())
+          : {
+              calendars: (await calendarService.list(userId)).map(
+                mapCalendarRecord,
+              ),
+            };
 
       res.promise(response);
     } catch (e) {
