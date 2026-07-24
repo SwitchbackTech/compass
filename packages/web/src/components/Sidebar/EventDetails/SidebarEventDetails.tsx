@@ -1,4 +1,5 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useContext, useMemo } from "react";
+import { type GridEventDraft } from "@web/events/event-draft.types";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { useEventById } from "@web/events/queries/useEventById";
 import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
@@ -19,12 +20,14 @@ import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
+import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 
 /**
  * Store-driven event-details panel for Day and Week sidebars. Renders the
  * current grid draft whenever the draft store says the form is open.
  */
 export function SidebarEventDetails() {
+  const weekDraft = useContext(DraftContext);
   const draft = useDraftStore(selectGridDraft);
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const _id = draft?.kind === "edit" ? draft.source.id : undefined;
@@ -53,6 +56,14 @@ export function SidebarEventDetails() {
     onDelete: (applyTo) => onDelete(toRecurrenceScope(applyTo)),
     onSave,
   });
+
+  const syncDraft = useCallback(
+    (resolved: GridEventDraft | null) => {
+      draftActions.setGridDraft(resolved);
+      weekDraft?.setters.setDraft(resolved);
+    },
+    [weekDraft],
+  );
 
   const scopeDialogDraft = useMemo(() => {
     if (!confirmation.pendingAction || !draft) return null;
@@ -93,7 +104,7 @@ export function SidebarEventDetails() {
       isFormOpen={isFormOpen}
       onClose={onClose}
       onDuplicate={onDuplicate}
-      syncDraft={draftActions.setGridDraft}
+      syncDraft={syncDraft}
     />
   );
 }
