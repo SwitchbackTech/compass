@@ -11,7 +11,7 @@ import { type LocalEventRecord } from "@web/events/types/local-event.record";
 
 type LocalEventSyncStorage = Pick<
   OfflineDataStore,
-  "clearAllEvents" | "getAllEvents"
+  "clearAllEvents" | "deleteEvent" | "getAllEvents"
 >;
 
 type LocalEventSyncDependencies = {
@@ -75,9 +75,14 @@ export function createSyncLocalEventsToCloud({
 
       for (const record of recordsToSync) {
         await createEvent(toCreateInput(record, serverLocalCalendar.id));
+        // Drop each promoted row immediately so a mid-batch interrupt does not
+        // re-POST already-cloud events on the next resume.
+        await store.deleteEvent(record.id);
       }
     }
 
+    // Demo rows (and any leftover) are never promoted — wipe them once the
+    // user batch finished without throwing.
     await store.clearAllEvents();
 
     return recordsToSync.length;

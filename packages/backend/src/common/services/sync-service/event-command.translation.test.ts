@@ -90,7 +90,7 @@ describe("toCreateSubmitRequest", () => {
     expect(request.input).toMatchObject({
       kind: "create",
       calendarId,
-      clientEventId: null,
+      clientEventId: eventId,
       invitation: "none",
       recurrence: { kind: "single" },
     });
@@ -108,6 +108,10 @@ describe("toCreateSubmitRequest", () => {
 
     expect(request.eventId).toMatch(/^[0-9a-f]{24}$/);
     expect(request.idempotencyKey).toBe(`create:${request.eventId}`);
+    expect(request.input).toMatchObject({
+      kind: "create",
+      clientEventId: null,
+    });
   });
 });
 
