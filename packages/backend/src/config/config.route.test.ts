@@ -21,6 +21,7 @@ describe("GET /api/config", () => {
       expect(response.body).toEqual({
         google: {
           isConfigured: false,
+          connectDelegatedToSync: false,
         },
       });
     } finally {
@@ -44,11 +45,23 @@ describe("GET /api/config", () => {
       expect(response.body).toEqual({
         google: {
           isConfigured: false,
+          connectDelegatedToSync: false,
         },
       });
     } finally {
       CONFIG.GOOGLE_CLIENT_ID = originalClientId;
       CONFIG.GOOGLE_CLIENT_SECRET = originalClientSecret;
     }
+  });
+
+  it("reports connect as not delegated to sync on a legacy deployment", async () => {
+    // The test config has no sync service configured, so the global routing
+    // switch resolves to "legacy" and the browser keeps the code-exchange flow.
+    const response = await baseDriver
+      .getServer()
+      .get("/api/config")
+      .expect(Status.OK);
+
+    expect(response.body.google.connectDelegatedToSync).toBe(false);
   });
 });
