@@ -1,6 +1,9 @@
 import { NodeEnv } from "@core/constants/core.constants";
 import { createSyncService, type SyncService } from "@sync/app";
 import { type SyncConfig } from "@sync/config/sync.config";
+import { ReadinessRegistry } from "@sync/lifecycle/readiness";
+import { buildSyncApp } from "@sync/server/sync.server";
+import { afterEach, describe, expect, it } from "bun:test";
 import { type AddressInfo } from "node:net";
 
 const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
@@ -20,6 +23,20 @@ async function listen(service: SyncService): Promise<string> {
   const { port } = service.httpServer.address() as AddressInfo;
   return `http://127.0.0.1:${port}`;
 }
+
+describe("buildSyncApp", () => {
+  it("trusts one proxy hop so Caddy X-Forwarded-For does not trip rate-limit", () => {
+    const app = buildSyncApp({
+      identity: {
+        name: "compass-sync",
+        environment: NodeEnv.Test,
+        execution: "passive",
+      },
+      readiness: new ReadinessRegistry(),
+    });
+    expect(app.get("trust proxy")).toBe(1);
+  });
+});
 
 describe("Sync HTTP server health endpoints", () => {
   let service: SyncService;

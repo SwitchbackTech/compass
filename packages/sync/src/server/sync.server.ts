@@ -19,6 +19,9 @@ export function buildSyncApp(deps: {
   connectionApi?: ConnectionApiDeps;
 }): Express {
   const app = express();
+  // Caddy terminates TLS and proxies `/sync/*` with X-Forwarded-For. One hop
+  // of trust keeps express-rate-limit from rejecting those public routes.
+  app.set("trust proxy", 1);
   app.use(express.json());
 
   registerHealthRoutes(app, deps);
