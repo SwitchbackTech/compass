@@ -1,4 +1,4 @@
-import { type FC, useMemo } from "react";
+import { type FC, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Origin } from "@core/constants/core.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -35,21 +35,30 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   const { setDraft } = setters;
   const gridDraftFromStore = useDraftStore(selectGridDraft);
 
-  // Sidebar edits and context-menu Edit write the shared draft store.
-  // Mirror into Week local draft while the form is idle so the portal
-  // overlay stays in sync without ContextMenu/Sidebar depending on
-  // DraftContext. Adjust during render (not useEffect) so context-menu
-  // Edit — which only flips store isFormOpen — does not flash an empty
-  // portal for a frame before GridDraft can read local `draft`.
+  // Context-menu Edit only flips store isFormOpen (handleChange skips
+  // eventRightClick), so hydrate local draft during render when it is still
+  // null — otherwise the portal would lag a frame behind the sidebar form.
+  // Do not overwrite a non-null local draft here: keyboard repositioning
+  // updates local only, and a render-time `draft !== store` sync would undo it.
   if (
     !isDragging &&
     !isResizing &&
     isFormOpen &&
     gridDraftFromStore &&
-    draft !== gridDraftFromStore
+    draft === null
   ) {
     setDraft(gridDraftFromStore);
   }
+
+  // Sidebar edits write the shared draft store. Mirror into Week local draft
+  // when the store draft changes while the form is idle.
+  useEffect(() => {
+    if (isDragging || isResizing || !isFormOpen || !gridDraftFromStore) {
+      return;
+    }
+
+    setDraft(gridDraftFromStore);
+  }, [gridDraftFromStore, isDragging, isFormOpen, isResizing, setDraft]);
 
   // GridEvent-shaped projection of the canonical GridEventDraft, for
   // the still-unconverted grid-layout helpers below (deck layout, all-day
