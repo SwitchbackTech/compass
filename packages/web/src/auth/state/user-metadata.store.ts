@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import {
   type GoogleConnectionState,
+  type GoogleSyncConnectionSummary,
   type UserMetadata,
 } from "@core/types/user.types";
 import { IS_DEV } from "@web/common/constants/env.constants";
@@ -75,3 +76,9 @@ export const selectGoogleConnectionState = (
   state: UserMetadataState,
 ): GoogleConnectionState =>
   state.current?.google?.connectionState ?? "NOT_CONNECTED";
+
+/** Sync-backed primary connection summary, or null when absent / legacy. */
+export const selectGoogleSyncConnection = (
+  state: UserMetadataState,
+): GoogleSyncConnectionSummary | null =>
+  state.current?.google?.connection ?? null;

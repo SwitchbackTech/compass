@@ -7,6 +7,10 @@ import {
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { getGoogleSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import {
+  selectGoogleSyncConnection,
+  useUserMetadataStore,
+} from "@web/auth/state/user-metadata.store";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
   Tooltip,
@@ -89,9 +93,10 @@ const AnonymousAccountHeader: FC = () => {
 
 const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
   const { commandAction, isAvailable, state } = useConnectGoogle();
+  const syncConnection = useUserMetadataStore(selectGoogleSyncConnection);
   const hasPendingEventMutations = useHasPendingEventMutations();
   const isSyncing =
-    getGoogleSyncStatus(state)?.variant === "syncing" ||
+    getGoogleSyncStatus(state, syncConnection)?.variant === "syncing" ||
     hasPendingEventMutations;
   const showConnectGoogle =
     state === "NOT_CONNECTED" && isAvailable && commandAction != null;

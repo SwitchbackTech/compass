@@ -1,11 +1,12 @@
 import mergeWith from "lodash.mergewith";
 import {
   type GoogleConnectionState,
+  type GoogleSyncConnectionSummary,
   type UserMetadata,
 } from "@core/types/user.types";
 import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
 import { getConnectionDelegation } from "@backend/common/services/sync-service/connection-routing";
-import { resolveGoogleConnectionStateFromSync } from "@backend/common/services/sync-service/google-connection-status";
+import { resolveGoogleConnectionFromSync } from "@backend/common/services/sync-service/google-connection-status";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import { isGoogleSyncActive } from "@backend/sync/services/google-sync/google-sync.activity";
@@ -15,6 +16,7 @@ import { type GetUserMetadataResponse } from "@backend/user/types/user.types";
 
 type GoogleMetadataAssessment = {
   connectionState: GoogleConnectionState;
+  connection?: GoogleSyncConnectionSummary | null;
 };
 
 const legacyEmailUpdatesKey = "subscribeToUpdates";
@@ -61,11 +63,7 @@ class UserMetadataService {
     if (getConnectionDelegation() === "sync") {
       const client = getSyncServiceClient();
       if (client) {
-        const connectionState = await resolveGoogleConnectionStateFromSync(
-          client,
-          toSyncPrincipal(userId),
-        );
-        return { connectionState };
+        return resolveGoogleConnectionFromSync(client, toSyncPrincipal(userId));
       }
     }
 
@@ -168,15 +166,20 @@ class UserMetadataService {
       };
     }
 
-    const { connectionState } = await this.assessGoogleMetadata(
+    const { connectionState, connection } = await this.assessGoogleMetadata(
       userId,
       metadata,
     );
 
+    // Cast: SuperTokens JSONObject's index signature doesn't accept our nested
+    // google.connection summary type even though every field is JSON-safe.
     return {
       ...metadata,
-      google: { connectionState },
-    };
+      google: {
+        connectionState,
+        ...(connection !== undefined ? { connection } : {}),
+      },
+    } as UserMetadata;
   };
 }
 

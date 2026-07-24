@@ -37,6 +37,54 @@ describe("getGoogleSyncStatus", () => {
   it("returns error copy for RECONNECT_REQUIRED", () => {
     expect(getGoogleSyncStatus("RECONNECT_REQUIRED")?.variant).toBe("error");
   });
+
+  it("uses Sync catchingUp copy when a connection summary is present", () => {
+    expect(
+      getGoogleSyncStatus("IMPORTING", {
+        id: "c1",
+        state: "catchingUp",
+        stateReason: null,
+        lastSyncedAt: null,
+        lastHealthyAt: null,
+        accountEmail: "a@example.com",
+      }),
+    ).toEqual({
+      variant: "syncing",
+      text: "Catching up your calendar…",
+    });
+  });
+
+  it("uses Sync delayed copy when a connection summary is present", () => {
+    expect(
+      getGoogleSyncStatus("ATTENTION", {
+        id: "c1",
+        state: "delayed",
+        stateReason: "workOverdue",
+        lastSyncedAt: "2026-07-24T12:00:00.000Z",
+        lastHealthyAt: null,
+        accountEmail: null,
+      }),
+    ).toEqual({
+      variant: "warning",
+      text: "Calendar sync is delayed",
+    });
+  });
+
+  it("uses Sync healthy copy from the connection summary", () => {
+    expect(
+      getGoogleSyncStatus("HEALTHY", {
+        id: "c1",
+        state: "healthy",
+        stateReason: null,
+        lastSyncedAt: "2026-07-24T12:00:00.000Z",
+        lastHealthyAt: "2026-07-24T12:00:00.000Z",
+        accountEmail: "a@example.com",
+      }),
+    ).toEqual({
+      variant: "healthy",
+      text: "Calendar up-to-date",
+    });
+  });
 });
 
 describe("getGoogleConnectionConfig", () => {

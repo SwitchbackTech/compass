@@ -1,5 +1,8 @@
 import { type ConnectionListResponse } from "@core/types/sync/connection.contracts";
-import { resolveGoogleConnectionStateFromSync } from "./google-connection-status";
+import {
+  resolveGoogleConnectionFromSync,
+  resolveGoogleConnectionStateFromSync,
+} from "./google-connection-status";
 import {
   type SyncClientResult,
   type SyncPrincipal,
@@ -88,5 +91,59 @@ describe("resolveGoogleConnectionStateFromSync", () => {
         await resolveGoogleConnectionStateFromSync(client, principal),
       ).toBe("ATTENTION");
     }
+  });
+});
+
+describe("resolveGoogleConnectionFromSync", () => {
+  it("includes the primary connection summary for the browser", async () => {
+    const client = clientReturning({
+      ok: true,
+      value: {
+        connections: [
+          {
+            ...connection("healthy"),
+            id: "healthy-1",
+            account: {
+              providerAccountId: "a1",
+              email: "ok@example.com",
+              displayName: null,
+            },
+            lastSyncedAt: "2026-07-24T12:00:00.000Z",
+            lastHealthyAt: "2026-07-24T12:00:00.000Z",
+          },
+          {
+            ...connection("actionRequired", "authorizationRevoked"),
+            id: "broken-1",
+            account: {
+              providerAccountId: "a2",
+              email: "bad@example.com",
+              displayName: null,
+            },
+          },
+        ],
+      },
+      correlationId: "corr-1",
+    });
+
+    const resolved = await resolveGoogleConnectionFromSync(client, principal);
+    expect(resolved.connectionState).toBe("RECONNECT_REQUIRED");
+    expect(resolved.connection).toMatchObject({
+      id: "broken-1",
+      state: "actionRequired",
+      stateReason: "authorizationRevoked",
+      accountEmail: "bad@example.com",
+    });
+  });
+
+  it("returns a null summary when Sync is unavailable", async () => {
+    const client = clientReturning({
+      ok: false,
+      error: { kind: "unavailable", correlationId: "corr-1" },
+    });
+
+    expect(await resolveGoogleConnectionFromSync(client, principal)).toEqual({
+      connectionState: "ATTENTION",
+      connection: null,
+    });
   });
 });

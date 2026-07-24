@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { AuthApi } from "@web/api/auth.api";
 import { SyncApi } from "@web/api/sync.api";
 import { getApiErrorCode, isApiError } from "@web/api/util/api.util";
@@ -8,6 +9,10 @@ import {
   setRepairingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
 import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
+import {
+  selectGoogleSyncConnection,
+  useUserMetadataStore,
+} from "@web/auth/state/user-metadata.store";
 import {
   GOOGLE_CONNECT_FAILED_TOAST_ID,
   GOOGLE_REPAIR_FAILED_TOAST_ID,
@@ -26,6 +31,7 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
   const isAvailable = useIsGoogleAvailable();
   const isConnectDelegatedToSync = useIsConnectDelegatedToSync();
   const state = useGoogleUiState();
+  const syncConnection = useUserMetadataStore(selectGoogleSyncConnection);
   const { startGoogleAuthorization } = useStartGoogleAuthorization({
     intent: "connectCalendar",
     prompt: "consent",
@@ -49,9 +55,15 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
       // Sync-delegated connect: the sync service owns the OAuth round-trip, so
       // the browser just navigates to the consent URL it mints. No client-side
       // code exchange happens here; the connection is linked when Google calls
-      // back to the sync service.
+      // back to the sync service. Reconnect binds the flow to the primary
+      // connection id from metadata so the wrong account cannot spawn a second.
       try {
-        const { authorizationUrl } = await AuthApi.beginGoogleConnection();
+        const beginRequest =
+          state === "RECONNECT_REQUIRED" && syncConnection?.id
+            ? { connectionId: syncConnection.id as ConnectionId }
+            : {};
+        const { authorizationUrl } =
+          await AuthApi.beginGoogleConnection(beginRequest);
         window.location.assign(authorizationUrl);
       } catch {
         showErrorToast(
@@ -62,7 +74,12 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
     };
 
     void start();
-  }, [isConnectDelegatedToSync, startGoogleAuthorization]);
+  }, [
+    isConnectDelegatedToSync,
+    startGoogleAuthorization,
+    state,
+    syncConnection?.id,
+  ]);
 
   const onRepairGoogle = useCallback(() => {
     const startRepair = async () => {
