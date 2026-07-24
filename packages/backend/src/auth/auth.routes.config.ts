@@ -34,6 +34,16 @@ export class AuthRoutes extends CommonRoutesConfig {
         authController.connectGoogle(req, res);
       });
 
+    // Sync-delegated connect: returns the provider consent URL for the browser
+    // to navigate to. Only meaningful where connections are delegated to the
+    // sync service; the legacy code-exchange flow uses /connect above.
+    this.app
+      .route(`/api/auth/google/connect/begin`)
+      .all(requireSession)
+      .post((req, res) => {
+        authController.beginGoogleConnection(req, res);
+      });
+
     return this.app;
   }
 }

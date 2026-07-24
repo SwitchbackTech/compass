@@ -2,6 +2,7 @@ import { Status } from "@core/errors/status.codes";
 import { type ErrorMetadata } from "@backend/common/types/error.types";
 
 interface AuthErrors {
+  ConnectNotDelegated: ErrorMetadata;
   DevOnly: ErrorMetadata;
   GoogleAccountAlreadyConnected: ErrorMetadata;
   GoogleConnectEmailMismatch: ErrorMetadata;
@@ -11,9 +12,16 @@ interface AuthErrors {
   MissingRefreshToken: ErrorMetadata;
   NoUserId: ErrorMetadata;
   NoGAuthAccessToken: ErrorMetadata;
+  SyncConnectionUnavailable: ErrorMetadata;
 }
 
 export const AuthError: AuthErrors = {
+  ConnectNotDelegated: {
+    description:
+      "Provider connect is not delegated to the sync service on this deployment",
+    status: Status.CONFLICT,
+    isOperational: true,
+  },
   DevOnly: {
     description: "Only available during development",
     status: Status.FORBIDDEN,
@@ -61,6 +69,11 @@ export const AuthError: AuthErrors = {
   NoGAuthAccessToken: {
     description: "No gauth access token",
     status: Status.UNAUTHORIZED,
+    isOperational: true,
+  },
+  SyncConnectionUnavailable: {
+    description: "Could not reach the sync service to start a connection",
+    status: Status.SERVICE_UNAVAILABLE,
     isOperational: true,
   },
 };
