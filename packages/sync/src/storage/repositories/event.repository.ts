@@ -112,6 +112,23 @@ export class EventRepository {
     return record ? EventRecordSchema.parse(record) : null;
   }
 
+  // Batch-hydrate full event records by id, owner-scoped. The full-fidelity read
+  // uses this to join a page of occurrence rows back to their owning events (and
+  // then those events' series masters). Not generation-filtered: an event is
+  // unique per identity, and generation on `events` is only a last-touched
+  // watermark, never a read key. An empty id list short-circuits to no query.
+  async findByIds(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    ids: readonly EventId[],
+  ): Promise<EventRecord[]> {
+    if (ids.length === 0) return [];
+    const records = await this.collection
+      .find({ _id: { $in: [...ids] }, tenantId, principalId })
+      .toArray();
+    return records.map((record) => EventRecordSchema.parse(record));
+  }
+
   // Look up one provider-linked event by its provider identity, owner-scoped.
   // Import uses this to resolve a series instance's provider parent to the
   // locally stored master when the master arrived in an earlier page or run.
