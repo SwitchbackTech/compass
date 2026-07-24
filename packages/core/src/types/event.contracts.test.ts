@@ -148,8 +148,10 @@ describe("Event Contracts", () => {
       expect(EventRecurrenceSchema.safeParse(recurrence).success).toBe(false);
     });
 
-    it("rejects an occurrence with an invalid seriesId", () => {
-      const recurrence = { kind: "occurrence", seriesId: "not-an-id" };
+    it("rejects an occurrence with an empty seriesId", () => {
+      // EventId is an opaque non-empty string (S39 D1=II); emptiness is the
+      // only shape check left at this layer.
+      const recurrence = { kind: "occurrence", seriesId: "" };
 
       expect(EventRecurrenceSchema.safeParse(recurrence).success).toBe(false);
     });

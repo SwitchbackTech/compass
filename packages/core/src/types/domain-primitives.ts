@@ -6,7 +6,16 @@ import {
   zYearMonthDayString,
 } from "@core/types/type.utils";
 
-export const EventIdSchema = ObjectIdStringSchema.brand<"EventId">();
+// Opaque on purpose: under sync event delegation (S39 D1=II) a projected
+// series occurrence carries a composed id (`${eventId}::${recurrenceId}`),
+// not a Mongo ObjectId. The web treats Event.id as opaque (React key +
+// PUT/DELETE target); only the backend decode step cares about the shape.
+export const EventIdSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(256)
+  .brand<"EventId">();
 export type EventId = z.infer<typeof EventIdSchema>;
 
 export const CalendarIdSchema = ObjectIdStringSchema.brand<"CalendarId">();
