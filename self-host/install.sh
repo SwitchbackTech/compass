@@ -452,15 +452,20 @@ EOF
 
 download_compose_file() {
   tmp_compose=$COMPASS_HOME/compose.yaml.$$
+  tmp_selfhosted=$COMPASS_HOME/compose.selfhosted.yaml.$$
   info "Downloading compose.yaml for Compass ${COMPASS_VERSION}."
   curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compose.yaml" -o "$tmp_compose" \
     || fail "Could not download compose.yaml for version ${COMPASS_VERSION}. Check that the version exists."
+  curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compose.selfhosted.yaml" -o "$tmp_selfhosted" \
+    || fail "Could not download compose.selfhosted.yaml for version ${COMPASS_VERSION}. Check that the version exists."
 
   if [ -f "$COMPOSE_FILE" ]; then
     cp "$COMPOSE_FILE" "${COMPASS_HOME}/.compose.yaml.bak" || true
   fi
 
   mv "$tmp_compose" "$COMPOSE_FILE" || fail "Could not install compose.yaml."
+  mv "$tmp_selfhosted" "$COMPASS_HOME/compose.selfhosted.yaml" \
+    || fail "Could not install compose.selfhosted.yaml."
 }
 
 download_helper() {

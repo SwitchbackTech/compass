@@ -265,6 +265,12 @@ curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compose.yaml" -o "$C
   || { echo "ERROR: Could not download compose.yaml"; exit 1; }
 echo "  ✓ Downloaded compose.yaml"
 
+# Selfhosted overlay hard-waits for healthy mongo before starting backend.
+curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compose.selfhosted.yaml" \
+  -o "$COMPASS_HOME/compose.selfhosted.yaml" \
+  || { echo "ERROR: Could not download compose.selfhosted.yaml"; exit 1; }
+echo "  ✓ Downloaded compose.selfhosted.yaml"
+
 # Download the compass helper script - provides commands like "compass logs", "compass restart"
 curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compass" -o "$HELPER_FILE" \
   || { echo "ERROR: Could not download compass helper"; exit 1; }

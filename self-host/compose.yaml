@@ -24,17 +24,14 @@ services:
 
   backend:
     image: switchbacktech/compass-backend:${COMPASS_VERSION:-latest}
-    depends_on:
-      mongo:
-        condition: service_healthy
-        # `mongo` is gated behind the `selfhosted` profile. Atlas/cloud
-        # environments run without a mongo container (the backend reads
-        # mongo.uri from compass.yaml), so with the profile off there is no
-        # mongo service to depend on. `required: false` keeps the health-gated
-        # wait where mongo is present (selfhosted) while treating its absence as
-        # satisfied instead of an "undefined service mongo" invalid-project
-        # error (same reasoning the sync service documents below).
-        required: false
+    # No depends_on mongo here: mongo is gated behind the `selfhosted` profile,
+    # and cloud/Atlas deploys run without a local mongo service. A hard
+    # dependency in this base file makes those projects invalid ("depends on
+    # undefined service mongo"). `required: false` is not a substitute — Compose
+    # treats an unhealthy optional dependency as satisfied and starts backend
+    # before mongo is ready. The selfhosted wait lives in
+    # compose.selfhosted.yaml and is applied by the compass helper when the
+    # selfhosted profile is active.
     environment:
       COMPASS_CONFIG_FILE: /app/compass.yaml
       # Default to info so health-check requests stay out of the tail. Reveal

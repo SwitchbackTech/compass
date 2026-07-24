@@ -16,6 +16,7 @@ fi
 
 CONFIG_FILE=${COMPASS_CONFIG_FILE:-"$INSTALL_DIR/compass.yaml"}
 COMPOSE_FILE=$INSTALL_DIR/compose.yaml
+COMPOSE_SELFHOSTED_FILE=$INSTALL_DIR/compose.selfhosted.yaml
 ENV_LOADED=0
 PROJECT_NAME=$(basename "$INSTALL_DIR")
 APP_URL=http://localhost:9080
@@ -155,6 +156,20 @@ require_stack() {
 compose() {
   require_stack
   set_compose_env
+  # Cloud/Atlas (no selfhosted profile) uses only the base file. Selfhosted
+  # adds the overlay that hard-waits for healthy mongo before backend. Putting
+  # that dependency in the base file breaks profile-less cloud deploys, and
+  # `required: false` is not a substitute — Compose treats an unhealthy
+  # optional dependency as satisfied and starts backend early.
+  case ",${COMPOSE_PROFILES}," in
+    *,selfhosted,*)
+      if [ -f "$COMPOSE_SELFHOSTED_FILE" ]; then
+        docker compose --project-name "$PROJECT_NAME" \
+          -f "$COMPOSE_FILE" -f "$COMPOSE_SELFHOSTED_FILE" "$@"
+        return
+      fi
+      ;;
+  esac
   docker compose --project-name "$PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
 }
 

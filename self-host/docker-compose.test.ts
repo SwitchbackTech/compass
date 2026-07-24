@@ -133,36 +133,37 @@ describe("self-host docker compose", () => {
     expect(compose).toContain("compass_sync_logs:");
   });
 
-  it("waits for mongo before starting backend when the selfhosted profile is active", () => {
-    const compose = readFileSync(join(import.meta.dir, "compose.yaml"), {
-      encoding: "utf8",
-    });
-
-    expect(compose).toContain("depends_on:");
-    expect(compose).toContain("condition: service_healthy");
-    expect(compose).toContain("stop_grace_period: 30s");
-    expect(compose).toContain("start_period: 90s");
-  });
-
-  it("keeps the backend mongo dependency optional so cloud/Atlas deploys stay a valid project", () => {
+  it("omits the backend mongo dependency from the base compose file", () => {
     const compose = readFileSync(join(import.meta.dir, "compose.yaml"), {
       encoding: "utf8",
     });
 
     // mongo is gated behind the `selfhosted` profile, so a profile-less
-    // cloud/Atlas deploy has no mongo container. Without `required: false` the
-    // backend's dependency on the (absent) mongo service makes the compose
-    // project invalid ("depends on undefined service mongo"), which breaks the
-    // staging-cloud/production deploy.
+    // cloud/Atlas deploy has no mongo container. A hard depends_on in the base
+    // file makes that project invalid ("depends on undefined service mongo").
+    // `required: false` is the wrong fix: Compose treats an unhealthy optional
+    // dependency as satisfied and starts backend before mongo is ready.
     // Match the top-level service definition ("\n  backend:\n", exactly two
     // spaces of indent), not the x-local-bindings anchor ("  backend:
     // &backend-port ...") nor the web service's nested "depends_on: backend:".
     const backendBlock = compose
       .slice(compose.indexOf("\n  backend:\n") + 1)
       .split(/\n {2}\w/)[0];
-    expect(backendBlock).toContain("mongo:");
-    expect(backendBlock).toContain("condition: service_healthy");
-    expect(backendBlock).toMatch(/^\s+required: false\s*$/m);
+    expect(backendBlock).not.toContain("mongo:");
+    expect(backendBlock).toContain("start_period: 90s");
+    expect(compose).toContain("stop_grace_period: 30s");
+  });
+
+  it("waits for mongo before starting backend via the selfhosted overlay", () => {
+    const overlay = readFileSync(
+      join(import.meta.dir, "compose.selfhosted.yaml"),
+      { encoding: "utf8" },
+    );
+
+    expect(overlay).toContain("depends_on:");
+    expect(overlay).toContain("mongo:");
+    expect(overlay).toContain("condition: service_healthy");
+    expect(overlay).not.toContain("required: false");
   });
 });
 
@@ -186,6 +187,14 @@ describe("self-host installer", () => {
       "I found existing Compass Docker data, but $CONFIG_FILE is missing.",
     );
   });
+
+  it("downloads the selfhosted mongo overlay with the base compose file", () => {
+    const installer = readRepoFile("self-host/install.sh");
+    const manual = readRepoFile("self-host/install-manual.sh");
+
+    expect(installer).toContain("self-host/compose.selfhosted.yaml");
+    expect(manual).toContain("self-host/compose.selfhosted.yaml");
+  });
 });
 
 describe("self-host helper", () => {
@@ -208,6 +217,13 @@ describe("self-host helper", () => {
     const helper = readRepoFile("self-host/compass");
 
     expect(helper).toContain("compose up -d --remove-orphans --wait");
+  });
+
+  it("applies the selfhosted mongo overlay when the selfhosted profile is active", () => {
+    const helper = readRepoFile("self-host/compass");
+
+    expect(helper).toContain("compose.selfhosted.yaml");
+    expect(helper).toContain("*,selfhosted,*)");
   });
 });
 
@@ -233,6 +249,14 @@ describe("staging deploy workflow", () => {
 
     expect(workflow).not.toContain(
       "docker compose --project-name compass -f compose.yaml down",
+    );
+  });
+
+  it("deploys the selfhosted mongo overlay alongside the base compose file", () => {
+    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
+
+    expect(workflow).toContain(
+      "self-host/compose.selfhosted.yaml -o ~/compass/compose.selfhosted.yaml",
     );
   });
 
