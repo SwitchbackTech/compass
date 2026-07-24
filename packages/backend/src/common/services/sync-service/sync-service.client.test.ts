@@ -11,6 +11,7 @@ import { COMMANDS_PATH } from "@sync/server/command.routes";
 import {
   AVAILABILITY_BUSY_PATH,
   BEGIN_PATH,
+  CALENDARS_PATH,
   CONNECTIONS_PATH,
   EVENTS_FULL_PATH,
   EVENTS_PATH,
@@ -144,6 +145,46 @@ describe("SyncServiceClient", () => {
     if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
     expect(verdict.context.tenantId).toBe(who.tenantId);
     expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("lists calendars with a signed GET the real Sync verifier accepts", async () => {
+    const who = principal();
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({ calendars: [] }),
+    }));
+
+    const result = await client(fn).listCalendars(who);
+
+    if (!result.ok) throw new Error(`expected ok, got ${result.error.kind}`);
+    expect(result.value.calendars).toEqual([]);
+
+    const sent = calls[0];
+    expect(sent?.url).toBe(`${BASE_URL}${CALENDARS_PATH}`);
+    expect(sent?.method).toBe("GET");
+    expect(sent?.body).toBeUndefined();
+
+    const verdict = verifyInternalRequest({
+      secret: SECRET,
+      headers: sent?.headers ?? {},
+      now: NOW,
+    });
+    if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
+    expect(verdict.context.tenantId).toBe(who.tenantId);
+    expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("rejects a calendars body that does not match the contract", async () => {
+    const { fn } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({ calendars: [{ bogus: true }] }),
+    }));
+
+    const result = await client(fn).listCalendars(principal());
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.kind).toBe("invalidResponse");
   });
 
   it("rejects a connections body that does not match the contract", async () => {

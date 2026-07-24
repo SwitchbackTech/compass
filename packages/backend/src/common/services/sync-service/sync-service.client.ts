@@ -10,6 +10,8 @@ import {
   CommandSubmitResponseSchema,
 } from "@core/types/sync/command.contracts";
 import {
+  type CalendarListResponse,
+  CalendarListResponseSchema,
   type ConnectionBeginRequest,
   type ConnectionBeginResponse,
   ConnectionBeginResponseSchema,
@@ -29,6 +31,7 @@ import { createHmac, randomUUID } from "node:crypto";
 // The internal endpoints this client calls. Kept in sync with the Sync service's
 // route paths; a contract test asserts they match.
 const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
+const CALENDARS_PATH = "/internal/calendars";
 const CONNECTIONS_PATH = "/internal/connections";
 const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
 const EVENTS_PATH = "/internal/events";
@@ -141,6 +144,22 @@ export class SyncServiceClient {
       path: CONNECTIONS_PATH,
       principal,
       schema: ConnectionListResponseSchema,
+      correlationId,
+    });
+  }
+
+  // The caller's provider calendars, scoped to the signed principal. A read;
+  // served in passive mode too. Backs the browser calendar list under sync
+  // delegation.
+  listCalendars(
+    principal: SyncPrincipal,
+    correlationId?: string,
+  ): Promise<SyncClientResult<CalendarListResponse>> {
+    return this.#request({
+      method: "GET",
+      path: CALENDARS_PATH,
+      principal,
+      schema: CalendarListResponseSchema,
       correlationId,
     });
   }
