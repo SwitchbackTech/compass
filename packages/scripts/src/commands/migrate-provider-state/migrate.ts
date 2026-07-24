@@ -508,6 +508,24 @@ export async function migrateProviderSyncState(
         },
       );
 
+      let content: ReturnType<typeof toSyncContent>;
+      let schedule: ReturnType<typeof toSyncSchedule>;
+      try {
+        content = toSyncContent(event.content);
+        schedule = toSyncSchedule(event.schedule);
+      } catch (error) {
+        counts.eventsSkipped += 1;
+        skips.push({
+          category: "unmappable_event",
+          id: event._id.toHexString(),
+          detail:
+            error instanceof Error
+              ? error.message
+              : "failed to map event content/schedule",
+        });
+        continue;
+      }
+
       if (options.dryRun) {
         if (existing) counts.eventsWouldUpdate += 1;
         else counts.eventsWouldCreate += 1;
@@ -526,24 +544,6 @@ export async function migrateProviderSyncState(
                 } as SyncEventRecord),
           );
         }
-        continue;
-      }
-
-      let content: ReturnType<typeof toSyncContent>;
-      let schedule: ReturnType<typeof toSyncSchedule>;
-      try {
-        content = toSyncContent(event.content);
-        schedule = toSyncSchedule(event.schedule);
-      } catch (error) {
-        counts.eventsSkipped += 1;
-        skips.push({
-          category: "unmappable_event",
-          id: event._id.toHexString(),
-          detail:
-            error instanceof Error
-              ? error.message
-              : "failed to map event content/schedule",
-        });
         continue;
       }
 
