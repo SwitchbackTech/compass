@@ -247,6 +247,7 @@ export async function runPreseedSyncComposition(
     if (name === "state") {
       const source = await ensureCollections();
       const progressStarted = Date.now();
+      let lastProgressAt = progressStarted;
       let lastEvents = 0;
       const report = await migrateProviderSyncState(
         {
@@ -264,16 +265,22 @@ export async function runPreseedSyncComposition(
           reproject: options.reproject ?? "after",
           concurrency: options.concurrency ?? 4,
           onProgress: async (progress) => {
-            const elapsedMin = Math.max(
-              (Date.now() - progressStarted) / 60_000,
+            const now = Date.now();
+            const totalElapsedMin = Math.max(
+              (now - progressStarted) / 60_000,
+              1 / 60,
+            );
+            const intervalElapsedMin = Math.max(
+              (now - lastProgressAt) / 60_000,
               1 / 60,
             );
             const rate =
               progress.eventsUpserted > lastEvents
                 ? (progress.eventsUpserted - lastEvents) /
-                  Math.max(elapsedMin, 0.01)
-                : progress.eventsUpserted / elapsedMin;
+                  Math.max(intervalElapsedMin, 0.01)
+                : progress.eventsUpserted / totalElapsedMin;
             lastEvents = progress.eventsUpserted;
+            lastProgressAt = now;
             logger.info(
               `preseed state ${progress.phase} users=${progress.usersDone}/${progress.usersTotal} eventsUpserted=${progress.eventsUpserted} skipped=${progress.eventsSkipped} lastUser=${progress.lastUserId ?? "-"} ${progress.detail ?? ""}`,
             );
