@@ -1,8 +1,37 @@
 import {
+  formatLastSyncedLabel,
   getGoogleConnectionConfig,
   getGoogleSyncStatus,
 } from "./useConnectGoogle.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+
+describe("formatLastSyncedLabel", () => {
+  const nowMs = Date.parse("2026-07-24T12:00:00.000Z");
+
+  it("returns null when lastSyncedAt is missing or invalid", () => {
+    expect(formatLastSyncedLabel(null, nowMs)).toBeNull();
+    expect(formatLastSyncedLabel(undefined, nowMs)).toBeNull();
+    expect(formatLastSyncedLabel("not-a-date", nowMs)).toBeNull();
+  });
+
+  it("formats recent relative ages", () => {
+    expect(formatLastSyncedLabel("2026-07-24T11:59:30.000Z", nowMs)).toBe(
+      "Last synced just now",
+    );
+    expect(formatLastSyncedLabel("2026-07-24T11:59:00.000Z", nowMs)).toBe(
+      "Last synced 1 minute ago",
+    );
+    expect(formatLastSyncedLabel("2026-07-24T11:45:00.000Z", nowMs)).toBe(
+      "Last synced 15 minutes ago",
+    );
+    expect(formatLastSyncedLabel("2026-07-24T10:00:00.000Z", nowMs)).toBe(
+      "Last synced 2 hours ago",
+    );
+    expect(formatLastSyncedLabel("2026-07-22T12:00:00.000Z", nowMs)).toBe(
+      "Last synced 2 days ago",
+    );
+  });
+});
 
 describe("getGoogleSyncStatus", () => {
   it("returns no sync status when Google is not connected", () => {

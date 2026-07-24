@@ -6,7 +6,10 @@ import {
 } from "@web/auth/compass/state/auth.state.util";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { getGoogleSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import {
+  formatLastSyncedLabel,
+  getGoogleSyncStatus,
+} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import {
   selectGoogleSyncConnection,
   useUserMetadataStore,
@@ -100,6 +103,7 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
     getGoogleSyncStatus(state, syncConnection)?.variant === "syncing" ||
     hasPendingEventMutations;
   const showGoogleAction = isAvailable && commandAction != null;
+  const lastSyncedLabel = formatLastSyncedLabel(syncConnection?.lastSyncedAt);
 
   return (
     <>
@@ -114,6 +118,9 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
           {email}
         </span>
       </h2>
+      {lastSyncedLabel ? (
+        <p className="mb-2 text-text-muted text-xs">{lastSyncedLabel}</p>
+      ) : null}
       {showGoogleAction ? (
         <button
           className={CONNECT_GOOGLE_BUTTON_CLASSNAME}

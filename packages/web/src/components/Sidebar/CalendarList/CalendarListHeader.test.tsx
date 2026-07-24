@@ -4,6 +4,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenModal = mock();
@@ -109,6 +110,7 @@ describe("CalendarListHeader", () => {
     mockOpenModal.mockClear();
     mockUseConnectGoogle.mockClear();
     mockConnectGoogle.mockClear();
+    userMetadataActions.clear();
   });
 
   it("shows a default-colored not-saved-yet heading with a sign-up tooltip before any changes are made", async () => {
@@ -181,9 +183,35 @@ describe("CalendarListHeader", () => {
     expect(email).toHaveClass("text-text");
     expect(email).not.toHaveClass("c-sync-text-wave");
     expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.queryByText(/Last synced/)).toBeNull();
 
     await user.hover(email);
     expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
+  it("shows last-synced timing when Sync connection metadata includes lastSyncedAt", () => {
+    mockEmail = "ahab@pequod.com";
+    mockGoogleState = "HEALTHY";
+    userMetadataActions.set({
+      google: {
+        connectionState: "HEALTHY",
+        connection: {
+          id: "conn-1",
+          state: "healthy",
+          stateReason: null,
+          lastSyncedAt: new Date().toISOString(),
+          lastHealthyAt: new Date().toISOString(),
+          accountEmail: "compasscaltest3@gmail.com",
+        },
+      },
+    });
+
+    renderHeader();
+
+    expect(screen.getByText("Last synced just now")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Google Calendar/ }),
+    ).toBeNull();
   });
 
   it.each([
