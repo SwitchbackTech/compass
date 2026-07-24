@@ -38,8 +38,16 @@ export function usePrefetchAdjacentEvents<
   // re-prefetch) every render instead of only when the actual range changes.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see comment above.
   useEffect(() => {
-    void queryClient.prefetchQuery(queryOptionsFn({ source, ...previous }));
-    void queryClient.prefetchQuery(queryOptionsFn({ source, ...next }));
+    // prefetchQuery rejects when the fetch fails. Adjacent-range warming is
+    // best-effort — the user isn't looking at these ranges yet — so swallow
+    // rejections. Leaving them unhandled was surfacing every transient 5xx /
+    // network blip as a PostHog unhandledrejection (capture_unhandled_rejections).
+    void queryClient
+      .prefetchQuery(queryOptionsFn({ source, ...previous }))
+      .catch(() => undefined);
+    void queryClient
+      .prefetchQuery(queryOptionsFn({ source, ...next }))
+      .catch(() => undefined);
   }, [
     queryClient,
     queryOptionsFn,

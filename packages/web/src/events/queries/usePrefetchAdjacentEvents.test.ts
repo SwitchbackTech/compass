@@ -108,4 +108,48 @@ describe("usePrefetchAdjacentEvents", () => {
     await Promise.resolve();
     expect(fetchWeekEvents.mock.calls.length).toBe(2);
   });
+
+  it("swallows prefetch rejections so they do not become unhandledrejection", async () => {
+    const queryClient = createCompassQueryClient();
+    const unhandled: PromiseRejectionEvent[] = [];
+    const onUnhandled = (event: PromiseRejectionEvent) => {
+      unhandled.push(event);
+    };
+    window.addEventListener("unhandledrejection", onUnhandled);
+
+    fetchWeekEvents.mockImplementation(async () => {
+      throw Object.assign(new Error("Request failed with status 502"), {
+        name: "ApiError",
+      });
+    });
+
+    try {
+      renderHook(
+        () => usePrefetchAdjacentEvents(weekEventsQueryOptions, previous, next),
+        { queryClient },
+      );
+
+      await waitFor(() => {
+        expect(fetchWeekEvents.mock.calls.length).toBe(2);
+      });
+      // Let any rejected prefetch promises settle past the microtask queue.
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(unhandled).toEqual([]);
+    } finally {
+      window.removeEventListener("unhandledrejection", onUnhandled);
+      fetchWeekEvents.mockImplementation(async () => ({
+        ids: ["week-neighbor"],
+        entities: {
+          "week-neighbor": {
+            _id: "week-neighbor",
+            title: "Neighbor week event",
+            startDate: "2025-11-03T09:00:00",
+            endDate: "2025-11-03T10:00:00",
+          },
+        },
+      }));
+    }
+  });
 });
