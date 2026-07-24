@@ -1,10 +1,10 @@
-import { describe, expect, it } from "bun:test";
+import { type ConnectionListResponse } from "@core/types/sync/connection.contracts";
+import { resolveGoogleConnectionStateFromSync } from "./google-connection-status";
 import {
   type SyncClientResult,
   type SyncPrincipal,
 } from "./sync-service.client";
-import { resolveGoogleConnectionStateFromSync } from "./google-connection-status";
-import { type ConnectionListResponse } from "@core/types/sync/connection.contracts";
+import { describe, expect, it } from "bun:test";
 
 const principal: SyncPrincipal = {
   tenantId: "64b7f9c2e1a2b3c4d5e6f7a8",
@@ -12,9 +12,7 @@ const principal: SyncPrincipal = {
 };
 
 // A minimal client stub whose listConnections returns a scripted result.
-const clientReturning = (
-  result: SyncClientResult<ConnectionListResponse>,
-) => ({
+const clientReturning = (result: SyncClientResult<ConnectionListResponse>) => ({
   listConnections: async () => result,
 });
 
@@ -86,9 +84,9 @@ describe("resolveGoogleConnectionStateFromSync", () => {
         error: { kind, correlationId: "corr-1" },
       });
 
-      expect(await resolveGoogleConnectionStateFromSync(client, principal)).toBe(
-        "ATTENTION",
-      );
+      expect(
+        await resolveGoogleConnectionStateFromSync(client, principal),
+      ).toBe("ATTENTION");
     }
   });
 });
