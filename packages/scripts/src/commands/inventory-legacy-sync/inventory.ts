@@ -257,12 +257,15 @@ export function inventoryLegacySyncData(
     });
   }
 
+  const seenOrphanCursorIds = new Set<string>();
   for (const doc of syncDocs) {
     const eventRows = doc.google?.events ?? [];
     for (const row of eventRows) {
       const known = googleCalByUser.get(doc.user);
       if (known?.has(row.gCalendarId)) continue;
       const id = `${doc.user}:${row.gCalendarId}`;
+      if (seenOrphanCursorIds.has(id)) continue;
+      seenOrphanCursorIds.add(id);
       orphans.push({
         kind: "cursor_calendar",
         id,
