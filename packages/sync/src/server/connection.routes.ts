@@ -57,6 +57,7 @@ import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
@@ -130,6 +131,7 @@ export function registerConnectionRoutes(
           calendars: new ProviderCalendarRepository(deps.mongo.db),
           resources: new SyncResourceRepository(deps.mongo.db),
           credentials: new CredentialRepository(deps.mongo.db),
+          invalidations: new InvalidationRepository(deps.mongo.db),
         };
         const records = await connections.listByPrincipal(
           auth.tenantId,

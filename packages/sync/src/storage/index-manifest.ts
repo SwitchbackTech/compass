@@ -183,6 +183,19 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       options: { expireAfterSeconds: 0 },
     },
   ],
+  [SYNC_COLLECTIONS.invalidations]: [
+    // Keyset resume for GET /internal/changes: filter by owner, page by _id.
+    {
+      name: "principal_id",
+      key: { tenantId: 1, principalId: 1, _id: 1 },
+    },
+    // TTL: content-free invalidations expire after the retention window.
+    {
+      name: "ttl_expiry",
+      key: { expiresAt: 1 },
+      options: { expireAfterSeconds: 0 },
+    },
+  ],
 };
 
 // Creates every collection and its indexes idempotently. Safe to run on every

@@ -13,6 +13,8 @@ export const SYNC_COLLECTIONS = {
   commands: "commands",
   jobs: "jobs",
   deletionMarkers: "deletion_markers",
+  // Append-only, content-free invalidation outbox for GET /internal/changes.
+  invalidations: "invalidations",
 } as const;
 
 export type SyncCollectionName =

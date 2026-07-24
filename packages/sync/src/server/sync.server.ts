@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import { type ReadinessRegistry } from "@sync/lifecycle/readiness";
+import { registerChangeFeedRoutes } from "@sync/server/change-feed.routes";
 import { registerCommandRoutes } from "@sync/server/command.routes";
 import {
   type ConnectionApiDeps,
@@ -37,6 +38,11 @@ export function buildSyncApp(deps: {
       writer: deps.connectionApi.writer,
       authAdapter: deps.connectionApi.authAdapter,
       now: deps.connectionApi.now,
+    });
+    // Resumable invalidation outbox for Compass API → browser SSE (S40).
+    registerChangeFeedRoutes(app, {
+      authMiddleware: deps.connectionApi.authMiddleware,
+      mongo: deps.connectionApi.mongo,
     });
     // The public webhook ingress shares the connection API's storage; it needs
     // no auth adapter or secrets, only the db and execution mode.

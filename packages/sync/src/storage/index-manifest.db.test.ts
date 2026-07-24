@@ -76,6 +76,15 @@ describe("installIndexManifest", () => {
     expect(ttl?.expireAfterSeconds).toBe(0);
   });
 
+  it("installs principal keyset and TTL indexes on invalidations", async () => {
+    const indexes = await db
+      .collection(SYNC_COLLECTIONS.invalidations)
+      .indexes();
+    expect(indexes.some((i) => i.name === "principal_id")).toBe(true);
+    const ttl = indexes.find((i) => i.name === "ttl_expiry");
+    expect(ttl?.expireAfterSeconds).toBe(0);
+  });
+
   it("enforces the unique command idempotency key", async () => {
     const commands = db.collection(SYNC_COLLECTIONS.commands);
     const key = {
