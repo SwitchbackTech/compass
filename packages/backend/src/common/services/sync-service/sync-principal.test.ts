@@ -1,5 +1,5 @@
-import { describe, expect, it } from "bun:test";
 import { toSyncPrincipal } from "./sync-principal";
+import { describe, expect, it } from "bun:test";
 
 describe("toSyncPrincipal", () => {
   it("maps a Compass user id to a personal tenant + principal (both the user id)", () => {
