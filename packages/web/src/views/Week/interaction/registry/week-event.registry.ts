@@ -1,14 +1,10 @@
-import {
-  type ForwardedRef,
-  type MutableRefObject,
-  useCallback,
-  useRef,
-} from "react";
+import { type ForwardedRef } from "react";
 import {
   createEventRegistry,
   type EventRegistry,
   type RegisteredEventTarget,
 } from "@web/grid/interaction/event.registry";
+import { useEventRegistrationRef } from "@web/grid/interaction/use-event-registration-ref";
 
 export const WEEK_INTERACTION_EVENT_ID_ATTRIBUTE =
   "data-week-interaction-event-id";
@@ -65,41 +61,11 @@ export const useWeekEventRegistrationRef = ({
   forwardedRef?: ForwardedRef<HTMLDivElement>;
   isEnabled: boolean;
   registry?: WeekEventRegistry;
-}) => {
-  const unregisterRef = useRef<(() => void) | null>(null);
-
-  return useCallback(
-    (node: HTMLDivElement | null) => {
-      unregisterRef.current?.();
-      unregisterRef.current = null;
-      assignRef(forwardedRef, node);
-
-      if (!node || !eventId || !isEnabled) {
-        return;
-      }
-
-      unregisterRef.current = registry.register({
-        element: node,
-        eventId,
-        eventType,
-      });
-    },
-    [eventId, eventType, forwardedRef, isEnabled, registry],
-  );
-};
-
-const assignRef = (
-  ref: ForwardedRef<HTMLDivElement> | undefined,
-  node: HTMLDivElement | null,
-) => {
-  if (!ref) {
-    return;
-  }
-
-  if (typeof ref === "function") {
-    ref(node);
-    return;
-  }
-
-  (ref as MutableRefObject<HTMLDivElement | null>).current = node;
-};
+}) =>
+  useEventRegistrationRef({
+    eventId,
+    eventType,
+    forwardedRef,
+    isEnabled,
+    registry,
+  });

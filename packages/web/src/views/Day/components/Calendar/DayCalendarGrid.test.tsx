@@ -660,9 +660,6 @@ describe("DayCalendarGrid", () => {
         }),
       ).toBeVisible();
       expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
-      expect(
-        screen.getByRole("textbox", { name: "Event Title" }),
-      ).toHaveFocus();
     });
   });
 

@@ -1,8 +1,10 @@
+import { type ForwardedRef } from "react";
 import {
   createEventRegistry,
   type EventRegistry,
   type RegisteredEventTarget,
 } from "@web/grid/interaction/event.registry";
+import { useEventRegistrationRef } from "@web/grid/interaction/use-event-registration-ref";
 
 export const DAY_INTERACTION_EVENT_ID_ATTRIBUTE =
   "data-day-interaction-event-id";
@@ -45,3 +47,24 @@ export const createDayEventRegistry = (): DayEventRegistry =>
   });
 
 export const dayEventRegistry = createDayEventRegistry();
+
+export const useDayEventRegistrationRef = ({
+  eventId,
+  eventType,
+  forwardedRef,
+  isEnabled,
+  registry = dayEventRegistry,
+}: {
+  eventId: string | undefined;
+  eventType: DayInteractionEventType;
+  forwardedRef?: ForwardedRef<HTMLDivElement>;
+  isEnabled: boolean;
+  registry?: DayEventRegistry;
+}) =>
+  useEventRegistrationRef({
+    eventId,
+    eventType,
+    forwardedRef,
+    isEnabled,
+    registry,
+  });
