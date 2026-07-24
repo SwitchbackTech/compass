@@ -37,7 +37,8 @@ const CONNECT_GOOGLE_BUTTON_CLASSNAME =
  * The calendar list's heading is the account identity (email, or the
  * not-saved-yet label when anonymous) rather than a generic "Calendars"
  * title, and carries the syncing wave shimmer plus the sign-up-to-save CTA
- * for anonymous users. Google connect is surfaced inline when not linked.
+ * for anonymous users. Google connect / reconnect / repair actions mirror
+ * the command palette when Sync (or legacy) exposes a commandAction.
  */
 export const CalendarListHeader: FC = () => {
   const { email } = useUser();
@@ -98,8 +99,7 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
   const isSyncing =
     getGoogleSyncStatus(state, syncConnection)?.variant === "syncing" ||
     hasPendingEventMutations;
-  const showConnectGoogle =
-    state === "NOT_CONNECTED" && isAvailable && commandAction != null;
+  const showGoogleAction = isAvailable && commandAction != null;
 
   return (
     <>
@@ -114,13 +114,13 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
           {email}
         </span>
       </h2>
-      {showConnectGoogle ? (
+      {showGoogleAction ? (
         <button
           className={CONNECT_GOOGLE_BUTTON_CLASSNAME}
           onClick={commandAction.onSelect}
           type="button"
         >
-          Connect Google Calendar
+          {commandAction.label}
         </button>
       ) : null}
       {isSyncing ? (

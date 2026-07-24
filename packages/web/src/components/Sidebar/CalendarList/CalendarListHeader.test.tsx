@@ -11,13 +11,25 @@ let mockEmail: string | undefined;
 let mockGoogleState: GoogleUiState = "NOT_CONNECTED";
 let mockIsAnonymousDirty = false;
 const mockConnectGoogle = mock();
+const googleCommandActionFor = (state: GoogleUiState) => {
+  switch (state) {
+    case "NOT_CONNECTED":
+      return { label: "Connect Google Calendar", onSelect: mockConnectGoogle };
+    case "RECONNECT_REQUIRED":
+      return {
+        label: "Reconnect Google Calendar",
+        onSelect: mockConnectGoogle,
+      };
+    case "ATTENTION":
+      return { label: "Sync Google Calendar", onSelect: mockConnectGoogle };
+    default:
+      return null;
+  }
+};
 const mockUseConnectGoogle = mock(() => ({
   state: mockGoogleState,
   isAvailable: true,
-  commandAction:
-    mockGoogleState === "NOT_CONNECTED"
-      ? { label: "Connect Google Calendar", onSelect: mockConnectGoogle }
-      : null,
+  commandAction: googleCommandActionFor(mockGoogleState),
 }));
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
@@ -193,7 +205,7 @@ describe("CalendarListHeader", () => {
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
-  it("shows no warning color or tooltip/action when out of date, and clicking does nothing", async () => {
+  it("shows a sync Google button when the calendar is out of date", async () => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "ATTENTION";
@@ -206,14 +218,14 @@ describe("CalendarListHeader", () => {
     expect(email).not.toHaveClass("text-warning");
     expect(screen.queryByRole("status")).toBeNull();
 
-    await user.hover(email);
-    expect(screen.queryByRole("tooltip")).toBeNull();
-
-    await user.click(email);
-    expect(screen.queryByRole("button")).toBeNull();
+    const syncButton = screen.getByRole("button", {
+      name: "Sync Google Calendar",
+    });
+    await user.click(syncButton);
+    expect(mockConnectGoogle).toHaveBeenCalledTimes(1);
   });
 
-  it("shows no error color or tooltip/action when reconnect is required", async () => {
+  it("shows a reconnect Google button when reconnect is required", async () => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "RECONNECT_REQUIRED";
@@ -225,8 +237,11 @@ describe("CalendarListHeader", () => {
     expect(email).not.toHaveClass("text-error");
     expect(screen.queryByRole("status")).toBeNull();
 
-    await user.hover(email);
-    expect(screen.queryByRole("tooltip")).toBeNull();
+    const reconnectButton = screen.getByRole("button", {
+      name: "Reconnect Google Calendar",
+    });
+    await user.click(reconnectButton);
+    expect(mockConnectGoogle).toHaveBeenCalledTimes(1);
   });
 
   it("shows the shimmer and syncing status while an event mutation is pending", () => {
