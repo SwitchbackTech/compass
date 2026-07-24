@@ -16,6 +16,18 @@ const createHook = () => {
   return useIsGoogleAvailable;
 };
 
+const createDelegationHook = () => {
+  const { resetGoogleAvailabilityForTests, useIsConnectDelegatedToSync } =
+    createGoogleAvailability({
+      getConfig,
+      isGoogleAuthConfigured: true,
+    });
+
+  resetGoogleAvailabilityForTests();
+
+  return useIsConnectDelegatedToSync;
+};
+
 describe("useIsGoogleAvailable", () => {
   it("uses the backend config response before exposing Google UI", async () => {
     getConfig.mockClear();
@@ -61,5 +73,44 @@ describe("useIsGoogleAvailable", () => {
       expect(secondRender.result.current).toBe(true);
     });
     expect(getConfig).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("useIsConnectDelegatedToSync", () => {
+  it("reflects the backend connect-delegation flag from config", async () => {
+    getConfig.mockClear();
+    getConfig.mockResolvedValue({
+      google: {
+        isConfigured: true,
+        connectDelegatedToSync: true,
+      },
+    });
+    const useIsConnectDelegatedToSync = createDelegationHook();
+
+    const { result } = renderHook(() => useIsConnectDelegatedToSync());
+
+    // Defaults to legacy (false) until the config load resolves.
+    expect(result.current).toBe(false);
+
+    await waitFor(() => {
+      expect(result.current).toBe(true);
+    });
+  });
+
+  it("stays on legacy when the flag is absent from an older backend", async () => {
+    getConfig.mockClear();
+    getConfig.mockResolvedValue({
+      google: {
+        isConfigured: true,
+      },
+    });
+    const useIsConnectDelegatedToSync = createDelegationHook();
+
+    const { result } = renderHook(() => useIsConnectDelegatedToSync());
+
+    await waitFor(() => {
+      expect(getConfig).toHaveBeenCalledTimes(1);
+    });
+    expect(result.current).toBe(false);
   });
 });
