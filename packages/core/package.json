@@ -10,7 +10,7 @@
     "@opentelemetry/api-logs": "^0.220.0",
     "bson": "^7.2.0",
     "dayjs": "^1.11.19",
-    "google-auth-library": "^9.15.1",
+    "google-auth-library": "^10.5.0",
     "lodash.mergewith": "^4.6.2",
     "logform": "^2.7.0",
     "rrule": "^2.7.2",
