@@ -4,6 +4,7 @@ export const MigrateConnectionSkipCategorySchema = z.enum([
   "no_google_identity",
   "missing_refresh_token",
   "empty_google_id",
+  "disconnected_in_sync",
 ]);
 export type MigrateConnectionSkipCategory = z.infer<
   typeof MigrateConnectionSkipCategorySchema

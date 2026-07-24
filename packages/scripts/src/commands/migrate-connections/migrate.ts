@@ -125,6 +125,23 @@ export async function migrateProviderConnections(
     );
     const existed = existing !== undefined;
 
+    if (existing !== undefined && existing.disconnectedAt != null) {
+      results.push({
+        userId,
+        tenantId,
+        principalId,
+        providerAccountId,
+        accountEmail,
+        action: "skipped",
+        connectionId: existing._id,
+        credentialVerified: false,
+        skipCategory: "disconnected_in_sync",
+        detail:
+          "Sync connection is disconnected; not reviving from legacy token",
+      });
+      continue;
+    }
+
     if (options.dryRun) {
       results.push({
         userId,
