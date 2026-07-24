@@ -132,7 +132,7 @@ describe("executeProviderCreate", () => {
           canInviteAttendees: true,
         },
       });
-    const command = await commands.submit({
+    const { record: command } = await commands.submit({
       tenantId,
       principalId,
       idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
@@ -434,7 +434,7 @@ describe("executeProviderUpdate", () => {
     } as never);
     const event = await events.findById(tenantId, principalId, eventId);
     if (!event) throw new Error("seed failed to read back the event");
-    const command = await commands.submit({
+    const { record: command } = await commands.submit({
       tenantId,
       principalId,
       idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
@@ -730,7 +730,7 @@ describe("executeProviderDelete", () => {
     } as never);
     const event = await events.findById(tenantId, principalId, eventId);
     if (!event) throw new Error("seed failed to read back the event");
-    const command = await commands.submit({
+    const { record: command } = await commands.submit({
       tenantId,
       principalId,
       idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
@@ -1000,22 +1000,24 @@ describe("executeProviderSeriesUpdate", () => {
     master: EventRecord,
     edit: { title: string; recurrence: RecurrenceEdit },
   ) =>
-    commands.submit({
-      tenantId: master.tenantId,
-      principalId: master.principalId,
-      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
-      eventId: master._id,
-      input: {
-        kind: "update",
-        invitation: "all",
-        content: content(edit.title),
-        schedule,
-        recurrence: edit.recurrence,
-        scope: "all",
-        recurrenceId: null,
-      } as unknown as SyncCommandInput,
-      expectedVersion: "etag-1" as never,
-    });
+    (
+      await commands.submit({
+        tenantId: master.tenantId,
+        principalId: master.principalId,
+        idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+        eventId: master._id,
+        input: {
+          kind: "update",
+          invitation: "all",
+          content: content(edit.title),
+          schedule,
+          recurrence: edit.recurrence,
+          scope: "all",
+          recurrenceId: null,
+        } as unknown as SyncCommandInput,
+        expectedVersion: "etag-1" as never,
+      })
+    ).record;
 
   const masterOccurrences = (eventId: EventId) =>
     mongo.db

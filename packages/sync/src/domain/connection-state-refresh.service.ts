@@ -5,6 +5,7 @@ import {
 } from "@sync/domain/connection-state";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { type CredentialRepository } from "@sync/storage/repositories/credential.repository";
+import { type InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { type ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
@@ -14,6 +15,9 @@ export interface ConnectionStateRefreshDeps {
   calendars: ProviderCalendarRepository;
   resources: SyncResourceRepository;
   credentials: CredentialRepository;
+  // Optional so unit callers that only assert state can omit the outbox; the
+  // HTTP list path always supplies it so UI clients learn about state changes.
+  invalidations?: InvalidationRepository;
 }
 
 // Re-derive a connection's user-facing state from live evidence and persist it.
@@ -46,7 +50,7 @@ export async function refreshConnectionState(
     return connection;
   }
 
-  return deps.connections.updateDerivedState(
+  const updated = await deps.connections.updateDerivedState(
     connection.tenantId,
     connection.principalId,
     connection._id,
@@ -58,6 +62,20 @@ export async function refreshConnectionState(
     },
     at,
   );
+
+  if (deps.invalidations) {
+    await deps.invalidations.append({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      invalidation: {
+        kind: "connection",
+        connectionId: connection._id,
+      },
+      emittedAt: at,
+    });
+  }
+
+  return updated;
 }
 
 export async function gatherConnectionStateEvidence(

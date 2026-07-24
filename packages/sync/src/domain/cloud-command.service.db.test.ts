@@ -157,7 +157,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const calendar = await seedProviderCalendar(tenantId, principalId);
     const writer = new FakeWriter();
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       {
         commands,
         events,
@@ -181,7 +181,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const calendar = await seedProviderCalendar(tenantId, principalId);
     const writer = new FakeWriter();
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       {
         commands,
         events,
@@ -204,7 +204,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const principalId = objectId() as PrincipalId;
     const calendar = await seedProviderCalendar(tenantId, principalId);
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       {
         commands,
         events,
@@ -225,7 +225,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const principalId = objectId() as PrincipalId;
     const writer = new FakeWriter();
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       {
         commands,
         events,
@@ -323,7 +323,7 @@ describe("submitCloudCommand provider dispatch", () => {
       deliveryState: "confirmed",
     });
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       deps(),
       deleteFor(tenantId, principalId, eventId),
       now,
@@ -351,7 +351,7 @@ describe("submitCloudCommand provider dispatch", () => {
     });
     const writer = new FakeWriter();
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       {
         commands,
         events,
@@ -409,7 +409,7 @@ describe("submitCloudCommand provider dispatch", () => {
     });
     const writer = new FakeWriter();
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       {
         commands,
         events,
@@ -451,7 +451,7 @@ describe("submitCloudCommand provider dispatch", () => {
     });
     const writer = new FakeWriter();
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       {
         commands,
         events,
@@ -485,7 +485,7 @@ describe("submitCloudCommand provider dispatch", () => {
     });
     const writer = new FakeWriter();
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       {
         commands,
         events,
@@ -563,7 +563,7 @@ describe("submitCloudCommand provider dispatch", () => {
     });
     const writer = new FakeWriter();
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       {
         commands,
         events,
@@ -596,7 +596,7 @@ describe("submitCloudCommand provider dispatch", () => {
     });
     const writer = new FakeWriter();
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       {
         commands,
         events,
@@ -640,7 +640,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const principalId = objectId() as PrincipalId;
     const submit = submitFor(tenantId, principalId, objectId());
 
-    const command = await submitCloudCommand(deps(), submit, now);
+    const { command } = await submitCloudCommand(deps(), submit, now);
 
     expect(command.outcome.state).toBe("confirmed");
     expect(await occurrenceStartsFor(submit.eventId)).toEqual([
@@ -700,7 +700,7 @@ describe("submitCloudCommand provider dispatch", () => {
       expectedVersion: null,
     };
 
-    const command = await submitCloudCommand(deps(), update, now);
+    const { command } = await submitCloudCommand(deps(), update, now);
 
     expect(command.outcome.state).toBe("confirmed");
     expect(await occurrenceStartsFor(eventId)).toEqual([
@@ -715,7 +715,7 @@ describe("submitCloudCommand provider dispatch", () => {
     await submitCloudCommand(deps(), submit, now);
     expect(await occurrenceStartsFor(submit.eventId)).toHaveLength(1);
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       deps(),
       deleteFor(tenantId, principalId, submit.eventId),
       now,
@@ -845,7 +845,7 @@ describe("submitCloudCommand provider dispatch", () => {
     expect((await occurrenceStartsFor(masterId)).length).toBeGreaterThan(0);
     expect(await occurrenceStartsFor(exception._id)).toHaveLength(1);
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       deps(),
       deleteFor(tenantId, principalId, masterId),
       now,
@@ -875,7 +875,7 @@ describe("submitCloudCommand provider dispatch", () => {
     await reprojectOccurrences(occurrences, master, now, [excepted as never]);
     await reprojectOccurrences(occurrences, exception, now);
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       deps(),
       updateAllFor(tenantId, principalId, masterId, "Renamed"),
       now,
@@ -913,7 +913,7 @@ describe("submitCloudCommand provider dispatch", () => {
     ]);
     await reprojectOccurrences(occurrences, tombstone, now);
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       deps(),
       updateAllFor(tenantId, principalId, masterId, "Renamed"),
       now,
@@ -945,7 +945,7 @@ describe("submitCloudCommand provider dispatch", () => {
     await reprojectOccurrences(occurrences, master, now, [excepted as never]);
     await reprojectOccurrences(occurrences, exception, now);
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       deps(),
       updateAllFor(tenantId, principalId, masterId, "Now single", {
         kind: "single",
@@ -976,7 +976,7 @@ describe("submitCloudCommand provider dispatch", () => {
       deliveryState: "confirmed",
     });
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       deps(),
       deleteFor(tenantId, principalId, masterId),
       now,
@@ -1034,7 +1034,7 @@ describe("submitCloudCommand provider dispatch", () => {
     await reprojectOccurrences(occurrences, master, now);
     expect(await occurrenceStartsFor(masterId)).toHaveLength(3);
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       deps(),
       deleteFor(tenantId, principalId, masterId, "this", EXCEPTED),
       now,
@@ -1063,7 +1063,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const master = await seriesMaster(tenantId, principalId, masterId);
     await reprojectOccurrences(occurrences, master, now);
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       deps(),
       updateThisFor(tenantId, principalId, masterId, EXCEPTED, "Moved"),
       now,
@@ -1135,7 +1135,7 @@ describe("submitCloudCommand provider dispatch", () => {
     ]);
     await reprojectOccurrences(occurrences, following, now);
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       deps(),
       deleteFor(tenantId, principalId, masterId, "thisAndFollowing", EXCEPTED),
       now,
@@ -1214,7 +1214,7 @@ describe("submitCloudCommand provider dispatch", () => {
     ]);
     await reprojectOccurrences(occurrences, following, now);
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       deps(),
       splitFor(tenantId, principalId, masterId, EXCEPTED, "Split"),
       now,
@@ -1272,7 +1272,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const master = await seriesMaster(tenantId, principalId, masterId);
     await reprojectOccurrences(occurrences, master, now);
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       deps(),
       splitFor(
         tenantId,
@@ -1298,7 +1298,7 @@ describe("submitCloudCommand provider dispatch", () => {
     const master = await seriesMaster(tenantId, principalId, masterId);
     await reprojectOccurrences(occurrences, master, now);
 
-    const command = await submitCloudCommand(
+    const { command } = await submitCloudCommand(
       deps(),
       // The split point is the series' own first occurrence.
       deleteFor(

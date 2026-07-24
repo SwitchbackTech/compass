@@ -49,7 +49,7 @@ describe("CommandRepository", () => {
   });
 
   it("submits a new command as pending with zero attempts", async () => {
-    const command = await repo.submit(submit());
+    const { record: command } = await repo.submit(submit());
     expect(command.outcome).toEqual({ state: "pending" });
     expect(command.attemptCount).toBe(0);
     expect(command._id).toMatch(/^[0-9a-f]{24}$/);
@@ -61,11 +61,12 @@ describe("CommandRepository", () => {
     const first = await repo.submit(
       submit({ tenantId, principalId, idempotencyKey: "dup" }),
     );
+    expect(first.inserted).toBe(true);
     // A retried submit must not create a second command or reset progress.
     await repo.updateOutcome(
       tenantId,
       principalId,
-      first._id,
+      first.record._id,
       { state: "applying" },
       1,
     );
@@ -73,14 +74,15 @@ describe("CommandRepository", () => {
       submit({ tenantId, principalId, idempotencyKey: "dup" }),
     );
 
-    expect(second._id).toBe(first._id);
-    expect(second.outcome).toEqual({ state: "applying" });
-    expect(second.attemptCount).toBe(1);
+    expect(second.inserted).toBe(false);
+    expect(second.record._id).toBe(first.record._id);
+    expect(second.record.outcome).toEqual({ state: "applying" });
+    expect(second.record.attemptCount).toBe(1);
     expect(await db.collection("commands").countDocuments()).toBe(1);
   });
 
   it("transitions outcome through the command lifecycle", async () => {
-    const command = await repo.submit(submit());
+    const { record: command } = await repo.submit(submit());
     const applying = await repo.updateOutcome(
       command.tenantId,
       command.principalId,
@@ -105,7 +107,7 @@ describe("CommandRepository", () => {
   });
 
   it("rejects an outcome update from another principal", async () => {
-    const command = await repo.submit(submit());
+    const { record: command } = await repo.submit(submit());
     const result = await repo.updateOutcome(
       command.tenantId,
       objectId() as CommandSubmit["principalId"],
@@ -119,7 +121,7 @@ describe("CommandRepository", () => {
   it("lists only nonterminal commands, oldest first", async () => {
     const tenantId = objectId();
     const principalId = objectId();
-    const a = await repo.submit(
+    const { record: a } = await repo.submit(
       submit({ tenantId, principalId, idempotencyKey: "a" }),
     );
     await repo.submit(submit({ tenantId, principalId, idempotencyKey: "b" }));
@@ -141,7 +143,7 @@ describe("CommandRepository", () => {
     const tenantId = objectId();
     const principalId = objectId();
     const eventId = objectId();
-    const command = await repo.submit(
+    const { record: command } = await repo.submit(
       submit({ tenantId, principalId, eventId }),
     );
 

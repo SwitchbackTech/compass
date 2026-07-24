@@ -23,6 +23,7 @@ import { CredentialRepository } from "@sync/storage/repositories/credential.repo
 import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 
@@ -86,7 +87,7 @@ export function registerCommandRoutes(
               }
             : undefined;
 
-        const command = await submitCloudCommand(
+        const { command, changed } = await submitCloudCommand(
           {
             commands: new CommandRepository(deps.mongo.db),
             events: new EventRepository(deps.mongo.db),
@@ -109,6 +110,24 @@ export function registerCommandRoutes(
           },
           () => (deps.now ? new Date(deps.now()) : new Date()),
         );
+
+        // Content-free change-feed notice for Compass API → browser SSE.
+        // Emitted only when this request durably changed command/event state,
+        // so an idempotent replay does not duplicate outbox rows.
+        if (changed) {
+          const invalidations = new InvalidationRepository(deps.mongo.db);
+          const emittedAt = deps.now ? new Date(deps.now()) : new Date();
+          await invalidations.appendMany(
+            auth.tenantId,
+            auth.principalId,
+            [
+              { kind: "command", commandId: command._id },
+              { kind: "event", eventId: command.eventId },
+            ],
+            emittedAt,
+          );
+        }
+
         const response: CommandSubmitResponse = {
           command: toSyncCommand(command),
         };
