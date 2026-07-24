@@ -17,7 +17,10 @@ import {
   type CommandSubmitRequest,
   CommandSubmitRequestSchema,
 } from "@core/types/sync/command.contracts";
-import { type SyncEventContent } from "@core/types/sync/event.contracts";
+import {
+  ClientEventIdSchema,
+  type SyncEventContent,
+} from "@core/types/sync/event.contracts";
 import { IdempotencyKeySchema } from "@core/types/sync/identity.contracts";
 import { decodeOccurrenceId } from "./occurrence-id";
 import { createHash } from "node:crypto";
@@ -102,6 +105,10 @@ export const toCreateSubmitRequest = (
   input: CreateEventInput,
 ): { request: CommandSubmitRequest; responseEvent: Event } => {
   const eventId = input.id ?? mintEventId();
+  // When the browser supplies an id (optimistic create / IndexedDB promotion),
+  // preserve it as clientEventId so Sync can correlate device origin across
+  // resume. Minted server ids are not client-originated — leave null.
+  const clientEventId = input.id ? ClientEventIdSchema.parse(input.id) : null;
   const request = CommandSubmitRequestSchema.parse({
     idempotencyKey: IdempotencyKeySchema.parse(`create:${eventId}`),
     eventId,
@@ -109,7 +116,7 @@ export const toCreateSubmitRequest = (
     input: {
       kind: "create",
       calendarId: input.calendarId,
-      clientEventId: null,
+      clientEventId,
       invitation: "none",
       content: toSyncContent(input.content),
       schedule: input.schedule,

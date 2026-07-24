@@ -1,8 +1,9 @@
 import { z } from "zod/v4";
 import { EventSchema } from "@core/types/event.contracts";
 
-// There is no syncState field: local sync is push-all-then-clear on
-// connect, so a per-record state machine models a queue that does not exist.
+// There is no syncState field: promotion deletes each row after a successful
+// create, then clears leftovers (demos). A richer per-record state machine
+// is not required for resume safety.
 export const LocalEventRecordSchema = z
   .strictObject({
     version: z.literal(2),

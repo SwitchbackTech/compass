@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 const ensureOfflineDataStoreReady = mock();
 const getAllEvents = mock();
 const clearAllEvents = mock();
+const deleteEvent = mock();
 const createEvent = mock();
 const listCalendars = mock();
 
@@ -14,6 +15,7 @@ const syncLocalEventsToCloud = createSyncLocalEventsToCloud({
   ensureOfflineDataStoreReady,
   getOfflineDataStore: () => ({
     clearAllEvents,
+    deleteEvent,
     getAllEvents,
   }),
 });
@@ -25,6 +27,7 @@ describe("syncLocalEventsToCloud", () => {
     ensureOfflineDataStoreReady.mockClear();
     getAllEvents.mockClear();
     clearAllEvents.mockClear();
+    deleteEvent.mockClear();
     createEvent.mockClear();
     listCalendars.mockClear();
     listCalendars.mockResolvedValue([
@@ -65,6 +68,7 @@ describe("syncLocalEventsToCloud", () => {
         calendarId: SERVER_LOCAL_CALENDAR_ID,
       }),
     );
+    expect(deleteEvent).toHaveBeenCalledWith(userRecord.id);
     expect(clearAllEvents).toHaveBeenCalledTimes(1);
   });
 
@@ -74,6 +78,7 @@ describe("syncLocalEventsToCloud", () => {
     await expect(syncLocalEventsToCloud()).resolves.toBe(0);
 
     expect(createEvent).not.toHaveBeenCalled();
+    expect(deleteEvent).not.toHaveBeenCalled();
     expect(listCalendars).not.toHaveBeenCalled();
     expect(clearAllEvents).toHaveBeenCalledTimes(1);
   });
@@ -84,6 +89,7 @@ describe("syncLocalEventsToCloud", () => {
     await expect(syncLocalEventsToCloud()).resolves.toBe(0);
 
     expect(createEvent).not.toHaveBeenCalled();
+    expect(deleteEvent).not.toHaveBeenCalled();
     expect(clearAllEvents).not.toHaveBeenCalled();
   });
 
@@ -97,6 +103,23 @@ describe("syncLocalEventsToCloud", () => {
     // Never POST against a calendar the backend can't resolve (would 404), and
     // never clear the store - the records stay put for a later sync.
     expect(createEvent).not.toHaveBeenCalled();
+    expect(deleteEvent).not.toHaveBeenCalled();
+    expect(clearAllEvents).not.toHaveBeenCalled();
+  });
+
+  it("deletes each promoted event so a mid-batch failure can resume the rest", async () => {
+    const first = createMockLocalEventRecord({}, false);
+    const second = createMockLocalEventRecord({}, false);
+    getAllEvents.mockResolvedValue([first, second]);
+    createEvent
+      .mockResolvedValueOnce({})
+      .mockRejectedValueOnce(new Error("network down"));
+
+    await expect(syncLocalEventsToCloud()).rejects.toThrow("network down");
+
+    expect(createEvent).toHaveBeenCalledTimes(2);
+    expect(deleteEvent).toHaveBeenCalledTimes(1);
+    expect(deleteEvent).toHaveBeenCalledWith(first.id);
     expect(clearAllEvents).not.toHaveBeenCalled();
   });
 });
