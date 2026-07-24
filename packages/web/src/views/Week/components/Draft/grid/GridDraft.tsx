@@ -37,9 +37,8 @@ export const GridDraft: FC<Props> = ({
   recurringPreviews = [],
   weekProps,
 }) => {
-  const { actions, setters, state } = useDraftContext();
-  const { startDragging } = actions;
-  const { setDragOffset, setDateBeingChanged, setIsResizing } = setters;
+  const { actions, state } = useDraftContext();
+  const { startDragging, startResizing } = actions;
   const { draft, dragOffset, isDragging, isResizing } = state;
 
   // GridEvent-shaped projection of the canonical GridEventDraft, for
@@ -61,8 +60,19 @@ export const GridDraft: FC<Props> = ({
   const handleDrag = (_: GridEventEntity, moveEvent: PartialMouseEvent) => {
     if (!draft) return; // TS Guard
 
-    setDragOffset(getEventDragOffset(draftAsGridEvent ?? undefined, moveEvent));
-    startDragging();
+    startDragging(
+      getEventDragOffset(draftAsGridEvent ?? undefined, moveEvent),
+    );
+  };
+
+  const handleScalerMouseDown = (
+    _event: GridEventEntity,
+    e: MouseEvent,
+    dateToChange: "startDate" | "endDate",
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    startResizing(dateToChange);
   };
 
   const motionMode = isResizing ? "resizing" : isDragging ? "dragging" : "idle";
@@ -108,16 +118,7 @@ export const GridDraft: FC<Props> = ({
             e.preventDefault();
             onMouseDown(e, event);
           }}
-          onScalerMouseDown={(
-            _event: GridEventEntity,
-            e: MouseEvent,
-            dateToChange: "startDate" | "endDate",
-          ) => {
-            e.stopPropagation();
-            e.preventDefault();
-            setDateBeingChanged(dateToChange);
-            setIsResizing(true);
-          }}
+          onScalerMouseDown={handleScalerMouseDown}
           weekDays={weekProps.component.weekDays}
         />
       ) : (
@@ -133,16 +134,7 @@ export const GridDraft: FC<Props> = ({
             onMouseDown(e, event);
           }}
           onEventKeyDown={focusEventFormTitle}
-          onScalerMouseDown={(
-            _event: GridEventEntity,
-            e: MouseEvent,
-            dateToChange: "startDate" | "endDate",
-          ) => {
-            e.stopPropagation();
-            e.preventDefault();
-            setDateBeingChanged(dateToChange);
-            setIsResizing(true);
-          }}
+          onScalerMouseDown={handleScalerMouseDown}
           weekProps={weekProps}
         />
       )}

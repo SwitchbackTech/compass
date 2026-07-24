@@ -93,12 +93,10 @@ const renderGridDraft = ({
       discard: mock(),
       repositionDraftByKeyboard: mock(() => true),
       startDragging: mock(),
+      startResizing: mock(),
     },
     setters: {
-      setDateBeingChanged: mock(),
       setDraft: mock(),
-      setDragOffset: mock(),
-      setIsResizing: mock(),
     },
     state: {
       draft,
