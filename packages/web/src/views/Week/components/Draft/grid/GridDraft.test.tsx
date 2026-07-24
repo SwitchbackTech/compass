@@ -90,7 +90,6 @@ const renderGridDraft = ({
 } = {}) => {
   const value = {
     actions: {
-      convert: mock(),
       discard: mock(),
       repositionDraftByKeyboard: mock(() => true),
       startDragging: mock(),

@@ -84,7 +84,6 @@ export const useDraftActions = (
     setResizeStatus,
     setDateBeingChanged,
     setDraft,
-    setDraftSessionKey,
     setIsFormOpen,
     setIsFormOpenBeforeDragging,
   } = setters;
@@ -110,35 +109,29 @@ export const useDraftActions = (
     setDateBeingChanged("endDate");
   }, [setIsResizing, setResizeStatus, setDateBeingChanged]);
 
-  const closeForm = useCallback(() => {
-    setIsFormOpen(false);
-  }, [setIsFormOpen]);
-
-  const reset = useCallback(() => {
+  const discard = useCallback(() => {
     setDraft(null);
     setIsDragging(false);
-    closeForm();
+    setIsFormOpen(false);
     setIsResizing(false);
     setDragStatus(null);
     setResizeStatus(null);
     setDateBeingChanged(null);
-  }, [
-    closeForm,
-    setDateBeingChanged,
-    setDraft,
-    setDragStatus,
-    setIsDragging,
-    setIsResizing,
-    setResizeStatus,
-  ]);
-
-  const discard = useCallback(() => {
-    reset();
 
     if (gridDraftFromStore || isDrafting) {
       draftActions.discard();
     }
-  }, [gridDraftFromStore, isDrafting, reset]);
+  }, [
+    gridDraftFromStore,
+    isDrafting,
+    setDateBeingChanged,
+    setDraft,
+    setDragStatus,
+    setIsDragging,
+    setIsFormOpen,
+    setIsResizing,
+    setResizeStatus,
+  ]);
 
   const openForm = useCallback(() => {
     setIsFormOpen(true);
@@ -476,7 +469,7 @@ export const useDraftActions = (
           }
         }
 
-        closeForm();
+        setIsFormOpen(false);
 
         const schedule: GridScheduleDraft = isAllDay
           ? {
@@ -556,7 +549,6 @@ export const useDraftActions = (
       });
     },
     [
-      closeForm,
       dateBeingChanged,
       dateCalcs,
       draft,
@@ -566,6 +558,7 @@ export const useDraftActions = (
       resizeStatus?.hasMoved,
       setDateBeingChanged,
       setDraft,
+      setIsFormOpen,
       setResizeStatus,
       weekProps.component.startOfView,
     ],
@@ -574,10 +567,9 @@ export const useDraftActions = (
   const create = useCallback(async () => {
     if (!gridDraftFromStore) return;
 
-    setDraftSessionKey((key) => key + 1);
     setDraft(gridDraftFromStore);
     openForm();
-  }, [openForm, gridDraftFromStore, setDraft, setDraftSessionKey]);
+  }, [openForm, gridDraftFromStore, setDraft]);
 
   const handleChange = useCallback(async () => {
     if (!isDrafting) return;
@@ -585,7 +577,6 @@ export const useDraftActions = (
       return; // Prevents form and context menu from opening at same time
     }
     if (activity === "keyboardEdit") {
-      setDraftSessionKey((key) => key + 1);
       if (gridDraftFromStore) setDraft(gridDraftFromStore);
       openForm();
       return;
@@ -595,7 +586,6 @@ export const useDraftActions = (
       return;
     }
     if (activity === "resizing") {
-      setDraftSessionKey((key) => key + 1);
       if (gridDraftFromStore) setDraft(gridDraftFromStore);
       startResizing();
     }
@@ -604,20 +594,17 @@ export const useDraftActions = (
     activity,
     create,
     setDraft,
-    setDraftSessionKey,
     gridDraftFromStore,
     startResizing,
     openForm,
   ]);
 
   const actions = {
-    closeForm,
     submit,
     discard,
     drag,
     openForm,
     repositionDraftByKeyboard,
-    reset,
     resize,
     startDragging: () => {
       // Placing `setIsFormOpenBeforeDragging` here rather than inside `startDragging`
