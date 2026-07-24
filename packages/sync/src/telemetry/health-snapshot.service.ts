@@ -166,14 +166,11 @@ async function summarizeFreshness(
 ): Promise<SyncHealthSnapshot["freshness"]> {
   const rows = await db
     .collection(SYNC_COLLECTIONS.syncResources)
-    .find(
-      { resourceKind: "events", lastSuccessAt: { $ne: null } },
-      {
-        projection: { lastSuccessAt: 1 },
-        limit: FRESHNESS_SAMPLE_LIMIT,
-        sort: { lastSuccessAt: 1 },
-      },
-    )
+    .aggregate<{ lastSuccessAt: Date | null }>([
+      { $match: { resourceKind: "events", lastSuccessAt: { $ne: null } } },
+      { $project: { lastSuccessAt: 1 } },
+      { $sample: { size: FRESHNESS_SAMPLE_LIMIT } },
+    ])
     .toArray();
 
   if (rows.length === 0) {
