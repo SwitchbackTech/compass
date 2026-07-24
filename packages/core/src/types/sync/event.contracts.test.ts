@@ -2,14 +2,18 @@ import { faker } from "@faker-js/faker";
 import {
   AttendeeSchema,
   ConferenceSchema,
+  EventInstanceListQuerySchema,
+  EventInstanceListResponseSchema,
   EventOccurrenceListQuerySchema,
   EventOccurrenceListResponseSchema,
   OrganizerSchema,
   SyncEventCalendarIdSchema,
+  SyncEventInstanceSchema,
   SyncEventOccurrenceSchema,
   SyncEventOwnershipSchema,
   SyncEventRecurrenceSchema,
   SyncEventSchema,
+  SyncInstanceRecurrenceSchema,
 } from "@core/types/sync/event.contracts";
 
 const objectId = () => faker.database.mongodbObjectId();
@@ -388,6 +392,165 @@ describe("Sync event contracts", () => {
       expect(
         EventOccurrenceListResponseSchema.safeParse(response).success,
       ).toBe(true);
+    });
+  });
+
+  describe("SyncInstanceRecurrenceSchema", () => {
+    it("accepts a single row", () => {
+      expect(
+        SyncInstanceRecurrenceSchema.safeParse({ kind: "single" }).success,
+      ).toBe(true);
+    });
+
+    it("accepts a series master row carrying the rule", () => {
+      const recurrence = { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] };
+      expect(SyncInstanceRecurrenceSchema.safeParse(recurrence).success).toBe(
+        true,
+      );
+    });
+
+    it("rejects a series master row with empty rules", () => {
+      const recurrence = { kind: "series", rules: [] };
+      expect(SyncInstanceRecurrenceSchema.safeParse(recurrence).success).toBe(
+        false,
+      );
+    });
+
+    it("accepts an occurrence row addressed by its recurrenceId", () => {
+      const recurrence = {
+        kind: "occurrence",
+        recurrenceId: "2026-07-21T09:00:00.000Z",
+      };
+      expect(SyncInstanceRecurrenceSchema.safeParse(recurrence).success).toBe(
+        true,
+      );
+    });
+
+    it("rejects an occurrence row missing its recurrenceId", () => {
+      const recurrence = { kind: "occurrence" };
+      expect(SyncInstanceRecurrenceSchema.safeParse(recurrence).success).toBe(
+        false,
+      );
+    });
+  });
+
+  describe("SyncEventInstanceSchema", () => {
+    const baseInstance = (overrides: Record<string, unknown> = {}) => ({
+      eventId: objectId(),
+      calendarId: objectId(),
+      content: { title: "Standup", description: "Daily sync" },
+      schedule: timedSchedule,
+      recurrence: { kind: "single" },
+      createdAt: "2026-07-01T00:00:00.000Z",
+      updatedAt: "2026-07-01T00:00:00.000Z",
+      ...overrides,
+    });
+
+    it("accepts a single timed instance", () => {
+      expect(SyncEventInstanceSchema.safeParse(baseInstance()).success).toBe(
+        true,
+      );
+    });
+
+    it("accepts a series master row with a rule", () => {
+      const instance = baseInstance({
+        recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+      });
+      expect(SyncEventInstanceSchema.safeParse(instance).success).toBe(true);
+    });
+
+    it("accepts a projected occurrence row addressed by recurrenceId", () => {
+      const instance = baseInstance({
+        recurrence: {
+          kind: "occurrence",
+          recurrenceId: "2026-07-21T09:00:00.000Z",
+        },
+      });
+      expect(SyncEventInstanceSchema.safeParse(instance).success).toBe(true);
+    });
+
+    it("accepts an all-day instance", () => {
+      const instance = baseInstance({ schedule: allDaySchedule });
+      expect(SyncEventInstanceSchema.safeParse(instance).success).toBe(true);
+    });
+
+    it("preserves the description through validation (full-fidelity read)", () => {
+      // Unlike the stripped occurrence feed (title only), the schema must keep
+      // the description — the whole point of the full-fidelity read. Assert on
+      // the PARSED output, not the input object, so this proves the schema.
+      const parsed = SyncEventInstanceSchema.safeParse(
+        baseInstance({
+          content: { title: "Standup", description: "Daily sync" },
+        }),
+      );
+      expect(parsed.success).toBe(true);
+      if (parsed.success) {
+        expect(parsed.data.content.description).toBe("Daily sync");
+      }
+    });
+
+    it("rejects an instance whose content is missing the description", () => {
+      const instance = baseInstance({ content: { title: "Standup" } });
+      expect(SyncEventInstanceSchema.safeParse(instance).success).toBe(false);
+    });
+
+    it("rejects a calendarId that isn't a 24-character hex id", () => {
+      const instance = baseInstance({ calendarId: "not-an-id" });
+      expect(SyncEventInstanceSchema.safeParse(instance).success).toBe(false);
+    });
+  });
+
+  describe("EventInstanceListQuerySchema", () => {
+    const baseQuery = () => ({
+      calendarIds: [objectId()],
+      start: "2026-07-01T00:00:00.000Z",
+      end: "2026-08-01T00:00:00.000Z",
+    });
+
+    it("accepts a bounded range with at least one calendar", () => {
+      expect(EventInstanceListQuerySchema.safeParse(baseQuery()).success).toBe(
+        true,
+      );
+    });
+
+    it("accepts an optional cursor and limit", () => {
+      const query = { ...baseQuery(), cursor: "page-2", limit: 100 };
+      expect(EventInstanceListQuerySchema.safeParse(query).success).toBe(true);
+    });
+
+    it("rejects an empty calendarIds array", () => {
+      const query = { ...baseQuery(), calendarIds: [] };
+      expect(EventInstanceListQuerySchema.safeParse(query).success).toBe(false);
+    });
+
+    it("rejects end before start", () => {
+      const query = {
+        ...baseQuery(),
+        start: baseQuery().end,
+        end: baseQuery().start,
+      };
+      expect(EventInstanceListQuerySchema.safeParse(query).success).toBe(false);
+    });
+
+    it("rejects a limit above the bound", () => {
+      const query = { ...baseQuery(), limit: 501 };
+      expect(EventInstanceListQuerySchema.safeParse(query).success).toBe(false);
+    });
+  });
+
+  describe("EventInstanceListResponseSchema", () => {
+    it("accepts an empty page with no next cursor", () => {
+      const response = { instances: [], nextCursor: null };
+      expect(EventInstanceListResponseSchema.safeParse(response).success).toBe(
+        true,
+      );
+    });
+
+    it("accepts a page with a next cursor", () => {
+      const response = { instances: [], nextCursor: "page-2" };
+      expect(EventInstanceListResponseSchema.safeParse(response).success).toBe(
+        true,
+      );
     });
   });
 });
