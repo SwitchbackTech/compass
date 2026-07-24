@@ -17,6 +17,9 @@ import {
   ConnectionListResponseSchema,
 } from "@core/types/sync/connection.contracts";
 import {
+  type EventInstanceListQuery,
+  type EventInstanceListResponse,
+  EventInstanceListResponseSchema,
   type EventOccurrenceListQuery,
   type EventOccurrenceListResponse,
   EventOccurrenceListResponseSchema,
@@ -29,6 +32,7 @@ const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 const CONNECTIONS_PATH = "/internal/connections";
 const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
 const EVENTS_PATH = "/internal/events";
+const EVENTS_FULL_PATH = "/internal/events/full";
 const COMMANDS_PATH = "/internal/commands";
 
 const DEFAULT_TIMEOUT_MS = 5000;
@@ -186,6 +190,36 @@ export class SyncServiceClient {
       query: params,
       principal,
       schema: EventOccurrenceListResponseSchema,
+      correlationId,
+    });
+  }
+
+  // A page of full-fidelity event rows (content + schedule + series linkage) for
+  // the given calendars and range, scoped to the signed principal. Backs the
+  // browser calendar read; unlike listEventOccurrences (busy/availability), each
+  // row carries what the app needs to render AND edit. Same query serialization:
+  // `calendarIds` as repeated params, and `query.cursor` from a prior response's
+  // `nextCursor` to page.
+  listFullEvents(
+    principal: SyncPrincipal,
+    query: EventInstanceListQuery,
+    correlationId?: string,
+  ): Promise<SyncClientResult<EventInstanceListResponse>> {
+    const params = new URLSearchParams();
+    for (const calendarId of query.calendarIds) {
+      params.append("calendarIds", calendarId);
+    }
+    params.set("start", query.start);
+    params.set("end", query.end);
+    if (query.cursor !== undefined) params.set("cursor", query.cursor);
+    if (query.limit !== undefined) params.set("limit", String(query.limit));
+
+    return this.#request({
+      method: "GET",
+      path: EVENTS_FULL_PATH,
+      query: params,
+      principal,
+      schema: EventInstanceListResponseSchema,
       correlationId,
     });
   }
