@@ -148,7 +148,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
         draftActions.setGridDraft(draft);
       }
 
-      actions.openForm();
+      draftActions.setFormOpen(true);
       return;
     }
 
