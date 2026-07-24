@@ -36,6 +36,10 @@ export interface SyncJobWorkerOptions {
   // Math.random.
   random?: () => number;
   now?: () => Date;
+  // Called when a job engine throws (before the worker schedules a retry). The
+  // scheduler's drain onError only sees claim/settle failures; per-job engine
+  // throws were previously swallowed, which left staging imports opaque.
+  onError?: (error: unknown) => void;
 }
 
 const DEFAULT_LEASE_MS = 5 * 60_000;
@@ -90,6 +94,7 @@ export class SyncJobWorker {
   readonly #maxAttempts: number;
   readonly #backoff: (attempt: number, now: Date) => Date;
   readonly #now: () => Date;
+  readonly #onError: (error: unknown) => void;
 
   constructor(
     deps: SyncJobWorkerDeps,
@@ -109,6 +114,7 @@ export class SyncJobWorker {
       options.backoff ??
       ((attempt, now) => jitteredBackoff(attempt, now, random));
     this.#now = options.now ?? (() => new Date());
+    this.#onError = options.onError ?? (() => {});
   }
 
   // Claim and process at most one due job. Returns "idle" when nothing is due.
@@ -162,9 +168,18 @@ export class SyncJobWorker {
     let outcome: Awaited<ReturnType<typeof dispatchSyncJob>>;
     try {
       outcome = await dispatchSyncJob(this.#deps, job, this.#now);
-    } catch {
+    } catch (error) {
       // An engine threw (a transient provider/storage error dispatch does not
       // model as a status). Treat it as retryable; the cap still bounds it.
+      // Log the cause — without this, staging imports fail silently and the
+      // UI stays stuck on "Syncing calendar" with only a retryableTransient
+      // job row to show for it.
+      this.#onError(
+        new Error(
+          `Sync job ${job.kind} (${job._id}) attempt ${job.attempt} failed`,
+          { cause: error instanceof Error ? error : undefined },
+        ),
+      );
       await this.#settleFailure(job, "retryableTransient");
       return;
     }

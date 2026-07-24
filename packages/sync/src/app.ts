@@ -266,6 +266,9 @@ function buildSchedulers(
       callbackUrl: `${config.CALLBACK_BASE_URL}${NOTIFICATIONS_PATH}`,
     },
     owner,
+    {
+      onError: (error) => logger.error("Sync job engine failed", error),
+    },
   );
   const drain = new SyncScheduler(
     { worker, jobs },
