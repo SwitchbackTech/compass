@@ -17,9 +17,10 @@ import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { ID_EVENT_FORM, ID_SIDEBAR } from "@web/common/constants/web.constants";
+import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
-import { type GridEventDraft } from "@web/events/event-draft.types";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { useDraftStore } from "@web/events/stores/draft.store";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
@@ -106,15 +107,22 @@ const shiftKey = {
 };
 let pendingEventIds: string[] = [];
 let repositionDraftByKeyboard = mock();
-let confirmationOnSubmit = mock();
 
 const { useWeekShortcuts } =
   require("./useWeekShortcuts") as typeof import("./useWeekShortcuts");
 
+const offsetString = (date: dayjs.Dayjs) =>
+  dayjs.tz(date.toDate(), getBrowserTimeZone()).format();
+
+const getEditMutation = (queryClient: QueryClient) =>
+  queryClient
+    .getMutationCache()
+    .getAll()
+    .find((mutation) => mutation.options.mutationKey?.[2] === "replace");
+
 beforeEach(() => {
   HotkeyManager.resetInstance();
   repositionDraftByKeyboard = mock();
-  confirmationOnSubmit = mock();
 });
 
 afterEach(() => {
@@ -161,6 +169,14 @@ const renderShortcuts = (options?: {
     ...(options?.includeLeftmostEvent ? [leftmostEvent] : []),
     ...(options?.extraEvents ?? []),
   ];
+  queryClient.setQueryData(
+    eventQueryKeys.week({
+      source: "local",
+      start: "2026-05-18T00:00:00.000Z",
+      end: "2026-05-24T23:59:59.999Z",
+    }),
+    toNormalizedEventQueryData(events),
+  );
   queryClient.setQueryDefaults(["events"], {
     initialData: toNormalizedEventQueryData(events),
   });
@@ -175,7 +191,6 @@ const renderShortcuts = (options?: {
             value={
               {
                 actions: { repositionDraftByKeyboard },
-                confirmation: { onSubmit: confirmationOnSubmit },
                 setters: {},
                 state: {},
               } as never
@@ -445,28 +460,30 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
   it("moves the focused timed event to the next day with Shift+ArrowRight", async () => {
     const button = addCalendarTarget();
     button.focus();
-    renderShortcuts();
+    const { queryClient } = renderShortcuts();
 
     pressKey("ArrowRight", shiftKey);
 
     await waitFor(() => {
-      expect(confirmationOnSubmit).toHaveBeenCalledTimes(1);
+      expect(getEditMutation(queryClient)).toBeDefined();
     });
-    const submitted = confirmationOnSubmit.mock.calls[0]?.[0] as GridEventDraft;
-    expect(dayjs(submitted.values.schedule.start).format()).toBe(
-      dayjs("2026-05-20T09:00:00.000Z").add(1, "day").format(),
+    const { input } = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string; end: string } };
+    };
+    expect(input.schedule.start).toBe(
+      offsetString(dayjs("2026-05-20T09:00:00.000Z").add(1, "day")),
     );
-    expect(dayjs(submitted.values.schedule.end).format()).toBe(
-      dayjs("2026-05-20T10:00:00.000Z").add(1, "day").format(),
+    expect(input.schedule.end).toBe(
+      offsetString(dayjs("2026-05-20T10:00:00.000Z").add(1, "day")),
     );
   });
 
   // packet 08 step 8: nudging (moving) a read-only event must be blocked
-  // the same way deleting it is - no draft ever reaches confirmation.onSubmit.
+  // the same way deleting it is - no replace mutation is queued.
   it("does not move a read-only calendar event with Shift+ArrowRight", async () => {
     const button = addCalendarTarget(readOnlyEvent.id);
     button.focus();
-    renderShortcuts({
+    const { queryClient } = renderShortcuts({
       extraEvents: [readOnlyEvent],
       calendars: [readOnlyCalendar],
     });
@@ -478,32 +495,47 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(confirmationOnSubmit).not.toHaveBeenCalled();
+    expect(getEditMutation(queryClient)).toBeUndefined();
   });
 
   it("moves the focused timed event by 15 minutes with Shift+ArrowUp and Shift+ArrowDown", async () => {
     const button = addCalendarTarget();
     button.focus();
-    renderShortcuts();
+    const { queryClient } = renderShortcuts();
 
     pressKey("ArrowUp", shiftKey);
 
     await waitFor(() => {
-      expect(confirmationOnSubmit).toHaveBeenCalledTimes(1);
+      expect(getEditMutation(queryClient)).toBeDefined();
     });
-    const movedUp = confirmationOnSubmit.mock.calls[0]?.[0] as GridEventDraft;
-    expect(dayjs(movedUp.values.schedule.start).format()).toBe(
-      dayjs("2026-05-20T09:00:00.000Z").subtract(15, "minutes").format(),
+    const movedUp = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string } };
+    };
+    expect(movedUp.input.schedule.start).toBe(
+      offsetString(dayjs("2026-05-20T09:00:00.000Z").subtract(15, "minutes")),
     );
 
     pressKey("ArrowDown", shiftKey);
 
     await waitFor(() => {
-      expect(confirmationOnSubmit).toHaveBeenCalledTimes(2);
+      expect(
+        queryClient
+          .getMutationCache()
+          .getAll()
+          .filter(
+            (mutation) => mutation.options.mutationKey?.[2] === "replace",
+          ),
+      ).toHaveLength(2);
     });
-    const movedDown = confirmationOnSubmit.mock.calls[1]?.[0] as GridEventDraft;
-    expect(dayjs(movedDown.values.schedule.start).format()).toBe(
-      dayjs("2026-05-20T09:00:00.000Z").add(15, "minutes").format(),
+    const movedDown = queryClient
+      .getMutationCache()
+      .getAll()
+      .filter((mutation) => mutation.options.mutationKey?.[2] === "replace")[1]
+      ?.state.variables as { input: { schedule: { start: string } } };
+    // ArrowDown starts from the already-nudged cache (08:45), so +15m returns
+    // to the original start — not another +15m from the pre-Up fixture.
+    expect(movedDown.input.schedule.start).toBe(
+      offsetString(dayjs("2026-05-20T09:00:00.000Z")),
     );
   });
 
@@ -511,20 +543,20 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
     const button = addCalendarTarget(leftmostEvent.id);
     button.focus();
 
-    renderShortcuts({ includeLeftmostEvent: true });
+    const { queryClient } = renderShortcuts({ includeLeftmostEvent: true });
     pressKey("ArrowLeft", shiftKey);
 
-    expect(confirmationOnSubmit).not.toHaveBeenCalled();
+    expect(getEditMutation(queryClient)).toBeUndefined();
   });
 
   it("does not move all-day events with Shift+ArrowUp", () => {
     const button = addCalendarTarget(editableAllDayEvent.id, "all-day");
     button.focus();
 
-    renderShortcuts({ includeAllDayEvent: true });
+    const { queryClient } = renderShortcuts({ includeAllDayEvent: true });
     pressKey("ArrowUp", shiftKey);
 
-    expect(confirmationOnSubmit).not.toHaveBeenCalled();
+    expect(getEditMutation(queryClient)).toBeUndefined();
   });
 
   it("keeps native Shift+Arrow behavior inside editable fields", () => {
@@ -533,20 +565,20 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
     document.body.appendChild(input);
     input.focus();
 
-    renderShortcuts();
+    const { queryClient } = renderShortcuts();
     pressKey("ArrowRight", shiftKey, input);
 
-    expect(confirmationOnSubmit).not.toHaveBeenCalled();
+    expect(getEditMutation(queryClient)).toBeUndefined();
   });
 
   it("does not move hovered-but-unfocused events", () => {
     const button = addCalendarTarget();
     setHoveredWeekGridEventTarget(button);
 
-    renderShortcuts();
+    const { queryClient } = renderShortcuts();
     pressKey("ArrowRight", shiftKey);
 
-    expect(confirmationOnSubmit).not.toHaveBeenCalled();
+    expect(getEditMutation(queryClient)).toBeUndefined();
   });
 });
 

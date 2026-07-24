@@ -241,7 +241,6 @@ const renderMainGrid = () => {
         value={
           {
             actions,
-            confirmation: {},
             setters: {},
             state: {},
           } as never
@@ -277,7 +276,6 @@ const renderGridRegions = () => {
               stopDragging: mock(),
               stopResizing: mock(),
             },
-            confirmation: {},
             setters: {},
             state: {},
           } as never
@@ -319,7 +317,6 @@ const renderWeekGrid = (events: CompassEvent[] = []) => {
               stopDragging: mock(),
               stopResizing: mock(),
             },
-            confirmation: {},
             setters: {},
             state: {},
           } as never

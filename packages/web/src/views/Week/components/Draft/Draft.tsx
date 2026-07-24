@@ -1,4 +1,4 @@
-import { type FC, useMemo } from "react";
+import { type FC, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Origin } from "@core/constants/core.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -6,6 +6,7 @@ import { getDraftContainer } from "@web/common/utils/draft/draft.util";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { positionAllDayDraftEvent } from "@web/grid/layout/all-day-draft.position";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -29,8 +30,22 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
-  const { state } = useDraftContext();
-  const { draft } = state;
+  const { setters, state } = useDraftContext();
+  const { draft, isDragging, isFormOpen, isResizing } = state;
+  const { setDraft } = setters;
+  const gridDraftFromStore = useDraftStore(selectGridDraft);
+
+  // Sidebar edits write the shared draft store. Mirror into Week local draft
+  // while the form is idle so the portal overlay stays in sync without
+  // SidebarEventDetails depending on DraftContext.
+  useEffect(() => {
+    if (isDragging || isResizing || !isFormOpen || !gridDraftFromStore) {
+      return;
+    }
+
+    setDraft(gridDraftFromStore);
+  }, [gridDraftFromStore, isDragging, isFormOpen, isResizing, setDraft]);
+
   // GridEvent-shaped projection of the canonical GridEventDraft, for
   // the still-unconverted grid-layout helpers below (deck layout, all-day
   // positioning, recurrence previews) — see grid-event-draft.adapter.ts's

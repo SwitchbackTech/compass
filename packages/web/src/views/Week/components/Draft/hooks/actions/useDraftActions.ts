@@ -1,7 +1,5 @@
-import { ObjectId } from "bson";
 import { useCallback } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { EventIdSchema } from "@core/types/domain-primitives";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
@@ -23,7 +21,6 @@ import {
 } from "@web/events/event-draft.types";
 import {
   createGridEventDraft,
-  duplicateGridEventDraft,
   parseGridEventDraft,
   replaceGridDraftSchedule,
   timedGridSchedule,
@@ -120,16 +117,6 @@ export const useDraftActions = (
     setDateBeingChanged("endDate");
   }, [setIsResizing, setResizeStatus, setDateBeingChanged]);
 
-  const isInstance = useCallback((): boolean => {
-    return ObjectId.isValid(draftFromStore?.recurrence?.eventId ?? "");
-  }, [draftFromStore?.recurrence?.eventId]);
-
-  const isRecurrence = useCallback((): boolean => {
-    const hasRRule = Array.isArray(draftFromStore?.recurrence?.rule);
-
-    return hasRRule || isInstance();
-  }, [draftFromStore?.recurrence?.rule, isInstance]);
-
   const closeForm = useCallback(() => {
     setIsFormOpen(false);
   }, [setIsFormOpen]);
@@ -159,25 +146,6 @@ export const useDraftActions = (
       draftActions.discard();
     }
   }, [draftFromStore, eventType, reset]);
-
-  const deleteEvent = useCallback(
-    (
-      applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
-    ) => {
-      // No confirmation prompt: deletes are undoable via Cmd/Ctrl+Z
-      const draftId = draft?.kind === "edit" ? draft.source.id : undefined;
-      const storeId = draftFromStore?._id
-        ? EventIdSchema.safeParse(draftFromStore._id)
-        : undefined;
-      const id = draftId ?? (storeId?.success ? storeId.data : undefined);
-
-      if (id) {
-        mutations.delete({ id, scope: scopeFromApplyTo(applyTo) });
-      }
-      discard();
-    },
-    [draft, draftFromStore, discard, mutations],
-  );
 
   const openForm = useCallback(() => {
     setIsFormOpen(true);
@@ -272,36 +240,6 @@ export const useDraftActions = (
       openForm,
     ],
   );
-
-  const duplicateEvent = useCallback(() => {
-    if (!gridDraftFromStore) {
-      discard();
-      return;
-    }
-
-    if (gridDraftFromStore.kind !== "edit") {
-      // In-progress, not-yet-saved draft: duplicate its current form values.
-      void submit({
-        kind: "create",
-        source: null,
-        values: { ...gridDraftFromStore.values },
-      });
-      discard();
-      return;
-    }
-
-    const duplicate = duplicateGridEventDraft(
-      gridDraftFromStore.source,
-      calendars ?? [],
-    );
-    if (!duplicate) {
-      discard();
-      return;
-    }
-
-    void submit(duplicate);
-    discard();
-  }, [calendars, gridDraftFromStore, submit, discard]);
 
   const isInsideVisibleWeek = useCallback(
     (start: Dayjs) => {
@@ -708,16 +646,12 @@ export const useDraftActions = (
   const actions = {
     closeForm,
     submit,
-    deleteEvent,
-    duplicateEvent,
     discard,
     drag,
     openForm,
     repositionDraftByKeyboard,
     reset,
     resize,
-    isInstance,
-    isRecurrence,
     startDragging: () => {
       // Placing `setIsFormOpenBeforeDragging` here rather than inside `startDragging`
       // because `setIsFormOpenBeforeDragging` depends on `isFormOpen` and re-calculates

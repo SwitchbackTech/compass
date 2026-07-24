@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef } from "react";
-import { type EventId } from "@core/types/domain-primitives";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   isEventReadOnly,
@@ -20,13 +19,8 @@ import {
   isEventFormOpen,
 } from "@web/common/utils/form/form.util";
 import { focusFirstSidebarItem } from "@web/components/Sidebar/util/sidebarFocus.util";
-import { type GridScheduleDraft } from "@web/events/event-draft.types";
-import {
-  editGridEventDraft,
-  replaceGridDraftSchedule,
-  timedGridSchedule,
-} from "@web/events/grid-event-draft.adapter";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
 import {
@@ -79,17 +73,17 @@ export const useWeekShortcuts = ({
 }: ShortcutProps) => {
   const mutations = useEventMutations();
   const { delete: deleteEvent } = mutations;
+  const updateEvent = useUpdateEvent();
   // Read-only (unwritable calendar or busy content) events can be inspected
   // but never mutated - delete and nudge/move below gate on this before
   // touching the store (packet 08 step 8).
   const calendarLookup = useCalendarLookup();
   const {
     actions: { repositionDraftByKeyboard },
-    confirmation,
   } = useDraftContext();
 
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
-  const { allDayEvents, entities, timedEvents } = useWeekEventViewModel({
+  const { allDayEvents, timedEvents } = useWeekEventViewModel({
     startOfView: queryStartOfView,
     endOfView: queryEndOfView,
   });
@@ -288,36 +282,12 @@ export const useWeekShortcuts = ({
         event,
         keyboardEvent,
         onNudge: (nudgedEvent) => {
-          const sourceEvent = nudgedEvent._id
-            ? entities[nudgedEvent._id as EventId]
-            : undefined;
-          const draft = sourceEvent
-            ? editGridEventDraft(sourceEvent, "this")
-            : null;
-          if (!draft) return;
-
-          const schedule: GridScheduleDraft = nudgedEvent.isAllDay
-            ? {
-                kind: "allDay",
-                start: dayjs(nudgedEvent.startDate).toDate(),
-                end: dayjs(nudgedEvent.endDate).toDate(),
-              }
-            : timedGridSchedule(
-                dayjs(nudgedEvent.startDate).toDate(),
-                dayjs(nudgedEvent.endDate).toDate(),
-              );
-
-          void confirmation.onSubmit(replaceGridDraftSchedule(draft, schedule));
+          updateEvent({ event: nudgedEvent }, true);
         },
+        afterNudge: () => draftActions.discard(),
       });
     },
-    [
-      calendarLookup,
-      confirmation,
-      entities,
-      findCalendarEventForTarget,
-      weekDays,
-    ],
+    [calendarLookup, findCalendarEventForTarget, updateEvent, weekDays],
   );
 
   const moveShortcutCreatedDraft = useCallback(

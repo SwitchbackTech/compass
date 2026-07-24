@@ -1,5 +1,4 @@
-import { useCallback, useContext, useMemo } from "react";
-import { type GridEventDraft } from "@web/events/event-draft.types";
+import { useCallback, useMemo } from "react";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { useEventById } from "@web/events/queries/useEventById";
 import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
@@ -20,82 +19,81 @@ import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
-import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
+
+type SidebarEventDetailsProps = {
+  /**
+   * Day view always prompts before saving recurring edits. Week view applies
+   * occurrence-count and instance heuristics instead.
+   */
+  confirmAllRecurringEdits?: boolean;
+};
 
 /**
  * Store-driven event-details panel for Day and Week sidebars. Renders the
  * current grid draft whenever the draft store says the form is open.
  */
-export function SidebarEventDetails() {
-  const weekDraft = useContext(DraftContext);
+export function SidebarEventDetails({
+  confirmAllRecurringEdits = true,
+}: SidebarEventDetailsProps = {}) {
   const draft = useDraftStore(selectGridDraft);
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const _id = draft?.kind === "edit" ? draft.source.id : undefined;
-  const dayOnSave = useSaveEventForm();
-  const dayOnDelete = useDeleteEvent(_id as string);
-  const dayOnDuplicate = useDuplicateEvent(_id as string);
-  const dayOnClose = useCloseEventForm();
+  const onSave = useSaveEventForm();
+  const onDelete = useDeleteEvent(_id as string);
+  const onDuplicate = useDuplicateEvent(_id as string);
+  const onClose = useCloseEventForm();
   const existingEvent = useEventById(_id);
   const existing = Boolean(existingEvent);
   const isRecurring = isExistingEventRecurring(existingEvent);
+  const seriesBaseEventId =
+    draft?.kind === "edit" && draft.source.recurrence.kind === "occurrence"
+      ? draft.source.recurrence.seriesId
+      : undefined;
+  const seriesBaseEvent = useEventById(seriesBaseEventId);
 
   const getSaveContext = useCallback(
-    () => ({
-      confirmAllRecurringEdits: true,
-      isInstance: false,
-      isRecurring,
-    }),
-    [isRecurring],
+    (editDraft: NonNullable<typeof draft>) => {
+      if (confirmAllRecurringEdits) {
+        return {
+          confirmAllRecurringEdits: true as const,
+          isInstance: false,
+          isRecurring,
+        };
+      }
+
+      const isEditDraft = editDraft.kind === "edit";
+      const draftIsInstance =
+        isEditDraft && editDraft.source.recurrence.kind === "occurrence";
+
+      return {
+        baseEvent: seriesBaseEvent,
+        isInstance: draftIsInstance,
+        isRecurring:
+          isEditDraft &&
+          (isExistingEventRecurring(existingEvent) || draftIsInstance),
+      };
+    },
+    [confirmAllRecurringEdits, existingEvent, isRecurring, seriesBaseEvent],
   );
 
   const getDeleteContext = useCallback(() => ({ isRecurring }), [isRecurring]);
 
-  const dayConfirmation = useRecurrenceScopeConfirmation({
+  const confirmation = useRecurrenceScopeConfirmation({
     getDeleteContext,
     getSaveContext,
-    onDelete: (applyTo) => dayOnDelete(toRecurrenceScope(applyTo)),
-    onSave: dayOnSave,
+    onDelete: (applyTo) => onDelete(toRecurrenceScope(applyTo)),
+    onSave,
   });
 
-  const confirmation = weekDraft?.confirmation ?? dayConfirmation;
-  const onClose = weekDraft?.actions.discard ?? dayOnClose;
-  const onDuplicate = weekDraft?.actions.duplicateEvent ?? dayOnDuplicate;
-
-  const syncDraft = useCallback(
-    (resolved: GridEventDraft | null) => {
-      draftActions.setGridDraft(resolved);
-      weekDraft?.setters.setDraft(resolved);
-    },
-    [weekDraft],
-  );
-
   const scopeDialogDraft = useMemo(() => {
-    if (weekDraft || !dayConfirmation.pendingAction || !draft) return null;
+    if (!confirmation.pendingAction || !draft) return null;
 
     return gridEventDraftToSchemaEvent(
-      dayConfirmation.pendingAction.type === "save"
-        ? dayConfirmation.pendingAction.draft
+      confirmation.pendingAction.type === "save"
+        ? confirmation.pendingAction.draft
         : draft,
     );
-  }, [dayConfirmation.pendingAction, draft, weekDraft]);
-
-  const confirmationUi = weekDraft ? null : (
-    <>
-      <RecurrenceScopeConfirmationDialog
-        draft={scopeDialogDraft}
-        pendingAction={dayConfirmation.pendingAction}
-        setRecurrenceUpdateScopeDialogOpen={
-          dayConfirmation.setRecurrenceUpdateScopeDialogOpen
-        }
-        onUpdateScopeChange={dayConfirmation.onUpdateScopeChange}
-      />
-      <ConvertToStandaloneDialog
-        draft={dayConfirmation.standaloneDraft}
-        onCancel={dayConfirmation.onCancelConvertToStandalone}
-        onConfirm={dayConfirmation.onConfirmConvertToStandalone}
-      />
-    </>
-  );
+  }, [confirmation.pendingAction, draft]);
 
   return (
     <EventFormPanel
@@ -103,14 +101,30 @@ export function SidebarEventDetails() {
         onDelete: confirmation.onDelete,
         onSubmit: confirmation.onSubmit,
       }}
-      confirmationUi={confirmationUi}
+      confirmationUi={
+        <>
+          <RecurrenceScopeConfirmationDialog
+            draft={scopeDialogDraft}
+            pendingAction={confirmation.pendingAction}
+            setRecurrenceUpdateScopeDialogOpen={
+              confirmation.setRecurrenceUpdateScopeDialogOpen
+            }
+            onUpdateScopeChange={confirmation.onUpdateScopeChange}
+          />
+          <ConvertToStandaloneDialog
+            draft={confirmation.standaloneDraft}
+            onCancel={confirmation.onCancelConvertToStandalone}
+            onConfirm={confirmation.onConfirmConvertToStandalone}
+          />
+        </>
+      }
       draft={draft}
       isDraft={!existing}
       isExistingEvent={existing}
       isFormOpen={isFormOpen}
       onClose={onClose}
       onDuplicate={onDuplicate}
-      syncDraft={syncDraft}
+      syncDraft={draftActions.setGridDraft}
     />
   );
 }

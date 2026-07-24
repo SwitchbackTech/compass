@@ -92,13 +92,8 @@ const renderGridDraft = ({
     actions: {
       convert: mock(),
       discard: mock(),
-      duplicateEvent: mock(),
       repositionDraftByKeyboard: mock(() => true),
       startDragging: mock(),
-    },
-    confirmation: {
-      onDelete: mock(),
-      onSubmit: mock(),
     },
     setters: {
       setDateBeingChanged: mock(),
