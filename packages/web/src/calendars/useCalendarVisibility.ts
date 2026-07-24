@@ -14,7 +14,7 @@ export const CALENDAR_VISIBILITY_FAILURE_MESSAGE =
   "Couldn't update calendar visibility. The change was undone.";
 
 /**
- * Optimistic + coalesced calendar visibility toggle (packet 08 step 3).
+ * Optimistic + coalesced calendar visibility toggle.
  * Every call flips the calendars cache immediately, and on hide drops that
  * calendar's events from every cached event query so the grid lists
  * react without waiting on the network. Rapid toggles across calendars

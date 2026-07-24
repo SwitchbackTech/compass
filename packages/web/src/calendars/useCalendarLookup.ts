@@ -21,7 +21,7 @@ export function buildCalendarLookup(
 
 /**
  * Memoized id -> Calendar lookup, built once per calendars-query data
- * reference rather than rescanned per event/card render (packet 08 step 5).
+ * reference rather than rescanned per event/card render.
  * Call this once in a list-rendering parent (e.g. MainGridEvents,
  * AllDayEvents) and resolve/pass down per-card via
  * {@link resolveCalendarCardIdentity} - not from inside every card.
@@ -39,7 +39,7 @@ export type CalendarCardIdentity = {
 
 /**
  * Resolves the calendar-colored accent + accessible-label suffix for a
- * single event card. Identity is never conveyed by color alone (A9): the
+ * single event card. Identity is never conveyed by color alone: the
  * name always travels with the accent. Gated on there being more than one
  * active calendar - a single-calendar account's cards gain nothing from
  * either the accent or a redundant name suffix, since every card would say
@@ -62,7 +62,7 @@ export function resolveCalendarCardIdentity(
  * - it's a busy event (content.kind === "busy") - a private event on a
  *   reader calendar whose real fields the server never sends, so there is
  *   nothing that could round-trip through an edit; forced read-only
- *   regardless of calendar capability (packet 08 step 8), or
+ *   regardless of calendar capability, or
  * - its calendar resolves in the lookup and that calendar's
  *   capabilities.canWrite is false.
  *

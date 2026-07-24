@@ -1,6 +1,6 @@
 import { type Calendar } from "@core/types/calendar.contracts";
 
-// A4: the default create target is the primary writable Google calendar,
+// The default create target is the primary writable Google calendar,
 // falling back to the local calendar when there is no such Google calendar
 // (offline/anonymous mode, or a Google account with no primary writer access).
 export function getLocalCalendar(calendars: Calendar[]): Calendar | undefined {
