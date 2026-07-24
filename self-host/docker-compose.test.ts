@@ -223,7 +223,8 @@ describe("self-host helper", () => {
     const helper = readRepoFile("self-host/compass");
     const updateBlock = helper.slice(helper.indexOf("\n  update)"));
 
-    expect(updateBlock).toContain("docker image prune -af");
+    expect(helper).toContain("prune_unused_images");
+    expect(helper).toContain("timeout 120 docker image prune -af");
     expect(updateBlock).toContain("compose logs --tail=100 mongo backend");
   });
 
