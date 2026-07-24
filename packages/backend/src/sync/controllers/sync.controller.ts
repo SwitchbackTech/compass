@@ -19,6 +19,7 @@ import { publicWatchNotificationIngress } from "@backend/sync/services/public-wa
 import { getSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { googleWatchMaintenanceService } from "@backend/sync/services/watch/google-watch-maintenance.service";
+import * as legacyWatchOwnership from "@backend/sync/services/watch/legacy-watch-ownership";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { ImportGCalRequestSchema } from "../sync.types";
 
@@ -189,6 +190,15 @@ export class SyncController {
     res: Response,
     next: NextFunction,
   ) => {
+    // When Sync owns watches/events, Google push must land on Sync's
+    // `/sync/notifications/google` path. Ack-and-ignore leftover legacy
+    // watches so we do not write legacy Mongo or publish SSE that makes the
+    // SPA refetch Sync before Sync has pulled.
+    if (!legacyWatchOwnership.isLegacyGoogleWatchOwner()) {
+      res.status(Status.OK).send("ignored");
+      return;
+    }
+
     const channelId = req.headers["x-goog-channel-id"] as string;
     const resourceId = req.headers["x-goog-resource-id"] as string;
 
