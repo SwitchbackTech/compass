@@ -1,5 +1,5 @@
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
-import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
+import { useDraftDragMotion } from "@web/views/Week/components/Draft/context/useDraftDragMotion";
 
 const SCROLL_SPEED = 10;
 const EDGE_THRESHOLD = 50;
@@ -7,13 +7,13 @@ const EDGE_THRESHOLD = 50;
 export const useDragEventSmartScroll = (
   mainGridRef: MutableRefObject<HTMLElement | null>,
 ) => {
-  const { state } = useDraftContext();
+  const { isDragging, isTimedDraft } = useDraftDragMotion();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const scrollRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!state.isDragging) return;
-    if (state.draft?.values.schedule.kind !== "timed") return;
+    if (!isDragging) return;
+    if (!isTimedDraft) return;
 
     const updateMousePosition = (event: MouseEvent) => {
       setMousePosition({ x: event.clientX, y: event.clientY });
@@ -24,16 +24,16 @@ export const useDragEventSmartScroll = (
     return () => {
       window.removeEventListener("mousemove", updateMousePosition);
     };
-  }, [state.draft?.values.schedule.kind, state.isDragging]);
+  }, [isDragging, isTimedDraft]);
 
   useEffect(() => {
     if (!mainGridRef.current) return;
     const container = mainGridRef.current;
 
     const scrollIfNeeded = () => {
-      if (!state.isDragging) return;
+      if (!isDragging) return;
       if (!container) return;
-      if (state.draft?.values.schedule.kind !== "timed") return;
+      if (!isTimedDraft) return;
 
       const containerRect = container.getBoundingClientRect();
       const { top, bottom } = {
@@ -73,10 +73,10 @@ export const useDragEventSmartScroll = (
       }
     };
   }, [
-    state.isDragging,
+    isDragging,
+    isTimedDraft,
     mousePosition.x,
     mousePosition.y,
-    state.draft?.values.schedule.kind,
     mousePosition,
     mainGridRef.current,
   ]);
