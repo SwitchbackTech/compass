@@ -88,7 +88,7 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
         autoComplete="email"
       />
       {submitError ? (
-        <p className="text-center text-sm text-error" role="alert">
+        <p className="text-center text-error text-sm" role="alert">
           {submitError}
         </p>
       ) : null}
