@@ -94,10 +94,7 @@ class CalendarController {
 
         res.promise({
           calendars: localCalendar
-            ? [
-                ...syncResponse.calendars,
-                mapCalendarRecord(localCalendar),
-              ]
+            ? [...syncResponse.calendars, mapCalendarRecord(localCalendar)]
             : syncResponse.calendars,
         });
         return;
