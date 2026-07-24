@@ -5,6 +5,9 @@ import {
   BusyAvailabilityResponseSchema,
 } from "@core/types/sync/availability.contracts";
 import {
+  type ConnectionBeginRequest,
+  type ConnectionBeginResponse,
+  ConnectionBeginResponseSchema,
   type ConnectionListResponse,
   ConnectionListResponseSchema,
 } from "@core/types/sync/connection.contracts";
@@ -14,6 +17,7 @@ import { createHmac, randomUUID } from "node:crypto";
 // route paths; a contract test asserts they match.
 const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 const CONNECTIONS_PATH = "/internal/connections";
+const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
 
 const DEFAULT_TIMEOUT_MS = 5000;
 
@@ -121,6 +125,26 @@ export class SyncServiceClient {
       path: CONNECTIONS_PATH,
       principal,
       schema: ConnectionListResponseSchema,
+      correlationId,
+    });
+  }
+
+  // Start an OAuth authorization flow and return the provider consent URL the
+  // browser should be sent to. Pass a connectionId to reconnect an existing
+  // connection; omit it for a fresh one. The Sync service only mints the URL
+  // here (and requires active execution mode, else it returns a 409 mapped to
+  // `unexpectedStatus`); the connection is created when the provider calls back.
+  beginConnection(
+    principal: SyncPrincipal,
+    request: ConnectionBeginRequest = {},
+    correlationId?: string,
+  ): Promise<SyncClientResult<ConnectionBeginResponse>> {
+    return this.#request({
+      method: "POST",
+      path: CONNECTIONS_BEGIN_PATH,
+      principal,
+      body: request,
+      schema: ConnectionBeginResponseSchema,
       correlationId,
     });
   }
