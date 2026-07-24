@@ -89,6 +89,12 @@ export class ProviderConnectionRepository {
     if (record) return this.parseRecord(record);
 
     // Pre-S45 rows omit diagnosticKey until first read; match derived keys.
+    const hasLegacyRows = await this.collection.findOne(
+      { diagnosticKey: { $not: { $type: "string" } } },
+      { projection: { _id: 1 } },
+    );
+    if (!hasLegacyRows) return null;
+
     const legacyRows = await this.collection
       .find({ diagnosticKey: { $not: { $type: "string" } } })
       .toArray();
