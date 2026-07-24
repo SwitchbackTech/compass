@@ -689,8 +689,9 @@ async function migrateCalendarListResource(args: {
   userCounts: MigrateProviderStateUserResult["counts"];
 }): Promise<void> {
   const cursor =
-    args.syncDoc?.google?.calendarlist?.find((r) => Boolean(r.nextSyncToken))
-      ?.nextSyncToken ?? null;
+    args.syncDoc?.google?.calendarlist?.find(
+      (r) => r.gCalendarId === Resource_Sync.CALENDAR,
+    )?.nextSyncToken ?? null;
   const existing = args.existingResources.find(
     (row) => row.resourceKind === "calendarList" && row.calendarId === null,
   );
