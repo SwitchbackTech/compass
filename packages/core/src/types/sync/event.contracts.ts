@@ -213,3 +213,90 @@ export const EventOccurrenceListResponseSchema = z.strictObject({
 export type EventOccurrenceListResponse = z.infer<
   typeof EventOccurrenceListResponseSchema
 >;
+
+// A full-fidelity event row for the browser calendar read (distinct from the
+// stripped SyncEventOccurrence used by the busy/availability feed). It carries
+// everything the app needs to render AND edit an event: full content, the
+// projected instance schedule, and how the row relates to a series. The backend
+// translates one of these into an app-facing Event.
+//
+// Row kinds returned for a recurring series over a range, mirroring what the
+// legacy store materializes today:
+//   - one `series` master row (the app keeps it for edit-all-future, but
+//     suppresses it from rendering), plus
+//   - one `occurrence` row per projected instance in range.
+// A non-recurring event is a single `single` row.
+const SyncInstanceContentSchema = z.strictObject({
+  title: z.string(),
+  description: z.string(),
+});
+export type SyncInstanceContent = z.infer<typeof SyncInstanceContentSchema>;
+
+const SingleInstanceRecurrenceSchema = z.strictObject({
+  kind: z.literal("single"),
+});
+
+// The series master row: carries the recurrence rule the app needs to offer
+// "edit this and all following". Its schedule is the master's own schedule.
+const SeriesInstanceRecurrenceSchema = z.strictObject({
+  kind: z.literal("series"),
+  rules: RRuleSchema,
+});
+
+// One projected (or overridden) instance of a series. recurrenceId is the
+// instance's original scheduled start — the identity the write path uses to
+// address exactly this occurrence. The owning series is `eventId`.
+const OccurrenceInstanceRecurrenceSchema = z.strictObject({
+  kind: z.literal("occurrence"),
+  recurrenceId: DateTimeSchema,
+});
+
+export const SyncInstanceRecurrenceSchema = z.discriminatedUnion("kind", [
+  SingleInstanceRecurrenceSchema,
+  SeriesInstanceRecurrenceSchema,
+  OccurrenceInstanceRecurrenceSchema,
+]);
+export type SyncInstanceRecurrence = z.infer<
+  typeof SyncInstanceRecurrenceSchema
+>;
+
+export const SyncEventInstanceSchema = z.strictObject({
+  // The real id of the owning event: the single, or the series master that
+  // owns a `series`/`occurrence` row. Never a synthesized id — the backend
+  // composes any app-facing per-occurrence id from (eventId, recurrenceId).
+  eventId: EventIdSchema,
+  calendarId: SyncEventCalendarIdSchema,
+  content: SyncInstanceContentSchema,
+  schedule: EventScheduleSchema,
+  recurrence: SyncInstanceRecurrenceSchema,
+  createdAt: DateTimeSchema,
+  updatedAt: DateTimeSchema,
+});
+export type SyncEventInstance = z.infer<typeof SyncEventInstanceSchema>;
+
+// Query for the full-fidelity read. Identical range/paging shape to the
+// occurrence feed, kept as its own schema so the two endpoints stay
+// independently evolvable.
+export const EventInstanceListQuerySchema = z
+  .strictObject({
+    calendarIds: z.array(SyncEventCalendarIdSchema).min(1).readonly(),
+    start: DateTimeSchema,
+    end: DateTimeSchema,
+    cursor: z.string().trim().min(1).max(1024).optional(),
+    limit: z.number().int().min(1).max(500).optional(),
+  })
+  .refine(({ start, end }) => Date.parse(end) > Date.parse(start), {
+    message: "Range end must be after start",
+    path: ["end"],
+  });
+export type EventInstanceListQuery = z.infer<
+  typeof EventInstanceListQuerySchema
+>;
+
+export const EventInstanceListResponseSchema = z.strictObject({
+  instances: z.array(SyncEventInstanceSchema).readonly(),
+  nextCursor: z.string().trim().min(1).max(1024).nullable(),
+});
+export type EventInstanceListResponse = z.infer<
+  typeof EventInstanceListResponseSchema
+>;
