@@ -324,7 +324,14 @@ export function inventoryLegacySyncData(
 
   const syncDocByUser = new Map<string, (typeof syncDocs)[number]>();
   for (const doc of syncDocs) {
-    if (!syncDocByUser.has(doc.user)) syncDocByUser.set(doc.user, doc);
+    const existing = syncDocByUser.get(doc.user);
+    const docId = doc._id?.toHexString() ?? `user:${doc.user}`;
+    if (
+      !existing ||
+      byId(docId, existing._id?.toHexString() ?? `user:${existing.user}`) < 0
+    ) {
+      syncDocByUser.set(doc.user, doc);
+    }
   }
 
   const watchesByUser = new Map<string, Schema_Watch[]>();
