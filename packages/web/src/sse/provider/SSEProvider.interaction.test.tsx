@@ -152,7 +152,7 @@ describe("useGcalSSE", () => {
     });
   });
 
-  it("clears the syncing override and triggers refetch after importCompleted", async () => {
+  it("refetches metadata and events after importCompleted without clearing repairing", async () => {
     setRepairingSyncIndicatorOverride();
 
     render(<HookHost />);
@@ -167,8 +167,37 @@ describe("useGcalSSE", () => {
     });
 
     await waitFor(() => {
-      expect(getGoogleSyncIndicatorOverride()).toBe(null);
+      // Repairing is a user-initiated override; only its own completion path
+      // clears it. Import SSE refreshes truth from metadata instead.
+      expect(getGoogleSyncIndicatorOverride()).toBe("repairing");
+      expect(refreshUserMetadata).toHaveBeenCalled();
       expect(mockInvalidateEventQueries).toHaveBeenCalled();
+    });
+  });
+
+  it("refetches metadata on calendarsChanged so Sync connection health can land", async () => {
+    render(<HookHost />);
+
+    act(() => {
+      fireMessage({ type: "calendarsChanged", calendarIds: [] });
+    });
+
+    await waitFor(() => {
+      expect(refreshUserMetadata).toHaveBeenCalled();
+    });
+  });
+
+  it("refetches metadata on healthy syncStatusChanged instead of clearing locally", async () => {
+    render(<HookHost />);
+
+    act(() => {
+      fireMessage({ type: "syncStatusChanged", sync: { status: "syncing" } });
+      fireMessage({ type: "syncStatusChanged", sync: { status: "healthy" } });
+    });
+
+    await waitFor(() => {
+      expect(getGoogleSyncIndicatorOverride()).toBe("syncing");
+      expect(refreshUserMetadata).toHaveBeenCalled();
     });
   });
 
