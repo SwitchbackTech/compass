@@ -5,6 +5,10 @@ import {
 } from "@web/common/constants/web.constants";
 import { GRID_TIME_STEP, TIMED_VISIBLE_HOURS } from "@web/grid/grid.constants";
 import {
+  SMART_SCROLL_BOTTOM_INSET_PX,
+  SMART_SCROLL_SPEED_PX,
+} from "@web/grid/interaction/adapter.helpers";
+import {
   buildAllDayGridLayoutCache,
   buildDragGridLayoutCache,
   buildTimedGridLayoutCache,
@@ -16,9 +20,6 @@ import {
 } from "@web/grid/interaction/layout.cache";
 import { type DragRow } from "@web/grid/interaction/types/timed-drag.types";
 import { WEEK_EDGE_NAVIGATION_THRESHOLD_PX } from "../edge-navigation";
-
-const SMART_SCROLL_BOTTOM_INSET_PX = 100;
-const SMART_SCROLL_SPEED_PX = 10;
 
 export type WeekLayoutCacheSources = GridLayoutCacheSources;
 
