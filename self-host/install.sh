@@ -13,6 +13,7 @@ CONFIG_FILE=$COMPASS_HOME/compass.yaml
 MARKER_FILE=$COMPASS_HOME/.compass-self-host
 HELPER_FILE=$COMPASS_HOME/compass
 COMPOSE_FILE=$COMPASS_HOME/compose.yaml
+COMPOSE_SELFHOSTED_FILE=$COMPASS_HOME/compose.selfhosted.yaml
 
 PROJECT_NAME=$(basename "$COMPASS_HOME")
 WEB_PORT_VALUE=9080
@@ -452,15 +453,20 @@ EOF
 
 download_compose_file() {
   tmp_compose=$COMPASS_HOME/compose.yaml.$$
+  tmp_selfhosted=$COMPASS_HOME/compose.selfhosted.yaml.$$
   info "Downloading compose.yaml for Compass ${COMPASS_VERSION}."
   curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compose.yaml" -o "$tmp_compose" \
     || fail "Could not download compose.yaml for version ${COMPASS_VERSION}. Check that the version exists."
+  curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compose.selfhosted.yaml" -o "$tmp_selfhosted" \
+    || fail "Could not download compose.selfhosted.yaml for version ${COMPASS_VERSION}. Check that the version exists."
 
   if [ -f "$COMPOSE_FILE" ]; then
     cp "$COMPOSE_FILE" "${COMPASS_HOME}/.compose.yaml.bak" || true
   fi
 
   mv "$tmp_compose" "$COMPOSE_FILE" || fail "Could not install compose.yaml."
+  mv "$tmp_selfhosted" "$COMPASS_HOME/compose.selfhosted.yaml" \
+    || fail "Could not install compose.selfhosted.yaml."
 }
 
 download_helper() {
@@ -497,6 +503,15 @@ set_compose_env() {
 
 compose_base() {
   set_compose_env
+  case ",${COMPOSE_PROFILES}," in
+    *,selfhosted,*)
+      if [ -f "$COMPOSE_SELFHOSTED_FILE" ]; then
+        docker compose --project-name "$PROJECT_NAME" \
+          -f "$COMPOSE_FILE" -f "$COMPOSE_SELFHOSTED_FILE" "$@"
+        return
+      fi
+      ;;
+  esac
   docker compose --project-name "$PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
 }
 

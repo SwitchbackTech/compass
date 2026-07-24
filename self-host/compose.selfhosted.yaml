@@ -1,0 +1,9 @@
+# Overlay applied when COMPOSE_PROFILES includes `selfhosted`.
+# Keeps the backend gated on a healthy local mongo without breaking
+# profile-less cloud/Atlas deploys that have no mongo service in the
+# base compose.yaml.
+services:
+  backend:
+    depends_on:
+      mongo:
+        condition: service_healthy
