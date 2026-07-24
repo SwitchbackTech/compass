@@ -20,21 +20,16 @@ function sortCalendars(calendars: Calendar[]): Calendar[] {
 }
 
 interface Props {
-  /** Test seam only: production callers rely on useCalendarVisibility's default. */
-  coalesceDelayMs?: number;
   /** Test seam only: lets list tests stub the account header's auth/sync hooks. */
   Header?: FC;
 }
 
-export const CalendarList: FC<Props> = ({
-  coalesceDelayMs,
-  Header = CalendarListHeader,
-}) => {
+export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
   const { authenticated } = useSession();
   const { isAvailable, state } = useConnectGoogle();
   const { data, isPending, isError, refetch } = useCalendarsQuery();
   const { toggleCalendarVisibility, failureAnnouncement } =
-    useCalendarVisibility(coalesceDelayMs);
+    useCalendarVisibility();
 
   const calendars = sortCalendars(
     (data ?? []).filter((calendar) => calendar.isActive),
@@ -92,23 +87,17 @@ export const CalendarList: FC<Props> = ({
 
             return (
               <li key={calendar.id}>
-                {authenticated ? (
-                  <button
-                    aria-label={`${calendar.isVisible ? "Hide" : "Show"} ${displayName} calendar`}
-                    aria-pressed={calendar.isVisible}
-                    className="c-focus-ring group flex w-full min-w-0 items-center gap-2 rounded px-1 py-0.5 text-left text-text text-xs hover:bg-surface-panel"
-                    onClick={() =>
-                      toggleCalendarVisibility(calendar.id, !calendar.isVisible)
-                    }
-                    type="button"
-                  >
-                    {calendarRow}
-                  </button>
-                ) : (
-                  <div className="flex min-w-0 items-center gap-2 px-1 py-0.5 text-text text-xs">
-                    {calendarRow}
-                  </div>
-                )}
+                <button
+                  aria-label={`${calendar.isVisible ? "Hide" : "Show"} ${displayName} calendar`}
+                  aria-pressed={calendar.isVisible}
+                  className="c-focus-ring group flex w-full min-w-0 items-center gap-2 rounded px-1 py-0.5 text-left text-text text-xs hover:bg-surface-panel"
+                  onClick={() =>
+                    toggleCalendarVisibility(calendar.id, !calendar.isVisible)
+                  }
+                  type="button"
+                >
+                  {calendarRow}
+                </button>
               </li>
             );
           })}

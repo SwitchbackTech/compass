@@ -143,7 +143,8 @@ const DEFAULT_EVENTS: FixtureEvent[] = [
   buildEvent(EVENT_B_ID, CALENDAR_B_ID, EVENT_B_TITLE, 13),
 ];
 
-function buildCalendars(visibility: Record<string, boolean>) {
+function buildCalendars() {
+  // Server isVisible is ignored by the web (S39 A2 overlays localStorage).
   return [
     calendar({
       id: CALENDAR_A_ID,
@@ -153,7 +154,7 @@ function buildCalendars(visibility: Record<string, boolean>) {
       provider: "google",
       access: "owner",
       isPrimary: true,
-      isVisible: visibility[CALENDAR_A_ID],
+      isVisible: true,
     }),
     calendar({
       id: CALENDAR_B_ID,
@@ -163,7 +164,7 @@ function buildCalendars(visibility: Record<string, boolean>) {
       provider: "google",
       access: "reader",
       isPrimary: false,
-      isVisible: visibility[CALENDAR_B_ID],
+      isVisible: true,
     }),
     calendar({
       id: CALENDAR_LOCAL_ID,
@@ -173,18 +174,12 @@ function buildCalendars(visibility: Record<string, boolean>) {
       provider: "local",
       access: "owner",
       isPrimary: false,
-      isVisible: visibility[CALENDAR_LOCAL_ID],
+      isVisible: true,
     }),
   ];
 }
 
-interface VisibilityUpdate {
-  calendarId: string;
-  isVisible: boolean;
-}
-
 interface CalendarExperienceHarness {
-  putCalls: VisibilityUpdate[][];
   mutationRequests: { method: string; pathname: string }[];
 }
 
@@ -199,23 +194,14 @@ type CompassE2EWindow = Window & {
  * "has authenticated before" flag (so the event repository targets the
  * remote API instead of IndexedDB - see event.repository.factory.ts), and
  * handlers for every endpoint the calendar sidebar/CalendarSelect/read-only
- * form/availability query touch. The calendars and event-list handlers
- * share `visibility` state so a `/calendars/select` PUT is reflected by
- * both on the next refetch, emulating server-side visibility filtering
- * (packet 08 step 4). The event-list handler answers the "range" query with
- * the visible fixture events.
+ * form/availability query touch. Visibility is client-owned (S39 A2): the
+ * event list returns every fixture event; the web filters via localStorage.
  */
 async function setupCalendarExperiencePage(
   page: Page,
   events: FixtureEvent[] = DEFAULT_EVENTS,
 ): Promise<CalendarExperienceHarness> {
-  const visibility: Record<string, boolean> = {
-    [CALENDAR_A_ID]: true,
-    [CALENDAR_B_ID]: true,
-    [CALENDAR_LOCAL_ID]: true,
-  };
   const harness: CalendarExperienceHarness = {
-    putCalls: [],
     mutationRequests: [],
   };
 
@@ -265,25 +251,14 @@ async function setupCalendarExperiencePage(
     if (pathname.endsWith("/api/config")) {
       return json({ google: { isConfigured: true } });
     }
-    if (pathname.endsWith("/api/calendars/select") && method === "PUT") {
-      const body = request.postDataJSON() as VisibilityUpdate[];
-      harness.putCalls.push(body);
-      for (const entry of body) {
-        visibility[entry.calendarId] = entry.isVisible;
-      }
-      return route.fulfill({ status: 204 });
-    }
     if (pathname.endsWith("/api/calendars/availability")) {
       return json({ busyPeriods: [] });
     }
     if (pathname.endsWith("/api/calendars") && method === "GET") {
-      return json({ calendars: buildCalendars(visibility) });
+      return json({ calendars: buildCalendars() });
     }
     if (pathname.endsWith("/api/event") && method === "GET") {
-      const matching = events.filter(
-        (event) => visibility[event.calendarId] !== false,
-      );
-      return json({ events: matching });
+      return json({ events });
     }
     if (pathname.startsWith("/api/event") && method !== "GET") {
       harness.mutationRequests.push({ method, pathname });
@@ -320,10 +295,10 @@ async function setupCalendarExperiencePage(
   return harness;
 }
 
-test("sidebar lists calendars, coalesces a visibility toggle, and shows card identity", async ({
+test("sidebar lists calendars, toggles visibility in localStorage, and shows card identity", async ({
   page,
 }) => {
-  const harness = await setupCalendarExperiencePage(page);
+  await setupCalendarExperiencePage(page);
   await ensureSidebarOpen(page);
   const sidebar = page.locator("#sidebar");
   const grid = page.locator("#mainGrid");
@@ -367,19 +342,24 @@ test("sidebar lists calendars, coalesces a visibility toggle, and shows card ide
   );
   await expect(grid.getByRole("button", { name: EVENT_A_TITLE })).toBeVisible();
 
-  await expect.poll(() => harness.putCalls.length).toBe(1);
-  expect(harness.putCalls[0]).toEqual([
-    { calendarId: CALENDAR_B_ID, isVisible: false },
-  ]);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const raw = localStorage.getItem("compass.calendars.hidden-ids");
+        return raw ? (JSON.parse(raw) as string[]) : [];
+      }),
+    )
+    .toEqual([CALENDAR_B_ID]);
 
   await toggleB.click();
   await expect(toggleB).toHaveAttribute("aria-pressed", "true");
   await expect(grid.getByRole("button", { name: EVENT_B_TITLE })).toBeVisible();
 
-  await expect.poll(() => harness.putCalls.length).toBe(2);
-  expect(harness.putCalls[1]).toEqual([
-    { calendarId: CALENDAR_B_ID, isVisible: true },
-  ]);
+  await expect
+    .poll(() =>
+      page.evaluate(() => localStorage.getItem("compass.calendars.hidden-ids")),
+    )
+    .toBeNull();
 });
 
 test("day view separates visible calendars into distinct columns", async ({

@@ -13,6 +13,9 @@ import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type ApiRequestConfig } from "@web/api/api.types";
 import { BaseApi } from "@web/api/base/base.api";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import { isCalendarHidden } from "@web/calendars/calendar-visibility.storage";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
@@ -24,6 +27,7 @@ import {
   expect,
   it,
   mock,
+  spyOn,
 } from "bun:test";
 
 // mock.module is process-wide and not reliably restorable, so the real hook
@@ -101,10 +105,7 @@ const makeCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
 
 const renderCalendarList = (
   calendars: Calendar[],
-  {
-    authenticated = true,
-    coalesceDelayMs,
-  }: { authenticated?: boolean; coalesceDelayMs?: number } = {},
+  { authenticated = true }: { authenticated?: boolean } = {},
 ) => {
   mockUseSession.mockReturnValue({
     authenticated,
@@ -114,12 +115,9 @@ const renderCalendarList = (
   const { queryClient, wrapper } = createStoreWrapper();
   queryClient.setQueryData(calendarQueryKeys.all, calendars);
 
-  const utils = render(
-    <CalendarList coalesceDelayMs={coalesceDelayMs} Header={StubHeader} />,
-    {
-      wrapper,
-    },
-  );
+  const utils = render(<CalendarList Header={StubHeader} />, {
+    wrapper,
+  });
 
   return { queryClient, ...utils };
 };
@@ -134,6 +132,7 @@ describe("CalendarList", () => {
 
   afterEach(() => {
     BaseApi.defaults.adapter = undefined;
+    persistentBrowserStore.remove(STORAGE_KEYS.HIDDEN_CALENDAR_IDS);
     mockUseSession.mockReturnValue({
       authenticated: false,
       setAuthenticated: () => {},
@@ -171,9 +170,10 @@ describe("CalendarList", () => {
     expect(screen.queryByText("ahab@pequod.com")).not.toBeInTheDocument();
   });
 
-  it("hides the visibility toggle for anonymous sessions and keeps the local sentinel's own name", () => {
+  it("keeps the local sentinel's own name for anonymous sessions (still toggleable)", () => {
     // The anonymous synthesized local calendar is isPrimary, but must not be
     // relabeled "primary" - the header shows "Temporary account", not its name.
+    // Visibility is client-owned, so the toggle stays available offline.
     const local = makeCalendar({
       name: "Compass",
       provider: "local",
@@ -184,42 +184,17 @@ describe("CalendarList", () => {
 
     expect(screen.getByText("Compass")).toBeInTheDocument();
     expect(screen.queryByText("primary")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Hide Compass calendar" }),
+    ).toBeInTheDocument();
   });
 
-  it("flips aria-pressed optimistically and coalesces rapid toggles into one final call", async () => {
+  it("flips aria-pressed and persists hidden ids in localStorage", async () => {
     const calendarA = makeCalendar({ name: "Calendar A" });
     const calendarB = makeCalendar({ name: "Calendar B" });
-    // Method-aware: a successful flush invalidates the calendars query, which
-    // (since it's actively observed here) triggers a real GET refetch through
-    // this same adapter. That refetch is an expected side effect of the hook,
-    // not what this test is verifying, so only PUT /calendars/select calls
-    // are counted below.
-    const putCalls: unknown[] = [];
-    BaseApi.defaults.adapter = async <T,>(
-      config: ApiRequestConfig & { body?: unknown },
-    ) => {
-      if (config.method === "PUT") {
-        putCalls.push(config.body);
-        return {
-          config,
-          data: undefined as T,
-          headers: new Headers(),
-          status: 204,
-          statusText: "No Content",
-        };
-      }
-      return {
-        config,
-        data: { calendars: [] } as T,
-        headers: new Headers(),
-        status: 200,
-        statusText: "OK",
-      };
-    };
 
     const user = userEvent.setup({ delay: null });
-    renderCalendarList([calendarA, calendarB], { coalesceDelayMs: 100 });
+    renderCalendarList([calendarA, calendarB]);
 
     const buttonA = screen.getByRole("button", {
       name: "Hide Calendar A calendar",
@@ -232,34 +207,20 @@ describe("CalendarList", () => {
     await waitFor(() => {
       expect(buttonA.getAttribute("aria-pressed")).toBe("false");
     });
+    expect(isCalendarHidden(calendarA.id)).toBe(true);
 
     await user.click(buttonB);
     await waitFor(() => {
       expect(buttonB.getAttribute("aria-pressed")).toBe("false");
     });
+    expect(isCalendarHidden(calendarB.id)).toBe(true);
 
     await user.click(buttonA);
     await waitFor(() => {
       expect(buttonA.getAttribute("aria-pressed")).toBe("true");
     });
-
-    await waitFor(
-      () => {
-        expect(putCalls).toHaveLength(1);
-      },
-      { timeout: 3000 },
-    );
-
-    const body = putCalls[0] as { calendarId: string; isVisible: boolean }[];
-    expect(body).toHaveLength(2);
-    expect(body).toContainEqual({
-      calendarId: calendarA.id,
-      isVisible: true,
-    });
-    expect(body).toContainEqual({
-      calendarId: calendarB.id,
-      isVisible: false,
-    });
+    expect(isCalendarHidden(calendarA.id)).toBe(false);
+    expect(isCalendarHidden(calendarB.id)).toBe(true);
   });
 
   it("removes the hidden calendar's events from a cached week query immediately on toggle-off", async () => {
@@ -274,9 +235,7 @@ describe("CalendarList", () => {
     });
 
     const user = userEvent.setup({ delay: null });
-    const { queryClient } = renderCalendarList([hidden, kept], {
-      coalesceDelayMs: 100,
-    });
+    const { queryClient } = renderCalendarList([hidden, kept]);
     queryClient.setQueryData<NormalizedEventQueryData>(weekKey, {
       ids: [hiddenEvent.id, keptEvent.id],
       entities: { [hiddenEvent.id]: hiddenEvent, [keptEvent.id]: keptEvent },
@@ -292,43 +251,28 @@ describe("CalendarList", () => {
     expect(cached?.entities[keptEvent.id]).toBeDefined();
   });
 
-  it("rolls back the visibility button and announces failure when the flush rejects", async () => {
+  it("announces failure and leaves the button pressed when storage write fails", async () => {
     const calendar = makeCalendar({ name: "Work" });
-    BaseApi.defaults.adapter = mock(async () => {
-      throw new Error("Simulated network failure");
-    });
+    const setSpy = spyOn(persistentBrowserStore, "set").mockReturnValue(false);
 
     const user = userEvent.setup({ delay: null });
-    renderCalendarList([calendar], { coalesceDelayMs: 100 });
+    renderCalendarList([calendar]);
 
     const toggle = screen.getByRole("button", { name: "Hide Work calendar" });
     await user.click(toggle);
-    await waitFor(() => {
-      expect(toggle.getAttribute("aria-pressed")).toBe("false");
-    });
 
-    await waitFor(() => {
-      expect(toggle.getAttribute("aria-pressed")).toBe("true");
-    });
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByRole("status").textContent ?? "").toMatch(
       /couldn.t update calendar visibility/i,
     );
+    setSpy.mockRestore();
   });
 
   it("is reachable by Tab and toggles on Enter and Space", async () => {
     const calendar = makeCalendar({ name: "Work" });
-    BaseApi.defaults.adapter = async <T,>(
-      config: ApiRequestConfig & { body?: unknown },
-    ) => ({
-      config,
-      data: (config.method === "PUT" ? undefined : { calendars: [] }) as T,
-      headers: new Headers(),
-      status: config.method === "PUT" ? 204 : 200,
-      statusText: config.method === "PUT" ? "No Content" : "OK",
-    });
 
     const user = userEvent.setup({ delay: null });
-    renderCalendarList([calendar], { coalesceDelayMs: 100 });
+    renderCalendarList([calendar]);
 
     const toggle = screen.getByRole("button", { name: "Hide Work calendar" });
 

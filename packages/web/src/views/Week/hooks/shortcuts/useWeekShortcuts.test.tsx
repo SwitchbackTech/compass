@@ -72,9 +72,26 @@ const leftmostEvent = createMockEvent({
 });
 
 // packet 08 step 8: read-only (unwritable calendar) fixtures for the
-// delete/nudge gating tests below.
+// delete/nudge gating tests below. Writable calendar must also be seeded
+// whenever the calendars query is set — week/day view models filter events
+// by visible calendars (S39 A2), so an incomplete list would hide the
+// editable event under test.
 const READ_ONLY_EVENT_ID = EventIdSchema.parse("cccccccccccccccccccccccc");
 const readOnlyCalendarId = CalendarIdSchema.parse(createObjectIdString());
+const writableCalendar: Calendar = {
+  id: editableEvent.calendarId,
+  name: "Primary calendar",
+  description: "",
+  timeZone: null,
+  foregroundColor: "#000000",
+  backgroundColor: "#4285f4",
+  provider: "google",
+  access: "owner",
+  capabilities: getCalendarCapabilities("owner"),
+  isPrimary: true,
+  isVisible: true,
+  isActive: true,
+};
 const readOnlyCalendar: Calendar = {
   id: readOnlyCalendarId,
   name: "Shared calendar",
@@ -158,7 +175,7 @@ const renderShortcuts = (options?: {
   includeLeftmostEvent?: boolean;
   /** Extra fixtures beyond the three flags above - e.g. a read-only-calendar event. */
   extraEvents?: Event[];
-  /** Seeds the calendars query (packet 08 step 8's read-only gate reads it). Omitted -> unseeded -> every event resolves writable (fails open). */
+  /** Seeds the calendars query (read-only gate + A2 visibility filter). Omitted -> unseeded -> events pass the visibility filter and resolve writable (fails open). */
   calendars?: Calendar[];
 }) => {
   const queryClient = new QueryClient();
@@ -180,9 +197,13 @@ const renderShortcuts = (options?: {
   queryClient.setQueryDefaults(["events"], {
     initialData: toNormalizedEventQueryData(events),
   });
-  if (options?.calendars) {
-    queryClient.setQueryData(calendarQueryKeys.all, options.calendars);
-  }
+  // Always seed calendars so useWeekEventViewModel's visibility filter and
+  // useCalendarsQuery don't race a network fetch (MSW has no /api/calendars
+  // handler in this file). Default = writable calendar for the editable event.
+  queryClient.setQueryData(
+    calendarQueryKeys.all,
+    options?.calendars ?? [writableCalendar],
+  );
   function wrapper({ children }: PropsWithChildren) {
     return (
       <QueryClientProvider client={queryClient}>
@@ -401,7 +422,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
 
     const { queryClient } = renderShortcuts({
       extraEvents: [readOnlyEvent],
-      calendars: [readOnlyCalendar],
+      calendars: [writableCalendar, readOnlyCalendar],
     });
     pressKey("Delete");
 

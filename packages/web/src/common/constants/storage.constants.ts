@@ -11,6 +11,9 @@ export const StorageKeySchema = z.enum([
   "compass.theme",
   "compass.life.preferences",
   "compass.view.sidebar-open",
+  // S39 A2: client-owned calendar visibility (default visible). Device-local,
+  // matching other compass.* prefs — not synced across browsers.
+  "compass.calendars.hidden-ids",
 ]);
 
 export type StorageKey = z.infer<typeof StorageKeySchema>;
@@ -25,7 +28,8 @@ export const STORAGE_KEYS: Record<
   | "LIFE_PREFERENCES"
   | "SIDEBAR_WIDTH"
   | "SIDEBAR_OPEN"
-  | "THEME",
+  | "THEME"
+  | "HIDDEN_CALENDAR_IDS",
   StorageKey
 > = {
   AUTH: "compass.auth",
@@ -41,4 +45,5 @@ export const STORAGE_KEYS: Record<
   SIDEBAR_WIDTH: "compass.sidebar.width",
   SIDEBAR_OPEN: "compass.view.sidebar-open",
   THEME: "compass.theme",
+  HIDDEN_CALENDAR_IDS: "compass.calendars.hidden-ids",
 } as const;
