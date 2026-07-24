@@ -35,14 +35,11 @@ type ReactDatePickerComponent = typeof ReactDatePickerModule.default;
 // Bun's __toESM(mod, nodeInterop=1) can wrap CJS+__esModule modules so
 // .default points at the whole export object. Unwrap one level to reach the
 // actual component function.
-const resolveDefaultExport = <T,>(moduleValue: T): T => {
-  const maybeWrapped = moduleValue as T & { default?: T };
-  return maybeWrapped.default ?? moduleValue;
-};
-
-const ReactDatePicker = resolveDefaultExport<ReactDatePickerComponent>(
-  ReactDatePickerModule.default,
-);
+const reactDatePickerExport =
+  ReactDatePickerModule.default as ReactDatePickerComponent & {
+    default?: ReactDatePickerComponent;
+  };
+const ReactDatePicker = reactDatePickerExport.default ?? reactDatePickerExport;
 
 export const DatePicker: React.FC<Props> = (datePickerProps) => {
   const {

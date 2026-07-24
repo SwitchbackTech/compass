@@ -11,10 +11,7 @@ export const AuthStateSchema = z.object({
 
 export type AuthState = z.infer<typeof AuthStateSchema>;
 
-export const DEFAULT_AUTH_STATE: AuthState = {
-  hasAuthenticated: false,
-  shouldPromptSignUpAfterAnonymousCalendarChange: false,
-};
+export const DEFAULT_AUTH_STATE: AuthState = AuthStateSchema.parse({});
 
 const authStateListeners = new Set<() => void>();
 

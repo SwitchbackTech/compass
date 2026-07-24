@@ -6,23 +6,31 @@ import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { freshenEventStartEndDate } from "@web/views/Week/week-view.render.test.utils";
 
+const createGoogleImportEvent: typeof createMockStandaloneEvent = (
+  overrides = {},
+  allDayEvent,
+  dateDiff,
+) =>
+  createMockStandaloneEvent(
+    { origin: Origin.GOOGLE_IMPORT, ...overrides },
+    allDayEvent,
+    dateDiff,
+  );
+
 export const globalHandlers = [
   rest.get("http://localhost/version.json", (_req, res, ctx) => {
     return res(ctx.json({ version: "dev" }));
   }),
   rest.get(`${ENV_WEB.API_BASEURL}/event`, (_req, res, ctx) => {
     const events = [
-      createMockStandaloneEvent({ origin: Origin.GOOGLE_IMPORT }),
-      createMockStandaloneEvent({ origin: Origin.GOOGLE_IMPORT }, true),
-      createMockStandaloneEvent(
-        { origin: Origin.GOOGLE_IMPORT, isAllDay: true },
-        true,
-        { value: 21, unit: "days" },
-      ),
-      createMockStandaloneEvent({ origin: Origin.GOOGLE_IMPORT }),
-      freshenEventStartEndDate(
-        createMockStandaloneEvent({ origin: Origin.GOOGLE_IMPORT }),
-      ),
+      createGoogleImportEvent(),
+      createGoogleImportEvent({}, true),
+      createGoogleImportEvent({ isAllDay: true }, true, {
+        value: 21,
+        unit: "days",
+      }),
+      createGoogleImportEvent(),
+      freshenEventStartEndDate(createGoogleImportEvent()),
     ];
     return res(ctx.json(events));
   }),

@@ -26,16 +26,16 @@ const clearSchedule = () => {
   persistentBrowserStore.remove(SCHEDULED_OPEN_AT_KEY);
 };
 
-const openPrompt = () => {
+const setPromptOpen = (isOpen: boolean) => {
   clearSchedule();
-  useReleaseNotesPromptStore.setState({ isOpen: true });
+  useReleaseNotesPromptStore.setState({ isOpen });
 };
 
 const startTimer = (delayMs: number) => {
   clearTimer();
   timeoutId = window.setTimeout(() => {
     timeoutId = undefined;
-    openPrompt();
+    setPromptOpen(true);
   }, delayMs);
 };
 
@@ -53,7 +53,7 @@ const resumeScheduledOpen = () => {
 
   const remainingMs = openAtMs - Date.now();
   if (remainingMs <= 0) {
-    openPrompt();
+    setPromptOpen(true);
     return;
   }
 
@@ -61,11 +61,8 @@ const resumeScheduledOpen = () => {
 };
 
 export const releaseNotesPromptActions = {
-  open: openPrompt,
-  close: () => {
-    clearSchedule();
-    useReleaseNotesPromptStore.setState({ isOpen: false });
-  },
+  open: () => setPromptOpen(true),
+  close: () => setPromptOpen(false),
   scheduleOpen: (delayMs = 45_000) => {
     if (persistentBrowserStore.isAvailable()) {
       persistentBrowserStore.set(
