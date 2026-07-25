@@ -320,10 +320,11 @@ describe("migrate-provider-state (db)", () => {
     ).toBe(3);
   });
 
-  it("keeps one calendar when duplicates exist and skips the rest", async () => {
+  it("keeps one calendar when duplicates exist and still migrates dup events", async () => {
     const { userId } = await seedLegacyFixture();
+    const dupCalendarId = new ObjectId();
     await mongoService.calendar.insertOne({
-      _id: new ObjectId(),
+      _id: dupCalendarId,
       userId,
       name: "Primary Dup",
       description: "",
@@ -338,6 +339,25 @@ describe("migrate-provider-state (db)", () => {
         provider: "google",
         calendarId: "primary",
         etag: "etag-dup",
+      },
+      createdAt: NOW,
+      updatedAt: null,
+    });
+    await mongoService.event.insertOne({
+      _id: new ObjectId(),
+      calendarId: dupCalendarId,
+      content: { kind: "details", title: "on-dup", description: "" },
+      schedule: {
+        kind: "timed",
+        start: NOW,
+        end: new Date(NOW.getTime() + 1800_000),
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "single" },
+      externalReference: {
+        provider: "google",
+        eventId: "gcal-on-dup",
+        recurringEventId: null,
       },
       createdAt: NOW,
       updatedAt: null,
@@ -370,5 +390,55 @@ describe("migrate-provider-state (db)", () => {
         .collection(SYNC_COLLECTIONS.providerCalendars)
         .countDocuments(),
     ).toBe(1);
+    expect(
+      await syncStorage
+        .db()
+        .collection(SYNC_COLLECTIONS.events)
+        .findOne({ providerEventId: "gcal-on-dup" }),
+    ).not.toBeNull();
+  });
+
+  it("preserves existing event generation on re-apply", async () => {
+    const { userId } = await seedLegacyFixture();
+    const repositories = deps();
+    await migrateProviderConnections(
+      {
+        connections: repositories.connections,
+        credentials: new CredentialRepository(syncStorage.db()),
+      },
+      await mongoService.user.find({}).toArray(),
+      { dryRun: false, now: NOW },
+    );
+
+    await migrateProviderSyncState(repositories, await loadSource(), {
+      dryRun: false,
+      now: NOW,
+    });
+
+    await syncStorage
+      .db()
+      .collection(SYNC_COLLECTIONS.events)
+      .updateMany({}, { $set: { generation: 3 } });
+    await syncStorage
+      .db()
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .updateMany(
+        { resourceKind: "events" },
+        { $set: { activeGeneration: 3, importGeneration: 3 } },
+      );
+
+    await migrateProviderSyncState(repositories, await loadSource(), {
+      dryRun: false,
+      now: NOW,
+    });
+
+    const generations = await syncStorage
+      .db()
+      .collection(SYNC_COLLECTIONS.events)
+      .find({ tenantId: userId.toHexString() })
+      .project({ generation: 1 })
+      .toArray();
+    expect(generations.length).toBeGreaterThan(0);
+    expect(generations.every((row) => row.generation === 3)).toBe(true);
   });
 });

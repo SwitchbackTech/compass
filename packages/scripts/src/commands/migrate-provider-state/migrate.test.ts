@@ -270,6 +270,51 @@ describe("migrateProviderSyncState", () => {
             updatedAt: null,
           },
           {
+            _id: new ObjectId("507f1f77bcf86cd799439033"),
+            calendarId: CALENDAR_ID,
+            content: { kind: "details", title: "weekly", description: "" },
+            schedule: {
+              kind: "timed",
+              start: NOW,
+              end: new Date(NOW.getTime() + 3600_000),
+              timeZone: "America/Denver",
+            },
+            recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+            externalReference: {
+              provider: "google",
+              eventId: "gcal-master-1",
+              recurringEventId: null,
+            },
+            createdAt: NOW,
+            updatedAt: null,
+          },
+          {
+            _id: new ObjectId("507f1f77bcf86cd799439034"),
+            calendarId: CALENDAR_ID,
+            content: {
+              kind: "details",
+              title: "weekly (moved)",
+              description: "",
+            },
+            schedule: {
+              kind: "timed",
+              start: new Date(NOW.getTime() + 86_400_000),
+              end: new Date(NOW.getTime() + 86_400_000 + 3600_000),
+              timeZone: "America/Denver",
+            },
+            recurrence: {
+              kind: "occurrence",
+              seriesId: new ObjectId("507f1f77bcf86cd799439033"),
+            },
+            externalReference: {
+              provider: "google",
+              eventId: "gcal-exception-1",
+              recurringEventId: "gcal-master-1",
+            },
+            createdAt: NOW,
+            updatedAt: null,
+          },
+          {
             _id: new ObjectId("507f1f77bcf86cd799439032"),
             calendarId: CALENDAR_ID,
             content: { kind: "details", title: "local only", description: "" },
@@ -313,7 +358,7 @@ describe("migrateProviderSyncState", () => {
     expect(report.dryRun).toBe(true);
     expect(report.counts.usersWouldMigrate).toBe(1);
     expect(report.counts.calendarsWouldCreate).toBe(1);
-    expect(report.counts.eventsWouldCreate).toBe(1);
+    expect(report.counts.eventsWouldCreate).toBe(3);
     expect(report.counts.unlinkedDeferred).toBe(1);
     expect(report.counts.watchesSkippedRewatch).toBe(1);
     expect(
@@ -322,5 +367,8 @@ describe("migrateProviderSyncState", () => {
     expect(report.skips.some((s) => s.category === "unlinked_deferred")).toBe(
       true,
     );
+    expect(
+      report.skips.some((s) => s.category === "missing_series_master"),
+    ).toBe(false);
   });
 });
