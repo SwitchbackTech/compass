@@ -364,6 +364,12 @@ describe("POST /internal/commands", () => {
     const created = createRequest();
     await startService();
     await submit(tenantId, principalId, created);
+    const eventNoticesBefore = await mongo.db
+      .collection("invalidations")
+      .countDocuments({
+        "invalidation.kind": "event",
+        "invalidation.eventId": created.eventId,
+      });
 
     const del = {
       idempotencyKey: `idem-${objectId()}`,
@@ -378,6 +384,22 @@ describe("POST /internal/commands", () => {
     };
     expect(body.command.outcome.state).toBe("confirmed");
     expect(await mongo.db.collection("events").countDocuments()).toBe(0);
+    // Event row is gone, but the outbox still carries eventsChanged so the
+    // SPA can drop the tombstone without waiting on a full refetch.
+    const eventNoticesAfter = await mongo.db
+      .collection("invalidations")
+      .find({
+        "invalidation.kind": "event",
+        "invalidation.eventId": created.eventId,
+      })
+      .toArray();
+    expect(eventNoticesAfter.length).toBe(eventNoticesBefore + 1);
+    expect(
+      eventNoticesAfter.some(
+        (row) =>
+          row["invalidation"]?.["calendarId"] === created.input.calendarId,
+      ),
+    ).toBe(true);
   });
 
   it("confirms an idempotent delete of an already-absent event", async () => {

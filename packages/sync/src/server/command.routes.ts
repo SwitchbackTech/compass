@@ -87,10 +87,20 @@ export function registerCommandRoutes(
               }
             : undefined;
 
+        const events = new EventRepository(deps.mongo.db);
+        // Snapshot calendarId before apply: a confirmed delete removes the
+        // event row, and the change-feed still needs an eventsChanged notice
+        // so the SPA (and other tabs) drop it without a manual reload.
+        const before = await events.findById(
+          auth.tenantId,
+          auth.principalId,
+          request.eventId,
+        );
+
         const { command, changed } = await submitCloudCommand(
           {
             commands: new CommandRepository(deps.mongo.db),
-            events: new EventRepository(deps.mongo.db),
+            events,
             calendars: new ProviderCalendarRepository(deps.mongo.db),
             occurrences: new EventOccurrenceRepository(
               deps.mongo.db,
@@ -115,12 +125,12 @@ export function registerCommandRoutes(
         // Emitted only when this request durably changed command/event state,
         // so an idempotent replay does not duplicate outbox rows.
         if (changed) {
-          const events = new EventRepository(deps.mongo.db);
-          const event = await events.findById(
+          const after = await events.findById(
             auth.tenantId,
             auth.principalId,
             command.eventId,
           );
+          const calendarId = after?.calendarId ?? before?.calendarId;
           const invalidations = new InvalidationRepository(deps.mongo.db);
           const emittedAt = deps.now ? new Date(deps.now()) : new Date();
           const notices = [
@@ -128,12 +138,12 @@ export function registerCommandRoutes(
               kind: "command" as const,
               commandId: command._id,
             },
-            ...(event
+            ...(calendarId
               ? [
                   {
                     kind: "event" as const,
                     eventId: command.eventId,
-                    calendarId: event.calendarId,
+                    calendarId,
                   },
                 ]
               : []),

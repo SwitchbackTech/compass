@@ -54,7 +54,12 @@ const COMMANDS_PATH = "/internal/commands";
 const PRINCIPAL_PATH = "/internal/principal";
 const DIAGNOSTIC_CONNECTION_PATH_PREFIX = "/internal/diagnostics/connections/";
 
-const DEFAULT_TIMEOUT_MS = 5000;
+const DEFAULT_TIMEOUT_MS = 5_000;
+// Provider create/update/delete run inline inside POST /internal/commands.
+// The default read deadline is too short for a Google round-trip; aborting
+// mid-delete leaves Sync applying the mutation while Compass API returns an
+// error (staging: DELETE appeared to fail with 5xx while the event was gone).
+export const COMMAND_TIMEOUT_MS = 30_000;
 
 // The identity a request acts on behalf of. Signed into the request so the Sync
 // service derives ownership from the signature, never the body.
@@ -277,6 +282,7 @@ export class SyncServiceClient {
       body: request,
       schema: CommandSubmitResponseSchema,
       correlationId,
+      timeoutMs: COMMAND_TIMEOUT_MS,
     });
   }
 
@@ -356,6 +362,7 @@ export class SyncServiceClient {
     body?: unknown;
     schema: z.ZodType<T>;
     correlationId?: string;
+    timeoutMs?: number;
   }): Promise<SyncClientResult<T>> {
     const correlationId = input.correlationId ?? this.#newCorrelationId();
     const timestamp = this.#now();
@@ -375,7 +382,8 @@ export class SyncServiceClient {
         : `${this.#baseUrl}${input.path}`;
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.#timeoutMs);
+    const deadlineMs = input.timeoutMs ?? this.#timeoutMs;
+    const timer = setTimeout(() => controller.abort(), deadlineMs);
     let response: { status: number; json: () => Promise<unknown> };
     try {
       response = await this.#fetch(url, {
