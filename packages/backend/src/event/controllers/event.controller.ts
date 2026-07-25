@@ -176,6 +176,18 @@ const submitCommandOrThrow = async (
 ) => {
   const result = await client.submitCommand(toSyncPrincipal(userId), request);
   if (!result.ok) {
+    // Timeout/unavailable can mean Sync already accepted (or finished) the
+    // mutation — especially provider deletes, which run inline. Do not fall
+    // back to legacy; surface a retryable provider failure instead.
+    if (
+      result.error.kind === "timeout" ||
+      result.error.kind === "unavailable"
+    ) {
+      throw eventMutationError(
+        "PROVIDER_FAILURE",
+        `Sync command ${result.error.kind}; the mutation may already be applied`,
+      );
+    }
     throw error(
       GenericError.NotSure,
       `Failed to submit command to sync (${result.error.kind})`,

@@ -686,6 +686,58 @@ describe("SyncServiceClient", () => {
     expect(result.error.kind).toBe("timeout");
   });
 
+  it("keeps submitCommand open longer than the default read deadline", async () => {
+    // Default client timeout is 20ms; a 50ms response must still succeed for
+    // commands (provider deletes run inline and routinely exceed the read
+    // deadline).
+    const who = principal();
+    const eventId = objectId();
+    const commandBody = {
+      id: objectId(),
+      tenantId: who.tenantId,
+      principalId: who.principalId,
+      idempotencyKey: "slow-delete-key",
+      eventId,
+      input: {
+        kind: "delete",
+        invitation: "none",
+        scope: "all",
+        recurrenceId: null,
+      },
+      expectedVersion: null,
+      outcome: {
+        state: "confirmed",
+        providerEventId: null,
+        providerVersion: null,
+      },
+      attemptCount: 1,
+      createdAt: "2026-07-01T00:00:00.000Z",
+      updatedAt: "2026-07-01T00:00:01.000Z",
+    };
+    const fn: SyncServiceClientOptions["fetch"] = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      return {
+        status: 200,
+        json: async () => ({ command: commandBody }),
+      };
+    };
+
+    const result = await client(fn).submitCommand(who, {
+      idempotencyKey: "slow-delete-key",
+      eventId,
+      input: {
+        kind: "delete",
+        invitation: "none",
+        scope: "all",
+        recurrenceId: null,
+      },
+      expectedVersion: null,
+    } as CommandSubmitRequest);
+
+    if (!result.ok) throw new Error(`expected ok, got ${result.error.kind}`);
+    expect(result.value.command.outcome.state).toBe("confirmed");
+  });
+
   it("rejects a 200 body that does not match the contract", async () => {
     const { fn } = fakeFetch(async () => ({
       status: 200,
