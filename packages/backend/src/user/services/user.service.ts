@@ -18,6 +18,8 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
+import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
+import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import eventService from "@backend/event/services/event.service";
 import syncRecords from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
@@ -252,6 +254,8 @@ class UserService {
    * Order matters: the refresh token has to be read before the delete
    * transaction removes the user doc, and the grant can only be revoked after
    * the delete stops their watches (stopping a watch needs a working grant).
+   * Sync principal purge is fail-open: a Sync outage must not strand an
+   * undeleted Compass account.
    */
   deleteAccount = async (userId: string): Promise<Summary_Delete> => {
     const user = await mongoService.user.findOne({
@@ -268,7 +272,21 @@ class UserService {
       await revokeGoogleGrant(gRefreshToken);
     }
 
+    await this.#purgeSyncPrincipal(userId);
+
     return summary;
+  };
+
+  #purgeSyncPrincipal = async (userId: string): Promise<void> => {
+    const client = getSyncServiceClient();
+    if (!client) return;
+
+    const result = await client.purgePrincipal(toSyncPrincipal(userId));
+    if (!result.ok) {
+      logger.warn(
+        `Sync principal purge failed (${result.error.kind}, correlation=${result.error.correlationId}); continuing anyway`,
+      );
+    }
   };
 
   initUserData = async (

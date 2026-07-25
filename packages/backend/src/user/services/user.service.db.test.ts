@@ -18,6 +18,7 @@ import { UserError } from "@backend/common/errors/user/user.errors";
 import * as supertokensMiddleware from "@backend/common/middleware/supertokens.middleware";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
+import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import userService from "@backend/user/services/user.service";
@@ -31,6 +32,7 @@ import {
   describe,
   expect,
   it,
+  mock,
   spyOn,
 } from "bun:test";
 
@@ -348,6 +350,59 @@ describe("UserService", () => {
         false,
       );
       const user = await UserDriver.createUser();
+
+      await userService.deleteAccount(user._id.toString());
+
+      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
+    });
+
+    it("fail-open purges the Sync principal after Compass data is deleted", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const purgePrincipal = mock(() =>
+        Promise.resolve({
+          ok: true as const,
+          value: {
+            connections: 0,
+            credentials: 0,
+            calendars: 0,
+            events: 0,
+            eventOccurrences: 0,
+            syncResources: 0,
+            commands: 0,
+            jobs: 0,
+            deletionMarkers: 0,
+            invalidations: 0,
+          },
+          correlationId: "corr-purge",
+        }),
+      );
+      spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+        purgePrincipal,
+      } as never);
+
+      await userService.deleteAccount(userId);
+
+      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
+      expect(purgePrincipal).toHaveBeenCalledWith({
+        tenantId: userId,
+        principalId: userId,
+      });
+    });
+
+    it("still deletes the account when Sync principal purge fails", async () => {
+      const user = await UserDriver.createUser();
+      spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+        purgePrincipal: mock(() =>
+          Promise.resolve({
+            ok: false as const,
+            error: {
+              kind: "unavailable" as const,
+              correlationId: "corr-down",
+            },
+          }),
+        ),
+      } as never);
 
       await userService.deleteAccount(user._id.toString());
 

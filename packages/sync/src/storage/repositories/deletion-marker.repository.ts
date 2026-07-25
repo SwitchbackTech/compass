@@ -2,7 +2,9 @@ import { type Collection, type Db, ObjectId } from "mongodb";
 import { type SyncEventCalendarId } from "@core/types/sync/event.contracts";
 import {
   type ConnectionId,
+  type PrincipalId,
   type ProviderEventId,
+  type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
@@ -74,5 +76,14 @@ export class DeletionMarkerRepository {
       { limit: 1 },
     );
     return count > 0;
+  }
+
+  // Hard-delete every deletion marker for a principal (account deletion).
+  async deleteByPrincipal(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+  ): Promise<number> {
+    const result = await this.collection.deleteMany({ tenantId, principalId });
+    return result.deletedCount;
   }
 }

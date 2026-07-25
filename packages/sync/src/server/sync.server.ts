@@ -8,6 +8,7 @@ import {
 } from "@sync/server/connection.routes";
 import { registerHealthRoutes } from "@sync/server/health.routes";
 import { registerNotificationRoutes } from "@sync/server/notification.routes";
+import { registerPrincipalRoutes } from "@sync/server/principal.routes";
 import { type StructuredServiceIdentity } from "@sync/service-identity";
 
 // Builds the Sync service's HTTP application. Health probes are always public
@@ -43,6 +44,13 @@ export function buildSyncApp(deps: {
     registerChangeFeedRoutes(app, {
       authMiddleware: deps.connectionApi.authMiddleware,
       mongo: deps.connectionApi.mongo,
+    });
+    // Account-deletion hard purge for the signed principal (S43). Served in
+    // passive mode; best-effort provider revoke when an auth adapter exists.
+    registerPrincipalRoutes(app, {
+      authMiddleware: deps.connectionApi.authMiddleware,
+      mongo: deps.connectionApi.mongo,
+      authAdapter: deps.connectionApi.authAdapter,
     });
     // The public webhook ingress shares the connection API's storage; it needs
     // no auth adapter or secrets, only the db and execution mode.

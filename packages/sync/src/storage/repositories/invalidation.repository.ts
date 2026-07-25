@@ -93,4 +93,13 @@ export class InvalidationRepository {
     );
     return row?._id ?? null;
   }
+
+  // Hard-delete every invalidation for a principal (account deletion).
+  async deleteByPrincipal(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+  ): Promise<number> {
+    const result = await this.collection.deleteMany({ tenantId, principalId });
+    return result.deletedCount;
+  }
 }

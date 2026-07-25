@@ -330,4 +330,13 @@ export class SyncResourceRepository {
       .toArray();
     return records.map((r) => SyncResourceRecordSchema.parse(r));
   }
+
+  // Hard-delete every sync resource for a principal (account deletion).
+  async deleteByPrincipal(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+  ): Promise<number> {
+    const result = await this.collection.deleteMany({ tenantId, principalId });
+    return result.deletedCount;
+  }
 }

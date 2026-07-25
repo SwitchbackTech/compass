@@ -287,6 +287,15 @@ export class EventRepository {
     });
   }
 
+  // Hard-delete every event for a principal (account deletion).
+  async deleteByPrincipal(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+  ): Promise<number> {
+    const result = await this.collection.deleteMany({ tenantId, principalId });
+    return result.deletedCount;
+  }
+
   // Bounded, keyset-paginated canonical events for one calendar/generation,
   // ordered by _id so a cursor never skips or repeats a row.
   async listByCalendar(query: EventListQuery): Promise<EventRecord[]> {
