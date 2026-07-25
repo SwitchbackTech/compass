@@ -17,8 +17,10 @@ import {
   type SyncEventContent,
   type SyncEventRecurrence,
 } from "@core/types/sync/event.contracts";
+import { convertRfc5545ToIso } from "@core/util/date/date.util";
 import {
   type EventScheduleRecord,
+  type ExternalEventReference,
   type EventRecord as LegacyEventRecord,
 } from "@backend/event/event.record";
 
@@ -112,9 +114,34 @@ export function toSyncSchedule(schedule: EventScheduleRecord): EventSchedule {
   };
 }
 
+function recurrenceIdFromGoogleInstanceId(
+  externalReference: ExternalEventReference,
+): DateTime | null {
+  const { eventId, recurringEventId } = externalReference;
+  if (!recurringEventId) return null;
+  const prefix = `${recurringEventId}_`;
+  if (!eventId.startsWith(prefix)) return null;
+  const suffix = eventId.slice(prefix.length);
+  const iso =
+    convertRfc5545ToIso(suffix) ??
+    (/^\d{8}$/.test(suffix)
+      ? `${suffix.slice(0, 4)}-${suffix.slice(4, 6)}-${suffix.slice(6, 8)}T00:00:00.000Z`
+      : null);
+  if (!iso) return null;
+  return DateTimeSchema.parse(iso);
+}
+
+/** Sync recurrenceId is the instance's original slot, not its current schedule. */
 export function recurrenceIdFromOccurrence(
   schedule: EventScheduleRecord,
+  externalReference: ExternalEventReference | null,
 ): DateTime {
+  const fromProviderId =
+    externalReference?.provider === "google"
+      ? recurrenceIdFromGoogleInstanceId(externalReference)
+      : null;
+  if (fromProviderId) return fromProviderId;
+
   if (schedule.kind === "timed") {
     return DateTimeSchema.parse(schedule.start.toISOString());
   }
@@ -164,7 +191,10 @@ export function planSyncRecurrence(
     recurrence: {
       kind: "exception",
       seriesId: PLACEHOLDER_SERIES_ID,
-      recurrenceId: recurrenceIdFromOccurrence(event.schedule),
+      recurrenceId: recurrenceIdFromOccurrence(
+        event.schedule,
+        event.externalReference,
+      ),
       cancelled: false,
     },
     needsMaster: true,
