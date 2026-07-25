@@ -287,6 +287,20 @@ export class EventRepository {
     });
   }
 
+  // Hard-delete every provider-linked event for one connection (retention).
+  async deleteByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: NonNullable<EventRecord["connectionId"]>,
+  ): Promise<number> {
+    const result = await this.collection.deleteMany({
+      tenantId,
+      principalId,
+      connectionId,
+    });
+    return result.deletedCount;
+  }
+
   // Hard-delete every event for a principal (account deletion).
   async deleteByPrincipal(
     tenantId: TenantId,

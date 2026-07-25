@@ -2,6 +2,10 @@ import { Logger } from "@core/logger/winston.logger";
 import { createInternalAuthMiddleware } from "@sync/auth/internal-auth";
 import { loadSyncConfig, type SyncConfig } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
+import {
+  CONNECTION_CACHE_RETENTION_MS,
+  purgeExpiredDisconnectedConnections,
+} from "@sync/domain/connection-retention.service";
 import { reconcileStaleCalendars } from "@sync/domain/reconcile.service";
 import { maintainExpiringSubscriptions } from "@sync/domain/subscription-sweep.service";
 import { SweepScheduler } from "@sync/domain/sweep-scheduler.service";
@@ -22,6 +26,7 @@ import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
+import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
@@ -190,13 +195,16 @@ async function start(): Promise<void> {
       enforceLeastPrivilege: config.ENFORCE_LEAST_PRIVILEGE,
     });
 
-    // Storage is up: start draining the job queue and periodically reconciling
-    // stale calendars and renewing expiring push channels. All three register
-    // AFTER the mongo drain so the coordinator's reverse-order teardown stops
-    // them FIRST (the producing sweeps before the drain, so no new jobs are
-    // enqueued while the drain finishes and releases its leases) and closes mongo
-    // last. Only an active, provider-configured deployment does work; a passive
-    // or unconfigured one serves health.
+    // Retention is local-only (no provider calls), so it runs in passive mode
+    // too — soft-disconnected caches must still age out. Register before the
+    // mongo drain so reverse-order teardown stops the sweep first.
+    const retention = buildRetentionSweep(mongo);
+    service.shutdown.register("retention", () => retention.stop());
+    retention.start();
+
+    // Active, provider-configured deployments also drain jobs and renew
+    // channels. Those register AFTER the mongo drain so teardown stops them
+    // first and closes mongo last.
     const schedulers = buildSchedulers(config, mongo);
     if (schedulers) {
       service.shutdown.register("scheduler", () => schedulers.drain.stop());
@@ -208,8 +216,10 @@ async function start(): Promise<void> {
       schedulers.reconcile.start();
       schedulers.subscription.start();
       logger.info(
-        "Sync scheduler draining, reconciling, and renewing channels",
+        "Sync scheduler draining, reconciling, renewing channels, and retaining",
       );
+    } else {
+      logger.info("Sync retention sweep started (passive / unconfigured)");
     }
   } catch (error) {
     logger.error(
@@ -225,6 +235,36 @@ const RECONCILE_STALE_AFTER_MS = 15 * 60_000;
 // maintainSubscription's default renew guard so the sweep and the operation
 // agree on what "near expiry" means.
 const SUBSCRIPTION_RENEW_BEFORE_MS = 24 * 60 * 60_000;
+// How often to look for soft-disconnected connections past the 30-day cache
+// window. Daily is enough for the retention SLA; hourly keeps catch-up snappy.
+const RETENTION_SWEEP_INTERVAL_MS = 60 * 60_000;
+
+// Local-only: purge soft-disconnected connection caches past the retention
+// window. Safe without provider credentials and in passive execution.
+function buildRetentionSweep(mongo: SyncMongoService): SweepScheduler {
+  const db = mongo.db;
+  const deps = {
+    connections: new ProviderConnectionRepository(db),
+    credentials: new CredentialRepository(db),
+    calendars: new ProviderCalendarRepository(db),
+    events: new EventRepository(db),
+    eventOccurrences: new EventOccurrenceRepository(db, mongo.client),
+    syncResources: new SyncResourceRepository(db),
+    jobs: new JobRepository(db),
+    deletionMarkers: new DeletionMarkerRepository(db),
+  };
+  return new SweepScheduler(
+    {
+      sweep: (before) => purgeExpiredDisconnectedConnections(deps, before),
+    },
+    {
+      intervalMs: RETENTION_SWEEP_INTERVAL_MS,
+      windowMs: -CONNECTION_CACHE_RETENTION_MS,
+      onError: (error) =>
+        logger.error("Sync disconnect retention sweep failed", error),
+    },
+  );
+}
 
 // Build the background schedulers for an active, provider-configured deployment:
 // the queue DRAIN (claims and runs jobs), the RECONCILE sweep (the missed-webhook

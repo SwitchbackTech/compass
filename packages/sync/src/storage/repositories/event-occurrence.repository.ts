@@ -122,6 +122,21 @@ export class EventOccurrenceRepository {
     });
   }
 
+  // Hard-delete occurrences for the given calendars (post-disconnect retention).
+  async deleteByCalendars(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    calendarIds: readonly SyncEventCalendarId[],
+  ): Promise<number> {
+    if (calendarIds.length === 0) return 0;
+    const result = await this.collection.deleteMany({
+      tenantId,
+      principalId,
+      calendarId: { $in: [...calendarIds] },
+    });
+    return result.deletedCount;
+  }
+
   // Hard-delete every occurrence for a principal (account deletion).
   async deleteByPrincipal(
     tenantId: TenantId,

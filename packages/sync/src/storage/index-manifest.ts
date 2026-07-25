@@ -38,6 +38,15 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
     },
     { name: "principal_state", key: { principalId: 1, state: 1 } },
     { name: "health_age", key: { lastHealthyAt: 1 } },
+    {
+      // Retention sweep: soft-disconnected connections past the cache window.
+      // Partial so live connections (disconnectedAt: null) stay out of the index.
+      name: "disconnected_at",
+      key: { disconnectedAt: 1 },
+      options: {
+        partialFilterExpression: { disconnectedAt: { $type: "date" } },
+      },
+    },
   ],
   // Keyed 1:1 by connection id (the automatic _id index); no secondary indexes.
   [SYNC_COLLECTIONS.credentials]: [],

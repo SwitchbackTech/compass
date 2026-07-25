@@ -131,6 +131,20 @@ export class ProviderCalendarRepository {
     return records.map((r) => ProviderCalendarRecordSchema.parse(r));
   }
 
+  // Hard-delete every calendar for one connection (post-disconnect retention).
+  async deleteByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+  ): Promise<number> {
+    const result = await this.collection.deleteMany({
+      tenantId,
+      principalId,
+      connectionId,
+    });
+    return result.deletedCount;
+  }
+
   // Hard-delete every calendar for a principal (account deletion).
   async deleteByPrincipal(
     tenantId: TenantId,

@@ -78,6 +78,20 @@ export class DeletionMarkerRepository {
     return count > 0;
   }
 
+  // Hard-delete every deletion marker for one connection (retention).
+  async deleteByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+  ): Promise<number> {
+    const result = await this.collection.deleteMany({
+      tenantId,
+      principalId,
+      connectionId,
+    });
+    return result.deletedCount;
+  }
+
   // Hard-delete every deletion marker for a principal (account deletion).
   async deleteByPrincipal(
     tenantId: TenantId,
