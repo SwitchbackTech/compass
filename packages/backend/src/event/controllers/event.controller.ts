@@ -23,6 +23,7 @@ import {
 import calendarService from "@backend/calendar/services/calendar.service";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import {
   toCreateSubmitRequest,
   toDeleteSubmitRequest,
@@ -251,6 +252,7 @@ class EventController {
 
   create = async (req: SessionRequest, res: Response) => {
     try {
+      assertCloudMutationsAllowed();
       const userId = req.session?.getUserId() as string;
       const input = CreateEventInputSchema.parse(req.body);
       const event =
@@ -266,6 +268,7 @@ class EventController {
 
   replace = async (req: SessionRequest, res: Response) => {
     try {
+      assertCloudMutationsAllowed();
       const userId = req.session?.getUserId() as string;
       const eventId = req.params["id"] as string;
       const input = ReplaceEventInputSchema.parse(req.body);
@@ -282,6 +285,7 @@ class EventController {
 
   delete = async (req: SessionRequest, res: Response) => {
     try {
+      assertCloudMutationsAllowed();
       const userId = req.session?.getUserId() as string;
       const eventId = req.params["id"] as string;
       const scopeParam = req.query["scope"];

@@ -23,6 +23,12 @@ describe("GET /api/config", () => {
           isConfigured: false,
           connectDelegatedToSync: false,
         },
+        sync: {
+          connectionRouting: "legacy",
+          eventRouting: "legacy",
+          cloudMutationMode: "enabled",
+          execution: "passive",
+        },
       });
     } finally {
       CONFIG.GOOGLE_CLIENT_ID = originalClientId;
@@ -47,6 +53,12 @@ describe("GET /api/config", () => {
           isConfigured: false,
           connectDelegatedToSync: false,
         },
+        sync: {
+          connectionRouting: "legacy",
+          eventRouting: "legacy",
+          cloudMutationMode: "enabled",
+          execution: "passive",
+        },
       });
     } finally {
       CONFIG.GOOGLE_CLIENT_ID = originalClientId;
@@ -63,5 +75,19 @@ describe("GET /api/config", () => {
       .expect(Status.OK);
 
     expect(response.body.google.connectDelegatedToSync).toBe(false);
+  });
+
+  it("exposes Sync cutover posture on a legacy deployment", async () => {
+    const response = await baseDriver
+      .getServer()
+      .get("/api/config")
+      .expect(Status.OK);
+
+    expect(response.body.sync).toEqual({
+      connectionRouting: "legacy",
+      eventRouting: "legacy",
+      cloudMutationMode: "enabled",
+      execution: "passive",
+    });
   });
 });

@@ -75,6 +75,20 @@ describe("isBackendUnavailableError", () => {
     ).toBe(false);
   });
 
+  it("does not treat a maintenance 503 as backend unavailability", () => {
+    // Cutover maintenance answers with 503 + EventMutationError. The API is
+    // up; flipping into local mode would hide the pause and rewrite IndexedDB.
+    expect(
+      isBackendUnavailableError(
+        createApiErrorWithStatus(Status.SERVICE_UNAVAILABLE, {
+          code: "MAINTENANCE",
+          message: "Cloud edits are paused for maintenance",
+          retryable: true,
+        }),
+      ),
+    ).toBe(false);
+  });
+
   it("still treats a gateway error with no backend body as unavailability", () => {
     expect(
       isBackendUnavailableError(

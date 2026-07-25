@@ -47,6 +47,16 @@ const ConfigSchema = z
     // durable write commands. Independent of SYNC_CONNECTION_ROUTING so the
     // riskier event path rolls out separately. Global, not per-request.
     SYNC_EVENT_ROUTING: z.enum(["legacy", "sync"]).default("legacy"),
+    // Whether cloud event writes and provider-connection changes are accepted.
+    // `maintenance` rejects them with a typed MAINTENANCE response (S50).
+    SYNC_CLOUD_MUTATION_MODE: z
+      .enum(["enabled", "maintenance"])
+      .default("enabled"),
+    // Mirror of sync.execution for the backend startup guard + operator
+    // surface. Sync itself enforces passive/active; the API refuses unsafe
+    // dual-writer combinations when this is active and mutations are enabled
+    // while any routing remains legacy.
+    SYNC_EXECUTION: z.enum(["passive", "active"]).default("passive"),
     POSTHOG_KEY: z.string().nonempty().optional(),
     POSTHOG_HOST: z.string().url().optional(),
   })
@@ -126,6 +136,27 @@ const ConfigSchema = z
         path: ["SYNC_SERVICE_URL"],
       });
     }
+
+    // Refuse an active Sync writer while the API still routes any browser
+    // path to legacy AND cloud mutations are enabled — that is a dual-writer
+    // window. Cutover keeps mutations in `maintenance` until both routes are
+    // on Sync (S50 / R-MIG-01).
+    const anyLegacyRouting =
+      env.SYNC_CONNECTION_ROUTING === "legacy" ||
+      env.SYNC_EVENT_ROUTING === "legacy";
+    if (
+      env.SYNC_EXECUTION === "active" &&
+      env.SYNC_CLOUD_MUTATION_MODE === "enabled" &&
+      anyLegacyRouting
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        fatal: true,
+        message:
+          "SYNC_EXECUTION=active with SYNC_CLOUD_MUTATION_MODE=enabled requires both SYNC_CONNECTION_ROUTING and SYNC_EVENT_ROUTING to be sync (refuse dual-writer). Enter maintenance or keep Sync passive while any routing remains legacy",
+        path: ["SYNC_EXECUTION"],
+      });
+    }
   });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -173,6 +204,8 @@ export function parseRawConfig(config: CompassConfig): Config {
       : undefined,
     SYNC_CONNECTION_ROUTING: config.sync?.connectionRouting,
     SYNC_EVENT_ROUTING: config.sync?.eventRouting,
+    SYNC_CLOUD_MUTATION_MODE: config.sync?.cloudMutationMode,
+    SYNC_EXECUTION: config.sync?.execution,
     POSTHOG_KEY: nonEmpty(config.posthog?.key),
     POSTHOG_HOST: nonEmpty(config.posthog?.host) || DEFAULT_POSTHOG_HOST,
   });
@@ -209,6 +242,8 @@ export function parseConfigFromEnv(
     SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(rawEnv["SYNC_INTERNAL_AUTH_TOKEN"]),
     SYNC_CONNECTION_ROUTING: nonEmpty(rawEnv["SYNC_CONNECTION_ROUTING"]),
     SYNC_EVENT_ROUTING: nonEmpty(rawEnv["SYNC_EVENT_ROUTING"]),
+    SYNC_CLOUD_MUTATION_MODE: nonEmpty(rawEnv["SYNC_CLOUD_MUTATION_MODE"]),
+    SYNC_EXECUTION: nonEmpty(rawEnv["SYNC_EXECUTION"]),
     POSTHOG_KEY: rawEnv["POSTHOG_KEY"],
     POSTHOG_HOST: rawEnv["POSTHOG_HOST"] || DEFAULT_POSTHOG_HOST,
   });
@@ -241,3 +276,7 @@ try {
 
 export const CONFIG = parsedConfig;
 export const IS_DEV = isDev(CONFIG.NODE_ENV);
+
+logger.info(
+  `Sync cutover: execution=${CONFIG.SYNC_EXECUTION} connectionRouting=${CONFIG.SYNC_CONNECTION_ROUTING} eventRouting=${CONFIG.SYNC_EVENT_ROUTING} cloudMutationMode=${CONFIG.SYNC_CLOUD_MUTATION_MODE}`,
+);

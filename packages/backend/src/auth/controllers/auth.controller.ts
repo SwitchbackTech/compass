@@ -16,6 +16,7 @@ import { CONFIG } from "@backend/common/constants/config.constants";
 import { isGoogleConfigured } from "@backend/common/constants/config.util";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import { getConnectionDelegation } from "@backend/common/services/sync-service/connection-routing";
 import { beginSyncConnection } from "@backend/common/services/sync-service/sync-connection-begin";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
@@ -25,6 +26,18 @@ import {
   type Res_Promise,
   type SReqBody,
 } from "@backend/common/types/express.types";
+import { toEventMutationError } from "@backend/event/event.error";
+
+const rejectIfMaintenance = (res: Res_Promise): boolean => {
+  try {
+    assertCloudMutationsAllowed();
+    return false;
+  } catch (err) {
+    const { status, body } = toEventMutationError(err);
+    res.status(status).json(body);
+    return true;
+  }
+};
 
 class AuthController {
   createSession = async (
@@ -62,6 +75,8 @@ class AuthController {
     req: SReqBody<GoogleAuthCodeRequest>,
     res: Res_Promise,
   ): void => {
+    if (rejectIfMaintenance(res)) return;
+
     if (!isGoogleConfigured(CONFIG)) {
       res.promise(
         Promise.reject(error(AuthError.GoogleNotConfigured, "Connect failed")),
@@ -87,6 +102,8 @@ class AuthController {
     req: SReqBody<ConnectionBeginRequest>,
     res: Res_Promise,
   ): void => {
+    if (rejectIfMaintenance(res)) return;
+
     const client =
       getConnectionDelegation() === "sync" ? getSyncServiceClient() : null;
     if (!client) {

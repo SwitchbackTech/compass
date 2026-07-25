@@ -54,8 +54,9 @@ supertokens:
 #   serviceUrl: http://sync:3010 # base URL the API uses to reach this service; set when delegating to sync
 #   connectionRouting: legacy # legacy (default) | sync; sync delegates provider-connection routes here and requires serviceUrl
 #   eventRouting: legacy # legacy (default) | sync; sync delegates calendar/event reads + commands here and requires serviceUrl
+#   cloudMutationMode: enabled # enabled (default) | maintenance — maintenance rejects cloud edits / connect with typed MAINTENANCE
 # Public OAuth/webhook paths (via Caddy → sync): /sync/google, /sync/notifications/google
-#   execution: passive # passive | active
+#   execution: passive # passive | active — active required for OAuth begin + provider import/jobs; refuse active+enabled while any routing is legacy
 #   maxConcurrency: 4
 #   enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)
 #   compassApiDatabase: prod_calendar # API database the least-privilege check must be denied access to
