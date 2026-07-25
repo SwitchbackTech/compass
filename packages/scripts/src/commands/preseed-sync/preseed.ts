@@ -145,6 +145,13 @@ export async function runPreseedSyncComposition(
         relativePath: "phases/inventory.json",
         json: report,
       });
+      const inventoryParity = evaluatePreseedParity(
+        { inventory: report },
+        { mode: options.mode, dryRun },
+      );
+      if (!dryRun && inventoryParity.blockers.length > 0) {
+        break;
+      }
       continue;
     }
 
@@ -234,32 +241,16 @@ export async function runPreseedSyncComposition(
   }
 
   // Frozen apply: re-plan dry-run on the same source to detect residual creates.
-  if (options.mode === "frozen" && !dryRun && options.phase === "all") {
+  if (options.mode === "frozen" && !dryRun) {
     const source = await ensureCollections();
-    const residualConnections = await migrateProviderConnections(
-      { connections, credentials },
-      source.users,
-      { dryRun: true, userIds: options.userIds, now: startedAt },
-    );
-    const residualState = await migrateProviderSyncState(
-      { connections, calendars, events, occurrences, resources },
-      source,
-      { dryRun: true, userIds: options.userIds, now: startedAt },
-    );
-    const residualPending = await migratePendingCompassIntent(
-      { connections, calendars, events, occurrences, commands },
-      source,
-      {
-        dryRun: true,
-        userIds: options.userIds,
-        now: startedAt,
-        targetCalendarId: options.targetCalendarId,
-        targetGcalId: options.targetGcalId,
-      },
-    );
-    // Overlay would_* from the convergence pass onto the apply reports so
-    // evaluatePreseedParity can see residual creates after apply.
-    if (phases.connections) {
+    if (selected.includes("connections") && phases.connections) {
+      const residualConnections = await migrateProviderConnections(
+        { connections, credentials },
+        source.users,
+        { dryRun: true, userIds: options.userIds, now: startedAt },
+      );
+      // Overlay would_* from the convergence pass onto the apply reports so
+      // evaluatePreseedParity can see residual creates after apply.
       phases.connections = {
         ...phases.connections,
         counts: {
@@ -269,7 +260,12 @@ export async function runPreseedSyncComposition(
         },
       };
     }
-    if (phases.providerState) {
+    if (selected.includes("state") && phases.providerState) {
+      const residualState = await migrateProviderSyncState(
+        { connections, calendars, events, occurrences, resources },
+        source,
+        { dryRun: true, userIds: options.userIds, now: startedAt },
+      );
       phases.providerState = {
         ...phases.providerState,
         counts: {
@@ -281,7 +277,18 @@ export async function runPreseedSyncComposition(
         },
       };
     }
-    if (phases.pendingIntent) {
+    if (selected.includes("pending") && phases.pendingIntent) {
+      const residualPending = await migratePendingCompassIntent(
+        { connections, calendars, events, occurrences, commands },
+        source,
+        {
+          dryRun: true,
+          userIds: options.userIds,
+          now: startedAt,
+          targetCalendarId: options.targetCalendarId,
+          targetGcalId: options.targetGcalId,
+        },
+      );
       phases.pendingIntent = {
         ...phases.pendingIntent,
         counts: {

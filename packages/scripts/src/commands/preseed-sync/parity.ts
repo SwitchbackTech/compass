@@ -85,6 +85,7 @@ export function evaluatePreseedParity(
 ): PreseedParity {
   const blockers: PreseedFinding[] = [];
   const warnings: PreseedFinding[] = [];
+  let unexplainedSkips = 0;
 
   const inventory = phases.inventory;
   if (inventory) {
@@ -137,6 +138,7 @@ export function evaluatePreseedParity(
           detail: `${skip.category}: ${skip.detail}`,
         });
       } else {
+        unexplainedSkips += 1;
         blockers.push({
           code: "inventory_blocking_skip",
           phase: "inventory",
@@ -185,6 +187,7 @@ export function evaluatePreseedParity(
           detail: result.detail,
         });
       } else {
+        unexplainedSkips += 1;
         blockers.push({
           code: result.skipCategory,
           phase: "connections",
@@ -213,6 +216,7 @@ export function evaluatePreseedParity(
           detail: `${skip.category}: ${skip.detail}`,
         });
       } else {
+        unexplainedSkips += 1;
         blockers.push({
           code: "state_blocking_skip",
           phase: "state",
@@ -241,6 +245,7 @@ export function evaluatePreseedParity(
           detail: `${skip.category}: ${skip.detail}`,
         });
       } else {
+        unexplainedSkips += 1;
         blockers.push({
           code: "pending_blocking_skip",
           phase: "pending",
@@ -302,7 +307,7 @@ export function evaluatePreseedParity(
     blockers,
     warnings,
     counts: {
-      unexplainedSkips: blockers.length,
+      unexplainedSkips,
       duplicateIdentities: inventory?.duplicates.length ?? 0,
       orphans: inventory?.orphans.length ?? 0,
       missingAuthority:
