@@ -250,10 +250,17 @@ export async function migrateProviderSyncState(
         if (existed) counts.calendarsWouldUpdate += 1;
         else counts.calendarsWouldCreate += 1;
         userCounts.calendarsUpserted += 1;
-        const stub = existingByProviderId.get(
-          providerCalendarId as ProviderCalendarSourceId,
-        );
-        if (stub) syncCalendarByGcalId.set(providerCalendarId, stub);
+        const stub =
+          existingByProviderId.get(
+            providerCalendarId as ProviderCalendarSourceId,
+          ) ??
+          ({
+            _id: calendar._id.toHexString(),
+            ...fields,
+            createdAt: now,
+            updatedAt: now,
+          } as ProviderCalendarRecord);
+        syncCalendarByGcalId.set(providerCalendarId, stub);
         continue;
       }
 
@@ -363,9 +370,23 @@ export async function migrateProviderSyncState(
       });
     }
 
+    const keptByGcalId = new Map(
+      googleCalendars.map((calendar) => [calendar.source.calendarId, calendar]),
+    );
+    const legacyGoogleCalendarById = new Map<string, GoogleCalendarRecord>();
+    for (const calendar of calendarsByUser.get(userId) ?? []) {
+      if (calendar.source.provider !== "google") continue;
+      const kept = keptByGcalId.get(calendar.source.calendarId);
+      if (!kept) continue;
+      legacyGoogleCalendarById.set(
+        calendar._id.toHexString(),
+        calendar as GoogleCalendarRecord,
+      );
+    }
+
     const userEvents: LegacyEventRecord[] = [];
-    for (const calendar of googleCalendars) {
-      const list = eventsByCalendar.get(calendar._id.toHexString()) ?? [];
+    for (const calendarId of legacyGoogleCalendarById.keys()) {
+      const list = eventsByCalendar.get(calendarId) ?? [];
       userEvents.push(...list);
     }
     userEvents.sort(byHexId);
@@ -414,10 +435,10 @@ export async function migrateProviderSyncState(
     const upsertedSyncEvents: SyncEventRecord[] = [];
 
     for (const event of [...mastersAndSingles, ...exceptions]) {
-      const calendar = googleCalendars.find((row) =>
-        row._id.equals(event.calendarId),
+      const calendar = legacyGoogleCalendarById.get(
+        event.calendarId.toHexString(),
       );
-      if (!calendar || calendar.source.provider !== "google") {
+      if (!calendar) {
         counts.eventsSkipped += 1;
         skips.push({
           category: "orphan_event",
@@ -429,12 +450,6 @@ export async function migrateProviderSyncState(
 
       const syncCalendar = syncCalendarByGcalId.get(calendar.source.calendarId);
       if (!syncCalendar) {
-        if (options.dryRun) {
-          counts.eventsWouldCreate += 1;
-          userCounts.eventsUpserted += 1;
-          maybeSample(samples, event);
-          continue;
-        }
         counts.eventsSkipped += 1;
         skips.push({
           category: "orphan_event",
@@ -498,6 +513,19 @@ export async function migrateProviderSyncState(
         else counts.eventsWouldCreate += 1;
         userCounts.eventsUpserted += 1;
         maybeSample(samples, event);
+        if (recurrence.kind === "seriesMaster") {
+          syncMasterByProviderId.set(
+            providerEventId,
+            existing?.recurrence.kind === "seriesMaster"
+              ? existing
+              : ({
+                  _id: (existing?._id ??
+                    event._id.toHexString()) as SyncEventRecord["_id"],
+                  recurrence,
+                  providerEventId,
+                } as SyncEventRecord),
+          );
+        }
         continue;
       }
 
@@ -519,6 +547,13 @@ export async function migrateProviderSyncState(
         continue;
       }
 
+      const eventsResource = existingResources.find(
+        (row) =>
+          row.resourceKind === "events" && row.calendarId === syncCalendar._id,
+      );
+      const generation =
+        existing?.generation ?? eventsResource?.activeGeneration ?? 0;
+
       const record = await deps.events.upsertByProviderIdentity({
         tenantId,
         principalId,
@@ -535,7 +570,7 @@ export async function migrateProviderSyncState(
         schedule,
         recurrence,
         lifecycleState: "active",
-        generation: 0,
+        generation,
         confirmedAt: now,
       });
 
