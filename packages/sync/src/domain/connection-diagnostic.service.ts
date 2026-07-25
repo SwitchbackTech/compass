@@ -20,21 +20,22 @@ export async function resolveDiagnosticConnection(
   const connection = await deps.connections.findByDiagnosticKey(diagnosticKey);
   if (!connection) return null;
 
-  const [calendars, pendingJobCount, pendingCommands] = await Promise.all([
-    deps.calendars.listByConnection(
-      connection.tenantId,
-      connection.principalId,
-      connection._id,
-    ),
+  const calendars = await deps.calendars.listByConnection(
+    connection.tenantId,
+    connection.principalId,
+    connection._id,
+  );
+  const [pendingJobCount, pendingCommandCount] = await Promise.all([
     deps.jobs.countOutstandingByConnection(
       connection.tenantId,
       connection.principalId,
       connection._id,
     ),
-    deps.commands.listNonterminal(
+    deps.commands.countNonterminalByConnection(
       connection.tenantId,
       connection.principalId,
-      100,
+      connection._id,
+      calendars.map((calendar) => calendar._id),
     ),
   ]);
 
@@ -52,6 +53,6 @@ export async function resolveDiagnosticConnection(
     disconnectedAt: connection.disconnectedAt?.toISOString() ?? null,
     calendarCount: calendars.length,
     pendingJobCount,
-    pendingCommandCount: pendingCommands.length,
+    pendingCommandCount,
   };
 }

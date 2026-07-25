@@ -86,7 +86,19 @@ export class ProviderConnectionRepository {
     diagnosticKey: string,
   ): Promise<ProviderConnectionRecord | null> {
     const record = await this.collection.findOne({ diagnosticKey });
-    return record ? this.parseRecord(record) : null;
+    if (record) return this.parseRecord(record);
+
+    // Pre-S45 rows omit diagnosticKey until first read; match derived keys.
+    const legacyRows = await this.collection
+      .find({ diagnosticKey: { $not: { $type: "string" } } })
+      .toArray();
+    for (const legacy of legacyRows) {
+      const id = String(legacy._id) as ConnectionId;
+      if (deriveDiagnosticKey(id) === diagnosticKey) {
+        return this.parseRecord(legacy);
+      }
+    }
+    return null;
   }
 
   async findById(

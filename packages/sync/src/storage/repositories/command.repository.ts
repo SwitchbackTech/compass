@@ -2,7 +2,9 @@ import { type Collection, type Db, ObjectId } from "mongodb";
 import { type EventId } from "@core/types/domain-primitives";
 import { type SyncCommandOutcome } from "@core/types/sync/command.contracts";
 import {
+  type ConnectionId,
   type PrincipalId,
+  type ProviderCalendarId,
   type SyncCommandId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
@@ -134,6 +136,51 @@ export class CommandRepository {
       .limit(limit)
       .toArray();
     return records.map((r) => CommandRecordSchema.parse(r));
+  }
+
+  // Outstanding commands for one connection (support diagnostics / S45).
+  // Provider work is keyed by linked event connectionId or by create/move
+  // calendar targets on that connection.
+  async countNonterminalByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+    calendarIds: readonly ProviderCalendarId[],
+  ): Promise<number> {
+    const matchOr: Record<string, unknown>[] = [
+      { "event.connectionId": connectionId },
+    ];
+    if (calendarIds.length > 0) {
+      matchOr.push({
+        "input.kind": { $in: ["create", "move"] },
+        "input.calendarId": { $in: calendarIds },
+      });
+    }
+
+    const [result] = await this.collection
+      .aggregate<{ count: number }>([
+        {
+          $match: {
+            tenantId,
+            principalId,
+            "outcome.state": { $in: ["pending", "applying", "reconciling"] },
+          },
+        },
+        {
+          $lookup: {
+            from: SYNC_COLLECTIONS.events,
+            localField: "eventId",
+            foreignField: "_id",
+            as: "event",
+          },
+        },
+        { $unwind: { path: "$event", preserveNullAndEmptyArrays: true } },
+        { $match: { $or: matchOr } },
+        { $count: "count" },
+      ])
+      .toArray();
+
+    return result?.count ?? 0;
   }
 
   // Hard-delete every command for a principal (account deletion).
