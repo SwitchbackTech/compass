@@ -7,6 +7,7 @@ import { type ObjectId } from "mongodb";
 import {
   type ConnectionId,
   type PrincipalId,
+  ProviderAccountIdSchema,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { type Schema_User } from "@core/types/user.types";
@@ -147,7 +148,7 @@ export async function migrateProviderConnections(
       principalId,
       provider: "google",
       account: {
-        providerAccountId,
+        providerAccountId: ProviderAccountIdSchema.parse(providerAccountId),
         email: accountEmail,
         displayName: null,
       },
