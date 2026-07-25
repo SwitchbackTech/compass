@@ -270,7 +270,9 @@ export function inventoryLegacySyncData(
 
   const seenOrphanCursorIds = new Set<string>();
   for (const doc of syncDocs) {
-    const eventRows = legacyCursorRows(doc.google?.events);
+    const eventRows = legacyCursorRows<{ gCalendarId: string }>(
+      doc.google?.events,
+    );
     for (const row of eventRows) {
       const known = googleCalByUser.get(doc.user);
       if (known?.has(row.gCalendarId)) continue;
@@ -427,7 +429,10 @@ export function inventoryLegacySyncData(
     );
 
     const syncResourceTargets: InventoryUserTarget["syncResourceTargets"] = [];
-    const calendarListRows = legacyCursorRows(syncDoc?.google?.calendarlist);
+    const calendarListRows = legacyCursorRows<{
+      gCalendarId?: string;
+      nextSyncToken?: string;
+    }>(syncDoc?.google?.calendarlist);
     if (
       calendarListRows.length > 0 ||
       watchKeys.has(`${userId}:${Resource_Sync.CALENDAR}`)
@@ -453,9 +458,10 @@ export function inventoryLegacySyncData(
       syncResourceTargets.push({
         resourceKind: "events",
         gCalendarId,
-        hasCursor: legacyCursorRows<{ gCalendarId: string }>(
-          syncDoc?.google?.events,
-        ).some(
+        hasCursor: legacyCursorRows<{
+          gCalendarId: string;
+          nextSyncToken?: string;
+        }>(syncDoc?.google?.events).some(
           (r) => r.gCalendarId === gCalendarId && Boolean(r.nextSyncToken),
         ),
         hasWatch: watchKeys.has(`${userId}:${gCalendarId}`),
