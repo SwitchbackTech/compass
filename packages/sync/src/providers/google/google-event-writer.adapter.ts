@@ -16,6 +16,7 @@ import {
   type ProviderWriteRecurrence,
   type ProviderWriteResult,
 } from "@sync/providers/provider-event-writer.port";
+import { redactedCause } from "@sync/safety/redact-error";
 
 // The Google event calls the writer makes. Depending on this narrow interface
 // (not the concrete googleapis client) lets tests script results and errors
@@ -323,14 +324,6 @@ function hasRetryable403Reason(error: unknown): boolean {
   return Boolean(
     errors?.some((e) => e.reason && RETRYABLE_403_REASONS.has(e.reason)),
   );
-}
-
-// Reduce a provider-SDK error to a bare message before attaching it as a cause.
-// A googleapis/gaxios error retains the request config, whose headers carry the
-// bearer access token; propagating the raw object would leak it the moment any
-// caller logged the cause chain. The message is response-derived, so it is safe.
-function redactedCause(error: unknown): Error | undefined {
-  return error instanceof Error ? new Error(error.message) : undefined;
 }
 
 // Google event ids must be base32hex (0-9, a-v), 5-1024 chars. A Compass

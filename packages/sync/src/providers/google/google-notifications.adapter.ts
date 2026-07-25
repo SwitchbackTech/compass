@@ -8,6 +8,7 @@ import {
   type ProviderNotificationAdapter,
   ProviderNotificationError,
 } from "@sync/providers/provider-notifications.port";
+import { redactedCause } from "@sync/safety/redact-error";
 
 // The two Google channel calls the adapter makes. Depending on this narrow
 // interface (not the concrete googleapis client) lets tests script results and
@@ -206,12 +207,4 @@ function googleStatus(error: unknown): number | undefined {
     (error as { response?: { status?: number } })?.response?.status ??
     (error as { code?: number })?.code
   );
-}
-
-// Reduce a provider-SDK error to a bare message before attaching it as a cause.
-// A googleapis/gaxios error retains the request config, whose headers carry the
-// bearer access token; propagating the raw object would leak it the moment any
-// caller logged the cause chain.
-function redactedCause(error: unknown): Error | undefined {
-  return error instanceof Error ? new Error(error.message) : undefined;
 }
