@@ -31,6 +31,10 @@ import {
   type EventOccurrenceListResponse,
   EventOccurrenceListResponseSchema,
 } from "@core/types/sync/event.contracts";
+import {
+  type PrincipalPurgeResponse,
+  PrincipalPurgeResponseSchema,
+} from "@core/types/sync/principal.contracts";
 import { createHmac, randomUUID } from "node:crypto";
 
 // The internal endpoints this client calls. Kept in sync with the Sync service's
@@ -43,6 +47,7 @@ const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
 const EVENTS_PATH = "/internal/events";
 const EVENTS_FULL_PATH = "/internal/events/full";
 const COMMANDS_PATH = "/internal/commands";
+const PRINCIPAL_PATH = "/internal/principal";
 
 const DEFAULT_TIMEOUT_MS = 5000;
 
@@ -307,8 +312,23 @@ export class SyncServiceClient {
     });
   }
 
+  // Hard-delete every Sync-held row for the signed principal (account deletion).
+  // Served in Sync passive mode too. Idempotent: a retry returns zero counts.
+  purgePrincipal(
+    principal: SyncPrincipal,
+    correlationId?: string,
+  ): Promise<SyncClientResult<PrincipalPurgeResponse>> {
+    return this.#request({
+      method: "DELETE",
+      path: PRINCIPAL_PATH,
+      principal,
+      schema: PrincipalPurgeResponseSchema,
+      correlationId,
+    });
+  }
+
   async #request<T>(input: {
-    method: "GET" | "POST";
+    method: "GET" | "POST" | "DELETE";
     path: string;
     query?: URLSearchParams;
     principal: SyncPrincipal;

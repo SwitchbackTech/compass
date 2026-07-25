@@ -122,6 +122,15 @@ export class EventOccurrenceRepository {
     });
   }
 
+  // Hard-delete every occurrence for a principal (account deletion).
+  async deleteByPrincipal(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+  ): Promise<number> {
+    const result = await this.collection.deleteMany({ tenantId, principalId });
+    return result.deletedCount;
+  }
+
   async listByCalendarRange(
     query: OccurrenceRangeQuery,
   ): Promise<EventOccurrenceRecord[]> {

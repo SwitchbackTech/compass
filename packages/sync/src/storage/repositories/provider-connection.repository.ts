@@ -158,4 +158,14 @@ export class ProviderConnectionRepository {
     }
     return ProviderConnectionRecordSchema.parse(result);
   }
+
+  // Hard-delete every connection for a principal (account deletion). Soft
+  // disconnect uses markDisconnected instead; this removes the rows entirely.
+  async deleteByPrincipal(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+  ): Promise<number> {
+    const result = await this.collection.deleteMany({ tenantId, principalId });
+    return result.deletedCount;
+  }
 }

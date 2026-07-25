@@ -17,6 +17,7 @@ import {
   EVENTS_FULL_PATH,
   EVENTS_PATH,
 } from "@sync/server/connection.routes";
+import { PRINCIPAL_PATH } from "@sync/server/principal.routes";
 import {
   SyncServiceClient,
   type SyncServiceClientOptions,
@@ -136,6 +137,45 @@ describe("SyncServiceClient", () => {
     const sent = calls[0];
     expect(sent?.url).toBe(`${BASE_URL}${CONNECTIONS_PATH}`);
     expect(sent?.method).toBe("GET");
+    expect(sent?.body).toBeUndefined();
+
+    const verdict = verifyInternalRequest({
+      secret: SECRET,
+      headers: sent?.headers ?? {},
+      now: NOW,
+    });
+    if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
+    expect(verdict.context.tenantId).toBe(who.tenantId);
+    expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("purges a principal with a signed DELETE the real Sync verifier accepts", async () => {
+    const who = principal();
+    const counts = {
+      connections: 1,
+      credentials: 1,
+      calendars: 0,
+      events: 0,
+      eventOccurrences: 0,
+      syncResources: 0,
+      commands: 0,
+      jobs: 0,
+      deletionMarkers: 0,
+      invalidations: 0,
+    };
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => counts,
+    }));
+
+    const result = await client(fn).purgePrincipal(who);
+
+    if (!result.ok) throw new Error(`expected ok, got ${result.error.kind}`);
+    expect(result.value).toEqual(counts);
+
+    const sent = calls[0];
+    expect(sent?.url).toBe(`${BASE_URL}${PRINCIPAL_PATH}`);
+    expect(sent?.method).toBe("DELETE");
     expect(sent?.body).toBeUndefined();
 
     const verdict = verifyInternalRequest({
