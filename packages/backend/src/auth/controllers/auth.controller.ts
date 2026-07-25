@@ -26,6 +26,18 @@ import {
   type Res_Promise,
   type SReqBody,
 } from "@backend/common/types/express.types";
+import { toEventMutationError } from "@backend/event/event.error";
+
+const rejectIfMaintenance = (res: Res_Promise): boolean => {
+  try {
+    assertCloudMutationsAllowed();
+    return false;
+  } catch (err) {
+    const { status, body } = toEventMutationError(err);
+    res.status(status).json(body);
+    return true;
+  }
+};
 
 class AuthController {
   createSession = async (
@@ -63,12 +75,7 @@ class AuthController {
     req: SReqBody<GoogleAuthCodeRequest>,
     res: Res_Promise,
   ): void => {
-    try {
-      assertCloudMutationsAllowed();
-    } catch (err) {
-      res.promise(Promise.reject(err));
-      return;
-    }
+    if (rejectIfMaintenance(res)) return;
 
     if (!isGoogleConfigured(CONFIG)) {
       res.promise(
@@ -95,12 +102,7 @@ class AuthController {
     req: SReqBody<ConnectionBeginRequest>,
     res: Res_Promise,
   ): void => {
-    try {
-      assertCloudMutationsAllowed();
-    } catch (err) {
-      res.promise(Promise.reject(err));
-      return;
-    }
+    if (rejectIfMaintenance(res)) return;
 
     const client =
       getConnectionDelegation() === "sync" ? getSyncServiceClient() : null;
