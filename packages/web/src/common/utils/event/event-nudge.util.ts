@@ -44,10 +44,17 @@ export const isTimedEventMultiDay = (start: Dayjs, end: Dayjs) =>
 export const timedMultiDayToAllDayDates = (
   start: Dayjs,
   end: Dayjs,
-): { startDate: string; endDate: string } => ({
-  startDate: start.startOf("day").format(YEAR_MONTH_DAY_FORMAT),
-  endDate: end.startOf("day").add(1, "day").format(YEAR_MONTH_DAY_FORMAT),
-});
+): { startDate: string; endDate: string } => {
+  const endDayStart = end.startOf("day");
+  const exclusiveEnd = end.isSame(endDayStart)
+    ? endDayStart
+    : endDayStart.add(1, "day");
+
+  return {
+    startDate: start.startOf("day").format(YEAR_MONTH_DAY_FORMAT),
+    endDate: exclusiveEnd.format(YEAR_MONTH_DAY_FORMAT),
+  };
+};
 
 export const nudgeEventDates = (
   event: Pick<CompassEvent, "startDate" | "endDate" | "isAllDay">,

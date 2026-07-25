@@ -162,4 +162,13 @@ describe("timedMultiDayToAllDayDates", () => {
       ),
     ).toEqual({ startDate: "2026-05-22", endDate: "2026-05-24" });
   });
+
+  it("does not include the day after a midnight-exclusive end", () => {
+    expect(
+      timedMultiDayToAllDayDates(
+        dayjs("2026-05-22T08:00:00"),
+        dayjs("2026-05-25T00:00:00"),
+      ),
+    ).toEqual({ startDate: "2026-05-22", endDate: "2026-05-25" });
+  });
 });
