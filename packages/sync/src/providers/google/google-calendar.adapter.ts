@@ -14,6 +14,7 @@ import {
   type ProviderCalendarAdapter,
   ProviderCalendarError,
 } from "@sync/providers/provider-calendar.port";
+import { redactedCause } from "@sync/safety/redact-error";
 
 // One page of a Google calendar-list read, narrowed to the fields discovery
 // needs. Google returns `nextSyncToken` only on the final page; intermediate
@@ -197,13 +198,4 @@ function isCursorExpired(error: unknown): boolean {
     (error as { response?: { status?: number } })?.response?.status ??
     (error as { code?: number })?.code;
   return status === 410;
-}
-
-// Reduce a provider-SDK error to a bare message before attaching it as a cause.
-// A googleapis/gaxios error retains the full request config, whose headers carry
-// the bearer access token; propagating the raw object would leak that token the
-// moment any caller logs the cause chain. The message is response-derived, so it
-// is safe to keep for diagnostics. (Mirrors the auth adapter's redaction.)
-function redactedCause(error: unknown): Error | undefined {
-  return error instanceof Error ? new Error(error.message) : undefined;
 }

@@ -11,6 +11,7 @@ import {
   type ProviderAuthorization,
   type RefreshedCredential,
 } from "@sync/providers/provider-auth.port";
+import { redactedCause } from "@sync/safety/redact-error";
 
 // The subset of google-auth-library's OAuth2Client the adapter uses. Depending
 // on an interface (not the concrete client) lets tests supply a plain fake
@@ -197,16 +198,6 @@ export class GoogleAuthAdapter implements ProviderAuthAdapter {
     }
     return payload;
   }
-}
-
-// Reduce a provider-SDK error to a bare message before attaching it as a
-// cause. The google-auth-library/gaxios error retains the full token-exchange
-// request config, which includes the app's `client_secret` and the auth code;
-// propagating the raw object would leak that secret the moment any caller logs
-// the cause chain. The message is built from the response, not the request, so
-// it is safe to keep for diagnostics.
-function redactedCause(error: unknown): Error | undefined {
-  return error instanceof Error ? new Error(error.message) : undefined;
 }
 
 // A Google token-endpoint rejection carries the reason in the response body's
