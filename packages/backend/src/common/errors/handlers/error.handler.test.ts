@@ -8,6 +8,7 @@ import {
   toClientErrorPayload,
 } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
+import { eventMutationError } from "@backend/event/event.error";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import userService from "@backend/user/services/user.service";
 import { describe, expect, it, mock, spyOn } from "bun:test";
@@ -62,6 +63,32 @@ describe("error.handler", () => {
   });
 
   describe("handleExpressError", () => {
+    it("returns the EventMutationError envelope for MAINTENANCE", async () => {
+      const json = mock();
+      const res = {
+        header: mock().mockReturnThis(),
+        status: mock().mockReturnThis(),
+        json,
+      } as unknown as Parameters<typeof handleExpressError>[1];
+      const req = {} as Parameters<typeof handleExpressError>[0];
+
+      await handleExpressError(
+        req,
+        res,
+        eventMutationError(
+          "MAINTENANCE",
+          "Cloud edits are paused for maintenance",
+        ),
+      );
+
+      expect(res.status).toHaveBeenCalledWith(Status.SERVICE_UNAVAILABLE);
+      expect(json).toHaveBeenCalledWith({
+        code: "MAINTENANCE",
+        message: "Cloud edits are paused for maintenance",
+        retryable: true,
+      });
+    });
+
     it("returns 401 with GOOGLE_REVOKED payload when Google token is invalid", async () => {
       const userId = "507f1f77bcf86cd799439011";
       spyOn(userService, "pruneGoogleData").mockResolvedValue();

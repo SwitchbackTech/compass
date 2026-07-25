@@ -22,6 +22,10 @@ import {
   type Info_Error,
 } from "@backend/common/types/error.types";
 import { type SessionResponse } from "@backend/common/types/express.types";
+import {
+  EventMutationException,
+  toEventMutationError,
+} from "@backend/event/event.error";
 import { pruneGoogleDataAndNotifyRevoked } from "@backend/sync/services/google-sync/google-sync.revoked";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { getSyncByToken } from "@backend/sync/services/records/sync-records.repository";
@@ -82,7 +86,12 @@ export const handleExpressError = async (
   res.header("Content-Type", "application/json");
 
   errorHandler.log(e);
-  if (e instanceof BaseError) {
+  // Typed mutation/cutover errors must keep the EventMutationError envelope
+  // (`code`/`message`/`retryable`), not the generic `{ result, message }` shape.
+  if (e instanceof EventMutationException) {
+    const { status, body } = toEventMutationError(e);
+    res.status(status).json(body);
+  } else if (e instanceof BaseError) {
     res.status(e.statusCode).json(toClientErrorPayload(e));
   } else {
     const userId = await parseUserId(res, e);
