@@ -912,11 +912,7 @@ describe("executeProviderDelete", () => {
       updatedAt: now(),
       confirmedAt: now(),
     } as never);
-    const exception = await events.findById(
-      tenantId,
-      principalId,
-      exceptionId,
-    );
+    const exception = await events.findById(tenantId, principalId, exceptionId);
     if (!exception) throw new Error("seed failed to read back the exception");
     await reprojectOccurrences(occurrences, master, now);
     await reprojectOccurrences(occurrences, exception, now);
@@ -949,8 +945,9 @@ describe("executeProviderDelete", () => {
     expect(
       await events.findById(tenantId, principalId, exceptionId),
     ).toBeNull();
-    expect(await events.findSeriesExceptions(tenantId, principalId, masterId))
-      .toEqual([]);
+    expect(
+      await events.findSeriesExceptions(tenantId, principalId, masterId),
+    ).toEqual([]);
     expect(
       await mongo.db
         .collection(SYNC_COLLECTIONS.eventOccurrences)
