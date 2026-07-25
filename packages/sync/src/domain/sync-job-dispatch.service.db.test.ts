@@ -22,6 +22,7 @@ import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.c
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
@@ -138,6 +139,7 @@ describe("dispatchSyncJob", () => {
   let calendars: ProviderCalendarRepository;
   let commands: CommandRepository;
   let jobs: JobRepository;
+  let invalidations: InvalidationRepository;
   // Dispatch resolves the connection for a calendarListSync job; a test sets what
   // findById returns without seeding a full connection record.
   let stubbedConnection: ProviderConnectionRecord | null;
@@ -149,6 +151,7 @@ describe("dispatchSyncJob", () => {
     calendars = new ProviderCalendarRepository(storage.db());
     commands = new CommandRepository(storage.db());
     jobs = new JobRepository(storage.db());
+    invalidations = new InvalidationRepository(storage.db());
     stubbedConnection = null;
   });
 
@@ -169,6 +172,7 @@ describe("dispatchSyncJob", () => {
     custody: tokenSource,
     notifications,
     callbackUrl: "https://sync.example/sync/notifications/google",
+    invalidations,
   });
 
   const seedCalendar = (): Promise<ProviderCalendarRecord> =>
@@ -239,6 +243,31 @@ describe("dispatchSyncJob", () => {
       updatedAt: now(),
     }) as JobRecord;
 
+  it("invalidates after an empty incremental pull retry once the cursor already advanced", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-1");
+    const reader = new FakeReader([page([], "cursor-1")]);
+
+    const outcome = await dispatchSyncJob(
+      deps(reader),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+    expect(outcome).toEqual({ result: "done" });
+
+    const feed = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.invalidations)
+      .find({ principalId: calendar.principalId })
+      .toArray();
+    expect(feed).toHaveLength(1);
+    expect(feed[0]?.invalidation).toEqual({
+      kind: "calendar",
+      connectionId: calendar.connectionId,
+      calendarId: calendar._id,
+    });
+  });
+
   it("settles an applied incremental pull as done with no followup", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
@@ -250,6 +279,18 @@ describe("dispatchSyncJob", () => {
       now,
     );
     expect(outcome).toEqual({ result: "done" });
+
+    const feed = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.invalidations)
+      .find({ principalId: calendar.principalId })
+      .toArray();
+    expect(feed).toHaveLength(1);
+    expect(feed[0]?.invalidation).toEqual({
+      kind: "calendar",
+      connectionId: calendar.connectionId,
+      calendarId: calendar._id,
+    });
   });
 
   it("hands off an expired-cursor pull to a repair followup", async () => {

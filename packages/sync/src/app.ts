@@ -24,6 +24,7 @@ import { CommandRepository } from "@sync/storage/repositories/command.repository
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
@@ -264,6 +265,7 @@ function buildSchedulers(
       // Where the provider posts change notifications back; the callback route
       // verifies them against the stored subscription.
       callbackUrl: `${config.CALLBACK_BASE_URL}${NOTIFICATIONS_PATH}`,
+      invalidations: new InvalidationRepository(db),
     },
     owner,
     {

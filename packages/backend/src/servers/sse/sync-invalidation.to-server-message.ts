@@ -17,13 +17,24 @@ export function syncInvalidationToServerMessages(
           reason: "reconciled",
         },
       ];
-    case "calendar":
+    case "calendar": {
+      // Provider pull/repair changed this calendar's events. Emit both so the
+      // SPA refetches the calendar list and the event queries (useEventSSE only
+      // invalidates events on eventsChanged).
+      const calendarId = CalendarIdSchema.parse(invalidation.calendarId);
       return [
         {
           type: "calendarsChanged",
-          calendarIds: [CalendarIdSchema.parse(invalidation.calendarId)],
+          calendarIds: [calendarId],
+        },
+        {
+          type: "eventsChanged",
+          calendarId,
+          eventIds: [],
+          reason: "reconciled",
         },
       ];
+    }
     case "connection":
       // Connection state / calendar membership may have changed; the web
       // invalidates the whole calendar list on this signal.

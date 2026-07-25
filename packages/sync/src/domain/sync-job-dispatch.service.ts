@@ -17,6 +17,7 @@ import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.c
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { type InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { type ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
@@ -40,6 +41,10 @@ export interface SyncJobDispatchDeps {
   // url is where the provider posts change notifications back to this service.
   notifications: ProviderNotificationAdapter;
   callbackUrl: string;
+  // Content-free outbox so Compass API can push typed browser SSE after a
+  // provider pull. Without this, incremental pulls update Sync storage but the
+  // open SPA never refetches (S40 gap).
+  invalidations: InvalidationRepository;
 }
 
 // The decision a dispatch makes about a claimed job. The worker loop (a later
@@ -131,6 +136,7 @@ export async function dispatchSyncJob(
     case "incrementalPull": {
       const pull = await pullCalendarChanges(deps, calendar, now);
       if (pull.status === "applied") {
+        await appendCalendarInvalidation(deps, calendar, now());
         return { result: "done" };
       }
       if (pull.status === "notImported") {
@@ -144,13 +150,15 @@ export async function dispatchSyncJob(
       const repair = await repairCalendar(deps, calendar, now);
       // An incomplete repair (the pass yielded no durable cursor) left the old
       // generation intact; retry the whole rebuild later rather than settle.
-      return repair.status === "repaired"
-        ? { result: "done" }
-        : {
-            result: "retry",
-            failureClass: "retryableTransient",
-            reason: "repair did not complete",
-          };
+      if (repair.status === "repaired") {
+        await appendCalendarInvalidation(deps, calendar, now());
+        return { result: "done" };
+      }
+      return {
+        result: "retry",
+        failureClass: "retryableTransient",
+        reason: "repair did not complete",
+      };
     }
     case "subscriptionMaintain": {
       // Open or renew the push channel. Every terminal outcome (watched /
@@ -194,6 +202,23 @@ function importFollowup(
     runAfter: now(),
     coalescingKey: `initialImport:${resource._id}`,
   };
+}
+
+async function appendCalendarInvalidation(
+  deps: Pick<SyncJobDispatchDeps, "invalidations">,
+  calendar: ProviderCalendarRecord,
+  emittedAt: Date,
+): Promise<void> {
+  await deps.invalidations.append({
+    tenantId: calendar.tenantId,
+    principalId: calendar.principalId,
+    invalidation: {
+      kind: "calendar",
+      connectionId: calendar.connectionId,
+      calendarId: calendar._id,
+    },
+    emittedAt,
+  });
 }
 
 function subscriptionFollowup(

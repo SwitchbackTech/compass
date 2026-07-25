@@ -21,8 +21,10 @@ import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.c
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 const objectId = () => faker.database.mongodbObjectId();
@@ -92,6 +94,8 @@ describe("SyncJobWorker", () => {
   let calendars: ProviderCalendarRepository;
   let commands: CommandRepository;
   let jobs: JobRepository;
+  let connections: ProviderConnectionRepository;
+  let invalidations: InvalidationRepository;
 
   beforeEach(() => {
     events = new EventRepository(storage.db());
@@ -100,6 +104,8 @@ describe("SyncJobWorker", () => {
     calendars = new ProviderCalendarRepository(storage.db());
     commands = new CommandRepository(storage.db());
     jobs = new JobRepository(storage.db());
+    connections = new ProviderConnectionRepository(storage.db());
+    invalidations = new InvalidationRepository(storage.db());
   });
 
   const deps = (reader: FakeReader): SyncJobWorkerDeps => ({
@@ -107,10 +113,25 @@ describe("SyncJobWorker", () => {
     occurrences,
     resources,
     calendars,
+    connections,
+    discovery: {
+      provider: "google",
+      discoverCalendars: async () => ({ calendars: [], cursor: null }),
+    },
     commands,
     jobs,
     reader,
     custody: tokenSource,
+    notifications: {
+      provider: "google",
+      watchEvents: async () => {
+        throw new Error("watch not used in worker tests");
+      },
+      stopChannel: async () => {},
+      parseCallback: () => null,
+    },
+    callbackUrl: "https://sync.example/sync/notifications/google",
+    invalidations,
   });
 
   const worker = (reader: FakeReader) =>

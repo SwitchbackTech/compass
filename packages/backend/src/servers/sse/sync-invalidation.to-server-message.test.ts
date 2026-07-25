@@ -23,7 +23,7 @@ describe("syncInvalidationToServerMessages", () => {
     ]);
   });
 
-  it("maps a calendar invalidation to calendarsChanged", () => {
+  it("maps a calendar invalidation to calendarsChanged and eventsChanged", () => {
     const calendarId = objectId();
     expect(
       syncInvalidationToServerMessages({
@@ -31,7 +31,15 @@ describe("syncInvalidationToServerMessages", () => {
         connectionId: objectId() as never,
         calendarId: calendarId as never,
       }),
-    ).toEqual([{ type: "calendarsChanged", calendarIds: [calendarId] }]);
+    ).toEqual([
+      { type: "calendarsChanged", calendarIds: [calendarId] },
+      {
+        type: "eventsChanged",
+        calendarId,
+        eventIds: [],
+        reason: "reconciled",
+      },
+    ]);
   });
 
   it("maps a connection invalidation to a calendarsChanged refetch signal", () => {
