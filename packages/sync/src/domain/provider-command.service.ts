@@ -1,4 +1,4 @@
-import { type DateTime } from "@core/types/domain-primitives";
+import { type DateTime, type EventId } from "@core/types/domain-primitives";
 import {
   type EditableRecurrence,
   type EventSchedule,
@@ -522,12 +522,10 @@ async function commitProviderSeriesUpdate(
   //
   // Deferred gap: for a provider-linked series this removes only the LOCAL copy
   // of the override, not the override event at the provider — patching a Google
-  // master does not delete its instance overrides. That is harmless today
-  // because provider-linked exceptions are only ever created by import, which
-  // does not exist yet, so `discarded` is always empty here. Once import lands,
-  // an edit-all must also cancel the discarded overrides at the provider (the
-  // same gap already noted for the provider delete path), or a later pull would
-  // resurrect them.
+  // master does not delete its instance overrides. An edit-all must also cancel
+  // the discarded overrides at the provider, or a later pull could resurrect
+  // them. (Provider series delete cascades local exceptions in
+  // executeProviderDelete; edit-all still needs the provider cancel.)
   for (const exception of discarded) {
     await deps.occurrences.replaceForEvent(
       exception._id,
@@ -739,12 +737,18 @@ export async function executeProviderDelete(
 
   // Mark the event as being deleted. If it is already gone locally, a prior
   // attempt removed it (the marker was written first) — the delete converged.
+  // Still cascade any leftover series exceptions: older builds removed the
+  // master without clearing overrides, and a crash between exception cleanup
+  // and confirm can leave the same residue.
   const marked = await deps.events.replaceExisting({
     ...event,
     lifecycleState: "deletionPending",
     updatedAt: now(),
   });
-  if (!marked) return confirmDeletion(deps, command);
+  if (!marked) {
+    await clearSeriesExceptions(deps, command, command.eventId);
+    return confirmDeletion(deps, command);
+  }
 
   let accessToken: string;
   try {
@@ -782,10 +786,11 @@ export async function executeProviderDelete(
 
   // The provider confirmed the deletion. Write the content-free tombstone first
   // (so no window exists where the event is gone with no marker), clear the
-  // occurrences, then remove the local record, then confirm. Clearing before the
-  // delete matters: a crash after deleteById would otherwise strand the
-  // occurrence rows, since the retry's already-gone (`!marked`) branch confirms
-  // without clearing them. All steps are idempotent.
+  // master's occurrences, cascade local series exceptions (Google-side instance
+  // overrides), then remove the master LAST — same crash-safety as the cloud
+  // series delete / pull cascade. Clearing before deleteById matters: a crash
+  // after deleteById would otherwise strand occurrence rows, since the retry's
+  // already-gone (`!marked`) branch confirms without ever clearing them.
   await deps.markers.record({
     tenantId: event.tenantId,
     principalId: event.principalId,
@@ -797,8 +802,37 @@ export async function executeProviderDelete(
     deletedAt: now(),
   });
   await deps.occurrences.replaceForEvent(event._id, event.generation, []);
+  await clearSeriesExceptions(deps, command, event._id);
   await deps.events.deleteById(event.tenantId, event.principalId, event._id);
   return confirmDeletion(deps, command);
+}
+
+// Remove every local exception of a series (occurrences first). Idempotent:
+// findSeriesExceptions is empty when the target was a single event or when a
+// prior attempt already cleared overrides. Does not call the provider — Google
+// series delete already discarded the instances with the master.
+async function clearSeriesExceptions(
+  deps: ProviderDeleteDeps,
+  command: CommandRecord,
+  seriesId: EventId,
+): Promise<void> {
+  const exceptions = await deps.events.findSeriesExceptions(
+    command.tenantId,
+    command.principalId,
+    seriesId,
+  );
+  for (const exception of exceptions) {
+    await deps.occurrences.replaceForEvent(
+      exception._id,
+      exception.generation,
+      [],
+    );
+    await deps.events.deleteById(
+      command.tenantId,
+      command.principalId,
+      exception._id,
+    );
+  }
 }
 
 // Confirm a completed deletion: the event has no live provider target anymore,

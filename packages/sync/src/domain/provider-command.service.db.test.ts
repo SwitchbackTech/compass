@@ -816,6 +816,266 @@ describe("executeProviderDelete", () => {
     expect(writer.deleteCalls).toHaveLength(0);
   });
 
+  it("cascades local series exceptions when deleting a provider series", async () => {
+    // Staging repro: Google-side instance override stays in Sync after the
+    // master is deleted with scope=all, and keeps resurfacing in range reads.
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const connectionId = objectId() as ConnectionId;
+    const calendar: ProviderCalendarRecord = {
+      _id: objectId() as never,
+      tenantId,
+      principalId,
+      connectionId,
+      providerCalendarId: "primary@google.com" as never,
+      displayName: "Google",
+      color: null,
+      active: true,
+      primary: true,
+      accessRole: "owner",
+      capabilities: [],
+      createdAt: now(),
+      updatedAt: now(),
+    } as never;
+    const masterId = objectId() as EventId;
+    await events.put({
+      _id: masterId,
+      tenantId,
+      principalId,
+      origin: "provider",
+      calendarId: calendar._id,
+      clientEventId: null,
+      connectionId,
+      providerEventId: "g-series-1" as never,
+      providerVersion: "etag-1" as never,
+      providerUpdatedAt: null,
+      deliveryState: "confirmed",
+      providerMetadata: null,
+      content: {
+        title: "Weekly",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      },
+      schedule,
+      recurrence: {
+        kind: "seriesMaster",
+        rules: ["RRULE:FREQ=WEEKLY;COUNT=4"],
+      },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: now(),
+      updatedAt: now(),
+      confirmedAt: now(),
+    } as never);
+    const master = await events.findById(tenantId, principalId, masterId);
+    if (!master) throw new Error("seed failed to read back the master");
+    const exceptionId = objectId() as EventId;
+    await events.put({
+      _id: exceptionId,
+      tenantId,
+      principalId,
+      origin: "provider",
+      calendarId: calendar._id,
+      clientEventId: null,
+      connectionId,
+      providerEventId: "g-inst-override" as never,
+      providerVersion: "etag-1" as never,
+      providerUpdatedAt: null,
+      deliveryState: "confirmed",
+      providerMetadata: null,
+      content: {
+        title: "Moved instance",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-21T11:00:00-06:00",
+        end: "2026-07-21T12:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: {
+        kind: "exception",
+        seriesId: masterId,
+        recurrenceId: "2026-07-21T09:00:00-06:00" as never,
+        cancelled: false,
+      },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: now(),
+      updatedAt: now(),
+      confirmedAt: now(),
+    } as never);
+    const exception = await events.findById(
+      tenantId,
+      principalId,
+      exceptionId,
+    );
+    if (!exception) throw new Error("seed failed to read back the exception");
+    await reprojectOccurrences(occurrences, master, now);
+    await reprojectOccurrences(occurrences, exception, now);
+    const { record: command } = await commands.submit({
+      tenantId,
+      principalId,
+      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+      eventId: masterId,
+      input: { kind: "delete", invitation: "none", scope: "all" } as never,
+      expectedVersion: null,
+    });
+
+    const result = await executeProviderDelete(
+      {
+        commands,
+        events,
+        occurrences,
+        writer: new FakeDeleteWriter(),
+        custody: tokenSource(),
+        markers,
+      },
+      command,
+      master,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("confirmed");
+    expect(await events.findById(tenantId, principalId, masterId)).toBeNull();
+    expect(
+      await events.findById(tenantId, principalId, exceptionId),
+    ).toBeNull();
+    expect(await events.findSeriesExceptions(tenantId, principalId, masterId))
+      .toEqual([]);
+    expect(
+      await mongo.db
+        .collection(SYNC_COLLECTIONS.eventOccurrences)
+        .countDocuments({ eventId: { $in: [masterId, exceptionId] } }),
+    ).toBe(0);
+  });
+
+  it("clears leftover series exceptions on an already-gone master replay", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const connectionId = objectId() as ConnectionId;
+    const calendar: ProviderCalendarRecord = {
+      _id: objectId() as never,
+      tenantId,
+      principalId,
+      connectionId,
+      providerCalendarId: "primary@google.com" as never,
+      displayName: "Google",
+      color: null,
+      active: true,
+      primary: true,
+      accessRole: "owner",
+      capabilities: [],
+      createdAt: now(),
+      updatedAt: now(),
+    } as never;
+    const masterId = objectId() as EventId;
+    const exceptionId = objectId() as EventId;
+    // Master already removed (prior attempt); orphan exception remains.
+    await events.put({
+      _id: exceptionId,
+      tenantId,
+      principalId,
+      origin: "provider",
+      calendarId: calendar._id,
+      clientEventId: null,
+      connectionId,
+      providerEventId: "g-inst-orphan" as never,
+      providerVersion: "etag-1" as never,
+      providerUpdatedAt: null,
+      deliveryState: "confirmed",
+      providerMetadata: null,
+      content: {
+        title: "Orphan",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      },
+      schedule,
+      recurrence: {
+        kind: "exception",
+        seriesId: masterId,
+        recurrenceId: "2026-07-21T09:00:00-06:00" as never,
+        cancelled: false,
+      },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: now(),
+      updatedAt: now(),
+      confirmedAt: now(),
+    } as never);
+    const ghostMaster = {
+      _id: masterId,
+      tenantId,
+      principalId,
+      origin: "provider",
+      calendarId: calendar._id,
+      clientEventId: null,
+      connectionId,
+      providerEventId: "g-series-1" as never,
+      providerVersion: "etag-1" as never,
+      providerUpdatedAt: null,
+      deliveryState: "confirmed",
+      providerMetadata: null,
+      content: {
+        title: "Weekly",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      },
+      schedule,
+      recurrence: {
+        kind: "seriesMaster",
+        rules: ["RRULE:FREQ=WEEKLY;COUNT=4"],
+      },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: now(),
+      updatedAt: now(),
+      confirmedAt: now(),
+    } as EventRecord;
+    const { record: command } = await commands.submit({
+      tenantId,
+      principalId,
+      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+      eventId: masterId,
+      input: { kind: "delete", invitation: "none", scope: "all" } as never,
+      expectedVersion: null,
+    });
+
+    const result = await executeProviderDelete(
+      {
+        commands,
+        events,
+        occurrences,
+        writer: new FakeDeleteWriter(),
+        custody: tokenSource(),
+        markers,
+      },
+      command,
+      ghostMaster,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("confirmed");
+    expect(
+      await events.findById(tenantId, principalId, exceptionId),
+    ).toBeNull();
+  });
+
   it("keeps the event deletionPending and stays pending on a transient failure", async () => {
     const { tenantId, principalId, calendar, event, command } = await seed();
     const writer = new FakeDeleteWriter();
