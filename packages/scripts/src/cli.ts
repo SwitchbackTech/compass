@@ -1,4 +1,5 @@
 import { CliValidator } from "@scripts/cli.validator";
+import { runInventoryLegacySync } from "@scripts/commands/inventory-legacy-sync";
 import { runMigrator } from "@scripts/commands/migrate";
 import { MigratorType } from "@scripts/common/cli.types";
 import { Command } from "commander";
@@ -20,6 +21,9 @@ export default class CompassCLI {
       case cmd === "migrate":
         await runMigrator(MigratorType.MIGRATION);
         break;
+      case cmd === "inventory-legacy-sync":
+        await runInventoryLegacySync();
+        break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
     }
@@ -35,6 +39,14 @@ export default class CompassCLI {
       .helpOption(false)
       .allowUnknownOption(true)
       .description("run database schema migrations");
+
+    program
+      .command("inventory-legacy-sync")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "read-only inventory of legacy Google sync data (S46; no writes)",
+      );
 
     return program;
   }
