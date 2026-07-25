@@ -14,6 +14,7 @@ const mockRunMigrateProviderState = mock(
 const mockRunMigratePendingIntent = mock(
   (): Promise<void> => Promise.resolve(),
 );
+const mockRunPreseedSync = mock((): Promise<void> => Promise.resolve());
 
 mock.module("@scripts/cli.validator", () => ({
   CliValidator: mock().mockImplementation(() => ({
@@ -44,6 +45,11 @@ mock.module("@scripts/commands/migrate-provider-state", () => ({
 mock.module("@scripts/commands/migrate-pending-intent", () => ({
   __esModule: true,
   runMigratePendingIntent: mock(() => mockRunMigratePendingIntent()),
+}));
+
+mock.module("@scripts/commands/preseed-sync", () => ({
+  __esModule: true,
+  runPreseedSync: mock(() => mockRunPreseedSync()),
 }));
 
 const { default: CompassCLI } = requireActual(
@@ -93,6 +99,14 @@ describe("CompassCLI", () => {
     await cli.run();
 
     expect(mockRunMigratePendingIntent).toHaveBeenCalled();
+  });
+
+  it("runs preseed-sync command", async () => {
+    const cli = new CompassCLI(["node", "cli", "preseed-sync"]);
+
+    await cli.run();
+
+    expect(mockRunPreseedSync).toHaveBeenCalled();
   });
 
   it("calls exitHelpfully for unsupported command", async () => {
