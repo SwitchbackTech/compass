@@ -136,9 +136,7 @@ export async function dispatchSyncJob(
     case "incrementalPull": {
       const pull = await pullCalendarChanges(deps, calendar, now);
       if (pull.status === "applied") {
-        if (pull.changed > 0 || pull.deleted > 0) {
-          await appendCalendarInvalidation(deps, calendar, now());
-        }
+        await appendCalendarInvalidation(deps, calendar, now());
         return { result: "done" };
       }
       if (pull.status === "notImported") {

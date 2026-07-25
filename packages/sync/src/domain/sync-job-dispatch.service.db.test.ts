@@ -243,6 +243,31 @@ describe("dispatchSyncJob", () => {
       updatedAt: now(),
     }) as JobRecord;
 
+  it("invalidates after an empty incremental pull retry once the cursor already advanced", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-1");
+    const reader = new FakeReader([page([], "cursor-1")]);
+
+    const outcome = await dispatchSyncJob(
+      deps(reader),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+    expect(outcome).toEqual({ result: "done" });
+
+    const feed = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.invalidations)
+      .find({ principalId: calendar.principalId })
+      .toArray();
+    expect(feed).toHaveLength(1);
+    expect(feed[0]?.invalidation).toEqual({
+      kind: "calendar",
+      connectionId: calendar.connectionId,
+      calendarId: calendar._id,
+    });
+  });
+
   it("settles an applied incremental pull as done with no followup", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
