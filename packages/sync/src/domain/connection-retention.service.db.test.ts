@@ -268,6 +268,43 @@ describe("purgeExpiredDisconnectedConnections", () => {
     ).toBe(0);
   });
 
+  it("skips purge when the connection reconnects before processing", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const expiredAt = new Date(RETENTION_CUTOFF.getTime() - 60_000);
+    const connection = await seedConnection(tenantId, principalId, expiredAt);
+
+    await connections.upsertByProviderAccount({
+      tenantId: tenantId as TenantId,
+      principalId: principalId as PrincipalId,
+      provider: "google",
+      account: {
+        providerAccountId: connection.account.providerAccountId,
+        email: "cache@example.com",
+        displayName: null,
+      },
+      capabilities: ["readEvents"],
+      state: "healthy",
+      stateReason: null,
+      lastSyncedAt: null,
+      lastHealthyAt: null,
+    });
+
+    const purged = await purgeExpiredDisconnectedConnections(
+      deps(),
+      RETENTION_CUTOFF,
+    );
+
+    expect(purged).toBe(0);
+    expect(
+      await connections.findById(
+        tenantId as TenantId,
+        principalId as PrincipalId,
+        connection._id,
+      ),
+    ).not.toBeNull();
+  });
+
   it("bounds the sweep and takes the oldest disconnect first", async () => {
     const tenantId = objectId();
     const principalId = objectId();

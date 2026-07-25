@@ -31,10 +31,21 @@ export interface ConnectionRetentionDeps {
 export async function purgeDisconnectedConnection(
   deps: ConnectionRetentionDeps,
   connection: ProviderConnectionRecord,
-): Promise<void> {
+  before: Date,
+): Promise<boolean> {
   const tenantId = connection.tenantId;
   const principalId = connection.principalId;
   const connectionId = connection._id;
+
+  const deleted = await deps.connections.deleteIfDisconnectedBefore(
+    tenantId,
+    principalId,
+    connectionId,
+    before,
+  );
+  if (!deleted) {
+    return false;
+  }
 
   const calendars = await deps.calendars.listByConnection(
     tenantId,
@@ -56,7 +67,7 @@ export async function purgeDisconnectedConnection(
     deps.credentials.deleteByConnection(connectionId),
   ]);
   await deps.calendars.deleteByConnection(tenantId, principalId, connectionId);
-  await deps.connections.deleteById(tenantId, principalId, connectionId);
+  return true;
 }
 
 // Purge soft-disconnected connections whose disconnectedAt is before `before`
@@ -68,8 +79,11 @@ export async function purgeExpiredDisconnectedConnections(
   limit = 100,
 ): Promise<number> {
   const expired = await deps.connections.listDisconnectedBefore(before, limit);
+  let purged = 0;
   for (const connection of expired) {
-    await purgeDisconnectedConnection(deps, connection);
+    if (await purgeDisconnectedConnection(deps, connection, before)) {
+      purged += 1;
+    }
   }
-  return expired.length;
+  return purged;
 }
