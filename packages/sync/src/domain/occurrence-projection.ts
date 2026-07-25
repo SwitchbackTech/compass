@@ -59,9 +59,20 @@ function projectSeriesMaster(
     excludedInstants.map((instant) => new Date(instant).getTime()),
   );
   const occurrences: OccurrenceInput[] = [];
+  // DTSTART is always an instance of the series when it falls in the horizon,
+  // even if BYDAY/COUNT would skip it on expansion. Matches CompassEventRRule
+  // (and Google): a Friday event saved with weekly BYDAY=SU still materializes
+  // that Friday so the create week's range read — and the SPA grid — see it.
+  const dtstart = scheduleStartAt(event.schedule);
+  const dtstartMs = dtstart.getTime();
+  if (withinHorizon(dtstart, horizon) && !excluded.has(dtstartMs)) {
+    occurrences.push(toOccurrence(event, event.schedule, dtstart, false));
+  }
 
   for (const originalStart of expandInstants(event.schedule, rules, horizon)) {
     if (excluded.has(originalStart.getTime())) continue;
+    // Already emitted as the DTSTART instance above.
+    if (originalStart.getTime() === dtstartMs) continue;
     const schedule = shiftSchedule(event.schedule, originalStart);
     occurrences.push(toOccurrence(event, schedule, originalStart, false));
   }

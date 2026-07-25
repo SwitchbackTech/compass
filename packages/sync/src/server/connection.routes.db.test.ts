@@ -20,6 +20,7 @@ import {
   type ProviderAuthorization,
   type RefreshedCredential,
 } from "@sync/providers/provider-auth.port";
+import { COMMANDS_PATH } from "@sync/server/command.routes";
 import {
   BEGIN_PATH,
   CALENDARS_PATH,
@@ -1481,5 +1482,91 @@ describe("GET /internal/events/full", () => {
     );
 
     expect(res.status).toBe(401);
+  });
+
+  it("create → full-range read returns a new weekly series in the create week", async () => {
+    // Real command path (put + reproject), not a hand-seeded occurrence. Repro
+    // for series roots that vanish from the SPA week query when BYDAY skips
+    // the DTSTART weekday — the create week's narrow range must still see an
+    // occurrence (and therefore the back-filled series master).
+    const tenantId = objectId();
+    const principalId = objectId();
+    const calendarId = objectId();
+    await startService();
+
+    const eventId = objectId();
+    const createRes = await fetch(`${base}${COMMANDS_PATH}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        ...signedHeaders(tenantId, principalId),
+      },
+      body: JSON.stringify({
+        idempotencyKey: `idem-${objectId()}`,
+        eventId,
+        input: {
+          kind: "create",
+          calendarId,
+          content: {
+            title: "Weekly standup",
+            description: "",
+            location: null,
+            organizer: null,
+            attendees: [],
+            conference: null,
+          },
+          schedule: {
+            kind: "timed",
+            start: "2026-07-24T12:00:00-06:00",
+            end: "2026-07-24T13:00:00-06:00",
+            timeZone: "America/Denver",
+          },
+          // Friday start + Sunday BYDAY — the staging-shaped mismatch.
+          recurrence: {
+            kind: "series",
+            rules: ["RRULE:FREQ=WEEKLY;COUNT=12;INTERVAL=1;BYDAY=SU"],
+          },
+        },
+        expectedVersion: null,
+      }),
+    });
+    expect(createRes.status).toBe(200);
+    const created = (await createRes.json()) as {
+      command: { eventId: string; outcome: { state: string } };
+    };
+    expect(created.command.outcome.state).toBe("confirmed");
+    expect(created.command.eventId).toBe(eventId);
+
+    // SPA week window containing the Friday DTSTART (ends Saturday night).
+    const weekQuery =
+      `calendarIds=${calendarId}` +
+      `&start=${encodeURIComponent("2026-07-19T00:00:00-06:00")}` +
+      `&end=${encodeURIComponent("2026-07-25T23:59:59-06:00")}`;
+    const body = (await (
+      await get(tenantId, principalId, weekQuery)
+    ).json()) as {
+      instances: Array<{
+        eventId: string;
+        recurrence: { kind: string };
+        schedule: { start: string };
+      }>;
+    };
+
+    const kinds = body.instances.map((i) => i.recurrence.kind).sort();
+    expect(kinds).toContain("occurrence");
+    expect(kinds).toContain("series");
+    expect(
+      body.instances.some(
+        (i) =>
+          i.eventId === eventId &&
+          i.recurrence.kind === "occurrence" &&
+          i.schedule.start.startsWith("2026-07-24"),
+      ),
+    ).toBe(true);
+    expect(
+      body.instances.some(
+        (i) => i.eventId === eventId && i.recurrence.kind === "series",
+      ),
+    ).toBe(true);
   });
 });

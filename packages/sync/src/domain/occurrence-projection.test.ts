@@ -162,6 +162,26 @@ describe("projectOccurrences", () => {
       }
     });
 
+    it("keeps DTSTART when BYDAY would otherwise skip the series start day", () => {
+      // Staging repro: Friday start + weekly BYDAY=SU (default week-start
+      // constant). Pure RRULE expansion jumps to Sunday; the create week's
+      // range read must still see Friday so the SPA grid is not empty.
+      const e = event(
+        timed("2026-07-24T12:00:00-06:00", "2026-07-24T13:00:00-06:00"),
+        {
+          kind: "seriesMaster",
+          rules: ["RRULE:FREQ=WEEKLY;COUNT=12;INTERVAL=1;BYDAY=SU"],
+        },
+      );
+      const occ = projectOccurrences(e, HORIZON);
+      expect(occ[0]?.startAt.toISOString()).toBe("2026-07-24T18:00:00.000Z");
+      expect(occ.map((o) => o.startAt.toISOString()).slice(0, 3)).toEqual([
+        "2026-07-24T18:00:00.000Z",
+        "2026-07-26T18:00:00.000Z",
+        "2026-08-02T18:00:00.000Z",
+      ]);
+    });
+
     it("clamps expansion to the horizon window", () => {
       const e = event(
         timed("2026-01-01T09:00:00-07:00", "2026-01-01T10:00:00-07:00"),
