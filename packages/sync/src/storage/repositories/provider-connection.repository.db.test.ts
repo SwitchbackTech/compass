@@ -1,6 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
+import { deriveDiagnosticKey } from "@sync/safety/diagnostic-key";
 import { type ProviderConnectionUpsert } from "@sync/storage/contracts/provider-connection.contracts";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 
@@ -43,6 +44,14 @@ describe("ProviderConnectionRepository", () => {
     expect(created.state).toBe("importing");
     // A fresh connection carries no disconnect evidence.
     expect(created.disconnectedAt).toBeNull();
+    expect(created.diagnosticKey).toBe(deriveDiagnosticKey(created._id));
+  });
+
+  it("finds a connection by diagnostic key", async () => {
+    const created = await repo.upsertByProviderAccount(baseUpsert());
+    const found = await repo.findByDiagnosticKey(created.diagnosticKey);
+    expect(found?._id).toBe(created._id);
+    expect(await repo.findByDiagnosticKey("b".repeat(32))).toBeNull();
   });
 
   it("clears disconnect evidence when the account reconnects via upsert", async () => {

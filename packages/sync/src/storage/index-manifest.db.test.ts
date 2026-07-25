@@ -87,6 +87,17 @@ describe("installIndexManifest", () => {
     });
   });
 
+  it("installs a unique diagnostic_key index for support lookup", async () => {
+    const indexes = await db
+      .collection(SYNC_COLLECTIONS.providerConnections)
+      .indexes();
+    const diagnostic = indexes.find((i) => i.name === "diagnostic_key");
+    expect(diagnostic?.unique).toBe(true);
+    expect(diagnostic?.partialFilterExpression).toEqual({
+      diagnosticKey: { $type: "string" },
+    });
+  });
+
   it("installs principal keyset and TTL indexes on invalidations", async () => {
     const indexes = await db
       .collection(SYNC_COLLECTIONS.invalidations)

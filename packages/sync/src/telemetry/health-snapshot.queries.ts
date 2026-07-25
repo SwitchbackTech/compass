@@ -1,8 +1,8 @@
 import { SYNC_HEALTH_SNAPSHOT_EVENT } from "@core/types/sync/health.contracts";
 
-// HogQL fixtures for the Sync health dashboard / alerts (S44 evidence).
-// Wired into PostHog insights in S45; kept here so the event shape and
-// alert predicates stay next to the emitter.
+// HogQL fixtures for the Sync health dashboard / alerts (S44/S45).
+// Wired into PostHog insights from SYNC_HEALTH_DASHBOARD; kept here so the
+// event shape and alert predicates stay next to the emitter.
 export const SYNC_HEALTH_CONNECTION_DISTRIBUTION_HOGQL = `
 SELECT
   properties.environment,
@@ -10,6 +10,40 @@ SELECT
   properties.connections.delayed,
   properties.connections.actionRequired,
   properties.connections.disconnected
+FROM events
+WHERE event = '${SYNC_HEALTH_SNAPSHOT_EVENT}'
+  AND timestamp > now() - INTERVAL 1 DAY
+ORDER BY timestamp DESC
+LIMIT 288
+`.trim();
+
+export const SYNC_HEALTH_UNHEALTHY_RATIO_HOGQL = `
+SELECT
+  timestamp,
+  properties.environment,
+  if(
+    (
+      properties.connections.connecting +
+      properties.connections.importing +
+      properties.connections.catchingUp +
+      properties.connections.healthy +
+      properties.connections.delayed +
+      properties.connections.actionRequired +
+      properties.connections.disconnected
+    ) = 0,
+    0,
+    (
+      (properties.connections.delayed + properties.connections.actionRequired) * 100.0
+    ) / (
+      properties.connections.connecting +
+      properties.connections.importing +
+      properties.connections.catchingUp +
+      properties.connections.healthy +
+      properties.connections.delayed +
+      properties.connections.actionRequired +
+      properties.connections.disconnected
+    )
+  ) AS unhealthyPercent
 FROM events
 WHERE event = '${SYNC_HEALTH_SNAPSHOT_EVENT}'
   AND timestamp > now() - INTERVAL 1 DAY
@@ -28,6 +62,36 @@ FROM events
 WHERE event = '${SYNC_HEALTH_SNAPSHOT_EVENT}'
   AND timestamp > now() - INTERVAL 1 DAY
 ORDER BY timestamp DESC
+`.trim();
+
+export const SYNC_HEALTH_JOB_BACKLOG_HOGQL = `
+SELECT
+  timestamp,
+  properties.environment,
+  properties.jobs.pending,
+  properties.jobs.claimed,
+  properties.jobs.failed,
+  properties.jobs.oldestDueAgeMs
+FROM events
+WHERE event = '${SYNC_HEALTH_SNAPSHOT_EVENT}'
+  AND timestamp > now() - INTERVAL 1 DAY
+ORDER BY timestamp DESC
+LIMIT 288
+`.trim();
+
+export const SYNC_HEALTH_SUBSCRIPTION_HOGQL = `
+SELECT
+  timestamp,
+  properties.environment,
+  properties.subscriptions.healthy,
+  properties.subscriptions.renewSoon,
+  properties.subscriptions.expired,
+  properties.subscriptions.missing
+FROM events
+WHERE event = '${SYNC_HEALTH_SNAPSHOT_EVENT}'
+  AND timestamp > now() - INTERVAL 1 DAY
+ORDER BY timestamp DESC
+LIMIT 288
 `.trim();
 
 export const SYNC_HEALTH_HEARTBEAT_HOGQL = `

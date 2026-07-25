@@ -47,6 +47,17 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
         partialFilterExpression: { disconnectedAt: { $type: "date" } },
       },
     },
+    {
+      // Private support lookup by non-user-facing diagnostic key (S45).
+      // Partial so pre-S45 rows without the field do not collide on null
+      // while reads lazily stamp keys.
+      name: "diagnostic_key",
+      key: { diagnosticKey: 1 },
+      options: {
+        unique: true,
+        partialFilterExpression: { diagnosticKey: { $type: "string" } },
+      },
+    },
   ],
   // Keyed 1:1 by connection id (the automatic _id index); no secondary indexes.
   [SYNC_COLLECTIONS.credentials]: [],

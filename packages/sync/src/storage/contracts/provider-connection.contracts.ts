@@ -41,6 +41,12 @@ export const ProviderConnectionRecordSchema = z
     capabilities: ProviderCapabilitySetSchema,
     state: ConnectionStateSchema,
     stateReason: ConnectionStateReasonSchema.nullable(),
+    // Non-user-facing key for logs / private support lookup (R-OPS-05). Derived
+    // from `_id` at insert; never returned on the public connection wire.
+    diagnosticKey: z
+      .string()
+      .length(32)
+      .regex(/^[0-9a-f]+$/),
     // When the user disconnected this connection, or null while connected. This
     // is durable evidence, not a derived flag: connection-state derivation
     // treats a non-null value as the top-priority "disconnected" state, so a

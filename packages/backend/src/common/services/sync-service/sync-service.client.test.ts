@@ -17,6 +17,7 @@ import {
   EVENTS_FULL_PATH,
   EVENTS_PATH,
 } from "@sync/server/connection.routes";
+import { DIAGNOSTIC_CONNECTION_PATH } from "@sync/server/diagnostic.routes";
 import { PRINCIPAL_PATH } from "@sync/server/principal.routes";
 import {
   SyncServiceClient,
@@ -186,6 +187,43 @@ describe("SyncServiceClient", () => {
     if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
     expect(verdict.context.tenantId).toBe(who.tenantId);
     expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("resolves a diagnostic connection with a signed GET", async () => {
+    const who = principal();
+    const key = "a".repeat(32);
+    const payload = {
+      diagnosticKey: key,
+      connectionId: "507f1f77bcf86cd799439011",
+      tenantId: who.tenantId,
+      principalId: who.principalId,
+      provider: "google",
+      state: "healthy",
+      stateReason: null,
+      accountEmail: "ops@example.com",
+      lastSyncedAt: null,
+      lastHealthyAt: null,
+      disconnectedAt: null,
+      calendarCount: 1,
+      pendingJobCount: 0,
+      pendingCommandCount: 0,
+    };
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => payload,
+    }));
+
+    const result = await client(fn).resolveDiagnosticConnection(who, key);
+
+    if (!result.ok) throw new Error(`expected ok, got ${result.error.kind}`);
+    expect(result.value.diagnosticKey).toBe(key);
+
+    const expectedPath = DIAGNOSTIC_CONNECTION_PATH.replace(
+      ":diagnosticKey",
+      key,
+    );
+    expect(calls[0]?.url).toBe(`${BASE_URL}${expectedPath}`);
+    expect(calls[0]?.method).toBe("GET");
   });
 
   it("lists calendars with a signed GET the real Sync verifier accepts", async () => {

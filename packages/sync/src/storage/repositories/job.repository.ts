@@ -203,6 +203,20 @@ export class JobRepository {
     return result.modifiedCount;
   }
 
+  // Outstanding work for one connection (support diagnostics / S45).
+  async countOutstandingByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+  ): Promise<number> {
+    return this.collection.countDocuments({
+      tenantId,
+      principalId,
+      connectionId,
+      state: { $in: ["pending", "claimed"] },
+    });
+  }
+
   // Hard-delete every job for one connection (post-disconnect retention).
   async deleteByConnection(
     tenantId: TenantId,

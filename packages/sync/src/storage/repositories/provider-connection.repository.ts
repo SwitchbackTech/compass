@@ -8,6 +8,7 @@ import {
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
+import { deriveDiagnosticKey } from "@sync/safety/diagnostic-key";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
   type ProviderConnectionRecord,
@@ -37,6 +38,7 @@ export class ProviderConnectionRepository {
   ): Promise<ProviderConnectionRecord> {
     const fields = ProviderConnectionUpsertSchema.parse(input);
     const now = new Date();
+    const connectionId = new ObjectId().toHexString() as ConnectionId;
 
     const result = await this.collection.findOneAndUpdate(
       {
@@ -61,7 +63,8 @@ export class ProviderConnectionRepository {
           updatedAt: now,
         },
         $setOnInsert: {
-          _id: new ObjectId().toHexString() as ConnectionId,
+          _id: connectionId,
+          diagnosticKey: deriveDiagnosticKey(connectionId),
           tenantId: fields.tenantId,
           principalId: fields.principalId,
           provider: fields.provider,
@@ -74,7 +77,16 @@ export class ProviderConnectionRepository {
     if (!result) {
       throw new Error("Upsert did not return a connection record");
     }
-    return ProviderConnectionRecordSchema.parse(result);
+    return this.parseRecord(result);
+  }
+
+  // Global support lookup by non-user-facing diagnostic key. Callers must
+  // already hold internal auth — this is not principal-scoped.
+  async findByDiagnosticKey(
+    diagnosticKey: string,
+  ): Promise<ProviderConnectionRecord | null> {
+    const record = await this.collection.findOne({ diagnosticKey });
+    return record ? this.parseRecord(record) : null;
   }
 
   async findById(
@@ -87,7 +99,7 @@ export class ProviderConnectionRepository {
       tenantId,
       principalId,
     });
-    return record ? ProviderConnectionRecordSchema.parse(record) : null;
+    return record ? this.parseRecord(record) : null;
   }
 
   async listByPrincipal(
@@ -97,7 +109,7 @@ export class ProviderConnectionRepository {
     const records = await this.collection
       .find({ tenantId, principalId })
       .toArray();
-    return records.map((r) => ProviderConnectionRecordSchema.parse(r));
+    return Promise.all(records.map((r) => this.parseRecord(r)));
   }
 
   // Record that the user disconnected this connection. Sets the durable
@@ -156,7 +168,30 @@ export class ProviderConnectionRepository {
     if (!result) {
       throw new Error("Connection not found while updating derived state");
     }
-    return ProviderConnectionRecordSchema.parse(result);
+    return this.parseRecord(result);
+  }
+
+  // Stamp diagnosticKey on pre-S45 rows, then validate. Read paths share this
+  // so support lookup and API reads never fail parse on legacy documents.
+  private async parseRecord(
+    record: ProviderConnectionRecord | Record<string, unknown>,
+  ): Promise<ProviderConnectionRecord> {
+    const id = String((record as { _id: ConnectionId })._id) as ConnectionId;
+    if (
+      typeof (record as { diagnosticKey?: unknown }).diagnosticKey !== "string"
+    ) {
+      const diagnosticKey = deriveDiagnosticKey(id);
+      const stamped = await this.collection.findOneAndUpdate(
+        { _id: id },
+        { $set: { diagnosticKey } },
+        { returnDocument: "after" },
+      );
+      if (!stamped) {
+        throw new Error("Connection not found while stamping diagnostic key");
+      }
+      return ProviderConnectionRecordSchema.parse(stamped);
+    }
+    return ProviderConnectionRecordSchema.parse(record);
   }
 
   // Soft-disconnected connections whose disconnectedAt is strictly before
@@ -171,7 +206,7 @@ export class ProviderConnectionRepository {
       .sort({ disconnectedAt: 1 })
       .limit(limit)
       .toArray();
-    return records.map((r) => ProviderConnectionRecordSchema.parse(r));
+    return Promise.all(records.map((r) => this.parseRecord(r)));
   }
 
   // Hard-delete one connection row after its retained cache has been purged.
