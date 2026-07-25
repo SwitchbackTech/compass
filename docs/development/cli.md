@@ -20,6 +20,7 @@ Primary file:
 | `bun run cli inventory-legacy-sync [--out path.json]` | `packages/scripts/src/commands/inventory-legacy-sync.ts` | Read-only S46 inventory of legacy Google sync data (users/credentials/calendars/events/cursors/watches). Never writes or calls providers. |
 | `bun run cli migrate-connections [--apply] [--out report.json] [--user-id id]...` | `packages/scripts/src/commands/migrate-connections.ts` | S47: idempotently upsert Sync connections + credentials from legacy users. Default dry-run; `--apply` writes. Never clears source tokens or enqueues Sync jobs. |
 | `bun run cli migrate-provider-state [--apply] [--out report.json] [--user-id id]...` | `packages/scripts/src/commands/migrate-provider-state.ts` | S48: idempotently upsert Sync calendars, linked events, occurrences, and sync cursors from legacy data. Default dry-run; `--apply` writes. Requires S47 connections. Defers unlinked events to S49; skips legacy watches for Sync rewatch. |
+| `bun run cli migrate-pending-intent [--apply] [--out report.json] [--user-id id]... [--target-calendar-id id] [--target-gcal-id id]` | `packages/scripts/src/commands/migrate-pending-intent.ts` | S49: preserve unlinked Compass events in Sync and submit resumable backfill create commands. Default dry-run; `--apply` writes. Never infers target by email; never mirrors already-linked events. |
 
 ## Migration Internals
 

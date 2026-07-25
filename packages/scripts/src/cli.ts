@@ -2,6 +2,7 @@ import { CliValidator } from "@scripts/cli.validator";
 import { runInventoryLegacySync } from "@scripts/commands/inventory-legacy-sync";
 import { runMigrator } from "@scripts/commands/migrate";
 import { runMigrateConnections } from "@scripts/commands/migrate-connections";
+import { runMigratePendingIntent } from "@scripts/commands/migrate-pending-intent";
 import { runMigrateProviderState } from "@scripts/commands/migrate-provider-state";
 import { MigratorType } from "@scripts/common/cli.types";
 import { Command } from "commander";
@@ -32,6 +33,9 @@ export default class CompassCLI {
       case cmd === "migrate-provider-state":
         await runMigrateProviderState();
         break;
+      case cmd === "migrate-pending-intent":
+        await runMigratePendingIntent();
+        break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
     }
@@ -44,6 +48,14 @@ export default class CompassCLI {
 
     // Register longer `migrate-*` names before `migrate` so Commander does not
     // treat them as unknown args to the Umzug migrate command.
+    program
+      .command("migrate-pending-intent")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "preserve unlinked Compass events and submit Sync backfill commands (S49; --apply to write)",
+      );
+
     program
       .command("migrate-provider-state")
       .helpOption(false)
