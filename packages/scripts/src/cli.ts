@@ -1,6 +1,7 @@
 import { CliValidator } from "@scripts/cli.validator";
 import { runInventoryLegacySync } from "@scripts/commands/inventory-legacy-sync";
 import { runMigrator } from "@scripts/commands/migrate";
+import { runMigrateConnections } from "@scripts/commands/migrate-connections";
 import { MigratorType } from "@scripts/common/cli.types";
 import { Command } from "commander";
 
@@ -24,6 +25,9 @@ export default class CompassCLI {
       case cmd === "inventory-legacy-sync":
         await runInventoryLegacySync();
         break;
+      case cmd === "migrate-connections":
+        await runMigrateConnections();
+        break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
     }
@@ -32,13 +36,17 @@ export default class CompassCLI {
   private _createProgram(): Command {
     const program = new Command();
 
+    program.enablePositionalOptions(true).passThroughOptions(true);
+
+    // Register longer `migrate-*` names before `migrate` so Commander does not
+    // treat them as unknown args to the Umzug migrate command.
     program
-      .enablePositionalOptions(true)
-      .passThroughOptions(true)
-      .command("migrate")
+      .command("migrate-connections")
       .helpOption(false)
       .allowUnknownOption(true)
-      .description("run database schema migrations");
+      .description(
+        "idempotently copy legacy Google connections into Sync (S47; --apply to write)",
+      );
 
     program
       .command("inventory-legacy-sync")
@@ -47,6 +55,12 @@ export default class CompassCLI {
       .description(
         "read-only inventory of legacy Google sync data (S46; no writes)",
       );
+
+    program
+      .command("migrate")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description("run database schema migrations");
 
     return program;
   }
