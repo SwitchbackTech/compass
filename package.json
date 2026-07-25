@@ -48,7 +48,9 @@
     "verify": "bun packages/scripts/src/testing/verify.ts",
     "build:backend": "bun packages/scripts/src/commands/build.backend.ts",
     "build:sync": "bun packages/scripts/src/commands/build.sync.ts",
-    "build:web": "cd packages/web && bun run build.ts"
+    "build:web": "cd packages/web && bun run build.ts",
+    "sync:backup": "bun packages/scripts/src/commands/sync-backup.ts",
+    "sync:restore": "bun packages/scripts/src/commands/sync-restore.ts"
   },
   "dependencies": {
     "@compass/backend": "*",

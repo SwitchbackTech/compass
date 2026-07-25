@@ -24,6 +24,10 @@ import {
   ConnectionListResponseSchema,
 } from "@core/types/sync/connection.contracts";
 import {
+  type DiagnosticConnectionResponse,
+  DiagnosticConnectionResponseSchema,
+} from "@core/types/sync/diagnostic.contracts";
+import {
   type EventInstanceListQuery,
   type EventInstanceListResponse,
   EventInstanceListResponseSchema,
@@ -48,6 +52,7 @@ const EVENTS_PATH = "/internal/events";
 const EVENTS_FULL_PATH = "/internal/events/full";
 const COMMANDS_PATH = "/internal/commands";
 const PRINCIPAL_PATH = "/internal/principal";
+const DIAGNOSTIC_CONNECTION_PATH_PREFIX = "/internal/diagnostics/connections/";
 
 const DEFAULT_TIMEOUT_MS = 5000;
 
@@ -323,6 +328,22 @@ export class SyncServiceClient {
       path: PRINCIPAL_PATH,
       principal,
       schema: PrincipalPurgeResponseSchema,
+      correlationId,
+    });
+  }
+
+  // Private support lookup by non-user-facing diagnostic connection key (S45).
+  // The signed principal proves INTERNAL_AUTH_TOKEN possession; lookup is global.
+  resolveDiagnosticConnection(
+    principal: SyncPrincipal,
+    diagnosticKey: string,
+    correlationId?: string,
+  ): Promise<SyncClientResult<DiagnosticConnectionResponse>> {
+    return this.#request({
+      method: "GET",
+      path: `${DIAGNOSTIC_CONNECTION_PATH_PREFIX}${diagnosticKey}`,
+      principal,
+      schema: DiagnosticConnectionResponseSchema,
       correlationId,
     });
   }

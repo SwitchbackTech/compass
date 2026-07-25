@@ -6,6 +6,7 @@ import {
   type ConnectionApiDeps,
   registerConnectionRoutes,
 } from "@sync/server/connection.routes";
+import { registerDiagnosticRoutes } from "@sync/server/diagnostic.routes";
 import { registerHealthRoutes } from "@sync/server/health.routes";
 import { registerNotificationRoutes } from "@sync/server/notification.routes";
 import { registerPrincipalRoutes } from "@sync/server/principal.routes";
@@ -51,6 +52,11 @@ export function buildSyncApp(deps: {
       authMiddleware: deps.connectionApi.authMiddleware,
       mongo: deps.connectionApi.mongo,
       authAdapter: deps.connectionApi.authAdapter,
+    });
+    // Private support diagnostic lookup by non-user-facing connection key (S45).
+    registerDiagnosticRoutes(app, {
+      authMiddleware: deps.connectionApi.authMiddleware,
+      mongo: deps.connectionApi.mongo,
     });
     // The public webhook ingress shares the connection API's storage; it needs
     // no auth adapter or secrets, only the db and execution mode.
