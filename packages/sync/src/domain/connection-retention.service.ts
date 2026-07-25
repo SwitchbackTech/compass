@@ -37,16 +37,6 @@ export async function purgeDisconnectedConnection(
   const principalId = connection.principalId;
   const connectionId = connection._id;
 
-  const deleted = await deps.connections.deleteIfDisconnectedBefore(
-    tenantId,
-    principalId,
-    connectionId,
-    before,
-  );
-  if (!deleted) {
-    return false;
-  }
-
   const calendars = await deps.calendars.listByConnection(
     tenantId,
     principalId,
@@ -67,7 +57,13 @@ export async function purgeDisconnectedConnection(
     deps.credentials.deleteByConnection(connectionId),
   ]);
   await deps.calendars.deleteByConnection(tenantId, principalId, connectionId);
-  return true;
+
+  return deps.connections.deleteIfDisconnectedBefore(
+    tenantId,
+    principalId,
+    connectionId,
+    before,
+  );
 }
 
 // Purge soft-disconnected connections whose disconnectedAt is before `before`
