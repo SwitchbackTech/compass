@@ -1,4 +1,7 @@
-import { type DiagnosticConnectionResponse } from "@core/types/sync/diagnostic.contracts";
+import {
+  type DiagnosticConnectionResponse,
+  DiagnosticConnectionResponseSchema,
+} from "@core/types/sync/diagnostic.contracts";
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
@@ -39,7 +42,7 @@ export async function resolveDiagnosticConnection(
     ),
   ]);
 
-  return {
+  return DiagnosticConnectionResponseSchema.parse({
     diagnosticKey: connection.diagnosticKey,
     connectionId: connection._id,
     tenantId: connection.tenantId,
@@ -54,5 +57,5 @@ export async function resolveDiagnosticConnection(
     calendarCount: calendars.length,
     pendingJobCount,
     pendingCommandCount,
-  };
+  });
 }
