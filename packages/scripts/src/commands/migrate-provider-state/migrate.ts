@@ -1,3 +1,4 @@
+import { legacyCursorRows } from "@scripts/commands/inventory-legacy-sync/inventory";
 import {
   byHexId,
   capabilitiesForAccess,
@@ -296,7 +297,10 @@ export async function migrateProviderSyncState(
     });
 
     const eventCursorIds = new Set<string>();
-    for (const row of syncDoc?.google?.events ?? []) {
+    for (const row of legacyCursorRows<{
+      gCalendarId?: string;
+      nextSyncToken?: string | null;
+    }>(syncDoc?.google?.events)) {
       if (row.gCalendarId) eventCursorIds.add(row.gCalendarId);
     }
     for (const watch of userWatches) {
@@ -331,7 +335,10 @@ export async function migrateProviderSyncState(
 
       const calendarId = syncCalendar?._id ?? null;
       const cursor =
-        syncDoc?.google?.events?.find((r) => r.gCalendarId === gCalendarId)
+        legacyCursorRows<{
+          gCalendarId?: string;
+          nextSyncToken?: string | null;
+        }>(syncDoc?.google?.events).find((r) => r.gCalendarId === gCalendarId)
           ?.nextSyncToken ?? null;
 
       if (options.dryRun && !calendarId) {
@@ -689,7 +696,10 @@ async function migrateCalendarListResource(args: {
   userCounts: MigrateProviderStateUserResult["counts"];
 }): Promise<void> {
   const cursor =
-    args.syncDoc?.google?.calendarlist?.find(
+    legacyCursorRows<{
+      gCalendarId?: string;
+      nextSyncToken?: string | null;
+    }>(args.syncDoc?.google?.calendarlist).find(
       (r) => r.gCalendarId === Resource_Sync.CALENDAR,
     )?.nextSyncToken ?? null;
   const existing = args.existingResources.find(
