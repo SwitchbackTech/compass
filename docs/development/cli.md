@@ -17,6 +17,7 @@ Primary file:
 | `bun run cli migrate <umzug-subcommand>` | `packages/scripts/src/commands/migrate.ts` | Runs wrapped Umzug subcommands: `pending`, `executed`, `up`, `down`, and `create`. Inspect `bun run cli migrate --help` before bounded execution. |
 | `bun run cli migrate pending` | `packages/scripts/src/commands/migrate.ts` | Lists pending migrations. |
 | `bun run cli migrate executed` | `packages/scripts/src/commands/migrate.ts` | Lists executed migrations. |
+| `bun run cli inventory-legacy-sync [--out path.json]` | `packages/scripts/src/commands/inventory-legacy-sync.ts` | Read-only S46 inventory of legacy Google sync data (users/credentials/calendars/events/cursors/watches). Never writes or calls providers. |
 
 ## Migration Internals
 
