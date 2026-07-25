@@ -111,6 +111,8 @@ export const EventMutationErrorCodeSchema = z.enum([
   "DUPLICATE_EVENT_ID",
   "INVALID_SCHEDULE",
   "PROVIDER_FAILURE",
+  // Scoped cutover maintenance: cloud/provider mutations paused (S50).
+  "MAINTENANCE",
 ]);
 
 export const EventMutationErrorSchema = z.strictObject({

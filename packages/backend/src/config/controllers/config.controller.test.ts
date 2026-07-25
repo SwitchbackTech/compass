@@ -45,3 +45,33 @@ describe("ConfigController.get connectDelegatedToSync", () => {
     expect(invokeGet().google.connectDelegatedToSync).toBe(true);
   });
 });
+
+describe("ConfigController.get sync cutover posture", () => {
+  const originals = {
+    connectionRouting: CONFIG.SYNC_CONNECTION_ROUTING,
+    eventRouting: CONFIG.SYNC_EVENT_ROUTING,
+    cloudMutationMode: CONFIG.SYNC_CLOUD_MUTATION_MODE,
+    execution: CONFIG.SYNC_EXECUTION,
+  };
+
+  afterEach(() => {
+    CONFIG.SYNC_CONNECTION_ROUTING = originals.connectionRouting;
+    CONFIG.SYNC_EVENT_ROUTING = originals.eventRouting;
+    CONFIG.SYNC_CLOUD_MUTATION_MODE = originals.cloudMutationMode;
+    CONFIG.SYNC_EXECUTION = originals.execution;
+  });
+
+  it("exposes the four global cutover knobs", () => {
+    CONFIG.SYNC_CONNECTION_ROUTING = "legacy";
+    CONFIG.SYNC_EVENT_ROUTING = "legacy";
+    CONFIG.SYNC_CLOUD_MUTATION_MODE = "maintenance";
+    CONFIG.SYNC_EXECUTION = "passive";
+
+    expect(invokeGet().sync).toEqual({
+      connectionRouting: "legacy",
+      eventRouting: "legacy",
+      cloudMutationMode: "maintenance",
+      execution: "passive",
+    });
+  });
+});

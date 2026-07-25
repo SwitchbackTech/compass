@@ -4,6 +4,7 @@ import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import { eventMutationError } from "@backend/event/event.error";
 import { type EventRecord } from "@backend/event/event.record";
 import { eventRepository } from "@backend/event/event.repository";
@@ -77,6 +78,10 @@ export class CompassToGoogleEventPropagation {
     userId: string,
     change: EventChangeSet,
   ): Promise<void> {
+    // Defense-in-depth for cutover maintenance (S50): controllers should
+    // already reject, but never let a late Google write escape.
+    assertCloudMutationsAllowed();
+
     const calendarIds = [
       ...new Set(
         [...change.upserted, ...change.deletedBefore].map((event) =>
@@ -154,6 +159,10 @@ export class CompassToGoogleEventPropagation {
     from: CalendarRecord,
     to: CalendarRecord,
   ): Promise<void> {
+    // Defense-in-depth for cutover maintenance (S50): controllers should
+    // already reject, but never let a late Google write escape.
+    assertCloudMutationsAllowed();
+
     const fromGoogle = from.source.provider === "google" ? from.source : null;
     const toGoogle = to.source.provider === "google" ? to.source : null;
 

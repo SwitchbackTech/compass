@@ -224,6 +224,7 @@ describe("Event Command Contracts", () => {
         "DUPLICATE_EVENT_ID",
         "INVALID_SCHEDULE",
         "PROVIDER_FAILURE",
+        "MAINTENANCE",
       ] as const;
 
       for (const code of codes) {

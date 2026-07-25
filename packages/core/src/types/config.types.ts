@@ -12,6 +12,23 @@ export const AppConfigSchema = z.object({
      */
     connectDelegatedToSync: z.boolean().default(false),
   }),
+  /**
+   * Operator-visible Sync cutover posture (S50). Global deployment knobs —
+   * never per-user. Defaults match safe pre-cutover values when omitted.
+   */
+  sync: z
+    .object({
+      connectionRouting: z.enum(["legacy", "sync"]).default("legacy"),
+      eventRouting: z.enum(["legacy", "sync"]).default("legacy"),
+      cloudMutationMode: z.enum(["enabled", "maintenance"]).default("enabled"),
+      execution: z.enum(["passive", "active"]).default("passive"),
+    })
+    .default({
+      connectionRouting: "legacy",
+      eventRouting: "legacy",
+      cloudMutationMode: "enabled",
+      execution: "passive",
+    }),
 });
 
 export type AppConfig = z.infer<typeof AppConfigSchema>;

@@ -89,6 +89,11 @@ const CompassConfigSchema = z
         // "sync" delegates to the standalone Sync service and requires
         // serviceUrl (validated backend-side).
         eventRouting: z.enum(["legacy", "sync"]).optional(),
+        // Whether cloud event writes and provider-connection changes are
+        // accepted (`enabled`) or rejected with a typed MAINTENANCE response
+        // (`maintenance`). Independent of routing/execution so cutover can
+        // pause mutations while Sync stays passive or active.
+        cloudMutationMode: z.enum(["enabled", "maintenance"]).optional(),
         callbackBaseUrl: z.string(),
         // Where the OAuth callback redirects the browser after connecting;
         // defaults to callbackBaseUrl when omitted.

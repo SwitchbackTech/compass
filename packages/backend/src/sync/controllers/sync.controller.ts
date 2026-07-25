@@ -11,6 +11,8 @@ import {
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
+import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
+import { toEventMutationError } from "@backend/event/event.error";
 import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
 import { pruneGoogleDataAndNotifyRevoked } from "@backend/sync/services/google-sync/google-sync.revoked";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
@@ -25,6 +27,17 @@ import { ImportGCalRequestSchema } from "../sync.types";
 
 const logger = Logger("app:sync.controller");
 const REPAIR_STARTED = "REPAIR_STARTED" satisfies NotificationOutcome;
+
+const rejectIfMaintenance = (res: Response): boolean => {
+  try {
+    assertCloudMutationsAllowed();
+    return false;
+  } catch (err) {
+    const { status, body } = toEventMutationError(err);
+    res.status(status).json(body);
+    return true;
+  }
+};
 
 export class SyncController {
   private static handleMissingRefreshToken = async (
@@ -254,6 +267,7 @@ export class SyncController {
   };
 
   static maintain = async (_req: Request, res: Response) => {
+    if (rejectIfMaintenance(res)) return;
     try {
       // To avoid 504 timeouts on this long running endpoint
       // to support the reliance of the google cloud function
@@ -281,6 +295,7 @@ export class SyncController {
   };
 
   static importGCal = (req: Request, res: Response): void => {
+    if (rejectIfMaintenance(res)) return;
     const userId = req.session!.getUserId();
     const { force } = ImportGCalRequestSchema.parse(req.body);
     const isForce = force === true;

@@ -80,6 +80,7 @@ jobs:
           # stay unset until cutover. Staging-cloud sets these to prove S38/S39.
           SYNC_CONNECTION_ROUTING: ${{ vars.SYNC_CONNECTION_ROUTING }}
           SYNC_EVENT_ROUTING: ${{ vars.SYNC_EVENT_ROUTING }}
+          SYNC_CLOUD_MUTATION_MODE: ${{ vars.SYNC_CLOUD_MUTATION_MODE }}
           SYNC_EXECUTION: ${{ vars.SYNC_EXECUTION }}
           WEB_IMAGE: switchbacktech/compass-web:${{ inputs.environment }}-${{ steps.version.outputs.image_version }}
           # Sensitive
@@ -178,6 +179,9 @@ jobs:
               fi
               if [ -n "$SYNC_EVENT_ROUTING" ]; then
                 printf '%s\n' "  eventRouting: \"${SYNC_EVENT_ROUTING}\""
+              fi
+              if [ -n "$SYNC_CLOUD_MUTATION_MODE" ]; then
+                printf '%s\n' "  cloudMutationMode: \"${SYNC_CLOUD_MUTATION_MODE}\""
               fi
               if [ -n "$SYNC_EXECUTION" ]; then
                 printf '%s\n' "  execution: \"${SYNC_EXECUTION}\""
