@@ -1,5 +1,6 @@
 import { type Collection, type Db, ObjectId } from "mongodb";
 import {
+  type ConnectionId,
   type PrincipalId,
   type SyncJobId,
   type TenantId,
@@ -200,6 +201,20 @@ export class JobRepository {
       },
     );
     return result.modifiedCount;
+  }
+
+  // Hard-delete every job for one connection (post-disconnect retention).
+  async deleteByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+  ): Promise<number> {
+    const result = await this.collection.deleteMany({
+      tenantId,
+      principalId,
+      connectionId,
+    });
+    return result.deletedCount;
   }
 
   // Hard-delete every job for a principal (account deletion).

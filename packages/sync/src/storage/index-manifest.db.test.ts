@@ -76,6 +76,17 @@ describe("installIndexManifest", () => {
     expect(ttl?.expireAfterSeconds).toBe(0);
   });
 
+  it("installs a partial disconnectedAt index for retention sweeps", async () => {
+    const indexes = await db
+      .collection(SYNC_COLLECTIONS.providerConnections)
+      .indexes();
+    const disconnected = indexes.find((i) => i.name === "disconnected_at");
+    expect(disconnected).toBeDefined();
+    expect(disconnected?.partialFilterExpression).toEqual({
+      disconnectedAt: { $type: "date" },
+    });
+  });
+
   it("installs principal keyset and TTL indexes on invalidations", async () => {
     const indexes = await db
       .collection(SYNC_COLLECTIONS.invalidations)

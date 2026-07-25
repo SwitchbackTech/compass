@@ -159,6 +159,53 @@ export class ProviderConnectionRepository {
     return ProviderConnectionRecordSchema.parse(result);
   }
 
+  // Soft-disconnected connections whose disconnectedAt is strictly before
+  // `before`, oldest first. Global scan for the retention sweeper (system
+  // liveness, not a user request); each row carries its own owner ids.
+  async listDisconnectedBefore(
+    before: Date,
+    limit: number,
+  ): Promise<ProviderConnectionRecord[]> {
+    const records = await this.collection
+      .find({ disconnectedAt: { $ne: null, $lt: before } })
+      .sort({ disconnectedAt: 1 })
+      .limit(limit)
+      .toArray();
+    return records.map((r) => ProviderConnectionRecordSchema.parse(r));
+  }
+
+  // Hard-delete one connection row after its retained cache has been purged.
+  async deleteById(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: ConnectionId,
+  ): Promise<boolean> {
+    const result = await this.collection.deleteOne({
+      _id: id,
+      tenantId,
+      principalId,
+    });
+    return result.deletedCount === 1;
+  }
+
+  // Hard-delete only when the connection is still soft-disconnected and past
+  // retention. Used by the sweeper so a reconnect during the purge window
+  // does not delete a live connection row.
+  async deleteIfDisconnectedBefore(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: ConnectionId,
+    before: Date,
+  ): Promise<boolean> {
+    const result = await this.collection.deleteOne({
+      _id: id,
+      tenantId,
+      principalId,
+      disconnectedAt: { $ne: null, $lt: before },
+    });
+    return result.deletedCount === 1;
+  }
+
   // Hard-delete every connection for a principal (account deletion). Soft
   // disconnect uses markDisconnected instead; this removes the rows entirely.
   async deleteByPrincipal(
