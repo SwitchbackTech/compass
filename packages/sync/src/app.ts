@@ -35,6 +35,12 @@ import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { emitHealthSnapshot } from "@sync/telemetry/health-snapshot.service";
+import {
+  createPostHogCaptureClient,
+  DEFAULT_POSTHOG_HOST,
+  type PostHogCaptureClient,
+} from "@sync/telemetry/posthog-capture";
 import { randomUUID } from "node:crypto";
 import { createServer, type Server } from "node:http";
 
@@ -202,6 +208,16 @@ async function start(): Promise<void> {
     service.shutdown.register("retention", () => retention.stop());
     retention.start();
 
+    // Sanitized sync_health_snapshot every five minutes (S44). Runs in passive
+    // mode too so the heartbeat stays alive before provider work is enabled.
+    const posthog = buildPostHogClient(config);
+    if (posthog) {
+      service.shutdown.register("posthog", () => posthog.shutdown());
+    }
+    const health = buildHealthSnapshotSweep(service.identity, mongo, posthog);
+    service.shutdown.register("health", () => health.stop());
+    health.start();
+
     // Active, provider-configured deployments also drain jobs and renew
     // channels. Those register AFTER the mongo drain so teardown stops them
     // first and closes mongo last.
@@ -216,10 +232,12 @@ async function start(): Promise<void> {
       schedulers.reconcile.start();
       schedulers.subscription.start();
       logger.info(
-        "Sync scheduler draining, reconciling, renewing channels, and retaining",
+        "Sync scheduler draining, reconciling, renewing channels, retaining, and reporting health",
       );
     } else {
-      logger.info("Sync retention sweep started (passive / unconfigured)");
+      logger.info(
+        "Sync retention + health snapshot started (passive / unconfigured)",
+      );
     }
   } catch (error) {
     logger.error(
@@ -238,6 +256,41 @@ const SUBSCRIPTION_RENEW_BEFORE_MS = 24 * 60 * 60_000;
 // How often to look for soft-disconnected connections past the 30-day cache
 // window. Daily is enough for the retention SLA; hourly keeps catch-up snappy.
 const RETENTION_SWEEP_INTERVAL_MS = 60 * 60_000;
+// Architecture: one sync_health_snapshot every five minutes.
+const HEALTH_SNAPSHOT_INTERVAL_MS = 5 * 60_000;
+
+function buildPostHogClient(config: SyncConfig): PostHogCaptureClient | null {
+  if (!config.POSTHOG_KEY) return null;
+  return createPostHogCaptureClient({
+    apiKey: config.POSTHOG_KEY,
+    host: config.POSTHOG_HOST ?? DEFAULT_POSTHOG_HOST,
+  });
+}
+
+function buildHealthSnapshotSweep(
+  identity: ReturnType<typeof buildServiceIdentity>,
+  mongo: SyncMongoService,
+  client: PostHogCaptureClient | null,
+): SweepScheduler {
+  return new SweepScheduler(
+    {
+      // SweepScheduler always passes `before`; health ignore it and use now.
+      sweep: async () => {
+        await emitHealthSnapshot({
+          deps: { mongo, identity },
+          client,
+        });
+        return 1;
+      },
+    },
+    {
+      intervalMs: HEALTH_SNAPSHOT_INTERVAL_MS,
+      jitterRatio: 0.05,
+      onError: (error) =>
+        logger.error("Sync health snapshot emit failed", error),
+    },
+  );
+}
 
 // Local-only: purge soft-disconnected connection caches past the retention
 // window. Safe without provider credentials and in passive execution.

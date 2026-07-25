@@ -52,6 +52,10 @@ export const SyncConfigSchema = z.strictObject({
   // the Google adapter refuses to construct when either is absent.
   GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
   GOOGLE_CLIENT_SECRET: z.string().trim().min(1).optional(),
+  // Optional PostHog credentials for sanitized sync_health_snapshot events.
+  // When absent, the health emitter no-ops (local/dev without analytics).
+  POSTHOG_KEY: z.string().trim().min(1).optional(),
+  POSTHOG_HOST: z.url().optional(),
 });
 export type SyncConfig = z.infer<typeof SyncConfigSchema>;
 
@@ -76,6 +80,8 @@ export function parseSyncConfig(config: CompassConfig): SyncConfig {
     // Empty-string (unfilled deploy placeholder) or null coerces to absent.
     GOOGLE_CLIENT_ID: config.google?.clientId || undefined,
     GOOGLE_CLIENT_SECRET: config.google?.clientSecret || undefined,
+    POSTHOG_KEY: config.posthog?.key || undefined,
+    POSTHOG_HOST: config.posthog?.host || undefined,
   });
 }
 
@@ -96,6 +102,8 @@ export function parseSyncConfigFromEnv(
     COMPASS_API_DATABASE: rawEnv["SYNC_COMPASS_API_DATABASE"],
     GOOGLE_CLIENT_ID: rawEnv["GOOGLE_CLIENT_ID"] || undefined,
     GOOGLE_CLIENT_SECRET: rawEnv["GOOGLE_CLIENT_SECRET"] || undefined,
+    POSTHOG_KEY: rawEnv["POSTHOG_KEY"] || undefined,
+    POSTHOG_HOST: rawEnv["POSTHOG_HOST"] || undefined,
   });
 }
 
