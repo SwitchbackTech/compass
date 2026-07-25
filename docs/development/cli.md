@@ -18,6 +18,7 @@ Primary file:
 | `bun run cli migrate pending` | `packages/scripts/src/commands/migrate.ts` | Lists pending migrations. |
 | `bun run cli migrate executed` | `packages/scripts/src/commands/migrate.ts` | Lists executed migrations. |
 | `bun run cli inventory-legacy-sync [--out path.json]` | `packages/scripts/src/commands/inventory-legacy-sync.ts` | Read-only S46 inventory of legacy Google sync data (users/credentials/calendars/events/cursors/watches). Never writes or calls providers. |
+| `bun run cli migrate-connections [--apply] [--out report.json] [--user-id id]...` | `packages/scripts/src/commands/migrate-connections.ts` | S47: idempotently upsert Sync connections + credentials from legacy users. Default dry-run; `--apply` writes. Never clears source tokens or enqueues Sync jobs. |
 
 ## Migration Internals
 
