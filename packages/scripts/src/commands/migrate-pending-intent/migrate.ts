@@ -307,7 +307,7 @@ export async function migratePendingCompassIntent(
         continue;
       }
 
-      if (!isWithinSyncHorizon(schedule, now)) {
+      if (!isWithinSyncHorizon(schedule, now, syncRecurrence)) {
         counts.commandsSkipped += 1;
         skips.push({
           category: "outside_sync_horizon",

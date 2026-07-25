@@ -17,6 +17,7 @@ import {
 } from "@core/types/sync/identity.contracts";
 import { type EventRecord as LegacyEventRecord } from "@backend/event/event.record";
 import { syncHorizon } from "@sync/domain/horizon";
+import { projectOccurrences } from "@sync/domain/occurrence-projection";
 import { type CommandSubmit } from "@sync/storage/contracts/command.contracts";
 import { type EventRecord as SyncEventRecord } from "@sync/storage/contracts/event.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
@@ -54,8 +55,21 @@ export function toEditableRecurrence(
 export function isWithinSyncHorizon(
   schedule: ReturnType<typeof toSyncSchedule>,
   now: Date,
+  recurrence?: SyncEventRecurrence | null,
 ): boolean {
   const horizon = syncHorizon(now);
+  if (recurrence?.kind === "seriesMaster") {
+    return (
+      projectOccurrences(
+        {
+          schedule,
+          recurrence,
+          content: { title: "" },
+        } as SyncEventRecord,
+        horizon,
+      ).length > 0
+    );
+  }
   const startMs =
     schedule.kind === "timed"
       ? Date.parse(schedule.start)
