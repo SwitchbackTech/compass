@@ -8,6 +8,9 @@ const mockExitHelpfully = mock();
 const mockRunMigrator = mock((): Promise<void> => Promise.resolve());
 const mockRunInventory = mock((): Promise<void> => Promise.resolve());
 const mockRunMigrateConnections = mock((): Promise<void> => Promise.resolve());
+const mockRunMigrateProviderState = mock(
+  (): Promise<void> => Promise.resolve(),
+);
 
 mock.module("@scripts/cli.validator", () => ({
   CliValidator: mock().mockImplementation(() => ({
@@ -28,6 +31,11 @@ mock.module("@scripts/commands/inventory-legacy-sync", () => ({
 mock.module("@scripts/commands/migrate-connections", () => ({
   __esModule: true,
   runMigrateConnections: mock(() => mockRunMigrateConnections()),
+}));
+
+mock.module("@scripts/commands/migrate-provider-state", () => ({
+  __esModule: true,
+  runMigrateProviderState: mock(() => mockRunMigrateProviderState()),
 }));
 
 const { default: CompassCLI } = requireActual(
@@ -61,6 +69,14 @@ describe("CompassCLI", () => {
     await cli.run();
 
     expect(mockRunMigrateConnections).toHaveBeenCalled();
+  });
+
+  it("runs migrate-provider-state command", async () => {
+    const cli = new CompassCLI(["node", "cli", "migrate-provider-state"]);
+
+    await cli.run();
+
+    expect(mockRunMigrateProviderState).toHaveBeenCalled();
   });
 
   it("calls exitHelpfully for unsupported command", async () => {

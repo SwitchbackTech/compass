@@ -2,6 +2,7 @@ import { CliValidator } from "@scripts/cli.validator";
 import { runInventoryLegacySync } from "@scripts/commands/inventory-legacy-sync";
 import { runMigrator } from "@scripts/commands/migrate";
 import { runMigrateConnections } from "@scripts/commands/migrate-connections";
+import { runMigrateProviderState } from "@scripts/commands/migrate-provider-state";
 import { MigratorType } from "@scripts/common/cli.types";
 import { Command } from "commander";
 
@@ -28,6 +29,9 @@ export default class CompassCLI {
       case cmd === "migrate-connections":
         await runMigrateConnections();
         break;
+      case cmd === "migrate-provider-state":
+        await runMigrateProviderState();
+        break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
     }
@@ -40,6 +44,14 @@ export default class CompassCLI {
 
     // Register longer `migrate-*` names before `migrate` so Commander does not
     // treat them as unknown args to the Umzug migrate command.
+    program
+      .command("migrate-provider-state")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "idempotently copy legacy Google calendars/events/cursors into Sync (S48; --apply to write)",
+      );
+
     program
       .command("migrate-connections")
       .helpOption(false)
