@@ -4,6 +4,7 @@ import { runMigrator } from "@scripts/commands/migrate";
 import { runMigrateConnections } from "@scripts/commands/migrate-connections";
 import { runMigratePendingIntent } from "@scripts/commands/migrate-pending-intent";
 import { runMigrateProviderState } from "@scripts/commands/migrate-provider-state";
+import { runPreseedSync } from "@scripts/commands/preseed-sync";
 import { MigratorType } from "@scripts/common/cli.types";
 import { Command } from "commander";
 
@@ -36,6 +37,9 @@ export default class CompassCLI {
       case cmd === "migrate-pending-intent":
         await runMigratePendingIntent();
         break;
+      case cmd === "preseed-sync":
+        await runPreseedSync();
+        break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
     }
@@ -46,8 +50,16 @@ export default class CompassCLI {
 
     program.enablePositionalOptions(true).passThroughOptions(true);
 
-    // Register longer `migrate-*` names before `migrate` so Commander does not
-    // treat them as unknown args to the Umzug migrate command.
+    // Register longer `migrate-*` / preseed names before `migrate` so Commander
+    // does not treat them as unknown args to the Umzug migrate command.
+    program
+      .command("preseed-sync")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "compose S46–S49 Sync pre-seed with blocking parity (S51; --apply to write)",
+      );
+
     program
       .command("migrate-pending-intent")
       .helpOption(false)
