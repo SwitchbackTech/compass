@@ -2,12 +2,17 @@ import { Origin } from "@core/constants/core.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleGridEvent,
   type EventWithDates,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
+import {
+  isTimedEventMultiDay,
+  timedMultiDayToAllDayDates,
+} from "@web/common/utils/event/event-nudge.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
 import { type NormalizedEventQueryData } from "./event.query.types";
 
@@ -129,11 +134,47 @@ const gridEventsFrom = (
 };
 
 const timedEventsFrom = (events: Event[], demoEventIds?: readonly EventId[]) =>
-  gridEventsFrom(events, "timed", demoEventIds);
+  gridEventsFrom(events, "timed", demoEventIds).filter((event) => {
+    if (!event.startDate || !event.endDate) return true;
+    return !isTimedEventMultiDay(dayjs(event.startDate), dayjs(event.endDate));
+  });
+
+const multiDayTimedAsAllDayFrom = (
+  events: Event[],
+  demoEventIds?: readonly EventId[],
+): GridEvent[] => {
+  const scheduled = events
+    .filter(isValidScheduledEvent)
+    .filter((event) => event.recurrence.kind !== "series")
+    .filter((event) => event.schedule.kind === "timed")
+    .filter((event) => {
+      const { start, end } = event.schedule;
+      return isTimedEventMultiDay(dayjs(start), dayjs(end));
+    });
+
+  const assembled = scheduled.map((event) => {
+    const { start, end } = event.schedule;
+    const dates = timedMultiDayToAllDayDates(dayjs(start), dayjs(end));
+    const schemaEvent: EventWithDates = {
+      ...scheduledEventToSchemaEvent(event),
+      isAllDay: true,
+      startDate: dates.startDate,
+      endDate: dates.endDate,
+    };
+    return {
+      ...assembleGridEvent(schemaEvent),
+      isTimedMultiDayDisplay: true,
+    };
+  });
+
+  return withCalendarMetadata(scheduled, assembled, demoEventIds);
+};
 
 const allDayEventsFrom = (events: Event[], demoEventIds?: readonly EventId[]) =>
-  assignEventsToRow(gridEventsFrom(events, "allDay", demoEventIds))
-    .allDayEvents;
+  assignEventsToRow([
+    ...gridEventsFrom(events, "allDay", demoEventIds),
+    ...multiDayTimedAsAllDayFrom(events, demoEventIds),
+  ]).allDayEvents;
 
 const rowCountFrom = (events: GridEvent[]) => {
   const rows = events

@@ -12,6 +12,10 @@ import {
 } from "@web/common/utils/event/event.util";
 import { focusEventFormTitle } from "@web/common/utils/form/form.util";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
+import {
+  draftToAllDayRowGridEvent,
+  isDraftRenderedInAllDayRow,
+} from "@web/grid/layout/all-day-draft.position";
 import { type TimedDeckLayout } from "@web/grid/layout/timed-deck.layout";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
@@ -75,19 +79,20 @@ export const GridDraft: FC<Props> = ({
 
   const motionMode = isResizing ? "resizing" : isDragging ? "dragging" : "idle";
 
+  const rendersInAllDayRow = draft ? isDraftRenderedInAllDayRow(draft) : false;
+  const isMultiDayTimedDraft =
+    rendersInAllDayRow && draft?.values.schedule.kind === "timed";
+
   const { onMouseDown } = useGridEventMouseDown(
-    draft?.values.schedule.kind === "allDay"
-      ? Categories_Event.ALLDAY
-      : Categories_Event.TIMED,
+    rendersInAllDayRow ? Categories_Event.ALLDAY : Categories_Event.TIMED,
     handleGridDraftClick,
-    handleDrag,
+    isMultiDayTimedDraft ? () => {} : handleDrag,
   );
 
   if (!draft || !draftAsGridEvent) return null;
 
-  const isAllDay = draft.values.schedule.kind === "allDay";
-  const allDayDraftEvent = isAllDay
-    ? (activeAllDayDraftEvent ?? draftAsGridEvent)
+  const allDayDraftEvent = rendersInAllDayRow
+    ? (activeAllDayDraftEvent ?? draftToAllDayRowGridEvent(draft))
     : draftAsGridEvent;
 
   return (
@@ -105,18 +110,24 @@ export const GridDraft: FC<Props> = ({
         />
       ))}
 
-      {isAllDay ? (
+      {rendersInAllDayRow ? (
         <AllDayEventMemo
           event={allDayDraftEvent}
           isPlaceholder={false}
           key={`draft-${draftAsGridEvent._id}`}
           measurements={measurements}
           onKeyDown={focusEventFormTitle}
-          onMouseDown={(e: MouseEvent, event: GridEventEntity) => {
-            e.preventDefault();
-            onMouseDown(e, event);
-          }}
-          onScalerMouseDown={handleScalerMouseDown}
+          onMouseDown={
+            isMultiDayTimedDraft
+              ? undefined
+              : (e: MouseEvent, event: GridEventEntity) => {
+                  e.preventDefault();
+                  onMouseDown(e, event);
+                }
+          }
+          onScalerMouseDown={
+            isMultiDayTimedDraft ? undefined : handleScalerMouseDown
+          }
           weekDays={weekProps.component.weekDays}
         />
       ) : (

@@ -20,8 +20,18 @@ function useMinuteTick(): Dayjs {
 export function useUpNextEvent() {
   const now = useMinuteTick();
   const { startDate, endDate } = dayEventQueryRange(now);
-  const { events, timedEvents } = useDayEventViewModel({ startDate, endDate });
-  const upNext = timedEvents
+  const { events, timedEvents, allDayEvents } = useDayEventViewModel({
+    startDate,
+    endDate,
+  });
+  const multiDayTimed = allDayEvents
+    .filter((event) => event.isTimedMultiDayDisplay)
+    .flatMap((gridEvent) => {
+      const source = events.find((event) => event.id === gridEvent._id);
+      if (!source || source.schedule.kind !== "timed") return [];
+      return [{ ...gridEvent, startDate: source.schedule.start }];
+    });
+  const upNext = [...timedEvents, ...multiDayTimed]
     .filter((event) => dayjs(event.startDate).isAfter(now))
     .sort(
       (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),

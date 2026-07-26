@@ -74,4 +74,29 @@ describe("Event query view models", () => {
       demoEventIds: undefined,
     });
   });
+
+  test("promotes multi-day timed events into the all-day row", () => {
+    const multiDayTimed = createMockEvent({
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-07-24T08:00:00.000Z",
+        end: "2026-07-25T18:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
+    const sameDayTimed = createMockEvent();
+    const data = normalized(multiDayTimed, sameDayTimed);
+
+    const result = deriveCalendarEventViewModel(data);
+
+    expect(result.timedEvents.map(({ _id }) => _id)).toEqual([sameDayTimed.id]);
+    expect(result.allDayEvents.map(({ _id }) => _id)).toEqual([
+      multiDayTimed.id,
+    ]);
+    const promoted = result.allDayEvents[0];
+    expect(promoted?.isAllDay).toBe(true);
+    expect(promoted?.isTimedMultiDayDisplay).toBe(true);
+    expect(promoted?.startDate).toBe("2026-07-24");
+    expect(promoted?.endDate).toBe("2026-07-26");
+  });
 });

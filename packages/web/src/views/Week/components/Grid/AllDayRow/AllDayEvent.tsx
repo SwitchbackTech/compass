@@ -55,10 +55,10 @@ const AllDayEventBase = (
 
   const shouldTrackCalendarHover = !isPlaceholder && Boolean(event._id);
   const handleEventMouseDown = (e: MouseEvent, selectedEvent: GridEvent) => {
-    if (!onMouseDown) {
-      e.stopPropagation();
-      return;
-    }
+    // Always stop bubble so the all-day row's create-draft handler cannot
+    // overwrite a card click (including read-only open).
+    e.stopPropagation();
+    if (!onMouseDown) return;
 
     onMouseDown(e, selectedEvent);
   };

@@ -2,6 +2,7 @@ import { type MouseEvent, useMemo } from "react";
 import {
   type CalendarCardIdentity,
   isEventReadOnly,
+  isGridEventContentReadOnly,
   resolveCalendarCardIdentity,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
@@ -53,11 +54,14 @@ export const AllDayEvents = ({
   // registry.
   const visibleAllDayEvents = useMemo(
     () =>
-      allDayEvents.filter(
-        (event: GridEvent) =>
-          isAllDayEventInVisibleDays(event, weekDays) &&
-          !(event._id === draftId && !draftOverlay?.isAllDay),
-      ),
+      allDayEvents.filter((event: GridEvent) => {
+        if (!isAllDayEventInVisibleDays(event, weekDays)) return false;
+        // Multi-day timed display bars stay in the all-day row, but while
+        // editing GridDraft owns the live bar — hide the saved view-model
+        // card to avoid a stale duplicate underneath the portal draft.
+        if (event.isTimedMultiDayDisplay) return event._id !== draftId;
+        return !(event._id === draftId && !draftOverlay?.isAllDay);
+      }),
     [allDayEvents, draftOverlay?.isAllDay, draftId, weekDays],
   );
   // Resolved once per event here (not inside each card) and kept referentially
@@ -78,7 +82,7 @@ export const AllDayEvents = ({
         isReadOnly: isEventReadOnly(
           calendarLookup,
           event.calendarId,
-          event.isBusy ?? false,
+          isGridEventContentReadOnly(event),
         ),
       })),
     [visibleAllDayEvents, calendarLookup],
@@ -96,10 +100,11 @@ export const AllDayEvents = ({
         visibleAllDayEventsWithIdentity.map(
           ({ event, calendarIdentity, isReadOnly }) => {
             const isPlaceholder = event._id === draftId;
-            const eventForDisplay = mergeGridEventWithDraftOverlay(
-              event,
-              draftOverlay,
-            );
+            // Never overlay timed draft dates onto a multi-day timed display
+            // bar — that would replace YYYY-MM-DD span dates with datetimes.
+            const eventForDisplay = event.isTimedMultiDayDisplay
+              ? event
+              : mergeGridEventWithDraftOverlay(event, draftOverlay);
             // The placeholder can carry a live (dragging/resizing) calendarId
             // from the draft store; everything else reuses the stable,
             // list-level resolved identity above.

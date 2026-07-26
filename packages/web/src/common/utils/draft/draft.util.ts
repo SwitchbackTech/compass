@@ -12,6 +12,7 @@ import {
 } from "@web/events/grid-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
 import { GRID_TIME_STEP } from "@web/grid/grid.constants";
+import { isDraftRenderedInAllDayRow } from "@web/grid/layout/all-day-draft.position";
 
 export const createTimedDraft = (
   isCurrentWeek: boolean,
@@ -61,6 +62,6 @@ export const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
 };
 
 export const getDraftContainer = (draft: GridEventDraft) =>
-  draft.values.schedule.kind === "allDay"
+  isDraftRenderedInAllDayRow(draft)
     ? getElemById(ID_GRID_EVENTS_ALLDAY)
     : getElemById(ID_GRID_EVENTS_TIMED);

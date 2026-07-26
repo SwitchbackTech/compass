@@ -139,12 +139,10 @@ const AllDayEventCardBase = (
         onEventKeyDown?.(event);
       }}
       onMouseDown={(e: MouseEvent) => {
-        if (!onEventMouseDown) {
-          e.stopPropagation();
-          return;
-        }
-
-        onEventMouseDown(e, event);
+        // Stop bubble so the all-day row create handler cannot overwrite a
+        // card click (including read-only open for busy / multi-day timed).
+        e.stopPropagation();
+        onEventMouseDown?.(e, event);
       }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}

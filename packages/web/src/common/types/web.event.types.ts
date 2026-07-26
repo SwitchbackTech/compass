@@ -51,5 +51,7 @@ export const GridEventSchema = WebEventSchema.extend({
   calendarId: CalendarIdSchema.optional(),
   isBusy: z.boolean().optional(),
   isDemo: z.boolean().optional(),
+  /** Timed event shown in the all-day row because it spans midnight. */
+  isTimedMultiDayDisplay: z.boolean().optional(),
 });
 export type GridEvent = z.infer<typeof GridEventSchema>;
