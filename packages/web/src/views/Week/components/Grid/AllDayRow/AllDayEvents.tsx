@@ -78,7 +78,7 @@ export const AllDayEvents = ({
         isReadOnly: isEventReadOnly(
           calendarLookup,
           event.calendarId,
-          event.isBusy ?? false,
+          (event.isBusy ?? false) || (event.isTimedMultiDayDisplay ?? false),
         ),
       })),
     [visibleAllDayEvents, calendarLookup],

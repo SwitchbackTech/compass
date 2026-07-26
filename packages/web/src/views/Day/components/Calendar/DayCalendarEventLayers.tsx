@@ -84,7 +84,7 @@ export const DayCalendarAllDayEventsLayer = ({
           isReadOnly={isEventReadOnly(
             calendarLookup,
             event.calendarId,
-            event.isBusy ?? false,
+            (event.isBusy ?? false) || (event.isTimedMultiDayDisplay ?? false),
           )}
           key={event._id ?? "all-day-draft"}
           measurements={measurements}
