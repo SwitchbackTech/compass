@@ -1,11 +1,15 @@
 import { loadInventoryCollections } from "@scripts/commands/inventory-legacy-sync/inventory";
 import { runPreseedSyncComposition } from "@scripts/commands/preseed-sync/preseed";
 import {
+  writePreseedFailureMarker,
+} from "@scripts/commands/preseed-sync/heartbeat";
+import {
   type PreseedMode,
   PreseedModeSchema,
   type PreseedPhase,
   PreseedPhaseSchema,
 } from "@scripts/commands/preseed-sync/report.types";
+import { type ReprojectMode } from "@scripts/commands/migrate-provider-state/migrate";
 import { loadCompassConfig } from "@core/config/compass.config";
 import { Logger } from "@core/logger/winston.logger";
 import mongoService from "@backend/common/services/mongo.service";
@@ -34,6 +38,9 @@ function parseArgs(argv: string[]): {
   phase: PreseedPhase;
   targetCalendarId: string | undefined;
   targetGcalId: string | undefined;
+  reproject: ReprojectMode;
+  concurrency: number;
+  purgeCorrupt: boolean;
 } {
   const apply = argv.includes("--apply");
   const dryRun = !apply;
@@ -46,6 +53,9 @@ function parseArgs(argv: string[]): {
   let phase: PreseedPhase = "all";
   let targetCalendarId: string | undefined;
   let targetGcalId: string | undefined;
+  let reproject: ReprojectMode = "after";
+  let concurrency = 4;
+  let purgeCorrupt = true;
 
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === "--user-id" && argv[i + 1]) {
@@ -63,6 +73,18 @@ function parseArgs(argv: string[]): {
     } else if (argv[i] === "--target-gcal-id" && argv[i + 1]) {
       targetGcalId = argv[i + 1]!;
       i += 1;
+    } else if (argv[i] === "--reproject" && argv[i + 1]) {
+      const value = argv[i + 1]!;
+      if (value !== "inline" && value !== "after" && value !== "off") {
+        throw new Error("--reproject must be inline|after|off");
+      }
+      reproject = value;
+      i += 1;
+    } else if (argv[i] === "--concurrency" && argv[i + 1]) {
+      concurrency = Math.max(1, Number(argv[i + 1]));
+      i += 1;
+    } else if (argv[i] === "--no-purge-corrupt") {
+      purgeCorrupt = false;
     }
   }
 
@@ -74,6 +96,9 @@ function parseArgs(argv: string[]): {
     phase,
     targetCalendarId,
     targetGcalId,
+    reproject,
+    concurrency,
+    purgeCorrupt,
   };
 }
 
@@ -86,6 +111,7 @@ function parseArgs(argv: string[]): {
  *   bun run cli preseed-sync [--apply] [--out <dir>] [--mode live|frozen]
  *     [--phase inventory|connections|state|pending|all]
  *     [--user-id <id>]... [--target-calendar-id id] [--target-gcal-id id]
+ *     [--reproject after|inline|off] [--concurrency N] [--no-purge-corrupt]
  */
 export async function runPreseedSync(): Promise<void> {
   const argv = process.argv.slice(3);
@@ -97,6 +123,9 @@ export async function runPreseedSync(): Promise<void> {
     phase,
     targetCalendarId,
     targetGcalId,
+    reproject,
+    concurrency,
+    purgeCorrupt,
   } = parseArgs(argv);
   const syncMongo = new SyncMongoService();
 
@@ -122,6 +151,9 @@ export async function runPreseedSync(): Promise<void> {
         targetCalendarId,
         targetGcalId,
         outDir,
+        reproject,
+        concurrency,
+        purgeCorrupt,
         argv,
         gitSha: process.env["GITHUB_SHA"] ?? process.env["GIT_SHA"] ?? null,
         compassApiMongoDbName: mongoService.db?.databaseName ?? null,
@@ -144,6 +176,19 @@ export async function runPreseedSync(): Promise<void> {
     process.exit(result.exitCode);
   } catch (error) {
     logger.error(error);
+    if (outDir) {
+      try {
+        await writePreseedFailureMarker(outDir, {
+          exitCode: 1,
+          error:
+            error instanceof Error
+              ? { name: error.name, message: error.message, stack: error.stack }
+              : { message: String(error) },
+        });
+      } catch {
+        // ignore
+      }
+    }
     try {
       await syncMongo.disconnect();
     } catch {

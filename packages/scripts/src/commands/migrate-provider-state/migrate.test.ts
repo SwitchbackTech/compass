@@ -137,6 +137,10 @@ describe("migrateProviderSyncState", () => {
         } as never,
         events: {
           findByProviderIdentity: async () => null,
+          findByProviderIdentitySafe: async () => ({
+            record: null,
+            corruptDeletedId: null,
+          }),
           upsertByProviderIdentity: upsertEvent,
         } as never,
         occurrences: {
@@ -204,6 +208,10 @@ describe("migrateProviderSyncState", () => {
         } as never,
         events: {
           findByProviderIdentity: async () => null,
+          findByProviderIdentitySafe: async () => ({
+            record: null,
+            corruptDeletedId: null,
+          }),
           upsertByProviderIdentity: async () => {
             throw new Error("dry-run");
           },

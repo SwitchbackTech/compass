@@ -15,6 +15,7 @@ const mockRunMigratePendingIntent = mock(
   (): Promise<void> => Promise.resolve(),
 );
 const mockRunPreseedSync = mock((): Promise<void> => Promise.resolve());
+const mockRunPurgeCorrupt = mock((): Promise<void> => Promise.resolve());
 
 mock.module("@scripts/cli.validator", () => ({
   CliValidator: mock().mockImplementation(() => ({
@@ -50,6 +51,11 @@ mock.module("@scripts/commands/migrate-pending-intent", () => ({
 mock.module("@scripts/commands/preseed-sync", () => ({
   __esModule: true,
   runPreseedSync: mock(() => mockRunPreseedSync()),
+}));
+
+mock.module("@scripts/commands/purge-corrupt-sync-events", () => ({
+  __esModule: true,
+  runPurgeCorruptSyncEvents: mock(() => mockRunPurgeCorrupt()),
 }));
 
 const { default: CompassCLI } = requireActual(
@@ -107,6 +113,12 @@ describe("CompassCLI", () => {
     await cli.run();
 
     expect(mockRunPreseedSync).toHaveBeenCalled();
+  });
+
+  it("runs purge-corrupt-sync-events command", async () => {
+    const cli = new CompassCLI(["node", "cli", "purge-corrupt-sync-events"]);
+    await cli.run();
+    expect(mockRunPurgeCorrupt).toHaveBeenCalled();
   });
 
   it("calls exitHelpfully for unsupported command", async () => {

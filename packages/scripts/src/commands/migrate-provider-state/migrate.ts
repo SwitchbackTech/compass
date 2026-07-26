@@ -30,7 +30,11 @@ import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { type EventRecord as LegacyEventRecord } from "@backend/event/event.record";
 import { reprojectOccurrences } from "@sync/domain/reproject";
-import { type EventRecord as SyncEventRecord } from "@sync/storage/contracts/event.contracts";
+import {
+  type EventRecord as SyncEventRecord,
+  EventRecordSchema,
+} from "@sync/storage/contracts/event.contracts";
+import { type ProviderEventUpsert } from "@sync/storage/repositories/event.repository";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
@@ -54,11 +58,33 @@ export interface MigrateProviderStateDeps {
   resources: SyncResourceRepository;
 }
 
+export type ReprojectMode = "inline" | "after" | "off";
+
+export type MigrateProviderStateProgress = {
+  usersDone: number;
+  usersTotal: number;
+  eventsUpserted: number;
+  eventsSkipped: number;
+  lastUserId: string | null;
+  phase: "state-upsert" | "state-reproject";
+  detail?: string;
+};
+
 export interface MigrateProviderStateOptions {
   dryRun: boolean;
   now?: Date;
   /** When set, only these Compass user ids are considered. */
   userIds?: ReadonlySet<string>;
+  /**
+   * When to materialize occurrences:
+   * - inline: after each user's events (legacy)
+   * - after: after all users' event upserts (default for preseed speed/resilience)
+   * - off: skip reproject
+   */
+  reproject?: ReprojectMode;
+  /** Parallel users during state migrate (default 1). */
+  concurrency?: number;
+  onProgress?: (progress: MigrateProviderStateProgress) => void | Promise<void>;
 }
 
 interface AggregateCounts {
@@ -101,6 +127,74 @@ const emptyCounts = (): AggregateCounts => ({
   unlinkedDeferred: 0,
 });
 
+async function runPool(
+  concurrency: number,
+  count: number,
+  task: (index: number) => Promise<void>,
+): Promise<void> {
+  let nextIndex = 0;
+  async function worker(): Promise<void> {
+    while (nextIndex < count) {
+      const index = nextIndex++;
+      await task(index);
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.max(1, Math.min(concurrency, count)) }, () =>
+      worker(),
+    ),
+  );
+}
+
+async function findExistingProviderEvent(
+  events: EventRepository,
+  tenantId: TenantId,
+  principalId: PrincipalId,
+  identity: {
+    connectionId: ConnectionId;
+    calendarId: SyncEventRecord["calendarId"];
+    providerEventId: string;
+  },
+  skips: MigrateProviderStateSkip[],
+): Promise<SyncEventRecord | null> {
+  const { record, corruptDeletedId } = await events.findByProviderIdentitySafe(
+    tenantId,
+    principalId,
+    {
+      connectionId: identity.connectionId,
+      calendarId: identity.calendarId,
+      providerEventId: identity.providerEventId as never,
+    },
+  );
+  if (corruptDeletedId) {
+    skips.push({
+      category: "corrupt_sync_event",
+      id: corruptDeletedId,
+      detail:
+        "deleted Sync event that failed EventRecordSchema; will recreate from legacy if present",
+    });
+  }
+  return record;
+}
+
+function validateProviderUpsert(
+  input: ProviderEventUpsert,
+): { ok: true } | { ok: false; detail: string } {
+  const parsed = EventRecordSchema.omit({
+    _id: true,
+    createdAt: true,
+    updatedAt: true,
+  }).safeParse(input);
+  if (parsed.success) return { ok: true };
+  return {
+    ok: false,
+    detail: parsed.error.issues
+      .slice(0, 3)
+      .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+      .join("; "),
+  };
+}
+
 /**
  * Idempotently migrate legacy Google calendars, linked events, sync cursors,
  * and watch associations into Sync (S48). Never deletes source rows, never
@@ -130,8 +224,31 @@ export async function migrateProviderSyncState(
   const eventsByCalendar = groupEvents(source.events);
   const syncByUser = groupSyncDocs(source.syncDocs);
   const watchesByUser = groupWatches(source.watches);
+  const reprojectMode = options.reproject ?? "after";
+  const concurrency = Math.max(1, options.concurrency ?? 1);
+  const deferredReproject: SyncEventRecord[] = [];
+  let usersDone = 0;
+  let eventsUpsertedProgress = 0;
 
-  for (const user of users) {
+  const reportProgress = async (
+    phase: MigrateProviderStateProgress["phase"],
+    lastUserId: string | null,
+    detail?: string,
+  ) => {
+    if (!options.onProgress) return;
+    await options.onProgress({
+      usersDone,
+      usersTotal: users.length,
+      eventsUpserted: eventsUpsertedProgress,
+      eventsSkipped: counts.eventsSkipped,
+      lastUserId,
+      phase,
+      detail,
+    });
+  };
+
+  await runPool(concurrency, users.length, async (index) => {
+    const user = users[index]!;
     const userId = user._id.toHexString();
     const principal = toSyncPrincipal(userId);
     const tenantId = principal.tenantId as TenantId;
@@ -144,6 +261,8 @@ export async function migrateProviderSyncState(
       unlinkedDeferred: 0,
       watchesSkippedRewatch: 0,
     };
+
+    try {
 
     if (!user.google?.googleId?.trim()) {
       skips.push({
@@ -161,7 +280,7 @@ export async function migrateProviderSyncState(
         detail: "user has no google identity",
         counts: userCounts,
       });
-      continue;
+      return;
     }
 
     const providerAccountId = user.google.googleId.trim();
@@ -189,7 +308,7 @@ export async function migrateProviderSyncState(
         detail: "no Sync google connection for this principal",
         counts: userCounts,
       });
-      continue;
+      return;
     }
 
     if (connection.disconnectedAt != null) {
@@ -208,7 +327,7 @@ export async function migrateProviderSyncState(
         detail: "Sync connection is disconnected",
         counts: userCounts,
       });
-      continue;
+      return;
     }
 
     const connectionId = connection._id as ConnectionId;
@@ -481,11 +600,17 @@ export async function migrateProviderSyncState(
       if (plan.needsMaster) {
         const master =
           syncMasterByProviderId.get(plan.seriesProviderId) ??
-          (await deps.events.findByProviderIdentity(tenantId, principalId, {
-            connectionId,
-            calendarId: syncCalendar._id,
-            providerEventId: plan.seriesProviderId as never,
-          }));
+          (await findExistingProviderEvent(
+            deps.events,
+            tenantId,
+            principalId,
+            {
+              connectionId,
+              calendarId: syncCalendar._id,
+              providerEventId: plan.seriesProviderId,
+            },
+            skips,
+          ));
         if (!master || master.recurrence.kind !== "seriesMaster") {
           counts.eventsSkipped += 1;
           skips.push({
@@ -505,14 +630,16 @@ export async function migrateProviderSyncState(
       }
 
       const providerEventId = event.externalReference!.eventId.trim();
-      const existing = await deps.events.findByProviderIdentity(
+      const existing = await findExistingProviderEvent(
+        deps.events,
         tenantId,
         principalId,
         {
           connectionId,
           calendarId: syncCalendar._id,
-          providerEventId: providerEventId as never,
+          providerEventId,
         },
+        skips,
       );
 
       let content: ReturnType<typeof toSyncContent>;
@@ -561,27 +688,39 @@ export async function migrateProviderSyncState(
       const generation =
         existing?.generation ?? eventsResource?.activeGeneration ?? 0;
 
+      const upsertInput: ProviderEventUpsert = {
+        tenantId,
+        principalId,
+        origin: "provider",
+        calendarId: syncCalendar._id,
+        clientEventId: null,
+        connectionId,
+        providerEventId: providerEventId as never,
+        providerVersion: MIGRATED_PROVIDER_VERSION,
+        providerUpdatedAt: event.updatedAt,
+        deliveryState: null,
+        providerMetadata: null,
+        content,
+        schedule,
+        recurrence,
+        lifecycleState: "active",
+        generation,
+        confirmedAt: now,
+      };
+      const validated = validateProviderUpsert(upsertInput);
+      if (!validated.ok) {
+        counts.eventsSkipped += 1;
+        skips.push({
+          category: "unmappable_event",
+          id: event._id.toHexString(),
+          detail: validated.detail,
+        });
+        continue;
+      }
+
       let record: SyncEventRecord;
       try {
-        record = await deps.events.upsertByProviderIdentity({
-          tenantId,
-          principalId,
-          origin: "provider",
-          calendarId: syncCalendar._id,
-          clientEventId: null,
-          connectionId,
-          providerEventId: providerEventId as never,
-          providerVersion: MIGRATED_PROVIDER_VERSION,
-          providerUpdatedAt: event.updatedAt,
-          deliveryState: null,
-          providerMetadata: null,
-          content,
-          schedule,
-          recurrence,
-          lifecycleState: "active",
-          generation,
-          confirmedAt: now,
-        });
+        record = await deps.events.upsertByProviderIdentity(upsertInput);
       } catch (error) {
         counts.eventsSkipped += 1;
         skips.push({
@@ -606,12 +745,16 @@ export async function migrateProviderSyncState(
       }
     }
 
-    if (!options.dryRun) {
+    if (!options.dryRun && reprojectMode === "inline") {
       await reprojectMigratedEvents(
         deps.occurrences,
         upsertedSyncEvents,
         nowFn,
+        skips,
+        counts,
       );
+    } else if (!options.dryRun && reprojectMode === "after") {
+      deferredReproject.push(...upsertedSyncEvents);
     }
 
     usersOut.push({
@@ -626,6 +769,51 @@ export async function migrateProviderSyncState(
         : "upserted calendars, linked events, and sync resources",
       counts: userCounts,
     });
+    eventsUpsertedProgress += userCounts.eventsUpserted;
+    } catch (error) {
+      skips.push({
+        category: "user_migrate_failed",
+        id: userId,
+        detail:
+          error instanceof Error
+            ? error.message
+            : "unexpected failure migrating user provider state",
+      });
+      usersOut.push({
+        userId,
+        tenantId,
+        principalId,
+        connectionId: null,
+        action: "skipped",
+        skipCategory: "user_migrate_failed",
+        detail:
+          error instanceof Error
+            ? error.message
+            : "unexpected failure migrating user provider state",
+        counts: userCounts,
+      });
+    } finally {
+      usersDone += 1;
+      if (usersDone % 10 === 0 || usersDone === users.length) {
+        await reportProgress("state-upsert", userId);
+      }
+    }
+  });
+
+  if (!options.dryRun && reprojectMode === "after" && deferredReproject.length > 0) {
+    await reportProgress(
+      "state-reproject",
+      null,
+      `reprojecting ${deferredReproject.length} events`,
+    );
+    await reprojectMigratedEvents(
+      deps.occurrences,
+      deferredReproject,
+      nowFn,
+      skips,
+      counts,
+    );
+    await reportProgress("state-reproject", null, "reproject complete");
   }
 
   return MigrateProviderStateReportSchema.parse({
@@ -667,10 +855,31 @@ async function reprojectMigratedEvents(
   occurrences: EventOccurrenceRepository,
   events: readonly SyncEventRecord[],
   now: () => Date,
+  skips: MigrateProviderStateSkip[],
+  counts: AggregateCounts,
 ): Promise<void> {
   const masters = events.filter((e) => e.recurrence.kind === "seriesMaster");
   const exceptions = events.filter((e) => e.recurrence.kind === "exception");
   const singles = events.filter((e) => e.recurrence.kind === "single");
+
+  const runOne = async (
+    event: SyncEventRecord,
+    instants: readonly DateTime[] = [],
+  ) => {
+    try {
+      await reprojectOccurrences(occurrences, event, now, instants);
+    } catch (error) {
+      counts.eventsSkipped += 1;
+      skips.push({
+        category: "reproject_failed",
+        id: event._id,
+        detail:
+          error instanceof Error
+            ? error.message
+            : "failed to reproject occurrences",
+      });
+    }
+  };
 
   for (const master of masters) {
     const seriesExceptions = exceptions.filter(
@@ -678,20 +887,17 @@ async function reprojectMigratedEvents(
         row.recurrence.kind === "exception" &&
         row.recurrence.seriesId === master._id,
     );
-    const instants = seriesExceptions.map((row) => {
-      if (row.recurrence.kind !== "exception") {
-        throw new Error("expected exception");
-      }
-      return row.recurrence.recurrenceId as DateTime;
-    });
-    await reprojectOccurrences(occurrences, master, now, instants);
+    const instants = seriesExceptions.flatMap((row) =>
+      row.recurrence.kind === "exception" ? [row.recurrence.recurrenceId as DateTime] : [],
+    );
+    await runOne(master, instants);
   }
 
   for (const exception of exceptions) {
-    await reprojectOccurrences(occurrences, exception, now);
+    await runOne(exception);
   }
   for (const single of singles) {
-    await reprojectOccurrences(occurrences, single, now);
+    await runOne(single);
   }
 }
 

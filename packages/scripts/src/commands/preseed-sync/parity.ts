@@ -48,7 +48,6 @@ const STATE_BLOCKING = new Set([
   "duplicate_google_calendar",
   "missing_provider_event_id",
   "missing_series_master",
-  "unmappable_event",
 ]);
 
 const STATE_EXPLAINED = new Set([
@@ -56,6 +55,11 @@ const STATE_EXPLAINED = new Set([
   "local_calendar",
   "unlinked_deferred",
   "subscription_requires_rewatch",
+  // Legacy/data-quality defects must not abort cutover for healthy users.
+  "unmappable_event",
+  "reproject_failed",
+  "corrupt_sync_event",
+  "user_migrate_failed",
 ]);
 
 const PENDING_BLOCKING = new Set([

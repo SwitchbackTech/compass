@@ -14,6 +14,9 @@ export const MigrateProviderStateSkipCategorySchema = z.enum([
   "missing_provider_event_id",
   "missing_series_master",
   "unmappable_event",
+  "reproject_failed",
+  "corrupt_sync_event",
+  "user_migrate_failed",
 ]);
 export type MigrateProviderStateSkipCategory = z.infer<
   typeof MigrateProviderStateSkipCategorySchema

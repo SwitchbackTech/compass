@@ -441,4 +441,66 @@ describe("migrate-provider-state (db)", () => {
     expect(generations.length).toBeGreaterThan(0);
     expect(generations.every((row) => row.generation === 3)).toBe(true);
   });
+
+  it("deletes a corrupt Sync event and continues migrate", async () => {
+    await seedLegacyFixture();
+    const repositories = deps();
+    await migrateProviderConnections(
+      {
+        connections: repositories.connections,
+        credentials: new CredentialRepository(syncStorage.db()),
+      },
+      await mongoService.user.find({}).toArray(),
+      { dryRun: false, now: NOW },
+    );
+
+    // First apply creates valid Sync calendars/events.
+    await migrateProviderSyncState(repositories, await loadSource(), {
+      dryRun: false,
+      now: NOW,
+      reproject: "off",
+    });
+
+    const poison = await syncStorage
+      .db()
+      .collection(SYNC_COLLECTIONS.events)
+      .findOne({ providerEventId: "gcal-single-1" });
+    expect(poison).not.toBeNull();
+
+    // Invert schedule in place (poison), leaving provider identity intact.
+    await syncStorage
+      .db()
+      .collection(SYNC_COLLECTIONS.events)
+      .updateOne(
+        { _id: poison!._id },
+        {
+          $set: {
+            schedule: {
+              kind: "timed",
+              start: "2026-07-25T05:00:00.000Z",
+              end: "2026-07-25T04:00:00.000Z",
+              timeZone: "UTC",
+            },
+          },
+        },
+      );
+
+    const report = await migrateProviderSyncState(
+      repositories,
+      await loadSource(),
+      { dryRun: false, now: NOW, reproject: "after", concurrency: 2 },
+    );
+
+    expect(report.skips.some((s) => s.category === "corrupt_sync_event")).toBe(
+      true,
+    );
+    expect(report.counts.usersMigrated).toBe(1);
+    // Recreated with a valid schedule from legacy.
+    const restored = await syncStorage
+      .db()
+      .collection(SYNC_COLLECTIONS.events)
+      .findOne({ providerEventId: "gcal-single-1" });
+    expect(restored).not.toBeNull();
+    expect(restored?.schedule?.end > restored?.schedule?.start).toBe(true);
+  });
 });

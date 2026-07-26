@@ -151,6 +151,33 @@ export class EventRepository {
     return record ? EventRecordSchema.parse(record) : null;
   }
 
+  // Like findByProviderIdentity, but a document that fails EventRecordSchema
+  // (e.g. written then rejected mid-migrate) is deleted and treated as missing
+  // so a poison row cannot abort an entire preseed/import job.
+  async findByProviderIdentitySafe(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    identity: {
+      connectionId: NonNullable<EventRecord["connectionId"]>;
+      calendarId: EventRecord["calendarId"];
+      providerEventId: NonNullable<EventRecord["providerEventId"]>;
+    },
+  ): Promise<{ record: EventRecord | null; corruptDeletedId: string | null }> {
+    const record = await this.collection.findOne({
+      tenantId,
+      principalId,
+      connectionId: identity.connectionId,
+      calendarId: identity.calendarId,
+      providerEventId: identity.providerEventId,
+    });
+    if (!record) return { record: null, corruptDeletedId: null };
+    const parsed = EventRecordSchema.safeParse(record);
+    if (parsed.success) return { record: parsed.data, corruptDeletedId: null };
+    const id = String(record._id);
+    await this.collection.deleteOne({ _id: record._id });
+    return { record: null, corruptDeletedId: id };
+  }
+
   // Remove one event by id, scoped to its owner so a caller can only delete its
   // own event. Idempotent: deleting an already-absent event is a no-op, so a
   // retried delete converges. Returns whether a document was removed.
