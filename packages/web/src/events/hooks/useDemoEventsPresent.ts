@@ -19,11 +19,19 @@ export function useDemoEventsPresent(): boolean {
 
     refreshGenerationRef.current += 1;
     const generation = refreshGenerationRef.current;
-    void hasDemoEvents().then((result) => {
-      if (generation === refreshGenerationRef.current) {
-        setPresent(result);
-      }
-    });
+    void hasDemoEvents()
+      .then((result) => {
+        if (generation === refreshGenerationRef.current) {
+          setPresent(result);
+        }
+      })
+      .catch(() => {
+        // IndexedDB probe is best-effort; treat failures as "no demo events"
+        // rather than an unhandledrejection.
+        if (generation === refreshGenerationRef.current) {
+          setPresent(false);
+        }
+      });
   }, [source]);
 
   useEffect(() => {

@@ -197,7 +197,11 @@ export const handleError = (error: Error) => {
   }
 
   const codesToIgnore = [Status.NOT_FOUND, Status.GONE, Status.UNAUTHORIZED];
-  const code = parseInt(error.message.slice(-3), 10);
+  // Prefer the structured status on ApiError; fall back to the trailing
+  // status digits in the message for errors that only carry text.
+  const code =
+    (error as ApiError).response?.status ??
+    parseInt(error.message.slice(-3), 10);
   if (codesToIgnore.includes(code)) {
     // api interceptor will handle these
     return;
