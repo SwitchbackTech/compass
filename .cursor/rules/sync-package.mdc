@@ -1,0 +1,19 @@
+---
+description: Compass sync package setup, debugging references, and verification
+globs: packages/sync/**
+alwaysApply: false
+---
+
+# Sync package
+
+- Read `docs/features/google-sync-and-sse-flow.md` before changing provider,
+  watch, OAuth, import, or connection-health behavior.
+- Backend, Google sync, MongoDB, and SSE work requires a root `compass.yaml`.
+  Bootstrap from `compass.example.yaml`; never commit the generated file.
+- Use `bun run test:sync:fast` for Mongo-free work and `bun run test:sync` for
+  persistence or full package coverage.
+- Shared event names and payloads belong in `packages/core`.
+- For cross-package behavior, verify the affected backend/web consumers and run
+  `bun run type-check`.
+- Distinguish browser-to-backend SSE traffic from Google-to-Compass webhook
+  traffic; local webhook delivery requires a public HTTPS URL.

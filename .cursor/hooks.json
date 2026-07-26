@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "bun .cursor/hooks/format-after-edit.ts",
+        "timeout": 30
+      }
+    ]
+  }
+}

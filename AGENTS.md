@@ -14,7 +14,7 @@ cp compass.example.yaml compass.yaml
 - `compass.yaml` contains secrets. Do not commit it.
 
 - Avoid defaulting to `bun test`; use the focused package test first.
-- Formatting is handled by the repo-local Codex Stop hook after each agent turn.
+- Formatting is handled by repo-local Codex and Cursor hooks after agent edits.
 - Use `bun lint` and relevant verification before pushing or ending a session.
 
 ## Commands
@@ -53,6 +53,20 @@ Validation defaults:
 ## Lookups
 
 - Docs index: `docs/README.md`
+
+## Skills
+
+Project workflows live in `.agents/skills` so supported agents share one source
+of truth:
+
+- `/ship`: validate, review, open, merge, and verify a delivery
+- `/simplify`: reduce complexity without changing behavior
+- `/a11y-audit`: review changed UI for accessibility regressions
+- `/qa-test-staging`: run the post-deploy staging confidence sweep
+- `/verify-change`: select and run checks from the actual diff
+- `/local-dev-bootstrap`: prepare the lightest viable local environment
+- `/google-sync-debug`: trace OAuth, provider, job, webhook, and SSE failures
+- `/handoff`: compact work for a fresh agent session
 
 ## Compass-Specific Rules
 
