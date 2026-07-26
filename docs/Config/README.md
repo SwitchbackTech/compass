@@ -4,7 +4,7 @@ Compass uses `compass.yaml` for self-hosting and local development. The file is 
 
 Examples:
 
-- local development: `packages/backend/compass.example.yaml`
+- local development: `compass.example.yaml`
 - self-hosting: `self-host/compass.example.yaml`
 
 ## Runtime

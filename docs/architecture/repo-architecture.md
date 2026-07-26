@@ -1,6 +1,6 @@
 # Repo Architecture
 
-Compass is a TypeScript monorepo with four packages and one shared event domain.
+Compass is a TypeScript monorepo with five packages and one shared event domain.
 
 ## Package Map
 
@@ -36,6 +36,23 @@ Key entrypoints:
 - `packages/backend/src/app.ts`
 - `packages/backend/src/servers/express/express.server.ts`
 - `packages/backend/src/servers/sse/sse.server.ts`
+
+### `packages/sync`
+
+The provider synchronization service. It owns:
+
+- provider connection and credential custody
+- Google Calendar adapters and notification verification
+- sync jobs, scheduling, reconciliation, and subscription renewal
+- provider calendars, events, invalidations, and sync-resource persistence
+- sync readiness, health telemetry, and graceful shutdown
+
+Key entrypoints:
+
+- `packages/sync/src/app.ts`
+- `packages/sync/src/server/sync.server.ts`
+- `packages/sync/src/domain/sync-job-worker.service.ts`
+- `packages/sync/src/config/sync.config.ts`
 
 ### `packages/core`
 
@@ -75,6 +92,12 @@ The web package imports shared event/date concepts from `core` and should not re
 
 The backend uses `core` for shared validation, event categories, recurrence scopes, constants, and SSE event names.
 
+### Sync -> Core
+
+The sync service uses `core` for shared logging and domain contracts while
+keeping provider credentials, job orchestration, and provider-specific adapters
+inside `packages/sync`.
+
 ### Web <-> Backend
 
 The web talks to the backend through:
@@ -82,6 +105,13 @@ The web talks to the backend through:
 - HTTP APIs
 - SSE events
 - shared domain types from `core`
+
+### Backend <-> Sync
+
+The backend remains the browser-facing API and SSE boundary. The sync service
+exposes authenticated internal HTTP routes and change feeds for provider
+connection, command, notification, and availability work. Keep shared wire
+contracts explicit and provider implementation details inside `packages/sync`.
 
 ## Startup Paths
 
@@ -104,6 +134,18 @@ The web talks to the backend through:
 3. register HTTP routes (SSE is opened per authenticated `GET /api/events/stream`)
 4. start Mongo
 5. listen on the configured port
+
+### Sync boot
+
+`packages/sync/src/app.ts` does this in order:
+
+1. load and validate sync configuration
+2. create the HTTP app, lifecycle registries, and storage dependencies
+3. bind the HTTP port so liveness is available
+4. connect MongoDB and install readiness checks
+5. start retention and health sweeps
+6. in active provider-configured mode, start job, reconciliation, and
+   subscription schedulers
 
 ## Main Architectural Patterns
 
@@ -136,4 +178,6 @@ The repo prefers:
 - New event field: `core` schema, backend parsing/persistence, web editors/selectors/tests
 - New backend endpoint: backend route/controller/service plus maybe shared type in `core`
 - New SSE event: `core` constants/types, backend `sse.server` / `publish`, web SSE hook consumer
+- New provider sync behavior: sync provider port/adapter, job orchestration and
+  storage, backend integration boundary, and affected web state
 - New local persistence behavior: web storage adapter, migration runner, tests
