@@ -1,3 +1,4 @@
+import { Origin } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
@@ -10,14 +11,16 @@ const visibleDates: GridVisibleDate[] = [
   { key: "2026-05-22", date: dayjs("2026-05-22T00:00:00") },
 ];
 
-const savedTimed: GridEvent = {
+const savedTimed = {
   _id: "saved-timed",
   title: "Saved",
   isAllDay: false,
   startDate: "2026-05-22T10:00:00",
   endDate: "2026-05-22T11:00:00",
+  origin: Origin.COMPASS,
+  user: "user",
   position: gridEventDefaultPosition,
-};
+} as GridEvent;
 
 describe("addVisibleDraftEvent", () => {
   it("does not inject a multi-day timed draft into the timed layer", () => {
