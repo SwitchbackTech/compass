@@ -6,12 +6,9 @@ alwaysApply: false
 
 # Web styles
 
-- Use Tailwind semantic colors defined in `packages/web/src/index.css`.
-- Do not add raw palette colors such as `bg-blue-300` or `text-zinc-900`.
-- Prefer canonical Tailwind scale utilities over arbitrary values when an
-  equivalent exists.
-- Treat Tailwind IntelliSense `suggestCanonicalClasses` warnings as required
-  cleanup.
+See `AGENTS.md`'s Compass-Specific Rules for Tailwind semantic colors and
+canonical-scale-utility conventions.
+
 - Preserve the established Compass visual language and responsive behavior.
 - Use native semantic elements and visible focus states for interactive UI.
 
