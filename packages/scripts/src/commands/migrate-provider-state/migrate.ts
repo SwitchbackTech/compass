@@ -260,15 +260,23 @@ export async function migrateProviderSyncState(
     detail?: string,
   ) => {
     if (!options.onProgress) return;
-    await options.onProgress({
-      usersDone,
-      usersTotal: users.length,
-      eventsUpserted: eventsUpsertedProgress,
-      eventsSkipped: counts.eventsSkipped,
-      lastUserId,
-      phase,
-      detail,
-    });
+    try {
+      await options.onProgress({
+        usersDone,
+        usersTotal: users.length,
+        eventsUpserted: eventsUpsertedProgress,
+        eventsSkipped: counts.eventsSkipped,
+        lastUserId,
+        phase,
+        detail,
+      });
+    } catch (error) {
+      console.warn(
+        `migrate provider state progress callback failed (${phase}): ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   };
 
   await runPool(concurrency, users.length, async (index) => {
