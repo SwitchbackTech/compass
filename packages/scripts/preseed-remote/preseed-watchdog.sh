@@ -65,12 +65,22 @@ import json, time
 from pathlib import Path
 hb = json.loads(Path("${HEARTBEAT}").read_text())
 ts = hb.get("ts")
-# support Z
-from datetime import datetime
-dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-print(int(time.time() - dt.timestamp()))
+if not isinstance(ts, str):
+    print("invalid")
+    raise SystemExit(0)
+try:
+    from datetime import datetime
+    dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    print(int(time.time() - dt.timestamp()))
+except (ValueError, AttributeError, TypeError):
+    print("invalid")
 PY
 )"
+
+if [[ "${age}" == "invalid" ]]; then
+  alert_once "🚨 prod preseed heartbeat malformed pid=${pid} out=${OUT}"
+  exit 0
+fi
 
 if [[ "${age}" -gt "${STALE_SECONDS}" ]]; then
   alert_once "🚨 prod preseed heartbeat stale age=${age}s pid=${pid} out=${OUT}"

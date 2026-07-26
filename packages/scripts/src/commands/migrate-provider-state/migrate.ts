@@ -31,12 +31,14 @@ import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-prin
 import { type EventRecord as LegacyEventRecord } from "@backend/event/event.record";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import {
-  type EventRecord as SyncEventRecord,
   EventRecordSchema,
+  type EventRecord as SyncEventRecord,
 } from "@sync/storage/contracts/event.contracts";
-import { type ProviderEventUpsert } from "@sync/storage/repositories/event.repository";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
-import { type EventRepository } from "@sync/storage/repositories/event.repository";
+import {
+  type EventRepository,
+  type ProviderEventUpsert,
+} from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { type ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
@@ -126,6 +128,24 @@ const emptyCounts = (): AggregateCounts => ({
   watchesSkippedRewatch: 0,
   unlinkedDeferred: 0,
 });
+
+function mergeCounts(target: AggregateCounts, source: AggregateCounts): void {
+  for (const key of Object.keys(target) as Array<keyof AggregateCounts>) {
+    target[key] += source[key];
+  }
+}
+
+function createAsyncMutex() {
+  let tail = Promise.resolve();
+  return <T>(fn: () => Promise<T> | T): Promise<T> => {
+    const run = tail.then(fn, fn);
+    tail = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    return run;
+  };
+}
 
 async function runPool(
   concurrency: number,
@@ -229,6 +249,7 @@ export async function migrateProviderSyncState(
   const deferredReproject: SyncEventRecord[] = [];
   let usersDone = 0;
   let eventsUpsertedProgress = 0;
+  const withPoolLock = createAsyncMutex();
 
   const reportProgress = async (
     phase: MigrateProviderStateProgress["phase"],
@@ -253,6 +274,7 @@ export async function migrateProviderSyncState(
     const principal = toSyncPrincipal(userId);
     const tenantId = principal.tenantId as TenantId;
     const principalId = principal.principalId as PrincipalId;
+    const localCounts = emptyCounts();
 
     const userCounts = {
       calendarsUpserted: 0,
@@ -262,512 +284,522 @@ export async function migrateProviderSyncState(
       watchesSkippedRewatch: 0,
     };
     const upsertedSyncEvents: SyncEventRecord[] = [];
+    let eventsUpsertedForProgress = 0;
 
     try {
+      if (!user.google?.googleId?.trim()) {
+        skips.push({
+          category: "no_google_identity",
+          id: userId,
+          detail: "user has no google identity",
+        });
+        usersOut.push({
+          userId,
+          tenantId,
+          principalId,
+          connectionId: null,
+          action: "skipped",
+          skipCategory: "no_google_identity",
+          detail: "user has no google identity",
+          counts: userCounts,
+        });
+        return;
+      }
 
-    if (!user.google?.googleId?.trim()) {
-      skips.push({
-        category: "no_google_identity",
-        id: userId,
-        detail: "user has no google identity",
-      });
-      usersOut.push({
-        userId,
-        tenantId,
-        principalId,
-        connectionId: null,
-        action: "skipped",
-        skipCategory: "no_google_identity",
-        detail: "user has no google identity",
-        counts: userCounts,
-      });
-      return;
-    }
-
-    const providerAccountId = user.google.googleId.trim();
-    const connection = (
-      await deps.connections.listByPrincipal(tenantId, principalId)
-    ).find(
-      (row) =>
-        row.provider === "google" &&
-        row.account.providerAccountId === providerAccountId,
-    );
-
-    if (!connection) {
-      skips.push({
-        category: "missing_connection",
-        id: userId,
-        detail: "run migrate-connections (S47) before migrate-provider-state",
-      });
-      usersOut.push({
-        userId,
-        tenantId,
-        principalId,
-        connectionId: null,
-        action: "skipped",
-        skipCategory: "missing_connection",
-        detail: "no Sync google connection for this principal",
-        counts: userCounts,
-      });
-      return;
-    }
-
-    if (connection.disconnectedAt != null) {
-      skips.push({
-        category: "disconnected_in_sync",
-        id: userId,
-        detail: "Sync connection is disconnected; not migrating provider state",
-      });
-      usersOut.push({
-        userId,
-        tenantId,
-        principalId,
-        connectionId: connection._id,
-        action: "skipped",
-        skipCategory: "disconnected_in_sync",
-        detail: "Sync connection is disconnected",
-        counts: userCounts,
-      });
-      return;
-    }
-
-    const connectionId = connection._id as ConnectionId;
-    const existingCalendars = await deps.calendars.listByConnection(
-      tenantId,
-      principalId,
-      connectionId,
-    );
-    const existingByProviderId = new Map(
-      existingCalendars.map((row) => [row.providerCalendarId, row]),
-    );
-
-    const googleCalendars = selectGoogleCalendars(
-      calendarsByUser.get(userId) ?? [],
-      skips,
-      counts,
-    );
-
-    const syncCalendarByGcalId = new Map<string, ProviderCalendarRecord>();
-
-    for (const calendar of googleCalendars) {
-      const providerCalendarId = calendar.source.calendarId;
-      const existed = existingByProviderId.has(
-        providerCalendarId as ProviderCalendarSourceId,
+      const providerAccountId = user.google.googleId.trim();
+      const connection = (
+        await deps.connections.listByPrincipal(tenantId, principalId)
+      ).find(
+        (row) =>
+          row.provider === "google" &&
+          row.account.providerAccountId === providerAccountId,
       );
-      const fields = {
+
+      if (!connection) {
+        skips.push({
+          category: "missing_connection",
+          id: userId,
+          detail: "run migrate-connections (S47) before migrate-provider-state",
+        });
+        usersOut.push({
+          userId,
+          tenantId,
+          principalId,
+          connectionId: null,
+          action: "skipped",
+          skipCategory: "missing_connection",
+          detail: "no Sync google connection for this principal",
+          counts: userCounts,
+        });
+        return;
+      }
+
+      if (connection.disconnectedAt != null) {
+        skips.push({
+          category: "disconnected_in_sync",
+          id: userId,
+          detail:
+            "Sync connection is disconnected; not migrating provider state",
+        });
+        usersOut.push({
+          userId,
+          tenantId,
+          principalId,
+          connectionId: connection._id,
+          action: "skipped",
+          skipCategory: "disconnected_in_sync",
+          detail: "Sync connection is disconnected",
+          counts: userCounts,
+        });
+        return;
+      }
+
+      const connectionId = connection._id as ConnectionId;
+      const existingCalendars = await deps.calendars.listByConnection(
         tenantId,
         principalId,
         connectionId,
-        providerCalendarId: providerCalendarId as ProviderCalendarSourceId,
-        displayName: calendar.name.trim() || providerCalendarId,
-        color: calendar.backgroundColor,
-        active: calendar.isActive,
-        primary: calendar.isPrimary,
-        accessRole: mapAccessRole(calendar.access),
-        capabilities: capabilitiesForAccess(calendar.access),
-      };
+      );
+      const existingByProviderId = new Map(
+        existingCalendars.map((row) => [row.providerCalendarId, row]),
+      );
 
-      if (options.dryRun) {
-        if (existed) counts.calendarsWouldUpdate += 1;
-        else counts.calendarsWouldCreate += 1;
-        userCounts.calendarsUpserted += 1;
-        const stub =
-          existingByProviderId.get(
-            providerCalendarId as ProviderCalendarSourceId,
-          ) ??
-          ({
-            _id: calendar._id.toHexString(),
-            ...fields,
-            createdAt: now,
-            updatedAt: now,
-          } as ProviderCalendarRecord);
-        syncCalendarByGcalId.set(providerCalendarId, stub);
-        continue;
-      }
+      const googleCalendars = selectGoogleCalendars(
+        calendarsByUser.get(userId) ?? [],
+        skips,
+        localCounts,
+      );
 
-      const record = await deps.calendars.upsertByProviderCalendar(fields);
-      syncCalendarByGcalId.set(providerCalendarId, record);
-      if (existed) counts.calendarsUpdated += 1;
-      else counts.calendarsCreated += 1;
-      userCounts.calendarsUpserted += 1;
-    }
+      const syncCalendarByGcalId = new Map<string, ProviderCalendarRecord>();
 
-    // Dry-run without prior Sync calendars: resources/events still report
-    // would_* using provider calendar ids, but cannot bind Sync calendar ids.
-    const existingResources = await deps.resources.listByConnection(
-      tenantId,
-      principalId,
-      connectionId,
-    );
+      for (const calendar of googleCalendars) {
+        const providerCalendarId = calendar.source.calendarId;
+        const existed = existingByProviderId.has(
+          providerCalendarId as ProviderCalendarSourceId,
+        );
+        const fields = {
+          tenantId,
+          principalId,
+          connectionId,
+          providerCalendarId: providerCalendarId as ProviderCalendarSourceId,
+          displayName: calendar.name.trim() || providerCalendarId,
+          color: calendar.backgroundColor,
+          active: calendar.isActive,
+          primary: calendar.isPrimary,
+          accessRole: mapAccessRole(calendar.access),
+          capabilities: capabilitiesForAccess(calendar.access),
+        };
 
-    const syncDoc = syncByUser.get(userId);
-    const userWatches = watchesByUser.get(userId) ?? [];
-
-    await migrateCalendarListResource({
-      deps,
-      tenantId,
-      principalId,
-      connectionId,
-      dryRun: options.dryRun,
-      existingResources,
-      syncDoc,
-      now,
-      counts,
-      userCounts,
-    });
-
-    const eventCursorIds = new Set<string>();
-    for (const row of legacyCursorRows<{
-      gCalendarId?: string;
-      nextSyncToken?: string | null;
-    }>(syncDoc?.google?.events)) {
-      if (row.gCalendarId) eventCursorIds.add(row.gCalendarId);
-    }
-    for (const watch of userWatches) {
-      if (watch.gCalendarId !== Resource_Sync.CALENDAR) {
-        eventCursorIds.add(watch.gCalendarId);
-      }
-    }
-    for (const gCalendarId of syncCalendarByGcalId.keys()) {
-      eventCursorIds.add(gCalendarId);
-    }
-
-    for (const gCalendarId of [...eventCursorIds].sort()) {
-      const syncCalendar = syncCalendarByGcalId.get(gCalendarId);
-      if (!syncCalendar) {
-        if (
-          !options.dryRun ||
-          !googleCalendars.some(
-            (c) =>
-              c.source.provider === "google" &&
-              c.source.calendarId === gCalendarId,
-          )
-        ) {
-          counts.syncResourcesSkipped += 1;
-          skips.push({
-            category: "orphan_cursor",
-            id: `${userId}:${gCalendarId}`,
-            detail: `events cursor/watch for gCalendarId=${gCalendarId} has no migrated provider calendar`,
-          });
+        if (options.dryRun) {
+          if (existed) localCounts.calendarsWouldUpdate += 1;
+          else localCounts.calendarsWouldCreate += 1;
+          userCounts.calendarsUpserted += 1;
+          const stub =
+            existingByProviderId.get(
+              providerCalendarId as ProviderCalendarSourceId,
+            ) ??
+            ({
+              _id: calendar._id.toHexString(),
+              ...fields,
+              createdAt: now,
+              updatedAt: now,
+            } as ProviderCalendarRecord);
+          syncCalendarByGcalId.set(providerCalendarId, stub);
           continue;
         }
+
+        const record = await deps.calendars.upsertByProviderCalendar(fields);
+        syncCalendarByGcalId.set(providerCalendarId, record);
+        if (existed) localCounts.calendarsUpdated += 1;
+        else localCounts.calendarsCreated += 1;
+        userCounts.calendarsUpserted += 1;
       }
 
-      const calendarId = syncCalendar?._id ?? null;
-      const cursor =
-        legacyCursorRows<{
-          gCalendarId?: string;
-          nextSyncToken?: string | null;
-        }>(syncDoc?.google?.events).find((r) => r.gCalendarId === gCalendarId)
-          ?.nextSyncToken ?? null;
+      // Dry-run without prior Sync calendars: resources/events still report
+      // would_* using provider calendar ids, but cannot bind Sync calendar ids.
+      const existingResources = await deps.resources.listByConnection(
+        tenantId,
+        principalId,
+        connectionId,
+      );
 
-      if (options.dryRun && !calendarId) {
-        if (cursor) {
-          counts.syncResourcesWouldCreate += 1;
-          userCounts.syncResourcesUpserted += 1;
-        }
-        continue;
-      }
+      const syncDoc = syncByUser.get(userId);
+      const userWatches = watchesByUser.get(userId) ?? [];
 
-      if (!calendarId) continue;
-
-      await migrateEventsResource({
+      await migrateCalendarListResource({
         deps,
         tenantId,
         principalId,
         connectionId,
-        calendarId,
-        gCalendarId,
-        cursor,
         dryRun: options.dryRun,
         existingResources,
+        syncDoc,
         now,
-        counts,
+        counts: localCounts,
         userCounts,
       });
-    }
 
-    for (const watch of userWatches) {
-      counts.watchesSkippedRewatch += 1;
-      userCounts.watchesSkippedRewatch += 1;
-      skips.push({
-        category: "subscription_requires_rewatch",
-        id: String(watch._id),
-        detail: `legacy watch for gCalendarId=${watch.gCalendarId}; Sync will open a fresh subscription`,
-      });
-    }
+      const eventCursorIds = new Set<string>();
+      for (const row of legacyCursorRows<{
+        gCalendarId?: string;
+        nextSyncToken?: string | null;
+      }>(syncDoc?.google?.events)) {
+        if (row.gCalendarId) eventCursorIds.add(row.gCalendarId);
+      }
+      for (const watch of userWatches) {
+        if (watch.gCalendarId !== Resource_Sync.CALENDAR) {
+          eventCursorIds.add(watch.gCalendarId);
+        }
+      }
+      for (const gCalendarId of syncCalendarByGcalId.keys()) {
+        eventCursorIds.add(gCalendarId);
+      }
 
-    const keptByGcalId = new Map(
-      googleCalendars.map((calendar) => [calendar.source.calendarId, calendar]),
-    );
-    const legacyGoogleCalendarById = new Map<string, GoogleCalendarRecord>();
-    for (const calendar of calendarsByUser.get(userId) ?? []) {
-      if (calendar.source.provider !== "google") continue;
-      const kept = keptByGcalId.get(calendar.source.calendarId);
-      if (!kept) continue;
-      legacyGoogleCalendarById.set(
-        calendar._id.toHexString(),
-        calendar as GoogleCalendarRecord,
+      for (const gCalendarId of [...eventCursorIds].sort()) {
+        const syncCalendar = syncCalendarByGcalId.get(gCalendarId);
+        if (!syncCalendar) {
+          if (
+            !options.dryRun ||
+            !googleCalendars.some(
+              (c) =>
+                c.source.provider === "google" &&
+                c.source.calendarId === gCalendarId,
+            )
+          ) {
+            localCounts.syncResourcesSkipped += 1;
+            skips.push({
+              category: "orphan_cursor",
+              id: `${userId}:${gCalendarId}`,
+              detail: `events cursor/watch for gCalendarId=${gCalendarId} has no migrated provider calendar`,
+            });
+            continue;
+          }
+        }
+
+        const calendarId = syncCalendar?._id ?? null;
+        const cursor =
+          legacyCursorRows<{
+            gCalendarId?: string;
+            nextSyncToken?: string | null;
+          }>(syncDoc?.google?.events).find((r) => r.gCalendarId === gCalendarId)
+            ?.nextSyncToken ?? null;
+
+        if (options.dryRun && !calendarId) {
+          if (cursor) {
+            localCounts.syncResourcesWouldCreate += 1;
+            userCounts.syncResourcesUpserted += 1;
+          }
+          continue;
+        }
+
+        if (!calendarId) continue;
+
+        await migrateEventsResource({
+          deps,
+          tenantId,
+          principalId,
+          connectionId,
+          calendarId,
+          gCalendarId,
+          cursor,
+          dryRun: options.dryRun,
+          existingResources,
+          now,
+          counts: localCounts,
+          userCounts,
+        });
+      }
+
+      for (const watch of userWatches) {
+        localCounts.watchesSkippedRewatch += 1;
+        userCounts.watchesSkippedRewatch += 1;
+        skips.push({
+          category: "subscription_requires_rewatch",
+          id: String(watch._id),
+          detail: `legacy watch for gCalendarId=${watch.gCalendarId}; Sync will open a fresh subscription`,
+        });
+      }
+
+      const keptByGcalId = new Map(
+        googleCalendars.map((calendar) => [
+          calendar.source.calendarId,
+          calendar,
+        ]),
       );
-    }
-
-    const userEvents: LegacyEventRecord[] = [];
-    for (const calendarId of legacyGoogleCalendarById.keys()) {
-      const list = eventsByCalendar.get(calendarId) ?? [];
-      userEvents.push(...list);
-    }
-    userEvents.sort(byHexId);
-
-    const linked: LegacyEventRecord[] = [];
-    for (const event of userEvents) {
-      if (event.externalReference == null) {
-        counts.unlinkedDeferred += 1;
-        userCounts.unlinkedDeferred += 1;
-        skips.push({
-          category: "unlinked_deferred",
-          id: event._id.toHexString(),
-          detail: "unlinked Compass event deferred to S49",
-        });
-        continue;
-      }
-      if (event.externalReference.provider !== "google") {
-        counts.eventsSkipped += 1;
-        skips.push({
-          category: "unmappable_event",
-          id: event._id.toHexString(),
-          detail: `unsupported external provider=${event.externalReference.provider}`,
-        });
-        continue;
-      }
-      if (!event.externalReference.eventId.trim()) {
-        counts.eventsSkipped += 1;
-        skips.push({
-          category: "missing_provider_event_id",
-          id: event._id.toHexString(),
-          detail: "linked event has empty provider event id",
-        });
-        continue;
-      }
-      linked.push(event);
-    }
-
-    const mastersAndSingles = linked.filter(
-      (event) => event.recurrence.kind !== "occurrence",
-    );
-    const exceptions = linked.filter(
-      (event) => event.recurrence.kind === "occurrence",
-    );
-
-    const syncMasterByProviderId = new Map<string, SyncEventRecord>();
-
-    for (const event of [...mastersAndSingles, ...exceptions]) {
-      const calendar = legacyGoogleCalendarById.get(
-        event.calendarId.toHexString(),
-      );
-      if (!calendar) {
-        counts.eventsSkipped += 1;
-        skips.push({
-          category: "orphan_event",
-          id: event._id.toHexString(),
-          detail: "event calendar is not a migrated google calendar",
-        });
-        continue;
+      const legacyGoogleCalendarById = new Map<string, GoogleCalendarRecord>();
+      for (const calendar of calendarsByUser.get(userId) ?? []) {
+        if (calendar.source.provider !== "google") continue;
+        const kept = keptByGcalId.get(calendar.source.calendarId);
+        if (!kept) continue;
+        legacyGoogleCalendarById.set(
+          calendar._id.toHexString(),
+          calendar as GoogleCalendarRecord,
+        );
       }
 
-      const syncCalendar = syncCalendarByGcalId.get(calendar.source.calendarId);
-      if (!syncCalendar) {
-        counts.eventsSkipped += 1;
-        skips.push({
-          category: "orphan_event",
-          id: event._id.toHexString(),
-          detail: "no Sync provider calendar for event",
-        });
-        continue;
+      const userEvents: LegacyEventRecord[] = [];
+      for (const calendarId of legacyGoogleCalendarById.keys()) {
+        const list = eventsByCalendar.get(calendarId) ?? [];
+        userEvents.push(...list);
       }
+      userEvents.sort(byHexId);
 
-      const plan = planSyncRecurrence(event);
-      if (!plan.ok) {
-        counts.eventsSkipped += 1;
-        skips.push({
-          category: "unmappable_event",
-          id: event._id.toHexString(),
-          detail: plan.detail,
-        });
-        continue;
-      }
-
-      let recurrence = plan.recurrence;
-      if (plan.needsMaster) {
-        const master =
-          syncMasterByProviderId.get(plan.seriesProviderId) ??
-          (await findExistingProviderEvent(
-            deps.events,
-            tenantId,
-            principalId,
-            {
-              connectionId,
-              calendarId: syncCalendar._id,
-              providerEventId: plan.seriesProviderId,
-            },
-            skips,
-          ));
-        if (!master || master.recurrence.kind !== "seriesMaster") {
-          counts.eventsSkipped += 1;
+      const linked: LegacyEventRecord[] = [];
+      for (const event of userEvents) {
+        if (event.externalReference == null) {
+          localCounts.unlinkedDeferred += 1;
+          userCounts.unlinkedDeferred += 1;
           skips.push({
-            category: "missing_series_master",
+            category: "unlinked_deferred",
             id: event._id.toHexString(),
-            detail: `no Sync series master for providerEventId=${plan.seriesProviderId} (legacy seriesId=${plan.legacySeriesId})`,
+            detail: "unlinked Compass event deferred to S49",
           });
           continue;
         }
-        syncMasterByProviderId.set(plan.seriesProviderId, master);
-        recurrence = {
-          kind: "exception",
-          seriesId: master._id as EventId,
-          recurrenceId: plan.recurrence.recurrenceId,
-          cancelled: false,
-        };
-      }
-
-      const providerEventId = event.externalReference!.eventId.trim();
-      const existing = await findExistingProviderEvent(
-        deps.events,
-        tenantId,
-        principalId,
-        {
-          connectionId,
-          calendarId: syncCalendar._id,
-          providerEventId,
-        },
-        skips,
-      );
-
-      let content: ReturnType<typeof toSyncContent>;
-      let schedule: ReturnType<typeof toSyncSchedule>;
-      try {
-        content = toSyncContent(event.content);
-        schedule = toSyncSchedule(event.schedule);
-      } catch (error) {
-        counts.eventsSkipped += 1;
-        skips.push({
-          category: "unmappable_event",
-          id: event._id.toHexString(),
-          detail:
-            error instanceof Error
-              ? error.message
-              : "failed to map event content/schedule",
-        });
-        continue;
-      }
-
-      if (options.dryRun) {
-        if (existing) counts.eventsWouldUpdate += 1;
-        else counts.eventsWouldCreate += 1;
-        userCounts.eventsUpserted += 1;
-        maybeSample(samples, event);
-        if (recurrence.kind === "seriesMaster") {
-          syncMasterByProviderId.set(
-            providerEventId,
-            existing?.recurrence.kind === "seriesMaster"
-              ? existing
-              : ({
-                  _id: (existing?._id ??
-                    event._id.toHexString()) as SyncEventRecord["_id"],
-                  recurrence,
-                  providerEventId,
-                } as SyncEventRecord),
-          );
+        if (event.externalReference.provider !== "google") {
+          localCounts.eventsSkipped += 1;
+          skips.push({
+            category: "unmappable_event",
+            id: event._id.toHexString(),
+            detail: `unsupported external provider=${event.externalReference.provider}`,
+          });
+          continue;
         }
-        continue;
+        if (!event.externalReference.eventId.trim()) {
+          localCounts.eventsSkipped += 1;
+          skips.push({
+            category: "missing_provider_event_id",
+            id: event._id.toHexString(),
+            detail: "linked event has empty provider event id",
+          });
+          continue;
+        }
+        linked.push(event);
       }
 
-      const eventsResource = existingResources.find(
-        (row) =>
-          row.resourceKind === "events" && row.calendarId === syncCalendar._id,
+      const mastersAndSingles = linked.filter(
+        (event) => event.recurrence.kind !== "occurrence",
       );
-      const generation =
-        existing?.generation ?? eventsResource?.activeGeneration ?? 0;
+      const exceptions = linked.filter(
+        (event) => event.recurrence.kind === "occurrence",
+      );
 
-      const upsertInput: ProviderEventUpsert = {
+      const syncMasterByProviderId = new Map<string, SyncEventRecord>();
+
+      for (const event of [...mastersAndSingles, ...exceptions]) {
+        const calendar = legacyGoogleCalendarById.get(
+          event.calendarId.toHexString(),
+        );
+        if (!calendar) {
+          localCounts.eventsSkipped += 1;
+          skips.push({
+            category: "orphan_event",
+            id: event._id.toHexString(),
+            detail: "event calendar is not a migrated google calendar",
+          });
+          continue;
+        }
+
+        const syncCalendar = syncCalendarByGcalId.get(
+          calendar.source.calendarId,
+        );
+        if (!syncCalendar) {
+          localCounts.eventsSkipped += 1;
+          skips.push({
+            category: "orphan_event",
+            id: event._id.toHexString(),
+            detail: "no Sync provider calendar for event",
+          });
+          continue;
+        }
+
+        const plan = planSyncRecurrence(event);
+        if (!plan.ok) {
+          localCounts.eventsSkipped += 1;
+          skips.push({
+            category: "unmappable_event",
+            id: event._id.toHexString(),
+            detail: plan.detail,
+          });
+          continue;
+        }
+
+        let recurrence = plan.recurrence;
+        if (plan.needsMaster) {
+          const master =
+            syncMasterByProviderId.get(plan.seriesProviderId) ??
+            (await findExistingProviderEvent(
+              deps.events,
+              tenantId,
+              principalId,
+              {
+                connectionId,
+                calendarId: syncCalendar._id,
+                providerEventId: plan.seriesProviderId,
+              },
+              skips,
+            ));
+          if (!master || master.recurrence.kind !== "seriesMaster") {
+            localCounts.eventsSkipped += 1;
+            skips.push({
+              category: "missing_series_master",
+              id: event._id.toHexString(),
+              detail: `no Sync series master for providerEventId=${plan.seriesProviderId} (legacy seriesId=${plan.legacySeriesId})`,
+            });
+            continue;
+          }
+          syncMasterByProviderId.set(plan.seriesProviderId, master);
+          recurrence = {
+            kind: "exception",
+            seriesId: master._id as EventId,
+            recurrenceId: plan.recurrence.recurrenceId,
+            cancelled: false,
+          };
+        }
+
+        const providerEventId = event.externalReference!.eventId.trim();
+        const existing = await findExistingProviderEvent(
+          deps.events,
+          tenantId,
+          principalId,
+          {
+            connectionId,
+            calendarId: syncCalendar._id,
+            providerEventId,
+          },
+          skips,
+        );
+
+        let content: ReturnType<typeof toSyncContent>;
+        let schedule: ReturnType<typeof toSyncSchedule>;
+        try {
+          content = toSyncContent(event.content);
+          schedule = toSyncSchedule(event.schedule);
+        } catch (error) {
+          localCounts.eventsSkipped += 1;
+          skips.push({
+            category: "unmappable_event",
+            id: event._id.toHexString(),
+            detail:
+              error instanceof Error
+                ? error.message
+                : "failed to map event content/schedule",
+          });
+          continue;
+        }
+
+        if (options.dryRun) {
+          if (existing) localCounts.eventsWouldUpdate += 1;
+          else localCounts.eventsWouldCreate += 1;
+          userCounts.eventsUpserted += 1;
+          maybeSample(samples, event);
+          if (recurrence.kind === "seriesMaster") {
+            syncMasterByProviderId.set(
+              providerEventId,
+              existing?.recurrence.kind === "seriesMaster"
+                ? existing
+                : ({
+                    _id: (existing?._id ??
+                      event._id.toHexString()) as SyncEventRecord["_id"],
+                    recurrence,
+                    providerEventId,
+                  } as SyncEventRecord),
+            );
+          }
+          continue;
+        }
+
+        const eventsResource = existingResources.find(
+          (row) =>
+            row.resourceKind === "events" &&
+            row.calendarId === syncCalendar._id,
+        );
+        const generation =
+          existing?.generation ?? eventsResource?.activeGeneration ?? 0;
+
+        const upsertInput: ProviderEventUpsert = {
+          tenantId,
+          principalId,
+          origin: "provider",
+          calendarId: syncCalendar._id,
+          clientEventId: null,
+          connectionId,
+          providerEventId: providerEventId as never,
+          providerVersion: MIGRATED_PROVIDER_VERSION,
+          providerUpdatedAt: event.updatedAt,
+          deliveryState: null,
+          providerMetadata: null,
+          content,
+          schedule,
+          recurrence,
+          lifecycleState: "active",
+          generation,
+          confirmedAt: now,
+        };
+        const validated = validateProviderUpsert(upsertInput);
+        if (!validated.ok) {
+          localCounts.eventsSkipped += 1;
+          skips.push({
+            category: "unmappable_event",
+            id: event._id.toHexString(),
+            detail: validated.detail,
+          });
+          continue;
+        }
+
+        let record: SyncEventRecord;
+        try {
+          record = await deps.events.upsertByProviderIdentity(upsertInput);
+        } catch (error) {
+          localCounts.eventsSkipped += 1;
+          skips.push({
+            category: "unmappable_event",
+            id: event._id.toHexString(),
+            detail:
+              error instanceof Error
+                ? error.message
+                : "failed to upsert mapped event",
+          });
+          continue;
+        }
+
+        if (existing) localCounts.eventsUpdated += 1;
+        else localCounts.eventsCreated += 1;
+        userCounts.eventsUpserted += 1;
+        upsertedSyncEvents.push(record);
+        maybeSample(samples, event);
+
+        if (
+          record.recurrence.kind === "seriesMaster" &&
+          record.providerEventId
+        ) {
+          syncMasterByProviderId.set(record.providerEventId, record);
+        }
+      }
+
+      if (!options.dryRun && reprojectMode === "inline") {
+        await reprojectMigratedEvents(
+          deps.occurrences,
+          upsertedSyncEvents,
+          nowFn,
+          skips,
+          localCounts,
+        );
+      }
+
+      usersOut.push({
+        userId,
         tenantId,
         principalId,
-        origin: "provider",
-        calendarId: syncCalendar._id,
-        clientEventId: null,
         connectionId,
-        providerEventId: providerEventId as never,
-        providerVersion: MIGRATED_PROVIDER_VERSION,
-        providerUpdatedAt: event.updatedAt,
-        deliveryState: null,
-        providerMetadata: null,
-        content,
-        schedule,
-        recurrence,
-        lifecycleState: "active",
-        generation,
-        confirmedAt: now,
-      };
-      const validated = validateProviderUpsert(upsertInput);
-      if (!validated.ok) {
-        counts.eventsSkipped += 1;
-        skips.push({
-          category: "unmappable_event",
-          id: event._id.toHexString(),
-          detail: validated.detail,
-        });
-        continue;
-      }
-
-      let record: SyncEventRecord;
-      try {
-        record = await deps.events.upsertByProviderIdentity(upsertInput);
-      } catch (error) {
-        counts.eventsSkipped += 1;
-        skips.push({
-          category: "unmappable_event",
-          id: event._id.toHexString(),
-          detail:
-            error instanceof Error
-              ? error.message
-              : "failed to upsert mapped event",
-        });
-        continue;
-      }
-
-      if (existing) counts.eventsUpdated += 1;
-      else counts.eventsCreated += 1;
-      userCounts.eventsUpserted += 1;
-      upsertedSyncEvents.push(record);
-      maybeSample(samples, event);
-
-      if (record.recurrence.kind === "seriesMaster" && record.providerEventId) {
-        syncMasterByProviderId.set(record.providerEventId, record);
-      }
-    }
-
-    if (!options.dryRun && reprojectMode === "inline") {
-      await reprojectMigratedEvents(
-        deps.occurrences,
-        upsertedSyncEvents,
-        nowFn,
-        skips,
-        counts,
-      );
-    }
-
-    usersOut.push({
-      userId,
-      tenantId,
-      principalId,
-      connectionId,
-      action: options.dryRun ? "would_migrate" : "migrated",
-      skipCategory: null,
-      detail: options.dryRun
-        ? "would upsert calendars, linked events, and sync resources"
-        : "upserted calendars, linked events, and sync resources",
-      counts: userCounts,
-    });
-    eventsUpsertedProgress += userCounts.eventsUpserted;
+        action: options.dryRun ? "would_migrate" : "migrated",
+        skipCategory: null,
+        detail: options.dryRun
+          ? "would upsert calendars, linked events, and sync resources"
+          : "upserted calendars, linked events, and sync resources",
+        counts: userCounts,
+      });
+      eventsUpsertedForProgress = userCounts.eventsUpserted;
     } catch (error) {
       skips.push({
         category: "user_migrate_failed",
@@ -791,21 +823,29 @@ export async function migrateProviderSyncState(
         counts: userCounts,
       });
     } finally {
-      if (
-        !options.dryRun &&
-        reprojectMode === "after" &&
-        upsertedSyncEvents.length > 0
-      ) {
-        deferredReproject.push(...upsertedSyncEvents);
-      }
-      usersDone += 1;
-      if (usersDone % 10 === 0 || usersDone === users.length) {
-        await reportProgress("state-upsert", userId);
-      }
+      await withPoolLock(async () => {
+        mergeCounts(counts, localCounts);
+        eventsUpsertedProgress += eventsUpsertedForProgress;
+        if (
+          !options.dryRun &&
+          reprojectMode === "after" &&
+          upsertedSyncEvents.length > 0
+        ) {
+          deferredReproject.push(...upsertedSyncEvents);
+        }
+        usersDone += 1;
+        if (usersDone % 10 === 0 || usersDone === users.length) {
+          await reportProgress("state-upsert", userId);
+        }
+      });
     }
   });
 
-  if (!options.dryRun && reprojectMode === "after" && deferredReproject.length > 0) {
+  if (
+    !options.dryRun &&
+    reprojectMode === "after" &&
+    deferredReproject.length > 0
+  ) {
     await reportProgress(
       "state-reproject",
       null,
@@ -893,7 +933,9 @@ async function reprojectMigratedEvents(
         row.recurrence.seriesId === master._id,
     );
     const instants = seriesExceptions.flatMap((row) =>
-      row.recurrence.kind === "exception" ? [row.recurrence.recurrenceId as DateTime] : [],
+      row.recurrence.kind === "exception"
+        ? [row.recurrence.recurrenceId as DateTime]
+        : [],
     );
     await runOne(master, instants);
   }

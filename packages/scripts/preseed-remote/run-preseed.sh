@@ -40,6 +40,8 @@ if [[ -f "${PID_FILE}" ]]; then
 fi
 
 echo $$ >"${PID_FILE}"
+python3 -c 'import json,datetime,sys; print(json.dumps({"ts":datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),"pid":int(sys.argv[1]),"phase":"starting","usersDone":0,"usersTotal":0,"eventsUpserted":0,"eventsSkipped":0,"lastUserId":None,"ratePerMin":None,"detail":None}))' \
+  "$$" >"${OUT}/heartbeat.json"
 
 notify() {
   local msg="$1"

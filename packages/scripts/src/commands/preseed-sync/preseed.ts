@@ -17,6 +17,7 @@ import { purgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-eve
 import { Logger } from "@core/logger/winston.logger";
 
 const logger = Logger("scripts.commands.preseed-sync.composition");
+
 import {
   buildExecutionRecord,
   type PhaseExecutionSummary,
@@ -127,7 +128,29 @@ export async function runPreseedSyncComposition(
   const resources = new SyncResourceRepository(deps.syncDb);
   const commands = new CommandRepository(deps.syncDb);
 
+  const writePhaseHeartbeat = async (
+    phase: string,
+    detail: string | null = null,
+  ) => {
+    if (!options.outDir) return;
+    await writePreseedHeartbeat(options.outDir, {
+      ts: new Date().toISOString(),
+      pid: process.pid,
+      phase,
+      usersDone: 0,
+      usersTotal: 0,
+      eventsUpserted: 0,
+      eventsSkipped: 0,
+      lastUserId: null,
+      ratePerMin: null,
+      detail,
+    });
+  };
+
+  await writePhaseHeartbeat("starting");
+
   if (!dryRun && options.purgeCorrupt !== false && selected.includes("state")) {
+    await writePhaseHeartbeat("purge-corrupt");
     const purge = await purgeCorruptSyncEvents(deps.syncDb, { dryRun: false });
     logger.info(
       `purged corrupt Sync events deleted=${purge.deleted} scanned=${purge.scanned}`,
@@ -161,6 +184,7 @@ export async function runPreseedSyncComposition(
 
   for (const name of selected) {
     const phaseStarted = new Date();
+    await writePhaseHeartbeat(name);
     if (name === "inventory") {
       const source = await ensureCollections();
       const report = inventoryLegacySyncData(source, { now: startedAt });
