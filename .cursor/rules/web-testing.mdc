@@ -6,9 +6,10 @@ alwaysApply: false
 
 # Web testing
 
-- Use React Testing Library and `user-event`.
-- Query by semantic role, accessible name, or visible text.
-- Avoid CSS selectors, `data-*` locators, and implementation-detail assertions.
+See `AGENTS.md`'s Compass-Specific Rules for the RTL/`user-event`/semantic-query
+convention.
+
+- Avoid implementation-detail assertions.
 - Prefer the shared render/store/provider harnesses over broad module mocks.
 - Restore replaced globals, timers, and spies in teardown.
 - Register every new Zustand store in both the reset registry and state seeder.

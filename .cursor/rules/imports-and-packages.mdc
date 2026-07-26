@@ -6,13 +6,9 @@ alwaysApply: false
 
 # Imports and package boundaries
 
-- Use `@compass/backend`, `@compass/core`, `@compass/scripts`,
-  `@compass/sync`, `@web/*`, and `@core/*` instead of deep relative imports.
-- Import from concrete source files. Do not create or use `index.ts` or
-  `index.tsx` barrel files.
-- Put shared web/backend contracts in `packages/core` and define them with Zod;
-  infer TypeScript types from the schema.
-- Keep React components in their own files.
+See `AGENTS.md`'s Compass-Specific Rules for import aliases, the barrel-file
+ban, the Zod shared-contracts rule, and the one-component-per-file rule.
+
 - Put code in the package that owns the concept; do not duplicate shared domain
   behavior in web and backend.
 
