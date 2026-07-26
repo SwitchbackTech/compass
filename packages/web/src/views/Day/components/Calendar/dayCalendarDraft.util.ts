@@ -1,5 +1,6 @@
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import { isTimedEventMultiDay } from "@web/common/utils/event/event-nudge.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   getGridDraftId,
@@ -29,6 +30,16 @@ export const addVisibleDraftEvent = ({
 
   if (isAllDay) {
     return positionAllDayDraftEvent({ draft, events }).events;
+  }
+
+  const schedule = draft.values.schedule;
+  // Multi-day timed drafts stay represented by the promoted all-day bar;
+  // injecting a timed card here overflows the day column.
+  if (
+    schedule.kind === "timed" &&
+    isTimedEventMultiDay(dayjs(schedule.start), dayjs(schedule.end))
+  ) {
+    return events;
   }
 
   const draftEvent = gridEventDraftToGridEvent(draft);

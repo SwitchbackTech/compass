@@ -1,6 +1,7 @@
 import { type FC, type MouseEvent } from "react";
 import { Origin } from "@core/constants/core.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Categories_Event,
@@ -10,6 +11,7 @@ import {
   getEventDragOffset,
   gridEventDefaultPosition,
 } from "@web/common/utils/event/event.util";
+import { isTimedEventMultiDay } from "@web/common/utils/event/event-nudge.util";
 import { focusEventFormTitle } from "@web/common/utils/form/form.util";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { type TimedDeckLayout } from "@web/grid/layout/timed-deck.layout";
@@ -86,6 +88,14 @@ export const GridDraft: FC<Props> = ({
   if (!draft || !draftAsGridEvent) return null;
 
   const isAllDay = draft.values.schedule.kind === "allDay";
+  const schedule = draft.values.schedule;
+  const isMultiDayTimedDraft =
+    schedule.kind === "timed" &&
+    isTimedEventMultiDay(dayjs(schedule.start), dayjs(schedule.end));
+  // Multi-day timed events render as all-day bars; keep the form draft in
+  // the store but do not mount an overflowing timed grid card.
+  if (isMultiDayTimedDraft) return null;
+
   const allDayDraftEvent = isAllDay
     ? (activeAllDayDraftEvent ?? draftAsGridEvent)
     : draftAsGridEvent;

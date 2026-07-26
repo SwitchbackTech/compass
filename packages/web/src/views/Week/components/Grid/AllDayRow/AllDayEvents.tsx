@@ -54,11 +54,14 @@ export const AllDayEvents = ({
   // registry.
   const visibleAllDayEvents = useMemo(
     () =>
-      allDayEvents.filter(
-        (event: GridEvent) =>
-          isAllDayEventInVisibleDays(event, weekDays) &&
-          !(event._id === draftId && !draftOverlay?.isAllDay),
-      ),
+      allDayEvents.filter((event: GridEvent) => {
+        if (!isAllDayEventInVisibleDays(event, weekDays)) return false;
+        // Timed drafts normally replace the saved all-day card with GridDraft.
+        // Multi-day timed display bars stay put: the form edits the timed
+        // source, but the grid must not remount an overflowing timed card.
+        if (event.isTimedMultiDayDisplay) return true;
+        return !(event._id === draftId && !draftOverlay?.isAllDay);
+      }),
     [allDayEvents, draftOverlay?.isAllDay, draftId, weekDays],
   );
   // Resolved once per event here (not inside each card) and kept referentially
@@ -97,10 +100,11 @@ export const AllDayEvents = ({
         visibleAllDayEventsWithIdentity.map(
           ({ event, calendarIdentity, isReadOnly }) => {
             const isPlaceholder = event._id === draftId;
-            const eventForDisplay = mergeGridEventWithDraftOverlay(
-              event,
-              draftOverlay,
-            );
+            // Never overlay timed draft dates onto a multi-day timed display
+            // bar — that would replace YYYY-MM-DD span dates with datetimes.
+            const eventForDisplay = event.isTimedMultiDayDisplay
+              ? event
+              : mergeGridEventWithDraftOverlay(event, draftOverlay);
             // The placeholder can carry a live (dragging/resizing) calendarId
             // from the draft store; everything else reuses the stable,
             // list-level resolved identity above.
