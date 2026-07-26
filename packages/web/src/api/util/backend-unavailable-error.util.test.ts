@@ -32,6 +32,11 @@ describe("isBackendUnavailableError", () => {
     expect(isBackendUnavailableError(new TypeError("Failed to fetch"))).toBe(
       true,
     );
+    expect(
+      isBackendUnavailableError(
+        new TypeError("NetworkError when attempting to fetch resource."),
+      ),
+    ).toBe(true);
   });
 
   it.each([

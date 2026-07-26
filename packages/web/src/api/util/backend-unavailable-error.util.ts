@@ -46,7 +46,12 @@ export function isBackendUnavailableError(error: unknown): boolean {
     return !isBackendAuthoredError(response.data);
   }
 
-  return error.message === "Failed to fetch";
+  // Chromium: "Failed to fetch". Firefox: "NetworkError when attempting to
+  // fetch resource." Both mean the browser never got an HTTP response.
+  return (
+    error.message === "Failed to fetch" ||
+    error.message === "NetworkError when attempting to fetch resource."
+  );
 }
 
 export function isBackendUnavailable(): boolean {
