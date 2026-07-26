@@ -14,11 +14,14 @@ HEARTBEAT="${OUT}/heartbeat.json"
 SUCCESS="${OUT}/SUCCESS.json"
 DEDUPE="${OUT}/watchdog-alerted"
 STALE_SECONDS="${PRESEED_STALE_SECONDS:-900}"
+PRESEED_DISCORD_WEBHOOK_URL="${PRESEED_DISCORD_WEBHOOK_URL:-${DISCORD_DEPLOY_WEBHOOK_URL:-}}"
 
 notify() {
   local msg="$1"
+  # Always leave a local trail so cron without Discord still surfaces alerts.
+  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) ${msg}" >>"${OUT}/watchdog.log"
+  echo "${msg}" >&2
   if [[ -z "${PRESEED_DISCORD_WEBHOOK_URL:-}" ]]; then
-    echo "${msg}" >&2
     return 0
   fi
   curl -sS -X POST -H 'Content-Type: application/json' \

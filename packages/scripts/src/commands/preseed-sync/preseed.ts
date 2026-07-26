@@ -174,9 +174,14 @@ export async function runPreseedSyncComposition(
   let collections: InventoryCollections | null = null;
   const ensureCollections = async () => {
     if (!collections) {
+      await writePhaseHeartbeat("inventory-load", "loading legacy collections");
       collections = filterCollections(
         await deps.loadCollections(),
         options.userIds,
+      );
+      await writePhaseHeartbeat(
+        "inventory-load",
+        `loaded users=${collections.users.length} events=${collections.events.length}`,
       );
     }
     return collections;

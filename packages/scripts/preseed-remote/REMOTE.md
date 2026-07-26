@@ -15,16 +15,17 @@ cd /root/compass-preseed && git checkout <branch> && bun install
 
 export COMPASS_CONFIG_FILE=/root/compass/compass.yaml
 export PRESEED_OUT=/root/sync-preseed-prod/apply
-export PRESEED_DISCORD_WEBHOOK_URL='…'   # optional but recommended
+export PRESEED_DISCORD_WEBHOOK_URL='…'   # optional; falls back to DISCORD_DEPLOY_WEBHOOK_URL
+# or: export DISCORD_DEPLOY_WEBHOOK_URL='…'
 
 chmod +x packages/scripts/preseed-remote/*.sh
 tmux new -s preseed 'packages/scripts/preseed-remote/run-preseed.sh'
 ```
 
-Optional cron (every 5 minutes):
+Install the 5-minute watchdog (writes `$PRESEED_OUT/watchdog.log`; Discord when webhook set):
 
 ```cron
-*/5 * * * * PRESEED_OUT=/root/sync-preseed-prod/apply PRESEED_DISCORD_WEBHOOK_URL=… /root/compass-preseed/packages/scripts/preseed-remote/preseed-watchdog.sh
+*/5 * * * * PRESEED_OUT=/root/sync-preseed-prod/apply PRESEED_DISCORD_WEBHOOK_URL=… /root/compass-preseed/packages/scripts/preseed-remote/preseed-watchdog.sh >>/root/sync-preseed-prod/apply/watchdog-cron.log 2>&1
 ```
 
 ## Ops

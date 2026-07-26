@@ -11,7 +11,7 @@
 #   PRESEED_REPO         repo checkout (default directory containing this script/../../..)
 #   PRESEED_CONCURRENCY  default 4
 #   PRESEED_REPROJECT    after|inline|off (default after)
-#   PRESEED_DISCORD_WEBHOOK_URL  notify on non-zero exit / used by watchdog
+#   PRESEED_DISCORD_WEBHOOK_URL  notify on exit (falls back to DISCORD_DEPLOY_WEBHOOK_URL)
 
 set -euo pipefail
 
@@ -21,6 +21,9 @@ OUT="${PRESEED_OUT:-/root/sync-preseed-prod/apply}"
 CONCURRENCY="${PRESEED_CONCURRENCY:-4}"
 REPROJECT="${PRESEED_REPROJECT:-after}"
 PID_FILE="${OUT}/preseed.pid"
+# Prefer preseed-specific webhook; reuse deploy alerts webhook when unset.
+PRESEED_DISCORD_WEBHOOK_URL="${PRESEED_DISCORD_WEBHOOK_URL:-${DISCORD_DEPLOY_WEBHOOK_URL:-}}"
+export PRESEED_DISCORD_WEBHOOK_URL
 export PATH="${HOME}/.bun/bin:/root/.bun/bin:${PATH}"
 
 if [[ -z "${COMPASS_CONFIG_FILE:-}" ]]; then
