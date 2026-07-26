@@ -1,7 +1,6 @@
 import { type FC, type MouseEvent } from "react";
 import { Origin } from "@core/constants/core.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
-import dayjs from "@core/util/date/dayjs";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Categories_Event,
@@ -11,9 +10,12 @@ import {
   getEventDragOffset,
   gridEventDefaultPosition,
 } from "@web/common/utils/event/event.util";
-import { isTimedEventMultiDay } from "@web/common/utils/event/event-nudge.util";
 import { focusEventFormTitle } from "@web/common/utils/form/form.util";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
+import {
+  draftToAllDayRowGridEvent,
+  isDraftRenderedInAllDayRow,
+} from "@web/grid/layout/all-day-draft.position";
 import { type TimedDeckLayout } from "@web/grid/layout/timed-deck.layout";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
@@ -77,27 +79,18 @@ export const GridDraft: FC<Props> = ({
 
   const motionMode = isResizing ? "resizing" : isDragging ? "dragging" : "idle";
 
+  const rendersInAllDayRow = draft ? isDraftRenderedInAllDayRow(draft) : false;
+
   const { onMouseDown } = useGridEventMouseDown(
-    draft?.values.schedule.kind === "allDay"
-      ? Categories_Event.ALLDAY
-      : Categories_Event.TIMED,
+    rendersInAllDayRow ? Categories_Event.ALLDAY : Categories_Event.TIMED,
     handleGridDraftClick,
     handleDrag,
   );
 
   if (!draft || !draftAsGridEvent) return null;
 
-  const isAllDay = draft.values.schedule.kind === "allDay";
-  const schedule = draft.values.schedule;
-  const isMultiDayTimedDraft =
-    schedule.kind === "timed" &&
-    isTimedEventMultiDay(dayjs(schedule.start), dayjs(schedule.end));
-  // Multi-day timed events render as all-day bars; keep the form draft in
-  // the store but do not mount an overflowing timed grid card.
-  if (isMultiDayTimedDraft) return null;
-
-  const allDayDraftEvent = isAllDay
-    ? (activeAllDayDraftEvent ?? draftAsGridEvent)
+  const allDayDraftEvent = rendersInAllDayRow
+    ? (activeAllDayDraftEvent ?? draftToAllDayRowGridEvent(draft))
     : draftAsGridEvent;
 
   return (
@@ -115,7 +108,7 @@ export const GridDraft: FC<Props> = ({
         />
       ))}
 
-      {isAllDay ? (
+      {rendersInAllDayRow ? (
         <AllDayEventMemo
           event={allDayDraftEvent}
           isPlaceholder={false}
