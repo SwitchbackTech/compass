@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import {
   isEventReadOnly,
+  isGridEventContentReadOnly,
   resolveCalendarCardIdentity,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
@@ -84,7 +85,7 @@ export const DayCalendarAllDayEventsLayer = ({
           isReadOnly={isEventReadOnly(
             calendarLookup,
             event.calendarId,
-            (event.isBusy ?? false) || (event.isTimedMultiDayDisplay ?? false),
+            isGridEventContentReadOnly(event),
           )}
           key={event._id ?? "all-day-draft"}
           measurements={measurements}

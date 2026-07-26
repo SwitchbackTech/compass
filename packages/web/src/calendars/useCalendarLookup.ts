@@ -58,6 +58,17 @@ export function resolveCalendarCardIdentity(
 }
 
 /**
+ * Grid-only content flags that force read-only treatment regardless of
+ * calendar write capability (passed as the `isBusy` argument to
+ * {@link isEventReadOnly}).
+ */
+export const isGridEventContentReadOnly = (event: {
+  isBusy?: boolean;
+  isTimedMultiDayDisplay?: boolean;
+}): boolean =>
+  (event.isBusy ?? false) || (event.isTimedMultiDayDisplay ?? false);
+
+/**
  * An event is read-only (inspectable but never mutable) when either:
  * - it's a busy event (content.kind === "busy") - a private event on a
  *   reader calendar whose real fields the server never sends, so there is

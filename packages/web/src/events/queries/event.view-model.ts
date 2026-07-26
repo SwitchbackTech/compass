@@ -146,33 +146,25 @@ const multiDayTimedAsAllDayFrom = (
   const scheduled = events
     .filter(isValidScheduledEvent)
     .filter((event) => event.recurrence.kind !== "series")
-    .flatMap((event) => {
-      if (event.schedule.kind !== "timed") return [];
-      const start = dayjs(event.schedule.start);
-      const end = dayjs(event.schedule.end);
-      if (!isTimedEventMultiDay(start, end)) return [];
-      return [event];
+    .filter((event) => event.schedule.kind === "timed")
+    .filter((event) => {
+      const { start, end } = event.schedule;
+      return isTimedEventMultiDay(dayjs(start), dayjs(end));
     });
 
-  const assembled = scheduled.flatMap((event) => {
-    const schedule = event.schedule;
-    if (schedule.kind !== "timed") return [];
-    const dates = timedMultiDayToAllDayDates(
-      dayjs(schedule.start),
-      dayjs(schedule.end),
-    );
+  const assembled = scheduled.map((event) => {
+    const { start, end } = event.schedule;
+    const dates = timedMultiDayToAllDayDates(dayjs(start), dayjs(end));
     const schemaEvent: EventWithDates = {
       ...scheduledEventToSchemaEvent(event),
       isAllDay: true,
       startDate: dates.startDate,
       endDate: dates.endDate,
     };
-    return [
-      {
-        ...assembleGridEvent(schemaEvent),
-        isTimedMultiDayDisplay: true,
-      },
-    ];
+    return {
+      ...assembleGridEvent(schemaEvent),
+      isTimedMultiDayDisplay: true,
+    };
   });
 
   return withCalendarMetadata(scheduled, assembled, demoEventIds);

@@ -2,6 +2,7 @@ import { type MouseEvent, useMemo } from "react";
 import {
   type CalendarCardIdentity,
   isEventReadOnly,
+  isGridEventContentReadOnly,
   resolveCalendarCardIdentity,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
@@ -78,7 +79,7 @@ export const AllDayEvents = ({
         isReadOnly: isEventReadOnly(
           calendarLookup,
           event.calendarId,
-          (event.isBusy ?? false) || (event.isTimedMultiDayDisplay ?? false),
+          isGridEventContentReadOnly(event),
         ),
       })),
     [visibleAllDayEvents, calendarLookup],
