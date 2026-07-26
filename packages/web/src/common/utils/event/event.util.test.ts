@@ -44,7 +44,9 @@ describe("handleError", () => {
   it("logs once and does not reload on a server error", () => {
     // Carries a `response` like a real 500 from `createApiError`: backend
     // availability is judged on the response status, not the message text.
-    const error = new Error("Request failed with status 500") as ApiError;
+    const error = new Error(
+      "Request failed for GET /event with status 500",
+    ) as ApiError;
     error.name = "ApiError";
     error.response = { status: Status.INTERNAL_SERVER } as ApiResponse<unknown>;
 
@@ -55,6 +57,18 @@ describe("handleError", () => {
     // proves handleError reached the notify path (rather than early-returning).
     expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
     expect(consoleErrorSpy).toHaveBeenCalledWith(error);
+  });
+
+  it("ignores unauthorized errors using response.status even when the message is enriched", () => {
+    const error = new Error(
+      "Request failed for GET /user/profile with status 401",
+    ) as ApiError;
+    error.name = "ApiError";
+    error.response = { status: Status.UNAUTHORIZED } as ApiResponse<unknown>;
+
+    handleError(error);
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
   it("does not log a retryable, backend-authored mutation failure", () => {

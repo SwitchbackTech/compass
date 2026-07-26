@@ -10,6 +10,7 @@ import {
   type ApiResponse,
 } from "../api.types";
 import {
+  createApiError as buildApiError,
   getApiErrorCode,
   handleErrorResponse,
   parseApiError,
@@ -33,6 +34,37 @@ const createApiError = (
         } as ApiResponse<unknown>)
       : undefined,
   });
+
+describe("createApiError", () => {
+  it("includes method, url, and trailing status for failed responses", () => {
+    const config = { method: "get", url: "/event?kind=timed" };
+    const response = {
+      config,
+      data: {},
+      headers: new Headers(),
+      status: 500,
+      statusText: "Internal Server Error",
+    } satisfies ApiResponse<unknown>;
+
+    const error = buildApiError(config, response);
+
+    expect(error.name).toBe("ApiError");
+    expect(error.message).toBe(
+      "Request failed for GET /event?kind=timed with status 500",
+    );
+    expect(error.message.slice(-3)).toBe("500");
+    expect(error.config).toBe(config);
+    expect(error.response).toBe(response);
+  });
+
+  it("includes method and url when there is no response", () => {
+    const config = { method: "DELETE", url: "/event/abc" };
+    const error = buildApiError(config);
+
+    expect(error.message).toBe("Request failed for DELETE /event/abc");
+    expect(error.response).toBeUndefined();
+  });
+});
 
 describe("getApiErrorCode", () => {
   it("returns the code when response.data has a string code property", () => {

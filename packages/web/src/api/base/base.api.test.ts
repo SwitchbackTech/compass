@@ -27,6 +27,19 @@ describe("BaseApi backend availability", () => {
 
     await expect(BaseApi.get("/event")).rejects.toMatchObject({
       name: "ApiError",
+      message: "Request failed for GET /event",
+    });
+
+    expect(isBackendUnavailable()).toBe(true);
+  });
+
+  it("marks the backend unavailable on Firefox network failures", async () => {
+    BaseApi.defaults.adapter = async () => {
+      throw new TypeError("NetworkError when attempting to fetch resource.");
+    };
+
+    await expect(BaseApi.get("/event")).rejects.toMatchObject({
+      name: "ApiError",
     });
 
     expect(isBackendUnavailable()).toBe(true);
