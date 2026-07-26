@@ -1,12 +1,14 @@
 import { type ObjectId } from "mongodb";
 import { type CalendarAccess } from "@core/types/calendar.contracts";
 import {
-  type DateOnly,
   type DateTime,
   DateTimeSchema,
   EventIdSchema,
 } from "@core/types/domain-primitives";
-import { type EventSchedule } from "@core/types/event.contracts";
+import {
+  type EventSchedule,
+  EventScheduleSchema,
+} from "@core/types/event.contracts";
 import {
   type CalendarAccessRole,
   type CalendarCapabilities,
@@ -99,19 +101,21 @@ export function toSyncContent(
 }
 
 export function toSyncSchedule(schedule: EventScheduleRecord): EventSchedule {
+  // Parse through EventScheduleSchema so inverted ranges fail here (and become
+  // unmappable skips in migrate) instead of crashing later on event upsert.
   if (schedule.kind === "timed") {
-    return {
+    return EventScheduleSchema.parse({
       kind: "timed",
-      start: DateTimeSchema.parse(schedule.start.toISOString()),
-      end: DateTimeSchema.parse(schedule.end.toISOString()),
+      start: schedule.start.toISOString(),
+      end: schedule.end.toISOString(),
       timeZone: schedule.timeZone,
-    };
+    });
   }
-  return {
+  return EventScheduleSchema.parse({
     kind: "allDay",
-    start: schedule.start as DateOnly,
-    end: schedule.end as DateOnly,
-  };
+    start: schedule.start,
+    end: schedule.end,
+  });
 }
 
 function recurrenceIdFromGoogleInstanceId(

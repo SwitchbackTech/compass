@@ -53,6 +53,14 @@ describe("migrate-provider-state map helpers", () => {
       end: "2026-07-25T04:30:00.000Z",
       timeZone: "America/Denver",
     });
+    expect(() =>
+      toSyncSchedule({
+        kind: "timed",
+        start: NOW,
+        end: new Date(NOW.getTime() - 1800_000),
+        timeZone: "UTC",
+      }),
+    ).toThrow(/end must be after start/i);
   });
 
   it("plans series masters and occurrences", () => {

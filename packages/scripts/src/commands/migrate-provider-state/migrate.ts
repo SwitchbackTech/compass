@@ -561,25 +561,39 @@ export async function migrateProviderSyncState(
       const generation =
         existing?.generation ?? eventsResource?.activeGeneration ?? 0;
 
-      const record = await deps.events.upsertByProviderIdentity({
-        tenantId,
-        principalId,
-        origin: "provider",
-        calendarId: syncCalendar._id,
-        clientEventId: null,
-        connectionId,
-        providerEventId: providerEventId as never,
-        providerVersion: MIGRATED_PROVIDER_VERSION,
-        providerUpdatedAt: event.updatedAt,
-        deliveryState: null,
-        providerMetadata: null,
-        content,
-        schedule,
-        recurrence,
-        lifecycleState: "active",
-        generation,
-        confirmedAt: now,
-      });
+      let record: SyncEventRecord;
+      try {
+        record = await deps.events.upsertByProviderIdentity({
+          tenantId,
+          principalId,
+          origin: "provider",
+          calendarId: syncCalendar._id,
+          clientEventId: null,
+          connectionId,
+          providerEventId: providerEventId as never,
+          providerVersion: MIGRATED_PROVIDER_VERSION,
+          providerUpdatedAt: event.updatedAt,
+          deliveryState: null,
+          providerMetadata: null,
+          content,
+          schedule,
+          recurrence,
+          lifecycleState: "active",
+          generation,
+          confirmedAt: now,
+        });
+      } catch (error) {
+        counts.eventsSkipped += 1;
+        skips.push({
+          category: "unmappable_event",
+          id: event._id.toHexString(),
+          detail:
+            error instanceof Error
+              ? error.message
+              : "failed to upsert mapped event",
+        });
+        continue;
+      }
 
       if (existing) counts.eventsUpdated += 1;
       else counts.eventsCreated += 1;
