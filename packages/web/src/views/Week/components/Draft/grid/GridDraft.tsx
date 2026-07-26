@@ -80,11 +80,13 @@ export const GridDraft: FC<Props> = ({
   const motionMode = isResizing ? "resizing" : isDragging ? "dragging" : "idle";
 
   const rendersInAllDayRow = draft ? isDraftRenderedInAllDayRow(draft) : false;
+  const isMultiDayTimedDraft =
+    rendersInAllDayRow && draft?.values.schedule.kind === "timed";
 
   const { onMouseDown } = useGridEventMouseDown(
     rendersInAllDayRow ? Categories_Event.ALLDAY : Categories_Event.TIMED,
     handleGridDraftClick,
-    handleDrag,
+    isMultiDayTimedDraft ? () => {} : handleDrag,
   );
 
   if (!draft || !draftAsGridEvent) return null;
@@ -115,11 +117,17 @@ export const GridDraft: FC<Props> = ({
           key={`draft-${draftAsGridEvent._id}`}
           measurements={measurements}
           onKeyDown={focusEventFormTitle}
-          onMouseDown={(e: MouseEvent, event: GridEventEntity) => {
-            e.preventDefault();
-            onMouseDown(e, event);
-          }}
-          onScalerMouseDown={handleScalerMouseDown}
+          onMouseDown={
+            isMultiDayTimedDraft
+              ? undefined
+              : (e: MouseEvent, event: GridEventEntity) => {
+                  e.preventDefault();
+                  onMouseDown(e, event);
+                }
+          }
+          onScalerMouseDown={
+            isMultiDayTimedDraft ? undefined : handleScalerMouseDown
+          }
           weekDays={weekProps.component.weekDays}
         />
       ) : (

@@ -56,10 +56,10 @@ export const AllDayEvents = ({
     () =>
       allDayEvents.filter((event: GridEvent) => {
         if (!isAllDayEventInVisibleDays(event, weekDays)) return false;
-        // Timed drafts normally replace the saved all-day card with GridDraft.
-        // Multi-day timed display bars stay put: the form edits the timed
-        // source, but the grid must not remount an overflowing timed card.
-        if (event.isTimedMultiDayDisplay) return true;
+        // Multi-day timed display bars stay in the all-day row, but while
+        // editing GridDraft owns the live bar — hide the saved view-model
+        // card to avoid a stale duplicate underneath the portal draft.
+        if (event.isTimedMultiDayDisplay) return event._id !== draftId;
         return !(event._id === draftId && !draftOverlay?.isAllDay);
       }),
     [allDayEvents, draftOverlay?.isAllDay, draftId, weekDays],
