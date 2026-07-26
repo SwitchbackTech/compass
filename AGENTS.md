@@ -120,6 +120,11 @@ everything runs through Bun, so that mismatch is not a blocker.
   `test:sync`, `test:scripts`) spin up an in-memory MongoDB automatically, and
   SuperTokens/Google are mocked. Run the focused suite per AGENTS.md
   (`bun test:core|web|backend|sync|scripts`).
+- Playwright e2e/a11y (`bun test:e2e`, `bun test:a11y`) are self-contained —
+  they boot their own web server on port 9150 with `e2e/compass.playwright.yaml`
+  (no real backend), but require the browser first: `bunx playwright install
+  chromium`. Axe "incomplete" results are logged, not failures (see
+  `docs/development/testing-playbook.md`).
 - Backend: run `bash .cursor/bootstrap-backend.sh` once to write a working
   `compass.yaml` and install/start a single-node MongoDB replica set, then
   `bun run dev:backend` (serves http://localhost:3000/api). The script is
