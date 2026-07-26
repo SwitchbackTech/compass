@@ -1,0 +1,4 @@
+{
+  "$schema": "https://www.cursor.com/schemas/environment.schema.json",
+  "install": "curl -fsSL https://bun.sh/install | bash -s bun-v1.3.14\n\"$HOME/.bun/bin/bun\" install"
+}
