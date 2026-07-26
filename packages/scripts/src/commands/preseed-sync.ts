@@ -81,7 +81,11 @@ function parseArgs(argv: string[]): {
       reproject = value;
       i += 1;
     } else if (argv[i] === "--concurrency" && argv[i + 1]) {
-      concurrency = Math.max(1, Number(argv[i + 1]));
+      const parsed = Number(argv[i + 1]);
+      if (!Number.isFinite(parsed) || parsed < 1) {
+        throw new Error("--concurrency must be a positive number");
+      }
+      concurrency = Math.max(1, parsed);
       i += 1;
     } else if (argv[i] === "--no-purge-corrupt") {
       purgeCorrupt = false;

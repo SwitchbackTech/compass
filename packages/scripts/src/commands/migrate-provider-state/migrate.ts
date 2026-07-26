@@ -261,6 +261,7 @@ export async function migrateProviderSyncState(
       unlinkedDeferred: 0,
       watchesSkippedRewatch: 0,
     };
+    const upsertedSyncEvents: SyncEventRecord[] = [];
 
     try {
 
@@ -558,7 +559,6 @@ export async function migrateProviderSyncState(
     );
 
     const syncMasterByProviderId = new Map<string, SyncEventRecord>();
-    const upsertedSyncEvents: SyncEventRecord[] = [];
 
     for (const event of [...mastersAndSingles, ...exceptions]) {
       const calendar = legacyGoogleCalendarById.get(
@@ -753,8 +753,6 @@ export async function migrateProviderSyncState(
         skips,
         counts,
       );
-    } else if (!options.dryRun && reprojectMode === "after") {
-      deferredReproject.push(...upsertedSyncEvents);
     }
 
     usersOut.push({
@@ -793,6 +791,13 @@ export async function migrateProviderSyncState(
         counts: userCounts,
       });
     } finally {
+      if (
+        !options.dryRun &&
+        reprojectMode === "after" &&
+        upsertedSyncEvents.length > 0
+      ) {
+        deferredReproject.push(...upsertedSyncEvents);
+      }
       usersDone += 1;
       if (usersDone % 10 === 0 || usersDone === users.length) {
         await reportProgress("state-upsert", userId);
