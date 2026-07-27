@@ -65,22 +65,6 @@ type EventMutationContext = {
   previousQueries: Array<[QueryKey, unknown]>;
 };
 
-function eventMatchesWriteKey(event: Event, writeKey: EventId): boolean {
-  if (event.id === writeKey) return true;
-  if (
-    event.recurrence.kind === "occurrence" &&
-    event.recurrence.seriesId === writeKey
-  ) {
-    return true;
-  }
-  return false;
-}
-
-/**
- * When other event mutations are still pending, restore only entities owned by
- * `writeKey` from the pre-mutation snapshot so a concurrent optimistic write
- * to a different event is preserved.
- */
 function restoreWriteKeyFromSnapshot(
   queryClient: ReturnType<typeof useQueryClient>,
   writeKey: EventId,
@@ -101,36 +85,21 @@ function restoreWriteKeyFromSnapshot(
   })) {
     if (!current || !isEventQueryKey(queryKey)) continue;
     const snap = snapByKey.get(JSON.stringify(queryKey));
-    const affectedIds = new Set<EventId>();
-
-    const collect = (data: NormalizedEventQueryData | undefined) => {
-      if (!data) return;
-      for (const id of data.ids) {
-        const event = data.entities[id];
-        if (event && eventMatchesWriteKey(event, writeKey)) {
-          affectedIds.add(id);
-        }
-      }
-      if (data.entities[writeKey]) affectedIds.add(writeKey);
-    };
-    collect(current);
-    collect(snap);
-
-    if (affectedIds.size === 0) continue;
+    const snapEvent = snap?.entities[writeKey];
+    const currentEvent = current.entities[writeKey];
+    if (!snapEvent && !currentEvent) continue;
 
     const entities = { ...current.entities };
     let ids = [...current.ids];
-    for (const id of affectedIds) {
-      const snapEvent = snap?.entities[id];
-      if (snapEvent) {
-        entities[id] = snapEvent;
-        if (!ids.includes(id)) ids = [...ids, id];
-      } else {
-        delete entities[id];
-        ids = ids.filter((candidate) => candidate !== id);
-      }
+    if (snapEvent) {
+      entities[writeKey] = snapEvent;
+      if (!ids.includes(writeKey)) ids = [...ids, writeKey];
+    } else {
+      delete entities[writeKey];
+      ids = ids.filter((candidate) => candidate !== writeKey);
     }
-    queryClient.setQueryData(queryKey, { ids, entities });
+    // Preserve optional fields like demoEventIds on the query payload.
+    queryClient.setQueryData(queryKey, { ...current, ids, entities });
   }
 }
 
@@ -319,9 +288,11 @@ export function useEventMutations(
         return;
       }
       // Another mutation shares this write key (newer optimistic edit) — leave
-      // the cache alone so we do not clobber it. Different-key concurrency can
-      // surgically restore only this writeKey's entities.
+      // the cache alone so we do not clobber it. Deletes wait for settle when
+      // concurrent (recurring deletes touch more than writeKey). Different-key
+      // create/replace concurrency restores only entities[writeKey].
       if (
+        operation === "delete" ||
         hasOtherPendingWriteForKey(queryClient, variables.writeKey, variables)
       ) {
         return;
