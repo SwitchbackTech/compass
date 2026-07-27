@@ -29,6 +29,7 @@ const actions: ContextMenuItemsActions = {
   delete: mock(),
   duplicate: mock(),
   edit: mock(),
+  setColor: mock(),
 };
 
 // Mirrors how the day/week wrappers mount the menu: a virtual cursor reference

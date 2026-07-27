@@ -14,13 +14,20 @@ describe("EventColorPicker", () => {
       <EventColorPicker value={null} onChange={onChange} />,
     );
 
-    await user.click(screen.getByRole("radio", { name: "blue" }));
+    await user.click(screen.getByRole("radio", { name: "Blue" }));
     expect(onChange).toHaveBeenCalledWith("blue");
 
     rerender(<EventColorPicker value="blue" onChange={onChange} />);
-    await user.click(
-      screen.getByRole("radio", { name: "Calendar default color" }),
-    );
+    await user.click(screen.getByRole("radio", { name: "Calendar default" }));
     expect(onChange).toHaveBeenCalledWith(null);
+  });
+
+  it("exposes color name tooltips for the default and slot swatches", () => {
+    render(<EventColorPicker value={null} onChange={mock()} />);
+
+    expect(
+      screen.getByRole("tooltip", { name: "Calendar default" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("tooltip", { name: "Coral" })).toBeInTheDocument();
   });
 });

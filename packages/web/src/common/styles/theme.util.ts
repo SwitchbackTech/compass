@@ -35,6 +35,23 @@ export const EVENT_COLOR_SLOT_HEX: Record<EventColorSlot, string> = {
   red: "#D50000",
 };
 
+export const EVENT_COLOR_SLOT_LABEL: Record<EventColorSlot, string> = {
+  lavender: "Lavender",
+  mint: "Mint",
+  plum: "Plum",
+  coral: "Coral",
+  gold: "Gold",
+  orange: "Orange",
+  blue: "Blue",
+  slate: "Slate",
+  indigo: "Indigo",
+  green: "Green",
+  red: "Red",
+};
+
+export const eventColorLabel = (color: EventColorSlot | null): string =>
+  color === null ? "Calendar default" : EVENT_COLOR_SLOT_LABEL[color];
+
 export interface EventPalette {
   base: string;
   /** Derived (not a fixed hex) so the hover delta scales with the base the

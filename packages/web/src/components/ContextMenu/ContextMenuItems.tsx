@@ -1,6 +1,7 @@
 import { Copy, PenNib, Trash } from "@phosphor-icons/react";
 import type React from "react";
 import { createContext, useContext } from "react";
+import { type EventColorSlot } from "@core/types/event-color.contracts";
 import {
   isEventReadOnly,
   useCalendarLookup,
@@ -8,8 +9,10 @@ import {
 import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { draftActions } from "@web/events/stores/draft.store";
+import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/EventColorPicker";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
+import { useSetEventColor } from "@web/views/Forms/hooks/useSetEventColor";
 
 export interface ContextMenuAction {
   id: string;
@@ -37,6 +40,7 @@ export interface ContextMenuItemsActions {
   delete: () => void;
   duplicate: () => void;
   edit: () => void;
+  setColor: (color: EventColorSlot | null) => void;
 }
 
 interface ContextMenuItemsProps {
@@ -120,6 +124,18 @@ export function ContextMenuItemsView({
           </button>
         );
       })}
+      {!isReadOnly && (
+        <div role="none" className="max-w-68 border-t border-border px-3 py-2">
+          <EventColorPicker
+            name="context-menu-event-color"
+            value={event.color ?? null}
+            onChange={(next) => {
+              actions.setColor(next);
+              close();
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -128,6 +144,7 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   const eventId = event._id ?? "";
   const deleteEvent = useDeleteEvent(eventId);
   const duplicateEvent = useDuplicateEvent(eventId);
+  const setEventColor = useSetEventColor(eventId);
 
   const menuActions: ContextMenuItemsActions = {
     delete: () => {
@@ -141,6 +158,9 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
     // when isFormOpen flips (handleChange skips eventRightClick on purpose).
     edit: () => {
       draftActions.setFormOpen(true);
+    },
+    setColor: (color) => {
+      setEventColor(color);
     },
   };
 
