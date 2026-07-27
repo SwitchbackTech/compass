@@ -32,3 +32,13 @@ export function googleColorIdToSlot(
 export function slotToGoogleColorId(slot: EventColorSlot): string {
   return SLOT_TO_GOOGLE_COLOR_ID[slot];
 }
+
+// Fields for a Google create/patch body: a slot sets colorId, null clears it,
+// undefined leaves Google's existing color untouched (omit the key).
+export function googleColorIdFields(
+  color: EventColorSlot | null | undefined,
+): { colorId: string | null } | Record<string, never> {
+  if (color === undefined) return {};
+  if (color === null) return { colorId: null };
+  return { colorId: slotToGoogleColorId(color) };
+}

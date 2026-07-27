@@ -2,7 +2,10 @@ import { Origin } from "@core/constants/core.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
-import { type EventColorSlot } from "@core/types/event-color.contracts";
+import {
+  type EventColorSlot,
+  withColor,
+} from "@core/types/event-color.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -121,7 +124,7 @@ const withCalendarMetadata = (
       isDemo: gridEvent._id
         ? demoEventIdSet.has(gridEvent._id as EventId)
         : false,
-      ...(metadata?.color !== undefined ? { color: metadata.color } : {}),
+      ...withColor(metadata?.color),
     };
   });
 };

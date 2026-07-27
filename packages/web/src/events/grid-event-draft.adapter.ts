@@ -3,7 +3,10 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
-import { type EventColorSlot } from "@core/types/event-color.contracts";
+import {
+  type EventColorSlot,
+  withColor,
+} from "@core/types/event-color.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -94,13 +97,9 @@ export function editGridEventDraft(
     kind: "edit",
     source: event,
     values: {
-      title: event.content.kind === "details" ? event.content.title : "",
-      description:
-        event.content.kind === "details" ? event.content.description : "",
+      ...editableDetailsFromEvent(event),
       schedule,
       calendarId: event.calendarId,
-      color:
-        event.content.kind === "details" ? (event.content.color ?? null) : null,
       recurrence: { kind: "preserve" },
       scope,
     },
@@ -140,13 +139,9 @@ export function duplicateGridEventDraft(
     kind: "create",
     source: null,
     values: {
-      title: event.content.kind === "details" ? event.content.title : "",
-      description:
-        event.content.kind === "details" ? event.content.description : "",
+      ...editableDetailsFromEvent(event),
       schedule,
       calendarId,
-      color:
-        event.content.kind === "details" ? (event.content.color ?? null) : null,
       recurrence:
         event.recurrence.kind === "series"
           ? { kind: "series", rules: [...event.recurrence.rules] }
@@ -301,7 +296,7 @@ export function gridEventDraftToSchemaEvent(
         : dayjs(schedule.end).format(),
     isAllDay: schedule.kind === "allDay",
     isBusy: draft.kind === "edit" && draft.source.content.kind === "busy",
-    ...(color !== undefined ? { color } : {}),
+    ...withColor(color),
     recurrence: legacyRecurrenceFromDraft(draft, seriesRules),
     startDate:
       schedule.kind === "allDay"
@@ -396,32 +391,48 @@ export function patchGridDraftFields(
     Pick<GridEventDraft["values"], "title" | "description" | "color">
   >,
 ): GridEventDraft {
+  // Branching on kind keeps create/edit values correlated with the
+  // discriminant (a shared spread widens recurrence across both shapes).
   if (current.kind === "create") {
     return {
       ...current,
-      values: {
-        ...current.values,
-        ...(patch.title !== undefined ? { title: patch.title } : {}),
-        ...(patch.description !== undefined
-          ? { description: patch.description }
-          : {}),
-        ...(patch.color !== undefined ? { color: patch.color } : {}),
-      },
+      values: applyDraftFieldPatch(current.values, patch),
     };
   }
-
   return {
     ...current,
-    values: {
-      ...current.values,
-      ...(patch.title !== undefined ? { title: patch.title } : {}),
-      ...(patch.description !== undefined
-        ? { description: patch.description }
-        : {}),
-      ...(patch.color !== undefined ? { color: patch.color } : {}),
-    },
+    values: applyDraftFieldPatch(current.values, patch),
   };
 }
+
+const applyDraftFieldPatch = <
+  T extends Pick<GridEventDraft["values"], "title" | "description" | "color">,
+>(
+  values: T,
+  patch: Partial<
+    Pick<GridEventDraft["values"], "title" | "description" | "color">
+  >,
+): T => ({
+  ...values,
+  ...(patch.title !== undefined ? { title: patch.title } : {}),
+  ...(patch.description !== undefined
+    ? { description: patch.description }
+    : {}),
+  ...(patch.color !== undefined ? { color: patch.color } : {}),
+});
+
+const editableDetailsFromEvent = (
+  event: Event,
+): { title: string; description: string; color: EventColorSlot | null } => {
+  if (event.content.kind !== "details") {
+    return { title: "", description: "", color: null };
+  }
+  return {
+    title: event.content.title,
+    description: event.content.description,
+    color: event.content.color ?? null,
+  };
+};
 
 // Local, not toISOString: all-day draft Dates are local midnight, so a UTC
 // rendering would shift the day for any non-UTC viewer.

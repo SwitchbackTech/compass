@@ -1,3 +1,4 @@
+import { withColor } from "@core/types/event-color.contracts";
 import {
   type SyncEventInstance,
   SyncEventInstanceSchema,
@@ -43,13 +44,7 @@ export function assembleEventInstances(
     const event = eventsById.get(occurrence.eventId);
     if (!event) continue;
 
-    const content = {
-      title: event.content.title,
-      description: event.content.description,
-      ...(event.content.color !== undefined
-        ? { color: event.content.color }
-        : {}),
-    };
+    const content = toInstanceContent(event.content);
     const timestamps = {
       createdAt: event.createdAt.toISOString(),
       updatedAt: event.updatedAt.toISOString(),
@@ -116,13 +111,7 @@ export function assembleEventInstances(
       SyncEventInstanceSchema.parse({
         eventId: master._id,
         calendarId: master.calendarId,
-        content: {
-          title: master.content.title,
-          description: master.content.description,
-          ...(master.content.color !== undefined
-            ? { color: master.content.color }
-            : {}),
-        },
+        content: toInstanceContent(master.content),
         schedule: master.schedule,
         recurrence: { kind: "series", rules: master.recurrence.rules },
         createdAt: master.createdAt.toISOString(),
@@ -133,3 +122,9 @@ export function assembleEventInstances(
 
   return instances;
 }
+
+const toInstanceContent = (content: EventRecord["content"]) => ({
+  title: content.title,
+  description: content.description,
+  ...withColor(content.color),
+});

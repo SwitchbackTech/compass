@@ -1,5 +1,6 @@
 import {
   GOOGLE_COLOR_ID_TO_SLOT,
+  googleColorIdFields,
   googleColorIdToSlot,
   SLOT_TO_GOOGLE_COLOR_ID,
   slotToGoogleColorId,
@@ -21,5 +22,11 @@ describe("google-color.map", () => {
     expect(googleColorIdToSlot("")).toBeUndefined();
     expect(googleColorIdToSlot(undefined)).toBeUndefined();
     expect(googleColorIdToSlot(null)).toBeUndefined();
+  });
+
+  it("builds Google colorId body fields for set, clear, and omit", () => {
+    expect(googleColorIdFields("blue")).toEqual({ colorId: "7" });
+    expect(googleColorIdFields(null)).toEqual({ colorId: null });
+    expect(googleColorIdFields(undefined)).toEqual({});
   });
 });
