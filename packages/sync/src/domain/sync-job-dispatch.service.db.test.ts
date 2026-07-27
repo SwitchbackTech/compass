@@ -87,7 +87,10 @@ class FakeReader implements ProviderEventReader {
   }
 }
 
-const tokenSource = { getValidAccessToken: async () => "access-token" };
+const tokenSource = {
+  getValidAccessToken: async () => "access-token",
+  discardRevoked: async () => {},
+};
 
 // A notification adapter that records watch calls and returns a fixed channel,
 // so a subscriptionMaintain dispatch runs without a network round-trip.

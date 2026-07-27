@@ -53,6 +53,7 @@ class FakeReader implements ProviderEventReader {
 
 const tokenSource: AccessTokenSource = {
   getValidAccessToken: async () => "access-token",
+  discardRevoked: async () => {},
 };
 
 const schedule = {

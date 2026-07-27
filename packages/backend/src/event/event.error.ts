@@ -18,6 +18,7 @@ const STATUS_BY_CODE: Record<EventMutationErrorCode, Status> = {
   DUPLICATE_EVENT_ID: Status.CONFLICT,
   INVALID_SCHEDULE: Status.BAD_REQUEST,
   PROVIDER_FAILURE: 502 as Status,
+  GOOGLE_REVOKED: Status.UNAUTHORIZED,
   MAINTENANCE: Status.SERVICE_UNAVAILABLE,
 };
 
@@ -29,6 +30,7 @@ const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
   DUPLICATE_EVENT_ID: false,
   INVALID_SCHEDULE: false,
   PROVIDER_FAILURE: true,
+  GOOGLE_REVOKED: false,
   MAINTENANCE: true,
 };
 
