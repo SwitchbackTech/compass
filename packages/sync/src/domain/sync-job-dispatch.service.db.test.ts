@@ -4,6 +4,7 @@ import {
   dispatchSyncJob,
   type SyncJobDispatchDeps,
 } from "@sync/domain/sync-job-dispatch.service";
+import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import {
   type ProviderEvent,
   type ProviderEventRead,
@@ -162,7 +163,10 @@ describe("dispatchSyncJob", () => {
     findById: async () => stubbedConnection,
   } as unknown as SyncJobDispatchDeps["connections"];
 
-  const deps = (reader: FakeReader): SyncJobDispatchDeps => ({
+  const deps = (
+    reader: FakeReader,
+    custody: SyncJobDispatchDeps["custody"] = tokenSource,
+  ): SyncJobDispatchDeps => ({
     events,
     occurrences,
     resources,
@@ -172,7 +176,7 @@ describe("dispatchSyncJob", () => {
     jobs,
     commands,
     reader,
-    custody: tokenSource,
+    custody,
     notifications,
     callbackUrl: "https://sync.example/sync/notifications/google",
     invalidations,
@@ -382,6 +386,55 @@ describe("dispatchSyncJob", () => {
     expect(outcome.followup.coalescingKey).toBe(
       `subscriptionMaintain:${resource._id}`,
     );
+  });
+
+  it("settles a job done and discards the credential when the token is revoked", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const reader = new FakeReader([]);
+    const discarded: string[] = [];
+    const revokedCustody: SyncJobDispatchDeps["custody"] = {
+      getValidAccessToken: async () => {
+        throw new ProviderAuthError(
+          "authorizationRevoked",
+          "refresh token revoked",
+        );
+      },
+      discardRevoked: async (connectionId) => {
+        discarded.push(connectionId);
+      },
+    };
+
+    const outcome = await dispatchSyncJob(
+      deps(reader, revokedCustody),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+    expect(discarded).toEqual([calendar.connectionId]);
+  });
+
+  it("leaves a transient refresh failure for the worker to retry", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const reader = new FakeReader([]);
+    const flakyCustody: SyncJobDispatchDeps["custody"] = {
+      getValidAccessToken: async () => {
+        throw new ProviderAuthError("refreshFailed", "network blip");
+      },
+      discardRevoked: async () => {
+        throw new Error("should not discard on a transient refresh failure");
+      },
+    };
+
+    await expect(
+      dispatchSyncJob(
+        deps(reader, flakyCustody),
+        jobFor(resource, "incrementalPull"),
+        now,
+      ),
+    ).rejects.toThrow(ProviderAuthError);
   });
 
   it("drops a job whose resource no longer exists", async () => {

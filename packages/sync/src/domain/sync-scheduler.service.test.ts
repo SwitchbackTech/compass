@@ -88,6 +88,48 @@ describe("SyncScheduler", () => {
     expect(worker.calls).toBe(callsAtStop);
   });
 
+  it("does not release owned jobs until an in-flight drain settles", async () => {
+    // job.repository.ts's releaseOwned doc comment calls this out as a real
+    // hazard: racing it against a still-running complete()/scheduleRetry() can
+    // flip a just-finished job back to pending and get it reprocessed. Pin the
+    // ordering stop() relies on to avoid that — release only after the loop's
+    // current drain (and everything it awaited to settle its jobs) has
+    // resolved, not the instant stop() is called.
+    let resolveDrain: (() => void) | null = null;
+    let signalDrainStarted: (() => void) | null = null;
+    const drainStarted = new Promise<void>((resolve) => {
+      signalDrainStarted = resolve;
+    });
+    const worker: JobDrainer = {
+      drain: async () => {
+        signalDrainStarted?.();
+        await new Promise<void>((resolve) => {
+          resolveDrain = resolve;
+        });
+        return 0;
+      },
+    };
+    const jobs = releaser();
+    const scheduler = new SyncScheduler(
+      { worker, jobs },
+      { owner: OWNER, pollMs: 10_000 },
+    );
+
+    scheduler.start();
+    await drainStarted;
+
+    const stopping = scheduler.stop();
+    // Give stop() a tick to run ahead if it were (incorrectly) not waiting on
+    // the in-flight drain before releasing.
+    await new Promise((r) => setTimeout(r, 0));
+    expect(jobs.released).toEqual([]);
+
+    resolveDrain?.();
+    await stopping;
+
+    expect(jobs.released).toEqual([OWNER]);
+  });
+
   it("keeps looping after a drain throws", async () => {
     const errors: unknown[] = [];
     const worker = new FakeWorker([1, 0], 1); // call 1 throws, call 2 idles
