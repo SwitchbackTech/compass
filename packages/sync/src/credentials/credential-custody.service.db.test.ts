@@ -210,9 +210,6 @@ describe("CredentialCustody", () => {
       .catch((e) => e)) as ProviderAuthError;
 
     expect(error.reason).toBe("authorizationRevoked");
-    // Deleting the row is the durable evidence deriveConnectionState reads as
-    // actionRequired/authorizationRevoked. No provider revoke call — the grant
-    // is already dead at Google.
     expect(await repo.findByConnection(connectionId)).toBeNull();
     expect(adapter.revokedTokens).toEqual([]);
   });

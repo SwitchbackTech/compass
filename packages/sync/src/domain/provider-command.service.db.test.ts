@@ -357,7 +357,6 @@ describe("executeProviderCreate", () => {
       result.outcome.state === "failed" && result.outcome.failureReason,
     ).toBe("authorizationRevoked");
     expect(writer.calls).toHaveLength(0);
-    // Refresh-path discard (custody) + failCommand discard — both idempotent.
     expect(
       await credentials.findByConnection(calendar.connectionId),
     ).toBeNull();
@@ -707,8 +706,6 @@ describe("executeProviderUpdate", () => {
   });
 
   it("discards the credential when a writer 401 classifies as authorizationRevoked", async () => {
-    // Cached access token is still valid, so custody refresh never runs — the
-    // writer is the one that sees the mid-flight 401. failCommand must discard.
     const { calendar, event, command } = await seed();
     const credentials = new CredentialRepository(mongo.db);
     await storeCredential(credentials, calendar.connectionId, {

@@ -150,9 +150,6 @@ async function failCommand(
     { state: "failed", failureReason: reason },
     command.attemptCount,
   );
-  // Outcome first, then evidence: both are idempotent, so a crash between them
-  // re-runs cleanly. Deleting the credential lets deriveConnectionState read
-  // actionRequired/authorizationRevoked on the next metadata/connections fetch.
   if (reason === "authorizationRevoked") {
     await deps.custody.discardRevoked(connectionId);
   }

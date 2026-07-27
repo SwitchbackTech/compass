@@ -66,9 +66,7 @@ export class CredentialCustody {
   }
 
   // Delete a credential whose grant the provider has already invalidated.
-  // Unlike disconnect, this does not call provider revoke — the grant is
-  // already dead. The missing row is the durable evidence deriveConnectionState
-  // reads as actionRequired/authorizationRevoked. Idempotent.
+  // Unlike disconnect, this does not call provider revoke. Idempotent.
   async discardRevoked(connectionId: ConnectionId): Promise<void> {
     await this.credentials.deleteByConnection(connectionId);
   }
@@ -90,9 +88,7 @@ export class CredentialCustody {
       return credential.accessToken;
     }
 
-    // Refresh; on authorizationRevoked, delete the dead credential first so
-    // connection state re-derives as actionRequired, then rethrow so callers
-    // (commands, pulls, etc.) still see the terminal auth failure.
+    // Refresh; on authorizationRevoked, delete the dead credential then rethrow.
     let refreshed: Awaited<
       ReturnType<ProviderAuthAdapter["refreshAccessToken"]>
     >;

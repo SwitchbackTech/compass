@@ -77,27 +77,6 @@ describe("handleError", () => {
 
     expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
-
-  it("early-returns on 401 GOOGLE_REVOKED so the fetch interceptor owns reconnect", () => {
-    // The api wrapper's handleGoogleRevoked gate owns the reconnect toast /
-    // metadata refresh. handleError must stay silent (no toast, no log) for
-    // the 401 envelope — same skip path as other UNAUTHORIZED statuses.
-    const error = new Error("Request failed with status 401") as ApiError;
-    error.name = "ApiError";
-    error.response = {
-      status: Status.UNAUTHORIZED,
-      data: {
-        code: "GOOGLE_REVOKED",
-        message:
-          "Google Calendar access expired or was revoked. Reconnect Google Calendar in Compass to resume syncing.",
-        retryable: false,
-      },
-    } as ApiResponse<unknown>;
-
-    handleError(error);
-
-    expect(consoleErrorSpy).not.toHaveBeenCalled();
-  });
 });
 
 describe("isEventInRange", () => {

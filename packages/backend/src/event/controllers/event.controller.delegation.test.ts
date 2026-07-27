@@ -36,6 +36,46 @@ const jsonRes = () => {
   return { res, json };
 };
 
+const sampleCreateBody = () => ({
+  id: objectId(),
+  calendarId: objectId(),
+  content: { kind: "details", title: "Lunch", description: "" },
+  schedule: {
+    kind: "timed",
+    start: "2026-07-14T12:00:00.000Z",
+    end: "2026-07-14T13:00:00.000Z",
+    timeZone: "UTC",
+  },
+  recurrence: { kind: "single" },
+});
+
+const mockSyncCommandFailure = (failureReason: string) => {
+  spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+    submitCommand: mock(() =>
+      Promise.resolve({
+        ok: true as const,
+        value: {
+          command: {
+            outcome: {
+              state: "failed" as const,
+              failureReason,
+            },
+          },
+        },
+      }),
+    ),
+  } as never);
+};
+
+const createViaSync = async () => {
+  const { res, json } = jsonRes();
+  await eventController.create(
+    sessionReq(objectId(), { body: sampleCreateBody() }),
+    res,
+  );
+  return { res, json };
+};
+
 const enableSyncDelegation = () => {
   // Point at an unreachable sync service so delegated calls fail at fetch.
   // Proves the SYNC branch ran (legacy would hit the event store) AND that
@@ -149,40 +189,8 @@ describe("EventController event delegation", () => {
   });
 
   it("maps authorizationRevoked to 401 GOOGLE_REVOKED (not retryable)", async () => {
-    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
-      submitCommand: mock(() =>
-        Promise.resolve({
-          ok: true as const,
-          value: {
-            command: {
-              outcome: {
-                state: "failed" as const,
-                failureReason: "authorizationRevoked",
-              },
-            },
-          },
-        }),
-      ),
-    } as never);
-
-    const { res, json } = jsonRes();
-    await eventController.create(
-      sessionReq(objectId(), {
-        body: {
-          id: objectId(),
-          calendarId: objectId(),
-          content: { kind: "details", title: "Lunch", description: "" },
-          schedule: {
-            kind: "timed",
-            start: "2026-07-14T12:00:00.000Z",
-            end: "2026-07-14T13:00:00.000Z",
-            timeZone: "UTC",
-          },
-          recurrence: { kind: "single" },
-        },
-      }),
-      res,
-    );
+    mockSyncCommandFailure("authorizationRevoked");
+    const { res, json } = await createViaSync();
 
     expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
       Status.UNAUTHORIZED,
@@ -196,40 +204,8 @@ describe("EventController event delegation", () => {
   });
 
   it("maps permanentProviderError to 502 PROVIDER_FAILURE (retryable)", async () => {
-    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
-      submitCommand: mock(() =>
-        Promise.resolve({
-          ok: true as const,
-          value: {
-            command: {
-              outcome: {
-                state: "failed" as const,
-                failureReason: "permanentProviderError",
-              },
-            },
-          },
-        }),
-      ),
-    } as never);
-
-    const { res, json } = jsonRes();
-    await eventController.create(
-      sessionReq(objectId(), {
-        body: {
-          id: objectId(),
-          calendarId: objectId(),
-          content: { kind: "details", title: "Lunch", description: "" },
-          schedule: {
-            kind: "timed",
-            start: "2026-07-14T12:00:00.000Z",
-            end: "2026-07-14T13:00:00.000Z",
-            timeZone: "UTC",
-          },
-          recurrence: { kind: "single" },
-        },
-      }),
-      res,
-    );
+    mockSyncCommandFailure("permanentProviderError");
+    const { res, json } = await createViaSync();
 
     expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
       502,
