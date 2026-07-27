@@ -254,19 +254,19 @@ export const useDraftActions = (
     [activity, draft, isInsideVisibleWeek, setDraft],
   );
 
-  const drag = useCallback(
-    (e: Omit<PartialMouseEvent, "currentTarget">) => {
-      if (!isDragging) {
-        devAlert("not dragging (anymore?)");
-        return;
-      }
+  const applyDragPosition = useCallback(
+    (
+      e: Omit<PartialMouseEvent, "currentTarget">,
+      offset: DragOffset,
+      status: Status_Drag | null,
+    ) => {
       if (!draft) return;
 
       const { durationMin, schedule } = resolveDraftDragSchedule({
         clientX: e.clientX,
         clientY: e.clientY,
-        dragOffset,
-        dragStatus,
+        dragOffset: offset,
+        dragStatus: status,
         getDateByXY: dateCalcs.getDateByXY,
         schedule: draft.values.schedule,
         startOfView: weekProps.component.startOfView,
@@ -274,11 +274,10 @@ export const useDraftActions = (
 
       const nextDraft = replaceGridDraftSchedule(draft, schedule);
       const kindChanged = draft.values.schedule.kind !== schedule.kind;
-      const draftStartStr = dayjs(draft.values.schedule.start).format();
-      const nextStartStr = dayjs(schedule.start).format();
       const hasMoved =
         kindChanged ||
-        draftStartStr !== nextStartStr ||
+        dayjs(draft.values.schedule.start).format() !==
+          dayjs(schedule.start).format() ||
         dayjs(draft.values.schedule.end).format() !==
           dayjs(schedule.end).format();
 
@@ -295,8 +294,8 @@ export const useDraftActions = (
       }
 
       if (
-        (!dragStatus?.hasMoved && hasMoved) ||
-        (dragStatus != null && dragStatus.durationMin !== durationMin)
+        (!status?.hasMoved && hasMoved) ||
+        (status != null && status.durationMin !== durationMin)
       ) {
         setDragStatus(
           (_status): Status_Drag => ({
@@ -307,16 +306,25 @@ export const useDraftActions = (
       }
     },
     [
-      isDragging,
-      dateCalcs,
-      weekProps.component.startOfView,
+      dateCalcs.getDateByXY,
       draft,
-      dragOffset,
-      dragStatus,
       setDraft,
       setDragOffset,
       setDragStatus,
+      weekProps.component.startOfView,
     ],
+  );
+
+  const drag = useCallback(
+    (e: Omit<PartialMouseEvent, "currentTarget">) => {
+      if (!isDragging) {
+        devAlert("not dragging (anymore?)");
+        return;
+      }
+
+      applyDragPosition(e, dragOffset, dragStatus);
+    },
+    [applyDragPosition, dragOffset, dragStatus, isDragging],
   );
 
   const isValidMovement = useCallback(
@@ -563,13 +571,24 @@ export const useDraftActions = (
     repositionDraftByKeyboard,
     resize,
     setLocalDraft: setDraft,
-    startDragging: (offset?: DragOffset) => {
+    startDragging: (
+      offset?: DragOffset,
+      initialEvent?: Omit<PartialMouseEvent, "currentTarget">,
+    ) => {
       // Placing `setIsFormOpenBeforeDragging` here rather than inside `startDragging`
       // because `setIsFormOpenBeforeDragging` depends on `isFormOpen` and re-calculates
       // `startDragging` (due to it being a react callback) which causes issues.
       // This is a hacky solution to the issue.
       setIsFormOpenBeforeDragging(isFormOpen);
+      const nextOffset = offset ?? { x: 0, y: 0 };
       startDragging(offset);
+      // Apply the pointer position immediately. Drag often begins only after the
+      // pointer has already left the all-day row; waiting for the next mousemove
+      // (and for isDragging to commit) can miss the cross-row conversion entirely
+      // on a short gesture.
+      if (initialEvent) {
+        applyDragPosition(initialEvent, nextOffset, dragStatus);
+      }
     },
     startResizing,
     stopDragging,

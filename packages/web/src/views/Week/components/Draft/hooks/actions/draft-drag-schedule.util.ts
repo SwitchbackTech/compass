@@ -1,5 +1,5 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { type Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
@@ -81,10 +81,14 @@ export const resolveDraftDragSchedule = ({
   const row = resolveDraftDragRow(clientY, sourceRow, getElementById);
 
   if (row === "timed") {
+    // Use the live schedule duration for already-timed drafts. After an
+    // all-day → timed conversion, dragStatus may still hold the all-day
+    // day-length (1440m) for a frame; reusing that would invent a multi-day
+    // timed block that snaps back into the all-day row.
     const durationMin =
-      sourceRow === "timed"
-        ? getDragDurationMinutes(schedule, dragStatus)
-        : CROSS_ROW_TIMED_DURATION_MIN;
+      sourceRow === "allDay"
+        ? CROSS_ROW_TIMED_DURATION_MIN
+        : dayjs(schedule.end).diff(schedule.start, "minutes");
     // Same-row timed drag keeps the grab offset; all-day → timed is absolute
     // (pointer marks the start), matching the saved-event cross-row ghost.
     const y = sourceRow === "timed" ? clientY - dragOffset.y : clientY;

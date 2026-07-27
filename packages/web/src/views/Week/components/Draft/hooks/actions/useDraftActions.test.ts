@@ -1,4 +1,4 @@
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { type Event } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
@@ -431,7 +431,9 @@ describe("useDraftActions", () => {
         dragStatus: { durationMin: 24 * 60 },
       });
 
-    result.current.drag({ clientX: 100, clientY: 200 });
+    act(() => {
+      result.current.drag({ clientX: 100, clientY: 200 });
+    });
 
     const nextDraft = setDraft.mock.calls[0]?.[0] as GridEventDraft;
     expect(nextDraft.values.schedule.kind).toBe("timed");
@@ -459,10 +461,43 @@ describe("useDraftActions", () => {
       dragStatus: { durationMin: 24 * 60, hasMoved: false },
     });
 
-    result.current.drag({ clientX: 200, clientY: 180 });
+    act(() => {
+      result.current.drag({ clientX: 200, clientY: 180 });
+    });
 
     const nextDraft = setDraft.mock.calls[0]?.[0] as GridEventDraft;
     expect(nextDraft.kind).toBe("edit");
     expect(nextDraft.values.schedule.kind).toBe("timed");
+  });
+
+  it("converts on drag start when the pointer is already over the timed grid", () => {
+    mountDraftDragDom();
+    setDraftActivity("gridClick", Categories_Event.ALLDAY);
+    const draft = createNewDraft({
+      isAllDay: true,
+      start: "2024-01-16T00:00:00.000Z",
+      end: "2024-01-17T00:00:00.000Z",
+    });
+    const { result, setDraft } = renderDraftActions(draft, {
+      isDragging: false,
+      dragOffset: { x: 0, y: 0 },
+      dragStatus: { durationMin: 24 * 60 },
+    });
+
+    act(() => {
+      result.current.startDragging(
+        { x: 10, y: 5 },
+        { clientX: 100, clientY: 200 },
+      );
+    });
+
+    const nextDraft = setDraft.mock.calls[0]?.[0] as GridEventDraft;
+    expect(nextDraft.values.schedule.kind).toBe("timed");
+    expect(
+      dayjs(nextDraft.values.schedule.end).diff(
+        nextDraft.values.schedule.start,
+        "minutes",
+      ),
+    ).toBe(CROSS_ROW_TIMED_DURATION_MIN);
   });
 });

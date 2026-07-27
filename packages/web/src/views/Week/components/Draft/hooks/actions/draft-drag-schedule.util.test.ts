@@ -182,4 +182,30 @@ describe("resolveDraftDragSchedule", () => {
       dayjs(result.schedule.end).diff(result.schedule.start, "minutes"),
     ).toBe(90);
   });
+
+  it("ignores a stale all-day dragStatus duration after converting to timed", () => {
+    // Simulates the frame after all-day → timed: schedule is already timed
+    // (60m) but dragStatus still holds the all-day day-length.
+    const result = resolveDraftDragSchedule({
+      clientX: 450,
+      clientY: 200,
+      dragOffset: { x: 0, y: 0 },
+      dragStatus: { durationMin: 24 * 60, hasMoved: true },
+      getDateByXY,
+      getElementById: createGetElementById(),
+      schedule: {
+        kind: "timed",
+        start: new Date("2026-05-13T09:00:00.000"),
+        end: new Date("2026-05-13T10:00:00.000"),
+        timeZone: "UTC",
+      },
+      startOfView,
+    });
+
+    expect(result.row).toBe("timed");
+    expect(result.durationMin).toBe(CROSS_ROW_TIMED_DURATION_MIN);
+    expect(
+      dayjs(result.schedule.end).diff(result.schedule.start, "minutes"),
+    ).toBe(CROSS_ROW_TIMED_DURATION_MIN);
+  });
 });

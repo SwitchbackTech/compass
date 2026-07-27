@@ -64,7 +64,10 @@ export const GridDraft: FC<Props> = ({
   const handleDrag = (_: GridEventEntity, moveEvent: PartialMouseEvent) => {
     if (!draft) return; // TS Guard
 
-    startDragging(getEventDragOffset(draftAsGridEvent ?? undefined, moveEvent));
+    startDragging(
+      getEventDragOffset(draftAsGridEvent ?? undefined, moveEvent),
+      moveEvent,
+    );
   };
 
   const handleScalerMouseDown = (
