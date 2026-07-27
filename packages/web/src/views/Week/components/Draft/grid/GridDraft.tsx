@@ -13,6 +13,10 @@ import {
 import { focusEventFormTitle } from "@web/common/utils/form/form.util";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import {
+  selectDraftActivity,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
+import {
   draftToAllDayRowGridEvent,
   isDraftRenderedInAllDayRow,
 } from "@web/grid/layout/all-day-draft.position";
@@ -44,6 +48,9 @@ export const GridDraft: FC<Props> = ({
   const { actions, state } = useDraftContext();
   const { startDragging, startResizing } = actions;
   const { draft, dragOffset, isDragging, isResizing } = state;
+  // A live drag-create looks like a resize: the user is dragging one edge of
+  // the draft. It just isn't a local resize, so `isResizing` stays false.
+  const isCreating = useDraftStore(selectDraftActivity) === "creating";
 
   // GridEvent-shaped projection of the canonical GridEventDraft, for
   // the still-unconverted renderer components (GridEvent/AllDayEventMemo)
@@ -77,7 +84,8 @@ export const GridDraft: FC<Props> = ({
     startResizing(dateToChange);
   };
 
-  const motionMode = isResizing ? "resizing" : isDragging ? "dragging" : "idle";
+  const motionMode =
+    isResizing || isCreating ? "resizing" : isDragging ? "dragging" : "idle";
 
   const rendersInAllDayRow = draft ? isDraftRenderedInAllDayRow(draft) : false;
   const isMultiDayTimedDraft =

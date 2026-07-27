@@ -6,11 +6,12 @@ import { type GridEventDraft } from "@web/events/event-draft.types";
 
 export type Activity_DraftEvent =
   | "createShortcut"
+  /** A drag-create gesture is live and `gridDraft` is its running preview. */
+  | "creating"
   | "dnd"
   | "eventRightClick"
   | "gridClick"
   | "keyboardEdit"
-  | "resizing"
   | "sidebarClick";
 
 export interface Status_DraftEvent {
@@ -24,7 +25,6 @@ export interface Status_DraftEvent {
    * but the form stays closed until the gesture finishes).
    */
   isFormOpen: boolean;
-  dateToResize?: "startDate" | "endDate" | null;
 }
 
 export interface State_DraftEvent {
@@ -38,7 +38,6 @@ const initialDraftStatus: Status_DraftEvent = {
   isDrafting: false,
   isFormOpen: false,
   eventType: null,
-  dateToResize: null,
 };
 
 export const initialDraftState: State_DraftEvent = {
@@ -61,18 +60,16 @@ export const draftActions = {
 
   startGridDraft: ({
     activity,
-    dateToResize = null,
     draft,
   }: {
     activity: Extract<
       Activity_DraftEvent,
       | "createShortcut"
+      | "creating"
       | "eventRightClick"
       | "gridClick"
       | "keyboardEdit"
-      | "resizing"
     >;
-    dateToResize?: "startDate" | "endDate" | null;
     draft: GridEventDraft;
   }) =>
     useDraftStore.setState(
@@ -81,7 +78,6 @@ export const draftActions = {
         status: {
           ...(state.status ?? initialDraftStatus),
           activity,
-          dateToResize,
           eventType:
             draft.values.schedule.kind === "allDay"
               ? Categories_Event.ALLDAY
@@ -94,21 +90,32 @@ export const draftActions = {
       { type: "startGridDraft" },
     ),
 
+  // Reuses the existing `status` object when it already says what this call
+  // would set. Drag-creation calls this on every mousemove, and a fresh
+  // `status` each time would re-render every `selectDraftStatus` subscriber
+  // for a value that never changed. `activity` and `isFormOpen` are carried
+  // through untouched: the gesture that started the draft owns those.
   setGridDraft: (draft: GridEventDraft | null) =>
     useDraftStore.setState(
-      (state) => ({
-        gridDraft: draft,
-        status: draft
-          ? {
-              ...(state.status ?? initialDraftStatus),
-              eventType:
-                draft.values.schedule.kind === "allDay"
-                  ? Categories_Event.ALLDAY
-                  : Categories_Event.TIMED,
-              isDrafting: true,
-            }
-          : initialDraftStatus,
-      }),
+      (state) => {
+        if (!draft) {
+          return { gridDraft: null, status: initialDraftStatus };
+        }
+
+        const status = state.status ?? initialDraftStatus;
+        const eventType =
+          draft.values.schedule.kind === "allDay"
+            ? Categories_Event.ALLDAY
+            : Categories_Event.TIMED;
+        const isUnchanged = status.isDrafting && status.eventType === eventType;
+
+        return {
+          gridDraft: draft,
+          status: isUnchanged
+            ? status
+            : { ...status, eventType, isDrafting: true },
+        };
+      },
       false,
       { type: "setGridDraft" },
     ),

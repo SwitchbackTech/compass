@@ -897,6 +897,65 @@ describe("DayCalendarGrid", () => {
     });
   });
 
+  // Two moves, not one: the first mousemove has always written the draft to
+  // the store (it starts the preview), so a single-move assertion passes even
+  // when the draft is frozen for the rest of the gesture.
+  it("resizes the timed draft on every mousemove, not just the first", async () => {
+    renderDayCalendarGrid();
+
+    fireEvent.mouseDown(getTimedSlot(3), {
+      button: 0,
+      clientX: 100,
+      clientY: 120,
+    });
+
+    fireEvent.mouseMove(window, { buttons: 1, clientX: 100, clientY: 240 });
+
+    await waitFor(() => {
+      const draft = getDraft();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("04:00");
+    });
+
+    fireEvent.mouseMove(window, { buttons: 1, clientX: 100, clientY: 360 });
+
+    await waitFor(() => {
+      const draft = getDraft();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("06:00");
+    });
+
+    // The draft renders during the drag, but the form stays closed until the
+    // gesture finishes.
+    expect(getIsFormOpen()).toBe(false);
+  });
+
+  it("flips the timed draft upward mid-drag when the pointer passes the origin", async () => {
+    renderDayCalendarGrid();
+
+    fireEvent.mouseDown(getTimedSlot(3), {
+      button: 0,
+      clientX: 100,
+      clientY: 240,
+    });
+
+    fireEvent.mouseMove(window, { buttons: 1, clientX: 100, clientY: 300 });
+
+    await waitFor(() => {
+      const draft = getDraft();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("04:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("05:00");
+    });
+
+    fireEvent.mouseMove(window, { buttons: 1, clientX: 100, clientY: 120 });
+
+    await waitFor(() => {
+      const draft = getDraft();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("04:00");
+    });
+  });
+
   it("opens the timed draft form after stray zero-button mousemove events", async () => {
     renderDayCalendarGrid();
 

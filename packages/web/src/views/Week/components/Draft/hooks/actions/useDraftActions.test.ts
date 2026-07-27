@@ -180,7 +180,6 @@ const setDraftActivity = (
   currentState.events!.draft = currentState.events!.draft ?? {};
   currentState.events!.draft.status = {
     activity,
-    dateToResize: null,
     eventType,
     isDrafting: true,
     isFormOpen: false,
@@ -229,7 +228,6 @@ describe("useDraftActions", () => {
       gridDraft: draft,
       status: {
         activity: "eventRightClick",
-        dateToResize: null,
         eventType: Categories_Event.TIMED,
         isDrafting: true,
         isFormOpen: false,
@@ -369,5 +367,40 @@ describe("useDraftActions", () => {
     result.current.repositionDraftByKeyboard("ArrowDown");
 
     expect(setDraft).not.toHaveBeenCalled();
+  });
+
+  // A live drag-create must not turn into a local resize: `resize()` freezes
+  // the store draft as its origin, and during creation that draft moves with
+  // the pointer, which would collapse its math.
+  it("mirrors a live drag-create into local state without starting a resize", () => {
+    setDraftActivity("creating");
+    const draft = createNewDraft({
+      start: "2024-01-16T10:00:00.000Z",
+      end: "2024-01-16T11:00:00.000Z",
+    });
+    const setDraft = mock();
+    const setIsResizing = mock();
+
+    currentState.events!.draft = {
+      ...currentState.events!.draft,
+      gridDraft: draft,
+    };
+    const { wrapper } = createStoreWrapper(currentState);
+
+    renderHook(
+      () =>
+        useDraftActions(
+          createState({ draft: null }),
+          createSetters({ setDraft, setIsResizing }),
+          dateCalcs,
+          weekProps,
+        ),
+      { wrapper },
+    );
+
+    expect(setDraft).toHaveBeenCalledWith(draft);
+    // The mount effect calls setIsResizing(false) to clear stale state; what
+    // must never happen is a resize being switched *on*.
+    expect(setIsResizing).not.toHaveBeenCalledWith(true);
   });
 });

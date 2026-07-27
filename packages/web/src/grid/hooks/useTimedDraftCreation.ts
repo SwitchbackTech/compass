@@ -86,7 +86,7 @@ export const useTimedDraftCreation = ({
     let hasMoved = false;
     let isCancelled = false;
     let isFinished = false;
-    let isResizePreviewStarted = false;
+    let isPreviewStarted = false;
 
     const resolveDraftForPointer = (point: { x: number; y: number }) => {
       const minimumEndDate = start.add(DRAFT_DURATION_MIN, "minutes");
@@ -124,18 +124,21 @@ export const useTimedDraftCreation = ({
       onFinish(nextDraft);
     };
 
-    const startResizePreview = (mouseEvent: MouseEvent) => {
-      isResizePreviewStarted = true;
+    // The store draft is the preview: both views render it straight from the
+    // store while the gesture runs, so every move has to write it.
+    const previewDraft = (mouseEvent: MouseEvent) => {
       const nextDraft = resolveDraftForPointer(getPointerPoint(mouseEvent));
       if (isCancelled || isFinished) {
         return;
       }
 
-      draftActions.startGridDraft({
-        activity: "resizing",
-        dateToResize: "endDate",
-        draft: nextDraft,
-      });
+      if (isPreviewStarted) {
+        draftActions.setGridDraft(nextDraft);
+        return;
+      }
+
+      isPreviewStarted = true;
+      draftActions.startGridDraft({ activity: "creating", draft: nextDraft });
     };
 
     function finish(mouseEvent: MouseEvent) {
@@ -158,7 +161,7 @@ export const useTimedDraftCreation = ({
       isCancelled = true;
       cleanup();
 
-      if (isResizePreviewStarted) {
+      if (isPreviewStarted) {
         draftActions.discard();
       }
     }
@@ -187,10 +190,7 @@ export const useTimedDraftCreation = ({
       }
 
       hasMoved = true;
-
-      if (!isResizePreviewStarted) {
-        startResizePreview(mouseEvent);
-      }
+      previewDraft(mouseEvent);
     }
 
     function handleMouseUp(mouseEvent: MouseEvent) {

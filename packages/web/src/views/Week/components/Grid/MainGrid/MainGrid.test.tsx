@@ -161,7 +161,6 @@ const seedGrid = (
     gridDraft,
     status: {
       activity: "keyboardEdit",
-      dateToResize: null,
       eventType: draftEvent.isAllDay
         ? Categories_Event.ALLDAY
         : Categories_Event.TIMED,
@@ -451,6 +450,43 @@ describe("MainGrid empty-grid draft creation", () => {
       startOfView.add(11, "hour").format(),
       startOfView.add(12, "hour").format(),
     );
+  });
+
+  // The store draft is the live preview for both views now, so it has to track
+  // the pointer mid-gesture rather than staying frozen until mouseup. Needs two
+  // moves: the first one has always written the draft (it starts the preview).
+  it("tracks the pointer in the store draft on every move, before mouseup", async () => {
+    const { container } = renderMainGrid();
+    const row = getFirstTimedGridRow(container);
+
+    fireEvent.mouseDown(row, {
+      button: 0,
+      buttons: 1,
+      clientX: 100,
+      clientY: 11 * 60,
+    });
+
+    fireEvent.mouseMove(window, {
+      buttons: 1,
+      clientX: 100,
+      clientY: 12 * 60,
+    });
+    await expectDraftRange(
+      startOfView.add(11, "hour").format(),
+      startOfView.add(12, "hour").format(),
+    );
+
+    fireEvent.mouseMove(window, {
+      buttons: 1,
+      clientX: 100,
+      clientY: 14 * 60,
+    });
+    await expectDraftRange(
+      startOfView.add(11, "hour").format(),
+      startOfView.add(14, "hour").format(),
+    );
+
+    fireEvent.mouseUp(window, { clientX: 100, clientY: 14 * 60 });
   });
 
   it("keeps quick empty-grid clicks at the default draft duration", async () => {

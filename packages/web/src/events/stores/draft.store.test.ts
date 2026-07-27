@@ -1,4 +1,7 @@
-import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
+import {
+  createGridEventDraft,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
 import {
   draftActions,
   initialDraftState,
@@ -27,6 +30,69 @@ describe("draftActions.startGridDraft", () => {
       activity: "gridClick",
       eventType: "allday",
       isDrafting: true,
+      isFormOpen: false,
+    });
+  });
+});
+
+describe("draftActions.setGridDraft", () => {
+  const timedDraft = (start: string, end: string) =>
+    createGridEventDraft(timedGridSchedule(new Date(start), new Date(end)));
+
+  // Drag-creation calls setGridDraft on every mousemove, so it has to leave the
+  // gesture's own status alone: bumping `activity` would break the consumers
+  // that branch on it, and flipping `isFormOpen` would pop the form mid-drag.
+  it("carries activity and isFormOpen through untouched", () => {
+    draftActions.startGridDraft({
+      activity: "creating",
+      draft: timedDraft("2026-05-20T10:00:00.000Z", "2026-05-20T10:15:00.000Z"),
+    });
+
+    const next = timedDraft(
+      "2026-05-20T10:00:00.000Z",
+      "2026-05-20T11:00:00.000Z",
+    );
+    draftActions.setGridDraft(next);
+
+    const state = useDraftStore.getState();
+    expect(selectGridDraft(state)).toBe(next);
+    expect(state.status).toMatchObject({
+      activity: "creating",
+      eventType: "timed",
+      isDrafting: true,
+      isFormOpen: false,
+    });
+  });
+
+  // Same reason: a fresh status object per move would re-render every
+  // selectDraftStatus subscriber for a value that never changed.
+  it("keeps the same status reference when nothing about it changed", () => {
+    draftActions.startGridDraft({
+      activity: "creating",
+      draft: timedDraft("2026-05-20T10:00:00.000Z", "2026-05-20T10:15:00.000Z"),
+    });
+    const statusBefore = useDraftStore.getState().status;
+
+    draftActions.setGridDraft(
+      timedDraft("2026-05-20T10:00:00.000Z", "2026-05-20T11:00:00.000Z"),
+    );
+
+    expect(useDraftStore.getState().status).toBe(statusBefore);
+  });
+
+  it("resets status when the draft is cleared", () => {
+    draftActions.startGridDraft({
+      activity: "creating",
+      draft: timedDraft("2026-05-20T10:00:00.000Z", "2026-05-20T10:15:00.000Z"),
+    });
+
+    draftActions.setGridDraft(null);
+
+    const state = useDraftStore.getState();
+    expect(selectGridDraft(state)).toBeNull();
+    expect(state.status).toMatchObject({
+      activity: null,
+      isDrafting: false,
       isFormOpen: false,
     });
   });
