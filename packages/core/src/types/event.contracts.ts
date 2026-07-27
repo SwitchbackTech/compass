@@ -7,12 +7,14 @@ import {
   RRuleSchema,
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
+import { EventColorSlotSchema } from "@core/types/event-color.contracts";
 
 export const EventContentSchema = z.discriminatedUnion("kind", [
   z.strictObject({
     kind: z.literal("details"),
     title: z.string(),
     description: z.string(),
+    color: EventColorSlotSchema.optional(),
   }),
   z.strictObject({ kind: z.literal("busy") }),
 ]);

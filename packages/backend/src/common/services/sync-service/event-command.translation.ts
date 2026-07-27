@@ -7,6 +7,7 @@ import {
   EventIdSchema,
 } from "@core/types/domain-primitives";
 import { type Event, EventSchema } from "@core/types/event.contracts";
+import { type EventColorSlot } from "@core/types/event-color.contracts";
 import {
   type CreateEventInput,
   type DeleteEventInput,
@@ -35,10 +36,13 @@ const UNKNOWN_CALENDAR_ID = CalendarIdSchema.parse("000000000000000000000000");
 // so the strict SyncEventContent schema accepts the wire payload. On create
 // those nulls are correct (new event). On update, sync's apply path merges
 // title/description onto the existing record (mergeUpdateContent) so a rename
-// cannot wipe provider-sourced attendees/location/conference.
+// cannot wipe provider-sourced attendees/location/conference. Optional color
+// is forwarded when the browser sets one; omitted color leaves merge to keep
+// whatever Sync already stores.
 export const toSyncContent = (content: {
   title: string;
   description: string;
+  color?: EventColorSlot;
 }): SyncEventContent => ({
   title: content.title,
   description: content.description,
@@ -46,6 +50,7 @@ export const toSyncContent = (content: {
   organizer: null,
   attendees: [],
   conference: null,
+  ...(content.color !== undefined ? { color: content.color } : {}),
 });
 
 export interface CommandTarget {

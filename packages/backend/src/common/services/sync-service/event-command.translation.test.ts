@@ -31,6 +31,26 @@ describe("toSyncContent", () => {
       conference: null,
     });
   });
+
+  it("forwards an optional color onto sync content", () => {
+    expect(
+      toSyncContent({ title: "Standup", description: "Daily", color: "coral" }),
+    ).toEqual({
+      title: "Standup",
+      description: "Daily",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+      color: "coral",
+    });
+  });
+
+  it("omits color when the browser did not set one", () => {
+    expect(
+      toSyncContent({ title: "Standup", description: "Daily" }),
+    ).not.toHaveProperty("color");
+  });
 });
 
 describe("resolveCommandTarget", () => {
