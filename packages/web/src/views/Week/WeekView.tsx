@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useRef } from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
-import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { getCommandPalettePlaceholder } from "@web/components/CommandPalette/more.cmd.constants";
@@ -13,6 +12,7 @@ import { Sidebar } from "@web/components/Sidebar/Sidebar";
 import { useUpNextEventShortcut } from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
 import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
 import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
+import { toDemoEventsRange } from "@web/events/demo-events.util";
 import {
   draftActions,
   selectIsEventFormOpen,
@@ -142,14 +142,12 @@ export const WeekView = () => {
     welcomeGuideActions.open();
   }, []);
 
-  // Exclusive end so all-day sample events on the last visible day still match.
   const demoEventsRange = useMemo(
-    () => ({
-      start: toUTCOffset(weekProps.component.startOfView.startOf("day")),
-      end: toUTCOffset(
-        weekProps.component.endOfView.startOf("day").add(1, "day"),
+    () =>
+      toDemoEventsRange(
+        weekProps.component.startOfView,
+        weekProps.component.endOfView,
       ),
-    }),
     [weekProps.component.endOfView, weekProps.component.startOfView],
   );
 

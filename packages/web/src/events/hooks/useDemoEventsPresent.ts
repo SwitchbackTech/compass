@@ -7,18 +7,30 @@ import {
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 
+function rangeKey(range?: DemoEventsRange): string {
+  return range ? `${range.start}|${range.end}` : "";
+}
+
 export function useDemoEventsPresent(range?: DemoEventsRange): boolean {
   const queryClient = useQueryClient();
   const source = useEventRepositorySource();
-  const [present, setPresent] = useState(false);
+  const [state, setState] = useState<{
+    present: boolean;
+    key: string;
+  }>({ present: false, key: "" });
   const refreshGenerationRef = useRef(0);
   const rangeStart = range?.start;
   const rangeEnd = range?.end;
+  const currentKey = rangeKey(
+    rangeStart !== undefined && rangeEnd !== undefined
+      ? { start: rangeStart, end: rangeEnd }
+      : undefined,
+  );
 
   const refresh = useCallback(() => {
     if (source !== "local") {
       refreshGenerationRef.current += 1;
-      setPresent(false);
+      setState({ present: false, key: currentKey });
       return;
     }
 
@@ -30,10 +42,10 @@ export function useDemoEventsPresent(range?: DemoEventsRange): boolean {
         : undefined;
     void hasDemoEvents(rangeArg).then((result) => {
       if (generation === refreshGenerationRef.current) {
-        setPresent(result);
+        setState({ present: result, key: rangeKey(rangeArg) });
       }
     });
-  }, [rangeEnd, rangeStart, source]);
+  }, [currentKey, rangeEnd, rangeStart, source]);
 
   useEffect(() => {
     refresh();
@@ -49,5 +61,6 @@ export function useDemoEventsPresent(range?: DemoEventsRange): boolean {
     });
   }, [queryClient, refresh]);
 
-  return present;
+  // Drop stale "present" from a previous range while the next check is in flight.
+  return state.key === currentKey && state.present;
 }

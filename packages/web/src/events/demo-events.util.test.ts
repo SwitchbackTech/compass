@@ -1,6 +1,11 @@
 import { EventScheduleSchema } from "@core/types/event.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { createMockLocalEventRecord } from "@web/__tests__/utils/factories/event.factory";
-import { clearDemoEvents, hasDemoEvents } from "@web/events/demo-events.util";
+import {
+  clearDemoEvents,
+  hasDemoEvents,
+  toDemoEventsRange,
+} from "@web/events/demo-events.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const getAllEvents = mock(
@@ -8,16 +13,19 @@ const getAllEvents = mock(
 );
 const deleteEvent = mock(async () => undefined);
 const invalidateQueries = mock(async () => undefined);
+const getStore = () => ({ getAllEvents, deleteEvent });
 
-mock.module(
-  "@web/common/storage/offline-data/offline-data.store.registry",
-  () => ({
-    getOfflineDataStore: () => ({
-      getAllEvents,
-      deleteEvent,
-    }),
-  }),
-);
+describe("toDemoEventsRange", () => {
+  it("builds an exclusive-end range from inclusive calendar days", () => {
+    const start = dayjs("2026-07-26");
+    const end = dayjs("2026-08-01");
+
+    expect(toDemoEventsRange(start.hour(15), end.endOf("day"))).toEqual({
+      start: start.startOf("day").format(),
+      end: end.startOf("day").add(1, "day").format(),
+    });
+  });
+});
 
 describe("hasDemoEvents", () => {
   beforeEach(() => {
@@ -32,13 +40,13 @@ describe("hasDemoEvents", () => {
       createMockLocalEventRecord({}, false),
     ]);
 
-    await expect(hasDemoEvents()).resolves.toBe(true);
+    await expect(hasDemoEvents(undefined, getStore)).resolves.toBe(true);
   });
 
   it("returns false when no demo events exist", async () => {
     getAllEvents.mockResolvedValueOnce([createMockLocalEventRecord({}, false)]);
 
-    await expect(hasDemoEvents()).resolves.toBe(false);
+    await expect(hasDemoEvents(undefined, getStore)).resolves.toBe(false);
   });
 
   it("returns true only when a demo event overlaps the given range", async () => {
@@ -67,24 +75,33 @@ describe("hasDemoEvents", () => {
     getAllEvents.mockResolvedValue([inRange, outOfRange]);
 
     await expect(
-      hasDemoEvents({
-        start: "2026-07-26T00:00:00.000-05:00",
-        end: "2026-08-02T00:00:00.000-05:00",
-      }),
+      hasDemoEvents(
+        {
+          start: "2026-07-26T00:00:00.000-05:00",
+          end: "2026-08-02T00:00:00.000-05:00",
+        },
+        getStore,
+      ),
     ).resolves.toBe(true);
 
     await expect(
-      hasDemoEvents({
-        start: "2026-08-02T00:00:00.000-05:00",
-        end: "2026-08-09T00:00:00.000-05:00",
-      }),
+      hasDemoEvents(
+        {
+          start: "2026-08-02T00:00:00.000-05:00",
+          end: "2026-08-09T00:00:00.000-05:00",
+        },
+        getStore,
+      ),
     ).resolves.toBe(true);
 
     await expect(
-      hasDemoEvents({
-        start: "2026-08-09T00:00:00.000-05:00",
-        end: "2026-08-16T00:00:00.000-05:00",
-      }),
+      hasDemoEvents(
+        {
+          start: "2026-08-09T00:00:00.000-05:00",
+          end: "2026-08-16T00:00:00.000-05:00",
+        },
+        getStore,
+      ),
     ).resolves.toBe(false);
   });
 
@@ -104,10 +121,13 @@ describe("hasDemoEvents", () => {
     ]);
 
     await expect(
-      hasDemoEvents({
-        start: "2026-07-26T00:00:00.000-05:00",
-        end: "2026-08-02T00:00:00.000-05:00",
-      }),
+      hasDemoEvents(
+        {
+          start: "2026-07-26T00:00:00.000-05:00",
+          end: "2026-08-02T00:00:00.000-05:00",
+        },
+        getStore,
+      ),
     ).resolves.toBe(false);
   });
 
@@ -126,10 +146,13 @@ describe("hasDemoEvents", () => {
     ]);
 
     await expect(
-      hasDemoEvents({
-        start: "2026-07-26T00:00:00.000-05:00",
-        end: "2026-08-02T00:00:00.000-05:00",
-      }),
+      hasDemoEvents(
+        {
+          start: "2026-07-26T00:00:00.000-05:00",
+          end: "2026-08-02T00:00:00.000-05:00",
+        },
+        getStore,
+      ),
     ).resolves.toBe(true);
   });
 });
@@ -146,9 +169,10 @@ describe("clearDemoEvents", () => {
     const user = createMockLocalEventRecord({}, false);
     getAllEvents.mockResolvedValueOnce([demo, user]);
 
-    const removed = await clearDemoEvents({
-      invalidateQueries,
-    } as never);
+    const removed = await clearDemoEvents(
+      { invalidateQueries } as never,
+      getStore,
+    );
 
     expect(removed).toBe(1);
     expect(deleteEvent).toHaveBeenCalledTimes(1);

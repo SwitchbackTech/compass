@@ -13,6 +13,7 @@ import { useUpNextEventShortcut } from "@web/components/Sidebar/UpNextCard/useUp
 import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
 import { focusFirstSidebarItem } from "@web/components/Sidebar/util/sidebarFocus.util";
 import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
+import { toDemoEventsRange } from "@web/events/demo-events.util";
 import {
   selectIsEventFormOpen,
   useDraftStore,
@@ -25,10 +26,7 @@ import {
 import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
 import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
 import { Header } from "@web/views/Day/components/Header/Header";
-import {
-  dayEventQueryRange,
-  useDayEvents,
-} from "@web/views/Day/hooks/events/useDayEvents";
+import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
@@ -125,10 +123,10 @@ export const DayViewContent = memo(() => {
     welcomeGuideActions.open();
   }, []);
 
-  const demoEventsRange = useMemo(() => {
-    const { startDate, endDate } = dayEventQueryRange(dateInView);
-    return { start: startDate, end: endDate };
-  }, [dateInView]);
+  const demoEventsRange = useMemo(
+    () => toDemoEventsRange(dateInView, dateInView),
+    [dateInView],
+  );
 
   return (
     <div id="day" className="flex h-screen w-screen overflow-hidden">
