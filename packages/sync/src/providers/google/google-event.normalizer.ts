@@ -1,5 +1,6 @@
 import { type calendar_v3 } from "@googleapis/calendar";
 import { EventScheduleSchema } from "@core/types/event.contracts";
+import { withColor } from "@core/types/event-color.contracts";
 import { type gSchema$Event } from "@core/types/gcal";
 import {
   type Attendee,
@@ -88,8 +89,7 @@ function mapContent(item: gSchema$Event) {
     organizer: mapOrganizer(item.organizer),
     attendees: mapAttendees(item.attendees),
     conference: mapConference(item),
-    // Omit entirely when Google reports no color or an unknown id.
-    ...(color !== undefined ? { color } : {}),
+    ...withColor(color),
   });
   if (!parsed.success) {
     throw new ProviderEventError(

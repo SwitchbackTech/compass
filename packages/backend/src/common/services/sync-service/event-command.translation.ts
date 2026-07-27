@@ -7,7 +7,10 @@ import {
   EventIdSchema,
 } from "@core/types/domain-primitives";
 import { type Event, EventSchema } from "@core/types/event.contracts";
-import { type EventColorSlot } from "@core/types/event-color.contracts";
+import {
+  type EventColorSlot,
+  withColor,
+} from "@core/types/event-color.contracts";
 import {
   type CreateEventInput,
   type DeleteEventInput,
@@ -50,7 +53,7 @@ export const toSyncContent = (content: {
   organizer: null,
   attendees: [],
   conference: null,
-  ...(content.color !== undefined ? { color: content.color } : {}),
+  ...withColor(content.color),
 });
 
 export interface CommandTarget {

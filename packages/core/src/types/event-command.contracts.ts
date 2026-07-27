@@ -11,7 +11,7 @@ import {
   EventScheduleSchema,
   EventSchema,
 } from "@core/types/event.contracts";
-import { EventColorSlotSchema } from "@core/types/event-color.contracts";
+import { OptionalNullableEventColorSchema } from "@core/types/event-color.contracts";
 
 const EditableContentSchema = z.strictObject({
   kind: z.literal("details"),
@@ -19,7 +19,7 @@ const EditableContentSchema = z.strictObject({
   description: z.string(),
   // Null clears a previously set color on replace; omit leaves sync color
   // alone when the client did not touch it.
-  color: EventColorSlotSchema.nullable().optional(),
+  color: OptionalNullableEventColorSchema,
 });
 
 export const RecurrenceScopeSchema = z.enum([

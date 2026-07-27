@@ -6,7 +6,10 @@ import {
   RRuleSchema,
 } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
-import { EventColorSlotSchema } from "@core/types/event-color.contracts";
+import {
+  EventColorSlotSchema,
+  OptionalNullableEventColorSchema,
+} from "@core/types/event-color.contracts";
 import {
   ConnectionIdSchema,
   ProviderCalendarIdSchema,
@@ -106,7 +109,7 @@ export const SyncEventContentSchema = z.strictObject({
   conference: ConferenceSchema.nullable(),
   // Null means "clear the color tag" on an update command. Stored/read
   // records omit the field when there is no color.
-  color: EventColorSlotSchema.nullable().optional(),
+  color: OptionalNullableEventColorSchema,
 });
 export type SyncEventContent = z.infer<typeof SyncEventContentSchema>;
 
