@@ -660,7 +660,9 @@ describe("useWeekShortcuts view command bus", () => {
     });
 
     await waitFor(() => {
-      expect(useDraftStore.getState().status?.activity).toBe("createShortcut");
+      const { gridDraft, status } = useDraftStore.getState();
+      expect(status?.activity).toBe("createShortcut");
+      expect(gridDraft?.values.calendarId).toBe(writableCalendar.id);
     });
   });
 
@@ -672,7 +674,9 @@ describe("useWeekShortcuts view command bus", () => {
     });
 
     await waitFor(() => {
-      expect(useDraftStore.getState().status?.activity).toBe("createShortcut");
+      const { gridDraft, status } = useDraftStore.getState();
+      expect(status?.activity).toBe("createShortcut");
+      expect(gridDraft?.values.calendarId).toBe(writableCalendar.id);
     });
   });
 });
