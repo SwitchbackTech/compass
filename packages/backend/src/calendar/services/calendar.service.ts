@@ -242,10 +242,13 @@ class CalendarService {
 
   /**
    * Get every calendar record owned by a user.
+   *
+   * Takes an optional session so a caller deleting inside a transaction reads
+   * the same snapshot it is writing to, rather than the committed state.
    */
-  list = async (userId: ObjectId | string) => {
+  list = async (userId: ObjectId | string, session?: ClientSession) => {
     return mongoService.calendar
-      .find({ userId: zObjectId.parse(userId) })
+      .find({ userId: zObjectId.parse(userId) }, { session })
       .toArray();
   };
 

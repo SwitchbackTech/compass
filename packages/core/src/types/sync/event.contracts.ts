@@ -7,6 +7,10 @@ import {
 } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import {
+  EventColorSlotSchema,
+  OptionalNullableEventColorSchema,
+} from "@core/types/event-color.contracts";
+import {
   ConnectionIdSchema,
   ProviderCalendarIdSchema,
   ProviderEventIdSchema,
@@ -103,6 +107,9 @@ export const SyncEventContentSchema = z.strictObject({
   organizer: OrganizerSchema.nullable(),
   attendees: z.array(AttendeeSchema).readonly(),
   conference: ConferenceSchema.nullable(),
+  // Null means "clear the color tag" on an update command. Stored/read
+  // records omit the field when there is no color.
+  color: OptionalNullableEventColorSchema,
 });
 export type SyncEventContent = z.infer<typeof SyncEventContentSchema>;
 
@@ -229,6 +236,7 @@ export type EventOccurrenceListResponse = z.infer<
 const SyncInstanceContentSchema = z.strictObject({
   title: z.string(),
   description: z.string(),
+  color: EventColorSlotSchema.optional(),
 });
 export type SyncInstanceContent = z.infer<typeof SyncInstanceContentSchema>;
 

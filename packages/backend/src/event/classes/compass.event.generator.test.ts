@@ -43,6 +43,28 @@ describe("generateReplace", () => {
     });
   });
 
+  it("replaceThis: materializes instances when the update converts a single event to a series", () => {
+    const updated = buildEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=DAILY;COUNT=5"] },
+    });
+    const plan: ReplacePlan = { kind: "replaceThis", updated };
+
+    const result = generateReplace(plan);
+
+    expect(result.primary).toBe(updated);
+    expect(result.deleteIds).toEqual([]);
+    // base + 5 materialized instances, including the first (COUNT=5)
+    expect(result.upsert).toHaveLength(6);
+    expect(result.upsert[0]).toBe(updated);
+    result.upsert.slice(1).forEach((instance) => {
+      expect(instance.recurrence).toEqual({
+        kind: "occurrence",
+        seriesId: updated._id,
+      });
+    });
+    expect(result.upsert[1]?.schedule.start).toEqual(updated.schedule.start);
+  });
+
   it("replaceSeries: materializes instances for the new base and marks old instances for deletion", () => {
     const updatedBase = buildEvent({
       recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },

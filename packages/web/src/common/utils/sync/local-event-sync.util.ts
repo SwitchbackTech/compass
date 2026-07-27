@@ -1,4 +1,5 @@
 import { type CreateEventInput } from "@core/types/event-command.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { CalendarApi } from "@web/api/calendar.api";
 import { getLocalCalendar } from "@web/calendars/calendar.util";
 import { type OfflineDataStore } from "@web/common/storage/offline-data/offline-data.store";
@@ -7,6 +8,7 @@ import {
   getOfflineDataStore,
 } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { EventApi } from "@web/events/event.api";
+import { parseOccurrenceId } from "@web/events/recurrence/projectRecurringEdit";
 import { type LocalEventRecord } from "@web/events/types/local-event.record";
 
 type LocalEventSyncStorage = Pick<
@@ -21,6 +23,29 @@ type LocalEventSyncDependencies = {
   getOfflineDataStore: () => LocalEventSyncStorage;
 };
 
+// Occurrences a local "delete this occurrence" excluded from the series
+// (LocalEventRepository stores them as bare start dates on the record, never
+// materializing a per-instance row) survive promotion as RFC5545 EXDATE lines
+// appended to the RRULE text - materializeSeriesInstances parses the whole
+// `rules` array as one iCalendar text block, so this is the same mechanism
+// UNTIL truncation already relies on. Without this, a locally-deleted
+// occurrence would silently resurrect once the series is promoted.
+//
+// Always the full UTC timed format (never a bare date), anchored the same
+// way the backend's own getAnchorDate anchors an all-day series (midnight
+// UTC of the date) - matching instants exactly, since materializeSeriesInstances
+// generates each occurrence as an offset from that same anchor.
+function exdateLines(
+  exdates: readonly string[] | undefined,
+  allDay: boolean,
+): string[] {
+  if (!exdates || exdates.length === 0) return [];
+  return exdates.map((date) => {
+    const instant = allDay ? dayjs(`${date}T00:00:00.000Z`) : dayjs(date).utc();
+    return `EXDATE:${instant.toRRuleDTSTARTString()}`;
+  });
+}
+
 // Maps a locally-stored record (calendarId = the client-generated sentinel)
 // onto the server's own local calendar id, preserving the client-generated
 // event id.
@@ -28,13 +53,25 @@ function toCreateInput(
   record: LocalEventRecord,
   serverLocalCalendarId: string,
 ): CreateEventInput {
+  const recurrence = record.event.recurrence;
+  const allDay = record.event.schedule.kind === "allDay";
+
   return {
-    id: record.event.id,
+    // Composed occurrence ids (`${seriesId}::${start}`, minted by local-mode
+    // series expansion) aren't valid server ids - let the backend generate
+    // one instead of rejecting the POST.
+    id: parseOccurrenceId(record.event.id) ? undefined : record.event.id,
     calendarId: serverLocalCalendarId as CreateEventInput["calendarId"],
     schedule: record.event.schedule,
     recurrence:
-      record.event.recurrence.kind === "series"
-        ? { kind: "series", rules: record.event.recurrence.rules }
+      recurrence.kind === "series"
+        ? {
+            kind: "series",
+            rules: [
+              ...recurrence.rules,
+              ...exdateLines(record.exdates, allDay),
+            ],
+          }
         : { kind: "single" },
     // Local storage only ever holds "details" content (never a synthesized
     // "busy" block), so this narrowing cast is safe.

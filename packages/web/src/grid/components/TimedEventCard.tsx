@@ -123,13 +123,10 @@ const TimedEventCardBase = (
     [position.height, showTimeLabel],
   );
 
-  const { base: baseColor, hover: hoverColor } = useEventPalette();
-  // Darkened well past the mid-tone "dead zone" (where neither dark nor light
-  // text clears 4.5:1) so the draft fill is unambiguously dark and takes the
-  // light title color. On the dark theme that separates it from the lighter
-  // saved fills; on the light theme (already-dark fills) the drop-shadow
-  // below carries the draft-vs-saved distinction.
-  const draftColor = darken(baseColor, 38);
+  const { base: baseColor, hover: hoverColor } = useEventPalette(event.color);
+  // Draft fills use the same base as saved cards so the Week overlay matches
+  // the form/context-menu swatch (and the eventual save). Draft vs saved is
+  // carried by the drop-shadow filter below, not by darkening the color away.
   // Past events recede in the direction of the theme's grid: the dark theme's
   // light steel fill dims slightly, the light theme's ink fill fades toward
   // the paper (brighten 14 keeps light text >= 4.5:1 and stays clearly apart
@@ -144,7 +141,7 @@ const TimedEventCardBase = (
     "0 0 0 1px color-mix(in srgb, var(--text) 55%, transparent)";
 
   const bgColor = (() => {
-    if (isDraft) return draftColor;
+    if (isDraft) return baseColor;
     if (isResizing || isDragging) return brighten(baseColor);
     if (isInPast) return pastColor;
     return baseColor;

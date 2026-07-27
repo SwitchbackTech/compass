@@ -2,6 +2,10 @@ import { Origin } from "@core/constants/core.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
+import {
+  type EventColorSlot,
+  withColor,
+} from "@core/types/event-color.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -74,14 +78,15 @@ const isValidScheduledEvent = (event: Event): boolean => {
   return isValid;
 };
 
-// Re-attaches calendarId + isBusy onto the GridEvent produced by the
-// Event -> CompassEvent -> GridEvent bridge above. scheduledEventToSchemaEvent
-// returns the hand-written core `CompassEvent` shape (compass-event.contracts.ts),
-// which has neither field, so the bridge itself can't carry them through
-// without widening that shared type (used by 10+ unrelated consumers). Joining
-// back by event id after assembleGridEvent keeps the bridge untouched and scopes
-// the new fields to GridEvent only (packet 08 steps 5 and 8). isBusy
-// backs the read-only gate - see isEventReadOnly in calendars/useCalendarLookup.ts.
+// Re-attaches calendarId + isBusy + optional color onto the GridEvent
+// produced by the Event -> CompassEvent -> GridEvent bridge above.
+// scheduledEventToSchemaEvent returns the hand-written core `CompassEvent`
+// shape (compass-event.contracts.ts), which has none of those fields, so the
+// bridge itself can't carry them through without widening that shared type
+// (used by 10+ unrelated consumers). Joining back by event id after
+// assembleGridEvent keeps the bridge untouched and scopes the new fields to
+// GridEvent only (packet 08 steps 5 and 8). isBusy backs the read-only gate
+// - see isEventReadOnly in calendars/useCalendarLookup.ts.
 const withCalendarMetadata = (
   events: Event[],
   gridEvents: GridEvent[],
@@ -90,11 +95,22 @@ const withCalendarMetadata = (
   const demoEventIdSet = new Set(demoEventIds ?? []);
   const metadataByEventId = new Map<
     string,
-    { calendarId: Event["calendarId"]; isBusy: boolean }
+    {
+      calendarId: Event["calendarId"];
+      isBusy: boolean;
+      color?: EventColorSlot;
+    }
   >(
     events.map((event) => [
       event.id,
-      { calendarId: event.calendarId, isBusy: event.content.kind === "busy" },
+      {
+        calendarId: event.calendarId,
+        isBusy: event.content.kind === "busy",
+        color:
+          event.content.kind === "details"
+            ? (event.content.color ?? undefined)
+            : undefined,
+      },
     ]),
   );
   return gridEvents.map((gridEvent) => {
@@ -108,6 +124,7 @@ const withCalendarMetadata = (
       isDemo: gridEvent._id
         ? demoEventIdSet.has(gridEvent._id as EventId)
         : false,
+      ...withColor(metadata?.color),
     };
   });
 };

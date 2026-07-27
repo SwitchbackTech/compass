@@ -29,6 +29,7 @@ const actions: ContextMenuItemsActions = {
   delete: mock(),
   duplicate: mock(),
   edit: mock(),
+  setColor: mock(),
 };
 
 // Mirrors how the day/week wrappers mount the menu: a virtual cursor reference
@@ -124,5 +125,21 @@ describe("ContextMenu keyboard operability", () => {
 
     expect(getMenu()).toBeInTheDocument();
     expect(screen.getAllByRole("menuitem")).toHaveLength(3);
+    expect(screen.getAllByRole("menuitemradio").length).toBeGreaterThan(0);
+  });
+
+  it("navigates from action items into color swatches with arrow keys", async () => {
+    render(<OpenMenuHarness />);
+    await flushFocusSeat();
+
+    const menu = getMenu();
+    fireEvent.keyDown(menu, { key: "ArrowDown" });
+    fireEvent.keyDown(menu, { key: "ArrowDown" });
+    expect(screen.getByRole("menuitem", { name: "Delete" })).toHaveFocus();
+
+    fireEvent.keyDown(menu, { key: "ArrowDown" });
+    expect(
+      screen.getByRole("menuitemradio", { name: "Calendar default" }),
+    ).toHaveFocus();
   });
 });

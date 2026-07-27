@@ -56,7 +56,7 @@ const AllDayEventCardBase = (
   }: AllDayEventCardProps,
   ref: ForwardedRef<HTMLDivElement>,
 ) => {
-  const { base: baseColor, hover: hoverColor } = useEventPalette();
+  const { base: baseColor, hover: hoverColor } = useEventPalette(event.color);
   const isInPast = dayjs().isAfter(dayjs(event.endDate));
   const isRecurring = isRecurringEvent(event);
   const showRepeatIcon =

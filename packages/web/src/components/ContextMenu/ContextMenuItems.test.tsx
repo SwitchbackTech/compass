@@ -117,6 +117,38 @@ describe("ContextMenuItems", () => {
     expect(screen.getByText("Edit")).toBeInTheDocument();
     expect(screen.getByText("Duplicate")).toBeInTheDocument();
     expect(screen.getByText("Delete")).toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitemradio", { name: "Blue" }),
+    ).toBeInTheDocument();
+  });
+
+  it("applies a color from the swatch strip and closes", async () => {
+    const user = userEvent.setup();
+    const event = createMockGridEvent({
+      title: "Test Event",
+    });
+    const setColor = mock();
+
+    const { ContextMenuItemsView } =
+      require("./ContextMenuItems") as typeof import("./ContextMenuItems");
+
+    renderWithTheme(
+      <ContextMenuItemsView
+        event={event}
+        close={mockClose}
+        actions={{
+          delete: mock(),
+          duplicate: mock(),
+          edit: mock(),
+          setColor,
+        }}
+      />,
+      { event },
+    );
+
+    await user.click(screen.getByRole("menuitemradio", { name: "Coral" }));
+    expect(setColor).toHaveBeenCalledWith("coral");
+    expect(mockClose).toHaveBeenCalled();
   });
 
   it("should call onClick handlers", async () => {
@@ -268,6 +300,9 @@ describe("ContextMenuItems read-only gate", () => {
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("menuitem", { name: "Delete" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitemradio", { name: "Blue" }),
     ).not.toBeInTheDocument();
   });
 

@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
 import {
@@ -9,6 +10,7 @@ import {
 } from "@sync/providers/provider-notifications.port";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 const objectId = () => faker.database.mongodbObjectId();
@@ -71,7 +73,10 @@ class FakeNotifications implements ProviderNotificationAdapter {
   }
 }
 
-const custody = { getValidAccessToken: async () => "access-token" };
+const custody = {
+  getValidAccessToken: async () => "access-token",
+  discardRevoked: async () => {},
+};
 
 describe("maintainSubscription", () => {
   const storage = setupSyncStorage(import.meta.url);
@@ -245,17 +250,36 @@ describe("maintainSubscription", () => {
     expect(saved?.subscriptionExpiresAt).toBeNull();
   });
 
-  it("reports authRevoked without touching the stored subscription", async () => {
-    const cal = calendar(objectId());
+  it("reports authRevoked, discards the credential, and leaves the subscription", async () => {
+    const connectionId = objectId() as ConnectionId;
+    const cal = calendar(connectionId);
     const resource = await seedResource(cal, {
       expiresAt: new Date("2026-07-10T01:00:00.000Z"),
     });
+    const credentials = new CredentialRepository(storage.db());
+    await credentials.store({
+      connectionId,
+      provider: "google",
+      refreshToken: "stored-refresh-token",
+      scopes: ["https://www.googleapis.com/auth/calendar.events"],
+    });
+    const discardingCustody = {
+      getValidAccessToken: async () => "access-token",
+      discardRevoked: async (id: ConnectionId) => {
+        await credentials.deleteByConnection(id);
+      },
+    };
     const notifications = new FakeNotifications({
       watchError: new ProviderNotificationError("authorizationRevoked", "gone"),
     });
 
     const outcome = await maintainSubscription(
-      { resources, notifications, custody, callbackUrl: "https://sync/cb" },
+      {
+        resources,
+        notifications,
+        custody: discardingCustody,
+        callbackUrl: "https://sync/cb",
+      },
       cal,
       resource,
       now,
@@ -265,6 +289,7 @@ describe("maintainSubscription", () => {
     // Left as-is: a reconnect re-bootstraps; we do not clear a possibly-live one.
     const saved = await reload(resource);
     expect(saved?.subscriptionId).toBe("old-channel");
+    expect(await credentials.findByConnection(connectionId)).toBeNull();
   });
 
   it("throws on a transient watch failure so the worker retries", async () => {

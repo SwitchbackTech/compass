@@ -50,6 +50,7 @@ import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSect
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
 import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
+import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/EventColorPicker";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
@@ -175,8 +176,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         ? seriesBase.recurrence.rules
         : undefined;
 
-    const { title, description } = draft.values;
-    const { base: eventColor } = useEventPalette();
+    const { title, description, color } = draft.values;
+    const { base: eventColor } = useEventPalette(color ?? undefined);
     const category =
       draft.values.schedule.kind === "allDay"
         ? Categories_Event.ALLDAY
@@ -308,7 +309,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
     const patchDraftFields = useCallback(
       (
-        patch: Partial<Pick<GridEventDraft["values"], "title" | "description">>,
+        patch: Partial<
+          Pick<GridEventDraft["values"], "title" | "description" | "color">
+        >,
       ) => {
         setLatestDraft((current) => {
           if (!current) return current;
@@ -661,6 +664,10 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                   Calendar: {originalCalendarName}
                 </p>
               )}
+              <EventColorPicker
+                value={color}
+                onChange={(next) => patchDraftFields({ color: next })}
+              />
             </FormCard>
 
             <FormCard>

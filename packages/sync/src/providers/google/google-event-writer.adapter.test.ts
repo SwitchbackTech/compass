@@ -371,6 +371,32 @@ describe("GoogleEventWriter", () => {
     });
   });
 
+  it("maps content.color onto Google colorId and omits colorId when unset", async () => {
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    await writer.createEvent({
+      ...baseCreate,
+      content: content({ color: "blue" }),
+    });
+    await writer.patchEvent({ ...basePatch, content: content() });
+
+    expect(api.calls.insert[0].requestBody.colorId).toBe("7");
+    expect(api.calls.patch[0].requestBody).not.toHaveProperty("colorId");
+  });
+
+  it("clears Google colorId when content.color is null", async () => {
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    await writer.patchEvent({
+      ...basePatch,
+      content: content({ color: null }),
+    });
+
+    expect(api.calls.patch[0].requestBody.colorId).toBeNull();
+  });
+
   it("maps each invitation intent straight to sendUpdates", async () => {
     const api = new FakeEventsApi();
     const { writer } = writerWith(api);

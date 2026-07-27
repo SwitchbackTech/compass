@@ -1,15 +1,23 @@
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { type Event } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
+import {
+  ID_GRID_ALLDAY_ROW,
+  ID_GRID_MAIN,
+} from "@web/common/constants/web.constants";
 import { Categories_Event } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraft,
   editGridEventDraft,
 } from "@web/events/grid-event-draft.adapter";
-import { type Activity_DraftEvent } from "@web/events/stores/draft.store";
+import {
+  type Activity_DraftEvent,
+  draftActions,
+} from "@web/events/stores/draft.store";
+import { CROSS_ROW_TIMED_DURATION_MIN } from "@web/grid/interaction/math/cross-row.drag";
 import {
   type Setters_Draft,
   type State_Draft_Local,
@@ -160,7 +168,15 @@ const createSetters = (
   ...overrides,
 });
 
-const dateCalcs = {} as DateCalcs;
+const dateCalcs = {
+  getDateByXY: (x: number, y: number, startOfView: dayjs.Dayjs) => {
+    const dayOffset = Math.max(0, Math.floor(x / 100));
+    const minutes = Math.max(0, Math.floor(y / 2 / 15) * 15);
+    return startOfView.add(dayOffset, "day").add(minutes, "minutes");
+  },
+  getDateStrByXY: (x: number, y: number, startOfView: dayjs.Dayjs) =>
+    dateCalcs.getDateByXY(x, y, startOfView).format(),
+} as DateCalcs;
 
 const weekProps = {
   component: {
@@ -172,6 +188,27 @@ const weekProps = {
     getLastNavigationSource: () => "manual",
   },
 } as unknown as WeekProps;
+
+const mountDraftDragDom = () => {
+  document.body.innerHTML = "";
+  const allDayRow = document.createElement("div");
+  const mainGrid = document.createElement("div");
+  allDayRow.id = ID_GRID_ALLDAY_ROW;
+  mainGrid.id = ID_GRID_MAIN;
+  allDayRow.getBoundingClientRect = () =>
+    ({
+      top: 20,
+      bottom: 60,
+      left: 0,
+      right: 700,
+      height: 40,
+      width: 700,
+      x: 0,
+      y: 20,
+      toJSON: () => ({}),
+    }) as DOMRect;
+  document.body.append(allDayRow, mainGrid);
+};
 
 const setDraftActivity = (
   activity: Activity_DraftEvent,
@@ -186,18 +223,24 @@ const setDraftActivity = (
   };
 };
 
-const renderDraftActions = (draft: GridEventDraft) => {
+const renderDraftActions = (
+  draft: GridEventDraft,
+  stateOverrides: Partial<State_Draft_Local> = {},
+) => {
   const setDraft = mock();
+  const setDragOffset = mock();
+  const setDragStatus = mock();
   currentState.events!.draft = {
     ...currentState.events!.draft,
     gridDraft: draft,
   };
+  draftActions.setGridDraft(draft);
   const { wrapper } = createStoreWrapper(currentState);
   const { result } = renderHook(
     () =>
       useDraftActions(
-        createState({ draft }),
-        createSetters({ setDraft }),
+        createState({ draft, ...stateOverrides }),
+        createSetters({ setDraft, setDragOffset, setDragStatus }),
         dateCalcs,
         weekProps,
       ),
@@ -205,8 +248,10 @@ const renderDraftActions = (draft: GridEventDraft) => {
   );
 
   setDraft.mockClear();
+  setDragOffset.mockClear();
+  setDragStatus.mockClear();
 
-  return { result, setDraft };
+  return { result, setDraft, setDragOffset, setDragStatus };
 };
 
 const expectDraftRange = (
@@ -402,5 +447,90 @@ describe("useDraftActions", () => {
     // The mount effect calls setIsResizing(false) to clear stale state; what
     // must never happen is a resize being switched *on*.
     expect(setIsResizing).not.toHaveBeenCalledWith(true);
+  });
+
+  it("converts a new all-day draft to timed while dragging over the timed grid", () => {
+    mountDraftDragDom();
+    setDraftActivity("gridClick", Categories_Event.ALLDAY);
+    const draft = createNewDraft({
+      isAllDay: true,
+      start: "2024-01-16T00:00:00.000Z",
+      end: "2024-01-17T00:00:00.000Z",
+    });
+    const { result, setDraft, setDragOffset, setDragStatus } =
+      renderDraftActions(draft, {
+        isDragging: true,
+        dragOffset: { x: 10, y: 5 },
+        dragStatus: { durationMin: 24 * 60 },
+      });
+
+    act(() => {
+      result.current.drag({ clientX: 100, clientY: 200 });
+    });
+
+    const nextDraft = setDraft.mock.calls[0]?.[0] as GridEventDraft;
+    expect(nextDraft.values.schedule.kind).toBe("timed");
+    expect(
+      dayjs(nextDraft.values.schedule.end).diff(
+        nextDraft.values.schedule.start,
+        "minutes",
+      ),
+    ).toBe(CROSS_ROW_TIMED_DURATION_MIN);
+    expect(setDragOffset).toHaveBeenCalledWith({ x: 0, y: 0 });
+    expect(setDragStatus).toHaveBeenCalled();
+  });
+
+  it("converts an existing all-day edit draft to timed while dragging over the timed grid", () => {
+    mountDraftDragDom();
+    setDraftActivity("gridClick", Categories_Event.ALLDAY);
+    const draft = createEditDraft({
+      isAllDay: true,
+      start: "2024-01-16T00:00:00.000Z",
+      end: "2024-01-17T00:00:00.000Z",
+    });
+    const { result, setDraft } = renderDraftActions(draft, {
+      isDragging: true,
+      dragOffset: { x: 8, y: 4 },
+      dragStatus: { durationMin: 24 * 60, hasMoved: false },
+    });
+
+    act(() => {
+      result.current.drag({ clientX: 200, clientY: 180 });
+    });
+
+    const nextDraft = setDraft.mock.calls[0]?.[0] as GridEventDraft;
+    expect(nextDraft.kind).toBe("edit");
+    expect(nextDraft.values.schedule.kind).toBe("timed");
+  });
+
+  it("converts on drag start when the pointer is already over the timed grid", () => {
+    mountDraftDragDom();
+    setDraftActivity("gridClick", Categories_Event.ALLDAY);
+    const draft = createNewDraft({
+      isAllDay: true,
+      start: "2024-01-16T00:00:00.000Z",
+      end: "2024-01-17T00:00:00.000Z",
+    });
+    const { result, setDraft } = renderDraftActions(draft, {
+      isDragging: false,
+      dragOffset: { x: 0, y: 0 },
+      dragStatus: { durationMin: 24 * 60 },
+    });
+
+    act(() => {
+      result.current.startDragging(
+        { x: 10, y: 5 },
+        { clientX: 100, clientY: 200 },
+      );
+    });
+
+    const nextDraft = setDraft.mock.calls[0]?.[0] as GridEventDraft;
+    expect(nextDraft.values.schedule.kind).toBe("timed");
+    expect(
+      dayjs(nextDraft.values.schedule.end).diff(
+        nextDraft.values.schedule.start,
+        "minutes",
+      ),
+    ).toBe(CROSS_ROW_TIMED_DURATION_MIN);
   });
 });

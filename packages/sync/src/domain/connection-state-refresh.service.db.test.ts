@@ -169,4 +169,13 @@ describe("refreshConnectionState", () => {
     const after = await refreshConnectionState(deps(), connection);
     expect(after.state).toBe("importing");
   });
+
+  it("derives actionRequired/authorizationRevoked when the credential is missing", async () => {
+    const connection = await seedImportingConnection();
+    await credentials.deleteByConnection(connection._id);
+
+    const after = await refreshConnectionState(deps(), connection);
+    expect(after.state).toBe("actionRequired");
+    expect(after.stateReason).toBe("authorizationRevoked");
+  });
 });

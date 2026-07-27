@@ -110,6 +110,7 @@ export async function maintainSubscription(
         return { status: "unsupported" };
       }
       if (error.reason === "authorizationRevoked") {
+        await deps.custody.discardRevoked(calendar.connectionId);
         return { status: "authRevoked" };
       }
     }

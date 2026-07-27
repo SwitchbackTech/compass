@@ -1,7 +1,15 @@
-import { DateOnlySchema, DateTimeSchema } from "@core/types/domain-primitives";
+import { ObjectId } from "bson";
+import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
+import {
+  DateOnlySchema,
+  DateTimeSchema,
+  type EventId,
+} from "@core/types/domain-primitives";
 import { type Event, type EventSchedule } from "@core/types/event.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
+import { getCompassEventDateFormat } from "@core/util/event/event.util";
 
 export type RecurringEditProjection = {
   removeIds: ReadonlySet<string>;
@@ -124,7 +132,8 @@ const shiftEvent = (event: Event, original: Event, edited: Event): Event => {
   };
 };
 
-const isAtOrAfter = (event: Event, cutoff: Event["schedule"]) => {
+// Exported for projectSeriesRulesChange's "thisAndFollowing" filtering below.
+export const isAtOrAfter = (event: Event, cutoff: Event["schedule"]) => {
   return !dayjs(event.schedule.start).isBefore(cutoff.start);
 };
 
@@ -188,4 +197,149 @@ export function projectRecurringDelete({
   if (scope === "all") removeIds.add(seriesId);
 
   return { removeIds, upserts: [] };
+}
+
+// Deterministic occurrence ids (`${seriesId}::${start}`) keep repeated
+// projections idempotent and give local mode stable ids across refetches.
+// EventId is opaque client-side, so the composed shape is legal; the server
+// swaps them for real ids at the settle refetch in remote mode.
+export function composeOccurrenceId(seriesId: string, start: string): EventId {
+  return `${seriesId}::${start}` as EventId;
+}
+
+// Split at the LAST "::": a this-and-following split creates a series whose
+// own id is already composed, so its occurrences nest another segment.
+export function parseOccurrenceId(
+  id: string,
+): { seriesId: EventId; start: string } | null {
+  const separator = id.lastIndexOf("::");
+  if (separator <= 0 || separator + 2 >= id.length) return null;
+  return {
+    seriesId: id.slice(0, separator) as EventId,
+    start: id.slice(separator + 2),
+  };
+}
+
+type ProjectSeriesMaterializationInput = {
+  /** The series base; `recurrence.kind` must be "series" to expand. */
+  base: Event;
+  /** Stale cached instances of this series to purge (old rules). */
+  cachedSeriesEvents?: readonly Event[];
+  /** Ranges worth materializing into (typically the cached query ranges). */
+  ranges: readonly { start: string; end: string }[];
+  /** Occurrence starts (in the base's schedule format) to skip. */
+  exdates?: readonly string[];
+};
+
+/**
+ * Expand a series base's RRULE into concrete occurrence events so a
+ * create/edit that (re)defines recurrence renders instantly instead of after
+ * the server round trip. Mirrors the server's materialization: the first
+ * occurrence is a real instance and the base stays metadata-only (the grid
+ * filters `kind === "series"`). Expansion is bounded by the latest range end
+ * and the server's 730-instance cap; per-entry range membership is enforced
+ * downstream by `applyEventProjectionAcrossQueries`.
+ */
+export function projectSeriesMaterialization({
+  base,
+  cachedSeriesEvents = [],
+  ranges,
+  exdates = [],
+}: ProjectSeriesMaterializationInput): RecurringEditProjection {
+  const removeIds = new Set<string>(
+    cachedSeriesEvents.flatMap((event) =>
+      event.id === base.id ? [] : [event.id],
+    ),
+  );
+
+  if (base.recurrence.kind !== "series" || ranges.length === 0) {
+    return { removeIds, upserts: [base] };
+  }
+
+  try {
+    const rrule = new CompassEventRRule({
+      _id: new ObjectId(),
+      startDate: base.schedule.start,
+      endDate: base.schedule.end,
+      recurrence: { rule: [...base.recurrence.rules] },
+    });
+
+    const format = getCompassEventDateFormat(base.schedule.start);
+    const durationMs = dayjs(base.schedule.end).diff(
+      base.schedule.start,
+      "milliseconds",
+    );
+    const maxEnd = ranges
+      .map((range) => dayjs(range.end))
+      .reduce((latest, end) => (end.isAfter(latest) ? end : latest));
+    const excluded = new Set(exdates);
+
+    const instances = rrule
+      .all(
+        (date, index) =>
+          index < GCAL_MAX_RECURRENCES && dayjs(date).isBefore(maxEnd),
+      )
+      .flatMap((date) => {
+        const start = dayjs(date).format(format);
+        if (excluded.has(start)) return [];
+        return [
+          {
+            ...base,
+            id: composeOccurrenceId(base.id, start),
+            schedule: {
+              ...base.schedule,
+              start,
+              end: dayjs(date).add(durationMs, "milliseconds").format(format),
+            } as Event["schedule"],
+            recurrence: { kind: "occurrence", seriesId: base.id },
+          } satisfies Event,
+        ];
+      });
+
+    return { removeIds, upserts: [base, ...instances] };
+  } catch {
+    return { removeIds, upserts: [base] };
+  }
+}
+
+type ProjectSeriesRulesChangeInput = {
+  scope: RecurrenceScope;
+  /** The edited event; `recurrence.kind` must be "series". */
+  edited: Event;
+  /** The pre-edit cached event (single, series base, or occurrence). */
+  original: Event;
+  /** seriesIdOf(original); null for a single event becoming a series. */
+  seriesId: EventId | null;
+  /** Every cached instance of the series, unfiltered. */
+  seriesEvents: readonly Event[];
+  ranges: readonly { start: string; end: string }[];
+};
+
+/**
+ * Dispatches a rules-changing recurrence edit (single→series at scope "this",
+ * or a rules change at "all"/"thisAndFollowing") to projectSeriesMaterialization,
+ * resolving the same per-scope base-rebasing and affected-instance filtering
+ * the backend's analyzeReplace applies — mirrors how projectRecurringEdit and
+ * projectRecurringDelete take `scope` and internalize their own affected-
+ * instance logic, keeping callers thin dispatchers.
+ */
+export function projectSeriesRulesChange({
+  scope,
+  edited,
+  original,
+  seriesId,
+  seriesEvents,
+  ranges,
+}: ProjectSeriesRulesChangeInput): RecurringEditProjection {
+  // "all" rewrites the series base in place (server's replaceSeries keeps the
+  // base id); "thisAndFollowing" splits, re-basing at the edited event and
+  // keeping earlier instances; single→series keeps the edited event's own id.
+  const base =
+    scope === "all" && seriesId ? { ...edited, id: seriesId } : edited;
+  const cachedSeriesEvents =
+    scope === "thisAndFollowing"
+      ? seriesEvents.filter((event) => isAtOrAfter(event, original.schedule))
+      : seriesEvents;
+
+  return projectSeriesMaterialization({ base, cachedSeriesEvents, ranges });
 }

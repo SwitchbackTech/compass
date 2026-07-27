@@ -1,23 +1,10 @@
 import { type MouseEvent as ReactMouseEvent, useRef } from "react";
-import {
-  ID_GRID_ALLDAY_ROW,
-  ID_GRID_MAIN,
-} from "@web/common/constants/web.constants";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
-import {
-  Categories_Event,
-  type GridEvent,
-} from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
-import { getElemById } from "@web/common/utils/grid/grid.util";
 
 export const GRID_EVENT_MOUSE_HOLD_DELAY = 750; // ms
 export const GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD = 25; // pixels
-
-const elementEventTypeMap = {
-  [Categories_Event.TIMED]: ID_GRID_MAIN,
-  [Categories_Event.ALLDAY]: ID_GRID_ALLDAY_ROW,
-};
 
 type HandleDragHandlers = {
   onMouseMove: (e: MouseEvent) => void;
@@ -29,16 +16,18 @@ type HandleDragHandlers = {
  * - Quick press and release triggers a click
  * - Hold for delay or move beyond threshold triggers drag
  * - When form is open, only allows drag if mouse is still held down
+ *
+ * Listeners attach to `document` so an all-day draft can start dragging when the
+ * pointer leaves the all-day row toward the timed grid (element-scoped
+ * mousemove would stop firing at the row boundary).
  */
 export const useGridEventMouseDown = (
-  eventType: Categories_Event.TIMED | Categories_Event.ALLDAY,
   onClick: (event: GridEvent) => void,
   onDrag: (event: GridEvent, moveEvent: PartialMouseEvent) => void,
   delay: number = GRID_EVENT_MOUSE_HOLD_DELAY,
 ) => {
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
   const mouseMoved = useRef<boolean>(false);
-  const elementId = elementEventTypeMap[eventType];
   const targetRef = useRef<EventTarget | null>(null);
 
   const hasExceededMoveThreshold = (
@@ -56,20 +45,18 @@ export const useGridEventMouseDown = (
   };
 
   const cleanup = (
-    element: HTMLElement,
     onMouseMove: (e: MouseEvent) => void,
     onMouseUp: () => void,
   ) => {
     if (timeoutId.current) {
       clearTimeout(timeoutId.current);
     }
-    element.removeEventListener("mousemove", onMouseMove);
-    element.removeEventListener("mouseup", onMouseUp);
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
   };
 
   const handleDrag = (
     event: GridEvent,
-    element: HTMLElement,
     currentEvent: MouseEvent,
     handlers: HandleDragHandlers,
   ) => {
@@ -77,7 +64,7 @@ export const useGridEventMouseDown = (
     if (isEventFormOpen()) {
       const isMouseDown = document.querySelector(":active") !== null;
       if (!isMouseDown) {
-        cleanup(element, handlers.onMouseMove, handlers.onMouseUp);
+        cleanup(handlers.onMouseMove, handlers.onMouseUp);
         return;
       }
     }
@@ -93,10 +80,6 @@ export const useGridEventMouseDown = (
   const onMouseDown = (e: ReactMouseEvent, event: GridEvent) => {
     e.stopPropagation();
     targetRef.current = e.currentTarget;
-    const element = getElemById(elementId);
-    if (!element) {
-      return;
-    }
     const initialX = e.clientX;
     const initialY = e.clientY;
     mouseMoved.current = false;
@@ -119,7 +102,7 @@ export const useGridEventMouseDown = (
           clientY: moveEvent.clientY,
           currentTarget: targetRef.current as EventTarget & Element,
         });
-        cleanup(element, onMouseMove, onMouseUp);
+        cleanup(onMouseMove, onMouseUp);
       }
     };
 
@@ -128,7 +111,7 @@ export const useGridEventMouseDown = (
         clearTimeout(timeoutId.current);
         onClick(event);
       }
-      cleanup(element, onMouseMove, onMouseUp);
+      cleanup(onMouseMove, onMouseUp);
     };
 
     // Start hold timer
@@ -140,13 +123,12 @@ export const useGridEventMouseDown = (
           clientY: initialY,
         });
 
-        handleDrag(event, element, currentEvent, { onMouseMove, onMouseUp });
+        handleDrag(event, currentEvent, { onMouseMove, onMouseUp });
       }
     }, delay);
 
-    // Set up event listeners
-    element.addEventListener("mousemove", onMouseMove);
-    element.addEventListener("mouseup", onMouseUp);
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
   };
 
   return { onMouseDown };

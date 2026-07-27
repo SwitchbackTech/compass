@@ -1,3 +1,4 @@
+import { type EventColorSlot } from "@core/types/event-color.contracts";
 import { type ThemeName } from "@web/settings/theme/theme.constants";
 import { selectTheme, useThemeStore } from "@web/settings/theme/theme.store";
 import { brighten, darken } from "./color.utils";
@@ -17,6 +18,40 @@ const EVENT_BASE_COLOR: Record<ThemeName, string> = {
   "light-beach": "#454442",
 };
 
+// Google Calendar's modern event color palette (colors.get event backgrounds),
+// keyed by Compass EventColorSlot. Used when an event carries a color tag;
+// otherwise cards fall back to EVENT_BASE_COLOR for the active theme.
+export const EVENT_COLOR_SLOT_HEX: Record<EventColorSlot, string> = {
+  lavender: "#7986CB",
+  mint: "#33B679",
+  plum: "#8E24AA",
+  coral: "#E67C73",
+  gold: "#F6BF26",
+  orange: "#F4511E",
+  blue: "#039BE5",
+  slate: "#616161",
+  indigo: "#3F51B5",
+  green: "#0B8043",
+  red: "#D50000",
+};
+
+export const EVENT_COLOR_SLOT_LABEL: Record<EventColorSlot, string> = {
+  lavender: "Lavender",
+  mint: "Mint",
+  plum: "Plum",
+  coral: "Coral",
+  gold: "Gold",
+  orange: "Orange",
+  blue: "Blue",
+  slate: "Slate",
+  indigo: "Indigo",
+  green: "Green",
+  red: "Red",
+};
+
+export const eventColorLabel = (color: EventColorSlot | null): string =>
+  color === null ? "Calendar default" : EVENT_COLOR_SLOT_LABEL[color];
+
 export interface EventPalette {
   base: string;
   /** Derived (not a fixed hex) so the hover delta scales with the base the
@@ -29,20 +64,20 @@ export interface EventPalette {
   saveButtonShadow: string;
 }
 
-const buildEventPalette = (theme: ThemeName): EventPalette => {
-  const base = EVENT_BASE_COLOR[theme];
-  return {
-    base,
-    hover: brighten(base),
-    gradient: `linear-gradient(90deg, ${darken(base, 15)}, ${darken(base, 30)})`,
-    // Undarkened: darken(base) sat right at the mid-tone dead zone (see
-    // getContrastText above), leaving Save's text only ~5:1 against its own
-    // fill. The plain base clears 6.5:1+ in both themes; saveButtonShadow
-    // still carries the "elevated" depth cue.
-    saveButtonBg: base,
-    saveButtonShadow: darken(base, 25),
-  };
-};
+const buildEventPaletteFromBase = (base: string): EventPalette => ({
+  base,
+  hover: brighten(base),
+  gradient: `linear-gradient(90deg, ${darken(base, 15)}, ${darken(base, 30)})`,
+  // Undarkened: darken(base) sat right at the mid-tone dead zone (see
+  // getContrastText above), leaving Save's text only ~5:1 against its own
+  // fill. The plain base clears 6.5:1+ in both themes; saveButtonShadow
+  // still carries the "elevated" depth cue.
+  saveButtonBg: base,
+  saveButtonShadow: darken(base, 25),
+});
+
+const buildEventPalette = (theme: ThemeName): EventPalette =>
+  buildEventPaletteFromBase(EVENT_BASE_COLOR[theme]);
 
 // Precomputed for both themes at module load — consumers just index in.
 const EVENT_PALETTES: Record<ThemeName, EventPalette> = {
@@ -50,15 +85,23 @@ const EVENT_PALETTES: Record<ThemeName, EventPalette> = {
   "light-beach": buildEventPalette("light-beach"),
 };
 
-/** The active theme's event palette; subscribes so a theme switch re-renders
- * the caller with the new fills. */
-export const useEventPalette = (): EventPalette =>
-  EVENT_PALETTES[useThemeStore(selectTheme)];
+/** The active theme's event palette, or a Google-slot fill when `color` is
+ * set. Subscribes so a theme switch re-renders the default (no-slot) case. */
+export const useEventPalette = (color?: EventColorSlot): EventPalette =>
+  resolveEventPalette(useThemeStore(selectTheme), color);
 
 /** Non-reactive read for plain functions (e.g. getGradient's identity check).
  * Components should use useEventPalette so they repaint on switch. */
-export const getEventPalette = (): EventPalette =>
-  EVENT_PALETTES[useThemeStore.getState().theme];
+export const getEventPalette = (color?: EventColorSlot): EventPalette =>
+  resolveEventPalette(useThemeStore.getState().theme, color);
+
+const resolveEventPalette = (
+  themeName: ThemeName,
+  color?: EventColorSlot,
+): EventPalette =>
+  color !== undefined
+    ? buildEventPaletteFromBase(EVENT_COLOR_SLOT_HEX[color])
+    : EVENT_PALETTES[themeName];
 
 // CSS-variable gradients: these land in inline `background` styles, so the
 // browser resolves them against the active [data-theme] — no JS hex needed.

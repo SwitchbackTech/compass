@@ -16,6 +16,7 @@ import {
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import {
   DATA_TIMED_GRID_ROW,
   ZIndex,
@@ -201,9 +202,16 @@ const withOffset = (dateTime: string) =>
 
 // The query cache (unlike draft.store.ts, still legacy CompassEvent-shaped
 // per its own TODO) requires strict-contract `Event`s.
+//
+// calendarId must match the anonymous local calendar the calendars query
+// synthesizes. Otherwise filterEventsByVisibleCalendars drops every fixture
+// once that query resolves mid-userEvent click (delay:0 yields to macrotasks
+// between hover and pointerdown), and the card unmounts before the
+// interaction engine can open it.
 const toStrictEvent = (event: CompassEvent): Event =>
   createMockEvent({
     id: EventIdSchema.parse(event._id!),
+    calendarId: getLocalCalendarSentinelId(),
     content: {
       kind: "details",
       title: event.title ?? "",
@@ -769,6 +777,72 @@ describe("DayCalendarGrid", () => {
     await waitFor(() => {
       expect(getGridDraft()?.values.calendarId).toBe(projects.id);
     });
+  });
+
+  it("seeds CREATE_TIMED_DRAFT with the default target calendar, not column 0", async () => {
+    // Holidays is first in column order (read-only, visible) but is not the
+    // default create target — primary writable Google is. Shortcut drafts
+    // must land on primary so the grid column matches the form.
+    const holidays = makeCalendar("Holidays in United States", {
+      access: "reader",
+      capabilities: {
+        canReadAvailability: true,
+        canReadDetails: true,
+        canWrite: false,
+        canManage: false,
+        canWatchEvents: true,
+      },
+    });
+    const primary = makeCalendar("compasscaltest3@gmail.com", {
+      isPrimary: true,
+    });
+    renderDayCalendarGrid([holidays, primary]);
+
+    act(() => {
+      emitViewCommand("CREATE_TIMED_DRAFT");
+    });
+
+    await waitFor(() => {
+      expect(getGridDraft()?.values.calendarId).toBe(primary.id);
+      expect(getIsFormOpen()).toBe(true);
+    });
+
+    const draftCard = screen.getByRole("button", {
+      name: /timed event: untitled event/i,
+    });
+    // Column widths are 180; primary is the second column (index 1).
+    expect(parseFloat(draftCard.style.left)).toBeGreaterThanOrEqual(180);
+  });
+
+  it("seeds CREATE_ALLDAY_DRAFT with the default target calendar, not column 0", async () => {
+    const holidays = makeCalendar("Holidays in United States", {
+      access: "reader",
+      capabilities: {
+        canReadAvailability: true,
+        canReadDetails: true,
+        canWrite: false,
+        canManage: false,
+        canWatchEvents: true,
+      },
+    });
+    const primary = makeCalendar("compasscaltest3@gmail.com", {
+      isPrimary: true,
+    });
+    renderDayCalendarGrid([holidays, primary]);
+
+    act(() => {
+      emitViewCommand("CREATE_ALLDAY_DRAFT");
+    });
+
+    await waitFor(() => {
+      expect(getGridDraft()?.values.calendarId).toBe(primary.id);
+      expect(getIsFormOpen()).toBe(true);
+    });
+
+    const draftCard = screen.getByRole("button", {
+      name: /all-day event: untitled event/i,
+    });
+    expect(parseFloat(draftCard.style.left)).toBeGreaterThanOrEqual(180);
   });
 
   it("rejects timed draft creation on a read-only calendar", async () => {

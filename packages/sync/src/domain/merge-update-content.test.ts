@@ -35,4 +35,79 @@ describe("mergeUpdateContent", () => {
       conference: existing.conference,
     });
   });
+
+  it("applies an incoming color and preserves existing color when omitted", () => {
+    const existing = {
+      title: "Old",
+      description: "Old desc",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+      color: "blue" as const,
+    };
+
+    expect(
+      mergeUpdateContent(existing, {
+        title: "New",
+        description: "New desc",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+        color: "coral",
+      }),
+    ).toEqual({
+      ...existing,
+      title: "New",
+      description: "New desc",
+      color: "coral",
+    });
+
+    expect(
+      mergeUpdateContent(existing, {
+        title: "New",
+        description: "New desc",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      }),
+    ).toEqual({
+      ...existing,
+      title: "New",
+      description: "New desc",
+    });
+  });
+
+  it("clears an existing color when the command sends null", () => {
+    const existing = {
+      title: "Old",
+      description: "Old desc",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+      color: "blue" as const,
+    };
+
+    expect(
+      mergeUpdateContent(existing, {
+        title: "Old",
+        description: "Old desc",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+        color: null,
+      }),
+    ).toEqual({
+      title: "Old",
+      description: "Old desc",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+    });
+  });
 });

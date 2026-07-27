@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import {
   isEventReadOnly,
   useCalendarLookup,
@@ -78,6 +80,10 @@ export const useWeekShortcuts = ({
   // but never mutated - delete and nudge/move below gate on this before
   // touching the store (packet 08 step 8).
   const calendarLookup = useCalendarLookup();
+  const { data: calendars = [], isPending: isCalendarsPending } =
+    useCalendarsQuery();
+  const defaultTargetCalendarId =
+    getDefaultTargetCalendar(calendars)?.id ?? null;
   const {
     actions: { repositionDraftByKeyboard },
   } = useDraftContext();
@@ -130,17 +136,37 @@ export const useWeekShortcuts = ({
   }, [_discardDraft, shiftViewByDay]);
 
   const createAllDayDraftEvent = useCallback(() => {
-    void createAlldayDraft(startOfView, endOfView, "createShortcut");
-  }, [startOfView, endOfView]);
+    // Same guard as DayCalendarGrid.openShortcutDraft: do not seed a sticky
+    // null calendarId while calendars are still loading.
+    if (isCalendarsPending && !defaultTargetCalendarId) {
+      return;
+    }
+
+    void createAlldayDraft(
+      startOfView,
+      endOfView,
+      "createShortcut",
+      defaultTargetCalendarId,
+    );
+  }, [defaultTargetCalendarId, endOfView, isCalendarsPending, startOfView]);
 
   const createTimedDraftEvent = useCallback(() => {
-    void createTimedDraft(isCurrentWeek, startOfView, "createShortcut");
-  }, [isCurrentWeek, startOfView]);
+    if (isCalendarsPending && !defaultTargetCalendarId) {
+      return;
+    }
+
+    void createTimedDraft(
+      isCurrentWeek,
+      startOfView,
+      "createShortcut",
+      defaultTargetCalendarId,
+    );
+  }, [defaultTargetCalendarId, isCalendarsPending, isCurrentWeek, startOfView]);
 
   // The command palette's create-event rows emit these same commands
   // (event.cmd.constants.ts) so the "C"/"A" keys and the palette rows run
-  // identical code. Resubscribes only when the week in view changes (these
-  // callbacks are memoized on startOfView/endOfView/isCurrentWeek).
+  // identical code. Resubscribes when the create handlers change (week in
+  // view or default target calendar).
   useEffect(() => {
     const unsubscribeCreateAllDayDraft = onViewCommand(
       "CREATE_ALLDAY_DRAFT",

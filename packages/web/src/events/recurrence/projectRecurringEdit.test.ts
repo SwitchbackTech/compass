@@ -8,6 +8,7 @@ import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import {
   projectRecurringDelete,
   projectRecurringEdit,
+  projectSeriesMaterialization,
 } from "./projectRecurringEdit";
 import { describe, expect, test } from "bun:test";
 
@@ -459,5 +460,129 @@ describe("projectRecurringDelete", () => {
     expect([...result.removeIds].sort()).toEqual(
       [...events.map((event) => event.id), SERIES_ID].sort(),
     );
+  });
+});
+
+describe("projectSeriesMaterialization", () => {
+  const dailyBase = (rules = ["RRULE:FREQ=DAILY;COUNT=10"]) =>
+    createMockEvent({
+      id: SERIES_ID,
+      content: { kind: "details", title: "Standup", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-06T16:00:00.000Z",
+        end: "2026-07-06T17:00:00.000Z",
+        timeZone: "UTC",
+      } as never,
+      recurrence: { kind: "series", rules },
+    });
+
+  const weekRange = {
+    start: "2026-07-05T00:00:00.000Z",
+    end: "2026-07-12T00:00:00.000Z",
+  };
+
+  test("expands a daily rule into occurrence instances including the first day", () => {
+    const base = dailyBase();
+
+    const result = projectSeriesMaterialization({ base, ranges: [weekRange] });
+
+    expect(result.upserts[0]).toBe(base);
+    const instances = result.upserts.slice(1);
+    expect(instances.length).toBeGreaterThanOrEqual(6);
+    for (const instance of instances) {
+      expect(instance.recurrence).toEqual({
+        kind: "occurrence",
+        seriesId: SERIES_ID,
+      });
+      expect(instance.id).toContain(`${SERIES_ID}::`);
+    }
+    const starts = instances.map((instance) =>
+      dayjs(instance.schedule.start).toISOString(),
+    );
+    expect(starts[0]).toBe("2026-07-06T16:00:00.000Z");
+    expect(starts[1]).toBe("2026-07-07T16:00:00.000Z");
+  });
+
+  test("is deterministic: same input yields the same instance ids", () => {
+    const base = dailyBase();
+
+    const first = projectSeriesMaterialization({ base, ranges: [weekRange] });
+    const second = projectSeriesMaterialization({ base, ranges: [weekRange] });
+
+    expect(first.upserts.map(({ id }) => id)).toEqual(
+      second.upserts.map(({ id }) => id),
+    );
+  });
+
+  test("marks stale cached instances for removal", () => {
+    const base = dailyBase(["RRULE:FREQ=WEEKLY;COUNT=4"]);
+    const stale = [occurrence(1), occurrence(2)];
+
+    const result = projectSeriesMaterialization({
+      base,
+      cachedSeriesEvents: stale,
+      ranges: [weekRange],
+    });
+
+    expect([...result.removeIds].sort()).toEqual(
+      stale.map(({ id }) => id).sort(),
+    );
+  });
+
+  test("returns only the base when there are no ranges", () => {
+    const base = dailyBase();
+
+    const result = projectSeriesMaterialization({ base, ranges: [] });
+
+    expect(result.upserts).toEqual([base]);
+  });
+
+  test("skips excluded occurrence starts", () => {
+    const base = dailyBase();
+
+    const withoutExdates = projectSeriesMaterialization({
+      base,
+      ranges: [weekRange],
+    });
+    const excludedStart = withoutExdates.upserts[2]!.schedule.start;
+
+    const result = projectSeriesMaterialization({
+      base,
+      ranges: [weekRange],
+      exdates: [excludedStart],
+    });
+
+    expect(result.upserts).toHaveLength(withoutExdates.upserts.length - 1);
+    expect(
+      result.upserts.some((event) => event.schedule.start === excludedStart),
+    ).toBe(false);
+  });
+
+  test("keeps allDay schedules date-only", () => {
+    const base = createMockEvent({
+      id: SERIES_ID,
+      schedule: {
+        kind: "allDay",
+        start: "2026-07-06",
+        end: "2026-07-07",
+      } as never,
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=DAILY;COUNT=5"] },
+    });
+
+    const result = projectSeriesMaterialization({
+      base,
+      ranges: [
+        { start: "2026-07-05T00:00:00.000Z", end: "2026-07-12T00:00:00.000Z" },
+      ],
+    });
+
+    const instances = result.upserts.slice(1);
+    expect(instances.length).toBeGreaterThan(1);
+    for (const instance of instances) {
+      expect(instance.schedule.kind).toBe("allDay");
+      expect(instance.schedule.start).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(instance.schedule.end).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
   });
 });

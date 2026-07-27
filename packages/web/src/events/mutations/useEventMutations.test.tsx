@@ -299,6 +299,209 @@ describe("useEventMutations", () => {
     context.pending.resolve();
   });
 
+  test("materializes optimistic instances when a single event becomes a series", async () => {
+    const context = setup();
+    const single = event();
+    context.queryClient.setQueryData(calendarKey, normalized(single));
+
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(single.id, {
+          recurrence: {
+            kind: "series",
+            rules: ["RRULE:FREQ=DAILY;COUNT=7"] as never,
+          },
+        }),
+      ),
+    );
+
+    await waitFor(() => {
+      const cached =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(
+          calendarKey,
+        )!;
+      expect(cached.entities[single.id]?.recurrence.kind).toBe("series");
+      const instances = Object.values(cached.entities).filter(
+        (item) =>
+          item.recurrence.kind === "occurrence" &&
+          item.recurrence.seriesId === single.id,
+      );
+      // Daily from Jul 2 bounded by the cached week's end (Jul 8): 6 instances.
+      expect(instances).toHaveLength(6);
+      const starts = instances
+        .map((item) => new Date(item.schedule.start).toISOString())
+        .sort();
+      expect(starts[0]).toBe("2026-07-02T16:00:00.000Z");
+      expect(starts[1]).toBe("2026-07-03T16:00:00.000Z");
+    });
+
+    context.pending.resolve();
+  });
+
+  test("materializes optimistic instances for a recurring create", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized());
+
+    act(() =>
+      context.hook.result.current.mutations.create({
+        calendarId: event().calendarId,
+        content: { kind: "details", title: "New series", description: "" },
+        schedule: timedSchedule(
+          "2026-07-02T16:00:00.000Z",
+          "2026-07-02T17:00:00.000Z",
+        ),
+        recurrence: {
+          kind: "series",
+          rules: ["RRULE:FREQ=DAILY;COUNT=7"] as never,
+        },
+      }),
+    );
+
+    await waitFor(() => {
+      const cached =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(
+          calendarKey,
+        )!;
+      const instances = Object.values(cached.entities).filter(
+        (item) => item.recurrence.kind === "occurrence",
+      );
+      expect(instances).toHaveLength(6);
+    });
+
+    context.pending.resolve();
+  });
+
+  test("replaces stale cached instances when the series rules change", async () => {
+    const context = setup();
+    const base = event({
+      recurrence: {
+        kind: "series",
+        rules: ["RRULE:FREQ=DAILY;COUNT=7"] as never,
+      },
+    });
+    const first = occurrence(base.id, {
+      schedule: timedSchedule(
+        "2026-07-02T16:00:00.000Z",
+        "2026-07-02T17:00:00.000Z",
+      ),
+    });
+    const second = occurrence(base.id, {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    context.queryClient.setQueryData(
+      calendarKey,
+      normalized(base, first, second),
+    );
+
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(first.id, {
+          recurrence: {
+            kind: "series",
+            rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] as never,
+          },
+          scope: "all",
+        }),
+      ),
+    );
+
+    await waitFor(() => {
+      const cached =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(
+          calendarKey,
+        )!;
+      // Old daily instances are gone; the weekly rule only yields Jul 2
+      // within the cached week.
+      expect(cached.entities[first.id]).toBeUndefined();
+      expect(cached.entities[second.id]).toBeUndefined();
+      const instances = Object.values(cached.entities).filter(
+        (item) =>
+          item.recurrence.kind === "occurrence" &&
+          item.recurrence.seriesId === base.id,
+      );
+      expect(instances).toHaveLength(1);
+      expect(cached.entities[base.id]?.recurrence).toMatchObject({
+        kind: "series",
+        rules: ["RRULE:FREQ=WEEKLY;COUNT=3"],
+      });
+    });
+
+    context.pending.resolve();
+  });
+
+  test("purges this-and-following instances from every cached week on delete", async () => {
+    const context = setup();
+    const nextWeekKey = eventQueryKeys.week({
+      source: "local",
+      start: "2026-07-08T00:00:00.000Z",
+      end: "2026-07-15T00:00:00.000Z",
+    });
+    const seriesId = event().id;
+    const days = [2, 3, 9, 10].map((day) =>
+      occurrence(seriesId, {
+        schedule: timedSchedule(
+          `2026-07-${String(day).padStart(2, "0")}T16:00:00.000Z`,
+          `2026-07-${String(day).padStart(2, "0")}T17:00:00.000Z`,
+        ),
+      }),
+    );
+    context.queryClient.setQueryData(calendarKey, normalized(days[0], days[1]));
+    context.queryClient.setQueryData(nextWeekKey, normalized(days[2], days[3]));
+
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: days[1].id,
+        scope: "thisAndFollowing",
+      }),
+    );
+
+    await waitFor(() => {
+      const week =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(
+          calendarKey,
+        )!;
+      const nextWeek =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(
+          nextWeekKey,
+        )!;
+      expect(week.entities[days[0].id]).toBeDefined();
+      expect(week.entities[days[1].id]).toBeUndefined();
+      expect(nextWeek.entities[days[2].id]).toBeUndefined();
+      expect(nextWeek.entities[days[3].id]).toBeUndefined();
+    });
+
+    context.pending.resolve();
+  });
+
+  test("settle invalidates with refetchType all so inactive entries refetch", async () => {
+    const context = setup();
+    const single = event();
+    context.queryClient.setQueryData(calendarKey, normalized(single));
+    const invalidations: unknown[] = [];
+    const original = context.queryClient.invalidateQueries.bind(
+      context.queryClient,
+    );
+    context.queryClient.invalidateQueries = ((filters?: unknown) => {
+      invalidations.push(filters);
+      return original(filters as never);
+    }) as typeof context.queryClient.invalidateQueries;
+
+    act(() =>
+      context.hook.result.current.mutations.replace(replacePayload(single.id)),
+    );
+    context.pending.resolve();
+
+    await waitFor(() => {
+      expect(invalidations).toContainEqual({
+        queryKey: eventQueryKeys.all,
+        refetchType: "all",
+      });
+    });
+  });
+
   test("serializes series edits submitted through different instances", async () => {
     const context = setup();
     const seriesId = event().id;

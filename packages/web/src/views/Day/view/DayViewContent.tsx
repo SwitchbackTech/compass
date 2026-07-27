@@ -13,6 +13,7 @@ import { useUpNextEventShortcut } from "@web/components/Sidebar/UpNextCard/useUp
 import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
 import { focusFirstSidebarItem } from "@web/components/Sidebar/util/sidebarFocus.util";
 import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
+import { toDemoEventsRange } from "@web/events/demo-events.util";
 import {
   selectIsEventFormOpen,
   useDraftStore,
@@ -122,6 +123,11 @@ export const DayViewContent = memo(() => {
     welcomeGuideActions.open();
   }, []);
 
+  const demoEventsRange = useMemo(
+    () => toDemoEventsRange(dateInView, dateInView),
+    [dateInView],
+  );
+
   return (
     <div id="day" className="flex h-screen w-screen overflow-hidden">
       <CommandPalette
@@ -139,7 +145,7 @@ export const DayViewContent = memo(() => {
         className="flex h-screen flex-1 flex-col overflow-hidden bg-background pt-5 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
       >
         <Header />
-        <DemoEventsBannerGate />
+        <DemoEventsBannerGate range={demoEventsRange} />
 
         <div className="flex w-full flex-1 overflow-hidden">
           <DayCalendarGrid />
