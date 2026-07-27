@@ -61,11 +61,11 @@ export function DayCalendarGrid() {
   const dateInView = useDateInView();
   const { navigateToDate } = useDateNavigation();
   const today = useMemo(() => dayjs(), []);
-  const { data: calendars = [] } = useCalendarsQuery();
-  const defaultTargetCalendarId = useMemo(
-    () => getDefaultTargetCalendar(calendars)?.id ?? null,
-    [calendars],
-  );
+  const { data: calendars = [], isPending: isCalendarsPending } =
+    useCalendarsQuery();
+  // Seed shortcuts with the form's default create target, not day-column order.
+  const defaultTargetCalendarId =
+    getDefaultTargetCalendar(calendars)?.id ?? null;
   const {
     allDayEvents,
     events: dayEvents,
@@ -172,11 +172,16 @@ export function DayCalendarGrid() {
       if (gridDraft) {
         return;
       }
+      // Avoid locking in calendarId: null while the calendars query is still
+      // loading; the form would show the default once data arrives.
+      if (isCalendarsPending && !defaultTargetCalendarId) {
+        return;
+      }
 
       createDraft();
       draftActions.setFormOpen(true);
     },
-    [gridDraft],
+    [defaultTargetCalendarId, gridDraft, isCalendarsPending],
   );
 
   const createAllDayDraftFromShortcut = useCallback(

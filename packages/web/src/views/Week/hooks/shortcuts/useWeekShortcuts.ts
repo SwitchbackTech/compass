@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
@@ -80,11 +80,10 @@ export const useWeekShortcuts = ({
   // but never mutated - delete and nudge/move below gate on this before
   // touching the store (packet 08 step 8).
   const calendarLookup = useCalendarLookup();
-  const { data: calendars = [] } = useCalendarsQuery();
-  const defaultTargetCalendarId = useMemo(
-    () => getDefaultTargetCalendar(calendars)?.id ?? null,
-    [calendars],
-  );
+  const { data: calendars = [], isPending: isCalendarsPending } =
+    useCalendarsQuery();
+  const defaultTargetCalendarId =
+    getDefaultTargetCalendar(calendars)?.id ?? null;
   const {
     actions: { repositionDraftByKeyboard },
   } = useDraftContext();
@@ -137,22 +136,32 @@ export const useWeekShortcuts = ({
   }, [_discardDraft, shiftViewByDay]);
 
   const createAllDayDraftEvent = useCallback(() => {
+    // Same guard as DayCalendarGrid.openShortcutDraft: do not seed a sticky
+    // null calendarId while calendars are still loading.
+    if (isCalendarsPending && !defaultTargetCalendarId) {
+      return;
+    }
+
     void createAlldayDraft(
       startOfView,
       endOfView,
       "createShortcut",
       defaultTargetCalendarId,
     );
-  }, [defaultTargetCalendarId, startOfView, endOfView]);
+  }, [defaultTargetCalendarId, endOfView, isCalendarsPending, startOfView]);
 
   const createTimedDraftEvent = useCallback(() => {
+    if (isCalendarsPending && !defaultTargetCalendarId) {
+      return;
+    }
+
     void createTimedDraft(
       isCurrentWeek,
       startOfView,
       "createShortcut",
       defaultTargetCalendarId,
     );
-  }, [defaultTargetCalendarId, isCurrentWeek, startOfView]);
+  }, [defaultTargetCalendarId, isCalendarsPending, isCurrentWeek, startOfView]);
 
   // The command palette's create-event rows emit these same commands
   // (event.cmd.constants.ts) so the "C"/"A" keys and the palette rows run
