@@ -16,6 +16,7 @@ import {
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import {
   DATA_TIMED_GRID_ROW,
   ZIndex,
@@ -201,9 +202,16 @@ const withOffset = (dateTime: string) =>
 
 // The query cache (unlike draft.store.ts, still legacy CompassEvent-shaped
 // per its own TODO) requires strict-contract `Event`s.
+//
+// calendarId must match the anonymous local calendar the calendars query
+// synthesizes. Otherwise filterEventsByVisibleCalendars drops every fixture
+// once that query resolves mid-userEvent click (delay:0 yields to macrotasks
+// between hover and pointerdown), and the card unmounts before the
+// interaction engine can open it.
 const toStrictEvent = (event: CompassEvent): Event =>
   createMockEvent({
     id: EventIdSchema.parse(event._id!),
+    calendarId: getLocalCalendarSentinelId(),
     content: {
       kind: "details",
       title: event.title ?? "",
