@@ -21,6 +21,17 @@ const occurrence = (day: number) =>
     recurrence: { kind: "occurrence", seriesId: SERIES_ID },
   });
 
+const allDayOccurrence = (day: number) =>
+  createMockEvent({
+    content: { kind: "details", title: "Original", description: "" },
+    schedule: {
+      kind: "allDay",
+      start: `2026-07-${String(day).padStart(2, "0")}`,
+      end: `2026-07-${String(day + 1).padStart(2, "0")}`,
+    } as never,
+    recurrence: { kind: "occurrence", seriesId: SERIES_ID },
+  });
+
 const seriesBase = () =>
   createMockEvent({
     id: SERIES_ID,
@@ -267,17 +278,11 @@ describe("projectRecurringEdit", () => {
   });
 
   test("converts every occurrence to timed for an all-events all-day to timed flip", () => {
-    const events = [1, 2, 3].map((day) =>
-      createMockEvent({
-        content: { kind: "details", title: "Original", description: "" },
-        schedule: {
-          kind: "allDay",
-          start: `2026-07-${String(day).padStart(2, "0")}`,
-          end: `2026-07-${String(day + 1).padStart(2, "0")}`,
-        } as never,
-        recurrence: { kind: "occurrence", seriesId: SERIES_ID },
-      }),
-    );
+    const events = [
+      allDayOccurrence(1),
+      allDayOccurrence(2),
+      allDayOccurrence(3),
+    ];
     const original = events[1];
     const edited = {
       ...original,
@@ -301,8 +306,8 @@ describe("projectRecurringEdit", () => {
         id: event.id,
         ...(event.schedule.kind === "timed"
           ? {
-              start: event.schedule.start as string,
-              end: event.schedule.end as string,
+              start: dayjs(event.schedule.start).toISOString(),
+              end: dayjs(event.schedule.end).toISOString(),
               timeZone: event.schedule.timeZone,
             }
           : {}),
@@ -310,23 +315,73 @@ describe("projectRecurringEdit", () => {
     ).toEqual([
       {
         id: events[0].id,
-        start: "2026-07-01T16:00:00+00:00",
-        end: "2026-07-01T17:00:00+00:00",
+        start: "2026-07-01T16:00:00.000Z",
+        end: "2026-07-01T17:00:00.000Z",
         timeZone: "UTC",
       },
       {
         id: events[1].id,
-        start: "2026-07-02T16:00:00+00:00",
-        end: "2026-07-02T17:00:00+00:00",
+        start: "2026-07-02T16:00:00.000Z",
+        end: "2026-07-02T17:00:00.000Z",
         timeZone: "UTC",
       },
       {
         id: events[2].id,
-        start: "2026-07-03T16:00:00+00:00",
-        end: "2026-07-03T17:00:00+00:00",
+        start: "2026-07-03T16:00:00.000Z",
+        end: "2026-07-03T17:00:00.000Z",
         timeZone: "UTC",
       },
     ]);
+  });
+
+  test("preserves wall-clock time when all-day to timed crosses a DST spring-forward", () => {
+    // 2026-03-08 is the America/Denver spring-forward (02:00 → 03:00).
+    const events = [
+      createMockEvent({
+        content: { kind: "details", title: "Original", description: "" },
+        schedule: {
+          kind: "allDay",
+          start: "2026-03-07",
+          end: "2026-03-08",
+        } as never,
+        recurrence: { kind: "occurrence", seriesId: SERIES_ID },
+      }),
+      createMockEvent({
+        content: { kind: "details", title: "Original", description: "" },
+        schedule: {
+          kind: "allDay",
+          start: "2026-03-08",
+          end: "2026-03-09",
+        } as never,
+        recurrence: { kind: "occurrence", seriesId: SERIES_ID },
+      }),
+    ];
+    const original = events[0];
+    const edited = {
+      ...original,
+      schedule: {
+        kind: "timed" as const,
+        start: "2026-03-07T15:00:00-07:00",
+        end: "2026-03-07T16:00:00-07:00",
+        timeZone: "America/Denver",
+      } as never,
+    };
+
+    const result = projectRecurringEdit({
+      scope: "all",
+      edited,
+      original,
+      seriesEvents: events,
+    });
+
+    const starts = result.upserts.map((event) =>
+      event.schedule.kind === "timed"
+        ? dayjs(event.schedule.start)
+            .tz("America/Denver")
+            .format("YYYY-MM-DD HH:mm")
+        : null,
+    );
+    expect(starts).toEqual(["2026-03-07 15:00", "2026-03-08 15:00"]);
   });
 });
 

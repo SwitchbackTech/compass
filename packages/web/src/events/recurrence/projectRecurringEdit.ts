@@ -29,48 +29,53 @@ const seriesPatch = (event: Event, edited: Event): Event => ({
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-const calendarDay = (value: string) => dayjs(value).startOf("day");
-
 // When the edit flips timed ↔ allDay, millisecond deltas across kinds produce
-// full-day timed ghosts (or invalid allDay strings). Rebuild each instance
-// from the edited schedule shape, shifted by that instance's day offset from
-// the edited occurrence so the edited card lands on `edited.schedule` and
-// siblings keep their relative days.
+// full-day timed ghosts (or invalid allDay strings). Copy the edited schedule
+// onto each instance, shifted by that instance's day offset from the original
+// occurrence so the edited card keeps `edited.schedule` and siblings keep
+// their relative days.
 const convertScheduleKind = (
   event: Event,
   original: Event,
   edited: Event,
 ): EventSchedule => {
-  const dayDeltaDays = calendarDay(edited.schedule.start).diff(
-    calendarDay(original.schedule.start),
-    "day",
-  );
-  const targetDay = calendarDay(event.schedule.start).add(dayDeltaDays, "day");
+  const dayOffset = dayjs(event.schedule.start)
+    .startOf("day")
+    .diff(dayjs(original.schedule.start).startOf("day"), "day");
 
-  if (edited.schedule.kind === "allDay") {
-    const durationDays = dayjs(edited.schedule.end).diff(
-      dayjs(edited.schedule.start),
-      "day",
-    );
-    const start = targetDay.toYearMonthDayString();
+  const { schedule } = edited;
+  if (schedule.kind === "allDay") {
     return {
       kind: "allDay",
-      start: DateOnlySchema.parse(start),
+      start: DateOnlySchema.parse(
+        dayjs(schedule.start).add(dayOffset, "day").toYearMonthDayString(),
+      ),
       end: DateOnlySchema.parse(
-        dayjs(start).add(durationDays, "day").toYearMonthDayString(),
+        dayjs(schedule.end).add(dayOffset, "day").toYearMonthDayString(),
       ),
     };
   }
 
-  const editedStart = dayjs(edited.schedule.start);
-  const durationMs = dayjs(edited.schedule.end).diff(editedStart);
-  const timeOfDayMs = editedStart.diff(editedStart.startOf("day"));
-  const start = targetDay.add(timeOfDayMs, "millisecond");
+  // Shift by calendar day in the event's zone so DST transitions keep the
+  // same wall-clock time (plain `.add(n, "day")` on an offset string is a
+  // fixed 24h step and drifts across spring-forward / fall-back).
+  const shiftTimed = (value: string) => {
+    const local = dayjs(value).tz(schedule.timeZone);
+    return DateTimeSchema.parse(
+      dayjs
+        .tz(
+          `${local.add(dayOffset, "day").format("YYYY-MM-DD")}T${local.format("HH:mm:ss")}`,
+          schedule.timeZone,
+        )
+        .format(),
+    );
+  };
+
   return {
     kind: "timed",
-    start: DateTimeSchema.parse(start.format()),
-    end: DateTimeSchema.parse(start.add(durationMs, "millisecond").format()),
-    timeZone: edited.schedule.timeZone,
+    start: shiftTimed(schedule.start),
+    end: shiftTimed(schedule.end),
+    timeZone: schedule.timeZone,
   };
 };
 
