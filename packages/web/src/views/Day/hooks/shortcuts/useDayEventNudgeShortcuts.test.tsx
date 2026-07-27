@@ -1,4 +1,5 @@
 import { HotkeyManager } from "@tanstack/react-hotkeys";
+import { act } from "@testing-library/react";
 import { Origin } from "@core/constants/core.constants";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
@@ -347,7 +348,9 @@ describe("useDayEventNudgeShortcuts", () => {
     draftActions.startGridDraft({ activity: "createShortcut", draft });
     renderEditShortcuts({ navigateToDate });
 
-    pressKey("ArrowRight");
+    act(() => {
+      pressKey("ArrowRight");
+    });
 
     const nextDraft = useDraftStore.getState().gridDraft;
     expect(dayjs(nextDraft?.values.schedule.start).format()).toBe(
@@ -369,7 +372,9 @@ describe("useDayEventNudgeShortcuts", () => {
     input.focus();
     renderEditShortcuts();
 
-    pressKey("ArrowRight", {}, input);
+    act(() => {
+      pressKey("ArrowRight", {}, input);
+    });
 
     expect(
       dayjs(useDraftStore.getState().gridDraft?.values.schedule.start).format(),
