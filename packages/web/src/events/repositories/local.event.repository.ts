@@ -14,7 +14,10 @@ import {
 } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { expandLocalEventRecords } from "@web/events/recurrence/expandLocalEventRecords";
-import { parseOccurrenceId } from "@web/events/recurrence/projectRecurringEdit";
+import {
+  composeOccurrenceId,
+  parseOccurrenceId,
+} from "@web/events/recurrence/projectRecurringEdit";
 import { type LocalEventRecord } from "@web/events/types/local-event.record";
 import { type EventRepository } from "./event.repository.types";
 
@@ -41,12 +44,10 @@ function truncateRules(
   rules: readonly string[],
   beforeStart: string,
 ): string[] {
-  const until = beforeStart.includes("T")
-    ? dayjs(beforeStart)
-        .subtract(1, "second")
-        .utc()
-        .format("YYYYMMDD[T]HHmmss[Z]")
-    : dayjs(beforeStart).subtract(1, "day").format("YYYYMMDD");
+  const allDay = !beforeStart.includes("T");
+  const until = allDay
+    ? dayjs(beforeStart).subtract(1, "day").toRRuleDTSTARTString(true)
+    : dayjs(beforeStart).subtract(1, "second").utc().toRRuleDTSTARTString();
 
   return rules.map((rule) => {
     if (!rule.startsWith("RRULE:")) return rule;
@@ -59,6 +60,28 @@ function truncateRules(
     return `RRULE:${[...kept, `UNTIL=${until}`].join(";")}`;
   });
 }
+
+// Shared by create/replace/replaceSeries: "preserve" keeps the existing
+// event's recurrence (not meaningful for create, which has no existing
+// event), "series"/"single" apply the input's own recurrence.
+function resolveRecurrence(
+  recurrence: ReplaceEventInput["recurrence"] | CreateEventInput["recurrence"],
+  fallback: Event["recurrence"],
+): Event["recurrence"] {
+  if (recurrence.kind === "series") {
+    return { kind: "series", rules: recurrence.rules };
+  }
+  if (recurrence.kind === "single") return { kind: "single" };
+  return fallback;
+}
+
+// A series record's recurrence is guaranteed `kind === "series"` by the
+// `findSeriesRecord` check below; narrowing the return type here means
+// every call site can read `.rules` directly instead of re-deriving the
+// same guaranteed-true ternary.
+type SeriesRecord = LocalEventRecord & {
+  event: Event & { recurrence: { kind: "series"; rules: readonly string[] } };
+};
 
 export class LocalEventRepository implements EventRepository {
   constructor(
@@ -87,12 +110,12 @@ export class LocalEventRepository implements EventRepository {
   /** The stored series record behind a composed occurrence id, if any. */
   private async findSeriesRecord(
     id: EventId,
-  ): Promise<{ record: LocalEventRecord; occurrenceStart: string } | null> {
+  ): Promise<{ record: SeriesRecord; occurrenceStart: string } | null> {
     const parsed = parseOccurrenceId(id);
     if (!parsed) return null;
     const record = await this.findRecordById(parsed.seriesId);
     if (!record || record.event.recurrence.kind !== "series") return null;
-    return { record, occurrenceStart: parsed.start };
+    return { record: record as SeriesRecord, occurrenceStart: parsed.start };
   }
 
   async getById(id: EventId): Promise<Event> {
@@ -112,10 +135,7 @@ export class LocalEventRepository implements EventRepository {
       calendarId: input.calendarId,
       content: input.content,
       schedule: input.schedule,
-      recurrence:
-        input.recurrence.kind === "series"
-          ? { kind: "series", rules: input.recurrence.rules }
-          : { kind: "single" },
+      recurrence: resolveRecurrence(input.recurrence, { kind: "single" }),
       createdAt: now,
       updatedAt: null,
     };
@@ -143,13 +163,6 @@ export class LocalEventRepository implements EventRepository {
     const existingRecord = await this.findRecordById(id);
     const existing = existingRecord?.event;
 
-    const recurrence =
-      input.recurrence.kind === "preserve"
-        ? (existing?.recurrence ?? { kind: "single" as const })
-        : input.recurrence.kind === "series"
-          ? { kind: "series" as const, rules: input.recurrence.rules }
-          : { kind: "single" as const };
-
     const event: Event = {
       id,
       calendarId:
@@ -158,7 +171,10 @@ export class LocalEventRepository implements EventRepository {
         getLocalCalendarSentinelId(),
       content: input.content,
       schedule: input.schedule,
-      recurrence,
+      recurrence: resolveRecurrence(
+        input.recurrence,
+        existing?.recurrence ?? { kind: "single" },
+      ),
       createdAt: existing?.createdAt ?? nowDateTime(),
       updatedAt: nowDateTime(),
     };
@@ -174,7 +190,7 @@ export class LocalEventRepository implements EventRepository {
   }
 
   private async replaceSeries(
-    record: LocalEventRecord,
+    record: SeriesRecord,
     occurrenceStart: string,
     input: ReplaceEventInput,
   ): Promise<Event> {
@@ -184,12 +200,10 @@ export class LocalEventRepository implements EventRepository {
       input.scope === "thisAndFollowing" &&
       dayjs(occurrenceStart).isAfter(record.event.schedule.start);
 
-    const recurrence: Event["recurrence"] =
-      input.recurrence.kind === "series"
-        ? { kind: "series", rules: input.recurrence.rules }
-        : input.recurrence.kind === "single"
-          ? { kind: "single" }
-          : record.event.recurrence;
+    const recurrence = resolveRecurrence(
+      input.recurrence,
+      record.event.recurrence,
+    );
 
     if (!splits) {
       const event: Event = {
@@ -208,18 +222,13 @@ export class LocalEventRepository implements EventRepository {
       ...record.event,
       recurrence: {
         kind: "series",
-        rules: truncateRules(
-          record.event.recurrence.kind === "series"
-            ? record.event.recurrence.rules
-            : [],
-          occurrenceStart,
-        ),
+        rules: truncateRules(record.event.recurrence.rules, occurrenceStart),
       },
       updatedAt: nowDateTime(),
     };
     await this.store.putEvent({ ...record, event: truncated });
 
-    const id = `${record.id}::${occurrenceStart}` as EventId;
+    const id = composeOccurrenceId(record.id, occurrenceStart);
     const event: Event = {
       id,
       calendarId: input.calendarId ?? record.event.calendarId,
@@ -263,9 +272,7 @@ export class LocalEventRepository implements EventRepository {
           recurrence: {
             kind: "series",
             rules: truncateRules(
-              record.event.recurrence.kind === "series"
-                ? record.event.recurrence.rules
-                : [],
+              record.event.recurrence.rules,
               occurrenceStart,
             ),
           },

@@ -132,7 +132,8 @@ const shiftEvent = (event: Event, original: Event, edited: Event): Event => {
   };
 };
 
-const isAtOrAfter = (event: Event, cutoff: Event["schedule"]) => {
+// Exported for projectSeriesRulesChange's "thisAndFollowing" filtering below.
+export const isAtOrAfter = (event: Event, cutoff: Event["schedule"]) => {
   return !dayjs(event.schedule.start).isBefore(cutoff.start);
 };
 
@@ -299,4 +300,46 @@ export function projectSeriesMaterialization({
   } catch {
     return { removeIds, upserts: [base] };
   }
+}
+
+type ProjectSeriesRulesChangeInput = {
+  scope: RecurrenceScope;
+  /** The edited event; `recurrence.kind` must be "series". */
+  edited: Event;
+  /** The pre-edit cached event (single, series base, or occurrence). */
+  original: Event;
+  /** seriesIdOf(original); null for a single event becoming a series. */
+  seriesId: EventId | null;
+  /** Every cached instance of the series, unfiltered. */
+  seriesEvents: readonly Event[];
+  ranges: readonly { start: string; end: string }[];
+};
+
+/**
+ * Dispatches a rules-changing recurrence edit (single→series at scope "this",
+ * or a rules change at "all"/"thisAndFollowing") to projectSeriesMaterialization,
+ * resolving the same per-scope base-rebasing and affected-instance filtering
+ * the backend's analyzeReplace applies — mirrors how projectRecurringEdit and
+ * projectRecurringDelete take `scope` and internalize their own affected-
+ * instance logic, keeping callers thin dispatchers.
+ */
+export function projectSeriesRulesChange({
+  scope,
+  edited,
+  original,
+  seriesId,
+  seriesEvents,
+  ranges,
+}: ProjectSeriesRulesChangeInput): RecurringEditProjection {
+  // "all" rewrites the series base in place (server's replaceSeries keeps the
+  // base id); "thisAndFollowing" splits, re-basing at the edited event and
+  // keeping earlier instances; single→series keeps the edited event's own id.
+  const base =
+    scope === "all" && seriesId ? { ...edited, id: seriesId } : edited;
+  const cachedSeriesEvents =
+    scope === "thisAndFollowing"
+      ? seriesEvents.filter((event) => isAtOrAfter(event, original.schedule))
+      : seriesEvents;
+
+  return projectSeriesMaterialization({ base, cachedSeriesEvents, ranges });
 }

@@ -12,7 +12,6 @@ import {
   type RecurrenceScope,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
-import dayjs from "@core/util/date/dayjs";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   buildCalendarLookup,
@@ -37,6 +36,7 @@ import {
   projectRecurringDelete,
   projectRecurringEdit,
   projectSeriesMaterialization,
+  projectSeriesRulesChange,
 } from "@web/events/recurrence/projectRecurringEdit";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
@@ -209,6 +209,14 @@ export function useEventMutations(
       : undefined;
   const reportError = dependencies.reportError ?? handleError;
 
+  // Shared by the create and replace optimistic callbacks: the query-cache
+  // ranges a series expansion should materialize instances into.
+  const cachedRanges = () =>
+    getEventQueryEntries(queryClient, { source }).map(({ metadata }) => ({
+      start: metadata.start,
+      end: metadata.end,
+    }));
+
   // Backstop only - the real enforcement is the UI gates (cards, shortcuts,
   // context menu, form) that block a read-only mutation before it ever
   // reaches here (packet 08 step 8). Reads the calendars query's cache
@@ -369,12 +377,7 @@ export function useEventMutations(
             queryClient,
             projectSeriesMaterialization({
               base: event,
-              ranges: getEventQueryEntries(queryClient, { source }).map(
-                ({ metadata }) => ({
-                  start: metadata.start,
-                  end: metadata.end,
-                }),
-              ),
+              ranges: cachedRanges(),
             }),
             source,
           );
@@ -426,35 +429,17 @@ export function useEventMutations(
               edited.recurrence.rules.join("\n");
 
           if (rulesChanged) {
-            const seriesEvents = seriesId
-              ? findSeriesEventsInCache(queryClient, seriesId, source)
-              : [];
             applyEventProjectionAcrossQueries(
               queryClient,
-              projectSeriesMaterialization({
-                // Mirror the server's plan: "all" rewrites the series base in
-                // place; "thisAndFollowing" splits, re-basing at the edited
-                // event and keeping earlier instances; single→series keeps
-                // the edited event's own id as the new base id.
-                base:
-                  input.scope === "all" && seriesId
-                    ? { ...edited, id: seriesId }
-                    : edited,
-                cachedSeriesEvents:
-                  input.scope === "thisAndFollowing"
-                    ? seriesEvents.filter(
-                        (event) =>
-                          !dayjs(event.schedule.start).isBefore(
-                            existing.schedule.start,
-                          ),
-                      )
-                    : seriesEvents,
-                ranges: getEventQueryEntries(queryClient, { source }).map(
-                  ({ metadata }) => ({
-                    start: metadata.start,
-                    end: metadata.end,
-                  }),
-                ),
+              projectSeriesRulesChange({
+                scope: input.scope,
+                edited,
+                original: existing,
+                seriesId,
+                seriesEvents: seriesId
+                  ? findSeriesEventsInCache(queryClient, seriesId, source)
+                  : [],
+                ranges: cachedRanges(),
               }),
               source,
             );
