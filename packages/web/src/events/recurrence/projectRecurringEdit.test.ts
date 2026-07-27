@@ -1,4 +1,8 @@
-import { type EventId } from "@core/types/domain-primitives";
+import {
+  DateOnlySchema,
+  type EventId,
+  TimeZoneSchema,
+} from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import {
@@ -228,15 +232,27 @@ describe("projectRecurringEdit", () => {
     ).toEqual([
       {
         id: events[0].id,
-        schedule: { kind: "allDay", start: "2026-07-01", end: "2026-07-02" },
+        schedule: {
+          kind: "allDay",
+          start: DateOnlySchema.parse("2026-07-01"),
+          end: DateOnlySchema.parse("2026-07-02"),
+        },
       },
       {
         id: events[1].id,
-        schedule: { kind: "allDay", start: "2026-07-02", end: "2026-07-03" },
+        schedule: {
+          kind: "allDay",
+          start: DateOnlySchema.parse("2026-07-02"),
+          end: DateOnlySchema.parse("2026-07-03"),
+        },
       },
       {
         id: events[2].id,
-        schedule: { kind: "allDay", start: "2026-07-03", end: "2026-07-04" },
+        schedule: {
+          kind: "allDay",
+          start: DateOnlySchema.parse("2026-07-03"),
+          end: DateOnlySchema.parse("2026-07-04"),
+        },
       },
     ]);
   });
@@ -268,11 +284,19 @@ describe("projectRecurringEdit", () => {
     ).toEqual([
       {
         id: events[1].id,
-        schedule: { kind: "allDay", start: "2026-07-02", end: "2026-07-03" },
+        schedule: {
+          kind: "allDay",
+          start: DateOnlySchema.parse("2026-07-02"),
+          end: DateOnlySchema.parse("2026-07-03"),
+        },
       },
       {
         id: events[2].id,
-        schedule: { kind: "allDay", start: "2026-07-03", end: "2026-07-04" },
+        schedule: {
+          kind: "allDay",
+          start: DateOnlySchema.parse("2026-07-03"),
+          end: DateOnlySchema.parse("2026-07-04"),
+        },
       },
     ]);
   });
@@ -317,19 +341,19 @@ describe("projectRecurringEdit", () => {
         id: events[0].id,
         start: "2026-07-01T16:00:00.000Z",
         end: "2026-07-01T17:00:00.000Z",
-        timeZone: "UTC",
+        timeZone: TimeZoneSchema.parse("UTC"),
       },
       {
         id: events[1].id,
         start: "2026-07-02T16:00:00.000Z",
         end: "2026-07-02T17:00:00.000Z",
-        timeZone: "UTC",
+        timeZone: TimeZoneSchema.parse("UTC"),
       },
       {
         id: events[2].id,
         start: "2026-07-03T16:00:00.000Z",
         end: "2026-07-03T17:00:00.000Z",
-        timeZone: "UTC",
+        timeZone: TimeZoneSchema.parse("UTC"),
       },
     ]);
   });

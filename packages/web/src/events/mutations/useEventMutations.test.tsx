@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { act, type PropsWithChildren } from "react";
-import { type EventId } from "@core/types/domain-primitives";
+import { DateOnlySchema, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import {
   type CreateEventInput,
@@ -229,8 +229,8 @@ describe("useEventMutations", () => {
         replacePayload(first.id, {
           schedule: {
             kind: "allDay",
-            start: "2026-07-02",
-            end: "2026-07-03",
+            start: DateOnlySchema.parse("2026-07-02"),
+            end: DateOnlySchema.parse("2026-07-03"),
           },
           scope: "all",
         }),
