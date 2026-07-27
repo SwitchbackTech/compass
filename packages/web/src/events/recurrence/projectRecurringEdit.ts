@@ -1,4 +1,4 @@
-import { type Event } from "@core/types/event.contracts";
+import { type Event, type EventSchedule } from "@core/types/event.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
 
@@ -28,6 +28,49 @@ const seriesPatch = (event: Event, edited: Event): Event => ({
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+const calendarDay = (value: string) => dayjs(value).startOf("day");
+
+// When the edit flips timed ↔ allDay, millisecond deltas across kinds produce
+// full-day timed ghosts (or invalid allDay strings). Rebuild each instance
+// from the edited schedule shape, shifted by that instance's day offset from
+// the edited occurrence so the edited card lands on `edited.schedule` and
+// siblings keep their relative days.
+const convertScheduleKind = (
+  event: Event,
+  original: Event,
+  edited: Event,
+): EventSchedule => {
+  const dayDeltaDays = calendarDay(edited.schedule.start).diff(
+    calendarDay(original.schedule.start),
+    "day",
+  );
+  const targetDay = calendarDay(event.schedule.start).add(dayDeltaDays, "day");
+
+  if (edited.schedule.kind === "allDay") {
+    const durationDays = dayjs(edited.schedule.end).diff(
+      dayjs(edited.schedule.start),
+      "day",
+    );
+    const start = targetDay.toYearMonthDayString();
+    return {
+      kind: "allDay",
+      start,
+      end: dayjs(start).add(durationDays, "day").toYearMonthDayString(),
+    };
+  }
+
+  const editedStart = dayjs(edited.schedule.start);
+  const durationMs = dayjs(edited.schedule.end).diff(editedStart);
+  const timeOfDayMs = editedStart.diff(editedStart.startOf("day"));
+  const start = targetDay.add(timeOfDayMs, "millisecond");
+  return {
+    kind: "timed",
+    start: start.format(),
+    end: start.add(durationMs, "millisecond").format(),
+    timeZone: edited.schedule.timeZone,
+  };
+};
+
 // Shift every affected instance by the drag's delta so the change renders
 // optimistically. Both series-wide scopes shift by the same delta; they
 // differ only in which instances are affected (computed by the caller). Each
@@ -35,6 +78,13 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 // at its old time in the cache here — lands on the edited time because
 // (old + (edited - original)) === edited.
 const shiftEvent = (event: Event, original: Event, edited: Event): Event => {
+  if (edited.schedule.kind !== original.schedule.kind) {
+    return {
+      ...event,
+      schedule: convertScheduleKind(event, original, edited),
+    };
+  }
+
   const startDelta = dayjs(edited.schedule.start).diff(original.schedule.start);
   const endDelta = dayjs(edited.schedule.end).diff(original.schedule.end);
 

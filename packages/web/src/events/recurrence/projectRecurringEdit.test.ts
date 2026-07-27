@@ -189,6 +189,145 @@ describe("projectRecurringEdit", () => {
     expect([...result.removeIds]).toEqual([events[0].id]);
     expect(result.upserts).toEqual([edited]);
   });
+
+  test("converts every occurrence to all-day for an all-events kind flip", () => {
+    const events = [occurrence(1), occurrence(2), occurrence(3)];
+    const original = events[1];
+    const edited = {
+      ...original,
+      schedule: {
+        kind: "allDay" as const,
+        start: "2026-07-02",
+        end: "2026-07-03",
+      } as never,
+    };
+
+    const result = projectRecurringEdit({
+      scope: "all",
+      edited,
+      original,
+      seriesEvents: events,
+    });
+
+    expect(
+      result.upserts.map((event) => ({
+        id: event.id,
+        schedule: event.schedule,
+      })),
+    ).toEqual([
+      {
+        id: events[0].id,
+        schedule: { kind: "allDay", start: "2026-07-01", end: "2026-07-02" },
+      },
+      {
+        id: events[1].id,
+        schedule: { kind: "allDay", start: "2026-07-02", end: "2026-07-03" },
+      },
+      {
+        id: events[2].id,
+        schedule: { kind: "allDay", start: "2026-07-03", end: "2026-07-04" },
+      },
+    ]);
+  });
+
+  test("converts only the cutoff and future occurrences to all-day", () => {
+    const events = [occurrence(1), occurrence(2), occurrence(3)];
+    const original = events[1];
+    const edited = {
+      ...original,
+      schedule: {
+        kind: "allDay" as const,
+        start: "2026-07-02",
+        end: "2026-07-03",
+      } as never,
+    };
+
+    const result = projectRecurringEdit({
+      scope: "thisAndFollowing",
+      edited,
+      original,
+      seriesEvents: events,
+    });
+
+    expect(
+      result.upserts.map((event) => ({
+        id: event.id,
+        schedule: event.schedule,
+      })),
+    ).toEqual([
+      {
+        id: events[1].id,
+        schedule: { kind: "allDay", start: "2026-07-02", end: "2026-07-03" },
+      },
+      {
+        id: events[2].id,
+        schedule: { kind: "allDay", start: "2026-07-03", end: "2026-07-04" },
+      },
+    ]);
+  });
+
+  test("converts every occurrence to timed for an all-events all-day to timed flip", () => {
+    const events = [1, 2, 3].map((day) =>
+      createMockEvent({
+        content: { kind: "details", title: "Original", description: "" },
+        schedule: {
+          kind: "allDay",
+          start: `2026-07-${String(day).padStart(2, "0")}`,
+          end: `2026-07-${String(day + 1).padStart(2, "0")}`,
+        } as never,
+        recurrence: { kind: "occurrence", seriesId: SERIES_ID },
+      }),
+    );
+    const original = events[1];
+    const edited = {
+      ...original,
+      schedule: {
+        kind: "timed" as const,
+        start: "2026-07-02T16:00:00.000Z",
+        end: "2026-07-02T17:00:00.000Z",
+        timeZone: "UTC",
+      } as never,
+    };
+
+    const result = projectRecurringEdit({
+      scope: "all",
+      edited,
+      original,
+      seriesEvents: events,
+    });
+
+    expect(
+      result.upserts.map((event) => ({
+        id: event.id,
+        ...(event.schedule.kind === "timed"
+          ? {
+              start: event.schedule.start as string,
+              end: event.schedule.end as string,
+              timeZone: event.schedule.timeZone,
+            }
+          : {}),
+      })),
+    ).toEqual([
+      {
+        id: events[0].id,
+        start: "2026-07-01T16:00:00+00:00",
+        end: "2026-07-01T17:00:00+00:00",
+        timeZone: "UTC",
+      },
+      {
+        id: events[1].id,
+        start: "2026-07-02T16:00:00+00:00",
+        end: "2026-07-02T17:00:00+00:00",
+        timeZone: "UTC",
+      },
+      {
+        id: events[2].id,
+        start: "2026-07-03T16:00:00+00:00",
+        end: "2026-07-03T17:00:00+00:00",
+        timeZone: "UTC",
+      },
+    ]);
+  });
 });
 
 describe("projectRecurringDelete", () => {

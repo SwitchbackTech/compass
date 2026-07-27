@@ -206,6 +206,57 @@ describe("useEventMutations", () => {
     context.pending.resolve();
   });
 
+  test("optimistically converts a series from timed to all-day for all-events edits", async () => {
+    const context = setup();
+    const seriesId = event().id;
+    const first = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-02T16:00:00.000Z",
+        "2026-07-02T17:00:00.000Z",
+      ),
+    });
+    const second = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(first, second));
+    context.queryClient.setQueryData(dayKey, normalized(first));
+
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(first.id, {
+          schedule: {
+            kind: "allDay",
+            start: "2026-07-02",
+            end: "2026-07-03",
+          },
+          scope: "all",
+        }),
+      ),
+    );
+
+    await waitFor(() => {
+      const week =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(
+          calendarKey,
+        )!;
+      expect(week.entities[first.id].schedule).toEqual({
+        kind: "allDay",
+        start: "2026-07-02",
+        end: "2026-07-03",
+      });
+      expect(week.entities[second.id].schedule).toEqual({
+        kind: "allDay",
+        start: "2026-07-03",
+        end: "2026-07-04",
+      });
+    });
+
+    context.pending.resolve();
+  });
+
   test("optimistically moves only this-and-following instances", async () => {
     const context = setup();
     const seriesId = event().id;
