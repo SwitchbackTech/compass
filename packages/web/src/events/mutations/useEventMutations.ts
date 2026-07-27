@@ -228,7 +228,7 @@ export function useEventMutations(
     },
     onError: (
       error: Error,
-      variables: Variables,
+      _variables: Variables,
       context: EventMutationContext | undefined,
     ) => {
       reportError(error);
