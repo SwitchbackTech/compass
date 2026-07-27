@@ -290,4 +290,18 @@ describe("normalizeGoogleEvent", () => {
     expect(error).toBeInstanceOf(ProviderEventError);
     expect(error.reason).toBe("unmappableContent");
   });
+
+  it("maps Google colorId 7 to content.color blue", () => {
+    const read = asProviderEvent(
+      normalizeGoogleEvent(gEvent({ colorId: "7" })),
+    );
+
+    expect(read.content.color).toBe("blue");
+  });
+
+  it("omits content.color when Google reports no colorId", () => {
+    const read = asProviderEvent(normalizeGoogleEvent(gEvent({})));
+
+    expect(read.content).not.toHaveProperty("color");
+  });
 });

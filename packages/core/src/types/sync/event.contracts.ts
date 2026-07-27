@@ -6,6 +6,7 @@ import {
   RRuleSchema,
 } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
+import { EventColorSlotSchema } from "@core/types/event-color.contracts";
 import {
   ConnectionIdSchema,
   ProviderCalendarIdSchema,
@@ -103,6 +104,7 @@ export const SyncEventContentSchema = z.strictObject({
   organizer: OrganizerSchema.nullable(),
   attendees: z.array(AttendeeSchema).readonly(),
   conference: ConferenceSchema.nullable(),
+  color: EventColorSlotSchema.optional(),
 });
 export type SyncEventContent = z.infer<typeof SyncEventContentSchema>;
 
@@ -229,6 +231,7 @@ export type EventOccurrenceListResponse = z.infer<
 const SyncInstanceContentSchema = z.strictObject({
   title: z.string(),
   description: z.string(),
+  color: EventColorSlotSchema.optional(),
 });
 export type SyncInstanceContent = z.infer<typeof SyncInstanceContentSchema>;
 
