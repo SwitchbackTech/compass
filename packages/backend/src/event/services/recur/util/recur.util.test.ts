@@ -81,6 +81,33 @@ describe("materializeSeriesInstances", () => {
     expect(second.schedule.end).toBe("2026-08-13");
   });
 
+  it("honors an EXDATE line appended to the rules array (local-mode occurrence-exclusion promotion)", () => {
+    const base = buildBase({
+      schedule: {
+        kind: "timed",
+        start: new Date("2026-07-14T15:00:00.000Z"),
+        end: new Date("2026-07-14T16:00:00.000Z"),
+        timeZone: "America/Denver",
+      },
+      recurrence: {
+        kind: "series",
+        rules: ["RRULE:FREQ=DAILY;COUNT=5", "EXDATE:20260716T150000Z"],
+      },
+    });
+
+    const instances = materializeSeriesInstances(base);
+
+    expect(instances).toHaveLength(4);
+    const starts = instances
+      .map((i) =>
+        i.schedule.kind === "timed" ? i.schedule.start.getTime() : 0,
+      )
+      .sort((a, b) => a - b);
+    expect(starts).not.toContain(
+      new Date("2026-07-16T15:00:00.000Z").getTime(),
+    );
+  });
+
   it("returns no instances for a non-series recurrence", () => {
     const base = buildBase({ recurrence: { kind: "single" } });
     expect(materializeSeriesInstances(base)).toEqual([]);

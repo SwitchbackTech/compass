@@ -23,7 +23,15 @@ const materializeIfSeries = (base: EventRecord): EventRecord[] =>
 export function generateReplace(plan: ReplacePlan): MaterializedMutation {
   switch (plan.kind) {
     case "replaceThis":
-      return { upsert: [plan.updated], deleteIds: [], primary: plan.updated };
+      // A single event converted to a series arrives here (scope "this" on a
+      // non-recurring target), so instances must materialize just like the
+      // replaceSeries/replaceSplit branches — otherwise the series persists
+      // with zero instance docs until the provider sync round-trips.
+      return {
+        upsert: [plan.updated, ...materializeIfSeries(plan.updated)],
+        deleteIds: [],
+        primary: plan.updated,
+      };
     case "replaceSeries":
       return {
         upsert: [plan.updatedBase, ...materializeIfSeries(plan.updatedBase)],

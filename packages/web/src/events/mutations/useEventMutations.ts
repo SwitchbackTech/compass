@@ -24,6 +24,7 @@ import {
   eventBelongsToEntry,
   findEventInCache,
   findSeriesEventsInCache,
+  getEventQueryEntries,
   insertEventIntoQueries,
   isEventQueryKey,
   removeEventFromQueries,
@@ -34,6 +35,8 @@ import { type NormalizedEventQueryData } from "@web/events/queries/event.query.t
 import {
   projectRecurringDelete,
   projectRecurringEdit,
+  projectSeriesMaterialization,
+  projectSeriesRulesChange,
 } from "@web/events/recurrence/projectRecurringEdit";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
@@ -206,6 +209,14 @@ export function useEventMutations(
       : undefined;
   const reportError = dependencies.reportError ?? handleError;
 
+  // Shared by the create and replace optimistic callbacks: the query-cache
+  // ranges a series expansion should materialize instances into.
+  const cachedRanges = () =>
+    getEventQueryEntries(queryClient, { source }).map(({ metadata }) => ({
+      start: metadata.start,
+      end: metadata.end,
+    }));
+
   // Backstop only - the real enforcement is the UI gates (cards, shortcuts,
   // context menu, form) that block a read-only mutation before it ever
   // reaches here (packet 08 step 8). Reads the calendars query's cache
@@ -249,7 +260,13 @@ export function useEventMutations(
       if (
         queryClient.isMutating({ mutationKey: eventMutationKeys.all }) === 0
       ) {
-        void queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
+        // refetchType "all" so inactive entries (prefetched neighbor weeks,
+        // recently visited ranges) refetch too instead of serving stale
+        // instances until the user navigates back onto them.
+        void queryClient.invalidateQueries({
+          queryKey: eventQueryKeys.all,
+          refetchType: "all",
+        });
       }
     }, 0);
   };
@@ -352,6 +369,20 @@ export function useEventMutations(
       },
       ({ input }) => {
         const event = optimisticEventFromCreate(input);
+        // A recurring create's base is metadata-only (the grid filters
+        // series bases), so expand its instances too or the event would be
+        // invisible until the settle refetch.
+        if (event.recurrence.kind === "series") {
+          applyEventProjectionAcrossQueries(
+            queryClient,
+            projectSeriesMaterialization({
+              base: event,
+              ranges: cachedRanges(),
+            }),
+            source,
+          );
+          return;
+        }
         insertEventIntoQueries(queryClient, event, (entry) =>
           eventBelongsToEntry(event, entry, source),
         );
@@ -376,6 +407,45 @@ export function useEventMutations(
         if (!existing) return;
         const edited = mergeReplaceInput(existing, input);
         const seriesId = seriesIdOf(existing);
+
+        // (Re)defining recurrence rules changes which instances exist, so
+        // shifting cached instances isn't enough: expand the new rules into
+        // optimistic occurrences, mirroring the server's materialization.
+        // Scope "this" on an occurrence keeps its occurrence recurrence
+        // server-side, so it stays on the plain upsert path below.
+        if (
+          edited.recurrence.kind === "series" &&
+          (input.scope !== "this" || existing.recurrence.kind !== "occurrence")
+        ) {
+          const currentBase =
+            existing.recurrence.kind === "series"
+              ? existing
+              : seriesId
+                ? findEventInCache(queryClient, seriesId, source)
+                : null;
+          const rulesChanged =
+            currentBase?.recurrence.kind !== "series" ||
+            currentBase.recurrence.rules.join("\n") !==
+              edited.recurrence.rules.join("\n");
+
+          if (rulesChanged) {
+            applyEventProjectionAcrossQueries(
+              queryClient,
+              projectSeriesRulesChange({
+                scope: input.scope,
+                edited,
+                original: existing,
+                seriesId,
+                seriesEvents: seriesId
+                  ? findSeriesEventsInCache(queryClient, seriesId, source)
+                  : [],
+                ranges: cachedRanges(),
+              }),
+              source,
+            );
+            return;
+          }
+        }
 
         if (seriesId && input.scope !== "this") {
           applyEventProjectionAcrossQueries(

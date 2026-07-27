@@ -182,6 +182,44 @@ describe("EventService (local calendar)", () => {
     ).toBe(true);
   });
 
+  it("materializes instances when a replace converts a single event to a series", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Standup", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "single" },
+    });
+
+    await eventService.replace(user._id.toString(), created._id.toHexString(), {
+      content: { kind: "details", title: "Standup", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver" as never,
+      },
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=DAILY;COUNT=5"] },
+      scope: "this",
+    });
+
+    const instances = await mongoService.event
+      .find({ "recurrence.seriesId": created._id })
+      .toArray();
+
+    expect(instances).toHaveLength(5);
+    expect(
+      instances.map((instance) => instance.schedule.start.toISOString()),
+    ).toContain("2026-07-14T21:00:00.000Z");
+  });
+
   it("deletes a standalone event", async () => {
     const { user } = await UtilDriver.setupTestUser();
     const calendar = await seedLocalCalendar(user._id);
