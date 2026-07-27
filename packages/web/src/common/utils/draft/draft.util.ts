@@ -1,3 +1,4 @@
+import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   ID_GRID_EVENTS_ALLDAY,
@@ -18,10 +19,13 @@ export const createTimedDraft = (
   isCurrentWeek: boolean,
   startOfView: Dayjs,
   activity: "createShortcut",
+  calendarId: CalendarId | null = null,
 ) => {
   const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
   const draft = createGridEventDraft(
     timedGridSchedule(new Date(startDate), new Date(endDate)),
+    undefined,
+    calendarId,
   );
 
   draftActions.startGridDraft({ activity, draft });
@@ -31,6 +35,7 @@ export const createAlldayDraft = (
   startOfView: Dayjs,
   endOfView: Dayjs,
   activity: "createShortcut",
+  calendarId: CalendarId | null = null,
 ) => {
   const today = dayjs();
   const start = today.isBetween(startOfView, endOfView, "day", "[]")
@@ -38,11 +43,15 @@ export const createAlldayDraft = (
     : startOfView.startOf("day");
   const startDate = start.format();
   const endDate = start.add(1, "day").format();
-  const draft = createGridEventDraft({
-    kind: "allDay",
-    start: new Date(startDate),
-    end: new Date(endDate),
-  });
+  const draft = createGridEventDraft(
+    {
+      kind: "allDay",
+      start: new Date(startDate),
+      end: new Date(endDate),
+    },
+    undefined,
+    calendarId,
+  );
 
   draftActions.startGridDraft({ activity, draft });
 };
