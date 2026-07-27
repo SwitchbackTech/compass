@@ -117,7 +117,9 @@ describe("ContextMenuItems", () => {
     expect(screen.getByText("Edit")).toBeInTheDocument();
     expect(screen.getByText("Duplicate")).toBeInTheDocument();
     expect(screen.getByText("Delete")).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Blue" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitemradio", { name: "Blue" }),
+    ).toBeInTheDocument();
   });
 
   it("applies a color from the swatch strip and closes", async () => {
@@ -144,7 +146,7 @@ describe("ContextMenuItems", () => {
       { event },
     );
 
-    await user.click(screen.getByRole("radio", { name: "Coral" }));
+    await user.click(screen.getByRole("menuitemradio", { name: "Coral" }));
     expect(setColor).toHaveBeenCalledWith("coral");
     expect(mockClose).toHaveBeenCalled();
   });
@@ -300,7 +302,7 @@ describe("ContextMenuItems read-only gate", () => {
       screen.queryByRole("menuitem", { name: "Delete" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("radio", { name: "Blue" }),
+      screen.queryByRole("menuitemradio", { name: "Blue" }),
     ).not.toBeInTheDocument();
   });
 

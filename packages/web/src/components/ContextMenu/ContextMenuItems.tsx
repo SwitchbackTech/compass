@@ -1,15 +1,21 @@
 import { Copy, PenNib, Trash } from "@phosphor-icons/react";
 import type React from "react";
 import { createContext, useContext } from "react";
-import { type EventColorSlot } from "@core/types/event-color.contracts";
+import {
+  type EventColorSlot,
+  EventColorSlotSchema,
+} from "@core/types/event-color.contracts";
 import {
   isEventReadOnly,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
+import {
+  EVENT_COLOR_SLOT_HEX,
+  eventColorLabel,
+} from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { draftActions } from "@web/events/stores/draft.store";
-import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/EventColorPicker";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useSetEventColor } from "@web/views/Forms/hooks/useSetEventColor";
@@ -51,6 +57,14 @@ interface ContextMenuItemsProps {
 interface ContextMenuItemsViewProps extends ContextMenuItemsProps {
   actions: ContextMenuItemsActions;
 }
+
+const COLOR_OPTIONS: Array<EventColorSlot | null> = [
+  null,
+  ...EventColorSlotSchema.options,
+];
+
+const colorSwatchClassName =
+  "h-5 w-5 shrink-0 cursor-pointer rounded-sm border border-transparent focus-visible:ring-2 focus-visible:ring-accent aria-checked:border-text aria-checked:outline aria-checked:outline-2 aria-checked:outline-offset-1 aria-checked:outline-text";
 
 export function ContextMenuItemsView({
   actions,
@@ -94,6 +108,7 @@ export function ContextMenuItemsView({
   ];
 
   const nav = useContext(ContextMenuNavContext);
+  const selectedColor = event.color ?? null;
 
   return (
     // role="none" keeps the menu -> menuitem ownership valid across this
@@ -125,15 +140,55 @@ export function ContextMenuItemsView({
         );
       })}
       {!isReadOnly && (
-        <div role="none" className="max-w-68 border-border border-t px-3 py-2">
-          <EventColorPicker
-            name="context-menu-event-color"
-            value={event.color ?? null}
-            onChange={(next) => {
-              actions.setColor(next);
-              close();
-            }}
-          />
+        <div
+          role="group"
+          aria-label="Event color"
+          className="max-w-68 border-border border-t px-3 py-2"
+        >
+          <div className="flex flex-wrap items-center gap-1.5">
+            {COLOR_OPTIONS.map((slot, colorIndex) => {
+              const index = menuActions.length + colorIndex;
+              const label = eventColorLabel(slot);
+              const checked = selectedColor === slot;
+              const select = () => {
+                actions.setColor(slot);
+                close();
+              };
+              const itemProps = nav
+                ? nav.getItemProps({ onClick: select })
+                : { onClick: select };
+              return (
+                <span key={label} className="group relative inline-flex">
+                  <button
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={checked}
+                    aria-label={label}
+                    className={
+                      slot === null
+                        ? `${colorSwatchClassName} border-border bg-bg-primary`
+                        : colorSwatchClassName
+                    }
+                    style={
+                      slot === null
+                        ? undefined
+                        : { backgroundColor: EVENT_COLOR_SLOT_HEX[slot] }
+                    }
+                    ref={(node) => {
+                      if (nav) nav.listRef.current[index] = node;
+                    }}
+                    tabIndex={
+                      nav ? (nav.activeIndex === index ? 0 : -1) : undefined
+                    }
+                    {...itemProps}
+                  />
+                  <span className="c-context-tooltip" role="tooltip">
+                    {label}
+                  </span>
+                </span>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
