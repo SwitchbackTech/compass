@@ -226,8 +226,9 @@ describe("useDayEventNudgeShortcuts", () => {
   });
 
   it("moves the focused timed event to the next day with Shift+ArrowRight", async () => {
+    const navigateToDate = mock(() => {});
     focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    const { queryClient } = renderEditShortcuts();
+    const { queryClient } = renderEditShortcuts({ navigateToDate });
 
     pressKey("ArrowRight", shiftKey);
 
@@ -240,6 +241,7 @@ describe("useDayEventNudgeShortcuts", () => {
     expect(input.schedule.start).toBe(
       offsetString(dayjs(timedEvent.startDate).add(1, "day")),
     );
+    expect(navigateToDate).toHaveBeenCalled();
   });
 
   it("moves the focused all-day event to the previous day with Shift+ArrowLeft", async () => {
