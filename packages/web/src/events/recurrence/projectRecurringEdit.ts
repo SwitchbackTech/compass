@@ -1,3 +1,4 @@
+import { DateOnlySchema, DateTimeSchema } from "@core/types/domain-primitives";
 import { type Event, type EventSchedule } from "@core/types/event.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
@@ -54,8 +55,10 @@ const convertScheduleKind = (
     const start = targetDay.toYearMonthDayString();
     return {
       kind: "allDay",
-      start,
-      end: dayjs(start).add(durationDays, "day").toYearMonthDayString(),
+      start: DateOnlySchema.parse(start),
+      end: DateOnlySchema.parse(
+        dayjs(start).add(durationDays, "day").toYearMonthDayString(),
+      ),
     };
   }
 
@@ -65,8 +68,8 @@ const convertScheduleKind = (
   const start = targetDay.add(timeOfDayMs, "millisecond");
   return {
     kind: "timed",
-    start: start.format(),
-    end: start.add(durationMs, "millisecond").format(),
+    start: DateTimeSchema.parse(start.format()),
+    end: DateTimeSchema.parse(start.add(durationMs, "millisecond").format()),
     timeZone: edited.schedule.timeZone,
   };
 };
