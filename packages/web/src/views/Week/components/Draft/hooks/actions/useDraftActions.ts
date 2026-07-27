@@ -7,10 +7,7 @@ import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
-import {
-  getArrowKeyMovement,
-  isTimedEventInsideOneDay,
-} from "@web/common/utils/event/event-nudge.util";
+import { repositionDraftByKeyboard as applyDraftKeyboardReposition } from "@web/common/utils/draft/reposition-draft-by-keyboard.util";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
 import {
   type GridEventDraft,
@@ -47,11 +44,6 @@ const scopeFromApplyTo = (
     : applyTo === RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS
       ? "thisAndFollowing"
       : "this";
-
-const canRepositionDraftByKeyboard = (activity: string | null | undefined) =>
-  activity === "createShortcut" ||
-  activity === "gridClick" ||
-  activity === "keyboardEdit";
 
 export const useDraftActions = (
   draftState: State_Draft_Local,
@@ -248,37 +240,15 @@ export const useDraftActions = (
 
   const repositionDraftByKeyboard = useCallback(
     (key: string) => {
-      if (!canRepositionDraftByKeyboard(activity) || !draft) return false;
+      const nextDraft = applyDraftKeyboardReposition({
+        activity,
+        draft,
+        key,
+        isStartAllowed: (nextStart) => isInsideVisibleWeek(dayjs(nextStart)),
+      });
+      if (!nextDraft) return false;
 
-      const isAllDay = draft.values.schedule.kind === "allDay";
-      const movement = getArrowKeyMovement(key, isAllDay);
-      if (!movement) return false;
-
-      const start = dayjs(draft.values.schedule.start);
-      const end = dayjs(draft.values.schedule.end);
-      const nextStart = start
-        .add(movement.days, "day")
-        .add(movement.minutes, "minutes");
-      const nextEnd = end
-        .add(movement.days, "day")
-        .add(movement.minutes, "minutes");
-
-      if (!isInsideVisibleWeek(nextStart)) return false;
-
-      if (!isAllDay && !isTimedEventInsideOneDay(nextStart, nextEnd)) {
-        return false;
-      }
-
-      const schedule: GridScheduleDraft = isAllDay
-        ? { kind: "allDay", start: nextStart.toDate(), end: nextEnd.toDate() }
-        : {
-            ...draft.values.schedule,
-            start: nextStart.toDate(),
-            end: nextEnd.toDate(),
-          };
-
-      setDraft(replaceGridDraftSchedule(draft, schedule));
-
+      setDraft(nextDraft);
       return true;
     },
     [activity, draft, isInsideVisibleWeek, setDraft],

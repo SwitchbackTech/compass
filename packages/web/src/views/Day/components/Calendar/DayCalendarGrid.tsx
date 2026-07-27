@@ -29,6 +29,7 @@ import { useGridCoordinates } from "@web/grid/hooks/useGridCoordinates";
 import { useGridMeasurements } from "@web/grid/hooks/useGridMeasurements";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
+import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayEventNudgeShortcuts } from "@web/views/Day/hooks/shortcuts/useDayEventNudgeShortcuts";
 import { DayInteractionCoordinator } from "@web/views/Day/interaction/DayInteractionCoordinator";
 import { DayCalendarBusyPeriodsLayer } from "./DayCalendarBusyPeriods";
@@ -56,6 +57,7 @@ const isDayInteractionMotionActive = () => false;
 
 export function DayCalendarGrid() {
   const dateInView = useDateInView();
+  const { navigateToDate } = useDateNavigation();
   const today = useMemo(() => dayjs(), []);
   const {
     allDayEvents,
@@ -81,7 +83,11 @@ export function DayCalendarGrid() {
     gridRefs.mainGridRef,
     visibleDates,
   );
-  useDayEventNudgeShortcuts({ timedEvents: displayedTimedEvents });
+  useDayEventNudgeShortcuts({
+    allDayEvents: displayedAllDayEvents,
+    navigateToDate,
+    timedEvents: displayedTimedEvents,
+  });
   const gridDraft = useDraftStore(selectGridDraft);
 
   const calendarColumnKeys = useMemo(
