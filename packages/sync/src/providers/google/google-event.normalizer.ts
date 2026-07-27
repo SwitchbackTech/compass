@@ -9,6 +9,7 @@ import {
   SyncEventContentSchema,
 } from "@core/types/sync/event.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { googleColorIdToSlot } from "@sync/providers/google/google-color.map";
 import {
   ProviderEventError,
   type ProviderEventRead,
@@ -77,6 +78,7 @@ function mapContent(item: gSchema$Event) {
   // the contract's max). That makes one event unusable, so it must surface as a
   // ProviderEventError the reader can skip — never a raw ZodError that would
   // escape the per-event skip boundary and fail a whole import page.
+  const color = googleColorIdToSlot(item.colorId);
   const parsed = SyncEventContentSchema.safeParse({
     // Google omits summary/description for untitled/empty events; the neutral
     // contract models those as empty strings, not absence.
@@ -86,6 +88,8 @@ function mapContent(item: gSchema$Event) {
     organizer: mapOrganizer(item.organizer),
     attendees: mapAttendees(item.attendees),
     conference: mapConference(item),
+    // Omit entirely when Google reports no color or an unknown id.
+    ...(color !== undefined ? { color } : {}),
   });
   if (!parsed.success) {
     throw new ProviderEventError(

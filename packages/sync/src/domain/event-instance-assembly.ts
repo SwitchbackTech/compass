@@ -46,6 +46,9 @@ export function assembleEventInstances(
     const content = {
       title: event.content.title,
       description: event.content.description,
+      ...(event.content.color !== undefined
+        ? { color: event.content.color }
+        : {}),
     };
     const timestamps = {
       createdAt: event.createdAt.toISOString(),
@@ -116,6 +119,9 @@ export function assembleEventInstances(
         content: {
           title: master.content.title,
           description: master.content.description,
+          ...(master.content.color !== undefined
+            ? { color: master.content.color }
+            : {}),
         },
         schedule: master.schedule,
         recurrence: { kind: "series", rules: master.recurrence.rules },

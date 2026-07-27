@@ -99,6 +99,29 @@ describe("assembleEventInstances", () => {
     expect(instance?.updatedAt).toBe("2026-07-02T00:00:00.000Z");
   });
 
+  it("carries event content.color onto assembled instance content", () => {
+    const event = makeEvent({
+      content: {
+        title: "Standup",
+        description: "Daily sync",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+        color: "coral",
+      },
+    });
+    const occurrence = makeOccurrence({ eventId: event._id });
+
+    const [instance] = assembleEventInstances([occurrence], byId(event));
+
+    expect(instance?.content).toEqual({
+      title: "Standup",
+      description: "Daily sync",
+      color: "coral",
+    });
+  });
+
   it("maps plain series instances to occurrence rows plus one master row", () => {
     const master = makeEvent({
       recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=DAILY"] },
