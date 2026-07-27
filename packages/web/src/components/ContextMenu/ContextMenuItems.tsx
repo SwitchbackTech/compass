@@ -125,7 +125,7 @@ export function ContextMenuItemsView({
         );
       })}
       {!isReadOnly && (
-        <div role="none" className="max-w-68 border-t border-border px-3 py-2">
+        <div role="none" className="max-w-68 border-border border-t px-3 py-2">
           <EventColorPicker
             name="context-menu-event-color"
             value={event.color ?? null}
