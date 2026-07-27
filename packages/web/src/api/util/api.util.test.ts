@@ -176,6 +176,28 @@ describe("handleErrorResponse", () => {
     expect(onGoogleRevoked).toHaveBeenCalledTimes(1);
   });
 
+  it("delegates Google revocation for the full event-mutation envelope body", async () => {
+    // Sync-delegated writes now return the same GOOGLE_REVOKED code inside the
+    // EventMutationError envelope (message + retryable). The gate keys only on
+    // code, so the richer body must still fire reconnect.
+    const onGoogleRevoked = mock();
+    const error = createApiError({
+      data: {
+        code: "GOOGLE_REVOKED",
+        message:
+          "Google Calendar access expired or was revoked. Reconnect Google Calendar in Compass to resume syncing.",
+        retryable: false,
+      },
+      status: Status.UNAUTHORIZED,
+    });
+
+    await expect(handleErrorResponse(error, { onGoogleRevoked })).rejects.toBe(
+      error,
+    );
+
+    expect(onGoogleRevoked).toHaveBeenCalledTimes(1);
+  });
+
   it("does not delegate unrelated API errors", async () => {
     const onGoogleRevoked = mock();
     const error = createApiError(

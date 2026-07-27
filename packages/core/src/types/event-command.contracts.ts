@@ -115,6 +115,9 @@ export const EventMutationErrorCodeSchema = z.enum([
   "DUPLICATE_EVENT_ID",
   "INVALID_SCHEDULE",
   "PROVIDER_FAILURE",
+  // Same reconnect envelope as the legacy Google path (401 + GOOGLE_REVOKED):
+  // web fetch wrapper → handleGoogleRevoked → GoogleReconnectToast.
+  "GOOGLE_REVOKED",
   // Scoped cutover maintenance: cloud/provider mutations paused (S50).
   "MAINTENANCE",
 ]);

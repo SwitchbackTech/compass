@@ -169,4 +169,15 @@ describe("refreshConnectionState", () => {
     const after = await refreshConnectionState(deps(), connection);
     expect(after.state).toBe("importing");
   });
+
+  it("derives actionRequired/authorizationRevoked when the credential is missing", async () => {
+    // Deleting the credential row is the evidence write for a revoked grant;
+    // state re-derives on read — no direct actionRequired stamp.
+    const connection = await seedImportingConnection();
+    await credentials.deleteByConnection(connection._id);
+
+    const after = await refreshConnectionState(deps(), connection);
+    expect(after.state).toBe("actionRequired");
+    expect(after.stateReason).toBe("authorizationRevoked");
+  });
 });

@@ -33,10 +33,11 @@ import { type EventRepository } from "@sync/storage/repositories/event.repositor
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 
 // The slice of credential custody the executor needs — a valid access token for
-// a connection. Narrow so tests pass a plain fake; CredentialCustody satisfies
-// it structurally.
+// a connection, plus discard of a provider-invalidated grant. Narrow so tests
+// pass a plain fake; CredentialCustody satisfies it structurally.
 export interface AccessTokenSource {
   getValidAccessToken(connectionId: ConnectionId): Promise<string>;
+  discardRevoked(connectionId: ConnectionId): Promise<void>;
 }
 
 export interface ProviderMutationDeps {
@@ -85,7 +86,12 @@ export async function executeProviderCreate(
     ) {
       return command;
     }
-    return failCommand(deps, command, "authorizationRevoked");
+    return failCommand(
+      deps,
+      command,
+      "authorizationRevoked",
+      calendar.connectionId,
+    );
   }
 
   let result: ProviderWriteResult;
@@ -105,7 +111,7 @@ export async function executeProviderCreate(
       // eventual retry idempotent. Every other reason is terminal and maps
       // straight to a command failure class.
       if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason);
+      return failCommand(deps, command, error.reason, calendar.connectionId);
     }
     throw error;
   }
@@ -135,6 +141,7 @@ async function failCommand(
   deps: ProviderMutationDeps,
   command: CommandRecord,
   reason: SyncCommandFailureReason,
+  connectionId: ConnectionId,
 ): Promise<CommandRecord> {
   const failed = await deps.commands.updateOutcome(
     command.tenantId,
@@ -143,6 +150,12 @@ async function failCommand(
     { state: "failed", failureReason: reason },
     command.attemptCount,
   );
+  // Outcome first, then evidence: both are idempotent, so a crash between them
+  // re-runs cleanly. Deleting the credential lets deriveConnectionState read
+  // actionRequired/authorizationRevoked on the next metadata/connections fetch.
+  if (reason === "authorizationRevoked") {
+    await deps.custody.discardRevoked(connectionId);
+  }
   return failed ?? command;
 }
 
@@ -248,7 +261,7 @@ export async function executeProviderUpdate(
     ) {
       return command;
     }
-    return failCommand(deps, command, "authorizationRevoked");
+    return failCommand(deps, command, "authorizationRevoked", connectionId);
   }
 
   const location = {
@@ -268,11 +281,13 @@ export async function executeProviderUpdate(
   } catch (error) {
     if (error instanceof ProviderWriteError) {
       if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason);
+      return failCommand(deps, command, error.reason, connectionId);
     }
     throw error;
   }
-  if (!current) return failCommand(deps, command, "permanentProviderError");
+  if (!current) {
+    return failCommand(deps, command, "permanentProviderError", connectionId);
+  }
 
   // Merge so a title/description edit cannot wipe provider-sourced attendees.
   const content = mergeUpdateContent(event.content, input.content);
@@ -308,7 +323,7 @@ export async function executeProviderUpdate(
   } catch (error) {
     if (error instanceof ProviderWriteError) {
       if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason);
+      return failCommand(deps, command, error.reason, connectionId);
     }
     throw error;
   }
@@ -410,7 +425,7 @@ export async function executeProviderSeriesUpdate(
     ) {
       return command;
     }
-    return failCommand(deps, command, "authorizationRevoked");
+    return failCommand(deps, command, "authorizationRevoked", connectionId);
   }
 
   const location = {
@@ -428,11 +443,13 @@ export async function executeProviderSeriesUpdate(
   } catch (error) {
     if (error instanceof ProviderWriteError) {
       if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason);
+      return failCommand(deps, command, error.reason, connectionId);
     }
     throw error;
   }
-  if (!current) return failCommand(deps, command, "permanentProviderError");
+  if (!current) {
+    return failCommand(deps, command, "permanentProviderError", connectionId);
+  }
 
   const content = mergeUpdateContent(master.content, input.content);
 
@@ -464,7 +481,7 @@ export async function executeProviderSeriesUpdate(
   } catch (error) {
     if (error instanceof ProviderWriteError) {
       if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason);
+      return failCommand(deps, command, error.reason, connectionId);
     }
     throw error;
   }
@@ -764,7 +781,14 @@ export async function executeProviderDelete(
     ) {
       return command;
     }
-    return revertAndFail(deps, command, event, "authorizationRevoked", now);
+    return revertAndFail(
+      deps,
+      command,
+      event,
+      "authorizationRevoked",
+      connectionId,
+      now,
+    );
   }
 
   try {
@@ -783,7 +807,14 @@ export async function executeProviderDelete(
       if (error.reason === "transient") return command;
       // Terminal: the delete failed, so restore the event to active rather than
       // leaving it stuck showing "deleting".
-      return revertAndFail(deps, command, event, error.reason, now);
+      return revertAndFail(
+        deps,
+        command,
+        event,
+        error.reason,
+        connectionId,
+        now,
+      );
     }
     throw error;
   }
@@ -866,6 +897,7 @@ async function revertAndFail(
   command: CommandRecord,
   event: EventRecord,
   reason: SyncCommandFailureReason,
+  connectionId: ConnectionId,
   now: () => Date,
 ): Promise<CommandRecord> {
   await deps.events.replaceExisting({
@@ -873,5 +905,5 @@ async function revertAndFail(
     lifecycleState: "active",
     updatedAt: now(),
   });
-  return failCommand(deps, command, reason);
+  return failCommand(deps, command, reason, connectionId);
 }

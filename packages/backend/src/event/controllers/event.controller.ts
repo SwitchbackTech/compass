@@ -156,9 +156,15 @@ const mapSyncFailure = (reason: SyncCommandFailureReason) => {
         "RECURRENCE_CONFLICT",
         "Event was modified elsewhere",
       );
+    case "authorizationRevoked":
+      // Same copy and envelope as the legacy Google reconnect path so the web
+      // fetch wrapper's existing GOOGLE_REVOKED gate fires unchanged.
+      return eventMutationError(
+        "GOOGLE_REVOKED",
+        "Google Calendar access expired or was revoked. Reconnect Google Calendar in Compass to resume syncing.",
+      );
     case "unsupportedCapability":
     case "permanentProviderError":
-    case "authorizationRevoked":
       return eventMutationError(
         "PROVIDER_FAILURE",
         `Sync command failed (${reason})`,

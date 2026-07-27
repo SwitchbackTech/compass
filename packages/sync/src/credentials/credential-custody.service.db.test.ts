@@ -197,7 +197,7 @@ describe("CredentialCustody", () => {
     expect(adapter.refreshCalls).toBe(0);
   });
 
-  it("propagates authorizationRevoked from the adapter", async () => {
+  it("propagates authorizationRevoked from the adapter and deletes the credential", async () => {
     const connectionId = objectId() as ConnectionId;
     const adapter = new FakeAdapter({
       refreshError: new ProviderAuthError("authorizationRevoked", "revoked"),
@@ -210,6 +210,26 @@ describe("CredentialCustody", () => {
       .catch((e) => e)) as ProviderAuthError;
 
     expect(error.reason).toBe("authorizationRevoked");
+    // Deleting the row is the durable evidence deriveConnectionState reads as
+    // actionRequired/authorizationRevoked. No provider revoke call — the grant
+    // is already dead at Google.
+    expect(await repo.findByConnection(connectionId)).toBeNull();
+    expect(adapter.revokedTokens).toEqual([]);
+  });
+
+  it("discardRevoked deletes the credential and is idempotent", async () => {
+    const connectionId = objectId() as ConnectionId;
+    const adapter = new FakeAdapter();
+    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    await custody.store(baseCredential(connectionId));
+
+    await custody.discardRevoked(connectionId);
+    expect(await repo.findByConnection(connectionId)).toBeNull();
+
+    // Second call and a never-stored connection are both no-ops.
+    await custody.discardRevoked(connectionId);
+    await custody.discardRevoked(objectId() as ConnectionId);
+    expect(adapter.revokedTokens).toEqual([]);
   });
 
   it("does not serve a token when a disconnect deletes the credential mid-refresh", async () => {

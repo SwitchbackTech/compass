@@ -78,7 +78,10 @@ class FakeWriter implements ProviderEventWriter {
 
 const provider = (writer: ProviderEventWriter) => ({
   writer,
-  custody: { getValidAccessToken: async () => "access-token" },
+  custody: {
+    getValidAccessToken: async () => "access-token",
+    discardRevoked: async () => {},
+  },
 });
 
 describe("submitCloudCommand provider dispatch", () => {

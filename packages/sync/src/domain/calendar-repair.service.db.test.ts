@@ -76,7 +76,10 @@ const page = (
   nextSyncToken: opts.nextSyncToken ?? null,
 });
 
-const tokenSource = { getValidAccessToken: async () => "access-token" };
+const tokenSource = {
+  getValidAccessToken: async () => "access-token",
+  discardRevoked: async () => {},
+};
 
 describe("repairCalendar", () => {
   const storage = setupSyncStorage(import.meta.url);

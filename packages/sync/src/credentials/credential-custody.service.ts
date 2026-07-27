@@ -65,6 +65,14 @@ export class CredentialCustody {
     }
   }
 
+  // Delete a credential whose grant the provider has already invalidated.
+  // Unlike disconnect, this does not call provider revoke — the grant is
+  // already dead. The missing row is the durable evidence deriveConnectionState
+  // reads as actionRequired/authorizationRevoked. Idempotent.
+  async discardRevoked(connectionId: ConnectionId): Promise<void> {
+    await this.credentials.deleteByConnection(connectionId);
+  }
+
   async #resolveAccessToken(connectionId: ConnectionId): Promise<string> {
     const credential = await this.credentials.findByConnection(connectionId);
     if (!credential) {
@@ -82,11 +90,25 @@ export class CredentialCustody {
       return credential.accessToken;
     }
 
-    // Let a ProviderAuthError (authorizationRevoked / refreshFailed) propagate:
-    // the caller maps revoked authority to an action-required connection state.
-    const refreshed = await this.adapter.refreshAccessToken({
-      refreshToken: credential.refreshToken,
-    });
+    // Refresh; on authorizationRevoked, delete the dead credential first so
+    // connection state re-derives as actionRequired, then rethrow so callers
+    // (commands, pulls, etc.) still see the terminal auth failure.
+    let refreshed: Awaited<
+      ReturnType<ProviderAuthAdapter["refreshAccessToken"]>
+    >;
+    try {
+      refreshed = await this.adapter.refreshAccessToken({
+        refreshToken: credential.refreshToken,
+      });
+    } catch (error) {
+      if (
+        error instanceof ProviderAuthError &&
+        error.reason === "authorizationRevoked"
+      ) {
+        await this.discardRevoked(connectionId);
+      }
+      throw error;
+    }
     const cached = await this.credentials.cacheAccessToken(
       connectionId,
       refreshed.accessToken,

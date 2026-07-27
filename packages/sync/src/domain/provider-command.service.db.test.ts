@@ -9,6 +9,7 @@ import {
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
+import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import {
   type AccessTokenSource,
   executeProviderCreate,
@@ -17,7 +18,11 @@ import {
   executeProviderUpdate,
 } from "@sync/domain/provider-command.service";
 import { reprojectOccurrences } from "@sync/domain/reproject";
-import { ProviderAuthError } from "@sync/providers/provider-auth.port";
+import {
+  type ProviderAuthAdapter,
+  ProviderAuthError,
+  type RefreshedCredential,
+} from "@sync/providers/provider-auth.port";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
   type ProviderCreateInput,
@@ -32,6 +37,7 @@ import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
@@ -69,12 +75,62 @@ class FakeWriter implements ProviderEventWriter {
 
 const tokenSource = (token = "access-token"): AccessTokenSource => ({
   getValidAccessToken: async () => token,
+  discardRevoked: async () => {},
 });
 const failingTokenSource = (error: unknown): AccessTokenSource => ({
   getValidAccessToken: async () => {
     throw error;
   },
+  discardRevoked: async () => {},
 });
+
+// Minimal auth adapter for CredentialCustody in the revoked-grant cases.
+class RevokedAuthAdapter implements ProviderAuthAdapter {
+  readonly provider = "google" as const;
+  constructor(
+    private readonly behavior: {
+      refreshError?: unknown;
+      refreshed?: RefreshedCredential;
+    } = {},
+  ) {}
+  buildAuthorizationUrl(): string {
+    throw new Error("not used");
+  }
+  exchangeAuthorizationCode(): Promise<never> {
+    throw new Error("not used");
+  }
+  async refreshAccessToken(): Promise<RefreshedCredential> {
+    if (this.behavior.refreshError) throw this.behavior.refreshError;
+    return (
+      this.behavior.refreshed ?? {
+        accessToken: "refreshed",
+        expiresAt: new Date("2099-01-01T00:00:00Z"),
+        grantedScopes: [],
+      }
+    );
+  }
+  async revoke(): Promise<void> {}
+}
+
+const storeCredential = async (
+  credentials: CredentialRepository,
+  connectionId: ConnectionId,
+  accessToken?: { token: string; expiresAt: Date },
+) => {
+  await credentials.store({
+    connectionId,
+    provider: "google",
+    refreshToken: "stored-refresh-token",
+    scopes: ["https://www.googleapis.com/auth/calendar.events"],
+  });
+  if (accessToken) {
+    await credentials.cacheAccessToken(
+      connectionId,
+      accessToken.token,
+      accessToken.expiresAt,
+    );
+  }
+};
 
 describe("executeProviderCreate", () => {
   let mongo: SyncMongoService;
@@ -274,6 +330,14 @@ describe("executeProviderCreate", () => {
   it("fails the command when the credential is revoked, without writing", async () => {
     const { calendar, command } = await seed();
     const writer = new FakeWriter();
+    const credentials = new CredentialRepository(mongo.db);
+    await storeCredential(credentials, calendar.connectionId);
+    const custody = new CredentialCustody(
+      credentials,
+      new RevokedAuthAdapter({
+        refreshError: new ProviderAuthError("authorizationRevoked", "revoked"),
+      }),
+    );
 
     const result = await executeProviderCreate(
       {
@@ -281,9 +345,7 @@ describe("executeProviderCreate", () => {
         events,
         occurrences,
         writer,
-        custody: failingTokenSource(
-          new ProviderAuthError("authorizationRevoked", "revoked"),
-        ),
+        custody,
       },
       command,
       calendar,
@@ -295,6 +357,10 @@ describe("executeProviderCreate", () => {
       result.outcome.state === "failed" && result.outcome.failureReason,
     ).toBe("authorizationRevoked");
     expect(writer.calls).toHaveLength(0);
+    // Refresh-path discard (custody) + failCommand discard — both idempotent.
+    expect(
+      await credentials.findByConnection(calendar.connectionId),
+    ).toBeNull();
   });
 
   it("leaves the command pending on a transient refresh failure", async () => {
@@ -638,6 +704,42 @@ describe("executeProviderUpdate", () => {
     expect(result.outcome.state).toBe("failed");
     expect(writer.fetchCalls).toHaveLength(0);
     expect(writer.patchCalls).toHaveLength(0);
+  });
+
+  it("discards the credential when a writer 401 classifies as authorizationRevoked", async () => {
+    // Cached access token is still valid, so custody refresh never runs — the
+    // writer is the one that sees the mid-flight 401. failCommand must discard.
+    const { calendar, event, command } = await seed();
+    const credentials = new CredentialRepository(mongo.db);
+    await storeCredential(credentials, calendar.connectionId, {
+      token: "still-cached",
+      expiresAt: new Date("2099-01-01T00:00:00Z"),
+    });
+    const custody = new CredentialCustody(
+      credentials,
+      new RevokedAuthAdapter(),
+    );
+    const writer = new FakeUpdateWriter();
+    writer.fetchError = new ProviderWriteError(
+      "authorizationRevoked",
+      "token rejected",
+    );
+
+    const result = await executeProviderUpdate(
+      { commands, events, occurrences, writer, custody },
+      command,
+      event,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("failed");
+    expect(
+      result.outcome.state === "failed" && result.outcome.failureReason,
+    ).toBe("authorizationRevoked");
+    expect(
+      await credentials.findByConnection(calendar.connectionId),
+    ).toBeNull();
   });
 });
 
