@@ -25,7 +25,10 @@ import {
 import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
 import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
 import { Header } from "@web/views/Day/components/Header/Header";
-import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
+import {
+  dayEventQueryRange,
+  useDayEvents,
+} from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
@@ -122,6 +125,11 @@ export const DayViewContent = memo(() => {
     welcomeGuideActions.open();
   }, []);
 
+  const demoEventsRange = useMemo(() => {
+    const { startDate, endDate } = dayEventQueryRange(dateInView);
+    return { start: startDate, end: endDate };
+  }, [dateInView]);
+
   return (
     <div id="day" className="flex h-screen w-screen overflow-hidden">
       <CommandPalette
@@ -139,7 +147,7 @@ export const DayViewContent = memo(() => {
         className="flex h-screen flex-1 flex-col overflow-hidden bg-background pt-5 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
       >
         <Header />
-        <DemoEventsBannerGate />
+        <DemoEventsBannerGate range={demoEventsRange} />
 
         <div className="flex w-full flex-1 overflow-hidden">
           <DayCalendarGrid />

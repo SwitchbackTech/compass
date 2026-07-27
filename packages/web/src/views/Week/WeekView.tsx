@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
+import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { getCommandPalettePlaceholder } from "@web/components/CommandPalette/more.cmd.constants";
@@ -141,6 +142,17 @@ export const WeekView = () => {
     welcomeGuideActions.open();
   }, []);
 
+  // Exclusive end so all-day sample events on the last visible day still match.
+  const demoEventsRange = useMemo(
+    () => ({
+      start: toUTCOffset(weekProps.component.startOfView.startOf("day")),
+      end: toUTCOffset(
+        weekProps.component.endOfView.startOf("day").add(1, "day"),
+      ),
+    }),
+    [weekProps.component.endOfView, weekProps.component.startOfView],
+  );
+
   return (
     <div id="cal" className="flex h-screen w-screen overflow-hidden">
       <CommandPalette
@@ -160,7 +172,7 @@ export const WeekView = () => {
             className="flex h-screen flex-1 flex-col overflow-hidden bg-background pt-5 pr-0 pb-0 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
           >
             <Header scrollUtil={scrollUtil} weekProps={weekProps} />
-            <DemoEventsBannerGate />
+            <DemoEventsBannerGate range={demoEventsRange} />
 
             <WeekGridScrollArea>
               <div

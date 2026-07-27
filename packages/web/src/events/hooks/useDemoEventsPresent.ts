@@ -1,14 +1,19 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { hasDemoEvents } from "@web/events/demo-events.util";
+import {
+  type DemoEventsRange,
+  hasDemoEvents,
+} from "@web/events/demo-events.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 
-export function useDemoEventsPresent(): boolean {
+export function useDemoEventsPresent(range?: DemoEventsRange): boolean {
   const queryClient = useQueryClient();
   const source = useEventRepositorySource();
   const [present, setPresent] = useState(false);
   const refreshGenerationRef = useRef(0);
+  const rangeStart = range?.start;
+  const rangeEnd = range?.end;
 
   const refresh = useCallback(() => {
     if (source !== "local") {
@@ -19,12 +24,16 @@ export function useDemoEventsPresent(): boolean {
 
     refreshGenerationRef.current += 1;
     const generation = refreshGenerationRef.current;
-    void hasDemoEvents().then((result) => {
+    const rangeArg =
+      rangeStart !== undefined && rangeEnd !== undefined
+        ? { start: rangeStart, end: rangeEnd }
+        : undefined;
+    void hasDemoEvents(rangeArg).then((result) => {
       if (generation === refreshGenerationRef.current) {
         setPresent(result);
       }
     });
-  }, [source]);
+  }, [rangeEnd, rangeStart, source]);
 
   useEffect(() => {
     refresh();
