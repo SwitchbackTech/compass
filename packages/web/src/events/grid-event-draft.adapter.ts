@@ -3,6 +3,7 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
+import { type EventColorSlot } from "@core/types/event-color.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -270,15 +271,23 @@ export function gridEventDraftToGridEvent(draft: GridEventDraft): GridEvent {
 }
 
 // Converts a grid draft to the CompassEvent-shaped view used by schema
-// overlays, Day placeholders, and context-menu props. calendarId/isBusy are
-// widened onto the return (rather than adding them to the shared core
-// CompassEvent interface) so colored accents and the busy read-only gate stay
-// correct without a second lookup.
+// overlays, Day placeholders, and context-menu props. calendarId/isBusy/color
+// are widened onto the return (rather than adding them to the shared core
+// CompassEvent interface) so colored accents, the busy read-only gate, and
+// per-event fill stay correct without a second lookup.
 export function gridEventDraftToSchemaEvent(
   draft: GridEventDraft,
   seriesRules?: readonly string[],
-): CompassEvent & { calendarId?: CalendarId; isBusy?: boolean } {
+): CompassEvent & {
+  calendarId?: CalendarId;
+  isBusy?: boolean;
+  color?: EventColorSlot;
+} {
   const { schedule } = draft.values;
+  const color =
+    draft.kind === "edit" && draft.source.content.kind === "details"
+      ? draft.source.content.color
+      : undefined;
 
   return {
     _id: draft.kind === "edit" ? draft.source.id : draft.clientId,
@@ -290,6 +299,7 @@ export function gridEventDraftToSchemaEvent(
         : dayjs(schedule.end).format(),
     isAllDay: schedule.kind === "allDay",
     isBusy: draft.kind === "edit" && draft.source.content.kind === "busy",
+    ...(color !== undefined ? { color } : {}),
     recurrence: legacyRecurrenceFromDraft(draft, seriesRules),
     startDate:
       schedule.kind === "allDay"

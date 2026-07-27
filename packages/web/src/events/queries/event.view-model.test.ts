@@ -63,6 +63,26 @@ describe("Event query view models", () => {
     expect(userCard?.isDemo).toBe(false);
   });
 
+  test("carries optional content.color onto grid event cards", () => {
+    const colored = createMockEvent({
+      content: {
+        kind: "details",
+        title: "Blue meeting",
+        description: "",
+        color: "blue",
+      },
+    });
+    const plain = createMockEvent();
+    const result = deriveCalendarEventViewModel(normalized(colored, plain));
+
+    expect(
+      result.timedEvents.find(({ _id }) => _id === colored.id)?.color,
+    ).toBe("blue");
+    expect(
+      result.timedEvents.find(({ _id }) => _id === plain.id),
+    ).not.toHaveProperty("color");
+  });
+
   test("returns stable empty shapes", () => {
     const week = deriveCalendarEventViewModel();
     expect(week).toEqual({
