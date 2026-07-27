@@ -63,6 +63,8 @@ describe("useSaveEventForm", () => {
         new Date("2026-05-20T10:00:00.000Z"),
         new Date("2026-05-20T09:00:00.000Z"),
       ),
+      undefined,
+      calendarId,
     );
     draftActions.startGridDraft({ activity: "gridClick", draft });
     draftActions.setFormOpen(true);
@@ -73,10 +75,7 @@ describe("useSaveEventForm", () => {
     });
 
     act(() => {
-      result.current.saveEventForm({
-        ...draft,
-        values: { ...draft.values, calendarId },
-      });
+      result.current.saveEventForm(draft);
     });
 
     expect(result.current.fieldErrors.end).toBeDefined();
