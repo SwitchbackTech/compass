@@ -52,6 +52,7 @@ export function createGridEventDraft(
       description: "",
       schedule,
       calendarId,
+      color: null,
       recurrence: { kind: "single" },
     },
   };
@@ -98,6 +99,8 @@ export function editGridEventDraft(
         event.content.kind === "details" ? event.content.description : "",
       schedule,
       calendarId: event.calendarId,
+      color:
+        event.content.kind === "details" ? (event.content.color ?? null) : null,
       recurrence: { kind: "preserve" },
       scope,
     },
@@ -142,6 +145,8 @@ export function duplicateGridEventDraft(
         event.content.kind === "details" ? event.content.description : "",
       schedule,
       calendarId,
+      color:
+        event.content.kind === "details" ? (event.content.color ?? null) : null,
       recurrence:
         event.recurrence.kind === "series"
           ? { kind: "series", rules: [...event.recurrence.rules] }
@@ -284,10 +289,7 @@ export function gridEventDraftToSchemaEvent(
   color?: EventColorSlot;
 } {
   const { schedule } = draft.values;
-  const color =
-    draft.kind === "edit" && draft.source.content.kind === "details"
-      ? draft.source.content.color
-      : undefined;
+  const color = draft.values.color ?? undefined;
 
   return {
     _id: draft.kind === "edit" ? draft.source.id : draft.clientId,
@@ -390,7 +392,9 @@ export function patchGridDraftScheduleDates(
 
 export function patchGridDraftFields(
   current: GridEventDraft,
-  patch: Partial<Pick<GridEventDraft["values"], "title" | "description">>,
+  patch: Partial<
+    Pick<GridEventDraft["values"], "title" | "description" | "color">
+  >,
 ): GridEventDraft {
   if (current.kind === "create") {
     return {
@@ -401,6 +405,7 @@ export function patchGridDraftFields(
         ...(patch.description !== undefined
           ? { description: patch.description }
           : {}),
+        ...(patch.color !== undefined ? { color: patch.color } : {}),
       },
     };
   }
@@ -413,6 +418,7 @@ export function patchGridDraftFields(
       ...(patch.description !== undefined
         ? { description: patch.description }
         : {}),
+      ...(patch.color !== undefined ? { color: patch.color } : {}),
     },
   };
 }

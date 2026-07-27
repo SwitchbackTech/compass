@@ -216,9 +216,11 @@ function toGoogleBody(
     summary: content.title,
     description: content.description,
     location: content.location,
-    ...(content.color !== undefined
-      ? { colorId: slotToGoogleColorId(content.color) }
-      : {}),
+    ...(content.color === null
+      ? { colorId: null }
+      : content.color !== undefined
+        ? { colorId: slotToGoogleColorId(content.color) }
+        : {}),
     ...scheduleFields(schedule),
     recurrence: recurrence.kind === "series" ? [...recurrence.rules] : null,
   };

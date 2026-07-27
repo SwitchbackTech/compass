@@ -79,4 +79,35 @@ describe("mergeUpdateContent", () => {
       description: "New desc",
     });
   });
+
+  it("clears an existing color when the command sends null", () => {
+    const existing = {
+      title: "Old",
+      description: "Old desc",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+      color: "blue" as const,
+    };
+
+    expect(
+      mergeUpdateContent(existing, {
+        title: "Old",
+        description: "Old desc",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+        color: null,
+      }),
+    ).toEqual({
+      title: "Old",
+      description: "Old desc",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+    });
+  });
 });

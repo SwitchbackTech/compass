@@ -14,7 +14,9 @@ export const EventContentSchema = z.discriminatedUnion("kind", [
     kind: z.literal("details"),
     title: z.string(),
     description: z.string(),
-    color: EventColorSlotSchema.optional(),
+    // Null clears a previously set color tag on replace. Reads omit the field
+    // when there is no color.
+    color: EventColorSlotSchema.nullable().optional(),
   }),
   z.strictObject({ kind: z.literal("busy") }),
 ]);
