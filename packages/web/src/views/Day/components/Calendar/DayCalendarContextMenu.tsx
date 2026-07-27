@@ -16,6 +16,7 @@ import {
 } from "@web/components/ContextMenu/contextMenu.floating";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
+import { useSetEventColor } from "@web/views/Forms/hooks/useSetEventColor";
 
 export const useDayCalendarContextMenu = ({
   getDayEventById,
@@ -31,6 +32,7 @@ export const useDayCalendarContextMenu = ({
   const contextMenuEventId = contextMenuEvent?._id ?? "";
   const duplicateContextMenuEvent = useDuplicateEvent(contextMenuEventId);
   const deleteContextMenuEvent = useDeleteEvent(contextMenuEventId);
+  const setContextMenuEventColor = useSetEventColor(contextMenuEventId);
 
   const { context, refs, floatingStyles } = useFloating({
     ...CONTEXT_MENU_FLOATING_OPTIONS,
@@ -88,12 +90,16 @@ export const useDayCalendarContextMenu = ({
 
         onOpenEvent(contextMenuEvent);
       },
+      setColor: (color) => {
+        setContextMenuEventColor(color);
+      },
     }),
     [
       contextMenuEvent,
       deleteContextMenuEvent,
       duplicateContextMenuEvent,
       onOpenEvent,
+      setContextMenuEventColor,
     ],
   );
 

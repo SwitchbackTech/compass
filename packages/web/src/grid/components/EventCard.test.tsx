@@ -134,6 +134,28 @@ describe("EventCard", () => {
     );
   });
 
+  it("paints a timed draft with the same slot fill as the saved card", () => {
+    render(
+      <TimedEventCard
+        displayMode="draft"
+        event={createEvent({
+          color: "red",
+          startDate: "2099-01-15T09:00:00.000Z",
+          endDate: "2099-01-15T10:00:00.000Z",
+        })}
+        motionMode="idle"
+        position={position}
+      />,
+    );
+
+    const card = screen.getByRole("button", {
+      name: "Timed event: Planning block, 9 - 10 AM",
+    });
+    expect(card.style.getPropertyValue("--event-bg")).toBe(
+      getEventPalette("red").base,
+    );
+  });
+
   it("keeps timed event keyboard activation from reaching parent shortcuts", () => {
     const onEventKeyDown = mock();
     const onParentKeyDown = mock();
