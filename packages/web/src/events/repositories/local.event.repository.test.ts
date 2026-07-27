@@ -198,6 +198,39 @@ describe("LocalEventRepository", () => {
     ]);
   });
 
+  it("truncates an all-day series with a full timed UTC UNTIL, never a bare date", async () => {
+    // Regression guard: CompassEventRRule anchors dtstart in the guessed
+    // local timezone (parseCompassEventDate + `.local()`), so a bare
+    // YYYY-MM-DD UNTIL is compared against that anchored instant rather
+    // than a plain calendar date. In any timezone behind UTC (all of the
+    // Americas — verified directly against CompassEventRRule outside this
+    // process-wide-UTC-pinned test harness under America/Denver and
+    // Asia/Tokyo) a bare-date UNTIL silently drops the last kept
+    // occurrence of a "this and following" split/delete on an all-day
+    // series. The fix always emits the full `YYYYMMDDTHHmmssZ` format
+    // truncateRules produces for timed schedules too.
+    const record = createMockLocalEventRecord({
+      schedule: {
+        kind: "allDay",
+        start: "2026-08-01" as never,
+        end: "2026-08-02" as never,
+      },
+      recurrence: {
+        kind: "series",
+        rules: ["RRULE:FREQ=DAILY;COUNT=10"] as never,
+      },
+    });
+    getAllEvents.mockResolvedValue([record]);
+    const id = `${record.id}::2026-08-04` as EventId;
+
+    await repository.delete(id, "thisAndFollowing");
+
+    const saved = putEvent.mock.calls[0][0];
+    expect(saved.event.recurrence.rules).toEqual([
+      "RRULE:FREQ=DAILY;UNTIL=20260803T235959Z",
+    ]);
+  });
+
   it("delete scope thisAndFollowing on the first occurrence removes the series", async () => {
     const record = seriesRecord();
     getAllEvents.mockResolvedValue([record]);
