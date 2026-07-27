@@ -25,10 +25,12 @@ import {
   findEventInCache,
   findSeriesEventsInCache,
   insertEventIntoQueries,
+  isEventQueryKey,
   removeEventFromQueries,
   upsertEventAcrossQueries,
 } from "@web/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
 import {
   projectRecurringDelete,
   projectRecurringEdit,
@@ -43,6 +45,7 @@ import {
   eventMutationKeys,
 } from "./event.mutation.keys";
 import {
+  hasOtherPendingWriteForKey,
   isSupersededByLaterEditWrite,
   markAnonymousEventWrite,
   type PrecedingEventWrites,
@@ -61,6 +64,75 @@ import {
 type EventMutationContext = {
   previousQueries: Array<[QueryKey, unknown]>;
 };
+
+function eventMatchesWriteKey(event: Event, writeKey: EventId): boolean {
+  if (event.id === writeKey) return true;
+  if (
+    event.recurrence.kind === "occurrence" &&
+    event.recurrence.seriesId === writeKey
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * When other event mutations are still pending, restore only entities owned by
+ * `writeKey` from the pre-mutation snapshot so a concurrent optimistic write
+ * to a different event is preserved.
+ */
+function restoreWriteKeyFromSnapshot(
+  queryClient: ReturnType<typeof useQueryClient>,
+  writeKey: EventId,
+  previousQueries: Array<[QueryKey, unknown]>,
+) {
+  const snapByKey = new Map(
+    previousQueries.map(([queryKey, data]) => [
+      JSON.stringify(queryKey),
+      data as NormalizedEventQueryData | undefined,
+    ]),
+  );
+
+  for (const [
+    queryKey,
+    current,
+  ] of queryClient.getQueriesData<NormalizedEventQueryData>({
+    queryKey: eventQueryKeys.all,
+  })) {
+    if (!current || !isEventQueryKey(queryKey)) continue;
+    const snap = snapByKey.get(JSON.stringify(queryKey));
+    const affectedIds = new Set<EventId>();
+
+    const collect = (data: NormalizedEventQueryData | undefined) => {
+      if (!data) return;
+      for (const id of data.ids) {
+        const event = data.entities[id];
+        if (event && eventMatchesWriteKey(event, writeKey)) {
+          affectedIds.add(id);
+        }
+      }
+      if (data.entities[writeKey]) affectedIds.add(writeKey);
+    };
+    collect(current);
+    collect(snap);
+
+    if (affectedIds.size === 0) continue;
+
+    const entities = { ...current.entities };
+    let ids = [...current.ids];
+    for (const id of affectedIds) {
+      const snapEvent = snap?.entities[id];
+      if (snapEvent) {
+        entities[id] = snapEvent;
+        if (!ids.includes(id)) ids = [...ids, id];
+      } else {
+        delete entities[id];
+        ids = ids.filter((candidate) => candidate !== id);
+      }
+    }
+    queryClient.setQueryData(queryKey, { ids, entities });
+  }
+}
 
 const nowDateTime = () => DateTimeSchema.parse(new Date().toISOString());
 
@@ -195,13 +267,14 @@ export function useEventMutations(
     [queryClient],
   );
 
-  // Snapshot + conditional rollback: a failed mutation restores its pre-image
-  // when it is the only in-flight event mutation. Concurrent writes (same key
-  // or another event) skip snapshot restore so a newer optimistic update is
-  // not clobbered; settle-time invalidation still converges to server truth.
-  // Invalidation is deferred to a macrotask because a settling mutation still
-  // counts as pending during its own onSettled — deferring lets simultaneous
-  // settles reliably observe count 0 instead of each seeing the other and skipping.
+  // Snapshot + conditional rollback: a failed mutation restores its pre-image.
+  // Alone in flight → full query restore. Concurrent writes → restore only
+  // entities owned by this writeKey so another event's optimistic update is
+  // preserved. Settle-time invalidation still converges to server truth once
+  // no event mutation remains in flight. Invalidation is deferred to a
+  // macrotask because a settling mutation still counts as pending during its
+  // own onSettled — deferring lets simultaneous settles reliably observe
+  // count 0 instead of each seeing the other and skipping.
   const settle = () => {
     setTimeout(() => {
       if (
@@ -228,22 +301,36 @@ export function useEventMutations(
     },
     onError: (
       error: Error,
-      _variables: Variables,
+      variables: Variables,
       context: EventMutationContext | undefined,
     ) => {
       reportError(error);
-      // Full-query snapshots would clobber a concurrent optimistic write to a
-      // different event. TanStack still counts *this* mutation as pending while
-      // onError runs (it dispatches status "error" only afterwards), so
-      // isMutating === 1 means we are alone and safe to restore.
+      if (!context) return;
+      // TanStack still counts *this* mutation as pending while onError runs
+      // (it dispatches status "error" only afterwards), so isMutating === 1
+      // means we are alone and a full snapshot restore is safe.
       const pendingEventMutations = queryClient.isMutating({
         mutationKey: eventMutationKeys.all,
       });
-      if (context && pendingEventMutations <= 1) {
+      if (pendingEventMutations <= 1) {
         for (const [queryKey, data] of context.previousQueries) {
           queryClient.setQueryData(queryKey, data);
         }
+        return;
       }
+      // Another mutation shares this write key (newer optimistic edit) — leave
+      // the cache alone so we do not clobber it. Different-key concurrency can
+      // surgically restore only this writeKey's entities.
+      if (
+        hasOtherPendingWriteForKey(queryClient, variables.writeKey, variables)
+      ) {
+        return;
+      }
+      restoreWriteKeyFromSnapshot(
+        queryClient,
+        variables.writeKey,
+        context.previousQueries,
+      );
     },
     onSettled: settle,
   });

@@ -84,10 +84,12 @@ mutate(payload)
   belong to, so a created or dragged-in event shows immediately — before the
   server responds.
 - **Conditional rollback on failure.** Each mutation snapshots matching cache
-  entries in `onMutate`. On error it restores that snapshot when no other event
-  mutation is still in flight (so a concurrent optimistic write to another
-  event is not clobbered), reports the error (toast), and still settles into a
-  refetch. Invalidation is deferred to a macrotask and gated on
+  entries in `onMutate`. On error it reports a toast and restores that snapshot
+  when it is alone in flight; if other mutations are pending for a *different*
+  write key it restores only this key's entities; if another mutation shares the
+  same key it leaves the newer optimistic write alone. Settle-time invalidation
+  still converges to server truth once no event mutation remains in flight.
+  Invalidation is deferred to a macrotask and gated on
   `queryClient.isMutating(...) === 0` so a refetch never overwrites another
   mutation's live optimistic update (the TanStack Query recipe for concurrent
   optimistic updates, deferred so simultaneous settles cannot all skip).

@@ -559,6 +559,10 @@ describe("useEventMutations", () => {
 
     await waitFor(() => {
       expect(context.errors[0]?.message).toBe("doomed edit failed");
+      expect(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[doomed.id].content,
+      ).toMatchObject({ title: "Original" });
     });
     expect(
       context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)

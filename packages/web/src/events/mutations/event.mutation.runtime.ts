@@ -156,3 +156,27 @@ export function isSupersededByLaterEditWrite(
       variablesEventId(mutation) === eventId,
   );
 }
+
+/**
+ * True when another pending event mutation shares this write key. Used to skip
+ * per-key snapshot restore on failure so a newer optimistic write for the same
+ * event is not clobbered.
+ */
+export function hasOtherPendingWriteForKey(
+  queryClient: QueryClient,
+  eventId: string,
+  ownVariables: unknown,
+): boolean {
+  const mutations = queryClient.getMutationCache().getAll() as AnyMutation[];
+  const self = mutations.find(
+    (mutation) => mutation.state.variables === ownVariables,
+  );
+  if (!self) return false;
+  return mutations.some(
+    (mutation) =>
+      mutation !== self &&
+      mutation.state.status === "pending" &&
+      operationOf(mutation) !== undefined &&
+      variablesEventId(mutation) === eventId,
+  );
+}

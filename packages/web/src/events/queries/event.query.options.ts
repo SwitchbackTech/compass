@@ -14,8 +14,10 @@ import { fetchWeekEvents } from "./week.event.query";
 const EVENT_QUERY_CACHE_OPTIONS = {
   staleTime: 2 * 60 * 1000, // 2 minutes
   gcTime: 10 * 60 * 1000, // 10 minutes
-  refetchOnWindowFocus: true,
-} as const;
+  // "always": staleTime would otherwise skip focus refetch for 2 minutes and
+  // leave a missed SSE/sleep gap on screen.
+  refetchOnWindowFocus: "always" as const,
+};
 
 export type EventsQueryArgs = {
   source: EventRepositorySource;
