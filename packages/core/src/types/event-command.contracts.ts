@@ -11,11 +11,13 @@ import {
   EventScheduleSchema,
   EventSchema,
 } from "@core/types/event.contracts";
+import { EventColorSlotSchema } from "@core/types/event-color.contracts";
 
 const EditableContentSchema = z.strictObject({
   kind: z.literal("details"),
   title: z.string(),
   description: z.string(),
+  color: EventColorSlotSchema.optional(),
 });
 
 export const RecurrenceScopeSchema = z.enum([

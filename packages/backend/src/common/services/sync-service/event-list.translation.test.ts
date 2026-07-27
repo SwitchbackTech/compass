@@ -87,4 +87,24 @@ describe("syncEventInstanceToBrowser", () => {
     expect(event.createdAt).toBe(instance.createdAt);
     expect(event.updatedAt).toBe(instance.updatedAt);
   });
+
+  it("forwards content.color onto browser details content", () => {
+    const instance = baseInstance({
+      content: { title: "Standup", description: "Daily", color: "blue" },
+    });
+    const event = syncEventInstanceToBrowser(instance);
+
+    expect(event.content).toEqual({
+      kind: "details",
+      title: "Standup",
+      description: "Daily",
+      color: "blue",
+    });
+  });
+
+  it("omits content.color on the browser event when sync has none", () => {
+    const event = syncEventInstanceToBrowser(baseInstance());
+
+    expect(event.content).not.toHaveProperty("color");
+  });
 });

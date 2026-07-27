@@ -2,6 +2,13 @@ import { type Event, EventSchema } from "@core/types/event.contracts";
 import { type SyncEventInstance } from "@core/types/sync/event.contracts";
 import { composeOccurrenceId } from "./occurrence-id";
 
+const toBrowserDetails = (content: SyncEventInstance["content"]) => ({
+  kind: "details" as const,
+  title: content.title,
+  description: content.description,
+  ...(content.color !== undefined ? { color: content.color } : {}),
+});
+
 // Translate one sync full-fidelity instance into the browser Event contract.
 // D1=II: singles and series-master rows keep the real eventId; projected
 // occurrences get a composed id the write path can reverse. content.kind is
@@ -15,11 +22,7 @@ export const syncEventInstanceToBrowser = (
       return EventSchema.parse({
         id: instance.eventId,
         calendarId: instance.calendarId,
-        content: {
-          kind: "details",
-          title: instance.content.title,
-          description: instance.content.description,
-        },
+        content: toBrowserDetails(instance.content),
         schedule: instance.schedule,
         recurrence: { kind: "single" },
         createdAt: instance.createdAt,
@@ -29,11 +32,7 @@ export const syncEventInstanceToBrowser = (
       return EventSchema.parse({
         id: instance.eventId,
         calendarId: instance.calendarId,
-        content: {
-          kind: "details",
-          title: instance.content.title,
-          description: instance.content.description,
-        },
+        content: toBrowserDetails(instance.content),
         schedule: instance.schedule,
         recurrence: { kind: "series", rules: instance.recurrence.rules },
         createdAt: instance.createdAt,
@@ -46,11 +45,7 @@ export const syncEventInstanceToBrowser = (
           recurrenceId: instance.recurrence.recurrenceId,
         }),
         calendarId: instance.calendarId,
-        content: {
-          kind: "details",
-          title: instance.content.title,
-          description: instance.content.description,
-        },
+        content: toBrowserDetails(instance.content),
         schedule: instance.schedule,
         recurrence: { kind: "occurrence", seriesId: instance.eventId },
         createdAt: instance.createdAt,
