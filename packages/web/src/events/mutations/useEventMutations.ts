@@ -12,6 +12,7 @@ import {
   type RecurrenceScope,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   buildCalendarLookup,
@@ -24,6 +25,7 @@ import {
   eventBelongsToEntry,
   findEventInCache,
   findSeriesEventsInCache,
+  getEventQueryEntries,
   insertEventIntoQueries,
   isEventQueryKey,
   removeEventFromQueries,
@@ -34,6 +36,7 @@ import { type NormalizedEventQueryData } from "@web/events/queries/event.query.t
 import {
   projectRecurringDelete,
   projectRecurringEdit,
+  projectSeriesMaterialization,
 } from "@web/events/recurrence/projectRecurringEdit";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
@@ -249,7 +252,13 @@ export function useEventMutations(
       if (
         queryClient.isMutating({ mutationKey: eventMutationKeys.all }) === 0
       ) {
-        void queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
+        // refetchType "all" so inactive entries (prefetched neighbor weeks,
+        // recently visited ranges) refetch too instead of serving stale
+        // instances until the user navigates back onto them.
+        void queryClient.invalidateQueries({
+          queryKey: eventQueryKeys.all,
+          refetchType: "all",
+        });
       }
     }, 0);
   };
@@ -352,6 +361,25 @@ export function useEventMutations(
       },
       ({ input }) => {
         const event = optimisticEventFromCreate(input);
+        // A recurring create's base is metadata-only (the grid filters
+        // series bases), so expand its instances too or the event would be
+        // invisible until the settle refetch.
+        if (event.recurrence.kind === "series") {
+          applyEventProjectionAcrossQueries(
+            queryClient,
+            projectSeriesMaterialization({
+              base: event,
+              ranges: getEventQueryEntries(queryClient, { source }).map(
+                ({ metadata }) => ({
+                  start: metadata.start,
+                  end: metadata.end,
+                }),
+              ),
+            }),
+            source,
+          );
+          return;
+        }
         insertEventIntoQueries(queryClient, event, (entry) =>
           eventBelongsToEntry(event, entry, source),
         );
@@ -376,6 +404,63 @@ export function useEventMutations(
         if (!existing) return;
         const edited = mergeReplaceInput(existing, input);
         const seriesId = seriesIdOf(existing);
+
+        // (Re)defining recurrence rules changes which instances exist, so
+        // shifting cached instances isn't enough: expand the new rules into
+        // optimistic occurrences, mirroring the server's materialization.
+        // Scope "this" on an occurrence keeps its occurrence recurrence
+        // server-side, so it stays on the plain upsert path below.
+        if (
+          edited.recurrence.kind === "series" &&
+          (input.scope !== "this" || existing.recurrence.kind !== "occurrence")
+        ) {
+          const currentBase =
+            existing.recurrence.kind === "series"
+              ? existing
+              : seriesId
+                ? findEventInCache(queryClient, seriesId, source)
+                : null;
+          const rulesChanged =
+            currentBase?.recurrence.kind !== "series" ||
+            currentBase.recurrence.rules.join("\n") !==
+              edited.recurrence.rules.join("\n");
+
+          if (rulesChanged) {
+            const seriesEvents = seriesId
+              ? findSeriesEventsInCache(queryClient, seriesId, source)
+              : [];
+            applyEventProjectionAcrossQueries(
+              queryClient,
+              projectSeriesMaterialization({
+                // Mirror the server's plan: "all" rewrites the series base in
+                // place; "thisAndFollowing" splits, re-basing at the edited
+                // event and keeping earlier instances; single→series keeps
+                // the edited event's own id as the new base id.
+                base:
+                  input.scope === "all" && seriesId
+                    ? { ...edited, id: seriesId }
+                    : edited,
+                cachedSeriesEvents:
+                  input.scope === "thisAndFollowing"
+                    ? seriesEvents.filter(
+                        (event) =>
+                          !dayjs(event.schedule.start).isBefore(
+                            existing.schedule.start,
+                          ),
+                      )
+                    : seriesEvents,
+                ranges: getEventQueryEntries(queryClient, { source }).map(
+                  ({ metadata }) => ({
+                    start: metadata.start,
+                    end: metadata.end,
+                  }),
+                ),
+              }),
+              source,
+            );
+            return;
+          }
+        }
 
         if (seriesId && input.scope !== "this") {
           applyEventProjectionAcrossQueries(

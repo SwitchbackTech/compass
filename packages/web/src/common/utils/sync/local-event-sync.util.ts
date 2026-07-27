@@ -29,7 +29,10 @@ function toCreateInput(
   serverLocalCalendarId: string,
 ): CreateEventInput {
   return {
-    id: record.event.id,
+    // Composed occurrence ids (`${seriesId}::${start}`, minted by local-mode
+    // series expansion) aren't valid server ids - let the backend generate
+    // one instead of rejecting the POST.
+    id: record.event.id.includes("::") ? undefined : record.event.id,
     calendarId: serverLocalCalendarId as CreateEventInput["calendarId"],
     schedule: record.event.schedule,
     recurrence:
