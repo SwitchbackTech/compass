@@ -19,21 +19,14 @@ export const useSSEConnection = () => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (authenticated || userId) {
-      openStream();
-      // A (re)opened stream may have missed changes while disconnected;
-      // reconcile once rather than trusting the gap is empty (B10).
-      invalidateScheduleQueries(queryClient);
-    } else {
+    if (!(authenticated || userId)) {
       closeStream();
+      return;
     }
-  }, [authenticated, userId, queryClient]);
 
-  useEffect(() => {
-    if (!(authenticated || userId)) return;
-
-    // Native reconnect after sleep fires EventSource "open" without remounting
-    // this effect — refetch what was missed while the stream was down.
+    openStream();
+    // Open and native reconnect can both follow a disconnect gap.
+    invalidateScheduleQueries(queryClient);
     return onStreamReopen(() => {
       invalidateScheduleQueries(queryClient);
     });
