@@ -119,6 +119,69 @@ describe("EventService (local calendar)", () => {
     expect(instances).toHaveLength(3);
   });
 
+  it("replace scope 'all' converts a timed series to all-day and rematerializes instances", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Weekly sync", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+    });
+
+    const timedInstances = await mongoService.event
+      .find({ "recurrence.seriesId": created._id })
+      .toArray();
+    expect(timedInstances).toHaveLength(3);
+    expect(timedInstances.every((i) => i.schedule.kind === "timed")).toBe(true);
+
+    await eventService.replace(user._id.toString(), created._id.toHexString(), {
+      content: { kind: "details", title: "Weekly sync", description: "" },
+      schedule: {
+        kind: "allDay",
+        start: "2026-07-14",
+        end: "2026-07-15",
+      },
+      recurrence: { kind: "preserve" },
+      scope: "all",
+    });
+
+    const base = await eventService.readById(
+      user._id.toString(),
+      created._id.toHexString(),
+    );
+    expect(base.schedule).toEqual({
+      kind: "allDay",
+      start: "2026-07-14",
+      end: "2026-07-15",
+    });
+
+    const instances = await mongoService.event
+      .find({ "recurrence.seriesId": created._id })
+      .sort({ "schedule.start": 1 })
+      .toArray();
+
+    expect(instances).toHaveLength(3);
+    expect(instances.map((i) => i.schedule)).toEqual([
+      { kind: "allDay", start: "2026-07-14", end: "2026-07-15" },
+      { kind: "allDay", start: "2026-07-21", end: "2026-07-22" },
+      { kind: "allDay", start: "2026-07-28", end: "2026-07-29" },
+    ]);
+    // Old timed instance ids are replaced by rematerialization.
+    expect(
+      instances.every(
+        (instance) =>
+          !timedInstances.some((prior) => prior._id.equals(instance._id)),
+      ),
+    ).toBe(true);
+  });
+
   it("deletes a standalone event", async () => {
     const { user } = await UtilDriver.setupTestUser();
     const calendar = await seedLocalCalendar(user._id);

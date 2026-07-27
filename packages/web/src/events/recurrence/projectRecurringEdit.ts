@@ -1,4 +1,5 @@
-import { type Event } from "@core/types/event.contracts";
+import { DateOnlySchema, DateTimeSchema } from "@core/types/domain-primitives";
+import { type Event, type EventSchedule } from "@core/types/event.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
 
@@ -28,6 +29,56 @@ const seriesPatch = (event: Event, edited: Event): Event => ({
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+// When the edit flips timed ↔ allDay, millisecond deltas across kinds produce
+// full-day timed ghosts (or invalid allDay strings). Copy the edited schedule
+// onto each instance, shifted by that instance's day offset from the original
+// occurrence so the edited card keeps `edited.schedule` and siblings keep
+// their relative days.
+const convertScheduleKind = (
+  event: Event,
+  original: Event,
+  edited: Event,
+): EventSchedule => {
+  const dayOffset = dayjs(event.schedule.start)
+    .startOf("day")
+    .diff(dayjs(original.schedule.start).startOf("day"), "day");
+
+  const { schedule } = edited;
+  if (schedule.kind === "allDay") {
+    return {
+      kind: "allDay",
+      start: DateOnlySchema.parse(
+        dayjs(schedule.start).add(dayOffset, "day").toYearMonthDayString(),
+      ),
+      end: DateOnlySchema.parse(
+        dayjs(schedule.end).add(dayOffset, "day").toYearMonthDayString(),
+      ),
+    };
+  }
+
+  // Shift by calendar day in the event's zone so DST transitions keep the
+  // same wall-clock time (plain `.add(n, "day")` on an offset string is a
+  // fixed 24h step and drifts across spring-forward / fall-back).
+  const shiftTimed = (value: string) => {
+    const local = dayjs(value).tz(schedule.timeZone);
+    return DateTimeSchema.parse(
+      dayjs
+        .tz(
+          `${local.add(dayOffset, "day").format("YYYY-MM-DD")}T${local.format("HH:mm:ss")}`,
+          schedule.timeZone,
+        )
+        .format(),
+    );
+  };
+
+  return {
+    kind: "timed",
+    start: shiftTimed(schedule.start),
+    end: shiftTimed(schedule.end),
+    timeZone: schedule.timeZone,
+  };
+};
+
 // Shift every affected instance by the drag's delta so the change renders
 // optimistically. Both series-wide scopes shift by the same delta; they
 // differ only in which instances are affected (computed by the caller). Each
@@ -35,6 +86,13 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 // at its old time in the cache here — lands on the edited time because
 // (old + (edited - original)) === edited.
 const shiftEvent = (event: Event, original: Event, edited: Event): Event => {
+  if (edited.schedule.kind !== original.schedule.kind) {
+    return {
+      ...event,
+      schedule: convertScheduleKind(event, original, edited),
+    };
+  }
+
   const startDelta = dayjs(edited.schedule.start).diff(original.schedule.start);
   const endDelta = dayjs(edited.schedule.end).diff(original.schedule.end);
 
