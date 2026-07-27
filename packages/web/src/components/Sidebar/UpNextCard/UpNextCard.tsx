@@ -31,13 +31,7 @@ export const UpNextCard: FC = () => {
   const { now, openEventDetails, upNext } = useUpNextEvent();
 
   if (!upNext) {
-    return (
-      <section aria-label="Up next">
-        <p className="text-text-muted text-xs">
-          Nothing scheduled — press C to add an event.
-        </p>
-      </section>
-    );
+    return null;
   }
 
   const countdown = formatStartsIn(dayjs(upNext.startDate), now);
