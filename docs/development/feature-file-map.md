@@ -38,7 +38,8 @@ Use this document to find the first files to inspect for common Compass changes.
 
 - Day view route and content: `packages/web/src/views/Day/view`
 - Day view header (includes sidebar toggle control): `packages/web/src/views/Day/components/Header/Header.tsx`
-- Day keyboard shortcuts (includes `[` toggle): `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
+- Day keyboard shortcuts: `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
+- Sidebar toggle (`]`): `packages/web/src/views/Week/hooks/shortcuts/useGlobalShortcuts.ts`
 - Day view hooks: `packages/web/src/views/Day/hooks`
 - Week view: `packages/web/src/views/Week`
 - Responsive layout controller (auto-collapse on breakpoint crossings): `packages/web/src/components/AuthenticatedLayout/useResponsiveLayout.ts`

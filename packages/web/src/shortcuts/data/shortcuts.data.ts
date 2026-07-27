@@ -60,44 +60,28 @@ const getCreateShortcuts = (view: ShortcutMenuView): Shortcut[] =>
         { keys: ["a"], label: "Create all-day event" },
       ];
 
-const getFocusShortcuts = (view: ShortcutMenuView): Shortcut[] =>
-  view === "life"
-    ? []
-    : view === "day"
-      ? [
-          { keys: ["i"], label: "Focus sidebar" },
-          { keys: ["u"], label: "Focus calendar" },
-        ]
-      : [
-          { keys: ["i"], label: "Focus sidebar" },
-          { keys: ["u"], label: "Focus calendar event" },
-        ];
-
 const getEditShortcuts = (view: ShortcutMenuView): Shortcut[] =>
   view === "life"
     ? []
-    : view === "day"
-      ? [
-          {
-            keys: ["Shift", "ArrowUp"],
-            label: "Move event 15 min earlier",
-          },
-          {
-            keys: ["Shift", "ArrowDown"],
-            label: "Move event 15 min later",
-          },
-        ]
-      : [
-          { keys: ["Delete"], label: "Delete calendar event" },
-          { keys: ["Arrow keys"], label: "Move draft event" },
-          {
-            keys: ["Shift", "ArrowLeft"],
-            label: "Move event to previous day (or sidebar)",
-          },
-          { keys: ["Shift", "ArrowRight"], label: "Move event to next day" },
-          { keys: ["Shift", "ArrowUp"], label: "Move event 15 min earlier" },
-          { keys: ["Shift", "ArrowDown"], label: "Move event 15 min later" },
-        ];
+    : [
+        { keys: ["Delete"], label: "Delete calendar event" },
+        { keys: ["Arrow keys"], label: "Move draft event" },
+        {
+          keys: ["Shift", "ArrowLeft"],
+          label: "Move event to previous day",
+        },
+        { keys: ["Shift", "ArrowRight"], label: "Move event to next day" },
+        { keys: ["Shift", "ArrowUp"], label: "Move event 15 min earlier" },
+        { keys: ["Shift", "ArrowDown"], label: "Move event 15 min later" },
+      ];
+
+const getFocusShortcuts = (view: ShortcutMenuView): Shortcut[] =>
+  view === "life"
+    ? []
+    : [
+        { keys: ["i"], label: "Focus sidebar" },
+        { keys: ["u"], label: "Focus calendar event" },
+      ];
 
 const getOtherShortcuts = (): Shortcut[] => [
   { keys: ["]"], label: "Toggle sidebar" },

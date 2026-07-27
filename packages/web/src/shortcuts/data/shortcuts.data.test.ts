@@ -124,7 +124,7 @@ describe("shortcuts.data", () => {
 
       expect(findFocus("day")?.shortcuts).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
-        { keys: ["u"], label: "Focus calendar" },
+        { keys: ["u"], label: "Focus calendar event" },
       ]);
       expect(findFocus("week")?.shortcuts).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
@@ -132,48 +132,44 @@ describe("shortcuts.data", () => {
       ]);
     });
 
-    it("includes Delete in the week Edit section", () => {
-      const edit = getShortcutMenuSections({
-        view: "week",
-        isViewingCurrentPeriod: true,
-      }).find((section) => section.id === "edit");
+    it("includes Delete in the day and week Edit sections", () => {
+      for (const view of ["day", "week"] as const) {
+        const edit = getShortcutMenuSections({
+          view,
+          isViewingCurrentPeriod: true,
+        }).find((section) => section.id === "edit");
 
-      expect(edit?.shortcuts).toContainEqual({
-        keys: ["Delete"],
-        label: "Delete calendar event",
-      });
+        expect(edit?.shortcuts).toContainEqual({
+          keys: ["Delete"],
+          label: "Delete calendar event",
+        });
+      }
     });
 
-    it("lists Shift+Arrow reschedule shortcuts in the week Edit section", () => {
-      const edit = getShortcutMenuSections({
-        view: "week",
-        isViewingCurrentPeriod: true,
-      }).find((section) => section.id === "edit");
+    it("lists Shift+Arrow reschedule shortcuts in the day and week Edit sections", () => {
+      for (const view of ["day", "week"] as const) {
+        const edit = getShortcutMenuSections({
+          view,
+          isViewingCurrentPeriod: true,
+        }).find((section) => section.id === "edit");
 
-      expect(edit?.shortcuts).toContainEqual({
-        keys: ["Shift", "ArrowLeft"],
-        label: "Move event to previous day (or sidebar)",
-      });
-      expect(edit?.shortcuts).toContainEqual({
-        keys: ["Shift", "ArrowRight"],
-        label: "Move event to next day",
-      });
-      expect(edit?.shortcuts).toContainEqual({
-        keys: ["Shift", "ArrowUp"],
-        label: "Move event 15 min earlier",
-      });
-    });
-
-    it("lists event nudge shortcuts in the day Edit section", () => {
-      const edit = getShortcutMenuSections({
-        view: "day",
-        isViewingCurrentPeriod: true,
-      }).find((section) => section.id === "edit");
-
-      expect(edit?.shortcuts).toContainEqual({
-        keys: ["Shift", "ArrowDown"],
-        label: "Move event 15 min later",
-      });
+        expect(edit?.shortcuts).toContainEqual({
+          keys: ["Shift", "ArrowLeft"],
+          label: "Move event to previous day",
+        });
+        expect(edit?.shortcuts).toContainEqual({
+          keys: ["Shift", "ArrowRight"],
+          label: "Move event to next day",
+        });
+        expect(edit?.shortcuts).toContainEqual({
+          keys: ["Shift", "ArrowUp"],
+          label: "Move event 15 min earlier",
+        });
+        expect(edit?.shortcuts).toContainEqual({
+          keys: ["Arrow keys"],
+          label: "Move draft event",
+        });
+      }
     });
 
     it("labels the Other section with a sidebar toggle", () => {

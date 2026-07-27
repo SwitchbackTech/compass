@@ -305,7 +305,7 @@ Assertions to prefer:
 - when asserting presence in JSDOM for desktop-only markup (`hidden xl:flex`), use role queries that allow hidden elements where needed
 - verify both pathways for toggle behavior:
   - user interaction (header toggle button)
-  - keyboard interaction (`[` shortcut via view shortcut hooks)
+  - keyboard interaction (`]` shortcut via global shell shortcuts)
 
 ### Seeding Event Data And Client State
 
