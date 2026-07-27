@@ -34,7 +34,7 @@ import {
 } from "@web/views/Week/components/Draft/hooks/state/useDraftState";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import { getDragDurationMinutes } from "./drag-duration.util";
+import { resolveDraftDragSchedule } from "./draft-drag-schedule.util";
 
 const scopeFromApplyTo = (
   applyTo: RecurringEventUpdateScope,
@@ -254,92 +254,76 @@ export const useDraftActions = (
     [activity, draft, isInsideVisibleWeek, setDraft],
   );
 
+  const applyDragPosition = useCallback(
+    (
+      e: Omit<PartialMouseEvent, "currentTarget">,
+      offset: DragOffset,
+      status: Status_Drag | null,
+    ) => {
+      if (!draft) return;
+
+      const { durationMin, schedule } = resolveDraftDragSchedule({
+        clientX: e.clientX,
+        clientY: e.clientY,
+        dragOffset: offset,
+        dragStatus: status,
+        getDateByXY: dateCalcs.getDateByXY,
+        schedule: draft.values.schedule,
+        startOfView: weekProps.component.startOfView,
+      });
+
+      const nextDraft = replaceGridDraftSchedule(draft, schedule);
+      const prev = draft.values.schedule;
+      const kindChanged = prev.kind !== schedule.kind;
+      const hasMoved =
+        kindChanged ||
+        !dayjs(prev.start).isSame(schedule.start) ||
+        !dayjs(prev.end).isSame(schedule.end);
+
+      // Keep the shared store in sync so form hydration and eventType track
+      // cross-row kind flips (local-only updates would be overwritten on
+      // mouseup when the form opens).
+      setDraft(nextDraft);
+      draftActions.setGridDraft(nextDraft);
+
+      // Cross-row conversion switches between grab-offset and absolute pointer
+      // placement; clear the stale offset so the next frame doesn't jump.
+      if (kindChanged) {
+        setDragOffset({ x: 0, y: 0 });
+      }
+
+      if (
+        (!status?.hasMoved && hasMoved) ||
+        (status != null && status.durationMin !== durationMin)
+      ) {
+        setDragStatus(
+          (_status): Status_Drag => ({
+            durationMin,
+            hasMoved: Boolean(_status?.hasMoved || hasMoved),
+          }),
+        );
+      }
+    },
+    [
+      dateCalcs.getDateByXY,
+      draft,
+      setDraft,
+      setDragOffset,
+      setDragStatus,
+      weekProps.component.startOfView,
+    ],
+  );
+
   const drag = useCallback(
     (e: Omit<PartialMouseEvent, "currentTarget">) => {
-      const updateTimesDuringDrag = (
-        e: Omit<PartialMouseEvent, "currentTarget">,
-      ) => {
-        if (!draft) return;
-
-        const isAllDay = draft.values.schedule.kind === "allDay";
-        const rawX = e.clientX;
-        const x = isAllDay ? rawX - dragOffset.x : rawX;
-        const startEndDurationMin = getDragDurationMinutes(
-          draft.values.schedule,
-          dragStatus,
-        );
-
-        const y = e.clientY - dragOffset.y;
-
-        let eventStart = dateCalcs.getDateByXY(
-          x,
-          y,
-          weekProps.component.startOfView,
-        );
-
-        let eventEnd = eventStart.add(startEndDurationMin, "minutes");
-
-        if (!isAllDay) {
-          // Edge case: timed events' end times can overflow past midnight at the bottom of the grid.
-          // Below logic prevents that from occurring.
-          if (eventEnd.date() !== eventStart.date()) {
-            eventEnd = eventEnd.hour(0).minute(0);
-            eventStart = eventEnd.subtract(startEndDurationMin, "minutes");
-          }
-        }
-
-        const schedule: GridScheduleDraft = isAllDay
-          ? {
-              kind: "allDay",
-              start: eventStart.toDate(),
-              end: eventEnd.toDate(),
-            }
-          : {
-              ...draft.values.schedule,
-              start: eventStart.toDate(),
-              end: eventEnd.toDate(),
-            };
-
-        const nextDraft = replaceGridDraftSchedule(draft, schedule);
-
-        setDraft(nextDraft);
-      };
       if (!isDragging) {
         devAlert("not dragging (anymore?)");
         return;
       }
 
-      const currTime = dateCalcs.getDateStrByXY(
-        e.clientX,
-        e.clientY,
-        weekProps.component.startOfView,
-      );
-      const draftStartStr = draft
-        ? dayjs(draft.values.schedule.start).format()
-        : undefined;
-      const hasMoved = currTime !== draftStartStr;
-
-      if (!dragStatus?.hasMoved && hasMoved) {
-        setDragStatus(
-          (_status): Status_Drag => ({
-            ..._status!,
-            hasMoved: true,
-          }),
-        );
-      }
-
-      updateTimesDuringDrag(e);
+      applyDragPosition(e, dragOffset, dragStatus);
     },
-    [
-      isDragging,
-      dateCalcs,
-      weekProps.component.startOfView,
-      draft,
-      dragOffset,
-      dragStatus,
-      setDraft,
-      setDragStatus,
-    ],
+    [applyDragPosition, dragOffset, dragStatus, isDragging],
   );
 
   const isValidMovement = useCallback(
@@ -586,13 +570,24 @@ export const useDraftActions = (
     repositionDraftByKeyboard,
     resize,
     setLocalDraft: setDraft,
-    startDragging: (offset?: DragOffset) => {
+    startDragging: (
+      offset?: DragOffset,
+      initialEvent?: Omit<PartialMouseEvent, "currentTarget">,
+    ) => {
       // Placing `setIsFormOpenBeforeDragging` here rather than inside `startDragging`
       // because `setIsFormOpenBeforeDragging` depends on `isFormOpen` and re-calculates
       // `startDragging` (due to it being a react callback) which causes issues.
       // This is a hacky solution to the issue.
       setIsFormOpenBeforeDragging(isFormOpen);
+      const nextOffset = offset ?? { x: 0, y: 0 };
       startDragging(offset);
+      // Apply the pointer position immediately. Drag often begins only after the
+      // pointer has already left the all-day row; waiting for the next mousemove
+      // (and for isDragging to commit) can miss the cross-row conversion entirely
+      // on a short gesture.
+      if (initialEvent) {
+        applyDragPosition(initialEvent, nextOffset, dragStatus);
+      }
     },
     startResizing,
     stopDragging,
