@@ -619,7 +619,7 @@ function exceptionInstant(event: EventRecord): DateTime {
 // Whether the provider's current event already carries this command's intended
 // edit — the signal that a prior attempt landed and this is a safe replay.
 // Compares ONLY the fields a patch actually writes (title, description,
-// location, schedule, recurrence). organizer/attendees/conference are
+// location, color, schedule, recurrence). organizer/attendees/conference are
 // read-reflected, not written by the provider adapter, so they drift
 // independently (e.g. an attendee RSVPs) — comparing them would turn a landed
 // edit into a false miss, then a stale-version patch, then a spurious
@@ -639,6 +639,7 @@ function matchesIntendedEdit(
     current.content.title === content.title &&
     current.content.description === content.description &&
     current.content.location === content.location &&
+    current.content.color === content.color &&
     deepEqual(current.schedule, schedule) &&
     recurrenceMatches(current.recurrence, recurrence)
   );
