@@ -39,13 +39,15 @@ export const SaveButton = forwardRef<
 >(({ className, disabled, minWidth, style, ...props }, ref) => {
   // Per-theme, precomputed in theme.util — the hook subscription is what
   // repaints the button when the theme switches.
+  // Fill goes through a CSS variable (not an inline `background`) so
+  // hover:bg-background can override it. An inline background won over the
+  // hover class and left text-muted on the event fill — ~1:1 in both themes.
   const { saveButtonBg, saveButtonShadow } = useEventPalette();
   const buttonStyle: CSSVariables = {
     ...style,
+    "--save-button-bg": saveButtonBg,
     "--save-button-text-color": theme.getContrastText(saveButtonBg),
-    "--save-button-hover-color": "var(--color-text-muted)",
     "--elevated-shadow-color": saveButtonShadow,
-    background: saveButtonBg,
     minWidth,
   };
 
@@ -54,7 +56,7 @@ export const SaveButton = forwardRef<
       {...props}
       aria-disabled={disabled || undefined}
       className={classNames(
-        "c-button-elevated min-w-39.5 px-2 text-(--save-button-text-color) transition-[background-color,color,box-shadow,transform] duration-500 hover:bg-background hover:text-(--save-button-hover-color)",
+        "c-button-elevated min-w-39.5 bg-(--save-button-bg) px-2 text-(--save-button-text-color) transition-[background-color,color,box-shadow,transform] duration-500 hover:bg-background hover:text-text-muted",
         disabled && "pointer-events-none opacity-50",
         className,
       )}
