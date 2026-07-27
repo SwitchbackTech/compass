@@ -25,8 +25,10 @@ const TimedScheduleSchema = z
     end: DateTimeSchema,
     timeZone: TimeZoneSchema,
   })
-  .refine(({ start, end }) => Date.parse(end) > Date.parse(start), {
-    message: "Timed event end must be after start",
+  // Zero-duration is valid (Google, Outlook, and RFC 5545 all allow start == end,
+  // e.g. medication-reminder or deadline-marker events); only end < start is rejected.
+  .refine(({ start, end }) => Date.parse(end) >= Date.parse(start), {
+    message: "Timed event end must not be before start",
     path: ["end"],
   });
 

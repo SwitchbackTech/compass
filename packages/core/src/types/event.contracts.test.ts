@@ -55,14 +55,12 @@ describe("Event Contracts", () => {
   });
 
   describe("EventScheduleSchema (timed)", () => {
-    it("rejects end equal to start", () => {
+    it("accepts a zero-duration event (end equal to start)", () => {
+      // Google, Outlook, and RFC 5545 all allow start == end (e.g. medication
+      // reminders, deadline markers); only end < start is invalid.
       const schedule = { ...timedSchedule, end: timedSchedule.start };
-      const result = EventScheduleSchema.safeParse(schedule);
 
-      expect(result.success).toBe(false);
-      expect(result.success ? null : result.error.issues[0]?.path).toEqual([
-        "end",
-      ]);
+      expect(EventScheduleSchema.safeParse(schedule).success).toBe(true);
     });
 
     it("rejects end before start", () => {

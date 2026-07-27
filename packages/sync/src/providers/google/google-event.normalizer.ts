@@ -8,6 +8,7 @@ import {
   type Organizer,
   SyncEventContentSchema,
 } from "@core/types/sync/event.contracts";
+import { TimezoneSchema } from "@core/types/type.utils";
 import dayjs from "@core/util/date/dayjs";
 import {
   ProviderEventError,
@@ -170,13 +171,15 @@ function mapSchedule(item: gSchema$Event) {
         "Timed event carried no time zone",
       );
     }
-    // Re-anchor to the IANA zone so the emitted offset is correct for that
-    // date's DST rules rather than trusting the stored offset.
+    // Resolve to a valid IANA zone before re-anchoring: toOffsetIso's .tz()
+    // call needs one, and a fixed-offset string ("GMT-07:00") would otherwise
+    // reach it unvalidated.
+    const ianaTimeZone = toIanaTimeZone(timeZone);
     return parseSchedule({
       kind: "timed",
-      start: toOffsetIso(start),
-      end: toOffsetIso(end),
-      timeZone,
+      start: toOffsetIso({ ...start, timeZone: ianaTimeZone }),
+      end: toOffsetIso({ ...end, timeZone: ianaTimeZone }),
+      timeZone: ianaTimeZone,
     });
   }
 
@@ -184,6 +187,14 @@ function mapSchedule(item: gSchema$Event) {
     "unmappableSchedule",
     "Event start/end mixes date and dateTime",
   );
+}
+
+// Google mostly emits IANA zone names, but a small number of events carry a
+// fixed-offset string ("GMT-07:00") that TimeZoneSchema rejects. The instant
+// is unaffected either way, so falling back to UTC only loses the wall-clock
+// display context rather than dropping the event.
+function toIanaTimeZone(timeZone: string): string {
+  return TimezoneSchema.safeParse(timeZone).success ? timeZone : "UTC";
 }
 
 // safeParse the neutral schedule so a value the contract rejects surfaces as a

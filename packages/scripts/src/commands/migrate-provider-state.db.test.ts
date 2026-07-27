@@ -503,4 +503,250 @@ describe("migrate-provider-state (db)", () => {
     expect(restored).not.toBeNull();
     expect(restored?.schedule?.end > restored?.schedule?.start).toBe(true);
   });
+
+  it("links each calendar's exception to its own calendar's series master when the same Google event id recurs on two calendars", async () => {
+    // A recurring Google event can carry the same opaque event id on two of a
+    // user's calendars (e.g. one they organize and a shared copy). The master
+    // cache used to key on providerEventId alone, so calendar B's exception
+    // would silently borrow calendar A's master and collide on the
+    // series_exception_identity unique index.
+    const userId = new ObjectId();
+    const calendarAId = new ObjectId();
+    const calendarBId = new ObjectId();
+
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "dual-calendar@example.com",
+      firstName: "Dual",
+      lastName: "Calendar",
+      name: "Dual Calendar",
+      locale: "en",
+      google: {
+        googleId: "google-subject-dual",
+        picture: "",
+        gRefreshToken: "legacy-refresh-token",
+      },
+    });
+
+    const makeCalendar = (id: ObjectId, gCalendarId: string, name: string) => ({
+      _id: id,
+      userId,
+      name,
+      description: "",
+      timeZone: "America/Denver",
+      foregroundColor: "#000000",
+      backgroundColor: "#4285f4",
+      access: "owner" as const,
+      isPrimary: false,
+      isVisible: true,
+      isActive: true,
+      source: {
+        provider: "google" as const,
+        calendarId: gCalendarId,
+        etag: "e",
+      },
+      createdAt: NOW,
+      updatedAt: null,
+    });
+    await mongoService.calendar.insertMany([
+      makeCalendar(calendarAId, "calendar-a@gmail.com", "Calendar A"),
+      makeCalendar(calendarBId, "calendar-b@gmail.com", "Calendar B"),
+    ]);
+
+    const makeSeries = (calendarId: ObjectId, label: string) => {
+      const masterId = new ObjectId();
+      return [
+        {
+          _id: masterId,
+          calendarId,
+          content: {
+            kind: "details",
+            title: `${label} master`,
+            description: "",
+          },
+          schedule: {
+            kind: "timed",
+            start: NOW,
+            end: new Date(NOW.getTime() + 3600_000),
+            timeZone: "America/Denver",
+          },
+          recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+          externalReference: {
+            provider: "google",
+            eventId: "shared-event-id",
+            recurringEventId: null,
+          },
+          createdAt: NOW,
+          updatedAt: null,
+        },
+        {
+          _id: new ObjectId(),
+          calendarId,
+          content: {
+            kind: "details",
+            title: `${label} exception`,
+            description: "",
+          },
+          schedule: {
+            kind: "timed",
+            start: new Date(NOW.getTime() + 86_400_000),
+            end: new Date(NOW.getTime() + 86_400_000 + 3600_000),
+            timeZone: "America/Denver",
+          },
+          recurrence: { kind: "occurrence", seriesId: masterId },
+          externalReference: {
+            provider: "google",
+            eventId: `shared-event-id_${label}-exception`,
+            recurringEventId: "shared-event-id",
+          },
+          createdAt: NOW,
+          updatedAt: null,
+        },
+      ];
+    };
+    await mongoService.event.insertMany([
+      ...makeSeries(calendarAId, "a"),
+      ...makeSeries(calendarBId, "b"),
+    ]);
+    await mongoService.sync.insertOne({
+      user: userId.toHexString(),
+      google: {
+        calendarlist: [
+          {
+            gCalendarId: Resource_Sync.CALENDAR,
+            nextSyncToken: "cal-sync-token",
+          },
+        ],
+        events: [],
+      },
+    });
+
+    const repositories = deps();
+    await migrateProviderConnections(
+      {
+        connections: repositories.connections,
+        credentials: new CredentialRepository(syncStorage.db()),
+      },
+      await mongoService.user.find({}).toArray(),
+      { dryRun: false, now: NOW },
+    );
+
+    const report = await migrateProviderSyncState(
+      repositories,
+      await loadSource(),
+      { dryRun: false, now: NOW },
+    );
+
+    expect(
+      report.skips.filter((s) => s.category === "unmappable_event"),
+    ).toEqual([]);
+    expect(
+      report.skips.filter((s) => s.category === "missing_series_master"),
+    ).toEqual([]);
+
+    const syncEvents = await syncStorage
+      .db()
+      .collection(SYNC_COLLECTIONS.events)
+      .find({})
+      .toArray();
+    const masters = syncEvents.filter(
+      (e) => e.recurrence?.kind === "seriesMaster",
+    );
+    const exceptions = syncEvents.filter(
+      (e) => e.recurrence?.kind === "exception",
+    );
+    expect(masters).toHaveLength(2);
+    expect(exceptions).toHaveLength(2);
+
+    const masterByCalendar = new Map(masters.map((m) => [m.calendarId, m]));
+    for (const exception of exceptions) {
+      const ownCalendarMaster = masterByCalendar.get(exception.calendarId);
+      expect(ownCalendarMaster).toBeDefined();
+      expect(exception.recurrence.seriesId).toBe(ownCalendarMaster!._id);
+    }
+    // The two calendars' masters must be distinct Sync records, not one
+    // shared master borrowed across calendars.
+    expect(masters[0]!._id).not.toBe(masters[1]!._id);
+  });
+
+  it("classifies an exception whose legacy series master is gone as orphan_series_instance, not missing_series_master", async () => {
+    const userId = new ObjectId();
+    const calendarId = new ObjectId();
+    const exceptionId = new ObjectId();
+    const goneSeriesId = new ObjectId(); // never inserted into mongoService.event
+
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "ghost-series@example.com",
+      firstName: "Ghost",
+      lastName: "Series",
+      name: "Ghost Series",
+      locale: "en",
+      google: {
+        googleId: "google-subject-ghost",
+        picture: "",
+        gRefreshToken: "legacy-refresh-token",
+      },
+    });
+    await mongoService.calendar.insertOne({
+      _id: calendarId,
+      userId,
+      name: "Primary",
+      description: "",
+      timeZone: "America/Denver",
+      foregroundColor: "#000000",
+      backgroundColor: "#4285f4",
+      access: "owner",
+      isPrimary: true,
+      isVisible: true,
+      isActive: true,
+      source: { provider: "google", calendarId: "primary", etag: "e" },
+      createdAt: NOW,
+      updatedAt: null,
+    });
+    await mongoService.event.insertOne({
+      _id: exceptionId,
+      calendarId,
+      content: { kind: "details", title: "orphaned instance", description: "" },
+      schedule: {
+        kind: "timed",
+        start: NOW,
+        end: new Date(NOW.getTime() + 3600_000),
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "occurrence", seriesId: goneSeriesId },
+      externalReference: {
+        provider: "google",
+        eventId: "gcal-gone-master_20260101",
+        recurringEventId: "gcal-gone-master",
+      },
+      createdAt: NOW,
+      updatedAt: null,
+    });
+
+    const repositories = deps();
+    await migrateProviderConnections(
+      {
+        connections: repositories.connections,
+        credentials: new CredentialRepository(syncStorage.db()),
+      },
+      await mongoService.user.find({}).toArray(),
+      { dryRun: false, now: NOW },
+    );
+
+    const report = await migrateProviderSyncState(
+      repositories,
+      await loadSource(),
+      { dryRun: false, now: NOW },
+    );
+
+    expect(
+      report.skips.filter((s) => s.category === "missing_series_master"),
+    ).toEqual([]);
+    const orphanSkip = report.skips.find(
+      (s) => s.category === "orphan_series_instance",
+    );
+    expect(orphanSkip?.id).toBe(exceptionId.toHexString());
+    expect(orphanSkip?.detail).toContain(goneSeriesId.toHexString());
+  });
 });

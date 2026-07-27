@@ -40,11 +40,9 @@ const CONNECTION_EXPLAINED = new Set([
 ]);
 
 const STATE_BLOCKING = new Set([
-  "missing_connection",
   "disconnected_in_sync",
   "orphan_calendar",
   "orphan_event",
-  "orphan_cursor",
   "duplicate_google_calendar",
   "missing_provider_event_id",
   "missing_series_master",
@@ -60,11 +58,19 @@ const STATE_EXPLAINED = new Set([
   "reproject_failed",
   "corrupt_sync_event",
   "user_migrate_failed",
+  // The series master itself no longer exists in legacy (changed/deleted
+  // series, or left behind on a dropped duplicate calendar) — a ghost
+  // instance Google never re-confirms, not a migration failure.
+  "orphan_series_instance",
+  // No usable Google credentials (no refresh token / no Google identity):
+  // sync was already dead for this account in legacy. Re-auth post-cutover
+  // triggers a fresh import regardless of preseed outcome.
+  "missing_connection",
+  "orphan_cursor",
 ]);
 
 const PENDING_BLOCKING = new Set([
   "missing_selected_target",
-  "missing_connection",
   "orphan_event",
   "unmappable_event",
   "read_only_target",
@@ -77,6 +83,7 @@ const PENDING_EXPLAINED = new Set([
   "busy_not_eligible",
   "outside_sync_horizon",
   "no_google_identity",
+  "missing_connection",
 ]);
 
 export type PreseedPhaseReports = {

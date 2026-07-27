@@ -546,6 +546,9 @@ export async function migrateProviderSyncState(
         userEvents.push(...list);
       }
       userEvents.sort(byHexId);
+      const userEventIds = new Set(
+        userEvents.map((event) => event._id.toHexString()),
+      );
 
       const linked: LegacyEventRecord[] = [];
       for (const event of userEvents) {
@@ -587,7 +590,16 @@ export async function migrateProviderSyncState(
         (event) => event.recurrence.kind === "occurrence",
       );
 
+      // Keyed by calendar + providerEventId, not providerEventId alone: the
+      // same Google recurring event id can appear on more than one of a
+      // user's calendars, and each calendar's instances must resolve to
+      // *that* calendar's master. A providerEventId-only key let one
+      // calendar's instances borrow another's seriesId, colliding on the
+      // series_exception_identity unique index (tenantId, principalId,
+      // recurrence.seriesId, recurrence.recurrenceId).
       const syncMasterByProviderId = new Map<string, SyncEventRecord>();
+      const masterCacheKey = (calendarId: string, providerEventId: string) =>
+        `${calendarId}:${providerEventId}`;
 
       for (const event of [...mastersAndSingles, ...exceptions]) {
         const calendar = legacyGoogleCalendarById.get(
@@ -629,8 +641,24 @@ export async function migrateProviderSyncState(
 
         let recurrence = plan.recurrence;
         if (plan.needsMaster) {
+          if (!userEventIds.has(plan.legacySeriesId)) {
+            // The legacy master document itself is gone (deleted/changed
+            // series, or left behind on a dropped duplicate calendar) — this
+            // instance is a ghost Google never re-confirms, not a migration
+            // failure. Distinct from missing_series_master, which means the
+            // master exists in this run's scope but failed to migrate.
+            localCounts.eventsSkipped += 1;
+            skips.push({
+              category: "orphan_series_instance",
+              id: event._id.toHexString(),
+              detail: `legacy series master ${plan.legacySeriesId} no longer exists`,
+            });
+            continue;
+          }
           const master =
-            syncMasterByProviderId.get(plan.seriesProviderId) ??
+            syncMasterByProviderId.get(
+              masterCacheKey(syncCalendar._id, plan.seriesProviderId),
+            ) ??
             (await findExistingProviderEvent(
               deps.events,
               tenantId,
@@ -652,7 +680,10 @@ export async function migrateProviderSyncState(
             });
             continue;
           }
-          syncMasterByProviderId.set(plan.seriesProviderId, master);
+          syncMasterByProviderId.set(
+            masterCacheKey(syncCalendar._id, plan.seriesProviderId),
+            master,
+          );
           recurrence = {
             kind: "exception",
             seriesId: master._id as EventId,
@@ -700,7 +731,7 @@ export async function migrateProviderSyncState(
           maybeSample(samples, event);
           if (recurrence.kind === "seriesMaster") {
             syncMasterByProviderId.set(
-              providerEventId,
+              masterCacheKey(syncCalendar._id, providerEventId),
               existing?.recurrence.kind === "seriesMaster"
                 ? existing
                 : ({
@@ -778,7 +809,10 @@ export async function migrateProviderSyncState(
           record.recurrence.kind === "seriesMaster" &&
           record.providerEventId
         ) {
-          syncMasterByProviderId.set(record.providerEventId, record);
+          syncMasterByProviderId.set(
+            masterCacheKey(syncCalendar._id, record.providerEventId),
+            record,
+          );
         }
       }
 

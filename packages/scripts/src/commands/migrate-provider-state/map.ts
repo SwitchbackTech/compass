@@ -19,6 +19,7 @@ import {
   type SyncEventContent,
   type SyncEventRecurrence,
 } from "@core/types/sync/event.contracts";
+import { TimezoneSchema } from "@core/types/type.utils";
 import { convertRfc5545ToIso } from "@core/util/date/date.util";
 import {
   type EventScheduleRecord,
@@ -108,7 +109,7 @@ export function toSyncSchedule(schedule: EventScheduleRecord): EventSchedule {
       kind: "timed",
       start: schedule.start.toISOString(),
       end: schedule.end.toISOString(),
-      timeZone: schedule.timeZone,
+      timeZone: toIanaTimeZone(schedule.timeZone),
     });
   }
   return EventScheduleSchema.parse({
@@ -116,6 +117,14 @@ export function toSyncSchedule(schedule: EventScheduleRecord): EventSchedule {
     start: schedule.start,
     end: schedule.end,
   });
+}
+
+// Legacy stored a handful of fixed-offset strings ("GMT-07:00") instead of an
+// IANA zone, which TimeZoneSchema rejects. The instant is a Date either way,
+// so falling back to UTC only loses the wall-clock display context, not the
+// event's actual time — better than dropping the event as unmappable.
+function toIanaTimeZone(timeZone: string): string {
+  return TimezoneSchema.safeParse(timeZone).success ? timeZone : "UTC";
 }
 
 function recurrenceIdFromGoogleInstanceId(

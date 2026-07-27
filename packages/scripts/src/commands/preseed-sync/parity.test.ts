@@ -292,4 +292,100 @@ describe("evaluatePreseedParity", () => {
       frozen.blockers.some((b) => b.code === "frozen_residual_creates"),
     ).toBe(true);
   });
+
+  it("treats missing_connection, orphan_cursor, and orphan_series_instance as accepted residuals on a live apply", () => {
+    const providerStateCounts = {
+      usersScanned: 3,
+      usersMigrated: 0,
+      usersWouldMigrate: 0,
+      usersSkipped: 3,
+      calendarsCreated: 0,
+      calendarsUpdated: 0,
+      calendarsWouldCreate: 0,
+      calendarsWouldUpdate: 0,
+      calendarsSkipped: 0,
+      eventsCreated: 0,
+      eventsUpdated: 0,
+      eventsWouldCreate: 0,
+      eventsWouldUpdate: 0,
+      eventsSkipped: 3,
+      syncResourcesCreated: 0,
+      syncResourcesUpdated: 0,
+      syncResourcesWouldCreate: 0,
+      syncResourcesWouldUpdate: 0,
+      syncResourcesSkipped: 0,
+      watchesSkippedRewatch: 0,
+      unlinkedDeferred: 0,
+    };
+
+    const parity = evaluatePreseedParity(
+      {
+        providerState: {
+          generatedAt: "2026-07-25T00:00:00.000Z",
+          dryRun: false,
+          counts: providerStateCounts,
+          users: [],
+          skips: [
+            {
+              category: "missing_connection",
+              id: "u1",
+              detail:
+                "run migrate-connections (S47) before migrate-provider-state",
+            },
+            {
+              category: "orphan_cursor",
+              id: "u2:gcal-x@gmail.com",
+              detail: "events cursor/watch has no migrated provider calendar",
+            },
+            {
+              category: "orphan_series_instance",
+              id: "u3",
+              detail:
+                "legacy series master 000000000000000000000000 no longer exists",
+            },
+          ],
+          samples: [],
+        },
+        pendingIntent: {
+          generatedAt: "2026-07-25T00:00:00.000Z",
+          dryRun: false,
+          counts: {
+            usersScanned: 1,
+            usersMigrated: 0,
+            usersWouldMigrate: 0,
+            usersSkipped: 1,
+            eventsCreated: 0,
+            eventsUpdated: 0,
+            eventsWouldCreate: 0,
+            eventsWouldUpdate: 0,
+            eventsSkipped: 0,
+            commandsCreated: 0,
+            commandsAlreadyPresent: 0,
+            commandsWouldCreate: 0,
+            commandsSkipped: 1,
+          },
+          users: [],
+          skips: [
+            {
+              category: "missing_connection",
+              id: "u1",
+              detail:
+                "run migrate-connections (S47) before migrate-pending-intent",
+            },
+          ],
+        },
+      },
+      { mode: "live", dryRun: false },
+    );
+
+    expect(parity.ok).toBe(true);
+    expect(parity.blockers).toHaveLength(0);
+    expect(parity.warnings.map((w) => w.code)).toEqual(
+      expect.arrayContaining([
+        "missing_connection",
+        "orphan_cursor",
+        "orphan_series_instance",
+      ]),
+    );
+  });
 });
