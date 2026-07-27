@@ -1,4 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  type QueryKey,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
@@ -21,10 +25,12 @@ import {
   findEventInCache,
   findSeriesEventsInCache,
   insertEventIntoQueries,
+  isEventQueryKey,
   removeEventFromQueries,
   upsertEventAcrossQueries,
 } from "@web/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
 import {
   projectRecurringDelete,
   projectRecurringEdit,
@@ -39,6 +45,7 @@ import {
   eventMutationKeys,
 } from "./event.mutation.keys";
 import {
+  hasOtherPendingWriteForKey,
   isSupersededByLaterEditWrite,
   markAnonymousEventWrite,
   type PrecedingEventWrites,
@@ -53,6 +60,48 @@ import {
   recordEventDeleteHistory,
   recordEventEditHistory,
 } from "./event.mutation-history";
+
+type EventMutationContext = {
+  previousQueries: Array<[QueryKey, unknown]>;
+};
+
+function restoreWriteKeyFromSnapshot(
+  queryClient: ReturnType<typeof useQueryClient>,
+  writeKey: EventId,
+  previousQueries: Array<[QueryKey, unknown]>,
+) {
+  const snapByKey = new Map(
+    previousQueries.map(([queryKey, data]) => [
+      JSON.stringify(queryKey),
+      data as NormalizedEventQueryData | undefined,
+    ]),
+  );
+
+  for (const [
+    queryKey,
+    current,
+  ] of queryClient.getQueriesData<NormalizedEventQueryData>({
+    queryKey: eventQueryKeys.all,
+  })) {
+    if (!current || !isEventQueryKey(queryKey)) continue;
+    const snap = snapByKey.get(JSON.stringify(queryKey));
+    const snapEvent = snap?.entities[writeKey];
+    const currentEvent = current.entities[writeKey];
+    if (!snapEvent && !currentEvent) continue;
+
+    const entities = { ...current.entities };
+    let ids = [...current.ids];
+    if (snapEvent) {
+      entities[writeKey] = snapEvent;
+      if (!ids.includes(writeKey)) ids = [...ids, writeKey];
+    } else {
+      delete entities[writeKey];
+      ids = ids.filter((candidate) => candidate !== writeKey);
+    }
+    // Preserve optional fields like demoEventIds on the query payload.
+    queryClient.setQueryData(queryKey, { ...current, ids, entities });
+  }
+}
 
 const nowDateTime = () => DateTimeSchema.parse(new Date().toISOString());
 
@@ -187,13 +236,14 @@ export function useEventMutations(
     [queryClient],
   );
 
-  // No per-mutation rollback: failed mutations leave their optimistic write
-  // in place and rely on the settle-time refetch to restore server truth.
-  // Invalidation only runs once NO event mutation remains in flight, so a
-  // refetch never overwrites another mutation's live optimistic update.
-  // The check is deferred to a macrotask because a settling mutation still
-  // counts as pending during its own onSettled — deferring lets simultaneous
-  // settles reliably observe count 0 instead of each seeing the other and skipping.
+  // Snapshot + conditional rollback: a failed mutation restores its pre-image.
+  // Alone in flight → full query restore. Concurrent writes → restore only
+  // entities owned by this writeKey so another event's optimistic update is
+  // preserved. Settle-time invalidation still converges to server truth once
+  // no event mutation remains in flight. Invalidation is deferred to a
+  // macrotask because a settling mutation still counts as pending during its
+  // own onSettled — deferring lets simultaneous settles reliably observe
+  // count 0 instead of each seeing the other and skipping.
   const settle = () => {
     setTimeout(() => {
       if (
@@ -203,18 +253,56 @@ export function useEventMutations(
       }
     }, 0);
   };
-  const buildMutation = <Variables>(
+  const buildMutation = <Variables extends { writeKey: EventId }>(
     operation: EventMutationOperation,
     mutationFn: (variables: Variables) => Promise<unknown>,
     optimistic: (variables: Variables) => void,
   ) => ({
     mutationKey: eventMutationKeys.operation(operation),
     mutationFn,
-    onMutate: async (variables: Variables) => {
+    onMutate: async (variables: Variables): Promise<EventMutationContext> => {
       await queryClient.cancelQueries({ queryKey: eventQueryKeys.all });
+      const previousQueries = queryClient.getQueriesData<unknown>({
+        queryKey: eventQueryKeys.all,
+      });
       optimistic(variables);
+      return { previousQueries };
     },
-    onError: (error: Error) => reportError(error),
+    onError: (
+      error: Error,
+      variables: Variables,
+      context: EventMutationContext | undefined,
+    ) => {
+      reportError(error);
+      if (!context) return;
+      // TanStack still counts *this* mutation as pending while onError runs
+      // (it dispatches status "error" only afterwards), so isMutating === 1
+      // means we are alone and a full snapshot restore is safe.
+      const pendingEventMutations = queryClient.isMutating({
+        mutationKey: eventMutationKeys.all,
+      });
+      if (pendingEventMutations <= 1) {
+        for (const [queryKey, data] of context.previousQueries) {
+          queryClient.setQueryData(queryKey, data);
+        }
+        return;
+      }
+      // Another mutation shares this write key (newer optimistic edit) — leave
+      // the cache alone so we do not clobber it. Deletes wait for settle when
+      // concurrent (recurring deletes touch more than writeKey). Different-key
+      // create/replace concurrency restores only entities[writeKey].
+      if (
+        operation === "delete" ||
+        hasOtherPendingWriteForKey(queryClient, variables.writeKey, variables)
+      ) {
+        return;
+      }
+      restoreWriteKeyFromSnapshot(
+        queryClient,
+        variables.writeKey,
+        context.previousQueries,
+      );
+    },
     onSettled: settle,
   });
   // Shared by every mutationFn below: wait for earlier writes to the same

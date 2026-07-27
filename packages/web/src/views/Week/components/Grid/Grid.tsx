@@ -33,7 +33,11 @@ export const Grid: FC<Props> = ({
   const { allDayRef, allDayRowRef, mainGridElementRef, mainGridRef } = gridRefs;
   // Subscribes to the same cache entry the event layers read, so this reports
   // their load without issuing a second fetch.
-  const { isPending: isLoadingEvents } = useWeekEventsQueryStatus({
+  const {
+    isPending: isLoadingEvents,
+    isError: isErrorEvents,
+    refetch,
+  } = useWeekEventsQueryStatus({
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
@@ -79,8 +83,10 @@ export const Grid: FC<Props> = ({
                 allDayGridOffsetTopPx={GRID_Y_START}
                 allDayRowsCount={allDayRowsCount}
                 gridRefs={gridRefs}
+                isErrorEvents={isErrorEvents}
                 isLoadingEvents={isLoadingEvents}
                 onAllDayMouseDown={onAllDayMouseDown}
+                onRetryEvents={() => void refetch()}
                 onTimedMouseDown={onTimedMouseDown}
                 timedEventsLayer={timedEventsLayer}
                 today={today}

@@ -67,11 +67,13 @@ Mutations go through the narrow `EventMutations` interface
 mutate(payload)
    │
    ├─ onMutate:   cancel in-flight reads
+   │              → snapshot matching cache entries
    │              → apply optimistic edit to matching cache entries   (instant UI)
    │
    ├─ mutationFn: persist via repository (captured source)
    │
-   ├─ onError:    report the error (no cache rollback)
+   ├─ onError:    report the error (toast)
+   │              → restore snapshot when no other event mutation is pending
    │
    └─ onSettled:  once NO event mutation remains in flight (checked on a
                   deferred macrotask), invalidate ["events"] → refetch to
@@ -81,11 +83,13 @@ mutate(payload)
 - **Optimistic edits** insert/patch/remove events across exactly the entries they
   belong to, so a created or dragged-in event shows immediately — before the
   server responds.
-- **No per-mutation rollback.** Rapid successive edits are allowed (events stay
-  interactive while pending), so a failed mutation must not restore a snapshot —
-  that would clobber a newer edit's optimistic write. Instead, failures leave the
-  optimistic value in place and the settle-time refetch converges the cache to
-  server truth. Invalidation is deferred to a macrotask and gated on
+- **Conditional rollback on failure.** Each mutation snapshots matching cache
+  entries in `onMutate`. On error it reports a toast and restores that snapshot
+  when it is alone in flight; if other mutations are pending for a *different*
+  write key it restores only this key's entities; if another mutation shares the
+  same key it leaves the newer optimistic write alone. Settle-time invalidation
+  still converges to server truth once no event mutation remains in flight.
+  Invalidation is deferred to a macrotask and gated on
   `queryClient.isMutating(...) === 0` so a refetch never overwrites another
   mutation's live optimistic update (the TanStack Query recipe for concurrent
   optimistic updates, deferred so simultaneous settles cannot all skip).
@@ -112,7 +116,9 @@ sides call the **same** predicate:
 
 - **Mutations** — invalidate `["events"]` on settle (see above).
 - **SSE** — background `EVENT_CHANGED` invalidates the
-  relevant scope so it refetches. See [SSE Runtime](./frontend-runtime-flow.md#sse-runtime).
+  relevant scope so it refetches. Native EventSource reconnect (`open`) and
+  window focus also invalidate/refetch so a laptop-sleep gap is not silent.
+  See [SSE Runtime](./frontend-runtime-flow.md#sse-runtime).
 - **Auth / source transitions** — refresh the repository source store and drop
   stale entries (e.g. Google revoked → fall back to `local`).
 

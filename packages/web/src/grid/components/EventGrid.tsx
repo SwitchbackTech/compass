@@ -19,6 +19,9 @@ export interface EventGridProps {
   gridRefs: GridRefs;
   /** First load only. Background refetches keep the grid interactive. */
   isLoadingEvents?: boolean;
+  /** Failed fetch with nothing reliable to show — mirrors CalendarList. */
+  isErrorEvents?: boolean;
+  onRetryEvents?: () => void;
   onAllDayMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
   onTimedMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
   timedEventsLayer: ReactNode;
@@ -32,6 +35,8 @@ export const EventGrid: FC<EventGridProps> = ({
   allDayRowsCount = 0,
   gridRefs,
   isLoadingEvents = false,
+  isErrorEvents = false,
+  onRetryEvents,
   onAllDayMouseDown,
   onTimedMouseDown,
   timedEventsLayer,
@@ -71,6 +76,22 @@ export const EventGrid: FC<EventGridProps> = ({
         className="pointer-events-none [&>div]:my-0"
         role="status"
       />
+    )}
+    {isErrorEvents && !isLoadingEvents && (
+      <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 px-4">
+        <div className="flex items-center gap-3 text-sm">
+          <p className="text-error">Couldn't load events.</p>
+          {onRetryEvents ? (
+            <button
+              className="c-focus-ring rounded-xs px-1.5 py-0.5 text-accent hover:brightness-110"
+              onClick={onRetryEvents}
+              type="button"
+            >
+              Retry
+            </button>
+          ) : null}
+        </div>
+      </div>
     )}
   </div>
 );

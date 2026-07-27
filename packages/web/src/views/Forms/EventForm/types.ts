@@ -5,6 +5,7 @@ import { type GridEventDraft } from "@web/events/event-draft.types";
 // canonical GridEventDraft.
 export interface GridEventFormProps {
   draft: GridEventDraft;
+  fieldErrors?: Record<string, string>;
   isDraft: boolean;
   isExistingEvent: boolean;
   onClose: () => void;

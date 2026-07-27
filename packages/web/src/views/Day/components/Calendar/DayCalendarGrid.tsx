@@ -60,7 +60,9 @@ export function DayCalendarGrid() {
   const {
     allDayEvents,
     events: dayEvents,
+    isError: isErrorEvents,
     isPending: isLoadingEvents,
+    refetch,
     rowCount: allDayRowsCount,
     timedEvents,
   } = useDayEventViewModel(dayEventQueryRange(dateInView));
@@ -313,8 +315,10 @@ export function DayCalendarGrid() {
           allDayEventsLayer={allDayEventsLayer}
           allDayRowsCount={allDayRowsCount}
           gridRefs={gridRefs}
+          isErrorEvents={isErrorEvents}
           isLoadingEvents={isLoadingEvents}
           onAllDayMouseDown={handleAllDayMouseDown}
+          onRetryEvents={() => void refetch()}
           onTimedMouseDown={handleTimedMouseDown}
           timedEventsLayer={timedEventsLayer}
           today={today}
