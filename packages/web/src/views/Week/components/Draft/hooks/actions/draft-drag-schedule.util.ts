@@ -11,10 +11,9 @@ import {
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { CROSS_ROW_TIMED_DURATION_MIN } from "@web/grid/interaction/math/cross-row.drag";
+import { type DragRow } from "@web/grid/interaction/types/timed-drag.types";
 import { type Status_Drag } from "@web/views/Week/components/Draft/hooks/state/useDraftState";
 import { getDragDurationMinutes } from "./drag-duration.util";
-
-export type DraftDragRow = "allDay" | "timed";
 
 const ONE_DAY_MINUTES = 24 * 60;
 
@@ -23,12 +22,15 @@ const ONE_DAY_MINUTES = 24 * 60;
  * rect is the boundary. Inside it the drop is all-day; anywhere else (when both
  * rows are mounted) it lands in the timed grid. Falls back to the draft's
  * current kind when either row is missing so same-row dragging still works.
+ *
+ * Draft drag still hit-tests live DOM rather than the saved-event layout cache,
+ * so this stays a thin adapter instead of forcing drafts onto that cache shape.
  */
 export const resolveDraftDragRow = (
   pointerY: number,
-  sourceRow: DraftDragRow,
+  sourceRow: DragRow,
   getElementById: (id: string) => HTMLElement | null = getElemById,
-): DraftDragRow => {
+): DragRow => {
   const allDayRow = getElementById(ID_GRID_ALLDAY_ROW);
   const mainGrid = getElementById(ID_GRID_MAIN);
 
@@ -56,7 +58,6 @@ interface ResolveDraftDragScheduleInput {
 
 export interface ResolvedDraftDragSchedule {
   durationMin: number;
-  row: DraftDragRow;
   schedule: GridScheduleDraft;
 }
 
@@ -76,8 +77,7 @@ export const resolveDraftDragSchedule = ({
   schedule,
   startOfView,
 }: ResolveDraftDragScheduleInput): ResolvedDraftDragSchedule => {
-  const sourceRow: DraftDragRow =
-    schedule.kind === "allDay" ? "allDay" : "timed";
+  const sourceRow: DragRow = schedule.kind === "allDay" ? "allDay" : "timed";
   const row = resolveDraftDragRow(clientY, sourceRow, getElementById);
 
   if (row === "timed") {
@@ -102,7 +102,6 @@ export const resolveDraftDragSchedule = ({
 
     return {
       durationMin,
-      row,
       schedule: timedGridSchedule(eventStart.toDate(), eventEnd.toDate()),
     };
   }
@@ -116,12 +115,10 @@ export const resolveDraftDragSchedule = ({
 
     return {
       durationMin,
-      row,
-      schedule: {
-        kind: "allDay",
-        start: eventStart.toDate(),
-        end: eventEnd.toDate(),
-      },
+      schedule: allDayGridSchedule(
+        eventStart.format(YEAR_MONTH_DAY_FORMAT),
+        eventEnd.format(YEAR_MONTH_DAY_FORMAT),
+      ),
     };
   }
 
@@ -129,7 +126,6 @@ export const resolveDraftDragSchedule = ({
   const day = getDateByXY(clientX, 0, startOfView).startOf("day");
   return {
     durationMin: ONE_DAY_MINUTES,
-    row,
     schedule: allDayGridSchedule(
       day.format(YEAR_MONTH_DAY_FORMAT),
       day.add(1, "day").format(YEAR_MONTH_DAY_FORMAT),

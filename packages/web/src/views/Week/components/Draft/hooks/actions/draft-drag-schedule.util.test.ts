@@ -102,7 +102,6 @@ describe("resolveDraftDragSchedule", () => {
       startOfView,
     });
 
-    expect(result.row).toBe("timed");
     expect(result.durationMin).toBe(CROSS_ROW_TIMED_DURATION_MIN);
     expect(result.schedule.kind).toBe("timed");
     expect(dayjs(result.schedule.start).format()).toBe(
@@ -127,7 +126,6 @@ describe("resolveDraftDragSchedule", () => {
       startOfView,
     });
 
-    expect(result.row).toBe("allDay");
     expect(result.schedule.kind).toBe("allDay");
     expect(dayjs(result.schedule.start).format("YYYY-MM-DD")).toBe(
       getDateByXY(440, 0).startOf("day").format("YYYY-MM-DD"),
@@ -149,7 +147,6 @@ describe("resolveDraftDragSchedule", () => {
       startOfView,
     });
 
-    expect(result.row).toBe("allDay");
     expect(result.schedule.kind).toBe("allDay");
     expect(result.durationMin).toBe(24 * 60);
     expect(dayjs(result.schedule.start).format("YYYY-MM-DD")).toBe(
@@ -175,7 +172,6 @@ describe("resolveDraftDragSchedule", () => {
       startOfView,
     });
 
-    expect(result.row).toBe("timed");
     expect(result.durationMin).toBe(90);
     expect(result.schedule.kind).toBe("timed");
     expect(
@@ -202,7 +198,6 @@ describe("resolveDraftDragSchedule", () => {
       startOfView,
     });
 
-    expect(result.row).toBe("timed");
     expect(result.durationMin).toBe(CROSS_ROW_TIMED_DURATION_MIN);
     expect(
       dayjs(result.schedule.end).diff(result.schedule.start, "minutes"),

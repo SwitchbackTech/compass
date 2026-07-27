@@ -1,9 +1,6 @@
 import { type MouseEvent as ReactMouseEvent, useRef } from "react";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
-import {
-  type Categories_Event,
-  type GridEvent,
-} from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 
 export const GRID_EVENT_MOUSE_HOLD_DELAY = 750; // ms
@@ -25,7 +22,6 @@ type HandleDragHandlers = {
  * mousemove would stop firing at the row boundary).
  */
 export const useGridEventMouseDown = (
-  _eventType: Categories_Event.TIMED | Categories_Event.ALLDAY,
   onClick: (event: GridEvent) => void,
   onDrag: (event: GridEvent, moveEvent: PartialMouseEvent) => void,
   delay: number = GRID_EVENT_MOUSE_HOLD_DELAY,

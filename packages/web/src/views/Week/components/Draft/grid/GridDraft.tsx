@@ -2,10 +2,7 @@ import { type FC, type MouseEvent } from "react";
 import { Origin } from "@core/constants/core.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
-import {
-  Categories_Event,
-  type GridEvent as GridEventEntity,
-} from "@web/common/types/web.event.types";
+import { type GridEvent as GridEventEntity } from "@web/common/types/web.event.types";
 import {
   getEventDragOffset,
   gridEventDefaultPosition,
@@ -87,7 +84,6 @@ export const GridDraft: FC<Props> = ({
     rendersInAllDayRow && draft?.values.schedule.kind === "timed";
 
   const { onMouseDown } = useGridEventMouseDown(
-    rendersInAllDayRow ? Categories_Event.ALLDAY : Categories_Event.TIMED,
     handleGridDraftClick,
     isMultiDayTimedDraft ? () => {} : handleDrag,
   );

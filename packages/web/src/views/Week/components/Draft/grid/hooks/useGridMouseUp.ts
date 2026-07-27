@@ -49,43 +49,25 @@ export const useGridMouseUp = () => {
     }
   }, [isDragging, isResizing, stopDragging, stopResizing]);
 
-  const handleAllDayRowMouseUp = useCallback(() => {
-    if (!draft) return;
+  const commitOnMouseUp = useCallback(
+    (category: Categories_Event) => {
+      if (!draft) return;
 
-    stopMotion();
+      stopMotion();
 
-    const { shouldSubmit, shouldOpenForm } = getNextAction(
-      Categories_Event.ALLDAY,
-    );
+      const { shouldSubmit, shouldOpenForm } = getNextAction(category);
 
-    if (shouldOpenForm) {
-      draftActions.setFormOpen(true);
-      return;
-    }
+      if (shouldOpenForm) {
+        draftActions.setFormOpen(true);
+        return;
+      }
 
-    if (shouldSubmit) {
-      submit(draft);
-    }
-  }, [draft, getNextAction, stopMotion, submit]);
-
-  const handleMainGridMouseUp = useCallback(() => {
-    if (!draft || !isDrafting) return;
-
-    stopMotion();
-
-    const { shouldSubmit, shouldOpenForm } = getNextAction(
-      Categories_Event.TIMED,
-    );
-
-    if (shouldOpenForm) {
-      draftActions.setFormOpen(true);
-      return;
-    }
-
-    if (shouldSubmit) {
-      submit(draft);
-    }
-  }, [draft, isDrafting, getNextAction, stopMotion, submit]);
+      if (shouldSubmit) {
+        submit(draft);
+      }
+    },
+    [draft, getNextAction, stopMotion, submit],
+  );
 
   const onGridMouseUp = useCallback(
     (e: MouseEvent) => {
@@ -94,13 +76,13 @@ export const useGridMouseUp = () => {
 
       // Commit against the live draft schedule so an all-day → timed conversion
       // mid-drag lands in the timed path (store eventType may lag one frame).
-      if (draft.values.schedule.kind === "allDay") {
-        handleAllDayRowMouseUp();
-      } else {
-        handleMainGridMouseUp();
-      }
+      commitOnMouseUp(
+        draft.values.schedule.kind === "allDay"
+          ? Categories_Event.ALLDAY
+          : Categories_Event.TIMED,
+      );
     },
-    [draft, isDrafting, handleAllDayRowMouseUp, handleMainGridMouseUp],
+    [draft, isDrafting, commitOnMouseUp],
   );
 
   useEventListener("mouseup", onGridMouseUp, getElemById("root"));

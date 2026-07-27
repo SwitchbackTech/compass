@@ -273,13 +273,12 @@ export const useDraftActions = (
       });
 
       const nextDraft = replaceGridDraftSchedule(draft, schedule);
-      const kindChanged = draft.values.schedule.kind !== schedule.kind;
+      const prev = draft.values.schedule;
+      const kindChanged = prev.kind !== schedule.kind;
       const hasMoved =
         kindChanged ||
-        dayjs(draft.values.schedule.start).format() !==
-          dayjs(schedule.start).format() ||
-        dayjs(draft.values.schedule.end).format() !==
-          dayjs(schedule.end).format();
+        !dayjs(prev.start).isSame(schedule.start) ||
+        !dayjs(prev.end).isSame(schedule.end);
 
       // Keep the shared store in sync so form hydration and eventType track
       // cross-row kind flips (local-only updates would be overwritten on
