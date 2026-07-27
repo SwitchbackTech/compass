@@ -34,7 +34,7 @@ import {
 } from "@web/views/Week/components/Draft/hooks/state/useDraftState";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import { getDragDurationMinutes } from "./drag-duration.util";
+import { resolveDraftDragSchedule } from "./draft-drag-schedule.util";
 
 const scopeFromApplyTo = (
   applyTo: RecurringEventUpdateScope,
@@ -256,79 +256,55 @@ export const useDraftActions = (
 
   const drag = useCallback(
     (e: Omit<PartialMouseEvent, "currentTarget">) => {
-      const updateTimesDuringDrag = (
-        e: Omit<PartialMouseEvent, "currentTarget">,
-      ) => {
-        if (!draft) return;
-
-        const isAllDay = draft.values.schedule.kind === "allDay";
-        const rawX = e.clientX;
-        const x = isAllDay ? rawX - dragOffset.x : rawX;
-        const startEndDurationMin = getDragDurationMinutes(
-          draft.values.schedule,
-          dragStatus,
-        );
-
-        const y = e.clientY - dragOffset.y;
-
-        let eventStart = dateCalcs.getDateByXY(
-          x,
-          y,
-          weekProps.component.startOfView,
-        );
-
-        let eventEnd = eventStart.add(startEndDurationMin, "minutes");
-
-        if (!isAllDay) {
-          // Edge case: timed events' end times can overflow past midnight at the bottom of the grid.
-          // Below logic prevents that from occurring.
-          if (eventEnd.date() !== eventStart.date()) {
-            eventEnd = eventEnd.hour(0).minute(0);
-            eventStart = eventEnd.subtract(startEndDurationMin, "minutes");
-          }
-        }
-
-        const schedule: GridScheduleDraft = isAllDay
-          ? {
-              kind: "allDay",
-              start: eventStart.toDate(),
-              end: eventEnd.toDate(),
-            }
-          : {
-              ...draft.values.schedule,
-              start: eventStart.toDate(),
-              end: eventEnd.toDate(),
-            };
-
-        const nextDraft = replaceGridDraftSchedule(draft, schedule);
-
-        setDraft(nextDraft);
-      };
       if (!isDragging) {
         devAlert("not dragging (anymore?)");
         return;
       }
+      if (!draft) return;
 
-      const currTime = dateCalcs.getDateStrByXY(
-        e.clientX,
-        e.clientY,
-        weekProps.component.startOfView,
-      );
-      const draftStartStr = draft
-        ? dayjs(draft.values.schedule.start).format()
-        : undefined;
-      const hasMoved = currTime !== draftStartStr;
+      const { durationMin, schedule } = resolveDraftDragSchedule({
+        clientX: e.clientX,
+        clientY: e.clientY,
+        dragOffset,
+        dragStatus,
+        getDateByXY: dateCalcs.getDateByXY,
+        schedule: draft.values.schedule,
+        startOfView: weekProps.component.startOfView,
+      });
 
-      if (!dragStatus?.hasMoved && hasMoved) {
+      const nextDraft = replaceGridDraftSchedule(draft, schedule);
+      const kindChanged = draft.values.schedule.kind !== schedule.kind;
+      const draftStartStr = dayjs(draft.values.schedule.start).format();
+      const nextStartStr = dayjs(schedule.start).format();
+      const hasMoved =
+        kindChanged ||
+        draftStartStr !== nextStartStr ||
+        dayjs(draft.values.schedule.end).format() !==
+          dayjs(schedule.end).format();
+
+      // Keep the shared store in sync so form hydration and eventType track
+      // cross-row kind flips (local-only updates would be overwritten on
+      // mouseup when the form opens).
+      setDraft(nextDraft);
+      draftActions.setGridDraft(nextDraft);
+
+      // Cross-row conversion switches between grab-offset and absolute pointer
+      // placement; clear the stale offset so the next frame doesn't jump.
+      if (kindChanged) {
+        setDragOffset({ x: 0, y: 0 });
+      }
+
+      if (
+        (!dragStatus?.hasMoved && hasMoved) ||
+        (dragStatus != null && dragStatus.durationMin !== durationMin)
+      ) {
         setDragStatus(
           (_status): Status_Drag => ({
-            ..._status!,
-            hasMoved: true,
+            durationMin,
+            hasMoved: Boolean(_status?.hasMoved || hasMoved),
           }),
         );
       }
-
-      updateTimesDuringDrag(e);
     },
     [
       isDragging,
@@ -338,6 +314,7 @@ export const useDraftActions = (
       dragOffset,
       dragStatus,
       setDraft,
+      setDragOffset,
       setDragStatus,
     ],
   );
