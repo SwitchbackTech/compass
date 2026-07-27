@@ -123,7 +123,7 @@ const TimedEventCardBase = (
     [position.height, showTimeLabel],
   );
 
-  const { base: baseColor, hover: hoverColor } = useEventPalette();
+  const { base: baseColor, hover: hoverColor } = useEventPalette(event.color);
   // Darkened well past the mid-tone "dead zone" (where neither dark nor light
   // text clears 4.5:1) so the draft fill is unambiguously dark and takes the
   // light title color. On the dark theme that separates it from the lighter
