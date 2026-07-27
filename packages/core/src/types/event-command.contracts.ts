@@ -17,7 +17,9 @@ const EditableContentSchema = z.strictObject({
   kind: z.literal("details"),
   title: z.string(),
   description: z.string(),
-  color: EventColorSlotSchema.optional(),
+  // Null clears a previously set color on replace; omit leaves sync color
+  // alone when the client did not touch it.
+  color: EventColorSlotSchema.nullable().optional(),
 });
 
 export const RecurrenceScopeSchema = z.enum([

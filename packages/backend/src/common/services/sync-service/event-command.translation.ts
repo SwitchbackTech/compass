@@ -42,7 +42,7 @@ const UNKNOWN_CALENDAR_ID = CalendarIdSchema.parse("000000000000000000000000");
 export const toSyncContent = (content: {
   title: string;
   description: string;
-  color?: EventColorSlot;
+  color?: EventColorSlot | null;
 }): SyncEventContent => ({
   title: content.title,
   description: content.description,

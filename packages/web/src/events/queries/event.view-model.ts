@@ -104,7 +104,9 @@ const withCalendarMetadata = (
         calendarId: event.calendarId,
         isBusy: event.content.kind === "busy",
         color:
-          event.content.kind === "details" ? event.content.color : undefined,
+          event.content.kind === "details"
+            ? (event.content.color ?? undefined)
+            : undefined,
       },
     ]),
   );

@@ -104,7 +104,9 @@ export const SyncEventContentSchema = z.strictObject({
   organizer: OrganizerSchema.nullable(),
   attendees: z.array(AttendeeSchema).readonly(),
   conference: ConferenceSchema.nullable(),
-  color: EventColorSlotSchema.optional(),
+  // Null means "clear the color tag" on an update command. Stored/read
+  // records omit the field when there is no color.
+  color: EventColorSlotSchema.nullable().optional(),
 });
 export type SyncEventContent = z.infer<typeof SyncEventContentSchema>;
 

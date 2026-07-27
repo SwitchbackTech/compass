@@ -1,5 +1,6 @@
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
+import { type EventColorSlot } from "@core/types/event-color.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 
 // Drafts use required keys with nullable incomplete values. This confines
@@ -29,6 +30,8 @@ type SharedEventFormValues = {
   title: string;
   description: string;
   schedule: EventScheduleDraft;
+  // Null means calendar-default / no event color tag.
+  color: EventColorSlot | null;
 };
 
 // A new draft can only use "single" or "series" and has no irrelevant

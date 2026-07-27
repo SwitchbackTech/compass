@@ -5,16 +5,26 @@ import { type SyncEventContent } from "@core/types/sync/event.contracts";
 // pads the richer fields with null/[] — so applying the wire content verbatim
 // would wipe attendees/location/conference Sync already holds from the
 // provider. Merge: take editable fields from the command, keep the rest from
-// existing. Color is applied only when the command sets one; omitting it
-// preserves whatever Sync already stores.
+// existing. Color: a slot replaces, null clears (field omitted), omit keeps
+// whatever Sync already stores.
 export function mergeUpdateContent(
   existing: SyncEventContent,
   incoming: SyncEventContent,
 ): SyncEventContent {
-  return {
+  const base: SyncEventContent = {
     ...existing,
     title: incoming.title,
     description: incoming.description,
-    ...(incoming.color !== undefined ? { color: incoming.color } : {}),
   };
+
+  if (incoming.color === null) {
+    const { color: _cleared, ...withoutColor } = base;
+    return withoutColor;
+  }
+
+  if (incoming.color !== undefined) {
+    return { ...base, color: incoming.color };
+  }
+
+  return base;
 }

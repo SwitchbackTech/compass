@@ -46,6 +46,7 @@ const newFormValues = (
   description: "",
   schedule: timedSchedule(),
   calendarId: calendarId(),
+  color: null,
   recurrence: { kind: "single" },
   ...overrides,
 });
@@ -66,6 +67,7 @@ const editFormValues = (
   description: "",
   schedule: timedSchedule(),
   calendarId: calendarId(),
+  color: null,
   recurrence: { kind: "preserve" },
   scope: "this",
   ...overrides,
@@ -99,6 +101,23 @@ describe("parseEventDraft", () => {
       expect(result.input.schedule.start).toContain("-06:00");
       expect(result.input.schedule.end).toContain("-06:00");
       expect(CreateEventInputSchema.parse(result.input)).toBeTruthy();
+    });
+
+    it("includes a selected color and sends null when cleared", () => {
+      const withColor = parseEventDraft(newDraft({ color: "coral" }));
+      expect(withColor.ok).toBe(true);
+      if (!withColor.ok) throw new Error("expected ok");
+      expect(withColor.input.content).toEqual({
+        kind: "details",
+        title: "Standup",
+        description: "",
+        color: "coral",
+      });
+
+      const cleared = parseEventDraft(editDraft({ color: null }));
+      expect(cleared.ok).toBe(true);
+      if (!cleared.ok) throw new Error("expected ok");
+      expect(cleared.input.content.color).toBeNull();
     });
 
     it("normalizes a same-day all-day selection to an exclusive end", () => {

@@ -385,6 +385,18 @@ describe("GoogleEventWriter", () => {
     expect(api.calls.patch[0].requestBody).not.toHaveProperty("colorId");
   });
 
+  it("clears Google colorId when content.color is null", async () => {
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    await writer.patchEvent({
+      ...basePatch,
+      content: content({ color: null }),
+    });
+
+    expect(api.calls.patch[0].requestBody.colorId).toBeNull();
+  });
+
   it("maps each invitation intent straight to sendUpdates", async () => {
     const api = new FakeEventsApi();
     const { writer } = writerWith(api);

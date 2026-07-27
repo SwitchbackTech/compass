@@ -635,11 +635,14 @@ function matchesIntendedEdit(
   schedule: EventSchedule,
   recurrence: ProviderWriteRecurrence,
 ): boolean {
+  // Null on the command means "no color"; treat it like an absent color on
+  // the provider read so a clear that already landed counts as a replay.
+  const intendedColor = content.color === null ? undefined : content.color;
   return (
     current.content.title === content.title &&
     current.content.description === content.description &&
     current.content.location === content.location &&
-    current.content.color === content.color &&
+    current.content.color === intendedColor &&
     deepEqual(current.schedule, schedule) &&
     recurrenceMatches(current.recurrence, recurrence)
   );
