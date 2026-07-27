@@ -199,11 +199,14 @@ class UserService {
         logger.warn(`User(${userId}) not found while deleting compass data`);
       }
 
-      const calendars = await calendarService.deleteAllByUser(userId, session);
-      summary.calendars = calendars.deletedCount;
-
+      // Events first: they are reachable only through the calendars that own
+      // them, so deleting the calendars first would leave nothing to find them
+      // by.
       const events = await eventService.deleteAllByUser(userId, session);
       summary.events = events.deletedCount;
+
+      const calendars = await calendarService.deleteAllByUser(userId, session);
+      summary.calendars = calendars.deletedCount;
 
       if (gcalAccess) {
         const watches = await googleWatchService.stopWatches(
