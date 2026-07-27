@@ -8,6 +8,8 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
@@ -59,6 +61,11 @@ export function DayCalendarGrid() {
   const dateInView = useDateInView();
   const { navigateToDate } = useDateNavigation();
   const today = useMemo(() => dayjs(), []);
+  const { data: calendars = [], isPending: isCalendarsPending } =
+    useCalendarsQuery();
+  // Seed shortcuts with the form's default create target, not day-column order.
+  const defaultTargetCalendarId =
+    getDefaultTargetCalendar(calendars)?.id ?? null;
   const {
     allDayEvents,
     events: dayEvents,
@@ -165,19 +172,29 @@ export function DayCalendarGrid() {
       if (gridDraft) {
         return;
       }
+      // Avoid locking in calendarId: null while the calendars query is still
+      // loading; the form would show the default once data arrives.
+      if (isCalendarsPending && !defaultTargetCalendarId) {
+        return;
+      }
 
       createDraft();
       draftActions.setFormOpen(true);
     },
-    [gridDraft],
+    [defaultTargetCalendarId, gridDraft, isCalendarsPending],
   );
 
   const createAllDayDraftFromShortcut = useCallback(
     () =>
       openShortcutDraft(() =>
-        createAlldayDraft(dateInView, dateInView, "createShortcut"),
+        createAlldayDraft(
+          dateInView,
+          dateInView,
+          "createShortcut",
+          defaultTargetCalendarId,
+        ),
       ),
-    [dateInView, openShortcutDraft],
+    [dateInView, defaultTargetCalendarId, openShortcutDraft],
   );
 
   const createTimedDraftFromShortcut = useCallback(
@@ -187,9 +204,10 @@ export function DayCalendarGrid() {
           dateInView.isSame(dayjs(), "day"),
           dateInView,
           "createShortcut",
+          defaultTargetCalendarId,
         ),
       ),
-    [dateInView, openShortcutDraft],
+    [dateInView, defaultTargetCalendarId, openShortcutDraft],
   );
 
   // onViewCommand returns its own unsubscribe and emitViewCommand reads the

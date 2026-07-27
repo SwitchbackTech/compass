@@ -771,6 +771,72 @@ describe("DayCalendarGrid", () => {
     });
   });
 
+  it("seeds CREATE_TIMED_DRAFT with the default target calendar, not column 0", async () => {
+    // Holidays is first in column order (read-only, visible) but is not the
+    // default create target — primary writable Google is. Shortcut drafts
+    // must land on primary so the grid column matches the form.
+    const holidays = makeCalendar("Holidays in United States", {
+      access: "reader",
+      capabilities: {
+        canReadAvailability: true,
+        canReadDetails: true,
+        canWrite: false,
+        canManage: false,
+        canWatchEvents: true,
+      },
+    });
+    const primary = makeCalendar("compasscaltest3@gmail.com", {
+      isPrimary: true,
+    });
+    renderDayCalendarGrid([holidays, primary]);
+
+    act(() => {
+      emitViewCommand("CREATE_TIMED_DRAFT");
+    });
+
+    await waitFor(() => {
+      expect(getGridDraft()?.values.calendarId).toBe(primary.id);
+      expect(getIsFormOpen()).toBe(true);
+    });
+
+    const draftCard = screen.getByRole("button", {
+      name: /timed event: untitled event/i,
+    });
+    // Column widths are 180; primary is the second column (index 1).
+    expect(parseFloat(draftCard.style.left)).toBeGreaterThanOrEqual(180);
+  });
+
+  it("seeds CREATE_ALLDAY_DRAFT with the default target calendar, not column 0", async () => {
+    const holidays = makeCalendar("Holidays in United States", {
+      access: "reader",
+      capabilities: {
+        canReadAvailability: true,
+        canReadDetails: true,
+        canWrite: false,
+        canManage: false,
+        canWatchEvents: true,
+      },
+    });
+    const primary = makeCalendar("compasscaltest3@gmail.com", {
+      isPrimary: true,
+    });
+    renderDayCalendarGrid([holidays, primary]);
+
+    act(() => {
+      emitViewCommand("CREATE_ALLDAY_DRAFT");
+    });
+
+    await waitFor(() => {
+      expect(getGridDraft()?.values.calendarId).toBe(primary.id);
+      expect(getIsFormOpen()).toBe(true);
+    });
+
+    const draftCard = screen.getByRole("button", {
+      name: /all-day event: untitled event/i,
+    });
+    expect(parseFloat(draftCard.style.left)).toBeGreaterThanOrEqual(180);
+  });
+
   it("rejects timed draft creation on a read-only calendar", async () => {
     const primary = makeCalendar("Primary", { isPrimary: true });
     const holidays = makeCalendar("Holidays", {

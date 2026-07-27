@@ -1,9 +1,11 @@
+import { CalendarIdSchema } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
 import { Categories_Event } from "@web/common/types/web.event.types";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { useDraftStore } from "@web/events/stores/draft.store";
 import { assembleDefaultEvent } from "../event/event.util";
@@ -94,6 +96,38 @@ describe("shortcut draft creation", () => {
       "2026-06-01T10:15:00.000Z",
     );
     expectSameTime(gridDraft?.values.schedule.end, "2026-06-01T11:15:00.000Z");
+  });
+
+  it("stores a provided calendarId on timed shortcut drafts", async () => {
+    setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
+    const calendarId = CalendarIdSchema.parse(createObjectIdString());
+
+    await createTimedDraft(
+      true,
+      dayjs("2026-05-20T00:00:00.000Z"),
+      "createShortcut",
+      calendarId,
+    );
+
+    expect(useDraftStore.getState().gridDraft?.values.calendarId).toBe(
+      calendarId,
+    );
+  });
+
+  it("stores a provided calendarId on all-day shortcut drafts", async () => {
+    setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
+    const calendarId = CalendarIdSchema.parse(createObjectIdString());
+
+    await createAlldayDraft(
+      dayjs("2026-05-18T00:00:00.000Z"),
+      dayjs("2026-05-24T23:59:59.999Z"),
+      "createShortcut",
+      calendarId,
+    );
+
+    expect(useDraftStore.getState().gridDraft?.values.calendarId).toBe(
+      calendarId,
+    );
   });
 });
 
