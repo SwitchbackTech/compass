@@ -103,7 +103,20 @@ _Avoid_: logged out
 
 ## Sync
 
-"Sync" can mean local IndexedDB persistence, backend event persistence, Googl import, Google incremental sync, or SSE refresh. Name the specific flow.e
+"Sync" can mean local IndexedDB persistence, backend event persistence, Google
+import, Google incremental sync, SSE refresh, or the standalone **Sync
+service**. Name the specific flow.
+
+**Sync service**:
+The standalone provider-sync process in `packages/sync`. Owns an isolated Mongo
+database, provider credentials, jobs, and internal HTTP routes. The backend
+delegates selected connection/event paths to it when cutover knobs are set.
+See [Sync Service Cutover](../backend/sync-service-cutover.md).
+_Avoid_: calling every Google import path "the Sync service"
+
+**Sync cutover**:
+The controlled handoff from legacy in-backend Google sync to the Sync service
+via `connectionRouting`, `eventRouting`, `cloudMutationMode`, and `execution`.
 
 ### Google Sync
 
@@ -125,7 +138,7 @@ tokens are missing or invalid, fall back to full **Repair**.
 **Primary Calendar**: The main Google Calendar Compass currently syncs. Compass
 does not yet support choosing multiple Google calendars in the UI.
 
-**Google Watch notifications**: A Google Calendar watch subscription used to notify Compass when Google-side calendar data changes. Use "channel" only for Google API fields such as `channelId`. These are eparate from browser API and **SSE** traffic; browser traffic can be local, but Google webhook posts need public HTTPS when continuous sync is expected.
+**Google Watch notifications**: A Google Calendar watch subscription used to notify Compass when Google-side calendar data changes. Use "channel" only for Google API fields such as `channelId`. These are separate from browser API and **SSE** traffic; browser traffic can be local, but Google webhook posts need public HTTPS when continuous sync is expected.
 _Avoid_: Sync Channel
 
 **nextSyncToken**: Google's cursor for incremental calendar sync.
@@ -157,6 +170,9 @@ _Avoid_: hotkey — the term survives only inside the third-party
   MongoDB.
 - A **Timed Event** appears in the **Timed Grid**.
 - An **All-Day Event** appears in the all-day row.
+- A **Timed Event** that crosses midnight may render as a multi-day span in the
+  all-day row (`isTimedMultiDayDisplay`) without becoming an **All-Day Event**
+  in storage.
 - An active Week **Draft Event** can be repositioned before saving, whether it
   was created from a keyboard shortcut, created from the grid, or opened from an
   existing **Grid Event**.
@@ -213,3 +229,5 @@ _Avoid_: hotkey — the term survives only inside the third-party
 - **Public watch notifications** are separate from browser API and **SSE**
   traffic; browser traffic can be local, but Google webhook posts need public
   HTTPS when continuous sync is expected.
+- The **Sync service** may own provider connections and event commands when
+  cutover routing is `sync`; the backend still owns browser HTTP and **SSE**.
