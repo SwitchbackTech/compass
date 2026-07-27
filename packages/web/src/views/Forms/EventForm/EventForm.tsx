@@ -152,6 +152,7 @@ const scheduleDateStrings = (draft: GridEventDraft) => {
 export const EventForm: React.FC<GridEventFormProps> = memo(
   ({
     draft,
+    fieldErrors,
     onClose: _onClose,
     onDelete,
     onSubmit,
@@ -681,7 +682,21 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           )}
         </div>
 
-        {!isReadOnly && <SaveSection onSubmit={onSubmitForm} />}
+        {!isReadOnly && (
+          <>
+            {fieldErrors && Object.keys(fieldErrors).length > 0 ? (
+              <ul
+                className="flex list-none flex-col gap-1 border-border border-t px-4 pt-3 text-error text-xs"
+                role="alert"
+              >
+                {Object.entries(fieldErrors).map(([field, message]) => (
+                  <li key={field}>{message}</li>
+                ))}
+              </ul>
+            ) : null}
+            <SaveSection onSubmit={onSubmitForm} />
+          </>
+        )}
       </EventFormShell>
     );
   },

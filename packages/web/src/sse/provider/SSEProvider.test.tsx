@@ -24,6 +24,7 @@ mock.module("../client/sse.client", () => ({
   closeStream,
   getStream,
   onServerMessage: createFakeServerMessageBus().onServerMessage,
+  onStreamReopen: () => () => undefined,
 }));
 
 const { default: SSEProvider } =

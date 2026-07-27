@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
@@ -12,13 +12,21 @@ export function useSaveEventForm() {
   const closeEventForm = useCloseEventForm();
   const { create, replace } = useEventMutations();
   const { data: calendars } = useCalendarsQuery();
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const clearFieldErrors = useCallback(() => {
+    setFieldErrors({});
+  }, []);
 
   const saveEventForm = useCallback(
     (
       draft: GridEventDraft | null,
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
-      if (!draft) return closeEventForm();
+      if (!draft) {
+        clearFieldErrors();
+        return closeEventForm();
+      }
 
       if (draft.kind === "create") {
         // Respects a calendar the user explicitly chose via CalendarSelect;
@@ -27,32 +35,48 @@ export function useSaveEventForm() {
         const calendarId =
           draft.values.calendarId ??
           getDefaultTargetCalendar(calendars ?? [])?.id;
-        if (!calendarId) return closeEventForm();
+        if (!calendarId) {
+          setFieldErrors({ calendarId: "Calendar is required" });
+          return;
+        }
 
         const parsed = parseGridEventDraft({
           ...draft,
           values: { ...draft.values, calendarId },
         });
 
-        if (parsed.ok && parsed.mode === "create") {
-          create(parsed.input);
+        if (!parsed.ok) {
+          setFieldErrors(parsed.fieldErrors);
+          return;
         }
-      } else {
-        const scope = toRecurrenceScope(applyTo);
-        const parsed = parseGridEventDraft({
-          ...draft,
-          values: { ...draft.values, scope },
-        });
 
-        if (parsed.ok && parsed.mode === "edit") {
-          replace({ id: parsed.eventId, input: parsed.input });
+        if (parsed.mode === "create") {
+          clearFieldErrors();
+          create(parsed.input);
+          closeEventForm();
         }
+        return;
       }
 
-      closeEventForm();
+      const scope = toRecurrenceScope(applyTo);
+      const parsed = parseGridEventDraft({
+        ...draft,
+        values: { ...draft.values, scope },
+      });
+
+      if (!parsed.ok) {
+        setFieldErrors(parsed.fieldErrors);
+        return;
+      }
+
+      if (parsed.mode === "edit") {
+        clearFieldErrors();
+        replace({ id: parsed.eventId, input: parsed.input });
+        closeEventForm();
+      }
     },
-    [calendars, closeEventForm, create, replace],
+    [calendars, clearFieldErrors, closeEventForm, create, replace],
   );
 
-  return saveEventForm;
+  return { saveEventForm, fieldErrors, clearFieldErrors };
 }

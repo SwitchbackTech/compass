@@ -338,7 +338,7 @@ describe("useEventMutations", () => {
     });
   });
 
-  test("reports the error and invalidates instead of rolling back when a replace fails", async () => {
+  test("reports the error, rolls back the optimistic write, and invalidates when a replace fails", async () => {
     const context = setup();
     const original = event();
     context.queryClient.setQueryData(calendarKey, normalized(original));
@@ -361,16 +361,14 @@ describe("useEventMutations", () => {
 
     await waitFor(() => {
       expect(context.errors[0]?.message).toBe("write failed");
-      // No in-memory rollback: the settle-time invalidation refetches server
-      // truth instead of restoring a snapshot.
+      expect(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id].content,
+      ).toMatchObject({ title: "Original" });
       expect(
         context.queryClient.getQueryState(calendarKey)?.isInvalidated,
       ).toBe(true);
     });
-    expect(
-      context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
-        ?.entities[original.id].content,
-    ).toMatchObject({ title: "Changed" });
   });
 
   test("keeps a newer edit's optimistic value when an older edit for the same event fails", async () => {

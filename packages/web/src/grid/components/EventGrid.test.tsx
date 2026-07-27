@@ -123,4 +123,32 @@ describe("EventGrid", () => {
         .height,
     ).toContain("6 *");
   });
+
+  it("shows a couldn't-load state with retry when event fetch failed", async () => {
+    const onRetryEvents = mock();
+    const user = userEvent.setup();
+
+    render(
+      <EventGrid
+        allDayEventsLayer={<div />}
+        gridRefs={createGridRefs()}
+        isErrorEvents
+        onAllDayMouseDown={mock()}
+        onRetryEvents={onRetryEvents}
+        onTimedMouseDown={mock()}
+        timedEventsLayer={<div />}
+        today={dayjs("2026-05-20T00:00:00.000")}
+        visibleDates={[
+          {
+            date: dayjs("2026-05-20T00:00:00.000"),
+            key: "date-0",
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Couldn't load events.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Retry" }));
+    expect(onRetryEvents).toHaveBeenCalledTimes(1);
+  });
 });

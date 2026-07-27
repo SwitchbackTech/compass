@@ -1,4 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  type QueryKey,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
@@ -53,6 +57,10 @@ import {
   recordEventDeleteHistory,
   recordEventEditHistory,
 } from "./event.mutation-history";
+
+type EventMutationContext = {
+  previousQueries: Array<[QueryKey, unknown]>;
+};
 
 const nowDateTime = () => DateTimeSchema.parse(new Date().toISOString());
 
@@ -187,11 +195,11 @@ export function useEventMutations(
     [queryClient],
   );
 
-  // No per-mutation rollback: failed mutations leave their optimistic write
-  // in place and rely on the settle-time refetch to restore server truth.
-  // Invalidation only runs once NO event mutation remains in flight, so a
-  // refetch never overwrites another mutation's live optimistic update.
-  // The check is deferred to a macrotask because a settling mutation still
+  // Snapshot + conditional rollback: a failed mutation restores its pre-image
+  // when it is the only in-flight event mutation. Concurrent writes (same key
+  // or another event) skip snapshot restore so a newer optimistic update is
+  // not clobbered; settle-time invalidation still converges to server truth.
+  // Invalidation is deferred to a macrotask because a settling mutation still
   // counts as pending during its own onSettled — deferring lets simultaneous
   // settles reliably observe count 0 instead of each seeing the other and skipping.
   const settle = () => {
@@ -203,18 +211,40 @@ export function useEventMutations(
       }
     }, 0);
   };
-  const buildMutation = <Variables>(
+  const buildMutation = <Variables extends { writeKey: EventId }>(
     operation: EventMutationOperation,
     mutationFn: (variables: Variables) => Promise<unknown>,
     optimistic: (variables: Variables) => void,
   ) => ({
     mutationKey: eventMutationKeys.operation(operation),
     mutationFn,
-    onMutate: async (variables: Variables) => {
+    onMutate: async (variables: Variables): Promise<EventMutationContext> => {
       await queryClient.cancelQueries({ queryKey: eventQueryKeys.all });
+      const previousQueries = queryClient.getQueriesData<unknown>({
+        queryKey: eventQueryKeys.all,
+      });
       optimistic(variables);
+      return { previousQueries };
     },
-    onError: (error: Error) => reportError(error),
+    onError: (
+      error: Error,
+      variables: Variables,
+      context: EventMutationContext | undefined,
+    ) => {
+      reportError(error);
+      // Full-query snapshots would clobber a concurrent optimistic write to a
+      // different event. TanStack still counts *this* mutation as pending while
+      // onError runs (it dispatches status "error" only afterwards), so
+      // isMutating === 1 means we are alone and safe to restore.
+      const pendingEventMutations = queryClient.isMutating({
+        mutationKey: eventMutationKeys.all,
+      });
+      if (context && pendingEventMutations <= 1) {
+        for (const [queryKey, data] of context.previousQueries) {
+          queryClient.setQueryData(queryKey, data);
+        }
+      }
+    },
     onSettled: settle,
   });
   // Shared by every mutationFn below: wait for earlier writes to the same
