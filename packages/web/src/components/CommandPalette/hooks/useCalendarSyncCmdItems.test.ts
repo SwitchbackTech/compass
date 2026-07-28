@@ -39,6 +39,7 @@ describe("useCalendarSyncCmdItems", () => {
   it("returns no items when Google is unavailable", async () => {
     mockUseConnectGoogle.mockReturnValue({
       isAvailable: false,
+      isConnecting: false,
       commandAction: null,
       state: "NOT_CONNECTED",
     });
@@ -53,6 +54,7 @@ describe("useCalendarSyncCmdItems", () => {
     const onSelect = mock();
     mockUseConnectGoogle.mockReturnValue({
       isAvailable: true,
+      isConnecting: false,
       commandAction: {
         label: "Sync Google Calendar",
         icon: CloudArrowUpIcon,
@@ -83,6 +85,7 @@ describe("useCalendarSyncCmdItems", () => {
     const onSelect = mock();
     mockUseConnectGoogle.mockReturnValue({
       isAvailable: true,
+      isConnecting: false,
       commandAction: {
         label: "Connect Google Calendar",
         icon: CloudArrowUpIcon,
@@ -104,6 +107,7 @@ describe("useCalendarSyncCmdItems", () => {
   ] as const)("returns a disabled syncing row for %s", async (state) => {
     mockUseConnectGoogle.mockReturnValue({
       isAvailable: true,
+      isConnecting: false,
       commandAction: null,
       state,
     });

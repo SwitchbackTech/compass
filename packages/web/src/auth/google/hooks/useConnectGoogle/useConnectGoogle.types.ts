@@ -15,5 +15,7 @@ export type GoogleUiConfig = {
 
 export type UseConnectGoogleResult = GoogleUiConfig & {
   isAvailable: boolean;
+  /** True while connect/reconnect OAuth is starting (before redirect). */
+  isConnecting: boolean;
   state: GoogleUiState;
 };
