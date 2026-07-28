@@ -247,6 +247,40 @@ describe("submitCloudCommand provider dispatch", () => {
     expect(writer.calls).toHaveLength(0);
   });
 
+  it("omits null color when persisting a cloud create", async () => {
+    // Browser creates send color: null (no tag). Null is a write-command clear
+    // signal, not a stored value — persisting it used to 500 GET /api/event.
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const submit = submitFor(tenantId, principalId, objectId());
+    if (submit.input.kind !== "create") throw new Error("expected create");
+    submit.input = {
+      ...submit.input,
+      content: { ...submit.input.content, color: null },
+    };
+
+    const { command } = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        markers,
+        execution: "active",
+      },
+      submit,
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    const stored = await events.findById(
+      tenantId,
+      principalId,
+      command.eventId,
+    );
+    expect(stored?.content).not.toHaveProperty("color");
+  });
+
   // Seed an existing event to mutate. Overrides let a test make it
   // provider-linked or recurring to exercise the deferral guards.
   const seedEvent = (

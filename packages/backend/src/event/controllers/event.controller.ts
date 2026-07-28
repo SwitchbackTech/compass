@@ -71,8 +71,8 @@ const resolveSyncCalendarIds = async (
   ]);
 
   if (!calendarsResult.ok) {
-    throw error(
-      GenericError.NotSure,
+    throw eventMutationError(
+      "PROVIDER_FAILURE",
       `Failed to list calendars from sync (${calendarsResult.error.kind})`,
     );
   }
@@ -109,8 +109,8 @@ const listAllFullEvents = async (
     };
     const result = await client.listFullEvents(principal, pageQuery);
     if (!result.ok) {
-      throw error(
-        GenericError.NotSure,
+      throw eventMutationError(
+        "PROVIDER_FAILURE",
         `Failed to list events from sync (${result.error.kind})`,
       );
     }
@@ -129,7 +129,10 @@ const listAllFullEvents = async (
 const readAllFromSync = async (userId: string, query: EventListQuery) => {
   const client = getSyncServiceClient();
   if (!client) {
-    throw error(GenericError.NotSure, "Sync event listing unavailable");
+    throw eventMutationError(
+      "PROVIDER_FAILURE",
+      "Sync event listing unavailable",
+    );
   }
 
   const calendarIds = await resolveSyncCalendarIds(client, userId);

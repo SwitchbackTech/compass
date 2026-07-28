@@ -51,6 +51,20 @@ describe("toSyncContent", () => {
       toSyncContent({ title: "Standup", description: "Daily" }),
     ).not.toHaveProperty("color");
   });
+
+  it("forwards null color so update merge can clear a tag", () => {
+    expect(
+      toSyncContent({ title: "Standup", description: "Daily", color: null }),
+    ).toEqual({
+      title: "Standup",
+      description: "Daily",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+      color: null,
+    });
+  });
 });
 
 describe("resolveCommandTarget", () => {

@@ -5,6 +5,7 @@ import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { type CredentialCustody } from "@sync/credentials/credential-custody.service";
 import { mergeUpdateContent } from "@sync/domain/merge-update-content";
+import { normalizeStoredContent } from "@sync/domain/normalize-stored-content";
 import {
   occurrenceScheduleAt,
   scheduleStartAt,
@@ -725,7 +726,7 @@ function buildCloudEventRecord(command: CommandRecord, now: Date): EventRecord {
     providerUpdatedAt: null,
     deliveryState: null,
     providerMetadata: null,
-    content: input.content,
+    content: normalizeStoredContent(input.content),
     schedule: input.schedule,
     recurrence: toStoredRecurrence(input.recurrence),
     lifecycleState: "active",

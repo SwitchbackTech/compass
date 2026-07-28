@@ -122,6 +122,31 @@ describe("assembleEventInstances", () => {
     });
   });
 
+  it("omits a persisted null color instead of failing the whole page", () => {
+    // Creates used to store write-command `color: null` on the event row.
+    // SyncEventInstance rejects null, so one such row 500'd GET /api/event.
+    const event = makeEvent({
+      content: {
+        title: "Standup",
+        description: "Daily sync",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+        color: null,
+      },
+    });
+    const occurrence = makeOccurrence({ eventId: event._id });
+
+    const [instance] = assembleEventInstances([occurrence], byId(event));
+
+    expect(instance?.content).toEqual({
+      title: "Standup",
+      description: "Daily sync",
+    });
+    expect(instance?.content).not.toHaveProperty("color");
+  });
+
   it("maps plain series instances to occurrence rows plus one master row", () => {
     const master = makeEvent({
       recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=DAILY"] },
