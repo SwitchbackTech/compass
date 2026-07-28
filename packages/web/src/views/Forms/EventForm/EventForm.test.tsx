@@ -22,7 +22,7 @@ import {
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type Props as DateTimeSectionProps } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DateTimeSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 type CapturedDateTimeSectionProps = Pick<
   DateTimeSectionProps,
@@ -590,6 +590,67 @@ describe("EventForm", () => {
     if (savedDraft.values.schedule.kind !== "timed") {
       throw new Error("expected a timed schedule");
     }
+    expect(
+      savedDraft.values.schedule.end.getTime() -
+        savedDraft.values.schedule.start.getTime(),
+    ).toBe(60 * 60 * 1000);
+  });
+
+  it("converts an all-day draft to a timed event inside the grid's current scroll position, not a fixed 9am", async () => {
+    const user = userEvent.setup();
+    const onSubmit = mock();
+
+    // clientHeight/13hrs/60min = 1 minute per pixel, so scrollTop=780
+    // means the grid is scrolled to 1pm (780 minutes from midnight) -
+    // well past the 9am default this test exists to disprove.
+    const fakeGrid = document.createElement("section");
+    Object.defineProperty(fakeGrid, "clientHeight", { value: 780 });
+    fakeGrid.scrollTop = 780;
+    const getElementByIdSpy = spyOn(
+      document,
+      "getElementById",
+    ).mockImplementation((id: string) => (id === "mainGrid" ? fakeGrid : null));
+
+    function Harness() {
+      const [draft, setDraft] = useState<GridEventDraft | null>(
+        createAllDayDraft(),
+      );
+
+      if (!draft) return null;
+
+      return (
+        <EventForm
+          draft={draft}
+          isDraft
+          isExistingEvent={false}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={onSubmit}
+          setDraft={setDraft}
+        />
+      );
+    }
+
+    renderWithStore(<Harness />);
+
+    act(() => capturedDateControlsSectionProps?.onToggleAllDay(false));
+
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    getElementByIdSpy.mockRestore();
+
+    const savedDraft = onSubmit.mock.calls[0]?.[0] as GridEventDraft;
+    expect(savedDraft.values.schedule).toMatchObject({ kind: "timed" });
+    if (savedDraft.values.schedule.kind !== "timed") {
+      throw new Error("expected a timed schedule");
+    }
+
+    // visibleStartMinute (780) + 30min margin, rounded up to next 15 = 810
+    // minutes from midnight = 13:30.
+    expect(dayjs(savedDraft.values.schedule.start).format("HH:mm")).toBe(
+      "13:30",
+    );
     expect(
       savedDraft.values.schedule.end.getTime() -
         savedDraft.values.schedule.start.getTime(),
