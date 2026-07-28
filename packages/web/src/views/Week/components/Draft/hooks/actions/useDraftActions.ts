@@ -55,8 +55,7 @@ export const useDraftActions = (
   const { data: calendars } = useCalendarsQuery();
   const gridDraftFromStore = useDraftStore(selectGridDraft);
 
-  const { activity, dateToResize, isDrafting } =
-    useDraftStore(selectDraftStatus)!;
+  const { activity, isDrafting } = useDraftStore(selectDraftStatus)!;
 
   const {
     dateBeingChanged,
@@ -546,21 +545,20 @@ export const useDraftActions = (
       await create();
       return;
     }
-    if (activity === "resizing") {
+    if (activity === "creating") {
+      // Mirror the running drag-create preview. Deliberately does not start a
+      // local resize: `resize()` freezes the store draft as its origin, so
+      // letting it run against a store draft that moves with the pointer would
+      // collapse its math.
       if (gridDraftFromStore) setDraft(gridDraftFromStore);
-      if (dateToResize === "startDate" || dateToResize === "endDate") {
-        startResizing(dateToResize);
-      }
     }
   }, [
     isDrafting,
     activity,
     create,
-    dateToResize,
     setDraft,
     gridDraftFromStore,
     setIsFormOpen,
-    startResizing,
   ]);
 
   const actions = {

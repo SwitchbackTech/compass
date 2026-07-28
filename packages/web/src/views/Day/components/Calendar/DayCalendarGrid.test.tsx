@@ -35,7 +35,15 @@ import {
 } from "@web/events/stores/draft.store";
 import { TIMED_EVENT_FAN_INDENT } from "@web/grid/grid.constants";
 import { type GridMeasurements } from "@web/grid/types/grid.types";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+} from "bun:test";
 import "@testing-library/jest-dom";
 
 let seededEvents: Event[] = [];
@@ -292,6 +300,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // bun's fake clock is process-global; restore it so a pinned test can't
+  // leak its time into later tests or later files.
+  setSystemTime();
   cleanup();
   if (originalScroll) {
     HTMLElement.prototype.scroll = originalScroll;
@@ -780,6 +791,12 @@ describe("DayCalendarGrid", () => {
   });
 
   it("seeds CREATE_TIMED_DRAFT with the default target calendar, not column 0", async () => {
+    // Pin the clock: createTimedDraft derives the draft from the real
+    // `dayjs()` hour, so between 23:00 and 23:59 UTC the 1-hour draft runs
+    // past midnight, becomes multi-day, and renders in the all-day row
+    // instead of as the timed card this test looks for.
+    setSystemTime(new Date("2026-05-20T10:00:00.000Z"));
+
     // Holidays is first in column order (read-only, visible) but is not the
     // default create target — primary writable Google is. Shortcut drafts
     // must land on primary so the grid column matches the form.
@@ -968,6 +985,65 @@ describe("DayCalendarGrid", () => {
       expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
       expect(dayjs(draft?.endDate).format("HH:mm")).toBe("05:00");
       expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
+    });
+  });
+
+  // Two moves, not one: the first mousemove has always written the draft to
+  // the store (it starts the preview), so a single-move assertion passes even
+  // when the draft is frozen for the rest of the gesture.
+  it("resizes the timed draft on every mousemove, not just the first", async () => {
+    renderDayCalendarGrid();
+
+    fireEvent.mouseDown(getTimedSlot(3), {
+      button: 0,
+      clientX: 100,
+      clientY: 120,
+    });
+
+    fireEvent.mouseMove(window, { buttons: 1, clientX: 100, clientY: 240 });
+
+    await waitFor(() => {
+      const draft = getDraft();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("04:00");
+    });
+
+    fireEvent.mouseMove(window, { buttons: 1, clientX: 100, clientY: 360 });
+
+    await waitFor(() => {
+      const draft = getDraft();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("06:00");
+    });
+
+    // The draft renders during the drag, but the form stays closed until the
+    // gesture finishes.
+    expect(getIsFormOpen()).toBe(false);
+  });
+
+  it("flips the timed draft upward mid-drag when the pointer passes the origin", async () => {
+    renderDayCalendarGrid();
+
+    fireEvent.mouseDown(getTimedSlot(3), {
+      button: 0,
+      clientX: 100,
+      clientY: 240,
+    });
+
+    fireEvent.mouseMove(window, { buttons: 1, clientX: 100, clientY: 300 });
+
+    await waitFor(() => {
+      const draft = getDraft();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("04:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("05:00");
+    });
+
+    fireEvent.mouseMove(window, { buttons: 1, clientX: 100, clientY: 120 });
+
+    await waitFor(() => {
+      const draft = getDraft();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("04:00");
     });
   });
 
