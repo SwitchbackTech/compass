@@ -39,7 +39,7 @@ export function FeedbackDialogHost() {
 
     setIsSubmitting(false);
     feedbackActions.close();
-    showStatusToast("feedback-sent", "Thanks — your feedback was sent.");
+    showStatusToast("feedback-sent", "Feedback sent to the big boss, thanks!");
   };
 
   return (
