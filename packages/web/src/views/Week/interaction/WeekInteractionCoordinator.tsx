@@ -40,7 +40,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
-  const { actions, state } = useDraftContext();
+  const { state } = useDraftContext();
   const updateEvent = useUpdateEvent();
   const activeInteractionEventRef = useRef<Event | null>(null);
   const layoutSourcesRef = useRef(getLayoutSources);
@@ -144,7 +144,6 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     if (result.hadFormOpenBeforeInteraction) {
       const draft = gridEventDraftFromSavedResult(result.event);
       if (draft) {
-        actions.setLocalDraft(draft);
         draftActions.setGridDraft(draft);
       }
 

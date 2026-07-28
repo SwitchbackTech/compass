@@ -96,3 +96,24 @@ export function isEventReadOnly(
 
   return !calendar.capabilities.canWrite;
 }
+
+/**
+ * Single read-only predicate for grid card registration and edit shortcuts
+ * (delete / nudge). Uses {@link isGridEventContentReadOnly} so busy content
+ * and timed multi-day display bars cannot diverge between pointer and
+ * keyboard gates.
+ */
+export function isGridEventInteractionReadOnly(
+  lookup: ReadonlyMap<CalendarId, Calendar>,
+  event: {
+    calendarId?: CalendarId | null;
+    isBusy?: boolean;
+    isTimedMultiDayDisplay?: boolean;
+  },
+): boolean {
+  return isEventReadOnly(
+    lookup,
+    event.calendarId,
+    isGridEventContentReadOnly(event),
+  );
+}

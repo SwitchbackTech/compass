@@ -1,18 +1,10 @@
 import { Origin } from "@core/constants/core.constants";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
-import {
-  type EventColorSlot,
-  withColor,
-} from "@core/types/event-color.contracts";
+import { withColor } from "@core/types/event-color.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import {
-  assembleGridEvent,
-  type EventWithDates,
-  hasEventDates,
-} from "@web/common/utils/event/event.util";
+import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
   isTimedEventMultiDay,
   timedMultiDayToAllDayDates,
@@ -30,21 +22,42 @@ import { type NormalizedEventQueryData } from "./event.query.types";
 // there's nothing real to duplicate/resubmit.
 export const BUSY_EVENT_TITLE = "Busy";
 
-// The grid renderer (assembleGridEvent) still consumes the CompassEvent
-// shape rather than the core Event contract directly, scoped to scheduled
-// (timed/allDay) events.
-const scheduledEventToSchemaEvent = (event: Event): CompassEvent => {
+type EventToGridEventOptions = {
+  demoEventIds?: readonly EventId[];
+  /** Override schedule dates / all-day for multi-day timed display promotion. */
+  scheduleOverride?: {
+    isAllDay: boolean;
+    startDate: string;
+    endDate: string;
+    isTimedMultiDayDisplay?: boolean;
+  };
+};
+
+/**
+ * Direct Event → GridEvent assembly for the calendar view-model hot path.
+ * Avoids the Event → CompassEvent → GridEvent bridge and joins calendar
+ * metadata (calendarId / isBusy / color / isDemo) inline.
+ */
+const eventToGridEvent = (
+  event: Event,
+  { demoEventIds, scheduleOverride }: EventToGridEventOptions = {},
+): GridEvent => {
   const { schedule } = event;
+  const isAllDay = scheduleOverride?.isAllDay ?? schedule.kind === "allDay";
+  const startDate = scheduleOverride?.startDate ?? schedule.start;
+  const endDate = scheduleOverride?.endDate ?? schedule.end;
+  const isBusy = event.content.kind === "busy";
+  const details = event.content.kind === "details" ? event.content : undefined;
+
   return {
     _id: event.id,
-    title:
-      event.content.kind === "details" ? event.content.title : BUSY_EVENT_TITLE,
-    description:
-      event.content.kind === "details" ? event.content.description : "",
+    title: details?.title ?? BUSY_EVENT_TITLE,
+    description: details?.description ?? "",
     origin: Origin.COMPASS,
-    isAllDay: schedule.kind === "allDay",
-    startDate: schedule.start,
-    endDate: schedule.end,
+    user: "",
+    isAllDay,
+    startDate,
+    endDate,
     recurrence:
       event.recurrence.kind === "series"
         ? { rule: [...event.recurrence.rules], eventId: event.id }
@@ -52,6 +65,14 @@ const scheduledEventToSchemaEvent = (event: Event): CompassEvent => {
           ? { eventId: event.recurrence.seriesId }
           : undefined,
     updatedAt: event.updatedAt ?? undefined,
+    position: gridEventDefaultPosition,
+    calendarId: event.calendarId,
+    isBusy,
+    isDemo: Boolean(demoEventIds?.includes(event.id)),
+    ...(scheduleOverride?.isTimedMultiDayDisplay
+      ? { isTimedMultiDayDisplay: true }
+      : {}),
+    ...withColor(details?.color ?? undefined),
   };
 };
 
@@ -59,13 +80,11 @@ const eventsFrom = (data?: NormalizedEventQueryData): Event[] =>
   data?.ids.flatMap((id) => (data.entities[id] ? [data.entities[id]] : [])) ??
   [];
 
-// assembleGridEvent/hasEventDates still operate on the CompassEvent
-// shape; bridged via scheduledEventToSchemaEvent above. A cache entry with a
-// missing/malformed `schedule` is a bug upstream (normalizeEventList/query
-// seeding), not a case to silently swallow — but it must not crash this
-// shared derivation, since every grid
-// consumer recomputes from it on every render (a throw here becomes a
-// render-crash loop). Log loudly and drop the offending event instead.
+// A cache entry with a missing/malformed `schedule` is a bug upstream
+// (normalizeEventList/query seeding), not a case to silently swallow — but
+// it must not crash this shared derivation, since every grid consumer
+// recomputes from it on every render (a throw here becomes a render-crash
+// loop). Log loudly and drop the offending event instead.
 const isValidScheduledEvent = (event: Event): boolean => {
   const isValid =
     event.schedule != null && typeof event.schedule.kind === "string";
@@ -78,77 +97,23 @@ const isValidScheduledEvent = (event: Event): boolean => {
   return isValid;
 };
 
-// Re-attaches calendarId + isBusy + optional color onto the GridEvent
-// produced by the Event -> CompassEvent -> GridEvent bridge above.
-// scheduledEventToSchemaEvent returns the hand-written core `CompassEvent`
-// shape (compass-event.contracts.ts), which has none of those fields, so the
-// bridge itself can't carry them through without widening that shared type
-// (used by 10+ unrelated consumers). Joining back by event id after
-// assembleGridEvent keeps the bridge untouched and scopes the new fields to
-// GridEvent only (packet 08 steps 5 and 8). isBusy backs the read-only gate
-// - see isEventReadOnly in calendars/useCalendarLookup.ts.
-const withCalendarMetadata = (
-  events: Event[],
-  gridEvents: GridEvent[],
-  demoEventIds?: readonly EventId[],
-): GridEvent[] => {
-  const demoEventIdSet = new Set(demoEventIds ?? []);
-  const metadataByEventId = new Map<
-    string,
-    {
-      calendarId: Event["calendarId"];
-      isBusy: boolean;
-      color?: EventColorSlot;
-    }
-  >(
-    events.map((event) => [
-      event.id,
-      {
-        calendarId: event.calendarId,
-        isBusy: event.content.kind === "busy",
-        color:
-          event.content.kind === "details"
-            ? (event.content.color ?? undefined)
-            : undefined,
-      },
-    ]),
-  );
-  return gridEvents.map((gridEvent) => {
-    const metadata = gridEvent._id
-      ? metadataByEventId.get(gridEvent._id)
-      : undefined;
-    return {
-      ...gridEvent,
-      calendarId: metadata?.calendarId,
-      isBusy: metadata?.isBusy ?? false,
-      isDemo: gridEvent._id
-        ? demoEventIdSet.has(gridEvent._id as EventId)
-        : false,
-      ...withColor(metadata?.color),
-    };
-  });
-};
-
 // A series base is metadata-only: its schedule is the first occurrence's
 // datetime (kept so the RRULE and series id are reachable for editing), but
 // the first occurrence itself is a separately materialized doc that renders
 // the actual card. Rendering the base too would double the first day.
+const scheduledNonSeries = (events: Event[]) =>
+  events
+    .filter(isValidScheduledEvent)
+    .filter((event) => event.recurrence.kind !== "series");
+
 const gridEventsFrom = (
   events: Event[],
   kind: "timed" | "allDay",
   demoEventIds?: readonly EventId[],
-) => {
-  const scheduled = events
-    .filter(isValidScheduledEvent)
+) =>
+  scheduledNonSeries(events)
     .filter((event) => event.schedule.kind === kind)
-    .filter((event) => event.recurrence.kind !== "series");
-  const assembled = scheduled
-    .map(scheduledEventToSchemaEvent)
-    .filter((event): event is EventWithDates => hasEventDates(event))
-    .map(assembleGridEvent);
-
-  return withCalendarMetadata(scheduled, assembled, demoEventIds);
-};
+    .map((event) => eventToGridEvent(event, { demoEventIds }));
 
 const timedEventsFrom = (events: Event[], demoEventIds?: readonly EventId[]) =>
   gridEventsFrom(events, "timed", demoEventIds).filter((event) => {
@@ -159,33 +124,26 @@ const timedEventsFrom = (events: Event[], demoEventIds?: readonly EventId[]) =>
 const multiDayTimedAsAllDayFrom = (
   events: Event[],
   demoEventIds?: readonly EventId[],
-): GridEvent[] => {
-  const scheduled = events
-    .filter(isValidScheduledEvent)
-    .filter((event) => event.recurrence.kind !== "series")
+): GridEvent[] =>
+  scheduledNonSeries(events)
     .filter((event) => event.schedule.kind === "timed")
     .filter((event) => {
       const { start, end } = event.schedule;
       return isTimedEventMultiDay(dayjs(start), dayjs(end));
+    })
+    .map((event) => {
+      const { start, end } = event.schedule;
+      const dates = timedMultiDayToAllDayDates(dayjs(start), dayjs(end));
+      return eventToGridEvent(event, {
+        demoEventIds,
+        scheduleOverride: {
+          isAllDay: true,
+          startDate: dates.startDate,
+          endDate: dates.endDate,
+          isTimedMultiDayDisplay: true,
+        },
+      });
     });
-
-  const assembled = scheduled.map((event) => {
-    const { start, end } = event.schedule;
-    const dates = timedMultiDayToAllDayDates(dayjs(start), dayjs(end));
-    const schemaEvent: EventWithDates = {
-      ...scheduledEventToSchemaEvent(event),
-      isAllDay: true,
-      startDate: dates.startDate,
-      endDate: dates.endDate,
-    };
-    return {
-      ...assembleGridEvent(schemaEvent),
-      isTimedMultiDayDisplay: true,
-    };
-  });
-
-  return withCalendarMetadata(scheduled, assembled, demoEventIds);
-};
 
 const allDayEventsFrom = (events: Event[], demoEventIds?: readonly EventId[]) =>
   assignEventsToRow([

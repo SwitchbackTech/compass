@@ -6,6 +6,7 @@ import { CalendarIdSchema } from "@core/types/domain-primitives";
 import {
   buildCalendarLookup,
   isEventReadOnly,
+  isGridEventInteractionReadOnly,
 } from "@web/calendars/useCalendarLookup";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { describe, expect, it } from "bun:test";
@@ -96,5 +97,41 @@ describe("isEventReadOnly", () => {
     const someId = CalendarIdSchema.parse(createObjectIdString());
 
     expect(isEventReadOnly(lookup, someId, false)).toBe(false);
+  });
+});
+
+describe("isGridEventInteractionReadOnly", () => {
+  it("treats busy and timed multi-day display content as read-only", () => {
+    const calendar = makeCalendar({ access: "owner" });
+    const lookup = buildCalendarLookup([calendar]);
+
+    expect(
+      isGridEventInteractionReadOnly(lookup, {
+        calendarId: calendar.id,
+        isBusy: true,
+      }),
+    ).toBe(true);
+    expect(
+      isGridEventInteractionReadOnly(lookup, {
+        calendarId: calendar.id,
+        isTimedMultiDayDisplay: true,
+      }),
+    ).toBe(true);
+  });
+
+  it("still respects calendar write capability for ordinary events", () => {
+    const reader = makeCalendar({
+      access: "reader",
+      capabilities: getCalendarCapabilities("reader"),
+    });
+    const owner = makeCalendar({ access: "owner" });
+    const lookup = buildCalendarLookup([reader, owner]);
+
+    expect(
+      isGridEventInteractionReadOnly(lookup, { calendarId: reader.id }),
+    ).toBe(true);
+    expect(
+      isGridEventInteractionReadOnly(lookup, { calendarId: owner.id }),
+    ).toBe(false);
   });
 });

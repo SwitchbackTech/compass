@@ -1,8 +1,7 @@
 import { type MouseEvent, useMemo } from "react";
 import {
   type CalendarCardIdentity,
-  isEventReadOnly,
-  isGridEventContentReadOnly,
+  isGridEventInteractionReadOnly,
   resolveCalendarCardIdentity,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
@@ -79,11 +78,7 @@ export const AllDayEvents = ({
         // attach interaction attributes/registration below, so the drag/
         // resize engine can't find them as a target - blocked before any
         // optimistic state change (packet 08 step 8).
-        isReadOnly: isEventReadOnly(
-          calendarLookup,
-          event.calendarId,
-          isGridEventContentReadOnly(event),
-        ),
+        isReadOnly: isGridEventInteractionReadOnly(calendarLookup, event),
       })),
     [visibleAllDayEvents, calendarLookup],
   );

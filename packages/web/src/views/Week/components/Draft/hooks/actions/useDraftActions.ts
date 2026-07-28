@@ -21,11 +21,13 @@ import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import {
   draftActions,
   selectDraftStatus,
-  selectGridDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { GRID_TIME_STEP } from "@web/grid/grid.constants";
-import { useDraftEffects } from "@web/views/Week/components/Draft/hooks/effects/useDraftEffects";
+import {
+  clearGestureEphemera,
+  useDraftEffects,
+} from "@web/views/Week/components/Draft/hooks/effects/useDraftEffects";
 import {
   type DragOffset,
   type Setters_Draft,
@@ -45,6 +47,9 @@ const scopeFromApplyTo = (
       ? "thisAndFollowing"
       : "this";
 
+const readLiveDraft = (): GridEventDraft | null =>
+  useDraftStore.getState().gridDraft;
+
 export const useDraftActions = (
   draftState: State_Draft_Local,
   setters: Setters_Draft,
@@ -53,15 +58,13 @@ export const useDraftActions = (
 ) => {
   const mutations = useEventMutations();
   const { data: calendars } = useCalendarsQuery();
-  const gridDraftFromStore = useDraftStore(selectGridDraft);
-
   const { activity, isDrafting } = useDraftStore(selectDraftStatus)!;
 
   const {
     dateBeingChanged,
-    draft,
     dragOffset,
     dragStatus,
+    gestureOriginDraft,
     isDragging,
     isResizing,
     resizeStatus,
@@ -74,9 +77,9 @@ export const useDraftActions = (
     setIsResizing,
     setDragOffset,
     setDragStatus,
+    setGestureOriginDraft,
     setResizeStatus,
     setDateBeingChanged,
-    setDraft,
     setIsFormOpen,
     setIsFormOpenBeforeDragging,
   } = setters;
@@ -93,10 +96,14 @@ export const useDraftActions = (
 
   const startResizing = useCallback(
     (dateBeingChanged: "startDate" | "endDate") => {
+      const liveDraft = readLiveDraft();
+      if (liveDraft) {
+        setGestureOriginDraft(liveDraft);
+      }
       setIsResizing(true);
       setDateBeingChanged(dateBeingChanged);
     },
-    [setIsResizing, setDateBeingChanged],
+    [setDateBeingChanged, setGestureOriginDraft, setIsResizing],
   );
 
   const stopDragging = useCallback(() => {
@@ -109,31 +116,18 @@ export const useDraftActions = (
     setIsResizing(false);
     setResizeStatus(null);
     setDateBeingChanged("endDate");
-  }, [setIsResizing, setResizeStatus, setDateBeingChanged]);
-
-  const discard = useCallback(() => {
-    setDraft(null);
-    setIsDragging(false);
-    setIsFormOpen(false);
-    setIsResizing(false);
-    setDragStatus(null);
-    setResizeStatus(null);
-    setDateBeingChanged(null);
-
-    if (gridDraftFromStore || isDrafting) {
-      draftActions.discard();
-    }
+    setGestureOriginDraft(null);
   }, [
-    gridDraftFromStore,
-    isDrafting,
     setDateBeingChanged,
-    setDraft,
-    setDragStatus,
-    setIsDragging,
-    setIsFormOpen,
+    setGestureOriginDraft,
     setIsResizing,
     setResizeStatus,
   ]);
+
+  const discard = useCallback(() => {
+    clearGestureEphemera(setters);
+    draftActions.discard();
+  }, [setters]);
 
   const determineSubmitAction = useCallback(
     (draft: GridEventDraft) => {
@@ -239,18 +233,19 @@ export const useDraftActions = (
 
   const repositionDraftByKeyboard = useCallback(
     (key: string) => {
+      const liveDraft = readLiveDraft();
       const nextDraft = applyDraftKeyboardReposition({
         activity,
-        draft,
+        draft: liveDraft,
         key,
         isStartAllowed: (nextStart) => isInsideVisibleWeek(dayjs(nextStart)),
       });
       if (!nextDraft) return false;
 
-      setDraft(nextDraft);
+      draftActions.setGridDraft(nextDraft);
       return true;
     },
-    [activity, draft, isInsideVisibleWeek, setDraft],
+    [activity, isInsideVisibleWeek],
   );
 
   const applyDragPosition = useCallback(
@@ -259,7 +254,8 @@ export const useDraftActions = (
       offset: DragOffset,
       status: Status_Drag | null,
     ) => {
-      if (!draft) return;
+      const liveDraft = readLiveDraft();
+      if (!liveDraft) return;
 
       const { durationMin, schedule } = resolveDraftDragSchedule({
         clientX: e.clientX,
@@ -267,22 +263,18 @@ export const useDraftActions = (
         dragOffset: offset,
         dragStatus: status,
         getDateByXY: dateCalcs.getDateByXY,
-        schedule: draft.values.schedule,
+        schedule: liveDraft.values.schedule,
         startOfView: weekProps.component.startOfView,
       });
 
-      const nextDraft = replaceGridDraftSchedule(draft, schedule);
-      const prev = draft.values.schedule;
+      const nextDraft = replaceGridDraftSchedule(liveDraft, schedule);
+      const prev = liveDraft.values.schedule;
       const kindChanged = prev.kind !== schedule.kind;
       const hasMoved =
         kindChanged ||
         !dayjs(prev.start).isSame(schedule.start) ||
         !dayjs(prev.end).isSame(schedule.end);
 
-      // Keep the shared store in sync so form hydration and eventType track
-      // cross-row kind flips (local-only updates would be overwritten on
-      // mouseup when the form opens).
-      setDraft(nextDraft);
       draftActions.setGridDraft(nextDraft);
 
       // Cross-row conversion switches between grab-offset and absolute pointer
@@ -305,8 +297,6 @@ export const useDraftActions = (
     },
     [
       dateCalcs.getDateByXY,
-      draft,
-      setDraft,
       setDragOffset,
       setDragStatus,
       weekProps.component.startOfView,
@@ -326,43 +316,44 @@ export const useDraftActions = (
   );
 
   const isValidMovement = useCallback(
-    (currTime: dayjs.Dayjs) => {
-      if (!draft || !dateBeingChanged) return false;
+    (currTime: dayjs.Dayjs, liveDraft: GridEventDraft) => {
+      if (!dateBeingChanged) return false;
 
-      const isAllDay = draft.values.schedule.kind === "allDay";
+      const isAllDay = liveDraft.values.schedule.kind === "allDay";
       if (isAllDay) {
         return true;
       }
 
       const draftDate =
         dateBeingChanged === "startDate"
-          ? draft.values.schedule.start
-          : draft.values.schedule.end;
+          ? liveDraft.values.schedule.start
+          : liveDraft.values.schedule.end;
       const _currTime = currTime.format();
       const noChange = dayjs(draftDate).format() === _currTime;
 
       if (noChange) return false;
 
       const diffDay =
-        currTime.day() !== dayjs(draft.values.schedule.start).day();
+        currTime.day() !== dayjs(liveDraft.values.schedule.start).day();
       if (diffDay) return false;
 
       const sameStart =
-        _currTime === dayjs(draft.values.schedule.start).format();
+        _currTime === dayjs(liveDraft.values.schedule.start).format();
       if (sameStart) return false;
 
       return true;
     },
-    [dateBeingChanged, draft],
+    [dateBeingChanged],
   );
 
   const resize = useCallback(
     (e: MouseEvent) => {
-      // Freeze the origin against the store draft: local `setDraft` updates
+      const liveDraft = readLiveDraft();
+      // Freeze the origin against the gesture snapshot so live store updates
       // mid-gesture must not shift the resize baseline.
-      if (!draft || !gridDraftFromStore) return;
+      if (!liveDraft || !gestureOriginDraft) return;
 
-      const isAllDay = draft.values.schedule.kind === "allDay";
+      const isAllDay = liveDraft.values.schedule.kind === "allDay";
       const _dateBeingChanged = dateBeingChanged as "startDate" | "endDate";
       const oppositeKey =
         _dateBeingChanged === "startDate" ? "endDate" : "startDate";
@@ -378,34 +369,39 @@ export const useDraftActions = (
           ? dayjs(date).format(YEAR_MONTH_DAY_FORMAT)
           : dayjs(date).format();
       const draftDates: Record<"startDate" | "endDate", string> = {
-        startDate: formatDraftDate(draft.values.schedule.start),
-        endDate: formatDraftDate(draft.values.schedule.end),
+        startDate: formatDraftDate(liveDraft.values.schedule.start),
+        endDate: formatDraftDate(liveDraft.values.schedule.end),
       };
       const originDates: Record<"startDate" | "endDate", string> = {
-        startDate: formatDraftDate(gridDraftFromStore.values.schedule.start),
-        endDate: formatDraftDate(gridDraftFromStore.values.schedule.end),
+        startDate: formatDraftDate(gestureOriginDraft.values.schedule.start),
+        endDate: formatDraftDate(gestureOriginDraft.values.schedule.end),
       };
+
+      let workingDraft = liveDraft;
+      let workingDateBeingChanged = dateBeingChanged;
 
       const flipIfNeeded = (currTime: Dayjs) => {
         let startDate = draftDates.startDate;
         let endDate = draftDates.endDate;
 
         let justFlipped = false;
-        let dateKey = dateBeingChanged;
+        let dateKey = workingDateBeingChanged;
         const opposite = dayjs(draftDates[oppositeKey]);
         const comparisonKeyword =
-          dateBeingChanged === "startDate" ? "after" : "before";
+          workingDateBeingChanged === "startDate" ? "after" : "before";
 
         if (comparisonKeyword === "after") {
           if (currTime.isAfter(opposite)) {
             dateKey = oppositeKey;
             startDate = draftDates.endDate;
+            workingDateBeingChanged = dateKey;
             setDateBeingChanged(dateKey);
 
             justFlipped = true;
           }
         } else if (comparisonKeyword === "before") {
           if (currTime.isBefore(opposite)) {
+            workingDateBeingChanged = oppositeKey;
             setDateBeingChanged(oppositeKey);
             if (isAllDay) {
               // For all-day events, move by day
@@ -438,17 +434,12 @@ export const useDraftActions = (
               end: dayjs(endDate).toDate(),
             }
           : {
-              ...draft.values.schedule,
+              ...workingDraft.values.schedule,
               start: dayjs(startDate).toDate(),
               end: dayjs(endDate).toDate(),
             };
 
-        setDraft((_draft) => {
-          if (!_draft) return _draft;
-
-          return replaceGridDraftSchedule(_draft, schedule);
-        });
-
+        workingDraft = replaceGridDraftSchedule(workingDraft, schedule);
         return justFlipped;
       };
 
@@ -465,7 +456,7 @@ export const useDraftActions = (
         weekProps.component.startOfView,
       );
 
-      if (!isValidMovement(currTime)) {
+      if (!isValidMovement(currTime, workingDraft)) {
         return;
       }
 
@@ -495,71 +486,46 @@ export const useDraftActions = (
         setResizeStatus({ hasMoved: true });
       }
 
-      setDraft((_draft) => {
-        if (!_draft) return _draft;
+      const nextSchedule: GridScheduleDraft = {
+        ...workingDraft.values.schedule,
+        ...(dateChanged === "startDate"
+          ? { start: dayjs(updatedTime).toDate() }
+          : { end: dayjs(updatedTime).toDate() }),
+      } as GridScheduleDraft;
 
-        const nextSchedule: GridScheduleDraft = {
-          ..._draft.values.schedule,
-          ...(dateChanged === "startDate"
-            ? { start: dayjs(updatedTime).toDate() }
-            : { end: dayjs(updatedTime).toDate() }),
-        } as GridScheduleDraft;
-
-        return replaceGridDraftSchedule(_draft, nextSchedule);
-      });
+      draftActions.setGridDraft(
+        replaceGridDraftSchedule(workingDraft, nextSchedule),
+      );
     },
     [
       dateBeingChanged,
       dateCalcs,
-      draft,
-      gridDraftFromStore,
+      gestureOriginDraft,
       isResizing,
       isValidMovement,
       resizeStatus?.hasMoved,
       setDateBeingChanged,
-      setDraft,
       setIsFormOpen,
       setResizeStatus,
       weekProps.component.startOfView,
     ],
   );
 
-  const create = useCallback(async () => {
-    if (!gridDraftFromStore) return;
-
-    setDraft(gridDraftFromStore);
-    setIsFormOpen(true);
-  }, [gridDraftFromStore, setDraft, setIsFormOpen]);
-
   const handleChange = useCallback(async () => {
     if (!isDrafting) return;
     if (activity === "eventRightClick") {
       return; // Prevents form and context menu from opening at same time
     }
-    if (activity === "keyboardEdit") {
-      if (gridDraftFromStore) setDraft(gridDraftFromStore);
+    if (
+      activity === "keyboardEdit" ||
+      activity === "createShortcut" ||
+      activity === "gridClick"
+    ) {
       setIsFormOpen(true);
-      return;
     }
-    if (activity === "createShortcut" || activity === "gridClick") {
-      await create();
-      return;
-    }
-    if (activity === "creating") {
-      // Mirror the running drag-create preview. Deliberately does not start a
-      // local resize: `resize()` freezes the store draft as its origin, so
-      // letting it run against a store draft that moves with the pointer would
-      // collapse its math.
-      if (gridDraftFromStore) setDraft(gridDraftFromStore);
-    }
-  }, [
-    isDrafting,
-    activity,
-    create,
-    setDraft,
-    gridDraftFromStore,
-    setIsFormOpen,
-  ]);
+    // "creating": store already owns the live drag-create preview — no
+    // local mirror or resize start needed.
+  }, [isDrafting, activity, setIsFormOpen]);
 
   const actions = {
     submit,
@@ -567,15 +533,13 @@ export const useDraftActions = (
     drag,
     repositionDraftByKeyboard,
     resize,
-    setLocalDraft: setDraft,
     startDragging: (
       offset?: DragOffset,
       initialEvent?: Omit<PartialMouseEvent, "currentTarget">,
     ) => {
-      // Placing `setIsFormOpenBeforeDragging` here rather than inside `startDragging`
-      // because `setIsFormOpenBeforeDragging` depends on `isFormOpen` and re-calculates
-      // `startDragging` (due to it being a react callback) which causes issues.
-      // This is a hacky solution to the issue.
+      // Capture form-open before startDragging so the callback identity of
+      // startDragging does not depend on isFormOpen (which would recreate it
+      // and disrupt gesture start). Gesture policy only — not draft ownership.
       setIsFormOpenBeforeDragging(isFormOpen);
       const nextOffset = offset ?? { x: 0, y: 0 };
       startDragging(offset);
