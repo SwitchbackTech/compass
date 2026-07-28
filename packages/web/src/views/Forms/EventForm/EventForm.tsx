@@ -26,6 +26,7 @@ import {
   getTimeOptionByValue,
   mapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
+import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
 import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
@@ -133,6 +134,8 @@ const handleEventFormDelete = ({
 
   onDelete();
 };
+
+const DEFAULT_TIMED_START_HOUR = 9; // fallback when the grid can't be measured
 
 const scheduleDateStrings = (draft: GridEventDraft) => {
   const { schedule } = draft.values;
@@ -470,7 +473,11 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         return;
       }
 
-      const timedStart = dayjs(selectedStartDate).hour(9).minute(0);
+      const startMinute =
+        getVisibleGridStartMinute() ?? DEFAULT_TIMED_START_HOUR * 60;
+      const timedStart = dayjs(selectedStartDate)
+        .startOf("day")
+        .add(startMinute, "minute");
       const timedEnd = timedStart.add(1, "hour");
       const nextStartTime = getTimeOptionByValue(timedStart);
       const nextEndTime = getTimeOptionByValue(timedEnd);
