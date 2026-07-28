@@ -600,7 +600,7 @@ describe("DayCalendarGrid", () => {
     expect(screen.queryByText("Delete Event")).not.toBeInTheDocument();
   });
 
-  it("dismisses an open form when pressing empty Day timed calendar space", async () => {
+  it("discards an open form and starts a new draft when pressing empty Day timed calendar space", async () => {
     const event = createTimedEvent({
       _id: "open-draft",
       endDate: "2026-05-20T10:00:00.000",
@@ -614,6 +614,7 @@ describe("DayCalendarGrid", () => {
       screen.getByRole("button", { name: /timed event: open draft/i }),
     );
     expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
+    expect(getGridDraft()?.kind).toBe("edit");
 
     const emptySlot = getTimedSlot(3);
     await user.pointer([
@@ -628,14 +629,17 @@ describe("DayCalendarGrid", () => {
         target: emptySlot,
       },
     ]);
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    });
 
-    expect(screen.queryByRole("dialog", { name: "Event form" })).toBeNull();
-    expect(
-      screen.queryByRole("button", { name: /timed event: untitled event/i }),
-    ).not.toBeInTheDocument();
+    // The click both drops the stale "Open draft" edit and starts a fresh
+    // draft at the new point - a plain click elsewhere must never be a
+    // no-op, or it reads as a dead click (see useTimedDraftCreation).
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /timed event: untitled event/i }),
+      ).toBeVisible();
+      expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
+    });
+    expect(getGridDraft()?.kind).toBe("create");
   });
 
   it("keeps the event form open when pressing outside the calendar", async () => {
