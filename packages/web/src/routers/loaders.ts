@@ -55,6 +55,18 @@ export function redirectToDefaultCalendar(): never {
   });
 }
 
+// /waitlist predates self-serve signup and no longer has anything to show;
+// send it through the normal root flow instead of 404ing (external links to
+// it are still out there). That flow already does the right thing per
+// visitor: mobile OSes hit RootView's MobileGate (the real, still-active
+// mobile waitlist), desktop hits the welcome screen.
+export function redirectToRoot(): never {
+  throw redirect({
+    to: ROOT_ROUTES.ROOT,
+    search: (prev: Record<string, unknown>) => prev,
+  });
+}
+
 // Deliberately not params.parse: a throwing parser makes the route not
 // match (-> NotFound), but the existing UX redirects an invalid dateString
 // to the base route instead. Runs in beforeLoad so an invalid param never

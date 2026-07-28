@@ -1,3 +1,5 @@
+import { CaretDownIcon } from "@phosphor-icons/react";
+import classNames from "classnames";
 import { useId, useState } from "react";
 import { FAQ_ITEMS } from "./faq";
 
@@ -45,10 +47,18 @@ export function WelcomeGuideBody() {
                 type="button"
                 aria-controls={answerId}
                 aria-expanded={isExpanded}
-                className="c-focus-ring w-full cursor-pointer select-none text-left font-medium text-sm text-text transition-colors hover:text-text-lightest"
+                className="c-focus-ring flex w-full cursor-pointer select-none items-center justify-between gap-2 text-left font-medium text-sm text-text transition-colors hover:text-text-lightest"
                 onClick={() => toggleFaq(item.question)}
               >
-                {item.question}
+                <span>{item.question}</span>
+                <CaretDownIcon
+                  aria-hidden="true"
+                  className={classNames(
+                    "shrink-0 transition-transform duration-200 ease-out motion-reduce:transition-none",
+                    isExpanded && "rotate-180",
+                  )}
+                  size={14}
+                />
               </button>
               <div
                 id={answerId}

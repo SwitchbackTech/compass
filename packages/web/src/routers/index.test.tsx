@@ -5,6 +5,7 @@ import {
   lifeRoute,
   rootRoute,
   routeTree,
+  waitlistRoute,
 } from "@web/routers/router.routes";
 import { describe, expect, it } from "bun:test";
 
@@ -23,5 +24,11 @@ describe("routeTree", () => {
   it("gates the authenticated layout behind loadAuthenticated", () => {
     expect(authenticatedLayoutRoute.options.beforeLoad).toBeDefined();
     expect(authenticatedLayoutRoute.parentRoute).toBe(rootRoute);
+  });
+
+  it("redirects the retired /waitlist route to root instead of 404ing", () => {
+    expect(waitlistRoute.fullPath).toBe(ROOT_ROUTES.WAITLIST);
+    expect(waitlistRoute.options.beforeLoad).toBeDefined();
+    expect(waitlistRoute.parentRoute).toBe(rootRoute);
   });
 });

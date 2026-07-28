@@ -10,6 +10,7 @@ import {
   loadAuthenticated,
   loadDateParam,
   redirectToDefaultCalendar,
+  redirectToRoot,
   redirectToToday,
   validateDayDateParam,
   validateWeekDateParam,
@@ -115,6 +116,12 @@ export const cleanupRoute = createRoute({
   ),
 });
 
+export const waitlistRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: ROOT_ROUTES.WAITLIST,
+  beforeLoad: redirectToRoot,
+});
+
 export const googleAuthCallbackRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: ROOT_ROUTES.GOOGLE_AUTH_CALLBACK,
@@ -135,4 +142,5 @@ export const routeTree = rootRoute.addChildren([
   authenticatedRoute,
   ...(IS_DEV ? [cleanupRoute] : []),
   googleAuthCallbackRoute,
+  waitlistRoute,
 ]);

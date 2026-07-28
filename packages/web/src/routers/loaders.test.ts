@@ -10,6 +10,7 @@ import {
   loadDateParam,
   loadTodayData,
   redirectToDefaultCalendar,
+  redirectToRoot,
   redirectToToday,
   validateWeekDateParam,
 } from "@web/routers/loaders";
@@ -63,12 +64,18 @@ function createTestRouter(initialEntries: string[]) {
     path: "/",
     beforeLoad: redirectToDefaultCalendar,
   });
+  const waitlistRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: ROOT_ROUTES.WAITLIST,
+    beforeLoad: redirectToRoot,
+  });
 
   return createRouter({
     routeTree: rootRoute.addChildren([
       dayRoute.addChildren([dayIndexRoute, dayDateRoute]),
       weekRoute.addChildren([weekIndexRoute, weekDateRoute]),
       rootIndexRoute,
+      waitlistRoute,
     ]),
     history: createMemoryHistory({ initialEntries }),
     defaultPendingMs: 0,
@@ -91,6 +98,14 @@ describe("router redirects", () => {
 
     expect(router.state.location.pathname).toBe(ROOT_ROUTES.WEEK);
     expect(router.state.location.search).toEqual({ auth: "login" });
+  });
+
+  it("redirects /waitlist through / to the bare week route", async () => {
+    const router = createTestRouter(["/waitlist"]);
+
+    await router.load();
+
+    expect(router.state.location.pathname).toBe(ROOT_ROUTES.WEEK);
   });
 
   it("redirects /day to today's dated day route", async () => {

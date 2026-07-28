@@ -51,9 +51,12 @@ export const useTimedDraftCreation = ({
     event: ReactMouseEvent<HTMLElement>,
     columnCalendarId: CalendarId | null = calendarId,
   ) => {
+    // A plain click elsewhere while a draft is open discards it and starts a
+    // fresh one at the new point, rather than swallowing the click: without
+    // this, a second click anywhere on the grid did nothing but drop the
+    // first draft, which read as a dead click (and lost any typed title).
     if (isDrafting) {
       draftActions.discard();
-      return;
     }
 
     if (

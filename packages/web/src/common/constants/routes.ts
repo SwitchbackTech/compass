@@ -4,6 +4,7 @@ export const ROOT_ROUTES = {
   GOOGLE_AUTH_CALLBACK: "/auth/google/callback",
   LIFE: "/life",
   ROOT: "/",
+  WAITLIST: "/waitlist",
   WEEK: "/week",
   WEEK_DATE: "/week/$dateString",
   DAY: "/day",
