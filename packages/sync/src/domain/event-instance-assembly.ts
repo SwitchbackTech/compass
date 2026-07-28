@@ -126,7 +126,6 @@ export function assembleEventInstances(
 const toInstanceContent = (content: EventRecord["content"]) => ({
   title: content.title,
   description: content.description,
-  // Null can appear on older create rows that stored a write-command clear
-  // signal; treat it as "no color" so one bad row cannot 500 the whole page.
+  // Heal rows that persisted write-command `color: null`.
   ...withColor(content.color ?? undefined),
 });

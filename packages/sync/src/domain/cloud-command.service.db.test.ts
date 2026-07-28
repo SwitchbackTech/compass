@@ -248,8 +248,6 @@ describe("submitCloudCommand provider dispatch", () => {
   });
 
   it("omits null color when persisting a cloud create", async () => {
-    // Browser creates send color: null (no tag). Null is a write-command clear
-    // signal, not a stored value — persisting it used to 500 GET /api/event.
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const submit = submitFor(tenantId, principalId, objectId());

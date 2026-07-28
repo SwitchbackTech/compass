@@ -14,8 +14,10 @@ import {
   type ConnectionId,
   type ProviderEventId,
 } from "@core/types/sync/identity.contracts";
-import { mergeUpdateContent } from "@sync/domain/merge-update-content";
-import { normalizeStoredContent } from "@sync/domain/normalize-stored-content";
+import {
+  mergeUpdateContent,
+  omitNullColor,
+} from "@sync/domain/merge-update-content";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
@@ -185,7 +187,7 @@ function buildLinkedEventRecord(
     providerUpdatedAt: null,
     deliveryState: "confirmed",
     providerMetadata: null,
-    content: normalizeStoredContent(input.content),
+    content: omitNullColor(input.content),
     schedule: input.schedule,
     recurrence:
       input.recurrence.kind === "series"

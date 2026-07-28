@@ -24,3 +24,11 @@ export function mergeUpdateContent(
     ? { ...merged, color: existingColor }
     : merged;
 }
+
+// Null is a write-command "clear" signal. Stored/read rows omit the field;
+// persisting null fails SyncEventInstance validation on list.
+export function omitNullColor(content: SyncEventContent): SyncEventContent {
+  if (content.color !== null) return content;
+  const { color: _color, ...rest } = content;
+  return rest;
+}

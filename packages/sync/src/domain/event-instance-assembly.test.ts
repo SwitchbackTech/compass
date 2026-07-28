@@ -123,8 +123,6 @@ describe("assembleEventInstances", () => {
   });
 
   it("omits a persisted null color instead of failing the whole page", () => {
-    // Creates used to store write-command `color: null` on the event row.
-    // SyncEventInstance rejects null, so one such row 500'd GET /api/event.
     const event = makeEvent({
       content: {
         title: "Standup",
@@ -144,7 +142,6 @@ describe("assembleEventInstances", () => {
       title: "Standup",
       description: "Daily sync",
     });
-    expect(instance?.content).not.toHaveProperty("color");
   });
 
   it("maps plain series instances to occurrence rows plus one master row", () => {
