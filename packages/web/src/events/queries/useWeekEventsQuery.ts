@@ -14,7 +14,12 @@ type WeekEventsQueryArgs = {
   endOfView: Dayjs;
 };
 
-function useWeekEventsQueryInternal({
+/**
+ * Primary week-events read hook. TanStack Query owns the normalized result;
+ * consumers derive render data through {@link useWeekEventViewModel}.
+ * Load failures are shown contextually (e.g. EventGrid) — no global toast.
+ */
+export function useWeekEventsQuery({
   startOfView,
   endOfView,
 }: WeekEventsQueryArgs) {
@@ -32,15 +37,6 @@ function useWeekEventsQueryInternal({
         endDate,
       }),
   });
-}
-
-/**
- * Primary week-events read hook. TanStack Query owns the normalized result;
- * consumers derive render data through {@link useWeekEventViewModel}.
- * Load failures are shown contextually (e.g. EventGrid) — no global toast.
- */
-export function useWeekEventsQuery(args: WeekEventsQueryArgs) {
-  return useWeekEventsQueryInternal(args);
 }
 
 export function useWeekEventViewModel(args: WeekEventsQueryArgs) {
@@ -61,5 +57,5 @@ export function useWeekEventViewModel(args: WeekEventsQueryArgs) {
  * {@link useWeekEventsQuery} (shared key → no extra fetch).
  */
 export function useWeekEventsQueryStatus(args: WeekEventsQueryArgs) {
-  return useWeekEventsQueryInternal(args);
+  return useWeekEventsQuery(args);
 }

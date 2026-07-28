@@ -16,6 +16,13 @@ import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const { handleError } = await import("@web/common/utils/event/event.util");
 
+function createServerError(status = Status.INTERNAL_SERVER): ApiError {
+  const error = new Error(`Request failed with status ${status}`) as ApiError;
+  error.name = "ApiError";
+  error.response = { status } as ApiResponse<unknown>;
+  return error;
+}
+
 describe("handleError", () => {
   let consoleErrorSpy: ReturnType<typeof spyOn>;
   const { port, mocks } = createTestToastPort();
@@ -44,9 +51,7 @@ describe("handleError", () => {
   it("logs once and does not reload on a server error", () => {
     // Carries a `response` like a real 500 from `createApiError`: backend
     // availability is judged on the response status, not the message text.
-    const error = new Error("Request failed with status 500") as ApiError;
-    error.name = "ApiError";
-    error.response = { status: Status.INTERNAL_SERVER } as ApiResponse<unknown>;
+    const error = createServerError();
 
     handleError(error);
 
@@ -63,10 +68,7 @@ describe("handleError", () => {
 
   it("does not stack a second catchall toast while one is already visible", () => {
     mocks.isActive.mockReturnValue(true);
-
-    const error = new Error("Request failed with status 500") as ApiError;
-    error.name = "ApiError";
-    error.response = { status: Status.INTERNAL_SERVER } as ApiResponse<unknown>;
+    const error = createServerError();
 
     handleError(error);
     handleError(error);
@@ -79,8 +81,7 @@ describe("handleError", () => {
     // "unavailable"), and it's retryable, so the user just needs a nudge. It
     // must not console.error - otherwise every transient provider hiccup
     // becomes a fresh error-tracking issue via capture_console_errors.
-    const error = new Error("Request failed with status 502") as ApiError;
-    error.name = "ApiError";
+    const error = createServerError(502);
     error.response = {
       status: 502,
       data: {

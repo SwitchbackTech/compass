@@ -192,6 +192,12 @@ const isRetryableMutationError = (error: Error): boolean => {
   return parsed.success && parsed.data.retryable;
 };
 
+const CATCHALL_TOAST_MESSAGE =
+  "Something went wrong behind the scenes. Please try again later.";
+
+const showCatchallToast = (message: string) =>
+  showErrorToast(message, { toastId: GENERIC_ERROR_TOAST_ID });
+
 export const handleError = (error: Error) => {
   if (isBackendUnavailableError(error)) {
     return;
@@ -206,24 +212,18 @@ export const handleError = (error: Error) => {
 
   if (isRetryableMutationError(error)) {
     // Expected transient failure: nudge the user to retry without logging it.
-    showErrorToast(
-      "Something went wrong behind the scenes. Please try again later.",
-      { toastId: GENERIC_ERROR_TOAST_ID },
-    );
+    showCatchallToast(CATCHALL_TOAST_MESSAGE);
     return;
   }
 
   console.error(error);
 
   if (code === Status.INTERNAL_SERVER) {
-    showErrorToast(
-      "Something went wrong behind the scenes. Please try again later.",
-      { toastId: GENERIC_ERROR_TOAST_ID },
-    );
+    showCatchallToast(CATCHALL_TOAST_MESSAGE);
     return;
   }
 
-  showErrorToast(error.message, { toastId: GENERIC_ERROR_TOAST_ID });
+  showCatchallToast(error.message);
 };
 
 export const isEventInRange = (
