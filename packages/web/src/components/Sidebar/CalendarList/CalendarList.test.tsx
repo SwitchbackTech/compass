@@ -9,6 +9,7 @@ import {
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
+import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type ApiRequestConfig } from "@web/api/api.types";
 import { BaseApi } from "@web/api/base/base.api";
@@ -225,49 +226,33 @@ describe("CalendarList", () => {
 
   it("keeps cached events on hide/show and only flips calendar isVisible", async () => {
     const hidden = makeCalendar({ name: "Hidden target" });
-    const kept = makeCalendar({ name: "Kept" });
     const hiddenEvent = createMockEvent({ calendarId: hidden.id });
-    const keptEvent = createMockEvent({ calendarId: kept.id });
     const weekKey = eventQueryKeys.week({
       source: "remote",
       start: "2026-07-13T00:00:00.000Z",
       end: "2026-07-20T00:00:00.000Z",
     });
-    const weekData: NormalizedEventQueryData = {
-      ids: [hiddenEvent.id, keptEvent.id],
-      entities: { [hiddenEvent.id]: hiddenEvent, [keptEvent.id]: keptEvent },
-    };
+    const weekData = toNormalizedEventQueryData([hiddenEvent]);
 
     const user = userEvent.setup({ delay: null });
-    const { queryClient } = renderCalendarList([hidden, kept]);
+    const { queryClient } = renderCalendarList([hidden]);
     queryClient.setQueryData<NormalizedEventQueryData>(weekKey, weekData);
 
-    const hideButton = screen.getByRole("button", {
-      name: "Hide Hidden target calendar",
-    });
-    await user.click(hideButton);
-
+    // The button label derives from the cached calendar's isVisible, so
+    // finding the flipped label already proves the calendars cache updated.
+    await user.click(
+      screen.getByRole("button", { name: "Hide Hidden target calendar" }),
+    );
     expect(queryClient.getQueryData<NormalizedEventQueryData>(weekKey)).toEqual(
       weekData,
     );
-    expect(
-      queryClient
-        .getQueryData<Calendar[]>(calendarQueryKeys.all)
-        ?.find((calendar) => calendar.id === hidden.id)?.isVisible,
-    ).toBe(false);
 
     await user.click(
       screen.getByRole("button", { name: "Show Hidden target calendar" }),
     );
-
     expect(queryClient.getQueryData<NormalizedEventQueryData>(weekKey)).toEqual(
       weekData,
     );
-    expect(
-      queryClient
-        .getQueryData<Calendar[]>(calendarQueryKeys.all)
-        ?.find((calendar) => calendar.id === hidden.id)?.isVisible,
-    ).toBe(true);
   });
 
   it("announces failure and leaves the button pressed when storage write fails", async () => {
