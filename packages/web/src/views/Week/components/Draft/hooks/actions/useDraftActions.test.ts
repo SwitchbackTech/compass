@@ -16,6 +16,7 @@ import {
 import {
   type Activity_DraftEvent,
   draftActions,
+  useDraftStore,
 } from "@web/events/stores/draft.store";
 import { CROSS_ROW_TIMED_DURATION_MIN } from "@web/grid/interaction/math/cross-row.drag";
 import {
@@ -145,6 +146,7 @@ const createState = (
   draft: createEditDraft(),
   dragOffset: { x: 0, y: 0 },
   dragStatus: null,
+  gestureOriginDraft: null,
   isDragging: false,
   isFormOpen: true,
   isFormOpenBeforeDragging: null,
@@ -157,9 +159,9 @@ const createSetters = (
   overrides: Partial<Setters_Draft> = {},
 ): Setters_Draft => ({
   setDateBeingChanged: mock(),
-  setDraft: mock(),
   setDragOffset: mock(),
   setDragStatus: mock(),
+  setGestureOriginDraft: mock(),
   setIsDragging: mock(),
   setIsFormOpen: mock(),
   setIsFormOpenBeforeDragging: mock(),
@@ -221,13 +223,25 @@ const setDraftActivity = (
     isDrafting: true,
     isFormOpen: false,
   };
+  const existing = useDraftStore.getState();
+  useDraftStore.setState({
+    gridDraft: existing.gridDraft,
+    status: {
+      activity,
+      dateToResize: null,
+      eventType,
+      isDrafting: true,
+      isFormOpen: false,
+    },
+  });
 };
+
+const readStoreDraft = () => useDraftStore.getState().gridDraft;
 
 const renderDraftActions = (
   draft: GridEventDraft,
   stateOverrides: Partial<State_Draft_Local> = {},
 ) => {
-  const setDraft = mock();
   const setDragOffset = mock();
   const setDragStatus = mock();
   currentState.events!.draft = {
@@ -240,29 +254,24 @@ const renderDraftActions = (
     () =>
       useDraftActions(
         createState({ draft, ...stateOverrides }),
-        createSetters({ setDraft, setDragOffset, setDragStatus }),
+        createSetters({ setDragOffset, setDragStatus }),
         dateCalcs,
         weekProps,
       ),
     { wrapper },
   );
 
-  setDraft.mockClear();
   setDragOffset.mockClear();
   setDragStatus.mockClear();
 
-  return { result, setDraft, setDragOffset, setDragStatus };
+  return { result, setDragOffset, setDragStatus };
 };
 
-const expectDraftRange = (
-  setDraft: ReturnType<typeof mock>,
-  startDate: string,
-  endDate: string,
-) => {
-  const nextDraft = setDraft.mock.calls[0]?.[0] as GridEventDraft;
-
-  expect(dayjs(nextDraft.values.schedule.start).isSame(startDate)).toBe(true);
-  expect(dayjs(nextDraft.values.schedule.end).isSame(endDate)).toBe(true);
+const expectDraftRange = (startDate: string, endDate: string) => {
+  const nextDraft = readStoreDraft();
+  expect(nextDraft).not.toBeNull();
+  expect(dayjs(nextDraft!.values.schedule.start).isSame(startDate)).toBe(true);
+  expect(dayjs(nextDraft!.values.schedule.end).isSame(endDate)).toBe(true);
 };
 
 describe("useDraftActions", () => {
@@ -278,29 +287,29 @@ describe("useDraftActions", () => {
         isFormOpen: false,
       },
     };
+    draftActions.discard();
+    draftActions.setGridDraft(draft);
   });
 
   it("moves a shortcut-created timed draft by keyboard while preserving duration", () => {
     setDraftActivity("createShortcut");
-    const { result, setDraft } = renderDraftActions(
+    const { result } = renderDraftActions(
       createNewDraft({
         start: "2024-01-16T10:00:00.000Z",
         end: "2024-01-16T11:00:00.000Z",
       }),
     );
 
+    const before = readStoreDraft();
     result.current.repositionDraftByKeyboard("ArrowDown");
 
-    expectDraftRange(
-      setDraft,
-      "2024-01-16T10:15:00.000Z",
-      "2024-01-16T11:15:00.000Z",
-    );
+    expectDraftRange("2024-01-16T10:15:00.000Z", "2024-01-16T11:15:00.000Z");
+    expect(readStoreDraft()).not.toBe(before);
   });
 
   it("moves a mouse-created timed draft by keyboard while preserving duration", () => {
     setDraftActivity("gridClick");
-    const { result, setDraft } = renderDraftActions(
+    const { result } = renderDraftActions(
       createNewDraft({
         start: "2024-01-16T10:00:00.000Z",
         end: "2024-01-16T11:00:00.000Z",
@@ -309,16 +318,12 @@ describe("useDraftActions", () => {
 
     result.current.repositionDraftByKeyboard("ArrowDown");
 
-    expectDraftRange(
-      setDraft,
-      "2024-01-16T10:15:00.000Z",
-      "2024-01-16T11:15:00.000Z",
-    );
+    expectDraftRange("2024-01-16T10:15:00.000Z", "2024-01-16T11:15:00.000Z");
   });
 
   it("moves a clicked existing timed event draft by keyboard", () => {
     setDraftActivity("gridClick");
-    const { result, setDraft } = renderDraftActions(
+    const { result } = renderDraftActions(
       createEditDraft({
         start: "2024-01-16T10:00:00.000Z",
         end: "2024-01-16T11:00:00.000Z",
@@ -327,16 +332,12 @@ describe("useDraftActions", () => {
 
     result.current.repositionDraftByKeyboard("ArrowLeft");
 
-    expectDraftRange(
-      setDraft,
-      "2024-01-15T10:00:00.000Z",
-      "2024-01-15T11:00:00.000Z",
-    );
+    expectDraftRange("2024-01-15T10:00:00.000Z", "2024-01-15T11:00:00.000Z");
   });
 
   it("moves a keyboard-opened existing timed event draft by keyboard", () => {
     setDraftActivity("keyboardEdit");
-    const { result, setDraft } = renderDraftActions(
+    const { result } = renderDraftActions(
       createEditDraft({
         start: "2024-01-16T10:00:00.000Z",
         end: "2024-01-16T11:00:00.000Z",
@@ -345,30 +346,30 @@ describe("useDraftActions", () => {
 
     result.current.repositionDraftByKeyboard("ArrowRight");
 
-    expectDraftRange(
-      setDraft,
-      "2024-01-17T10:00:00.000Z",
-      "2024-01-17T11:00:00.000Z",
-    );
+    expectDraftRange("2024-01-17T10:00:00.000Z", "2024-01-17T11:00:00.000Z");
   });
 
   it("does not move a timed draft past midnight", () => {
     setDraftActivity("createShortcut");
-    const { result, setDraft } = renderDraftActions(
-      createNewDraft({
-        start: "2024-01-16T23:00:00.000Z",
-        end: "2024-01-17T00:00:00.000Z",
-      }),
-    );
+    const draft = createNewDraft({
+      start: "2024-01-16T23:00:00.000Z",
+      end: "2024-01-17T00:00:00.000Z",
+    });
+    const { result } = renderDraftActions(draft);
 
     result.current.repositionDraftByKeyboard("ArrowDown");
 
-    expect(setDraft).not.toHaveBeenCalled();
+    expect(readStoreDraft()).toBe(useDraftStore.getState().gridDraft);
+    expect(
+      dayjs(readStoreDraft()!.values.schedule.start).isSame(
+        draft.values.schedule.start,
+      ),
+    ).toBe(true);
   });
 
   it("moves a clicked existing all-day event draft horizontally and ignores vertical arrows", () => {
     setDraftActivity("gridClick", Categories_Event.ALLDAY);
-    const { result, setDraft } = renderDraftActions(
+    const { result } = renderDraftActions(
       createEditDraft({
         isAllDay: true,
         start: "2024-01-16T00:00:00.000Z",
@@ -378,21 +379,17 @@ describe("useDraftActions", () => {
 
     result.current.repositionDraftByKeyboard("ArrowRight");
 
-    expectDraftRange(
-      setDraft,
-      "2024-01-17T00:00:00.000Z",
-      "2024-01-18T00:00:00.000Z",
-    );
+    expectDraftRange("2024-01-17T00:00:00.000Z", "2024-01-18T00:00:00.000Z");
 
-    setDraft.mockClear();
+    const afterHorizontal = readStoreDraft();
     result.current.repositionDraftByKeyboard("ArrowDown");
 
-    expect(setDraft).not.toHaveBeenCalled();
+    expect(readStoreDraft()).toBe(afterHorizontal);
   });
 
   it("moves a shortcut-created all-day draft horizontally and ignores vertical arrows", () => {
     setDraftActivity("createShortcut", Categories_Event.ALLDAY);
-    const { result, setDraft } = renderDraftActions(
+    const { result } = renderDraftActions(
       createNewDraft({
         isAllDay: true,
         start: "2024-01-16T00:00:00.000Z",
@@ -402,16 +399,12 @@ describe("useDraftActions", () => {
 
     result.current.repositionDraftByKeyboard("ArrowRight");
 
-    expectDraftRange(
-      setDraft,
-      "2024-01-17T00:00:00.000Z",
-      "2024-01-18T00:00:00.000Z",
-    );
+    expectDraftRange("2024-01-17T00:00:00.000Z", "2024-01-18T00:00:00.000Z");
 
-    setDraft.mockClear();
+    const afterHorizontal = readStoreDraft();
     result.current.repositionDraftByKeyboard("ArrowDown");
 
-    expect(setDraft).not.toHaveBeenCalled();
+    expect(readStoreDraft()).toBe(afterHorizontal);
   });
 
   // A live drag-create must not turn into a local resize: `resize()` freezes
@@ -457,22 +450,21 @@ describe("useDraftActions", () => {
       start: "2024-01-16T00:00:00.000Z",
       end: "2024-01-17T00:00:00.000Z",
     });
-    const { result, setDraft, setDragOffset, setDragStatus } =
-      renderDraftActions(draft, {
-        isDragging: true,
-        dragOffset: { x: 10, y: 5 },
-        dragStatus: { durationMin: 24 * 60 },
-      });
+    const { result, setDragOffset, setDragStatus } = renderDraftActions(draft, {
+      isDragging: true,
+      dragOffset: { x: 10, y: 5 },
+      dragStatus: { durationMin: 24 * 60 },
+    });
 
     act(() => {
       result.current.drag({ clientX: 100, clientY: 200 });
     });
 
-    const nextDraft = setDraft.mock.calls[0]?.[0] as GridEventDraft;
-    expect(nextDraft.values.schedule.kind).toBe("timed");
+    const nextDraft = readStoreDraft();
+    expect(nextDraft!.values.schedule.kind).toBe("timed");
     expect(
-      dayjs(nextDraft.values.schedule.end).diff(
-        nextDraft.values.schedule.start,
+      dayjs(nextDraft!.values.schedule.end).diff(
+        nextDraft!.values.schedule.start,
         "minutes",
       ),
     ).toBe(CROSS_ROW_TIMED_DURATION_MIN);
@@ -488,7 +480,7 @@ describe("useDraftActions", () => {
       start: "2024-01-16T00:00:00.000Z",
       end: "2024-01-17T00:00:00.000Z",
     });
-    const { result, setDraft } = renderDraftActions(draft, {
+    const { result } = renderDraftActions(draft, {
       isDragging: true,
       dragOffset: { x: 8, y: 4 },
       dragStatus: { durationMin: 24 * 60, hasMoved: false },
@@ -498,9 +490,9 @@ describe("useDraftActions", () => {
       result.current.drag({ clientX: 200, clientY: 180 });
     });
 
-    const nextDraft = setDraft.mock.calls[0]?.[0] as GridEventDraft;
-    expect(nextDraft.kind).toBe("edit");
-    expect(nextDraft.values.schedule.kind).toBe("timed");
+    const nextDraft = readStoreDraft();
+    expect(nextDraft!.kind).toBe("edit");
+    expect(nextDraft!.values.schedule.kind).toBe("timed");
   });
 
   it("converts on drag start when the pointer is already over the timed grid", () => {
@@ -511,7 +503,7 @@ describe("useDraftActions", () => {
       start: "2024-01-16T00:00:00.000Z",
       end: "2024-01-17T00:00:00.000Z",
     });
-    const { result, setDraft } = renderDraftActions(draft, {
+    const { result } = renderDraftActions(draft, {
       isDragging: false,
       dragOffset: { x: 0, y: 0 },
       dragStatus: { durationMin: 24 * 60 },
@@ -524,11 +516,11 @@ describe("useDraftActions", () => {
       );
     });
 
-    const nextDraft = setDraft.mock.calls[0]?.[0] as GridEventDraft;
-    expect(nextDraft.values.schedule.kind).toBe("timed");
+    const nextDraft = readStoreDraft();
+    expect(nextDraft!.values.schedule.kind).toBe("timed");
     expect(
-      dayjs(nextDraft.values.schedule.end).diff(
-        nextDraft.values.schedule.start,
+      dayjs(nextDraft!.values.schedule.end).diff(
+        nextDraft!.values.schedule.start,
         "minutes",
       ),
     ).toBe(CROSS_ROW_TIMED_DURATION_MIN);

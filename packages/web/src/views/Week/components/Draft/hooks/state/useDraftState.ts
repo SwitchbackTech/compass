@@ -1,6 +1,10 @@
 import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
+import {
+  draftActions,
+  selectGridDraft,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { lockGlobalCursor } from "@web/interaction/dom/cursor.lock";
 
 export interface Status_Drag {
@@ -19,12 +23,22 @@ export interface DragOffset {
 
 export interface State_Draft_Local {
   dateBeingChanged: "startDate" | "endDate" | null;
+  /** Canonical draft values from Zustand — sole owner for portal and form. */
   draft: GridEventDraft | null;
   dragOffset: DragOffset;
   dragStatus: Status_Drag | null;
+  /**
+   * Snapshot of the draft at resize-gesture start. Resize math freezes against
+   * this so live store updates mid-gesture do not shift the baseline.
+   */
+  gestureOriginDraft: GridEventDraft | null;
   isDragging: boolean;
   isResizing: boolean;
   isFormOpen: boolean;
+  /**
+   * Gesture policy: whether the form was open when drag began. Used by submit
+   * to reopen the form instead of persisting; not a second draft copy.
+   */
   isFormOpenBeforeDragging: boolean | null;
   resizeStatus: Status_Resize | null;
 }
@@ -32,9 +46,9 @@ export interface State_Draft_Local {
 export interface Setters_Draft {
   setIsDragging: (value: boolean) => void;
   setIsResizing: (value: boolean) => void;
-  setDraft: Dispatch<SetStateAction<GridEventDraft | null>>;
   setDragOffset: Dispatch<SetStateAction<DragOffset>>;
   setDragStatus: Dispatch<SetStateAction<Status_Drag | null>>;
+  setGestureOriginDraft: Dispatch<SetStateAction<GridEventDraft | null>>;
   setResizeStatus: (value: Status_Resize | null) => void;
   setDateBeingChanged: (value: "startDate" | "endDate" | null) => void;
   setIsFormOpen: (value: boolean) => void;
@@ -57,15 +71,17 @@ export const useDraftState = () => {
 
     return lockGlobalCursor("move");
   }, [isDragging]);
-  const [draft, setDraft] = useState<GridEventDraft | null>(null);
+
   // Mid-drag cursor-offset (pixels between the pointer and the dragged
-  // event's origin), populated only while a mouse-drag is active. Kept as a
-  // sibling to `draft` rather than folded into it: `GridEventDraft` is the
-  // persisted-shape contract (dates + form fields) and has no grid-layout
+  // event's origin), populated only while a mouse-drag is active. Kept as
+  // gesture ephemera rather than folded into the draft: `GridEventDraft` is
+  // the persisted-shape contract (dates + form fields) and has no grid-layout
   // concept of a cursor offset.
   const [dragOffset, setDragOffset] = useState<DragOffset>(ZERO_DRAG_OFFSET);
   const [dragStatus, setDragStatus] = useState<Status_Drag | null>(null);
   const [resizeStatus, setResizeStatus] = useState<Status_Resize | null>(null);
+  const [gestureOriginDraft, setGestureOriginDraft] =
+    useState<GridEventDraft | null>(null);
   const [dateBeingChanged, setDateBeingChanged] = useState<
     "startDate" | "endDate" | null
   >("endDate");
@@ -81,10 +97,13 @@ export const useDraftState = () => {
     boolean | null
   >(null);
 
+  const draft = useDraftStore(selectGridDraft);
+
   const state: State_Draft_Local = {
     draft,
     dragOffset,
     dragStatus,
+    gestureOriginDraft,
     isDragging,
     isFormOpen,
     isResizing,
@@ -96,9 +115,9 @@ export const useDraftState = () => {
   const setters: Setters_Draft = {
     setIsDragging,
     setIsResizing,
-    setDraft,
     setDragOffset,
     setDragStatus,
+    setGestureOriginDraft,
     setResizeStatus,
     setDateBeingChanged,
     setIsFormOpen,

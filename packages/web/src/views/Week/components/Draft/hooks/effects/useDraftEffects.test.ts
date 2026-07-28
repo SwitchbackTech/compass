@@ -39,6 +39,7 @@ const createState = (
   draft: createDraft(),
   dragOffset: { x: 0, y: 0 },
   dragStatus: { durationMin: 60, hasMoved: true },
+  gestureOriginDraft: null,
   isDragging: true,
   isFormOpen: false,
   isFormOpenBeforeDragging: null,
@@ -51,9 +52,9 @@ const createSetters = (
   overrides: Partial<Setters_Draft> = {},
 ): Setters_Draft => ({
   setDateBeingChanged: mock(),
-  setDraft: mock(),
   setDragOffset: mock(),
   setDragStatus: mock(),
+  setGestureOriginDraft: mock(),
   setIsDragging: mock(),
   setIsFormOpen: mock(),
   setIsFormOpenBeforeDragging: mock(),
