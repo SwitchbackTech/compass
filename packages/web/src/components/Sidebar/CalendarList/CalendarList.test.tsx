@@ -223,7 +223,7 @@ describe("CalendarList", () => {
     expect(isCalendarHidden(calendarB.id)).toBe(true);
   });
 
-  it("removes the hidden calendar's events from a cached week query immediately on toggle-off", async () => {
+  it("keeps cached events on hide/show and only flips calendar isVisible", async () => {
     const hidden = makeCalendar({ name: "Hidden target" });
     const kept = makeCalendar({ name: "Kept" });
     const hiddenEvent = createMockEvent({ calendarId: hidden.id });
@@ -233,22 +233,41 @@ describe("CalendarList", () => {
       start: "2026-07-13T00:00:00.000Z",
       end: "2026-07-20T00:00:00.000Z",
     });
+    const weekData: NormalizedEventQueryData = {
+      ids: [hiddenEvent.id, keptEvent.id],
+      entities: { [hiddenEvent.id]: hiddenEvent, [keptEvent.id]: keptEvent },
+    };
 
     const user = userEvent.setup({ delay: null });
     const { queryClient } = renderCalendarList([hidden, kept]);
-    queryClient.setQueryData<NormalizedEventQueryData>(weekKey, {
-      ids: [hiddenEvent.id, keptEvent.id],
-      entities: { [hiddenEvent.id]: hiddenEvent, [keptEvent.id]: keptEvent },
+    queryClient.setQueryData<NormalizedEventQueryData>(weekKey, weekData);
+
+    const hideButton = screen.getByRole("button", {
+      name: "Hide Hidden target calendar",
     });
+    await user.click(hideButton);
+
+    expect(queryClient.getQueryData<NormalizedEventQueryData>(weekKey)).toEqual(
+      weekData,
+    );
+    expect(
+      queryClient
+        .getQueryData<Calendar[]>(calendarQueryKeys.all)
+        ?.find((calendar) => calendar.id === hidden.id)?.isVisible,
+    ).toBe(false);
 
     await user.click(
-      screen.getByRole("button", { name: "Hide Hidden target calendar" }),
+      screen.getByRole("button", { name: "Show Hidden target calendar" }),
     );
 
-    const cached = queryClient.getQueryData<NormalizedEventQueryData>(weekKey);
-    expect(cached?.ids).toEqual([keptEvent.id]);
-    expect(cached?.entities[hiddenEvent.id]).toBeUndefined();
-    expect(cached?.entities[keptEvent.id]).toBeDefined();
+    expect(queryClient.getQueryData<NormalizedEventQueryData>(weekKey)).toEqual(
+      weekData,
+    );
+    expect(
+      queryClient
+        .getQueryData<Calendar[]>(calendarQueryKeys.all)
+        ?.find((calendar) => calendar.id === hidden.id)?.isVisible,
+    ).toBe(true);
   });
 
   it("announces failure and leaves the button pressed when storage write fails", async () => {
