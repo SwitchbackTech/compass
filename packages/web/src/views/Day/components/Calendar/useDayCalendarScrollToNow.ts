@@ -1,7 +1,9 @@
 import { type RefObject, useCallback, useEffect } from "react";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
-import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
-import { TIMED_VISIBLE_HOURS } from "@web/grid/grid.constants";
+import {
+  getCurrentMinute,
+  getMinuteHeight,
+} from "@web/common/utils/grid/grid.util";
 
 export const useDayCalendarScrollToNow = (
   mainGridRef: RefObject<HTMLElement | null>,
@@ -10,7 +12,7 @@ export const useDayCalendarScrollToNow = (
     const timedGrid = mainGridRef.current;
     if (!timedGrid) return;
 
-    const minuteHeight = timedGrid.clientHeight / TIMED_VISIBLE_HOURS / 60;
+    const minuteHeight = getMinuteHeight(timedGrid.clientHeight);
     timedGrid.scroll({
       behavior: "smooth",
       top: getCurrentMinute() * minuteHeight - 150,

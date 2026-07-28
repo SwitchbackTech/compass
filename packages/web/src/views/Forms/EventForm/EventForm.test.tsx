@@ -11,6 +11,7 @@ import {
 } from "@web/__tests__/render-with-store";
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { Categories_Event } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
@@ -22,7 +23,7 @@ import {
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type Props as DateTimeSectionProps } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DateTimeSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 type CapturedDateTimeSectionProps = Pick<
   DateTimeSectionProps,
@@ -604,12 +605,10 @@ describe("EventForm", () => {
     // means the grid is scrolled to 1pm (780 minutes from midnight) -
     // well past the 9am default this test exists to disprove.
     const fakeGrid = document.createElement("section");
+    fakeGrid.id = ID_GRID_MAIN;
     Object.defineProperty(fakeGrid, "clientHeight", { value: 780 });
     fakeGrid.scrollTop = 780;
-    const getElementByIdSpy = spyOn(
-      document,
-      "getElementById",
-    ).mockImplementation((id: string) => (id === "mainGrid" ? fakeGrid : null));
+    document.body.appendChild(fakeGrid);
 
     function Harness() {
       const [draft, setDraft] = useState<GridEventDraft | null>(
@@ -637,8 +636,6 @@ describe("EventForm", () => {
     act(() => capturedDateControlsSectionProps?.onToggleAllDay(false));
 
     await user.click(screen.getByRole("button", { name: "Save" }));
-
-    getElementByIdSpy.mockRestore();
 
     const savedDraft = onSubmit.mock.calls[0]?.[0] as GridEventDraft;
     expect(savedDraft.values.schedule).toMatchObject({ kind: "timed" });

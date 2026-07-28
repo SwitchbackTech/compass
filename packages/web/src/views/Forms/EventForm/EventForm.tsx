@@ -18,10 +18,7 @@ import {
   isEventReadOnly,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
-import {
-  ID_EVENT_FORM,
-  ID_GRID_MAIN,
-} from "@web/common/constants/web.constants";
+import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { useEventPalette } from "@web/common/styles/theme.util";
 import { type SelectOption } from "@web/common/types/component.types";
 import { Categories_Event } from "@web/common/types/web.event.types";
@@ -29,12 +26,11 @@ import {
   getTimeOptionByValue,
   mapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
+import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
 import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
 } from "@web/common/utils/form/form.util";
-import { getElemById } from "@web/common/utils/grid/grid.util";
-import { roundToNext } from "@web/common/utils/round/round.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
   Focusable,
@@ -49,7 +45,6 @@ import {
 } from "@web/events/grid-event-draft.adapter";
 import { BUSY_EVENT_TITLE } from "@web/events/queries/event.view-model";
 import { useEventById } from "@web/events/queries/useEventById";
-import { GRID_TIME_STEP, TIMED_VISIBLE_HOURS } from "@web/grid/grid.constants";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
@@ -141,24 +136,6 @@ const handleEventFormDelete = ({
 };
 
 const DEFAULT_TIMED_START_HOUR = 9; // fallback when the grid can't be measured
-const VISIBLE_START_MARGIN_MIN = 30; // keep the draft off the very top edge of the viewport
-
-// Timed grid only ever shows TIMED_VISIBLE_HOURS of the 24hr day at once, so
-// an all-day->timed conversion needs to land inside whatever's scrolled into
-// view right now, not at a fixed hour that may be scrolled off-screen.
-const getVisibleGridStartMinute = (): number | null => {
-  const grid = getElemById(ID_GRID_MAIN);
-  if (!grid || grid.clientHeight === 0) return null;
-
-  const minuteHeight = grid.clientHeight / TIMED_VISIBLE_HOURS / 60;
-  const visibleStartMinute = grid.scrollTop / minuteHeight;
-  const snapped = roundToNext(
-    visibleStartMinute + VISIBLE_START_MARGIN_MIN,
-    GRID_TIME_STEP,
-  );
-
-  return Math.min(Math.max(snapped, 0), 23 * 60);
-};
 
 const scheduleDateStrings = (draft: GridEventDraft) => {
   const { schedule } = draft.values;
@@ -496,13 +473,11 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         return;
       }
 
-      const visibleStartMinute = getVisibleGridStartMinute();
-      const timedStart =
-        visibleStartMinute === null
-          ? dayjs(selectedStartDate).hour(DEFAULT_TIMED_START_HOUR).minute(0)
-          : dayjs(selectedStartDate)
-              .startOf("day")
-              .add(visibleStartMinute, "minute");
+      const startMinute =
+        getVisibleGridStartMinute() ?? DEFAULT_TIMED_START_HOUR * 60;
+      const timedStart = dayjs(selectedStartDate)
+        .startOf("day")
+        .add(startMinute, "minute");
       const timedEnd = timedStart.add(1, "hour");
       const nextStartTime = getTimeOptionByValue(timedStart);
       const nextEndTime = getTimeOptionByValue(timedEnd);

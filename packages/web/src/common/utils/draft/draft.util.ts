@@ -3,8 +3,9 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
+  ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import { getElemById } from "@web/common/utils/grid/grid.util";
+import { getElemById, getMinuteHeight } from "@web/common/utils/grid/grid.util";
 import { roundToNext } from "@web/common/utils/round/round.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
@@ -14,6 +15,10 @@ import {
 import { draftActions } from "@web/events/stores/draft.store";
 import { GRID_TIME_STEP } from "@web/grid/grid.constants";
 import { isDraftRenderedInAllDayRow } from "@web/grid/layout/all-day-draft.position";
+
+// Keeps a newly-timed event off the very top edge of the scrolled-in
+// viewport rather than glued flush against it.
+const VISIBLE_START_MARGIN_MIN = 30;
 
 export const createTimedDraft = (
   isCurrentWeek: boolean,
@@ -68,6 +73,25 @@ export const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
   const endDate = _end.format();
 
   return { startDate, endDate };
+};
+
+// Timed grid only ever shows a fraction of the 24hr day at once, so a
+// draft that needs a visible default time (e.g. converting all-day->timed)
+// should land inside whatever's currently scrolled into view, not at a
+// fixed hour that may be scrolled off-screen. Returns minutes-from-midnight,
+// or null when the grid isn't mounted/measurable yet.
+export const getVisibleGridStartMinute = (): number | null => {
+  const grid = getElemById(ID_GRID_MAIN);
+  if (!grid || grid.clientHeight === 0) return null;
+
+  const minuteHeight = getMinuteHeight(grid.clientHeight);
+  const visibleStartMinute = grid.scrollTop / minuteHeight;
+  const snapped = roundToNext(
+    visibleStartMinute + VISIBLE_START_MARGIN_MIN,
+    GRID_TIME_STEP,
+  );
+
+  return Math.min(Math.max(snapped, 0), 23 * 60);
 };
 
 export const getDraftContainer = (draft: GridEventDraft) =>
