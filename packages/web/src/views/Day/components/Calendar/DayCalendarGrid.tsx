@@ -25,7 +25,7 @@ import {
   selectGridDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { EventGrid } from "@web/grid/components/EventGrid";
+import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
 import { useAllDayDraftCreation } from "@web/grid/hooks/useAllDayDraftCreation";
 import { useGridCoordinates } from "@web/grid/hooks/useGridCoordinates";
 import { useGridMeasurements } from "@web/grid/hooks/useGridMeasurements";
@@ -76,9 +76,11 @@ export function DayCalendarGrid() {
     rowCount: allDayRowsCount,
     timedEvents,
   } = useDayEventViewModel(dayEventQueryRange(dateInView));
-  // First load uses isPending; Retry uses isFetching so the overlay gives
-  // feedback instead of looking like a no-op when the refetch also fails.
-  const isLoadingEvents = isPending || (isErrorEvents && isFetching);
+  const isLoadingEvents = isEventGridLoading(
+    isPending,
+    isErrorEvents,
+    isFetching,
+  );
   const {
     calendarColumnIndexById,
     displayedAllDayEvents,

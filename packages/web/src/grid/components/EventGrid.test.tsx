@@ -4,7 +4,7 @@ import { type RefCallback } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
-import { EventGrid } from "./EventGrid";
+import { EventGrid, isEventGridLoading } from "./EventGrid";
 
 const createGridRefs = () => ({
   allDayColumnsRef: { current: null },
@@ -130,7 +130,7 @@ describe("EventGrid", () => {
 
     render(
       <EventGrid
-        allDayEventsLayer={<div data-testid="timed-underlay" />}
+        allDayEventsLayer={<div />}
         gridRefs={createGridRefs()}
         isErrorEvents
         onAllDayMouseDown={mock()}
@@ -182,5 +182,12 @@ describe("EventGrid", () => {
     expect(
       screen.getByRole("status", { name: "Loading events" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows the loader for first load and for retry after error", () => {
+    expect(isEventGridLoading(true, false, false)).toBe(true);
+    expect(isEventGridLoading(false, true, true)).toBe(true);
+    expect(isEventGridLoading(false, true, false)).toBe(false);
+    expect(isEventGridLoading(false, false, true)).toBe(false);
   });
 });

@@ -76,10 +76,9 @@ export const EventGrid: FC<EventGridProps> = ({
         className="pointer-events-none bg-background [&>div]:my-0"
         role="status"
       />
-    )}{" "}
+    )}
     {isErrorEvents && !isLoadingEvents && (
       <div
-        aria-live="assertive"
         className="absolute inset-0 z-20 flex items-center justify-center bg-background px-4"
         role="alert"
       >
@@ -99,3 +98,12 @@ export const EventGrid: FC<EventGridProps> = ({
     )}
   </div>
 );
+
+/** First load, or a Retry refetch after failure — both should show the loader. */
+export function isEventGridLoading(
+  isPending: boolean,
+  isError: boolean,
+  isFetching: boolean,
+): boolean {
+  return isPending || (isError && isFetching);
+}

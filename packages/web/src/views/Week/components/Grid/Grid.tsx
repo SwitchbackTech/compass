@@ -2,7 +2,7 @@ import { type FC } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useWeekEventsQueryStatus } from "@web/events/queries/useWeekEventsQuery";
-import { EventGrid } from "@web/grid/components/EventGrid";
+import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
 import { AllDayRow } from "@web/views/Week/components/Grid/AllDayRow/AllDayRow";
 import { EdgeNavigationIndicators } from "@web/views/Week/components/Grid/MainGrid/EdgeNavigationIndicators/EdgeNavigationIndicators";
 import { MainGrid } from "@web/views/Week/components/Grid/MainGrid/MainGrid";
@@ -42,9 +42,11 @@ export const Grid: FC<Props> = ({
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
-  // First load uses isPending; Retry uses isFetching so the overlay gives
-  // feedback instead of looking like a no-op when the refetch also fails.
-  const isLoadingEvents = isPending || (isErrorEvents && isFetching);
+  const isLoadingEvents = isEventGridLoading(
+    isPending,
+    isErrorEvents,
+    isFetching,
+  );
 
   useDragEdgeNavigation(mainGridRef, weekProps);
 
