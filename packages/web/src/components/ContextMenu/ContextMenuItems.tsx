@@ -140,9 +140,9 @@ export function ContextMenuItemsView({
         );
       })}
       {!isReadOnly && (
-        <fieldset className="m-0 max-w-68 min-w-0 border-border border-t px-3 py-2">
+        <fieldset className="m-0 min-w-0 border-border border-t px-3 py-2">
           <legend className="sr-only">Event color</legend>
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="grid grid-cols-6 gap-1.5">
             {COLOR_OPTIONS.map((slot, colorIndex) => {
               const index = menuActions.length + colorIndex;
               const label = eventColorLabel(slot);
