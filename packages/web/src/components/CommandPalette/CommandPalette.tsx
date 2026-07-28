@@ -9,7 +9,7 @@ import {
 } from "@floating-ui/react";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { type SyncStatusVariant } from "@web/calendars/sync-status.types";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { eventCommandPaletteItems } from "@web/components/CommandPalette/event.cmd.constants";
@@ -89,6 +89,15 @@ const CommandPaletteContent = ({
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState<number | null>(0);
   const listRef = useRef<Array<HTMLElement | null>>([]);
+
+  // Clear leftover query when closed via any path (Escape, select, Mod+K
+  // toggle, sidebar) so the next open starts fresh.
+  useEffect(() => {
+    if (!open) {
+      setSearch("");
+      setActiveIndex(0);
+    }
+  }, [open]);
 
   // Focus the search input the moment it mounts (commit phase, like the
   // autoFocus attribute — but without tripping the a11y lint). Stable identity
