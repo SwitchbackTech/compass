@@ -9,7 +9,7 @@ import {
 } from "@floating-ui/react";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { type SyncStatusVariant } from "@web/calendars/sync-status.types";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { eventCommandPaletteItems } from "@web/components/CommandPalette/event.cmd.constants";
@@ -79,25 +79,16 @@ export function filterSections(
     .filter((section) => section.items.length > 0);
 }
 
+/** Mounted only while open so search/activeIndex reset on every reopen. */
 const CommandPaletteContent = ({
   placeholder,
   sections,
 }: CommandPaletteContentProps) => {
   const { syncStatus } = useCalendarSyncCmdItems();
-  const open = useSettingsStore(selectIsCmdPaletteOpen);
 
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState<number | null>(0);
   const listRef = useRef<Array<HTMLElement | null>>([]);
-
-  // Clear leftover query when closed via any path (Escape, select, Mod+K
-  // toggle, sidebar) so the next open starts fresh.
-  useEffect(() => {
-    if (!open) {
-      setSearch("");
-      setActiveIndex(0);
-    }
-  }, [open]);
 
   // Focus the search input the moment it mounts (commit phase, like the
   // autoFocus attribute — but without tripping the a11y lint). Stable identity
@@ -137,8 +128,6 @@ const CommandPaletteContent = ({
     role,
     listNav,
   ]);
-
-  if (!open) return null;
 
   let itemIndex = -1;
 
@@ -325,6 +314,8 @@ export const CommandPalette = ({
     ...getMoreCommandPaletteSections(currentView),
   ];
 
+  if (!open) return null;
+
   return (
     <CommandPaletteContent placeholder={placeholder} sections={sections} />
   );
@@ -335,8 +326,11 @@ export const LifeCommandPalette = ({
 }: {
   placeholder: string;
 }) => {
+  const open = useSettingsStore(selectIsCmdPaletteOpen);
   const navigate = useNavigate();
   const themeCmdItems = useThemeCmdItems();
+
+  if (!open) return null;
 
   return (
     <CommandPaletteContent
