@@ -16,6 +16,7 @@ import {
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import { setCalendarVisibility } from "@web/calendars/calendar-visibility.store";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import {
   DATA_TIMED_GRID_ROW,
@@ -310,6 +311,8 @@ afterEach(() => {
     delete (HTMLElement.prototype as { scroll?: unknown }).scroll;
   }
   resetDraft();
+  // Storage clearing + the hidden-ids store resync are both handled by the
+  // global test-lifecycle afterEach (resetBrowserState + resetAllStores).
 });
 
 describe("DayCalendarGrid", () => {
@@ -323,7 +326,10 @@ describe("DayCalendarGrid", () => {
   it("renders enabled calendars as separate event columns", () => {
     const primary = makeCalendar("Primary", { isPrimary: true });
     const projects = makeCalendar("Projects");
-    const hidden = makeCalendar("Hidden", { isVisible: false });
+    const hidden = makeCalendar("Hidden");
+    // isVisible is client-derived from the hidden-ids store now, not a field
+    // to seed directly on the fixture - see calendar-visibility.store.ts.
+    setCalendarVisibility(hidden.id, false);
     seededEvents = [
       createMockEvent({
         calendarId: primary.id,
@@ -378,11 +384,10 @@ describe("DayCalendarGrid", () => {
   });
 
   it("falls back to the primary calendar when every calendar is disabled", () => {
-    const primary = makeCalendar("Primary", {
-      isPrimary: true,
-      isVisible: false,
-    });
-    const disabled = makeCalendar("Disabled", { isVisible: false });
+    const primary = makeCalendar("Primary", { isPrimary: true });
+    const disabled = makeCalendar("Disabled");
+    setCalendarVisibility(primary.id, false);
+    setCalendarVisibility(disabled.id, false);
 
     renderDayCalendarGrid([disabled, primary]);
 

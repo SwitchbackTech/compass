@@ -15,7 +15,6 @@ import { type ApiRequestConfig } from "@web/api/api.types";
 import { BaseApi } from "@web/api/base/base.api";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { isCalendarHidden } from "@web/calendars/calendar-visibility.storage";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
@@ -133,7 +132,8 @@ describe("CalendarList", () => {
 
   afterEach(() => {
     BaseApi.defaults.adapter = undefined;
-    persistentBrowserStore.remove(STORAGE_KEYS.HIDDEN_CALENDAR_IDS);
+    // Storage clearing + the hidden-ids store resync are both handled by the
+    // global test-lifecycle afterEach (resetBrowserState + resetAllStores).
     mockUseSession.mockReturnValue({
       authenticated: false,
       setAuthenticated: () => {},
@@ -238,14 +238,18 @@ describe("CalendarList", () => {
     const { queryClient } = renderCalendarList([hidden]);
     queryClient.setQueryData<NormalizedEventQueryData>(weekKey, weekData);
 
-    // The button label derives from the cached calendar's isVisible, so
-    // finding the flipped label already proves the calendars cache updated.
-    await user.click(
-      screen.getByRole("button", { name: "Hide Hidden target calendar" }),
-    );
+    const hideButton = screen.getByRole("button", {
+      name: "Hide Hidden target calendar",
+    });
+    await user.click(hideButton);
+
+    // Visibility now lives in the client-owned hidden-ids store (derived by
+    // the calendars query's `select`), not hand-patched onto the raw cache -
+    // event queries are untouched either way.
     expect(queryClient.getQueryData<NormalizedEventQueryData>(weekKey)).toEqual(
       weekData,
     );
+    expect(isCalendarHidden(hidden.id)).toBe(true);
 
     await user.click(
       screen.getByRole("button", { name: "Show Hidden target calendar" }),
@@ -253,6 +257,7 @@ describe("CalendarList", () => {
     expect(queryClient.getQueryData<NormalizedEventQueryData>(weekKey)).toEqual(
       weekData,
     );
+    expect(isCalendarHidden(hidden.id)).toBe(false);
   });
 
   it("announces failure and leaves the button pressed when storage write fails", async () => {

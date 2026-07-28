@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
+import { subscribeToStorageKey } from "@web/common/utils/external-store.util";
 import { clearGoogleRevokedState } from "../../google/state/google.auth.state";
 
 export const AuthStateSchema = z.object({
@@ -146,23 +147,10 @@ export function shouldShowAnonymousCalendarChangeSignUpPrompt(): boolean {
 
 export function subscribeToAuthState(listener: () => void): () => void {
   authStateListeners.add(listener);
-
-  if (typeof window === "undefined") {
-    return () => {
-      authStateListeners.delete(listener);
-    };
-  }
-
-  const handleStorage = (event: StorageEvent) => {
-    if (event.key === STORAGE_KEYS.AUTH) {
-      listener();
-    }
-  };
-
-  window.addEventListener("storage", handleStorage);
+  const unsubscribeStorage = subscribeToStorageKey(STORAGE_KEYS.AUTH, listener);
 
   return () => {
     authStateListeners.delete(listener);
-    window.removeEventListener("storage", handleStorage);
+    unsubscribeStorage();
   };
 }
