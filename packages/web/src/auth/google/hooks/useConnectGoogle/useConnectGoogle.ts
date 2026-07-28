@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { AuthApi } from "@web/api/auth.api";
 import { SyncApi } from "@web/api/sync.api";
@@ -33,16 +33,31 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
   const state = useGoogleUiState();
   const syncConnection = useUserMetadataStore(selectGoogleSyncConnection);
   const [isConnecting, setIsConnecting] = useState(false);
+  // Sync guard so rapid re-clicks before React re-renders cannot start a
+  // second OAuth attempt; isConnecting alone would still be false in-handler.
   const isConnectingRef = useRef(false);
-  const { startGoogleAuthorization } = useStartGoogleAuthorization({
-    intent: "connectCalendar",
-    prompt: "consent",
-  });
-
   const stopConnecting = useCallback(() => {
     isConnectingRef.current = false;
     setIsConnecting(false);
   }, []);
+  const { startGoogleAuthorization } = useStartGoogleAuthorization({
+    intent: "connectCalendar",
+    prompt: "consent",
+    onError: stopConnecting,
+  });
+
+  // OAuth uses a full navigation. If the user backs out and the page is
+  // restored from bfcache, React state is frozen mid-connecting and would
+  // otherwise leave the sidebar button disabled forever.
+  useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        stopConnecting();
+      }
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, [stopConnecting]);
 
   const onOpenGoogleAuth = useCallback(() => {
     if (isConnectingRef.current) {

@@ -105,6 +105,14 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
     hasPendingEventMutations;
   const showGoogleAction = isAvailable && commandAction != null;
   const lastSyncedLabel = formatLastSyncedLabel(syncConnection?.lastSyncedAt);
+  const googleActionLabel =
+    commandAction == null
+      ? null
+      : isConnecting
+        ? state === "RECONNECT_REQUIRED"
+          ? "Reconnecting…"
+          : "Connecting…"
+        : commandAction.label;
 
   return (
     <>
@@ -122,7 +130,9 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
       {lastSyncedLabel ? (
         <p className="mb-2 text-text-muted text-xs">{lastSyncedLabel}</p>
       ) : null}
-      {commandAction != null && showGoogleAction ? (
+      {showGoogleAction &&
+      commandAction != null &&
+      googleActionLabel != null ? (
         <button
           aria-busy={isConnecting || undefined}
           className={CONNECT_GOOGLE_BUTTON_CLASSNAME}
@@ -130,11 +140,7 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
           onClick={commandAction.onSelect}
           type="button"
         >
-          {isConnecting
-            ? state === "RECONNECT_REQUIRED"
-              ? "Reconnecting…"
-              : "Connecting…"
-            : commandAction.label}
+          {googleActionLabel}
         </button>
       ) : null}
       {isSyncing ? (
