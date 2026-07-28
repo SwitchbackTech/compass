@@ -1,9 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
-import { handleError } from "@web/common/utils/event/event.util";
 import { deriveOverlappingEventQueryData } from "@web/events/queries/event.query.cache";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
@@ -13,10 +12,14 @@ import { filterEventsByVisibleCalendars } from "./filter-events-by-visible-calen
 type WeekEventsQueryArgs = {
   startOfView: Dayjs;
   endOfView: Dayjs;
-  reportError?: (error: Error) => void;
 };
 
-function useWeekEventsQueryInternal({
+/**
+ * Primary week-events read hook. TanStack Query owns the normalized result;
+ * consumers derive render data through {@link useWeekEventViewModel}.
+ * Load failures are shown contextually (e.g. EventGrid) — no global toast.
+ */
+export function useWeekEventsQuery({
   startOfView,
   endOfView,
 }: WeekEventsQueryArgs) {
@@ -34,23 +37,6 @@ function useWeekEventsQueryInternal({
         endDate,
       }),
   });
-}
-
-/**
- * Primary week-events read hook. TanStack Query owns the normalized result;
- * consumers derive render data through {@link useWeekEventViewModel}.
- */
-export function useWeekEventsQuery(args: WeekEventsQueryArgs) {
-  const query = useWeekEventsQueryInternal(args);
-  const reportError = args.reportError ?? handleError;
-  const { error } = query;
-
-  useEffect(() => {
-    if (!error) return;
-    reportError(error as Error);
-  }, [error, reportError]);
-
-  return query;
 }
 
 export function useWeekEventViewModel(args: WeekEventsQueryArgs) {
@@ -71,5 +57,5 @@ export function useWeekEventViewModel(args: WeekEventsQueryArgs) {
  * {@link useWeekEventsQuery} (shared key → no extra fetch).
  */
 export function useWeekEventsQueryStatus(args: WeekEventsQueryArgs) {
-  return useWeekEventsQueryInternal(args);
+  return useWeekEventsQuery(args);
 }

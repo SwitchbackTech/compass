@@ -83,6 +83,14 @@ Use this document to find the first files to inspect for common Compass changes.
 - Google import internals: `packages/backend/src/sync/services/import`
 - Google/Compass event propagation: `packages/backend/src/sync/services/event-propagation`
 
+### Standalone Sync Service And Cutover
+
+- Sync service entrypoints: `packages/sync/src/app.ts`, `packages/sync/src/server/sync.server.ts`
+- Backend Sync client / routing: `packages/backend/src/common/services/sync-service/`
+- Preseed / migrate CLI: `packages/scripts/src/commands/preseed-sync.ts`, `migrate-connections.ts`, `migrate-provider-state.ts`, `migrate-pending-intent.ts`, `inventory-legacy-sync.ts`
+- Sync DB backup/restore: `packages/scripts/src/commands/sync-backup.ts`, `sync-restore.ts`
+- Diagnostics / retention / principal purge: `packages/sync/src/server/diagnostic.routes.ts`, `packages/sync/src/domain/connection-retention.service.ts`, `packages/sync/src/domain/principal-purge.service.ts`
+
 ## Users / Metadata
 
 - User queries/services: `packages/backend/src/user`
@@ -102,6 +110,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Build command: `packages/scripts/src/commands/build.ts`
 - Migration command: `packages/scripts/src/commands/migrate.ts`
 - Migrations: `packages/scripts/src/migrations`
+- Sync preseed / legacy migrate commands: see [CLI](./cli.md) and [Sync Service Cutover](../backend/sync-service-cutover.md)
 
 ## Test Anchors
 

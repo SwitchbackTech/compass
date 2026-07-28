@@ -1,7 +1,9 @@
 import { ObjectId } from "bson";
 import { Status } from "@core/errors/status.codes";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { type ApiError, type ApiResponse } from "@web/api/api.types";
+import { GENERIC_ERROR_TOAST_ID } from "@web/common/constants/toast.constants";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -9,28 +11,32 @@ import {
   isEventInRange,
   refocusEventElement,
 } from "@web/common/utils/event/event.util";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const { handleError } = await import("@web/common/utils/event/event.util");
 
+function createServerError(status = Status.INTERNAL_SERVER): ApiError {
+  const error = new Error(`Request failed with status ${status}`) as ApiError;
+  error.name = "ApiError";
+  error.response = { status } as ApiResponse<unknown>;
+  return error;
+}
+
 describe("handleError", () => {
   let consoleErrorSpy: ReturnType<typeof spyOn>;
+  const { port, mocks } = createTestToastPort();
 
   beforeEach(() => {
     consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
+    mocks.error.mockClear();
+    mocks.isActive.mockReturnValue(false);
+    registerToastPort(port);
   });
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
   });
-
-  // handleError now surfaces a toast (showErrorToast) instead of a native
-  // alert(). We assert on console.error rather than the toast: showErrorToast
-  // is import-bound to react-toastify, which several sibling suites replace
-  // process-wide via `mock.module`, so spying on the toast singleton is
-  // order-fragile. console.error is a call-time global — a stable seam that
-  // cleanly distinguishes "handled/notified" from "silently ignored", since
-  // handleError logs immediately before it notifies.
 
   it("does not log backend-unavailable errors", () => {
     const error = new Error("Request failed");
@@ -39,16 +45,13 @@ describe("handleError", () => {
     handleError(error);
 
     expect(consoleErrorSpy).not.toHaveBeenCalled();
+    expect(mocks.error).not.toHaveBeenCalled();
   });
 
   it("logs once and does not reload on a server error", () => {
     // Carries a `response` like a real 500 from `createApiError`: backend
     // availability is judged on the response status, not the message text.
-    const error = new Error(
-      "Request failed for GET /event with status 500",
-    ) as ApiError;
-    error.name = "ApiError";
-    error.response = { status: Status.INTERNAL_SERVER } as ApiResponse<unknown>;
+    const error = createServerError();
 
     handleError(error);
 
@@ -57,6 +60,20 @@ describe("handleError", () => {
     // proves handleError reached the notify path (rather than early-returning).
     expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
     expect(consoleErrorSpy).toHaveBeenCalledWith(error);
+    expect(mocks.error).toHaveBeenCalledTimes(1);
+    expect(mocks.error.mock.calls[0]?.[1]).toMatchObject({
+      toastId: GENERIC_ERROR_TOAST_ID,
+    });
+  });
+
+  it("does not stack a second catchall toast while one is already visible", () => {
+    mocks.isActive.mockReturnValue(true);
+    const error = createServerError();
+
+    handleError(error);
+    handleError(error);
+
+    expect(mocks.error).not.toHaveBeenCalled();
   });
 
   it("ignores unauthorized errors using response.status even when the message is enriched", () => {
@@ -76,8 +93,7 @@ describe("handleError", () => {
     // "unavailable"), and it's retryable, so the user just needs a nudge. It
     // must not console.error - otherwise every transient provider hiccup
     // becomes a fresh error-tracking issue via capture_console_errors.
-    const error = new Error("Request failed with status 502") as ApiError;
-    error.name = "ApiError";
+    const error = createServerError(502);
     error.response = {
       status: 502,
       data: {
@@ -90,6 +106,10 @@ describe("handleError", () => {
     handleError(error);
 
     expect(consoleErrorSpy).not.toHaveBeenCalled();
+    expect(mocks.error).toHaveBeenCalledTimes(1);
+    expect(mocks.error.mock.calls[0]?.[1]).toMatchObject({
+      toastId: GENERIC_ERROR_TOAST_ID,
+    });
   });
 });
 

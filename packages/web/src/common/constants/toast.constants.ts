@@ -4,6 +4,7 @@ import { type ThemeName } from "@web/settings/theme/theme.constants";
 import { useThemeStore } from "@web/settings/theme/theme.store";
 
 export const EVENT_DELETED_TOAST_ID: Id = "event-deleted";
+export const GENERIC_ERROR_TOAST_ID: Id = "generic-error";
 export const GOOGLE_REVOKED_TOAST_ID: Id = "google-revoked-api";
 export const GOOGLE_REPAIR_FAILED_TOAST_ID: Id = "google-repair-failed";
 export const GOOGLE_CONNECT_FAILED_TOAST_ID: Id = "google-connect-failed";
