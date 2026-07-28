@@ -1,8 +1,4 @@
-import {
-  BellIcon,
-  CircleNotchIcon,
-  WarningCircleIcon,
-} from "@phosphor-icons/react";
+import { BellIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { UserApi } from "@web/api/user.api";
 import { useSession } from "@web/auth/compass/session/useSession";
@@ -12,9 +8,10 @@ import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 
 /**
- * Returns the email-updates command only when that integration is available.
- * Kit remains the source of truth; this hook caches one lookup per mount and
- * retries a failed lookup when the palette next opens.
+ * Returns the actionable email-updates opt-in command when the user is
+ * eligible. Kit remains the source of truth; this hook caches one lookup per
+ * mount and retries a failed lookup when the palette next opens. Non-actionable
+ * statuses (subscribed, unsubscribed, checking, error) yield no items.
  */
 export const useSubscribeCmdItems = (open: boolean): CommandItem[] => {
   const { authenticated } = useSession();
@@ -55,53 +52,7 @@ export const useSubscribeCmdItems = (open: boolean): CommandItem[] => {
       });
   }, [authenticated, open]);
 
-  if (!authenticated || status === "idle" || status === "unavailable")
-    return [];
-
-  if (status === "checking") {
-    return [
-      {
-        id: "subscribe-to-updates",
-        label: "Checking email update status…",
-        icon: CircleNotchIcon,
-        iconClassName: "animate-spin",
-        disabled: true,
-      },
-    ];
-  }
-
-  if (status === "subscribed") {
-    return [
-      {
-        id: "subscribe-to-updates",
-        label: "You’re subscribed to updates",
-        icon: BellIcon,
-        disabled: true,
-      },
-    ];
-  }
-
-  if (status === "unsubscribed") {
-    return [
-      {
-        id: "subscribe-to-updates",
-        label: "You’re unsubscribed from updates",
-        icon: BellIcon,
-        disabled: true,
-      },
-    ];
-  }
-
-  if (status === "error") {
-    return [
-      {
-        id: "subscribe-to-updates",
-        label: "Couldn’t check email update status",
-        icon: WarningCircleIcon,
-        disabled: true,
-      },
-    ];
-  }
+  if (!authenticated || status !== "not_subscribed") return [];
 
   return [
     {

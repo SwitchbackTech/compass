@@ -73,7 +73,7 @@ describe("useSubscribeCmdItems", () => {
     expect(mockGetEmailUpdates).not.toHaveBeenCalled();
   });
 
-  it("waits to fetch until the palette opens and shows a loading item", async () => {
+  it("waits to fetch until the palette opens and shows nothing while checking", async () => {
     let resolveStatus!: (value: { status: "not_subscribed" }) => void;
     mockGetEmailUpdates.mockReturnValue(
       new Promise((resolve) => {
@@ -90,15 +90,14 @@ describe("useSubscribeCmdItems", () => {
     expect(result.current).toEqual([]);
     rerender({ open: true });
 
-    expect(result.current).toEqual([
-      expect.objectContaining({
-        disabled: true,
-        label: "Checking email update status…",
-      }),
-    ]);
+    expect(result.current).toEqual([]);
     expect(mockGetEmailUpdates).toHaveBeenCalledTimes(1);
 
     await act(async () => resolveStatus({ status: "not_subscribed" }));
+
+    await waitFor(() => {
+      expect(result.current[0]?.label).toBe("Opt in to email updates");
+    });
   });
 
   it("hides the command when email updates are unavailable", async () => {
@@ -110,20 +109,16 @@ describe("useSubscribeCmdItems", () => {
     await waitFor(() => expect(result.current).toEqual([]));
   });
 
-  it("shows a disabled subscribed item for an existing subscriber", async () => {
+  it("hides the command for an existing subscriber", async () => {
     mockGetEmailUpdates.mockResolvedValue({ status: "subscribed" });
     const { useSubscribeCmdItems } = await importHook();
 
     const { result } = renderHook(() => useSubscribeCmdItems(true));
 
     await waitFor(() => {
-      expect(result.current).toEqual([
-        expect.objectContaining({
-          disabled: true,
-          label: "You’re subscribed to updates",
-        }),
-      ]);
+      expect(result.current).toEqual([]);
     });
+    expect(mockSubscribeToEmailUpdates).not.toHaveBeenCalled();
   });
 
   it("does not offer an opt-in to a previously unsubscribed user", async () => {
@@ -133,12 +128,7 @@ describe("useSubscribeCmdItems", () => {
     const { result } = renderHook(() => useSubscribeCmdItems(true));
 
     await waitFor(() => {
-      expect(result.current).toEqual([
-        expect.objectContaining({
-          disabled: true,
-          label: "You’re unsubscribed from updates",
-        }),
-      ]);
+      expect(result.current).toEqual([]);
     });
     expect(mockSubscribeToEmailUpdates).not.toHaveBeenCalled();
   });
@@ -158,12 +148,12 @@ describe("useSubscribeCmdItems", () => {
     });
 
     await waitFor(() => {
-      expect(result.current[0]?.label).toBe("You’re subscribed to updates");
+      expect(result.current).toEqual([]);
     });
     expect(mockSubscribeToEmailUpdates).toHaveBeenCalledTimes(1);
   });
 
-  it("shows the check failure and retries after reopening the palette", async () => {
+  it("hides the check failure and retries after reopening the palette", async () => {
     mockGetEmailUpdates
       .mockRejectedValueOnce(new Error("network error"))
       .mockResolvedValueOnce({ status: "not_subscribed" });
@@ -175,9 +165,8 @@ describe("useSubscribeCmdItems", () => {
     );
 
     await waitFor(() => {
-      expect(result.current[0]?.label).toBe(
-        "Couldn’t check email update status",
-      );
+      expect(result.current).toEqual([]);
+      expect(mockGetEmailUpdates).toHaveBeenCalledTimes(1);
     });
     rerender({ open: false });
     rerender({ open: true });
