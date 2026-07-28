@@ -79,12 +79,12 @@ export function filterSections(
     .filter((section) => section.items.length > 0);
 }
 
+/** Mounted only while open so search/activeIndex reset on every reopen. */
 const CommandPaletteContent = ({
   placeholder,
   sections,
 }: CommandPaletteContentProps) => {
   const { syncStatus } = useCalendarSyncCmdItems();
-  const open = useSettingsStore(selectIsCmdPaletteOpen);
 
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState<number | null>(0);
@@ -128,8 +128,6 @@ const CommandPaletteContent = ({
     role,
     listNav,
   ]);
-
-  if (!open) return null;
 
   let itemIndex = -1;
 
@@ -316,6 +314,8 @@ export const CommandPalette = ({
     ...getMoreCommandPaletteSections(currentView),
   ];
 
+  if (!open) return null;
+
   return (
     <CommandPaletteContent placeholder={placeholder} sections={sections} />
   );
@@ -326,8 +326,11 @@ export const LifeCommandPalette = ({
 }: {
   placeholder: string;
 }) => {
+  const open = useSettingsStore(selectIsCmdPaletteOpen);
   const navigate = useNavigate();
   const themeCmdItems = useThemeCmdItems();
+
+  if (!open) return null;
 
   return (
     <CommandPaletteContent

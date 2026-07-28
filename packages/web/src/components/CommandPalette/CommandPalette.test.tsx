@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom";
 import { PlusIcon } from "@phosphor-icons/react";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithStore } from "@web/__tests__/render-with-store";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
@@ -12,6 +12,7 @@ import {
 } from "@web/events/stores/undo.store";
 import {
   selectIsCmdPaletteOpen,
+  settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -272,6 +273,26 @@ describe("CommandPalette", () => {
     renderPalette();
     fireEvent.keyDown(getInput(), { key: "Escape" });
     expect(isOpen()).toBe(false);
+  });
+
+  it("clears the search query when reopened after close", () => {
+    renderPalette();
+    const input = getInput();
+
+    fireEvent.change(input, { target: { value: "ligh" } });
+    expect(input).toHaveValue("ligh");
+    expect(screen.getByText("Switch to light theme")).toBeInTheDocument();
+    expect(screen.queryByText("Go to Today")).not.toBeInTheDocument();
+
+    fireEvent.keyDown(input, { key: "Escape" });
+    expect(isOpen()).toBe(false);
+
+    act(() => {
+      settingsActions.openCmdPalette();
+    });
+    expect(isOpen()).toBe(true);
+    expect(getInput()).toHaveValue("");
+    expect(screen.getByText("Go to Today")).toBeInTheDocument();
   });
 
   it("closes on outside press", () => {
