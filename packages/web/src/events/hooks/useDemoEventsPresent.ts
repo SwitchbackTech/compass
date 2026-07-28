@@ -40,11 +40,19 @@ export function useDemoEventsPresent(range?: DemoEventsRange): boolean {
       rangeStart !== undefined && rangeEnd !== undefined
         ? { start: rangeStart, end: rangeEnd }
         : undefined;
-    void hasDemoEvents(rangeArg).then((result) => {
-      if (generation === refreshGenerationRef.current) {
-        setState({ present: result, key: rangeKey(rangeArg) });
-      }
-    });
+    void hasDemoEvents(rangeArg)
+      .then((result) => {
+        if (generation === refreshGenerationRef.current) {
+          setState({ present: result, key: rangeKey(rangeArg) });
+        }
+      })
+      .catch(() => {
+        // IndexedDB probe is best-effort; treat failures as "no demo events"
+        // rather than an unhandledrejection.
+        if (generation === refreshGenerationRef.current) {
+          setState({ present: false, key: rangeKey(rangeArg) });
+        }
+      });
   }, [currentKey, rangeEnd, rangeStart, source]);
 
   useEffect(() => {

@@ -76,6 +76,18 @@ describe("handleError", () => {
     expect(mocks.error).not.toHaveBeenCalled();
   });
 
+  it("ignores unauthorized errors using response.status even when the message is enriched", () => {
+    const error = new Error(
+      "Request failed for GET /user/profile with status 401",
+    ) as ApiError;
+    error.name = "ApiError";
+    error.response = { status: Status.UNAUTHORIZED } as ApiResponse<unknown>;
+
+    handleError(error);
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
+
   it("does not log a retryable, backend-authored mutation failure", () => {
     // A 502 PROVIDER_FAILURE the backend authored: it answered (so it isn't
     // "unavailable"), and it's retryable, so the user just needs a nudge. It
