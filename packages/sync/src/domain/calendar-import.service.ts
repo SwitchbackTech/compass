@@ -1,3 +1,4 @@
+import { toColorLabelMap } from "@sync/domain/color-label-map";
 import { syncHorizon } from "@sync/domain/horizon";
 import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
@@ -145,9 +146,6 @@ class ImportRun {
   // the full pass re-reads, so counting both double-counts.
   #readerSkipped = 0;
   #orphans = 0;
-  // The calendar's custom event-color labels, built once so every page of
-  // both passes resolves colors from the same snapshot.
-  #colorLabels: ReadonlyMap<string, string>;
 
   constructor(
     private readonly deps: CalendarImportDeps,
@@ -155,9 +153,6 @@ class ImportRun {
     private readonly resource: SyncResourceRecord,
     now: () => Date,
   ) {
-    this.#colorLabels = new Map(
-      calendar.eventLabels.map((label) => [label.id, label.hex]),
-    );
     // Import writes the active (live) generation — the one reads serve. Only a
     // repair stages a separate importGeneration; the first import runs with
     // active and import both at 0, so it populates the generation reads serve.
@@ -194,7 +189,7 @@ class ImportRun {
         calendarId: this.calendar.providerCalendarId,
         window: options.window ?? null,
         pageToken,
-        colorLabels: this.#colorLabels,
+        colorLabels: toColorLabelMap(this.calendar.eventLabels),
       });
       if (options.checkpointed) this.#readerSkipped += page.skipped;
       // A first import has no local events to delete, so standalone

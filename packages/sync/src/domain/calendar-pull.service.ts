@@ -1,3 +1,4 @@
+import { toColorLabelMap } from "@sync/domain/color-label-map";
 import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
 import { type ProviderEventCancellation } from "@sync/providers/provider-event.port";
@@ -102,9 +103,7 @@ export async function pullCalendarChanges(
   let pageToken = resource.pageCursor;
   let cursor = resource.syncCursor;
   let deleted = 0;
-  const colorLabels: ReadonlyMap<string, string> = new Map(
-    calendar.eventLabels.map((label) => [label.id, label.hex]),
-  );
+  const colorLabels = toColorLabelMap(calendar.eventLabels);
 
   do {
     let page: Awaited<ReturnType<ProviderEventReader["listEventPage"]>>;

@@ -121,11 +121,13 @@ export class GoogleCalendarAdapter implements ProviderCalendarAdapter {
 
     do {
       const page = await this.#listPage(api, { pageToken, syncToken });
-      for (const item of page.items) {
-        const mapped = mapCalendar(item);
-        if (!mapped) continue;
-        const eventLabels = await api.getEventLabels(mapped.providerCalendarId);
-        calendars.push({ ...mapped, eventLabels });
+      // Label resolution is a per-calendar network call; run a page's calendars
+      // concurrently rather than paying N sequential round-trips.
+      const mapped = await Promise.all(
+        page.items.map((item) => mapCalendar(item, api)),
+      );
+      for (const calendar of mapped) {
+        if (calendar) calendars.push(calendar);
       }
       pageToken = page.nextPageToken ?? undefined;
       // Only the final page carries the token; keep the newest non-null one.
@@ -195,9 +197,10 @@ const CAPABILITIES_BY_ROLE: Record<CalendarAccessRole, CalendarCapabilities> = {
 
 // Map one Google calendar-list entry to provider-neutral facts. An entry
 // without an id is unusable (it cannot be keyed or persisted), so it is dropped.
-function mapCalendar(
+async function mapCalendar(
   item: gSchema$CalendarListEntry,
-): Omit<DiscoveredCalendar, "eventLabels"> | null {
+  api: GoogleCalendarListApi,
+): Promise<DiscoveredCalendar | null> {
   if (!item.id) return null;
 
   const accessRole = mapAccessRole(item.accessRole);
@@ -207,6 +210,7 @@ function mapCalendar(
     // then the id so the required non-empty name always holds.
     displayName: item.summaryOverride || item.summary || item.id,
     color: item.backgroundColor || null,
+    eventLabels: await api.getEventLabels(item.id),
     primary: item.primary === true,
     // deleted appears in incremental results; hidden means the user removed it
     // from their list. Either makes the calendar inactive, not gone.

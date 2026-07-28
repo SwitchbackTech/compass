@@ -242,7 +242,7 @@ export async function migrateProviderSyncState(
         color: calendar.backgroundColor,
         // The legacy store predates Google event labels; a real discovery
         // pass backfills them the next time calendar-list sync runs.
-        eventLabels: [],
+        eventLabels: [] as ProviderCalendarRecord["eventLabels"],
         active: calendar.isActive,
         primary: calendar.isPrimary,
         accessRole: mapAccessRole(calendar.access),
@@ -262,7 +262,7 @@ export async function migrateProviderSyncState(
             ...fields,
             createdAt: now,
             updatedAt: now,
-          } as unknown as ProviderCalendarRecord);
+          } as ProviderCalendarRecord);
         syncCalendarByGcalId.set(providerCalendarId, stub);
         continue;
       }
