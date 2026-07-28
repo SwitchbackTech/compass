@@ -149,10 +149,10 @@ describe("EventGrid", () => {
 
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent("Couldn't load events.");
-    expect(alert).toHaveClass("bg-background");
-    expect(within(alert).getByRole("button", { name: "Retry" })).toHaveClass(
-      "bg-accent",
-    );
+    expect(alert.closest(".bg-background")).toBeTruthy();
+    expect(
+      within(alert.parentElement!).getByRole("button", { name: "Retry" }),
+    ).toHaveClass("bg-accent");
 
     await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(onRetryEvents).toHaveBeenCalledTimes(1);
@@ -179,9 +179,34 @@ describe("EventGrid", () => {
     );
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("status", { name: "Loading events" }),
-    ).toBeInTheDocument();
+    const loader = screen.getByRole("status", { name: "Loading events" });
+    expect(loader).toBeInTheDocument();
+    // Retry loading must block the grid (opaque overlay is not click-through).
+    expect(loader).not.toHaveClass("pointer-events-none");
+  });
+
+  it("keeps first-load loader click-through for drag-create", () => {
+    render(
+      <EventGrid
+        allDayEventsLayer={<div />}
+        gridRefs={createGridRefs()}
+        isLoadingEvents
+        onAllDayMouseDown={mock()}
+        onTimedMouseDown={mock()}
+        timedEventsLayer={<div />}
+        today={dayjs("2026-05-20T00:00:00.000")}
+        visibleDates={[
+          {
+            date: dayjs("2026-05-20T00:00:00.000"),
+            key: "date-0",
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole("status", { name: "Loading events" })).toHaveClass(
+      "pointer-events-none",
+    );
   });
 
   it("shows the loader for first load and for retry after error", () => {
