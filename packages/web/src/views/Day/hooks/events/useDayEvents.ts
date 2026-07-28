@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import type dayjs from "@core/util/date/dayjs";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { dayEventsQueryOptions } from "@web/events/queries/event.query.options";
-import { useDayEventsQuery } from "@web/events/queries/useDayEventsQuery";
+import { useDayEventsQueryStatus } from "@web/events/queries/useDayEventsQuery";
 import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjacentEvents";
 
 /**
@@ -25,7 +25,10 @@ export function useDayEvents(dateInView: dayjs.Dayjs) {
     [dateInView],
   );
 
-  useDayEventsQuery({ startDate, endDate });
+  // Status-only: triggers the fetch and warms the cache entry that
+  // DayCalendarGrid reads via useDayEventViewModel for this same range - it
+  // owns error reporting for this query key.
+  useDayEventsQueryStatus({ startDate, endDate });
 
   // Warm the previous/next day so the next prev/next click resolves from
   // cache. Uses the same start/end-of-day formatting as the read above,

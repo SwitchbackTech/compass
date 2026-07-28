@@ -32,7 +32,8 @@ export const Grid: FC<Props> = ({
 }) => {
   const { allDayRef, allDayRowRef, mainGridElementRef, mainGridRef } = gridRefs;
   // Subscribes to the same cache entry the event layers read, so this reports
-  // their load without issuing a second fetch.
+  // their load without issuing a second fetch. Status-only - no event data
+  // (filtered or not) is available here.
   const {
     isPending: isLoadingEvents,
     isError: isErrorEvents,

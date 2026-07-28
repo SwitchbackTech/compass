@@ -37,11 +37,14 @@ function useWeekEventsQueryInternal({
 }
 
 /**
- * Primary week-events read hook. TanStack Query owns the normalized result;
- * consumers derive render data through {@link useWeekEventViewModel}.
+ * Primary week-events read hook. Data is filtered to visible calendars
+ * before it leaves this module - no caller can see a hidden calendar's
+ * events. TanStack Query owns the normalized (unfiltered) result underneath;
+ * this hook and {@link useWeekEventViewModel} are the only ways to read it.
  */
 export function useWeekEventsQuery(args: WeekEventsQueryArgs) {
   const query = useWeekEventsQueryInternal(args);
+  const { data: calendars } = useCalendarsQuery();
   const reportError = args.reportError ?? handleError;
   const { error } = query;
 
@@ -50,26 +53,32 @@ export function useWeekEventsQuery(args: WeekEventsQueryArgs) {
     reportError(error as Error);
   }, [error, reportError]);
 
-  return query;
+  const data = useMemo(
+    () => filterEventsByVisibleCalendars(query.data, calendars),
+    [query.data, calendars],
+  );
+
+  return { ...query, data };
 }
 
 export function useWeekEventViewModel(args: WeekEventsQueryArgs) {
   const query = useWeekEventsQuery(args);
-  const { data: calendars } = useCalendarsQuery();
   const viewModel = useMemo(
-    () =>
-      deriveCalendarEventViewModel(
-        filterEventsByVisibleCalendars(query.data, calendars),
-      ),
-    [query.data, calendars],
+    () => deriveCalendarEventViewModel(query.data),
+    [query.data],
   );
   return { ...query, ...viewModel };
 }
 
 /**
  * Read-only week-events loading state. Subscribes to the same cache entry as
- * {@link useWeekEventsQuery} (shared key → no extra fetch).
+ * {@link useWeekEventsQuery} (shared key → no extra fetch), but strips
+ * `data` so a status-only consumer can never read event data - filtered or
+ * not. Callers that only need `isPending`/`isError`/`refetch`-style fields
+ * (fetch triggering, loading UI) should use this instead of discarding the
+ * result of {@link useWeekEventsQuery}.
  */
 export function useWeekEventsQueryStatus(args: WeekEventsQueryArgs) {
-  return useWeekEventsQueryInternal(args);
+  const { data: _data, ...status } = useWeekEventsQueryInternal(args);
+  return status;
 }

@@ -5,7 +5,7 @@ import { ROOT_ROUTES, ROUTE_IDS } from "@web/common/constants/routes";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjacentEvents";
-import { useWeekEventsQuery } from "@web/events/queries/useWeekEventsQuery";
+import { useWeekEventsQueryStatus } from "@web/events/queries/useWeekEventsQuery";
 import { viewActions } from "@web/events/stores/view.store";
 import { WEEK_DAY_COUNT } from "@web/views/Week/util/week-window.util";
 import { type Category_View } from "@web/views/Week/week-view.types";
@@ -68,7 +68,12 @@ export const useWeek = (
     [start, visibleDayCount],
   );
 
-  useWeekEventsQuery({ startOfView: start, endOfView: queryEnd });
+  // Status-only: triggers the fetch and warms the cache entry that the
+  // event-consuming siblings in this tree (Draft, MainGridEvents,
+  // WeekInteractionCoordinator, ...) read via useWeekEventViewModel for the
+  // same range - they own error reporting for this query key, the same way
+  // Grid.tsx's own useWeekEventsQueryStatus call relies on them.
+  useWeekEventsQueryStatus({ startOfView: start, endOfView: queryEnd });
 
   // Warm the previous and next paged windows (J/K) using 7-day read keys.
   const previousStart = useMemo(

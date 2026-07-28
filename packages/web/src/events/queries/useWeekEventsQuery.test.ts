@@ -1,5 +1,10 @@
+import { type QueryClient } from "@tanstack/react-query";
 import { waitFor } from "@testing-library/react";
-import { type EventId } from "@core/types/domain-primitives";
+import {
+  type Calendar,
+  getCalendarCapabilities,
+} from "@core/types/calendar.contracts";
+import { CalendarIdSchema, type EventId } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
@@ -7,6 +12,25 @@ import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { normalizeEventList } from "@web/events/queries/event.query.normalize";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+
+// useWeekEventsQuery filters to visible calendars, so every test that reads
+// `.data` seeds a matching visible calendar - otherwise the assertion would
+// race the (unseeded) calendars query resolving mid-test.
+const WEEK_CALENDAR_ID = CalendarIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa");
+const makeVisibleCalendar = (id = WEEK_CALENDAR_ID): Calendar => ({
+  id,
+  name: "Primary calendar",
+  description: "",
+  timeZone: null,
+  foregroundColor: "#000000",
+  backgroundColor: "#4285f4",
+  provider: "google",
+  access: "owner",
+  capabilities: getCalendarCapabilities("owner"),
+  isPrimary: true,
+  isVisible: true,
+  isActive: true,
+});
 
 const fetchWeekEvents = mock(async () => ({
   ids: ["week-1"],
@@ -16,6 +40,7 @@ const fetchWeekEvents = mock(async () => ({
       title: "Sprint",
       startDate: "2025-11-10T09:00:00",
       endDate: "2025-11-10T10:00:00",
+      calendarId: WEEK_CALENDAR_ID,
     },
   },
 }));
@@ -28,6 +53,8 @@ const { renderHook } =
   require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
 const { createCompassQueryClient } =
   require("@web/api/query-client") as typeof import("@web/api/query-client");
+const { calendarQueryKeys } =
+  require("@web/calendars/calendar.query") as typeof import("@web/calendars/calendar.query");
 const { useWeekEventsQuery } =
   require("@web/events/queries/useWeekEventsQuery") as typeof import("@web/events/queries/useWeekEventsQuery");
 
@@ -36,6 +63,11 @@ const range = () => {
   return { startOfView: start, endOfView: start.endOf("week") };
 };
 
+const seedVisibleCalendar = (
+  queryClient: QueryClient,
+  calendar: Calendar = makeVisibleCalendar(),
+) => queryClient.setQueryData(calendarQueryKeys.all, [calendar]);
+
 describe("useWeekEventsQuery", () => {
   beforeEach(() => {
     fetchWeekEvents.mockClear();
@@ -43,6 +75,7 @@ describe("useWeekEventsQuery", () => {
 
   it("returns fetched week events without syncing Redux", async () => {
     const queryClient = createCompassQueryClient();
+    seedVisibleCalendar(queryClient);
 
     const result = renderHook(() => useWeekEventsQuery(range()), {
       queryClient,
@@ -57,6 +90,7 @@ describe("useWeekEventsQuery", () => {
 
   it("serves a cached remount from cache without a second fetch", async () => {
     const queryClient = createCompassQueryClient();
+    seedVisibleCalendar(queryClient);
 
     const first = renderHook(() => useWeekEventsQuery(range()), {
       queryClient,
@@ -115,6 +149,7 @@ describe("useWeekEventsQuery", () => {
       }),
       normalizeEventList([event]),
     );
+    seedVisibleCalendar(queryClient, makeVisibleCalendar(event.calendarId));
 
     const shiftedStart = start.add(1, "day");
     const shiftedEnd = shiftedStart.add(6, "day").endOf("day");
