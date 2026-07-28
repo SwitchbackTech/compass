@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import { type Response } from "express";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { Status } from "@core/errors/status.codes";
+import calendarService from "@backend/calendar/services/calendar.service";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import eventController from "./event.controller";
@@ -106,6 +107,19 @@ describe("EventController event delegation", () => {
   });
 
   it("delegates the event list to sync when event routing is sync", async () => {
+    spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      listCalendars: mock(() =>
+        Promise.resolve({
+          ok: false as const,
+          error: {
+            kind: "unavailable" as const,
+            correlationId: "corr-list",
+          },
+        }),
+      ),
+    } as never);
+
     const { res, json } = jsonRes();
     await eventController.readAll(
       sessionReq(objectId(), {
@@ -118,8 +132,13 @@ describe("EventController event delegation", () => {
     );
 
     const status = (res.status as ReturnType<typeof mock>).mock.calls[0]?.[0];
-    expect(status).not.toBe(200);
-    expect(json).toHaveBeenCalled();
+    // SyncClientError → retryable PROVIDER_FAILURE (502), not a generic 500.
+    expect(status).toBe(Status.BAD_GATEWAY);
+    expect(json).toHaveBeenCalledWith({
+      code: "PROVIDER_FAILURE",
+      message: "Failed to list calendars from sync (unavailable)",
+      retryable: true,
+    });
   });
 
   it("delegates create to sync and fails closed (no legacy fallback)", async () => {

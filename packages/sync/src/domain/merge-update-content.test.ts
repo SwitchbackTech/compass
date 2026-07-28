@@ -1,4 +1,4 @@
-import { mergeUpdateContent } from "./merge-update-content";
+import { mergeUpdateContent, omitNullColor } from "./merge-update-content";
 import { describe, expect, it } from "bun:test";
 
 describe("mergeUpdateContent", () => {
@@ -109,5 +109,21 @@ describe("mergeUpdateContent", () => {
       attendees: [],
       conference: null,
     });
+  });
+});
+
+describe("omitNullColor", () => {
+  it("drops null color before persist", () => {
+    expect(
+      omitNullColor({
+        title: "Standup",
+        description: "Daily",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+        color: null,
+      }),
+    ).not.toHaveProperty("color");
   });
 });
