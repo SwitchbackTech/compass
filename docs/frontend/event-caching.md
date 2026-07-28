@@ -58,6 +58,19 @@ timedEvents / allDayEvents / rowCount → components
 - The view model is derived by a pure function memoized on the `query.data`
   reference, so all consumers of a week's data share one computation.
 
+### Multi-day timed events in the all-day row
+
+Timed events that cross midnight are **not** cloned into per-day timed segments.
+`deriveCalendarEventViewModel` promotes them into `allDayEvents` with
+`isTimedMultiDayDisplay: true` (Google-style span bars).
+
+- Detection / date mapping: `isTimedEventMultiDay`, `timedMultiDayToAllDayDates`
+  in `packages/web/src/common/utils/event/event-nudge.util.ts`
+- Promotion: `packages/web/src/events/queries/event.view-model.ts`
+- Span coverage is half-open `[start, end)`: an end exactly at midnight does
+  **not** include that calendar day
+- Those bars are read-only on the grid (no timed drag/resize); edit via the form
+
 ## Writes: optimistic, then reconcile
 
 Mutations go through the narrow `EventMutations` interface

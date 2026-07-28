@@ -69,6 +69,31 @@ Both `google.clientId` and `google.clientSecret` must be real values for Google 
 
 See [Google Calendar](../self-hosting/google-calendar.md) for full setup instructions.
 
+## Sync Service
+
+Optional standalone Sync service (`packages/sync`). Omit the whole `sync:`
+block until you run that service. When present, `mongoUri` and
+`internalAuthToken` are required; Sync uses an **isolated** Mongo database and
+must not share the backend's database user/data.
+
+Cutover and ops: [Sync Service Cutover](../backend/sync-service-cutover.md).
+
+| key | Required | Description |
+|---|---|---|
+| `sync.port` | No | Sync HTTP port. Defaults to `3010` in examples. |
+| `sync.mongoUri` | Yes (if `sync:` set) | Isolated Sync Mongo URI. Never point this at the API database. |
+| `sync.internalAuthToken` | Yes (if `sync:` set) | Shared secret for Sync internal routes. Must match what the API uses when `serviceUrl` is set. |
+| `sync.callbackBaseUrl` | Yes (if `sync:` set) | Public base URL for provider OAuth/webhook callbacks (proxied as `/sync/*`). |
+| `sync.postConnectRedirectUrl` | No | Browser redirect after OAuth connect; defaults to `callbackBaseUrl`. |
+| `sync.serviceUrl` | No | Base URL the **backend** uses to reach Sync (e.g. `http://localhost:3010`). Required for any routing of `sync`. |
+| `sync.connectionRouting` | No | `legacy` (default) or `sync`. Delegates provider-connection routes when `sync`. |
+| `sync.eventRouting` | No | `legacy` (default) or `sync`. Delegates calendar/event reads and durable commands when `sync`. |
+| `sync.cloudMutationMode` | No | `enabled` (default) or `maintenance`. Maintenance rejects cloud edits/connect with typed `MAINTENANCE` (`503`). |
+| `sync.execution` | No | `passive` (default) or `active`. Active is required for OAuth begin and provider import/jobs. Startup refuses `active` + `enabled` mutations while any routing remains `legacy`. |
+| `sync.maxConcurrency` | No | Job concurrency hint for Sync workers. |
+| `sync.enforceLeastPrivilege` | No | When `true`, Sync verifies its Mongo user cannot read the API database. |
+| `sync.compassApiDatabase` | No | API database name the least-privilege check must be denied access to. |
+
 ## Optional Integrations
 
 | key | Required | Description |
