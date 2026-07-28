@@ -11,6 +11,7 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type ApiError } from "@web/api/api.types";
 import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 import { getUserId } from "@web/auth/compass/session/session.util";
+import { GENERIC_ERROR_TOAST_ID } from "@web/common/constants/toast.constants";
 import {
   DATA_EVENT_ELEMENT_ID,
   ID_GRID_ALLDAY_ROW,
@@ -191,6 +192,12 @@ const isRetryableMutationError = (error: Error): boolean => {
   return parsed.success && parsed.data.retryable;
 };
 
+const CATCHALL_TOAST_MESSAGE =
+  "Something went wrong behind the scenes. Please try again later.";
+
+const showCatchallToast = (message: string) =>
+  showErrorToast(message, { toastId: GENERIC_ERROR_TOAST_ID });
+
 export const handleError = (error: Error) => {
   if (isBackendUnavailableError(error)) {
     return;
@@ -205,22 +212,18 @@ export const handleError = (error: Error) => {
 
   if (isRetryableMutationError(error)) {
     // Expected transient failure: nudge the user to retry without logging it.
-    showErrorToast(
-      "Something went wrong behind the scenes. Please try again later.",
-    );
+    showCatchallToast(CATCHALL_TOAST_MESSAGE);
     return;
   }
 
   console.error(error);
 
   if (code === Status.INTERNAL_SERVER) {
-    showErrorToast(
-      "Something went wrong behind the scenes. Please try again later.",
-    );
+    showCatchallToast(CATCHALL_TOAST_MESSAGE);
     return;
   }
 
-  showErrorToast(error.message);
+  showCatchallToast(error.message);
 };
 
 export const isEventInRange = (
