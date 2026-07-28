@@ -119,7 +119,8 @@ export const useDraftState = () => {
   };
 
   // Stable identity so discard/effects can depend on `setters` without
-  // re-running every render.
+  // re-running every render. useState setters are stable; setIsFormOpen is
+  // the store action (also stable).
   const setters: Setters_Draft = useMemo(
     () => ({
       setIsDragging,
@@ -132,17 +133,8 @@ export const useDraftState = () => {
       setIsFormOpen,
       setIsFormOpenBeforeDragging,
     }),
-    [
-      setDateBeingChanged,
-      setDragOffset,
-      setDragStatus,
-      setGestureOriginDraft,
-      setIsDragging,
-      setIsFormOpen,
-      setIsFormOpenBeforeDragging,
-      setIsResizing,
-      setResizeStatus,
-    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable setter identities
+    [],
   );
 
   return { state, setters };

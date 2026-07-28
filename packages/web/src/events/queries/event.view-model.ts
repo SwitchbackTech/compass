@@ -46,17 +46,13 @@ const eventToGridEvent = (
   const isAllDay = scheduleOverride?.isAllDay ?? schedule.kind === "allDay";
   const startDate = scheduleOverride?.startDate ?? schedule.start;
   const endDate = scheduleOverride?.endDate ?? schedule.end;
-  const color =
-    event.content.kind === "details"
-      ? (event.content.color ?? undefined)
-      : undefined;
+  const isBusy = event.content.kind === "busy";
+  const details = event.content.kind === "details" ? event.content : undefined;
 
   return {
     _id: event.id,
-    title:
-      event.content.kind === "details" ? event.content.title : BUSY_EVENT_TITLE,
-    description:
-      event.content.kind === "details" ? event.content.description : "",
+    title: details?.title ?? BUSY_EVENT_TITLE,
+    description: details?.description ?? "",
     origin: Origin.COMPASS,
     user: "",
     isAllDay,
@@ -71,12 +67,12 @@ const eventToGridEvent = (
     updatedAt: event.updatedAt ?? undefined,
     position: gridEventDefaultPosition,
     calendarId: event.calendarId,
-    isBusy: event.content.kind === "busy",
+    isBusy,
     isDemo: Boolean(demoEventIds?.includes(event.id)),
     ...(scheduleOverride?.isTimedMultiDayDisplay
       ? { isTimedMultiDayDisplay: true }
       : {}),
-    ...withColor(color),
+    ...withColor(details?.color ?? undefined),
   };
 };
 

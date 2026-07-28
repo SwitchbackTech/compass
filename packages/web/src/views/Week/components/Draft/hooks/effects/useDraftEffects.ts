@@ -55,9 +55,9 @@ export const useDraftEffects = (
 
   useEffect(() => {
     if (isDrafting) return;
+    // Store discard already clears isFormOpen; only gesture ephemera remains.
     clearGestureEphemera(setters);
-    setIsFormOpen(false);
-  }, [isDrafting, setIsFormOpen, setters]);
+  }, [isDrafting, setters]);
 
   useEffect(() => {
     handleChange();

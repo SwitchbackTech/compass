@@ -65,9 +65,6 @@ const createSetters = (
 
 const weekProps = {
   component: { week: "2024-01-15" },
-  util: {
-    getLastNavigationSource: () => "manual",
-  },
 } as unknown as WeekProps;
 
 describe("useDraftEffects", () => {
