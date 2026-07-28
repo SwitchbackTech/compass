@@ -27,7 +27,7 @@ const googleCommandActionFor = (state: GoogleUiState) => {
       return null;
   }
 };
-const mockIsConnecting = false;
+let mockIsConnecting = false;
 const mockUseConnectGoogle = mock(() => ({
   state: mockGoogleState,
   isAvailable: true,
