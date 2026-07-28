@@ -7,12 +7,17 @@ import {
 } from "@web/calendars/useCalendarLookup";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import { suppressedSeriesIdForDraft } from "@web/events/grid-event-draft.adapter";
 import {
   mergeGridEventWithDraftOverlay,
   useGridDraftSchemaOverlay,
 } from "@web/events/hooks/useGridDraftSchemaOverlay";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
-import { selectDraftId, useDraftStore } from "@web/events/stores/draft.store";
+import {
+  selectDraftId,
+  selectGridDraft,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import {
   createTimedEventLayout,
   type TimedDeckLayout,
@@ -43,9 +48,16 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     endOfView: weekProps.query.endOfView,
   });
   const draftId = useDraftStore(selectDraftId);
+  const gridDraft = useDraftStore(selectGridDraft);
   const weekDays = weekProps.component.weekDays;
   // One lookup build for the whole list (packet 08 step 5) - not per card.
   const calendarLookup = useCalendarLookup();
+  // While the user is actively changing a series' recurrence, its saved
+  // sibling occurrences are stale (they reflect the rule before this edit) -
+  // the draft's own recurring-preview cards are the live truth for the
+  // series until the edit is saved or discarded. Null whenever recurrence
+  // hasn't been touched, so unrelated edits/drags never hide anything.
+  const suppressedSeriesId = suppressedSeriesIdForDraft(gridDraft);
   // The query covers the full week; only mount events for the visible window
   // so off-window events never land in the DOM or the interaction registry.
   const visibleTimedEvents = useMemo(
@@ -53,9 +65,20 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
       timedEvents.filter(
         (event) =>
           isTimedEventInVisibleDays(event, weekDays) &&
-          !(event._id === draftId && draftOverlay?.isAllDay),
+          !(event._id === draftId && draftOverlay?.isAllDay) &&
+          !(
+            suppressedSeriesId &&
+            event.recurrence?.eventId === suppressedSeriesId &&
+            event._id !== draftId
+          ),
       ),
-    [draftOverlay?.isAllDay, draftId, timedEvents, weekDays],
+    [
+      draftOverlay?.isAllDay,
+      draftId,
+      suppressedSeriesId,
+      timedEvents,
+      weekDays,
+    ],
   );
   const timedEventItems = useMemo(
     () => createTimedEventLayout(visibleTimedEvents),

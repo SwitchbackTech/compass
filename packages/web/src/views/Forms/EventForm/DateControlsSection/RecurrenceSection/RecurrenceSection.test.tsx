@@ -126,4 +126,22 @@ describe("RecurrenceSection", () => {
       "false",
     ]);
   });
+
+  it("turning off Repeat on an existing recurring event clears the controls", async () => {
+    // Guards against the toggle being a no-op on an edit draft: clearing
+    // recurrence used to resolve to "preserve", which read the source
+    // event's original rules right back and left hasRecurrence stuck true.
+    const user = userEvent.setup();
+    renderRecurrenceSection({ initialDraft: recurringDraft() });
+
+    const repeatButton = screen.getByRole("button", { name: /repeat/i });
+    expect(repeatButton).toHaveAttribute("data-repeat", "true");
+    expect(screen.getByText("Every")).toBeInTheDocument();
+
+    await user.click(repeatButton);
+
+    expect(repeatButton).toHaveAttribute("data-repeat", "false");
+    expect(screen.queryByText("Every")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
+  });
 });
