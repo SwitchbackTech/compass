@@ -1,8 +1,5 @@
 import { type CaptureResult } from "posthog-js";
-import {
-  filterPosthogBeforeSend,
-  shouldDropPosthogException,
-} from "./posthog-exception-filter.util";
+import { filterPosthogBeforeSend } from "./posthog-exception-filter.util";
 import { describe, expect, it } from "bun:test";
 
 const exceptionEvent = (
@@ -16,28 +13,27 @@ const exceptionEvent = (
     },
   }) as CaptureResult;
 
-describe("shouldDropPosthogException", () => {
-  it("keeps non-exception events", () => {
-    expect(
-      shouldDropPosthogException({
-        uuid: "1",
-        event: "$pageview",
-        properties: {},
-      }),
-    ).toBe(false);
+describe("filterPosthogBeforeSend", () => {
+  it("passes through non-exception events", () => {
+    const event = {
+      uuid: "1",
+      event: "$pageview",
+      properties: {},
+    } as CaptureResult;
+    expect(filterPosthogBeforeSend(event)).toBe(event);
   });
 
   it("drops Chrome Failed to fetch TypeErrors", () => {
     expect(
-      shouldDropPosthogException(
+      filterPosthogBeforeSend(
         exceptionEvent([{ type: "TypeError", value: "Failed to fetch" }]),
       ),
-    ).toBe(true);
+    ).toBeNull();
   });
 
   it("drops Firefox NetworkError TypeErrors", () => {
     expect(
-      shouldDropPosthogException(
+      filterPosthogBeforeSend(
         exceptionEvent([
           {
             type: "TypeError",
@@ -45,12 +41,12 @@ describe("shouldDropPosthogException", () => {
           },
         ]),
       ),
-    ).toBe(true);
+    ).toBeNull();
   });
 
   it("drops the exact CefSharp scanner signature", () => {
     expect(
-      shouldDropPosthogException(
+      filterPosthogBeforeSend(
         exceptionEvent([
           {
             type: "Error",
@@ -59,32 +55,26 @@ describe("shouldDropPosthogException", () => {
           },
         ]),
       ),
-    ).toBe(true);
+    ).toBeNull();
   });
 
   it("keeps ApiError exceptions", () => {
-    expect(
-      shouldDropPosthogException(
-        exceptionEvent([
-          { type: "ApiError", value: "Request failed with status 500" },
-        ]),
-      ),
-    ).toBe(false);
+    const event = exceptionEvent([
+      { type: "ApiError", value: "Request failed with status 500" },
+    ]);
+    expect(filterPosthogBeforeSend(event)).toBe(event);
   });
 
   it("keeps other TypeErrors", () => {
-    expect(
-      shouldDropPosthogException(
-        exceptionEvent([
-          { type: "TypeError", value: "Cannot read properties of undefined" },
-        ]),
-      ),
-    ).toBe(false);
+    const event = exceptionEvent([
+      { type: "TypeError", value: "Cannot read properties of undefined" },
+    ]);
+    expect(filterPosthogBeforeSend(event)).toBe(event);
   });
 
   it("reads $exception_types / $exception_values when list is absent", () => {
     expect(
-      shouldDropPosthogException({
+      filterPosthogBeforeSend({
         uuid: "1",
         event: "$exception",
         properties: {
@@ -92,21 +82,12 @@ describe("shouldDropPosthogException", () => {
           $exception_values: ["Failed to fetch"],
         },
       } as CaptureResult),
-    ).toBe(true);
-  });
-});
-
-describe("filterPosthogBeforeSend", () => {
-  it("returns null for dropped exceptions", () => {
-    expect(
-      filterPosthogBeforeSend(
-        exceptionEvent([{ type: "TypeError", value: "Failed to fetch" }]),
-      ),
     ).toBeNull();
   });
 
-  it("passes through kept events", () => {
+  it("keeps mixed exception lists that include a real error", () => {
     const event = exceptionEvent([
+      { type: "TypeError", value: "Failed to fetch" },
       { type: "ApiError", value: "Request failed with status 500" },
     ]);
     expect(filterPosthogBeforeSend(event)).toBe(event);

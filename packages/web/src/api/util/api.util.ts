@@ -26,9 +26,8 @@ export const createApiError = (
   config: ApiRequestConfig,
   response?: ApiResponse<unknown>,
 ): ApiError => {
-  // Include method+url for PostHog grouping/debugging, but keep the status as
-  // the last three characters when present — `handleError` still falls back to
-  // `error.message.slice(-3)` when `response.status` is unavailable.
+  // Keep status as the last three characters when present so `handleError` can
+  // still fall back to `error.message.slice(-3)` without a response object.
   const method = config.method?.toUpperCase();
   const target = [method, config.url].filter(Boolean).join(" ");
   const targetSuffix = target ? ` for ${target}` : "";

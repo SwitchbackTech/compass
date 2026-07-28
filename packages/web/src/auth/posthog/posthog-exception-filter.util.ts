@@ -1,4 +1,5 @@
 import { type CaptureResult } from "posthog-js";
+import { isTransientBrowserNetworkMessage } from "@web/api/util/backend-unavailable-error.util";
 
 /**
  * Exact unhandledrejection signature emitted by CefSharp / embedded WebView
@@ -6,18 +7,6 @@ import { type CaptureResult } from "posthog-js";
  */
 const CEFSHARP_SCANNER_MESSAGE =
   "Object Not Found Matching Id:1, MethodName:update, ParamCount:4";
-
-/**
- * Browser / SuperTokens network blips that escape as unhandledrejections.
- * The app already treats these as expected unavailability
- * (`isBackendUnavailableError`); capturing them as exceptions only creates
- * noise. SuperTokens' internal session fetch often rejects outside our
- * `doesSessionExist` try/catch, so client-side catch alone can't cover it.
- */
-const TRANSIENT_NETWORK_MESSAGES = new Set([
-  "Failed to fetch",
-  "NetworkError when attempting to fetch resource.",
-]);
 
 type ExceptionEntry = {
   type?: unknown;
@@ -51,47 +40,38 @@ const readExceptionEntries = (
   }));
 };
 
-const isTransientNetworkTypeError = (entry: ExceptionEntry): boolean => {
-  return (
-    entry.type === "TypeError" &&
-    typeof entry.value === "string" &&
-    TRANSIENT_NETWORK_MESSAGES.has(entry.value)
-  );
-};
+const isDroppableException = (entry: ExceptionEntry): boolean => {
+  if (typeof entry.value !== "string") return false;
 
-const isCefSharpScannerNoise = (entry: ExceptionEntry): boolean => {
+  if (entry.value === CEFSHARP_SCANNER_MESSAGE) return true;
+
+  // SuperTokens/browser network blips that escape as unhandledrejections.
+  // The app already treats these as expected unavailability; capturing them
+  // only creates noise. SuperTokens' session fetch often rejects outside our
+  // `doesSessionExist` try/catch, so client-side catch alone can't cover it.
   return (
-    typeof entry.value === "string" && entry.value === CEFSHARP_SCANNER_MESSAGE
+    entry.type === "TypeError" && isTransientBrowserNetworkMessage(entry.value)
   );
 };
 
 /**
- * Returns true when a PostHog capture payload is a known-unactionable
- * `$exception` that should be dropped in `before_send`.
+ * Drop known-unactionable `$exception` payloads in PostHog `before_send`.
  */
-export function shouldDropPosthogException(
+export function filterPosthogBeforeSend(
   event: CaptureResult | null,
-): boolean {
+): CaptureResult | null {
   if (!event || event.event !== "$exception") {
-    return false;
+    return event;
   }
 
   const entries = readExceptionEntries(event.properties);
   if (entries.length === 0) {
-    return false;
+    return event;
   }
 
-  return entries.every(
-    (entry) =>
-      isTransientNetworkTypeError(entry) || isCefSharpScannerNoise(entry),
-  );
-}
-
-export function filterPosthogBeforeSend(
-  event: CaptureResult | null,
-): CaptureResult | null {
-  if (shouldDropPosthogException(event)) {
+  if (entries.every(isDroppableException)) {
     return null;
   }
+
   return event;
 }
