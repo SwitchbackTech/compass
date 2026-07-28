@@ -11,11 +11,19 @@ import { type AvailabilityResponse } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { cleanup, render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { createCompassQueryClient } from "@web/api/query-client";
+import { applyClientVisibility } from "@web/calendars/apply-client-visibility";
 import {
   availabilityQueryOptions,
   deriveAvailabilityCalendarIds,
 } from "@web/calendars/availability.query";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import {
+  readHiddenCalendarIds,
+  setCalendarHidden,
+} from "@web/calendars/calendar-visibility.storage";
+import { resetCalendarVisibilityStoreForTests } from "@web/calendars/calendar-visibility.store";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type GridMeasurements } from "@web/grid/types/grid.types";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
@@ -53,7 +61,14 @@ function Provider({ children }: PropsWithChildren) {
     const client = createCompassQueryClient();
     client.setQueryData(calendarQueryKeys.all, seededCalendars);
 
-    const calendarIds = deriveAvailabilityCalendarIds(seededCalendars);
+    // Mirrors useCalendarsQuery's `select` (calendar.query.ts) so the key
+    // this seeds under matches the key the real hook computes - isVisible on
+    // a raw fixture is no longer authoritative, the hidden-ids store is.
+    const visibleCalendars = applyClientVisibility(
+      seededCalendars,
+      readHiddenCalendarIds(),
+    );
+    const calendarIds = deriveAvailabilityCalendarIds(visibleCalendars);
     // Same range the layer queries, so the seeded entry lands under the key
     // it reads.
     const { startDate, endDate } = dayEventQueryRange(dateInView);
@@ -79,6 +94,11 @@ afterEach(() => {
   cleanup();
   seededCalendars = [];
   seededBusyPeriods = [];
+  // The hidden-ids store is a module singleton that only resyncs from
+  // storage on a write or cross-tab event, so a plain removal here would
+  // leave the last test's hidden id in memory - reset both.
+  persistentBrowserStore.remove(STORAGE_KEYS.HIDDEN_CALENDAR_IDS);
+  resetCalendarVisibilityStoreForTests();
 });
 
 const makeFreeBusyCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
@@ -135,7 +155,13 @@ describe("DayCalendarBusyPeriodsLayer", () => {
     // useAvailabilityQuery's derived calendarIds is empty here - this pins
     // that the render path correctly shows nothing for that disabled query,
     // not just that the id-derivation function does.
-    const hiddenCalendar = makeFreeBusyCalendar({ isVisible: false });
+    const hiddenCalendar = makeFreeBusyCalendar();
+    // isVisible is client-derived from the hidden-ids store now, not a field
+    // to seed directly on the fixture - see calendar-visibility.store.ts.
+    // The store is a module singleton that only resyncs from storage on a
+    // write or cross-tab event, so force a resync before render picks it up.
+    setCalendarHidden(hiddenCalendar.id, true);
+    resetCalendarVisibilityStoreForTests();
     seededCalendars = [hiddenCalendar];
     seededBusyPeriods = [];
 
