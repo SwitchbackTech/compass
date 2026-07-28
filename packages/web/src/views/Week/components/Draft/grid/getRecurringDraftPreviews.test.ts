@@ -2,7 +2,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getRecurringDraftPreviews } from "./getRecurringDraftPreviews";
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
 
 const startOfView = dayjs("2026-07-05T00:00:00.000Z"); // Sun
 const endOfView = dayjs("2026-07-11T23:59:59.999Z"); // Sat
@@ -85,5 +85,46 @@ describe("getRecurringDraftPreviews", () => {
     expect(getRecurringDraftPreviews(draft, startOfView, endOfView)).toEqual(
       [],
     );
+  });
+
+  // The suite runs under TZ=Etc/UTC, so the host's timezone and dayjs.tz.guess()
+  // (which the underlying CompassEventRRule reads when no tzid is supplied)
+  // coincide - the exact condition that hid this bug in production for any
+  // non-UTC user. Mocking guess() reproduces a non-UTC host without touching
+  // process.env.TZ.
+  describe("on a non-UTC host (America/Denver)", () => {
+    const denver = "America/Denver";
+
+    afterEach(() => {
+      (
+        dayjs.tz.guess as unknown as { mockRestore: () => void }
+      ).mockRestore?.();
+    });
+
+    test("adding a weekday renders the preview on that weekday, not shifted a day earlier", () => {
+      spyOn(dayjs.tz, "guess").mockReturnValue(denver);
+
+      // Thursday 7pm Denver (MDT); checking "Saturday" in the form should
+      // preview Saturday 7pm, not Friday (the reported bug).
+      const draft = timedDraft({
+        startDate: "2026-07-23T19:00:00-06:00",
+        endDate: "2026-07-23T20:00:00-06:00",
+        recurrence: { rule: ["RRULE:FREQ=WEEKLY;BYDAY=TH,SA"] },
+      });
+      const start = dayjs.tz("2026-07-19 00:00", denver);
+      const end = dayjs.tz("2026-07-25 23:59:59", denver);
+
+      const previews = getRecurringDraftPreviews(draft, start, end);
+      const labeled = previews.map((p) =>
+        dayjs(p.startDate).tz(denver).format("dddd HH:mm"),
+      );
+
+      expect(labeled).toEqual(["Saturday 19:00"]);
+      expect(
+        dayjs(previews[0]!.startDate).isSame(
+          dayjs.tz("2026-07-25 19:00", denver),
+        ),
+      ).toBe(true);
+    });
   });
 });

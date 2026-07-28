@@ -21,6 +21,16 @@ export const RecurrenceIntervalSelect = ({
   max,
 }: RecurrenceIntervalSelectProps) => {
   const [value, setValue] = useState(initialValue);
+  // Re-seeds `value` whenever `initialValue` changes, e.g. when useRecurrence
+  // re-seeds its own interval state from a round-tripped rule (or the form
+  // switches to a different draft) - without this, `value` was set once from
+  // the first render's initialValue and never updated again, so the display
+  // could drift from the actual recurrence interval.
+  const [prevInitialValue, setPrevInitialValue] = useState(initialValue);
+  if (initialValue !== prevInitialValue) {
+    setPrevInitialValue(initialValue);
+    setValue(initialValue);
+  }
 
   const handleChange = (type: "increase" | "decrease") => {
     if (type === "increase" && value < max) {
