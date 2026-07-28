@@ -1,4 +1,5 @@
 import { z } from "zod/v4";
+import { HexColorSchema } from "@core/types/domain-primitives";
 import {
   CalendarAccessRoleSchema,
   CalendarCapabilitiesSchema,
@@ -10,6 +11,13 @@ import {
   ProviderCalendarSourceIdSchema,
   TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
+
+// One custom event-color label the calendar defines (Google's post-June-2026
+// event labels; a provider without the concept reports none).
+const EventLabelSchema = z.strictObject({
+  id: z.string().trim().min(1).max(256),
+  hex: HexColorSchema,
+});
 
 // Persistence record for `provider_calendars`. Provider FACTS
 // only — `active`/`primary`/`accessRole`/`capabilities` reflect what the
@@ -24,6 +32,7 @@ export const ProviderCalendarRecordSchema = z.strictObject({
   providerCalendarId: ProviderCalendarSourceIdSchema,
   displayName: z.string().trim().min(1).max(1024),
   color: z.string().trim().min(1).max(64).nullable(),
+  eventLabels: z.array(EventLabelSchema).readonly().default([]),
   active: z.boolean(),
   primary: z.boolean(),
   accessRole: CalendarAccessRoleSchema,
@@ -42,6 +51,7 @@ export const ProviderCalendarUpsertSchema = z.strictObject({
   providerCalendarId: ProviderCalendarSourceIdSchema,
   displayName: z.string().trim().min(1).max(1024),
   color: z.string().trim().min(1).max(64).nullable(),
+  eventLabels: z.array(EventLabelSchema).readonly().default([]),
   active: z.boolean(),
   primary: z.boolean(),
   accessRole: CalendarAccessRoleSchema,

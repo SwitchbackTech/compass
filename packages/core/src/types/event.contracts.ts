@@ -7,7 +7,10 @@ import {
   RRuleSchema,
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
-import { OptionalNullableEventColorSchema } from "@core/types/event-color.contracts";
+import {
+  OptionalHexEventColorSchema,
+  OptionalNullableEventColorSchema,
+} from "@core/types/event-color.contracts";
 
 export const EventContentSchema = z.discriminatedUnion("kind", [
   z.strictObject({
@@ -17,6 +20,9 @@ export const EventContentSchema = z.discriminatedUnion("kind", [
     // Null clears a previously set color tag on replace. Reads omit the field
     // when there is no color.
     color: OptionalNullableEventColorSchema,
+    // A provider-assigned custom color with no Compass slot equivalent.
+    // Read-only: no write command ever sets this.
+    colorHex: OptionalHexEventColorSchema,
   }),
   z.strictObject({ kind: z.literal("busy") }),
 ]);

@@ -2,6 +2,7 @@ import { calendar } from "@googleapis/calendar";
 import { OAuth2Client } from "google-auth-library";
 import {
   type gCalendar,
+  type gSchema$Calendar,
   type gSchema$CalendarListEntry,
 } from "@core/types/gcal";
 import {
@@ -25,7 +26,14 @@ export interface GoogleCalendarListPage {
   readonly nextSyncToken: string | null;
 }
 
-// The one Google call discovery makes. Depending on this narrow interface (not
+// One calendar's custom event-color labels, narrowed to what color resolution
+// needs. An entry with no id or hex is unusable for lookup and is dropped.
+export interface GoogleEventLabel {
+  readonly id: string;
+  readonly hex: string;
+}
+
+// The Google calls discovery makes. Depending on this narrow interface (not
 // the concrete googleapis client) lets tests supply scripted pages without a
 // network round-trip or module mocking.
 export interface GoogleCalendarListApi {
@@ -33,6 +41,11 @@ export interface GoogleCalendarListApi {
     pageToken?: string;
     syncToken?: string;
   }): Promise<GoogleCalendarListPage>;
+  // Only calendars.get (not calendarList.list) carries labelProperties, so
+  // discovery makes one extra call per calendar to resolve it. Never throws:
+  // a calendar whose label fetch fails is treated as having none, since a
+  // color lookup gap should never fail discovery.
+  getEventLabels(calendarId: string): Promise<readonly GoogleEventLabel[]>;
 }
 
 // Built per-connection from a short-lived access token minted by credential
@@ -61,6 +74,22 @@ const defaultApiFactory: GoogleCalendarListApiFactory = (accessToken) => {
         nextPageToken: data.nextPageToken ?? null,
         nextSyncToken: data.nextSyncToken ?? null,
       };
+    },
+    async getEventLabels(calendarId) {
+      let data: gSchema$Calendar;
+      try {
+        ({ data } = await gcal.calendars.get({ calendarId }));
+      } catch {
+        // A label-fetch failure (permissions, transient error) should never
+        // fail calendar discovery — the calendar just discovers with no
+        // custom colors resolvable this pass.
+        return [];
+      }
+      return (data.labelProperties?.eventLabels ?? [])
+        .filter((label): label is { id: string; backgroundColor: string } =>
+          Boolean(label.id && label.backgroundColor),
+        )
+        .map((label) => ({ id: label.id, hex: label.backgroundColor }));
     },
   };
 };
@@ -94,7 +123,9 @@ export class GoogleCalendarAdapter implements ProviderCalendarAdapter {
       const page = await this.#listPage(api, { pageToken, syncToken });
       for (const item of page.items) {
         const mapped = mapCalendar(item);
-        if (mapped) calendars.push(mapped);
+        if (!mapped) continue;
+        const eventLabels = await api.getEventLabels(mapped.providerCalendarId);
+        calendars.push({ ...mapped, eventLabels });
       }
       pageToken = page.nextPageToken ?? undefined;
       // Only the final page carries the token; keep the newest non-null one.
@@ -166,7 +197,7 @@ const CAPABILITIES_BY_ROLE: Record<CalendarAccessRole, CalendarCapabilities> = {
 // without an id is unusable (it cannot be keyed or persisted), so it is dropped.
 function mapCalendar(
   item: gSchema$CalendarListEntry,
-): DiscoveredCalendar | null {
+): Omit<DiscoveredCalendar, "eventLabels"> | null {
   if (!item.id) return null;
 
   const accessRole = mapAccessRole(item.accessRole);

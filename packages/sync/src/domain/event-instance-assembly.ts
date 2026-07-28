@@ -1,4 +1,4 @@
-import { withColor } from "@core/types/event-color.contracts";
+import { withColor, withColorHex } from "@core/types/event-color.contracts";
 import {
   type SyncEventInstance,
   SyncEventInstanceSchema,
@@ -128,4 +128,5 @@ const toInstanceContent = (content: EventRecord["content"]) => ({
   description: content.description,
   // Heal rows that persisted write-command `color: null`.
   ...withColor(content.color ?? undefined),
+  ...withColorHex(content.colorHex),
 });

@@ -1,7 +1,7 @@
 import { Origin } from "@core/constants/core.constants";
 import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
-import { withColor } from "@core/types/event-color.contracts";
+import { withColor, withColorHex } from "@core/types/event-color.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
@@ -73,6 +73,7 @@ const eventToGridEvent = (
       ? { isTimedMultiDayDisplay: true }
       : {}),
     ...withColor(details?.color ?? undefined),
+    ...withColorHex(details?.colorHex),
   };
 };
 

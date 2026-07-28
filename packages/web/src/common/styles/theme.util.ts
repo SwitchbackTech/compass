@@ -85,23 +85,34 @@ const EVENT_PALETTES: Record<ThemeName, EventPalette> = {
   "light-beach": buildEventPalette("light-beach"),
 };
 
-/** The active theme's event palette, or a Google-slot fill when `color` is
- * set. Subscribes so a theme switch re-renders the default (no-slot) case. */
-export const useEventPalette = (color?: EventColorSlot): EventPalette =>
-  resolveEventPalette(useThemeStore(selectTheme), color);
+/** The active theme's event palette, a provider-custom `colorHex` fill, or a
+ * Google-slot fill when `color` is set — in that precedence order. Subscribes
+ * so a theme switch re-renders the default (no-slot) case. */
+export const useEventPalette = (
+  color?: EventColorSlot,
+  colorHex?: string,
+): EventPalette =>
+  resolveEventPalette(useThemeStore(selectTheme), color, colorHex);
 
 /** Non-reactive read for plain functions (e.g. getGradient's identity check).
  * Components should use useEventPalette so they repaint on switch. */
-export const getEventPalette = (color?: EventColorSlot): EventPalette =>
-  resolveEventPalette(useThemeStore.getState().theme, color);
+export const getEventPalette = (
+  color?: EventColorSlot,
+  colorHex?: string,
+): EventPalette =>
+  resolveEventPalette(useThemeStore.getState().theme, color, colorHex);
 
 const resolveEventPalette = (
   themeName: ThemeName,
   color?: EventColorSlot,
-): EventPalette =>
-  color !== undefined
-    ? buildEventPaletteFromBase(EVENT_COLOR_SLOT_HEX[color])
-    : EVENT_PALETTES[themeName];
+  colorHex?: string,
+): EventPalette => {
+  if (colorHex !== undefined) return buildEventPaletteFromBase(colorHex);
+  if (color !== undefined) {
+    return buildEventPaletteFromBase(EVENT_COLOR_SLOT_HEX[color]);
+  }
+  return EVENT_PALETTES[themeName];
+};
 
 // CSS-variable gradients: these land in inline `background` styles, so the
 // browser resolves them against the active [data-theme] — no JS hex needed.

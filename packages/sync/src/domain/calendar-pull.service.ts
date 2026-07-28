@@ -102,6 +102,9 @@ export async function pullCalendarChanges(
   let pageToken = resource.pageCursor;
   let cursor = resource.syncCursor;
   let deleted = 0;
+  const colorLabels: ReadonlyMap<string, string> = new Map(
+    calendar.eventLabels.map((label) => [label.id, label.hex]),
+  );
 
   do {
     let page: Awaited<ReturnType<ProviderEventReader["listEventPage"]>>;
@@ -113,6 +116,7 @@ export async function pullCalendarChanges(
         // continues by pageToken alone.
         cursor: pageToken === null ? cursor : null,
         pageToken,
+        colorLabels,
       });
     } catch (error) {
       // An expired cursor cannot be resumed; hand off to repair without
