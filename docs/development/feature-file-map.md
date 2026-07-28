@@ -84,11 +84,8 @@ Use this document to find the first files to inspect for common Compass changes.
 
 ### Standalone Sync Service And Cutover
 
-- Cutover runbook: `docs/backend/sync-service-cutover.md`
 - Sync service entrypoints: `packages/sync/src/app.ts`, `packages/sync/src/server/sync.server.ts`
 - Backend Sync client / routing: `packages/backend/src/common/services/sync-service/`
-- Cutover knobs in config: `packages/core/src/config/compass.config.ts` (`sync.*`), `packages/backend/src/common/constants/config.constants.ts`
-- Public cutover posture: `packages/backend/src/config/controllers/config.controller.ts`
 - Preseed / migrate CLI: `packages/scripts/src/commands/preseed-sync.ts`, `migrate-connections.ts`, `migrate-provider-state.ts`, `migrate-pending-intent.ts`, `inventory-legacy-sync.ts`
 - Sync DB backup/restore: `packages/scripts/src/commands/sync-backup.ts`, `sync-restore.ts`
 - Diagnostics / retention / principal purge: `packages/sync/src/server/diagnostic.routes.ts`, `packages/sync/src/domain/connection-retention.service.ts`, `packages/sync/src/domain/principal-purge.service.ts`

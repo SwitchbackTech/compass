@@ -9,24 +9,6 @@ Realtime updates use **Server-Sent Events** (one HTTP connection per tab, server
 
 For local development, keep one boundary clear: browser API/SSE traffic can use localhost, but Google-to-Compass watch notifications are server-to-server POSTs from Google. Those notification POSTs need a public HTTPS backend URL if you want Google-side changes to arrive without a manual repair/import.
 
-## Legacy Backend Sync Vs Standalone Sync Service
-
-Two implementations can own Google connection and event data:
-
-| Mode | When | Owner |
-| --- | --- | --- |
-| Legacy | `sync.connectionRouting` / `sync.eventRouting` are `legacy` (default) | In-backend Google sync under `packages/backend/src/sync` |
-| Delegated | routing set to `sync` and `sync.serviceUrl` configured | Standalone `packages/sync` via `SyncServiceClient` |
-
-The backend always owns the browser HTTP/SSE surface. When delegated, controllers
-translate requests to Sync internal routes instead of the legacy store. Cutover
-knobs, safe sequence, preseed, diagnostics, and dual-writer guards are documented
-in [Sync Service Cutover](../backend/sync-service-cutover.md).
-
-The rest of this page describes the **legacy** Google sync + SSE path that still
-runs when routing is `legacy`, and the SSE client contract that applies in both
-modes (the browser still talks to `/api/events/stream`).
-
 ## High-Level Architecture
 
 ```mermaid
