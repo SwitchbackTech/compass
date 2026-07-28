@@ -35,7 +35,15 @@ import {
 } from "@web/events/stores/draft.store";
 import { TIMED_EVENT_FAN_INDENT } from "@web/grid/grid.constants";
 import { type GridMeasurements } from "@web/grid/types/grid.types";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+} from "bun:test";
 import "@testing-library/jest-dom";
 
 let seededEvents: Event[] = [];
@@ -292,6 +300,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // bun's fake clock is process-global; restore it so a pinned test can't
+  // leak its time into later tests or later files.
+  setSystemTime();
   cleanup();
   if (originalScroll) {
     HTMLElement.prototype.scroll = originalScroll;
@@ -780,6 +791,12 @@ describe("DayCalendarGrid", () => {
   });
 
   it("seeds CREATE_TIMED_DRAFT with the default target calendar, not column 0", async () => {
+    // Pin the clock: createTimedDraft derives the draft from the real
+    // `dayjs()` hour, so between 23:00 and 23:59 UTC the 1-hour draft runs
+    // past midnight, becomes multi-day, and renders in the all-day row
+    // instead of as the timed card this test looks for.
+    setSystemTime(new Date("2026-05-20T10:00:00.000Z"));
+
     // Holidays is first in column order (read-only, visible) but is not the
     // default create target — primary writable Google is. Shortcut drafts
     // must land on primary so the grid column matches the form.
