@@ -78,6 +78,35 @@ export async function dispatchSyncJob(
   job: JobRecord,
   now: () => Date,
 ): Promise<SyncJobOutcome> {
+  try {
+    return await runSyncJob(deps, job, now);
+  } catch (error) {
+    // Every kind resolves its provider token through getValidAccessToken, so a
+    // dead credential surfaces here whichever engine ran. Settle it done: the
+    // worker's generic catch classes any throw as retryableTransient, which
+    // would burn the whole retry ladder on a grant only a reconnect can fix.
+    // Done rather than a permanent failure because a failed job keeps its
+    // coalescing key and enqueue only $setOnInsert's, so the dead row would
+    // swallow the reconnect's re-enqueue and sync would never restart.
+    // refreshFailed rethrows: that is the transient case, a blip refreshing a
+    // still-good token. Mirrors the write path in provider-command.service.ts.
+    if (
+      error instanceof ProviderAuthError &&
+      error.reason !== "refreshFailed"
+    ) {
+      // Belt and braces: custody already discards on authorizationRevoked.
+      await deps.custody.discardRevoked(job.connectionId);
+      return { result: "done" };
+    }
+    throw error;
+  }
+}
+
+async function runSyncJob(
+  deps: SyncJobDispatchDeps,
+  job: JobRecord,
+  now: () => Date,
+): Promise<SyncJobOutcome> {
   // Calendar-list discovery is keyed on the connection, not a calendar/resource,
   // so it is resolved and handled before the resource-based family below.
   if (job.kind === "calendarListSync") {
@@ -125,72 +154,49 @@ export async function dispatchSyncJob(
     return { result: "drop", reason: "calendar no longer exists" };
   }
 
-  try {
-    switch (job.kind) {
-      case "initialImport": {
-        // Idempotent: a resource that already holds a cursor no-ops inside.
-        await importCalendarEvents(deps, calendar, now);
-        // Bootstrap the push channel once the calendar is imported. The followup
-        // is coalesced and maintainSubscription no-ops on an already-live channel,
-        // so a repeated import (a reclaimed lease, a re-import) never churns it.
-        return {
-          result: "done",
-          followup: subscriptionFollowup(resource, now),
-        };
-      }
-      case "incrementalPull": {
-        const pull = await pullCalendarChanges(deps, calendar, now);
-        if (pull.status === "applied") {
-          await appendCalendarInvalidation(deps, calendar, now());
-          return { result: "done" };
-        }
-        if (pull.status === "notImported") {
-          // A pull before the initial import ever ran: hand off to an import.
-          return { result: "done", followup: importFollowup(resource, now) };
-        }
-        // cursorExpired: the provider cursor is unusable; a repair rebuilds.
-        return { result: "done", followup: repairFollowup(resource, now) };
-      }
-      case "repair": {
-        const repair = await repairCalendar(deps, calendar, now);
-        // An incomplete repair (the pass yielded no durable cursor) left the old
-        // generation intact; retry the whole rebuild later rather than settle.
-        if (repair.status === "repaired") {
-          await appendCalendarInvalidation(deps, calendar, now());
-          return { result: "done" };
-        }
-        return {
-          result: "retry",
-          failureClass: "retryableTransient",
-          reason: "repair did not complete",
-        };
-      }
-      case "subscriptionMaintain": {
-        // Open or renew the push channel. Every terminal outcome (watched /
-        // renewed / current / unsupported / authRevoked) settles the job; a
-        // transient watch failure throws and the worker retries with backoff.
-        await maintainSubscription(deps, calendar, resource, now);
+  switch (job.kind) {
+    case "initialImport": {
+      // Idempotent: a resource that already holds a cursor no-ops inside.
+      await importCalendarEvents(deps, calendar, now);
+      // Bootstrap the push channel once the calendar is imported. The followup
+      // is coalesced and maintainSubscription no-ops on an already-live channel,
+      // so a repeated import (a reclaimed lease, a re-import) never churns it.
+      return { result: "done", followup: subscriptionFollowup(resource, now) };
+    }
+    case "incrementalPull": {
+      const pull = await pullCalendarChanges(deps, calendar, now);
+      if (pull.status === "applied") {
+        await appendCalendarInvalidation(deps, calendar, now());
         return { result: "done" };
       }
+      if (pull.status === "notImported") {
+        // A pull before the initial import ever ran: hand off to an import.
+        return { result: "done", followup: importFollowup(resource, now) };
+      }
+      // cursorExpired: the provider cursor is unusable; a repair rebuilds.
+      return { result: "done", followup: repairFollowup(resource, now) };
     }
-  } catch (error) {
-    // Every kind above resolves its provider token via getValidAccessToken
-    // before doing provider work. A revoked/missing credential is terminal —
-    // retrying cannot help until the user reconnects — so settle the job done
-    // rather than let it fall through to the worker's generic catch, which
-    // treats every throw as retryableTransient and burns the full retry ladder
-    // against a credential already known dead. refreshFailed is left alone: it
-    // is the transient case (a network blip refreshing a still-good token) and
-    // should retry. Mirrors the write path's classification in
-    // provider-command.service.ts.
-    if (
-      error instanceof ProviderAuthError &&
-      error.reason !== "refreshFailed"
-    ) {
-      await deps.custody.discardRevoked(calendar.connectionId);
+    case "repair": {
+      const repair = await repairCalendar(deps, calendar, now);
+      // An incomplete repair (the pass yielded no durable cursor) left the old
+      // generation intact; retry the whole rebuild later rather than settle.
+      if (repair.status === "repaired") {
+        await appendCalendarInvalidation(deps, calendar, now());
+        return { result: "done" };
+      }
+      return {
+        result: "retry",
+        failureClass: "retryableTransient",
+        reason: "repair did not complete",
+      };
+    }
+    case "subscriptionMaintain": {
+      // Open or renew the push channel. Every terminal outcome (watched /
+      // renewed / current / unsupported / authRevoked) settles the job; a
+      // transient watch failure throws and the worker retries with backoff.
+      await maintainSubscription(deps, calendar, resource, now);
       return { result: "done" };
     }
-    throw error;
   }
 }
 

@@ -419,12 +419,13 @@ describe("dispatchSyncJob", () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
     const reader = new FakeReader([]);
+    const discarded: string[] = [];
     const flakyCustody: SyncJobDispatchDeps["custody"] = {
       getValidAccessToken: async () => {
         throw new ProviderAuthError("refreshFailed", "network blip");
       },
-      discardRevoked: async () => {
-        throw new Error("should not discard on a transient refresh failure");
+      discardRevoked: async (connectionId) => {
+        discarded.push(connectionId);
       },
     };
 
@@ -435,6 +436,7 @@ describe("dispatchSyncJob", () => {
         now,
       ),
     ).rejects.toThrow(ProviderAuthError);
+    expect(discarded).toEqual([]);
   });
 
   it("drops a job whose resource no longer exists", async () => {
@@ -559,5 +561,37 @@ describe("dispatchSyncJob", () => {
       result: "drop",
       reason: "connection no longer exists",
     });
+  });
+
+  it("settles a revoked calendarListSync done, like the resource-based kinds", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const connectionId = objectId();
+    stubbedConnection = {
+      _id: connectionId,
+      tenantId,
+      principalId,
+    } as ProviderConnectionRecord;
+    const discarded: string[] = [];
+    const revokedCustody: SyncJobDispatchDeps["custody"] = {
+      getValidAccessToken: async () => {
+        throw new ProviderAuthError(
+          "authorizationRevoked",
+          "refresh token revoked",
+        );
+      },
+      discardRevoked: async (id) => {
+        discarded.push(id);
+      },
+    };
+
+    const outcome = await dispatchSyncJob(
+      deps(new FakeReader([]), revokedCustody),
+      calendarListJob(connectionId, tenantId, principalId),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+    expect(discarded).toEqual([connectionId]);
   });
 });
