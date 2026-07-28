@@ -1,5 +1,6 @@
 import { BellIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
+import { type EmailUpdatesStatus } from "@core/types/email/email.types";
 import { UserApi } from "@web/api/user.api";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { SUBSCRIBE_TO_UPDATES_TOAST_ID } from "@web/common/constants/toast.constants";
@@ -8,22 +9,13 @@ import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 
 /**
- * Returns the actionable email-updates opt-in command when the user is
- * eligible. Kit remains the source of truth; this hook caches one lookup per
- * mount and retries a failed lookup when the palette next opens. Non-actionable
- * statuses (subscribed, unsubscribed, checking, error) yield no items.
+ * Returns the email-updates opt-in command when Kit reports the user as
+ * eligible. Caches one lookup per mount; retries a failed lookup the next
+ * time the palette opens.
  */
 export const useSubscribeCmdItems = (open: boolean): CommandItem[] => {
   const { authenticated } = useSession();
-  const [status, setStatus] = useState<
-    | "idle"
-    | "checking"
-    | "unavailable"
-    | "not_subscribed"
-    | "subscribed"
-    | "unsubscribed"
-    | "error"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | EmailUpdatesStatus>("idle");
   const hasChecked = useRef(false);
 
   useEffect(() => {
@@ -36,19 +28,10 @@ export const useSubscribeCmdItems = (open: boolean): CommandItem[] => {
     if (!open || hasChecked.current) return;
 
     hasChecked.current = true;
-    setStatus("checking");
-    const getEmailUpdates = UserApi.getEmailUpdates;
-
-    if (!getEmailUpdates) {
-      setStatus("unavailable");
-      return;
-    }
-
-    void getEmailUpdates()
+    void UserApi.getEmailUpdates()
       .then((response) => setStatus(response.status))
       .catch(() => {
         hasChecked.current = false;
-        setStatus("error");
       });
   }, [authenticated, open]);
 
