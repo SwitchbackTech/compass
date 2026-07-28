@@ -1,3 +1,4 @@
+import { toColorLabelMap } from "@sync/domain/color-label-map";
 import { syncHorizon } from "@sync/domain/horizon";
 import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
@@ -188,6 +189,7 @@ class ImportRun {
         calendarId: this.calendar.providerCalendarId,
         window: options.window ?? null,
         pageToken,
+        colorLabels: toColorLabelMap(this.calendar.eventLabels),
       });
       if (options.checkpointed) this.#readerSkipped += page.skipped;
       // A first import has no local events to delete, so standalone

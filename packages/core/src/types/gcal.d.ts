@@ -17,7 +17,22 @@ export declare type gSchema$CalendarList = calendar_v3.Schema$CalendarList;
 export declare type gSchema$CalendarListEntry =
   calendar_v3.Schema$CalendarListEntry;
 export declare type gSchema$Channel = calendar_v3.Schema$Channel;
-export declare type gSchema$Event = calendar_v3.Schema$Event;
+
+// Google's July-2026 custom event-label color system. Not yet modeled by the
+// installed @googleapis/calendar client types, so these are hand-declared
+// against the documented shape (id + backgroundColor per calendar-scoped
+// label, referenced from an event by eventLabelId).
+export declare type gSchema$EventLabel = {
+  id?: string | null;
+  backgroundColor?: string | null;
+  name?: string | null;
+};
+export declare type gSchema$Calendar = calendar_v3.Schema$Calendar & {
+  labelProperties?: { eventLabels?: gSchema$EventLabel[] | null } | null;
+};
+export declare type gSchema$Event = calendar_v3.Schema$Event & {
+  eventLabelId?: string | null;
+};
 export declare type gSchema$EventBase = WithGcalId<
   WithRecurrenceRule<gSchema$Event>
 >;

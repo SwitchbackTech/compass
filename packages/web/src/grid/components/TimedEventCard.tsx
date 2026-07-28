@@ -123,7 +123,10 @@ const TimedEventCardBase = (
     [position.height, showTimeLabel],
   );
 
-  const { base: baseColor, hover: hoverColor } = useEventPalette(event.color);
+  const { base: baseColor, hover: hoverColor } = useEventPalette(
+    event.color,
+    event.colorHex,
+  );
   // Draft fills use the same base as saved cards so the Week overlay matches
   // the form/context-menu swatch (and the eventual save). Draft vs saved is
   // carried by the drop-shadow filter below, not by darkening the color away.

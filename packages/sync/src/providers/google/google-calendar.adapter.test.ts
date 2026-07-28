@@ -3,19 +3,28 @@ import {
   GoogleCalendarAdapter,
   type GoogleCalendarListApi,
   type GoogleCalendarListPage,
+  type GoogleEventLabel,
 } from "@sync/providers/google/google-calendar.adapter";
 import { ProviderCalendarError } from "@sync/providers/provider-calendar.port";
 
 // A fake calendar-list API that returns scripted pages in order, recording the
 // params it was called with so tests can assert pagination and cursor handling.
+// Event labels default to empty per calendar unless scripted via `labelsById`.
 class FakeCalendarListApi implements GoogleCalendarListApi {
   calls: Array<{ pageToken?: string; syncToken?: string }> = [];
+  labelCalls: string[] = [];
   #pages: GoogleCalendarListPage[];
   #error?: unknown;
+  #labelsById: Record<string, readonly GoogleEventLabel[]>;
 
-  constructor(pages: GoogleCalendarListPage[], error?: unknown) {
+  constructor(
+    pages: GoogleCalendarListPage[],
+    error?: unknown,
+    labelsById: Record<string, readonly GoogleEventLabel[]> = {},
+  ) {
     this.#pages = pages;
     this.#error = error;
+    this.#labelsById = labelsById;
   }
 
   async listPage(params: {
@@ -27,6 +36,13 @@ class FakeCalendarListApi implements GoogleCalendarListApi {
     const page = this.#pages.shift();
     if (!page) throw new Error("FakeCalendarListApi: no page scripted");
     return page;
+  }
+
+  async getEventLabels(
+    calendarId: string,
+  ): Promise<readonly GoogleEventLabel[]> {
+    this.labelCalls.push(calendarId);
+    return this.#labelsById[calendarId] ?? [];
   }
 }
 
@@ -87,6 +103,7 @@ describe("GoogleCalendarAdapter", () => {
         providerCalendarId: "primary-cal",
         displayName: "Primary",
         color: "#112233",
+        eventLabels: [],
         primary: true,
         active: true,
         accessRole: "owner",
@@ -98,6 +115,35 @@ describe("GoogleCalendarAdapter", () => {
         },
       },
     ]);
+  });
+
+  it("resolves each calendar's custom event-color labels via a per-calendar lookup", async () => {
+    const api = new FakeCalendarListApi(
+      [
+        page({
+          items: [entry({ id: "labeled" }), entry({ id: "unlabeled" })],
+          nextSyncToken: "s",
+        }),
+      ],
+      undefined,
+      {
+        labeled: [{ id: "label-1", hex: "#009688" }],
+      },
+    );
+    const { adapter } = adapterWith(api);
+
+    const { calendars } = await adapter.discoverCalendars({
+      accessToken: "at",
+    });
+    const byId = Object.fromEntries(
+      calendars.map((c) => [c.providerCalendarId, c]),
+    );
+
+    expect(byId["labeled"].eventLabels).toEqual([
+      { id: "label-1", hex: "#009688" },
+    ]);
+    expect(byId["unlabeled"].eventLabels).toEqual([]);
+    expect(api.labelCalls).toEqual(["labeled", "unlabeled"]);
   });
 
   it("follows pagination, accumulating items and taking the final sync token", async () => {

@@ -33,6 +33,10 @@ export interface ProviderEventReadInput {
   // request of a pass; paging afterward is identified by pageToken alone.
   readonly cursor?: string | null;
   readonly pageToken?: string | null;
+  // The owning calendar's custom event-color labels (id -> hex), for
+  // providers that support them (e.g. Google's post-June-2026 event labels).
+  // A provider with no such concept simply ignores this.
+  readonly colorLabels?: ReadonlyMap<string, string>;
 }
 
 // A provider-neutral event read port. One call reads one page; the caller

@@ -1,4 +1,4 @@
-import { withColor } from "@core/types/event-color.contracts";
+import { withColor, withColorHex } from "@core/types/event-color.contracts";
 import { describe, expect, it } from "bun:test";
 
 describe("withColor", () => {
@@ -12,5 +12,17 @@ describe("withColor", () => {
       color: null,
     });
     expect({ title: "x", ...withColor(undefined) }).toEqual({ title: "x" });
+  });
+});
+
+describe("withColorHex", () => {
+  it("includes the hex and omits when undefined", () => {
+    expect({ title: "x", ...withColorHex("#009688") }).toEqual({
+      title: "x",
+      colorHex: "#009688",
+    });
+    expect({ title: "x", ...withColorHex(undefined) }).toEqual({
+      title: "x",
+    });
   });
 });

@@ -120,6 +120,27 @@ describe("ProviderCalendarRepository", () => {
     ).toHaveLength(0);
   });
 
+  it("persists and updates the calendar's custom event-color labels", async () => {
+    const connectionId = objectId();
+    const created = await repo.upsertByProviderCalendar(
+      baseUpsert({
+        connectionId,
+        eventLabels: [{ id: "label-1", hex: "#009688" }],
+      }),
+    );
+    expect(created.eventLabels).toEqual([{ id: "label-1", hex: "#009688" }]);
+
+    const updated = await repo.upsertByProviderCalendar(
+      baseUpsert({ connectionId, eventLabels: [] }),
+    );
+    expect(updated.eventLabels).toEqual([]);
+  });
+
+  it("defaults eventLabels to empty when the caller omits it", async () => {
+    const created = await repo.upsertByProviderCalendar(baseUpsert());
+    expect(created.eventLabels).toEqual([]);
+  });
+
   it("rejects a duplicate (connection, provider-calendar) identity", async () => {
     const shared = {
       tenantId: objectId(),

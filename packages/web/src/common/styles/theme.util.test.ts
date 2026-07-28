@@ -19,4 +19,9 @@ describe("theme.util event color slots", () => {
     );
     expect(getEventPalette().base).not.toBe(EVENT_COLOR_SLOT_HEX.coral);
   });
+
+  it("prefers colorHex over a color slot, and colorHex over the theme default", () => {
+    expect(getEventPalette(undefined, "#009688").base).toBe("#009688");
+    expect(getEventPalette("coral", "#009688").base).toBe("#009688");
+  });
 });

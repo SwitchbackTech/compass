@@ -83,6 +83,26 @@ describe("Event query view models", () => {
     ).not.toHaveProperty("color");
   });
 
+  test("carries optional content.colorHex onto grid event cards", () => {
+    const labeled = createMockEvent({
+      content: {
+        kind: "details",
+        title: "Eucalyptus meeting",
+        description: "",
+        colorHex: "#009688",
+      },
+    });
+    const plain = createMockEvent();
+    const result = deriveCalendarEventViewModel(normalized(labeled, plain));
+
+    expect(
+      result.timedEvents.find(({ _id }) => _id === labeled.id)?.colorHex,
+    ).toBe("#009688");
+    expect(
+      result.timedEvents.find(({ _id }) => _id === plain.id),
+    ).not.toHaveProperty("colorHex");
+  });
+
   test("returns stable empty shapes", () => {
     const week = deriveCalendarEventViewModel();
     expect(week).toEqual({

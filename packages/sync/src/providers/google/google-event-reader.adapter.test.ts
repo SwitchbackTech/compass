@@ -189,6 +189,23 @@ describe("GoogleEventReaderAdapter", () => {
     expect(result.skipped).toBe(1);
   });
 
+  it("threads colorLabels through to resolve an event's eventLabelId", async () => {
+    const api = new FakeEventListApi([
+      page({ items: [gEvent({ id: "labeled", eventLabelId: "label-1" })] }),
+    ]);
+    const { adapter } = adapterWith(api);
+
+    const result = await adapter.listEventPage({
+      accessToken: "tok",
+      calendarId: "primary@google.com",
+      colorLabels: new Map([["label-1", "#009688"]]),
+    });
+
+    expect(result.events[0]).toMatchObject({
+      content: { colorHex: "#009688" },
+    });
+  });
+
   it("maps an expired sync token (410) to cursorExpired", async () => {
     const api = new FakeEventListApi([], { response: { status: 410 } });
     const { adapter } = adapterWith(api);

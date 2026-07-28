@@ -1,5 +1,5 @@
 import { type Event, EventSchema } from "@core/types/event.contracts";
-import { withColor } from "@core/types/event-color.contracts";
+import { withColor, withColorHex } from "@core/types/event-color.contracts";
 import { type SyncEventInstance } from "@core/types/sync/event.contracts";
 import { composeOccurrenceId } from "./occurrence-id";
 
@@ -8,6 +8,7 @@ const toBrowserDetails = (content: SyncEventInstance["content"]) => ({
   title: content.title,
   description: content.description,
   ...withColor(content.color),
+  ...withColorHex(content.colorHex),
 });
 
 // Translate one sync full-fidelity instance into the browser Event contract.

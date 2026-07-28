@@ -13,6 +13,13 @@ export interface DiscoveredCalendar {
   readonly providerCalendarId: string;
   readonly displayName: string;
   readonly color: string | null;
+  // Custom event-color labels the calendar defines (id -> hex), for providers
+  // that support per-event custom colors beyond a fixed palette (e.g. Google's
+  // post-June-2026 event labels). Empty for a provider or calendar with none.
+  readonly eventLabels: readonly {
+    readonly id: string;
+    readonly hex: string;
+  }[];
   // The provider designates this as the account's default calendar.
   readonly primary: boolean;
   // The calendar is present and visible in the account's list. A deleted or

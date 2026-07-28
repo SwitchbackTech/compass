@@ -96,6 +96,7 @@ export async function syncCalendarList(
         calendar.providerCalendarId as ProviderCalendarSourceId,
       displayName: calendar.displayName,
       color: calendar.color,
+      eventLabels: calendar.eventLabels,
       active: calendar.active,
       primary: calendar.primary,
       accessRole: calendar.accessRole,
