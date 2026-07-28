@@ -85,10 +85,9 @@ describe("useWeekEventsQuery", () => {
     });
     const queryClient = createCompassQueryClient();
 
-    const result = renderHook(
-      () => useWeekEventsQuery({ ...range(), reportError: () => {} }),
-      { queryClient },
-    );
+    const result = renderHook(() => useWeekEventsQuery(range()), {
+      queryClient,
+    });
 
     await waitFor(() => {
       expect(result.result.current.error?.message).toBe("boom");

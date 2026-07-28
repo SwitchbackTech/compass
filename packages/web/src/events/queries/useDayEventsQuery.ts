@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { handleError } from "@web/common/utils/event/event.util";
 import { dayEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { deriveCalendarEventViewModel } from "./event.view-model";
@@ -14,19 +13,12 @@ type DayEventsQueryArgs = {
 
 /**
  * Primary day-events read hook. TanStack Query owns the normalized result.
+ * Load failures are shown contextually (e.g. EventGrid) — no global toast.
  */
 export function useDayEventsQuery({ startDate, endDate }: DayEventsQueryArgs) {
   const source = useEventRepositorySource();
 
-  const query = useQuery(dayEventsQueryOptions({ source, startDate, endDate }));
-  const { error } = query;
-
-  useEffect(() => {
-    if (!error) return;
-    handleError(error as Error);
-  }, [error]);
-
-  return query;
+  return useQuery(dayEventsQueryOptions({ source, startDate, endDate }));
 }
 
 export function useDayEventViewModel(args: DayEventsQueryArgs) {

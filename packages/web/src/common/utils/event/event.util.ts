@@ -11,6 +11,7 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type ApiError } from "@web/api/api.types";
 import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 import { getUserId } from "@web/auth/compass/session/session.util";
+import { GENERIC_ERROR_TOAST_ID } from "@web/common/constants/toast.constants";
 import {
   DATA_EVENT_ELEMENT_ID,
   ID_GRID_ALLDAY_ROW,
@@ -207,6 +208,7 @@ export const handleError = (error: Error) => {
     // Expected transient failure: nudge the user to retry without logging it.
     showErrorToast(
       "Something went wrong behind the scenes. Please try again later.",
+      { toastId: GENERIC_ERROR_TOAST_ID },
     );
     return;
   }
@@ -216,11 +218,12 @@ export const handleError = (error: Error) => {
   if (code === Status.INTERNAL_SERVER) {
     showErrorToast(
       "Something went wrong behind the scenes. Please try again later.",
+      { toastId: GENERIC_ERROR_TOAST_ID },
     );
     return;
   }
 
-  showErrorToast(error.message);
+  showErrorToast(error.message, { toastId: GENERIC_ERROR_TOAST_ID });
 };
 
 export const isEventInRange = (
