@@ -32,3 +32,24 @@ export function createExternalStore<T>(initial: T): ExternalStore<T> {
     },
   };
 }
+
+/**
+ * Cross-tab sync for a single localStorage key: a write in another tab fires
+ * "storage" here (browsers never fire it in the writing tab itself), so this
+ * calls `onChange` to let the caller re-read its own source of truth. Shared
+ * by every store that mirrors one localStorage key (auth state, calendar
+ * visibility) so the window-listener wiring exists in one place.
+ */
+export function subscribeToStorageKey(
+  key: string,
+  onChange: () => void,
+): () => void {
+  if (typeof window === "undefined") return () => {};
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === key) onChange();
+  };
+  window.addEventListener("storage", handleStorage);
+
+  return () => window.removeEventListener("storage", handleStorage);
+}

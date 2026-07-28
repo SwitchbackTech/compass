@@ -15,8 +15,6 @@ import { type ApiRequestConfig } from "@web/api/api.types";
 import { BaseApi } from "@web/api/base/base.api";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { isCalendarHidden } from "@web/calendars/calendar-visibility.storage";
-import { resetCalendarVisibilityStoreForTests } from "@web/calendars/calendar-visibility.store";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
@@ -134,12 +132,8 @@ describe("CalendarList", () => {
 
   afterEach(() => {
     BaseApi.defaults.adapter = undefined;
-    persistentBrowserStore.remove(STORAGE_KEYS.HIDDEN_CALENDAR_IDS);
-    // The hidden-ids store is a module singleton (calendar-visibility.store.ts)
-    // that only resyncs from storage on a write or a cross-tab "storage"
-    // event - neither fires from the plain removal above, so without this it
-    // would keep the last test's hidden id in memory and leak into the next.
-    resetCalendarVisibilityStoreForTests();
+    // Storage clearing + the hidden-ids store resync are both handled by the
+    // global test-lifecycle afterEach (resetBrowserState + resetAllStores).
     mockUseSession.mockReturnValue({
       authenticated: false,
       setAuthenticated: () => {},

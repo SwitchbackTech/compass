@@ -1,4 +1,5 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { CalendarApi } from "@web/api/calendar.api";
 import { useSession } from "@web/auth/compass/session/useSession";
@@ -37,9 +38,13 @@ export function calendarsQueryOptions(authenticated: boolean) {
 export function useCalendarsQuery() {
   const { authenticated } = useSession();
   const hiddenIds = useHiddenCalendarIds();
+  // A fresh arrow function every render would recompute select's full
+  // map+spread over every calendar on every render, not just when hiddenIds
+  // (or the underlying data) actually changes.
+  const select = useCallback(
+    (calendars: Calendar[]) => applyClientVisibility(calendars, hiddenIds),
+    [hiddenIds],
+  );
 
-  return useQuery({
-    ...calendarsQueryOptions(authenticated),
-    select: (calendars) => applyClientVisibility(calendars, hiddenIds),
-  });
+  return useQuery({ ...calendarsQueryOptions(authenticated), select });
 }

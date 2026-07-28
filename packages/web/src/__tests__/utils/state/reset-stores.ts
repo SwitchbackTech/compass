@@ -9,6 +9,7 @@ import {
   initialUserMetadataState,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
+import { resetCalendarVisibilityStoreForTests } from "@web/calendars/calendar-visibility.store";
 import { resetEventRepositorySourceForTests } from "@web/events/repositories/event.repository.source.store";
 import {
   initialDraftState,
@@ -40,6 +41,9 @@ const storeResets: StoreReset[] = [
   // poisoning is silent and only surfaces under CI's file ordering).
   resetBackendAvailabilityForTests,
   resetEventRepositorySourceForTests,
+  // Storage itself is cleared by resetBrowserState() (test-lifecycle.ts)
+  // before this runs; this just resyncs the module-singleton store to match.
+  resetCalendarVisibilityStoreForTests,
   // Lives on window.__weekInteractionMotionActive, which survives across
   // test files (the preload reuses one jsdom window). A test that starts a
   // real drag and never completes it would otherwise leave every later

@@ -1,10 +1,13 @@
 import { useSyncExternalStore } from "react";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { createExternalStore } from "@web/common/utils/external-store.util";
+import {
+  createExternalStore,
+  subscribeToStorageKey,
+} from "@web/common/utils/external-store.util";
 import {
   readHiddenCalendarIds,
-  setCalendarHidden,
+  writeHiddenCalendarIds,
 } from "./calendar-visibility.storage";
 
 /**
@@ -28,34 +31,34 @@ function refreshFromStorage(): void {
 /**
  * Persist + broadcast a visibility change. Returns false (and leaves the
  * store untouched) when the storage write fails, so callers can surface a
- * failure toast without the UI silently flipping first.
+ * failure toast without the UI silently flipping first. Builds the next set
+ * from the in-memory store (already the source of truth for this tab) and
+ * writes it directly, rather than writing then re-reading storage to learn
+ * what was just written.
  */
 export function setCalendarVisibility(
   calendarId: CalendarId,
   isVisible: boolean,
 ): boolean {
-  const saved = setCalendarHidden(calendarId, !isVisible);
-  if (saved) refreshFromStorage();
+  const next = new Set(hiddenIdsStore.get());
+  if (isVisible) next.delete(calendarId);
+  else next.add(calendarId);
+
+  const saved = writeHiddenCalendarIds(next);
+  if (saved) hiddenIdsStore.set(next);
   return saved;
 }
 
 function subscribe(onChange: () => void): () => void {
   const unsubscribeStore = hiddenIdsStore.subscribe(onChange);
-
-  if (typeof window === "undefined") return unsubscribeStore;
-
-  // Cross-tab sync: a write in another tab fires "storage" here (never in
-  // the writing tab itself), so pick it up and re-read localStorage.
-  const handleStorage = (event: StorageEvent) => {
-    if (event.key === STORAGE_KEYS.HIDDEN_CALENDAR_IDS) {
-      refreshFromStorage();
-    }
-  };
-  window.addEventListener("storage", handleStorage);
+  const unsubscribeStorage = subscribeToStorageKey(
+    STORAGE_KEYS.HIDDEN_CALENDAR_IDS,
+    refreshFromStorage,
+  );
 
   return () => {
     unsubscribeStore();
-    window.removeEventListener("storage", handleStorage);
+    unsubscribeStorage();
   };
 }
 
@@ -64,9 +67,11 @@ export function useHiddenCalendarIds(): ReadonlySet<string> {
 }
 
 /**
- * Test-only: resyncs the in-memory store from storage. Without this, the
- * module-singleton store keeps a hidden id in memory even after a test
- * clears localStorage directly, leaking into later tests in the same file.
+ * Test-only: resyncs the in-memory store from storage. Registered in
+ * reset-stores.ts for between-test cleanup; also called directly by tests
+ * that seed a hidden id via calendar-visibility.storage.ts's setCalendarHidden
+ * (bypassing this store's own write path) and need the store to observe it
+ * before render.
  */
 export function resetCalendarVisibilityStoreForTests(): void {
   refreshFromStorage();

@@ -17,13 +17,8 @@ import {
   deriveAvailabilityCalendarIds,
 } from "@web/calendars/availability.query";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
-import {
-  readHiddenCalendarIds,
-  setCalendarHidden,
-} from "@web/calendars/calendar-visibility.storage";
-import { resetCalendarVisibilityStoreForTests } from "@web/calendars/calendar-visibility.store";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
+import { readHiddenCalendarIds } from "@web/calendars/calendar-visibility.storage";
+import { setCalendarVisibility } from "@web/calendars/calendar-visibility.store";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type GridMeasurements } from "@web/grid/types/grid.types";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
@@ -94,11 +89,8 @@ afterEach(() => {
   cleanup();
   seededCalendars = [];
   seededBusyPeriods = [];
-  // The hidden-ids store is a module singleton that only resyncs from
-  // storage on a write or cross-tab event, so a plain removal here would
-  // leave the last test's hidden id in memory - reset both.
-  persistentBrowserStore.remove(STORAGE_KEYS.HIDDEN_CALENDAR_IDS);
-  resetCalendarVisibilityStoreForTests();
+  // Storage clearing + the hidden-ids store resync are both handled by the
+  // global test-lifecycle afterEach (resetBrowserState + resetAllStores).
 });
 
 const makeFreeBusyCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
@@ -158,10 +150,7 @@ describe("DayCalendarBusyPeriodsLayer", () => {
     const hiddenCalendar = makeFreeBusyCalendar();
     // isVisible is client-derived from the hidden-ids store now, not a field
     // to seed directly on the fixture - see calendar-visibility.store.ts.
-    // The store is a module singleton that only resyncs from storage on a
-    // write or cross-tab event, so force a resync before render picks it up.
-    setCalendarHidden(hiddenCalendar.id, true);
-    resetCalendarVisibilityStoreForTests();
+    setCalendarVisibility(hiddenCalendar.id, false);
     seededCalendars = [hiddenCalendar];
     seededBusyPeriods = [];
 

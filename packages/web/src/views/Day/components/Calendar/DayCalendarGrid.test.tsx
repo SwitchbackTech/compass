@@ -16,15 +16,12 @@ import {
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
-import { setCalendarHidden } from "@web/calendars/calendar-visibility.storage";
-import { resetCalendarVisibilityStoreForTests } from "@web/calendars/calendar-visibility.store";
+import { setCalendarVisibility } from "@web/calendars/calendar-visibility.store";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
   DATA_TIMED_GRID_ROW,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
@@ -314,11 +311,8 @@ afterEach(() => {
     delete (HTMLElement.prototype as { scroll?: unknown }).scroll;
   }
   resetDraft();
-  // The hidden-ids store is a module singleton that only resyncs from
-  // storage on a write or cross-tab event, so a plain removal here would
-  // leave the last test's hidden id in memory - reset both.
-  persistentBrowserStore.remove(STORAGE_KEYS.HIDDEN_CALENDAR_IDS);
-  resetCalendarVisibilityStoreForTests();
+  // Storage clearing + the hidden-ids store resync are both handled by the
+  // global test-lifecycle afterEach (resetBrowserState + resetAllStores).
 });
 
 describe("DayCalendarGrid", () => {
@@ -335,10 +329,7 @@ describe("DayCalendarGrid", () => {
     const hidden = makeCalendar("Hidden");
     // isVisible is client-derived from the hidden-ids store now, not a field
     // to seed directly on the fixture - see calendar-visibility.store.ts.
-    // The store is a module singleton that only resyncs from storage on a
-    // write or cross-tab event, so force a resync before render picks it up.
-    setCalendarHidden(hidden.id, true);
-    resetCalendarVisibilityStoreForTests();
+    setCalendarVisibility(hidden.id, false);
     seededEvents = [
       createMockEvent({
         calendarId: primary.id,
@@ -395,9 +386,8 @@ describe("DayCalendarGrid", () => {
   it("falls back to the primary calendar when every calendar is disabled", () => {
     const primary = makeCalendar("Primary", { isPrimary: true });
     const disabled = makeCalendar("Disabled");
-    setCalendarHidden(primary.id, true);
-    setCalendarHidden(disabled.id, true);
-    resetCalendarVisibilityStoreForTests();
+    setCalendarVisibility(primary.id, false);
+    setCalendarVisibility(disabled.id, false);
 
     renderDayCalendarGrid([disabled, primary]);
 
