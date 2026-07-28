@@ -34,13 +34,17 @@ export const Grid: FC<Props> = ({
   // Subscribes to the same cache entry the event layers read, so this reports
   // their load without issuing a second fetch.
   const {
-    isPending: isLoadingEvents,
+    isPending,
+    isFetching,
     isError: isErrorEvents,
     refetch,
   } = useWeekEventsQueryStatus({
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
+  // First load uses isPending; Retry uses isFetching so the overlay gives
+  // feedback instead of looking like a no-op when the refetch also fails.
+  const isLoadingEvents = isPending || (isErrorEvents && isFetching);
 
   useDragEdgeNavigation(mainGridRef, weekProps);
 

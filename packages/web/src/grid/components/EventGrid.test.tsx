@@ -130,7 +130,7 @@ describe("EventGrid", () => {
 
     render(
       <EventGrid
-        allDayEventsLayer={<div />}
+        allDayEventsLayer={<div data-testid="timed-underlay" />}
         gridRefs={createGridRefs()}
         isErrorEvents
         onAllDayMouseDown={mock()}
@@ -147,8 +147,40 @@ describe("EventGrid", () => {
       />,
     );
 
-    expect(screen.getByText("Couldn't load events.")).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Couldn't load events.");
+    expect(alert).toHaveClass("bg-background");
+    expect(within(alert).getByRole("button", { name: "Retry" })).toHaveClass(
+      "bg-accent",
+    );
+
     await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(onRetryEvents).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides the error overlay while events are loading", () => {
+    render(
+      <EventGrid
+        allDayEventsLayer={<div />}
+        gridRefs={createGridRefs()}
+        isErrorEvents
+        isLoadingEvents
+        onAllDayMouseDown={mock()}
+        onTimedMouseDown={mock()}
+        timedEventsLayer={<div />}
+        today={dayjs("2026-05-20T00:00:00.000")}
+        visibleDates={[
+          {
+            date: dayjs("2026-05-20T00:00:00.000"),
+            key: "date-0",
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("status", { name: "Loading events" }),
+    ).toBeInTheDocument();
   });
 });

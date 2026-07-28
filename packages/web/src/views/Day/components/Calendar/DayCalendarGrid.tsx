@@ -70,11 +70,15 @@ export function DayCalendarGrid() {
     allDayEvents,
     events: dayEvents,
     isError: isErrorEvents,
-    isPending: isLoadingEvents,
+    isFetching,
+    isPending,
     refetch,
     rowCount: allDayRowsCount,
     timedEvents,
   } = useDayEventViewModel(dayEventQueryRange(dateInView));
+  // First load uses isPending; Retry uses isFetching so the overlay gives
+  // feedback instead of looking like a no-op when the refetch also fails.
+  const isLoadingEvents = isPending || (isErrorEvents && isFetching);
   const {
     calendarColumnIndexById,
     displayedAllDayEvents,
