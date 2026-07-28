@@ -21,11 +21,13 @@ import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import {
   draftActions,
   selectDraftStatus,
-  selectGridDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { GRID_TIME_STEP } from "@web/grid/grid.constants";
-import { useDraftEffects } from "@web/views/Week/components/Draft/hooks/effects/useDraftEffects";
+import {
+  clearGestureEphemera,
+  useDraftEffects,
+} from "@web/views/Week/components/Draft/hooks/effects/useDraftEffects";
 import {
   type DragOffset,
   type Setters_Draft,
@@ -56,10 +58,6 @@ export const useDraftActions = (
 ) => {
   const mutations = useEventMutations();
   const { data: calendars } = useCalendarsQuery();
-  // Prefer the store selector so high-frequency gesture writes stay in sync
-  // with React renders; gesture handlers also re-read via getState().
-  const draft = useDraftStore(selectGridDraft);
-
   const { activity, isDrafting } = useDraftStore(selectDraftStatus)!;
 
   const {
@@ -127,23 +125,9 @@ export const useDraftActions = (
   ]);
 
   const discard = useCallback(() => {
-    setIsDragging(false);
-    setIsFormOpen(false);
-    setIsResizing(false);
-    setDragStatus(null);
-    setResizeStatus(null);
-    setDateBeingChanged(null);
-    setGestureOriginDraft(null);
+    clearGestureEphemera(setters);
     draftActions.discard();
-  }, [
-    setDateBeingChanged,
-    setDragStatus,
-    setGestureOriginDraft,
-    setIsDragging,
-    setIsFormOpen,
-    setIsResizing,
-    setResizeStatus,
-  ]);
+  }, [setters]);
 
   const determineSubmitAction = useCallback(
     (draft: GridEventDraft) => {
@@ -532,38 +516,16 @@ export const useDraftActions = (
     if (activity === "eventRightClick") {
       return; // Prevents form and context menu from opening at same time
     }
-    if (activity === "keyboardEdit") {
+    if (
+      activity === "keyboardEdit" ||
+      activity === "createShortcut" ||
+      activity === "gridClick"
+    ) {
       setIsFormOpen(true);
-      return;
     }
-    if (activity === "createShortcut" || activity === "gridClick") {
-      setIsFormOpen(true);
-      return;
-    }
-<<<<<<< HEAD
-    if (activity === "creating") {
-      // Mirror the running drag-create preview. Deliberately does not start a
-      // local resize: `resize()` freezes the store draft as its origin, so
-      // letting it run against a store draft that moves with the pointer would
-      // collapse its math.
-      if (gridDraftFromStore) setDraft(gridDraftFromStore);
-    }
-  }, [
-    isDrafting,
-    activity,
-    create,
-    setDraft,
-    gridDraftFromStore,
-    setIsFormOpen,
-  ]);
-=======
-    if (activity === "resizing") {
-      if (dateToResize === "startDate" || dateToResize === "endDate") {
-        startResizing(dateToResize);
-      }
-    }
-  }, [isDrafting, activity, dateToResize, setIsFormOpen, startResizing]);
->>>>>>> d408b41c (refactor(web): make zustand the sole draft values owner)
+    // "creating": store already owns the live drag-create preview — no
+    // local mirror or resize start needed.
+  }, [isDrafting, activity, setIsFormOpen]);
 
   const actions = {
     submit,
@@ -594,13 +556,7 @@ export const useDraftActions = (
     stopResizing,
   };
 
-  useDraftEffects(
-    { ...draftState, draft },
-    setters,
-    weekProps,
-    isDrafting,
-    handleChange,
-  );
+  useDraftEffects(draftState, setters, weekProps, isDrafting, handleChange);
 
   return actions;
 };

@@ -1,4 +1,10 @@
-import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   draftActions,
@@ -112,17 +118,32 @@ export const useDraftState = () => {
     isFormOpenBeforeDragging,
   };
 
-  const setters: Setters_Draft = {
-    setIsDragging,
-    setIsResizing,
-    setDragOffset,
-    setDragStatus,
-    setGestureOriginDraft,
-    setResizeStatus,
-    setDateBeingChanged,
-    setIsFormOpen,
-    setIsFormOpenBeforeDragging,
-  };
+  // Stable identity so discard/effects can depend on `setters` without
+  // re-running every render.
+  const setters: Setters_Draft = useMemo(
+    () => ({
+      setIsDragging,
+      setIsResizing,
+      setDragOffset,
+      setDragStatus,
+      setGestureOriginDraft,
+      setResizeStatus,
+      setDateBeingChanged,
+      setIsFormOpen,
+      setIsFormOpenBeforeDragging,
+    }),
+    [
+      setDateBeingChanged,
+      setDragOffset,
+      setDragStatus,
+      setGestureOriginDraft,
+      setIsDragging,
+      setIsFormOpen,
+      setIsFormOpenBeforeDragging,
+      setIsResizing,
+      setResizeStatus,
+    ],
+  );
 
   return { state, setters };
 };

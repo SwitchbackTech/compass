@@ -216,23 +216,20 @@ const setDraftActivity = (
   activity: Activity_DraftEvent,
   eventType = Categories_Event.TIMED,
 ) => {
-  currentState.events!.draft = currentState.events!.draft ?? {};
-  currentState.events!.draft.status = {
+  // createStoreWrapper reseeds Zustand from currentState, so keep both in sync.
+  const status = {
     activity,
     eventType,
     isDrafting: true,
     isFormOpen: false,
   };
-  const existing = useDraftStore.getState();
+  currentState.events!.draft = {
+    ...(currentState.events!.draft ?? {}),
+    status,
+  };
   useDraftStore.setState({
-    gridDraft: existing.gridDraft,
-    status: {
-      activity,
-      dateToResize: null,
-      eventType,
-      isDrafting: true,
-      isFormOpen: false,
-    },
+    gridDraft: useDraftStore.getState().gridDraft,
+    status,
   });
 };
 
@@ -407,39 +404,38 @@ describe("useDraftActions", () => {
     expect(readStoreDraft()).toBe(afterHorizontal);
   });
 
-  // A live drag-create must not turn into a local resize: `resize()` freezes
-  // the store draft as its origin, and during creation that draft moves with
-  // the pointer, which would collapse its math.
-  it("mirrors a live drag-create into local state without starting a resize", () => {
+  // Drag-create uses the store-owned preview (`creating`). handleChange must
+  // not start a local resize — that freezes against a moving store draft.
+  it("does not start a local resize while a drag-create preview is live", () => {
     setDraftActivity("creating");
     const draft = createNewDraft({
       start: "2024-01-16T10:00:00.000Z",
       end: "2024-01-16T11:00:00.000Z",
     });
-    const setDraft = mock();
     const setIsResizing = mock();
+    const setGestureOriginDraft = mock();
 
     currentState.events!.draft = {
       ...currentState.events!.draft,
       gridDraft: draft,
     };
+    draftActions.setGridDraft(draft);
     const { wrapper } = createStoreWrapper(currentState);
 
     renderHook(
       () =>
         useDraftActions(
-          createState({ draft: null }),
-          createSetters({ setDraft, setIsResizing }),
+          createState({ draft }),
+          createSetters({ setIsResizing, setGestureOriginDraft }),
           dateCalcs,
           weekProps,
         ),
       { wrapper },
     );
 
-    expect(setDraft).toHaveBeenCalledWith(draft);
-    // The mount effect calls setIsResizing(false) to clear stale state; what
-    // must never happen is a resize being switched *on*.
     expect(setIsResizing).not.toHaveBeenCalledWith(true);
+    expect(setGestureOriginDraft).not.toHaveBeenCalled();
+    expect(useDraftStore.getState().gridDraft).toEqual(draft);
   });
 
   it("converts a new all-day draft to timed while dragging over the timed grid", () => {

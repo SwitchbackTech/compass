@@ -7,7 +7,8 @@ import {
   type State_Draft_Local,
 } from "../state/useDraftState";
 
-const clearGestureEphemera = (setters: Setters_Draft) => {
+/** Clears Week-local gesture flags; does not touch the store draft. */
+export const clearGestureEphemera = (setters: Setters_Draft) => {
   setters.setIsDragging(false);
   setters.setIsResizing(false);
   setters.setDragStatus(null);
@@ -23,16 +24,8 @@ export const useDraftEffects = (
   isDrafting: boolean,
   handleChange: () => Promise<void>,
 ) => {
-  const { draft, isDragging, isResizing, dateBeingChanged } = state;
-  const {
-    setIsDragging,
-    setIsFormOpen,
-    setIsResizing,
-    setResizeStatus,
-    setDragStatus,
-    setDateBeingChanged,
-    setGestureOriginDraft,
-  } = setters;
+  const { draft, isDragging, isResizing } = state;
+  const { setIsFormOpen, setDragStatus } = setters;
   const isFirstWeekEffectRef = useRef(true);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: draft state should clear only when the visible week changes.
@@ -44,54 +37,27 @@ export const useDraftEffects = (
       return;
     }
 
+    // Drag-to-edge week changes happen while isDragging/isResizing is true,
+    // so this early return also preserves the in-flight draft.
     if (isDragging || isResizing) {
       return;
     }
 
-    // Only skip clearing if we're currently dragging AND the week change was due to drag-to-edge navigation
-    const lastNavigationSource = weekProps.util.getLastNavigationSource();
-    const isDragToEdgeNavigation = lastNavigationSource === "drag-to-edge";
-    const shouldPreserveDuringDrag =
-      (isDragging || isResizing) && isDragToEdgeNavigation;
-
-    if (shouldPreserveDuringDrag) {
-      return;
-    }
-
     clearGestureEphemera(setters);
-    // With store-owned draft values, week navigation must discard the
-    // canonical draft (previously only the local portal copy was cleared).
     draftActions.discard();
   }, [weekProps.component.week]);
 
   useEffect(() => {
     if (isResizing) {
-      setDateBeingChanged(dateBeingChanged);
       setIsFormOpen(false);
     }
-  }, [dateBeingChanged, isResizing, setDateBeingChanged, setIsFormOpen]);
+  }, [isResizing, setIsFormOpen]);
 
   useEffect(() => {
-    const isStaleDraft = !isDrafting;
-    if (isStaleDraft) {
-      setIsDragging(false);
-      setIsFormOpen(false);
-      setIsResizing(false);
-      setDragStatus(null);
-      setResizeStatus(null);
-      setDateBeingChanged(null);
-      setGestureOriginDraft(null);
-    }
-  }, [
-    isDrafting,
-    setDateBeingChanged,
-    setDragStatus,
-    setGestureOriginDraft,
-    setIsDragging,
-    setIsFormOpen,
-    setIsResizing,
-    setResizeStatus,
-  ]);
+    if (isDrafting) return;
+    clearGestureEphemera(setters);
+    setIsFormOpen(false);
+  }, [isDrafting, setIsFormOpen, setters]);
 
   useEffect(() => {
     handleChange();

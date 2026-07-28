@@ -105,15 +105,18 @@ const isValidScheduledEvent = (event: Event): boolean => {
 // datetime (kept so the RRULE and series id are reachable for editing), but
 // the first occurrence itself is a separately materialized doc that renders
 // the actual card. Rendering the base too would double the first day.
+const scheduledNonSeries = (events: Event[]) =>
+  events
+    .filter(isValidScheduledEvent)
+    .filter((event) => event.recurrence.kind !== "series");
+
 const gridEventsFrom = (
   events: Event[],
   kind: "timed" | "allDay",
   demoEventIds?: readonly EventId[],
 ) =>
-  events
-    .filter(isValidScheduledEvent)
+  scheduledNonSeries(events)
     .filter((event) => event.schedule.kind === kind)
-    .filter((event) => event.recurrence.kind !== "series")
     .map((event) => eventToGridEvent(event, { demoEventIds }));
 
 const timedEventsFrom = (events: Event[], demoEventIds?: readonly EventId[]) =>
@@ -126,9 +129,7 @@ const multiDayTimedAsAllDayFrom = (
   events: Event[],
   demoEventIds?: readonly EventId[],
 ): GridEvent[] =>
-  events
-    .filter(isValidScheduledEvent)
-    .filter((event) => event.recurrence.kind !== "series")
+  scheduledNonSeries(events)
     .filter((event) => event.schedule.kind === "timed")
     .filter((event) => {
       const { start, end } = event.schedule;
