@@ -27,9 +27,11 @@ const googleCommandActionFor = (state: GoogleUiState) => {
       return null;
   }
 };
+const mockIsConnecting = false;
 const mockUseConnectGoogle = mock(() => ({
   state: mockGoogleState,
   isAvailable: true,
+  isConnecting: mockIsConnecting,
   commandAction: googleCommandActionFor(mockGoogleState),
 }));
 
@@ -106,6 +108,7 @@ describe("CalendarListHeader", () => {
   beforeEach(() => {
     mockEmail = undefined;
     mockGoogleState = "NOT_CONNECTED";
+    mockIsConnecting = false;
     mockIsAnonymousDirty = false;
     mockOpenModal.mockClear();
     mockUseConnectGoogle.mockClear();
@@ -268,8 +271,41 @@ describe("CalendarListHeader", () => {
     const reconnectButton = screen.getByRole("button", {
       name: "Reconnect Google Calendar",
     });
+    expect(reconnectButton).toBeEnabled();
+    expect(reconnectButton).not.toHaveAttribute("aria-busy");
     await user.click(reconnectButton);
     expect(mockConnectGoogle).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows an immediate reconnecting state while Google OAuth is starting", () => {
+    mockEmail = "ahab@pequod.com";
+    mockGoogleState = "RECONNECT_REQUIRED";
+    mockIsConnecting = true;
+
+    renderHeader();
+
+    const reconnectButton = screen.getByRole("button", {
+      name: "Reconnecting…",
+    });
+    expect(reconnectButton).toBeDisabled();
+    expect(reconnectButton).toHaveAttribute("aria-busy", "true");
+    expect(
+      screen.queryByRole("button", { name: "Reconnect Google Calendar" }),
+    ).toBeNull();
+  });
+
+  it("shows an immediate connecting state while first-time Google OAuth is starting", () => {
+    mockEmail = "ahab@pequod.com";
+    mockGoogleState = "NOT_CONNECTED";
+    mockIsConnecting = true;
+
+    renderHeader();
+
+    const connectButton = screen.getByRole("button", {
+      name: "Connecting…",
+    });
+    expect(connectButton).toBeDisabled();
+    expect(connectButton).toHaveAttribute("aria-busy", "true");
   });
 
   it("shows the shimmer and syncing status while an event mutation is pending", () => {

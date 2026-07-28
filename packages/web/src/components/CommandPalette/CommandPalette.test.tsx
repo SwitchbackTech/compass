@@ -111,6 +111,7 @@ const setMockGoogleConnection = (
 
   mockUseConnectGoogle.mockReturnValue({
     isAvailable: true,
+    isConnecting: false,
     commandAction: commandActionByState[state],
     state,
   });

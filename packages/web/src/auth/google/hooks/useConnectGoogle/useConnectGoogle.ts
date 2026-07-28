@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { AuthApi } from "@web/api/auth.api";
 import { SyncApi } from "@web/api/sync.api";
@@ -32,16 +32,33 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
   const isConnectDelegatedToSync = useIsConnectDelegatedToSync();
   const state = useGoogleUiState();
   const syncConnection = useUserMetadataStore(selectGoogleSyncConnection);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const isConnectingRef = useRef(false);
   const { startGoogleAuthorization } = useStartGoogleAuthorization({
     intent: "connectCalendar",
     prompt: "consent",
   });
 
+  const stopConnecting = useCallback(() => {
+    isConnectingRef.current = false;
+    setIsConnecting(false);
+  }, []);
+
   const onOpenGoogleAuth = useCallback(() => {
+    if (isConnectingRef.current) {
+      return;
+    }
+
+    // Show loading on the sidebar/command action immediately — local-event
+    // flush and beginGoogleConnection both run before the OAuth redirect.
+    isConnectingRef.current = true;
+    setIsConnecting(true);
+
     const start = async () => {
       const didSyncLocalEvents = await syncPendingLocalEvents();
 
       if (!didSyncLocalEvents) {
+        stopConnecting();
         return;
       }
 
@@ -66,6 +83,7 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
           await AuthApi.beginGoogleConnection(beginRequest);
         window.location.assign(authorizationUrl);
       } catch {
+        stopConnecting();
         showErrorToast(
           "We couldn't start connecting your Google Calendar. Please try again.",
           { toastId: GOOGLE_CONNECT_FAILED_TOAST_ID },
@@ -78,6 +96,7 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
     isConnectDelegatedToSync,
     startGoogleAuthorization,
     state,
+    stopConnecting,
     syncConnection?.id,
   ]);
 
@@ -113,6 +132,7 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
   return {
     ...getGoogleConnectionConfig(state, onOpenGoogleAuth, onRepairGoogle),
     isAvailable,
+    isConnecting,
     state,
   };
 };

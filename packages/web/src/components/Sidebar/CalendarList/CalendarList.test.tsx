@@ -52,6 +52,7 @@ let isConnectGoogleMocked = true;
 const mockUseConnectGoogle = mock(() => ({
   commandAction: null,
   isAvailable: true,
+  isConnecting: false,
   state: "NOT_CONNECTED" as const,
 }));
 mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({

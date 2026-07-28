@@ -34,7 +34,7 @@ const ANONYMOUS_ACCOUNT_TRIGGER_CLASSNAME =
   "min-w-0 truncate appearance-none border-0 bg-transparent p-0 text-left font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
 
 const CONNECT_GOOGLE_BUTTON_CLASSNAME =
-  "c-focus-ring mb-2 w-full rounded-xs bg-accent px-2 py-1.5 text-left font-medium text-on-accent text-xs hover:brightness-110";
+  "c-focus-ring mb-2 w-full rounded-xs bg-accent px-2 py-1.5 text-left font-medium text-on-accent text-xs hover:brightness-110 disabled:pointer-events-none disabled:opacity-60";
 
 /**
  * The calendar list's heading is the account identity (email, or the
@@ -96,7 +96,8 @@ const AnonymousAccountHeader: FC = () => {
 };
 
 const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
-  const { commandAction, isAvailable, state } = useConnectGoogle();
+  const { commandAction, isAvailable, isConnecting, state } =
+    useConnectGoogle();
   const syncConnection = useUserMetadataStore(selectGoogleSyncConnection);
   const hasPendingEventMutations = useHasPendingEventMutations();
   const isSyncing =
@@ -121,13 +122,19 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
       {lastSyncedLabel ? (
         <p className="mb-2 text-text-muted text-xs">{lastSyncedLabel}</p>
       ) : null}
-      {showGoogleAction ? (
+      {commandAction != null && showGoogleAction ? (
         <button
+          aria-busy={isConnecting || undefined}
           className={CONNECT_GOOGLE_BUTTON_CLASSNAME}
+          disabled={isConnecting}
           onClick={commandAction.onSelect}
           type="button"
         >
-          {commandAction.label}
+          {isConnecting
+            ? state === "RECONNECT_REQUIRED"
+              ? "Reconnecting…"
+              : "Connecting…"
+            : commandAction.label}
         </button>
       ) : null}
       {isSyncing ? (
