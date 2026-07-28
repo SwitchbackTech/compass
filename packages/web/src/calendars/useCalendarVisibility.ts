@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
@@ -22,23 +22,23 @@ export function useCalendarVisibility() {
   const queryClient = useQueryClient();
   const [failureAnnouncement, setFailureAnnouncement] = useState("");
 
-  const toggleCalendarVisibility = useCallback(
-    (calendarId: CalendarId, isVisible: boolean) => {
-      const saved = setCalendarHidden(calendarId, !isVisible);
-      if (!saved) {
-        showErrorToast(CALENDAR_VISIBILITY_FAILURE_MESSAGE);
-        setFailureAnnouncement(CALENDAR_VISIBILITY_FAILURE_MESSAGE);
-        return;
-      }
+  const toggleCalendarVisibility = (
+    calendarId: CalendarId,
+    isVisible: boolean,
+  ) => {
+    const saved = setCalendarHidden(calendarId, !isVisible);
+    if (!saved) {
+      showErrorToast(CALENDAR_VISIBILITY_FAILURE_MESSAGE);
+      setFailureAnnouncement(CALENDAR_VISIBILITY_FAILURE_MESSAGE);
+      return;
+    }
 
-      queryClient.setQueryData<Calendar[]>(calendarQueryKeys.all, (current) =>
-        current?.map((calendar) =>
-          calendar.id === calendarId ? { ...calendar, isVisible } : calendar,
-        ),
-      );
-    },
-    [queryClient],
-  );
+    queryClient.setQueryData<Calendar[]>(calendarQueryKeys.all, (current) =>
+      current?.map((calendar) =>
+        calendar.id === calendarId ? { ...calendar, isVisible } : calendar,
+      ),
+    );
+  };
 
   return { toggleCalendarVisibility, failureAnnouncement };
 }
