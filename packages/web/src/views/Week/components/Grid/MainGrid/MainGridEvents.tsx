@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import {
   type CalendarCardIdentity,
-  isEventReadOnly,
+  isGridEventInteractionReadOnly,
   resolveCalendarCardIdentity,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
@@ -76,11 +76,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
         // attach interaction attributes/registration below, so the drag/
         // resize engine can't find them as a target - blocked before any
         // optimistic state change (packet 08 step 8).
-        isReadOnly: isEventReadOnly(
-          calendarLookup,
-          item.event.calendarId,
-          item.event.isBusy ?? false,
-        ),
+        isReadOnly: isGridEventInteractionReadOnly(calendarLookup, item.event),
       })),
     [timedEventItems, calendarLookup],
   );

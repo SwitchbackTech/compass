@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import {
-  isEventReadOnly,
-  isGridEventContentReadOnly,
+  isGridEventInteractionReadOnly,
   resolveCalendarCardIdentity,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
@@ -82,11 +81,7 @@ export const DayCalendarAllDayEventsLayer = ({
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
-          isReadOnly={isEventReadOnly(
-            calendarLookup,
-            event.calendarId,
-            isGridEventContentReadOnly(event),
-          )}
+          isReadOnly={isGridEventInteractionReadOnly(calendarLookup, event)}
           key={event._id ?? "all-day-draft"}
           measurements={measurements}
           onOpenEvent={onOpenEvent}
@@ -145,11 +140,7 @@ export const DayCalendarTimedEventsLayer = ({
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
-          isReadOnly={isEventReadOnly(
-            calendarLookup,
-            event.calendarId,
-            event.isBusy ?? false,
-          )}
+          isReadOnly={isGridEventInteractionReadOnly(calendarLookup, event)}
           key={event._id ?? "timed-draft"}
           measurements={measurements}
           onOpenEvent={onOpenEvent}
