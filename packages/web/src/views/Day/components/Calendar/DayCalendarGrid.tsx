@@ -25,7 +25,7 @@ import {
   selectGridDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { EventGrid } from "@web/grid/components/EventGrid";
+import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
 import { useAllDayDraftCreation } from "@web/grid/hooks/useAllDayDraftCreation";
 import { useGridCoordinates } from "@web/grid/hooks/useGridCoordinates";
 import { useGridMeasurements } from "@web/grid/hooks/useGridMeasurements";
@@ -70,11 +70,17 @@ export function DayCalendarGrid() {
     allDayEvents,
     events: dayEvents,
     isError: isErrorEvents,
-    isPending: isLoadingEvents,
+    isFetching,
+    isPending,
     refetch,
     rowCount: allDayRowsCount,
     timedEvents,
   } = useDayEventViewModel(dayEventQueryRange(dateInView));
+  const isLoadingEvents = isEventGridLoading(
+    isPending,
+    isErrorEvents,
+    isFetching,
+  );
   const {
     calendarColumnIndexById,
     displayedAllDayEvents,

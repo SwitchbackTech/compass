@@ -17,9 +17,9 @@ export interface EventGridProps {
   allDayGridOffsetTopPx?: number;
   allDayRowsCount?: number;
   gridRefs: GridRefs;
-  /** First load only. Background refetches keep the grid interactive. */
+  /** First load, or refetch after a failed load (Retry). */
   isLoadingEvents?: boolean;
-  /** Failed fetch with nothing reliable to show — mirrors CalendarList. */
+  /** Failed fetch with nothing reliable to show. */
   isErrorEvents?: boolean;
   onRetryEvents?: () => void;
   onAllDayMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
@@ -68,22 +68,28 @@ export const EventGrid: FC<EventGridProps> = ({
       data-testid="grid-focus-indicator"
     />
     {isLoadingEvents && (
-      // pointer-events-none: the loader is informational and covers the whole
-      // grid, so without it the overlay swallows the mousedown that
-      // drag-creates an event for as long as the first fetch runs.
+      // First load keeps pointer-events-none so drag-create still works under
+      // the spinner. Retry after error must block the grid — the overlay is
+      // opaque and should not click through.
       <AbsoluteOverflowLoader
         aria-label="Loading events"
-        className="pointer-events-none [&>div]:my-0"
+        className={
+          isErrorEvents
+            ? "z-20 bg-background [&>div]:my-0"
+            : "pointer-events-none bg-background [&>div]:my-0"
+        }
         role="status"
       />
     )}
     {isErrorEvents && !isLoadingEvents && (
-      <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 px-4">
-        <div className="flex items-center gap-3 text-sm">
-          <p className="text-error">Couldn't load events.</p>
+      <div className="absolute inset-0 z-20 flex items-center justify-center bg-background px-4">
+        <div className="flex max-w-sm flex-col items-center gap-3 rounded-md border border-border-strong bg-surface-raised px-5 py-4 text-center shadow-[0_8px_24px_var(--color-shadow-default)]">
+          <p className="text-sm text-text" role="alert">
+            Couldn't load events.
+          </p>
           {onRetryEvents ? (
             <button
-              className="c-focus-ring rounded-xs px-1.5 py-0.5 text-accent hover:brightness-110"
+              className="c-focus-ring rounded-sm bg-accent px-3 py-1.5 text-on-accent text-sm hover:bg-accent-hover"
               onClick={onRetryEvents}
               type="button"
             >
@@ -95,3 +101,12 @@ export const EventGrid: FC<EventGridProps> = ({
     )}
   </div>
 );
+
+/** First load, or a Retry refetch after failure — both should show the loader. */
+export function isEventGridLoading(
+  isPending: boolean,
+  isError: boolean,
+  isFetching: boolean,
+): boolean {
+  return isPending || (isError && isFetching);
+}

@@ -4,7 +4,7 @@ import { type RefCallback } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
-import { EventGrid } from "./EventGrid";
+import { EventGrid, isEventGridLoading } from "./EventGrid";
 
 const createGridRefs = () => ({
   allDayColumnsRef: { current: null },
@@ -147,8 +147,72 @@ describe("EventGrid", () => {
       />,
     );
 
-    expect(screen.getByText("Couldn't load events.")).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Couldn't load events.");
+    expect(alert.closest(".bg-background")).toBeTruthy();
+    expect(
+      within(alert.parentElement!).getByRole("button", { name: "Retry" }),
+    ).toHaveClass("bg-accent");
+
     await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(onRetryEvents).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides the error overlay while events are loading", () => {
+    render(
+      <EventGrid
+        allDayEventsLayer={<div />}
+        gridRefs={createGridRefs()}
+        isErrorEvents
+        isLoadingEvents
+        onAllDayMouseDown={mock()}
+        onTimedMouseDown={mock()}
+        timedEventsLayer={<div />}
+        today={dayjs("2026-05-20T00:00:00.000")}
+        visibleDates={[
+          {
+            date: dayjs("2026-05-20T00:00:00.000"),
+            key: "date-0",
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    const loader = screen.getByRole("status", { name: "Loading events" });
+    expect(loader).toBeInTheDocument();
+    // Retry loading must block the grid (opaque overlay is not click-through).
+    expect(loader).not.toHaveClass("pointer-events-none");
+  });
+
+  it("keeps first-load loader click-through for drag-create", () => {
+    render(
+      <EventGrid
+        allDayEventsLayer={<div />}
+        gridRefs={createGridRefs()}
+        isLoadingEvents
+        onAllDayMouseDown={mock()}
+        onTimedMouseDown={mock()}
+        timedEventsLayer={<div />}
+        today={dayjs("2026-05-20T00:00:00.000")}
+        visibleDates={[
+          {
+            date: dayjs("2026-05-20T00:00:00.000"),
+            key: "date-0",
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole("status", { name: "Loading events" })).toHaveClass(
+      "pointer-events-none",
+    );
+  });
+
+  it("shows the loader for first load and for retry after error", () => {
+    expect(isEventGridLoading(true, false, false)).toBe(true);
+    expect(isEventGridLoading(false, true, true)).toBe(true);
+    expect(isEventGridLoading(false, true, false)).toBe(false);
+    expect(isEventGridLoading(false, false, true)).toBe(false);
   });
 });
