@@ -7,6 +7,7 @@ import { runMigrateProviderState } from "@scripts/commands/migrate-provider-stat
 import { runPreseedSync } from "@scripts/commands/preseed-sync";
 import { runPurgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events";
 import { runPurgeUser } from "@scripts/commands/purge-user";
+import { runRefreshConnectionStates } from "@scripts/commands/refresh-connection-states";
 import { MigratorType } from "@scripts/common/cli.types";
 import { Command } from "commander";
 
@@ -45,6 +46,9 @@ export default class CompassCLI {
       case cmd === "purge-corrupt-sync-events":
         await runPurgeCorruptSyncEvents();
         break;
+      case cmd === "refresh-connection-states":
+        await runRefreshConnectionStates();
+        break;
       case cmd === "purge-user":
         await runPurgeUser();
         break;
@@ -82,6 +86,14 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "Delete Sync events that fail EventRecordSchema (poison from aborted migrate)",
+      );
+
+    program
+      .command("refresh-connection-states")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "Re-derive every provider connection's stored state from live evidence (--apply to write)",
       );
 
     program
