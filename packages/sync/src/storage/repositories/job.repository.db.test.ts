@@ -204,5 +204,31 @@ describe("JobRepository", () => {
         .countDocuments({ state: "claimed" });
       expect(stillClaimed).toBe(0);
     });
+
+    // Load-bearing for running several drain workers in one process: each has
+    // its own owner id, and one stopping must not yank a job another is still
+    // running. If releaseOwned were not owner-scoped, a rolling shutdown would
+    // flip a peer's in-flight job back to pending and it would be reprocessed.
+    it("releases only the leaving worker's jobs, not a peer's", async () => {
+      await repo.enqueue(enqueue({ coalescingKey: "a", runAfter: past(1000) }));
+      await repo.enqueue(enqueue({ coalescingKey: "b", runAfter: past(1000) }));
+      const leaving = await repo.claimDueJob("leaving-worker", NOW, LEASE_MS);
+      const staying = await repo.claimDueJob("staying-worker", NOW, LEASE_MS);
+      expect(leaving).not.toBeNull();
+      expect(staying).not.toBeNull();
+
+      expect(await repo.releaseOwned("leaving-worker")).toBe(1);
+
+      const peer = await db
+        .collection("jobs")
+        .findOne({ _id: staying!._id as never });
+      expect(peer?.state).toBe("claimed");
+      expect(peer?.leaseOwner).toBe("staying-worker");
+      const released = await db
+        .collection("jobs")
+        .findOne({ _id: leaving!._id as never });
+      expect(released?.state).toBe("pending");
+      expect(released?.leaseOwner).toBeNull();
+    });
   });
 });
