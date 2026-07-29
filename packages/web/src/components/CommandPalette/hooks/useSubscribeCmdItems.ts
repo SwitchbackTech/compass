@@ -1,9 +1,6 @@
-import {
-  BellIcon,
-  CircleNotchIcon,
-  WarningCircleIcon,
-} from "@phosphor-icons/react";
+import { BellIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
+import { type EmailUpdatesStatus } from "@core/types/email/email.types";
 import { UserApi } from "@web/api/user.api";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { SUBSCRIBE_TO_UPDATES_TOAST_ID } from "@web/common/constants/toast.constants";
@@ -12,21 +9,13 @@ import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 
 /**
- * Returns the email-updates command only when that integration is available.
- * Kit remains the source of truth; this hook caches one lookup per mount and
- * retries a failed lookup when the palette next opens.
+ * Returns the email-updates opt-in command when Kit reports the user as
+ * eligible. Caches one lookup per mount; retries a failed lookup the next
+ * time the palette opens.
  */
 export const useSubscribeCmdItems = (open: boolean): CommandItem[] => {
   const { authenticated } = useSession();
-  const [status, setStatus] = useState<
-    | "idle"
-    | "checking"
-    | "unavailable"
-    | "not_subscribed"
-    | "subscribed"
-    | "unsubscribed"
-    | "error"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | EmailUpdatesStatus>("idle");
   const hasChecked = useRef(false);
 
   useEffect(() => {
@@ -39,69 +28,14 @@ export const useSubscribeCmdItems = (open: boolean): CommandItem[] => {
     if (!open || hasChecked.current) return;
 
     hasChecked.current = true;
-    setStatus("checking");
-    const getEmailUpdates = UserApi.getEmailUpdates;
-
-    if (!getEmailUpdates) {
-      setStatus("unavailable");
-      return;
-    }
-
-    void getEmailUpdates()
+    void UserApi.getEmailUpdates()
       .then((response) => setStatus(response.status))
       .catch(() => {
         hasChecked.current = false;
-        setStatus("error");
       });
   }, [authenticated, open]);
 
-  if (!authenticated || status === "idle" || status === "unavailable")
-    return [];
-
-  if (status === "checking") {
-    return [
-      {
-        id: "subscribe-to-updates",
-        label: "Checking email update status…",
-        icon: CircleNotchIcon,
-        iconClassName: "animate-spin",
-        disabled: true,
-      },
-    ];
-  }
-
-  if (status === "subscribed") {
-    return [
-      {
-        id: "subscribe-to-updates",
-        label: "You’re subscribed to updates",
-        icon: BellIcon,
-        disabled: true,
-      },
-    ];
-  }
-
-  if (status === "unsubscribed") {
-    return [
-      {
-        id: "subscribe-to-updates",
-        label: "You’re unsubscribed from updates",
-        icon: BellIcon,
-        disabled: true,
-      },
-    ];
-  }
-
-  if (status === "error") {
-    return [
-      {
-        id: "subscribe-to-updates",
-        label: "Couldn’t check email update status",
-        icon: WarningCircleIcon,
-        disabled: true,
-      },
-    ];
-  }
+  if (!authenticated || status !== "not_subscribed") return [];
 
   return [
     {
