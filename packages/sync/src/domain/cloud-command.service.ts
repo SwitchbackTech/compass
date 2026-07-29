@@ -34,6 +34,21 @@ import { type EventOccurrenceRepository } from "@sync/storage/repositories/event
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { createHash } from "node:crypto";
 
+// A provider-targeted write arrived while provider work is unavailable
+// (execution is passive, or no provider is configured). Nothing re-dispatches a
+// pending command, so accepting it would strand the write permanently while the
+// caller believes it succeeded. Callers surface this as a retryable 503.
+//
+// Production hit exactly that on 2026-07-29: routing was flipped to Sync while
+// the sync process was still passive, and creates returned 200 with the event
+// silently never reaching Google.
+export class ProviderWriteUnavailableError extends Error {
+  constructor() {
+    super("Provider writes are unavailable; command not accepted");
+    this.name = "ProviderWriteUnavailableError";
+  }
+}
+
 export interface CloudCommandDeps {
   commands: CommandRepository;
   events: EventRepository;
@@ -45,8 +60,8 @@ export interface CloudCommandDeps {
   markers: DeletionMarkerRepository;
   execution: SyncExecutionMode;
   // Provider write capability, present only when a provider is configured and
-  // provider work is enabled. Absent means provider-targeted commands stay
-  // pending instead of executing.
+  // provider work is enabled. Absent means a provider-targeted command is
+  // refused (see ProviderWriteUnavailableError) rather than left pending.
   provider?: {
     writer: ProviderEventWriter;
     custody: CredentialCustody;
@@ -119,7 +134,11 @@ export async function submitCloudCommand(
         ),
       );
     }
-    return finish(command);
+    // Nothing else ever picks this command up: no scheduled work re-dispatches
+    // a pending command, so returning it here would strand the write forever
+    // while the caller sees success. Refuse instead, so the caller can retry
+    // once provider work is enabled.
+    throw new ProviderWriteUnavailableError();
   }
 
   const record = buildCloudEventRecord(command, now());
