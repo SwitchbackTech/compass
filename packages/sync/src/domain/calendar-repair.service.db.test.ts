@@ -332,4 +332,38 @@ describe("repairCalendar", () => {
         .countDocuments({ calendarId: calendar._id }),
     ).toBe(1);
   });
+
+  it("stamps the attempt even when the token fetch throws", async () => {
+    // The reconcile sweep selects least-recently-attempted resources. A
+    // doomed connection's repair must rotate to the back of the sweep after
+    // failing, not tie at lastAttemptAt: null forever and keep winning slots
+    // (2026-07-29 sweep-starvation regression; see the sibling test in
+    // calendar-import.service.db.test.ts).
+    const calendar = await seedCalendar();
+    await seedImported(calendar);
+    const reader = new FakeReader([page([])]);
+    const deadCustody = {
+      getValidAccessToken: async () => {
+        throw new Error("token fetch failed");
+      },
+      discardRevoked: async () => {},
+    };
+
+    await expect(
+      repairCalendar(
+        { events, occurrences, resources, reader, custody: deadCustody },
+        calendar,
+        now,
+      ),
+    ).rejects.toThrow("token fetch failed");
+
+    const resource = await resources.ensure({
+      tenantId: calendar.tenantId,
+      principalId: calendar.principalId,
+      connectionId: calendar.connectionId,
+      resourceKind: "events",
+      calendarId: calendar._id,
+    });
+    expect(resource.lastAttemptAt).toEqual(now());
+  });
 });
