@@ -101,35 +101,62 @@ describe("useSubscribeCmdItems", () => {
   });
 
   it("hides the command when email updates are unavailable", async () => {
-    mockGetEmailUpdates.mockResolvedValue({ status: "unavailable" });
+    let resolveStatus!: (value: { status: "unavailable" }) => void;
+    mockGetEmailUpdates.mockReturnValue(
+      new Promise((resolve) => {
+        resolveStatus = resolve;
+      }),
+    );
     const { useSubscribeCmdItems } = await importHook();
 
     const { result } = renderHook(() => useSubscribeCmdItems(true));
 
-    await waitFor(() => expect(result.current).toEqual([]));
+    expect(result.current).toEqual([]);
+    expect(mockGetEmailUpdates).toHaveBeenCalledTimes(1);
+
+    await act(async () => resolveStatus({ status: "unavailable" }));
+
+    expect(result.current).toEqual([]);
+    expect(mockSubscribeToEmailUpdates).not.toHaveBeenCalled();
   });
 
   it("hides the command for an existing subscriber", async () => {
-    mockGetEmailUpdates.mockResolvedValue({ status: "subscribed" });
+    let resolveStatus!: (value: { status: "subscribed" }) => void;
+    mockGetEmailUpdates.mockReturnValue(
+      new Promise((resolve) => {
+        resolveStatus = resolve;
+      }),
+    );
     const { useSubscribeCmdItems } = await importHook();
 
     const { result } = renderHook(() => useSubscribeCmdItems(true));
 
-    await waitFor(() => {
-      expect(result.current).toEqual([]);
-    });
+    expect(result.current).toEqual([]);
+    expect(mockGetEmailUpdates).toHaveBeenCalledTimes(1);
+
+    await act(async () => resolveStatus({ status: "subscribed" }));
+
+    expect(result.current).toEqual([]);
     expect(mockSubscribeToEmailUpdates).not.toHaveBeenCalled();
   });
 
   it("does not offer an opt-in to a previously unsubscribed user", async () => {
-    mockGetEmailUpdates.mockResolvedValue({ status: "unsubscribed" });
+    let resolveStatus!: (value: { status: "unsubscribed" }) => void;
+    mockGetEmailUpdates.mockReturnValue(
+      new Promise((resolve) => {
+        resolveStatus = resolve;
+      }),
+    );
     const { useSubscribeCmdItems } = await importHook();
 
     const { result } = renderHook(() => useSubscribeCmdItems(true));
 
-    await waitFor(() => {
-      expect(result.current).toEqual([]);
-    });
+    expect(result.current).toEqual([]);
+    expect(mockGetEmailUpdates).toHaveBeenCalledTimes(1);
+
+    await act(async () => resolveStatus({ status: "unsubscribed" }));
+
+    expect(result.current).toEqual([]);
     expect(mockSubscribeToEmailUpdates).not.toHaveBeenCalled();
   });
 
@@ -154,8 +181,13 @@ describe("useSubscribeCmdItems", () => {
   });
 
   it("hides the check failure and retries after reopening the palette", async () => {
+    let rejectStatus!: (error: Error) => void;
     mockGetEmailUpdates
-      .mockRejectedValueOnce(new Error("network error"))
+      .mockReturnValueOnce(
+        new Promise((_, reject) => {
+          rejectStatus = reject;
+        }),
+      )
       .mockResolvedValueOnce({ status: "not_subscribed" });
     const { useSubscribeCmdItems } = await importHook();
 
@@ -164,10 +196,12 @@ describe("useSubscribeCmdItems", () => {
       { initialProps: { open: true } },
     );
 
-    await waitFor(() => {
-      expect(result.current).toEqual([]);
-      expect(mockGetEmailUpdates).toHaveBeenCalledTimes(1);
-    });
+    expect(mockGetEmailUpdates).toHaveBeenCalledTimes(1);
+    expect(result.current).toEqual([]);
+
+    await act(async () => rejectStatus(new Error("network error")));
+
+    expect(result.current).toEqual([]);
     rerender({ open: false });
     rerender({ open: true });
 
