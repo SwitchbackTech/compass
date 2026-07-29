@@ -223,12 +223,15 @@ async function start(): Promise<void> {
     // first and closes mongo last.
     const schedulers = buildSchedulers(config, mongo);
     if (schedulers) {
-      service.shutdown.register("scheduler", () => schedulers.drain.stop());
+      service.shutdown.register("scheduler", async () => {
+        // Stop every drain; each releases only its own owner's held jobs.
+        await Promise.all(schedulers.drains.map((drain) => drain.stop()));
+      });
       service.shutdown.register("reconcile", () => schedulers.reconcile.stop());
       service.shutdown.register("subscription", () =>
         schedulers.subscription.stop(),
       );
-      schedulers.drain.start();
+      for (const drain of schedulers.drains) drain.start();
       schedulers.reconcile.start();
       schedulers.subscription.start();
       logger.info(
@@ -320,17 +323,28 @@ function buildRetentionSweep(mongo: SyncMongoService): SweepScheduler {
 }
 
 // Build the background schedulers for an active, provider-configured deployment:
-// the queue DRAIN (claims and runs jobs), the RECONCILE sweep (the missed-webhook
+// the queue DRAINS (claim and run jobs), the RECONCILE sweep (the missed-webhook
 // fallback that enqueues pulls for stale calendars), and the SUBSCRIPTION sweep
 // (that renews push channels before they expire). Returns null when there is
 // nothing to run (passive execution, or no provider credentials to refresh access
-// tokens with). Repositories bind to the now-connected db; a fresh owner id per
-// process scopes the drain worker's leases.
+// tokens with). Repositories bind to the now-connected db.
+//
+// MAX_CONCURRENCY drains run in parallel. A worker's drain loop is sequential —
+// it awaits each job before claiming the next — so a single drain processes the
+// whole queue one job at a time, and one long initialImport stalls every queued
+// pull behind it. That starved change-propagation for hours after the
+// 2026-07-29 production cutover.
+//
+// Each drain gets its OWN owner id, which is load-bearing: leases are per-owner
+// and `releaseOwned(owner)` releases exactly that worker's held jobs on stop, so
+// sharing an id would let one worker's shutdown flip another's in-flight job
+// back to pending mid-run. Racing claims are already safe — claimDueJob is a
+// single atomic findOneAndUpdate, so two workers can never win the same job.
 function buildSchedulers(
   config: SyncConfig,
   mongo: SyncMongoService,
 ): {
-  drain: SyncScheduler;
+  drains: SyncScheduler[];
   reconcile: SweepScheduler;
   subscription: SweepScheduler;
 } | null {
@@ -339,36 +353,45 @@ function buildSchedulers(
   if (!authAdapter) return null;
 
   const db = mongo.db;
-  const owner = randomUUID();
   const resources = new SyncResourceRepository(db);
   const jobs = new JobRepository(db);
-  const worker = new SyncJobWorker(
-    {
-      events: new EventRepository(db),
-      occurrences: new EventOccurrenceRepository(db, mongo.client),
-      resources,
-      calendars: new ProviderCalendarRepository(db),
-      connections: new ProviderConnectionRepository(db),
-      discovery: new GoogleCalendarAdapter(),
-      commands: new CommandRepository(db),
-      jobs,
-      reader: new GoogleEventReaderAdapter(),
-      custody: new CredentialCustody(new CredentialRepository(db), authAdapter),
-      notifications: new GoogleNotificationAdapter(),
-      // Where the provider posts change notifications back; the callback route
-      // verifies them against the stored subscription.
-      callbackUrl: `${config.CALLBACK_BASE_URL}${NOTIFICATIONS_PATH}`,
-      invalidations: new InvalidationRepository(db),
-    },
-    owner,
-    {
-      onError: (error) => logger.error("Sync job engine failed", error),
-    },
-  );
-  const drain = new SyncScheduler(
-    { worker, jobs },
-    { owner, onError: (error) => logger.error("Sync job drain failed", error) },
-  );
+  const buildDrain = (): SyncScheduler => {
+    const owner = randomUUID();
+    const worker = new SyncJobWorker(
+      {
+        events: new EventRepository(db),
+        occurrences: new EventOccurrenceRepository(db, mongo.client),
+        resources,
+        calendars: new ProviderCalendarRepository(db),
+        connections: new ProviderConnectionRepository(db),
+        discovery: new GoogleCalendarAdapter(),
+        commands: new CommandRepository(db),
+        jobs,
+        reader: new GoogleEventReaderAdapter(),
+        custody: new CredentialCustody(
+          new CredentialRepository(db),
+          authAdapter,
+        ),
+        notifications: new GoogleNotificationAdapter(),
+        // Where the provider posts change notifications back; the callback route
+        // verifies them against the stored subscription.
+        callbackUrl: `${config.CALLBACK_BASE_URL}${NOTIFICATIONS_PATH}`,
+        invalidations: new InvalidationRepository(db),
+      },
+      owner,
+      {
+        onError: (error) => logger.error("Sync job engine failed", error),
+      },
+    );
+    return new SyncScheduler(
+      { worker, jobs },
+      {
+        owner,
+        onError: (error) => logger.error("Sync job drain failed", error),
+      },
+    );
+  };
+  const drains = Array.from({ length: config.MAX_CONCURRENCY }, buildDrain);
   // The reconcile fallback looks BACK: enqueue a pull for any events resource not
   // synced within the stale window (negative offset from now).
   const reconcile = new SweepScheduler(
@@ -399,7 +422,7 @@ function buildSchedulers(
         logger.error("Sync subscription maintenance sweep failed", error),
     },
   );
-  return { drain, reconcile, subscription };
+  return { drains, reconcile, subscription };
 }
 
 function registerSignalHandlers(
