@@ -54,7 +54,7 @@ async function build() {
     // time is the difference between passing and hitting the 30 s timeout.
     sourcemap: IS_DEV ? "inline" : "none",
     minify: !IS_DEV,
-    splitting: false,
+    splitting: true,
     define,
     plugins: [postcssPlugin],
     publicPath: "/",

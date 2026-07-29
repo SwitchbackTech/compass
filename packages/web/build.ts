@@ -61,7 +61,7 @@ const result = await Bun.build({
   target: "browser",
   sourcemap: "external",
   minify: true,
-  splitting: false,
+  splitting: true,
   define,
   plugins: [postcssPlugin],
   publicPath: "/",
