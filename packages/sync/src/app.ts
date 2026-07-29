@@ -381,6 +381,8 @@ function buildSchedulers(
       owner,
       {
         onError: (error) => logger.error("Sync job engine failed", error),
+        onDrop: (job, reason) =>
+          logger.warn(`Sync job ${job.kind} (${job._id}) dropped: ${reason}`),
       },
     );
     return new SyncScheduler(
@@ -396,8 +398,19 @@ function buildSchedulers(
   // synced within the stale window (negative offset from now).
   const reconcile = new SweepScheduler(
     {
-      sweep: (before) =>
-        reconcileStaleCalendars({ resources, jobs }, before, () => new Date()),
+      sweep: async (before) => {
+        const enqueued = await reconcileStaleCalendars(
+          { resources, jobs },
+          before,
+          () => new Date(),
+        );
+        // One line per cycle with work: silence here previously meant either
+        // "all fresh" or "sweep dead", indistinguishably.
+        if (enqueued > 0) {
+          logger.info(`Sync reconcile sweep enqueued ${enqueued} pull(s)`);
+        }
+        return enqueued;
+      },
     },
     {
       windowMs: -RECONCILE_STALE_AFTER_MS,

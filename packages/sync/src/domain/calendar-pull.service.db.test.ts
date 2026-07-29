@@ -216,6 +216,15 @@ describe("pullCalendarChanges", () => {
 
     expect(result.status).toBe("notImported");
     expect(reader.calls).toHaveLength(0);
+    // Even an early-exit pull stamps the attempt: the reconcile sweep selects
+    // least-recently-attempted resources, so a resource whose pull cannot
+    // proceed must still rotate to the back of the line instead of being
+    // re-selected by every sweep (2026-07-29 head-of-line starvation).
+    const stamped = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne({ calendarId: calendar._id, resourceKind: "events" });
+    expect(stamped?.lastAttemptAt).toEqual(now());
   });
 
   it("reads from the stored cursor and advances to the new one", async () => {

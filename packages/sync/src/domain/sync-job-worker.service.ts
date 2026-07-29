@@ -40,6 +40,11 @@ export interface SyncJobWorkerOptions {
   // scheduler's drain onError only sees claim/settle failures; per-job engine
   // throws were previously swallowed, which left staging imports opaque.
   onError?: (error: unknown) => void;
+  // Called when dispatch drops a job (settled complete without doing its work:
+  // vanished target, unusable credential). Drops are correct behavior, but an
+  // invisible drop path made a mass credential problem look like a dead sweep
+  // (2026-07-29) — surface them.
+  onDrop?: (job: JobRecord, reason: string) => void;
 }
 
 const DEFAULT_LEASE_MS = 5 * 60_000;
@@ -95,6 +100,7 @@ export class SyncJobWorker {
   readonly #backoff: (attempt: number, now: Date) => Date;
   readonly #now: () => Date;
   readonly #onError: (error: unknown) => void;
+  readonly #onDrop: (job: JobRecord, reason: string) => void;
 
   constructor(
     deps: SyncJobWorkerDeps,
@@ -115,6 +121,7 @@ export class SyncJobWorker {
       ((attempt, now) => jitteredBackoff(attempt, now, random));
     this.#now = options.now ?? (() => new Date());
     this.#onError = options.onError ?? (() => {});
+    this.#onDrop = options.onDrop ?? (() => {});
   }
 
   // Claim and process at most one due job. Returns "idle" when nothing is due.
@@ -194,7 +201,10 @@ export class SyncJobWorker {
         await this.#deps.jobs.complete(job._id, this.#owner);
         return;
       case "drop":
-        // Nothing to do (target vanished); settle so it never retries.
+        // Nothing to do (target vanished, credential unusable); settle so it
+        // never retries — but say so, or a mass drop is indistinguishable from
+        // a stalled queue.
+        this.#onDrop(job, outcome.reason);
         await this.#deps.jobs.complete(job._id, this.#owner);
         return;
       case "retry":

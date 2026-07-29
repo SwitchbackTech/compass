@@ -150,6 +150,9 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       options: { sparse: true },
     },
     { name: "last_success", key: { lastSuccessAt: 1 } },
+    // Backs the reconcile sweep's round-robin sort (lastAttemptAt asc, nulls
+    // first). The filter still selects on lastSuccessAt via last_success.
+    { name: "last_attempt", key: { lastAttemptAt: 1 } },
   ],
   [SYNC_COLLECTIONS.commands]: [
     {
