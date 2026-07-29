@@ -388,7 +388,7 @@ describe("dispatchSyncJob", () => {
     );
   });
 
-  it("settles a job done and discards the credential when the token is revoked", async () => {
+  it("drops the job with a reason and discards the credential when the token is revoked", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
     const reader = new FakeReader([]);
@@ -411,7 +411,13 @@ describe("dispatchSyncJob", () => {
       now,
     );
 
-    expect(outcome).toEqual({ result: "done" });
+    // A reasoned drop (settles identically to done, but visible): the silent
+    // done here made a mass credential problem look like a dead sweep.
+    expect(outcome.result).toBe("drop");
+    if (outcome.result === "drop") {
+      expect(outcome.reason).toContain("authorizationRevoked");
+      expect(outcome.reason).toContain(calendar.connectionId);
+    }
     expect(discarded).toEqual([calendar.connectionId]);
   });
 
@@ -563,7 +569,7 @@ describe("dispatchSyncJob", () => {
     });
   });
 
-  it("settles a revoked calendarListSync done, like the resource-based kinds", async () => {
+  it("drops a revoked calendarListSync with a reason, like the resource-based kinds", async () => {
     const tenantId = objectId();
     const principalId = objectId();
     const connectionId = objectId();
@@ -591,7 +597,10 @@ describe("dispatchSyncJob", () => {
       now,
     );
 
-    expect(outcome).toEqual({ result: "done" });
+    expect(outcome.result).toBe("drop");
+    if (outcome.result === "drop") {
+      expect(outcome.reason).toContain("authorizationRevoked");
+    }
     expect(discarded).toEqual([connectionId]);
   });
 });

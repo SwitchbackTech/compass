@@ -124,4 +124,28 @@ describe("reconcileStaleCalendars", () => {
       new Date("2026-07-02T00:00:00.000Z"),
     );
   });
+
+  it("rotates an attempted-but-never-successful resource behind never-attempted ones", async () => {
+    // The 2026-07-29 regression: ~100 resources whose pulls always die early
+    // (dead credential) have lastSuccessAt null forever. Sorted by success
+    // they monopolize the head of every bounded sweep batch and starve the
+    // healthy stale resources behind them. Sorting by ATTEMPT rotates them:
+    // once tried, they go to the back until everything else has had a turn.
+    const doomed = await seedResource(null); // never succeeds
+    const healthy = await seedResource(new Date("2026-07-05T00:00:00.000Z"));
+    await resources.markAttempt(
+      doomed.tenantId,
+      doomed.principalId,
+      doomed._id,
+      new Date("2026-07-29T16:00:00.000Z"),
+    );
+
+    const enqueued = await reconcileStaleCalendars(deps(), staleBefore, now, 1);
+
+    expect(enqueued).toBe(1);
+    // The single slot goes to the never-attempted resource, even though the
+    // doomed one is "more stale" by success time (null).
+    expect(await jobByKey(`incrementalPull:${healthy._id}`)).not.toBeNull();
+    expect(await jobByKey(`incrementalPull:${doomed._id}`)).toBeNull();
+  });
 });

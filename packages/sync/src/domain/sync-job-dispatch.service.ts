@@ -96,7 +96,14 @@ export async function dispatchSyncJob(
     ) {
       // Belt and braces: custody already discards on authorizationRevoked.
       await deps.custody.discardRevoked(job.connectionId);
-      return { result: "done" };
+      // A reasoned drop, not a bare done: settling is identical, but the worker
+      // surfaces drop reasons. This path settled ~100 jobs per sweep invisibly
+      // on 2026-07-29 (credential-less migrated connections), which made the
+      // sweep look broken while it was running fine.
+      return {
+        result: "drop",
+        reason: `credential unusable (${error.reason}) for connection ${job.connectionId}; sync resumes on reconnect`,
+      };
     }
     throw error;
   }

@@ -301,7 +301,15 @@ export class SyncResourceRepository {
         resourceKind: "events",
         $or: [{ lastSuccessAt: { $lt: before } }, { lastSuccessAt: null }],
       })
-      .sort({ lastSuccessAt: 1 })
+      // Round-robin by ATTEMPT, not success: never-attempted first (null sorts
+      // lowest), then least-recently-attempted. Sorting by lastSuccessAt let
+      // resources that fail without ever succeeding (dead credential, dead
+      // calendar) occupy the head of every bounded sweep batch forever,
+      // starving the stale-but-healthy resources behind them (2026-07-29:
+      // 97 credential-less resources monopolized all 100 slots while 886
+      // healthy ones were never selected). The pull stamps lastAttemptAt
+      // before it can fail, so every selected resource rotates to the back.
+      .sort({ lastAttemptAt: 1, lastSuccessAt: 1 })
       .limit(limit)
       .toArray();
     return records.map((r) => SyncResourceRecordSchema.parse(r));
