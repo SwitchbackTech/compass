@@ -1,15 +1,13 @@
 import { loadInventoryCollections } from "@scripts/commands/inventory-legacy-sync/inventory";
+import { type ReprojectMode } from "@scripts/commands/migrate-provider-state/migrate";
+import { writePreseedFailureMarker } from "@scripts/commands/preseed-sync/heartbeat";
 import { runPreseedSyncComposition } from "@scripts/commands/preseed-sync/preseed";
-import {
-  writePreseedFailureMarker,
-} from "@scripts/commands/preseed-sync/heartbeat";
 import {
   type PreseedMode,
   PreseedModeSchema,
   type PreseedPhase,
   PreseedPhaseSchema,
 } from "@scripts/commands/preseed-sync/report.types";
-import { type ReprojectMode } from "@scripts/commands/migrate-provider-state/migrate";
 import { loadCompassConfig } from "@core/config/compass.config";
 import { Logger } from "@core/logger/winston.logger";
 import mongoService from "@backend/common/services/mongo.service";

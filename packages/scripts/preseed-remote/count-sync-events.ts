@@ -2,8 +2,9 @@
  * Quick Sync DB counters for ops while preseed runs.
  * Usage: COMPASS_CONFIG_FILE=... bun packages/scripts/preseed-remote/count-sync-events.ts
  */
-import { readFileSync } from "node:fs";
+
 import { MongoClient } from "mongodb";
+import { readFileSync } from "node:fs";
 
 function mongoUriFromCompassYaml(text: string): string {
   const syncBlock = text.split(/^sync:\s*$/m)[1] ?? "";
