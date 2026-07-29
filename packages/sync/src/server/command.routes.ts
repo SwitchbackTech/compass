@@ -8,7 +8,10 @@ import {
 } from "@core/types/sync/command.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
-import { submitCloudCommand } from "@sync/domain/cloud-command.service";
+import {
+  ProviderWriteUnavailableError,
+  submitCloudCommand,
+} from "@sync/domain/cloud-command.service";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import {
@@ -160,7 +163,16 @@ export function registerCommandRoutes(
           command: toSyncCommand(command),
         };
         res.status(Status.OK).json(response);
-      } catch {
+      } catch (error) {
+        // Provider writes being unavailable is a retryable service state, not a
+        // bug: answer 503 so the caller retries instead of believing a write
+        // landed that nothing will ever apply.
+        if (error instanceof ProviderWriteUnavailableError) {
+          res
+            .status(Status.SERVICE_UNAVAILABLE)
+            .json({ error: "provider_write_unavailable" });
+          return;
+        }
         respondInternalError(res);
       }
     },

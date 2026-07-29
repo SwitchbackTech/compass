@@ -221,7 +221,7 @@ describe("POST /internal/commands", () => {
     });
   });
 
-  it("leaves a create targeting a provider calendar pending for the provider path", async () => {
+  it("refuses a create targeting a provider calendar when the writer is unavailable", async () => {
     const tenantId = objectId();
     const principalId = objectId();
     await startService();
@@ -252,10 +252,11 @@ describe("POST /internal/commands", () => {
     });
     const res = await submit(tenantId, principalId, request);
 
-    const body = (await res.json()) as {
-      command: { outcome: { state: string } };
-    };
-    expect(body.command.outcome.state).toBe("pending");
+    // 503, not a pending 200: nothing re-dispatches a pending command, so
+    // answering OK would tell the caller a write landed that would never reach
+    // the provider (the 2026-07-29 production failure).
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "provider_write_unavailable" });
     // No local cloud event is written for a provider-targeted create.
     expect(await mongo.db.collection("events").countDocuments()).toBe(0);
   });

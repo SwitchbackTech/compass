@@ -8,7 +8,10 @@ import {
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
-import { submitCloudCommand } from "@sync/domain/cloud-command.service";
+import {
+  ProviderWriteUnavailableError,
+  submitCloudCommand,
+} from "@sync/domain/cloud-command.service";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
@@ -178,13 +181,16 @@ describe("submitCloudCommand provider dispatch", () => {
     expect(writer.calls).toHaveLength(1);
   });
 
-  it("leaves a provider-targeted create pending when passive", async () => {
+  // Accepting these would strand the write: nothing re-dispatches a pending
+  // command, so the caller would see success for an event that never reaches
+  // the provider. Production hit exactly that on 2026-07-29.
+  it("refuses a provider-targeted create when passive", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const calendar = await seedProviderCalendar(tenantId, principalId);
     const writer = new FakeWriter();
 
-    const { command } = await submitCloudCommand(
+    const submit = submitCloudCommand(
       {
         commands,
         events,
@@ -198,16 +204,16 @@ describe("submitCloudCommand provider dispatch", () => {
       now,
     );
 
-    expect(command.outcome.state).toBe("pending");
+    await expect(submit).rejects.toThrow(ProviderWriteUnavailableError);
     expect(writer.calls).toHaveLength(0);
   });
 
-  it("leaves a provider-targeted create pending when no provider is configured", async () => {
+  it("refuses a provider-targeted create when no provider is configured", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const calendar = await seedProviderCalendar(tenantId, principalId);
 
-    const { command } = await submitCloudCommand(
+    const submit = submitCloudCommand(
       {
         commands,
         events,
@@ -220,7 +226,7 @@ describe("submitCloudCommand provider dispatch", () => {
       now,
     );
 
-    expect(command.outcome.state).toBe("pending");
+    await expect(submit).rejects.toThrow(ProviderWriteUnavailableError);
   });
 
   it("still confirms a cloud (non-provider) create locally when active", async () => {
