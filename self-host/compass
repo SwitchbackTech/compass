@@ -130,10 +130,41 @@ load_env_if_present() {
   fi
 }
 
+# The profiles this install actually needs, read off its own config.
+#
+# Defaulting to `selfhosted` regardless of config took a production deployment
+# down (2026-07-29): that deployment uses Atlas and hosted SuperTokens, so a
+# routine `./compass update` started a bundled mongo it had never run, the
+# bundled mongo crash-looped on the host kernel, and the selfhosted overlay's
+# `backend depends_on mongo: service_healthy` then blocked the backend from
+# starting at all.
+#
+#   selfhosted -> bundled mongo + supertokens, only when mongo.uri targets the
+#                 bundled `mongo` service (an external/Atlas URI means those
+#                 containers do not belong to this install).
+#   sync       -> only where an isolated sync database is provisioned.
+#
+# An explicit COMPOSE_PROFILES in the environment still wins, so operators can
+# override this for one-off commands.
+default_profiles() {
+  profiles=
+
+  mongo_uri=$(strip_quotes "$(read_config_value mongo.uri)")
+  case "$mongo_uri" in
+    "" | *//mongo:* | *@mongo:*) profiles=selfhosted ;;
+  esac
+
+  if [ -n "$(strip_quotes "$(read_config_value sync.mongoUri)")" ]; then
+    profiles="${profiles:+$profiles,}sync"
+  fi
+
+  printf '%s\n' "$profiles"
+}
+
 set_compose_env() {
   load_env
   export COMPASS_CONFIG_FILE="$CONFIG_FILE"
-  export COMPOSE_PROFILES="${COMPOSE_PROFILES-selfhosted}"
+  export COMPOSE_PROFILES="${COMPOSE_PROFILES-$(default_profiles)}"
   export COMPASS_VERSION="$(strip_quotes "$(read_config_value runtime.version)")"
   export COMPASS_WEB_IMAGE="$(strip_quotes "$(read_config_value web.image)")"
   export WEB_PORT="$(strip_quotes "$(read_config_value web.port)")"

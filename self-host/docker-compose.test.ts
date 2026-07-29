@@ -199,13 +199,104 @@ describe("self-host installer", () => {
   });
 });
 
+// Run the helper's profile derivation against a throwaway config. Sourcing just
+// the pure functions keeps this a behavior test rather than a string match, so
+// it fails if the derivation regresses instead of only if the source is retyped.
+async function runDefaultProfiles(configYaml: string) {
+  const dir = makeTempDir();
+  const configPath = join(dir, "compass.yaml");
+  writeFileSync(configPath, `${configYaml}\n`, { encoding: "utf8" });
+
+  // Lift the pure helpers out of the script so they can be exercised without
+  // running any docker command.
+  const helper = readRepoFile("self-host/compass");
+  const fns = ["strip_quotes", "read_config_value", "default_profiles"]
+    .map((name) => {
+      const match = helper.match(new RegExp(`^${name}\\(\\)[\\s\\S]*?^}`, "m"));
+      if (!match) throw new Error(`missing shell function: ${name}`);
+      return match[0];
+    })
+    .join("\n\n");
+
+  const fnsPath = join(dir, "fns.sh");
+  writeFileSync(fnsPath, `${fns}\n`, { encoding: "utf8" });
+
+  const proc = Bun.spawn(
+    [
+      "bash",
+      "-c",
+      `CONFIG_FILE="$1"; . "$2"; default_profiles`,
+      "--",
+      configPath,
+      fnsPath,
+    ],
+    { cwd: repoRoot, stderr: "pipe", stdout: "pipe" },
+  );
+
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+
+  return { exitCode, stderr, stdout: stdout.trim() };
+}
+
 describe("self-host helper", () => {
-  it("defaults Docker Compose to the self-host profile", () => {
+  it("lets an explicit COMPOSE_PROFILES override the derived default", () => {
     const helper = readRepoFile("self-host/compass");
 
     expect(helper).toContain(
-      'COMPOSE_PROFILES="' + "$" + '{COMPOSE_PROFILES-selfhosted}"',
+      'COMPOSE_PROFILES="' + "$" + '{COMPOSE_PROFILES-$(default_profiles)}"',
     );
+  });
+
+  it("omits the selfhosted profile when mongo is external", async () => {
+    // The 2026-07-29 production outage: an Atlas-backed install must not start
+    // the bundled mongo, whose selfhosted overlay gates backend startup.
+    const result = await runDefaultProfiles(
+      [
+        "mongo:",
+        '  uri: "mongodb+srv://u:p@cluster.mongodb.net/prod_calendar"',
+        "sync:",
+        '  mongoUri: "mongodb+srv://u:p@cluster.mongodb.net/compass_sync"',
+      ].join("\n"),
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe("sync");
+  });
+
+  it("keeps the selfhosted profile when mongo is the bundled service", async () => {
+    const result = await runDefaultProfiles(
+      ["mongo:", '  uri: "mongodb://user:pass@mongo:27017/compass"'].join("\n"),
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe("selfhosted");
+  });
+
+  it("adds sync alongside selfhosted when a sync database is provisioned", async () => {
+    const result = await runDefaultProfiles(
+      [
+        "mongo:",
+        '  uri: "mongodb://mongo:27017/compass"',
+        "sync:",
+        '  mongoUri: "mongodb://mongo:27017/compass_sync"',
+      ].join("\n"),
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe("selfhosted,sync");
+  });
+
+  it("defaults to selfhosted before a mongo uri is configured", async () => {
+    const result = await runDefaultProfiles(
+      ["web:", "  port: 9080"].join("\n"),
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe("selfhosted");
   });
 
   it("reads the Docker image version from runtime.version", () => {
