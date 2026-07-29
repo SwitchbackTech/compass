@@ -187,8 +187,9 @@ SUPERTOKENS_POSTGRES_PASSWORD=$(random_hex) || exit 1
 SUPERTOKENS_KEY=$(random_hex) || exit 1
 COMPASS_SYNC_TOKEN=$(random_hex) || exit 1
 GCAL_NOTIFICATION_TOKEN=$(random_hex) || exit 1
+SYNC_INTERNAL_AUTH_TOKEN=$(random_hex) || exit 1
 
-echo "  ✓ Generated 6 cryptographic secrets (64 hex chars each)"
+echo "  ✓ Generated 7 cryptographic secrets (64 hex chars each)"
 
 # ── Section 6: Create Config File ─────────────────────────────────────────────
 # The compass.yaml file contains all configuration for your Compass instance.
@@ -244,11 +245,30 @@ supertokens:
 google:
   notificationToken: $GCAL_NOTIFICATION_TOKEN
 
-# To enable Google Calendar sync, uncomment and fill in your OAuth credentials:
+# To enable Google Calendar sign-in and calendar sync, uncomment and fill in
+# your OAuth credentials:
 # google:
 #   clientId: REPLACE_WITH_GOOGLE_CLIENT_ID # e.g. your-id.apps.googleusercontent.com
 #   clientSecret: REPLACE_WITH_GOOGLE_CLIENT_SECRET
 #   channelExpirationMin: 10
+
+# Compass Sync service — self-host runs the same architecture as Compass
+# Cloud. Uses the SAME bundled mongo as `mongo:` above, isolated to its own
+# compass_sync database (no separate database user exists on the bundled
+# image, so this reuses the root credentials against a different database
+# name). callbackBaseUrl defaults to localhost, which works for the OAuth
+# redirect but cannot receive Google push notifications — set it to your
+# public URL once you have a domain.
+sync:
+  port: 3010
+  mongoUri: mongodb://compass:$MONGO_PASSWORD@mongo:27017/compass_sync?authSource=admin&replicaSet=rs0
+  internalAuthToken: $SYNC_INTERNAL_AUTH_TOKEN
+  callbackBaseUrl: http://localhost:3010
+  serviceUrl: http://sync:3010
+  connectionRouting: sync
+  eventRouting: sync
+  cloudMutationMode: enabled
+  execution: active
 EOF
 
   chmod 600 "$CONFIG_FILE"
@@ -351,7 +371,7 @@ read_config_value() {
 
 # Export all variables needed by compose.yaml.
 export COMPASS_CONFIG_FILE="$CONFIG_FILE"
-export COMPOSE_PROFILES="${COMPOSE_PROFILES-selfhost}"
+export COMPOSE_PROFILES="${COMPOSE_PROFILES-selfhosted,sync}"
 export COMPASS_VERSION="$(strip_quotes "$(read_config_value runtime.version)")"
 export WEB_PORT="$(strip_quotes "$(read_config_value web.port)")"
 export PORT="$(strip_quotes "$(read_config_value backend.port)")"
@@ -485,7 +505,7 @@ Or use Docker Compose directly:
 
   cd "$COMPASS_HOME"
   export COMPASS_CONFIG_FILE="$CONFIG_FILE"
-  export COMPOSE_PROFILES=selfhost
+  export COMPOSE_PROFILES=selfhosted,sync
   docker compose --project-name "$PROJECT_NAME" -f compose.yaml logs
   docker compose --project-name "$PROJECT_NAME" -f compose.yaml down
   docker compose --project-name "$PROJECT_NAME" -f compose.yaml up -d

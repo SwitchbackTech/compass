@@ -17,18 +17,26 @@ flowchart TD
     caddy[Caddy<br/>HTTPS]
     web[web container<br/>127.0.0.1:9080]
     backend[backend container<br/>127.0.0.1:3000/api]
-    mongo[(MongoDB<br/>events)]
+    sync[sync container<br/>127.0.0.1:3010]
+    mongo[(MongoDB<br/>prod_calendar + compass_sync)]
     supertokens[SuperTokens Core<br/>signup, login]
     postgres[(Postgres<br/>auth data)]
+    google[Google Calendar]
 
     browser -->|loads Compass| caddy
     caddy -->|web traffic| web
     caddy -->|API traffic| backend
+    caddy -->|/sync/* OAuth + webhooks| sync
     browser -->|caches events locally| indexeddb
     backend -->|Docker volume| mongo
+    backend -->|calendar/event reads + writes| sync
     backend --> supertokens
+    sync -->|Docker volume, own database| mongo
+    sync <-->|OAuth, push notifications| google
     supertokens -->|Docker volume| postgres
 ```
+
+Compass Sync owns Google Calendar sync end to end (OAuth, webhooks, and incremental pulls) in its own isolated database on the same bundled MongoDB — the backend never reads Google credentials directly. Sign-in with Google is the one exception: it stays a direct backend↔Google exchange, separate from calendar sync.
 
 ## Start here
 

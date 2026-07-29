@@ -71,12 +71,16 @@ See [Google Calendar](../self-hosting/google-calendar.md) for full setup instruc
 
 ## Sync Service
 
-Optional standalone Sync service (`packages/sync`). Omit the whole `sync:`
-block until you run that service. When present, `mongoUri` and
-`internalAuthToken` are required; Sync uses an **isolated** Mongo database and
-must not share the backend's database user/data.
+Standalone service (`packages/sync`) that owns Google Calendar sync end to
+end. The self-host installer writes a `sync:` block by default (see
+[Self-Hosting](../self-hosting/README.md)) — omit the whole block only for a
+bare install with no Google Calendar sync at all. When present, `mongoUri`
+and `internalAuthToken` are required; Sync uses an **isolated** Mongo
+database and must not share the backend's database user/data.
 
-Cutover and ops: [Sync Service Cutover](../backend/sync-service-cutover.md).
+`connectionRouting` and `eventRouting` below decide whether the backend
+delegates to Sync or still runs its own legacy code — see
+[Sync Service Cutover](../backend/sync-service-cutover.md).
 
 | key | Required | Description |
 |---|---|---|
