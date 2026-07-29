@@ -269,6 +269,48 @@ describe("normalizeGoogleEvent", () => {
     expect(error.reason).toBe("unmappableSchedule");
   });
 
+  it("falls back to UTC for a fixed-offset time zone instead of dropping the event", () => {
+    const read = asProviderEvent(
+      normalizeGoogleEvent(
+        gEvent({
+          start: {
+            dateTime: "2025-01-15T09:00:00-07:00",
+            timeZone: "GMT-07:00",
+          },
+          end: { dateTime: "2025-01-15T10:00:00-07:00", timeZone: "GMT-07:00" },
+        }),
+      ),
+    );
+    if (read.schedule.kind !== "timed") throw new Error("expected timed");
+
+    expect(read.schedule.timeZone).toBe("UTC");
+    expect(Date.parse(read.schedule.start)).toBe(
+      Date.parse("2025-01-15T09:00:00-07:00"),
+    );
+  });
+
+  it("normalizes a zero-duration timed event instead of dropping it", () => {
+    // Medication-reminder and deadline-marker events legitimately have
+    // start === end; Google, Outlook, and RFC 5545 all allow it.
+    const read = asProviderEvent(
+      normalizeGoogleEvent(
+        gEvent({
+          start: {
+            dateTime: "2025-01-15T09:00:00-05:00",
+            timeZone: "America/New_York",
+          },
+          end: {
+            dateTime: "2025-01-15T09:00:00-05:00",
+            timeZone: "America/New_York",
+          },
+        }),
+      ),
+    );
+    if (read.schedule.kind !== "timed") throw new Error("expected timed");
+
+    expect(Date.parse(read.schedule.end)).toBe(Date.parse(read.schedule.start));
+  });
+
   it("throws a skippable ProviderEventError when content exceeds the contract", () => {
     // Google does not cap attendee display names; the neutral contract does. An
     // over-long one must surface as a skippable ProviderEventError, never a raw

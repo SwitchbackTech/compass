@@ -4,7 +4,20 @@ import {
 } from "@scripts/commands/inventory-legacy-sync/inventory";
 import { migrateProviderConnections } from "@scripts/commands/migrate-connections/migrate";
 import { migratePendingCompassIntent } from "@scripts/commands/migrate-pending-intent/migrate";
-import { migrateProviderSyncState } from "@scripts/commands/migrate-provider-state/migrate";
+import {
+  migrateProviderSyncState,
+  type ReprojectMode,
+} from "@scripts/commands/migrate-provider-state/migrate";
+import {
+  writePreseedFailureMarker,
+  writePreseedHeartbeat,
+  writePreseedSuccessMarker,
+} from "@scripts/commands/preseed-sync/heartbeat";
+import { purgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events/purge";
+import { Logger } from "@core/logger/winston.logger";
+
+const logger = Logger("scripts.commands.preseed-sync.composition");
+
 import {
   buildExecutionRecord,
   type PhaseExecutionSummary,
@@ -42,6 +55,10 @@ export type PreseedOptions = {
   gitSha?: string | null;
   compassApiMongoDbName?: string | null;
   syncMongoDbName?: string | null;
+  reproject?: ReprojectMode;
+  concurrency?: number;
+  /** When apply+state, purge corrupt Sync events before migrating. */
+  purgeCorrupt?: boolean;
 };
 
 export type PreseedResult = {
@@ -111,12 +128,60 @@ export async function runPreseedSyncComposition(
   const resources = new SyncResourceRepository(deps.syncDb);
   const commands = new CommandRepository(deps.syncDb);
 
+  const writePhaseHeartbeat = async (
+    phase: string,
+    detail: string | null = null,
+  ) => {
+    if (!options.outDir) return;
+    await writePreseedHeartbeat(options.outDir, {
+      ts: new Date().toISOString(),
+      pid: process.pid,
+      phase,
+      usersDone: 0,
+      usersTotal: 0,
+      eventsUpserted: 0,
+      eventsSkipped: 0,
+      lastUserId: null,
+      ratePerMin: null,
+      detail,
+    });
+  };
+
+  await writePhaseHeartbeat("starting");
+
+  if (!dryRun && options.purgeCorrupt !== false && selected.includes("state")) {
+    await writePhaseHeartbeat("purge-corrupt");
+    const purge = await purgeCorruptSyncEvents(deps.syncDb, { dryRun: false });
+    logger.info(
+      `purged corrupt Sync events deleted=${purge.deleted} scanned=${purge.scanned}`,
+    );
+    if (options.outDir) {
+      await writePreseedHeartbeat(options.outDir, {
+        ts: new Date().toISOString(),
+        pid: process.pid,
+        phase: "purge-corrupt",
+        usersDone: 0,
+        usersTotal: 0,
+        eventsUpserted: 0,
+        eventsSkipped: 0,
+        lastUserId: null,
+        ratePerMin: null,
+        detail: `deleted=${purge.deleted}`,
+      });
+    }
+  }
+
   let collections: InventoryCollections | null = null;
   const ensureCollections = async () => {
     if (!collections) {
+      await writePhaseHeartbeat("inventory-load", "loading legacy collections");
       collections = filterCollections(
         await deps.loadCollections(),
         options.userIds,
+      );
+      await writePhaseHeartbeat(
+        "inventory-load",
+        `loaded users=${collections.users.length} events=${collections.events.length}`,
       );
     }
     return collections;
@@ -124,6 +189,7 @@ export async function runPreseedSyncComposition(
 
   for (const name of selected) {
     const phaseStarted = new Date();
+    await writePhaseHeartbeat(name);
     if (name === "inventory") {
       const source = await ensureCollections();
       const report = inventoryLegacySyncData(source, { now: startedAt });
@@ -180,6 +246,8 @@ export async function runPreseedSyncComposition(
 
     if (name === "state") {
       const source = await ensureCollections();
+      const progressStarted = Date.now();
+      let lastEvents = 0;
       const report = await migrateProviderSyncState(
         {
           connections,
@@ -189,7 +257,42 @@ export async function runPreseedSyncComposition(
           resources,
         },
         source,
-        { dryRun, userIds: options.userIds, now: startedAt },
+        {
+          dryRun,
+          userIds: options.userIds,
+          now: startedAt,
+          reproject: options.reproject ?? "after",
+          concurrency: options.concurrency ?? 4,
+          onProgress: async (progress) => {
+            const elapsedMin = Math.max(
+              (Date.now() - progressStarted) / 60_000,
+              1 / 60,
+            );
+            const rate =
+              progress.eventsUpserted > lastEvents
+                ? (progress.eventsUpserted - lastEvents) /
+                  Math.max(elapsedMin, 0.01)
+                : progress.eventsUpserted / elapsedMin;
+            lastEvents = progress.eventsUpserted;
+            logger.info(
+              `preseed state ${progress.phase} users=${progress.usersDone}/${progress.usersTotal} eventsUpserted=${progress.eventsUpserted} skipped=${progress.eventsSkipped} lastUser=${progress.lastUserId ?? "-"} ${progress.detail ?? ""}`,
+            );
+            if (options.outDir) {
+              await writePreseedHeartbeat(options.outDir, {
+                ts: new Date().toISOString(),
+                pid: process.pid,
+                phase: progress.phase,
+                usersDone: progress.usersDone,
+                usersTotal: progress.usersTotal,
+                eventsUpserted: progress.eventsUpserted,
+                eventsSkipped: progress.eventsSkipped,
+                lastUserId: progress.lastUserId,
+                ratePerMin: Math.round(rate),
+                detail: progress.detail ?? null,
+              });
+            }
+          },
+        },
       );
       phases.providerState = report;
       phasesExecuted.push({
@@ -264,7 +367,13 @@ export async function runPreseedSyncComposition(
       const residualState = await migrateProviderSyncState(
         { connections, calendars, events, occurrences, resources },
         source,
-        { dryRun: true, userIds: options.userIds, now: startedAt },
+        {
+          dryRun: true,
+          userIds: options.userIds,
+          now: startedAt,
+          reproject: "off",
+          concurrency: 1,
+        },
       );
       phases.providerState = {
         ...phases.providerState,
@@ -340,6 +449,22 @@ export async function runPreseedSyncComposition(
       executionRecord,
       phaseArtifacts,
     );
+    if (exitCode === 0) {
+      await writePreseedSuccessMarker(options.outDir, {
+        exitCode,
+        parityOk: parity.ok,
+        mode: options.mode,
+        phase: options.phase,
+      });
+    } else {
+      await writePreseedFailureMarker(options.outDir, {
+        exitCode,
+        parityOk: parity.ok,
+        blockers: parity.blockers.slice(0, 20),
+        mode: options.mode,
+        phase: options.phase,
+      });
+    }
   }
 
   return { exitCode, report };

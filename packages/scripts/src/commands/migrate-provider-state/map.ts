@@ -1,12 +1,14 @@
 import { type ObjectId } from "mongodb";
 import { type CalendarAccess } from "@core/types/calendar.contracts";
 import {
-  type DateOnly,
   type DateTime,
   DateTimeSchema,
   EventIdSchema,
 } from "@core/types/domain-primitives";
-import { type EventSchedule } from "@core/types/event.contracts";
+import {
+  type EventSchedule,
+  EventScheduleSchema,
+} from "@core/types/event.contracts";
 import {
   type CalendarAccessRole,
   type CalendarCapabilities,
@@ -17,6 +19,7 @@ import {
   type SyncEventContent,
   type SyncEventRecurrence,
 } from "@core/types/sync/event.contracts";
+import { TimezoneSchema } from "@core/types/type.utils";
 import { convertRfc5545ToIso } from "@core/util/date/date.util";
 import {
   type EventScheduleRecord,
@@ -99,19 +102,29 @@ export function toSyncContent(
 }
 
 export function toSyncSchedule(schedule: EventScheduleRecord): EventSchedule {
+  // Parse through EventScheduleSchema so inverted ranges fail here (and become
+  // unmappable skips in migrate) instead of crashing later on event upsert.
   if (schedule.kind === "timed") {
-    return {
+    return EventScheduleSchema.parse({
       kind: "timed",
-      start: DateTimeSchema.parse(schedule.start.toISOString()),
-      end: DateTimeSchema.parse(schedule.end.toISOString()),
-      timeZone: schedule.timeZone,
-    };
+      start: schedule.start.toISOString(),
+      end: schedule.end.toISOString(),
+      timeZone: toIanaTimeZone(schedule.timeZone),
+    });
   }
-  return {
+  return EventScheduleSchema.parse({
     kind: "allDay",
-    start: schedule.start as DateOnly,
-    end: schedule.end as DateOnly,
-  };
+    start: schedule.start,
+    end: schedule.end,
+  });
+}
+
+// Legacy stored a handful of fixed-offset strings ("GMT-07:00") instead of an
+// IANA zone, which TimeZoneSchema rejects. The instant is a Date either way,
+// so falling back to UTC only loses the wall-clock display context, not the
+// event's actual time — better than dropping the event as unmappable.
+function toIanaTimeZone(timeZone: string): string {
+  return TimezoneSchema.safeParse(timeZone).success ? timeZone : "UTC";
 }
 
 function recurrenceIdFromGoogleInstanceId(

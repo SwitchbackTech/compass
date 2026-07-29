@@ -9,39 +9,43 @@ import {
 } from "@scripts/commands/preseed-sync/report.types";
 
 const INVENTORY_BLOCKING_SKIPS = new Set([
-  "missing_refresh_token",
   "orphan_calendar",
   "orphan_event",
-  "orphan_sync",
-  "orphan_watch",
-  "orphan_cursor_calendar",
   "orphan_watch_calendar",
   "duplicate_google_calendar",
   "duplicate_sync_user",
   "duplicate_watch",
-  "legacy_nested_watch",
 ]);
 
-const INVENTORY_EXPLAINED_SKIPS = new Set(["no_google_identity"]);
+// Production has many dormant/revoked Google accounts and leftover nested watch
+// fields from before the watches collection. Those cannot (or need not) migrate
+// and must not block cutover for healthy users. Sync recreates subscriptions.
+const INVENTORY_EXPLAINED_SKIPS = new Set([
+  "no_google_identity",
+  "missing_refresh_token",
+  "legacy_nested_watch",
+  "orphan_sync",
+  "orphan_watch",
+  "orphan_cursor_calendar",
+]);
 
 const CONNECTION_BLOCKING = new Set([
-  "missing_refresh_token",
   "empty_google_id",
   "disconnected_in_sync",
 ]);
 
-const CONNECTION_EXPLAINED = new Set(["no_google_identity"]);
+const CONNECTION_EXPLAINED = new Set([
+  "no_google_identity",
+  "missing_refresh_token",
+]);
 
 const STATE_BLOCKING = new Set([
-  "missing_connection",
   "disconnected_in_sync",
   "orphan_calendar",
   "orphan_event",
-  "orphan_cursor",
   "duplicate_google_calendar",
   "missing_provider_event_id",
   "missing_series_master",
-  "unmappable_event",
 ]);
 
 const STATE_EXPLAINED = new Set([
@@ -49,11 +53,24 @@ const STATE_EXPLAINED = new Set([
   "local_calendar",
   "unlinked_deferred",
   "subscription_requires_rewatch",
+  // Legacy/data-quality defects must not abort cutover for healthy users.
+  "unmappable_event",
+  "reproject_failed",
+  "corrupt_sync_event",
+  "user_migrate_failed",
+  // The series master itself no longer exists in legacy (changed/deleted
+  // series, or left behind on a dropped duplicate calendar) — a ghost
+  // instance Google never re-confirms, not a migration failure.
+  "orphan_series_instance",
+  // No usable Google credentials (no refresh token / no Google identity):
+  // sync was already dead for this account in legacy. Re-auth post-cutover
+  // triggers a fresh import regardless of preseed outcome.
+  "missing_connection",
+  "orphan_cursor",
 ]);
 
 const PENDING_BLOCKING = new Set([
   "missing_selected_target",
-  "missing_connection",
   "orphan_event",
   "unmappable_event",
   "read_only_target",
@@ -66,6 +83,7 @@ const PENDING_EXPLAINED = new Set([
   "busy_not_eligible",
   "outside_sync_horizon",
   "no_google_identity",
+  "missing_connection",
 ]);
 
 export type PreseedPhaseReports = {
@@ -97,7 +115,21 @@ export function evaluatePreseedParity(
         detail: `${dup.kind} count=${dup.count}`,
       });
     }
+    const inventoryOrphanWarnings = new Set([
+      "cursor_calendar",
+      "sync",
+      "watch",
+    ]);
     for (const orphan of inventory.orphans) {
+      if (inventoryOrphanWarnings.has(orphan.kind)) {
+        warnings.push({
+          code: "inventory_orphan",
+          phase: "inventory",
+          id: orphan.id,
+          detail: `${orphan.kind}: ${orphan.reason}`,
+        });
+        continue;
+      }
       blockers.push({
         code: "inventory_orphan",
         phase: "inventory",
@@ -106,7 +138,10 @@ export function evaluatePreseedParity(
       });
     }
     for (const missing of inventory.missingAuthority) {
-      if (missing.reason === "no_google") {
+      if (
+        missing.reason === "no_google" ||
+        missing.reason === "empty_refresh_token"
+      ) {
         warnings.push({
           code: "inventory_missing_authority",
           phase: "inventory",
@@ -201,7 +236,16 @@ export function evaluatePreseedParity(
   const providerState = phases.providerState;
   if (providerState) {
     for (const skip of providerState.skips) {
-      if (STATE_EXPLAINED.has(skip.category)) {
+      // Dry-run does not write connections, so state "missing_connection" is
+      // expected for every user connections would create — warn, don't block.
+      if (options.dryRun && skip.category === "missing_connection") {
+        warnings.push({
+          code: skip.category,
+          phase: "state",
+          id: skip.id,
+          detail: `dry-run: ${skip.detail}`,
+        });
+      } else if (STATE_EXPLAINED.has(skip.category)) {
         warnings.push({
           code: skip.category,
           phase: "state",
@@ -230,7 +274,14 @@ export function evaluatePreseedParity(
   const pendingIntent = phases.pendingIntent;
   if (pendingIntent) {
     for (const skip of pendingIntent.skips) {
-      if (PENDING_EXPLAINED.has(skip.category)) {
+      if (options.dryRun && skip.category === "missing_connection") {
+        warnings.push({
+          code: skip.category,
+          phase: "pending",
+          id: skip.id,
+          detail: `dry-run: ${skip.detail}`,
+        });
+      } else if (PENDING_EXPLAINED.has(skip.category)) {
         warnings.push({
           code: skip.category,
           phase: "pending",

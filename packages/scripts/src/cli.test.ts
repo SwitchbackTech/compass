@@ -15,6 +15,7 @@ const mockRunMigratePendingIntent = mock(
   (): Promise<void> => Promise.resolve(),
 );
 const mockRunPreseedSync = mock((): Promise<void> => Promise.resolve());
+const mockRunPurgeCorrupt = mock((): Promise<void> => Promise.resolve());
 const mockRunPurgeUser = mock((): Promise<void> => Promise.resolve());
 
 mock.module("@scripts/cli.validator", () => ({
@@ -53,6 +54,10 @@ mock.module("@scripts/commands/preseed-sync", () => ({
   runPreseedSync: mock(() => mockRunPreseedSync()),
 }));
 
+mock.module("@scripts/commands/purge-corrupt-sync-events", () => ({
+  __esModule: true,
+  runPurgeCorruptSyncEvents: mock(() => mockRunPurgeCorrupt()),
+}));
 mock.module("@scripts/commands/purge-user", () => ({
   __esModule: true,
   runPurgeUser: mock(() => mockRunPurgeUser()),
@@ -113,6 +118,14 @@ describe("CompassCLI", () => {
     await cli.run();
 
     expect(mockRunPreseedSync).toHaveBeenCalled();
+  });
+
+  it("runs purge-corrupt-sync-events command", async () => {
+    const cli = new CompassCLI(["node", "cli", "purge-corrupt-sync-events"]);
+
+    await cli.run();
+
+    expect(mockRunPurgeCorrupt).toHaveBeenCalled();
   });
 
   it("runs purge-user command", async () => {

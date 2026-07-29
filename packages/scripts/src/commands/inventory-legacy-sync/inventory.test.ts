@@ -1,4 +1,7 @@
-import { inventoryLegacySyncData } from "@scripts/commands/inventory-legacy-sync/inventory";
+import {
+  inventoryLegacySyncData,
+  legacyCursorRows,
+} from "@scripts/commands/inventory-legacy-sync/inventory";
 import { ObjectId } from "mongodb";
 import { Resource_Sync } from "@core/types/sync.types";
 import { describe, expect, it } from "bun:test";
@@ -277,5 +280,86 @@ describe("inventoryLegacySyncData", () => {
     expect(report.skips.some((s) => s.category === "orphan_event")).toBe(true);
     expect(report.skips.some((s) => s.category === "orphan_sync")).toBe(true);
     expect(report.skips.every((s) => s.category.length > 0)).toBe(true);
+  });
+
+  it("accepts array-like objects for nested google cursor rows", () => {
+    // Production has a few sync docs where calendarlist was stored as {"0": row}.
+    expect(
+      legacyCursorRows<{ gCalendarId: string }>({
+        0: { gCalendarId: "primary" },
+      }),
+    ).toEqual([{ gCalendarId: "primary" }]);
+
+    const userId = new ObjectId("507f1f77bcf86cd799439031");
+    const calendarId = new ObjectId("507f1f77bcf86cd799439032");
+    const report = inventoryLegacySyncData(
+      {
+        users: [
+          {
+            _id: userId,
+            email: "bob@example.com",
+            firstName: "B",
+            lastName: "O",
+            name: "B O",
+            locale: "en",
+            google: {
+              googleId: "google-subject-2",
+              picture: "",
+              gRefreshToken: "refresh-2",
+            },
+          },
+        ],
+        calendars: [
+          {
+            _id: calendarId,
+            userId,
+            name: "Primary",
+            description: "",
+            timeZone: "UTC" as const,
+            foregroundColor: "#000000" as const,
+            backgroundColor: "#ffffff" as const,
+            access: "owner" as const,
+            isPrimary: true,
+            isVisible: true,
+            isActive: true,
+            source: {
+              provider: "google" as const,
+              calendarId: "primary",
+              etag: "etag-1",
+            },
+            createdAt: NOW,
+            updatedAt: null,
+          },
+        ],
+        events: [],
+        syncDocs: [
+          {
+            _id: new ObjectId("507f1f77bcf86cd799439033"),
+            user: userId.toHexString(),
+            google: {
+              calendarlist: {
+                0: {
+                  gCalendarId: Resource_Sync.CALENDAR,
+                  nextSyncToken: "cal-token",
+                },
+              } as never,
+              events: {
+                0: { gCalendarId: "primary", nextSyncToken: "ev-token" },
+              } as never,
+            },
+          },
+        ],
+        watches: [],
+      },
+      { now: NOW },
+    );
+
+    expect(report.source.syncDocs.eventCursorRows).toBe(1);
+    expect(report.source.syncDocs.calendarListCursorRows).toBe(1);
+    expect(
+      report.targets[0]?.syncResourceTargets.some(
+        (t) => t.resourceKind === "calendarList" && t.hasCursor,
+      ),
+    ).toBe(true);
   });
 });

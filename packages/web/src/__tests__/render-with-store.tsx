@@ -1,9 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import {
-  type RenderHookOptions,
-  render,
-  renderHook,
-} from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { type PropsWithChildren, type ReactElement } from "react";
 import { type Event } from "@core/types/event.contracts";
 import { createCompassQueryClient } from "@web/api/query-client";

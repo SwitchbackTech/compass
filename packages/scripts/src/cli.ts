@@ -5,6 +5,7 @@ import { runMigrateConnections } from "@scripts/commands/migrate-connections";
 import { runMigratePendingIntent } from "@scripts/commands/migrate-pending-intent";
 import { runMigrateProviderState } from "@scripts/commands/migrate-provider-state";
 import { runPreseedSync } from "@scripts/commands/preseed-sync";
+import { runPurgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events";
 import { runPurgeUser } from "@scripts/commands/purge-user";
 import { MigratorType } from "@scripts/common/cli.types";
 import { Command } from "commander";
@@ -41,6 +42,9 @@ export default class CompassCLI {
       case cmd === "preseed-sync":
         await runPreseedSync();
         break;
+      case cmd === "purge-corrupt-sync-events":
+        await runPurgeCorruptSyncEvents();
+        break;
       case cmd === "purge-user":
         await runPurgeUser();
         break;
@@ -70,6 +74,14 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "compose S46–S49 Sync pre-seed with blocking parity (S51; --apply to write)",
+      );
+
+    program
+      .command("purge-corrupt-sync-events")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "Delete Sync events that fail EventRecordSchema (poison from aborted migrate)",
       );
 
     program

@@ -53,6 +53,43 @@ describe("migrate-provider-state map helpers", () => {
       end: "2026-07-25T04:30:00.000Z",
       timeZone: "America/Denver",
     });
+    // A fixed-offset legacy time zone falls back to UTC instead of failing
+    // the mapping; the instant itself is unaffected.
+    expect(
+      toSyncSchedule({
+        kind: "timed",
+        start: NOW,
+        end: new Date(NOW.getTime() + 1800_000),
+        timeZone: "GMT-07:00",
+      }),
+    ).toEqual({
+      kind: "timed",
+      start: "2026-07-25T04:00:00.000Z",
+      end: "2026-07-25T04:30:00.000Z",
+      timeZone: "UTC",
+    });
+    // Zero-duration (e.g. medication-reminder events) is valid, not a mapping failure.
+    expect(
+      toSyncSchedule({
+        kind: "timed",
+        start: NOW,
+        end: NOW,
+        timeZone: "UTC",
+      }),
+    ).toEqual({
+      kind: "timed",
+      start: "2026-07-25T04:00:00.000Z",
+      end: "2026-07-25T04:00:00.000Z",
+      timeZone: "UTC",
+    });
+    expect(() =>
+      toSyncSchedule({
+        kind: "timed",
+        start: NOW,
+        end: new Date(NOW.getTime() - 1800_000),
+        timeZone: "UTC",
+      }),
+    ).toThrow(/end must not be before start/i);
   });
 
   it("plans series masters and occurrences", () => {
@@ -129,6 +166,10 @@ describe("migrateProviderSyncState", () => {
         } as never,
         events: {
           findByProviderIdentity: async () => null,
+          findByProviderIdentitySafe: async () => ({
+            record: null,
+            corruptDeletedId: null,
+          }),
           upsertByProviderIdentity: upsertEvent,
         } as never,
         occurrences: {
@@ -196,6 +237,10 @@ describe("migrateProviderSyncState", () => {
         } as never,
         events: {
           findByProviderIdentity: async () => null,
+          findByProviderIdentitySafe: async () => ({
+            record: null,
+            corruptDeletedId: null,
+          }),
           upsertByProviderIdentity: async () => {
             throw new Error("dry-run");
           },

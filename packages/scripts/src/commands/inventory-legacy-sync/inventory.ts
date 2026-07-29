@@ -57,6 +57,17 @@ function nestedHasLegacyChannel(details: unknown): boolean {
   );
 }
 
+// Production has a few sync docs where nested google.events / calendarlist
+// were stored as array-like objects ({"0": row}) instead of arrays. Treat both
+// as row lists so inventory/preseed can run.
+export function legacyCursorRows<T>(value: unknown): T[] {
+  if (value == null) return [];
+  if (Array.isArray(value)) return value as T[];
+  if (typeof value === "object")
+    return Object.values(value as Record<string, T>);
+  return [];
+}
+
 /**
  * Read-only inventory of legacy Compass Google sync data (S46).
  * Never writes, deletes, refreshes tokens, or calls providers.
@@ -259,7 +270,9 @@ export function inventoryLegacySyncData(
 
   const seenOrphanCursorIds = new Set<string>();
   for (const doc of syncDocs) {
-    const eventRows = doc.google?.events ?? [];
+    const eventRows = legacyCursorRows<{ gCalendarId: string }>(
+      doc.google?.events,
+    );
     for (const row of eventRows) {
       const known = googleCalByUser.get(doc.user);
       if (known?.has(row.gCalendarId)) continue;
@@ -283,8 +296,8 @@ export function inventoryLegacySyncData(
   for (const doc of syncDocs) {
     const id = doc._id?.toHexString() ?? `user:${doc.user}`;
     const rows = [
-      ...(doc.google?.events ?? []),
-      ...(doc.google?.calendarlist ?? []),
+      ...legacyCursorRows(doc.google?.events),
+      ...legacyCursorRows(doc.google?.calendarlist),
     ];
     if (!rows.some(nestedHasLegacyChannel)) continue;
     skips.push({
@@ -416,7 +429,10 @@ export function inventoryLegacySyncData(
     );
 
     const syncResourceTargets: InventoryUserTarget["syncResourceTargets"] = [];
-    const calendarListRows = syncDoc?.google?.calendarlist ?? [];
+    const calendarListRows = legacyCursorRows<{
+      gCalendarId?: string;
+      nextSyncToken?: string;
+    }>(syncDoc?.google?.calendarlist);
     if (
       calendarListRows.length > 0 ||
       watchKeys.has(`${userId}:${Resource_Sync.CALENDAR}`)
@@ -429,7 +445,9 @@ export function inventoryLegacySyncData(
       });
     }
     const eventCursorIds = new Set(
-      (syncDoc?.google?.events ?? []).map((r) => r.gCalendarId),
+      legacyCursorRows<{ gCalendarId: string }>(syncDoc?.google?.events).map(
+        (r) => r.gCalendarId,
+      ),
     );
     for (const watch of userWatches) {
       if (watch.gCalendarId !== Resource_Sync.CALENDAR) {
@@ -440,7 +458,10 @@ export function inventoryLegacySyncData(
       syncResourceTargets.push({
         resourceKind: "events",
         gCalendarId,
-        hasCursor: (syncDoc?.google?.events ?? []).some(
+        hasCursor: legacyCursorRows<{
+          gCalendarId: string;
+          nextSyncToken?: string;
+        }>(syncDoc?.google?.events).some(
           (r) => r.gCalendarId === gCalendarId && Boolean(r.nextSyncToken),
         ),
         hasWatch: watchKeys.has(`${userId}:${gCalendarId}`),
@@ -466,8 +487,8 @@ export function inventoryLegacySyncData(
   let eventCursorRows = 0;
   let calendarListCursorRows = 0;
   for (const doc of syncDocs) {
-    eventCursorRows += doc.google?.events?.length ?? 0;
-    calendarListCursorRows += doc.google?.calendarlist?.length ?? 0;
+    eventCursorRows += legacyCursorRows(doc.google?.events).length;
+    calendarListCursorRows += legacyCursorRows(doc.google?.calendarlist).length;
   }
 
   let eventWatches = 0;
