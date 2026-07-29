@@ -24,17 +24,24 @@ No authentication required.
 
 The check calls `db.admin().ping()` against MongoDB. Call it on whatever schedule makes sense for your setup — Compass does not impose a polling interval.
 
-## Google sync health
+## Sync (Google Calendar) health
 
-If Google Calendar sync is enabled, watch (channel) health is worth watching separately from the health endpoint above — it degrades quietly (missed notifications, expired channels) rather than returning an error.
+If Google Calendar sync is enabled, the `sync` container's own health is worth watching separately from the backend health endpoint above — it degrades quietly (missed push notifications) rather than returning an error, and the backend health check above never touches it.
 
-What to watch, in backend logs:
+```
+GET /health/live
+```
 
-- **`app:google-watch-repair`** — one line per repair attempt: `REFRESHED`, `REPAIRED`, `FULL_REPAIR_STARTED`, or `PRUNED` (info level), or `SKIPPED` with reason `COOLDOWN`/`LOCKED` (debug level). A `HEALTHY`/`NONE` outcome (nothing to do) is not logged, so silence on this namespace is itself a healthy sign. Repair runs opportunistically on every client SSE (re)connect and via scheduled maintenance.
-- **`app:google-watch-maintenance.service`** — a debug-level summary after each `POST /api/sync/maintain-all` run (counts of ignored/pruned/refreshed/revoked watches across all users).
-- **`GOOGLE_REVOKED` sync-status events** — published over SSE and logged when a user's Google access was revoked or their refresh token went missing. Compass prunes that user's Google-owned data automatically (see [Google Calendar](./google-calendar.md)). They'll need to reconnect.
+on `127.0.0.1:3010` — liveness only (the container is up and serving), not a signal that sync work is actually progressing. `docker compose ps` surfaces this as the container's health status.
 
-`POST /api/sync/maintain-all` re-verifies every user's watches and is how expired/missing channels get caught outside the opportunistic SSE-triggered repair. The self-host Docker stack does not schedule calls to it for you — wire up your own external scheduler (cron, systemd timer, etc.) hitting it with the `x-comp-token` header set to `backend.compassToken`.
+What to watch, in sync container logs (`./compass logs sync`):
+
+- **Startup line** — `compass-sync listening on 3010 (production, execution=active)`. If it instead says `execution=passive`, Sync is up but doing no provider work — check `sync.execution` in `compass.yaml`.
+- **`Sync scheduler draining, reconciling, renewing channels, retaining, and reporting health`** — logged once at startup when active; confirms the job worker, the reconcile sweep, and subscription renewal are all running. If you only see `Sync retention + health snapshot started (passive / unconfigured)` instead, Sync isn't doing calendar work — check `google.clientId`/`google.clientSecret` are set and `sync.execution: active`.
+- **`Sync reconcile sweep enqueued N pull(s)`** — logs roughly every 10 minutes when there's stale work to catch up on. This is the fallback for missed push notifications; every connected calendar converges through it even if Google's webhook never arrives. It's normal for this to log `0` most of the time on a healthy install (nothing missed).
+- **`Sync job {kind} ({id}) dropped: {reason}`** (warn level) — a job settled without completing (e.g. the connection's Google access was revoked). The affected user needs to reconnect; Compass surfaces this in the UI as a "Reconnect Google Calendar" prompt automatically.
+
+Unlike the older backend-only sync engine, Sync manages its own push-notification channel renewal internally — there's no separate cron job or maintenance endpoint to wire up.
 
 ----
 

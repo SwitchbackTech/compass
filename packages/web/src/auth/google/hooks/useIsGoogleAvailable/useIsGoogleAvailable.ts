@@ -12,5 +12,6 @@ export const {
   setGoogleAvailabilityForTests,
   setConnectDelegatedToSyncForTests,
   useIsGoogleAvailable,
+  useIsConnectGoogleAvailable,
   useIsConnectDelegatedToSync,
 } = googleAvailability;

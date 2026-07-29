@@ -21,14 +21,14 @@ import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { settingsActions } from "@web/settings/settings.store";
 import {
   useIsConnectDelegatedToSync,
-  useIsGoogleAvailable,
+  useIsConnectGoogleAvailable,
 } from "../useIsGoogleAvailable/useIsGoogleAvailable";
 import { type UseConnectGoogleResult } from "./useConnectGoogle.types";
 import { getGoogleConnectionConfig } from "./useConnectGoogle.util";
 import { useGoogleUiState } from "./useGoogleUiState";
 
 export const useConnectGoogle = (): UseConnectGoogleResult => {
-  const isAvailable = useIsGoogleAvailable();
+  const isAvailable = useIsConnectGoogleAvailable();
   const isConnectDelegatedToSync = useIsConnectDelegatedToSync();
   const state = useGoogleUiState();
   const syncConnection = useUserMetadataStore(selectGoogleSyncConnection);

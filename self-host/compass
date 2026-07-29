@@ -169,6 +169,7 @@ set_compose_env() {
   export COMPASS_WEB_IMAGE="$(strip_quotes "$(read_config_value web.image)")"
   export WEB_PORT="$(strip_quotes "$(read_config_value web.port)")"
   export PORT="$(strip_quotes "$(read_config_value backend.port)")"
+  export SYNC_PORT="$(strip_quotes "$(read_config_value sync.port)")"
   export MONGO_INITDB_ROOT_USERNAME="$(strip_quotes "$(read_config_value mongo.username)")"
   export MONGO_INITDB_ROOT_PASSWORD="$(strip_quotes "$(read_config_value mongo.password)")"
   export MONGO_REPLICA_SET_KEY="$(strip_quotes "$(read_config_value mongo.replicaSetKey)")"

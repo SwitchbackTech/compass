@@ -52,11 +52,12 @@ export function createGoogleAvailability({
     connectDelegatedToSync;
 
   const loadBackendGoogleAvailability = async (): Promise<void> => {
-    if (!isGoogleAuthConfigured) {
-      setBackendGoogleAvailability("unavailable");
-      return;
-    }
-
+    // Always fetch /config, even without a baked GOOGLE_CLIENT_ID: a
+    // sync-delegated connect flow needs no client-side id at all, so bailing
+    // out here would leave connectDelegatedToSync permanently unknown for
+    // exactly the deployments that need it (e.g. a self-host web image that
+    // hasn't rebuilt with its own client id). Sign-in availability still
+    // requires the baked id — see useIsGoogleAvailable below.
     if (!loadPromise) {
       loadPromise = getConfig()
         .then((config) => {
@@ -88,6 +89,32 @@ export function createGoogleAvailability({
     }, []);
 
     return isGoogleAuthConfigured && isBackendGoogleConfigured;
+  };
+
+  // Connect-calendar availability, distinct from sign-in (useIsGoogleAvailable
+  // above): the sync redirect flow (connectDelegatedToSync) never runs
+  // client-side code exchange, so it needs no baked GOOGLE_CLIENT_ID — only
+  // that the backend has Google configured at all. The legacy popup flow
+  // still needs the baked id, same as sign-in.
+  const useIsConnectGoogleAvailable = (): boolean => {
+    const isBackendGoogleConfigured = useSyncExternalStore(
+      subscribe,
+      getBackendGoogleAvailabilitySnapshot,
+      getBackendGoogleAvailabilitySnapshot,
+    );
+    const delegatedToSync = useSyncExternalStore(
+      subscribe,
+      getConnectDelegatedToSyncSnapshot,
+      getConnectDelegatedToSyncSnapshot,
+    );
+
+    useEffect(() => {
+      void loadBackendGoogleAvailability();
+    }, []);
+
+    return (
+      isBackendGoogleConfigured && (delegatedToSync || isGoogleAuthConfigured)
+    );
   };
 
   const useIsConnectDelegatedToSync = (): boolean => {
@@ -132,6 +159,7 @@ export function createGoogleAvailability({
     setGoogleAvailabilityForTests,
     setConnectDelegatedToSyncForTests,
     useIsGoogleAvailable,
+    useIsConnectGoogleAvailable,
     useIsConnectDelegatedToSync,
   };
 }

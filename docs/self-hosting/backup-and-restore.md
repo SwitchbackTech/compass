@@ -16,7 +16,7 @@ are manual today. The installer and `./compass update` do not create them for yo
 Keep these things together as one backup set:
 
 1. `~/compass/compass.yaml`
-2. the Mongo data Docker volume, which stores events
+2. the Mongo data Docker volume, which stores events and Google Calendar sync state (the bundled Mongo hosts both the `prod_calendar` and `compass_sync` databases in the same volume — one backup covers both, no separate Sync backup needed)
 3. the Mongo config Docker volume, which stores Mongo replica set metadata
 4. the SuperTokens Postgres Docker volume, which stores user sessions
 
