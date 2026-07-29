@@ -57,12 +57,6 @@ rediscovering it:
   lets a user change Compass-local visibility, but never creates, deletes, or
   manages sharing/ACLs on a provider calendar (A1, A15). Calendar lifecycle
   stays server-owned and Google-authoritative in v1.
-- **Per-event Google colors.** Compass models calendar identity as an
-  accent/marker plus text label, while an event card's fill stays a single
-  flat neutral color (A9) — there is no per-event color field in
-  `event.contracts.ts` anywhere, so Google's per-event `colorId` overrides are
-  neither imported nor exposed. Surfacing them would need a second color
-  dimension on the card that A9 deliberately avoided.
 
 ## Core Event Schema
 
@@ -74,8 +68,11 @@ Important event fields:
 
 - `id`: Compass event id
 - `calendarId`: required, immutable once created (see Deferred Beyond V1)
-- `content`: discriminated union — `details` (`title` + `description`) or
-  `busy` (free/busy-only calendars)
+- `content`: discriminated union — `details` (`title` + `description` +
+  optional `color` as an `EventColorSlot`) or `busy` (free/busy-only
+  calendars). `color` maps 1:1 onto Google's 11 event `colorId` values; when
+  absent, the card keeps the theme-flat fill and calendar identity stays the
+  accent stripe.
 - `schedule`: discriminated union — `timed` (`start`/`end`/`timeZone`) or
   `allDay` (`DateOnly` `start`/`end`, exclusive end)
 - `recurrence`: discriminated union — `single` (standalone event), `series`

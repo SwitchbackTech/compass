@@ -16,6 +16,7 @@ export type EventFormPanelProps = {
   confirmation: EventFormPanelConfirmation;
   confirmationUi?: ReactNode;
   draft: GridEventDraft | null;
+  fieldErrors?: Record<string, string>;
   isDraft: boolean;
   isExistingEvent: boolean;
   isFormOpen: boolean;
@@ -33,6 +34,7 @@ export function EventFormPanel({
   confirmation,
   confirmationUi,
   draft,
+  fieldErrors,
   isDraft,
   isExistingEvent,
   isFormOpen,
@@ -54,6 +56,7 @@ export function EventFormPanel({
     <>
       <EventForm
         draft={draft}
+        fieldErrors={fieldErrors}
         isDraft={isDraft}
         isExistingEvent={isExistingEvent}
         onClose={onClose}

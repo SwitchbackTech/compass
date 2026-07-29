@@ -26,8 +26,14 @@ export const createApiError = (
   config: ApiRequestConfig,
   response?: ApiResponse<unknown>,
 ): ApiError => {
+  // Keep status as the last three characters when present so `handleError` can
+  // still fall back to `error.message.slice(-3)` without a response object.
+  const method = config.method?.toUpperCase();
+  const target = [method, config.url].filter(Boolean).join(" ");
+  const targetSuffix = target ? ` for ${target}` : "";
+  const statusSuffix = response ? ` with status ${response.status}` : "";
   const error = new Error(
-    `Request failed${response ? ` with status ${response.status}` : ""}`,
+    `Request failed${targetSuffix}${statusSuffix}`,
   ) as ApiError;
   error.config = config;
   error.name = "ApiError";

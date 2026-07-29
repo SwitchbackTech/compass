@@ -7,6 +7,7 @@ import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
+import { filterPosthogBeforeSend } from "@web/auth/posthog/posthog-exception-filter.util";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { queryClient as defaultQueryClient } from "@web/api/query-client";
@@ -98,6 +99,9 @@ export const CompassOptionalProviders = ({ children }: PropsWithChildren) => {
             // still captured by the two handlers above.
             capture_console_errors: false,
           },
+          // Drop known-unactionable exception signatures (SuperTokens/browser
+          // network blips, CefSharp scanner noise) before they become issues.
+          before_send: filterPosthogBeforeSend,
           opt_in_site_apps: true,
           person_profiles: "always",
         }}

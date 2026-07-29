@@ -332,4 +332,55 @@ describe("normalizeGoogleEvent", () => {
     expect(error).toBeInstanceOf(ProviderEventError);
     expect(error.reason).toBe("unmappableContent");
   });
+
+  it("maps Google colorId 7 to content.color blue", () => {
+    const read = asProviderEvent(
+      normalizeGoogleEvent(gEvent({ colorId: "7" })),
+    );
+
+    expect(read.content.color).toBe("blue");
+  });
+
+  it("omits content.color when Google reports no colorId", () => {
+    const read = asProviderEvent(normalizeGoogleEvent(gEvent({})));
+
+    expect(read.content).not.toHaveProperty("color");
+  });
+
+  it("resolves an eventLabelId against the calendar's color labels to colorHex", () => {
+    const colorLabels = new Map([["label-1", "#009688"]]);
+    const read = asProviderEvent(
+      normalizeGoogleEvent(gEvent({ eventLabelId: "label-1" }), colorLabels),
+    );
+
+    expect(read.content.colorHex).toBe("#009688");
+    expect(read.content).not.toHaveProperty("color");
+  });
+
+  it("omits colorHex when the eventLabelId has no matching label (e.g. deleted)", () => {
+    const read = asProviderEvent(
+      normalizeGoogleEvent(
+        gEvent({ eventLabelId: "gone" }),
+        new Map([["other", "#123456"]]),
+      ),
+    );
+
+    expect(read.content).not.toHaveProperty("colorHex");
+  });
+
+  it("omits colorHex when the event has no eventLabelId, even with labels available", () => {
+    const read = asProviderEvent(
+      normalizeGoogleEvent(gEvent({}), new Map([["label-1", "#009688"]])),
+    );
+
+    expect(read.content).not.toHaveProperty("colorHex");
+  });
+
+  it("defaults to no color labels when none are passed", () => {
+    const read = asProviderEvent(
+      normalizeGoogleEvent(gEvent({ eventLabelId: "label-1" })),
+    );
+
+    expect(read.content).not.toHaveProperty("colorHex");
+  });
 });

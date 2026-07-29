@@ -1,3 +1,4 @@
+import { withColor, withColorHex } from "@core/types/event-color.contracts";
 import {
   type SyncEventInstance,
   SyncEventInstanceSchema,
@@ -43,10 +44,7 @@ export function assembleEventInstances(
     const event = eventsById.get(occurrence.eventId);
     if (!event) continue;
 
-    const content = {
-      title: event.content.title,
-      description: event.content.description,
-    };
+    const content = toInstanceContent(event.content);
     const timestamps = {
       createdAt: event.createdAt.toISOString(),
       updatedAt: event.updatedAt.toISOString(),
@@ -113,10 +111,7 @@ export function assembleEventInstances(
       SyncEventInstanceSchema.parse({
         eventId: master._id,
         calendarId: master.calendarId,
-        content: {
-          title: master.content.title,
-          description: master.content.description,
-        },
+        content: toInstanceContent(master.content),
         schedule: master.schedule,
         recurrence: { kind: "series", rules: master.recurrence.rules },
         createdAt: master.createdAt.toISOString(),
@@ -127,3 +122,11 @@ export function assembleEventInstances(
 
   return instances;
 }
+
+const toInstanceContent = (content: EventRecord["content"]) => ({
+  title: content.title,
+  description: content.description,
+  // Heal rows that persisted write-command `color: null`.
+  ...withColor(content.color ?? undefined),
+  ...withColorHex(content.colorHex),
+});

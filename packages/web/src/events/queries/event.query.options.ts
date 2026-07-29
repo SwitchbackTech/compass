@@ -7,15 +7,17 @@ import { fetchWeekEvents } from "./week.event.query";
 
 /**
  * Shared cache policy for event reads. `staleTime` lets back-navigation to a
- * recently viewed range render instantly from cache; all data-change paths
- * (mutations, SSE, auth transitions) invalidate explicitly, so fetch triggers
- * stay identical to the pre-migration behavior (mount, key change, invalidation).
+ * recently viewed range render instantly from cache; mutations and SSE still
+ * invalidate explicitly. Window-focus refetch covers gaps a laptop sleep /
+ * native SSE reconnect may miss while `retry: false` left a failed fetch idle.
  */
 const EVENT_QUERY_CACHE_OPTIONS = {
   staleTime: 2 * 60 * 1000, // 2 minutes
   gcTime: 10 * 60 * 1000, // 10 minutes
-  refetchOnWindowFocus: false,
-} as const;
+  // "always": staleTime would otherwise skip focus refetch for 2 minutes and
+  // leave a missed SSE/sleep gap on screen.
+  refetchOnWindowFocus: "always" as const,
+};
 
 export type EventsQueryArgs = {
   source: EventRepositorySource;

@@ -1,0 +1,21 @@
+---
+description: Compass styling conventions for web components and stylesheets
+globs: packages/web/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# Web styles
+
+See `AGENTS.md`'s Compass-Specific Rules for Tailwind semantic colors and
+canonical-scale-utility conventions.
+
+- Preserve the established Compass visual language and responsive behavior.
+- Use native semantic elements and visible focus states for interactive UI.
+
+```tsx
+// Prefer
+<div className="bg-surface text-foreground" />
+
+// Avoid
+<div className="bg-blue-300 text-zinc-900" />
+```

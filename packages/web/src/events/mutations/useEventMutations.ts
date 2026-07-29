@@ -1,4 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  type QueryKey,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
@@ -20,14 +24,19 @@ import {
   eventBelongsToEntry,
   findEventInCache,
   findSeriesEventsInCache,
+  getEventQueryEntries,
   insertEventIntoQueries,
+  isEventQueryKey,
   removeEventFromQueries,
   upsertEventAcrossQueries,
 } from "@web/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
 import {
   projectRecurringDelete,
   projectRecurringEdit,
+  projectSeriesMaterialization,
+  projectSeriesRulesChange,
 } from "@web/events/recurrence/projectRecurringEdit";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
@@ -39,6 +48,7 @@ import {
   eventMutationKeys,
 } from "./event.mutation.keys";
 import {
+  hasOtherPendingWriteForKey,
   isSupersededByLaterEditWrite,
   markAnonymousEventWrite,
   type PrecedingEventWrites,
@@ -53,6 +63,48 @@ import {
   recordEventDeleteHistory,
   recordEventEditHistory,
 } from "./event.mutation-history";
+
+type EventMutationContext = {
+  previousQueries: Array<[QueryKey, unknown]>;
+};
+
+function restoreWriteKeyFromSnapshot(
+  queryClient: ReturnType<typeof useQueryClient>,
+  writeKey: EventId,
+  previousQueries: Array<[QueryKey, unknown]>,
+) {
+  const snapByKey = new Map(
+    previousQueries.map(([queryKey, data]) => [
+      JSON.stringify(queryKey),
+      data as NormalizedEventQueryData | undefined,
+    ]),
+  );
+
+  for (const [
+    queryKey,
+    current,
+  ] of queryClient.getQueriesData<NormalizedEventQueryData>({
+    queryKey: eventQueryKeys.all,
+  })) {
+    if (!current || !isEventQueryKey(queryKey)) continue;
+    const snap = snapByKey.get(JSON.stringify(queryKey));
+    const snapEvent = snap?.entities[writeKey];
+    const currentEvent = current.entities[writeKey];
+    if (!snapEvent && !currentEvent) continue;
+
+    const entities = { ...current.entities };
+    let ids = [...current.ids];
+    if (snapEvent) {
+      entities[writeKey] = snapEvent;
+      if (!ids.includes(writeKey)) ids = [...ids, writeKey];
+    } else {
+      delete entities[writeKey];
+      ids = ids.filter((candidate) => candidate !== writeKey);
+    }
+    // Preserve optional fields like demoEventIds on the query payload.
+    queryClient.setQueryData(queryKey, { ...current, ids, entities });
+  }
+}
 
 const nowDateTime = () => DateTimeSchema.parse(new Date().toISOString());
 
@@ -157,6 +209,14 @@ export function useEventMutations(
       : undefined;
   const reportError = dependencies.reportError ?? handleError;
 
+  // Shared by the create and replace optimistic callbacks: the query-cache
+  // ranges a series expansion should materialize instances into.
+  const cachedRanges = () =>
+    getEventQueryEntries(queryClient, { source }).map(({ metadata }) => ({
+      start: metadata.start,
+      end: metadata.end,
+    }));
+
   // Backstop only - the real enforcement is the UI gates (cards, shortcuts,
   // context menu, form) that block a read-only mutation before it ever
   // reaches here (packet 08 step 8). Reads the calendars query's cache
@@ -187,34 +247,79 @@ export function useEventMutations(
     [queryClient],
   );
 
-  // No per-mutation rollback: failed mutations leave their optimistic write
-  // in place and rely on the settle-time refetch to restore server truth.
-  // Invalidation only runs once NO event mutation remains in flight, so a
-  // refetch never overwrites another mutation's live optimistic update.
-  // The check is deferred to a macrotask because a settling mutation still
-  // counts as pending during its own onSettled — deferring lets simultaneous
-  // settles reliably observe count 0 instead of each seeing the other and skipping.
+  // Snapshot + conditional rollback: a failed mutation restores its pre-image.
+  // Alone in flight → full query restore. Concurrent writes → restore only
+  // entities owned by this writeKey so another event's optimistic update is
+  // preserved. Settle-time invalidation still converges to server truth once
+  // no event mutation remains in flight. Invalidation is deferred to a
+  // macrotask because a settling mutation still counts as pending during its
+  // own onSettled — deferring lets simultaneous settles reliably observe
+  // count 0 instead of each seeing the other and skipping.
   const settle = () => {
     setTimeout(() => {
       if (
         queryClient.isMutating({ mutationKey: eventMutationKeys.all }) === 0
       ) {
-        void queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
+        // refetchType "all" so inactive entries (prefetched neighbor weeks,
+        // recently visited ranges) refetch too instead of serving stale
+        // instances until the user navigates back onto them.
+        void queryClient.invalidateQueries({
+          queryKey: eventQueryKeys.all,
+          refetchType: "all",
+        });
       }
     }, 0);
   };
-  const buildMutation = <Variables>(
+  const buildMutation = <Variables extends { writeKey: EventId }>(
     operation: EventMutationOperation,
     mutationFn: (variables: Variables) => Promise<unknown>,
     optimistic: (variables: Variables) => void,
   ) => ({
     mutationKey: eventMutationKeys.operation(operation),
     mutationFn,
-    onMutate: async (variables: Variables) => {
+    onMutate: async (variables: Variables): Promise<EventMutationContext> => {
       await queryClient.cancelQueries({ queryKey: eventQueryKeys.all });
+      const previousQueries = queryClient.getQueriesData<unknown>({
+        queryKey: eventQueryKeys.all,
+      });
       optimistic(variables);
+      return { previousQueries };
     },
-    onError: (error: Error) => reportError(error),
+    onError: (
+      error: Error,
+      variables: Variables,
+      context: EventMutationContext | undefined,
+    ) => {
+      reportError(error);
+      if (!context) return;
+      // TanStack still counts *this* mutation as pending while onError runs
+      // (it dispatches status "error" only afterwards), so isMutating === 1
+      // means we are alone and a full snapshot restore is safe.
+      const pendingEventMutations = queryClient.isMutating({
+        mutationKey: eventMutationKeys.all,
+      });
+      if (pendingEventMutations <= 1) {
+        for (const [queryKey, data] of context.previousQueries) {
+          queryClient.setQueryData(queryKey, data);
+        }
+        return;
+      }
+      // Another mutation shares this write key (newer optimistic edit) — leave
+      // the cache alone so we do not clobber it. Deletes wait for settle when
+      // concurrent (recurring deletes touch more than writeKey). Different-key
+      // create/replace concurrency restores only entities[writeKey].
+      if (
+        operation === "delete" ||
+        hasOtherPendingWriteForKey(queryClient, variables.writeKey, variables)
+      ) {
+        return;
+      }
+      restoreWriteKeyFromSnapshot(
+        queryClient,
+        variables.writeKey,
+        context.previousQueries,
+      );
+    },
     onSettled: settle,
   });
   // Shared by every mutationFn below: wait for earlier writes to the same
@@ -264,6 +369,20 @@ export function useEventMutations(
       },
       ({ input }) => {
         const event = optimisticEventFromCreate(input);
+        // A recurring create's base is metadata-only (the grid filters
+        // series bases), so expand its instances too or the event would be
+        // invisible until the settle refetch.
+        if (event.recurrence.kind === "series") {
+          applyEventProjectionAcrossQueries(
+            queryClient,
+            projectSeriesMaterialization({
+              base: event,
+              ranges: cachedRanges(),
+            }),
+            source,
+          );
+          return;
+        }
         insertEventIntoQueries(queryClient, event, (entry) =>
           eventBelongsToEntry(event, entry, source),
         );
@@ -288,6 +407,45 @@ export function useEventMutations(
         if (!existing) return;
         const edited = mergeReplaceInput(existing, input);
         const seriesId = seriesIdOf(existing);
+
+        // (Re)defining recurrence rules changes which instances exist, so
+        // shifting cached instances isn't enough: expand the new rules into
+        // optimistic occurrences, mirroring the server's materialization.
+        // Scope "this" on an occurrence keeps its occurrence recurrence
+        // server-side, so it stays on the plain upsert path below.
+        if (
+          edited.recurrence.kind === "series" &&
+          (input.scope !== "this" || existing.recurrence.kind !== "occurrence")
+        ) {
+          const currentBase =
+            existing.recurrence.kind === "series"
+              ? existing
+              : seriesId
+                ? findEventInCache(queryClient, seriesId, source)
+                : null;
+          const rulesChanged =
+            currentBase?.recurrence.kind !== "series" ||
+            currentBase.recurrence.rules.join("\n") !==
+              edited.recurrence.rules.join("\n");
+
+          if (rulesChanged) {
+            applyEventProjectionAcrossQueries(
+              queryClient,
+              projectSeriesRulesChange({
+                scope: input.scope,
+                edited,
+                original: existing,
+                seriesId,
+                seriesEvents: seriesId
+                  ? findSeriesEventsInCache(queryClient, seriesId, source)
+                  : [],
+                ranges: cachedRanges(),
+              }),
+              source,
+            );
+            return;
+          }
+        }
 
         if (seriesId && input.scope !== "this") {
           applyEventProjectionAcrossQueries(

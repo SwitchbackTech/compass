@@ -4,6 +4,7 @@ import {
   dispatchSyncJob,
   type SyncJobDispatchDeps,
 } from "@sync/domain/sync-job-dispatch.service";
+import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import {
   type ProviderEvent,
   type ProviderEventRead,
@@ -87,7 +88,10 @@ class FakeReader implements ProviderEventReader {
   }
 }
 
-const tokenSource = { getValidAccessToken: async () => "access-token" };
+const tokenSource = {
+  getValidAccessToken: async () => "access-token",
+  discardRevoked: async () => {},
+};
 
 // A notification adapter that records watch calls and returns a fixed channel,
 // so a subscriptionMaintain dispatch runs without a network round-trip.
@@ -159,7 +163,10 @@ describe("dispatchSyncJob", () => {
     findById: async () => stubbedConnection,
   } as unknown as SyncJobDispatchDeps["connections"];
 
-  const deps = (reader: FakeReader): SyncJobDispatchDeps => ({
+  const deps = (
+    reader: FakeReader,
+    custody: SyncJobDispatchDeps["custody"] = tokenSource,
+  ): SyncJobDispatchDeps => ({
     events,
     occurrences,
     resources,
@@ -169,7 +176,7 @@ describe("dispatchSyncJob", () => {
     jobs,
     commands,
     reader,
-    custody: tokenSource,
+    custody,
     notifications,
     callbackUrl: "https://sync.example/sync/notifications/google",
     invalidations,
@@ -381,6 +388,57 @@ describe("dispatchSyncJob", () => {
     );
   });
 
+  it("settles a job done and discards the credential when the token is revoked", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const reader = new FakeReader([]);
+    const discarded: string[] = [];
+    const revokedCustody: SyncJobDispatchDeps["custody"] = {
+      getValidAccessToken: async () => {
+        throw new ProviderAuthError(
+          "authorizationRevoked",
+          "refresh token revoked",
+        );
+      },
+      discardRevoked: async (connectionId) => {
+        discarded.push(connectionId);
+      },
+    };
+
+    const outcome = await dispatchSyncJob(
+      deps(reader, revokedCustody),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+    expect(discarded).toEqual([calendar.connectionId]);
+  });
+
+  it("leaves a transient refresh failure for the worker to retry", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const reader = new FakeReader([]);
+    const discarded: string[] = [];
+    const flakyCustody: SyncJobDispatchDeps["custody"] = {
+      getValidAccessToken: async () => {
+        throw new ProviderAuthError("refreshFailed", "network blip");
+      },
+      discardRevoked: async (connectionId) => {
+        discarded.push(connectionId);
+      },
+    };
+
+    await expect(
+      dispatchSyncJob(
+        deps(reader, flakyCustody),
+        jobFor(resource, "incrementalPull"),
+        now,
+      ),
+    ).rejects.toThrow(ProviderAuthError);
+    expect(discarded).toEqual([]);
+  });
+
   it("drops a job whose resource no longer exists", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
@@ -503,5 +561,37 @@ describe("dispatchSyncJob", () => {
       result: "drop",
       reason: "connection no longer exists",
     });
+  });
+
+  it("settles a revoked calendarListSync done, like the resource-based kinds", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const connectionId = objectId();
+    stubbedConnection = {
+      _id: connectionId,
+      tenantId,
+      principalId,
+    } as ProviderConnectionRecord;
+    const discarded: string[] = [];
+    const revokedCustody: SyncJobDispatchDeps["custody"] = {
+      getValidAccessToken: async () => {
+        throw new ProviderAuthError(
+          "authorizationRevoked",
+          "refresh token revoked",
+        );
+      },
+      discardRevoked: async (id) => {
+        discarded.push(id);
+      },
+    };
+
+    const outcome = await dispatchSyncJob(
+      deps(new FakeReader([]), revokedCustody),
+      calendarListJob(connectionId, tenantId, principalId),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+    expect(discarded).toEqual([connectionId]);
   });
 });

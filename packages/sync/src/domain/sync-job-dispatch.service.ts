@@ -4,6 +4,7 @@ import { pullCalendarChanges } from "@sync/domain/calendar-pull.service";
 import { repairCalendar } from "@sync/domain/calendar-repair.service";
 import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
+import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { type ProviderCalendarAdapter } from "@sync/providers/provider-calendar.port";
 import { type ProviderEventReader } from "@sync/providers/provider-event-reader.port";
 import { type ProviderNotificationAdapter } from "@sync/providers/provider-notifications.port";
@@ -73,6 +74,35 @@ export type SyncJobOutcome =
 // job whose target no longer exists is dropped rather than retried forever. All
 // reads/writes inside the called services are owner-scoped.
 export async function dispatchSyncJob(
+  deps: SyncJobDispatchDeps,
+  job: JobRecord,
+  now: () => Date,
+): Promise<SyncJobOutcome> {
+  try {
+    return await runSyncJob(deps, job, now);
+  } catch (error) {
+    // Every kind resolves its provider token through getValidAccessToken, so a
+    // dead credential surfaces here whichever engine ran. Settle it done: the
+    // worker's generic catch classes any throw as retryableTransient, which
+    // would burn the whole retry ladder on a grant only a reconnect can fix.
+    // Done rather than a permanent failure because a failed job keeps its
+    // coalescing key and enqueue only $setOnInsert's, so the dead row would
+    // swallow the reconnect's re-enqueue and sync would never restart.
+    // refreshFailed rethrows: that is the transient case, a blip refreshing a
+    // still-good token. Mirrors the write path in provider-command.service.ts.
+    if (
+      error instanceof ProviderAuthError &&
+      error.reason !== "refreshFailed"
+    ) {
+      // Belt and braces: custody already discards on authorizationRevoked.
+      await deps.custody.discardRevoked(job.connectionId);
+      return { result: "done" };
+    }
+    throw error;
+  }
+}
+
+async function runSyncJob(
   deps: SyncJobDispatchDeps,
   job: JobRecord,
   now: () => Date,

@@ -9,12 +9,12 @@ import {
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
+import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type ApiRequestConfig } from "@web/api/api.types";
 import { BaseApi } from "@web/api/base/base.api";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { isCalendarHidden } from "@web/calendars/calendar-visibility.storage";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
@@ -52,6 +52,7 @@ let isConnectGoogleMocked = true;
 const mockUseConnectGoogle = mock(() => ({
   commandAction: null,
   isAvailable: true,
+  isConnecting: false,
   state: "NOT_CONNECTED" as const,
 }));
 mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
@@ -132,7 +133,8 @@ describe("CalendarList", () => {
 
   afterEach(() => {
     BaseApi.defaults.adapter = undefined;
-    persistentBrowserStore.remove(STORAGE_KEYS.HIDDEN_CALENDAR_IDS);
+    // Storage clearing + the hidden-ids store resync are both handled by the
+    // global test-lifecycle afterEach (resetBrowserState + resetAllStores).
     mockUseSession.mockReturnValue({
       authenticated: false,
       setAuthenticated: () => {},
@@ -223,32 +225,40 @@ describe("CalendarList", () => {
     expect(isCalendarHidden(calendarB.id)).toBe(true);
   });
 
-  it("removes the hidden calendar's events from a cached week query immediately on toggle-off", async () => {
+  it("keeps cached events on hide/show and only flips calendar isVisible", async () => {
     const hidden = makeCalendar({ name: "Hidden target" });
-    const kept = makeCalendar({ name: "Kept" });
     const hiddenEvent = createMockEvent({ calendarId: hidden.id });
-    const keptEvent = createMockEvent({ calendarId: kept.id });
     const weekKey = eventQueryKeys.week({
       source: "remote",
       start: "2026-07-13T00:00:00.000Z",
       end: "2026-07-20T00:00:00.000Z",
     });
+    const weekData = toNormalizedEventQueryData([hiddenEvent]);
 
     const user = userEvent.setup({ delay: null });
-    const { queryClient } = renderCalendarList([hidden, kept]);
-    queryClient.setQueryData<NormalizedEventQueryData>(weekKey, {
-      ids: [hiddenEvent.id, keptEvent.id],
-      entities: { [hiddenEvent.id]: hiddenEvent, [keptEvent.id]: keptEvent },
+    const { queryClient } = renderCalendarList([hidden]);
+    queryClient.setQueryData<NormalizedEventQueryData>(weekKey, weekData);
+
+    const hideButton = screen.getByRole("button", {
+      name: "Hide Hidden target calendar",
     });
+    await user.click(hideButton);
+
+    // Visibility now lives in the client-owned hidden-ids store (derived by
+    // the calendars query's `select`), not hand-patched onto the raw cache -
+    // event queries are untouched either way.
+    expect(queryClient.getQueryData<NormalizedEventQueryData>(weekKey)).toEqual(
+      weekData,
+    );
+    expect(isCalendarHidden(hidden.id)).toBe(true);
 
     await user.click(
-      screen.getByRole("button", { name: "Hide Hidden target calendar" }),
+      screen.getByRole("button", { name: "Show Hidden target calendar" }),
     );
-
-    const cached = queryClient.getQueryData<NormalizedEventQueryData>(weekKey);
-    expect(cached?.ids).toEqual([keptEvent.id]);
-    expect(cached?.entities[hiddenEvent.id]).toBeUndefined();
-    expect(cached?.entities[keptEvent.id]).toBeDefined();
+    expect(queryClient.getQueryData<NormalizedEventQueryData>(weekKey)).toEqual(
+      weekData,
+    );
+    expect(isCalendarHidden(hidden.id)).toBe(false);
   });
 
   it("announces failure and leaves the button pressed when storage write fails", async () => {

@@ -10,6 +10,10 @@ export const LocalEventRecordSchema = z
     id: EventSchema.shape.id,
     event: EventSchema,
     isDemo: z.boolean(),
+    // Occurrence starts excluded from a locally-stored series ("delete this
+    // occurrence" in anonymous mode). Honored by read-time expansion only;
+    // sign-in promotion does not carry exclusions to the server.
+    exdates: z.array(z.string()).optional(),
   })
   // IndexedDB keys on the duplicated top-level id, so it must always match
   // the nested event's own id.

@@ -1,0 +1,21 @@
+---
+description: Compass package boundaries, import aliases, and shared contract conventions
+globs: packages/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Imports and package boundaries
+
+See `AGENTS.md`'s Compass-Specific Rules for import aliases, the barrel-file
+ban, the Zod shared-contracts rule, and the one-component-per-file rule.
+
+- Put code in the package that owns the concept; do not duplicate shared domain
+  behavior in web and backend.
+
+```ts
+// Prefer
+import { EventSchema } from "@compass/core/src/types/event.contracts";
+
+// Avoid
+import { EventSchema } from "../../../core/src";
+```

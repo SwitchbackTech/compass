@@ -1,10 +1,21 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
+import { draftActions } from "@web/events/stores/draft.store";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
   type Setters_Draft,
   type State_Draft_Local,
 } from "../state/useDraftState";
+
+/** Clears Week-local gesture flags; does not touch the store draft. */
+export const clearGestureEphemera = (setters: Setters_Draft) => {
+  setters.setIsDragging(false);
+  setters.setIsResizing(false);
+  setters.setDragStatus(null);
+  setters.setResizeStatus(null);
+  setters.setDateBeingChanged(null);
+  setters.setGestureOriginDraft(null);
+};
 
 export const useDraftEffects = (
   state: State_Draft_Local,
@@ -13,70 +24,40 @@ export const useDraftEffects = (
   isDrafting: boolean,
   handleChange: () => Promise<void>,
 ) => {
-  const { draft, isDragging, isResizing, dateBeingChanged } = state;
-  const {
-    setDraft,
-    setIsDragging,
-    setIsFormOpen,
-    setIsResizing,
-    setResizeStatus,
-    setDragStatus,
-    setDateBeingChanged,
-  } = setters;
+  const { draft, isDragging, isResizing } = state;
+  const { setIsFormOpen, setDragStatus } = setters;
+  const isFirstWeekEffectRef = useRef(true);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: draft state should clear only when the visible week changes.
   useEffect(() => {
+    // Skip mount: discarding here would wipe a draft that was just seeded
+    // into the store before the provider mounted.
+    if (isFirstWeekEffectRef.current) {
+      isFirstWeekEffectRef.current = false;
+      return;
+    }
+
+    // Drag-to-edge week changes happen while isDragging/isResizing is true,
+    // so this early return also preserves the in-flight draft.
     if (isDragging || isResizing) {
       return;
     }
 
-    // Only skip clearing if we're currently dragging AND the week change was due to drag-to-edge navigation
-    const lastNavigationSource = weekProps.util.getLastNavigationSource();
-    const isDragToEdgeNavigation = lastNavigationSource === "drag-to-edge";
-    const shouldPreserveDuringDrag =
-      (isDragging || isResizing) && isDragToEdgeNavigation;
-
-    if (shouldPreserveDuringDrag) {
-      return;
-    }
-
-    setDraft(null);
-    setIsDragging(false);
-    setIsFormOpen(false);
-    setIsResizing(false);
-    setDragStatus(null);
-    setResizeStatus(null);
-    setDateBeingChanged(null);
+    clearGestureEphemera(setters);
+    draftActions.discard();
   }, [weekProps.component.week]);
 
   useEffect(() => {
     if (isResizing) {
-      setDateBeingChanged(dateBeingChanged);
       setIsFormOpen(false);
     }
-  }, [dateBeingChanged, isResizing, setDateBeingChanged, setIsFormOpen]);
+  }, [isResizing, setIsFormOpen]);
 
   useEffect(() => {
-    const isStaleDraft = !isDrafting;
-    if (isStaleDraft) {
-      setDraft(null);
-      setIsDragging(false);
-      setIsFormOpen(false);
-      setIsResizing(false);
-      setDragStatus(null);
-      setResizeStatus(null);
-      setDateBeingChanged(null);
-    }
-  }, [
-    isDrafting,
-    setDateBeingChanged,
-    setDraft,
-    setDragStatus,
-    setIsDragging,
-    setIsFormOpen,
-    setIsResizing,
-    setResizeStatus,
-  ]);
+    if (isDrafting) return;
+    // Store discard already clears isFormOpen; only gesture ephemera remains.
+    clearGestureEphemera(setters);
+  }, [isDrafting, setters]);
 
   useEffect(() => {
     handleChange();

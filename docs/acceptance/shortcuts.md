@@ -11,7 +11,8 @@ Use this guide to validate:
 - navigating between weeks in Week view (J, K, T)
 - opening and using the command palette (Cmd+K)
 - creating events with keyboard shortcuts (C, A in both Day and Week view)
-- toggling the sidebar ([)
+- editing events with the same keys in Day and Week (Delete, Shift+arrows, draft arrows)
+- toggling the sidebar (])
 - undoing with the keyboard (Cmd+Z / Ctrl+Z)
 - confirming that shortcuts do not fire while typing in inputs
 
@@ -41,16 +42,20 @@ Helpful notes:
 | `D`                         | Global    | Navigate to Day view              |
 | `W`                         | Global    | Navigate to Week view             |
 | `Cmd+K` / `Ctrl+K`          | Global    | Open command palette              |
-| `[`                         | Global    | Toggle sidebar                    |
+| `]`                         | Global    | Toggle sidebar                    |
 | `Cmd+Z` / `Ctrl+Z`          | Global    | Undo last event action            |
 | `Cmd+Shift+Z` / `Ctrl+Shift+Z` | Global | Redo last undone event action     |
 | `J`                         | Day view  | Previous day                      |
 | `K`                         | Day view  | Next day                          |
 | `T`                         | Day view  | Go to today                       |
 | `I`                         | Day view  | Focus sidebar                     |
-| `U`                         | Day view  | Focus calendar                    |
+| `U`                         | Day view  | Focus first calendar event        |
 | `C`                         | Day view  | Create timed event                |
 | `A`                         | Day view  | Create all-day event              |
+| `Delete`                    | Day view  | Delete focused/hovered event      |
+| `Arrow keys`                | Day view  | Move open draft event             |
+| `Shift+ArrowLeft`           | Day view  | Move focused event to previous day |
+| `Shift+ArrowRight`          | Day view  | Move focused event to next day    |
 | `Shift+ArrowUp` / `Shift+ArrowDown` | Day view | Move focused timed event 15 min earlier/later |
 | `J`                         | Week view | Previous week                     |
 | `K`                         | Week view | Next week                         |
@@ -60,6 +65,7 @@ Helpful notes:
 | `I`                         | Week view | Focus sidebar                     |
 | `U`                         | Week view | Focus first calendar event        |
 | `Delete`                    | Week view | Delete focused/hovered event      |
+| `Arrow keys`                | Week view | Move open draft event             |
 | `Shift+ArrowLeft`           | Week view | Move focused event to previous day |
 | `Shift+ArrowRight`          | Week view | Move focused event to next day    |
 | `Shift+ArrowUp` / `Shift+ArrowDown` | Week view | Move focused timed event 15 min earlier/later |
@@ -211,41 +217,42 @@ Pressing `C` in Day view opens a new timed event form, the same behavior as `C` 
 
 ---
 
-## Scenario 8: Toggle The Sidebar ([)
+## Scenario 8: Toggle The Sidebar (])
 
 ### UX
 
-Pressing `[` toggles the sidebar open or closed from any view.
+Pressing `]` toggles the sidebar open or closed from any view.
 
 ### Steps
 
 1. Navigate to `/week`.
-2. Press `[` to close the sidebar (if open).
-3. Press `[` again to reopen it.
+2. Press `]` to close the sidebar (if open).
+3. Press `]` again to reopen it.
 4. Navigate to `/day` and repeat.
 
 ### Expected Results
 
-- `[` toggles the sidebar in both Week view and Day view.
+- `]` toggles the sidebar in both Week view and Day view.
 - The calendar grid expands to fill the space when the sidebar is closed.
 
 ---
 
-## Scenario 9: Delete A Focused Event With The Keyboard (Delete, Week View)
+## Scenario 9: Delete A Focused Event With The Keyboard (Delete)
 
 ### UX
 
-Pressing Delete while an event is focused or hovered in the Week grid deletes it — equivalent to a mouse-driven delete action.
+Pressing Delete while an event is focused or hovered in the Day or Week grid deletes it — equivalent to a mouse-driven delete action.
 
 ### Steps
 
 1. Navigate to `/week`.
 2. Focus or hover an event in the grid.
 3. Press Delete.
+4. Navigate to `/day` and repeat with a focused or hovered event.
 
 ### Expected Results
 
-- The event is removed from the grid.
+- The event is removed from the grid in both views.
 - An undo toast appears.
 
 ---
@@ -300,7 +307,9 @@ If time is limited, run these checks before shipping shortcut-related changes:
 3. `T` returns to today from any offset in both Day and Week view.
 4. Cmd+K opens the command palette; Escape closes it without action.
 5. `C` opens a timed event form and `A` an all-day event form, in both Day and Week view.
-6. `[` toggles the sidebar in both Week and Day view.
-7. Delete removes a focused/hovered event in Week view and shows an undo toast.
+6. `]` toggles the sidebar in both Week and Day view.
+7. Delete removes a focused/hovered event in Day and Week view and shows an undo toast.
 8. Cmd+Z / Ctrl+Z undoes the last event action; Cmd+Shift+Z / Ctrl+Shift+Z redoes it.
 9. No shortcuts fire inside a focused text input except Cmd+K.
+10. Shift+ArrowLeft/Right move a focused event by one day in both Day and Week view.
+11. Arrow keys reposition an open draft in both Day and Week view.

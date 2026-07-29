@@ -58,6 +58,17 @@ export function resolveCalendarCardIdentity(
 }
 
 /**
+ * Grid-only content flags that force read-only treatment regardless of
+ * calendar write capability (passed as the `isBusy` argument to
+ * {@link isEventReadOnly}).
+ */
+export const isGridEventContentReadOnly = (event: {
+  isBusy?: boolean;
+  isTimedMultiDayDisplay?: boolean;
+}): boolean =>
+  (event.isBusy ?? false) || (event.isTimedMultiDayDisplay ?? false);
+
+/**
  * An event is read-only (inspectable but never mutable) when either:
  * - it's a busy event (content.kind === "busy") - a private event on a
  *   reader calendar whose real fields the server never sends, so there is
@@ -84,4 +95,25 @@ export function isEventReadOnly(
   if (!calendar) return false;
 
   return !calendar.capabilities.canWrite;
+}
+
+/**
+ * Single read-only predicate for grid card registration and edit shortcuts
+ * (delete / nudge). Uses {@link isGridEventContentReadOnly} so busy content
+ * and timed multi-day display bars cannot diverge between pointer and
+ * keyboard gates.
+ */
+export function isGridEventInteractionReadOnly(
+  lookup: ReadonlyMap<CalendarId, Calendar>,
+  event: {
+    calendarId?: CalendarId | null;
+    isBusy?: boolean;
+    isTimedMultiDayDisplay?: boolean;
+  },
+): boolean {
+  return isEventReadOnly(
+    lookup,
+    event.calendarId,
+    isGridEventContentReadOnly(event),
+  );
 }

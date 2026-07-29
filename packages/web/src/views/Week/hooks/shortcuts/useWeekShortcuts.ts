@@ -1,26 +1,14 @@
-import { useCallback, useEffect, useRef } from "react";
-import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import {
-  isEventReadOnly,
-  useCalendarLookup,
-} from "@web/calendars/useCalendarLookup";
-import { ID_SIDEBAR } from "@web/common/constants/web.constants";
+import { useCallback, useEffect } from "react";
+import { type Dayjs } from "@core/util/date/dayjs";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
-import { getArrowKeyMovement } from "@web/common/utils/event/event-nudge.util";
-import { nudgeEventFromKeyboard } from "@web/common/utils/event/event-nudge-shortcut.util";
-import {
-  isDeleteTextEditingTarget,
-  isEditableKeyboardTarget,
-  isEventFormKeyboardTarget,
-  isEventFormOpen,
-} from "@web/common/utils/form/form.util";
+import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { focusFirstSidebarItem } from "@web/components/Sidebar/util/sidebarFocus.util";
-import { useEventMutations } from "@web/events/mutations/useEventMutations";
-import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
 import {
@@ -28,11 +16,8 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
-import {
-  useAppShortcut,
-  useAppShortcutUp,
-} from "@web/shortcuts/useAppShortcut";
-import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
+import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
+import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -41,7 +26,6 @@ import {
   getFirstVisibleWeekGridEventTarget,
   getFocusedWeekGridEventTarget,
   getHoveredWeekGridEventTarget,
-  type WeekGridEventTarget,
 } from "@web/views/Week/interaction/targeting/week-event.targeting";
 
 export interface ShortcutProps {
@@ -55,12 +39,6 @@ export interface ShortcutProps {
   scrollUtil: Util_Scroll;
 }
 
-const DRAFT_MOVEMENT_HOTKEY_OPTIONS = {
-  ignoreInputs: false,
-  preventDefault: false,
-  stopPropagation: false,
-} as const;
-
 export const useWeekShortcuts = ({
   isCurrentWeek,
   queryEndOfView,
@@ -71,13 +49,10 @@ export const useWeekShortcuts = ({
   util,
   scrollUtil,
 }: ShortcutProps) => {
-  const mutations = useEventMutations();
-  const { delete: deleteEvent } = mutations;
-  const updateEvent = useUpdateEvent();
-  // Read-only (unwritable calendar or busy content) events can be inspected
-  // but never mutated - delete and nudge/move below gate on this before
-  // touching the store (packet 08 step 8).
-  const calendarLookup = useCalendarLookup();
+  const { data: calendars = [], isPending: isCalendarsPending } =
+    useCalendarsQuery();
+  const defaultTargetCalendarId =
+    getDefaultTargetCalendar(calendars)?.id ?? null;
   const {
     actions: { repositionDraftByKeyboard },
   } = useDraftContext();
@@ -87,15 +62,8 @@ export const useWeekShortcuts = ({
     startOfView: queryStartOfView,
     endOfView: queryEndOfView,
   });
-  const allDayEventsRef = useRef(allDayEvents);
-  const timedEventsRef = useRef(timedEvents);
   const { decrementWeek, incrementWeek, goToToday, shiftViewByDay } = util;
   const { scrollToNow } = scrollUtil;
-
-  useEffect(() => {
-    allDayEventsRef.current = allDayEvents;
-    timedEventsRef.current = timedEvents;
-  }, [allDayEvents, timedEvents]);
 
   const _discardDraft = useCallback(() => {
     if (isEventFormOpen()) {
@@ -130,17 +98,37 @@ export const useWeekShortcuts = ({
   }, [_discardDraft, shiftViewByDay]);
 
   const createAllDayDraftEvent = useCallback(() => {
-    void createAlldayDraft(startOfView, endOfView, "createShortcut");
-  }, [startOfView, endOfView]);
+    // Same guard as DayCalendarGrid.openShortcutDraft: do not seed a sticky
+    // null calendarId while calendars are still loading.
+    if (isCalendarsPending && !defaultTargetCalendarId) {
+      return;
+    }
+
+    void createAlldayDraft(
+      startOfView,
+      endOfView,
+      "createShortcut",
+      defaultTargetCalendarId,
+    );
+  }, [defaultTargetCalendarId, endOfView, isCalendarsPending, startOfView]);
 
   const createTimedDraftEvent = useCallback(() => {
-    void createTimedDraft(isCurrentWeek, startOfView, "createShortcut");
-  }, [isCurrentWeek, startOfView]);
+    if (isCalendarsPending && !defaultTargetCalendarId) {
+      return;
+    }
+
+    void createTimedDraft(
+      isCurrentWeek,
+      startOfView,
+      "createShortcut",
+      defaultTargetCalendarId,
+    );
+  }, [defaultTargetCalendarId, isCalendarsPending, isCurrentWeek, startOfView]);
 
   // The command palette's create-event rows emit these same commands
   // (event.cmd.constants.ts) so the "C"/"A" keys and the palette rows run
-  // identical code. Resubscribes only when the week in view changes (these
-  // callbacks are memoized on startOfView/endOfView/isCurrentWeek).
+  // identical code. Resubscribes when the create handlers change (week in
+  // view or default target calendar).
   useEffect(() => {
     const unsubscribeCreateAllDayDraft = onViewCommand(
       "CREATE_ALLDAY_DRAFT",
@@ -175,133 +163,17 @@ export const useWeekShortcuts = ({
     focusWeekGridEventTarget(target);
   }, []);
 
-  const findCalendarEventForTarget = useCallback(
-    (target: WeekGridEventTarget) => {
-      const events =
-        target.eventType === "all-day"
-          ? allDayEventsRef.current
-          : timedEventsRef.current;
-
-      return (
-        events.find((candidate) => candidate._id === target.eventId) ?? null
-      );
+  useGridEventEditShortcuts({
+    allDayEvents,
+    timedEvents,
+    dayBoundary: { kind: "clamp", weekDays },
+    targeting: {
+      getFocused: getFocusedWeekGridEventTarget,
+      getHovered: getHoveredWeekGridEventTarget,
+      getFirstVisible: getFirstVisibleWeekGridEventTarget,
     },
-    [],
-  );
-
-  const getTargetedCalendarEvent = useCallback(() => {
-    const target =
-      getFocusedWeekGridEventTarget() ??
-      getHoveredWeekGridEventTarget() ??
-      getFirstVisibleWeekGridEventTarget();
-
-    if (!target) return null;
-
-    const event = findCalendarEventForTarget(target);
-    if (!event) return null;
-
-    return { event, target };
-  }, [findCalendarEventForTarget]);
-
-  const deleteTargetedCalendarEvent = useCallback(
-    (keyboardEvent: KeyboardEvent) => {
-      if (
-        isDeleteTextEditingTarget(keyboardEvent) ||
-        isEventFormKeyboardTarget(keyboardEvent)
-      ) {
-        return;
-      }
-
-      // Focus inside the sidebar (e.g. via the "u" shortcut) means the user
-      // is acting on the sidebar, not grid events
-      if (document.activeElement?.closest(`#${ID_SIDEBAR}`)) {
-        return;
-      }
-
-      const resolvedTarget = getTargetedCalendarEvent();
-      if (!resolvedTarget) {
-        return;
-      }
-
-      if (
-        isEventReadOnly(
-          calendarLookup,
-          resolvedTarget.event.calendarId,
-          resolvedTarget.event.isBusy ?? false,
-        )
-      ) {
-        return;
-      }
-
-      keyboardEvent.preventDefault();
-      keyboardEvent.stopPropagation();
-
-      deleteEventAndDiscardDraft(deleteEvent, resolvedTarget.event);
-    },
-    [calendarLookup, deleteEvent, getTargetedCalendarEvent],
-  );
-
-  const moveFocusedCalendarEvent = useCallback(
-    (keyboardEvent: KeyboardEvent) => {
-      if (isEventFormOpen()) return;
-
-      // Focused only (no hover/first-visible fallback): moving an event the
-      // user isn't focused on would be surprising
-      const target = getFocusedWeekGridEventTarget();
-      if (!target) return;
-
-      const event = findCalendarEventForTarget(target);
-      if (!event?._id) return;
-
-      if (
-        isEventReadOnly(calendarLookup, event.calendarId, event.isBusy ?? false)
-      ) {
-        return;
-      }
-
-      const movement = getArrowKeyMovement(
-        keyboardEvent.key,
-        Boolean(event.isAllDay),
-      );
-      if (!movement) return;
-
-      const start = dayjs(event.startDate);
-
-      if (movement.days === -1 && !start.isAfter(weekDays[0], "day")) {
-        return;
-      }
-
-      if (
-        movement.days === 1 &&
-        !start.isBefore(weekDays[weekDays.length - 1], "day")
-      ) {
-        return;
-      }
-
-      nudgeEventFromKeyboard({
-        event,
-        keyboardEvent,
-        onNudge: (nudgedEvent) => {
-          updateEvent({ event: nudgedEvent }, true);
-        },
-        afterNudge: () => draftActions.discard(),
-      });
-    },
-    [calendarLookup, findCalendarEventForTarget, updateEvent, weekDays],
-  );
-
-  const moveShortcutCreatedDraft = useCallback(
-    (event: KeyboardEvent) => {
-      if (isEditableKeyboardTarget(event)) return;
-
-      const didMove = repositionDraftByKeyboard(event.key);
-      if (!didMove) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-    },
-    [repositionDraftByKeyboard],
-  );
+    repositionDraftByKey: repositionDraftByKeyboard,
+  });
 
   useAppShortcutUp("J", goToPreviousWeek);
   useAppShortcutUp("K", goToNextWeek);
@@ -312,31 +184,4 @@ export const useWeekShortcuts = ({
   useAppShortcutUp("C", createTimedDraftEvent);
   useAppShortcutUp("I", focusSidebar);
   useAppShortcutUp("U", focusFirstCalendarEvent);
-  useAppShortcut("Delete", deleteTargetedCalendarEvent, {
-    ignoreInputs: false,
-  });
-  useAppShortcut(
-    "ArrowUp",
-    moveShortcutCreatedDraft,
-    DRAFT_MOVEMENT_HOTKEY_OPTIONS,
-  );
-  useAppShortcut(
-    "ArrowDown",
-    moveShortcutCreatedDraft,
-    DRAFT_MOVEMENT_HOTKEY_OPTIONS,
-  );
-  useAppShortcut(
-    "ArrowLeft",
-    moveShortcutCreatedDraft,
-    DRAFT_MOVEMENT_HOTKEY_OPTIONS,
-  );
-  useAppShortcut(
-    "ArrowRight",
-    moveShortcutCreatedDraft,
-    DRAFT_MOVEMENT_HOTKEY_OPTIONS,
-  );
-  useAppShortcut("Shift+ArrowUp", moveFocusedCalendarEvent);
-  useAppShortcut("Shift+ArrowDown", moveFocusedCalendarEvent);
-  useAppShortcut("Shift+ArrowLeft", moveFocusedCalendarEvent);
-  useAppShortcut("Shift+ArrowRight", moveFocusedCalendarEvent);
 };

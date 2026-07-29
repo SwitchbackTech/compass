@@ -53,6 +53,7 @@ class FakeReader implements ProviderEventReader {
 
 const tokenSource: AccessTokenSource = {
   getValidAccessToken: async () => "access-token",
+  discardRevoked: async () => {},
 };
 
 const schedule = {
@@ -137,7 +138,9 @@ describe("importCalendarEvents", () => {
     calendars = new ProviderCalendarRepository(storage.db());
   });
 
-  const seedCalendar = (): Promise<ProviderCalendarRecord> =>
+  const seedCalendar = (
+    eventLabels: ProviderCalendarRecord["eventLabels"] = [],
+  ): Promise<ProviderCalendarRecord> =>
     calendars.upsertByProviderCalendar({
       tenantId: objectId() as ProviderCalendarRecord["tenantId"],
       principalId: objectId() as ProviderCalendarRecord["principalId"],
@@ -145,6 +148,7 @@ describe("importCalendarEvents", () => {
       providerCalendarId: "primary@google.com",
       displayName: "Google",
       color: null,
+      eventLabels,
       active: true,
       primary: true,
       accessRole: "owner",
@@ -206,6 +210,20 @@ describe("importCalendarEvents", () => {
 
     expect(reader.calls[0].window).not.toBeNull();
     expect(reader.calls.at(-1)?.window).toBeNull();
+  });
+
+  it("passes the calendar's event-color labels to every reader call", async () => {
+    const calendar = await seedCalendar([{ id: "label-1", hex: "#009688" }]);
+    const reader = new FakeReader({
+      window: [page([single("w")])],
+      full: [page([single("a")], { nextSyncToken: "cursor-1" })],
+    });
+
+    await importCalendarEvents(deps(reader), calendar, now);
+
+    for (const call of reader.calls) {
+      expect(call.colorLabels).toEqual(new Map([["label-1", "#009688"]]));
+    }
   });
 
   it("projects every occurrence of an imported series master", async () => {

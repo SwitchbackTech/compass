@@ -107,6 +107,33 @@ describe("syncLocalEventsToCloud", () => {
     expect(clearAllEvents).not.toHaveBeenCalled();
   });
 
+  it("carries locally-excluded occurrences forward as EXDATE lines so they don't resurrect", async () => {
+    const record = {
+      ...createMockLocalEventRecord(
+        {
+          recurrence: {
+            kind: "series",
+            rules: ["RRULE:FREQ=DAILY;COUNT=5"] as never,
+          },
+        },
+        false,
+      ),
+      exdates: ["2026-05-06T09:00:00-06:00"],
+    };
+    getAllEvents.mockResolvedValue([record]);
+
+    await syncLocalEventsToCloud();
+
+    expect(createEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recurrence: {
+          kind: "series",
+          rules: ["RRULE:FREQ=DAILY;COUNT=5", "EXDATE:20260506T150000Z"],
+        },
+      }),
+    );
+  });
+
   it("deletes each promoted event so a mid-batch failure can resume the rest", async () => {
     const first = createMockLocalEventRecord({}, false);
     const second = createMockLocalEventRecord({}, false);

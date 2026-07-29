@@ -28,8 +28,8 @@ export const DemoEventsBanner: FC<DemoEventsBannerProps> = ({ onDismiss }) => (
     role="status"
   >
     <span>
-      Sample events to help you explore — edit or delete anytime, or clear them
-      from the command palette.
+      Sample events to help you explore. Edit yourself or clear all from the cmd
+      palette.
     </span>
     <button
       className="c-focus-ring shrink-0 rounded-xs px-2 py-1 text-text hover:bg-surface-overlay"

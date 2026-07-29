@@ -16,7 +16,7 @@ Breakpoints:
 - `SIDEBAR_AUTO_COLLAPSE_BREAKPOINT` = 1280px (Tailwind `xl`)
 
 The hook only reacts to `matchMedia` `change` events — a breakpoint crossing,
-not a continuous width readout. This means a manual toggle (`[` for the
+not a continuous width readout. This means a manual toggle (`]` for the
 sidebar) sticks until the next crossing; it does not get silently re-opened
 or re-closed by unrelated re-renders.
 

@@ -32,6 +32,30 @@ export const isTimedEventInsideOneDay = (start: Dayjs, end: Dayjs) => {
   return end.isSame(start, "day") || end.isSame(midnightAfterStart);
 };
 
+/** Timed events that cross midnight render in the all-day row (Google-style). */
+export const isTimedEventMultiDay = (start: Dayjs, end: Dayjs) =>
+  !isTimedEventInsideOneDay(start, end);
+
+/**
+ * Maps a multi-day timed range onto an exclusive all-day date span for the
+ * all-day row. Inclusive coverage is every calendar day that contains any
+ * part of [start, end); exclusive end is the day after the last of those.
+ */
+export const timedMultiDayToAllDayDates = (
+  start: Dayjs,
+  end: Dayjs,
+): { startDate: string; endDate: string } => {
+  const endDayStart = end.startOf("day");
+  const exclusiveEnd = end.isSame(endDayStart)
+    ? endDayStart
+    : endDayStart.add(1, "day");
+
+  return {
+    startDate: start.startOf("day").format(YEAR_MONTH_DAY_FORMAT),
+    endDate: exclusiveEnd.format(YEAR_MONTH_DAY_FORMAT),
+  };
+};
+
 export const nudgeEventDates = (
   event: Pick<CompassEvent, "startDate" | "endDate" | "isAllDay">,
   movement: EventNudgeMovement,

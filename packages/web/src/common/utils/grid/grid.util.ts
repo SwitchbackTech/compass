@@ -1,4 +1,5 @@
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { TIMED_VISIBLE_HOURS } from "@web/grid/grid.constants";
 import {
   AFTER_TMRW_MULTIPLE,
   DIVIDER_GRID,
@@ -57,6 +58,12 @@ export const getBeforeTodayPercent = () => {
 export const getCurrentMinute = () => {
   return dayjs().get("hours") * 60 + dayjs().get("minutes");
 };
+
+// Timed grid always renders exactly TIMED_VISIBLE_HOURS worth of rows in
+// whatever height it's given, so this ratio is the single source of truth
+// for converting between the grid's pixel geometry and clock minutes.
+export const getMinuteHeight = (clientHeight: number) =>
+  clientHeight / TIMED_VISIBLE_HOURS / 60;
 
 export const getCurrentPercentOfDay = () => {
   return (getCurrentMinute() / 1440) * 100;

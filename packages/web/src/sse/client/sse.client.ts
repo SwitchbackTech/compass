@@ -25,8 +25,11 @@ function getListeners(
   return listeners;
 }
 
+const reopenListeners = new Set<() => void>();
+
 let es: EventSource | null = null;
 let forwardingHandler: ((e: MessageEvent) => void) | null = null;
+let openHandler: (() => void) | null = null;
 
 export const openStream = (): EventSource => {
   if (es) return es;
@@ -54,7 +57,15 @@ export const openStream = (): EventSource => {
       listener(parsed.data);
     }
   };
+  // Native EventSource reconnects after laptop sleep without going through
+  // openStream() again; the open event is the seam that refetches the gap.
+  openHandler = () => {
+    for (const listener of reopenListeners) {
+      listener();
+    }
+  };
   es.addEventListener(SSE_MESSAGE_EVENT, forwardingHandler);
+  es.addEventListener("open", openHandler);
   return es;
 };
 
@@ -62,9 +73,13 @@ export const closeStream = (): void => {
   if (es && forwardingHandler) {
     es.removeEventListener(SSE_MESSAGE_EVENT, forwardingHandler);
   }
+  if (es && openHandler) {
+    es.removeEventListener("open", openHandler);
+  }
   es?.close();
   es = null;
   forwardingHandler = null;
+  openHandler = null;
 };
 
 export const getStream = (): EventSource | null => es;
@@ -79,6 +94,13 @@ export function onServerMessage<T extends ServerMessage["type"]>(
   const listeners = getListeners(type);
   listeners.add(listener);
   return () => listeners.delete(listener);
+}
+
+export function onStreamReopen(handler: () => void): () => void {
+  reopenListeners.add(handler);
+  return () => {
+    reopenListeners.delete(handler);
+  };
 }
 
 export type OnServerMessage = typeof onServerMessage;

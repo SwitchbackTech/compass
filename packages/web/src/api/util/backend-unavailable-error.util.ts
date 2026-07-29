@@ -29,6 +29,17 @@ function isBackendAuthoredError(data: unknown): boolean {
   return EventMutationErrorSchema.safeParse(data).success;
 }
 
+/**
+ * Chromium: "Failed to fetch". Firefox: "NetworkError when attempting to
+ * fetch resource." Both mean the browser never got an HTTP response.
+ */
+export function isTransientBrowserNetworkMessage(message: string): boolean {
+  return (
+    message === "Failed to fetch" ||
+    message === "NetworkError when attempting to fetch resource."
+  );
+}
+
 export function isBackendUnavailableError(error: unknown): boolean {
   if (!(error instanceof Error)) {
     return false;
@@ -46,7 +57,7 @@ export function isBackendUnavailableError(error: unknown): boolean {
     return !isBackendAuthoredError(response.data);
   }
 
-  return error.message === "Failed to fetch";
+  return isTransientBrowserNetworkMessage(error.message);
 }
 
 export function isBackendUnavailable(): boolean {

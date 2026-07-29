@@ -52,12 +52,16 @@ Important runtime behavior:
 - Missing Google refresh token does not block Compass-local event writes; Google side effects are skipped.
 - Controllers use the shared `res.promise(...)` response helper and centralized
   error handling.
+- When `sync.eventRouting=sync`, calendar/event reads and durable write commands
+  delegate to the Sync service instead of the legacy event store. See
+  [Sync Service Cutover](./sync-service-cutover.md).
 
 Key files:
 
 - `packages/backend/src/event/controllers/event.controller.ts`
 - `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`
 - `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google-backfill.ts`
+- `packages/backend/src/common/services/sync-service/` (delegation client + routing)
 
 ## Google Notification Ingress
 
@@ -103,4 +107,5 @@ Primary files:
 - [Backend Request Flow](./backend-request-flow.md)
 - [Backend Error Handling](./backend-error-handling.md)
 - [Event Propagation Transactions](./event-propagation-transactions.md)
+- [Sync Service Cutover](./sync-service-cutover.md)
 - [Google Sync And SSE Flow](../features/google-sync-and-sse-flow.md)

@@ -3,6 +3,7 @@ import { OAuth2Client } from "google-auth-library";
 import { type EventSchedule } from "@core/types/event.contracts";
 import { type gCalendar, type gSchema$Event } from "@core/types/gcal";
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
+import { googleColorIdFields } from "@sync/providers/google/google-color.map";
 import { normalizeGoogleEvent } from "@sync/providers/google/google-event.normalizer";
 import { type ProviderEventRead } from "@sync/providers/provider-event.port";
 import {
@@ -215,6 +216,7 @@ function toGoogleBody(
     summary: content.title,
     description: content.description,
     location: content.location,
+    ...googleColorIdFields(content.color),
     ...scheduleFields(schedule),
     recurrence: recurrence.kind === "series" ? [...recurrence.rules] : null,
   };

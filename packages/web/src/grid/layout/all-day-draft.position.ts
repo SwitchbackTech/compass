@@ -1,10 +1,46 @@
+import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import {
+  isTimedEventMultiDay,
+  timedMultiDayToAllDayDates,
+} from "@web/common/utils/event/event-nudge.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   getGridDraftId,
   gridEventDraftToGridEvent,
 } from "@web/events/grid-event-draft.adapter";
+
+export const isDraftRenderedInAllDayRow = (draft: GridEventDraft): boolean => {
+  const { schedule } = draft.values;
+
+  return (
+    schedule.kind === "allDay" ||
+    (schedule.kind === "timed" &&
+      isTimedEventMultiDay(dayjs(schedule.start), dayjs(schedule.end)))
+  );
+};
+
+export const draftToAllDayRowGridEvent = (draft: GridEventDraft): GridEvent => {
+  const { schedule } = draft.values;
+
+  if (schedule.kind === "allDay") {
+    return gridEventDraftToGridEvent(draft);
+  }
+
+  const dates = timedMultiDayToAllDayDates(
+    dayjs(schedule.start),
+    dayjs(schedule.end),
+  );
+
+  return {
+    ...gridEventDraftToGridEvent(draft),
+    endDate: dates.endDate,
+    isAllDay: true,
+    isTimedMultiDayDisplay: true,
+    startDate: dates.startDate,
+  };
+};
 
 export const positionAllDayDraftEvent = ({
   draft,
@@ -16,11 +52,11 @@ export const positionAllDayDraftEvent = ({
   activeDraftEvent: GridEvent | null;
   events: GridEvent[];
 } => {
-  if (!draft || draft.values.schedule.kind !== "allDay") {
+  if (!draft || !isDraftRenderedInAllDayRow(draft)) {
     return { activeDraftEvent: null, events };
   }
 
-  const draftEvent = gridEventDraftToGridEvent(draft);
+  const draftEvent = draftToAllDayRowGridEvent(draft);
   const draftId = getGridDraftId(draft);
   const existingIndex = draftId
     ? events.findIndex((event) => event._id === draftId)

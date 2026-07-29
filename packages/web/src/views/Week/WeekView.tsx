@@ -12,6 +12,7 @@ import { Sidebar } from "@web/components/Sidebar/Sidebar";
 import { useUpNextEventShortcut } from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
 import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
 import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
+import { toDemoEventsRange } from "@web/events/demo-events.util";
 import {
   draftActions,
   selectIsEventFormOpen,
@@ -141,6 +142,15 @@ export const WeekView = () => {
     welcomeGuideActions.open();
   }, []);
 
+  const demoEventsRange = useMemo(
+    () =>
+      toDemoEventsRange(
+        weekProps.component.startOfView,
+        weekProps.component.endOfView,
+      ),
+    [weekProps.component.endOfView, weekProps.component.startOfView],
+  );
+
   return (
     <div id="cal" className="flex h-screen w-screen overflow-hidden">
       <CommandPalette
@@ -160,7 +170,7 @@ export const WeekView = () => {
             className="flex h-screen flex-1 flex-col overflow-hidden bg-background pt-5 pr-0 pb-0 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
           >
             <Header scrollUtil={scrollUtil} weekProps={weekProps} />
-            <DemoEventsBannerGate />
+            <DemoEventsBannerGate range={demoEventsRange} />
 
             <WeekGridScrollArea>
               <div

@@ -14,7 +14,10 @@ import {
   type ConnectionId,
   type ProviderEventId,
 } from "@core/types/sync/identity.contracts";
-import { mergeUpdateContent } from "@sync/domain/merge-update-content";
+import {
+  mergeUpdateContent,
+  omitNullColor,
+} from "@sync/domain/merge-update-content";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
@@ -33,10 +36,11 @@ import { type EventRepository } from "@sync/storage/repositories/event.repositor
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 
 // The slice of credential custody the executor needs — a valid access token for
-// a connection. Narrow so tests pass a plain fake; CredentialCustody satisfies
-// it structurally.
+// a connection, plus discard of a provider-invalidated grant. Narrow so tests
+// pass a plain fake; CredentialCustody satisfies it structurally.
 export interface AccessTokenSource {
   getValidAccessToken(connectionId: ConnectionId): Promise<string>;
+  discardRevoked(connectionId: ConnectionId): Promise<void>;
 }
 
 export interface ProviderMutationDeps {
@@ -85,7 +89,12 @@ export async function executeProviderCreate(
     ) {
       return command;
     }
-    return failCommand(deps, command, "authorizationRevoked");
+    return failCommand(
+      deps,
+      command,
+      "authorizationRevoked",
+      calendar.connectionId,
+    );
   }
 
   let result: ProviderWriteResult;
@@ -105,7 +114,7 @@ export async function executeProviderCreate(
       // eventual retry idempotent. Every other reason is terminal and maps
       // straight to a command failure class.
       if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason);
+      return failCommand(deps, command, error.reason, calendar.connectionId);
     }
     throw error;
   }
@@ -135,6 +144,7 @@ async function failCommand(
   deps: ProviderMutationDeps,
   command: CommandRecord,
   reason: SyncCommandFailureReason,
+  connectionId: ConnectionId,
 ): Promise<CommandRecord> {
   const failed = await deps.commands.updateOutcome(
     command.tenantId,
@@ -143,6 +153,9 @@ async function failCommand(
     { state: "failed", failureReason: reason },
     command.attemptCount,
   );
+  if (reason === "authorizationRevoked") {
+    await deps.custody.discardRevoked(connectionId);
+  }
   return failed ?? command;
 }
 
@@ -174,7 +187,7 @@ function buildLinkedEventRecord(
     providerUpdatedAt: null,
     deliveryState: "confirmed",
     providerMetadata: null,
-    content: input.content,
+    content: omitNullColor(input.content),
     schedule: input.schedule,
     recurrence:
       input.recurrence.kind === "series"
@@ -248,7 +261,7 @@ export async function executeProviderUpdate(
     ) {
       return command;
     }
-    return failCommand(deps, command, "authorizationRevoked");
+    return failCommand(deps, command, "authorizationRevoked", connectionId);
   }
 
   const location = {
@@ -268,11 +281,13 @@ export async function executeProviderUpdate(
   } catch (error) {
     if (error instanceof ProviderWriteError) {
       if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason);
+      return failCommand(deps, command, error.reason, connectionId);
     }
     throw error;
   }
-  if (!current) return failCommand(deps, command, "permanentProviderError");
+  if (!current) {
+    return failCommand(deps, command, "permanentProviderError", connectionId);
+  }
 
   // Merge so a title/description edit cannot wipe provider-sourced attendees.
   const content = mergeUpdateContent(event.content, input.content);
@@ -308,7 +323,7 @@ export async function executeProviderUpdate(
   } catch (error) {
     if (error instanceof ProviderWriteError) {
       if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason);
+      return failCommand(deps, command, error.reason, connectionId);
     }
     throw error;
   }
@@ -410,7 +425,7 @@ export async function executeProviderSeriesUpdate(
     ) {
       return command;
     }
-    return failCommand(deps, command, "authorizationRevoked");
+    return failCommand(deps, command, "authorizationRevoked", connectionId);
   }
 
   const location = {
@@ -428,11 +443,13 @@ export async function executeProviderSeriesUpdate(
   } catch (error) {
     if (error instanceof ProviderWriteError) {
       if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason);
+      return failCommand(deps, command, error.reason, connectionId);
     }
     throw error;
   }
-  if (!current) return failCommand(deps, command, "permanentProviderError");
+  if (!current) {
+    return failCommand(deps, command, "permanentProviderError", connectionId);
+  }
 
   const content = mergeUpdateContent(master.content, input.content);
 
@@ -464,7 +481,7 @@ export async function executeProviderSeriesUpdate(
   } catch (error) {
     if (error instanceof ProviderWriteError) {
       if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason);
+      return failCommand(deps, command, error.reason, connectionId);
     }
     throw error;
   }
@@ -619,7 +636,7 @@ function exceptionInstant(event: EventRecord): DateTime {
 // Whether the provider's current event already carries this command's intended
 // edit — the signal that a prior attempt landed and this is a safe replay.
 // Compares ONLY the fields a patch actually writes (title, description,
-// location, schedule, recurrence). organizer/attendees/conference are
+// location, color, schedule, recurrence). organizer/attendees/conference are
 // read-reflected, not written by the provider adapter, so they drift
 // independently (e.g. an attendee RSVPs) — comparing them would turn a landed
 // edit into a false miss, then a stale-version patch, then a spurious
@@ -635,10 +652,14 @@ function matchesIntendedEdit(
   schedule: EventSchedule,
   recurrence: ProviderWriteRecurrence,
 ): boolean {
+  // Null on the command means "no color"; treat it like an absent color on
+  // the provider read so a clear that already landed counts as a replay.
+  const intendedColor = content.color === null ? undefined : content.color;
   return (
     current.content.title === content.title &&
     current.content.description === content.description &&
     current.content.location === content.location &&
+    current.content.color === intendedColor &&
     deepEqual(current.schedule, schedule) &&
     recurrenceMatches(current.recurrence, recurrence)
   );
@@ -760,7 +781,14 @@ export async function executeProviderDelete(
     ) {
       return command;
     }
-    return revertAndFail(deps, command, event, "authorizationRevoked", now);
+    return revertAndFail(
+      deps,
+      command,
+      event,
+      "authorizationRevoked",
+      connectionId,
+      now,
+    );
   }
 
   try {
@@ -779,7 +807,14 @@ export async function executeProviderDelete(
       if (error.reason === "transient") return command;
       // Terminal: the delete failed, so restore the event to active rather than
       // leaving it stuck showing "deleting".
-      return revertAndFail(deps, command, event, error.reason, now);
+      return revertAndFail(
+        deps,
+        command,
+        event,
+        error.reason,
+        connectionId,
+        now,
+      );
     }
     throw error;
   }
@@ -862,6 +897,7 @@ async function revertAndFail(
   command: CommandRecord,
   event: EventRecord,
   reason: SyncCommandFailureReason,
+  connectionId: ConnectionId,
   now: () => Date,
 ): Promise<CommandRecord> {
   await deps.events.replaceExisting({
@@ -869,5 +905,5 @@ async function revertAndFail(
     lifecycleState: "active",
     updatedAt: now(),
   });
-  return failCommand(deps, command, reason);
+  return failCommand(deps, command, reason, connectionId);
 }

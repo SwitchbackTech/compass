@@ -4,6 +4,7 @@ Internal documentation for engineers and agents working in the Compass repo.
 
 ## Start Here
 
+- [Development Quickstart](./development/quickstart.md)
 - [Repo Architecture](./architecture/repo-architecture.md)
 - [Feature File Map](./development/feature-file-map.md)
 - [Common Change Recipes](./development/common-change-recipes.md)
@@ -35,13 +36,23 @@ Internal documentation for engineers and agents working in the Compass repo.
 ## Development And Operations
 
 - [Local Development](./development/local-development.md)
+- [Troubleshooting](./development/troubleshoot.md)
+- [Configuration](./Config/README.md)
 - [Hosting Modes](./development/hosting-modes.md)
 - [Self-Hosting](./self-hosting/README.md)
 - [Testing Playbook](./development/testing-playbook.md)
+- [Performance Baselines](./development/performance-baselines.md)
 - [Types And Validation](./development/types-and-validation.md)
 - [CI/CD Workflows](./CI-CD/workflows.md)
 - [CLI And Maintenance Commands](./development/cli.md)
 - [Versioning](./CI-CD/versioning.md)
+
+## Frontend
+
+- [Frontend Runtime Flow](./frontend/frontend-runtime-flow.md)
+- [Responsive Layout](./frontend/responsive-layout.md)
+- [Event Caching](./frontend/event-caching.md)
+- [Week Drag Interaction](./frontend/week-drag-interaction.md)
 
 ## Feature Deep Dives
 

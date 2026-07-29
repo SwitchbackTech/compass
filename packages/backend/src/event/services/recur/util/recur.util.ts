@@ -34,6 +34,12 @@ const shiftDateOnly = (dateOnly: DateOnly, offsetDays: number): DateOnly => {
   return date.toISOString().slice(0, 10) as DateOnly;
 };
 
+const toIcsUtc = (date: Date): string =>
+  date
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
+
 /**
  * The instant a schedule occupies in the recurrence pattern: the timed
  * instant itself, or midnight UTC of the all-day date. Shared by series
@@ -61,9 +67,15 @@ export const materializeSeriesInstances = (
   if (base.recurrence.kind !== "series") return [];
 
   const anchor = getAnchorDate(base.schedule);
-  const rule = rrulestr(base.recurrence.rules.join("\n"), {
-    dtstart: anchor,
-  });
+  // The dtstart option is silently ignored whenever the rules text carries
+  // more than a bare RRULE (e.g. an EXDATE line, from local-mode occurrence-
+  // exclusion promotion) - rrulestr only honors it when parsing a single
+  // RRULE with no other iCalendar properties. An explicit DTSTART line
+  // works unconditionally and produces identical output for the bare-RRULE
+  // case (verified), so it replaces the options-based anchor entirely.
+  const rule = rrulestr(
+    [`DTSTART:${toIcsUtc(anchor)}`, ...base.recurrence.rules].join("\n"),
+  );
   const dates = rule.all((_date, len) => len < maxInstances);
 
   return dates.map((date) => ({
@@ -79,10 +91,7 @@ export const materializeSeriesInstances = (
 };
 
 export const withUntil = (rules: readonly string[], until: Date): string[] => {
-  const untilString = `${until
-    .toISOString()
-    .replace(/[-:]/g, "")
-    .replace(/\.\d{3}/, "")}`;
+  const untilString = toIcsUtc(until);
 
   return rules.map((rule) =>
     /UNTIL=/.test(rule)

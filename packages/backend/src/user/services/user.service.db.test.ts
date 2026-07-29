@@ -480,6 +480,53 @@ describe("UserService", () => {
       cleanupSpy.mockRestore();
     });
 
+    it("deletes events owned by an archived calendar", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      const resolveSpy = spyOn(
+        supertokensUserCleanupService,
+        "resolveByExternalUserId",
+      ).mockResolvedValue({ externalUserIds: [], superTokensUserIds: [] });
+      const revokeSpy = spyOn(
+        compassAuthService,
+        "revokeSessionsByUser",
+      ).mockResolvedValue({ sessionsRevoked: 0 });
+      const cleanupSpy = spyOn(
+        supertokensUserCleanupService,
+        "cleanupResolvedTarget",
+      ).mockResolvedValue({
+        superTokensUsers: 0,
+        superTokensMappings: 0,
+        superTokensMetadata: 0,
+      });
+
+      await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
+
+      // Archiving is what a Google revoke, or a calendar disappearing from the
+      // user's Google list, leaves behind: the calendar row stays, its events
+      // stay, and only `isActive` flips.
+      const event = await mongoService.event.findOne({});
+      expect(event).not.toBeNull();
+      await mongoService.calendar.updateOne(
+        { _id: event!.calendarId },
+        { $set: { isActive: false } },
+      );
+      const archived = await mongoService.event.countDocuments({
+        calendarId: event!.calendarId,
+      });
+      expect(archived).toBeGreaterThan(0);
+
+      const summary = await userService.deleteCompassDataForUser(userId, false);
+
+      expect(summary.events).toBeGreaterThanOrEqual(archived);
+      expect(await mongoService.event.countDocuments({})).toBe(0);
+
+      resolveSpy.mockRestore();
+      revokeSpy.mockRestore();
+      cleanupSpy.mockRestore();
+    });
+
     it("includes SuperTokens cleanup results after deleting the Compass user", async () => {
       const userId = mongoService.objectId().toString();
       await userService.upsertUserFromAuth({

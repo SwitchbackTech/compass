@@ -1,17 +1,34 @@
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
 
-// Browser edits only title + description. An update command still carries a
-// full SyncEventContent (strict schema), and the Compass API pads the richer
-// fields with null/[] — so applying the wire content verbatim would wipe
+// Browser edits only title + description (+ optional color). An update command
+// still carries a full SyncEventContent (strict schema), and the Compass API
+// pads richer fields with null/[] — applying that verbatim would wipe
 // attendees/location/conference Sync already holds from the provider.
-// Merge: take editable fields from the command, keep the rest from existing.
+//
+// Merge editable fields from the command; keep the rest from existing.
+// Color: slot replaces, null clears (omit the field), omit keeps existing.
 export function mergeUpdateContent(
   existing: SyncEventContent,
   incoming: SyncEventContent,
 ): SyncEventContent {
-  return {
-    ...existing,
+  const { color: existingColor, ...existingWithoutColor } = existing;
+  const merged: SyncEventContent = {
+    ...existingWithoutColor,
     title: incoming.title,
     description: incoming.description,
   };
+
+  if (incoming.color === null) return merged;
+  if (incoming.color !== undefined) return { ...merged, color: incoming.color };
+  return existingColor !== undefined
+    ? { ...merged, color: existingColor }
+    : merged;
+}
+
+// Null is a write-command "clear" signal. Stored/read rows omit the field;
+// persisting null fails SyncEventInstance validation on list.
+export function omitNullColor(content: SyncEventContent): SyncEventContent {
+  if (content.color !== null) return content;
+  const { color: _color, ...rest } = content;
+  return rest;
 }

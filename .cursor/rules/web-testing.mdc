@@ -1,0 +1,25 @@
+---
+description: Compass web test conventions for reliable user-facing behavior coverage
+globs: packages/web/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Web testing
+
+See `AGENTS.md`'s Compass-Specific Rules for the RTL/`user-event`/semantic-query
+convention.
+
+- Avoid implementation-detail assertions.
+- Prefer the shared render/store/provider harnesses over broad module mocks.
+- Restore replaced globals, timers, and spies in teardown.
+- Register every new Zustand store in both the reset registry and state seeder.
+- Keep `bun run test:web` sequential; do not add `--parallel` without resolving
+  the documented jsdom/MSW isolation constraints.
+
+Read `docs/development/testing-playbook.md` before changing test infrastructure
+or debugging cross-file failures.
+
+```tsx
+const saveButton = screen.getByRole("button", { name: "Save event" });
+await user.click(saveButton);
+```

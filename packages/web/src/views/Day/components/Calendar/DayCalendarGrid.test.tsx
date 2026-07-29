@@ -16,6 +16,8 @@ import {
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import { setCalendarVisibility } from "@web/calendars/calendar-visibility.store";
+import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import {
   DATA_TIMED_GRID_ROW,
   ZIndex,
@@ -34,7 +36,15 @@ import {
 } from "@web/events/stores/draft.store";
 import { TIMED_EVENT_FAN_INDENT } from "@web/grid/grid.constants";
 import { type GridMeasurements } from "@web/grid/types/grid.types";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+} from "bun:test";
 import "@testing-library/jest-dom";
 
 let seededEvents: Event[] = [];
@@ -201,9 +211,16 @@ const withOffset = (dateTime: string) =>
 
 // The query cache (unlike draft.store.ts, still legacy CompassEvent-shaped
 // per its own TODO) requires strict-contract `Event`s.
+//
+// calendarId must match the anonymous local calendar the calendars query
+// synthesizes. Otherwise filterEventsByVisibleCalendars drops every fixture
+// once that query resolves mid-userEvent click (delay:0 yields to macrotasks
+// between hover and pointerdown), and the card unmounts before the
+// interaction engine can open it.
 const toStrictEvent = (event: CompassEvent): Event =>
   createMockEvent({
     id: EventIdSchema.parse(event._id!),
+    calendarId: getLocalCalendarSentinelId(),
     content: {
       kind: "details",
       title: event.title ?? "",
@@ -284,6 +301,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // bun's fake clock is process-global; restore it so a pinned test can't
+  // leak its time into later tests or later files.
+  setSystemTime();
   cleanup();
   if (originalScroll) {
     HTMLElement.prototype.scroll = originalScroll;
@@ -291,6 +311,8 @@ afterEach(() => {
     delete (HTMLElement.prototype as { scroll?: unknown }).scroll;
   }
   resetDraft();
+  // Storage clearing + the hidden-ids store resync are both handled by the
+  // global test-lifecycle afterEach (resetBrowserState + resetAllStores).
 });
 
 describe("DayCalendarGrid", () => {
@@ -304,7 +326,10 @@ describe("DayCalendarGrid", () => {
   it("renders enabled calendars as separate event columns", () => {
     const primary = makeCalendar("Primary", { isPrimary: true });
     const projects = makeCalendar("Projects");
-    const hidden = makeCalendar("Hidden", { isVisible: false });
+    const hidden = makeCalendar("Hidden");
+    // isVisible is client-derived from the hidden-ids store now, not a field
+    // to seed directly on the fixture - see calendar-visibility.store.ts.
+    setCalendarVisibility(hidden.id, false);
     seededEvents = [
       createMockEvent({
         calendarId: primary.id,
@@ -359,11 +384,10 @@ describe("DayCalendarGrid", () => {
   });
 
   it("falls back to the primary calendar when every calendar is disabled", () => {
-    const primary = makeCalendar("Primary", {
-      isPrimary: true,
-      isVisible: false,
-    });
-    const disabled = makeCalendar("Disabled", { isVisible: false });
+    const primary = makeCalendar("Primary", { isPrimary: true });
+    const disabled = makeCalendar("Disabled");
+    setCalendarVisibility(primary.id, false);
+    setCalendarVisibility(disabled.id, false);
 
     renderDayCalendarGrid([disabled, primary]);
 
@@ -771,6 +795,78 @@ describe("DayCalendarGrid", () => {
     });
   });
 
+  it("seeds CREATE_TIMED_DRAFT with the default target calendar, not column 0", async () => {
+    // Pin the clock: createTimedDraft derives the draft from the real
+    // `dayjs()` hour, so between 23:00 and 23:59 UTC the 1-hour draft runs
+    // past midnight, becomes multi-day, and renders in the all-day row
+    // instead of as the timed card this test looks for.
+    setSystemTime(new Date("2026-05-20T10:00:00.000Z"));
+
+    // Holidays is first in column order (read-only, visible) but is not the
+    // default create target — primary writable Google is. Shortcut drafts
+    // must land on primary so the grid column matches the form.
+    const holidays = makeCalendar("Holidays in United States", {
+      access: "reader",
+      capabilities: {
+        canReadAvailability: true,
+        canReadDetails: true,
+        canWrite: false,
+        canManage: false,
+        canWatchEvents: true,
+      },
+    });
+    const primary = makeCalendar("compasscaltest3@gmail.com", {
+      isPrimary: true,
+    });
+    renderDayCalendarGrid([holidays, primary]);
+
+    act(() => {
+      emitViewCommand("CREATE_TIMED_DRAFT");
+    });
+
+    await waitFor(() => {
+      expect(getGridDraft()?.values.calendarId).toBe(primary.id);
+      expect(getIsFormOpen()).toBe(true);
+    });
+
+    const draftCard = screen.getByRole("button", {
+      name: /timed event: untitled event/i,
+    });
+    // Column widths are 180; primary is the second column (index 1).
+    expect(parseFloat(draftCard.style.left)).toBeGreaterThanOrEqual(180);
+  });
+
+  it("seeds CREATE_ALLDAY_DRAFT with the default target calendar, not column 0", async () => {
+    const holidays = makeCalendar("Holidays in United States", {
+      access: "reader",
+      capabilities: {
+        canReadAvailability: true,
+        canReadDetails: true,
+        canWrite: false,
+        canManage: false,
+        canWatchEvents: true,
+      },
+    });
+    const primary = makeCalendar("compasscaltest3@gmail.com", {
+      isPrimary: true,
+    });
+    renderDayCalendarGrid([holidays, primary]);
+
+    act(() => {
+      emitViewCommand("CREATE_ALLDAY_DRAFT");
+    });
+
+    await waitFor(() => {
+      expect(getGridDraft()?.values.calendarId).toBe(primary.id);
+      expect(getIsFormOpen()).toBe(true);
+    });
+
+    const draftCard = screen.getByRole("button", {
+      name: /all-day event: untitled event/i,
+    });
+    expect(parseFloat(draftCard.style.left)).toBeGreaterThanOrEqual(180);
+  });
+
   it("rejects timed draft creation on a read-only calendar", async () => {
     const primary = makeCalendar("Primary", { isPrimary: true });
     const holidays = makeCalendar("Holidays", {
@@ -894,6 +990,65 @@ describe("DayCalendarGrid", () => {
       expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
       expect(dayjs(draft?.endDate).format("HH:mm")).toBe("05:00");
       expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
+    });
+  });
+
+  // Two moves, not one: the first mousemove has always written the draft to
+  // the store (it starts the preview), so a single-move assertion passes even
+  // when the draft is frozen for the rest of the gesture.
+  it("resizes the timed draft on every mousemove, not just the first", async () => {
+    renderDayCalendarGrid();
+
+    fireEvent.mouseDown(getTimedSlot(3), {
+      button: 0,
+      clientX: 100,
+      clientY: 120,
+    });
+
+    fireEvent.mouseMove(window, { buttons: 1, clientX: 100, clientY: 240 });
+
+    await waitFor(() => {
+      const draft = getDraft();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("04:00");
+    });
+
+    fireEvent.mouseMove(window, { buttons: 1, clientX: 100, clientY: 360 });
+
+    await waitFor(() => {
+      const draft = getDraft();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("06:00");
+    });
+
+    // The draft renders during the drag, but the form stays closed until the
+    // gesture finishes.
+    expect(getIsFormOpen()).toBe(false);
+  });
+
+  it("flips the timed draft upward mid-drag when the pointer passes the origin", async () => {
+    renderDayCalendarGrid();
+
+    fireEvent.mouseDown(getTimedSlot(3), {
+      button: 0,
+      clientX: 100,
+      clientY: 240,
+    });
+
+    fireEvent.mouseMove(window, { buttons: 1, clientX: 100, clientY: 300 });
+
+    await waitFor(() => {
+      const draft = getDraft();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("04:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("05:00");
+    });
+
+    fireEvent.mouseMove(window, { buttons: 1, clientX: 100, clientY: 120 });
+
+    await waitFor(() => {
+      const draft = getDraft();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("04:00");
     });
   });
 

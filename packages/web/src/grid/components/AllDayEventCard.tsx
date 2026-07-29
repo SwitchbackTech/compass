@@ -56,7 +56,10 @@ const AllDayEventCardBase = (
   }: AllDayEventCardProps,
   ref: ForwardedRef<HTMLDivElement>,
 ) => {
-  const { base: baseColor, hover: hoverColor } = useEventPalette();
+  const { base: baseColor, hover: hoverColor } = useEventPalette(
+    event.color,
+    event.colorHex,
+  );
   const isInPast = dayjs().isAfter(dayjs(event.endDate));
   const isRecurring = isRecurringEvent(event);
   const showRepeatIcon =
@@ -139,12 +142,10 @@ const AllDayEventCardBase = (
         onEventKeyDown?.(event);
       }}
       onMouseDown={(e: MouseEvent) => {
-        if (!onEventMouseDown) {
-          e.stopPropagation();
-          return;
-        }
-
-        onEventMouseDown(e, event);
+        // Stop bubble so the all-day row create handler cannot overwrite a
+        // card click (including read-only open for busy / multi-day timed).
+        e.stopPropagation();
+        onEventMouseDown?.(e, event);
       }}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}

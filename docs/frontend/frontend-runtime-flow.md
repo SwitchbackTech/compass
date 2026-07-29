@@ -299,6 +299,8 @@ Responsibilities:
 
 - open/close `EventSource` to `GET /api/events/stream` based on auth state
 - refetch events when background event changes arrive (`EVENT_CHANGED`)
+- refetch events/calendars when the native EventSource fires `open` again
+  (reconnect after sleep) via `onStreamReopen`
 - react to Google import progress and Google revocation events
 - apply `USER_METADATA` pushed on stream connect and when the backend refreshes metadata
 

@@ -1,46 +1,65 @@
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import { nudgeEventFromKeyboard } from "@web/common/utils/event/event-nudge-shortcut.util";
-import { isEventFormOpen } from "@web/common/utils/form/form.util";
+import { repositionDraftByKeyboard } from "@web/common/utils/draft/reposition-draft-by-keyboard.util";
 import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
-import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
-import { draftActions } from "@web/events/stores/draft.store";
-import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
-import { getFocusedDayGridEventTarget } from "@web/views/Day/interaction/targeting/day-event.targeting";
+import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
+import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
+import {
+  getFirstVisibleDayGridEventTarget,
+  getFocusedDayGridEventTarget,
+  getHoveredDayGridEventTarget,
+} from "@web/views/Day/interaction/targeting/day-event.targeting";
 
 /**
- * Shift+ArrowUp/Down moves the focused timed calendar event by 15 minutes.
- * Day-view events intentionally have no Shift+ArrowLeft/Right day moves yet.
+ * Day-view edit shortcuts: Delete, Shift+arrows (nudge / day-move), and
+ * Arrow keys to reposition an open draft. Shift+ArrowLeft/Right move a
+ * focused event by one day and follow that day in the Day view.
  */
 export function useDayEventNudgeShortcuts({
-  timedEvents,
+  allDayEvents = [],
   dependencies = {},
+  navigateToDate,
+  timedEvents,
 }: {
+  allDayEvents?: GridEvent[];
   dependencies?: EventMutationDependencies;
+  /** Follow draft Left/Right moves so the draft stays on screen. */
+  navigateToDate?: (date: Dayjs) => void;
   timedEvents: GridEvent[];
 }) {
-  const updateEvent = useUpdateEvent(dependencies);
+  useGridEventEditShortcuts({
+    allDayEvents,
+    dependencies,
+    timedEvents,
+    dayBoundary: {
+      kind: "follow",
+      onCrossed: (date) => navigateToDate?.(date),
+    },
+    targeting: {
+      getFocused: getFocusedDayGridEventTarget,
+      getHovered: getHoveredDayGridEventTarget,
+      getFirstVisible: getFirstVisibleDayGridEventTarget,
+    },
+    repositionDraftByKey: (key) => {
+      const { gridDraft, status } = useDraftStore.getState();
+      const previousStart = gridDraft
+        ? dayjs(gridDraft.values.schedule.start).startOf("day")
+        : null;
 
-  // TanStack Hotkeys syncs callbacks on every render, so this closure always
-  // sees the latest timedEvents (no refs needed)
-  const nudgeFocusedEvent = (keyboardEvent: KeyboardEvent) => {
-    if (isEventFormOpen()) return;
+      const nextDraft = repositionDraftByKeyboard({
+        activity: status?.activity,
+        draft: gridDraft,
+        key,
+      });
+      if (!nextDraft) return false;
 
-    const target = getFocusedDayGridEventTarget();
-    if (!target || target.eventType !== "timed") return;
+      draftActions.setGridDraft(nextDraft);
 
-    const event = timedEvents.find(
-      (candidate) => candidate._id === target.eventId,
-    );
-    if (!event?._id) return;
-
-    nudgeEventFromKeyboard({
-      event,
-      keyboardEvent,
-      onNudge: (event) => updateEvent({ event }, true),
-      afterNudge: () => draftActions.discard(),
-    });
-  };
-
-  useAppShortcut("Shift+ArrowUp", nudgeFocusedEvent);
-  useAppShortcut("Shift+ArrowDown", nudgeFocusedEvent);
+      const nextStart = dayjs(nextDraft.values.schedule.start).startOf("day");
+      if (previousStart && !nextStart.isSame(previousStart, "day")) {
+        navigateToDate?.(nextStart);
+      }
+      return true;
+    },
+  });
 }

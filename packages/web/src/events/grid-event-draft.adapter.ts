@@ -3,6 +3,10 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
+import {
+  type EventColorSlot,
+  withColor,
+} from "@core/types/event-color.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -51,6 +55,7 @@ export function createGridEventDraft(
       description: "",
       schedule,
       calendarId,
+      color: null,
       recurrence: { kind: "single" },
     },
   };
@@ -92,9 +97,7 @@ export function editGridEventDraft(
     kind: "edit",
     source: event,
     values: {
-      title: event.content.kind === "details" ? event.content.title : "",
-      description:
-        event.content.kind === "details" ? event.content.description : "",
+      ...editableDetailsFromEvent(event),
       schedule,
       calendarId: event.calendarId,
       recurrence: { kind: "preserve" },
@@ -136,9 +139,7 @@ export function duplicateGridEventDraft(
     kind: "create",
     source: null,
     values: {
-      title: event.content.kind === "details" ? event.content.title : "",
-      description:
-        event.content.kind === "details" ? event.content.description : "",
+      ...editableDetailsFromEvent(event),
       schedule,
       calendarId,
       recurrence:
@@ -270,15 +271,20 @@ export function gridEventDraftToGridEvent(draft: GridEventDraft): GridEvent {
 }
 
 // Converts a grid draft to the CompassEvent-shaped view used by schema
-// overlays, Day placeholders, and context-menu props. calendarId/isBusy are
-// widened onto the return (rather than adding them to the shared core
-// CompassEvent interface) so colored accents and the busy read-only gate stay
-// correct without a second lookup.
+// overlays, Day placeholders, and context-menu props. calendarId/isBusy/color
+// are widened onto the return (rather than adding them to the shared core
+// CompassEvent interface) so colored accents, the busy read-only gate, and
+// per-event fill stay correct without a second lookup.
 export function gridEventDraftToSchemaEvent(
   draft: GridEventDraft,
   seriesRules?: readonly string[],
-): CompassEvent & { calendarId?: CalendarId; isBusy?: boolean } {
+): CompassEvent & {
+  calendarId?: CalendarId;
+  isBusy?: boolean;
+  color?: EventColorSlot;
+} {
   const { schedule } = draft.values;
+  const color = draft.values.color ?? undefined;
 
   return {
     _id: draft.kind === "edit" ? draft.source.id : draft.clientId,
@@ -290,6 +296,7 @@ export function gridEventDraftToSchemaEvent(
         : dayjs(schedule.end).format(),
     isAllDay: schedule.kind === "allDay",
     isBusy: draft.kind === "edit" && draft.source.content.kind === "busy",
+    ...withColor(color),
     recurrence: legacyRecurrenceFromDraft(draft, seriesRules),
     startDate:
       schedule.kind === "allDay"
@@ -310,6 +317,30 @@ export function resolveDraftRecurrenceRules(
   return Array.isArray(rule) ? [...rule] : [];
 }
 
+// The draft renders its own recurrence preview separately (Draft.tsx's
+// getRecurringDraftPreviews), but the *saved* sibling occurrences of the
+// series being edited still come through the normal week query and render
+// on their own - unaffected by an in-progress edit to the shared rule. Once
+// the user has actually changed the recurrence (weekdays, frequency, until,
+// or cleared it), those siblings are stale: they reflect the rule as it
+// stood before this edit, not the draft's live preview. This returns the
+// series id whose OTHER occurrences should be hidden from the grid while
+// that's true, so the draft's own previews are the only thing shown for the
+// series - and null whenever recurrence hasn't been touched (the draft's
+// "preserve" kind), so dragging/editing non-recurrence fields never hides
+// anything.
+export function suppressedSeriesIdForDraft(
+  draft: GridEventDraft | null,
+): string | null {
+  if (!draft || draft.kind !== "edit") return null;
+  if (draft.values.recurrence.kind === "preserve") return null;
+
+  const { recurrence } = draft.source;
+  if (recurrence.kind === "occurrence") return recurrence.seriesId;
+  if (recurrence.kind === "series") return draft.source.id;
+  return null;
+}
+
 export function patchGridDraftRecurrence(
   draft: GridEventDraft,
   nextRules: readonly string[],
@@ -317,14 +348,24 @@ export function patchGridDraftRecurrence(
 ): GridEventDraft {
   const currentRules = resolveDraftRecurrenceRules(draft, seriesRules);
   const ruleUnchanged = fastDeepEqual(currentRules, [...nextRules]);
+  // Only useRecurrence calls this, and only with an explicit user edit (a
+  // weekday/frequency/until change, or the Repeat toggle turned off) - a
+  // draft that hasn't touched recurrence never reaches here, so it keeps
+  // "preserve" from editGridEventDraft instead. Empty rules is therefore
+  // always an explicit clear, on both create and edit drafts: "single",
+  // never "preserve" (which for an edit draft would just resolve back to
+  // the source event's original rules, making the Repeat toggle a no-op).
   const recurrence = ruleUnchanged
     ? draft.values.recurrence
     : nextRules.length > 0
       ? { kind: "series" as const, rules: [...nextRules] }
-      : draft.kind === "edit"
-        ? ({ kind: "preserve" } as const)
-        : ({ kind: "single" } as const);
+      : ({ kind: "single" } as const);
 
+  // The two branches look identical, but each is required to keep
+  // GridEventDraft's discriminated union narrowed (see
+  // replaceGridDraftSchedule above) - `recurrence` can structurally carry
+  // "preserve" here (from the ruleUnchanged passthrough on an edit draft),
+  // which isn't assignable to a create draft's NewEventRecurrenceDraft.
   if (draft.kind === "create") {
     return {
       ...draft,
@@ -336,13 +377,7 @@ export function patchGridDraftRecurrence(
     };
   }
 
-  return {
-    ...draft,
-    values: {
-      ...draft.values,
-      recurrence,
-    },
-  };
+  return { ...draft, values: { ...draft.values, recurrence } };
 }
 
 export function patchGridDraftScheduleDates(
@@ -380,32 +415,52 @@ export function patchGridDraftScheduleDates(
 
 export function patchGridDraftFields(
   current: GridEventDraft,
-  patch: Partial<Pick<GridEventDraft["values"], "title" | "description">>,
+  patch: Partial<
+    Pick<GridEventDraft["values"], "title" | "description" | "color">
+  >,
 ): GridEventDraft {
+  // Branching on kind keeps create/edit values correlated with the
+  // discriminant (a shared spread widens recurrence across both shapes).
   if (current.kind === "create") {
     return {
       ...current,
-      values: {
-        ...current.values,
-        ...(patch.title !== undefined ? { title: patch.title } : {}),
-        ...(patch.description !== undefined
-          ? { description: patch.description }
-          : {}),
-      },
+      values: applyDraftFieldPatch(current.values, patch),
     };
   }
-
   return {
     ...current,
-    values: {
-      ...current.values,
-      ...(patch.title !== undefined ? { title: patch.title } : {}),
-      ...(patch.description !== undefined
-        ? { description: patch.description }
-        : {}),
-    },
+    values: applyDraftFieldPatch(current.values, patch),
   };
 }
+
+const applyDraftFieldPatch = <
+  T extends Pick<GridEventDraft["values"], "title" | "description" | "color">,
+>(
+  values: T,
+  patch: Partial<
+    Pick<GridEventDraft["values"], "title" | "description" | "color">
+  >,
+): T => ({
+  ...values,
+  ...(patch.title !== undefined ? { title: patch.title } : {}),
+  ...(patch.description !== undefined
+    ? { description: patch.description }
+    : {}),
+  ...(patch.color !== undefined ? { color: patch.color } : {}),
+});
+
+const editableDetailsFromEvent = (
+  event: Event,
+): { title: string; description: string; color: EventColorSlot | null } => {
+  if (event.content.kind !== "details") {
+    return { title: "", description: "", color: null };
+  }
+  return {
+    title: event.content.title,
+    description: event.content.description,
+    color: event.content.color ?? null,
+  };
+};
 
 // Local, not toISOString: all-day draft Dates are local midnight, so a UTC
 // rendering would shift the day for any non-UTC viewer.

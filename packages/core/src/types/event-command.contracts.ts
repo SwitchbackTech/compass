@@ -11,11 +11,15 @@ import {
   EventScheduleSchema,
   EventSchema,
 } from "@core/types/event.contracts";
+import { OptionalNullableEventColorSchema } from "@core/types/event-color.contracts";
 
 const EditableContentSchema = z.strictObject({
   kind: z.literal("details"),
   title: z.string(),
   description: z.string(),
+  // Null clears a previously set color on replace; omit leaves sync color
+  // alone when the client did not touch it.
+  color: OptionalNullableEventColorSchema,
 });
 
 export const RecurrenceScopeSchema = z.enum([
@@ -111,6 +115,7 @@ export const EventMutationErrorCodeSchema = z.enum([
   "DUPLICATE_EVENT_ID",
   "INVALID_SCHEDULE",
   "PROVIDER_FAILURE",
+  "GOOGLE_REVOKED",
   // Scoped cutover maintenance: cloud/provider mutations paused (S50).
   "MAINTENANCE",
 ]);

@@ -1,6 +1,10 @@
 import { z } from "zod/v4";
 import { ValidatedCompassEventSchema } from "@core/types/compass-event.contracts";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
+import {
+  EventColorSlotSchema,
+  OptionalHexEventColorSchema,
+} from "@core/types/event-color.contracts";
 
 /** Event category, based on its display type */
 export enum Categories_Event {
@@ -51,5 +55,14 @@ export const GridEventSchema = WebEventSchema.extend({
   calendarId: CalendarIdSchema.optional(),
   isBusy: z.boolean().optional(),
   isDemo: z.boolean().optional(),
+  /** Timed event shown in the all-day row because it spans midnight. */
+  isTimedMultiDayDisplay: z.boolean().optional(),
+  // Optional Google-mapped event color tag. Joined like calendarId — not part
+  // of CompassEvent — so cards can paint a per-event fill without widening
+  // the shared core type.
+  color: EventColorSlotSchema.optional(),
+  // A provider custom color (e.g. a Google event label) with no Compass slot
+  // equivalent. Takes precedence over `color` when both are somehow present.
+  colorHex: OptionalHexEventColorSchema,
 });
 export type GridEvent = z.infer<typeof GridEventSchema>;

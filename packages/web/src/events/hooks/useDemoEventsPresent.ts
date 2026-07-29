@@ -1,30 +1,59 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { hasDemoEvents } from "@web/events/demo-events.util";
+import {
+  type DemoEventsRange,
+  hasDemoEvents,
+} from "@web/events/demo-events.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 
-export function useDemoEventsPresent(): boolean {
+function rangeKey(range?: DemoEventsRange): string {
+  return range ? `${range.start}|${range.end}` : "";
+}
+
+export function useDemoEventsPresent(range?: DemoEventsRange): boolean {
   const queryClient = useQueryClient();
   const source = useEventRepositorySource();
-  const [present, setPresent] = useState(false);
+  const [state, setState] = useState<{
+    present: boolean;
+    key: string;
+  }>({ present: false, key: "" });
   const refreshGenerationRef = useRef(0);
+  const rangeStart = range?.start;
+  const rangeEnd = range?.end;
+  const currentKey = rangeKey(
+    rangeStart !== undefined && rangeEnd !== undefined
+      ? { start: rangeStart, end: rangeEnd }
+      : undefined,
+  );
 
   const refresh = useCallback(() => {
     if (source !== "local") {
       refreshGenerationRef.current += 1;
-      setPresent(false);
+      setState({ present: false, key: currentKey });
       return;
     }
 
     refreshGenerationRef.current += 1;
     const generation = refreshGenerationRef.current;
-    void hasDemoEvents().then((result) => {
-      if (generation === refreshGenerationRef.current) {
-        setPresent(result);
-      }
-    });
-  }, [source]);
+    const rangeArg =
+      rangeStart !== undefined && rangeEnd !== undefined
+        ? { start: rangeStart, end: rangeEnd }
+        : undefined;
+    void hasDemoEvents(rangeArg)
+      .then((result) => {
+        if (generation === refreshGenerationRef.current) {
+          setState({ present: result, key: rangeKey(rangeArg) });
+        }
+      })
+      .catch(() => {
+        // IndexedDB probe is best-effort; treat failures as "no demo events"
+        // rather than an unhandledrejection.
+        if (generation === refreshGenerationRef.current) {
+          setState({ present: false, key: rangeKey(rangeArg) });
+        }
+      });
+  }, [currentKey, rangeEnd, rangeStart, source]);
 
   useEffect(() => {
     refresh();
@@ -40,5 +69,6 @@ export function useDemoEventsPresent(): boolean {
     });
   }, [queryClient, refresh]);
 
-  return present;
+  // Drop stale "present" from a previous range while the next check is in flight.
+  return state.key === currentKey && state.present;
 }

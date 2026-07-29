@@ -78,7 +78,10 @@ class FakeWriter implements ProviderEventWriter {
 
 const provider = (writer: ProviderEventWriter) => ({
   writer,
-  custody: { getValidAccessToken: async () => "access-token" },
+  custody: {
+    getValidAccessToken: async () => "access-token",
+    discardRevoked: async () => {},
+  },
 });
 
 describe("submitCloudCommand provider dispatch", () => {
@@ -242,6 +245,38 @@ describe("submitCloudCommand provider dispatch", () => {
 
     expect(command.outcome.state).toBe("confirmed");
     expect(writer.calls).toHaveLength(0);
+  });
+
+  it("omits null color when persisting a cloud create", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const submit = submitFor(tenantId, principalId, objectId());
+    if (submit.input.kind !== "create") throw new Error("expected create");
+    submit.input = {
+      ...submit.input,
+      content: { ...submit.input.content, color: null },
+    };
+
+    const { command } = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        markers,
+        execution: "active",
+      },
+      submit,
+      now,
+    );
+
+    expect(command.outcome.state).toBe("confirmed");
+    const stored = await events.findById(
+      tenantId,
+      principalId,
+      command.eventId,
+    );
+    expect(stored?.content).not.toHaveProperty("color");
   });
 
   // Seed an existing event to mutate. Overrides let a test make it

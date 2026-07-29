@@ -8,6 +8,7 @@ From repo root:
 
 ```bash
 bun run test:core
+bun run test:sync
 bun run test:web
 bun run test:backend
 bun run test:scripts
@@ -26,7 +27,7 @@ Source of truth:
 Unit workflow (`test-unit.yml`):
 
 - triggers on `push`
-- runs a matrix across `core`, `web`, `backend`, and `scripts`
+- runs a matrix across `core`, `sync`, `web`, `backend`, and `scripts`
 - uses `fail-fast: false`, so one failing lane does not cancel the others
 - runs `bun run test:<project>` in each lane after dependency install
 - runs every lane with `TZ: Etc/UTC` set
@@ -35,6 +36,7 @@ Local parity commands:
 
 ```bash
 bun run test:core
+bun run test:sync
 bun run test:web
 bun run test:backend
 bun run test:scripts
@@ -303,7 +305,7 @@ Assertions to prefer:
 - when asserting presence in JSDOM for desktop-only markup (`hidden xl:flex`), use role queries that allow hidden elements where needed
 - verify both pathways for toggle behavior:
   - user interaction (header toggle button)
-  - keyboard interaction (`[` shortcut via view shortcut hooks)
+  - keyboard interaction (`]` shortcut via global shell shortcuts)
 
 ### Seeding Event Data And Client State
 

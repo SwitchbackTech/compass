@@ -1,6 +1,10 @@
+import dayjs from "@core/util/date/dayjs";
 import {
   getArrowKeyMovement,
+  isTimedEventInsideOneDay,
+  isTimedEventMultiDay,
   nudgeEventDates,
+  timedMultiDayToAllDayDates,
 } from "@web/common/utils/event/event-nudge.util";
 import { GRID_TIME_STEP } from "@web/grid/grid.constants";
 import { describe, expect, it } from "bun:test";
@@ -108,5 +112,63 @@ describe("nudgeEventDates", () => {
     );
 
     expect(result).toBeNull();
+  });
+});
+
+describe("isTimedEventMultiDay", () => {
+  it("is false for same-day timed events and exact next-midnight ends", () => {
+    expect(
+      isTimedEventMultiDay(
+        dayjs("2026-05-20T10:00:00"),
+        dayjs("2026-05-20T11:00:00"),
+      ),
+    ).toBe(false);
+    expect(
+      isTimedEventInsideOneDay(
+        dayjs("2026-05-20T22:00:00"),
+        dayjs("2026-05-21T00:00:00"),
+      ),
+    ).toBe(true);
+    expect(
+      isTimedEventMultiDay(
+        dayjs("2026-05-20T22:00:00"),
+        dayjs("2026-05-21T00:00:00"),
+      ),
+    ).toBe(false);
+  });
+
+  it("is true for overnight and multi-day timed ranges", () => {
+    expect(
+      isTimedEventMultiDay(
+        dayjs("2026-05-20T22:00:00"),
+        dayjs("2026-05-21T02:00:00"),
+      ),
+    ).toBe(true);
+    expect(
+      isTimedEventMultiDay(
+        dayjs("2026-05-20T08:00:00"),
+        dayjs("2026-05-21T18:00:00"),
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("timedMultiDayToAllDayDates", () => {
+  it("maps a Fri–Sat timed range to an exclusive Fri–Sun all-day span", () => {
+    expect(
+      timedMultiDayToAllDayDates(
+        dayjs("2026-05-22T08:00:00"),
+        dayjs("2026-05-23T18:00:00"),
+      ),
+    ).toEqual({ startDate: "2026-05-22", endDate: "2026-05-24" });
+  });
+
+  it("does not include the day after a midnight-exclusive end", () => {
+    expect(
+      timedMultiDayToAllDayDates(
+        dayjs("2026-05-22T08:00:00"),
+        dayjs("2026-05-25T00:00:00"),
+      ),
+    ).toEqual({ startDate: "2026-05-22", endDate: "2026-05-25" });
   });
 });

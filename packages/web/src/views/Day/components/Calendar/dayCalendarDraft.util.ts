@@ -1,11 +1,18 @@
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import {
+  isTimedEventMultiDay,
+  timedMultiDayToAllDayDates,
+} from "@web/common/utils/event/event-nudge.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   getGridDraftId,
   gridEventDraftToGridEvent,
 } from "@web/events/grid-event-draft.adapter";
-import { positionAllDayDraftEvent } from "@web/grid/layout/all-day-draft.position";
+import {
+  isDraftRenderedInAllDayRow,
+  positionAllDayDraftEvent,
+} from "@web/grid/layout/all-day-draft.position";
 import { type GridVisibleDate } from "@web/grid/types/grid.types";
 
 export const addVisibleDraftEvent = ({
@@ -21,7 +28,7 @@ export const addVisibleDraftEvent = ({
 }) => {
   if (
     !draft ||
-    (draft.values.schedule.kind === "allDay") !== isAllDay ||
+    isDraftRenderedInAllDayRow(draft) !== isAllDay ||
     !isDraftVisibleOnDate(draft, visibleDates)
   ) {
     return events;
@@ -87,6 +94,23 @@ export const isDraftVisibleOnDate = (
   const { schedule } = draft.values;
 
   if (schedule.kind === "timed") {
+    if (isTimedEventMultiDay(dayjs(schedule.start), dayjs(schedule.end))) {
+      const dates = timedMultiDayToAllDayDates(
+        dayjs(schedule.start),
+        dayjs(schedule.end),
+      );
+      const visibleDay = visibleDate.startOf("day");
+      const start = dayjs(dates.startDate).startOf("day");
+      const end = dayjs(dates.endDate).startOf("day");
+      const inclusiveEnd = end.isAfter(start) ? end.subtract(1, "day") : start;
+
+      return (
+        visibleDay.isSame(start) ||
+        visibleDay.isSame(inclusiveEnd) ||
+        (visibleDay.isAfter(start) && visibleDay.isBefore(inclusiveEnd))
+      );
+    }
+
     return dayjs(schedule.start).isSame(visibleDate, "day");
   }
 

@@ -38,7 +38,11 @@ export function SidebarEventDetails({
   const draft = useDraftStore(selectGridDraft);
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const _id = draft?.kind === "edit" ? draft.source.id : undefined;
-  const onSave = useSaveEventForm();
+  const {
+    saveEventForm: onSave,
+    fieldErrors,
+    clearFieldErrors,
+  } = useSaveEventForm();
   const onDelete = useDeleteEvent(_id as string);
   const onDuplicate = useDuplicateEvent(_id as string);
   const onClose = useCloseEventForm();
@@ -119,12 +123,16 @@ export function SidebarEventDetails({
         </>
       }
       draft={draft}
+      fieldErrors={fieldErrors}
       isDraft={!existing}
       isExistingEvent={existing}
       isFormOpen={isFormOpen}
       onClose={onClose}
       onDuplicate={onDuplicate}
-      syncDraft={draftActions.setGridDraft}
+      syncDraft={(next) => {
+        clearFieldErrors();
+        draftActions.setGridDraft(next);
+      }}
     />
   );
 }

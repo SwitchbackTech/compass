@@ -387,6 +387,9 @@ export async function migrateProviderSyncState(
           providerCalendarId: providerCalendarId as ProviderCalendarSourceId,
           displayName: calendar.name.trim() || providerCalendarId,
           color: calendar.backgroundColor,
+          // The legacy store predates Google event labels; a real discovery
+          // pass backfills them the next time calendar-list sync runs.
+          eventLabels: [] as ProviderCalendarRecord["eventLabels"],
           active: calendar.isActive,
           primary: calendar.isPrimary,
           accessRole: mapAccessRole(calendar.access),

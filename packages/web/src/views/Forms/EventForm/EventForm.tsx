@@ -26,6 +26,7 @@ import {
   getTimeOptionByValue,
   mapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
+import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
 import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
@@ -50,6 +51,7 @@ import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSect
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
 import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
+import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/EventColorPicker";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
@@ -133,6 +135,8 @@ const handleEventFormDelete = ({
   onDelete();
 };
 
+const DEFAULT_TIMED_START_HOUR = 9; // fallback when the grid can't be measured
+
 const scheduleDateStrings = (draft: GridEventDraft) => {
   const { schedule } = draft.values;
 
@@ -152,6 +156,7 @@ const scheduleDateStrings = (draft: GridEventDraft) => {
 export const EventForm: React.FC<GridEventFormProps> = memo(
   ({
     draft,
+    fieldErrors,
     onClose: _onClose,
     onDelete,
     onSubmit,
@@ -174,8 +179,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         ? seriesBase.recurrence.rules
         : undefined;
 
-    const { title, description } = draft.values;
-    const { base: eventColor } = useEventPalette();
+    const { title, description, color } = draft.values;
+    const { base: eventColor } = useEventPalette(color ?? undefined);
     const category =
       draft.values.schedule.kind === "allDay"
         ? Categories_Event.ALLDAY
@@ -307,7 +312,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
     const patchDraftFields = useCallback(
       (
-        patch: Partial<Pick<GridEventDraft["values"], "title" | "description">>,
+        patch: Partial<
+          Pick<GridEventDraft["values"], "title" | "description" | "color">
+        >,
       ) => {
         setLatestDraft((current) => {
           if (!current) return current;
@@ -466,7 +473,11 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         return;
       }
 
-      const timedStart = dayjs(selectedStartDate).hour(9).minute(0);
+      const startMinute =
+        getVisibleGridStartMinute() ?? DEFAULT_TIMED_START_HOUR * 60;
+      const timedStart = dayjs(selectedStartDate)
+        .startOf("day")
+        .add(startMinute, "minute");
       const timedEnd = timedStart.add(1, "hour");
       const nextStartTime = getTimeOptionByValue(timedStart);
       const nextEndTime = getTimeOptionByValue(timedEnd);
@@ -660,6 +671,10 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                   Calendar: {originalCalendarName}
                 </p>
               )}
+              <EventColorPicker
+                value={color}
+                onChange={(next) => patchDraftFields({ color: next })}
+              />
             </FormCard>
 
             <FormCard>
@@ -681,7 +696,21 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           )}
         </div>
 
-        {!isReadOnly && <SaveSection onSubmit={onSubmitForm} />}
+        {!isReadOnly && (
+          <>
+            {fieldErrors && Object.keys(fieldErrors).length > 0 ? (
+              <ul
+                className="flex list-none flex-col gap-1 border-border border-t px-4 pt-3 text-error text-xs"
+                role="alert"
+              >
+                {Object.entries(fieldErrors).map(([field, message]) => (
+                  <li key={field}>{message}</li>
+                ))}
+              </ul>
+            ) : null}
+            <SaveSection onSubmit={onSubmitForm} />
+          </>
+        )}
       </EventFormShell>
     );
   },

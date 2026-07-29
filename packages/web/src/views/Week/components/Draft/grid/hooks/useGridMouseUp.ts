@@ -12,10 +12,9 @@ import { useDraftContext } from "../../context/useDraftContext";
 export const useGridMouseUp = () => {
   const { actions, state } = useDraftContext();
   const { draft, dragStatus, isDragging, isResizing, resizeStatus } = state;
-  const { discard, stopDragging, stopResizing, submit } = actions;
+  const { stopDragging, stopResizing, submit } = actions;
 
   const draftStatus = useDraftStore(selectDraftStatus);
-  const draftType = draftStatus?.eventType;
   const isDrafting = draftStatus?.isDrafting;
 
   const getNextAction = useCallback(
@@ -50,69 +49,40 @@ export const useGridMouseUp = () => {
     }
   }, [isDragging, isResizing, stopDragging, stopResizing]);
 
-  const handleAllDayRowMouseUp = useCallback(() => {
-    if (!draft) return;
+  const commitOnMouseUp = useCallback(
+    (category: Categories_Event) => {
+      if (!draft) return;
 
-    stopMotion();
+      stopMotion();
 
-    const { shouldSubmit, shouldOpenForm } = getNextAction(
-      Categories_Event.ALLDAY,
-    );
+      const { shouldSubmit, shouldOpenForm } = getNextAction(category);
 
-    if (shouldOpenForm) {
-      draftActions.setFormOpen(true);
-      return;
-    }
+      if (shouldOpenForm) {
+        draftActions.setFormOpen(true);
+        return;
+      }
 
-    if (shouldSubmit) {
-      submit(draft);
-    }
-  }, [draft, getNextAction, stopMotion, submit]);
-
-  const handleMainGridMouseUp = useCallback(() => {
-    if (!draft || !isDrafting) return;
-
-    if (isDrafting && draftType === Categories_Event.ALLDAY) {
-      discard();
-      return;
-    }
-
-    stopMotion();
-
-    const { shouldSubmit, shouldOpenForm } = getNextAction(
-      Categories_Event.TIMED,
-    );
-
-    if (shouldOpenForm) {
-      draftActions.setFormOpen(true);
-      return;
-    }
-
-    if (shouldSubmit) {
-      submit(draft);
-    }
-  }, [
-    draft,
-    isDrafting,
-    draftType,
-    getNextAction,
-    discard,
-    stopMotion,
-    submit,
-  ]);
+      if (shouldSubmit) {
+        submit(draft);
+      }
+    },
+    [draft, getNextAction, stopMotion, submit],
+  );
 
   const onGridMouseUp = useCallback(
     (e: MouseEvent) => {
       if (!draft || !isDrafting) return;
       if (e.button !== 0) return;
 
-      if (draft?.values.schedule.kind === "allDay") {
-        handleAllDayRowMouseUp();
-      } else {
-        handleMainGridMouseUp();
-      }
+      // Commit against the live draft schedule so an all-day → timed conversion
+      // mid-drag lands in the timed path (store eventType may lag one frame).
+      commitOnMouseUp(
+        draft.values.schedule.kind === "allDay"
+          ? Categories_Event.ALLDAY
+          : Categories_Event.TIMED,
+      );
     },
-    [draft, isDrafting, handleAllDayRowMouseUp, handleMainGridMouseUp],
+    [draft, isDrafting, commitOnMouseUp],
   );
 
   useEventListener("mouseup", onGridMouseUp, getElemById("root"));

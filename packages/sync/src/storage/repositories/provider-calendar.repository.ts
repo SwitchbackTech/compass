@@ -43,6 +43,7 @@ export class ProviderCalendarRepository {
         $set: {
           displayName: fields.displayName,
           color: fields.color,
+          eventLabels: fields.eventLabels,
           active: fields.active,
           primary: fields.primary,
           accessRole: fields.accessRole,

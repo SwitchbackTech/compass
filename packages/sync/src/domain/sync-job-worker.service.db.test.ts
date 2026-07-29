@@ -84,7 +84,10 @@ class FakeReader implements ProviderEventReader {
   }
 }
 
-const tokenSource = { getValidAccessToken: async () => "access-token" };
+const tokenSource = {
+  getValidAccessToken: async () => "access-token",
+  discardRevoked: async () => {},
+};
 
 describe("SyncJobWorker", () => {
   const storage = setupSyncStorage(import.meta.url);

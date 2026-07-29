@@ -47,6 +47,25 @@ describe("Event Contracts", () => {
       expect(result.success).toBe(false);
     });
 
+    it("accepts an optional event color on details content", () => {
+      const result = EventContentSchema.safeParse({
+        kind: "details",
+        title: "x",
+        description: "y",
+        color: "indigo",
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual({
+          kind: "details",
+          title: "x",
+          description: "y",
+          color: "indigo",
+        });
+      }
+    });
+
     it("rejects unknown keys on busy content", () => {
       const result = EventContentSchema.safeParse({ kind: "busy", extra: 1 });
 

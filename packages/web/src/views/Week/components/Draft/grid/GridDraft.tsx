@@ -2,16 +2,21 @@ import { type FC, type MouseEvent } from "react";
 import { Origin } from "@core/constants/core.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
-import {
-  Categories_Event,
-  type GridEvent as GridEventEntity,
-} from "@web/common/types/web.event.types";
+import { type GridEvent as GridEventEntity } from "@web/common/types/web.event.types";
 import {
   getEventDragOffset,
   gridEventDefaultPosition,
 } from "@web/common/utils/event/event.util";
 import { focusEventFormTitle } from "@web/common/utils/form/form.util";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
+import {
+  selectDraftActivity,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
+import {
+  draftToAllDayRowGridEvent,
+  isDraftRenderedInAllDayRow,
+} from "@web/grid/layout/all-day-draft.position";
 import { type TimedDeckLayout } from "@web/grid/layout/timed-deck.layout";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
@@ -40,6 +45,9 @@ export const GridDraft: FC<Props> = ({
   const { actions, state } = useDraftContext();
   const { startDragging, startResizing } = actions;
   const { draft, dragOffset, isDragging, isResizing } = state;
+  // A live drag-create looks like a resize: the user is dragging one edge of
+  // the draft. It just isn't a local resize, so `isResizing` stays false.
+  const isCreating = useDraftStore(selectDraftActivity) === "creating";
 
   // GridEvent-shaped projection of the canonical GridEventDraft, for
   // the still-unconverted renderer components (GridEvent/AllDayEventMemo)
@@ -60,7 +68,10 @@ export const GridDraft: FC<Props> = ({
   const handleDrag = (_: GridEventEntity, moveEvent: PartialMouseEvent) => {
     if (!draft) return; // TS Guard
 
-    startDragging(getEventDragOffset(draftAsGridEvent ?? undefined, moveEvent));
+    startDragging(
+      getEventDragOffset(draftAsGridEvent ?? undefined, moveEvent),
+      moveEvent,
+    );
   };
 
   const handleScalerMouseDown = (
@@ -73,21 +84,22 @@ export const GridDraft: FC<Props> = ({
     startResizing(dateToChange);
   };
 
-  const motionMode = isResizing ? "resizing" : isDragging ? "dragging" : "idle";
+  const motionMode =
+    isResizing || isCreating ? "resizing" : isDragging ? "dragging" : "idle";
+
+  const rendersInAllDayRow = draft ? isDraftRenderedInAllDayRow(draft) : false;
+  const isMultiDayTimedDraft =
+    rendersInAllDayRow && draft?.values.schedule.kind === "timed";
 
   const { onMouseDown } = useGridEventMouseDown(
-    draft?.values.schedule.kind === "allDay"
-      ? Categories_Event.ALLDAY
-      : Categories_Event.TIMED,
     handleGridDraftClick,
-    handleDrag,
+    isMultiDayTimedDraft ? () => {} : handleDrag,
   );
 
   if (!draft || !draftAsGridEvent) return null;
 
-  const isAllDay = draft.values.schedule.kind === "allDay";
-  const allDayDraftEvent = isAllDay
-    ? (activeAllDayDraftEvent ?? draftAsGridEvent)
+  const allDayDraftEvent = rendersInAllDayRow
+    ? (activeAllDayDraftEvent ?? draftToAllDayRowGridEvent(draft))
     : draftAsGridEvent;
 
   return (
@@ -105,18 +117,24 @@ export const GridDraft: FC<Props> = ({
         />
       ))}
 
-      {isAllDay ? (
+      {rendersInAllDayRow ? (
         <AllDayEventMemo
           event={allDayDraftEvent}
           isPlaceholder={false}
           key={`draft-${draftAsGridEvent._id}`}
           measurements={measurements}
           onKeyDown={focusEventFormTitle}
-          onMouseDown={(e: MouseEvent, event: GridEventEntity) => {
-            e.preventDefault();
-            onMouseDown(e, event);
-          }}
-          onScalerMouseDown={handleScalerMouseDown}
+          onMouseDown={
+            isMultiDayTimedDraft
+              ? undefined
+              : (e: MouseEvent, event: GridEventEntity) => {
+                  e.preventDefault();
+                  onMouseDown(e, event);
+                }
+          }
+          onScalerMouseDown={
+            isMultiDayTimedDraft ? undefined : handleScalerMouseDown
+          }
           weekDays={weekProps.component.weekDays}
         />
       ) : (

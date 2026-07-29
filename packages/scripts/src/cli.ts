@@ -6,6 +6,7 @@ import { runMigratePendingIntent } from "@scripts/commands/migrate-pending-inten
 import { runMigrateProviderState } from "@scripts/commands/migrate-provider-state";
 import { runPreseedSync } from "@scripts/commands/preseed-sync";
 import { runPurgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events";
+import { runPurgeUser } from "@scripts/commands/purge-user";
 import { MigratorType } from "@scripts/common/cli.types";
 import { Command } from "commander";
 
@@ -44,6 +45,9 @@ export default class CompassCLI {
       case cmd === "purge-corrupt-sync-events":
         await runPurgeCorruptSyncEvents();
         break;
+      case cmd === "purge-user":
+        await runPurgeUser();
+        break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
     }
@@ -56,6 +60,14 @@ export default class CompassCLI {
 
     // Register longer `migrate-*` / preseed names before `migrate` so Commander
     // does not treat them as unknown args to the Umzug migrate command.
+    program
+      .command("purge-user")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "delete every Compass row for one email, across the API db, Sync db, and SuperTokens (--apply to write)",
+      );
+
     program
       .command("preseed-sync")
       .helpOption(false)

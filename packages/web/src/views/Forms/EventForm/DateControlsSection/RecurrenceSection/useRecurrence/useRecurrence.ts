@@ -128,7 +128,9 @@ export const useRecurrence = (
   );
 
   const defaultWkst = useMemo<Weekday | null>(
-    () => (options?.wkst ? WEEKDAY_MAP[options.wkst] : null),
+    // wkst === 0 is RRule.MO (rrule numbers weekdays MO=0..SU=6) - a falsy
+    // check here would treat a parsed WKST=MO as "no wkst" and null it out.
+    () => (options?.wkst != null ? WEEKDAY_MAP[options.wkst] : null),
     [options?.wkst],
   );
 
