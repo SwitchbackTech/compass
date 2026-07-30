@@ -311,7 +311,11 @@ describe("R-SEC-03 isolation matrix", () => {
         command: { outcome: { state: string } };
       };
       // Foreign event looks missing to the attacker — never confirmed mutate.
-      expect(body.command.outcome.state).toBe("pending");
+      // (The lookup is tenant/principal-scoped, so the attacker's update
+      // resolves no target and fails the same way a genuinely missing event
+      // would — versionConflict, not a side channel that would let them
+      // distinguish "exists but not mine" from "doesn't exist".)
+      expect(body.command.outcome.state).toBe("failed");
       const stored = await events.findById(
         tenantId as TenantId,
         owner as PrincipalId,
@@ -393,7 +397,10 @@ describe("R-SEC-03 isolation matrix", () => {
       const body = (await res.json()) as {
         command: { outcome: { state: string } };
       };
-      expect(body.command.outcome.state).toBe("pending");
+      // Same as the cross-principal case above: the wrong-tenant lookup
+      // resolves no target, so the update fails (versionConflict) rather
+      // than leaking existence via a silently pending write.
+      expect(body.command.outcome.state).toBe("failed");
       const stored = await events.findById(
         ownerTenant as TenantId,
         principalId as PrincipalId,

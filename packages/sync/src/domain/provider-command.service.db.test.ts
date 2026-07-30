@@ -10,6 +10,7 @@ import {
 } from "@core/types/sync/identity.contracts";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
+import { truncateRulesBefore } from "@sync/domain/occurrence-projection";
 import {
   type AccessTokenSource,
   executeProviderCreate,
@@ -2291,10 +2292,15 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
       const { calendar, master } = await seedMaster();
       const command = await followingCommand(master, "delete");
       const writer = new FakeRecurringWriter();
-      // Provider already reflects the truncated rules.
-      writer.fetchEventResult = providerSeries("Old", "etag-2", [
-        "RRULE:FREQ=WEEKLY;COUNT=1",
-      ]);
+      // Provider already reflects the truncated rules — the exact UNTIL-based
+      // form truncateRulesBefore itself produces, not just an equivalent
+      // COUNT-based rule (matchesIntendedEdit compares rule strings, not
+      // recurrence semantics, so only this form is recognized as a replay).
+      writer.fetchEventResult = providerSeries(
+        "Old",
+        "etag-2",
+        truncateRulesBefore(weekly3, new Date(SECOND_START)),
+      );
 
       const result = await executeProviderSeriesFollowingDelete(
         deleteDeps(writer),
