@@ -8,11 +8,8 @@ import {
   requireAuth,
   respondInternalError,
 } from "@sync/server/internal-http";
-import { CommandRepository } from "@sync/storage/repositories/command.repository";
-import { JobRepository } from "@sync/storage/repositories/job.repository";
-import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
-import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { syncRepositories } from "@sync/storage/sync-repositories";
 
 export const DIAGNOSTIC_CONNECTION_PATH =
   "/internal/diagnostics/connections/:diagnosticKey";
@@ -48,12 +45,7 @@ export function registerDiagnosticRoutes(
 
       try {
         const result = await resolveDiagnosticConnection(
-          {
-            connections: new ProviderConnectionRepository(deps.mongo.db),
-            calendars: new ProviderCalendarRepository(deps.mongo.db),
-            jobs: new JobRepository(deps.mongo.db),
-            commands: new CommandRepository(deps.mongo.db),
-          },
+          syncRepositories(deps.mongo),
           diagnosticKey,
         );
         if (!result) {

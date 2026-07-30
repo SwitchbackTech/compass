@@ -1,4 +1,5 @@
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
+import { ProviderError } from "@sync/providers/provider-error";
 import { type ProviderEventRead } from "@sync/providers/provider-event.port";
 
 // A half-open working window over an event's time, as RFC3339 timestamps. The
@@ -59,13 +60,4 @@ export type ProviderEventReadErrorReason =
   | "transient"
   | "readFailed";
 
-export class ProviderEventReadError extends Error {
-  constructor(
-    readonly reason: ProviderEventReadErrorReason,
-    message: string,
-    options?: { cause?: unknown },
-  ) {
-    super(message, options);
-    this.name = "ProviderEventReadError";
-  }
-}
+export class ProviderEventReadError extends ProviderError<ProviderEventReadErrorReason> {}

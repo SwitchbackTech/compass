@@ -29,14 +29,15 @@ export const CredentialRecordSchema = z.strictObject({
 export type CredentialRecord = z.infer<typeof CredentialRecordSchema>;
 
 // What a caller provides to store or replace a connection's credential. Sync
-// owns _id, createdAt, and updatedAt. Storing a fresh refresh token clears any
-// cached access token so a stale one can never be served after re-authorization.
-export const CredentialUpsertSchema = z.strictObject({
-  connectionId: ConnectionIdSchema,
-  provider: ProviderKindSchema,
-  refreshToken: z.string().min(1),
-  scopes: z.array(z.string()),
-});
+// owns _id, createdAt, and updatedAt; _id doubles as connectionId, so it is
+// picked back in under that name rather than omitted. Storing a fresh refresh
+// token clears any cached access token so a stale one can never be served
+// after re-authorization.
+export const CredentialUpsertSchema = CredentialRecordSchema.pick({
+  provider: true,
+  refreshToken: true,
+  scopes: true,
+}).extend({ connectionId: ConnectionIdSchema });
 export type CredentialUpsert = z.infer<typeof CredentialUpsertSchema>;
 
 // A log-safe view of a credential. Token-shaped fields are reduced to presence

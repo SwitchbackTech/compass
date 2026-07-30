@@ -3,6 +3,7 @@ import {
   type CalendarCapabilities,
 } from "@core/types/sync/connection.contracts";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
+import { ProviderError } from "@sync/providers/provider-error";
 
 // One calendar as the provider currently reports it, normalized to
 // provider-neutral facts. These map directly onto a persisted provider-calendar
@@ -60,13 +61,4 @@ export type ProviderCalendarErrorReason =
   | "discoveryFailed" // the provider rejected or failed the calendar-list read
   | "cursorExpired"; // the incremental cursor is too old; a full re-list is required
 
-export class ProviderCalendarError extends Error {
-  constructor(
-    readonly reason: ProviderCalendarErrorReason,
-    message: string,
-    options?: { cause?: unknown },
-  ) {
-    super(message, options);
-    this.name = "ProviderCalendarError";
-  }
-}
+export class ProviderCalendarError extends ProviderError<ProviderCalendarErrorReason> {}

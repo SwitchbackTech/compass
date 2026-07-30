@@ -65,11 +65,11 @@ export const SyncResourceRecordSchema = z.strictObject({
 });
 export type SyncResourceRecord = z.infer<typeof SyncResourceRecordSchema>;
 
-export const SyncResourceUpsertSchema = z.strictObject({
-  tenantId: TenantIdSchema,
-  principalId: PrincipalIdSchema,
-  connectionId: ConnectionIdSchema,
-  resourceKind: ResourceKindSchema,
-  calendarId: SyncEventCalendarIdSchema.nullable(),
+export const SyncResourceUpsertSchema = SyncResourceRecordSchema.pick({
+  tenantId: true,
+  principalId: true,
+  connectionId: true,
+  resourceKind: true,
+  calendarId: true,
 });
 export type SyncResourceUpsert = z.infer<typeof SyncResourceUpsertSchema>;
