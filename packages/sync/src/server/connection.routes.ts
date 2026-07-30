@@ -30,7 +30,7 @@ import {
   type BusyAvailability,
   computeBusyAvailability,
 } from "@sync/domain/busy-query.service";
-import { deriveConnectionState } from "@sync/domain/connection-state";
+import { type DerivedConnectionState } from "@sync/domain/connection-state";
 import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
 import { assembleEventInstances } from "@sync/domain/event-instance-assembly";
 import {
@@ -51,14 +51,10 @@ import { type EventOccurrenceRecord } from "@sync/storage/contracts/event-occurr
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
-import { EventRepository } from "@sync/storage/repositories/event.repository";
-import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
-import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
-import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
-import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { syncRepositories } from "@sync/storage/sync-repositories";
 
 export const CONNECTIONS_PATH = "/internal/connections";
 export const CALENDARS_PATH = "/internal/calendars";
@@ -120,13 +116,14 @@ export function registerConnectionRoutes(
       if (!ensureConnected(deps.mongo, res)) return;
 
       try {
-        const connections = new ProviderConnectionRepository(deps.mongo.db);
+        const repos = syncRepositories(deps.mongo);
+        const connections = repos.connections;
         const refreshDeps = {
           connections,
-          calendars: new ProviderCalendarRepository(deps.mongo.db),
-          resources: new SyncResourceRepository(deps.mongo.db),
-          credentials: new CredentialRepository(deps.mongo.db),
-          invalidations: new InvalidationRepository(deps.mongo.db),
+          calendars: repos.calendars,
+          resources: repos.syncResources,
+          credentials: repos.credentials,
+          invalidations: repos.invalidations,
         };
         const records = await connections.listByPrincipal(
           auth.tenantId,
@@ -250,12 +247,10 @@ export function registerConnectionRoutes(
 
       const limit = query.limit ?? DEFAULT_EVENT_PAGE_LIMIT;
       try {
-        const occurrenceRepo = new EventOccurrenceRepository(
-          deps.mongo.db,
-          deps.mongo.client,
-        );
-        const eventRepo = new EventRepository(deps.mongo.db);
-        const resources = new SyncResourceRepository(deps.mongo.db);
+        const repos = syncRepositories(deps.mongo);
+        const occurrenceRepo = repos.eventOccurrences;
+        const eventRepo = repos.events;
+        const resources = repos.syncResources;
         const activeByCalendar = await resources.activeGenerationByCalendar(
           auth.tenantId,
           auth.principalId,
@@ -373,14 +368,12 @@ export function registerConnectionRoutes(
       }
 
       try {
+        const repos = syncRepositories(deps.mongo);
         const availability = await computeBusyAvailability(
           {
-            occurrences: new EventOccurrenceRepository(
-              deps.mongo.db,
-              deps.mongo.client,
-            ),
-            resources: new SyncResourceRepository(deps.mongo.db),
-            connections: new ProviderConnectionRepository(deps.mongo.db),
+            occurrences: repos.eventOccurrences,
+            resources: repos.syncResources,
+            connections: repos.connections,
           },
           {
             tenantId: auth.tenantId,
@@ -607,7 +600,8 @@ async function linkConnection(
     ReturnType<ProviderAuthAdapter["exchangeAuthorizationCode"]>
   >,
 ): Promise<void> {
-  const connections = new ProviderConnectionRepository(deps.mongo.db);
+  const repos = syncRepositories(deps.mongo);
+  const connections = repos.connections;
 
   // Reconnect: the state named a specific connection to re-authorize. Require
   // the account Google just returned to match that connection's account.
@@ -629,20 +623,12 @@ async function linkConnection(
     }
   }
 
-  const derived = deriveConnectionState(
-    {
-      disconnectedAt: null,
-      credential: "valid",
-      permanentConflict: false,
-      durableReadFailure: false,
-      accountIdentified: true,
-      initialImportComplete: false,
-      catchingUp: false,
-      oldestDueWorkAt: null,
-      recentProviderErrors: false,
-    },
-    new Date(),
-  );
+  // Every field deriveConnectionState would take here is a fixed literal (a
+  // freshly linked connection always has a valid credential and an
+  // account just identified, and never starts already import-complete), so
+  // the derivation always lands on the same result — inlined rather than
+  // calling it with a wall of constant evidence.
+  const derived: DerivedConnectionState = { state: "importing", reason: null };
 
   const connection = await connections.upsertByProviderAccount({
     tenantId: state.tenantId,
@@ -657,10 +643,7 @@ async function linkConnection(
   });
 
   try {
-    const custody = new CredentialCustody(
-      new CredentialRepository(deps.mongo.db),
-      authAdapter,
-    );
+    const custody = new CredentialCustody(repos.credentials, authAdapter);
     await custody.store({
       connectionId: connection._id,
       provider: "google",
@@ -685,7 +668,7 @@ async function linkConnection(
   // connection, so a reconnect (which re-links) collapses into one discovery
   // rather than piling up. A failure throws so the connect is reported failed and
   // retried, rather than silently leaving a connection that never syncs.
-  const jobs = new JobRepository(deps.mongo.db);
+  const jobs = repos.jobs;
   await jobs.enqueue({
     tenantId: state.tenantId,
     principalId: state.principalId,

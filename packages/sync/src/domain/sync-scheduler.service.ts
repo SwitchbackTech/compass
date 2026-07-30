@@ -1,15 +1,23 @@
+import { PollLoop } from "@sync/domain/poll-loop";
+
 // The scheduler drains the job queue continuously: it repeatedly asks a worker
 // to drain, sleeping a poll interval only when the queue is empty so a busy
 // queue is worked without idle latency. It owns no sync logic — that lives in
-// the worker/dispatch — only the loop and its graceful lifecycle.
+// the worker/dispatch — only the loop (via PollLoop) and its graceful
+// lifecycle.
 
 // The slice of the worker the loop drives. Kept minimal so the scheduler is
-// testable with a fake and never reaches into sync internals.
+// testable with a fake and never reaches into sync internals. SyncJobWorker
+// has private fields, so a lightweight test fake can only satisfy this narrow
+// structural type, never the concrete class — this interface is load-bearing,
+// not incidental.
 export interface JobDrainer {
   drain(max?: number): Promise<number>;
 }
 
 // The slice of the job store the scheduler needs to release its lease on stop.
+// Same rationale as JobDrainer: JobRepository has a private field, so tests
+// fake this narrow shape instead of the concrete repository.
 export interface OwnedJobReleaser {
   releaseOwned(owner: string): Promise<number>;
 }
@@ -34,75 +42,26 @@ export interface SyncSchedulerOptions {
 const DEFAULT_POLL_MS = 5_000;
 
 export class SyncScheduler {
-  readonly #worker: JobDrainer;
-  readonly #jobs: OwnedJobReleaser;
-  readonly #owner: string;
-  readonly #pollMs: number;
-  readonly #onError: (error: unknown) => void;
-
-  #running = false;
-  #loop: Promise<void> | null = null;
-  #wake: (() => void) | null = null;
-  #timer: ReturnType<typeof setTimeout> | null = null;
+  readonly #loop: PollLoop;
 
   constructor(deps: SyncSchedulerDeps, options: SyncSchedulerOptions) {
-    this.#worker = deps.worker;
-    this.#jobs = deps.jobs;
-    this.#owner = options.owner;
-    this.#pollMs = options.pollMs ?? DEFAULT_POLL_MS;
-    this.#onError = options.onError ?? (() => {});
-  }
-
-  // Begin draining. Idempotent: a second call while running is a no-op, so one
-  // scheduler never spawns two loops.
-  start(): void {
-    if (this.#running) return;
-    this.#running = true;
-    this.#loop = this.#run();
-  }
-
-  // Stop draining and release this worker's held jobs. Waits for an in-flight
-  // drain to finish BEFORE releasing (releaseOwned's precondition: no handler
-  // may still be running, or a just-finished job could be flipped back to
-  // pending and reprocessed). Idempotent and safe to call when never started.
-  async stop(): Promise<void> {
-    this.#running = false;
-    if (this.#timer) {
-      clearTimeout(this.#timer);
-      this.#timer = null;
-    }
-    // Resolve a pending idle wait so the loop notices #running is false at once
-    // instead of sleeping out the poll interval.
-    this.#wake?.();
-    this.#wake = null;
-    if (this.#loop) await this.#loop;
-    this.#loop = null;
-    await this.#jobs.releaseOwned(this.#owner);
-  }
-
-  async #run(): Promise<void> {
-    while (this.#running) {
-      let processed = 0;
-      try {
-        processed = await this.#worker.drain();
-      } catch (error) {
-        // A drain failure must never kill the loop; surface it and keep going.
-        this.#onError(error);
-      }
-      if (!this.#running) break;
+    const pollMs = options.pollMs ?? DEFAULT_POLL_MS;
+    this.#loop = new PollLoop({
+      tick: async () => (await deps.worker.drain()) > 0,
       // Loop immediately while there is work; otherwise wait a poll interval.
-      await this.#idle(processed > 0 ? 0 : this.#pollMs);
-    }
+      nextDelayMs: (didWork) => (didWork ? 0 : pollMs),
+      onError: options.onError,
+      onStop: async () => {
+        await deps.jobs.releaseOwned(options.owner);
+      },
+    });
   }
 
-  #idle(ms: number): Promise<void> {
-    return new Promise((resolve) => {
-      this.#wake = resolve;
-      this.#timer = setTimeout(() => {
-        this.#wake = null;
-        this.#timer = null;
-        resolve();
-      }, ms);
-    });
+  start(): void {
+    this.#loop.start();
+  }
+
+  async stop(): Promise<void> {
+    await this.#loop.stop();
   }
 }

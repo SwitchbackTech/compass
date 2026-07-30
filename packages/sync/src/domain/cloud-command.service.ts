@@ -21,6 +21,10 @@ import {
   executeProviderUpdate,
 } from "@sync/domain/provider-command.service";
 import { reprojectOccurrences } from "@sync/domain/reproject";
+import {
+  exceptionInstant,
+  isCancelledException,
+} from "@sync/domain/series-exception";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import {
   type CommandRecord,
@@ -445,18 +449,6 @@ async function deleteExceptions(
       exception._id,
     );
   }
-}
-
-function isCancelledException(event: EventRecord): boolean {
-  return event.recurrence.kind === "exception" && event.recurrence.cancelled;
-}
-
-// The original instant a series exception overrides — its recurrence identity.
-function exceptionInstant(event: EventRecord): DateTime {
-  if (event.recurrence.kind !== "exception") {
-    throw new Error("exceptionInstant requires an exception event");
-  }
-  return event.recurrence.recurrenceId;
 }
 
 // Cancel one occurrence of a cloud series (scope "this"): upsert a cancelled

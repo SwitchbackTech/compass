@@ -24,17 +24,8 @@ import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.
 import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
-import { CommandRepository } from "@sync/storage/repositories/command.repository";
-import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
-import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
-import { EventRepository } from "@sync/storage/repositories/event.repository";
-import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
-import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
-import { JobRepository } from "@sync/storage/repositories/job.repository";
-import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
-import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
-import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { syncRepositories } from "@sync/storage/sync-repositories";
 import { emitHealthSnapshot } from "@sync/telemetry/health-snapshot.service";
 import {
   createPostHogCaptureClient,
@@ -298,17 +289,7 @@ function buildHealthSnapshotSweep(
 // Local-only: purge soft-disconnected connection caches past the retention
 // window. Safe without provider credentials and in passive execution.
 function buildRetentionSweep(mongo: SyncMongoService): SweepScheduler {
-  const db = mongo.db;
-  const deps = {
-    connections: new ProviderConnectionRepository(db),
-    credentials: new CredentialRepository(db),
-    calendars: new ProviderCalendarRepository(db),
-    events: new EventRepository(db),
-    eventOccurrences: new EventOccurrenceRepository(db, mongo.client),
-    syncResources: new SyncResourceRepository(db),
-    jobs: new JobRepository(db),
-    deletionMarkers: new DeletionMarkerRepository(db),
-  };
+  const deps = syncRepositories(mongo);
   return new SweepScheduler(
     {
       sweep: (before) => purgeExpiredDisconnectedConnections(deps, before),
@@ -352,31 +333,28 @@ function buildSchedulers(
   const authAdapter = buildAuthAdapter(config);
   if (!authAdapter) return null;
 
-  const db = mongo.db;
-  const resources = new SyncResourceRepository(db);
-  const jobs = new JobRepository(db);
+  const repos = syncRepositories(mongo);
+  const resources = repos.syncResources;
+  const jobs = repos.jobs;
   const buildDrain = (): SyncScheduler => {
     const owner = randomUUID();
     const worker = new SyncJobWorker(
       {
-        events: new EventRepository(db),
-        occurrences: new EventOccurrenceRepository(db, mongo.client),
+        events: repos.events,
+        occurrences: repos.eventOccurrences,
         resources,
-        calendars: new ProviderCalendarRepository(db),
-        connections: new ProviderConnectionRepository(db),
+        calendars: repos.calendars,
+        connections: repos.connections,
         discovery: new GoogleCalendarAdapter(),
-        commands: new CommandRepository(db),
+        commands: repos.commands,
         jobs,
         reader: new GoogleEventReaderAdapter(),
-        custody: new CredentialCustody(
-          new CredentialRepository(db),
-          authAdapter,
-        ),
+        custody: new CredentialCustody(repos.credentials, authAdapter),
         notifications: new GoogleNotificationAdapter(),
         // Where the provider posts change notifications back; the callback route
         // verifies them against the stored subscription.
         callbackUrl: `${config.CALLBACK_BASE_URL}${NOTIFICATIONS_PATH}`,
-        invalidations: new InvalidationRepository(db),
+        invalidations: repos.invalidations,
       },
       owner,
       {
@@ -451,11 +429,6 @@ function registerSignalHandlers(
   process.on("SIGTERM", () => handle("SIGTERM"));
   process.on("SIGINT", () => handle("SIGINT"));
   process.on("SIGQUIT", () => handle("SIGQUIT"));
-}
-
-// Retained for the scaffold identity test and quick manual smoke checks.
-export function describeSyncService(): string {
-  return "compass-sync scaffold ready";
 }
 
 if (import.meta.main) {

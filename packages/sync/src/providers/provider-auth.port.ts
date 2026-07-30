@@ -1,5 +1,6 @@
 import { type ProviderAccountFacts } from "@core/types/sync/connection.contracts";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
+import { ProviderError } from "@sync/providers/provider-error";
 
 // The durable result of authorizing one provider account. It is the minimum a
 // caller needs to persist a connection: a stable, provider-assigned identity
@@ -71,13 +72,4 @@ export type ProviderAuthErrorReason =
   | "authorizationRevoked" // the refresh token is no longer valid (revoked/expired)
   | "refreshFailed"; // the token refresh failed for a transient/unknown reason
 
-export class ProviderAuthError extends Error {
-  constructor(
-    readonly reason: ProviderAuthErrorReason,
-    message: string,
-    options?: { cause?: unknown },
-  ) {
-    super(message, options);
-    this.name = "ProviderAuthError";
-  }
-}
+export class ProviderAuthError extends ProviderError<ProviderAuthErrorReason> {}

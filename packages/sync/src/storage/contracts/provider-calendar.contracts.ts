@@ -44,18 +44,10 @@ export type ProviderCalendarRecord = z.infer<
   typeof ProviderCalendarRecordSchema
 >;
 
-export const ProviderCalendarUpsertSchema = z.strictObject({
-  tenantId: TenantIdSchema,
-  principalId: PrincipalIdSchema,
-  connectionId: ConnectionIdSchema,
-  providerCalendarId: ProviderCalendarSourceIdSchema,
-  displayName: z.string().trim().min(1).max(1024),
-  color: z.string().trim().min(1).max(64).nullable(),
-  eventLabels: z.array(EventLabelSchema).readonly().default([]),
-  active: z.boolean(),
-  primary: z.boolean(),
-  accessRole: CalendarAccessRoleSchema,
-  capabilities: CalendarCapabilitiesSchema,
+export const ProviderCalendarUpsertSchema = ProviderCalendarRecordSchema.omit({
+  _id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 export type ProviderCalendarUpsert = z.infer<
   typeof ProviderCalendarUpsertSchema
