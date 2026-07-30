@@ -42,13 +42,26 @@ describe("syncInvalidationToServerMessages", () => {
     ]);
   });
 
-  it("maps a connection invalidation to a calendarsChanged refetch signal", () => {
+  it("maps a connection invalidation to both a calendars and an events refetch signal", () => {
+    // A connection change (auth state, calendar membership) can change which
+    // events the browser should show, e.g. a calendar going read-only or a
+    // connection being revoked — calendarsChanged alone leaves the event
+    // queries stale, since eventsChanged is the only signal the client ever
+    // refetches events on.
     expect(
       syncInvalidationToServerMessages({
         kind: "connection",
         connectionId: objectId() as never,
       }),
-    ).toEqual([{ type: "calendarsChanged", calendarIds: [] }]);
+    ).toEqual([
+      { type: "calendarsChanged", calendarIds: [] },
+      {
+        type: "eventsChanged",
+        calendarId: "000000000000000000000000",
+        eventIds: [],
+        reason: "reconciled",
+      },
+    ]);
   });
 
   it("maps incomplete import progress to syncing", () => {
