@@ -229,4 +229,30 @@ describe("EventController", () => {
       retryable: true,
     });
   });
+
+  // The regression lock for invariant 1 ("every write resolves
+  // definitively"): a command sync leaves non-terminal must never read as
+  // success here. Before this fix, a still-pending outcome returned 200 —
+  // the client applied the change optimistically, then a later refetch
+  // silently reverted it with no error ever shown ("my delete came back").
+  it("fails a still-pending outcome as a retryable PROVIDER_FAILURE, never as success", async () => {
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      submitCommand: mock(() =>
+        Promise.resolve({
+          ok: true as const,
+          value: { command: { outcome: { state: "pending" as const } } },
+        }),
+      ),
+    } as never);
+    const { res, json } = await createViaSync();
+
+    const status = (res.status as ReturnType<typeof mock>).mock.calls[0]?.[0];
+    expect(status).not.toBe(200);
+    expect(status).toBe(502);
+    expect(json).toHaveBeenCalledWith({
+      code: "PROVIDER_FAILURE",
+      message: "Sync command did not resolve (pending)",
+      retryable: true,
+    });
+  });
 });

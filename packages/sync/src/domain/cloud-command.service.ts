@@ -1,4 +1,4 @@
-import { type DateTime, type EventId } from "@core/types/domain-primitives";
+import { type DateTime } from "@core/types/domain-primitives";
 import { type EditableRecurrence } from "@core/types/event.contracts";
 import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
@@ -17,13 +17,21 @@ import {
 import {
   executeProviderCreate,
   executeProviderDelete,
+  executeProviderOccurrenceDelete,
+  executeProviderOccurrenceUpdate,
+  executeProviderSeriesFollowingDelete,
+  executeProviderSeriesFollowingUpdate,
   executeProviderSeriesUpdate,
   executeProviderUpdate,
 } from "@sync/domain/provider-command.service";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import {
+  deleteExceptions,
+  deleteFollowingExceptions,
   exceptionInstant,
   isCancelledException,
+  remainderMasterId,
+  reprojectMaster,
 } from "@sync/domain/series-exception";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import {
@@ -36,7 +44,6 @@ import { type DeletionMarkerRepository } from "@sync/storage/repositories/deleti
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
-import { createHash } from "node:crypto";
 
 // A provider-targeted write arrived while provider work is unavailable
 // (execution is passive, or no provider is configured). Nothing re-dispatches a
@@ -181,15 +188,25 @@ async function applyCloudMutation(
     // Absence is the desired end state, so a delete of an already-gone (or
     // never-created) event is confirmed rather than left hanging.
     if (!existing) return confirmCloud(deps, command);
-    // A series master: for a provider series, only scope "all" is handled here
-    // (delete the whole series at the provider); this/thisAndFollowing need
-    // provider exception ops and stay pending. For a cloud series, scope "all"
-    // removes the whole series, "this" cancels one occurrence, thisAndFollowing
-    // splits it.
+    // A series master. For a cloud series, scope "all" removes the whole
+    // series, "this" cancels one occurrence, thisAndFollowing splits it. For a
+    // provider series, scope "all" deletes the whole series at the provider;
+    // "this"/"thisAndFollowing" resolve and cancel/truncate the one addressed
+    // provider instance.
     if (existing.recurrence.kind === "seriesMaster") {
       if (existing.connectionId !== null) {
-        if (command.input.scope !== "all") return command;
-        return dispatchProviderDelete(deps, command, existing, now);
+        if (command.input.scope === "all") {
+          return dispatchProviderDelete(deps, command, existing, now);
+        }
+        if (command.input.scope === "this") {
+          return dispatchProviderOccurrenceDelete(deps, command, existing, now);
+        }
+        return dispatchProviderSeriesFollowingDelete(
+          deps,
+          command,
+          existing,
+          now,
+        );
       }
       if (command.input.scope === "all") {
         return deleteCloudSeries(deps, command, existing);
@@ -199,8 +216,14 @@ async function applyCloudMutation(
       }
       return deleteCloudSeriesFollowing(deps, command, existing, now);
     }
-    // A bare exception target (this/thisAndFollowing) also stays pending.
-    if (existing.recurrence.kind !== "single") return command;
+    // A bare exception target addressed directly by its own id: unreachable
+    // from the browser (resolveCommandTarget always resolves an occurrence id
+    // to its series' real id, never a bare exception's own _id — see
+    // event-command.translation.ts), but a command HERE naming one is not a
+    // coherent state to strand pending forever either.
+    if (existing.recurrence.kind !== "single") {
+      return failCloud(deps, command, "permanentProviderError");
+    }
     // A provider-linked event goes to the provider delete path; a cloud event is
     // removed locally below. Content is removed only after the provider confirms.
     if (existing.connectionId !== null) {
@@ -226,18 +249,30 @@ async function applyCloudMutation(
   // Only update remains (applyCloudMutation is called for update/delete).
   if (command.input.kind !== "update") return command;
 
-  // update: the target must exist; a missing event can't be updated, so leave
-  // the command pending rather than confirming a no-op.
-  if (!existing) return command;
+  // update: the target must exist. A concurrent delete removed it since the
+  // browser last saw it — an honest conflict, not a silently stranded write.
+  if (!existing) {
+    return failCloud(deps, command, "versionConflict");
+  }
   // A series master. For a cloud series, scope "all" edits the whole series,
   // "this" overrides one occurrence, thisAndFollowing splits at the target. For
-  // a provider series, only scope "all" is handled here (edit the whole series
-  // at the provider); this/thisAndFollowing need provider exception ops and stay
-  // pending.
+  // a provider series, scope "all" edits the whole series at the provider;
+  // "this"/"thisAndFollowing" resolve and patch/split the one addressed
+  // provider instance.
   if (existing.recurrence.kind === "seriesMaster") {
     if (existing.connectionId !== null) {
-      if (command.input.scope !== "all") return command;
-      return dispatchProviderSeriesUpdate(deps, command, existing, now);
+      if (command.input.scope === "all") {
+        return dispatchProviderSeriesUpdate(deps, command, existing, now);
+      }
+      if (command.input.scope === "this") {
+        return dispatchProviderOccurrenceUpdate(deps, command, existing, now);
+      }
+      return dispatchProviderSeriesFollowingUpdate(
+        deps,
+        command,
+        existing,
+        now,
+      );
     }
     if (command.input.scope === "all") {
       return updateCloudSeries(deps, command, existing, now);
@@ -247,15 +282,16 @@ async function applyCloudMutation(
     }
     return updateCloudSeriesFollowing(deps, command, existing, now);
   }
-  // A bare exception target stays pending, and converting a single event into a
-  // series is itself a series edit — defer both. Gating on the command's intent
-  // (not the event's post-write recurrence) keeps a retry converging: an applied
-  // single-event update never changes recurrence.kind here.
-  if (existing.recurrence.kind !== "single") return command;
-  if (command.input.recurrence.kind === "series") return command;
+  // A bare exception target addressed directly by its own id: see the
+  // matching delete-side comment above — unreachable from the browser, but
+  // not left pending forever if it somehow arrives.
+  if (existing.recurrence.kind !== "single") {
+    return failCloud(deps, command, "permanentProviderError");
+  }
 
   // A provider-linked event goes to the provider when provider work is enabled;
-  // otherwise it stays pending for a later execution.
+  // otherwise the write is refused rather than stranded pending (same rationale
+  // as the create path above: nothing re-dispatches a pending command).
   if (existing.connectionId !== null) {
     if (deps.execution === "active" && deps.provider) {
       const calendar = await deps.calendars.findById(
@@ -279,7 +315,7 @@ async function applyCloudMutation(
         );
       }
     }
-    return command;
+    throw new ProviderWriteUnavailableError();
   }
 
   // Cloud single event: conditional replace (no upsert), so a concurrent delete
@@ -302,13 +338,15 @@ async function dispatchProviderDelete(
   event: EventRecord,
   now: () => Date,
 ): Promise<CommandRecord> {
-  if (deps.execution !== "active" || !deps.provider) return command;
+  if (deps.execution !== "active" || !deps.provider) {
+    throw new ProviderWriteUnavailableError();
+  }
   const calendar = await deps.calendars.findById(
     command.tenantId,
     command.principalId,
     event.calendarId as ProviderCalendarId,
   );
-  if (!calendar) return command;
+  if (!calendar) throw new ProviderWriteUnavailableError();
   return executeProviderDelete(
     {
       commands: deps.commands,
@@ -335,14 +373,144 @@ async function dispatchProviderSeriesUpdate(
   master: EventRecord,
   now: () => Date,
 ): Promise<CommandRecord> {
-  if (deps.execution !== "active" || !deps.provider) return command;
+  if (deps.execution !== "active" || !deps.provider) {
+    throw new ProviderWriteUnavailableError();
+  }
   const calendar = await deps.calendars.findById(
     command.tenantId,
     command.principalId,
     master.calendarId as ProviderCalendarId,
   );
-  if (!calendar) return command;
+  if (!calendar) throw new ProviderWriteUnavailableError();
   return executeProviderSeriesUpdate(
+    {
+      commands: deps.commands,
+      events: deps.events,
+      occurrences: deps.occurrences,
+      writer: deps.provider.writer,
+      custody: deps.provider.custody,
+    },
+    command,
+    master,
+    calendar,
+    now,
+  );
+}
+
+// The four provider-linked recurring dispatchers below share one shape with
+// the two above: resolve the owning calendar, then hand off to the matching
+// executor. Provider work unavailable or the calendar unresolved refuses the
+// write outright (ProviderWriteUnavailableError) rather than stranding it
+// pending — these are new code paths, so unlike the two above (which predate
+// that fix) they never reintroduce the silent-pending failure mode.
+
+async function dispatchProviderOccurrenceDelete(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (deps.execution !== "active" || !deps.provider) {
+    throw new ProviderWriteUnavailableError();
+  }
+  const calendar = await deps.calendars.findById(
+    command.tenantId,
+    command.principalId,
+    master.calendarId as ProviderCalendarId,
+  );
+  if (!calendar) throw new ProviderWriteUnavailableError();
+  return executeProviderOccurrenceDelete(
+    {
+      commands: deps.commands,
+      events: deps.events,
+      occurrences: deps.occurrences,
+      writer: deps.provider.writer,
+      custody: deps.provider.custody,
+    },
+    command,
+    master,
+    calendar,
+    now,
+  );
+}
+
+async function dispatchProviderOccurrenceUpdate(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (deps.execution !== "active" || !deps.provider) {
+    throw new ProviderWriteUnavailableError();
+  }
+  const calendar = await deps.calendars.findById(
+    command.tenantId,
+    command.principalId,
+    master.calendarId as ProviderCalendarId,
+  );
+  if (!calendar) throw new ProviderWriteUnavailableError();
+  return executeProviderOccurrenceUpdate(
+    {
+      commands: deps.commands,
+      events: deps.events,
+      occurrences: deps.occurrences,
+      writer: deps.provider.writer,
+      custody: deps.provider.custody,
+    },
+    command,
+    master,
+    calendar,
+    now,
+  );
+}
+
+async function dispatchProviderSeriesFollowingDelete(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (deps.execution !== "active" || !deps.provider) {
+    throw new ProviderWriteUnavailableError();
+  }
+  const calendar = await deps.calendars.findById(
+    command.tenantId,
+    command.principalId,
+    master.calendarId as ProviderCalendarId,
+  );
+  if (!calendar) throw new ProviderWriteUnavailableError();
+  return executeProviderSeriesFollowingDelete(
+    {
+      commands: deps.commands,
+      events: deps.events,
+      occurrences: deps.occurrences,
+      writer: deps.provider.writer,
+      custody: deps.provider.custody,
+      markers: deps.markers,
+    },
+    command,
+    master,
+    calendar,
+    now,
+  );
+}
+
+async function dispatchProviderSeriesFollowingUpdate(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (deps.execution !== "active" || !deps.provider) {
+    throw new ProviderWriteUnavailableError();
+  }
+  const calendar = await deps.calendars.findById(
+    command.tenantId,
+    command.principalId,
+    master.calendarId as ProviderCalendarId,
+  );
+  if (!calendar) throw new ProviderWriteUnavailableError();
+  return executeProviderSeriesFollowingUpdate(
     {
       commands: deps.commands,
       events: deps.events,
@@ -431,25 +599,8 @@ async function deleteCloudSeries(
   return confirmCloud(deps, command);
 }
 
-// Remove the given exception events and clear each one's occurrences.
-async function deleteExceptions(
-  deps: CloudCommandDeps,
-  command: CommandRecord,
-  exceptions: readonly EventRecord[],
-): Promise<void> {
-  for (const exception of exceptions) {
-    await deps.occurrences.replaceForEvent(
-      exception._id,
-      exception.generation,
-      [],
-    );
-    await deps.events.deleteById(
-      command.tenantId,
-      command.principalId,
-      exception._id,
-    );
-  }
-}
+// deleteExceptions / isCancelledException / exceptionInstant now live in
+// series-exception.ts, shared with the provider-linked executors below.
 
 // Cancel one occurrence of a cloud series (scope "this"): upsert a cancelled
 // exception tombstone at the target instant, reproject the master to exclude
@@ -510,27 +661,8 @@ async function updateCloudOccurrence(
   return confirmCloud(deps, command);
 }
 
-// Reproject a series master excluding every instant one of its exceptions owns,
-// so the master never projects an occurrence at an excepted instant. Fetches the
-// exceptions fresh, so it picks up the one a scope-"this" edit just wrote.
-async function reprojectMaster(
-  deps: CloudCommandDeps,
-  command: CommandRecord,
-  master: EventRecord,
-  now: () => Date,
-): Promise<void> {
-  const exceptions = await deps.events.findSeriesExceptions(
-    command.tenantId,
-    command.principalId,
-    master._id,
-  );
-  await reprojectOccurrences(
-    deps.occurrences,
-    master,
-    now,
-    exceptions.map(exceptionInstant),
-  );
-}
+// reprojectMaster now lives in series-exception.ts, shared with the
+// provider-linked executors below.
 
 // Delete one occurrence of a cloud series and every occurrence after it (scope
 // "thisAndFollowing"): truncate the master's rule to end before the split point,
@@ -568,24 +700,8 @@ async function deleteCloudSeriesFollowing(
   return confirmCloud(deps, command);
 }
 
-// Delete every exception at or after the split instant and clear its occurrences.
-async function deleteFollowingExceptions(
-  deps: CloudCommandDeps,
-  command: CommandRecord,
-  seriesId: EventRecord["_id"],
-  splitAt: Date,
-): Promise<void> {
-  const exceptions = await deps.events.findSeriesExceptions(
-    command.tenantId,
-    command.principalId,
-    seriesId,
-  );
-  const following = exceptions.filter(
-    (exception) =>
-      new Date(exceptionInstant(exception)).getTime() >= splitAt.getTime(),
-  );
-  await deleteExceptions(deps, command, following);
-}
+// deleteFollowingExceptions now lives in series-exception.ts, shared
+// with the provider-linked executors below.
 
 // Edit one occurrence of a cloud series and every occurrence after it (scope
 // "thisAndFollowing") by SPLITTING the series: truncate the original master to
@@ -670,15 +786,8 @@ function buildRemainderMaster(
   };
 }
 
-// A deterministic event id for the remainder series, so the same split always
-// resolves to the same master and a retry never duplicates it. A 24-hex prefix
-// of a SHA-256 over (seriesId, split) is a valid event id and collision-safe.
-function remainderMasterId(seriesId: EventId, splitAt: DateTime): EventId {
-  return createHash("sha256")
-    .update(`${seriesId}:${splitAt}`)
-    .digest("hex")
-    .slice(0, 24) as EventId;
-}
+// remainderMasterId now lives in series-exception.ts, shared with the
+// provider-linked split executors below.
 
 // Confirm a cloud command with no provider identity — local persistence is the
 // only durability it needs. updateOutcome only misses if the command vanished
@@ -701,7 +810,10 @@ async function confirmCloud(
 async function failCloud(
   deps: CloudCommandDeps,
   command: CommandRecord,
-  failureReason: "unsupportedCapability",
+  failureReason:
+    | "unsupportedCapability"
+    | "versionConflict"
+    | "permanentProviderError",
 ): Promise<CommandRecord> {
   const failed = await deps.commands.updateOutcome(
     command.tenantId,

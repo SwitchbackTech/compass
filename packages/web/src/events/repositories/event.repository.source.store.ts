@@ -52,6 +52,15 @@ export function useEventRepositorySource(): EventRepositorySource {
 }
 
 /**
+ * Non-React subscription to source changes, for module-level side effects
+ * (undo.store.ts clears history on a local<->remote flip or logout — both
+ * manifest as a source change here). Prefer useEventRepositorySource() in
+ * components; this exists for singleton modules that can't use hooks.
+ */
+export const subscribeToEventRepositorySource = sourceStore.subscribe;
+export const getEventRepositorySourceSnapshot = sourceStore.get;
+
+/**
  * Test-only: clears the lazily-computed source cache so the next
  * `useEventRepositorySource()` call recomputes from scratch instead of
  * inheriting whatever a previous test (possibly in a different file, since

@@ -15,8 +15,8 @@ import {
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { expandLocalEventRecords } from "@web/events/recurrence/expandLocalEventRecords";
 import {
-  composeOccurrenceId,
-  parseOccurrenceId,
+  composeLocalOccurrenceId,
+  parseLocalOccurrenceId,
 } from "@web/events/recurrence/projectRecurringEdit";
 import { type LocalEventRecord } from "@web/events/types/local-event.record";
 import { type EventRepository } from "./event.repository.types";
@@ -120,7 +120,7 @@ export class LocalEventRepository implements EventRepository {
   private async findSeriesRecord(
     id: EventId,
   ): Promise<{ record: SeriesRecord; occurrenceStart: string } | null> {
-    const parsed = parseOccurrenceId(id);
+    const parsed = parseLocalOccurrenceId(id);
     if (!parsed) return null;
     const record = await this.findRecordById(parsed.seriesId);
     if (!record || record.event.recurrence.kind !== "series") return null;
@@ -229,7 +229,7 @@ export class LocalEventRepository implements EventRepository {
     };
     await this.store.putEvent({ ...record, event: truncated });
 
-    const id = composeOccurrenceId(record.id, occurrenceStart);
+    const id = composeLocalOccurrenceId(record.id, occurrenceStart);
     const event: Event = {
       id,
       calendarId: input.calendarId ?? record.event.calendarId,

@@ -10,6 +10,10 @@ import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { getCompassEventDateFormat } from "@core/util/event/event.util";
+import {
+  composeOccurrenceIdFromSchedule,
+  decodeOccurrenceId,
+} from "@core/util/occurrence-id";
 
 export type RecurringEditProjection = {
   removeIds: ReadonlySet<string>;
@@ -200,16 +204,24 @@ export function projectRecurringDelete({
 }
 
 // Deterministic occurrence ids (`${seriesId}::${start}`) keep repeated
-// projections idempotent and give local mode stable ids across refetches.
-// EventId is opaque client-side, so the composed shape is legal; the server
-// swaps them for real ids at the settle refetch in remote mode.
-export function composeOccurrenceId(seriesId: string, start: string): EventId {
+// projections idempotent and give LOCAL (IndexedDB) mode stable ids across
+// refetches. Local-mode only: these ids never reach the sync API, so they
+// split on the LAST "::" (a this-and-following split creates a series whose
+// own id is already composed, so its occurrences nest another segment) and
+// never need to match the server's own occurrence-id codec. Remote-facing
+// optimistic ids use composeOccurrenceIdFromSchedule (from @core) instead,
+// which is byte-identical to what sync's projection will mint — see that
+// function's docblock for why the two must never drift.
+export function composeLocalOccurrenceId(
+  seriesId: string,
+  start: string,
+): EventId {
   return `${seriesId}::${start}` as EventId;
 }
 
 // Split at the LAST "::": a this-and-following split creates a series whose
 // own id is already composed, so its occurrences nest another segment.
-export function parseOccurrenceId(
+export function parseLocalOccurrenceId(
   id: string,
 ): { seriesId: EventId; start: string } | null {
   const separator = id.lastIndexOf("::");
@@ -274,6 +286,17 @@ export function projectSeriesMaterialization({
       .reduce((latest, end) => (end.isAfter(latest) ? end : latest));
     const excluded = new Set(exdates);
 
+    // The prefix a new instance's id composes against. `base.id` is itself
+    // already a composite occurrence id for a "thisAndFollowing" split (the
+    // clicked instance's id, reused as the optimistic remainder series' own
+    // id) — decoding it first and composing against its plain eventId keeps
+    // every optimistic instance id ONE level of "::" deep, never nested.
+    // A nested id fails BOTH the client's and the server's decoder, which
+    // once meant "delete this one instance" silently widened to the whole
+    // series when it happened to hit resolveCommandTarget's plain-id
+    // fallback before that fallback was made to fail loud instead.
+    const idPrefix = decodeOccurrenceId(base.id)?.eventId ?? base.id;
+
     const instances = rrule
       .all(
         (date, index) =>
@@ -285,7 +308,10 @@ export function projectSeriesMaterialization({
         return [
           {
             ...base,
-            id: composeOccurrenceId(base.id, start),
+            id: composeOccurrenceIdFromSchedule(idPrefix, {
+              kind: base.schedule.kind === "allDay" ? "allDay" : "timed",
+              start,
+            }) as EventId,
             schedule: {
               ...base.schedule,
               start,

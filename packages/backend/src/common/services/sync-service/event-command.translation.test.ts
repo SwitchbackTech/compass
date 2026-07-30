@@ -89,6 +89,25 @@ describe("resolveCommandTarget", () => {
       recurrenceId: null,
     });
   });
+
+  it("throws on a composite id whose recurrenceId is malformed, rather than widening to scope all", () => {
+    // Must never silently fall through to "plain id" and delete/edit the
+    // WHOLE series when the caller only meant one instance.
+    const id = `${objectId()}::not-a-real-datetime`;
+    expect(() => resolveCommandTarget(id, "this")).toThrow(
+      /INVALID_OCCURRENCE_ID|could not be decoded/,
+    );
+  });
+
+  it("throws on a doubly-composed id (a thisAndFollowing split's own occurrence)", () => {
+    const id = `${objectId()}::2026-07-14T09:00:00.000Z::2026-07-21T09:00:00.000Z`;
+    expect(() => resolveCommandTarget(id, "this")).toThrow();
+  });
+
+  it("throws on a composite id whose eventId segment is not an ObjectId", () => {
+    const id = "not-an-object-id::2026-07-14T09:00:00.000Z";
+    expect(() => resolveCommandTarget(id, "this")).toThrow();
+  });
 });
 
 describe("toCreateSubmitRequest", () => {

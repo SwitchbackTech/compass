@@ -3,7 +3,10 @@ import { type ChangeFeedCursor } from "@core/types/sync/change-feed.contracts";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { syncInvalidationToServerMessages } from "@backend/servers/sse/sync-invalidation.to-server-message";
+import {
+  syncInvalidationToServerMessages,
+  UNKNOWN_CALENDAR_ID,
+} from "@backend/servers/sse/sync-invalidation.to-server-message";
 
 const logger = Logger("app:sse.sync-change-feed");
 
@@ -62,8 +65,17 @@ class SyncChangeFeedBridge {
 
       const page = result.value;
       if (page.kind === "resyncRequired") {
-        // Broad invalidate; client refetches canonical state. Resume from now.
+        // Broad invalidate; client refetches canonical state. Resume from
+        // now. Events too, not just calendars — a gap wide enough to need a
+        // resync (the cursor fell outside the retention window) means events
+        // may have changed as well, and the client's eventsChanged handler is
+        // the only thing that ever refetches the event queries themselves.
         sseServer.publishCalendarsChanged(userId, []);
+        sseServer.publishEventsChanged(userId, {
+          calendarId: UNKNOWN_CALENDAR_ID,
+          eventIds: [],
+          reason: "reconciled",
+        });
         cursor = null;
         schedule(POLL_INTERVAL_MS);
         return;

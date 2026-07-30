@@ -1,5 +1,5 @@
 import { type EventSchedule } from "@core/types/event.contracts";
-import { type gSchema$Event } from "@core/types/gcal";
+import { type gSchema$Event, type gSchema$Events } from "@core/types/gcal";
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
 import {
   deriveGoogleEventId,
@@ -33,6 +33,22 @@ const scriptedEvent = (id: string, etag = '"v1"'): gSchema$Event => ({
   end: { dateTime: "2025-01-15T10:00:00-05:00", timeZone: "America/New_York" },
 });
 
+const scriptedInstance = (
+  id: string,
+  originalStart: string,
+  etag = '"v1"',
+): gSchema$Event => ({
+  kind: "calendar#event",
+  id,
+  etag,
+  status: "confirmed",
+  summary: "T",
+  recurringEventId: "series-1",
+  originalStartTime: { dateTime: originalStart },
+  start: { dateTime: originalStart, timeZone: "America/New_York" },
+  end: { dateTime: "2025-01-15T10:00:00-05:00", timeZone: "America/New_York" },
+});
+
 type Behavior = gSchema$Event | Error | undefined;
 
 // A scriptable fake for the four Google event calls. Each method records its
@@ -43,6 +59,7 @@ class FakeEventsApi implements GoogleEventsApi {
     patch: [] as Parameters<GoogleEventsApi["patch"]>[0][],
     delete: [] as Parameters<GoogleEventsApi["delete"]>[0][],
     get: [] as Parameters<GoogleEventsApi["get"]>[0][],
+    instances: [] as Parameters<GoogleEventsApi["instances"]>[0][],
   };
 
   constructor(
@@ -51,6 +68,7 @@ class FakeEventsApi implements GoogleEventsApi {
       patch?: Behavior;
       delete?: Behavior;
       get?: Behavior;
+      instances?: gSchema$Events | Error;
     } = {},
   ) {}
 
@@ -82,6 +100,21 @@ class FakeEventsApi implements GoogleEventsApi {
   ): Promise<gSchema$Event> {
     this.calls.get.push(params);
     return this.#settle("get", () => scriptedEvent(params.eventId, '"vGet"'));
+  }
+
+  async instances(
+    params: Parameters<GoogleEventsApi["instances"]>[0],
+  ): Promise<gSchema$Events> {
+    this.calls.instances.push(params);
+    if (this.behavior.instances instanceof Error) throw this.behavior.instances;
+    return (
+      this.behavior.instances ?? {
+        kind: "calendar#events",
+        items: [
+          scriptedInstance(`${params.eventId}_instance`, params.originalStart),
+        ],
+      }
+    );
   }
 
   #settle(
@@ -430,6 +463,84 @@ describe("GoogleEventWriter", () => {
     expect(read?.kind).toBe("event");
     expect(read?.providerEventId).toBe("abc12deadbeef00000000000");
     expect(missing).toBeNull();
+  });
+
+  it("resolves one occurrence by its original start via the instances filter", async () => {
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    const read = await writer.fetchInstanceAt({
+      accessToken: "at",
+      calendarId: "cal",
+      seriesProviderEventId: "series-1",
+      originalStartAt: "2025-01-15T09:00:00-05:00",
+    });
+
+    expect(api.calls.instances[0]).toMatchObject({
+      calendarId: "cal",
+      eventId: "series-1",
+      originalStart: "2025-01-15T09:00:00-05:00",
+    });
+    expect(read?.kind).toBe("event");
+    expect(read?.providerEventId).toBe("series-1_instance");
+  });
+
+  it("returns null when no instance exists at that instant", async () => {
+    const api = new FakeEventsApi({
+      instances: { kind: "calendar#events", items: [] },
+    });
+    const { writer } = writerWith(api);
+
+    const read = await writer.fetchInstanceAt({
+      accessToken: "at",
+      calendarId: "cal",
+      seriesProviderEventId: "series-1",
+      originalStartAt: "2025-01-15T09:00:00-05:00",
+    });
+
+    expect(read).toBeNull();
+  });
+
+  it("returns null (not an error) when the series itself is gone", async () => {
+    const api = new FakeEventsApi({ instances: gError(404) });
+    const { writer } = writerWith(api);
+
+    const read = await writer.fetchInstanceAt({
+      accessToken: "at",
+      calendarId: "cal",
+      seriesProviderEventId: "gone",
+      originalStartAt: "2025-01-15T09:00:00-05:00",
+    });
+
+    expect(read).toBeNull();
+  });
+
+  it("resolves a cancelled instance as a cancellation read, not an event", async () => {
+    const api = new FakeEventsApi({
+      instances: {
+        kind: "calendar#events",
+        items: [
+          {
+            kind: "calendar#event",
+            id: "series-1_instance",
+            etag: '"v1"',
+            status: "cancelled",
+            recurringEventId: "series-1",
+            originalStartTime: { dateTime: "2025-01-15T09:00:00-05:00" },
+          },
+        ],
+      },
+    });
+    const { writer } = writerWith(api);
+
+    const read = await writer.fetchInstanceAt({
+      accessToken: "at",
+      calendarId: "cal",
+      seriesProviderEventId: "series-1",
+      originalStartAt: "2025-01-15T09:00:00-05:00",
+    });
+
+    expect(read?.kind).toBe("cancellation");
   });
 
   it("never leaks the bearer token onto a thrown error's cause", async () => {
