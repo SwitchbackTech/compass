@@ -1,9 +1,5 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
-import {
-  canDoIncrementalSync,
-  getSync,
-} from "@backend/sync/services/records/sync-records.repository";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import {
   type AuthDecision,
@@ -21,32 +17,13 @@ export async function determineGoogleAuthMode(
     return {
       authMode: "SIGNUP",
       compassUserId: null,
-      hasStoredRefreshToken: false,
-      hasHealthySync: false,
-      createdNewRecipeUser,
-    };
-  }
-
-  const compassUserId = user._id.toString();
-  const hasStoredRefreshToken = !!user.google?.gRefreshToken;
-  const sync = await getSync({ userId: compassUserId });
-  const hasHealthySync = sync ? !!canDoIncrementalSync(sync) : false;
-
-  if (!hasStoredRefreshToken || !hasHealthySync) {
-    return {
-      authMode: "RECONNECT_REPAIR",
-      compassUserId,
-      hasStoredRefreshToken,
-      hasHealthySync,
       createdNewRecipeUser,
     };
   }
 
   return {
-    authMode: "SIGNIN_INCREMENTAL",
-    compassUserId,
-    hasStoredRefreshToken,
-    hasHealthySync,
+    authMode: "SIGNIN",
+    compassUserId: user._id.toString(),
     createdNewRecipeUser,
   };
 }
