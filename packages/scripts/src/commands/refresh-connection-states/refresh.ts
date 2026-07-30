@@ -8,6 +8,7 @@ import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { ProviderConnectionRecordSchema } from "@sync/storage/contracts/provider-connection.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
+import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
@@ -46,6 +47,7 @@ export async function refreshConnectionStates(
     calendars: new ProviderCalendarRepository(db),
     resources: new SyncResourceRepository(db),
     credentials: new CredentialRepository(db),
+    jobs: new JobRepository(db),
     invalidations: new InvalidationRepository(db),
   };
 
@@ -126,7 +128,8 @@ async function gatherEvidenceOnly(
   deps: Parameters<typeof refreshConnectionState>[0],
   record: Parameters<typeof refreshConnectionState>[1],
 ): Promise<{ state: string; reason: string | null }> {
-  const evidence = await gatherConnectionStateEvidence(deps, record);
-  const derived = deriveConnectionState(evidence, new Date());
+  const now = new Date();
+  const evidence = await gatherConnectionStateEvidence(deps, record, now);
+  const derived = deriveConnectionState(evidence, now);
   return { state: derived.state, reason: derived.reason };
 }

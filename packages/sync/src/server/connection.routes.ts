@@ -123,6 +123,7 @@ export function registerConnectionRoutes(
           calendars: repos.calendars,
           resources: repos.syncResources,
           credentials: repos.credentials,
+          jobs: repos.jobs,
           invalidations: repos.invalidations,
         };
         const records = await connections.listByPrincipal(
