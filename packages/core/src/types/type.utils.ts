@@ -1,12 +1,7 @@
 import { ObjectId } from "bson";
-import { z } from "zod";
 import { z as zod4 } from "zod/v4";
 import { z as zod4Mini } from "zod/v4-mini";
 import dayjs from "@core/util/date/dayjs";
-
-export const IDSchema = z.string().refine(ObjectId.isValid, {
-  message: "Invalid id",
-});
 
 export const IDSchemaV4 = zod4.string().refine(ObjectId.isValid, {
   message: "Invalid id",
@@ -21,8 +16,6 @@ export const zObjectId = zod4.pipe(
   zod4.custom<ObjectId | string>((v) => ObjectId.isValid(v as string)),
   zod4.transform((v) => new ObjectId(v)),
 );
-
-export const zBase64String = zod4Mini.base64();
 
 export const zYearMonthDayString = zod4.string().refine(
   (dateString) => {

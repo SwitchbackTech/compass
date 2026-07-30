@@ -1,13 +1,13 @@
 # Google Sync And Server-Sent Events (SSE)
 
-Compass Google Calendar integration is bidirectional:
+Google Calendar sync is owned entirely by the standalone **Sync service**
+(`packages/sync`) — the backend has no Google API calls or sync logic of its
+own. The backend's role is: proxy sync-related reads/writes to Sync, poll
+Sync's change feed, and translate what it learns into browser SSE.
 
-- Compass-originated event changes can propagate to Google and then notify web clients.
-- Google-originated changes can flow back into Compass and then notify web clients.
-
-Realtime updates use **Server-Sent Events** (one HTTP connection per tab, server pushes named events). The browser `EventSource` connects to `GET /api/events/stream` with the session cookie.
-
-For local development, keep one boundary clear: browser API/SSE traffic can use localhost, but Google-to-Compass watch notifications are server-to-server POSTs from Google. Those notification POSTs need a public HTTPS backend URL if you want Google-side changes to arrive without a manual repair/import.
+Realtime updates use **Server-Sent Events** (one HTTP connection per tab).
+The browser `EventSource` connects to `GET /api/events/stream` with the
+session cookie.
 
 ## High-Level Architecture
 
@@ -23,14 +23,18 @@ flowchart LR
   subgraph Backend["packages/backend"]
     Stream[events.controller stream]
     Srv[sse.server]
-    Sync[Google sync modules]
+    Bridge[sync-change-feed.bridge]
     Err[error handler]
+  end
+  subgraph Sync["packages/sync"]
+    Feed[GET /internal/changes]
   end
   ES -->|GET /api/events/stream| Stream
   Stream -->|subscribe + replay| Srv
-  Sync -->|publish| Srv
+  Bridge -->|poll| Feed
+  Bridge -->|publish| Srv
   Err -->|GOOGLE_REVOKED| Srv
-  Srv -->|SSE over HTTP| ES
+  Srv -->|SSE over HTTP, one "message" event| ES
   Prov --> ES
   Ev --> ES
   Gc --> ES
@@ -50,110 +54,82 @@ sequenceDiagram
   X->>S: subscribe(userId, res)
   X->>M: fetchUserMetadata(userId)
   M-->>X: metadata
-  X->>S: publish USER_METADATA
-  S-->>B: "event: USER_METADATA"
+  X->>S: publish userMetadataChanged
+  S-->>B: "event: message" (data: {type: "userMetadataChanged", ...})
   Note over B,S: Connection stays open. Heartbeats limit proxy buffering.
 ```
 
-## Shared Event Names
+## Wire Format And Message Types
 
 Source:
 
-- `packages/core/src/constants/sse.constants.ts`
+- `packages/core/src/constants/sse.constants.ts` — the SSE transport
+- `packages/core/src/types/server-message.contracts.ts` — the message union
 
-Wire format uses the `event:` field (uppercase identifiers). Backend and web both import these constants.
+The server publishes **one** SSE event name, `message` (`SSE_MESSAGE_EVENT`).
+Its `data` is a JSON-serialized `ServerMessage` union member; clients parse
+once and switch on `type`. There is no longer a distinct SSE event name per
+signal (`EVENT_CHANGED`, `IMPORT_GCAL_START`, etc. are retired).
 
-| Constant                | Role                                              |
-| ----------------------- | ------------------------------------------------- |
-| `EVENT_CHANGED`         | Calendar grid data should be refetched            |
-| `USER_METADATA`         | Replay / push SuperTokens + sync metadata         |
-| `IMPORT_GCAL_START`     | Full or repair import started                     |
-| `IMPORT_GCAL_END`       | Import finished (see payload contract below)      |
-| `GOOGLE_REVOKED`        | Google refresh token invalid; client prunes state |
+| `type`                | Role                                              |
+| ---------------------- | ------------------------------------------------- |
+| `eventsChanged`         | Calendar grid data should be refetched            |
+| `calendarsChanged`      | Calendar list should be refetched                 |
+| `syncStatusChanged`     | Google connection health changed (syncing/healthy/attention) |
+| `importCompleted`       | A full/incremental/repair import finished          |
+| `userMetadataChanged`   | Replay / push SuperTokens + sync metadata         |
 
-### `IMPORT_GCAL_END` Payload Contract
-
-Source:
-
-- `packages/core/src/types/sse.types.ts`
-- `packages/backend/src/user/services/user.service.ts`
-- `packages/backend/src/sync/services/google-sync/google-sync.service.ts`
-
-`IMPORT_GCAL_END` carries an explicit `operation` so the client can distinguish repair completion from incremental completion.
-
-```ts
-type ImportGCalOperation = "INCREMENTAL" | "REPAIR";
-
-type ImportGCalEndPayload =
-  | {
-      operation: ImportGCalOperation;
-      status: "COMPLETED";
-      eventsCount?: number;
-      calendarsCount?: number;
-    }
-  | {
-      operation: ImportGCalOperation;
-      status: "ERRORED" | "IGNORED";
-      message: string;
-    };
-```
-
-Operational constraints:
-
-- repair path (`repairGoogleCalendarSync`) emits `operation: "REPAIR"`
-- incremental path (`importLatestGoogleCalendarChanges`) emits `operation: "INCREMENTAL"`
-- web listeners should keep a defensive `payload?` handler for compatibility with older emitters/tests
+`SSEServer` (`packages/backend/src/servers/sse/sse.server.ts`) exposes one
+named `publish*` convenience method per message type, plus a generic
+`publish()`. A completeness test
+(`packages/backend/src/servers/sse/sse.server.test.ts`) enforces that every
+`publish*` method emits a schema-valid frame — keep it exhaustive when the
+`ServerMessage` union grows.
 
 ## Outbound Flow: User Changes An Event In Compass
-
-High-level path:
 
 1. UI calls a mutation from `useEventMutations`.
 2. The mutation's `onMutate` applies an optimistic update to the TanStack Query cache.
 3. The mutation's `mutationFn` writes through the selected repository.
-4. Remote event writes hit backend event routes.
-5. `EventController` packages the change as a `CompassEvent`.
-6. `CompassToGoogleEventPropagation.processEvents()` loads the DB event, plans work, and applies persistence inside a retrying Mongo transaction, then runs Google side effects after commit (see [Event Propagation Transactions](../backend/event-propagation-transactions.md)).
-7. After the Google effects, the backend calls `sseServer` to publish an `EVENT_CHANGED` notification.
+4. Remote event writes hit backend event routes, which submit a command to
+   the Sync service (see [Backend](../backend/README.md#event-writes)).
+5. The backend does not publish `eventsChanged` for its own write — the
+   client already applied the change optimistically. Confirmation and
+   cross-tab/cross-device fan-out come from the change-feed poll below.
 
 Primary files:
 
 - `packages/web/src/events/mutations/useEventMutations.ts`
 - `packages/web/src/events/repositories`
 - `packages/backend/src/event/controllers/event.controller.ts`
-- `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`
+- `packages/backend/src/common/services/sync-service/` (Sync client)
 
-## Inbound Flow: Google Notifies Compass About Changes
+## Inbound Flow: Sync Notifies The Backend About Changes
 
-High-level path:
+Google's own webhook ingress, OAuth flow, and import/repair logic all live
+inside `packages/sync` and never touch the backend directly. The backend
+learns about changes by polling Sync's own change feed:
 
-1. Google posts to the notification endpoint in sync routes.
-2. `publicWatchNotificationIngress` validates and parses the Google headers.
-3. `googleWatchService.handleGoogleWatchNotification()` locates the watch and sync record.
-4. The service builds a Google Calendar client for the user.
-5. `GCalNotificationHandler` fetches incremental changes using the stored sync token.
-6. `GoogleToCompassEventPropagation` applies those changes to Compass data.
-7. The backend publishes `EVENT_CHANGED` so clients refetch.
+1. While a user has at least one open SSE connection,
+   `SyncChangeFeedBridge` (`packages/backend/src/servers/sse/sync-change-feed.bridge.ts`)
+   polls `GET /internal/changes` on the Sync service every ~2s.
+2. Each page of invalidations is translated to zero or more `ServerMessage`s
+   by `syncInvalidationToServerMessages`
+   (`packages/backend/src/servers/sse/sync-invalidation.to-server-message.ts`) —
+   e.g. a Sync `event` invalidation becomes an `eventsChanged` message, an
+   `importProgress` invalidation becomes `syncStatusChanged`/`importCompleted`.
+3. The backend publishes each translated message over SSE.
+4. Separately, `pruneGoogleDataAndNotifyRevoked`
+   (`packages/backend/src/common/services/gcal/google-revoked.util.ts`)
+   publishes `syncStatusChanged` with `code: "GOOGLE_REVOKED"` directly when
+   the backend itself detects a revoked/missing Google grant.
 
 Primary files:
 
-- `packages/backend/src/sync/sync.routes.config.ts`
-- `packages/backend/src/sync/services/public-watch-notifications/public-watch-notification.ingress.ts`
-- `packages/backend/src/sync/services/watch/google-watch.service.ts`
-- `packages/backend/src/sync/services/google-sync/google-sync.service.ts`
-- `packages/backend/src/sync/services/records/sync-records.repository.ts`
-- `packages/backend/src/sync/services/notify/handler/gcal.notification.handler.ts`
-- `packages/backend/src/sync/services/event-propagation/google-to-compass/google-to-compass.event-propagation.ts`
-
-Lifecycle and outbound repair paths live in:
-
-- `packages/backend/src/sync/services/google-sync/google-sync.service.ts`
-- `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google-backfill.ts`
-- `packages/backend/src/sync/services/watch/google-watch-maintenance.service.ts`
-
-### Notification Outcomes And Error Semantics
-
-Same as before: recoverable `INITIALIZED` / `IGNORED` / `PROCESSED` paths, `GOOGLE_REVOKED` on invalid refresh token, etc. See inline comments in `googleWatchService`, `googleCalendarSyncService`, and `SyncController`.
+- `packages/backend/src/servers/sse/sync-change-feed.bridge.ts`
+- `packages/backend/src/servers/sse/sync-invalidation.to-server-message.ts`
+- `packages/backend/src/common/services/gcal/google-revoked.util.ts`
+- `packages/core/src/types/sync/change-feed.contracts.ts` (the Sync-side invalidation shapes)
 
 ## SSE Server Responsibilities
 
@@ -167,8 +143,7 @@ The SSE layer:
 - accepts authenticated `GET /api/events/stream` requests (SuperTokens session)
 - registers each open `Response` per user for fan-out
 - sends periodic comment heartbeats (`: keepalive`) so buffering proxies do not delay events
-- on connect, replays `USER_METADATA` after subscribe so reconnects get current state
-- exposes helpers (`handleBackgroundCalendarChange`, `handleImportGCalEnd`, …) used by sync and error handling
+- on connect, replays `userMetadataChanged` after subscribe so reconnects get current state
 
 ## Web Client Responsibilities
 
@@ -177,90 +152,36 @@ Files:
 - `packages/web/src/sse/client/sse.client.ts`
 - `packages/web/src/sse/hooks/useSSEConnection.ts`
 - `packages/web/src/sse/hooks/useEventSSE.ts`
-- `packages/web/src/sse/hooks/useGcalSSE.ts`
+- `packages/web/src/sse/hooks/useGcalSSE.ts` (+ `useGcalSSE.factory.ts`)
 - `packages/web/src/sse/provider/SSEProvider.tsx`
 
 The client:
 
 - opens `EventSource` when a session exists (`SessionProvider` + `SSEProvider`)
-- refetches events when `EVENT_CHANGED` arrives (by invalidating the matching event query scopes)
-- tracks Google import status from `IMPORT_GCAL_*` and `USER_METADATA`
-- handles `GOOGLE_REVOKED` consistently with REST error payloads
+- refetches events when `eventsChanged` arrives (by invalidating the matching event query scopes)
+- tracks Google sync/import status from `syncStatusChanged`/`importCompleted` and `userMetadataChanged`
+- handles the `GOOGLE_REVOKED` `syncStatusChanged` code consistently with REST error payloads
 
-Refetches are driven by TanStack Query invalidation keyed to the SSE event names (`EVENT_CHANGED`, `GOOGLE_REVOKED`); `USER_METADATA` payloads land in the userMetadata Zustand store.
+Refetches are driven by TanStack Query invalidation keyed to the message
+`type`; `userMetadataChanged` payloads land in the userMetadata Zustand
+store.
 
 ## Revoked Token And Reconnect Lifecycle
 
-1. Backend detects missing/invalid Google refresh token (middleware, sync, or Google API error handling).
-2. Backend prunes Google-origin data and publishes `GOOGLE_REVOKED` over SSE.
-3. Web app marks Google as revoked in session memory and temporarily switches to local repository behavior.
-4. User initiates re-consent via OAuth flow.
-5. Backend auth handler determines mode server-side; reconnect updates credentials and metadata.
-
-## User Metadata Shape Used By SSE And UI
-
-`UserMetadata` includes Google connection state alongside sync state. It is pushed on stream connect (`USER_METADATA`) and available from `GET /api/user/metadata`.
-
-### Google Metadata Status Semantics
-
-Source files:
-
-- `packages/backend/src/user/services/user-metadata.service.ts`
-- `packages/backend/src/sync/services/google-sync/google-sync.health.ts`
-- `packages/core/src/types/user.types.ts`
-- `packages/web/src/sse/hooks/useGcalSSE.ts`
-
-The sidebar Google connection state is derived from user metadata. The backend
-metadata service delegates HEALTHY vs ATTENTION diagnosis to Google sync health,
-which checks stored sync tokens and, when public HTTPS watch notifications are
-enabled, active Google watches.
-
-Auto-import guardrail:
-
-- client auto-starts import only when `sync.importGCal === "RESTART"` **and** `google.connectionState` is not `NOT_CONNECTED` or `RECONNECT_REQUIRED`
-
-## Calendar Import And Lifecycle
-
-Compass imports every eligible Google calendar, not just primary. Five distinct
-states apply to a Google-sourced `CalendarRecord` — a calendar can be `true` on
-some and `false` on others independently (e.g. active + not currently watched,
-if its last import attempt failed):
-
-| State        | Meaning                                                                                                                                       | Source                                                                                     |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| **Eligible** | Present in Google's CalendarList with `deleted !== true` and `hidden !== true`. Determines whether Compass keeps a `CalendarRecord` at all.  | `getCalendarsToSync` (`sync/services/init/google-sync-init.ts`)                              |
-| **Active**   | `CalendarRecord.isActive`. Reconciled from the eligible list on every CalendarList sync; a calendar that drops out of a later, complete list is archived (`isActive: false`), never deleted — its identity/preference row survives (A16). | `calendarService.initializeGoogleCalendars` (`calendar/services/calendar.service.ts`)        |
-| **Visible**  | `CalendarRecord.isVisible`. A Compass user preference, seeded from Google's `selected` only on first insert and never overwritten by a later sync (A3). | `mapGoogleCalendar` (`calendar/calendar.record.mapper.ts`)                                   |
-| **Writable** | Derived from `CalendarRecord.access` (`owner`/`writer` writable; `reader`/`freeBusyReader` not). Not a stored field.                          | `getCalendarCapabilities` (`packages/core/src/types/calendar.contracts.ts`)                  |
-| **Watched**  | Compass currently holds a live Events webhook subscription. Only active, event-capable (`owner`/`writer`/`reader`) calendars whose most recent import succeeded are watched; `freeBusyReader` calendars are never watched (no Events resource to subscribe to). | `initializeGoogleCalendarSync` (`sync/services/google-sync/google-sync.service.ts`)          |
-
-Event import mirrors access role: `owner`/`writer`/`reader` calendars get their
-events imported (with per-calendar bounded concurrency and a resumable,
-per-calendar sync token); `freeBusyReader` calendars get only a `CalendarRecord`
-— their live availability comes from a bounded `freeBusy.query` contract, never
-synthetic events. One calendar's import failure is isolated and does not abort
-the others (only a primary-calendar failure fails the whole sync); a failed
-calendar retains whatever pages it already durably imported and can be retried
-without duplicating work.
-
-## Import Flow
-
-1. Backend starts import.
-2. SSE publishes `IMPORT_GCAL_START`.
-3. Client reacts to metadata / `USER_METADATA` / `IMPORT_GCAL_END`.
-4. Backend completes import and publishes `IMPORT_GCAL_END`.
-5. Client stores import results and triggers a refetch when appropriate.
-
-### Manual Import Trigger Contract
-
-`POST /api/sync/import-gcal` returns `204` immediately; progress is asynchronous via SSE events (not polling).
-
-## Debug
-
-- Local debug dispatch of calendar-change notifications may use env `SSE_DEBUG_USER` (see `sync.debug.controller`).
+1. Backend detects missing/invalid Google refresh token (middleware or Google API error handling) or Sync reports it via the change feed.
+2. Backend prunes Google-origin data and publishes a `syncStatusChanged` message with `code: "GOOGLE_REVOKED"`.
+3. Web app marks Google as revoked in session memory.
+4. User initiates re-consent via the OAuth flow (proxied to Sync).
+5. Sync completes the OAuth exchange; the backend's next metadata fetch/change-feed poll picks up the reconnected state.
 
 ## Rules Of Thumb For Changes
 
-- New realtime behavior usually needs changes in `core` (`sse.constants` / `sse.types`), `backend` (`sse.server` + callers), and `web` (hooks listening via `EventSource`).
-- If you add a new SSE event, update shared constants and both emit/listen sides.
-- If the UI is stale after edits, confirm an SSE event is published and the sync slice handles it on the client.
+- New realtime behavior usually needs changes in `core`
+  (`server-message.contracts.ts`), `backend` (`sse.server` + whichever
+  translator/caller publishes it), and `web` (hooks listening via
+  `EventSource`).
+- If you add a new `ServerMessage` member, add a matching `publish*` method
+  on `SSEServer` and a case in `sse.server.test.ts`'s completeness table.
+- If the UI is stale after edits, confirm a message is actually published
+  (either via `sync-change-feed.bridge.ts`'s translation or a direct
+  `sseServer.publish*` call) and that the web hook handles that `type`.

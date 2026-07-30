@@ -72,24 +72,20 @@ See [Google Calendar](../self-hosting/google-calendar.md) for full setup instruc
 ## Sync Service
 
 Standalone service (`packages/sync`) that owns Google Calendar sync end to
-end. The self-host installer writes a `sync:` block by default (see
-[Self-Hosting](../self-hosting/README.md)) — omit the whole block only for a
-bare install with no Google Calendar sync at all. When present, `mongoUri`
-and `internalAuthToken` are required; Sync uses an **isolated** Mongo
+end. Every deployment runs it — the backend exits at startup without
+`sync.serviceUrl`/`sync.internalAuthToken` configured, and the self-host
+installer writes the `sync:` block by default (see
+[Self-Hosting](../self-hosting/README.md)). Sync uses an **isolated** Mongo
 database and must not share the backend's database user/data.
-
-`sync.serviceUrl` below decides whether the backend delegates to Sync or
-still runs its own legacy code — see
-[Sync Service Cutover](../backend/sync-service-cutover.md).
 
 | key | Required | Description |
 |---|---|---|
 | `sync.port` | No | Sync HTTP port. Defaults to `3010` in examples. |
-| `sync.mongoUri` | Yes (if `sync:` set) | Isolated Sync Mongo URI. Never point this at the API database. |
-| `sync.internalAuthToken` | Yes (if `sync:` set) | Shared secret for Sync internal routes. Must match what the API uses when `serviceUrl` is set. |
-| `sync.callbackBaseUrl` | Yes (if `sync:` set) | Public base URL for provider OAuth/webhook callbacks (proxied as `/sync/*`). |
+| `sync.mongoUri` | Yes | Isolated Sync Mongo URI. Never point this at the API database. |
+| `sync.internalAuthToken` | Yes | Shared secret for Sync internal routes. Must match what the API uses. |
+| `sync.callbackBaseUrl` | Yes | Public base URL for provider OAuth/webhook callbacks (proxied as `/sync/*`). |
 | `sync.postConnectRedirectUrl` | No | Browser redirect after OAuth connect; defaults to `callbackBaseUrl`. |
-| `sync.serviceUrl` | No | Base URL the **backend** uses to reach Sync (e.g. `http://localhost:3010`). Once set (with `internalAuthToken`), the backend delegates provider-connection and event routes to Sync automatically. |
+| `sync.serviceUrl` | Yes | Base URL the **backend** uses to reach Sync (e.g. `http://localhost:3010`). The backend refuses to start without this and `internalAuthToken` set. |
 | `sync.cloudMutationMode` | No | `enabled` (default) or `maintenance`. Maintenance rejects cloud edits/connect with typed `MAINTENANCE` (`503`). |
 | `sync.execution` | No | `passive` (default) or `active`. Active is required for OAuth begin and provider import/jobs. |
 | `sync.maxConcurrency` | No | Job concurrency hint for Sync workers. |

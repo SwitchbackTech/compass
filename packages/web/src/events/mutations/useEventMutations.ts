@@ -63,7 +63,6 @@ import {
   waitForPrecedingEventWrites,
 } from "./event.mutation.runtime";
 import {
-  isRecurringEvent,
   recordEventCreateHistory,
   recordEventDeleteHistory,
   recordEventEditHistory,
@@ -597,5 +596,3 @@ export function useEventMutations(
     ],
   );
 }
-
-export { isRecurringEvent };

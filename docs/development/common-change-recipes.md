@@ -23,39 +23,32 @@ Rule: never treat event shape as web-only unless the field is strictly presentat
 
 ## Change Recurring Event Behavior
 
-1. Read `packages/core/src/types/event.contracts.ts`.
-2. Read `docs/features/recurring-events-handling.md`.
-3. Read `packages/backend/src/event/classes/compass.event.generator.ts`.
-4. Read `packages/backend/src/event/classes/compass.event.parser.ts`.
-5. Read `packages/backend/src/event/classes/compass.event.executor.ts`.
-6. Read `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`.
-7. Update the planner, executor, or scope-expansion path that actually owns the behavior.
-8. Add focused tests for the exact recurrence transition you changed.
+Recurrence is owned entirely by the Sync service now (`packages/sync`) — the
+backend has no recurrence-planning logic of its own; it submits commands and
+Sync applies them.
 
-Do not edit recurring behavior from one layer only.
+1. Read `packages/core/src/types/sync/event.contracts.ts` (`SyncEventRecurrenceSchema`: `single` / `seriesMaster` / `exception`).
+2. Read `packages/sync/src/domain/occurrence-projection.ts` and `reproject.ts` (RRULE expansion into the derived occurrence window).
+3. Read `packages/sync/src/domain/series-exception.ts` (cancelled vs. overridden instance handling).
+4. Read `packages/sync/src/domain/cloud-command.service.ts` and `provider-command.service.ts` (the two command-execution paths — cloud-only vs. provider-linked).
+5. Update the projection, exception, or command-execution logic that actually owns the behavior.
+6. Add focused tests in `packages/sync` for the exact recurrence transition you changed.
+
+Do not edit recurring behavior from one layer only — the command-service
+change and the projection/reprojection it triggers both need to stay
+consistent.
 
 ### Common Mistakes
 
-- **Changing only the generator/executor without updating the parser's plan** — `analyzeReplace(...)` and `analyzeDelete(...)` in `compass.event.parser.ts` are pure functions that turn a target event, its `SeriesContext` (base + instances), and the mutation input into a `ReplacePlan` or `DeletePlan` (`replaceThis`/`replaceSeries`/`replaceSplit`, `deleteThis`/`deleteSeries`/`deleteSplit`). `compass.event.generator.ts` (`generateReplace`/`generateDelete`) expands that plan into concrete records to persist (`upsert`, `deleteIds`, `primary`), and `compass.event.executor.ts` (`executeMutation`/`executeDelete`) is the only layer that touches the DB. If the parser produces the wrong plan kind or wrong instance ids, the generator and executor will faithfully do the wrong thing even though their own logic is correct. Always trace from `EventService.replace`/`EventService.delete` in `packages/backend/src/event/services/event.service.ts` through `analyzeReplace`/`analyzeDelete` first.
 - **Missing a database migration for existing recurring events** — existing user data will not be retroactively updated by code changes alone. If you modify how recurring series are stored or processed, add a migration to `packages/scripts/src/migrations`.
-- **Testing only the happy-path transition** — cancellation transitions follow a different planner path. A test that only covers the primary create/update flow can pass while cancellation transitions break silently.
-
-## Triage A Recurrence Sync Regression
-
-1. Reproduce with one event and one expected outcome (which scope: `this`, `thisAndFollowing`, or `all`).
-2. Trace the request through `EventService.replace`/`EventService.delete` in `packages/backend/src/event/services/event.service.ts`: confirm `seriesContext(...)` resolved the right `base`/`instances`, then log or debug the `ReplacePlan`/`DeletePlan` returned by `analyzeReplace`/`analyzeDelete` in `packages/backend/src/event/classes/compass.event.parser.ts` — check its `kind` and, for split plans, the `deleteInstanceIds` and `truncatedBase`/`newBase`.
-3. Confirm `generateReplace`/`generateDelete` in `packages/backend/src/event/classes/compass.event.generator.ts` expand that plan into the expected `upsert`/`deleteIds`/`primary` (or `deleteSeriesId`).
-4. Confirm `executeMutation`/`executeDelete` in `packages/backend/src/event/classes/compass.event.executor.ts` apply those records via `eventRepository`.
-5. If the DB side is correct but Google is wrong, check `CompassToGoogleEventPropagation.propagate(...)` in `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts` — it logs `Compass->Google propagation failed` on error and `Skipping Google effect for user <id> because Google is not connected.` when there's no refresh token; check `deletedBefore`/`originalStartByEventId` passed in from `event.service.ts`.
-6. Run focused tests:
-   - `bun run test:backend --runTestsByPath packages/backend/src/event/classes/compass.event.parser.test.ts packages/backend/src/event/classes/compass.event.generator.test.ts packages/backend/src/event/classes/compass.event.executor.test.ts packages/backend/src/sync/services/event-propagation/__tests__/compass-to-google.event-propagation.test.ts --runInBand`
+- **Testing only the happy-path transition** — cancellation transitions follow a different code path (`series-exception.ts`). A test that only covers the primary create/update flow can pass while cancellation transitions break silently.
 
 ## Add An SSE Event
 
-1. Add the event name to `packages/core/src/constants/sse.constants.ts`.
-2. Update shared payload types in `packages/core/src/types/sse.types.ts` if needed.
-3. Emit from `packages/backend/src/servers/sse/sse.server.ts` (or call site that uses `publish`).
-4. Consume it in a web hook under `packages/web/src/sse/hooks` (listeners on `EventSource`).
+1. Add a new discriminated member to `packages/core/src/types/server-message.contracts.ts` (`ServerMessage` union).
+2. Add a matching `publish*` convenience method on `SSEServer` (`packages/backend/src/servers/sse/sse.server.ts`) and a case in `sse.server.test.ts`'s completeness table.
+3. Call it from whichever backend code detects the change — either directly, or by adding a case to `syncInvalidationToServerMessages` (`packages/backend/src/servers/sse/sync-invalidation.to-server-message.ts`) if it's driven by Sync's change feed.
+4. Consume it in a web hook under `packages/web/src/sse/hooks` (listeners switch on the message `type`).
 5. Add tests on both emitter and listener sides.
 
 ## Add Or Change Local Storage Data
@@ -73,7 +66,7 @@ Do not edit recurring behavior from one layer only.
 ## Change Repository Selection Or Offline Behavior
 
 1. Start in `packages/web/src/events/repositories/event.repository.util.ts`.
-2. Verify auth-state implications in `packages/web/src/auth/session/SessionProvider.tsx` and auth-state helpers.
+2. Verify auth-state implications in `packages/web/src/auth/compass/session/SessionProvider.tsx` and auth-state helpers.
 3. Test both never-authenticated and previously-authenticated behavior.
 
 ## Change A Shared Hotkey Dialog (Day + Week)
@@ -111,7 +104,7 @@ For web local-data migrations:
 ## Change Environment Handling
 
 1. Update the relevant env schema:
-   - backend: `packages/backend/src/common/constants/env.constants.ts`
+   - backend: `packages/backend/src/common/constants/config.constants.ts`
    - web: `packages/web/src/common/constants/env.constants.ts`
 2. Confirm startup behavior still works in the intended dev mode.
 3. Document any new required variables.
@@ -150,4 +143,4 @@ it with a shared named type.
 1. Register the command in `packages/scripts/src/cli.ts`.
 2. Implement behavior in `packages/scripts/src/commands`.
 3. Reuse shared CLI utilities from `packages/scripts/src/common`.
-4. Add integration tests in `packages/scripts/src/__tests__`.
+4. Add integration tests colocated with the command (`*.db.test.ts`).

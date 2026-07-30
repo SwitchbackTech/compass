@@ -56,10 +56,3 @@ export async function clearAllBrowserStorage(): Promise<void> {
     throw error;
   }
 }
-
-/**
- * Checks if the browser has any Compass-related storage
- */
-export function hasCompassStorage(): boolean {
-  return persistentBrowserStore.keys().some(isCompassStorageKey);
-}

@@ -109,15 +109,11 @@ service**. Name the specific flow.
 
 **Sync service**:
 The standalone provider-sync process in `packages/sync`. Owns an isolated Mongo
-database, provider credentials, jobs, and internal HTTP routes. The backend
-delegates selected connection/event paths to it when cutover knobs are set.
-See [Sync Service Cutover](../backend/sync-service-cutover.md).
+database, provider credentials, jobs, and internal HTTP routes. Every
+deployment delegates connection/event paths to it — the backend has no
+legacy Google-sync path left. See [Config](../Config/README.md#sync-service)
+for the operator knobs (`cloudMutationMode`, `execution`).
 _Avoid_: calling every Google import path "the Sync service"
-
-**Sync cutover**:
-The controlled handoff from legacy in-backend Google sync to the Sync
-service — automatic once `sync.serviceUrl` is configured — with
-`cloudMutationMode` and `execution` as the remaining operator knobs.
 
 ### Google Sync
 

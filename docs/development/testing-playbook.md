@@ -290,7 +290,7 @@ await act(async () => {
 Files:
 
 - `packages/web/src/components/AuthenticatedLayout/useResponsiveLayout.ts`
-- `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
+- `packages/web/src/components/Sidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`
 - `packages/web/src/views/Day/view/DayViewContent.tsx`
 
 Reliable setup pattern:
@@ -341,7 +341,7 @@ A gotcha that produces confusing failures far from its actual cause:
 
 For components that depend on routing context (`Outlet`, nested routes, route transitions), prefer the shared memory-router helper:
 
-- `packages/web/src/__tests__/utils/providers/MemoryRouter.tsx`
+- `packages/web/src/__tests__/utils/providers/createTestRouter.tsx`
 
 Pass `initialEntries` when asserting nested or non-root routes.
 

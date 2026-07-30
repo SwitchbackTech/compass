@@ -51,7 +51,3 @@ export function getToastDefaultOptions(
     },
   };
 }
-
-/** @deprecated Prefer getToastDefaultOptions() so toasts follow the active theme. */
-export const toastDefaultOptions: ToastOptions =
-  getToastDefaultOptions("dark-abyss");

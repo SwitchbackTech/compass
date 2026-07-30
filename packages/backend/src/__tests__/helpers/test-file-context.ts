@@ -19,15 +19,6 @@ export function leaveTestFileUrl(): void {
 
 afterAll(leaveTestFileUrl);
 
-export function getCurrentTestFileUrl(): string {
-  if (!activeTestFileUrl) {
-    throw new Error(
-      "Test file URL not set. Call setupTestDb(import.meta.url) in a beforeEach or beforeAll hook.",
-    );
-  }
-  return activeTestFileUrl;
-}
-
 /** Per-file key when setupTestDb ran; shared key for lightweight unit tests. */
 export function getTestIsolationKey(): string {
   return activeTestFileUrl ?? UNIT_TEST_ISOLATION_KEY;

@@ -3,7 +3,6 @@ import {
   HOURS_AM_SHORT_FORMAT,
   YEAR_MONTH_DAY_FORMAT,
   YMDHAM_FORMAT,
-  YMDHM_FORMAT,
 } from "@core/constants/date.constants";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import {
@@ -14,9 +13,6 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type TimeOption } from "@web/common/types/util.types";
-import { type Categories_Event } from "@web/common/types/web.event.types";
-import { roundToNext } from "@web/common/utils/round/round.util";
-import { GRID_TIME_STEP } from "@web/grid/grid.constants";
 
 interface SelectedDates {
   startDate: Date;
@@ -54,43 +50,8 @@ export const getColorsByHour = (currentHour: number) => {
   return colors;
 };
 
-export const getDatesByCategory = (
-  _category: Categories_Event,
-  weekStart: Dayjs,
-  _weekEnd: Dayjs,
-) => {
-  const { startDate, endDate } = _getNextWeekInSameMonth(weekStart);
-
-  return {
-    startDate: startDate.format(YEAR_MONTH_DAY_FORMAT),
-    endDate: endDate.format(YEAR_MONTH_DAY_FORMAT),
-  };
-};
-
-export const getDayjsByTimeValue = (timeValue: string) => {
+const getDayjsByTimeValue = (timeValue: string) => {
   return dayjs(`2000-01-01 ${timeValue}`, YMDHAM_FORMAT);
-};
-
-export const getDurationLabel = (start: string, end: string) => {
-  const _start = dayjs(`2000-00-00 ${start}`, YMDHM_FORMAT);
-
-  const _end = dayjs(`2000-00-00 ${end}`, YMDHM_FORMAT);
-
-  return _end.diff(_start, "minutes");
-};
-
-export const getEndTimeOptions = (): TimeOption[] => {
-  const options = ACCEPTED_TIMES.map((value) => {
-    const day = dayjs(`2000-00-00 ${value}`, YMDHM_FORMAT);
-
-    const label = day.format(HOURS_AM_FORMAT).replace(":00", "");
-
-    return {
-      value,
-      label: `${label} 18h 10m`,
-    };
-  });
-  return options;
 };
 
 export const getHourLabels = (includeMidnight = false) => {
@@ -102,18 +63,7 @@ export const getHourLabels = (includeMidnight = false) => {
   });
 };
 
-export const getNextIntervalTimes = () => {
-  const currentMinute = dayjs().minute();
-  const nextInterval = roundToNext(currentMinute, GRID_TIME_STEP);
-  const start = dayjs().minute(nextInterval).second(0);
-  const end = start.add(1, "hour");
-  const startDate = start.format();
-  const endDate = end.format();
-
-  return { startDate, endDate };
-};
-
-export const getTimeLabel = (value: string) => value.replace(":00", "");
+const getTimeLabel = (value: string) => value.replace(":00", "");
 
 export const getTimeOptionByValue = (date: Dayjs): TimeOption => {
   const value = dayjs(date).format(HOURS_AM_FORMAT);
@@ -250,24 +200,6 @@ const _cleanStartMeridiem = (start: string, end: string) => {
     return start.slice(0, -2).trimEnd();
   }
   return start;
-};
-
-const _getNextWeekInSameMonth = (weekStart: Dayjs) => {
-  let startDate: Dayjs;
-
-  const startOfMonth = weekStart.startOf("month");
-  const nextWeek = weekStart.add(1, "week");
-  const nextWeekStartOfMonth = nextWeek.startOf("month");
-
-  if (nextWeekStartOfMonth.isSame(startOfMonth, "month")) {
-    startDate = nextWeek;
-  } else {
-    startDate = weekStart.subtract(1, "week");
-  }
-
-  const endDate = startDate.add(6, "days");
-
-  return { startDate, endDate };
 };
 
 const _isoUtcOffsetMinutes = (value: string): number | undefined => {

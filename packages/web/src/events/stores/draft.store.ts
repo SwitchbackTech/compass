@@ -144,9 +144,6 @@ export const selectGridDraft = (state: State_DraftEvent) => state.gridDraft;
 export const selectDraftActivity = (state: State_DraftEvent) =>
   state.status?.activity;
 
-export const selectDraftCategory = (state: State_DraftEvent) =>
-  state.status?.eventType;
-
 export const selectDraftId = (state: State_DraftEvent) =>
   state.gridDraft
     ? state.gridDraft.kind === "edit"
@@ -159,11 +156,5 @@ export const selectDraftStatus = (state: State_DraftEvent) => state.status;
 export const selectIsEventFormOpen = (state: State_DraftEvent) =>
   Boolean(state.status?.isFormOpen) && state.gridDraft !== null;
 
-export const selectIsDNDing = (state: State_DraftEvent) =>
-  state.status?.activity === "dnd";
-
 export const selectIsDrafting = (state: State_DraftEvent) =>
   state.status?.isDrafting;
-
-export const selectIsDraftingExisting = (state: State_DraftEvent) =>
-  state.gridDraft?.kind === "edit";

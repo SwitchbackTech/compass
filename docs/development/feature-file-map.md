@@ -14,12 +14,12 @@ Use this document to find the first files to inspect for common Compass changes.
 
 ## Authentication And Session
 
-- Session initialization and SuperTokens wiring: `packages/web/src/auth/session/SessionProvider.tsx`
-- User profile bootstrap: `packages/web/src/auth/context/UserProvider.tsx`
+- Session initialization and SuperTokens wiring: `packages/web/src/auth/compass/session/SessionProvider.tsx`
+- User profile bootstrap: `packages/web/src/auth/compass/user/context/UserProvider.tsx`
 - Google authorization app flow: `packages/web/src/auth/google/authorization`
 - Google redirect callback: `packages/web/src/views/GoogleAuthCallback/GoogleAuthCallback.tsx`
 - Google authorization intent storage: `packages/web/src/auth/google/authorization/google-authorization.storage.ts`
-- Auth schemas: `packages/web/src/auth/schemas/auth.schemas.ts`
+- Auth schemas: `packages/web/src/auth/compass/schemas/auth.schemas.ts`
 - Backend auth routes: `packages/backend/src/auth/auth.routes.config.ts`
 - Backend auth controllers/services: `packages/backend/src/auth/controllers`, `packages/backend/src/auth/services`
 
@@ -70,26 +70,23 @@ Use this document to find the first files to inspect for common Compass changes.
 - SSE client: `packages/web/src/sse/client/sse.client.ts`
 - SSE hooks: `packages/web/src/sse/hooks`
 - SSE provider: `packages/web/src/sse/provider/SSEProvider.tsx`
-- Shared SSE event names: `packages/core/src/constants/sse.constants.ts`
+- SSE transport constant + message union: `packages/core/src/constants/sse.constants.ts`, `packages/core/src/types/server-message.contracts.ts`
 - Backend SSE server: `packages/backend/src/servers/sse/sse.server.ts`
 - Events stream route: `packages/backend/src/events/events.routes.config.ts`
-- Backend sync routes: `packages/backend/src/sync/sync.routes.config.ts`
-- Public watch notification ingress: `packages/backend/src/sync/services/public-watch-notifications/public-watch-notification.ingress.ts`
-- Google Watch lifecycle and notifications: `packages/backend/src/sync/services/watch`
-- Google Calendar sync import and repair: `packages/backend/src/sync/services/google-sync/google-sync.service.ts`
-- Google sync health diagnosis: `packages/backend/src/sync/services/google-sync/google-sync.health.ts`
-- Compass-to-Google repair mirroring: `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google-backfill.ts`
-- Sync record persistence: `packages/backend/src/sync/services/records/sync-records.repository.ts`
-- Google import internals: `packages/backend/src/sync/services/import`
-- Google/Compass event propagation: `packages/backend/src/sync/services/event-propagation`
+- Sync change-feed poller (backend → Sync): `packages/backend/src/servers/sse/sync-change-feed.bridge.ts`
+- Sync invalidation → SSE message translation: `packages/backend/src/servers/sse/sync-invalidation.to-server-message.ts`
+- Google revoked/pruned handling: `packages/backend/src/common/services/gcal/google-revoked.util.ts`
+- Backend Sync client: `packages/backend/src/common/services/sync-service/`
 
-### Standalone Sync Service And Cutover
+### Standalone Sync Service (`packages/sync`)
 
-- Sync service entrypoints: `packages/sync/src/app.ts`, `packages/sync/src/server/sync.server.ts`
-- Backend Sync client / routing: `packages/backend/src/common/services/sync-service/`
-- Migrate CLI: `packages/scripts/src/commands/migrate-connections.ts`
-- Sync DB backup/restore: `packages/scripts/src/commands/sync-backup.ts`, `sync-restore.ts`
+Owns Google Calendar sync end to end (OAuth, webhooks, imports, jobs) —
+see [Google Sync And SSE Flow](../features/google-sync-and-sse-flow.md) for
+the full picture.
+
+- Service entrypoint + internal routes: `packages/sync/src/app.ts`, `packages/sync/src/server/`
 - Diagnostics / retention / principal purge: `packages/sync/src/server/diagnostic.routes.ts`, `packages/sync/src/domain/connection-retention.service.ts`, `packages/sync/src/domain/principal-purge.service.ts`
+- Sync DB backup/restore CLI: `packages/scripts/src/commands/sync-backup.ts`, `sync-restore.ts`
 
 ## Users / Metadata
 
@@ -99,18 +96,18 @@ Use this document to find the first files to inspect for common Compass changes.
 
 ## Environment And Infra
 
-- Backend env parsing: `packages/backend/src/common/constants/env.constants.ts`
+- Backend config parsing: `packages/backend/src/common/constants/config.constants.ts`
 - Web env parsing: `packages/web/src/common/constants/env.constants.ts`
 - Express middleware order: `packages/backend/src/servers/express/express.server.ts`
-- Health endpoint route/controller/tests: `packages/backend/src/health/health.routes.config.ts`, `packages/backend/src/health/controllers/health.controller.ts`, `packages/backend/src/health/controllers/health.controller.test.ts`
+- Health endpoint route/controller/tests: `packages/backend/src/health/health.routes.config.ts`, `packages/backend/src/health/controllers/health.controller.ts`, `packages/backend/src/health/controllers/health.controller.db.test.ts`
 
 ## CLI / Maintenance
 
 - CLI entrypoint: `packages/scripts/src/cli.ts`
-- Build command: `packages/scripts/src/commands/build.ts`
+- Build commands: `packages/scripts/src/commands/build.backend.ts`, `build.sync.ts`
 - Migration command: `packages/scripts/src/commands/migrate.ts`
 - Migrations: `packages/scripts/src/migrations`
-- Sync preseed / legacy migrate commands: see [CLI](./cli.md) and [Sync Service Cutover](../backend/sync-service-cutover.md)
+- Other CLI commands: see [CLI](./cli.md)
 
 ## Test Anchors
 
@@ -119,7 +116,6 @@ Use this document to find the first files to inspect for common Compass changes.
 - Core test setup: `packages/core/src/__tests__`
 - Web test setup: `packages/web/src/__tests__`
 - Web mock server handlers: `packages/web/src/__tests__/__mocks__/server/mock.handlers.ts`
-- Web floating-ui test setup: `packages/web/src/__tests__/floating-ui.setup.ts`
-- Web memory-router test helper: `packages/web/src/__tests__/utils/providers/MemoryRouter.tsx`
+- Web test router helper: `packages/web/src/__tests__/utils/providers/createTestRouter.tsx`
 - Backend test setup: `packages/backend/src/__tests__`
 - E2E tests: `e2e`

@@ -2,7 +2,6 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { TIMED_VISIBLE_HOURS } from "@web/grid/grid.constants";
 import {
   AFTER_TMRW_MULTIPLE,
-  DIVIDER_GRID,
   FLEX_EQUAL,
   FLEX_TMRW,
   FLEX_TODAY,
@@ -11,10 +10,6 @@ import {
 interface AssignResult {
   fits: boolean;
   rowNum?: number;
-}
-interface WidthPercentages {
-  current: number[];
-  pastFuture: number[];
 }
 export const assignEventToRow = (
   eventDays: number[],
@@ -35,26 +30,6 @@ export const assignEventToRow = (
   return { fits, rowNum };
 };
 
-export const getBeforeAfterPercentages = (
-  percentRemaining: number,
-  todayIndex: number,
-  afterTmrwCount: number,
-  beforeTodayCount: number,
-) => {
-  const diff = getBeforeTodayDiff(todayIndex, afterTmrwCount);
-
-  const beforeToday = percentRemaining / diff;
-  const afterTmrw =
-    (percentRemaining - beforeToday * beforeTodayCount) / afterTmrwCount;
-
-  return { afterTmrw, beforeToday };
-};
-
-export const getBeforeTodayPercent = () => {
-  // add up from idx 0 to n
-  return 10;
-};
-
 export const getCurrentMinute = () => {
   return dayjs().get("hours") * 60 + dayjs().get("minutes");
 };
@@ -69,103 +44,6 @@ export const getCurrentPercentOfDay = () => {
   return (getCurrentMinute() / 1440) * 100;
 };
 
-export const getColumnWidthPercentages = (
-  todayIndex: number,
-): WidthPercentages => {
-  const daysInView = 7;
-
-  const pastFutureWeek: number[] = new Array(daysInView).fill(FLEX_EQUAL);
-
-  const { afterTmrw, beforeToday } = getRelativePercentages(todayIndex);
-  const currentWeek = (() => {
-    switch (todayIndex) {
-      case 0:
-        return [
-          FLEX_TODAY,
-          FLEX_TMRW,
-          afterTmrw,
-          afterTmrw,
-          afterTmrw,
-          afterTmrw,
-          afterTmrw,
-        ];
-      case 1:
-        return [
-          beforeToday,
-          FLEX_TODAY,
-          FLEX_TMRW,
-          afterTmrw,
-          afterTmrw,
-          afterTmrw,
-          afterTmrw,
-        ];
-      case 2:
-        return [
-          beforeToday,
-          beforeToday,
-          FLEX_TODAY,
-          FLEX_TMRW,
-          afterTmrw,
-          afterTmrw,
-          afterTmrw,
-        ];
-      case 3:
-        return [
-          beforeToday,
-          beforeToday,
-          beforeToday,
-          FLEX_TODAY,
-          FLEX_TMRW,
-          afterTmrw,
-          afterTmrw,
-        ];
-      case 4:
-        return [
-          beforeToday,
-          beforeToday,
-          beforeToday,
-          beforeToday,
-          FLEX_TODAY,
-          FLEX_TMRW,
-          afterTmrw,
-        ];
-      case 5:
-        return [
-          beforeToday,
-          beforeToday,
-          beforeToday,
-          beforeToday,
-          beforeToday,
-          FLEX_TODAY,
-          FLEX_TMRW,
-        ];
-      case 6:
-        return [
-          beforeToday,
-          beforeToday,
-          beforeToday,
-          beforeToday,
-          beforeToday,
-          beforeToday,
-          FLEX_TODAY,
-        ];
-      default:
-        return pastFutureWeek;
-    }
-  })();
-
-  return { pastFuture: pastFutureWeek, current: currentWeek };
-};
-
-export const getBeforeTodayDiff = (
-  todayIndex: number,
-  afterTmrwCount: number,
-) => {
-  const futureFactor = afterTmrwCount * AFTER_TMRW_MULTIPLE;
-  const yesterdayIndex = todayIndex - 1;
-  const diff = yesterdayIndex + futureFactor;
-  return diff;
-};
 // #mainGrid/#allDayRow are <section> elements, not <div>s, so an
 // HTMLDivElement-only check made every lookup on them return null and
 // silently no-op event listeners (drag never started). Widened to accept
@@ -174,98 +52,6 @@ export const getElemById = (id: string): HTMLElement | null => {
   const element = document.getElementById(id);
 
   return element instanceof HTMLElement ? element : null;
-};
-
-export const getRelativePercentages = (todayIndex: number) => {
-  let afterTmrw: number;
-  let beforeToday: number;
-
-  const remaining = 100 - (FLEX_TODAY + FLEX_TMRW);
-
-  /*
-  S M T W R F S
-  */
-  switch (todayIndex) {
-    case 0:
-      afterTmrw = remaining / 5;
-      beforeToday = 0; // no day before today
-      break;
-    case 1: {
-      const beforeTodayCount = 1;
-      const afterTmrwCount = 4;
-      const percent = getBeforeAfterPercentages(
-        remaining,
-        todayIndex,
-        afterTmrwCount,
-        beforeTodayCount,
-      );
-      beforeToday = percent.beforeToday;
-      afterTmrw = percent.afterTmrw;
-
-      break;
-    }
-    case 2: {
-      const beforeTodayCount = 2;
-      const afterTmrwCount = 3;
-
-      const percent = getBeforeAfterPercentages(
-        remaining,
-        todayIndex,
-        afterTmrwCount,
-        beforeTodayCount,
-      );
-
-      beforeToday = percent.beforeToday;
-      afterTmrw = percent.afterTmrw;
-
-      break;
-    }
-    case 3: {
-      const beforeTodayCount = 3;
-      const afterTmrwCount = 2;
-
-      const percent = getBeforeAfterPercentages(
-        remaining,
-        todayIndex,
-        afterTmrwCount,
-        beforeTodayCount,
-      );
-
-      beforeToday = percent.beforeToday;
-      afterTmrw = percent.afterTmrw;
-      break;
-    }
-    case 4: {
-      const beforeTodayCount = 4;
-      const afterTmrwCount = 1;
-
-      const percent = getBeforeAfterPercentages(
-        remaining,
-        todayIndex,
-        afterTmrwCount,
-        beforeTodayCount,
-      );
-
-      beforeToday = percent.beforeToday;
-      afterTmrw = percent.afterTmrw;
-      break;
-    }
-    case 5: {
-      beforeToday = remaining / 5;
-      afterTmrw = 0; // no 'day after tmrw'
-      break;
-    }
-
-    case 6: {
-      beforeToday = (100 - FLEX_TODAY) / 6;
-      afterTmrw = 0; // no 'day after tmrw'
-      break;
-    }
-    default:
-      beforeToday = -666;
-      afterTmrw = -666;
-  }
-  return { beforeToday, afterTmrw };
 };
 
 export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
@@ -309,9 +95,6 @@ export const getPrevDayWidth = (today: Dayjs) => {
 
   return width;
 };
-
-export const getWidthBuffer = (startIndex: number) =>
-  startIndex * (DIVIDER_GRID * 2);
 
 const normalizeDayNums = (days: number[]) => {
   // doesn't support events longer than 365/6 days

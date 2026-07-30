@@ -50,20 +50,18 @@ Use the generic base schema with `parseApiError(error, ApiErrorResponseSchema)` 
 
 ### Shared contracts
 
-- `packages/core/src/types`
-- `packages/core/src/validators`
+- `packages/core/src/types` — `*.contracts.ts` files pair a schema with its inferred type; there is no separate `validators` directory, validation lives alongside the schema it validates
 - `packages/core/src/types/type.utils.ts`
 
 ### Backend request/env validation
 
-- `packages/backend/src/common/constants/env.constants.ts`
-- `packages/backend/src/common/validators`
-- feature-specific query validators such as `packages/backend/src/sync/services/records/sync-records.repository.ts`
+- `packages/backend/src/common/constants/config.constants.ts` — the backend's own env/config schema
+- feature-specific query validators live next to their route/service, e.g. `packages/sync/src/storage/contracts/`
 
 ### Web form/client validation
 
-- `packages/web/src/auth/schemas`
-- `packages/web/src/common/validators`
+- `packages/web/src/auth/compass/schemas`
+- `packages/web/src/common/constants/env.constants.ts`
 - feature-specific form hooks such as `packages/web/src/components/AuthModal/hooks/useZodForm.ts`
 
 ## Shared Event Contract

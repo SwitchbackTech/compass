@@ -1,33 +1,10 @@
 import { faker } from "@faker-js/faker";
-import { ZodError as ZodErrorV3 } from "zod";
 import { ZodError, z } from "zod/v4";
 import {
-  IDSchema,
   IDSchemaV4,
   RGBHexSchema,
   TimezoneSchema,
 } from "@core/types/type.utils";
-
-describe("IDSchema", () => {
-  it("validates a correct ObjectId string", () => {
-    const validId = faker.database.mongodbObjectId();
-
-    expect(IDSchema.safeParse(validId).success).toBe(true);
-  });
-
-  it("rejects an invalid ObjectId string", () => {
-    const invalidId = faker.string.ulid();
-    const result = IDSchema.safeParse(invalidId);
-
-    expect(result.success).toBe(false);
-    expect(result.error).toBeInstanceOf(ZodErrorV3);
-    expect(result.error?.errors).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ message: "Invalid id" }),
-      ]),
-    );
-  });
-});
 
 describe("IDSchemaV4", () => {
   it("validates a correct ObjectId string", () => {

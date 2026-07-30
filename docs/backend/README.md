@@ -27,8 +27,13 @@ Backend routes are registered from
 | User | `packages/backend/src/user/user.routes.config.ts` | Profile and metadata for the active session. |
 | Events | `packages/backend/src/event/event.routes.config.ts` | Event CRUD and reorder/delete helpers. |
 | Event stream | `packages/backend/src/events/events.routes.config.ts` | Authenticated SSE stream at `GET /api/events/stream`. |
-| Sync | `packages/backend/src/sync/sync.routes.config.ts` | Google import, maintenance, debug, and notification routes. |
 | Calendars | `packages/backend/src/calendar/calendar.routes.config.ts` | Calendar list and selection routes. |
+
+The backend has no inbound Google-sync routes of its own — the standalone
+Sync service (`packages/sync`) owns Google Calendar sync end to end,
+including its own OAuth/webhook routes. The backend is an outbound *client*
+of Sync (`packages/backend/src/common/services/sync-service/`), not a host
+for sync routes.
 
 Use source files as the exhaustive route list. This page keeps the behavior
 that is easiest to misunderstand.
@@ -48,38 +53,20 @@ Important runtime behavior:
 
 ## Event Writes
 
-- Event writes route through Compass-to-Google event propagation and can apply Google side effects.
-- Missing Google refresh token does not block Compass-local event writes; Google side effects are skipped.
+- Calendar/event reads and durable write commands delegate to the Sync
+  service — there is no legacy event store or Compass-to-Google propagation
+  path anymore.
 - Controllers use the shared `res.promise(...)` response helper and centralized
   error handling.
-- Once `sync.serviceUrl` is configured, calendar/event reads and durable write
-  commands delegate to the Sync service instead of the legacy event store. See
-  [Sync Service Cutover](./sync-service-cutover.md).
 
 Key files:
 
 - `packages/backend/src/event/controllers/event.controller.ts`
-- `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`
-- `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google-backfill.ts`
-- `packages/backend/src/common/services/sync-service/` (delegation client + routing)
+- `packages/backend/src/calendar/controllers/calendar.controller.ts`
+- `packages/backend/src/common/services/sync-service/` (Sync client + request/response translation)
 
-## Google Notification Ingress
-
-- endpoint: `POST /api/sync/gcal/notifications`
-- source: `packages/backend/src/sync/controllers/sync.controller.ts`
-- middleware: `publicWatchNotificationIngress.verify`
-- ingress owner: `packages/backend/src/sync/services/public-watch-notifications/public-watch-notification.ingress.ts`
-- notification owner: `packages/backend/src/sync/services/watch/google-watch.service.ts`
-- repair/setup owner: `packages/backend/src/sync/services/google-sync/google-sync.service.ts`
-- import owner: `packages/backend/src/sync/services/import/google-import.service.ts`
-- maintenance owner: `packages/backend/src/sync/services/watch/google-watch-maintenance.service.ts`
-
-Observed outcomes include:
-
-- `INITIALIZED` for Google channel handshake notifications
-- `IGNORED` for stale/missing watch/sync records
-- `204` for missing-sync-token recovery paths
-- `410` revoked/missing-token responses when Google data is pruned
+Google's own OAuth flow, webhook ingress, and change notifications are owned
+entirely by the Sync service (`packages/sync`), not the backend.
 
 ## SSE Stream
 
@@ -93,19 +80,9 @@ Primary files:
 - `packages/backend/src/servers/sse/sse.server.ts`
 - `packages/core/src/constants/sse.constants.ts`
 
-## Operational Contracts
-
-- Watch shutdown and cleanup are intentionally idempotent:
-  - stale/missing Google channels are deleted locally and processing continues
-  - missing refresh token paths also delete stale watch records instead of hard-failing maintenance
-- `/api/sync/import-gcal` accepts an optional body contract:
-  - `{ "force": true }` to force restart when not currently importing
-  - omitted or false follows normal metadata guardrails
-
 ## Related Docs
 
 - [Backend Request Flow](./backend-request-flow.md)
 - [Backend Error Handling](./backend-error-handling.md)
-- [Event Propagation Transactions](./event-propagation-transactions.md)
-- [Sync Service Cutover](./sync-service-cutover.md)
+- [Config](../Config/README.md#sync-service)
 - [Google Sync And SSE Flow](../features/google-sync-and-sse-flow.md)
