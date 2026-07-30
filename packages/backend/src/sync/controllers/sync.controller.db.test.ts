@@ -16,9 +16,9 @@ import {
 import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
 import { invalidSyncTokenError } from "@backend/__tests__/mocks.gcal/errors/error.invalidSyncToken";
 import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/error.missingRefreshToken";
-import { CONFIG } from "@backend/common/constants/config.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import {
   buildEventRecord,
@@ -34,7 +34,6 @@ import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -701,20 +700,17 @@ describe("SyncController", () => {
     });
 
     describe("Sync delegation:", () => {
-      const originalServiceUrl = CONFIG.SYNC_SERVICE_URL;
-      const originalToken = CONFIG.SYNC_INTERNAL_AUTH_TOKEN;
-
-      afterEach(() => {
-        CONFIG.SYNC_SERVICE_URL = originalServiceUrl;
-        CONFIG.SYNC_INTERNAL_AUTH_TOKEN = originalToken;
-      });
-
       it("refuses with 409 and never starts the legacy engine once Sync owns connections/events", async () => {
-        // Assigned in-test (not beforeAll): the shared backend harness's
-        // global beforeEach resets CONFIG to baseline before every test body
-        // runs, so a beforeAll-only override never survives to see it.
-        CONFIG.SYNC_SERVICE_URL = "http://sync.invalid:4999";
-        CONFIG.SYNC_INTERNAL_AUTH_TOKEN = "test-sync-secret";
+        // getConnectionDelegation()/getEventDelegation() cache a Sync client
+        // singleton on first call, process-wide — this file's many earlier
+        // importGCal/handleGoogleNotification tests already called it (with
+        // no SYNC_SERVICE_URL set), caching it as null. Setting CONFIG here
+        // would have no effect on that cached result, so spy on
+        // getSyncServiceClient() directly instead, bypassing the cache.
+        const clientSpy = spyOn(
+          syncServiceFactory,
+          "getSyncServiceClient",
+        ).mockReturnValue({} as never);
 
         const { user } = await UtilDriver.setupTestUser();
         const userId = user._id.toString();
@@ -738,6 +734,7 @@ describe("SyncController", () => {
 
         repairSpy.mockRestore();
         startSpy.mockRestore();
+        clientSpy.mockRestore();
       });
     });
 
