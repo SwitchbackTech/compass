@@ -45,9 +45,6 @@ const setup = () => {
   const calls: Array<{ method: string; value: unknown }> = [];
   const repository: EventRepository = {
     list: async () => [],
-    getById: async () => {
-      throw new Error("not implemented in test fake");
-    },
     create: async (input: CreateEventInput) => {
       calls.push({ method: "create", value: input });
       return event({ id: (input.id ?? event().id) as EventId });

@@ -26,7 +26,6 @@ export function resolveGoogleUiState({
   syncIndicator: SyncIndicator;
   userMetadataStatus: UserMetadataStatus;
 }): GoogleUiState {
-  if (syncIndicator === "repairing") return "repairing";
   if (syncIndicator === "syncing") return "IMPORTING";
 
   if (hasAuthenticated && userMetadataStatus !== "loaded") {
@@ -36,7 +35,7 @@ export function resolveGoogleUiState({
   return connectionState;
 }
 
-// Merges server metadata with transient repair/import overrides. The external
+// Merges server metadata with transient import overrides. The external
 // store subscription keeps every sync indicator aligned as SSE updates arrive.
 export function useGoogleUiState(): GoogleUiState {
   const connectionState = useUserMetadataStore(selectGoogleConnectionState);

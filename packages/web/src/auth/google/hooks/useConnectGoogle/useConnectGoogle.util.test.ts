@@ -47,7 +47,6 @@ describe("getGoogleSyncStatus", () => {
 
   it.each([
     "IMPORTING",
-    "repairing",
     "checking",
   ] as const)("returns syncing copy for %s", (state) => {
     expect(getGoogleSyncStatus(state)).toEqual({
@@ -126,7 +125,6 @@ describe("getGoogleConnectionConfig", () => {
   it.each([
     "HEALTHY",
     "checking",
-    "repairing",
     "IMPORTING",
     "ATTENTION",
   ] as const)("returns no command action for %s", (state) => {

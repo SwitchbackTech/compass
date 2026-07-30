@@ -101,7 +101,6 @@ describe("useCalendarSyncCmdItems", () => {
   });
 
   it.each([
-    "repairing",
     "IMPORTING",
     "checking",
   ] as const)("returns a disabled syncing row for %s", async (state) => {

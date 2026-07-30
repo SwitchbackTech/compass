@@ -30,11 +30,6 @@ const EventApi = {
     return EventListResponseSchema.parse(response.data).events;
   },
 
-  getById: async (id: EventId): Promise<Event> => {
-    const response = await BaseApi.get<unknown>(`/event/${id}`);
-    return EventResponseSchema.parse(response.data).event;
-  },
-
   create: async (input: CreateEventInput): Promise<Event> => {
     const response = await BaseApi.post<unknown>(`/event`, input);
     return EventResponseSchema.parse(response.data).event;

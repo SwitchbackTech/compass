@@ -29,7 +29,6 @@ export class EventRoutes extends CommonRoutesConfig {
     this.app
       .route(`/api/event/:id`)
       .all(verifySession())
-      .get(eventController.readById)
       .put(eventController.replace)
       .delete(eventController.delete);
 

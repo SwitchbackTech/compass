@@ -9,7 +9,6 @@ import {
 
 export interface EventRepository {
   list(query: EventListQuery): Promise<Event[]>;
-  getById(id: EventId): Promise<Event>;
   create(input: CreateEventInput): Promise<Event>;
   replace(id: EventId, input: ReplaceEventInput): Promise<Event>;
   delete(id: EventId, scope: RecurrenceScope): Promise<void>;

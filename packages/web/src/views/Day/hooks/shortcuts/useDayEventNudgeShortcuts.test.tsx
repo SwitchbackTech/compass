@@ -122,8 +122,6 @@ const renderEditShortcuts = ({
   );
   const repository: EventRepository = {
     list: async () => [],
-    getById: async (id) =>
-      id === ALL_DAY_EVENT_ID ? allDayEventContract : timedEventContract,
     create: async () => timedEventContract,
     replace: async (id, input) => ({
       ...(id === ALL_DAY_EVENT_ID ? allDayEventContract : timedEventContract),

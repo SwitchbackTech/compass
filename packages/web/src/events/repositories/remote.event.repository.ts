@@ -43,13 +43,6 @@ export class RemoteEventRepository implements EventRepository {
     );
   }
 
-  async getById(id: EventId): Promise<Event> {
-    return this.withLocalFallback(
-      () => this.api.getById(id),
-      () => this.localRepository.getById(id),
-    );
-  }
-
   async create(input: CreateEventInput): Promise<Event> {
     return this.withLocalFallback(
       () => this.api.create(input),

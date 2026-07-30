@@ -37,7 +37,6 @@ import {
   eventMutationError,
   toEventMutationError,
 } from "@backend/event/event.error";
-import { mapEventRecord } from "@backend/event/event.record.mapper";
 import eventService from "@backend/event/services/event.service";
 
 const send = (res: Response, e: unknown) => {
@@ -248,18 +247,6 @@ class EventController {
       const events = await readAllFromSync(userId, query);
 
       res.status(Status.OK).json({ events });
-    } catch (e) {
-      send(res, e);
-    }
-  };
-
-  readById = async (req: SessionRequest, res: Response) => {
-    try {
-      const userId = req.session?.getUserId() as string;
-      const eventId = req.params["id"] as string;
-      const event = await eventService.readById(userId, eventId);
-
-      res.status(Status.OK).json({ event: mapEventRecord(event) });
     } catch (e) {
       send(res, e);
     }

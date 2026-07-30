@@ -16,7 +16,6 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 const api = {
   create: mock(),
   list: mock(),
-  getById: mock(),
   replace: mock(),
   delete: mock(),
 } satisfies Record<keyof typeof EventApi, ReturnType<typeof mock>>;
@@ -24,7 +23,6 @@ const api = {
 const localRepository = {
   create: mock(),
   list: mock(),
-  getById: mock(),
   replace: mock(),
   delete: mock(),
 } satisfies Record<keyof EventRepository, ReturnType<typeof mock>>;

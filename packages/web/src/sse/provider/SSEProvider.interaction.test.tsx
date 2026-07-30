@@ -5,7 +5,7 @@ import { createFakeServerMessageBus } from "@web/__tests__/utils/sse-message-bus
 import {
   getGoogleSyncIndicatorOverride,
   resetGoogleSyncUIStateForTests,
-  setRepairingSyncIndicatorOverride,
+  setSyncingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
 import {
   userMetadataActions,
@@ -139,21 +139,8 @@ describe("useGcalSSE", () => {
     });
   });
 
-  it("keeps the repairing override during an early healthy metadata replay", async () => {
-    setRepairingSyncIndicatorOverride();
-    render(<HookHost />);
-
-    act(() => {
-      fireUserMetadata({ google: { connectionState: "HEALTHY" } });
-    });
-
-    await waitFor(() => {
-      expect(getGoogleSyncIndicatorOverride()).toBe("repairing");
-    });
-  });
-
-  it("refetches metadata and events after importCompleted without clearing repairing", async () => {
-    setRepairingSyncIndicatorOverride();
+  it("refetches metadata and events after importCompleted without clearing syncing", async () => {
+    setSyncingSyncIndicatorOverride();
 
     render(<HookHost />);
 
@@ -167,9 +154,9 @@ describe("useGcalSSE", () => {
     });
 
     await waitFor(() => {
-      // Repairing is a user-initiated override; only its own completion path
-      // clears it. Import SSE refreshes truth from metadata instead.
-      expect(getGoogleSyncIndicatorOverride()).toBe("repairing");
+      // importCompleted alone never clears the override; only metadata that
+      // leaves IMPORTING (or an attention/healthy syncStatusChanged) does.
+      expect(getGoogleSyncIndicatorOverride()).toBe("syncing");
       expect(refreshUserMetadata).toHaveBeenCalled();
       expect(mockInvalidateEventQueries).toHaveBeenCalled();
     });
@@ -202,7 +189,7 @@ describe("useGcalSSE", () => {
   });
 
   it("clears the syncing override and shows the repair toast on WATCH_REPAIR_FAILED", async () => {
-    setRepairingSyncIndicatorOverride();
+    setSyncingSyncIndicatorOverride();
 
     render(<HookHost />);
 
@@ -227,7 +214,7 @@ describe("useGcalSSE", () => {
   });
 
   it("clears the syncing override when Google is revoked", async () => {
-    setRepairingSyncIndicatorOverride();
+    setSyncingSyncIndicatorOverride();
 
     render(<HookHost />);
 
