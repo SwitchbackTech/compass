@@ -223,18 +223,10 @@ export async function handleSessionSignOut(
 ): Promise<Awaited<ReturnType<SessionSignOutPOSTFn>>> {
   const userId = zObjectId.parse(input.session.getUserId());
 
-  const userSessions = await Session.getAllSessionHandlesForUser(
-    userId.toString(),
-  );
-
-  const lastActiveSession = userSessions.length < 2;
-
   const res = await originalSignOutPOST(input);
 
   try {
-    await userService.handleLogoutCleanup(userId.toString(), {
-      isLastActiveSession: lastActiveSession,
-    });
+    await userService.handleLogoutCleanup(userId.toString());
   } catch (error) {
     logger.error(`Failed logout cleanup for user: ${userId.toString()}`, error);
   }

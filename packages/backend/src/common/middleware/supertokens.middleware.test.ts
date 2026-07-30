@@ -695,9 +695,8 @@ describe("supertokens.middleware", () => {
       expect(googleAuthService.handleGoogleAuth).not.toHaveBeenCalled();
     });
 
-    it("delegates logout cleanup for the last active Session in signOutPOST", async () => {
+    it("delegates logout cleanup in signOutPOST", async () => {
       const userId = new ObjectId().toString();
-      Session.getAllSessionHandlesForUser.mockResolvedValue(["h1"]);
 
       const originalImplementation = {
         marker: "ok" as const,
@@ -730,15 +729,12 @@ describe("supertokens.middleware", () => {
         session: { getUserId: () => string };
       }>(originalImplementation.signOutPOST);
       expect(signOutInput.session.getUserId()).toBe(userId);
-      expect(userService.handleLogoutCleanup).toHaveBeenCalledWith(userId, {
-        isLastActiveSession: true,
-      });
+      expect(userService.handleLogoutCleanup).toHaveBeenCalledWith(userId);
       expect(result).toEqual({ res: "ok" });
     });
 
     it("returns the sign-out response when logout cleanup fails", async () => {
       const userId = new ObjectId().toString();
-      Session.getAllSessionHandlesForUser.mockResolvedValue(["h1"]);
 
       const originalImplementation = {
         signOutPOST: mock().mockResolvedValue({ res: "ok" }),
@@ -767,39 +763,6 @@ describe("supertokens.middleware", () => {
           },
         }),
       ).resolves.toEqual({ res: "ok" });
-    });
-
-    it("passes non-last-session state to logout cleanup", async () => {
-      const userId = new ObjectId().toString();
-      Session.getAllSessionHandlesForUser.mockResolvedValue(["h1", "h2"]);
-
-      const originalImplementation = {
-        signOutPOST: mock().mockResolvedValue({ res: "ok" }),
-      };
-
-      (userService.handleLogoutCleanup as Mock).mockResolvedValue(undefined);
-
-      initSupertokens();
-
-      const sessionConfig = getFirstCallArg<{
-        override: {
-          apis: (original: typeof originalImplementation) => {
-            signOutPOST: (input: unknown) => Promise<unknown>;
-          };
-        };
-      }>(Session.init);
-
-      const overridden = sessionConfig.override.apis(originalImplementation);
-
-      await overridden.signOutPOST({
-        session: {
-          getUserId: () => userId,
-        },
-      });
-
-      expect(userService.handleLogoutCleanup).toHaveBeenCalledWith(userId, {
-        isLastActiveSession: false,
-      });
     });
   });
 

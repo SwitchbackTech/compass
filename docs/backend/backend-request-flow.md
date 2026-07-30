@@ -117,7 +117,6 @@ Frequently used middleware:
 - `verifySession()`: authenticated Compass session required
 - `requireGoogleConnectionSession`: active Google connection required for routes that call Google directly (for example `/api/sync/import-gcal`)
 - `authMiddleware.verifyIsDev`: development-only route
-- `authMiddleware.verifyIsFromCompass`: trusted internal caller
 - `publicWatchNotificationIngress.verify`: trusted Google notification source
 - `packages/backend/src/sync/services/public-watch-notifications/public-watch-notification.ingress.ts`: Public watch notification header validation and payload parsing
 

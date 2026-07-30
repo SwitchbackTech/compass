@@ -153,16 +153,6 @@ async function purgeOneUser(
     deps.db.collection(Collections.CALENDAR),
     { userId },
   );
-  const syncRecords = await removeMany(
-    dryRun,
-    deps.db.collection(Collections.SYNC),
-    { user: id },
-  );
-  const watches = await removeMany(
-    dryRun,
-    deps.db.collection(Collections.WATCH),
-    { user: id },
-  );
   const legacyCalendarLists = await removeMany(
     dryRun,
     deps.db.collection(LEGACY_CALENDAR_LIST),
@@ -183,8 +173,6 @@ async function purgeOneUser(
   return {
     events,
     calendars,
-    syncRecords,
-    watches,
     legacyCalendarLists,
     legacyEvents,
     user,
