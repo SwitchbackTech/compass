@@ -36,26 +36,19 @@ const ConfigSchema = z
     TOKEN_GCAL_NOTIFICATION: z.string().default(""),
     TOKEN_COMPASS_SYNC: z.string().nonempty(),
     // Base URL + shared secret for the Sync service's internal API. Both present
-    // (delegation configured) or both absent (legacy-only deployment); a partial
-    // configuration is a mistake.
+    // (Sync configured) or both absent (Sync not yet provisioned); a partial
+    // configuration is a mistake. Every deployment delegates provider-connection
+    // and event routes to Sync once it's configured — there is no more choice
+    // to make between it and a legacy in-backend engine.
     SYNC_SERVICE_URL: z.string().url().optional(),
     SYNC_INTERNAL_AUTH_TOKEN: z.string().nonempty().optional(),
-    // Which implementation serves the browser-facing provider-connection routes.
-    // Global, not per-request: legacy (default) or delegate to the Sync service.
-    SYNC_CONNECTION_ROUTING: z.enum(["legacy", "sync"]).default("legacy"),
-    // Which implementation serves the browser-facing calendar/event reads and
-    // durable write commands. Independent of SYNC_CONNECTION_ROUTING so the
-    // riskier event path rolls out separately. Global, not per-request.
-    SYNC_EVENT_ROUTING: z.enum(["legacy", "sync"]).default("legacy"),
     // Whether cloud event writes and provider-connection changes are accepted.
     // `maintenance` rejects them with a typed MAINTENANCE response (S50).
     SYNC_CLOUD_MUTATION_MODE: z
       .enum(["enabled", "maintenance"])
       .default("enabled"),
     // Mirror of sync.execution for the backend startup guard + operator
-    // surface. Sync itself enforces passive/active; the API refuses unsafe
-    // dual-writer combinations when this is active and mutations are enabled
-    // while any routing remains legacy.
+    // surface. Sync itself enforces passive/active.
     SYNC_EXECUTION: z.enum(["passive", "active"]).default("passive"),
     POSTHOG_KEY: z.string().nonempty().optional(),
     POSTHOG_HOST: z.string().url().optional(),
@@ -111,52 +104,6 @@ const ConfigSchema = z
           : ["SYNC_SERVICE_URL"],
       });
     }
-
-    // Delegating connection routes to Sync is meaningless without a Sync client
-    // to reach, so refuse to start rather than silently fall back to legacy and
-    // hide an operator's misconfigured switch.
-    if (env.SYNC_CONNECTION_ROUTING === "sync" && !env.SYNC_SERVICE_URL) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        fatal: true,
-        message:
-          "SYNC_CONNECTION_ROUTING=sync requires SYNC_SERVICE_URL (and SYNC_INTERNAL_AUTH_TOKEN) to be configured",
-        path: ["SYNC_SERVICE_URL"],
-      });
-    }
-
-    // Same guard for event delegation: a "sync" switch without a client to
-    // reach is a misconfiguration, not a silent fall-back to legacy.
-    if (env.SYNC_EVENT_ROUTING === "sync" && !env.SYNC_SERVICE_URL) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        fatal: true,
-        message:
-          "SYNC_EVENT_ROUTING=sync requires SYNC_SERVICE_URL (and SYNC_INTERNAL_AUTH_TOKEN) to be configured",
-        path: ["SYNC_SERVICE_URL"],
-      });
-    }
-
-    // Refuse an active Sync writer while the API still routes any browser
-    // path to legacy AND cloud mutations are enabled — that is a dual-writer
-    // window. Cutover keeps mutations in `maintenance` until both routes are
-    // on Sync (S50 / R-MIG-01).
-    const anyLegacyRouting =
-      env.SYNC_CONNECTION_ROUTING === "legacy" ||
-      env.SYNC_EVENT_ROUTING === "legacy";
-    if (
-      env.SYNC_EXECUTION === "active" &&
-      env.SYNC_CLOUD_MUTATION_MODE === "enabled" &&
-      anyLegacyRouting
-    ) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        fatal: true,
-        message:
-          "SYNC_EXECUTION=active with SYNC_CLOUD_MUTATION_MODE=enabled requires both SYNC_CONNECTION_ROUTING and SYNC_EVENT_ROUTING to be sync (refuse dual-writer). Enter maintenance or keep Sync passive while any routing remains legacy",
-        path: ["SYNC_EXECUTION"],
-      });
-    }
   });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -202,8 +149,6 @@ export function parseRawConfig(config: CompassConfig): Config {
     SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(config.sync?.serviceUrl)
       ? nonEmpty(config.sync?.internalAuthToken)
       : undefined,
-    SYNC_CONNECTION_ROUTING: config.sync?.connectionRouting,
-    SYNC_EVENT_ROUTING: config.sync?.eventRouting,
     SYNC_CLOUD_MUTATION_MODE: config.sync?.cloudMutationMode,
     SYNC_EXECUTION: config.sync?.execution,
     POSTHOG_KEY: nonEmpty(config.posthog?.key),
@@ -240,8 +185,6 @@ export function parseConfigFromEnv(
     // both-or-neither check honest.
     SYNC_SERVICE_URL: nonEmpty(rawEnv["SYNC_SERVICE_URL"]),
     SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(rawEnv["SYNC_INTERNAL_AUTH_TOKEN"]),
-    SYNC_CONNECTION_ROUTING: nonEmpty(rawEnv["SYNC_CONNECTION_ROUTING"]),
-    SYNC_EVENT_ROUTING: nonEmpty(rawEnv["SYNC_EVENT_ROUTING"]),
     SYNC_CLOUD_MUTATION_MODE: nonEmpty(rawEnv["SYNC_CLOUD_MUTATION_MODE"]),
     SYNC_EXECUTION: nonEmpty(rawEnv["SYNC_EXECUTION"]),
     POSTHOG_KEY: rawEnv["POSTHOG_KEY"],
@@ -278,5 +221,5 @@ export const CONFIG = parsedConfig;
 export const IS_DEV = isDev(CONFIG.NODE_ENV);
 
 logger.info(
-  `Sync cutover: execution=${CONFIG.SYNC_EXECUTION} connectionRouting=${CONFIG.SYNC_CONNECTION_ROUTING} eventRouting=${CONFIG.SYNC_EVENT_ROUTING} cloudMutationMode=${CONFIG.SYNC_CLOUD_MUTATION_MODE}`,
+  `Sync: configured=${Boolean(CONFIG.SYNC_SERVICE_URL)} execution=${CONFIG.SYNC_EXECUTION} cloudMutationMode=${CONFIG.SYNC_CLOUD_MUTATION_MODE}`,
 );

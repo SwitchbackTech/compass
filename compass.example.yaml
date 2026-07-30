@@ -56,11 +56,9 @@ supertokens:
 #   mongoUri: mongodb+srv://compass_sync:REPLACE_WITH_SYNC_MONGO_PASSWORD@cluster/compass_sync?retryWrites=true&w=majority
 #   internalAuthToken: REPLACE_WITH_SYNC_INTERNAL_AUTH_TOKEN # any string; must match the value the API uses
 #   callbackBaseUrl: http://localhost:3010 # public base URL for provider OAuth/webhook callbacks
-#   serviceUrl: http://localhost:3010 # base URL the API uses to reach this service; compose uses http://sync:3010
-#   connectionRouting: legacy # legacy (default) | sync; sync delegates provider-connection routes here and requires serviceUrl
-#   eventRouting: legacy # legacy (default) | sync; sync delegates calendar/event reads + commands here and requires serviceUrl
+#   serviceUrl: http://localhost:3010 # base URL the API uses to reach this service; compose uses http://sync:3010; once set, every deployment delegates provider-connection and event routes to Sync
 #   cloudMutationMode: enabled # enabled (default) | maintenance — maintenance rejects cloud edits / connect with typed MAINTENANCE
-#   execution: passive # passive | active — active required for OAuth begin + provider import/jobs; refuse active+enabled while any routing is legacy
+#   execution: passive # passive | active — active required for OAuth begin + provider import/jobs
 # Public OAuth/webhook paths (via Caddy → sync): /sync/google, /sync/notifications/google
 #   maxConcurrency: 4
 #   enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)

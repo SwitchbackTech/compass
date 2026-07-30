@@ -115,8 +115,9 @@ See [Sync Service Cutover](../backend/sync-service-cutover.md).
 _Avoid_: calling every Google import path "the Sync service"
 
 **Sync cutover**:
-The controlled handoff from legacy in-backend Google sync to the Sync service
-via `connectionRouting`, `eventRouting`, `cloudMutationMode`, and `execution`.
+The controlled handoff from legacy in-backend Google sync to the Sync
+service — automatic once `sync.serviceUrl` is configured — with
+`cloudMutationMode` and `execution` as the remaining operator knobs.
 
 ### Google Sync
 

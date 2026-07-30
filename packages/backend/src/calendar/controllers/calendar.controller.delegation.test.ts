@@ -38,17 +38,15 @@ const capturingRes = () => {
 };
 
 describe("CalendarController.list event delegation", () => {
-  const originalRouting = CONFIG.SYNC_EVENT_ROUTING;
   const originalServiceUrl = CONFIG.SYNC_SERVICE_URL;
   const originalToken = CONFIG.SYNC_INTERNAL_AUTH_TOKEN;
 
   afterEach(() => {
-    CONFIG.SYNC_EVENT_ROUTING = originalRouting;
     CONFIG.SYNC_SERVICE_URL = originalServiceUrl;
     CONFIG.SYNC_INTERNAL_AUTH_TOKEN = originalToken;
   });
 
-  it("delegates the calendar list to sync when event routing is sync", async () => {
+  it("delegates the calendar list to sync when a sync client is configured", async () => {
     // Point at an unreachable sync service so the delegated read fails at the
     // fetch. The rejection proves the SYNC branch ran (the legacy branch reads
     // the calendar store instead) AND that it fails closed rather than silently
@@ -57,7 +55,6 @@ describe("CalendarController.list event delegation", () => {
     // here rather than the legacy default from another test.
     CONFIG.SYNC_SERVICE_URL = "http://sync.invalid:4999";
     CONFIG.SYNC_INTERNAL_AUTH_TOKEN = "test-sync-secret";
-    CONFIG.SYNC_EVENT_ROUTING = "sync";
 
     const { res, settled } = capturingRes();
     await calendarController.list(reqFor(objectId()), res);
@@ -67,12 +64,10 @@ describe("CalendarController.list event delegation", () => {
 });
 
 describe("CalendarController.availability event delegation", () => {
-  const originalRouting = CONFIG.SYNC_EVENT_ROUTING;
   const originalServiceUrl = CONFIG.SYNC_SERVICE_URL;
   const originalToken = CONFIG.SYNC_INTERNAL_AUTH_TOKEN;
 
   afterEach(() => {
-    CONFIG.SYNC_EVENT_ROUTING = originalRouting;
     CONFIG.SYNC_SERVICE_URL = originalServiceUrl;
     CONFIG.SYNC_INTERNAL_AUTH_TOKEN = originalToken;
     mock.restore();
@@ -81,7 +76,6 @@ describe("CalendarController.availability event delegation", () => {
   it("delegates availability to sync and fails closed on a sync outage (no legacy fallback)", async () => {
     CONFIG.SYNC_SERVICE_URL = "http://sync.invalid:4999";
     CONFIG.SYNC_INTERNAL_AUTH_TOKEN = "test-sync-secret";
-    CONFIG.SYNC_EVENT_ROUTING = "sync";
 
     const { res, settled } = capturingRes();
     await calendarController.availability(
@@ -100,7 +94,6 @@ describe("CalendarController.availability event delegation", () => {
     // intervals keep their own, correct calendarId in the response.
     CONFIG.SYNC_SERVICE_URL = "http://sync.invalid:4999";
     CONFIG.SYNC_INTERNAL_AUTH_TOKEN = "test-sync-secret";
-    CONFIG.SYNC_EVENT_ROUTING = "sync";
 
     const [first, second] = [objectId(), objectId()];
     const queryBusyAvailability = mock(

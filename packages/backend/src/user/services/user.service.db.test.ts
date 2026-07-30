@@ -377,9 +377,11 @@ describe("UserService", () => {
           correlationId: "corr-purge",
         }),
       );
-      spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
-        purgePrincipal,
-      } as never);
+      deleteAccountSpies.push(
+        spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+          purgePrincipal,
+        } as never),
+      );
 
       await userService.deleteAccount(userId);
 
@@ -392,17 +394,19 @@ describe("UserService", () => {
 
     it("still deletes the account when Sync principal purge fails", async () => {
       const user = await UserDriver.createUser();
-      spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
-        purgePrincipal: mock(() =>
-          Promise.resolve({
-            ok: false as const,
-            error: {
-              kind: "unavailable" as const,
-              correlationId: "corr-down",
-            },
-          }),
-        ),
-      } as never);
+      deleteAccountSpies.push(
+        spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+          purgePrincipal: mock(() =>
+            Promise.resolve({
+              ok: false as const,
+              error: {
+                kind: "unavailable" as const,
+                correlationId: "corr-down",
+              },
+            }),
+          ),
+        } as never),
+      );
 
       await userService.deleteAccount(user._id.toString());
 

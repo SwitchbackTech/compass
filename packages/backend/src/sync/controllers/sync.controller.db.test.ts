@@ -701,20 +701,20 @@ describe("SyncController", () => {
     });
 
     describe("Sync delegation:", () => {
-      const originalConnectionRouting = CONFIG.SYNC_CONNECTION_ROUTING;
-      const originalEventRouting = CONFIG.SYNC_EVENT_ROUTING;
+      const originalServiceUrl = CONFIG.SYNC_SERVICE_URL;
+      const originalToken = CONFIG.SYNC_INTERNAL_AUTH_TOKEN;
 
       afterEach(() => {
-        CONFIG.SYNC_CONNECTION_ROUTING = originalConnectionRouting;
-        CONFIG.SYNC_EVENT_ROUTING = originalEventRouting;
+        CONFIG.SYNC_SERVICE_URL = originalServiceUrl;
+        CONFIG.SYNC_INTERNAL_AUTH_TOKEN = originalToken;
       });
 
       it("refuses with 409 and never starts the legacy engine once Sync owns connections/events", async () => {
         // Assigned in-test (not beforeAll): the shared backend harness's
         // global beforeEach resets CONFIG to baseline before every test body
         // runs, so a beforeAll-only override never survives to see it.
-        CONFIG.SYNC_CONNECTION_ROUTING = "sync";
-        CONFIG.SYNC_EVENT_ROUTING = "sync";
+        CONFIG.SYNC_SERVICE_URL = "http://sync.invalid:4999";
+        CONFIG.SYNC_INTERNAL_AUTH_TOKEN = "test-sync-secret";
 
         const { user } = await UtilDriver.setupTestUser();
         const userId = user._id.toString();

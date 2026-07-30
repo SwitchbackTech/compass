@@ -85,11 +85,9 @@ const enableSyncDelegation = () => {
   // values rather than a legacy default from another file.
   CONFIG.SYNC_SERVICE_URL = "http://sync.invalid:4999";
   CONFIG.SYNC_INTERNAL_AUTH_TOKEN = "test-sync-secret";
-  CONFIG.SYNC_EVENT_ROUTING = "sync";
 };
 
 describe("EventController event delegation", () => {
-  const originalRouting = CONFIG.SYNC_EVENT_ROUTING;
   const originalServiceUrl = CONFIG.SYNC_SERVICE_URL;
   const originalToken = CONFIG.SYNC_INTERNAL_AUTH_TOKEN;
 
@@ -98,7 +96,6 @@ describe("EventController event delegation", () => {
   });
 
   afterEach(() => {
-    CONFIG.SYNC_EVENT_ROUTING = originalRouting;
     CONFIG.SYNC_SERVICE_URL = originalServiceUrl;
     CONFIG.SYNC_INTERNAL_AUTH_TOKEN = originalToken;
     // Re-enable for the next test in this file (singleton already primed).
@@ -106,7 +103,7 @@ describe("EventController event delegation", () => {
     mock.restore();
   });
 
-  it("delegates the event list to sync when event routing is sync", async () => {
+  it("delegates the event list to sync when a sync client is configured", async () => {
     spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
     spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
       listCalendars: mock(() =>

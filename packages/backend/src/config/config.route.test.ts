@@ -24,8 +24,6 @@ describe("GET /api/config", () => {
           connectDelegatedToSync: false,
         },
         sync: {
-          connectionRouting: "legacy",
-          eventRouting: "legacy",
           cloudMutationMode: "enabled",
           execution: "passive",
         },
@@ -54,8 +52,6 @@ describe("GET /api/config", () => {
           connectDelegatedToSync: false,
         },
         sync: {
-          connectionRouting: "legacy",
-          eventRouting: "legacy",
           cloudMutationMode: "enabled",
           execution: "passive",
         },
@@ -66,9 +62,9 @@ describe("GET /api/config", () => {
     }
   });
 
-  it("reports connect as not delegated to sync on a legacy deployment", async () => {
-    // The test config has no sync service configured, so the global routing
-    // switch resolves to "legacy" and the browser keeps the code-exchange flow.
+  it("reports connect as not delegated to sync when no sync client is configured", async () => {
+    // The test config has no sync service configured, so delegation resolves
+    // to "legacy" and the browser keeps the code-exchange flow.
     const response = await baseDriver
       .getServer()
       .get("/api/config")
@@ -77,15 +73,13 @@ describe("GET /api/config", () => {
     expect(response.body.google.connectDelegatedToSync).toBe(false);
   });
 
-  it("exposes Sync cutover posture on a legacy deployment", async () => {
+  it("exposes Sync cutover posture when no sync client is configured", async () => {
     const response = await baseDriver
       .getServer()
       .get("/api/config")
       .expect(Status.OK);
 
     expect(response.body.sync).toEqual({
-      connectionRouting: "legacy",
-      eventRouting: "legacy",
       cloudMutationMode: "enabled",
       execution: "passive",
     });

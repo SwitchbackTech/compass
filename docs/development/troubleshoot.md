@@ -147,11 +147,7 @@ message, check `sync.cloudMutationMode` in `compass.yaml` / `GET /api/config`.
 If Google connect or event reads look like the old in-backend path after you
 expected Sync ownership:
 
-1. confirm `GET /api/config` → `sync.connectionRouting` / `sync.eventRouting`
+1. confirm `GET /api/config` → `google.connectDelegatedToSync` is `true`
 2. confirm `sync.serviceUrl` is set (token alone does not enable delegation)
 3. confirm Sync is reachable and healthy on its own port
 4. read [Sync Service Cutover](../backend/sync-service-cutover.md)
-
-Backend startup refusal mentioning dual-writer means `execution=active` and
-`cloudMutationMode=enabled` while any routing is still `legacy` — enter
-maintenance or keep Sync passive until both routings are `sync`.

@@ -52,8 +52,8 @@ Important runtime behavior:
 - Missing Google refresh token does not block Compass-local event writes; Google side effects are skipped.
 - Controllers use the shared `res.promise(...)` response helper and centralized
   error handling.
-- When `sync.eventRouting=sync`, calendar/event reads and durable write commands
-  delegate to the Sync service instead of the legacy event store. See
+- Once `sync.serviceUrl` is configured, calendar/event reads and durable write
+  commands delegate to the Sync service instead of the legacy event store. See
   [Sync Service Cutover](./sync-service-cutover.md).
 
 Key files:

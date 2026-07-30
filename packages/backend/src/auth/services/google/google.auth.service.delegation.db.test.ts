@@ -22,7 +22,6 @@ import { afterAll, beforeEach, describe, expect, it, spyOn } from "bun:test";
 const enableSyncDelegation = () => {
   CONFIG.SYNC_SERVICE_URL = "http://sync.invalid:4999";
   CONFIG.SYNC_INTERNAL_AUTH_TOKEN = "test-sync-secret";
-  CONFIG.SYNC_CONNECTION_ROUTING = "sync";
 };
 
 describe("googleAuthService legacy-engine gating under connection delegation", () => {

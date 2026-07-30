@@ -63,8 +63,11 @@ const CompassConfigSchema = z
         host: optionalString,
       })
       .nullish(),
-    // Compass Sync service configuration. Optional so existing deployments
-    // (and the legacy backend) parse unchanged until Sync is provisioned.
+    // Compass Sync service configuration. Optional at this layer so a
+    // deployment that hasn't provisioned Sync yet still parses (the backend
+    // enforces the pairing of serviceUrl/internalAuthToken itself). Every
+    // deployment that HAS provisioned Sync delegates provider-connection and
+    // event routes to it — there is no more legacy-vs-sync choice to make.
     // Sync owns its OWN isolated Mongo database (mongoUri) and never reads
     // the backend's mongo.uri, per the sync-service ownership boundary.
     sync: z
@@ -73,22 +76,9 @@ const CompassConfigSchema = z
         mongoUri: z.string(),
         internalAuthToken: z.string(),
         // The base URL the backend uses to reach the Sync service (e.g.
-        // http://localhost:3010 in dev, an internal service URL in prod). Optional
-        // so a deployment that does not delegate to Sync omits it.
+        // http://localhost:3010 in dev, an internal service URL in prod).
+        // Optional so a deployment that hasn't provisioned Sync yet omits it.
         serviceUrl: z.string().optional(),
-        // Which implementation serves the browser-facing provider-connection
-        // routes. "legacy" (default) keeps today's in-backend flow; "sync"
-        // delegates to the standalone Sync service. A single global switch, so
-        // every connection is owned end-to-end by one implementation. "sync"
-        // requires serviceUrl (validated backend-side).
-        connectionRouting: z.enum(["legacy", "sync"]).optional(),
-        // Which implementation serves the browser-facing calendar/event reads
-        // and durable write commands. Independent of connectionRouting so the
-        // riskier event path can be rolled out (and rolled back) on its own
-        // schedule. "legacy" (default) keeps today's in-backend event store;
-        // "sync" delegates to the standalone Sync service and requires
-        // serviceUrl (validated backend-side).
-        eventRouting: z.enum(["legacy", "sync"]).optional(),
         // Whether cloud event writes and provider-connection changes are
         // accepted (`enabled`) or rejected with a typed MAINTENANCE response
         // (`maintenance`). Independent of routing/execution so cutover can

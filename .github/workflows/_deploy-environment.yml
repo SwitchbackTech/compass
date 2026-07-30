@@ -76,10 +76,7 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
           SSH_HOST: ${{ vars.SSH_HOST }}
           SSH_USER: ${{ vars.SSH_USER }}
-          # Sync routing (optional; omit → legacy/passive defaults). Prod must
-          # stay unset until cutover. Staging-cloud sets these to prove S38/S39.
-          SYNC_CONNECTION_ROUTING: ${{ vars.SYNC_CONNECTION_ROUTING }}
-          SYNC_EVENT_ROUTING: ${{ vars.SYNC_EVENT_ROUTING }}
+          # Sync cutover knobs (optional; omit → enabled/passive defaults).
           SYNC_CLOUD_MUTATION_MODE: ${{ vars.SYNC_CLOUD_MUTATION_MODE }}
           SYNC_EXECUTION: ${{ vars.SYNC_EXECUTION }}
           WEB_IMAGE: switchbacktech/compass-web:${{ inputs.environment }}-${{ steps.version.outputs.image_version }}
@@ -172,14 +169,8 @@ jobs:
                 "  callbackBaseUrl: \"${FRONTEND_URL}\"" \
                 '  serviceUrl: "http://sync:3010"' \
                 '  enforceLeastPrivilege: true'
-              # Optional per-environment routing/execution (GitHub Environment
-              # vars). Empty → schema defaults (legacy / passive).
-              if [ -n "$SYNC_CONNECTION_ROUTING" ]; then
-                printf '%s\n' "  connectionRouting: \"${SYNC_CONNECTION_ROUTING}\""
-              fi
-              if [ -n "$SYNC_EVENT_ROUTING" ]; then
-                printf '%s\n' "  eventRouting: \"${SYNC_EVENT_ROUTING}\""
-              fi
+              # Optional per-environment execution/mutation-mode knobs (GitHub
+              # Environment vars). Empty → schema defaults (enabled / passive).
               if [ -n "$SYNC_CLOUD_MUTATION_MODE" ]; then
                 printf '%s\n' "  cloudMutationMode: \"${SYNC_CLOUD_MUTATION_MODE}\""
               fi

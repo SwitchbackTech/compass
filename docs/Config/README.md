@@ -78,8 +78,8 @@ bare install with no Google Calendar sync at all. When present, `mongoUri`
 and `internalAuthToken` are required; Sync uses an **isolated** Mongo
 database and must not share the backend's database user/data.
 
-`connectionRouting` and `eventRouting` below decide whether the backend
-delegates to Sync or still runs its own legacy code — see
+`sync.serviceUrl` below decides whether the backend delegates to Sync or
+still runs its own legacy code — see
 [Sync Service Cutover](../backend/sync-service-cutover.md).
 
 | key | Required | Description |
@@ -89,11 +89,9 @@ delegates to Sync or still runs its own legacy code — see
 | `sync.internalAuthToken` | Yes (if `sync:` set) | Shared secret for Sync internal routes. Must match what the API uses when `serviceUrl` is set. |
 | `sync.callbackBaseUrl` | Yes (if `sync:` set) | Public base URL for provider OAuth/webhook callbacks (proxied as `/sync/*`). |
 | `sync.postConnectRedirectUrl` | No | Browser redirect after OAuth connect; defaults to `callbackBaseUrl`. |
-| `sync.serviceUrl` | No | Base URL the **backend** uses to reach Sync (e.g. `http://localhost:3010`). Required for any routing of `sync`. |
-| `sync.connectionRouting` | No | `legacy` (default) or `sync`. Delegates provider-connection routes when `sync`. |
-| `sync.eventRouting` | No | `legacy` (default) or `sync`. Delegates calendar/event reads and durable commands when `sync`. |
+| `sync.serviceUrl` | No | Base URL the **backend** uses to reach Sync (e.g. `http://localhost:3010`). Once set (with `internalAuthToken`), the backend delegates provider-connection and event routes to Sync automatically. |
 | `sync.cloudMutationMode` | No | `enabled` (default) or `maintenance`. Maintenance rejects cloud edits/connect with typed `MAINTENANCE` (`503`). |
-| `sync.execution` | No | `passive` (default) or `active`. Active is required for OAuth begin and provider import/jobs. Startup refuses `active` + `enabled` mutations while any routing remains `legacy`. |
+| `sync.execution` | No | `passive` (default) or `active`. Active is required for OAuth begin and provider import/jobs. |
 | `sync.maxConcurrency` | No | Job concurrency hint for Sync workers. |
 | `sync.enforceLeastPrivilege` | No | When `true`, Sync verifies its Mongo user cannot read the API database. |
 | `sync.compassApiDatabase` | No | API database name the least-privilege check must be denied access to. |
