@@ -54,10 +54,18 @@ class SSEServer {
     };
   }
 
-  // Active SSE connections for a user. The Sync change-feed bridge uses this
-  // to stop polling when the last tab closes.
+  // Active SSE connections for a user.
   subscriberCount(userId: string): number {
     return this.connections.get(userId)?.size ?? 0;
+  }
+
+  // Every currently-connected user id. The Sync change-feed bridge's single
+  // global poller uses this to broad-invalidate everyone on a
+  // resyncRequired: with one shared cursor for the whole process, a stale
+  // cursor means any currently-subscribed user may have missed something,
+  // not just one.
+  connectedUserIds(): string[] {
+    return [...this.connections.keys()];
   }
 
   publish(userId: string, message: ServerMessage): void {

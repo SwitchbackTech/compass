@@ -8,6 +8,8 @@ import {
   type ChangeFeedCursor,
   type ChangeFeedResponse,
   ChangeFeedResponseSchema,
+  type GlobalChangeFeedResponse,
+  GlobalChangeFeedResponseSchema,
 } from "@core/types/sync/change-feed.contracts";
 import {
   type CommandSubmitRequest,
@@ -39,6 +41,7 @@ import { createHmac, randomUUID } from "node:crypto";
 const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 const CALENDARS_PATH = "/internal/calendars";
 const CHANGES_PATH = "/internal/changes";
+const CHANGES_ALL_PATH = "/internal/changes/all";
 const CONNECTIONS_PATH = "/internal/connections";
 const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
 const EVENTS_FULL_PATH = "/internal/events/full";
@@ -120,6 +123,20 @@ function signRequest(
 ): string {
   return createHmac("sha256", secret)
     .update(`${timestamp}.${principal.tenantId}.${principal.principalId}`)
+    .digest("hex");
+}
+
+// Sign a request that acts on behalf of no single tenant/principal — today,
+// only the global change-feed poll. Domain-separated from signRequest above
+// (a distinct HMAC preimage, "service." vs "<timestamp>.<tenant>.<principal>")
+// so a per-principal-signed request can never be replayed here. Reimplemented
+// here for the same reason signRequest is: this client build-depends on
+// neither the Sync service nor its independently-deployable package; a
+// contract test proves this is accepted by the real verifier
+// (verifyServiceRequest).
+function signServiceRequest(secret: string, timestamp: number): string {
+  return createHmac("sha256", secret)
+    .update(`service.${timestamp}`)
     .digest("hex");
 }
 
@@ -285,6 +302,26 @@ export class SyncServiceClient {
     });
   }
 
+  // Resumable content-free invalidation page across EVERY tenant/principal —
+  // backs the single multiplexed change-feed poll the backend runs once per
+  // process instead of once per connected user. Signed as the service itself,
+  // not any principal (see signServiceRequest): there is no single tenant or
+  // principal this request acts on behalf of. Pass `null` to resume from now.
+  getGlobalChanges(
+    cursor: ChangeFeedCursor | null,
+    correlationId?: string,
+  ): Promise<SyncClientResult<GlobalChangeFeedResponse>> {
+    const params = new URLSearchParams();
+    if (cursor !== null) params.set("cursor", cursor);
+    return this.#requestUnscoped({
+      method: "GET",
+      path: CHANGES_ALL_PATH,
+      query: params,
+      schema: GlobalChangeFeedResponseSchema,
+      correlationId,
+    });
+  }
+
   // Hard-delete every Sync-held row for the signed principal (account deletion).
   // Served in Sync passive mode too. Idempotent: a retry returns zero counts.
   purgePrincipal(
@@ -320,7 +357,44 @@ export class SyncServiceClient {
       "x-sync-signature": signRequest(this.#secret, timestamp, input.principal),
       "x-correlation-id": correlationId,
     };
+    return this.#send({ ...input, headers, correlationId });
+  }
 
+  // Same signed-request/timeout/parse machinery as #request, for a route that
+  // acts on behalf of no single tenant/principal (today, only the global
+  // change-feed poll). Signs a domain-separated payload with no identity
+  // claim — see signServiceRequest — so it can never be confused with, or
+  // used to replay, a per-principal-signed request.
+  async #requestUnscoped<T>(input: {
+    method: "GET";
+    path: string;
+    query?: URLSearchParams;
+    schema: z.ZodType<T>;
+    correlationId?: string;
+    timeoutMs?: number;
+  }): Promise<SyncClientResult<T>> {
+    const correlationId = input.correlationId ?? this.#newCorrelationId();
+    const timestamp = this.#now();
+    const headers: Record<string, string> = {
+      "content-type": "application/json",
+      "x-sync-timestamp": String(timestamp),
+      "x-sync-signature": signServiceRequest(this.#secret, timestamp),
+      "x-correlation-id": correlationId,
+    };
+    return this.#send({ ...input, headers, correlationId });
+  }
+
+  async #send<T>(input: {
+    method: "GET" | "POST" | "DELETE";
+    path: string;
+    query?: URLSearchParams;
+    body?: unknown;
+    schema: z.ZodType<T>;
+    correlationId: string;
+    headers: Record<string, string>;
+    timeoutMs?: number;
+  }): Promise<SyncClientResult<T>> {
+    const { correlationId } = input;
     const queryString = input.query?.toString();
     const url =
       queryString !== undefined && queryString.length > 0
@@ -334,7 +408,7 @@ export class SyncServiceClient {
     try {
       response = await this.#fetch(url, {
         method: input.method,
-        headers,
+        headers: input.headers,
         body: input.body === undefined ? undefined : JSON.stringify(input.body),
         signal: controller.signal,
       });

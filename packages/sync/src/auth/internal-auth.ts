@@ -161,3 +161,86 @@ export function createInternalAuthMiddleware(deps: {
     next();
   };
 }
+
+// A second, narrower auth scheme for routes that act on behalf of no single
+// tenant/principal — today, only the global (cross-tenant) change-feed poll
+// the backend runs once per process instead of once per connected user.
+// Reuses the same shared secret and the same timestamp/signature headers, but
+// signs a domain-separated payload with no identity claim, so:
+// - a per-principal-signed request can never be replayed here (different HMAC
+//   preimage, see signaturePayload above), and
+// - this route can never assert ownership of any tenant's data by
+//   construction — there is no tenant/principal to derive, only proof the
+//   caller holds the secret.
+function servicePayload(timestamp: number): string {
+  return `service.${timestamp}`;
+}
+
+export function signServiceRequest(secret: string, timestamp: number): string {
+  return createHmac("sha256", secret)
+    .update(servicePayload(timestamp))
+    .digest("hex");
+}
+
+export type VerifyServiceResult =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly reason: VerifyReason };
+
+export function verifyServiceRequest(input: {
+  readonly secret: string;
+  readonly headers: Record<string, string | string[] | undefined>;
+  readonly now: number;
+  readonly freshnessMs?: number;
+}): VerifyServiceResult {
+  const rawTimestamp = header(input.headers, INTERNAL_AUTH_HEADERS.timestamp);
+  const rawSignature = header(input.headers, INTERNAL_AUTH_HEADERS.signature);
+
+  if (!rawTimestamp || !rawSignature) {
+    return { ok: false, reason: "missing" };
+  }
+
+  const timestamp = Number(rawTimestamp);
+  if (!Number.isFinite(timestamp)) {
+    return { ok: false, reason: "malformed" };
+  }
+
+  const freshnessMs = input.freshnessMs ?? DEFAULT_FRESHNESS_MS;
+  if (Math.abs(input.now - timestamp) > freshnessMs) {
+    return { ok: false, reason: "stale" };
+  }
+
+  const expected = signServiceRequest(input.secret, timestamp);
+  if (!signaturesMatch(expected, rawSignature)) {
+    return { ok: false, reason: "invalidSignature" };
+  }
+
+  return { ok: true };
+}
+
+// Express middleware guarding the global change-feed route. Unlike
+// createInternalAuthMiddleware, success attaches no auth context — there is
+// no principal to scope this request to.
+export function createInternalServiceAuthMiddleware(deps: {
+  secret: string;
+  freshnessMs?: number;
+  now?: () => number;
+}) {
+  const now = deps.now ?? Date.now;
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const result = verifyServiceRequest({
+      secret: deps.secret,
+      headers: req.headers,
+      now: now(),
+      freshnessMs: deps.freshnessMs,
+    });
+
+    if (!result.ok) {
+      res
+        .status(Status.UNAUTHORIZED)
+        .json({ error: "unauthorized", reason: result.reason });
+      return;
+    }
+
+    next();
+  };
+}

@@ -3,7 +3,9 @@ import {
   DEFAULT_FRESHNESS_MS,
   INTERNAL_AUTH_HEADERS,
   signInternalRequest,
+  signServiceRequest,
   verifyInternalRequest,
+  verifyServiceRequest,
 } from "@sync/auth/internal-auth";
 
 const SECRET = "internal-service-secret";
@@ -146,6 +148,101 @@ describe("verifyInternalRequest", () => {
       secret: SECRET,
       headers,
       now: 1000,
+    });
+    expect(result).toEqual({ ok: false, reason: "invalidSignature" });
+  });
+});
+
+// The narrower scheme for the global (cross-tenant) change-feed poll: no
+// tenant/principal claim, only proof the caller holds the secret.
+describe("verifyServiceRequest", () => {
+  const serviceHeaders = (
+    overrides: { secret?: string; timestamp?: number } = {},
+  ) => {
+    const timestamp = overrides.timestamp ?? 1_000_000;
+    return {
+      [INTERNAL_AUTH_HEADERS.timestamp]: String(timestamp),
+      [INTERNAL_AUTH_HEADERS.signature]: signServiceRequest(
+        overrides.secret ?? SECRET,
+        timestamp,
+      ),
+    };
+  };
+
+  it("accepts a correctly signed, fresh request with no identity headers at all", () => {
+    const headers = serviceHeaders({ timestamp: 1_000_000 });
+    const result = verifyServiceRequest({
+      secret: SECRET,
+      headers,
+      now: 1_000_500,
+    });
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("rejects a request missing the timestamp or signature header", () => {
+    for (const missing of [
+      INTERNAL_AUTH_HEADERS.timestamp,
+      INTERNAL_AUTH_HEADERS.signature,
+    ]) {
+      const headers = serviceHeaders({ timestamp: 1_000_000 }) as Record<
+        string,
+        string
+      >;
+      delete headers[missing];
+      const result = verifyServiceRequest({
+        secret: SECRET,
+        headers,
+        now: 1_000_000,
+      });
+      expect(result).toEqual({ ok: false, reason: "missing" });
+    }
+  });
+
+  it("rejects a signature made with the wrong secret", () => {
+    const headers = serviceHeaders({
+      secret: "attacker-secret",
+      timestamp: 1000,
+    });
+    const result = verifyServiceRequest({ secret: SECRET, headers, now: 1000 });
+    expect(result).toEqual({ ok: false, reason: "invalidSignature" });
+  });
+
+  it("rejects a replayed request outside the freshness window", () => {
+    const headers = serviceHeaders({ timestamp: 1_000_000 });
+    const result = verifyServiceRequest({
+      secret: SECRET,
+      headers,
+      now: 1_000_000 + DEFAULT_FRESHNESS_MS + 1,
+    });
+    expect(result).toEqual({ ok: false, reason: "stale" });
+  });
+
+  it("rejects a non-numeric timestamp as malformed", () => {
+    const headers = serviceHeaders({ timestamp: 1000 }) as Record<
+      string,
+      string
+    >;
+    headers[INTERNAL_AUTH_HEADERS.timestamp] = "not-a-number";
+    const result = verifyServiceRequest({ secret: SECRET, headers, now: 1000 });
+    expect(result).toEqual({ ok: false, reason: "malformed" });
+  });
+
+  it("never accepts a per-principal-signed request (different HMAC preimage)", () => {
+    // A valid, correctly signed per-principal request must NOT be replayable
+    // against the service scheme — domain separation is the whole point.
+    const timestamp = 1_000_000;
+    const headers = {
+      [INTERNAL_AUTH_HEADERS.timestamp]: String(timestamp),
+      [INTERNAL_AUTH_HEADERS.signature]: signInternalRequest(SECRET, {
+        timestamp,
+        tenantId: objectId(),
+        principalId: objectId(),
+      }),
+    };
+    const result = verifyServiceRequest({
+      secret: SECRET,
+      headers,
+      now: timestamp,
     });
     expect(result).toEqual({ ok: false, reason: "invalidSignature" });
   });

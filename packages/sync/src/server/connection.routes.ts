@@ -76,6 +76,10 @@ const DEFAULT_EVENT_PAGE_LIMIT = 500;
 
 export interface ConnectionApiDeps {
   authMiddleware: RequestHandler;
+  // Guards the global (cross-tenant) change-feed poll only — see
+  // change-feed.routes.ts. Carried here because this is the shared deps bag
+  // every internal route slice is wired from.
+  serviceAuthMiddleware: RequestHandler;
   mongo: SyncMongoService;
   // Disconnect and begin make provider calls, so they are gated on execution.
   execution: SyncExecutionMode;

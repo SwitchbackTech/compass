@@ -88,4 +88,73 @@ describe("InvalidationRepository", () => {
     expect(ttl?.key).toEqual({ expiresAt: 1 });
     expect(ttl?.expireAfterSeconds).toBe(0);
   });
+
+  describe("global (cross-tenant) scan — backs the multiplexed change-feed poll", () => {
+    it("keyset-lists rows across every tenant/principal after a cursor", async () => {
+      const connectionId = objectId() as ConnectionId;
+      const first = await repo.append({
+        tenantId: objectId(),
+        principalId: objectId(),
+        invalidation: { kind: "connection", connectionId },
+        emittedAt: new Date(),
+      });
+      const second = await repo.append({
+        tenantId: objectId(),
+        principalId: objectId(),
+        invalidation: { kind: "connection", connectionId },
+        emittedAt: new Date(),
+      });
+      const third = await repo.append({
+        tenantId: objectId(),
+        principalId: objectId(),
+        invalidation: { kind: "connection", connectionId },
+        emittedAt: new Date(),
+      });
+
+      const fromStart = await repo.listAfterGlobal(null, 10);
+      expect(fromStart.map((r) => r._id)).toEqual([
+        first._id,
+        second._id,
+        third._id,
+      ]);
+
+      const page = await repo.listAfterGlobal(first._id, 10);
+      expect(page.map((r) => r._id)).toEqual([second._id, third._id]);
+    });
+
+    it("bounds the global page to the given limit", async () => {
+      const connectionId = objectId() as ConnectionId;
+      for (let i = 0; i < 3; i += 1) {
+        await repo.append({
+          tenantId: objectId(),
+          principalId: objectId(),
+          invalidation: { kind: "connection", connectionId },
+          emittedAt: new Date(),
+        });
+      }
+
+      const page = await repo.listAfterGlobal(null, 2);
+      expect(page).toHaveLength(2);
+    });
+
+    it("reports the highest retained id across every tenant/principal, or null when empty", async () => {
+      expect(await repo.latestIdGlobal()).toBeNull();
+
+      const connectionId = objectId() as ConnectionId;
+      await repo.append({
+        tenantId: objectId(),
+        principalId: objectId(),
+        invalidation: { kind: "connection", connectionId },
+        emittedAt: new Date(),
+      });
+      const last = await repo.append({
+        tenantId: objectId(),
+        principalId: objectId(),
+        invalidation: { kind: "connection", connectionId },
+        emittedAt: new Date(),
+      });
+
+      expect(await repo.latestIdGlobal()).toBe(last._id);
+    });
+  });
 });
