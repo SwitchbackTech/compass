@@ -10,13 +10,9 @@ import {
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { normalizeEmail } from "@backend/common/helpers/email.util";
-import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import mongoService from "@backend/common/services/mongo.service";
-import { getConnectionDelegation } from "@backend/common/services/sync-service/connection-routing";
-import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -96,8 +92,6 @@ async function persistGoogleConnection(
     },
   });
 
-  startGoogleCalendarSyncIfNeededInBackground(compassUserId);
-
   return { cUserId: compassUserId };
 }
 
@@ -128,27 +122,7 @@ async function persistStoredGoogleConnection(
     },
   });
 
-  startGoogleCalendarSyncIfNeededInBackground(cUserId);
-
   return { cUserId };
-}
-
-// A connection Sync owns is not this engine's to touch — kicking it here
-// too would run both engines against the same Google account at once. Every
-// caller of this function funnels through here (googleSignup,
-// persistGoogleConnection, persistStoredGoogleConnection), so this is the one
-// gate needed for the legacy engine's write-side entirely.
-function startGoogleCalendarSyncIfNeededInBackground(cUserId: string) {
-  if (getConnectionDelegation() === "sync") return;
-
-  googleCalendarSyncService
-    .startGoogleCalendarSyncIfNeeded(cUserId)
-    .catch((err) => {
-      getLogger().error(
-        `Something went wrong with starting calendar sync for user ${cUserId}`,
-        err,
-      );
-    });
 }
 
 async function googleSignup(
@@ -184,8 +158,6 @@ async function googleSignup(
 
     return { cUserId: cUser.user.userId };
   });
-
-  startGoogleCalendarSyncIfNeededInBackground(user.cUserId);
 
   return user;
 }
@@ -283,46 +255,6 @@ async function googleSignin(
   const cUserId = zObjectId
     .parse(user?._id, { error: () => "Invalid credentials" })
     .toString();
-
-  const googleOAuthClient = new GoogleOAuthClient();
-  googleOAuthClient.oauthClient.setCredentials(oAuthTokens);
-
-  // Wrap the just-authenticated client directly instead of building a
-  // context via createGoogleRequestContext(cUserId): the refresh token may
-  // not be persisted to Mongo yet at this point in the OAuth callback, so
-  // re-fetching by userId here could fail.
-  const freshContext: GoogleRequestContext = {
-    gcal: googleOAuthClient.getGcalClient(),
-    quotaUser: cUserId,
-  };
-
-  // A connection Sync owns has already imported and stays current on its own
-  // (webhooks + reconcile sweep) — kicking the legacy incremental sync here
-  // too would run both engines against the same Google account at once.
-  if (getConnectionDelegation() !== "sync") {
-    googleCalendarSyncService
-      .importLatestGoogleCalendarChanges(cUserId, freshContext)
-      .catch(async (err) => {
-        if (
-          err instanceof Error &&
-          err.message === SyncError.NoSyncToken.description
-        ) {
-          getLogger().info(
-            `Resyncing google data due to missing sync for user: ${cUserId}`,
-          );
-
-          await userMetadataService.updateUserMetadata({
-            userId: cUserId,
-            data: { sync: { importGCal: "RESTART" } },
-          });
-
-          startGoogleCalendarSyncIfNeededInBackground(cUserId);
-          return;
-        }
-
-        getLogger().error("Error during incremental sync:", err);
-      });
-  }
 
   return { cUserId };
 }

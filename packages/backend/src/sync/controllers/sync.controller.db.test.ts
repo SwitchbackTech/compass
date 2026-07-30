@@ -16,7 +16,6 @@ import {
 import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
 import { invalidSyncTokenError } from "@backend/__tests__/mocks.gcal/errors/error.invalidSyncToken";
 import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/error.missingRefreshToken";
-import { CONFIG } from "@backend/common/constants/config.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
@@ -35,7 +34,6 @@ import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,
