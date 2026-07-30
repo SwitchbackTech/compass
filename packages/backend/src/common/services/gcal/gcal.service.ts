@@ -1,5 +1,4 @@
 import { type GaxiosResponse } from "gaxios";
-import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import {
   type gParamsEventsList,
@@ -10,20 +9,13 @@ import {
 } from "@core/types/gcal";
 import {
   type Params_WatchEvents,
-  Resource_Sync,
   type SyncDetails,
 } from "@core/types/sync.types";
-import { IDSchemaV4 } from "@core/types/type.utils";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
-import { CONFIG } from "@backend/common/constants/config.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import { withGoogleRetry } from "@backend/common/services/gcal/gcal.retry";
-import { encodeChannelToken } from "@backend/sync/services/watch/google-watch-token";
-
-const getGcalNotificationAddress = () =>
-  CONFIG.GCAL_WEBHOOK_BASEURL + GCAL_NOTIFICATION_ENDPOINT;
 
 const logger = Logger("app:gcal.service");
 
@@ -385,49 +377,6 @@ class GCalService {
 
     return this.validateGCalResponse(response).data;
   }
-
-  watchCalendars = async (
-    { gcal, quotaUser }: GoogleRequestContext,
-    params: Omit<Params_WatchEvents, "gCalendarId" | "resourceId">,
-  ) => {
-    const response = await withGoogleRetry(() =>
-      gcal.calendarList.watch({
-        quotaUser,
-        requestBody: {
-          // reminder: address always needs to be HTTPS
-          address: getGcalNotificationAddress(),
-          expiration: params.expiration,
-          id: IDSchemaV4.parse(params.channelId),
-          token: encodeChannelToken({ resource: Resource_Sync.CALENDAR }),
-          type: "web_hook",
-        },
-      }),
-    );
-
-    return { watch: this.validateGCalResponse(response).data };
-  };
-
-  watchEvents = async (
-    { gcal, quotaUser }: GoogleRequestContext,
-    params: Omit<Params_WatchEvents, "resourceId">,
-  ) => {
-    const response = await withGoogleRetry(() =>
-      gcal.events.watch({
-        calendarId: params.gCalendarId,
-        quotaUser,
-        requestBody: {
-          // reminder: address always needs to be HTTPS
-          address: getGcalNotificationAddress(),
-          expiration: params.expiration,
-          id: IDSchemaV4.parse(params.channelId),
-          token: encodeChannelToken({ resource: Resource_Sync.EVENTS }),
-          type: "web_hook",
-        },
-      }),
-    );
-
-    return { watch: this.validateGCalResponse(response).data };
-  };
 
   stopWatch = async (
     { gcal, quotaUser }: GoogleRequestContext,

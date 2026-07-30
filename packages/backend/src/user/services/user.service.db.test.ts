@@ -1,9 +1,14 @@
 import { faker } from "@faker-js/faker";
+import { ObjectId } from "mongodb";
 import * as supertokensNode from "supertokens-node";
 import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
 import { CalendarProvider } from "@core/types/calendar.types";
-import { GoogleSyncDriver } from "@backend/__tests__/drivers/google-sync.driver";
+import { WatchSchema } from "@core/types/watch.types";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
+import {
+  buildEventRecord,
+  seedGoogleCalendar,
+} from "@backend/__tests__/helpers/event-propagation.test-helpers";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -20,7 +25,6 @@ import { initSupertokens } from "@backend/common/middleware/supertokens.middlewa
 import * as googleWatchCleanup from "@backend/common/services/gcal/google-watch-cleanup.util";
 import mongoService from "@backend/common/services/mongo.service";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
-import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
@@ -35,6 +39,43 @@ import {
   mock,
   spyOn,
 } from "bun:test";
+
+// Seeds `count` Google-provider calendars each with one event - a stand-in for
+// the legacy engine's full import flow, which used to seed realistic-looking
+// data here. These tests only care that Google-sourced calendars/events exist
+// to be cleaned up, not that they came from a real (mocked) Google API call.
+const seedGoogleCalendarsWithEvents = async (userId: ObjectId, count = 1) => {
+  const calendars = await Promise.all(
+    Array.from({ length: count }, () => seedGoogleCalendar(userId)),
+  );
+  await mongoService.event.insertMany(
+    calendars.map((calendar) => buildEventRecord(calendar._id)),
+  );
+  return calendars;
+};
+
+// Seeds a legacy `sync` collection row and a `watch` collection row directly -
+// a stand-in for the legacy engine's own watch-registration flow, which these
+// tests no longer have access to. Only the row's existence matters: these
+// tests assert deletion/cleanup clears it, not its content.
+const seedLegacySyncAndWatch = async (userId: string) => {
+  await mongoService.sync.insertOne({
+    user: userId,
+    google: {
+      events: [{ gCalendarId: "primary", nextSyncToken: "token" }],
+      calendarlist: [],
+    },
+  });
+  await mongoService.watch.insertOne(
+    WatchSchema.parse({
+      _id: new ObjectId(),
+      user: userId,
+      resourceId: "resource-1",
+      expiration: new Date(Date.now() + 60 * 60_000),
+      gCalendarId: "primary",
+    }),
+  );
+};
 
 const createSupertokensUser = (userId: string, recipeUserIds: string[]) => ({
   id: userId,
@@ -443,8 +484,8 @@ describe("UserService", () => {
         superTokensMetadata: 0,
       });
 
-      await GoogleSyncDriver.createHealthyGoogleSync(storedUser!, true);
-      await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
+      await seedLegacySyncAndWatch(userId);
+      await seedGoogleCalendarsWithEvents(user._id);
 
       const summary: Summary_Delete =
         await userService.deleteCompassDataForUser(userId, false);
@@ -505,7 +546,7 @@ describe("UserService", () => {
         superTokensMetadata: 0,
       });
 
-      await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
+      await seedGoogleCalendarsWithEvents(user._id);
 
       // Archiving is what a Google revoke, or a calendar disappearing from the
       // user's Google list, leaves behind: the calendar row stays, its events
@@ -777,7 +818,8 @@ describe("UserService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
 
-      await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
+      await seedGoogleCalendarsWithEvents(user._id, 2);
+      await seedLegacySyncAndWatch(userId);
 
       const calendars = await calendarService.list(userId);
 
@@ -896,7 +938,7 @@ describe("UserService", () => {
 
       expect(user.google).toBeDefined();
 
-      await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
+      await seedGoogleCalendarsWithEvents(user._id, 2);
 
       const calendarsBefore = await calendarService.list(userId);
       const googleCalendarIdsBefore = calendarsBefore

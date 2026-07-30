@@ -3,10 +3,19 @@ import { ObjectId } from "mongodb";
 import { type MigrationParams, type RunnableMigration } from "umzug";
 import mongoService from "@backend/common/services/mongo.service";
 import { type EventRecord } from "@backend/event/event.record";
-import { getAnchorDate } from "@backend/event/services/recur/util/recur.util";
 
-const anchorMs = (record: EventRecord): number =>
-  getAnchorDate(record.schedule).getTime();
+// The instant a schedule occupies in the recurrence pattern: the timed
+// instant itself, or midnight UTC of the all-day date. Inlined from the
+// (since-deleted) event/services/recur/util/recur.util.ts, this migration's
+// only remaining caller.
+const anchorMs = (record: EventRecord): number => {
+  const { schedule } = record;
+  const anchor =
+    schedule.kind === "timed"
+      ? schedule.start
+      : new Date(`${schedule.start}T00:00:00.000Z`);
+  return anchor.getTime();
+};
 
 /**
  * One-off repair for the pre-fix "base = first occurrence" model (see
