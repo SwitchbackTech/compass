@@ -11,7 +11,6 @@ import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oaut
 import * as googleAuthUtil from "@backend/auth/services/google/util/google.auth.util";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import mongoService from "@backend/common/services/mongo.service";
-import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
@@ -293,10 +292,6 @@ describe("googleAuthService", () => {
         access_token: faker.internet.jwt(),
         refresh_token: faker.string.uuid(),
       };
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
 
       await userService.pruneGoogleData(compassUserId);
 
@@ -320,43 +315,6 @@ describe("googleAuthService", () => {
       );
       expect(metadata.sync?.importGCal).toBe("RESTART");
       expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
-      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
-
-      restartSpy.mockRestore();
-    });
-
-    it("returns after persisting reconnect state even if the background sync fails", async () => {
-      const user = await UserDriver.createUser();
-      const compassUserId = user._id.toString();
-      const gUser = UserDriver.generateGoogleUser({
-        sub: faker.string.uuid(),
-        picture: faker.image.url(),
-      });
-      const oAuthTokens: Pick<Credentials, "access_token" | "refresh_token"> = {
-        access_token: faker.internet.jwt(),
-        refresh_token: faker.string.uuid(),
-      };
-      const restartError = new Error("sync failed");
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockImplementation(() => Promise.reject(restartError));
-
-      await userService.pruneGoogleData(compassUserId);
-
-      await expect(
-        googleAuthService.repairGoogleConnection(
-          compassUserId,
-          gUser,
-          oAuthTokens,
-        ),
-      ).resolves.toEqual({ cUserId: compassUserId });
-
-      await Promise.resolve();
-
-      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
-
-      restartSpy.mockRestore();
     });
 
     it("repairs sync with the stored refresh token when Google sign-in does not return a new one", async () => {
@@ -368,10 +326,6 @@ describe("googleAuthService", () => {
         sub: user.google?.googleId,
         picture: faker.image.url(),
       });
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
 
       mockDetermineGoogleAuthMode().mockResolvedValue({
         authMode: "RECONNECT_REPAIR",
@@ -401,9 +355,6 @@ describe("googleAuthService", () => {
       expect(updatedUser?.google?.picture).toBe(providerUser.picture);
       expect(metadata.sync?.importGCal).toBe("RESTART");
       expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
-      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
-
-      restartSpy.mockRestore();
     });
   });
 
@@ -416,10 +367,6 @@ describe("googleAuthService", () => {
         sub: user.google?.googleId,
         picture: faker.image.url(),
       });
-      const importSpy = spyOn(
-        googleCalendarSyncService,
-        "importLatestGoogleCalendarChanges",
-      ).mockResolvedValue(undefined);
 
       await expect(
         googleAuthService.googleSignin(providerUser, {
@@ -431,9 +378,6 @@ describe("googleAuthService", () => {
 
       expect(updatedUser?.google?.gRefreshToken).toBe(storedRefreshToken);
       expect(updatedUser?.google?.picture).toBe(providerUser.picture);
-      expect(importSpy).toHaveBeenCalledWith(compassUserId, expect.any(Object));
-
-      importSpy.mockRestore();
     });
   });
 
@@ -452,10 +396,6 @@ describe("googleAuthService", () => {
         picture: faker.image.url(),
       });
       const refreshToken = faker.string.uuid();
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
       const exchangeSpy = spyOn(
         GoogleOAuthClient.prototype,
         "exchangeAuthCode",
@@ -488,10 +428,8 @@ describe("googleAuthService", () => {
       expect(updatedUser?.google?.gRefreshToken).toBe(refreshToken);
       expect(metadata.sync?.importGCal).toBe("RESTART");
       expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
-      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
 
       exchangeSpy.mockRestore();
-      restartSpy.mockRestore();
     });
 
     it("rejects when the Google account belongs to another Compass user", async () => {
@@ -499,10 +437,6 @@ describe("googleAuthService", () => {
       const emailPasswordUser = await UserDriver.createUser({
         withGoogle: false,
       });
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
       const exchangeSpy = spyOn(
         GoogleOAuthClient.prototype,
         "exchangeAuthCode",
@@ -532,18 +466,11 @@ describe("googleAuthService", () => {
         description: AuthError.GoogleAccountAlreadyConnected.description,
       });
 
-      expect(restartSpy).not.toHaveBeenCalled();
-
       exchangeSpy.mockRestore();
-      restartSpy.mockRestore();
     });
 
     it("rejects when the Google account email does not match the current Compass user", async () => {
       const user = await UserDriver.createUser({ withGoogle: false });
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
       const exchangeSpy = spyOn(
         GoogleOAuthClient.prototype,
         "exchangeAuthCode",
@@ -572,40 +499,11 @@ describe("googleAuthService", () => {
         description: AuthError.GoogleConnectEmailMismatch.description,
       });
 
-      expect(restartSpy).not.toHaveBeenCalled();
-
       exchangeSpy.mockRestore();
-      restartSpy.mockRestore();
     });
   });
 
   describe("googleSignup", () => {
-    it("starts calendar repair in the background so Compass-only events sync after import completes", async () => {
-      const recipeUserId = faker.database.mongodbObjectId();
-      const providerUser = {
-        sub: faker.string.uuid(),
-        email: faker.internet.email(),
-        name: faker.person.fullName(),
-        picture: faker.image.url(),
-      } as TokenPayload;
-      const refreshToken = faker.string.uuid();
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
-
-      const result = await googleAuthService.googleSignup(
-        providerUser,
-        refreshToken,
-        recipeUserId,
-      );
-
-      expect(result.cUserId).toBe(recipeUserId);
-      expect(restartSpy).toHaveBeenCalledWith(recipeUserId);
-
-      restartSpy.mockRestore();
-    });
-
     it("reuses an existing same-email Compass user instead of creating a duplicate", async () => {
       const existingUser = await UserDriver.createUser({ withGoogle: false });
       const normalizedEmail = existingUser.email.toLowerCase();
@@ -621,10 +519,6 @@ describe("googleAuthService", () => {
         picture: faker.image.url(),
       } as TokenPayload;
       const refreshToken = faker.string.uuid();
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
 
       const result = await googleAuthService.googleSignup(
         providerUser,
@@ -641,9 +535,6 @@ describe("googleAuthService", () => {
       expect(storedUsers[0]?._id).toEqual(existingUser._id);
       expect(storedUsers[0]?.google?.googleId).toBe(providerUser.sub);
       expect(storedUsers[0]?.google?.gRefreshToken).toBe(refreshToken);
-      expect(restartSpy).toHaveBeenCalledWith(existingUser._id.toString());
-
-      restartSpy.mockRestore();
     });
   });
 });
