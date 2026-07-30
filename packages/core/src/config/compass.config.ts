@@ -60,13 +60,15 @@ const CompassConfigSchema = z
         host: optionalString,
       })
       .nullish(),
-    // Compass Sync service configuration. Optional at this layer so a
-    // deployment that hasn't provisioned Sync yet still parses (the backend
-    // enforces the pairing of serviceUrl/internalAuthToken itself). Every
-    // deployment that HAS provisioned Sync delegates provider-connection and
-    // event routes to it — there is no more legacy-vs-sync choice to make.
-    // Sync owns its OWN isolated Mongo database (mongoUri) and never reads
-    // the backend's mongo.uri, per the sync-service ownership boundary.
+    // Compass Sync service configuration. Every deployment runs Sync (self-host
+    // included) and delegates provider-connection and event routes to it — there
+    // is no more legacy-vs-sync choice to make. The block itself stays optional
+    // at this layer (not required-and-non-nullish) because this same schema
+    // parses Sync's own compass.yaml section for non-backend consumers
+    // (packages/scripts commands); the backend enforces serviceUrl/
+    // internalAuthToken as hard-required itself and exits at startup without
+    // them. Sync owns its OWN isolated Mongo database (mongoUri) and never
+    // reads the backend's mongo.uri, per the sync-service ownership boundary.
     sync: z
       .object({
         port: z.union([z.string(), z.number()]).optional(),
@@ -74,7 +76,8 @@ const CompassConfigSchema = z
         internalAuthToken: z.string(),
         // The base URL the backend uses to reach the Sync service (e.g.
         // http://localhost:3010 in dev, an internal service URL in prod).
-        // Optional so a deployment that hasn't provisioned Sync yet omits it.
+        // Required in practice (the backend exits at startup without it);
+        // kept optional in the schema for the non-backend consumers above.
         serviceUrl: z.string().optional(),
         // Whether cloud event writes and provider-connection changes are
         // accepted (`enabled`) or rejected with a typed MAINTENANCE response

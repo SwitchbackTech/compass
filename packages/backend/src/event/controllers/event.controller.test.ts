@@ -77,30 +77,30 @@ const createViaSync = async () => {
   return { res, json };
 };
 
-const enableSyncDelegation = () => {
-  // Point at an unreachable sync service so delegated calls fail at fetch.
-  // Proves the SYNC branch ran (legacy would hit the event store) AND that
-  // it fails closed — never falls back. This dedicated file gets its own
-  // test process, so the lazy sync client singleton is built from these
-  // values rather than a legacy default from another file.
+const pointAtUnreachableSync = () => {
+  // Point at an unreachable sync service so calls that aren't mocked below
+  // fail at fetch, proving the controller fails closed on a sync outage
+  // rather than silently returning empty/success. This dedicated file gets
+  // its own test process, so the lazy sync client singleton is built from
+  // these values rather than a default from another file.
   CONFIG.SYNC_SERVICE_URL = "http://sync.invalid:4999";
   CONFIG.SYNC_INTERNAL_AUTH_TOKEN = "test-sync-secret";
 };
 
-describe("EventController event delegation", () => {
+describe("EventController", () => {
   // The shared backend harness's global beforeEach (mock.setup.ts) resets
   // CONFIG to its file-load baseline before every test body runs, which
   // would wipe a beforeAll-set override. Use beforeEach here so this runs
   // after that reset, not before it.
   beforeEach(() => {
-    enableSyncDelegation();
+    pointAtUnreachableSync();
   });
 
   afterEach(() => {
     mock.restore();
   });
 
-  it("delegates the event list to sync when a sync client is configured", async () => {
+  it("fails closed on a sync outage when listing events", async () => {
     spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
     spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
       listCalendars: mock(() =>
@@ -135,7 +135,7 @@ describe("EventController event delegation", () => {
     });
   });
 
-  it("delegates create to sync and fails closed (no legacy fallback)", async () => {
+  it("fails closed on a sync outage when creating an event", async () => {
     const { res, json } = jsonRes();
     await eventController.create(
       sessionReq(objectId(), {
@@ -160,7 +160,7 @@ describe("EventController event delegation", () => {
     expect(json).toHaveBeenCalled();
   });
 
-  it("delegates replace to sync and fails closed (no legacy fallback)", async () => {
+  it("fails closed on a sync outage when replacing an event", async () => {
     const { res, json } = jsonRes();
     await eventController.replace(
       sessionReq(objectId(), {
@@ -185,7 +185,7 @@ describe("EventController event delegation", () => {
     expect(json).toHaveBeenCalled();
   });
 
-  it("delegates delete to sync and fails closed (no legacy fallback)", async () => {
+  it("fails closed on a sync outage when deleting an event", async () => {
     const { res, json } = jsonRes();
     await eventController.delete(
       sessionReq(objectId(), {

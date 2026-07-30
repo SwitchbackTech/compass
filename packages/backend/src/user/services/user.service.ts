@@ -250,8 +250,6 @@ class UserService {
 
   #purgeSyncPrincipal = async (userId: string): Promise<void> => {
     const client = getSyncServiceClient();
-    if (!client) return;
-
     const result = await client.purgePrincipal(toSyncPrincipal(userId));
     if (!result.ok) {
       logger.warn(

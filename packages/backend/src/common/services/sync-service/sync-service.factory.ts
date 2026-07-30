@@ -15,19 +15,16 @@ export function buildSyncServiceClient(options: {
   });
 }
 
-let cached: SyncServiceClient | null | undefined;
+let cached: SyncServiceClient | undefined;
 
 // The process-wide client, built once from config. SYNC_SERVICE_URL and
-// SYNC_INTERNAL_AUTH_TOKEN are required config, so this is null only in a
-// test/mock CONFIG that bypasses the schema — every real deployment gets a
-// real client. Callers still gate on it defensively rather than assume.
-export function getSyncServiceClient(): SyncServiceClient | null {
-  if (cached !== undefined) return cached;
-  const serviceUrl = CONFIG.SYNC_SERVICE_URL;
-  const secret = CONFIG.SYNC_INTERNAL_AUTH_TOKEN;
-  cached =
-    serviceUrl && secret
-      ? buildSyncServiceClient({ serviceUrl, secret })
-      : null;
+// SYNC_INTERNAL_AUTH_TOKEN are required config (the process exits at startup
+// if either is missing), so this is always a real client.
+export function getSyncServiceClient(): SyncServiceClient {
+  if (cached) return cached;
+  cached = buildSyncServiceClient({
+    serviceUrl: CONFIG.SYNC_SERVICE_URL,
+    secret: CONFIG.SYNC_INTERNAL_AUTH_TOKEN,
+  });
   return cached;
 }

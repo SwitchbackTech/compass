@@ -16,10 +16,6 @@ import {
 import {
   EventInstanceListQuerySchema,
   type EventInstanceListResponse,
-  EventOccurrenceListQuerySchema,
-  type EventOccurrenceListResponse,
-  type SyncEventOccurrence,
-  SyncEventOccurrenceSchema,
 } from "@core/types/sync/event.contracts";
 import {
   type ConnectionId,
@@ -66,7 +62,6 @@ import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 
 export const CONNECTIONS_PATH = "/internal/connections";
 export const CALENDARS_PATH = "/internal/calendars";
-export const EVENTS_PATH = "/internal/events";
 export const EVENTS_FULL_PATH = "/internal/events/full";
 export const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 export const BEGIN_PATH = "/internal/connections/begin";
@@ -190,106 +185,6 @@ export function registerConnectionRoutes(
         );
         const response: CalendarListResponse = {
           calendars: records.map(toProviderCalendar),
-        };
-        res.status(Status.OK).json(response);
-      } catch {
-        respondInternalError(res);
-      }
-    },
-  );
-
-  // List the caller's derived event occurrences within a bounded window, keyset
-  // paginated. The range is clamped to the sync horizon and the page is capped,
-  // so this never expands a series to completion or scans unboundedly. Scoped to
-  // the signed principal; a read, served in passive mode too.
-  app.get(
-    EVENTS_PATH,
-    internalRateLimit,
-    deps.authMiddleware,
-    async (req, res) => {
-      const auth = requireAuth(req, res);
-      if (!auth) return;
-      if (!ensureConnected(deps.mongo, res)) return;
-
-      const parsed = EventOccurrenceListQuerySchema.safeParse({
-        calendarIds: toQueryArray(req.query["calendarIds"]),
-        start: req.query["start"],
-        end: req.query["end"],
-        cursor: req.query["cursor"],
-        limit:
-          req.query["limit"] === undefined
-            ? undefined
-            : Number(req.query["limit"]),
-      });
-      if (!parsed.success) {
-        res.status(Status.BAD_REQUEST).json({ error: "invalid_query" });
-        return;
-      }
-      const query = parsed.data;
-
-      const after = decodeOccurrenceCursor(query.cursor);
-      if (query.cursor !== undefined && !after) {
-        res.status(Status.BAD_REQUEST).json({ error: "invalid_cursor" });
-        return;
-      }
-
-      // Clamp the requested range to the horizon. A range that falls entirely
-      // outside it collapses to empty rather than scanning anything.
-      const now = deps.now ? deps.now() : Date.now();
-      const start = maxDate(
-        new Date(query.start),
-        dayjs(now).subtract(HORIZON_PAST_MONTHS, "month").toDate(),
-      );
-      const end = minDate(
-        new Date(query.end),
-        dayjs(now).add(HORIZON_FUTURE_MONTHS, "month").toDate(),
-      );
-      if (start >= end) {
-        const empty: EventOccurrenceListResponse = {
-          occurrences: [],
-          nextCursor: null,
-        };
-        res.status(Status.OK).json(empty);
-        return;
-      }
-
-      const limit = query.limit ?? DEFAULT_EVENT_PAGE_LIMIT;
-      try {
-        const repo = new EventOccurrenceRepository(
-          deps.mongo.db,
-          deps.mongo.client,
-        );
-        // Resolve the active generation for each requested calendar so a repair
-        // in progress is never read; a calendar with no events resource yet
-        // (cloud-only, or not imported) reads generation 0.
-        const resources = new SyncResourceRepository(deps.mongo.db);
-        const activeByCalendar = await resources.activeGenerationByCalendar(
-          auth.tenantId,
-          auth.principalId,
-          [...query.calendarIds],
-        );
-        const calendars = [...query.calendarIds].map((calendarId) => ({
-          calendarId,
-          generation: activeByCalendar.get(calendarId) ?? 0,
-        }));
-        const records = await repo.listByCalendarRange({
-          tenantId: auth.tenantId,
-          principalId: auth.principalId,
-          calendars,
-          start,
-          end,
-          limit,
-          after,
-        });
-        // A full page means there may be more: hand back a cursor at the last
-        // row. A short page is the end of the range, so there is no next cursor.
-        const last = records.at(-1);
-        const response: EventOccurrenceListResponse = {
-          occurrences: records.map(toSyncEventOccurrence),
-          nextCursor:
-            records.length === limit && last
-              ? encodeOccurrenceCursor(last)
-              : null,
         };
         res.status(Status.OK).json(response);
       } catch {
@@ -875,23 +770,6 @@ export function toProviderCalendar(
     capabilities: record.capabilities,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
-  });
-}
-
-// Map a stored occurrence record to the display wire contract, dropping the
-// storage-only fields (tenant/principal scope, startAt axis, generation) and
-// validating the projection through the schema on the way out.
-export function toSyncEventOccurrence(
-  record: EventOccurrenceRecord,
-): SyncEventOccurrence {
-  return SyncEventOccurrenceSchema.parse({
-    occurrenceKey: record.occurrenceKey,
-    eventId: record.eventId,
-    calendarId: record.calendarId,
-    schedule: record.schedule,
-    busy: record.busy,
-    title: record.title,
-    cancelled: record.cancelled,
   });
 }
 
