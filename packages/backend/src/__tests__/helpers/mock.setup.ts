@@ -35,6 +35,7 @@ import {
   enterTestGcalClient,
   setTestGcalIsolationKey,
 } from "@backend/common/services/gcal/gcal.test-context";
+import * as googleWatchCleanup from "@backend/common/services/gcal/google-watch-cleanup.util";
 import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import { googleCalendarListService } from "@backend/sync/services/calendarlist/google-calendarlist.service";
@@ -244,6 +245,7 @@ function restoreLeakedTestSpies(): void {
     gcalService,
     sseServer,
     googleWatchService,
+    googleWatchCleanup,
     googleCalendarListService,
     googleCalendarSyncService,
     userService,

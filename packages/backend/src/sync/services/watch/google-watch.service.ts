@@ -1,11 +1,10 @@
-import { type ClientSession, ObjectId } from "mongodb";
+import { ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import {
   type Params_WatchEvents,
   type Payload_Sync_Notif,
   Resource_Sync,
-  type Result_Watch_Stop,
   XGoogleResourceState,
 } from "@core/types/sync.types";
 import { ExpirationDateSchema } from "@core/types/type.utils";
@@ -14,18 +13,17 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
-import { UserError } from "@backend/common/errors/user/user.errors";
 import {
   createGoogleRequestContext,
   type GoogleRequestContext,
 } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
+import { isGoogleWatchUnsupported } from "@backend/common/services/gcal/gcal.utils";
 import {
-  getGoogleErrorStatus,
-  isGoogleWatchUnsupported,
-  isInvalidGoogleToken,
-  isMissingGoogleRefreshToken,
-} from "@backend/common/services/gcal/gcal.utils";
+  deleteWatchesByUser,
+  stopWatch,
+  stopWatches,
+} from "@backend/common/services/gcal/google-watch-cleanup.util";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import { GCalEventsNotificationHandler } from "@backend/sync/services/notify/handler/gcal-events.notification.handler";
@@ -37,60 +35,8 @@ import {
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
 import { isWatchingGoogleResource } from "@backend/sync/services/watch/google-watch-state";
 import { getChannelExpiration } from "@backend/sync/services/watch/google-watch-timing";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const logger = Logger("app:google-watch.service");
-
-async function deleteWatchesByUser(
-  user: string,
-  session?: ClientSession,
-): Promise<Result_Watch_Stop> {
-  const watches = await mongoService.watch
-    .find({ user }, { session })
-    .toArray();
-
-  await mongoService.watch.deleteMany({ user }, { session });
-
-  return watches.map(({ _id, resourceId }) => ({
-    channelId: _id.toString(),
-    resourceId,
-  }));
-}
-
-async function prepareStopWatches(
-  user: string,
-  context?: GoogleRequestContext,
-  session?: ClientSession,
-) {
-  const watches = await mongoService.watch
-    .find({ user }, { session })
-    .toArray();
-
-  if (watches.length === 0 || context) {
-    return { watches, context };
-  }
-
-  const compassUser = await findCompassUserBy("_id", user);
-
-  if (!compassUser) {
-    throw error(UserError.UserNotFound, "User not found");
-  }
-
-  if (!compassUser.google?.gRefreshToken) {
-    await mongoService.watch.deleteMany({ user }, { session });
-
-    logger.warn(
-      "Google refresh token is missing. Corresponding watch records deleted",
-    );
-
-    return { watches: [], context };
-  }
-
-  return {
-    watches,
-    context: await createGoogleRequestContext(user),
-  };
-}
 
 async function cleanupStaleWatch({
   channelId,
@@ -428,100 +374,6 @@ async function startGoogleWatches(
       return googleWatchService.startEventWatch(userId, params, context);
     }),
   ).then((results) => results.filter((r) => r !== undefined));
-}
-
-async function stopWatch(
-  user: string,
-  channelId: string,
-  resourceId: string,
-  context?: GoogleRequestContext,
-  session?: ClientSession,
-) {
-  const filter = { user, _id: new ObjectId(channelId), resourceId };
-
-  try {
-    if (!context) context = await createGoogleRequestContext(user);
-
-    await gcalService.stopWatch(context, {
-      channelId,
-      resourceId,
-    });
-
-    await mongoService.watch.deleteOne(filter, { session });
-
-    return { channelId, resourceId };
-  } catch (e) {
-    const status = getGoogleErrorStatus(e);
-
-    if (status === 404) {
-      await mongoService.watch.deleteOne(filter, { session });
-
-      logger.warn(
-        "Channel no longer exists. Corresponding sync record deleted",
-      );
-
-      return undefined;
-    }
-
-    if (status === 401 || isInvalidGoogleToken(e)) {
-      await mongoService.watch.deleteOne(filter, { session });
-
-      logger.warn(
-        "Google authorization is no longer valid. Corresponding sync record deleted",
-      );
-
-      return undefined;
-    }
-
-    if (isMissingGoogleRefreshToken(e)) {
-      await mongoService.watch.deleteOne(filter, { session });
-
-      logger.warn(
-        "Google refresh token is missing. Corresponding watch record deleted",
-      );
-
-      return undefined;
-    }
-
-    throw e;
-  }
-}
-
-async function stopWatches(
-  user: string,
-  context?: GoogleRequestContext,
-  session?: ClientSession,
-): Promise<Result_Watch_Stop> {
-  const prepared = await prepareStopWatches(user, context, session);
-
-  if (prepared.watches.length === 0) {
-    return [];
-  }
-
-  logger.debug(
-    `Stopping ${prepared.watches.length} gcal event watches for user: ${user}`,
-  );
-  const result = await Promise.all(
-    prepared.watches.map(async ({ _id, resourceId }) =>
-      googleWatchService
-        .stopWatch(user, _id.toString(), resourceId, prepared.context, session)
-        .catch((error) => {
-          logger.error(
-            `Error stopping watch for user: ${user}, channelId: ${_id.toString()}`,
-            error,
-          );
-
-          return undefined;
-        }),
-    ),
-  );
-
-  const stopped = result.filter(
-    (identity): identity is { channelId: string; resourceId: string } =>
-      identity !== undefined,
-  );
-
-  return stopped;
 }
 
 export const googleWatchService = {

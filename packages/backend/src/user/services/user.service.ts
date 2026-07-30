@@ -17,12 +17,14 @@ import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { normalizeEmail } from "@backend/common/helpers/email.util";
+import {
+  deleteWatchesByUser,
+  stopWatches,
+} from "@backend/common/services/gcal/google-watch-cleanup.util";
 import mongoService from "@backend/common/services/mongo.service";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import eventService from "@backend/event/services/event.service";
-import syncRecords from "@backend/sync/services/records/sync-records.repository";
-import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
@@ -209,11 +211,7 @@ class UserService {
       summary.calendars = calendars.deletedCount;
 
       if (gcalAccess) {
-        const watches = await googleWatchService.stopWatches(
-          userId,
-          undefined,
-          session,
-        );
+        const watches = await stopWatches(userId, undefined, session);
         summary.eventWatches = watches.length;
       } else {
         const watches = await mongoService.watch.deleteMany(
@@ -223,13 +221,19 @@ class UserService {
         summary.eventWatches = watches.deletedCount;
       }
 
-      const syncs = await syncRecords.deleteAllByUser(userId, session);
+      const syncs = await mongoService.sync.deleteMany(
+        { user: userId },
+        { session },
+      );
       summary.syncs = syncs.deletedCount;
 
       if (user) {
         // delete other users sync with same Google calendar ID (email)
         const gCalId = user.email;
-        const staleSyncs = await syncRecords.deleteAllByGcalId(gCalId, session);
+        const staleSyncs = await mongoService.sync.deleteMany(
+          { "google.events.gCalendarId": gCalId },
+          { session },
+        );
         summary.syncs += staleSyncs.deletedCount;
       }
 
@@ -312,11 +316,14 @@ class UserService {
 
     await eventService.deleteByIntegration("google", userId);
     if (skipGoogleWatchStop) {
-      await googleWatchService.deleteWatchesByUser(userId);
+      await deleteWatchesByUser(userId);
     } else {
-      await googleWatchService.stopWatches(userId);
+      await stopWatches(userId);
     }
-    await syncRecords.deleteByIntegration("google", userId);
+    await mongoService.sync.updateOne(
+      { user: userId },
+      { $unset: { google: "" } },
+    );
   };
 
   handleLogoutCleanup = async (
@@ -343,7 +350,7 @@ class UserService {
     }
 
     if (options.isLastActiveSession) {
-      await googleWatchService.stopWatches(userId);
+      await stopWatches(userId);
     }
   };
 
@@ -403,8 +410,11 @@ class UserService {
       { userId: _id, "source.provider": "google" },
       { $set: { isActive: false, updatedAt: new Date() } },
     );
-    await googleWatchService.deleteWatchesByUser(userId);
-    await syncRecords.deleteByIntegration("google", userId);
+    await deleteWatchesByUser(userId);
+    await mongoService.sync.updateOne(
+      { user: userId },
+      { $unset: { google: "" } },
+    );
 
     await mongoService.user.updateOne(
       { _id },
