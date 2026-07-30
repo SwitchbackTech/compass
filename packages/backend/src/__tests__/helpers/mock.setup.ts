@@ -1,4 +1,3 @@
-import { faker } from "@faker-js/faker";
 import { type NextFunction, type Response } from "express";
 import superTokensNode from "supertokens-node";
 import { type SessionRequest } from "supertokens-node/framework/express";
@@ -38,10 +37,6 @@ import {
 import * as googleWatchCleanup from "@backend/common/services/gcal/google-watch-cleanup.util";
 import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { googleCalendarListService } from "@backend/sync/services/calendarlist/google-calendarlist.service";
-import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
-import * as syncImportService from "@backend/sync/services/import/google-import.service";
-import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import userService from "@backend/user/services/user.service";
 import { afterAll, afterEach, beforeEach, mock, spyOn } from "bun:test";
 import { randomUUID } from "node:crypto";
@@ -241,16 +236,7 @@ function restoreMockedMethods(...targets: object[]): void {
 
 /** Clears per-test spies so sequential cases in a file do not leak call counts. */
 function restoreLeakedTestSpies(): void {
-  restoreMockedMethods(
-    gcalService,
-    sseServer,
-    googleWatchService,
-    googleWatchCleanup,
-    googleCalendarListService,
-    googleCalendarSyncService,
-    userService,
-    syncImportService,
-  );
+  restoreMockedMethods(gcalService, sseServer, googleWatchCleanup, userService);
 }
 
 export function getTestLoggerInfoCalls(
@@ -278,31 +264,6 @@ export function setupBackendTestSeams(): void {
   registerUserMetadataStore(metadata);
   registerUserIdMappingStore(mappings);
   registerTestVerifySession(createTestVerifySession());
-  ensureGcalWatchSpies();
-}
-
-function ensureGcalWatchSpies(): void {
-  // A future timestamp string in the same shape production's
-  // getChannelExpiration() returns — this is fixture data for a mocked
-  // response, not a real channel, so it doesn't need that function's own
-  // logging side effect or CHANNEL_EXPIRATION_MIN precision, only "expires
-  // later than now".
-  const mockWatch = {
-    watch: {
-      resourceId: faker.string.uuid(),
-      expiration: (Date.now() + 60 * 60_000).toString(),
-    },
-  };
-
-  for (const method of ["watchEvents", "watchCalendars"] as const) {
-    const fn = gcalService[method];
-    if (!("mock" in fn) || !fn.mock) {
-      spyOn(gcalService, method).mockResolvedValue(mockWatch);
-    } else {
-      fn.mockClear();
-      fn.mockResolvedValue(mockWatch);
-    }
-  }
 }
 
 function applyPreloadSpies(): void {

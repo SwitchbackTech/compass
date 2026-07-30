@@ -1,5 +1,5 @@
 import { type Request } from "express";
-import { GaxiosError } from "gaxios";
+import { type GaxiosError } from "gaxios";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -11,8 +11,6 @@ import {
 } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import {
-  getEmailFromUrl,
-  isFullSyncRequired,
   isGoogleError,
   isInvalidGoogleToken,
   isInvalidValue,
@@ -27,9 +25,6 @@ import {
   EventMutationException,
   toEventMutationError,
 } from "@backend/event/event.error";
-import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
-import { getSyncByToken } from "@backend/sync/services/records/sync-records.repository";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const logger = Logger("app:express.handler");
 
@@ -50,27 +45,6 @@ const assembleErrorInfo = (e: CompassError) => {
 const parseUserId = async (res: SessionResponse, e: Error) => {
   if (res.req?.session) {
     return res.req.session.getUserId();
-  }
-
-  if (e instanceof GaxiosError) {
-    if ("syncToken" in e.config.params) {
-      const syncToken = e.config.params.syncToken as string;
-      const sync = await getSyncByToken(syncToken);
-
-      if (sync) {
-        return sync.user;
-      }
-
-      if (e.config.url) {
-        const email = getEmailFromUrl(e.config.url.toString());
-        if (email) {
-          const user = await findCompassUserBy("email", email);
-          if (user) {
-            return user._id.toString();
-          }
-        }
-      }
-    }
   }
 
   logger.error(e);
@@ -130,19 +104,6 @@ const handleGoogleError = async (
       message:
         "Google Calendar access expired or was revoked. Reconnect Google Calendar in Compass to resume syncing.",
     });
-    return;
-  }
-
-  if (isFullSyncRequired(e)) {
-    googleCalendarSyncService.repairGoogleCalendarSync(userId).catch((err) => {
-      logger.error(
-        `Something went wrong with resyncing google calendars for user: ${userId}`,
-        err,
-      );
-    });
-
-    res.status(Status.BAD_REQUEST).send({ message: "Full sync in progress." });
-
     return;
   }
 

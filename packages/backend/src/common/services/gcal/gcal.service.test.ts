@@ -1,75 +1,10 @@
-import { mockEnv } from "@backend/__tests__/helpers/mock.setup";
-import { beforeAll, describe, expect, it, mock } from "bun:test";
-
-beforeAll(() => {
-  mockEnv({ GCAL_WEBHOOK_BASEURL: "https://example.trycloudflare.com/api" });
-});
-
 import { GaxiosError, type GaxiosResponse } from "gaxios";
-import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
 import { type gSchema$Event } from "@core/types/gcal";
 import { type GoogleRequestContext } from "./gcal.context";
 import gcalService from "./gcal.service";
+import { describe, expect, it, mock } from "bun:test";
 
 describe("gcal.service watch callbacks", () => {
-  it("uses the Google webhook base URL for event watch callback addresses", async () => {
-    const watch = mock().mockResolvedValue({
-      status: 200,
-      data: { id: "507f1f77bcf86cd799439011", resourceId: "resource-id" },
-    });
-    const context = {
-      gcal: { events: { watch } },
-      quotaUser: "user-1",
-    } as unknown as GoogleRequestContext;
-
-    await gcalService.watchEvents(context, {
-      channelId: "507f1f77bcf86cd799439011",
-      expiration: new Date("2030-01-01T00:00:00.000Z").toISOString(),
-      gCalendarId: "primary",
-    });
-
-    expect(watch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        calendarId: "primary",
-        quotaUser: "user-1",
-        requestBody: expect.objectContaining({
-          address:
-            "https://example.trycloudflare.com/api" +
-            GCAL_NOTIFICATION_ENDPOINT,
-          type: "web_hook",
-        }),
-      }),
-    );
-  });
-
-  it("uses the Google webhook base URL for calendar list watch callback addresses", async () => {
-    const watch = mock().mockResolvedValue({
-      status: 200,
-      data: { id: "507f1f77bcf86cd799439011", resourceId: "resource-id" },
-    });
-    const context = {
-      gcal: { calendarList: { watch } },
-      quotaUser: "user-1",
-    } as unknown as GoogleRequestContext;
-
-    await gcalService.watchCalendars(context, {
-      channelId: "507f1f77bcf86cd799439011",
-      expiration: new Date("2030-01-01T00:00:00.000Z").toISOString(),
-    });
-
-    expect(watch).toHaveBeenCalledWith(
-      expect.objectContaining({
-        quotaUser: "user-1",
-        requestBody: expect.objectContaining({
-          address:
-            "https://example.trycloudflare.com/api" +
-            GCAL_NOTIFICATION_ENDPOINT,
-          type: "web_hook",
-        }),
-      }),
-    );
-  });
-
   it("forwards quotaUser into the underlying googleapis call", async () => {
     const list = mock().mockResolvedValue({
       status: 200,
@@ -201,7 +136,6 @@ describe("gcal.service getAllCalendarListPages", () => {
 
 describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
   const QUOTA_USER = "user-123";
-  const CHANNEL_ID = "507f1f77bcf86cd799439011";
 
   // One shared context for the whole table: `clearMocks` (jest.config.js)
   // wipes each mock()'s recorded calls between tests, so reusing these
@@ -332,25 +266,6 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
       mock: () => context.gcal.events.patch as Mock,
     },
     {
-      method: "watchCalendars",
-      call: () =>
-        gcalService.watchCalendars(context, {
-          channelId: CHANNEL_ID,
-          expiration: "123",
-        }),
-      mock: () => context.gcal.calendarList.watch as Mock,
-    },
-    {
-      method: "watchEvents",
-      call: () =>
-        gcalService.watchEvents(context, {
-          channelId: CHANNEL_ID,
-          expiration: "123",
-          gCalendarId: "cal-1",
-        }),
-      mock: () => context.gcal.events.watch as Mock,
-    },
-    {
       method: "stopWatch",
       call: () =>
         gcalService.stopWatch(context, {
@@ -402,10 +317,9 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
   ];
 
   /**
-   * GCalService's arrow-field methods (watchCalendars, watchEvents,
-   * stopWatch) are own properties of the instance; its regular `async`
-   * methods live on the prototype instead -- both have to be walked to see
-   * the whole method surface.
+   * GCalService's arrow-field methods (e.g. stopWatch) are own properties of
+   * the instance; its regular `async` methods live on the prototype instead
+   * -- both have to be walked to see the whole method surface.
    */
   const listMethodNames = (instance: object): string[] => {
     const ownNames = Object.getOwnPropertyNames(instance);
