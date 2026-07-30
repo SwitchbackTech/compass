@@ -18,7 +18,6 @@ import { ConfigRoutes } from "@backend/config/config.routes.config";
 import { EventRoutes } from "@backend/event/event.routes.config";
 import { EventsRoutes } from "@backend/events/events.routes.config";
 import { HealthRoutes } from "@backend/health/health.routes.config";
-import { SyncRoutes } from "@backend/sync/sync.routes.config";
 import { UserRoutes } from "@backend/user/user.routes.config";
 
 export const initExpressServer = () => {
@@ -44,7 +43,6 @@ export const initExpressServer = () => {
   routes.push(new UserRoutes(app));
   routes.push(new EventRoutes(app));
   routes.push(new EventsRoutes(app));
-  routes.push(new SyncRoutes(app));
   routes.push(new CalendarRoutes(app));
 
   app.use(supertokensErrorHandler()); // Keep this after routes
