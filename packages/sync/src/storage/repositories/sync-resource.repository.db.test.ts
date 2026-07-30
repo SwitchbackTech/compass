@@ -193,6 +193,61 @@ describe("SyncResourceRepository", () => {
     expect(done?.lastSuccessAt).toEqual(succeededAt);
   });
 
+  it("keeps the first read failure's timestamp while refreshing its detail", async () => {
+    const resource = await repo.ensure(upsert());
+    const first = new Date("2026-07-20T12:00:00.000Z");
+    const later = new Date("2026-07-23T12:00:00.000Z");
+    await repo.markReadFailure(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      first,
+      "Not Found (HTTP 404, reason notFound)",
+    );
+    await repo.markReadFailure(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      later,
+      "Forbidden (HTTP 403, reason forbidden)",
+    );
+
+    const after = await repo.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    // The FIRST timestamp is what says how long the calendar has been dead.
+    expect(after?.lastReadFailureAt).toEqual(first);
+    expect(after?.lastReadFailureDetail).toContain("HTTP 403");
+  });
+
+  it("clears the read-failure marker when the cursor next advances", async () => {
+    const resource = await repo.ensure(upsert());
+    await repo.markReadFailure(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      new Date("2026-07-20T12:00:00.000Z"),
+      "Not Found (HTTP 404, reason notFound)",
+    );
+    await repo.advanceCursor(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      "sync-token",
+      new Date("2026-07-24T12:00:00.000Z"),
+    );
+
+    const after = await repo.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(after?.lastReadFailureAt).toBeNull();
+    expect(after?.lastReadFailureDetail).toBeNull();
+  });
+
   it("updates and clears the push subscription", async () => {
     const resource = await repo.ensure(upsert());
     await repo.updateSubscription(

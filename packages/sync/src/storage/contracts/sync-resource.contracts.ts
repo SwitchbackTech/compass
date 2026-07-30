@@ -45,6 +45,14 @@ export const SyncResourceRecordSchema = z.strictObject({
   activeGeneration: z.number().int().min(0).default(0),
   lastAttemptAt: z.date().nullable(),
   lastSuccessAt: z.date().nullable(),
+  // Set when the provider durably rejects reads for this resource (a
+  // non-transient 4xx retries cannot fix — see the readFailed settlement in
+  // sync-job-dispatch). Cleared by the next successful pass (advanceCursor).
+  // Connection health surfaces a non-null marker on an active calendar as
+  // delayed/providerErrors. Defaults tolerate rows written before the field.
+  lastReadFailureAt: z.date().nullable().default(null),
+  // The redacted failure detail (HTTP status + provider reason) for triage.
+  lastReadFailureDetail: z.string().min(1).nullable().default(null),
   // Push subscription: the provider channel id, its opaque resource id, the
   // per-channel secret the provider echoes back on callbacks, and when it
   // expires. All null when no subscription is active.

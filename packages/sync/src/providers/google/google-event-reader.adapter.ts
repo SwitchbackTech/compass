@@ -133,7 +133,7 @@ export class GoogleEventReaderAdapter implements ProviderEventReader {
       throw new ProviderEventReadError(
         classifyReadError(error),
         "Google rejected the events list read",
-        { cause: redactedCause(error) },
+        { cause: readFailureCause(error) },
       );
     }
   }
@@ -151,6 +151,42 @@ function classifyReadError(
     return "transient";
   }
   return "readFailed";
+}
+
+// The cause attached to a read error. Like redactedCause it drops everything
+// request-derived (the gaxios config carries the bearer token), but keeps the
+// two response facts triage needs: the numeric HTTP status and Google's
+// machine-readable error reason. Without them a durable readFailed row is
+// guesswork to diagnose from logs (2026-07-30 prod triage).
+function readFailureCause(error: unknown): Error | undefined {
+  const status = httpStatus(error);
+  const reason = googleErrorReason(error);
+  const facts = [
+    ...(status === undefined ? [] : [`HTTP ${status}`]),
+    ...(reason === undefined ? [] : [`reason ${reason}`]),
+  ];
+  // Nothing response-derived to add (a bare network failure): fall back to the
+  // plain redacted message.
+  if (facts.length === 0) return redactedCause(error);
+  const message = error instanceof Error ? error.message : null;
+  return new Error(
+    message ? `${message} (${facts.join(", ")})` : facts.join(", "),
+  );
+}
+
+// Google's machine-readable reason for a failed call (e.g. "notFound",
+// "rateLimitExceeded"), from the standard error body; googleapis also copies
+// the errors array onto the error object itself. Response-derived only.
+function googleErrorReason(error: unknown): string | undefined {
+  const fromBody = (
+    error as {
+      response?: { data?: { error?: { errors?: { reason?: unknown }[] } } };
+    }
+  )?.response?.data?.error?.errors?.[0]?.reason;
+  const fromError = (error as { errors?: { reason?: unknown }[] })?.errors?.[0]
+    ?.reason;
+  const reason = fromBody ?? fromError;
+  return typeof reason === "string" ? reason : undefined;
 }
 
 // The HTTP status of a googleapis/gaxios error, from the response or the error
