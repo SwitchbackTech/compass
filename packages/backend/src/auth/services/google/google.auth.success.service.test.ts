@@ -43,8 +43,6 @@ function makeDecision(overrides: Partial<AuthDecision>): AuthDecision {
   return {
     authMode: "SIGNUP",
     compassUserId: null,
-    hasStoredRefreshToken: false,
-    hasHealthySync: false,
     createdNewRecipeUser: true,
     ...overrides,
   };
@@ -69,16 +67,12 @@ describe("handleGoogleAuth", () => {
     spyOn(googleAuthService, "googleSignup").mockResolvedValue({
       cUserId: "signup-id",
     });
-    spyOn(googleAuthService, "googleSignin").mockResolvedValue({
-      cUserId: "signin-id",
-    });
   });
 
   beforeEach(() => {
     mockDetermineGoogleAuthMode.mockReset();
     (googleAuthService.repairGoogleConnection as Mock).mockClear();
     (googleAuthService.googleSignup as Mock).mockClear();
-    (googleAuthService.googleSignin as Mock).mockClear();
   });
 
   afterAll(() => {
@@ -112,7 +106,6 @@ describe("handleGoogleAuth", () => {
         recipeUserId,
       );
       expect(googleAuthService.repairGoogleConnection).not.toHaveBeenCalled();
-      expect(googleAuthService.googleSignin).not.toHaveBeenCalled();
     });
 
     it("throws when refresh_token is missing for new user", async () => {
@@ -136,18 +129,16 @@ describe("handleGoogleAuth", () => {
     });
   });
 
-  describe("RECONNECT_REPAIR path", () => {
-    it("calls repairGoogleConnection when user exists but refresh token is missing", async () => {
+  describe("SIGNIN path", () => {
+    it("calls repairGoogleConnection for a returning user", async () => {
       const compassUserId = faker.database.mongodbObjectId();
       const providerUser = makeProviderUser();
       const oAuthTokens = makeOAuthTokens();
 
       mockDetermineGoogleAuthMode.mockResolvedValue(
         makeDecision({
-          authMode: "RECONNECT_REPAIR",
+          authMode: "SIGNIN",
           compassUserId,
-          hasStoredRefreshToken: false,
-          hasHealthySync: true,
           createdNewRecipeUser: false,
         }),
       );
@@ -168,138 +159,6 @@ describe("handleGoogleAuth", () => {
         providerUser,
         oAuthTokens,
       );
-      expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
-      expect(googleAuthService.googleSignin).not.toHaveBeenCalled();
-    });
-
-    it("calls repairGoogleConnection when user exists but sync is unhealthy", async () => {
-      const compassUserId = faker.database.mongodbObjectId();
-      const providerUser = makeProviderUser();
-      const oAuthTokens = makeOAuthTokens();
-
-      mockDetermineGoogleAuthMode.mockResolvedValue(
-        makeDecision({
-          authMode: "RECONNECT_REPAIR",
-          compassUserId,
-          hasStoredRefreshToken: true,
-          hasHealthySync: false,
-          createdNewRecipeUser: false,
-        }),
-      );
-
-      const success: GoogleSignInSuccess = {
-        providerUser,
-        oAuthTokens,
-        createdNewRecipeUser: false,
-        recipeUserId: compassUserId,
-        loginMethodsLength: 1,
-      };
-
-      await googleAuthService.handleGoogleAuth(success);
-
-      expect(googleAuthService.repairGoogleConnection).toHaveBeenCalledTimes(1);
-      expect(googleAuthService.repairGoogleConnection).toHaveBeenCalledWith(
-        compassUserId,
-        providerUser,
-        oAuthTokens,
-      );
-      expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
-      expect(googleAuthService.googleSignin).not.toHaveBeenCalled();
-    });
-
-    it("calls repairGoogleConnection when both refresh token is missing and sync is unhealthy", async () => {
-      const compassUserId = faker.database.mongodbObjectId();
-      const providerUser = makeProviderUser();
-      const oAuthTokens = makeOAuthTokens();
-
-      mockDetermineGoogleAuthMode.mockResolvedValue(
-        makeDecision({
-          authMode: "RECONNECT_REPAIR",
-          compassUserId,
-          hasStoredRefreshToken: false,
-          hasHealthySync: false,
-          createdNewRecipeUser: false,
-        }),
-      );
-
-      const success: GoogleSignInSuccess = {
-        providerUser,
-        oAuthTokens,
-        createdNewRecipeUser: false,
-        recipeUserId: compassUserId,
-        loginMethodsLength: 1,
-      };
-
-      await googleAuthService.handleGoogleAuth(success);
-
-      expect(googleAuthService.repairGoogleConnection).toHaveBeenCalledTimes(1);
-      expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
-      expect(googleAuthService.googleSignin).not.toHaveBeenCalled();
-    });
-
-    it("calls repairGoogleConnection when no sync record exists", async () => {
-      const compassUserId = faker.database.mongodbObjectId();
-      const providerUser = makeProviderUser();
-      const oAuthTokens = makeOAuthTokens();
-
-      mockDetermineGoogleAuthMode.mockResolvedValue(
-        makeDecision({
-          authMode: "RECONNECT_REPAIR",
-          compassUserId,
-          hasStoredRefreshToken: true,
-          hasHealthySync: false,
-          createdNewRecipeUser: false,
-        }),
-      );
-
-      const success: GoogleSignInSuccess = {
-        providerUser,
-        oAuthTokens,
-        createdNewRecipeUser: false,
-        recipeUserId: compassUserId,
-        loginMethodsLength: 1,
-      };
-
-      await googleAuthService.handleGoogleAuth(success);
-
-      expect(googleAuthService.repairGoogleConnection).toHaveBeenCalledTimes(1);
-      expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
-      expect(googleAuthService.googleSignin).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("SIGNIN_INCREMENTAL path", () => {
-    it("calls googleSignin when user exists with valid refresh token and healthy sync", async () => {
-      const compassUserId = faker.database.mongodbObjectId();
-      const providerUser = makeProviderUser();
-      const oAuthTokens = makeOAuthTokens();
-
-      mockDetermineGoogleAuthMode.mockResolvedValue(
-        makeDecision({
-          authMode: "SIGNIN_INCREMENTAL",
-          compassUserId,
-          hasStoredRefreshToken: true,
-          hasHealthySync: true,
-          createdNewRecipeUser: false,
-        }),
-      );
-
-      const success: GoogleSignInSuccess = {
-        providerUser,
-        oAuthTokens,
-        createdNewRecipeUser: false,
-        recipeUserId: compassUserId,
-        loginMethodsLength: 1,
-      };
-
-      await googleAuthService.handleGoogleAuth(success);
-
-      expect(googleAuthService.googleSignin).toHaveBeenCalledTimes(1);
-      expect(googleAuthService.googleSignin).toHaveBeenCalledWith(
-        providerUser,
-        oAuthTokens,
-      );
-      expect(googleAuthService.repairGoogleConnection).not.toHaveBeenCalled();
       expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
     });
   });
@@ -318,32 +177,11 @@ describe("handleGoogleAuth", () => {
       });
       expect(googleAuthService.googleSignup).toHaveBeenCalled();
 
-      const reconnectUserId = faker.database.mongodbObjectId();
-      mockDetermineGoogleAuthMode.mockResolvedValueOnce(
-        makeDecision({
-          authMode: "RECONNECT_REPAIR",
-          compassUserId: reconnectUserId,
-          hasStoredRefreshToken: false,
-          hasHealthySync: true,
-          createdNewRecipeUser: false,
-        }),
-      );
-      await googleAuthService.handleGoogleAuth({
-        providerUser: makeProviderUser(),
-        oAuthTokens: makeOAuthTokens(),
-        createdNewRecipeUser: false,
-        recipeUserId: reconnectUserId,
-        loginMethodsLength: 1,
-      });
-      expect(googleAuthService.repairGoogleConnection).toHaveBeenCalled();
-
       const signinUserId = faker.database.mongodbObjectId();
       mockDetermineGoogleAuthMode.mockResolvedValueOnce(
         makeDecision({
-          authMode: "SIGNIN_INCREMENTAL",
+          authMode: "SIGNIN",
           compassUserId: signinUserId,
-          hasStoredRefreshToken: true,
-          hasHealthySync: true,
           createdNewRecipeUser: false,
         }),
       );
@@ -354,7 +192,7 @@ describe("handleGoogleAuth", () => {
         recipeUserId: signinUserId,
         loginMethodsLength: 1,
       });
-      expect(googleAuthService.googleSignin).toHaveBeenCalled();
+      expect(googleAuthService.repairGoogleConnection).toHaveBeenCalled();
     });
   });
 });

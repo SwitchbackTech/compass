@@ -64,9 +64,7 @@ function getGoogleAuthDecisionTrace({
     createdNewRecipeUser,
     hasCompassUserId: Boolean(decision.compassUserId),
     hasGoogleUserId: Boolean(googleUserId),
-    hasHealthySync: decision.hasHealthySync,
     hasProviderEmail: Boolean(providerEmail),
-    hasStoredRefreshToken: decision.hasStoredRefreshToken,
     loginMethodsLength,
     ...(compassUserTraceId ? { compassUserTraceId } : {}),
     ...(googleUserTraceId ? { googleUserTraceId } : {}),
@@ -225,40 +223,6 @@ async function connectGoogleToCurrentUser(
   return persistGoogleConnection(cUserId, validatedGUser, refreshToken);
 }
 
-async function googleSignin(
-  gUser: TokenPayload,
-  oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
-) {
-  const gUserId = StringV4Schema.parse(gUser.sub, {
-    error: () => "Invalid Google user ID",
-  });
-  const refreshToken = oAuthTokens.refresh_token
-    ? StringV4Schema.parse(oAuthTokens.refresh_token, {
-        error: () => "Invalid or missing Google refresh token",
-      })
-    : undefined;
-  const update: Record<string, unknown> = {
-    "google.picture": gUser.picture || "not provided",
-    lastLoggedInAt: new Date(),
-  };
-
-  if (refreshToken) {
-    update["google.gRefreshToken"] = refreshToken;
-  }
-
-  const user = await mongoService.user.findOneAndUpdate(
-    { "google.googleId": gUserId },
-    { $set: update },
-    { returnDocument: "after" },
-  );
-
-  const cUserId = zObjectId
-    .parse(user?._id, { error: () => "Invalid credentials" })
-    .toString();
-
-  return { cUserId };
-}
-
 async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
   const {
     providerUser,
@@ -318,11 +282,14 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
       return;
     }
 
-    case "RECONNECT_REPAIR": {
-      // User exists but needs repair (missing refresh token or unhealthy sync)
+    case "SIGNIN": {
+      // Returning user - repairGoogleConnection covers both the healthy
+      // refresh case and the missing/stale-token case (it falls back to
+      // persistStoredGoogleConnection when Google doesn't return a new
+      // refresh token).
       const compassUserId = decision.compassUserId;
       if (!compassUserId) {
-        throw new Error("Compass user ID expected for Google repair");
+        throw new Error("Compass user ID expected for Google sign-in");
       }
 
       await googleAuthService.repairGoogleConnection(
@@ -330,12 +297,6 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
         providerUser,
         oAuthTokens,
       );
-      return;
-    }
-
-    case "SIGNIN_INCREMENTAL": {
-      // Healthy returning user - attempt incremental sync
-      await googleAuthService.googleSignin(providerUser, oAuthTokens);
       return;
     }
   }
@@ -346,6 +307,5 @@ export const googleAuthService = {
   repairGoogleConnection,
   getConnectedCompassUserId,
   connectGoogleToCurrentUser,
-  googleSignin,
   handleGoogleAuth,
 };

@@ -74,9 +74,6 @@ describe("googleAuthService", () => {
       spyOn(googleAuthService, "repairGoogleConnection").mockResolvedValue({
         cUserId: "repair-id",
       });
-      spyOn(googleAuthService, "googleSignin").mockResolvedValue({
-        cUserId: "signin-id",
-      });
     });
 
     afterEach(() => {
@@ -85,7 +82,6 @@ describe("googleAuthService", () => {
       // describe block below and cause unrelated assertions to fail.
       (googleAuthService.googleSignup as Mock).mockRestore();
       (googleAuthService.repairGoogleConnection as Mock).mockRestore();
-      (googleAuthService.googleSignin as Mock).mockRestore();
     });
 
     it("routes SIGNUP to googleSignup", async () => {
@@ -104,8 +100,6 @@ describe("googleAuthService", () => {
       const decision: AuthDecision = {
         authMode: "SIGNUP",
         compassUserId: null,
-        hasStoredRefreshToken: false,
-        hasHealthySync: false,
         createdNewRecipeUser: true,
       };
 
@@ -136,8 +130,6 @@ describe("googleAuthService", () => {
       const decision: AuthDecision = {
         authMode: "SIGNUP",
         compassUserId: null,
-        hasStoredRefreshToken: false,
-        hasHealthySync: false,
         createdNewRecipeUser: true,
       };
 
@@ -148,7 +140,7 @@ describe("googleAuthService", () => {
       );
     });
 
-    it("routes RECONNECT_REPAIR to repairGoogleConnection", async () => {
+    it("routes SIGNIN to repairGoogleConnection", async () => {
       const providerUser = makeProviderUser();
       const recipeUserId = faker.database.mongodbObjectId();
 
@@ -162,10 +154,8 @@ describe("googleAuthService", () => {
       };
 
       const decision: AuthDecision = {
-        authMode: "RECONNECT_REPAIR",
+        authMode: "SIGNIN",
         compassUserId: faker.string.uuid(),
-        hasStoredRefreshToken: false,
-        hasHealthySync: true,
         createdNewRecipeUser: false,
       };
 
@@ -175,37 +165,6 @@ describe("googleAuthService", () => {
 
       expect(googleAuthService.repairGoogleConnection).toHaveBeenCalledWith(
         decision.compassUserId!,
-        providerUser,
-        oAuthTokens,
-      );
-    });
-
-    it("routes SIGNIN_INCREMENTAL to googleSignin", async () => {
-      const providerUser = makeProviderUser();
-      const recipeUserId = faker.database.mongodbObjectId();
-      const oAuthTokens = makeOAuthTokens();
-
-      const success: GoogleSignInSuccess = {
-        providerUser,
-        oAuthTokens,
-        createdNewRecipeUser: false,
-        recipeUserId,
-        loginMethodsLength: 1,
-      };
-
-      const decision: AuthDecision = {
-        authMode: "SIGNIN_INCREMENTAL",
-        compassUserId: faker.string.uuid(),
-        hasStoredRefreshToken: true,
-        hasHealthySync: true,
-        createdNewRecipeUser: false,
-      };
-
-      mockDetermineGoogleAuthMode().mockResolvedValue(decision);
-
-      await googleAuthService.handleGoogleAuth(success);
-
-      expect(googleAuthService.googleSignin).toHaveBeenCalledWith(
         providerUser,
         oAuthTokens,
       );
@@ -229,10 +188,8 @@ describe("googleAuthService", () => {
       };
 
       const decision: AuthDecision = {
-        authMode: "SIGNIN_INCREMENTAL",
+        authMode: "SIGNIN",
         compassUserId,
-        hasStoredRefreshToken: true,
-        hasHealthySync: true,
         createdNewRecipeUser: false,
       };
 
@@ -248,15 +205,13 @@ describe("googleAuthService", () => {
       expect(decisionCall![0]).toBe("google_auth_decision");
       expect(decisionCall![1]).toEqual(
         expect.objectContaining({
-          authMode: "SIGNIN_INCREMENTAL",
+          authMode: "SIGNIN",
           compassUserTraceId: expect.any(String),
           createdNewRecipeUser: false,
           googleUserTraceId: expect.any(String),
           hasCompassUserId: true,
           hasGoogleUserId: true,
-          hasHealthySync: true,
           hasProviderEmail: true,
-          hasStoredRefreshToken: true,
           loginMethodsLength: 2,
           providerEmailTraceId: expect.any(String),
         }),
@@ -328,10 +283,8 @@ describe("googleAuthService", () => {
       });
 
       mockDetermineGoogleAuthMode().mockResolvedValue({
-        authMode: "RECONNECT_REPAIR",
+        authMode: "SIGNIN",
         compassUserId,
-        hasStoredRefreshToken: true,
-        hasHealthySync: false,
         createdNewRecipeUser: false,
       });
 
@@ -355,29 +308,6 @@ describe("googleAuthService", () => {
       expect(updatedUser?.google?.picture).toBe(providerUser.picture);
       expect(metadata.sync?.importGCal).toBe("RESTART");
       expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
-    });
-  });
-
-  describe("googleSignin", () => {
-    it("preserves the stored refresh token when Google does not return a new one", async () => {
-      const user = await UserDriver.createUser();
-      const compassUserId = user._id.toString();
-      const storedRefreshToken = user.google?.gRefreshToken;
-      const providerUser = UserDriver.generateGoogleUser({
-        sub: user.google?.googleId,
-        picture: faker.image.url(),
-      });
-
-      await expect(
-        googleAuthService.googleSignin(providerUser, {
-          access_token: faker.internet.jwt(),
-        }),
-      ).resolves.toEqual({ cUserId: compassUserId });
-
-      const updatedUser = await mongoService.user.findOne({ _id: user._id });
-
-      expect(updatedUser?.google?.gRefreshToken).toBe(storedRefreshToken);
-      expect(updatedUser?.google?.picture).toBe(providerUser.picture);
     });
   });
 
