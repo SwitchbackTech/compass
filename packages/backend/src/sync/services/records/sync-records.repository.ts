@@ -9,7 +9,6 @@ import {
   type Schema_Sync,
   type SyncDetails,
 } from "@core/types/sync.types";
-import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 
 export const resourceValidationSchema = zod
@@ -141,22 +140,11 @@ export const updateSync = async (
   return response;
 };
 
-export const deleteAllByGcalId = (
-  gCalendarId: string,
-  session?: ClientSession,
-) => {
-  return mongoService.sync.deleteMany(
-    { "google.events.gCalendarId": gCalendarId },
-    { session },
-  );
-};
-
 /**
  * Removes a single resource's sync entry (by gCalendarId) from the user's
  * sync document, leaving the rest of the document - the calendarlist token
- * and every other calendar's entries - untouched. Unlike `deleteAllByGcalId`
- * (which deletes the whole sync document), this only ever touches one array
- * entry.
+ * and every other calendar's entries - untouched. This only ever touches
+ * one array entry, unlike a whole-document deletion.
  */
 export const removeSyncEntry = (
   resource: Exclude<Resource_Sync, Resource_Sync.SETTINGS>,
@@ -171,10 +159,6 @@ export const removeSyncEntry = (
   return mongoService.sync.updateOne({ user: userId }, operation, {
     session,
   });
-};
-
-export const deleteAllByUser = (userId: string, session?: ClientSession) => {
-  return mongoService.sync.deleteMany({ user: userId }, { session });
 };
 
 /**
@@ -242,18 +226,9 @@ export const getWatchRepairState = async (
   };
 };
 
-export const deleteByIntegration = (integration: "google", userId: string) => {
-  return mongoService.db
-    .collection(Collections.SYNC)
-    .updateOne({ user: userId }, { $unset: { [integration]: "" } });
-};
-
 const syncRecords = {
   acquireWatchRepairLease,
   canDoIncrementalSync,
-  deleteAllByGcalId,
-  deleteAllByUser,
-  deleteByIntegration,
   getGCalEventsSyncPageToken,
   getSync,
   getSyncByToken,

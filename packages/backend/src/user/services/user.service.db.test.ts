@@ -17,10 +17,10 @@ import calendarService from "@backend/calendar/services/calendar.service";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import * as supertokensMiddleware from "@backend/common/middleware/supertokens.middleware";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
+import * as googleWatchCleanup from "@backend/common/services/gcal/google-watch-cleanup.util";
 import mongoService from "@backend/common/services/mongo.service";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
-import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
@@ -301,7 +301,7 @@ describe("UserService", () => {
       deleteAccountSpies.length = 0;
       deleteAccountSpies.push(
         spyOn(googleRevokeService, "revokeGoogleGrant").mockResolvedValue(true),
-        spyOn(googleWatchService, "stopWatches").mockResolvedValue([]),
+        spyOn(googleWatchCleanup, "stopWatches").mockResolvedValue([]),
         spyOn(
           supertokensUserCleanupService,
           "resolveByExternalUserId",
@@ -814,7 +814,7 @@ describe("UserService", () => {
     it("skips Google metadata updates for email/password-only users", async () => {
       const user = await UserDriver.createUser({ withGoogle: false });
       const stopWatchesSpy = spyOn(
-        googleWatchService,
+        googleWatchCleanup,
         "stopWatches",
       ).mockResolvedValue([]);
       const updateMetadataSpy = spyOn(
@@ -836,7 +836,7 @@ describe("UserService", () => {
     it("updates Google metadata and stops watches for last active Google sessions", async () => {
       const user = await UserDriver.createUser();
       const stopWatchesSpy = spyOn(
-        googleWatchService,
+        googleWatchCleanup,
         "stopWatches",
       ).mockResolvedValue([]);
       const updateMetadataSpy = spyOn(
@@ -891,8 +891,8 @@ describe("UserService", () => {
     it("stops sync, clears the Google refresh token, and resets sync metadata", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const stopWatchesSpy = spyOn(googleWatchService, "stopWatches");
-      const deleteWatchesSpy = spyOn(googleWatchService, "deleteWatchesByUser");
+      const stopWatchesSpy = spyOn(googleWatchCleanup, "stopWatches");
+      const deleteWatchesSpy = spyOn(googleWatchCleanup, "deleteWatchesByUser");
 
       expect(user.google).toBeDefined();
 
