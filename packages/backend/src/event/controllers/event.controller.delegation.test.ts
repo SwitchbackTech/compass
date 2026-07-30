@@ -8,7 +8,7 @@ import * as syncServiceFactory from "@backend/common/services/sync-service/sync-
 import eventController from "./event.controller";
 import {
   afterEach,
-  beforeAll,
+  beforeEach,
   describe,
   expect,
   it,
@@ -88,18 +88,15 @@ const enableSyncDelegation = () => {
 };
 
 describe("EventController event delegation", () => {
-  const originalServiceUrl = CONFIG.SYNC_SERVICE_URL;
-  const originalToken = CONFIG.SYNC_INTERNAL_AUTH_TOKEN;
-
-  beforeAll(() => {
+  // The shared backend harness's global beforeEach (mock.setup.ts) resets
+  // CONFIG to its file-load baseline before every test body runs, which
+  // would wipe a beforeAll-set override. Use beforeEach here so this runs
+  // after that reset, not before it.
+  beforeEach(() => {
     enableSyncDelegation();
   });
 
   afterEach(() => {
-    CONFIG.SYNC_SERVICE_URL = originalServiceUrl;
-    CONFIG.SYNC_INTERNAL_AUTH_TOKEN = originalToken;
-    // Re-enable for the next test in this file (singleton already primed).
-    enableSyncDelegation();
     mock.restore();
   });
 
