@@ -139,4 +139,38 @@ describe("Event query view models", () => {
     expect(promoted?.startDate).toBe("2026-07-24");
     expect(promoted?.endDate).toBe("2026-07-26");
   });
+
+  test("promotes midnight-to-midnight timed events into the all-day row", () => {
+    const fullDayTimed = createMockEvent({
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-07-24T00:00:00.000Z",
+        end: "2026-07-25T00:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
+    const eveningToMidnight = createMockEvent({
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-07-24T22:00:00.000Z",
+        end: "2026-07-25T00:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
+    const data = normalized(fullDayTimed, eveningToMidnight);
+
+    const result = deriveCalendarEventViewModel(data);
+
+    expect(result.timedEvents.map(({ _id }) => _id)).toEqual([
+      eveningToMidnight.id,
+    ]);
+    expect(result.allDayEvents.map(({ _id }) => _id)).toEqual([
+      fullDayTimed.id,
+    ]);
+    const promoted = result.allDayEvents[0];
+    expect(promoted?.isAllDay).toBe(true);
+    expect(promoted?.isTimedMultiDayDisplay).toBe(true);
+    expect(promoted?.startDate).toBe("2026-07-24");
+    expect(promoted?.endDate).toBe("2026-07-25");
+  });
 });

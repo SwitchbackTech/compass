@@ -1,9 +1,11 @@
 import dayjs from "@core/util/date/dayjs";
 import {
   getArrowKeyMovement,
+  isTimedEventFullCalendarDay,
   isTimedEventInsideOneDay,
   isTimedEventMultiDay,
   nudgeEventDates,
+  shouldRenderTimedInAllDayRow,
   timedMultiDayToAllDayDates,
 } from "@web/common/utils/event/event-nudge.util";
 import { GRID_TIME_STEP } from "@web/grid/grid.constants";
@@ -150,6 +152,73 @@ describe("isTimedEventMultiDay", () => {
         dayjs("2026-05-21T18:00:00"),
       ),
     ).toBe(true);
+  });
+});
+
+describe("isTimedEventFullCalendarDay", () => {
+  it("is true for midnight to next midnight", () => {
+    expect(
+      isTimedEventFullCalendarDay(
+        dayjs("2026-05-20T00:00:00"),
+        dayjs("2026-05-21T00:00:00"),
+      ),
+    ).toBe(true);
+  });
+
+  it("is false for evening events that end at next midnight", () => {
+    expect(
+      isTimedEventFullCalendarDay(
+        dayjs("2026-05-20T22:00:00"),
+        dayjs("2026-05-21T00:00:00"),
+      ),
+    ).toBe(false);
+  });
+
+  it("is false for same-day timed and overnight multi-day ranges", () => {
+    expect(
+      isTimedEventFullCalendarDay(
+        dayjs("2026-05-20T10:00:00"),
+        dayjs("2026-05-20T11:00:00"),
+      ),
+    ).toBe(false);
+    expect(
+      isTimedEventFullCalendarDay(
+        dayjs("2026-05-20T22:00:00"),
+        dayjs("2026-05-21T02:00:00"),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("shouldRenderTimedInAllDayRow", () => {
+  it("promotes full-calendar-day timed events and multi-day timed events", () => {
+    expect(
+      shouldRenderTimedInAllDayRow(
+        dayjs("2026-05-20T00:00:00"),
+        dayjs("2026-05-21T00:00:00"),
+      ),
+    ).toBe(true);
+    expect(
+      shouldRenderTimedInAllDayRow(
+        dayjs("2026-05-20T22:00:00"),
+        dayjs("2026-05-21T02:00:00"),
+      ),
+    ).toBe(true);
+  });
+
+  it("keeps evening-to-midnight and same-day timed events in the timed grid", () => {
+    expect(
+      shouldRenderTimedInAllDayRow(
+        dayjs("2026-05-20T22:00:00"),
+        dayjs("2026-05-21T00:00:00"),
+      ),
+    ).toBe(false);
+    expect(
+      shouldRenderTimedInAllDayRow(
+        dayjs("2026-05-20T10:00:00"),
+        dayjs("2026-05-20T11:00:00"),
+      ),
+    ).toBe(false);
   });
 });
 
