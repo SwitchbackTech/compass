@@ -15,6 +15,7 @@ import { UserError } from "@backend/common/errors/user/user.errors";
 import { normalizeEmail } from "@backend/common/helpers/email.util";
 import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import mongoService from "@backend/common/services/mongo.service";
+import { getConnectionDelegation } from "@backend/common/services/sync-service/connection-routing";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
@@ -132,7 +133,14 @@ async function persistStoredGoogleConnection(
   return { cUserId };
 }
 
+// A connection Sync owns is not this engine's to touch — kicking it here
+// too would run both engines against the same Google account at once. Every
+// caller of this function funnels through here (googleSignup,
+// persistGoogleConnection, persistStoredGoogleConnection), so this is the one
+// gate needed for the legacy engine's write-side entirely.
 function startGoogleCalendarSyncIfNeededInBackground(cUserId: string) {
+  if (getConnectionDelegation() === "sync") return;
+
   googleCalendarSyncService
     .startGoogleCalendarSyncIfNeeded(cUserId)
     .catch((err) => {
@@ -288,28 +296,33 @@ async function googleSignin(
     quotaUser: cUserId,
   };
 
-  googleCalendarSyncService
-    .importLatestGoogleCalendarChanges(cUserId, freshContext)
-    .catch(async (err) => {
-      if (
-        err instanceof Error &&
-        err.message === SyncError.NoSyncToken.description
-      ) {
-        getLogger().info(
-          `Resyncing google data due to missing sync for user: ${cUserId}`,
-        );
+  // A connection Sync owns has already imported and stays current on its own
+  // (webhooks + reconcile sweep) — kicking the legacy incremental sync here
+  // too would run both engines against the same Google account at once.
+  if (getConnectionDelegation() !== "sync") {
+    googleCalendarSyncService
+      .importLatestGoogleCalendarChanges(cUserId, freshContext)
+      .catch(async (err) => {
+        if (
+          err instanceof Error &&
+          err.message === SyncError.NoSyncToken.description
+        ) {
+          getLogger().info(
+            `Resyncing google data due to missing sync for user: ${cUserId}`,
+          );
 
-        await userMetadataService.updateUserMetadata({
-          userId: cUserId,
-          data: { sync: { importGCal: "RESTART" } },
-        });
+          await userMetadataService.updateUserMetadata({
+            userId: cUserId,
+            data: { sync: { importGCal: "RESTART" } },
+          });
 
-        startGoogleCalendarSyncIfNeededInBackground(cUserId);
-        return;
-      }
+          startGoogleCalendarSyncIfNeededInBackground(cUserId);
+          return;
+        }
 
-      getLogger().error("Error during incremental sync:", err);
-    });
+        getLogger().error("Error during incremental sync:", err);
+      });
+  }
 
   return { cUserId };
 }
