@@ -5,11 +5,12 @@ import { SYNC_HEALTH_SNAPSHOT_EVENT } from "@core/types/sync/health.contracts";
 // event shape and alert predicates stay next to the emitter.
 export const SYNC_HEALTH_CONNECTION_DISTRIBUTION_HOGQL = `
 SELECT
+  timestamp,
   properties.environment,
-  properties.connections.healthy,
-  properties.connections.delayed,
-  properties.connections.actionRequired,
-  properties.connections.disconnected
+  toFloat(properties.connections.healthy) AS healthy,
+  toFloat(properties.connections.delayed) AS delayed,
+  toFloat(properties.connections.actionRequired) AS actionRequired,
+  toFloat(properties.connections.disconnected) AS disconnected
 FROM events
 WHERE event = '${SYNC_HEALTH_SNAPSHOT_EVENT}'
   AND timestamp > now() - INTERVAL 1 DAY
@@ -23,25 +24,25 @@ SELECT
   properties.environment,
   if(
     (
-      properties.connections.connecting +
-      properties.connections.importing +
-      properties.connections.catchingUp +
-      properties.connections.healthy +
-      properties.connections.delayed +
-      properties.connections.actionRequired +
-      properties.connections.disconnected
+      toFloat(properties.connections.connecting) +
+      toFloat(properties.connections.importing) +
+      toFloat(properties.connections.catchingUp) +
+      toFloat(properties.connections.healthy) +
+      toFloat(properties.connections.delayed) +
+      toFloat(properties.connections.actionRequired) +
+      toFloat(properties.connections.disconnected)
     ) = 0,
     0,
     (
-      (properties.connections.delayed + properties.connections.actionRequired) * 100.0
+      (toFloat(properties.connections.delayed) + toFloat(properties.connections.actionRequired)) * 100.0
     ) / (
-      properties.connections.connecting +
-      properties.connections.importing +
-      properties.connections.catchingUp +
-      properties.connections.healthy +
-      properties.connections.delayed +
-      properties.connections.actionRequired +
-      properties.connections.disconnected
+      toFloat(properties.connections.connecting) +
+      toFloat(properties.connections.importing) +
+      toFloat(properties.connections.catchingUp) +
+      toFloat(properties.connections.healthy) +
+      toFloat(properties.connections.delayed) +
+      toFloat(properties.connections.actionRequired) +
+      toFloat(properties.connections.disconnected)
     )
   ) AS unhealthyPercent
 FROM events
@@ -54,10 +55,10 @@ LIMIT 288
 export const SYNC_HEALTH_FRESHNESS_HOGQL = `
 SELECT
   timestamp,
-  properties.freshness.p50Ms,
-  properties.freshness.p95Ms,
-  properties.freshness.p99Ms,
-  properties.freshness.percentOver30s
+  toFloat(properties.freshness.p50Ms) AS p50Ms,
+  toFloat(properties.freshness.p95Ms) AS p95Ms,
+  toFloat(properties.freshness.p99Ms) AS p99Ms,
+  toFloat(properties.freshness.percentOver30s) AS percentOver30s
 FROM events
 WHERE event = '${SYNC_HEALTH_SNAPSHOT_EVENT}'
   AND timestamp > now() - INTERVAL 1 DAY
@@ -68,10 +69,10 @@ export const SYNC_HEALTH_JOB_BACKLOG_HOGQL = `
 SELECT
   timestamp,
   properties.environment,
-  properties.jobs.pending,
-  properties.jobs.claimed,
-  properties.jobs.failed,
-  properties.jobs.oldestDueAgeMs
+  toFloat(properties.jobs.pending) AS pending,
+  toFloat(properties.jobs.claimed) AS claimed,
+  toFloat(properties.jobs.failed) AS failed,
+  toFloat(properties.jobs.oldestDueAgeMs) AS oldestDueAgeMs
 FROM events
 WHERE event = '${SYNC_HEALTH_SNAPSHOT_EVENT}'
   AND timestamp > now() - INTERVAL 1 DAY
@@ -83,10 +84,10 @@ export const SYNC_HEALTH_SUBSCRIPTION_HOGQL = `
 SELECT
   timestamp,
   properties.environment,
-  properties.subscriptions.healthy,
-  properties.subscriptions.renewSoon,
-  properties.subscriptions.expired,
-  properties.subscriptions.missing
+  toFloat(properties.subscriptions.healthy) AS healthy,
+  toFloat(properties.subscriptions.renewSoon) AS renewSoon,
+  toFloat(properties.subscriptions.expired) AS expired,
+  toFloat(properties.subscriptions.missing) AS missing
 FROM events
 WHERE event = '${SYNC_HEALTH_SNAPSHOT_EVENT}'
   AND timestamp > now() - INTERVAL 1 DAY
