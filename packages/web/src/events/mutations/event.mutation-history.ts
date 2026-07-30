@@ -15,7 +15,7 @@ import {
 // event instead of clearing the exdate, and even a "this"-scope instance edit
 // confirms the instance server-side, so its pre-edit snapshot is stale by the
 // time an undo would replay it.
-export const isRecurringEvent = (event: Event): boolean =>
+const isRecurringEvent = (event: Event): boolean =>
   event.recurrence.kind !== "single";
 
 const isThisScope = (scope?: RecurrenceScope) => !scope || scope === "this";
