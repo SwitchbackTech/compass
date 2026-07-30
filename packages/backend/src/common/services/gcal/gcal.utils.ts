@@ -1,9 +1,11 @@
 import { GaxiosError } from "gaxios";
+import { BaseError } from "@core/errors/errors.base";
 import {
   type gErrorResponse,
   type gSchema$Error,
   type gSchema$Event,
 } from "@core/types/gcal";
+import { UserError } from "@backend/common/errors/user/user.errors";
 
 const cancelled = (e: gSchema$Event) => {
   /*
@@ -162,4 +164,13 @@ export const isGoogleWatchUnsupported = (e: unknown): boolean => {
 
 export const isInvalidValue = (e: GaxiosError) => {
   return e.message === "Invalid Value";
+};
+
+export const isMissingGoogleRefreshToken = (
+  error: unknown,
+): error is BaseError => {
+  return (
+    error instanceof BaseError &&
+    error.description === UserError.MissingGoogleRefreshToken.description
+  );
 };

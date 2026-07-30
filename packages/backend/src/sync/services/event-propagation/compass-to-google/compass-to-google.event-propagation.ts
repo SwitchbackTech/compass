@@ -3,6 +3,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
+import { isMissingGoogleRefreshToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import { eventMutationError } from "@backend/event/event.error";
@@ -10,7 +11,6 @@ import { type EventRecord } from "@backend/event/event.record";
 import { eventRepository } from "@backend/event/event.repository";
 import { mapEventRecordToGoogle } from "@backend/event/google-event.adapter";
 import { getAnchorDate } from "@backend/event/services/recur/util/recur.util";
-import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
 
 const logger = Logger("app:compass-to-google.event-propagation");
 

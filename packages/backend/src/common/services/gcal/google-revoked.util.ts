@@ -2,7 +2,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import userService from "@backend/user/services/user.service";
 
-const logger = Logger("app:google-sync.revoked");
+const logger = Logger("app:google-revoked");
 
 /**
  * Shared revoked/missing-Google-access handling (A29): prunes Google-owned

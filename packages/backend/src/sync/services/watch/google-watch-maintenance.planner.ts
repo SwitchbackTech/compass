@@ -4,8 +4,8 @@ import { type Schema_Watch } from "@core/types/watch.types";
 import dayjs from "@core/util/date/dayjs";
 import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
+import { pruneGoogleDataAndNotifyRevoked } from "@backend/common/services/gcal/google-revoked.util";
 import mongoService from "@backend/common/services/mongo.service";
-import { pruneGoogleDataAndNotifyRevoked } from "@backend/sync/services/google-sync/google-sync.revoked";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { hasUserBeenActiveSince } from "@backend/sync/services/watch/google-watch-activity";
 import {

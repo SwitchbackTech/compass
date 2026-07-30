@@ -24,10 +24,10 @@ import {
   getGoogleErrorStatus,
   isGoogleWatchUnsupported,
   isInvalidGoogleToken,
+  isMissingGoogleRefreshToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
 import { GCalEventsNotificationHandler } from "@backend/sync/services/notify/handler/gcal-events.notification.handler";
 import { type NotificationOutcome } from "@backend/sync/services/notify/notification.outcome";
 import {

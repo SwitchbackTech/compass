@@ -1,7 +1,7 @@
 import { type gCalendar } from "@core/types/gcal";
+import { getGcalClient } from "@backend/common/services/gcal/gcal.client";
 import { getTestGcalOverride } from "@backend/common/services/gcal/gcal.test-context";
-import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
-import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
+import { isMissingGoogleRefreshToken } from "@backend/common/services/gcal/gcal.utils";
 
 /**
  * Everything a Google Calendar API call needs: the authenticated client and
