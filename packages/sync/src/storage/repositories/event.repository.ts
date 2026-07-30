@@ -62,7 +62,13 @@ export class EventRepository {
       {
         connectionId: input.connectionId,
         calendarId: input.calendarId,
-        providerEventId: input.providerEventId,
+        // $type is redundant with $eq here (providerEventId is always a string
+        // by this method's input type) but load-bearing for the planner: it's
+        // what lets Mongo prove the provider_event_identity partial index
+        // (partialFilterExpression providerEventId:{$type:"string"}) covers
+        // this query. Without it, equality alone doesn't imply the partial
+        // filter and every upsert falls back to a full collection scan.
+        providerEventId: { $eq: input.providerEventId, $type: "string" },
       },
       {
         // input already omits _id/createdAt/updatedAt (see ProviderEventUpsert).
