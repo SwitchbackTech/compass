@@ -1,7 +1,6 @@
 import { CONFIG } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { initExpressServer } from "@backend/servers/express/express.server";
-import { warnIfWebhookNotPublicHttps } from "@backend/sync/services/watch/google-watch-config";
 import { logger } from "./init"; //must be first import
 import { stopPostHogLogs } from "./logging/posthog-logs";
 import { createServer, type Server } from "node:http";
@@ -15,8 +14,6 @@ function onClose() {
 
 async function start() {
   try {
-    warnIfWebhookNotPublicHttps(logger);
-
     await mongoService.start();
 
     await new Promise((resolve) =>
