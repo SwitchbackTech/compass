@@ -661,7 +661,7 @@ async function updateCloudOccurrence(
   return confirmCloud(deps, command);
 }
 
-// reprojectMaster now lives in series-exception.util.ts, shared with the
+// reprojectMaster now lives in series-exception.ts, shared with the
 // provider-linked executors below.
 
 // Delete one occurrence of a cloud series and every occurrence after it (scope
@@ -700,7 +700,7 @@ async function deleteCloudSeriesFollowing(
   return confirmCloud(deps, command);
 }
 
-// deleteFollowingExceptions now lives in series-exception.util.ts, shared
+// deleteFollowingExceptions now lives in series-exception.ts, shared
 // with the provider-linked executors below.
 
 // Edit one occurrence of a cloud series and every occurrence after it (scope
@@ -786,7 +786,7 @@ function buildRemainderMaster(
   };
 }
 
-// remainderMasterId now lives in series-exception.util.ts, shared with the
+// remainderMasterId now lives in series-exception.ts, shared with the
 // provider-linked split executors below.
 
 // Confirm a cloud command with no provider identity — local persistence is the

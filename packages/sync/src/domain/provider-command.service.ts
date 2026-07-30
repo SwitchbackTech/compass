@@ -1,4 +1,4 @@
-import { type EventId } from "@core/types/domain-primitives";
+import { type DateTime, type EventId } from "@core/types/domain-primitives";
 import {
   type EditableRecurrence,
   type EventSchedule,
@@ -617,7 +617,7 @@ async function commitProviderSeriesUpdate(
 // executeProviderSeriesUpdate already use, and commits locally through
 // upsertException/reprojectMaster — the exact local-commit shape the cloud
 // path's updateCloudOccurrence/deleteCloudOccurrence/*SeriesFollowing already
-// use (series-exception.util.ts), so a provider-linked and a cloud-only
+// use (series-exception.ts), so a provider-linked and a cloud-only
 // series converge to the same on-disk shape.
 //
 // Known deferred gap, matching the documented one in
