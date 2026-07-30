@@ -43,6 +43,48 @@ describe("positionAllDayDraftEvent", () => {
     expect(activeDraftEvent?.row).toBe(3);
   });
 
+  it("places a midnight-to-midnight timed draft in the all-day row", () => {
+    const draft = createGridEventDraft({
+      kind: "timed",
+      start: new Date("2026-05-25T00:00:00"),
+      end: new Date("2026-05-26T00:00:00"),
+      timeZone: "UTC",
+    });
+    draft.values.title = "Full-day timed";
+
+    const { activeDraftEvent, events } = positionAllDayDraftEvent({
+      draft,
+      events: [
+        createAllDayEvent({
+          _id: "first",
+          title: "First",
+        }),
+      ],
+    });
+
+    expect(activeDraftEvent?.isTimedMultiDayDisplay).toBe(true);
+    expect(activeDraftEvent?.isAllDay).toBe(true);
+    expect(activeDraftEvent?.startDate).toBe("2026-05-25");
+    expect(activeDraftEvent?.endDate).toBe("2026-05-26");
+    expect(events.some((event) => event.title === "Full-day timed")).toBe(true);
+  });
+
+  it("does not place an evening-to-midnight timed draft in the all-day row", () => {
+    const draft = createGridEventDraft({
+      kind: "timed",
+      start: new Date("2026-05-25T22:00:00"),
+      end: new Date("2026-05-26T00:00:00"),
+      timeZone: "UTC",
+    });
+
+    const { activeDraftEvent } = positionAllDayDraftEvent({
+      draft,
+      events: [],
+    });
+
+    expect(activeDraftEvent).toBeNull();
+  });
+
   it("replaces an existing all-day event draft before assigning rows", () => {
     const draftId = EventIdSchema.parse("0123456789abcdef01234567");
     const draft = createGridEventDraft(

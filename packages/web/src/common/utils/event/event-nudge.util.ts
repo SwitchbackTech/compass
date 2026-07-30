@@ -37,6 +37,19 @@ export const isTimedEventMultiDay = (start: Dayjs, end: Dayjs) =>
   !isTimedEventInsideOneDay(start, end);
 
 /**
+ * Timed events that cover exactly one calendar day as [midnight, next midnight)
+ * — e.g. a Google dateTime full-day block. These stay `kind: "timed"` in storage
+ * but should render in the all-day row instead of a full-height timed column.
+ */
+export const isTimedEventFullCalendarDay = (start: Dayjs, end: Dayjs) =>
+  start.isSame(start.startOf("day")) &&
+  end.isSame(start.add(1, "day").startOf("day"));
+
+/** Timed events that belong in the all-day row for display (not storage). */
+export const shouldRenderTimedInAllDayRow = (start: Dayjs, end: Dayjs) =>
+  isTimedEventMultiDay(start, end) || isTimedEventFullCalendarDay(start, end);
+
+/**
  * Maps a multi-day timed range onto an exclusive all-day date span for the
  * all-day row. Inclusive coverage is every calendar day that contains any
  * part of [start, end); exclusive end is the day after the last of those.
