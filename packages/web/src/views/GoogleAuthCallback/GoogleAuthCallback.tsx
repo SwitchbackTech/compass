@@ -52,6 +52,10 @@ export function GoogleAuthCallbackView() {
       completeAuthentication,
       navigate: (path) => router.history.replace(path),
       search: location.searchStr,
+    }).catch(() => {
+      // Expected auth failures already toast inside completeGoogleAuthCallback.
+      // This covers unexpected throws so they don't become unhandledrejections.
+      showErrorToast("Couldn't finish Google sign-in. Please try again.");
     });
   }, [completeAuthentication, location.searchStr, router]);
 

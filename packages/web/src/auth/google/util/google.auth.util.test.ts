@@ -127,7 +127,7 @@ describe("google-auth.util", () => {
         LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
         expect.any(Object),
       );
-      expect(consoleSpy).toHaveBeenCalledWith(error);
+      expect(consoleSpy).toHaveBeenCalledWith(error.message);
     });
 
     it("shows session recovery copy when local event sync fails because the Compass session expired", async () => {
@@ -142,7 +142,7 @@ describe("google-auth.util", () => {
         LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE,
         expect.any(Object),
       );
-      expect(consoleSpy).toHaveBeenCalledWith(error);
+      expect(consoleSpy).toHaveBeenCalledWith(error.message);
     });
   });
 
