@@ -5,12 +5,9 @@ import {
   type UserMetadata,
 } from "@core/types/user.types";
 import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
-import { getConnectionDelegation } from "@backend/common/services/sync-service/connection-routing";
 import { resolveGoogleConnectionFromSync } from "@backend/common/services/sync-service/google-connection-status";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
-import { isGoogleSyncActive } from "@backend/sync/services/google-sync/google-sync.activity";
-import { isGoogleCalendarSyncHealthy } from "@backend/sync/services/google-sync/google-sync.health";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import { type GetUserMetadataResponse } from "@backend/user/types/user.types";
 
@@ -53,22 +50,17 @@ class UserMetadataService {
 
   assessGoogleMetadata = async (
     userId: string,
-    metadata?: UserMetadata,
   ): Promise<GoogleMetadataAssessment> => {
-    // When this deployment routes provider connections to the sync service, the
-    // connection state is owned there, not by the legacy google sub-doc, so
-    // derive it from sync. getConnectionDelegation() only returns "sync" once a
-    // client is configured (it fails safe to "legacy" otherwise), so a client is
-    // present here; the guard keeps this defensive.
-    if (getConnectionDelegation() === "sync") {
-      const client = getSyncServiceClient();
-      if (client) {
-        return resolveGoogleConnectionFromSync(client, toSyncPrincipal(userId));
-      }
+    const client = getSyncServiceClient();
+    if (client) {
+      return resolveGoogleConnectionFromSync(client, toSyncPrincipal(userId));
     }
 
-    const storedMetadata =
-      metadata ?? (await this.getStoredUserMetadata(userId));
+    // No Sync client configured — every real deployment has one (self-host
+    // and prod both require it); this only happens in a dev/test environment
+    // that hasn't provisioned Sync. Without it there's no sync engine left to
+    // check health against, so report ATTENTION rather than fabricate
+    // HEALTHY/IMPORTING from data that no longer means anything.
     const user = await findCompassUserBy("_id", userId);
     const googleId = user?.google?.googleId;
     const hasRefreshToken = Boolean(user?.google?.gRefreshToken);
@@ -79,20 +71,6 @@ class UserMetadataService {
 
     if (!hasRefreshToken) {
       return { connectionState: "RECONNECT_REQUIRED" };
-    }
-
-    if (isGoogleSyncActive(userId)) {
-      return { connectionState: "IMPORTING" };
-    }
-
-    const importStatus = storedMetadata.sync?.importGCal;
-    if (importStatus === "IMPORTING" || importStatus === "RESTART") {
-      return { connectionState: "ATTENTION" };
-    }
-
-    const isHealthy = await isGoogleCalendarSyncHealthy(userId);
-    if (isHealthy) {
-      return { connectionState: "HEALTHY" };
     }
 
     return { connectionState: "ATTENTION" };
@@ -166,10 +144,8 @@ class UserMetadataService {
       };
     }
 
-    const { connectionState, connection } = await this.assessGoogleMetadata(
-      userId,
-      metadata,
-    );
+    const { connectionState, connection } =
+      await this.assessGoogleMetadata(userId);
 
     // Cast: SuperTokens JSONObject's index signature doesn't accept our nested
     // google.connection summary type even though every field is JSON-safe.
