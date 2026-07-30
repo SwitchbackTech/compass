@@ -1,4 +1,4 @@
-import { type DateTime, type EventId } from "@core/types/domain-primitives";
+import { type EventId } from "@core/types/domain-primitives";
 import {
   type EditableRecurrence,
   type EventSchedule,
@@ -19,6 +19,10 @@ import {
   omitNullColor,
 } from "@sync/domain/merge-update-content";
 import { reprojectOccurrences } from "@sync/domain/reproject";
+import {
+  exceptionInstant,
+  isCancelledException,
+} from "@sync/domain/series-exception";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
@@ -617,20 +621,6 @@ function storedSeriesRecurrence(
   }
   if (recurrence.kind === "single") return { kind: "single" };
   return master.recurrence;
-}
-
-// Whether a series exception is a cancelled tombstone (a per-instance deletion)
-// rather than a content override. Twin of the cloud path's helper.
-function isCancelledException(event: EventRecord): boolean {
-  return event.recurrence.kind === "exception" && event.recurrence.cancelled;
-}
-
-// The original instant a series exception overrides — its recurrence identity.
-function exceptionInstant(event: EventRecord): DateTime {
-  if (event.recurrence.kind !== "exception") {
-    throw new Error("exceptionInstant requires an exception event");
-  }
-  return event.recurrence.recurrenceId;
 }
 
 // Whether the provider's current event already carries this command's intended

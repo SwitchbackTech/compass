@@ -34,15 +34,9 @@ export const DeletionMarkerRecordSchema = z.strictObject({
 });
 export type DeletionMarkerRecord = z.infer<typeof DeletionMarkerRecordSchema>;
 
-export const DeletionMarkerRecordInputSchema = z.strictObject({
-  tenantId: TenantIdSchema,
-  principalId: PrincipalIdSchema,
-  connectionId: ConnectionIdSchema,
-  calendarId: SyncEventCalendarIdSchema,
-  providerEventId: ProviderEventIdSchema,
-  providerVersion: ProviderEventVersionSchema.nullable(),
-  deletionSource: DeletionSourceSchema,
-  deletedAt: z.date(),
+export const DeletionMarkerRecordInputSchema = DeletionMarkerRecordSchema.omit({
+  _id: true,
+  expiresAt: true,
 });
 export type DeletionMarkerRecordInput = z.infer<
   typeof DeletionMarkerRecordInputSchema

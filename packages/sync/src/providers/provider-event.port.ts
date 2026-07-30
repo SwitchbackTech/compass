@@ -1,5 +1,6 @@
 import { type EventSchedule } from "@core/types/event.contracts";
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
+import { ProviderError } from "@sync/providers/provider-error";
 
 // How one event read relates to a recurring series, in the PROVIDER's own id
 // space. The provider's series id is resolved to a Compass event id later, at
@@ -60,13 +61,4 @@ export type ProviderEventErrorReason =
   | "unmappableContent"; // content failed the neutral contract (e.g. an
 // out-of-bounds attendee/organizer field the provider does not cap)
 
-export class ProviderEventError extends Error {
-  constructor(
-    readonly reason: ProviderEventErrorReason,
-    message: string,
-    options?: { cause?: unknown },
-  ) {
-    super(message, options);
-    this.name = "ProviderEventError";
-  }
-}
+export class ProviderEventError extends ProviderError<ProviderEventErrorReason> {}
