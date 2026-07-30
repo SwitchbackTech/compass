@@ -50,6 +50,11 @@ export const JobRecordSchema = z.strictObject({
   leaseOwner: z.string().trim().min(1).nullable(),
   leaseExpiresAt: z.date().nullable(),
   failureClass: JobFailureClassSchema.nullable(),
+  // How many times the self-heal sweep has requeued this job after it reached
+  // state:"failed". Distinct from `attempt` (which a requeue resets to give
+  // the job a fresh retry ladder) so a resource that keeps failing cannot be
+  // requeued forever — the sweep stops once this hits its cap.
+  requeuedCount: z.number().int().min(0),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -62,6 +67,7 @@ export const JobEnqueueSchema = JobRecordSchema.omit({
   leaseOwner: true,
   leaseExpiresAt: true,
   failureClass: true,
+  requeuedCount: true,
   createdAt: true,
   updatedAt: true,
 });

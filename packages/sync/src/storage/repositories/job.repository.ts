@@ -50,6 +50,7 @@ export class JobRepository {
           leaseOwner: null,
           leaseExpiresAt: null,
           failureClass: null,
+          requeuedCount: 0,
           createdAt: now,
           updatedAt: now,
         },
@@ -201,6 +202,110 @@ export class JobRepository {
       },
     );
     return result.modifiedCount;
+  }
+
+  // Failed jobs the self-heal sweep should give a fresh retry ladder: still
+  // failed (a concurrent operator/reconnect action may have moved it on),
+  // last due before the sweep's cooldown cutoff (`before`), not a permanently
+  // classed failure (retrying that can never help), and under the requeue
+  // cap. Gated on `runAfter` rather than `updatedAt` — the latter is set via
+  // $currentDate (real wall-clock, not the injected `now` used everywhere
+  // else) and is pure audit metadata, never a field business logic reads.
+  // Oldest-due-first so a long-wedged job is healed before a recently-failed
+  // one.
+  async listFailedForRequeue(
+    before: Date,
+    maxRequeues: number,
+    limit: number,
+  ): Promise<JobRecord[]> {
+    const rows = await this.collection
+      .find({
+        state: "failed",
+        failureClass: { $ne: "permanent" },
+        requeuedCount: { $lt: maxRequeues },
+        runAfter: { $lte: before },
+      })
+      .sort({ runAfter: 1 })
+      .limit(limit)
+      .toArray();
+    return rows.map((row) => JobRecordSchema.parse(row));
+  }
+
+  // Give a failed job a fresh attempt budget and return it to the pending
+  // pool, bumping requeuedCount (NOT reset by this — that is the sweep's
+  // budget, distinct from the per-worker attempt count this clears). Scoped
+  // to state:"failed" so a job an operator or reconnect already moved on is
+  // left alone. Reusing the same _id/coalescingKey in place, rather than
+  // remove+enqueue, means the sweep never has to race the coalescing key's
+  // $setOnInsert uniqueness against a fresh notification for the same
+  // resource.
+  async requeue(id: SyncJobId, now: Date): Promise<boolean> {
+    const result = await this.collection.updateOne(
+      { _id: id, state: "failed" },
+      {
+        $set: {
+          state: "pending",
+          runAfter: now,
+          attempt: 0,
+          leaseOwner: null,
+          leaseExpiresAt: null,
+          failureClass: null,
+        },
+        $inc: { requeuedCount: 1 },
+        $currentDate: { updatedAt: true },
+      },
+    );
+    return result.modifiedCount === 1;
+  }
+
+  // Failed jobs that exhausted the self-heal requeue budget and re-failed —
+  // the sweep will not touch them again; an operator must. Used to drive a
+  // loud, recurring alert rather than a silent terminal state.
+  async countExhaustedFailed(maxRequeues: number): Promise<number> {
+    return this.collection.countDocuments({
+      state: "failed",
+      failureClass: { $ne: "permanent" },
+      requeuedCount: { $gte: maxRequeues },
+    });
+  }
+
+  // The oldest piece of overdue work for one connection, if any: a pending
+  // job past its runAfter, a claimed job whose lease lapsed, or ANY failed
+  // job (a terminal failure is always overdue — nothing will run it again
+  // without the self-heal sweep or an operator). Feeds
+  // ConnectionStateEvidence.oldestDueWorkAt, which was previously wired to a
+  // hardcoded null — a wedged failed job was invisible to the connection's
+  // own health state (2026-07-30: every signal green with jobs stuck ~25h).
+  async findOldestOverdueByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+    now: Date,
+  ): Promise<{
+    runAfter: Date;
+    failureClass: JobRecord["failureClass"];
+  } | null> {
+    const result = await this.collection.findOne(
+      {
+        tenantId,
+        principalId,
+        connectionId,
+        $or: [
+          { state: "pending", runAfter: { $lte: now } },
+          { state: "claimed", leaseExpiresAt: { $lt: now } },
+          { state: "failed" },
+        ],
+      },
+      {
+        sort: { runAfter: 1 },
+        projection: { runAfter: 1, failureClass: 1 },
+      },
+    );
+    if (!result || !(result["runAfter"] instanceof Date)) return null;
+    return {
+      runAfter: result["runAfter"],
+      failureClass: result["failureClass"] ?? null,
+    };
   }
 
   // Outstanding work for one connection (support diagnostics / S45).

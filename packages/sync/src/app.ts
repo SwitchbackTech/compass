@@ -6,6 +6,7 @@ import {
   CONNECTION_CACHE_RETENTION_MS,
   purgeExpiredDisconnectedConnections,
 } from "@sync/domain/connection-retention.service";
+import { requeueFailedJobs } from "@sync/domain/failed-job-requeue.service";
 import { reconcileStaleCalendars } from "@sync/domain/reconcile.service";
 import { maintainExpiringSubscriptions } from "@sync/domain/subscription-sweep.service";
 import { SweepScheduler } from "@sync/domain/sweep-scheduler.service";
@@ -222,9 +223,13 @@ async function start(): Promise<void> {
       service.shutdown.register("subscription", () =>
         schedulers.subscription.stop(),
       );
+      service.shutdown.register("failedJobRequeue", () =>
+        schedulers.failedJobRequeue.stop(),
+      );
       for (const drain of schedulers.drains) drain.start();
       schedulers.reconcile.start();
       schedulers.subscription.start();
+      schedulers.failedJobRequeue.start();
       logger.info(
         "Sync scheduler draining, reconciling, renewing channels, retaining, and reporting health",
       );
@@ -241,6 +246,13 @@ async function start(): Promise<void> {
   }
 }
 
+// A failed job is eligible for the self-heal sweep once it has sat failed for
+// at least this long — long enough that a real provider outage has had a
+// chance to clear before we burn another retry ladder on it.
+const FAILED_JOB_REQUEUE_COOLDOWN_MS = 30 * 60_000;
+// How many times the self-heal sweep will requeue the same job before
+// leaving it failed for an operator instead.
+const FAILED_JOB_MAX_REQUEUES = 3;
 // A resource not synced within this window is swept for a reconcile pull.
 const RECONCILE_STALE_AFTER_MS = 15 * 60_000;
 // A push channel expiring within this window is swept for renewal. Matches
@@ -328,6 +340,7 @@ function buildSchedulers(
   drains: SyncScheduler[];
   reconcile: SweepScheduler;
   subscription: SweepScheduler;
+  failedJobRequeue: SweepScheduler;
 } | null {
   if (config.EXECUTION !== "active") return null;
   const authAdapter = buildAuthAdapter(config);
@@ -413,7 +426,38 @@ function buildSchedulers(
         logger.error("Sync subscription maintenance sweep failed", error),
     },
   );
-  return { drains, reconcile, subscription };
+  // Self-heal sweep: give jobs stuck in state:"failed" a fresh retry ladder
+  // once they have cooled down, and loudly log any that keep re-failing past
+  // the requeue cap. Looks BACK, like reconcile — a job is eligible once it
+  // has been failed since before the cooldown window.
+  const failedJobRequeue = new SweepScheduler(
+    {
+      sweep: async (before) => {
+        const result = await requeueFailedJobs(
+          { jobs },
+          before,
+          () => new Date(),
+          FAILED_JOB_MAX_REQUEUES,
+        );
+        if (result.requeued > 0) {
+          logger.info(
+            `Sync self-heal sweep requeued ${result.requeued} failed job(s)`,
+          );
+        }
+        if (result.exhausted > 0) {
+          logger.error(
+            `Sync self-heal sweep: ${result.exhausted} failed job(s) exhausted their requeue budget and need operator attention`,
+          );
+        }
+        return result.requeued;
+      },
+    },
+    {
+      windowMs: -FAILED_JOB_REQUEUE_COOLDOWN_MS,
+      onError: (error) => logger.error("Sync self-heal sweep failed", error),
+    },
+  );
+  return { drains, reconcile, subscription, failedJobRequeue };
 }
 
 function registerSignalHandlers(

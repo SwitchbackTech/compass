@@ -6,6 +6,7 @@ import {
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { type CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { type InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
+import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { type ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
@@ -15,6 +16,7 @@ export interface ConnectionStateRefreshDeps {
   calendars: ProviderCalendarRepository;
   resources: SyncResourceRepository;
   credentials: CredentialRepository;
+  jobs: JobRepository;
   // Optional so unit callers that only assert state can omit the outbox; the
   // HTTP list path always supplies it so UI clients learn about state changes.
   invalidations?: InvalidationRepository;
@@ -29,7 +31,7 @@ export async function refreshConnectionState(
   now: () => Date = () => new Date(),
 ): Promise<ProviderConnectionRecord> {
   const at = now();
-  const evidence = await gatherConnectionStateEvidence(deps, connection);
+  const evidence = await gatherConnectionStateEvidence(deps, connection, at);
   const derived = deriveConnectionState(evidence, at);
 
   const lastSyncedAt = maxDate(
@@ -81,8 +83,9 @@ export async function refreshConnectionState(
 export async function gatherConnectionStateEvidence(
   deps: ConnectionStateRefreshDeps,
   connection: ProviderConnectionRecord,
+  now: Date,
 ): Promise<ConnectionStateEvidence & { resourceSuccessAts: Date[] }> {
-  const [credential, calendars, resources] = await Promise.all([
+  const [credential, calendars, resources, oldestOverdue] = await Promise.all([
     deps.credentials.findByConnection(connection._id),
     deps.calendars.listByConnection(
       connection.tenantId,
@@ -93,6 +96,12 @@ export async function gatherConnectionStateEvidence(
       connection.tenantId,
       connection.principalId,
       connection._id,
+    ),
+    deps.jobs.findOldestOverdueByConnection(
+      connection.tenantId,
+      connection.principalId,
+      connection._id,
+      now,
     ),
   ]);
 
@@ -128,8 +137,10 @@ export async function gatherConnectionStateEvidence(
     // hold a durable events cursor (the initialImport settle condition).
     initialImportComplete: discoveryDone && allActiveImported,
     catchingUp: false,
-    oldestDueWorkAt: null,
-    recentProviderErrors: false,
+    oldestDueWorkAt: oldestOverdue?.runAfter ?? null,
+    // A job that used up its retry ladder on retryableTransient failures is
+    // itself provider-error evidence, distinct from a plain backlog.
+    recentProviderErrors: oldestOverdue?.failureClass === "retryableTransient",
     resourceSuccessAts,
   };
 }
