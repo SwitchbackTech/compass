@@ -56,9 +56,6 @@ describe("supertokens.middleware", () => {
     spyOn(Session, "revokeSession");
     spyOn(ThirdParty, "init");
     spyOn(UserMetadata, "init");
-    spyOn(googleAuthService, "getConnectedCompassUserId").mockResolvedValue(
-      null,
-    );
     spyOn(googleAuthService, "handleGoogleAuth").mockResolvedValue(undefined);
     spyOn(userService, "getCanonicalCompassUserId").mockResolvedValue(null);
     spyOn(userService, "handleLogoutCleanup").mockResolvedValue(undefined);
@@ -92,7 +89,6 @@ describe("supertokens.middleware", () => {
     (Session.revokeSession as Mock).mockClear();
     (ThirdParty.init as Mock).mockClear();
     (UserMetadata.init as Mock).mockClear();
-    (googleAuthService.getConnectedCompassUserId as Mock).mockClear();
     (googleAuthService.handleGoogleAuth as Mock).mockClear();
     (userService.getCanonicalCompassUserId as Mock).mockClear();
     (userService.handleLogoutCleanup as Mock).mockClear();
@@ -115,9 +111,6 @@ describe("supertokens.middleware", () => {
     (UserMetadata.init as Mock).mockReturnValue({
       recipe: "usermetadata",
     } as never);
-    (googleAuthService.getConnectedCompassUserId as Mock).mockResolvedValue(
-      null,
-    );
     (userService.getCanonicalCompassUserId as Mock).mockResolvedValue(null);
   });
 

@@ -7,9 +7,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { getTestLoggerInfoCalls } from "@backend/__tests__/helpers/mock.setup";
-import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oauth.client";
 import * as googleAuthUtil from "@backend/auth/services/google/util/google.auth.util";
-import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -308,128 +306,6 @@ describe("googleAuthService", () => {
       expect(updatedUser?.google?.picture).toBe(providerUser.picture);
       expect(metadata.sync?.importGCal).toBe("RESTART");
       expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
-    });
-  });
-
-  describe("connectGoogleToCurrentUser", () => {
-    it("connects Google to an email/password user and restarts sync", async () => {
-      const user = await UserDriver.createUser({ withGoogle: false });
-      const normalizedEmail = user.email.toLowerCase();
-      await mongoService.user.updateOne(
-        { _id: user._id },
-        { $set: { email: normalizedEmail } },
-      );
-      const compassUserId = user._id.toString();
-      const gUser = UserDriver.generateGoogleUser({
-        email: normalizedEmail,
-        sub: faker.string.uuid(),
-        picture: faker.image.url(),
-      });
-      const refreshToken = faker.string.uuid();
-      const exchangeSpy = spyOn(
-        GoogleOAuthClient.prototype,
-        "exchangeAuthCode",
-      ).mockResolvedValue({
-        gUser,
-        tokens: {
-          access_token: faker.internet.jwt(),
-          refresh_token: refreshToken,
-        },
-      } as never);
-
-      const result = await googleAuthService.connectGoogleToCurrentUser(
-        compassUserId,
-        {
-          clientType: "web",
-          thirdPartyId: "google",
-          redirectURIInfo: {
-            redirectURIOnProviderDashboard: "http://localhost:9080",
-            redirectURIQueryParams: { code: "auth-code" },
-          },
-        },
-      );
-
-      const updatedUser = await mongoService.user.findOne({ _id: user._id });
-      const metadata =
-        await userMetadataService.fetchUserMetadata(compassUserId);
-
-      expect(result).toEqual({ cUserId: compassUserId });
-      expect(updatedUser?.google?.googleId).toBe(gUser.sub);
-      expect(updatedUser?.google?.gRefreshToken).toBe(refreshToken);
-      expect(metadata.sync?.importGCal).toBe("RESTART");
-      expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
-
-      exchangeSpy.mockRestore();
-    });
-
-    it("rejects when the Google account belongs to another Compass user", async () => {
-      const connectedUser = await UserDriver.createUser();
-      const emailPasswordUser = await UserDriver.createUser({
-        withGoogle: false,
-      });
-      const exchangeSpy = spyOn(
-        GoogleOAuthClient.prototype,
-        "exchangeAuthCode",
-      ).mockResolvedValue({
-        gUser: UserDriver.generateGoogleUser({
-          sub: connectedUser.google?.googleId,
-        }),
-        tokens: {
-          access_token: faker.internet.jwt(),
-          refresh_token: faker.string.uuid(),
-        },
-      } as never);
-
-      await expect(
-        googleAuthService.connectGoogleToCurrentUser(
-          emailPasswordUser._id.toString(),
-          {
-            clientType: "web",
-            thirdPartyId: "google",
-            redirectURIInfo: {
-              redirectURIOnProviderDashboard: "http://localhost:9080",
-              redirectURIQueryParams: { code: "auth-code" },
-            },
-          },
-        ),
-      ).rejects.toMatchObject({
-        description: AuthError.GoogleAccountAlreadyConnected.description,
-      });
-
-      exchangeSpy.mockRestore();
-    });
-
-    it("rejects when the Google account email does not match the current Compass user", async () => {
-      const user = await UserDriver.createUser({ withGoogle: false });
-      const exchangeSpy = spyOn(
-        GoogleOAuthClient.prototype,
-        "exchangeAuthCode",
-      ).mockResolvedValue({
-        gUser: UserDriver.generateGoogleUser({
-          email: faker.internet.email(),
-          sub: faker.string.uuid(),
-        }),
-        tokens: {
-          access_token: faker.internet.jwt(),
-          refresh_token: faker.string.uuid(),
-        },
-      } as never);
-
-      await expect(
-        googleAuthService.connectGoogleToCurrentUser(user._id.toString(), {
-          clientType: "web",
-          thirdPartyId: "google",
-          redirectURIInfo: {
-            redirectURIOnProviderDashboard: "http://localhost:9080",
-            redirectURIQueryParams: { code: "auth-code" },
-          },
-        }),
-      ).rejects.toMatchObject({
-        code: "GOOGLE_CONNECT_EMAIL_MISMATCH",
-        description: AuthError.GoogleConnectEmailMismatch.description,
-      });
-
-      exchangeSpy.mockRestore();
     });
   });
 

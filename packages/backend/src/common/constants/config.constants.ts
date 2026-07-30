@@ -35,13 +35,12 @@ const ConfigSchema = z
     SUPERTOKENS_KEY: z.string().nonempty(),
     TOKEN_GCAL_NOTIFICATION: z.string().default(""),
     TOKEN_COMPASS_SYNC: z.string().nonempty(),
-    // Base URL + shared secret for the Sync service's internal API. Both present
-    // (Sync configured) or both absent (Sync not yet provisioned); a partial
-    // configuration is a mistake. Every deployment delegates provider-connection
-    // and event routes to Sync once it's configured — there is no more choice
-    // to make between it and a legacy in-backend engine.
-    SYNC_SERVICE_URL: z.string().url().optional(),
-    SYNC_INTERNAL_AUTH_TOKEN: z.string().nonempty().optional(),
+    // Base URL + shared secret for the Sync service's internal API. Required:
+    // every deployment delegates provider-connection and event routes to
+    // Sync — the legacy in-backend engine that used to be the fallback for
+    // an unconfigured Sync client no longer exists.
+    SYNC_SERVICE_URL: z.string().url(),
+    SYNC_INTERNAL_AUTH_TOKEN: z.string().nonempty(),
     // Whether cloud event writes and provider-connection changes are accepted.
     // `maintenance` rejects them with a typed MAINTENANCE response (S50).
     SYNC_CLOUD_MUTATION_MODE: z
@@ -88,22 +87,6 @@ const ConfigSchema = z
         path: ["TOKEN_GCAL_NOTIFICATION"],
       });
     }
-
-    // Sync delegation needs both the service URL and the shared secret; one
-    // without the other cannot make an authenticated call, so fail loudly.
-    if (
-      Boolean(env.SYNC_SERVICE_URL) !== Boolean(env.SYNC_INTERNAL_AUTH_TOKEN)
-    ) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        fatal: true,
-        message:
-          "Sync delegation requires both SYNC_SERVICE_URL and SYNC_INTERNAL_AUTH_TOKEN, or neither",
-        path: env.SYNC_SERVICE_URL
-          ? ["SYNC_INTERNAL_AUTH_TOKEN"]
-          : ["SYNC_SERVICE_URL"],
-      });
-    }
   });
 
 export type Config = z.infer<typeof ConfigSchema>;
@@ -139,16 +122,8 @@ export function parseRawConfig(config: CompassConfig): Config {
     SUPERTOKENS_KEY: config.supertokens.key,
     TOKEN_GCAL_NOTIFICATION: nonEmpty(config.google?.notificationToken) ?? "",
     TOKEN_COMPASS_SYNC: config.backend.compassToken,
-    // `serviceUrl` is the sole delegation signal: a deployment running the
-    // standalone Sync service always sets `internalAuthToken`, but that alone
-    // must NOT enable backend delegation (it would trip the both-or-neither
-    // check and refuse to start). Only inherit the shared secret once a
-    // serviceUrl is present, so the backend targets the same secret Sync
-    // verifies with.
     SYNC_SERVICE_URL: nonEmpty(config.sync?.serviceUrl),
-    SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(config.sync?.serviceUrl)
-      ? nonEmpty(config.sync?.internalAuthToken)
-      : undefined,
+    SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(config.sync?.internalAuthToken),
     SYNC_CLOUD_MUTATION_MODE: config.sync?.cloudMutationMode,
     SYNC_EXECUTION: config.sync?.execution,
     POSTHOG_KEY: nonEmpty(config.posthog?.key),
@@ -180,9 +155,9 @@ export function parseConfigFromEnv(
     SUPERTOKENS_KEY: rawEnv["SUPERTOKENS_KEY"],
     TOKEN_GCAL_NOTIFICATION: rawEnv["TOKEN_GCAL_NOTIFICATION"],
     TOKEN_COMPASS_SYNC: rawEnv["TOKEN_COMPASS_SYNC"],
-    // nonEmpty so a var set to "" reads as unset (not-configured) rather than
-    // failing url()/nonempty(); mirrors the config-file path and keeps the
-    // both-or-neither check honest.
+    // nonEmpty so a var set to "" reads as unset, and fails the schema's
+    // required check with a clear "missing" message rather than a confusing
+    // url()/nonempty() validation error.
     SYNC_SERVICE_URL: nonEmpty(rawEnv["SYNC_SERVICE_URL"]),
     SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(rawEnv["SYNC_INTERNAL_AUTH_TOKEN"]),
     SYNC_CLOUD_MUTATION_MODE: nonEmpty(rawEnv["SYNC_CLOUD_MUTATION_MODE"]),
@@ -221,5 +196,5 @@ export const CONFIG = parsedConfig;
 export const IS_DEV = isDev(CONFIG.NODE_ENV);
 
 logger.info(
-  `Sync: configured=${Boolean(CONFIG.SYNC_SERVICE_URL)} execution=${CONFIG.SYNC_EXECUTION} cloudMutationMode=${CONFIG.SYNC_CLOUD_MUTATION_MODE}`,
+  `Sync: execution=${CONFIG.SYNC_EXECUTION} cloudMutationMode=${CONFIG.SYNC_CLOUD_MUTATION_MODE}`,
 );

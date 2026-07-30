@@ -21,7 +21,6 @@ describe("GET /api/config", () => {
       expect(response.body).toEqual({
         google: {
           isConfigured: false,
-          connectDelegatedToSync: false,
         },
         sync: {
           cloudMutationMode: "enabled",
@@ -49,7 +48,6 @@ describe("GET /api/config", () => {
       expect(response.body).toEqual({
         google: {
           isConfigured: false,
-          connectDelegatedToSync: false,
         },
         sync: {
           cloudMutationMode: "enabled",
@@ -62,18 +60,7 @@ describe("GET /api/config", () => {
     }
   });
 
-  it("reports connect as not delegated to sync when no sync client is configured", async () => {
-    // The test config has no sync service configured, so delegation resolves
-    // to "legacy" and the browser keeps the code-exchange flow.
-    const response = await baseDriver
-      .getServer()
-      .get("/api/config")
-      .expect(Status.OK);
-
-    expect(response.body.google.connectDelegatedToSync).toBe(false);
-  });
-
-  it("exposes Sync cutover posture when no sync client is configured", async () => {
+  it("exposes Sync cutover posture", async () => {
     const response = await baseDriver
       .getServer()
       .get("/api/config")

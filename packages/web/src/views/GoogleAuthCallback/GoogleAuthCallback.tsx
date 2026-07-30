@@ -1,15 +1,11 @@
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { AuthApi } from "@web/api/auth.api";
-import { queryClient } from "@web/api/query-client";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
-import { session } from "@web/auth/compass/session/Session";
-import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { completeGoogleAuthorization } from "@web/auth/google/authorization/complete-google-authorization";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { releaseNotesPromptActions } from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
-import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 
 type CompleteAuthentication = ReturnType<typeof useCompleteAuthentication>;
 
@@ -27,10 +23,6 @@ export async function completeGoogleAuthCallback({
   const result = await completeGoogleAuthorization({
     authApi: AuthApi,
     completeAuthentication,
-    doesSessionExist: () => session.doesSessionExist(),
-    refreshUserMetadata,
-    requestEventFetch: () =>
-      queryClient.invalidateQueries({ queryKey: eventQueryKeys.all }),
     search,
   });
 

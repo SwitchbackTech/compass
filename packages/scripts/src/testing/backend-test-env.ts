@@ -14,6 +14,8 @@ export function applyBackendTestEnv(mongoUri: string): void {
   process.env["EMAILER_API_SECRET"] = "emailerApiSecret";
   process.env["TOKEN_GCAL_NOTIFICATION"] = "secretToken1";
   process.env["TOKEN_COMPASS_SYNC"] = "secretToken2";
+  process.env["SYNC_SERVICE_URL"] = "http://localhost:3010";
+  process.env["SYNC_INTERNAL_AUTH_TOKEN"] = "syncInternalAuthToken";
   process.env["FRONTEND_URL"] = "http://localhost:9080";
   process.env["TZ"] = "Etc/UTC";
   process.env["NODE_ENV"] = "test";

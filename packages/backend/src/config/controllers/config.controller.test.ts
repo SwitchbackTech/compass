@@ -22,27 +22,6 @@ const invokeGet = (): AppConfig => {
   return captured;
 };
 
-describe("ConfigController.get connectDelegatedToSync", () => {
-  const originalServiceUrl = CONFIG.SYNC_SERVICE_URL;
-  const originalToken = CONFIG.SYNC_INTERNAL_AUTH_TOKEN;
-
-  afterEach(() => {
-    CONFIG.SYNC_SERVICE_URL = originalServiceUrl;
-    CONFIG.SYNC_INTERNAL_AUTH_TOKEN = originalToken;
-  });
-
-  it("reports true when a sync client is configured", () => {
-    // A sync client is built lazily from these two values; with a client
-    // present, getConnectionDelegation() resolves to "sync". This test file
-    // gets its own process, so the client singleton is primed here rather
-    // than left null by an earlier legacy-path call.
-    CONFIG.SYNC_SERVICE_URL = "http://sync.internal:4000";
-    CONFIG.SYNC_INTERNAL_AUTH_TOKEN = "test-sync-secret";
-
-    expect(invokeGet().google.connectDelegatedToSync).toBe(true);
-  });
-});
-
 describe("ConfigController.get sync cutover posture", () => {
   const originals = {
     cloudMutationMode: CONFIG.SYNC_CLOUD_MUTATION_MODE,

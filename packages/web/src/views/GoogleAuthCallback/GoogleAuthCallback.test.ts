@@ -8,12 +8,10 @@ import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockLoginOrSignup = mock();
-const mockConnectGoogle = mock();
 
 mock.module("@web/api/auth.api", () => ({
   AuthApi: {
     loginOrSignup: mockLoginOrSignup,
-    connectGoogle: mockConnectGoogle,
   },
 }));
 
@@ -30,13 +28,9 @@ const callbackSearch = (
     state,
   )}&code=auth-code&scope=${encodeURIComponent(scope)}`;
 
-const writeIntent = (
-  state: string,
-  intent: "signIn" | "connectCalendar",
-  returnPath = "/week",
-) => {
+const writeIntent = (state: string, returnPath = "/week") => {
   writeGoogleAuthorizationIntent(state, {
-    intent,
+    intent: "signIn",
     returnPath,
     createdAt: Date.now(),
   });
@@ -51,17 +45,15 @@ describe("completeGoogleAuthCallback", () => {
     registerToastPort(port);
     sessionStorage.clear();
     mockLoginOrSignup.mockClear();
-    mockConnectGoogle.mockClear();
     completeAuthentication.mockClear();
     navigate.mockClear();
     mockLoginOrSignup.mockResolvedValue({
       user: { emails: ["user@example.com"] },
     });
-    mockConnectGoogle.mockResolvedValue({});
   });
 
   it("finishes a saved Google sign-in intent and returns to the saved path", async () => {
-    writeIntent("sign-in-state", "signIn", "/week");
+    writeIntent("sign-in-state", "/week");
 
     await completeGoogleAuthCallback({
       completeAuthentication,
@@ -80,7 +72,6 @@ describe("completeGoogleAuthCallback", () => {
         thirdPartyId: "google",
       }),
     );
-    expect(mockConnectGoogle).not.toHaveBeenCalled();
     expect(completeAuthentication).toHaveBeenCalledWith({
       email: "user@example.com",
     });
@@ -90,7 +81,7 @@ describe("completeGoogleAuthCallback", () => {
   });
 
   it("rejects a Google callback that is missing required calendar scopes", async () => {
-    writeIntent("missing-scopes-state", "signIn", "/week");
+    writeIntent("missing-scopes-state", "/week");
 
     await completeGoogleAuthCallback({
       completeAuthentication,
@@ -102,7 +93,6 @@ describe("completeGoogleAuthCallback", () => {
     });
 
     expect(mockLoginOrSignup).not.toHaveBeenCalled();
-    expect(mockConnectGoogle).not.toHaveBeenCalled();
     expect(completeAuthentication).not.toHaveBeenCalled();
     expect(mocks.error).toHaveBeenCalledWith(
       "Compass needs all the requested permissions to sync your calendar. Please allow them and try again.",
@@ -119,7 +109,6 @@ describe("completeGoogleAuthCallback", () => {
     });
 
     expect(mockLoginOrSignup).not.toHaveBeenCalled();
-    expect(mockConnectGoogle).not.toHaveBeenCalled();
     expect(completeAuthentication).not.toHaveBeenCalled();
     expect(mocks.error).toHaveBeenCalledWith(
       "We couldn't connect your Google account. Please try again.",
