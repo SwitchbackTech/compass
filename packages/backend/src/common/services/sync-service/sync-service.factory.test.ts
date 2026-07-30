@@ -15,9 +15,9 @@ describe("sync-service factory", () => {
     expect(client).toBeInstanceOf(SyncServiceClient);
   });
 
-  it("returns null when Sync delegation is not configured", () => {
-    // The backend test env sets no SYNC_SERVICE_URL / SYNC_INTERNAL_AUTH_TOKEN,
-    // so a legacy-only deployment never routes to Sync.
-    expect(getSyncServiceClient()).toBeNull();
+  it("returns a client built from the configured Sync service URL and secret", () => {
+    // Sync is required config now (every deployment delegates to it), so the
+    // process-wide singleton is always a real client, never null.
+    expect(getSyncServiceClient()).toBeInstanceOf(SyncServiceClient);
   });
 });

@@ -16,18 +16,6 @@ const createHook = () => {
   return useIsGoogleAvailable;
 };
 
-const createDelegationHook = () => {
-  const { resetGoogleAvailabilityForTests, useIsConnectDelegatedToSync } =
-    createGoogleAvailability({
-      getConfig,
-      isGoogleAuthConfigured: true,
-    });
-
-  resetGoogleAvailabilityForTests();
-
-  return useIsConnectDelegatedToSync;
-};
-
 describe("useIsGoogleAvailable", () => {
   it("uses the backend config response before exposing Google UI", async () => {
     getConfig.mockClear();
@@ -77,10 +65,10 @@ describe("useIsGoogleAvailable", () => {
 });
 
 describe("useIsConnectGoogleAvailable", () => {
-  it("is available under sync delegation even with no baked GOOGLE_CLIENT_ID (self-host, unrebuilt web image)", async () => {
+  it("is available with no baked GOOGLE_CLIENT_ID (self-host, unrebuilt web image)", async () => {
     getConfig.mockClear();
     getConfig.mockResolvedValue({
-      google: { isConfigured: true, connectDelegatedToSync: true },
+      google: { isConfigured: true },
     });
     const { resetGoogleAvailabilityForTests, useIsConnectGoogleAvailable } =
       createGoogleAvailability({ getConfig, isGoogleAuthConfigured: false });
@@ -97,27 +85,10 @@ describe("useIsConnectGoogleAvailable", () => {
     expect(getConfig).toHaveBeenCalledTimes(1);
   });
 
-  it("stays unavailable on the legacy popup flow with no baked GOOGLE_CLIENT_ID", async () => {
+  it("stays unavailable when the backend has no Google configured at all", async () => {
     getConfig.mockClear();
     getConfig.mockResolvedValue({
-      google: { isConfigured: true, connectDelegatedToSync: false },
-    });
-    const { resetGoogleAvailabilityForTests, useIsConnectGoogleAvailable } =
-      createGoogleAvailability({ getConfig, isGoogleAuthConfigured: false });
-    resetGoogleAvailabilityForTests();
-
-    const { result } = renderHook(() => useIsConnectGoogleAvailable());
-
-    await waitFor(() => {
-      expect(getConfig).toHaveBeenCalledTimes(1);
-    });
-    expect(result.current).toBe(false);
-  });
-
-  it("stays unavailable when the backend has no Google configured at all, even under sync delegation", async () => {
-    getConfig.mockClear();
-    getConfig.mockResolvedValue({
-      google: { isConfigured: false, connectDelegatedToSync: true },
+      google: { isConfigured: false },
     });
     const { resetGoogleAvailabilityForTests, useIsConnectGoogleAvailable } =
       createGoogleAvailability({ getConfig, isGoogleAuthConfigured: false });
@@ -133,10 +104,10 @@ describe("useIsConnectGoogleAvailable", () => {
 });
 
 describe("useIsGoogleAvailable (sign-in) stays gated on the baked client id", () => {
-  it("stays unavailable without a baked GOOGLE_CLIENT_ID even when the backend is sync-delegated and configured", async () => {
+  it("stays unavailable without a baked GOOGLE_CLIENT_ID even when the backend is configured", async () => {
     getConfig.mockClear();
     getConfig.mockResolvedValue({
-      google: { isConfigured: true, connectDelegatedToSync: true },
+      google: { isConfigured: true },
     });
     const { resetGoogleAvailabilityForTests, useIsGoogleAvailable } =
       createGoogleAvailability({ getConfig, isGoogleAuthConfigured: false });
@@ -147,47 +118,7 @@ describe("useIsGoogleAvailable (sign-in) stays gated on the baked client id", ()
     await waitFor(() => {
       expect(getConfig).toHaveBeenCalledTimes(1);
     });
-    // Sign-in is unaffected by connect delegation — the redirect flow only
-    // relaxes the connect surface, never sign-in.
-    expect(result.current).toBe(false);
-  });
-});
-
-describe("useIsConnectDelegatedToSync", () => {
-  it("reflects the backend connect-delegation flag from config", async () => {
-    getConfig.mockClear();
-    getConfig.mockResolvedValue({
-      google: {
-        isConfigured: true,
-        connectDelegatedToSync: true,
-      },
-    });
-    const useIsConnectDelegatedToSync = createDelegationHook();
-
-    const { result } = renderHook(() => useIsConnectDelegatedToSync());
-
-    // Defaults to legacy (false) until the config load resolves.
-    expect(result.current).toBe(false);
-
-    await waitFor(() => {
-      expect(result.current).toBe(true);
-    });
-  });
-
-  it("stays on legacy when the flag is absent from an older backend", async () => {
-    getConfig.mockClear();
-    getConfig.mockResolvedValue({
-      google: {
-        isConfigured: true,
-      },
-    });
-    const useIsConnectDelegatedToSync = createDelegationHook();
-
-    const { result } = renderHook(() => useIsConnectDelegatedToSync());
-
-    await waitFor(() => {
-      expect(getConfig).toHaveBeenCalledTimes(1);
-    });
+    // Sign-in always needs the baked client id — only connect relaxes this.
     expect(result.current).toBe(false);
   });
 });

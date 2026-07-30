@@ -1,14 +1,11 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { LoggerFactory } from "@core/logger/logger.factory";
-import { type GoogleAuthCodeRequest } from "@core/types/auth.types";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
-import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oauth.client";
 import {
   determineGoogleAuthMode,
   parseReconnectGoogleParams,
 } from "@backend/auth/services/google/util/google.auth.util";
 import { CONFIG } from "@backend/common/constants/config.constants";
-import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { normalizeEmail } from "@backend/common/helpers/email.util";
@@ -178,51 +175,6 @@ async function repairGoogleConnection(
   return persistGoogleConnection(cUserId, validatedGUser, refreshToken);
 }
 
-async function getConnectedCompassUserId(
-  googleUserId: string | null | undefined,
-): Promise<string | null> {
-  if (!googleUserId) {
-    return null;
-  }
-
-  const user = await findCompassUserBy("google.googleId", googleUserId);
-  return user?._id.toString() ?? null;
-}
-
-async function connectGoogleToCurrentUser(
-  compassUserId: string,
-  input: GoogleAuthCodeRequest,
-) {
-  const googleOAuthClient = new GoogleOAuthClient();
-  const { gUser, tokens } = await googleOAuthClient.exchangeAuthCode(input);
-  const {
-    cUserId,
-    gUser: validatedGUser,
-    refreshToken,
-  } = parseReconnectGoogleParams(compassUserId, gUser, tokens);
-  const existingCompassUserId =
-    await googleAuthService.getConnectedCompassUserId(validatedGUser.sub);
-
-  if (existingCompassUserId && existingCompassUserId !== cUserId) {
-    throw error(AuthError.GoogleAccountAlreadyConnected, "User not connected");
-  }
-
-  const currentUser = await findCompassUserBy("_id", cUserId);
-
-  if (!currentUser) {
-    throw error(UserError.UserNotFound, "User not connected");
-  }
-
-  if (
-    !validatedGUser.email ||
-    normalizeEmail(validatedGUser.email) !== normalizeEmail(currentUser.email)
-  ) {
-    throw error(AuthError.GoogleConnectEmailMismatch, "User not connected");
-  }
-
-  return persistGoogleConnection(cUserId, validatedGUser, refreshToken);
-}
-
 async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
   const {
     providerUser,
@@ -305,7 +257,5 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
 export const googleAuthService = {
   googleSignup,
   repairGoogleConnection,
-  getConnectedCompassUserId,
-  connectGoogleToCurrentUser,
   handleGoogleAuth,
 };

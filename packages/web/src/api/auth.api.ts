@@ -1,6 +1,5 @@
 import {
   type GoogleAuthCodeRequest,
-  type GoogleConnectResponse,
   type Result_Auth_Compass,
 } from "@core/types/auth.types";
 import {
@@ -8,7 +7,6 @@ import {
   type ConnectionBeginResponse,
   ConnectionBeginResponseSchema,
 } from "@core/types/sync/connection.contracts";
-import { type ApiMethodConfig } from "@web/api/api.types";
 import { BaseApi } from "@web/api/base/base.api";
 
 const AuthApi = {
@@ -24,24 +22,9 @@ const AuthApi = {
     return response.data;
   },
 
-  async connectGoogle(
-    data: GoogleAuthCodeRequest,
-    config?: ApiMethodConfig,
-  ): Promise<GoogleConnectResponse> {
-    const response = await BaseApi.post<GoogleConnectResponse>(
-      `/auth/google/connect`,
-      data,
-      config,
-    );
-
-    return response.data;
-  },
-
-  // Sync-delegated connect: ask the backend for the provider consent URL the
-  // browser should navigate to (the redirect flow). Only meaningful where the
-  // deployment delegates connections to the sync service; the legacy flow uses
-  // connectGoogle above. Pass `connectionId` to reconnect an existing
-  // connection; omit it for a fresh one.
+  // Ask the backend for the provider consent URL the browser should navigate
+  // to (the sync service owns the OAuth round-trip). Pass `connectionId` to
+  // reconnect an existing connection; omit it for a fresh one.
   async beginGoogleConnection(
     request: ConnectionBeginRequest = {},
   ): Promise<ConnectionBeginResponse> {

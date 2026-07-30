@@ -17,10 +17,10 @@ export function buildSyncServiceClient(options: {
 
 let cached: SyncServiceClient | null | undefined;
 
-// The process-wide client, built once from config. Returns null when Sync
-// delegation is not configured (SYNC_SERVICE_URL / SYNC_INTERNAL_AUTH_TOKEN
-// absent) — callers gate on it, so a legacy-only deployment simply never routes
-// to Sync. Config validation guarantees the two values are present together.
+// The process-wide client, built once from config. SYNC_SERVICE_URL and
+// SYNC_INTERNAL_AUTH_TOKEN are required config, so this is null only in a
+// test/mock CONFIG that bypasses the schema — every real deployment gets a
+// real client. Callers still gate on it defensively rather than assume.
 export function getSyncServiceClient(): SyncServiceClient | null {
   if (cached !== undefined) return cached;
   const serviceUrl = CONFIG.SYNC_SERVICE_URL;

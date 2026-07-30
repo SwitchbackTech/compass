@@ -102,37 +102,11 @@ describe("UserMetadataService", () => {
       expect(metadata.sync?.importGCal).toBe("RESTART");
     });
 
-    it("returns NOT_CONNECTED when the user never connected Google", async () => {
-      const user = await UserDriver.createUser({ withGoogle: false });
-      const userId = user._id.toString();
-
-      const metadata = await driver.fetchUserMetadata(userId);
-
-      expect(metadata.google?.connectionState).toBe("NOT_CONNECTED");
-    });
-
-    it("returns RECONNECT_REQUIRED when the refresh token is missing", async () => {
-      const user = await UserDriver.createUser({
-        withGoogleRefreshToken: false,
-      });
-      const userId = user._id.toString();
-
-      const metadata = await driver.fetchUserMetadata(userId);
-
-      expect(metadata.google?.connectionState).toBe("RECONNECT_REQUIRED");
-    });
-
-    it("returns ATTENTION when connected but no Sync client is configured", async () => {
-      // The test env sets no SYNC_SERVICE_URL, so assessGoogleMetadata falls
-      // back to this deployment-without-Sync case — there's no sync engine
-      // left to check health against, so a connected user reports ATTENTION
-      // rather than a fabricated HEALTHY/IMPORTING.
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-
-      const metadata = await driver.fetchUserMetadata(userId);
-
-      expect(metadata.google?.connectionState).toBe("ATTENTION");
-    });
+    // assessGoogleMetadata's local fallback (no Sync client configured) is
+    // covered separately in user-metadata.service.no-sync-client.db.test.ts:
+    // getSyncServiceClient() caches its result for the life of the process,
+    // so once any test in this file calls fetchUserMetadata with the (now
+    // always Sync-configured) shared test env, every later test in this
+    // file is stuck with that cached real client - mockEnv can't undo it.
   });
 });

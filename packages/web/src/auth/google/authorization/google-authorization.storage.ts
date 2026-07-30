@@ -6,7 +6,7 @@ import {
 } from "./google-authorization.constants";
 
 export const GoogleAuthorizationIntentSchema = z.object({
-  intent: z.enum(["signIn", "connectCalendar"]),
+  intent: z.literal("signIn"),
   returnPath: z
     .string()
     .startsWith("/")
