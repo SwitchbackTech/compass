@@ -887,12 +887,17 @@ export async function executeProviderOccurrenceDelete(
       content: master.content,
       schedule: occurrenceScheduleAt(master.schedule, recurrenceId),
       cancelled: true,
+      // `null`, not omitted: this exception is provider-linked (master is),
+      // and omitting would fall back to the master's own providerEventId —
+      // colliding the provider_event_identity unique index the master
+      // already occupies. When the instance is already gone at the provider
+      // there is no live counterpart to record.
       providerIdentity: instance
         ? {
             providerEventId: instance.providerEventId as ProviderEventId,
             providerVersion: instance.providerVersion as ProviderEventVersion,
           }
-        : undefined,
+        : null,
     },
     now(),
   );

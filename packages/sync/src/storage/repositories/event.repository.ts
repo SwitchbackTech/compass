@@ -242,20 +242,26 @@ export class EventRepository {
       // own addressable provider event — mirroring the master's identity
       // here would collide the provider_event_identity unique index, since
       // the master record already holds that exact (connectionId,
-      // calendarId, providerEventId) triple. Omitted falls back to the
-      // master's identity, which is correct for a cloud-only series (always
-      // null on both sides).
+      // calendarId, providerEventId) triple. Omitted (key absent) falls back
+      // to the master's identity, which is correct for a cloud-only series
+      // (always null on both sides). Pass `null` explicitly — not omit — for
+      // a provider-linked exception with no live provider counterpart (e.g.
+      // an instance already gone at the provider): omitting would fall back
+      // to the master's own (non-null) identity and collide the same index.
       providerIdentity?: {
         providerEventId: EventRecord["providerEventId"];
         providerVersion: EventRecord["providerVersion"];
-      };
+      } | null;
     },
     now: Date,
   ): Promise<EventRecord> {
-    const providerEventId =
-      override.providerIdentity?.providerEventId ?? master.providerEventId;
-    const providerVersion =
-      override.providerIdentity?.providerVersion ?? master.providerVersion;
+    const hasExplicitProviderIdentity = "providerIdentity" in override;
+    const providerEventId = hasExplicitProviderIdentity
+      ? (override.providerIdentity?.providerEventId ?? null)
+      : master.providerEventId;
+    const providerVersion = hasExplicitProviderIdentity
+      ? (override.providerIdentity?.providerVersion ?? null)
+      : master.providerVersion;
     const result = await this.collection.findOneAndUpdate(
       {
         tenantId: master.tenantId,

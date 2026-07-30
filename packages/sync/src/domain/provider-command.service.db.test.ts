@@ -2230,6 +2230,12 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
         master._id,
       );
       expect(exceptions).toHaveLength(1);
+      // Regression lock: the tombstone must NOT mirror the master's own
+      // providerEventId (master.providerEventId is non-null here, since this
+      // is a provider-linked series) — doing so would collide the
+      // provider_event_identity unique index the master document already
+      // occupies. There is no live provider counterpart, so it's null.
+      expect(exceptions[0]?.providerEventId).toBeNull();
     });
 
     it("leaves the command pending on a transient delete failure", async () => {
