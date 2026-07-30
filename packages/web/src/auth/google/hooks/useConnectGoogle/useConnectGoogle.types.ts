@@ -1,7 +1,7 @@
 import { type Icon } from "@phosphor-icons/react";
 import { type GoogleConnectionState } from "@core/types/user.types";
 
-export type GoogleUiState = "checking" | "repairing" | GoogleConnectionState;
+export type GoogleUiState = "checking" | GoogleConnectionState;
 
 export type CommandActionIcon = Icon;
 

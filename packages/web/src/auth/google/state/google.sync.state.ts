@@ -1,11 +1,11 @@
-// Transient Google sync UI overrides (e.g. repairing, post-connect syncing) live outside
+// Transient Google sync UI overrides (e.g. post-connect syncing) live outside
 // store so auth/sync helpers can update them from async callbacks without dispatch.
 // This module is a minimal external store (mutable snapshot + listener set). Consumers
 // subscribe with useSyncExternalStore(subscribeToGoogleSyncUIState, getGoogleSyncIndicatorOverride, …).
 
 const googleSyncUIListeners = new Set<() => void>();
 
-type SyncIndicator = null | "repairing" | "syncing";
+type SyncIndicator = null | "syncing";
 
 let gSyncIndicator: SyncIndicator = null;
 
@@ -33,10 +33,6 @@ export const clearSyncingSyncIndicatorOverride = () => {
 };
 
 export const getGoogleSyncIndicatorOverride = () => gSyncIndicator;
-
-export const setRepairingSyncIndicatorOverride = () => {
-  setGoogleSyncIndicatorOverride("repairing");
-};
 
 export const setSyncingSyncIndicatorOverride = () => {
   setGoogleSyncIndicatorOverride("syncing");

@@ -58,7 +58,6 @@ export const getGoogleConnectionConfig = (
 ): GoogleUiConfig => {
   switch (state) {
     case "checking":
-    case "repairing":
     case "IMPORTING":
     case "HEALTHY":
     // ATTENTION means a Sync outage or a permanent conflict; no client
@@ -112,7 +111,6 @@ export const getGoogleSyncStatus = (
     case "HEALTHY":
       return { variant: "healthy", text: "Calendar up-to-date" };
     case "IMPORTING":
-    case "repairing":
     case "checking":
       return { variant: "syncing", text: "Syncing your calendar…" };
     case "ATTENTION":
