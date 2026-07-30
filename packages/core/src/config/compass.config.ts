@@ -44,9 +44,6 @@ const CompassConfigSchema = z
       .object({
         clientId: optionalString,
         clientSecret: optionalString,
-        channelExpirationMin: z.union([z.string(), z.number()]).optional(),
-        webhookUrl: optionalString,
-        notificationToken: optionalString,
       })
       .nullish(),
     email: z

@@ -28,7 +28,6 @@ const baseRawConfig: CompassConfig = {
 
 const validEnv = {
   BASEURL: "http://localhost:3000/api",
-  CHANNEL_EXPIRATION_MIN: "10",
   CORS: "http://localhost:9080",
   FRONTEND_URL: "http://localhost:9080",
   MONGO_URI: "mongodb://localhost:27017/compass",
@@ -48,32 +47,7 @@ describe("config.constants", () => {
 
     expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
     expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
-    expect(env.TOKEN_GCAL_NOTIFICATION).toBe("");
     expect(isGoogleConfigured(env)).toBe(false);
-  });
-
-  it("falls back GCAL_WEBHOOK_BASEURL to BASEURL when not provided", () => {
-    const env = parseConfigFromEnv(validEnv);
-
-    expect(env.GCAL_WEBHOOK_BASEURL).toBe("http://localhost:3000/api");
-  });
-
-  it("defaults CHANNEL_EXPIRATION_MIN to 10080 minutes (7 days) when not provided (packet 07 step 11 pin)", () => {
-    // The test env always overrides CHANNEL_EXPIRATION_MIN (see
-    // backend.test.init.ts), so this pins the zod schema's own default
-    // directly rather than asserting against a real channel watch.
-    const env = parseConfigFromEnv({
-      ...validEnv,
-      CHANNEL_EXPIRATION_MIN: undefined,
-    });
-
-    expect(env.CHANNEL_EXPIRATION_MIN).toBe("10080");
-  });
-
-  it("falls back GCAL_WEBHOOK_BASEURL to BASEURL when blank", () => {
-    const env = parseConfigFromEnv({ ...validEnv, GCAL_WEBHOOK_BASEURL: "" });
-
-    expect(env.GCAL_WEBHOOK_BASEURL).toBe("http://localhost:3000/api");
   });
 
   it("rejects partially configured Google credentials", () => {
@@ -111,58 +85,6 @@ describe("config.constants", () => {
     });
 
     expect(isGoogleConfigured(env)).toBe(false);
-  });
-
-  it("requires a Google notification token for HTTPS Google watch callbacks", () => {
-    expect(() =>
-      parseConfigFromEnv({
-        ...validEnv,
-        BASEURL: "https://api.example.com/api",
-        GOOGLE_CLIENT_ID: "client-id",
-        GOOGLE_CLIENT_SECRET: "client-secret",
-      }),
-    ).toThrow(
-      "Google Calendar webhook notifications require TOKEN_GCAL_NOTIFICATION",
-    );
-  });
-
-  it("accepts an explicit HTTPS Google webhook URL while BASEURL remains local", () => {
-    const env = parseConfigFromEnv({
-      ...validEnv,
-      BASEURL: "http://localhost:3000/api",
-      GCAL_WEBHOOK_BASEURL: "https://example.trycloudflare.com/api",
-      GOOGLE_CLIENT_ID: "client-id",
-      GOOGLE_CLIENT_SECRET: "client-secret",
-      TOKEN_GCAL_NOTIFICATION: "notification-token",
-    });
-
-    expect(env.BASEURL).toBe("http://localhost:3000/api");
-    expect(env.GCAL_WEBHOOK_BASEURL).toBe(
-      "https://example.trycloudflare.com/api",
-    );
-  });
-
-  it("accepts a non-HTTPS Google webhook URL (webhook HTTPS no longer enforced at field level)", () => {
-    const env = parseConfigFromEnv({
-      ...validEnv,
-      GCAL_WEBHOOK_BASEURL: "http://example.com/api",
-    });
-
-    expect(env.GCAL_WEBHOOK_BASEURL).toBe("http://example.com/api");
-  });
-
-  it("requires a Google notification token when the explicit webhook URL uses HTTPS", () => {
-    expect(() =>
-      parseConfigFromEnv({
-        ...validEnv,
-        BASEURL: "http://localhost:3000/api",
-        GCAL_WEBHOOK_BASEURL: "https://example.trycloudflare.com/api",
-        GOOGLE_CLIENT_ID: "client-id",
-        GOOGLE_CLIENT_SECRET: "client-secret",
-      }),
-    ).toThrow(
-      "Google Calendar webhook notifications require TOKEN_GCAL_NOTIFICATION",
-    );
   });
 
   it("parses a fully configured Sync client", () => {
