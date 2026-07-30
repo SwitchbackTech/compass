@@ -1,28 +1,6 @@
 import { Glob } from "bun";
 
-export function resolveTestFiles(
-  scan: string,
-  extraArgs: string[],
-): { files: string[]; bunFlags: string[] } {
-  const explicit = extraArgs.filter((arg) => !arg.startsWith("-"));
-  const bunFlags = extraArgs.filter((arg) => arg.startsWith("-"));
-
-  if (explicit.length > 0) {
-    return {
-      files: explicit.map((arg) => (arg.startsWith("./") ? arg : `./${arg}`)),
-      bunFlags,
-    };
-  }
-
-  return {
-    files: Array.from(new Glob(scan).scanSync("."))
-      .map((file) => `./${file.replace(/^\.\//, "")}`)
-      .sort(),
-    bunFlags,
-  };
-}
-
-export function parseExtraArgs(extraArgs: string[]): {
+function parseExtraArgs(extraArgs: string[]): {
   bunFlags: string[];
   ignorePattern?: string;
   explicitPaths: string[];
@@ -88,37 +66,6 @@ export function resolveTestTargets(
   return { targets: [scan], bunFlags: flags, label: scan };
 }
 
-export async function runPool<T>(
-  concurrency: number,
-  count: number,
-  task: (index: number) => Promise<T>,
-): Promise<T[]> {
-  const results: T[] = new Array(count);
-  let nextIndex = 0;
-
-  async function worker(): Promise<void> {
-    while (nextIndex < count) {
-      const index = nextIndex++;
-      results[index] = await task(index);
-    }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.max(1, concurrency) }, () => worker()),
-  );
-
-  return results;
-}
-
 export function formatDuration(started: number): string {
   return ((Date.now() - started) / 1000).toFixed(1);
-}
-
-export function formatSummary(
-  label: string,
-  passed: number,
-  total: number,
-  started: number,
-): string {
-  return `${label}: ${passed}/${total} passed | ${formatDuration(started)}s`;
 }
