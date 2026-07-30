@@ -101,6 +101,32 @@ describe("EventRepository", () => {
     expect(await db.collection("events").countDocuments()).toBe(1);
   });
 
+  // The $type in the upsert filter looks redundant (the input is always a
+  // string) but is what lets the planner use the provider_event_identity
+  // PARTIAL index — without it every upsert COLLSCANs, which took prod down.
+  // This pins the plan so a cleanup can't silently strip the operator.
+  // See the PLANNER TRAP note in index-manifest.ts.
+  it("provider-identity filter is served by the partial index, not a scan", async () => {
+    const identity = {
+      connectionId: objectId(),
+      calendarId: objectId(),
+      providerEventId: "evt-plan",
+    };
+    await repo.upsertByProviderIdentity(linkedUpsert(identity));
+
+    const plan = await db
+      .collection("events")
+      .find({
+        connectionId: identity.connectionId,
+        calendarId: identity.calendarId,
+        providerEventId: { $eq: identity.providerEventId, $type: "string" },
+      })
+      .explain("queryPlanner");
+    const winning = JSON.stringify(plan);
+    expect(winning).toContain("provider_event_identity");
+    expect(winning).not.toContain("COLLSCAN");
+  });
+
   it("stores many unlinked Compass events (no provider identity collision)", async () => {
     const principalId = objectId();
     await repo.put(compassRecord({ principalId }));

@@ -62,7 +62,10 @@ export class EventRepository {
       {
         connectionId: input.connectionId,
         calendarId: input.calendarId,
-        providerEventId: input.providerEventId,
+        // $type is a semantic no-op but makes the provider_event_identity
+        // partial index provable to the planner — without it, COLLSCAN.
+        // See the PLANNER TRAP note in index-manifest.ts.
+        providerEventId: { $eq: input.providerEventId, $type: "string" },
       },
       {
         // input already omits _id/createdAt/updatedAt (see ProviderEventUpsert).
@@ -146,7 +149,8 @@ export class EventRepository {
       principalId,
       connectionId: identity.connectionId,
       calendarId: identity.calendarId,
-      providerEventId: identity.providerEventId,
+      // $type: see the PLANNER TRAP note in index-manifest.ts.
+      providerEventId: { $eq: identity.providerEventId, $type: "string" },
     });
     return record ? EventRecordSchema.parse(record) : null;
   }
@@ -169,7 +173,8 @@ export class EventRepository {
       principalId,
       connectionId: identity.connectionId,
       calendarId: identity.calendarId,
-      providerEventId: identity.providerEventId,
+      // $type: see the PLANNER TRAP note in index-manifest.ts.
+      providerEventId: { $eq: identity.providerEventId, $type: "string" },
     });
     if (!record) return { record: null, corruptDeletedId: null };
     const parsed = EventRecordSchema.safeParse(record);

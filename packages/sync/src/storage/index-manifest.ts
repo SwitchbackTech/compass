@@ -79,6 +79,14 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       // such events on (null,null,null) — allowing only one unlinked event.
       // Filtering on a real string providerEventId is robust whether the
       // repository stores unlinked provider fields as null or absent.
+      //
+      // PLANNER TRAP for every $type partial filter in this manifest: Mongo
+      // only uses a partial index when the query provably implies its filter,
+      // and a plain equality does NOT prove a $type predicate. Queries meant
+      // to hit these indexes must assert the type themselves, e.g.
+      // { providerEventId: { $eq: id, $type: "string" } } — semantically a
+      // no-op, but without it the planner silently falls back to a COLLSCAN
+      // (which is exactly what melted prod on this index).
       options: {
         unique: true,
         partialFilterExpression: { providerEventId: { $type: "string" } },
