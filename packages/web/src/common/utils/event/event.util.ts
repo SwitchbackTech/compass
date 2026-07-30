@@ -220,7 +220,9 @@ export const handleError = (error: Error) => {
     return;
   }
 
-  console.error(error);
+  // Log the message string, not the Error object — `capture_console_errors`
+  // turns `console.error(error)` into a fresh error-tracking issue.
+  console.error(error.message);
 
   if (code === Status.INTERNAL_SERVER) {
     showCatchallToast(CATCHALL_TOAST_MESSAGE);

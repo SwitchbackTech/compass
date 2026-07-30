@@ -175,7 +175,10 @@ export const handleErrorResponse = async <T>(
   ) {
     await signOut(status);
   } else if (!isAuthEndpoint) {
-    console.error(error);
+    // Log the message string, not the Error object. Passing `error` into
+    // `console.error` used to re-surface every handled ApiError as a PostHog
+    // `$exception` whenever `capture_console_errors` was enabled (see #2194).
+    console.error(error.message);
   }
 
   throw error;

@@ -70,7 +70,9 @@ export function createGoogleAuthUtil({
         : LOCAL_EVENTS_SYNC_ERROR_MESSAGE;
 
     toastError(message, getToastDefaultOptions());
-    console.error(error);
+    // Log the message string, not the Error object — avoids resurfacing
+    // handled ApiErrors if console-error capture is re-enabled.
+    console.error(error?.message ?? "Local events sync failed");
   };
 
   const syncLocalEvents = async (): Promise<SyncLocalEventsResult> => {

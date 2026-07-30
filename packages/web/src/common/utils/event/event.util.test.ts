@@ -58,8 +58,10 @@ describe("handleError", () => {
     // No reload: the mutation layer reconciles the cache after failures, and
     // a reload would wipe every live optimistic update. console.error firing
     // proves handleError reached the notify path (rather than early-returning).
+    // Log the message string — not the Error object — so console-error
+    // capture cannot revive ApiError issues.
     expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
-    expect(consoleErrorSpy).toHaveBeenCalledWith(error);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(error.message);
     expect(mocks.error).toHaveBeenCalledTimes(1);
     expect(mocks.error.mock.calls[0]?.[1]).toMatchObject({
       toastId: GENERIC_ERROR_TOAST_ID,

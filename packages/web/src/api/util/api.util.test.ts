@@ -251,6 +251,28 @@ describe("handleErrorResponse", () => {
     signOutSpy.mockRestore();
   });
 
+  it("logs the ApiError message string, not the Error object", async () => {
+    const consoleErrorSpy = spyOn(console, "error").mockImplementation(
+      () => {},
+    );
+    const error = createApiError(
+      { status: Status.INTERNAL_SERVER },
+      { method: "get", url: "/event" },
+    );
+    // Mirror production createApiError messaging so the assertion matches
+    // what handleErrorResponse actually prints.
+    error.message = "Request failed for GET /event with status 500";
+
+    await expect(
+      handleErrorResponse(error, { onGoogleRevoked: undefined }),
+    ).rejects.toBe(error);
+
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(error.message);
+    expect(consoleErrorSpy).not.toHaveBeenCalledWith(error);
+    consoleErrorSpy.mockRestore();
+  });
+
   it("still signs the user out on an unauthorized data-endpoint response", async () => {
     // Already on the calendar route, so signOut skips the (jsdom-unsupported)
     // navigation and we can assert purely on the sign-out call.
