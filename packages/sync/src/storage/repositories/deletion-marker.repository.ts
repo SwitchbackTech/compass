@@ -42,7 +42,8 @@ export class DeletionMarkerRepository {
       {
         connectionId: fields.connectionId,
         calendarId: fields.calendarId,
-        providerEventId: fields.providerEventId,
+        // $type: see the PLANNER TRAP note in index-manifest.ts.
+        providerEventId: { $eq: fields.providerEventId, $type: "string" },
       },
       {
         $set: {
@@ -72,7 +73,12 @@ export class DeletionMarkerRepository {
     providerEventId: ProviderEventId,
   ): Promise<boolean> {
     const count = await this.collection.countDocuments(
-      { connectionId, calendarId, providerEventId },
+      {
+        connectionId,
+        calendarId,
+        // $type: see the PLANNER TRAP note in index-manifest.ts.
+        providerEventId: { $eq: providerEventId, $type: "string" },
+      },
       { limit: 1 },
     );
     return count > 0;

@@ -62,12 +62,9 @@ export class EventRepository {
       {
         connectionId: input.connectionId,
         calendarId: input.calendarId,
-        // $type is redundant with $eq here (providerEventId is always a string
-        // by this method's input type) but load-bearing for the planner: it's
-        // what lets Mongo prove the provider_event_identity partial index
-        // (partialFilterExpression providerEventId:{$type:"string"}) covers
-        // this query. Without it, equality alone doesn't imply the partial
-        // filter and every upsert falls back to a full collection scan.
+        // $type is a semantic no-op but makes the provider_event_identity
+        // partial index provable to the planner — without it, COLLSCAN.
+        // See the PLANNER TRAP note in index-manifest.ts.
         providerEventId: { $eq: input.providerEventId, $type: "string" },
       },
       {
@@ -152,7 +149,8 @@ export class EventRepository {
       principalId,
       connectionId: identity.connectionId,
       calendarId: identity.calendarId,
-      providerEventId: identity.providerEventId,
+      // $type: see the PLANNER TRAP note in index-manifest.ts.
+      providerEventId: { $eq: identity.providerEventId, $type: "string" },
     });
     return record ? EventRecordSchema.parse(record) : null;
   }
@@ -175,7 +173,8 @@ export class EventRepository {
       principalId,
       connectionId: identity.connectionId,
       calendarId: identity.calendarId,
-      providerEventId: identity.providerEventId,
+      // $type: see the PLANNER TRAP note in index-manifest.ts.
+      providerEventId: { $eq: identity.providerEventId, $type: "string" },
     });
     if (!record) return { record: null, corruptDeletedId: null };
     const parsed = EventRecordSchema.safeParse(record);
