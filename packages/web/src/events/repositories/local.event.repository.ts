@@ -127,14 +127,6 @@ export class LocalEventRepository implements EventRepository {
     return { record: record as SeriesRecord, occurrenceStart: parsed.start };
   }
 
-  async getById(id: EventId): Promise<Event> {
-    const record = await this.findRecordById(id);
-    if (!record) {
-      throw new Error(`Event not found: ${id}`);
-    }
-    return record.event;
-  }
-
   async create(input: CreateEventInput): Promise<Event> {
     const id = input.id ?? (createObjectIdString() as EventId);
     const now = nowDateTime();

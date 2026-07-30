@@ -54,9 +54,6 @@ const setup = () => {
   });
   const repository: EventRepository = {
     list: async () => [],
-    getById: async () => {
-      throw new Error("not implemented in test fake");
-    },
     create: async (input) => ({ ...before, id: input.id as EventId }),
     replace: async (id: EventId, input): Promise<Event> => ({
       ...before,

@@ -326,7 +326,6 @@ describe("CommandPalette", () => {
     });
     const repository: EventRepository = {
       list: async () => [],
-      getById: async () => before,
       create: async () => before,
       replace: async (id, input) => ({
         ...before,
