@@ -126,26 +126,11 @@ const listAllFullEvents = async (
 // falling back to legacy (which would show a different, stale store).
 const readAllFromSync = async (userId: string, query: EventListQuery) => {
   const client = getSyncServiceClient();
-  if (!client) {
-    throw eventMutationError(
-      "PROVIDER_FAILURE",
-      "Sync event listing unavailable",
-    );
-  }
-
   const calendarIds = await resolveSyncCalendarIds(client, userId);
   if (calendarIds.length === 0) return [];
 
   const instances = await listAllFullEvents(client, userId, query, calendarIds);
   return instances.map(syncEventInstanceToBrowser);
-};
-
-const requireSyncClient = (): SyncServiceClient => {
-  const client = getSyncServiceClient();
-  if (!client) {
-    throw error(GenericError.NotSure, "Sync event commands unavailable");
-  }
-  return client;
 };
 
 const mapSyncFailure = (reason: SyncCommandFailureReason) => {
@@ -210,7 +195,7 @@ const submitCommandOrThrow = async (
 };
 
 const createFromSync = async (userId: string, input: CreateEventInput) => {
-  const client = requireSyncClient();
+  const client = getSyncServiceClient();
   const { request, responseEvent } = toCreateSubmitRequest(input);
   await submitCommandOrThrow(client, userId, request);
   return responseEvent;
@@ -221,7 +206,7 @@ const replaceFromSync = async (
   eventId: string,
   input: ReplaceEventInput,
 ) => {
-  const client = requireSyncClient();
+  const client = getSyncServiceClient();
   const { requests, responseEvent } = toReplaceSubmitRequests(eventId, input);
   for (const request of requests) {
     await submitCommandOrThrow(client, userId, request);
@@ -234,7 +219,7 @@ const deleteFromSync = async (
   eventId: string,
   input: DeleteEventInput,
 ) => {
-  const client = requireSyncClient();
+  const client = getSyncServiceClient();
   const request = toDeleteSubmitRequest(eventId, input);
   await submitCommandOrThrow(client, userId, request);
 };

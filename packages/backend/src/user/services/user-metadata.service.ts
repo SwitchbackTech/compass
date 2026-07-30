@@ -52,28 +52,7 @@ class UserMetadataService {
     userId: string,
   ): Promise<GoogleMetadataAssessment> => {
     const client = getSyncServiceClient();
-    if (client) {
-      return resolveGoogleConnectionFromSync(client, toSyncPrincipal(userId));
-    }
-
-    // No Sync client configured — every real deployment has one (self-host
-    // and prod both require it); this only happens in a dev/test environment
-    // that hasn't provisioned Sync. Without it there's no sync engine left to
-    // check health against, so report ATTENTION rather than fabricate
-    // HEALTHY/IMPORTING from data that no longer means anything.
-    const user = await findCompassUserBy("_id", userId);
-    const googleId = user?.google?.googleId;
-    const hasRefreshToken = Boolean(user?.google?.gRefreshToken);
-
-    if (!googleId) {
-      return { connectionState: "NOT_CONNECTED" };
-    }
-
-    if (!hasRefreshToken) {
-      return { connectionState: "RECONNECT_REQUIRED" };
-    }
-
-    return { connectionState: "ATTENTION" };
+    return resolveGoogleConnectionFromSync(client, toSyncPrincipal(userId));
   };
 
   /*

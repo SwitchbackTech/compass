@@ -24,16 +24,9 @@ import {
   ConnectionListResponseSchema,
 } from "@core/types/sync/connection.contracts";
 import {
-  type DiagnosticConnectionResponse,
-  DiagnosticConnectionResponseSchema,
-} from "@core/types/sync/diagnostic.contracts";
-import {
   type EventInstanceListQuery,
   type EventInstanceListResponse,
   EventInstanceListResponseSchema,
-  type EventOccurrenceListQuery,
-  type EventOccurrenceListResponse,
-  EventOccurrenceListResponseSchema,
 } from "@core/types/sync/event.contracts";
 import {
   type PrincipalPurgeResponse,
@@ -48,11 +41,9 @@ const CALENDARS_PATH = "/internal/calendars";
 const CHANGES_PATH = "/internal/changes";
 const CONNECTIONS_PATH = "/internal/connections";
 const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
-const EVENTS_PATH = "/internal/events";
 const EVENTS_FULL_PATH = "/internal/events/full";
 const COMMANDS_PATH = "/internal/commands";
 const PRINCIPAL_PATH = "/internal/principal";
-const DIAGNOSTIC_CONNECTION_PATH_PREFIX = "/internal/diagnostics/connections/";
 
 const DEFAULT_TIMEOUT_MS = 5_000;
 // Provider create/update/delete run inline inside POST /internal/commands.
@@ -205,41 +196,12 @@ export class SyncServiceClient {
     });
   }
 
-  // A page of canonical event occurrences for the given calendars and range,
-  // scoped to the signed principal. A read; served in the Sync service's passive
-  // mode too. `calendarIds` is serialized as repeated query params so the Sync
-  // route parses it back into an array; pass `query.cursor` from a prior
-  // response's `nextCursor` to page.
-  listEventOccurrences(
-    principal: SyncPrincipal,
-    query: EventOccurrenceListQuery,
-    correlationId?: string,
-  ): Promise<SyncClientResult<EventOccurrenceListResponse>> {
-    const params = new URLSearchParams();
-    for (const calendarId of query.calendarIds) {
-      params.append("calendarIds", calendarId);
-    }
-    params.set("start", query.start);
-    params.set("end", query.end);
-    if (query.cursor !== undefined) params.set("cursor", query.cursor);
-    if (query.limit !== undefined) params.set("limit", String(query.limit));
-
-    return this.#request({
-      method: "GET",
-      path: EVENTS_PATH,
-      query: params,
-      principal,
-      schema: EventOccurrenceListResponseSchema,
-      correlationId,
-    });
-  }
-
   // A page of full-fidelity event rows (content + schedule + series linkage) for
   // the given calendars and range, scoped to the signed principal. Backs the
-  // browser calendar read; unlike listEventOccurrences (busy/availability), each
-  // row carries what the app needs to render AND edit. Same query serialization:
-  // `calendarIds` as repeated params, and `query.cursor` from a prior response's
-  // `nextCursor` to page.
+  // browser calendar read — each row carries what the app needs to render AND
+  // edit. `calendarIds` is serialized as repeated query params so the Sync
+  // route parses it back into an array; pass `query.cursor` from a prior
+  // response's `nextCursor` to page.
   listFullEvents(
     principal: SyncPrincipal,
     query: EventInstanceListQuery,
@@ -334,22 +296,6 @@ export class SyncServiceClient {
       path: PRINCIPAL_PATH,
       principal,
       schema: PrincipalPurgeResponseSchema,
-      correlationId,
-    });
-  }
-
-  // Private support lookup by non-user-facing diagnostic connection key (S45).
-  // The signed principal proves INTERNAL_AUTH_TOKEN possession; lookup is global.
-  resolveDiagnosticConnection(
-    principal: SyncPrincipal,
-    diagnosticKey: string,
-    correlationId?: string,
-  ): Promise<SyncClientResult<DiagnosticConnectionResponse>> {
-    return this.#request({
-      method: "GET",
-      path: `${DIAGNOSTIC_CONNECTION_PATH_PREFIX}${diagnosticKey}`,
-      principal,
-      schema: DiagnosticConnectionResponseSchema,
       correlationId,
     });
   }

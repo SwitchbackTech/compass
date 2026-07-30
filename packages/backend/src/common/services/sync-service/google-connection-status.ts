@@ -51,15 +51,3 @@ export async function resolveGoogleConnectionFromSync(
   );
   return { connectionState: "ATTENTION", connection: null };
 }
-
-/** @deprecated Prefer resolveGoogleConnectionFromSync (keeps summary). */
-export async function resolveGoogleConnectionStateFromSync(
-  client: Pick<SyncServiceClient, "listConnections">,
-  principal: SyncPrincipal,
-): Promise<GoogleConnectionState> {
-  const { connectionState } = await resolveGoogleConnectionFromSync(
-    client,
-    principal,
-  );
-  return connectionState;
-}

@@ -14,14 +14,13 @@ interface Poller {
   stop: () => void;
 }
 
-// While a user has at least one SSE connection and Sync is configured, poll
-// GET /internal/changes and publish typed browser SSE. Cursor is in-memory per
-// user for the life of the connection set; reconnect starts from now.
+// While a user has at least one SSE connection, poll GET /internal/changes
+// and publish typed browser SSE. Cursor is in-memory per user for the life of
+// the connection set; reconnect starts from now.
 class SyncChangeFeedBridge {
   readonly #pollers = new Map<string, Poller>();
 
   onSubscribe(userId: string): void {
-    if (!getSyncServiceClient()) return;
     if (this.#pollers.has(userId)) return;
     this.#pollers.set(userId, this.#start(userId));
   }
@@ -50,11 +49,6 @@ class SyncChangeFeedBridge {
     const tick = async () => {
       if (stopped) return;
       const client = getSyncServiceClient();
-      if (!client) {
-        schedule(ERROR_BACKOFF_MS);
-        return;
-      }
-
       const result = await client.getChanges(toSyncPrincipal(userId), cursor);
       if (stopped) return;
 

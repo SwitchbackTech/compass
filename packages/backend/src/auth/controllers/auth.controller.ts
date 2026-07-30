@@ -6,8 +6,6 @@ import {
 } from "@core/types/sync/connection.contracts";
 import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
-import { AuthError } from "@backend/common/errors/auth/auth.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
 import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import { beginSyncConnection } from "@backend/common/services/sync-service/sync-connection-begin";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
@@ -71,15 +69,6 @@ class AuthController {
     if (rejectIfMaintenance(res)) return;
 
     const client = getSyncServiceClient();
-    if (!client) {
-      res.promise(
-        Promise.reject(
-          error(AuthError.ConnectNotDelegated, "Connect begin unavailable"),
-        ),
-      );
-      return;
-    }
-
     const userId = zObjectId.parse(req.session?.getUserId()).toString();
     const request = ConnectionBeginRequestSchema.parse(req.body ?? {});
 
