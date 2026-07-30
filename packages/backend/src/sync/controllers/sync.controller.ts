@@ -296,6 +296,16 @@ export class SyncController {
 
   static importGCal = (req: Request, res: Response): void => {
     if (rejectIfMaintenance(res)) return;
+    // Same reasoning as handleGoogleNotification above: once Sync owns
+    // connections/events, the legacy engine has no data of its own left to
+    // repair for this deployment — running it here would just start a
+    // second, wasted import in parallel with Sync (2026-07-29: found while
+    // auditing every place that could kick the legacy engine unconditionally
+    // — see the sign-in fix, PR #2458, for the first instance of this bug).
+    if (!legacyWatchOwnership.isLegacyGoogleWatchOwner()) {
+      res.status(Status.CONFLICT).json({ error: "legacy_sync_unavailable" });
+      return;
+    }
     const userId = req.session!.getUserId();
     const { force } = ImportGCalRequestSchema.parse(req.body);
     const isForce = force === true;

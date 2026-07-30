@@ -132,7 +132,7 @@ describe("getGoogleConnectionConfig", () => {
     "IMPORTING",
   ] as const)("returns no command action for %s", (state) => {
     expect(
-      getGoogleConnectionConfig(state, onConnectGoogle, onRepairGoogle),
+      getGoogleConnectionConfig(state, onConnectGoogle, onRepairGoogle, false),
     ).toEqual({ commandAction: null });
   });
 
@@ -141,6 +141,7 @@ describe("getGoogleConnectionConfig", () => {
       "NOT_CONNECTED",
       onConnectGoogle,
       onRepairGoogle,
+      false,
     );
 
     expect(config.commandAction?.label).toBe("Connect Google Calendar");
@@ -153,6 +154,7 @@ describe("getGoogleConnectionConfig", () => {
       "RECONNECT_REQUIRED",
       onConnectGoogle,
       onRepairGoogle,
+      false,
     );
 
     expect(config.commandAction?.label).toBe("Reconnect Google Calendar");
@@ -160,15 +162,30 @@ describe("getGoogleConnectionConfig", () => {
     expect(onConnectGoogle).toHaveBeenCalledTimes(1);
   });
 
-  it("wires ATTENTION to onRepairGoogle", () => {
+  it("wires ATTENTION to onRepairGoogle under legacy routing", () => {
     const config = getGoogleConnectionConfig(
       "ATTENTION",
       onConnectGoogle,
       onRepairGoogle,
+      false,
     );
 
     expect(config.commandAction?.label).toBe("Sync Google Calendar");
     config.commandAction?.onSelect?.();
     expect(onRepairGoogle).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides the ATTENTION action under sync delegation (no working remedy exists there)", () => {
+    // onRepairGoogle force-restarts the legacy engine, which the backend now
+    // refuses once Sync owns connections/events — offering the button would
+    // be a dead click, not a real recovery path.
+    const config = getGoogleConnectionConfig(
+      "ATTENTION",
+      onConnectGoogle,
+      onRepairGoogle,
+      true,
+    );
+
+    expect(config).toEqual({ commandAction: null });
   });
 });

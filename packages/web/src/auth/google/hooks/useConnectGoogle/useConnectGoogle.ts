@@ -145,7 +145,12 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
   }, []);
 
   return {
-    ...getGoogleConnectionConfig(state, onOpenGoogleAuth, onRepairGoogle),
+    ...getGoogleConnectionConfig(
+      state,
+      onOpenGoogleAuth,
+      onRepairGoogle,
+      isConnectDelegatedToSync,
+    ),
     connect: onOpenGoogleAuth,
     isAvailable,
     isConnecting,
