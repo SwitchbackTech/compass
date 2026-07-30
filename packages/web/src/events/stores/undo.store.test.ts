@@ -15,20 +15,20 @@ const event = (id: string) =>
     content: { kind: "details", title: id, description: "" },
   });
 
-const editEntry = (id: string): UndoHistoryEntry => ({
+const editEntry = (id: string, title = `${id}-moved`): UndoHistoryEntry => ({
   kind: "edit",
   id,
   before: event(id),
   after: {
     ...event(id),
-    content: { kind: "details", title: `${id}-moved`, description: "" },
+    content: { kind: "details", title, description: "" },
   },
 });
 
 describe("undoHistoryActions", () => {
   it("records entries and clears the redo stack", () => {
     undoHistoryActions.record(editEntry("a"));
-    undoHistoryActions.popUndo();
+    undoHistoryActions.commitUndo();
     expect(useUndoHistoryStore.getState().future).toHaveLength(1);
 
     undoHistoryActions.record(editEntry("b"));
@@ -40,6 +40,7 @@ describe("undoHistoryActions", () => {
 
   it("caps history at 30 entries, dropping the oldest", () => {
     for (let i = 0; i < 35; i++) {
+      // Distinct ids so consecutive entries never coalesce.
       undoHistoryActions.record(editEntry(`e${i}`));
     }
 
@@ -49,24 +50,136 @@ describe("undoHistoryActions", () => {
     expect(past.at(-1)).toMatchObject({ id: "e34" });
   });
 
-  it("moves entries between stacks on popUndo/popRedo", () => {
+  it("coalesces consecutive edits to the same event into one entry", () => {
+    undoHistoryActions.record(editEntry("a", "first"));
+    undoHistoryActions.record(editEntry("a", "second"));
+    undoHistoryActions.record(editEntry("a", "third"));
+
+    const { past } = useUndoHistoryStore.getState();
+    expect(past).toHaveLength(1);
+    expect(past[0]).toMatchObject({
+      kind: "edit",
+      id: "a",
+      after: { content: { title: "third" } },
+    });
+    // The run's FIRST before survives the merge, not an intermediate one.
+    expect(past[0]).toMatchObject({ before: event("a") });
+  });
+
+  it("does not coalesce edits to different events", () => {
+    undoHistoryActions.record(editEntry("a"));
+    undoHistoryActions.record(editEntry("b"));
+
+    expect(useUndoHistoryStore.getState().past).toHaveLength(2);
+  });
+
+  it("does not coalesce once something has been undone (top of past is a redo target)", () => {
+    undoHistoryActions.record(editEntry("a", "first"));
+    undoHistoryActions.record(editEntry("b"));
+    undoHistoryActions.commitUndo(); // undoes "b"
+    undoHistoryActions.record(editEntry("a", "second"));
+
+    const { past } = useUndoHistoryStore.getState();
+    expect(past).toHaveLength(2);
+    expect(past[1]).toMatchObject({ after: { content: { title: "second" } } });
+  });
+
+  it("moves entries between stacks on commitUndo/commitRedo", () => {
     undoHistoryActions.record(editEntry("a"));
     undoHistoryActions.record({ kind: "delete", event: event("b") });
 
-    const undone = undoHistoryActions.popUndo();
-    expect(undone).toMatchObject({ kind: "delete" });
+    const peeked = undoHistoryActions.peekUndo();
+    expect(peeked).toMatchObject({ kind: "delete" });
+    undoHistoryActions.commitUndo();
     expect(useUndoHistoryStore.getState().past).toHaveLength(1);
     expect(useUndoHistoryStore.getState().future).toHaveLength(1);
 
-    const redone = undoHistoryActions.popRedo();
-    expect(redone).toBe(undone);
+    const redone = undoHistoryActions.peekRedo();
+    expect(redone).toBe(peeked);
+    undoHistoryActions.commitRedo();
     expect(useUndoHistoryStore.getState().past).toHaveLength(2);
     expect(useUndoHistoryStore.getState().future).toHaveLength(0);
   });
 
-  it("returns null when popping empty stacks", () => {
-    expect(undoHistoryActions.popUndo()).toBeNull();
-    expect(undoHistoryActions.popRedo()).toBeNull();
+  it("returns null when peeking empty stacks, and commit/drop are no-ops", () => {
+    expect(undoHistoryActions.peekUndo()).toBeNull();
+    expect(undoHistoryActions.peekRedo()).toBeNull();
+    undoHistoryActions.commitUndo();
+    undoHistoryActions.commitRedo();
+    undoHistoryActions.dropTopUndo();
+    undoHistoryActions.dropTopRedo();
+    expect(useUndoHistoryStore.getState()).toEqual({ past: [], future: [] });
+  });
+
+  it("peekUndo/peekRedo do not consume the entry", () => {
+    undoHistoryActions.record(editEntry("a"));
+
+    undoHistoryActions.peekUndo();
+    undoHistoryActions.peekUndo();
+
+    expect(useUndoHistoryStore.getState().past).toHaveLength(1);
+  });
+
+  // The regression lock for the pop-before-validate bug: an aborted replay
+  // (blocked by a read-only guard, a stale snapshot, an unsupported content
+  // kind) must leave the entry exactly where it was, not silently move it to
+  // the other stack — the caller peeks, decides not to proceed, and simply
+  // never calls commitUndo/commitRedo.
+  it("leaves the stack untouched when the caller peeks but never commits", () => {
+    undoHistoryActions.record(editEntry("a"));
+
+    undoHistoryActions.peekUndo();
+
+    const { past, future } = useUndoHistoryStore.getState();
+    expect(past).toHaveLength(1);
+    expect(future).toHaveLength(0);
+  });
+
+  it("dropTopUndo discards the entry instead of moving it to redo", () => {
+    undoHistoryActions.record(editEntry("a"));
+
+    undoHistoryActions.dropTopUndo();
+
+    expect(useUndoHistoryStore.getState()).toEqual({ past: [], future: [] });
+  });
+
+  it("dropTopRedo discards the entry instead of moving it back to undo", () => {
+    undoHistoryActions.record(editEntry("a"));
+    undoHistoryActions.commitUndo();
+
+    undoHistoryActions.dropTopRedo();
+
+    expect(useUndoHistoryStore.getState()).toEqual({ past: [], future: [] });
+  });
+
+  it("clear empties both stacks", () => {
+    undoHistoryActions.record(editEntry("a"));
+    undoHistoryActions.record(editEntry("b"));
+    undoHistoryActions.commitUndo();
+
+    undoHistoryActions.clear();
+
+    expect(useUndoHistoryStore.getState()).toEqual({ past: [], future: [] });
+  });
+
+  it("commitRedo caps past at 30, dropping the oldest on a long redo run", () => {
+    for (let i = 0; i < 30; i++) {
+      undoHistoryActions.record(editEntry(`e${i}`));
+    }
+    // Undo all 30 (past -> future) without recording anything new in
+    // between — a fresh record() clears future, so this loop must run to
+    // completion before any redo.
+    for (let i = 0; i < 30; i++) {
+      undoHistoryActions.commitUndo();
+    }
+    expect(useUndoHistoryStore.getState().future).toHaveLength(30);
+
+    for (let i = 0; i < 30; i++) {
+      undoHistoryActions.commitRedo();
+    }
+
+    expect(useUndoHistoryStore.getState().past).toHaveLength(30);
+    expect(useUndoHistoryStore.getState().future).toHaveLength(0);
   });
 });
 

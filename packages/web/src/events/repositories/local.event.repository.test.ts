@@ -4,6 +4,7 @@ import {
   type EventId,
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
+import { decodeOccurrenceId } from "@core/util/occurrence-id";
 import { createMockLocalEventRecord } from "@web/__tests__/utils/factories/event.factory";
 import { type OfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { LocalEventRepository } from "@web/events/repositories/local.event.repository";
@@ -128,8 +129,15 @@ describe("LocalEventRepository", () => {
     expect(new Date(instances[0]!.schedule.start).toISOString()).toBe(
       "2026-05-04T09:00:00.000Z",
     );
-    expect(String(instances[0]!.id)).toBe(
-      `${record.id}::${instances[0]!.schedule.start}`,
+    // The id embeds the SAME instant as schedule.start, but via the shared
+    // core codec's canonical (server-matching) recurrenceId format — not
+    // necessarily the same string as schedule.start's own display format
+    // (that stays whatever getCompassEventDateFormat produces, e.g. an
+    // offset like +00:00; the codec always normalizes to .toISOString()).
+    const decoded = decodeOccurrenceId(String(instances[0]!.id));
+    expect(decoded?.eventId).toBe(String(record.id));
+    expect(decoded && new Date(decoded.recurrenceId).toISOString()).toBe(
+      new Date(instances[0]!.schedule.start).toISOString(),
     );
     // The base rides along for series metadata (the grid never renders it).
     expect(events.some((event) => event.id === record.id)).toBe(true);

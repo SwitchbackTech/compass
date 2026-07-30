@@ -53,6 +53,19 @@ export interface ProviderFetchInput {
   readonly providerEventId: string;
 }
 
+export interface ProviderInstanceFetchInput {
+  readonly accessToken: string;
+  readonly calendarId: string;
+  // The RECURRING master's provider id — an instance has no id of its own
+  // until resolved by this call.
+  readonly seriesProviderEventId: string;
+  // The instance's original scheduled start (its recurrence identity) — the
+  // same instant a this/thisAndFollowing scope's recurrenceId names. An
+  // instance that was itself rescheduled keeps this original identity, so it
+  // still resolves correctly even after being moved.
+  readonly originalStartAt: string;
+}
+
 export interface ProviderWriteResult {
   readonly providerEventId: string;
   readonly providerVersion: string;
@@ -77,6 +90,18 @@ export interface ProviderEventWriter {
   // Read one event back — the reconciliation step after an ambiguous create,
   // to learn whether the write actually landed. Null when no such event exists.
   fetchEvent(input: ProviderFetchInput): Promise<ProviderEventRead | null>;
+
+  // Resolve one occurrence of a recurring series to its own addressable
+  // provider event, by the instance's original scheduled start. A this/
+  // thisAndFollowing scope operates on ONE instance, which (unlike a cloud
+  // series exception) has no id of its own on the provider side until
+  // resolved this way; the caller then patches/deletes/fetches it with the
+  // returned identity exactly like any other provider event. Null when no
+  // instance exists at that instant (already cancelled, or the recurrenceId
+  // does not name a real occurrence of the series).
+  fetchInstanceAt(
+    input: ProviderInstanceFetchInput,
+  ): Promise<ProviderEventRead | null>;
 }
 
 // Why a mutation could not be applied. The terminal reasons mirror the sync

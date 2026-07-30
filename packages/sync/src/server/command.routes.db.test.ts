@@ -328,7 +328,7 @@ describe("POST /internal/commands", () => {
     expect(stored?.content.title).toBe("Renamed");
   });
 
-  it("defers an update that converts a single event into a series", async () => {
+  it("converts a single event into a series and confirms", async () => {
     const tenantId = objectId();
     const principalId = objectId();
     const created = createRequest();
@@ -352,16 +352,17 @@ describe("POST /internal/commands", () => {
     const body = (await res.json()) as {
       command: { outcome: { state: string } };
     };
-    // Converting to a series is a scope edit, deferred — the event stays single
-    // so a retry re-reads a single event and stays consistently pending.
-    expect(body.command.outcome.state).toBe("pending");
+    expect(body.command.outcome.state).toBe("confirmed");
     const events = new EventRepository(mongo.db);
     const stored = await events.findById(
       tenantId as TenantId,
       principalId as PrincipalId,
       created.eventId as never,
     );
-    expect(stored?.recurrence).toEqual({ kind: "single" });
+    expect(stored?.recurrence).toEqual({
+      kind: "seriesMaster",
+      rules: ["RRULE:FREQ=WEEKLY"],
+    });
   });
 
   it("deletes a cloud event and confirms", async () => {
@@ -427,7 +428,7 @@ describe("POST /internal/commands", () => {
     expect(body.command.outcome.state).toBe("confirmed");
   });
 
-  it("leaves an update of a missing event pending", async () => {
+  it("fails an update of a missing event instead of stranding it pending", async () => {
     const tenantId = objectId();
     const principalId = objectId();
     await startService();
@@ -456,7 +457,7 @@ describe("POST /internal/commands", () => {
     const body = (await res.json()) as {
       command: { outcome: { state: string } };
     };
-    expect(body.command.outcome.state).toBe("pending");
+    expect(body.command.outcome.state).toBe("failed");
   });
 
   it("promotes an anonymous device event, preserving its clientEventId", async () => {

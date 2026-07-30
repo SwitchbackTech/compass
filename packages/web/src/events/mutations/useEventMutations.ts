@@ -30,6 +30,11 @@ import {
   removeEventFromQueries,
   upsertEventAcrossQueries,
 } from "@web/events/queries/event.query.cache";
+import {
+  flushOwedEventInvalidation,
+  invalidateAllEventQueries,
+  markEventInvalidationOwed,
+} from "@web/events/queries/event.query.invalidation";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
 import {
@@ -254,18 +259,24 @@ export function useEventMutations(
   // macrotask because a settling mutation still counts as pending during its
   // own onSettled — deferring lets simultaneous settles reliably observe
   // count 0 instead of each seeing the other and skipping.
+  //
+  // The count>0 branch marks the invalidation OWED rather than dropping it.
+  // Every mutation's onSettled runs this same function, so whichever one
+  // finishes last will eventually observe count 0 and flush it — without
+  // this, a settle whose deferred check raced a brand-new mutation starting
+  // could silently never invalidate, leaving an edit/delete that already
+  // failed server-side (or an SSE signal that arrived mid-burst) stuck
+  // showing stale optimistic state until an unrelated refetch happened to
+  // cover it.
   const settle = () => {
     setTimeout(() => {
       if (
         queryClient.isMutating({ mutationKey: eventMutationKeys.all }) === 0
       ) {
-        // refetchType "all" so inactive entries (prefetched neighbor weeks,
-        // recently visited ranges) refetch too instead of serving stale
-        // instances until the user navigates back onto them.
-        void queryClient.invalidateQueries({
-          queryKey: eventQueryKeys.all,
-          refetchType: "all",
-        });
+        invalidateAllEventQueries(queryClient);
+        flushOwedEventInvalidation(queryClient);
+      } else {
+        markEventInvalidationOwed(queryClient);
       }
     }, 0);
   };
