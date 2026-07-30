@@ -17,7 +17,6 @@ import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { syncCalendarToBrowser } from "@backend/common/services/sync-service/calendar-list.translation";
-import { getEventDelegation } from "@backend/common/services/sync-service/event-routing";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import {
@@ -145,22 +144,15 @@ class CalendarController {
         error: () => error(AuthError.InadequatePermissions, "List Failed"),
       });
 
-      if (getEventDelegation() === "sync") {
-        const [syncResponse, localCalendar] = await Promise.all([
-          listCalendarsFromSync(userId.toString()),
-          calendarService.getLocalCalendar(userId),
-        ]);
-
-        res.promise({
-          calendars: localCalendar
-            ? [...syncResponse.calendars, mapCalendarRecord(localCalendar)]
-            : syncResponse.calendars,
-        });
-        return;
-      }
+      const [syncResponse, localCalendar] = await Promise.all([
+        listCalendarsFromSync(userId.toString()),
+        calendarService.getLocalCalendar(userId),
+      ]);
 
       res.promise({
-        calendars: (await calendarService.list(userId)).map(mapCalendarRecord),
+        calendars: localCalendar
+          ? [...syncResponse.calendars, mapCalendarRecord(localCalendar)]
+          : syncResponse.calendars,
       });
     } catch (e) {
       res.promise(Promise.reject(e));
@@ -192,10 +184,7 @@ class CalendarController {
       const query = parseAvailabilityQuery(req.query);
       assertBoundedAvailabilityRange(query);
 
-      const response =
-        getEventDelegation() === "sync"
-          ? await getAvailabilityFromSync(userId.toString(), query)
-          : await calendarService.getAvailability(userId, query);
+      const response = await getAvailabilityFromSync(userId.toString(), query);
 
       res.promise(response);
     } catch (e) {
