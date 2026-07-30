@@ -105,6 +105,16 @@ export async function submitCloudCommand(
   if (command.input.kind === "update" || command.input.kind === "delete") {
     return finish(await applyCloudMutation(deps, command, now));
   }
+  // A "move" command has no executor anywhere (no local apply, no provider
+  // dispatch, no worker picks up a pending one) - leaving it pending would
+  // strand the write forever while the caller sees success (submitCommandOrThrow
+  // only rejects failed/cancelled). Fail it explicitly instead, the same way an
+  // unsupported provider capability fails, so the caller gets a real error
+  // rather than a silent no-op. Remove this branch once move has a real
+  // executor.
+  if (command.input.kind === "move") {
+    return finish(await failCloud(deps, command, "unsupportedCapability"));
+  }
   if (command.input.kind !== "create") return finish(command);
 
   // A create whose target calendar is a connected provider calendar must go to
@@ -694,6 +704,21 @@ async function confirmCloud(
     command.attemptCount,
   );
   return confirmed ?? command;
+}
+
+async function failCloud(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  failureReason: "unsupportedCapability",
+): Promise<CommandRecord> {
+  const failed = await deps.commands.updateOutcome(
+    command.tenantId,
+    command.principalId,
+    command._id,
+    { state: "failed", failureReason },
+    command.attemptCount,
+  );
+  return failed ?? command;
 }
 
 // Apply an update command's content/schedule/recurrence to an existing cloud

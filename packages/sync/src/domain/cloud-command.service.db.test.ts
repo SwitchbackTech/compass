@@ -253,6 +253,44 @@ describe("submitCloudCommand provider dispatch", () => {
     expect(writer.calls).toHaveLength(0);
   });
 
+  // A "move" command has no executor anywhere yet - accepting it and leaving
+  // it pending would strand the write forever while the caller sees success
+  // (submitCommandOrThrow only rejects failed/cancelled outcomes). It must
+  // fail explicitly instead.
+  it("fails a move command as unsupportedCapability rather than leaving it pending", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const submit: CommandSubmit = {
+      tenantId,
+      principalId,
+      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+      eventId: objectId() as EventId,
+      input: {
+        kind: "move",
+        calendarId: objectId(),
+      } as unknown as SyncCommandInput,
+      expectedVersion: null,
+    };
+
+    const { command } = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        markers,
+        execution: "active",
+      },
+      submit,
+      now,
+    );
+
+    expect(command.outcome).toEqual({
+      state: "failed",
+      failureReason: "unsupportedCapability",
+    });
+  });
+
   it("omits null color when persisting a cloud create", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
