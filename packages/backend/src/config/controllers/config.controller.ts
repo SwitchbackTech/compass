@@ -14,8 +14,6 @@ class ConfigController {
           connectDelegatedToSync: getConnectionDelegation() === "sync",
         },
         sync: {
-          connectionRouting: CONFIG.SYNC_CONNECTION_ROUTING,
-          eventRouting: CONFIG.SYNC_EVENT_ROUTING,
           cloudMutationMode: getCloudMutationMode(),
           execution: CONFIG.SYNC_EXECUTION,
         },

@@ -213,8 +213,6 @@ describe("self-host installer", () => {
       expect(script).toContain(
         "mongo:27017/compass_sync?authSource=admin&replicaSet=rs0",
       );
-      expect(script).toContain("connectionRouting: sync");
-      expect(script).toContain("eventRouting: sync");
       expect(script).toContain("execution: active");
       expect(script).toContain("serviceUrl: http://sync:3010");
     }
@@ -523,15 +521,8 @@ describe("staging deploy workflow", () => {
     expect(workflow).toContain("'sync:'");
     expect(workflow).toContain('mongoUri: \\"$'.concat('{SYNC_MONGO_URI}\\"'));
     expect(workflow).toContain("enforceLeastPrivilege: true");
-    // Backend reaches sync on the compose network; routing stays opt-in via
-    // GitHub Environment vars (prod must leave them unset = legacy).
+    // Backend reaches sync on the compose network.
     expect(workflow).toContain('serviceUrl: "http://sync:3010"');
-    expect(workflow).toContain(
-      "SYNC_CONNECTION_ROUTING: $".concat("{{ vars.SYNC_CONNECTION_ROUTING }}"),
-    );
-    expect(workflow).toContain(
-      "SYNC_EVENT_ROUTING: $".concat("{{ vars.SYNC_EVENT_ROUTING }}"),
-    );
     expect(workflow).toContain(
       "SYNC_EXECUTION: $".concat("{{ vars.SYNC_EXECUTION }}"),
     );

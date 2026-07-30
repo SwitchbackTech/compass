@@ -1,4 +1,5 @@
-import { CONFIG } from "@backend/common/constants/config.constants";
+import { getConnectionDelegation } from "@backend/common/services/sync-service/connection-routing";
+import { getEventDelegation } from "@backend/common/services/sync-service/event-routing";
 
 /**
  * Whether the legacy backend should create/repair Google push channels and
@@ -7,7 +8,6 @@ import { CONFIG } from "@backend/common/constants/config.constants";
  */
 export function isLegacyGoogleWatchOwner(): boolean {
   return (
-    CONFIG.SYNC_CONNECTION_ROUTING === "legacy" &&
-    CONFIG.SYNC_EVENT_ROUTING === "legacy"
+    getConnectionDelegation() === "legacy" && getEventDelegation() === "legacy"
   );
 }

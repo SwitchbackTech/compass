@@ -459,8 +459,6 @@ sync:
   internalAuthToken: $sync_internal_auth_token
   callbackBaseUrl: http://localhost:3010
   serviceUrl: http://sync:3010
-  connectionRouting: sync
-  eventRouting: sync
   cloudMutationMode: enabled
   execution: active
 EOF

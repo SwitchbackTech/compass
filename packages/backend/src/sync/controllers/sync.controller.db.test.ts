@@ -19,6 +19,7 @@ import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/e
 import { CONFIG } from "@backend/common/constants/config.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import {
   buildEventRecord,
@@ -701,20 +702,17 @@ describe("SyncController", () => {
     });
 
     describe("Sync delegation:", () => {
-      const originalConnectionRouting = CONFIG.SYNC_CONNECTION_ROUTING;
-      const originalEventRouting = CONFIG.SYNC_EVENT_ROUTING;
-
-      afterEach(() => {
-        CONFIG.SYNC_CONNECTION_ROUTING = originalConnectionRouting;
-        CONFIG.SYNC_EVENT_ROUTING = originalEventRouting;
-      });
-
       it("refuses with 409 and never starts the legacy engine once Sync owns connections/events", async () => {
-        // Assigned in-test (not beforeAll): the shared backend harness's
-        // global beforeEach resets CONFIG to baseline before every test body
-        // runs, so a beforeAll-only override never survives to see it.
-        CONFIG.SYNC_CONNECTION_ROUTING = "sync";
-        CONFIG.SYNC_EVENT_ROUTING = "sync";
+        // getConnectionDelegation()/getEventDelegation() cache a Sync client
+        // singleton on first call, process-wide — this file's many earlier
+        // importGCal/handleGoogleNotification tests already called it (with
+        // no SYNC_SERVICE_URL set), caching it as null. Setting CONFIG here
+        // would have no effect on that cached result, so spy on
+        // getSyncServiceClient() directly instead, bypassing the cache.
+        const clientSpy = spyOn(
+          syncServiceFactory,
+          "getSyncServiceClient",
+        ).mockReturnValue({} as never);
 
         const { user } = await UtilDriver.setupTestUser();
         const userId = user._id.toString();
@@ -738,6 +736,7 @@ describe("SyncController", () => {
 
         repairSpy.mockRestore();
         startSpy.mockRestore();
+        clientSpy.mockRestore();
       });
     });
 

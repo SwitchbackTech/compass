@@ -122,10 +122,10 @@ const listAllFullEvents = async (
   return instances;
 };
 
-// GET /api/event under SYNC_EVENT_ROUTING=sync: fetch full-fidelity instances
-// from sync and translate to the browser Event contract. Fail-closed — a sync
-// outage surfaces as an error rather than silently falling back to legacy
-// (which would show a different, stale store).
+// GET /api/event when event routing delegates to sync: fetch full-fidelity
+// instances from sync and translate to the browser Event contract.
+// Fail-closed — a sync outage surfaces as an error rather than silently
+// falling back to legacy (which would show a different, stale store).
 const readAllFromSync = async (userId: string, query: EventListQuery) => {
   const client = getSyncServiceClient();
   if (!client) {
