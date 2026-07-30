@@ -1,4 +1,3 @@
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 
 /**
@@ -31,36 +30,6 @@ export const convertRruleWithUntilToDate = (rrule: string) => {
     .utc(rrule, FORMAT.RFC5545.value)
     .toISOString();
   return origDateFromUntil;
-};
-
-/**
- * Get current week and month date ranges
- * @returns Object containing week and month date ranges in YYYY-MM-DD format
- * @example
- * {
- *   week: { startDate: '2024-01-01', endDate: '2024-01-07' },
- *   month: { startDate: '2024-01-01', endDate: '2024-01-31' }
- * }
- */
-export const getCurrentRangeDates = () => {
-  const now = dayjs();
-
-  const weekStart = now.startOf("week");
-  const weekEnd = now.endOf("week");
-
-  const monthStart = now.startOf("month");
-  const monthEnd = now.endOf("month");
-
-  return {
-    week: {
-      startDate: weekStart.format(YEAR_MONTH_DAY_FORMAT),
-      endDate: weekEnd.format(YEAR_MONTH_DAY_FORMAT),
-    },
-    month: {
-      startDate: monthStart.format(YEAR_MONTH_DAY_FORMAT),
-      endDate: monthEnd.format(YEAR_MONTH_DAY_FORMAT),
-    },
-  };
 };
 
 /**

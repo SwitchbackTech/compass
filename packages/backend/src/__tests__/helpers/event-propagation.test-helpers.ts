@@ -10,13 +10,11 @@ import mongoService from "@backend/common/services/mongo.service";
 import { type EventRecord } from "@backend/event/event.record";
 
 /**
- * Test conventions shared by the compass->google propagation suites (see
- * event.repository.test.ts / event.service.test.ts for the sibling
- * conventions this mirrors): real mongo-memory-server, EventRecord/
- * CalendarRecord shapes seeded directly, no ORM. Google network calls never
- * happen — @googleapis/calendar is globally replaced by the in-memory
- * mockGcal factory (packages/backend/src/__tests__/backend.test.start.ts),
- * so gcalService methods are safe to spy on without leaking a real request.
+ * Test conventions shared by the compass->google propagation suites: real
+ * mongo-memory-server, EventRecord/CalendarRecord shapes seeded directly, no
+ * ORM. Google network calls never happen because the backend no longer has a
+ * Google Calendar API-client code path to call (removed once Sync took over
+ * event/calendar sync duties).
  */
 
 export type GoogleCalendarRecord = CalendarRecord & {

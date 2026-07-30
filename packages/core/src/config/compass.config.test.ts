@@ -105,20 +105,12 @@ posthog:
 google:
   clientId: my-client-id
   clientSecret: my-client-secret
-  channelExpirationMin: 30
-  webhookUrl: https://example.trycloudflare.com/api
-  notificationToken: my-notification-token
 `,
       "compass.yaml",
     );
 
     expect(config.google?.clientId).toBe("my-client-id");
     expect(config.google?.clientSecret).toBe("my-client-secret");
-    expect(config.google?.channelExpirationMin).toBe(30);
-    expect(config.google?.webhookUrl).toBe(
-      "https://example.trycloudflare.com/api",
-    );
-    expect(config.google?.notificationToken).toBe("my-notification-token");
   });
 
   it("throws a clear error for invalid YAML", () => {

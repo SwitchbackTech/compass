@@ -1,23 +1,13 @@
-import { createGoogleError } from "../../../__tests__/mocks.gcal/errors/error.google.factory";
 import { invalidGrant400Error } from "../../../__tests__/mocks.gcal/errors/error.google.invalidGrant";
 import { invalidValueError } from "../../../__tests__/mocks.gcal/errors/error.google.invalidValue";
-import { invalidSyncTokenError } from "../../../__tests__/mocks.gcal/errors/error.invalidSyncToken";
 import {
-  getEmailFromUrl,
-  getGoogleErrorStatus,
-  isFullSyncRequired,
   isGoogleError,
-  isGoogleRepairQuotaError,
-  isGoogleWatchUnsupported,
   isInvalidGoogleToken,
   isInvalidValue,
 } from "./gcal.utils";
 import { describe, expect, it } from "bun:test";
 
 describe("Google Error Parsing", () => {
-  it("recognizes invalid sync token error", () => {
-    expect(isFullSyncRequired(invalidSyncTokenError)).toBe(true);
-  });
   it("recognizes invalid (sync)value error", () => {
     expect(isInvalidValue(invalidValueError)).toBe(true);
   });
@@ -51,86 +41,5 @@ describe("Google Error Parsing", () => {
       },
     };
     expect(isInvalidGoogleToken(errorWithNumericCode)).toBe(true);
-  });
-  it("returns response status when present", () => {
-    expect(
-      getGoogleErrorStatus(
-        createGoogleError({ code: "500", responseStatus: 401 }),
-      ),
-    ).toBe(401);
-  });
-  it("falls back to the parsed gaxios code", () => {
-    expect(getGoogleErrorStatus(createGoogleError({ code: "410" }))).toBe(410);
-  });
-  it("returns undefined for non-google errors", () => {
-    expect(getGoogleErrorStatus(new Error("nope"))).toBeUndefined();
-  });
-  it("recognizes Google quota errors", () => {
-    const quotaError = createGoogleError({
-      code: "403",
-      responseStatus: 403,
-      message: "Quota exceeded",
-    });
-
-    if (quotaError.response) {
-      quotaError.response.data = {
-        error: {
-          message: "Quota exceeded for quota metric 'Queries'.",
-          errors: [{ reason: "quotaExceeded" }],
-        },
-      };
-    }
-
-    expect(isGoogleRepairQuotaError(quotaError)).toBe(true);
-  });
-  it("does not treat non-quota Google errors as repair quota errors", () => {
-    expect(isGoogleRepairQuotaError(createGoogleError({ code: "500" }))).toBe(
-      false,
-    );
-  });
-  it("recognizes resources that do not support push watches", () => {
-    const unsupported = createGoogleError({
-      code: "400",
-      responseStatus: 400,
-    });
-    if (unsupported.response) {
-      unsupported.response.data = {
-        error: {
-          code: 400,
-          message: "Push notifications are not supported by this resource.",
-          errors: [{ reason: "pushNotSupportedForRequestedResource" }],
-        },
-      };
-    }
-
-    expect(isGoogleWatchUnsupported(unsupported)).toBe(true);
-    expect(
-      isGoogleWatchUnsupported(
-        createGoogleError({ code: "500", responseStatus: 500 }),
-      ),
-    ).toBe(false);
-  });
-});
-
-describe("Gaxios response parsing", () => {
-  it("returns email with @", () => {
-    const url =
-      "https://www.googleapis.com/calendar/v3/calendars/foo%40bar.com/events?syncToken=!!!!!!!!!!!!!!!jqgYQwNWZ_QyyHyycChpiZHJvaGl1aHyyyyyyymxvZmMwaXZodjN2ZxoMCO7Xj6sGEICGncADwD4B";
-    expect(getEmailFromUrl(url)).toBe("foo@bar.com");
-  });
-  it("decodes additional percent-encoded characters beyond %40", () => {
-    const url =
-      "https://www.googleapis.com/calendar/v3/calendars/foo%2Bbar%40example.com/events";
-    expect(getEmailFromUrl(url)).toBe("foo+bar@example.com");
-  });
-  it("returns null for malformed percent-encoding", () => {
-    const url =
-      "https://www.googleapis.com/calendar/v3/calendars/foo%GGbar%40example.com/events";
-    expect(getEmailFromUrl(url)).toBeNull();
-  });
-  it("returns null when URL has no calendar segment", () => {
-    expect(
-      getEmailFromUrl("https://www.googleapis.com/calendar/v3/events"),
-    ).toBeNull();
   });
 });
