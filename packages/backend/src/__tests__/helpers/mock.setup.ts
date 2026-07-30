@@ -41,7 +41,6 @@ import { googleCalendarListService } from "@backend/sync/services/calendarlist/g
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import * as syncImportService from "@backend/sync/services/import/google-import.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
-import { getChannelExpiration } from "@backend/sync/services/watch/google-watch-timing";
 import userService from "@backend/user/services/user.service";
 import { afterAll, afterEach, beforeEach, mock, spyOn } from "bun:test";
 import { randomUUID } from "node:crypto";
@@ -281,10 +280,15 @@ export function setupBackendTestSeams(): void {
 }
 
 function ensureGcalWatchSpies(): void {
+  // A future timestamp string in the same shape production's
+  // getChannelExpiration() returns — this is fixture data for a mocked
+  // response, not a real channel, so it doesn't need that function's own
+  // logging side effect or CHANNEL_EXPIRATION_MIN precision, only "expires
+  // later than now".
   const mockWatch = {
     watch: {
       resourceId: faker.string.uuid(),
-      expiration: getChannelExpiration(),
+      expiration: (Date.now() + 60 * 60_000).toString(),
     },
   };
 
