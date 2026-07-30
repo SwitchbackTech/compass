@@ -237,9 +237,25 @@ export class EventRepository {
       content: EventRecord["content"];
       schedule: EventRecord["schedule"];
       cancelled: boolean;
+      // The instance's OWN provider identity, when it has one distinct from
+      // the master's. A provider-linked occurrence (Google instance) is its
+      // own addressable provider event — mirroring the master's identity
+      // here would collide the provider_event_identity unique index, since
+      // the master record already holds that exact (connectionId,
+      // calendarId, providerEventId) triple. Omitted falls back to the
+      // master's identity, which is correct for a cloud-only series (always
+      // null on both sides).
+      providerIdentity?: {
+        providerEventId: EventRecord["providerEventId"];
+        providerVersion: EventRecord["providerVersion"];
+      };
     },
     now: Date,
   ): Promise<EventRecord> {
+    const providerEventId =
+      override.providerIdentity?.providerEventId ?? master.providerEventId;
+    const providerVersion =
+      override.providerIdentity?.providerVersion ?? master.providerVersion;
     const result = await this.collection.findOneAndUpdate(
       {
         tenantId: master.tenantId,
@@ -249,19 +265,22 @@ export class EventRepository {
         "recurrence.recurrenceId": recurrenceId,
       },
       {
-        // Mirror the master's ownership/calendar/provider identity; set the
-        // instance's own content, schedule, and cancelled flag. recurrence.kind
-        // /seriesId/recurrenceId are seeded from the filter on insert, so only
-        // cancelled is set here (setting the whole recurrence would conflict).
+        // Mirror the master's ownership/calendar identity; set the
+        // instance's own content, schedule, provider identity, and cancelled
+        // flag. recurrence.kind/seriesId/recurrenceId are seeded from the
+        // filter on insert, so only cancelled is set here (setting the whole
+        // recurrence would conflict).
         $set: {
           origin: master.origin,
           calendarId: master.calendarId,
           clientEventId: null,
           connectionId: master.connectionId,
-          providerEventId: master.providerEventId,
-          providerVersion: master.providerVersion,
+          providerEventId,
+          providerVersion,
           providerUpdatedAt: master.providerUpdatedAt,
-          deliveryState: master.deliveryState,
+          deliveryState: master.connectionId
+            ? "confirmed"
+            : master.deliveryState,
           providerMetadata: master.providerMetadata,
           content: override.content,
           schedule: override.schedule,

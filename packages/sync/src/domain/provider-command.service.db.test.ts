@@ -14,6 +14,10 @@ import {
   type AccessTokenSource,
   executeProviderCreate,
   executeProviderDelete,
+  executeProviderOccurrenceDelete,
+  executeProviderOccurrenceUpdate,
+  executeProviderSeriesFollowingDelete,
+  executeProviderSeriesFollowingUpdate,
   executeProviderSeriesUpdate,
   executeProviderUpdate,
 } from "@sync/domain/provider-command.service";
@@ -29,6 +33,7 @@ import {
   type ProviderDeleteInput,
   type ProviderEventWriter,
   type ProviderFetchInput,
+  type ProviderInstanceFetchInput,
   type ProviderPatchInput,
   ProviderWriteError,
   type ProviderWriteResult,
@@ -1760,5 +1765,712 @@ describe("executeProviderSeriesUpdate", () => {
     );
 
     expect(result.outcome.state).toBe("pending");
+  });
+});
+
+// A writer covering every method the recurring-scope executors below use:
+// fetchInstanceAt (resolve one occurrence), fetchEvent/patchEvent (the master,
+// for a thisAndFollowing truncation), deleteEvent (cancel one instance), and
+// createEvent (the remainder series of a split). Each result/error is
+// independently scriptable so a test can isolate exactly which call it means
+// to exercise.
+class FakeRecurringWriter implements ProviderEventWriter {
+  readonly provider = "google" as const;
+  fetchEventResult: ProviderEvent | null = null;
+  fetchEventError?: unknown;
+  fetchInstanceResult: ProviderEvent | null = null;
+  fetchInstanceError?: unknown;
+  patchResult: ProviderWriteResult = {
+    providerEventId: "g-evt-1",
+    providerVersion: "etag-2",
+  };
+  patchError?: unknown;
+  deleteError?: unknown;
+  createResult: ProviderWriteResult = {
+    providerEventId: "g-remainder-1",
+    providerVersion: "etag-1",
+  };
+  createError?: unknown;
+  fetchEventCalls: ProviderFetchInput[] = [];
+  fetchInstanceCalls: ProviderInstanceFetchInput[] = [];
+  patchCalls: ProviderPatchInput[] = [];
+  deleteCalls: ProviderDeleteInput[] = [];
+  createCalls: ProviderCreateInput[] = [];
+
+  async createEvent(input: ProviderCreateInput): Promise<ProviderWriteResult> {
+    this.createCalls.push(input);
+    if (this.createError) throw this.createError;
+    return this.createResult;
+  }
+  async patchEvent(input: ProviderPatchInput): Promise<ProviderWriteResult> {
+    this.patchCalls.push(input);
+    if (this.patchError) throw this.patchError;
+    return this.patchResult;
+  }
+  async deleteEvent(input: ProviderDeleteInput): Promise<void> {
+    this.deleteCalls.push(input);
+    if (this.deleteError) throw this.deleteError;
+  }
+  async fetchEvent(input: ProviderFetchInput): Promise<ProviderEvent | null> {
+    this.fetchEventCalls.push(input);
+    if (this.fetchEventError) throw this.fetchEventError;
+    return this.fetchEventResult;
+  }
+  async fetchInstanceAt(
+    input: ProviderInstanceFetchInput,
+  ): Promise<ProviderEvent | null> {
+    this.fetchInstanceCalls.push(input);
+    if (this.fetchInstanceError) throw this.fetchInstanceError;
+    return this.fetchInstanceResult;
+  }
+}
+
+describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
+  let mongo: SyncMongoService;
+  let commands: CommandRepository;
+  let events: EventRepository;
+  let occurrences: EventOccurrenceRepository;
+  let calendars: ProviderCalendarRepository;
+  let markers: DeletionMarkerRepository;
+
+  const now = () => new Date("2026-07-10T00:00:00.000Z");
+
+  // A weekly series of three occurrences starting 2026-07-14 09:00 Denver:
+  // 07-14, 07-21, 07-28 (all 15:00Z). Matches the cloud-path test fixtures
+  // exactly, so results are directly comparable.
+  const schedule = {
+    kind: "timed" as const,
+    start: "2026-07-14T09:00:00-06:00",
+    end: "2026-07-14T10:00:00-06:00",
+    timeZone: "America/Denver",
+  };
+  const weekly3 = ["RRULE:FREQ=WEEKLY;COUNT=3"];
+  const SECOND_START = "2026-07-21T09:00:00-06:00";
+  const SECOND_START_UTC = "2026-07-21T15:00:00.000Z";
+  const content = (title: string) => ({
+    title,
+    description: "",
+    location: null,
+    organizer: null,
+    attendees: [],
+    conference: null,
+  });
+  const providerInstance = (
+    providerEventId: string,
+    title: string,
+    version: string,
+    instanceSchedule = {
+      kind: "timed" as const,
+      start: SECOND_START,
+      end: "2026-07-21T10:00:00-06:00",
+      timeZone: "America/Denver",
+    },
+  ): ProviderEvent => ({
+    kind: "event",
+    providerEventId,
+    providerVersion: version,
+    providerUpdatedAt: null,
+    content: content(title),
+    schedule: instanceSchedule,
+    busy: true,
+    recurrence: { kind: "single" },
+  });
+  const providerSeries = (
+    title: string,
+    version: string,
+    rules: readonly string[],
+  ): ProviderEvent => ({
+    kind: "event",
+    providerEventId: "g-series-1",
+    providerVersion: version,
+    providerUpdatedAt: null,
+    content: content(title),
+    schedule,
+    busy: true,
+    recurrence: { kind: "seriesMaster", rules: [...rules] },
+  });
+
+  const seedMaster = async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const connectionId = objectId() as ConnectionId;
+    const calendar = await calendars.upsertByProviderCalendar({
+      tenantId,
+      principalId,
+      connectionId,
+      providerCalendarId: "primary@google.com",
+      displayName: "Google",
+      color: null,
+      active: true,
+      primary: true,
+      accessRole: "owner",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: true,
+        canReadBusy: true,
+        canInviteAttendees: true,
+      },
+    });
+    const eventId = objectId() as EventId;
+    await events.put({
+      _id: eventId,
+      tenantId,
+      principalId,
+      origin: "compass",
+      calendarId: calendar._id,
+      clientEventId: null,
+      connectionId,
+      providerEventId: "g-series-1" as never,
+      providerVersion: "etag-1" as never,
+      providerUpdatedAt: null,
+      deliveryState: "confirmed",
+      providerMetadata: null,
+      content: content("Old"),
+      schedule,
+      recurrence: { kind: "seriesMaster", rules: [...weekly3] },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: now(),
+      updatedAt: now(),
+      confirmedAt: now(),
+    } as never);
+    const master = await events.findById(tenantId, principalId, eventId);
+    if (!master) throw new Error("seed failed to read back the master");
+    await reprojectOccurrences(occurrences, master, now);
+    return { tenantId, principalId, calendar, master };
+  };
+
+  const occurrenceStartsFor = async (eventId: EventId): Promise<string[]> => {
+    const docs = await mongo.db
+      .collection(SYNC_COLLECTIONS.eventOccurrences)
+      .find({ eventId })
+      .sort({ startAt: 1 })
+      .toArray();
+    return docs.map((doc) => (doc["startAt"] as Date).toISOString());
+  };
+
+  const otherSeriesMaster = (principalId: PrincipalId, masterId: EventId) =>
+    mongo.db
+      .collection(SYNC_COLLECTIONS.events)
+      .find({
+        principalId,
+        "recurrence.kind": "seriesMaster",
+        _id: { $ne: masterId },
+      })
+      .toArray();
+
+  const thisScopeCommand = async (
+    master: EventRecord,
+    kind: "update" | "delete",
+    title = "Edited",
+  ) =>
+    (
+      await commands.submit({
+        tenantId: master.tenantId,
+        principalId: master.principalId,
+        idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+        eventId: master._id,
+        input:
+          kind === "update"
+            ? ({
+                kind: "update",
+                invitation: "none",
+                content: content(title),
+                schedule: {
+                  kind: "timed",
+                  start: SECOND_START,
+                  end: "2026-07-21T10:00:00-06:00",
+                  timeZone: "America/Denver",
+                },
+                recurrence: { kind: "preserve" },
+                scope: "this",
+                recurrenceId: SECOND_START,
+              } as unknown as SyncCommandInput)
+            : ({
+                kind: "delete",
+                invitation: "none",
+                scope: "this",
+                recurrenceId: SECOND_START,
+              } as unknown as SyncCommandInput),
+        expectedVersion: null,
+      })
+    ).record;
+
+  const followingCommand = async (
+    master: EventRecord,
+    kind: "update" | "delete",
+    splitAt = SECOND_START,
+    title = "Split",
+  ) =>
+    (
+      await commands.submit({
+        tenantId: master.tenantId,
+        principalId: master.principalId,
+        idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+        eventId: master._id,
+        input:
+          kind === "update"
+            ? ({
+                kind: "update",
+                invitation: "none",
+                content: content(title),
+                schedule: {
+                  kind: "timed",
+                  start: splitAt,
+                  end: "2026-07-21T10:00:00-06:00",
+                  timeZone: "America/Denver",
+                },
+                recurrence: {
+                  kind: "series",
+                  rules: ["RRULE:FREQ=WEEKLY;COUNT=2"],
+                },
+                scope: "thisAndFollowing",
+                recurrenceId: splitAt,
+              } as unknown as SyncCommandInput)
+            : ({
+                kind: "delete",
+                invitation: "none",
+                scope: "thisAndFollowing",
+                recurrenceId: splitAt,
+              } as unknown as SyncCommandInput),
+        expectedVersion: null,
+      })
+    ).record;
+
+  const deps = (writer: FakeRecurringWriter) => ({
+    commands,
+    events,
+    occurrences,
+    writer,
+    custody: tokenSource(),
+  });
+  const deleteDeps = (writer: FakeRecurringWriter) => ({
+    ...deps(writer),
+    markers,
+  });
+
+  beforeEach(() => {
+    mongo = storage.mongo();
+    commands = new CommandRepository(mongo.db);
+    events = new EventRepository(mongo.db);
+    occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
+    calendars = new ProviderCalendarRepository(mongo.db);
+    markers = new DeletionMarkerRepository(mongo.db);
+  });
+
+  describe("executeProviderOccurrenceUpdate", () => {
+    it("resolves the instance, patches IT (not the master), and stores its own provider identity", async () => {
+      const { tenantId, principalId, calendar, master } = await seedMaster();
+      const command = await thisScopeCommand(master, "update", "Moved");
+      const writer = new FakeRecurringWriter();
+      writer.fetchInstanceResult = providerInstance(
+        "g-inst-1",
+        "Old",
+        "etag-1",
+      );
+
+      const result = await executeProviderOccurrenceUpdate(
+        deps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("confirmed");
+      expect(writer.fetchInstanceCalls[0]).toMatchObject({
+        seriesProviderEventId: "g-series-1",
+        originalStartAt: SECOND_START,
+      });
+      // Patched the INSTANCE's own resolved id, never the master's.
+      expect(writer.patchCalls[0]?.providerEventId).toBe("g-inst-1");
+
+      const exceptions = await events.findSeriesExceptions(
+        tenantId,
+        principalId,
+        master._id,
+      );
+      expect(exceptions).toHaveLength(1);
+      // The exception carries the INSTANCE's own provider identity, not the
+      // master's — sharing the master's would collide the unique
+      // provider_event_identity index.
+      expect(exceptions[0]?.providerEventId).toBe("g-inst-1");
+      expect(exceptions[0]?.content.title).toBe("Moved");
+      // The master no longer projects the overridden instant.
+      expect(await occurrenceStartsFor(master._id)).not.toContain(
+        SECOND_START_UTC,
+      );
+    });
+
+    it("confirms without re-patching when the edit already landed (replay)", async () => {
+      const { calendar, master } = await seedMaster();
+      const command = await thisScopeCommand(master, "update", "Moved");
+      const writer = new FakeRecurringWriter();
+      // The instance already carries this command's intended content.
+      writer.fetchInstanceResult = providerInstance(
+        "g-inst-1",
+        "Moved",
+        "etag-2",
+      );
+
+      const result = await executeProviderOccurrenceUpdate(
+        deps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("confirmed");
+      expect(writer.patchCalls).toHaveLength(0);
+    });
+
+    it("fails without writing when no instance exists at that instant", async () => {
+      const { calendar, master } = await seedMaster();
+      const command = await thisScopeCommand(master, "update");
+      const writer = new FakeRecurringWriter();
+      writer.fetchInstanceResult = null;
+
+      const result = await executeProviderOccurrenceUpdate(
+        deps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("failed");
+      expect(
+        result.outcome.state === "failed" && result.outcome.failureReason,
+      ).toBe("permanentProviderError");
+      expect(writer.patchCalls).toHaveLength(0);
+    });
+
+    it("leaves the command pending on a transient patch failure", async () => {
+      const { calendar, master } = await seedMaster();
+      const command = await thisScopeCommand(master, "update");
+      const writer = new FakeRecurringWriter();
+      writer.fetchInstanceResult = providerInstance(
+        "g-inst-1",
+        "Old",
+        "etag-1",
+      );
+      writer.patchError = new ProviderWriteError("transient", "blip");
+
+      const result = await executeProviderOccurrenceUpdate(
+        deps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("pending");
+    });
+  });
+
+  describe("executeProviderOccurrenceDelete", () => {
+    it("deletes the resolved instance at the provider and tombstones it locally", async () => {
+      const { tenantId, principalId, calendar, master } = await seedMaster();
+      const command = await thisScopeCommand(master, "delete");
+      const writer = new FakeRecurringWriter();
+      writer.fetchInstanceResult = providerInstance(
+        "g-inst-1",
+        "Old",
+        "etag-1",
+      );
+
+      const result = await executeProviderOccurrenceDelete(
+        deleteDeps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("confirmed");
+      expect(writer.deleteCalls[0]?.providerEventId).toBe("g-inst-1");
+      const exceptions = await events.findSeriesExceptions(
+        tenantId,
+        principalId,
+        master._id,
+      );
+      expect(exceptions).toHaveLength(1);
+      expect(
+        exceptions[0]?.recurrence.kind === "exception" &&
+          exceptions[0]?.recurrence.cancelled,
+      ).toBe(true);
+      // The master no longer projects the cancelled instant; the whole
+      // series and every OTHER instance are untouched.
+      expect(await occurrenceStartsFor(master._id)).toEqual([
+        "2026-07-14T15:00:00.000Z",
+        "2026-07-28T15:00:00.000Z",
+      ]);
+    });
+
+    it("converges without a second provider call when the instance is already gone", async () => {
+      const { tenantId, principalId, calendar, master } = await seedMaster();
+      const command = await thisScopeCommand(master, "delete");
+      const writer = new FakeRecurringWriter();
+      writer.fetchInstanceResult = null;
+
+      const result = await executeProviderOccurrenceDelete(
+        deleteDeps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("confirmed");
+      expect(writer.deleteCalls).toHaveLength(0);
+      const exceptions = await events.findSeriesExceptions(
+        tenantId,
+        principalId,
+        master._id,
+      );
+      expect(exceptions).toHaveLength(1);
+    });
+
+    it("leaves the command pending on a transient delete failure", async () => {
+      const { calendar, master } = await seedMaster();
+      const command = await thisScopeCommand(master, "delete");
+      const writer = new FakeRecurringWriter();
+      writer.fetchInstanceResult = providerInstance(
+        "g-inst-1",
+        "Old",
+        "etag-1",
+      );
+      writer.deleteError = new ProviderWriteError("transient", "blip");
+
+      const result = await executeProviderOccurrenceDelete(
+        deleteDeps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("pending");
+    });
+  });
+
+  describe("executeProviderSeriesFollowingDelete", () => {
+    it("truncates the provider master and drops following occurrences", async () => {
+      const { tenantId, principalId, calendar, master } = await seedMaster();
+      const command = await followingCommand(master, "delete");
+      const writer = new FakeRecurringWriter();
+      writer.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
+
+      const result = await executeProviderSeriesFollowingDelete(
+        deleteDeps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("confirmed");
+      expect(writer.patchCalls[0]?.recurrence.kind).toBe("series");
+      // Content/schedule are unchanged — only the rules were patched.
+      expect(writer.patchCalls[0]?.content.title).toBe("Old");
+      const stored = await events.findById(tenantId, principalId, master._id);
+      expect(stored?.recurrence.kind).toBe("seriesMaster");
+      expect(await occurrenceStartsFor(master._id)).toEqual([
+        "2026-07-14T15:00:00.000Z",
+      ]);
+    });
+
+    it("confirms without re-patching when the truncation already landed", async () => {
+      const { calendar, master } = await seedMaster();
+      const command = await followingCommand(master, "delete");
+      const writer = new FakeRecurringWriter();
+      // Provider already reflects the truncated rules.
+      writer.fetchEventResult = providerSeries("Old", "etag-2", [
+        "RRULE:FREQ=WEEKLY;COUNT=1",
+      ]);
+
+      const result = await executeProviderSeriesFollowingDelete(
+        deleteDeps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("confirmed");
+      expect(writer.patchCalls).toHaveLength(0);
+    });
+
+    it("collapses to the whole-series provider delete at the first occurrence", async () => {
+      const { tenantId, principalId, calendar, master } = await seedMaster();
+      const command = await followingCommand(
+        master,
+        "delete",
+        "2026-07-14T09:00:00-06:00",
+      );
+      const writer = new FakeRecurringWriter();
+
+      const result = await executeProviderSeriesFollowingDelete(
+        deleteDeps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("confirmed");
+      // executeProviderDelete's path was taken: the whole event is gone.
+      expect(writer.deleteCalls).toHaveLength(1);
+      expect(
+        await events.findById(tenantId, principalId, master._id),
+      ).toBeNull();
+    });
+
+    it("leaves the command pending on a transient patch failure", async () => {
+      const { calendar, master } = await seedMaster();
+      const command = await followingCommand(master, "delete");
+      const writer = new FakeRecurringWriter();
+      writer.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
+      writer.patchError = new ProviderWriteError("transient", "blip");
+
+      const result = await executeProviderSeriesFollowingDelete(
+        deleteDeps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("pending");
+    });
+  });
+
+  describe("executeProviderSeriesFollowingUpdate", () => {
+    it("truncates the original and creates a deterministic remainder at the provider", async () => {
+      const { principalId, calendar, master } = await seedMaster();
+      const command = await followingCommand(master, "update");
+      const writer = new FakeRecurringWriter();
+      writer.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
+      writer.createResult = {
+        providerEventId: "g-remainder-1",
+        providerVersion: "etag-1",
+      };
+
+      const result = await executeProviderSeriesFollowingUpdate(
+        deps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("confirmed");
+      // Original truncated to just the pre-split occurrence.
+      expect(await occurrenceStartsFor(master._id)).toEqual([
+        "2026-07-14T15:00:00.000Z",
+      ]);
+      // Remainder created at the provider with the deterministic id.
+      expect(writer.createCalls).toHaveLength(1);
+      const remainders = await otherSeriesMaster(principalId, master._id);
+      expect(remainders).toHaveLength(1);
+      expect(writer.createCalls[0]?.providerEventId).toBe(
+        remainders[0]?.["_id"],
+      );
+      expect(remainders[0]?.["content"]).toMatchObject({ title: "Split" });
+      const remainderId = remainders[0]?.["_id"] as EventId;
+      expect(await occurrenceStartsFor(remainderId)).toEqual([
+        SECOND_START_UTC,
+        "2026-07-28T15:00:00.000Z",
+      ]);
+    });
+
+    it("upserts a single remainder across two splits at the same point (idempotent retry)", async () => {
+      // Two distinct commands (fresh idempotency keys), same split point —
+      // mirrors the cloud path's own convergence test. The deterministic
+      // remainder id (remainderMasterId) means deps.events.put upserts the
+      // SAME Mongo document both times, regardless of whether each call's
+      // own provider-replay check fires — that Mongo-level convergence is
+      // what this test locks in.
+      const { principalId, calendar, master } = await seedMaster();
+      const first = await followingCommand(
+        master,
+        "update",
+        SECOND_START,
+        "First",
+      );
+      const writerA = new FakeRecurringWriter();
+      writerA.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
+      await executeProviderSeriesFollowingUpdate(
+        deps(writerA),
+        first,
+        master,
+        calendar,
+        now,
+      );
+
+      const second = await followingCommand(
+        master,
+        "update",
+        SECOND_START,
+        "Second",
+      );
+      const writerB = new FakeRecurringWriter();
+      writerB.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
+
+      await executeProviderSeriesFollowingUpdate(
+        deps(writerB),
+        second,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(await otherSeriesMaster(principalId, master._id)).toHaveLength(1);
+    });
+
+    it("collapses to the provider edit-all at the first occurrence", async () => {
+      const { tenantId, principalId, calendar, master } = await seedMaster();
+      const command = await followingCommand(
+        master,
+        "update",
+        "2026-07-14T09:00:00-06:00",
+        "Whole",
+      );
+      const writer = new FakeRecurringWriter();
+      writer.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
+
+      const result = await executeProviderSeriesFollowingUpdate(
+        deps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("confirmed");
+      expect(writer.createCalls).toHaveLength(0);
+      const stored = await events.findById(tenantId, principalId, master._id);
+      expect(stored?.content.title).toBe("Whole");
+      expect(await otherSeriesMaster(principalId, master._id)).toHaveLength(0);
+    });
+
+    it("leaves the command pending on a transient create failure for the remainder", async () => {
+      const { calendar, master } = await seedMaster();
+      const command = await followingCommand(master, "update");
+      const writer = new FakeRecurringWriter();
+      writer.fetchEventResult = providerSeries("Old", "etag-1", weekly3);
+      writer.createError = new ProviderWriteError("transient", "blip");
+
+      const result = await executeProviderSeriesFollowingUpdate(
+        deps(writer),
+        command,
+        master,
+        calendar,
+        now,
+      );
+
+      expect(result.outcome.state).toBe("pending");
+    });
   });
 });
