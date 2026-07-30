@@ -138,16 +138,15 @@ Recommended triage:
 2. resolve connectivity/auth issues to Compass APIs first
 3. retry Google connect after local sync succeeds
 
-## Sync Cutover Or Maintenance Mode
+## Sync Maintenance Mode
 
 If cloud edits or Google connect suddenly return `503` with a maintenance
 message, check `sync.cloudMutationMode` in `compass.yaml` / `GET /api/config`.
-`maintenance` rejects cloud mutations on purpose during cutover.
+`maintenance` rejects cloud mutations on purpose.
 
-If Google connect or event reads look like the old in-backend path after you
-expected Sync ownership:
+If Google connect or event reads aren't behaving as expected:
 
-1. confirm `GET /api/config` → `google.connectDelegatedToSync` is `true`
-2. confirm `sync.serviceUrl` is set (token alone does not enable delegation)
-3. confirm Sync is reachable and healthy on its own port
-4. read [Sync Service Cutover](../backend/sync-service-cutover.md)
+1. confirm `sync.serviceUrl` and `sync.internalAuthToken` are set — the
+   backend refuses to start without them
+2. confirm Sync is reachable and healthy on its own port
+3. see [Config](../Config/README.md#sync-service) for the full key reference

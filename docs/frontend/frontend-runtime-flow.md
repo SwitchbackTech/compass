@@ -56,7 +56,7 @@ This is the shell for the main desktop app experience.
 
 File:
 
-- `packages/web/src/auth/session/SessionProvider.tsx`
+- `packages/web/src/auth/compass/session/SessionProvider.tsx`
 
 Responsibilities:
 
@@ -84,7 +84,7 @@ The old blocking overlay is not used for Google authorization.
 
 File:
 
-- `packages/web/src/auth/context/UserProvider.tsx`
+- `packages/web/src/auth/compass/user/context/UserProvider.tsx`
 
 Responsibilities:
 

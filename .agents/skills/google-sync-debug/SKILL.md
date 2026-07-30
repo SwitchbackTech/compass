@@ -38,8 +38,8 @@ Invoke `/local-dev-bootstrap` for incomplete setup.
   effective ports.
 - Google OAuth credentials and redirect URIs must match the selected port.
 - Browser API and SSE traffic can remain local.
-- Google watch notifications require a public HTTPS `google.webhookUrl` ending
-  in `/api`.
+- Google watch notifications require a public HTTPS `sync.callbackBaseUrl`
+  (proxied as `/sync/*`).
 - A local HTTP backend can support OAuth and initial import but not inbound
   Google webhook delivery.
 

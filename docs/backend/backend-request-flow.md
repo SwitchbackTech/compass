@@ -115,10 +115,12 @@ This allows password-authenticated users to mutate Compass events even when no G
 Frequently used middleware:
 
 - `verifySession()`: authenticated Compass session required
-- `requireGoogleConnectionSession`: active Google connection required for routes that call Google directly (for example `/api/sync/import-gcal`)
 - `authMiddleware.verifyIsDev`: development-only route
-- `publicWatchNotificationIngress.verify`: trusted Google notification source
-- `packages/backend/src/sync/services/public-watch-notifications/public-watch-notification.ingress.ts`: Public watch notification header validation and payload parsing
+
+The backend has no Google-connection-gated routes or webhook ingress of its
+own — those live entirely in the Sync service (`packages/sync`), which has
+its own internal-request auth (`packages/sync/src/auth/internal-auth.ts`)
+and public webhook verification.
 
 Intentional unauthenticated route:
 
