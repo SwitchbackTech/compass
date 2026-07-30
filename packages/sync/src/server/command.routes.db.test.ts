@@ -261,10 +261,12 @@ describe("POST /internal/commands", () => {
     expect(await mongo.db.collection("events").countDocuments()).toBe(0);
   });
 
-  it("persists an unhandled command kind as durable pending intent", async () => {
+  it("fails a move command as unsupportedCapability rather than stranding it pending", async () => {
     const tenantId = objectId();
     const principalId = objectId();
-    // move is not applied locally yet, so it is recorded pending.
+    // move has no executor anywhere yet - leaving it pending would strand the
+    // write forever while the caller sees success (nothing rejects a merely
+    // "pending" outcome), so it fails explicitly instead.
     const request = createRequest({
       input: { kind: "move", calendarId: objectId() },
     });
@@ -273,9 +275,12 @@ describe("POST /internal/commands", () => {
     const res = await submit(tenantId, principalId, request);
 
     const body = (await res.json()) as {
-      command: { outcome: { state: string } };
+      command: { outcome: { state: string; failureReason?: string } };
     };
-    expect(body.command.outcome.state).toBe("pending");
+    expect(body.command.outcome).toEqual({
+      state: "failed",
+      failureReason: "unsupportedCapability",
+    });
     // No event is written for a command that was only recorded, not applied.
     expect(await mongo.db.collection("events").countDocuments()).toBe(0);
     expect(await mongo.db.collection("commands").countDocuments()).toBe(1);
