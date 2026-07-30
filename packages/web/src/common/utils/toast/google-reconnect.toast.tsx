@@ -1,6 +1,6 @@
 import { createElement } from "react";
 import { type Id } from "react-toastify";
-import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
+import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import {
   ErrorToastSeverity,
@@ -8,44 +8,29 @@ import {
 } from "@web/common/utils/toast/error-toast.util";
 import { getToast } from "@web/common/utils/toast/toast.port";
 
-// Imported dynamically to avoid a module cycle: google.auth.util shows this
-// toast, and the reconnect flow needs google.auth.util's local-event flush.
-const flushPendingLocalEvents = async (): Promise<boolean> => {
-  const { syncPendingLocalEvents } = await import(
-    "@web/auth/google/util/google.auth.util"
-  );
-  return syncPendingLocalEvents();
-};
-
 interface GoogleReconnectToastProps {
   toastId: Id;
-  syncPendingLocalEvents?: () => Promise<boolean>;
 }
 
 // Shown when Google reports invalid_grant, which covers both "access expired"
 // and "user revoked access" with no way to tell them apart, so the copy must
 // stay accurate for either cause. Hooks are fine here: ToastContainer renders
 // inside GoogleOAuthProvider (CompassProvider).
+//
+// Delegates to useConnectGoogle's connect() — the same trigger the command
+// palette uses — rather than driving the legacy popup flow directly: this
+// toast used to always open the legacy popup regardless of delegation,
+// silently wrong the moment eventRouting flips to sync (the redirect flow
+// needs to run instead). connect() forks correctly and it's the one place
+// that fork lives, so this can't drift out of sync with it again.
 export const GoogleReconnectToast = ({
   toastId,
-  syncPendingLocalEvents = flushPendingLocalEvents,
 }: GoogleReconnectToastProps) => {
-  const { startGoogleAuthorization } = useStartGoogleAuthorization({
-    intent: "connectCalendar",
-    prompt: "consent",
-  });
+  const { connect } = useConnectGoogle();
 
-  const handleReconnect = async () => {
-    const didSyncLocalEvents = await syncPendingLocalEvents();
-
-    // The flush already showed its own error toast; keep this one around so
-    // the user can retry once the flush issue is resolved.
-    if (!didSyncLocalEvents) {
-      return;
-    }
-
+  const handleReconnect = () => {
     getToast().dismiss(toastId);
-    void startGoogleAuthorization();
+    connect();
   };
 
   return (
@@ -59,7 +44,7 @@ export const GoogleReconnectToast = ({
       </p>
       <button
         className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-on-accent text-sm transition-colors hover:bg-accent-secondary-hover"
-        onClick={() => void handleReconnect()}
+        onClick={handleReconnect}
         type="button"
       >
         Reconnect Google Calendar
