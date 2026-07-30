@@ -29,18 +29,10 @@ export const GoogleAuthCodeRequestSchema = z.object({
 
 export type GoogleAuthCodeRequest = z.infer<typeof GoogleAuthCodeRequestSchema>;
 
-export const GoogleConnectResponseSchema = z.object({
-  status: z.literal("OK"),
-});
-
-export type GoogleConnectResponse = z.infer<typeof GoogleConnectResponseSchema>;
-
 export const ApiErrorResponseSchema = z.object({
   code: z.string(),
   message: z.string().min(1),
 });
-
-export type ApiErrorResponse = z.infer<typeof ApiErrorResponseSchema>;
 
 const GoogleConnectErrorCodeSchema = z.enum([
   "GOOGLE_ACCOUNT_ALREADY_CONNECTED",

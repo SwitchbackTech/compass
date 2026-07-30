@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -5,17 +6,38 @@ import { CalendarListResponseSchema } from "@core/types/calendar.contracts";
 import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
 import calendarController from "@backend/calendar/controllers/calendar.controller";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import { type Res_Promise } from "@backend/common/types/express.types";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
+
+const objectId = () => faker.database.mongodbObjectId();
+
+// Capture the promise the controller hands to res.promise so the test can
+// observe whether it resolved or rejected.
+const capturingRes = () => {
+  let settled: Promise<unknown> | undefined;
+  const res = {
+    promise: (value: unknown) => {
+      settled = Promise.resolve(value);
+    },
+  } as unknown as Res_Promise;
+  return { res, settled: () => settled };
+};
 
 // These exercise calendarController.availability directly against fake
 // req/res objects (no supertest), mirroring events.controller.test.ts - the
 // route itself is a one-line wire-up (calendar.routes.config.ts). The A7
 // 62-day bound is enforced in the controller before any sync call, so it's
-// pinned here independent of which service backs the request; happy-path
-// sync-delegated behavior (per-calendar attribution, outage handling) is
-// covered by calendar.controller.delegation.test.ts.
+// pinned here independent of which service backs the request.
 
 describe("CalendarController availability", () => {
   const userId = "507f1f77bcf86cd799439011";
@@ -133,5 +155,126 @@ describe("CalendarController list", () => {
 
     clientSpy.mockRestore();
     localCalendarSpy.mockRestore();
+  });
+
+  it("fails closed on a sync outage rather than silently returning an empty list", async () => {
+    // Point at an unreachable sync service so the read fails at the fetch,
+    // proving list() fails closed instead of silently returning []. This
+    // file shares a process with the rest of the suite, so the lazy sync
+    // client singleton is built from these values the first time a test
+    // here needs a live (non-mocked) client.
+    const originalServiceUrl = CONFIG.SYNC_SERVICE_URL;
+    const originalToken = CONFIG.SYNC_INTERNAL_AUTH_TOKEN;
+    CONFIG.SYNC_SERVICE_URL = "http://sync.invalid:4999";
+    CONFIG.SYNC_INTERNAL_AUTH_TOKEN = "test-sync-secret";
+
+    const { res, settled } = capturingRes();
+    await calendarController.list(
+      { query: {}, session: { getUserId: () => objectId() } } as SessionRequest,
+      res,
+    );
+
+    await expect(settled()).rejects.toThrow();
+
+    CONFIG.SYNC_SERVICE_URL = originalServiceUrl;
+    CONFIG.SYNC_INTERNAL_AUTH_TOKEN = originalToken;
+  });
+});
+
+describe("CalendarController.availability sync outage", () => {
+  const originalServiceUrl = CONFIG.SYNC_SERVICE_URL;
+  const originalToken = CONFIG.SYNC_INTERNAL_AUTH_TOKEN;
+
+  const availabilityReqFor = (userId: string, calendarIds: string[]) =>
+    ({
+      session: { getUserId: () => userId },
+      query: {
+        calendarIds: calendarIds.join(","),
+        start: "2026-07-14T00:00:00.000Z",
+        end: "2026-07-14T23:59:59.000Z",
+      },
+    }) as unknown as SessionRequest;
+
+  afterEach(() => {
+    CONFIG.SYNC_SERVICE_URL = originalServiceUrl;
+    CONFIG.SYNC_INTERNAL_AUTH_TOKEN = originalToken;
+    mock.restore();
+  });
+
+  it("fails closed on a sync outage (no silent empty response)", async () => {
+    CONFIG.SYNC_SERVICE_URL = "http://sync.invalid:4999";
+    CONFIG.SYNC_INTERNAL_AUTH_TOKEN = "test-sync-secret";
+
+    const { res, settled } = capturingRes();
+    await calendarController.availability(
+      availabilityReqFor(objectId(), [objectId()]),
+      res,
+    );
+
+    await expect(settled()).rejects.toThrow();
+  });
+
+  it("queries each calendar separately and attributes intervals to their real calendarId", async () => {
+    // The day-grid layout positions a busy block by calendarId and drops
+    // blocks for calendars it doesn't recognize — a merged, single-attributed
+    // response would silently lose busy time for every calendar but one.
+    // This asserts each requested calendar is queried on its own and its
+    // intervals keep their own, correct calendarId in the response.
+    const [first, second] = [objectId(), objectId()];
+    const queryBusyAvailability = mock(
+      (_principal: unknown, request: { calendarIds: readonly string[] }) => {
+        const requested = request.calendarIds[0];
+        const intervals =
+          requested === first
+            ? [
+                {
+                  start: "2026-07-14T09:00:00.000Z",
+                  end: "2026-07-14T10:00:00.000Z",
+                },
+              ]
+            : [
+                {
+                  start: "2026-07-14T14:00:00.000Z",
+                  end: "2026-07-14T15:00:00.000Z",
+                },
+              ];
+        return Promise.resolve({
+          ok: true as const,
+          value: {
+            intervals,
+            computedAt: "2026-07-14T08:00:00.000Z",
+            connections: [],
+            complete: true,
+            issues: [],
+            bookable: true,
+          },
+        });
+      },
+    );
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      queryBusyAvailability,
+    } as never);
+
+    const { res, settled } = capturingRes();
+    await calendarController.availability(
+      availabilityReqFor(objectId(), [first, second]),
+      res,
+    );
+
+    expect(queryBusyAvailability).toHaveBeenCalledTimes(2);
+    await expect(settled()).resolves.toEqual({
+      busyPeriods: [
+        {
+          calendarId: first,
+          start: "2026-07-14T09:00:00.000Z",
+          end: "2026-07-14T10:00:00.000Z",
+        },
+        {
+          calendarId: second,
+          start: "2026-07-14T14:00:00.000Z",
+          end: "2026-07-14T15:00:00.000Z",
+        },
+      ],
+    });
   });
 });

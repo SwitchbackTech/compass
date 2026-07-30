@@ -1,8 +1,5 @@
 import { type ConnectionListResponse } from "@core/types/sync/connection.contracts";
-import {
-  resolveGoogleConnectionFromSync,
-  resolveGoogleConnectionStateFromSync,
-} from "./google-connection-status";
+import { resolveGoogleConnectionFromSync } from "./google-connection-status";
 import {
   type SyncClientResult,
   type SyncPrincipal,
@@ -38,7 +35,7 @@ const connection = (
     updatedAt: "2026-07-14T00:00:00.000Z",
   }) as unknown as ConnectionListResponse["connections"][number];
 
-describe("resolveGoogleConnectionStateFromSync", () => {
+describe("resolveGoogleConnectionFromSync", () => {
   it("translates a healthy connection to HEALTHY", async () => {
     const client = clientReturning({
       ok: true,
@@ -46,9 +43,8 @@ describe("resolveGoogleConnectionStateFromSync", () => {
       correlationId: "corr-1",
     });
 
-    expect(await resolveGoogleConnectionStateFromSync(client, principal)).toBe(
-      "HEALTHY",
-    );
+    const resolved = await resolveGoogleConnectionFromSync(client, principal);
+    expect(resolved.connectionState).toBe("HEALTHY");
   });
 
   it("reports NOT_CONNECTED when the principal has no connections", async () => {
@@ -58,24 +54,13 @@ describe("resolveGoogleConnectionStateFromSync", () => {
       correlationId: "corr-1",
     });
 
-    expect(await resolveGoogleConnectionStateFromSync(client, principal)).toBe(
-      "NOT_CONNECTED",
-    );
-  });
-
-  it("surfaces ATTENTION when the sync service is unavailable", async () => {
-    const client = clientReturning({
-      ok: false,
-      error: { kind: "unavailable", correlationId: "corr-1" },
-    });
-
-    expect(await resolveGoogleConnectionStateFromSync(client, principal)).toBe(
-      "ATTENTION",
-    );
+    const resolved = await resolveGoogleConnectionFromSync(client, principal);
+    expect(resolved.connectionState).toBe("NOT_CONNECTED");
   });
 
   it("surfaces ATTENTION on any client error kind (timeout, unauthorized, ...)", async () => {
     for (const kind of [
+      "unavailable",
       "timeout",
       "unauthorized",
       "badRequest",
@@ -87,14 +72,11 @@ describe("resolveGoogleConnectionStateFromSync", () => {
         error: { kind, correlationId: "corr-1" },
       });
 
-      expect(
-        await resolveGoogleConnectionStateFromSync(client, principal),
-      ).toBe("ATTENTION");
+      const resolved = await resolveGoogleConnectionFromSync(client, principal);
+      expect(resolved.connectionState).toBe("ATTENTION");
     }
   });
-});
 
-describe("resolveGoogleConnectionFromSync", () => {
   it("includes the primary connection summary for the browser", async () => {
     const client = clientReturning({
       ok: true,

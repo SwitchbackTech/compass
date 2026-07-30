@@ -1,4 +1,4 @@
-import { type DateTime, type EventId } from "@core/types/domain-primitives";
+import { type EventId } from "@core/types/domain-primitives";
 import {
   type EditableRecurrence,
   type EventSchedule,
@@ -31,7 +31,7 @@ import {
   isCancelledException,
   remainderMasterId,
   reprojectMaster,
-} from "@sync/domain/series-exception.util";
+} from "@sync/domain/series-exception";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
@@ -1294,8 +1294,8 @@ function storedSeriesRecurrence(
   return master.recurrence;
 }
 
-// isCancelledException / exceptionInstant now come from
-// series-exception.util.ts, shared with the cloud path.
+// isCancelledException / exceptionInstant now come from series-exception.ts,
+// shared with the cloud path.
 
 // Whether the provider's current event already carries this command's intended
 // edit — the signal that a prior attempt landed and this is a safe replay.

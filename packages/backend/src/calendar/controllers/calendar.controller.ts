@@ -73,10 +73,6 @@ const listCalendarsFromSync = async (
   userId: string,
 ): Promise<CalendarListResponse> => {
   const client = getSyncServiceClient();
-  if (!client) {
-    throw error(GenericError.NotSure, "Sync calendar listing unavailable");
-  }
-
   const result = await client.listCalendars(toSyncPrincipal(userId));
   if (!result.ok) {
     throw error(
@@ -104,9 +100,6 @@ const getAvailabilityFromSync = async (
   query: AvailabilityQuery,
 ): Promise<AvailabilityResponse> => {
   const client = getSyncServiceClient();
-  if (!client) {
-    throw error(GenericError.NotSure, "Sync availability unavailable");
-  }
   const principal = toSyncPrincipal(userId);
 
   const perCalendar = await Promise.all(

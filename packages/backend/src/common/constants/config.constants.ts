@@ -18,13 +18,11 @@ const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
 const ConfigSchema = z
   .object({
     BASEURL: z.string().nonempty(),
-    CHANNEL_EXPIRATION_MIN: z.string().nonempty().default("10080"),
     GOOGLE_CLIENT_ID: z.string().nonempty().optional(),
     GOOGLE_CLIENT_SECRET: z.string().nonempty().optional(),
     DB: z.string().nonempty(),
     EMAILER_SECRET: z.string().nonempty().optional(),
     FRONTEND_URL: z.string().url(),
-    GCAL_WEBHOOK_BASEURL: z.string().url(),
     MONGO_URI: z.string().nonempty(),
     MONGO_BATCH_SIZE: z.coerce.number().int().positive().default(1000),
     NODE_ENV: z.nativeEnum(NodeEnv),
@@ -33,7 +31,6 @@ const ConfigSchema = z
     PORT: z.string().nonempty().default(PORT_DEFAULT_BACKEND.toString()),
     SUPERTOKENS_URI: z.string().nonempty(),
     SUPERTOKENS_KEY: z.string().nonempty(),
-    TOKEN_GCAL_NOTIFICATION: z.string().default(""),
     TOKEN_COMPASS_SYNC: z.string().nonempty(),
     // Base URL + shared secret for the Sync service's internal API. Required:
     // every deployment delegates provider-connection and event routes to
@@ -58,7 +55,6 @@ const ConfigSchema = z
     const hasGoogleClientSecret = isGoogleClientSecretValid(
       env.GOOGLE_CLIENT_SECRET,
     );
-    const isGoogleConfigComplete = hasGoogleClientId && hasGoogleClientSecret;
 
     if (hasGoogleClientId !== hasGoogleClientSecret) {
       context.addIssue({
@@ -68,23 +64,6 @@ const ConfigSchema = z
         path: hasGoogleClientId
           ? ["GOOGLE_CLIENT_SECRET"]
           : ["GOOGLE_CLIENT_ID"],
-      });
-    }
-
-    const usesHttpsGoogleWebhook =
-      env.GCAL_WEBHOOK_BASEURL.startsWith("https://");
-
-    if (
-      isGoogleConfigComplete &&
-      usesHttpsGoogleWebhook &&
-      !env.TOKEN_GCAL_NOTIFICATION
-    ) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        fatal: true,
-        message:
-          "Google Calendar webhook notifications require TOKEN_GCAL_NOTIFICATION when Google webhook URL uses HTTPS",
-        path: ["TOKEN_GCAL_NOTIFICATION"],
       });
     }
   });
@@ -103,15 +82,11 @@ export function parseRawConfig(config: CompassConfig): Config {
 
   return ConfigSchema.parse({
     BASEURL: config.backend.apiUrl,
-    CHANNEL_EXPIRATION_MIN:
-      toStr(config.google?.channelExpirationMin) ?? "10080",
     GOOGLE_CLIENT_ID: nonEmpty(config.google?.clientId),
     GOOGLE_CLIENT_SECRET: nonEmpty(config.google?.clientSecret),
     DB: isDev(nodeEnv) ? "dev_calendar" : "prod_calendar",
     EMAILER_SECRET: nonEmpty(config.email?.kitApiSecret),
     FRONTEND_URL: config.web.url,
-    GCAL_WEBHOOK_BASEURL:
-      nonEmpty(config.google?.webhookUrl) || config.backend.apiUrl,
     MONGO_URI: config.mongo.uri,
     MONGO_BATCH_SIZE: 1000,
     NODE_ENV: nodeEnv,
@@ -120,7 +95,6 @@ export function parseRawConfig(config: CompassConfig): Config {
     PORT: toStr(config.backend.port),
     SUPERTOKENS_URI: config.supertokens.uri,
     SUPERTOKENS_KEY: config.supertokens.key,
-    TOKEN_GCAL_NOTIFICATION: nonEmpty(config.google?.notificationToken) ?? "",
     TOKEN_COMPASS_SYNC: config.backend.compassToken,
     SYNC_SERVICE_URL: nonEmpty(config.sync?.serviceUrl),
     SYNC_INTERNAL_AUTH_TOKEN: nonEmpty(config.sync?.internalAuthToken),
@@ -138,13 +112,11 @@ export function parseConfigFromEnv(
 
   return ConfigSchema.parse({
     BASEURL: rawEnv["BASEURL"],
-    CHANNEL_EXPIRATION_MIN: rawEnv["CHANNEL_EXPIRATION_MIN"],
     GOOGLE_CLIENT_ID: rawEnv["GOOGLE_CLIENT_ID"],
     GOOGLE_CLIENT_SECRET: rawEnv["GOOGLE_CLIENT_SECRET"],
     DB: isDev(nodeEnv) ? "dev_calendar" : "prod_calendar",
     EMAILER_SECRET: rawEnv["EMAILER_API_SECRET"],
     FRONTEND_URL: rawEnv["FRONTEND_URL"],
-    GCAL_WEBHOOK_BASEURL: rawEnv["GCAL_WEBHOOK_BASEURL"] || rawEnv["BASEURL"],
     MONGO_URI: rawEnv["MONGO_URI"],
     MONGO_BATCH_SIZE: rawEnv["MONGO_BATCH_SIZE"],
     NODE_ENV: nodeEnv,
@@ -153,7 +125,6 @@ export function parseConfigFromEnv(
     PORT: rawEnv["PORT"],
     SUPERTOKENS_URI: rawEnv["SUPERTOKENS_URI"],
     SUPERTOKENS_KEY: rawEnv["SUPERTOKENS_KEY"],
-    TOKEN_GCAL_NOTIFICATION: rawEnv["TOKEN_GCAL_NOTIFICATION"],
     TOKEN_COMPASS_SYNC: rawEnv["TOKEN_COMPASS_SYNC"],
     // nonEmpty so a var set to "" reads as unset, and fails the schema's
     // required check with a clear "missing" message rather than a confusing

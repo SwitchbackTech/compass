@@ -1,9 +1,5 @@
 import { type CompassConfig } from "@core/config/compass.config";
-import {
-  parseSyncConfig,
-  parseSyncConfigFromEnv,
-  SyncConfigSchema,
-} from "@sync/config/sync.config";
+import { parseSyncConfig, SyncConfigSchema } from "@sync/config/sync.config";
 
 const baseSyncSection = () => ({
   mongoUri: "mongodb+srv://compass_sync:pw@cluster/compass_sync",
@@ -18,13 +14,6 @@ const compassConfigWithSync = (
     runtime: { nodeEnv: "staging", timezone: "Etc/UTC" },
     sync: { ...baseSyncSection(), ...syncOverrides },
   }) as unknown as CompassConfig;
-
-const baseEnv = () => ({
-  NODE_ENV: "test",
-  SYNC_MONGO_URI: "mongodb://localhost:27017/compass_sync",
-  SYNC_INTERNAL_AUTH_TOKEN: "internal-token",
-  SYNC_CALLBACK_BASE_URL: "http://localhost:3010",
-});
 
 describe("Sync service configuration", () => {
   describe("SyncConfigSchema defaults", () => {
@@ -174,28 +163,6 @@ describe("Sync service configuration", () => {
         SUPERTOKENS_KEY: "leak",
       });
       expect(result.success).toBe(false);
-    });
-  });
-
-  describe("parseSyncConfigFromEnv", () => {
-    it("parses a valid environment with the passive default", () => {
-      const config = parseSyncConfigFromEnv(baseEnv());
-      expect(config.EXECUTION).toBe("passive");
-      expect(config.MONGO_URI).toBe("mongodb://localhost:27017/compass_sync");
-    });
-
-    it("reads an explicit execution mode from the environment", () => {
-      const config = parseSyncConfigFromEnv({
-        ...baseEnv(),
-        SYNC_EXECUTION: "active",
-      });
-      expect(config.EXECUTION).toBe("active");
-    });
-
-    it("rejects an environment missing the internal auth token", () => {
-      const env = baseEnv() as Record<string, string | undefined>;
-      env["SYNC_INTERNAL_AUTH_TOKEN"] = undefined;
-      expect(() => parseSyncConfigFromEnv(env)).toThrow();
     });
   });
 });

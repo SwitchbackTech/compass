@@ -1,6 +1,7 @@
 import { type EventSchedule } from "@core/types/event.contracts";
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
+import { ProviderError } from "@sync/providers/provider-error";
 import { type ProviderEventRead } from "@sync/providers/provider-event.port";
 
 // Whether the provider should notify attendees of a mutation.
@@ -113,13 +114,4 @@ export type ProviderWriteErrorReason =
   | "transient" // network / 5xx / rate limit — safe to retry
   | "permanentProviderError"; // an unrecoverable provider rejection
 
-export class ProviderWriteError extends Error {
-  constructor(
-    readonly reason: ProviderWriteErrorReason,
-    message: string,
-    options?: { cause?: unknown },
-  ) {
-    super(message, options);
-    this.name = "ProviderWriteError";
-  }
-}
+export class ProviderWriteError extends ProviderError<ProviderWriteErrorReason> {}

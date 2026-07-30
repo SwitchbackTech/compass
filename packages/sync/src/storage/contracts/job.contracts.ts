@@ -55,15 +55,14 @@ export const JobRecordSchema = z.strictObject({
 });
 export type JobRecord = z.infer<typeof JobRecordSchema>;
 
-export const JobEnqueueSchema = z.strictObject({
-  tenantId: TenantIdSchema,
-  principalId: PrincipalIdSchema,
-  connectionId: ConnectionIdSchema,
-  resourceId: z.string().trim().min(1).nullable(),
-  commandId: SyncCommandIdSchema.nullable(),
-  kind: JobKindSchema,
-  priority: z.number().int(),
-  runAfter: z.date(),
-  coalescingKey: z.string().trim().min(1),
+export const JobEnqueueSchema = JobRecordSchema.omit({
+  _id: true,
+  state: true,
+  attempt: true,
+  leaseOwner: true,
+  leaseExpiresAt: true,
+  failureClass: true,
+  createdAt: true,
+  updatedAt: true,
 });
 export type JobEnqueue = z.infer<typeof JobEnqueueSchema>;

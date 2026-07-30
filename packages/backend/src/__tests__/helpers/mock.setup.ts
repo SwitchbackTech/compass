@@ -12,7 +12,6 @@ import {
 } from "@core/logger/logger.factory";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { getTestIsolationKey } from "@backend/__tests__/helpers/test-file-context";
-import { getTestGcalFixture } from "@backend/__tests__/helpers/test-gcal-fixture";
 import {
   registerUserIdMappingStore,
   registerUserMetadataStore,
@@ -29,11 +28,6 @@ import {
   resetVerifySession,
 } from "@backend/auth/session/session.middleware";
 import { CONFIG } from "@backend/common/constants/config.constants";
-import gcalService from "@backend/common/services/gcal/gcal.service";
-import {
-  enterTestGcalClient,
-  setTestGcalIsolationKey,
-} from "@backend/common/services/gcal/gcal.test-context";
 import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import userService from "@backend/user/services/user.service";
@@ -235,7 +229,7 @@ function restoreMockedMethods(...targets: object[]): void {
 
 /** Clears per-test spies so sequential cases in a file do not leak call counts. */
 function restoreLeakedTestSpies(): void {
-  restoreMockedMethods(gcalService, sseServer, userService);
+  restoreMockedMethods(sseServer, userService);
 }
 
 export function getTestLoggerInfoCalls(
@@ -249,17 +243,13 @@ export function setupBackendTestSeams(): void {
   restoreLeakedTestSpies();
   registerTestLoggerFactory();
 
-  const fixture = getTestGcalFixture();
   const { metadata, mappings } = getFileSupertokensStores();
 
-  fixture.reset();
   metadata.reset();
   mappings.reset();
   revokeSessionMock.mockClear();
   clearTestLoggerMocks();
 
-  setTestGcalIsolationKey(getTestIsolationKey());
-  enterTestGcalClient(fixture.createGcalClient());
   registerUserMetadataStore(metadata);
   registerUserIdMappingStore(mappings);
   registerTestVerifySession(createTestVerifySession());
@@ -304,9 +294,3 @@ export function teardownBackendTestSeams(): void {
   resetSupertokensStores();
   resetVerifySession();
 }
-
-// Re-export for tests that mutate gcal fixture data directly.
-export {
-  getTestGcalFixture,
-  getTestGcalFixture as compassTestState,
-} from "@backend/__tests__/helpers/test-gcal-fixture";

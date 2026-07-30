@@ -32,7 +32,7 @@ import {
   isCancelledException,
   remainderMasterId,
   reprojectMaster,
-} from "@sync/domain/series-exception.util";
+} from "@sync/domain/series-exception";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import {
   type CommandRecord,
@@ -600,7 +600,7 @@ async function deleteCloudSeries(
 }
 
 // deleteExceptions / isCancelledException / exceptionInstant now live in
-// series-exception.util.ts, shared with the provider-linked executors below.
+// series-exception.ts, shared with the provider-linked executors below.
 
 // Cancel one occurrence of a cloud series (scope "this"): upsert a cancelled
 // exception tombstone at the target instant, reproject the master to exclude

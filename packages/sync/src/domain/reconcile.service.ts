@@ -1,3 +1,4 @@
+import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
@@ -21,25 +22,18 @@ export interface ReconcileDeps {
 // request); each enqueued job carries the resource's own owner ids. The periodic
 // trigger that calls this on a jittered interval is a separate slice — this is
 // the sweep it drives.
-export async function reconcileStaleCalendars(
+export function reconcileStaleCalendars(
   deps: ReconcileDeps,
   before: Date,
   now: () => Date,
   limit = 100,
 ): Promise<number> {
-  const stale = await deps.resources.listStaleEvents(before, limit);
-  for (const resource of stale) {
-    await deps.jobs.enqueue({
-      tenantId: resource.tenantId,
-      principalId: resource.principalId,
-      connectionId: resource.connectionId,
-      resourceId: resource._id,
-      commandId: null,
-      kind: "incrementalPull",
-      priority: 0,
-      runAfter: now(),
-      coalescingKey: `incrementalPull:${resource._id}`,
-    });
-  }
-  return stale.length;
+  return enqueueForResources(
+    deps,
+    (b, l) => deps.resources.listStaleEvents(b, l),
+    "incrementalPull",
+    before,
+    now,
+    limit,
+  );
 }

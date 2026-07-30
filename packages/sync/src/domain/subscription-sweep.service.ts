@@ -1,3 +1,4 @@
+import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
@@ -20,28 +21,18 @@ export interface SubscriptionSweepDeps {
 // A GLOBAL scan across owners (this is system liveness, not a user request);
 // each enqueued job carries the resource's own owner ids. The periodic trigger
 // that drives this on an interval is a separate slice.
-export async function maintainExpiringSubscriptions(
+export function maintainExpiringSubscriptions(
   deps: SubscriptionSweepDeps,
   before: Date,
   now: () => Date,
   limit = 100,
 ): Promise<number> {
-  const expiring = await deps.resources.listExpiringSubscriptions(
+  return enqueueForResources(
+    deps,
+    (b, l) => deps.resources.listExpiringSubscriptions(b, l),
+    "subscriptionMaintain",
     before,
+    now,
     limit,
   );
-  for (const resource of expiring) {
-    await deps.jobs.enqueue({
-      tenantId: resource.tenantId,
-      principalId: resource.principalId,
-      connectionId: resource.connectionId,
-      resourceId: resource._id,
-      commandId: null,
-      kind: "subscriptionMaintain",
-      priority: 0,
-      runAfter: now(),
-      coalescingKey: `subscriptionMaintain:${resource._id}`,
-    });
-  }
-  return expiring.length;
 }

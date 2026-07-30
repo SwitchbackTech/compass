@@ -1,4 +1,5 @@
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
+import { ProviderError } from "@sync/providers/provider-error";
 
 // A live provider push channel, as the provider reports it after a watch. The
 // caller persists this association and matches inbound callbacks against it.
@@ -74,13 +75,4 @@ export type ProviderNotificationErrorReason =
   | "watchFailed" // the provider refused to open the channel
   | "authorizationRevoked"; // the credential is no longer valid
 
-export class ProviderNotificationError extends Error {
-  constructor(
-    readonly reason: ProviderNotificationErrorReason,
-    message: string,
-    options?: { cause?: unknown },
-  ) {
-    super(message, options);
-    this.name = "ProviderNotificationError";
-  }
-}
+export class ProviderNotificationError extends ProviderError<ProviderNotificationErrorReason> {}

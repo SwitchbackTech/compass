@@ -4,12 +4,9 @@ import {
   ConferenceSchema,
   EventInstanceListQuerySchema,
   EventInstanceListResponseSchema,
-  EventOccurrenceListQuerySchema,
-  EventOccurrenceListResponseSchema,
   OrganizerSchema,
   SyncEventCalendarIdSchema,
   SyncEventInstanceSchema,
-  SyncEventOccurrenceSchema,
   SyncEventOwnershipSchema,
   SyncEventRecurrenceSchema,
   SyncEventSchema,
@@ -278,120 +275,14 @@ describe("Sync event contracts", () => {
     });
   });
 
-  describe("SyncEventOccurrenceSchema", () => {
-    const baseOccurrence = () => ({
-      occurrenceKey: "event-id:2026-07-21T09:00:00.000Z",
-      eventId: objectId(),
-      calendarId: objectId(),
-      schedule: timedSchedule,
-      busy: true,
-      title: "Standup",
-      cancelled: false,
-    });
-
-    it("accepts a busy timed occurrence", () => {
-      expect(
-        SyncEventOccurrenceSchema.safeParse(baseOccurrence()).success,
-      ).toBe(true);
-    });
-
-    it("accepts a cancelled occurrence", () => {
-      const occurrence = { ...baseOccurrence(), cancelled: true };
-      expect(SyncEventOccurrenceSchema.safeParse(occurrence).success).toBe(
-        true,
-      );
-    });
-
-    it("accepts a free (non-blocking) occurrence", () => {
-      const occurrence = { ...baseOccurrence(), busy: false };
-      expect(SyncEventOccurrenceSchema.safeParse(occurrence).success).toBe(
-        true,
-      );
-    });
-
-    it("accepts an all-day occurrence", () => {
-      const occurrence = { ...baseOccurrence(), schedule: allDaySchedule };
-      expect(SyncEventOccurrenceSchema.safeParse(occurrence).success).toBe(
-        true,
-      );
-    });
-
-    // An occurrence must be groupable by calendar whether its source event is
-    // still unlinked (Compass's own calendar id) or provider-linked (the
-    // provider calendar id) — Sync is the store of record for both.
-    it("accepts a Compass calendar id for an unlinked event's occurrence", () => {
+  describe("SyncEventCalendarIdSchema", () => {
+    // A calendar id must be groupable whether its source event is still
+    // unlinked (Compass's own calendar id) or provider-linked (the provider
+    // calendar id) — Sync is the store of record for both.
+    it("accepts a Compass calendar id for an unlinked event", () => {
       expect(SyncEventCalendarIdSchema.safeParse(objectId()).success).toBe(
         true,
       );
-    });
-
-    it("rejects a calendarId that isn't a 24-character hex id", () => {
-      const occurrence = { ...baseOccurrence(), calendarId: "not-an-id" };
-      expect(SyncEventOccurrenceSchema.safeParse(occurrence).success).toBe(
-        false,
-      );
-    });
-  });
-
-  describe("EventOccurrenceListQuerySchema", () => {
-    const baseQuery = () => ({
-      calendarIds: [objectId()],
-      start: "2026-07-01T00:00:00.000Z",
-      end: "2026-08-01T00:00:00.000Z",
-    });
-
-    it("accepts a bounded range with at least one calendar", () => {
-      expect(
-        EventOccurrenceListQuerySchema.safeParse(baseQuery()).success,
-      ).toBe(true);
-    });
-
-    it("accepts an optional cursor and limit", () => {
-      const query = { ...baseQuery(), cursor: "page-2", limit: 100 };
-      expect(EventOccurrenceListQuerySchema.safeParse(query).success).toBe(
-        true,
-      );
-    });
-
-    it("rejects an empty calendarIds array", () => {
-      const query = { ...baseQuery(), calendarIds: [] };
-      expect(EventOccurrenceListQuerySchema.safeParse(query).success).toBe(
-        false,
-      );
-    });
-
-    it("rejects end before start", () => {
-      const query = {
-        ...baseQuery(),
-        start: baseQuery().end,
-        end: baseQuery().start,
-      };
-      expect(EventOccurrenceListQuerySchema.safeParse(query).success).toBe(
-        false,
-      );
-    });
-
-    it("rejects a limit above the bound", () => {
-      const query = { ...baseQuery(), limit: 501 };
-      expect(EventOccurrenceListQuerySchema.safeParse(query).success).toBe(
-        false,
-      );
-    });
-  });
-
-  describe("EventOccurrenceListResponseSchema", () => {
-    it("accepts an empty page with no next cursor", () => {
-      const response = { occurrences: [], nextCursor: null };
-      expect(
-        EventOccurrenceListResponseSchema.safeParse(response).success,
-      ).toBe(true);
-    });
-
-    it("accepts a page with a next cursor", () => {
-      const response = { occurrences: [], nextCursor: "page-2" };
-      expect(
-        EventOccurrenceListResponseSchema.safeParse(response).success,
-      ).toBe(true);
     });
   });
 
