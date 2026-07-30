@@ -45,15 +45,15 @@ describe("getGoogleSyncStatus", () => {
     });
   });
 
-  it.each(["IMPORTING", "checking"] as const)(
-    "returns syncing copy for %s",
-    (state) => {
-      expect(getGoogleSyncStatus(state)).toEqual({
-        variant: "syncing",
-        text: "Syncing your calendar…",
-      });
-    },
-  );
+  it.each([
+    "IMPORTING",
+    "checking",
+  ] as const)("returns syncing copy for %s", (state) => {
+    expect(getGoogleSyncStatus(state)).toEqual({
+      variant: "syncing",
+      text: "Syncing your calendar…",
+    });
+  });
 
   it("returns warning copy for ATTENTION, without using the word 'repair'", () => {
     const status = getGoogleSyncStatus("ATTENTION");
@@ -122,14 +122,16 @@ describe("getGoogleConnectionConfig", () => {
     onConnectGoogle.mockClear();
   });
 
-  it.each(["HEALTHY", "checking", "IMPORTING", "ATTENTION"] as const)(
-    "returns no command action for %s",
-    (state) => {
-      expect(getGoogleConnectionConfig(state, onConnectGoogle)).toEqual({
-        commandAction: null,
-      });
-    },
-  );
+  it.each([
+    "HEALTHY",
+    "checking",
+    "IMPORTING",
+    "ATTENTION",
+  ] as const)("returns no command action for %s", (state) => {
+    expect(getGoogleConnectionConfig(state, onConnectGoogle)).toEqual({
+      commandAction: null,
+    });
+  });
 
   it("wires NOT_CONNECTED to onConnectGoogle", () => {
     const config = getGoogleConnectionConfig("NOT_CONNECTED", onConnectGoogle);

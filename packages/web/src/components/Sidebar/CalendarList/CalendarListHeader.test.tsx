@@ -217,23 +217,23 @@ describe("CalendarListHeader", () => {
     ).toBeNull();
   });
 
-  it.each(["IMPORTING", "checking"] as const)(
-    "shows the wave shimmer and a generic syncing status for %s, with no tooltip",
-    async (state) => {
-      const user = userEvent.setup();
-      mockEmail = "ahab@pequod.com";
-      mockGoogleState = state;
+  it.each([
+    "IMPORTING",
+    "checking",
+  ] as const)("shows the wave shimmer and a generic syncing status for %s, with no tooltip", async (state) => {
+    const user = userEvent.setup();
+    mockEmail = "ahab@pequod.com";
+    mockGoogleState = state;
 
-      renderHeader();
+    renderHeader();
 
-      const email = screen.getByText("ahab@pequod.com");
-      expect(email).toHaveClass("c-sync-text-wave");
-      expect(screen.getByRole("status")).toHaveTextContent("Syncing…");
+    const email = screen.getByText("ahab@pequod.com");
+    expect(email).toHaveClass("c-sync-text-wave");
+    expect(screen.getByRole("status")).toHaveTextContent("Syncing…");
 
-      await user.hover(email);
-      expect(screen.queryByRole("tooltip")).toBeNull();
-    },
-  );
+    await user.hover(email);
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
 
   it("shows a sync Google button when the calendar is out of date", async () => {
     const user = userEvent.setup();

@@ -100,29 +100,29 @@ describe("useCalendarSyncCmdItems", () => {
     expect(result.current.items[0]?.keepOpen).toBeUndefined();
   });
 
-  it.each(["IMPORTING", "checking"] as const)(
-    "returns a disabled syncing row for %s",
-    async (state) => {
-      mockUseConnectGoogle.mockReturnValue({
-        isAvailable: true,
-        isConnecting: false,
-        commandAction: null,
-        state,
-      });
+  it.each([
+    "IMPORTING",
+    "checking",
+  ] as const)("returns a disabled syncing row for %s", async (state) => {
+    mockUseConnectGoogle.mockReturnValue({
+      isAvailable: true,
+      isConnecting: false,
+      commandAction: null,
+      state,
+    });
 
-      const { useCalendarSyncCmdItems } = await importHook();
-      const { result } = renderHook(() => useCalendarSyncCmdItems());
+    const { useCalendarSyncCmdItems } = await importHook();
+    const { result } = renderHook(() => useCalendarSyncCmdItems());
 
-      expect(result.current.items).toEqual([
-        {
-          id: "connect-google-calendar",
-          label: "Syncing your calendar…",
-          icon: CloudArrowUpIcon,
-          iconClassName: "c-sync-icon-wave",
-          disabled: true,
-        },
-      ]);
-      expect(result.current.syncStatus?.variant).toBe("syncing");
-    },
-  );
+    expect(result.current.items).toEqual([
+      {
+        id: "connect-google-calendar",
+        label: "Syncing your calendar…",
+        icon: CloudArrowUpIcon,
+        iconClassName: "c-sync-icon-wave",
+        disabled: true,
+      },
+    ]);
+    expect(result.current.syncStatus?.variant).toBe("syncing");
+  });
 });
