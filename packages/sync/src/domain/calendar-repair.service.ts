@@ -1,3 +1,4 @@
+import { toColorLabelMap } from "@sync/domain/color-label-map";
 import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
 import { type ProviderEventReader } from "@sync/providers/provider-event-reader.port";
@@ -101,6 +102,7 @@ export async function repairCalendar(
     newGeneration,
     now,
   );
+  const colorLabels = toColorLabelMap(calendar.eventLabels);
   let pageToken: string | null = null;
   let cursor: string | null = null;
   do {
@@ -108,6 +110,7 @@ export async function repairCalendar(
       accessToken,
       calendarId: calendar.providerCalendarId,
       pageToken,
+      colorLabels,
     });
     await applier.applyPage(page.events);
     pageToken = page.nextPageToken;

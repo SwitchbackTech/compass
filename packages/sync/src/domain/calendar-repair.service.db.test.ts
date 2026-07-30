@@ -103,7 +103,9 @@ describe("repairCalendar", () => {
     custody: tokenSource,
   });
 
-  const seedCalendar = (): Promise<ProviderCalendarRecord> =>
+  const seedCalendar = (
+    eventLabels: ProviderCalendarRecord["eventLabels"] = [],
+  ): Promise<ProviderCalendarRecord> =>
     calendars.upsertByProviderCalendar({
       tenantId: objectId() as ProviderCalendarRecord["tenantId"],
       principalId: objectId() as ProviderCalendarRecord["principalId"],
@@ -111,6 +113,7 @@ describe("repairCalendar", () => {
       providerCalendarId: "primary@google.com",
       displayName: "Google",
       color: null,
+      eventLabels,
       active: true,
       primary: true,
       accessRole: "owner",
@@ -331,6 +334,24 @@ describe("repairCalendar", () => {
         .collection(SYNC_COLLECTIONS.eventOccurrences)
         .countDocuments({ calendarId: calendar._id }),
     ).toBe(1);
+  });
+
+  it("passes the calendar's event-color labels to the reader", async () => {
+    // Repair rebuilds the whole calendar via the same reader port import/pull
+    // use, so a repaired calendar must resolve custom label colors the same
+    // way — this was missing until now, silently dropping colorHex for any
+    // calendar that went through a repair rather than a plain pull.
+    const calendar = await seedCalendar([{ id: "label-1", hex: "#009688" }]);
+    await seedImported(calendar);
+    const reader = new FakeReader([
+      page([single("keep")], { nextSyncToken: "cursor-1" }),
+    ]);
+
+    await repairCalendar(deps(reader), calendar, now);
+
+    expect(reader.calls[0]?.colorLabels).toEqual(
+      new Map([["label-1", "#009688"]]),
+    );
   });
 
   it("stamps the attempt even when the token fetch throws", async () => {
