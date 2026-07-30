@@ -3,8 +3,10 @@ import { DateTimeSchema, EventIdSchema } from "@core/types/domain-primitives";
 import { SyncEventCalendarIdSchema } from "@core/types/sync/event.contracts";
 import {
   ConnectionIdSchema,
+  PrincipalIdSchema,
   ProviderCalendarIdSchema,
   SyncCommandIdSchema,
+  TenantIdSchema,
 } from "@core/types/sync/identity.contracts";
 
 // Resumable internal change-feed contracts for Compass Sync.
@@ -109,8 +111,10 @@ const ChangeFeedOkSchema = z.strictObject({
 });
 
 // Sent when a resume cursor is no longer valid; the caller must invalidate
-// all affected cached queries rather than trust a partial replay.
-const ChangeFeedResyncRequiredSchema = z.strictObject({
+// all affected cached queries rather than trust a partial replay. Exported so
+// the global (cross-tenant) feed's response union below can reuse it verbatim
+// — "the cursor is stale" means the same thing on both feeds.
+export const ChangeFeedResyncRequiredSchema = z.strictObject({
   kind: z.literal("resyncRequired"),
 });
 
@@ -119,3 +123,30 @@ export const ChangeFeedResponseSchema = z.discriminatedUnion("kind", [
   ChangeFeedResyncRequiredSchema,
 ]);
 export type ChangeFeedResponse = z.infer<typeof ChangeFeedResponseSchema>;
+
+// The global feed's envelope carries tenantId/principalId — unlike the
+// per-principal feed above, where scope is implicit from the signed caller —
+// so the one backend poller reading across every tenant can route each
+// invalidation to the right user's SSE subscribers.
+export const GlobalInvalidationEnvelopeSchema =
+  InvalidationEnvelopeSchema.extend({
+    tenantId: TenantIdSchema,
+    principalId: PrincipalIdSchema,
+  });
+export type GlobalInvalidationEnvelope = z.infer<
+  typeof GlobalInvalidationEnvelopeSchema
+>;
+
+const GlobalChangeFeedOkSchema = z.strictObject({
+  kind: z.literal("ok"),
+  invalidations: z.array(GlobalInvalidationEnvelopeSchema).readonly(),
+  nextCursor: ChangeFeedCursorSchema,
+});
+
+export const GlobalChangeFeedResponseSchema = z.discriminatedUnion("kind", [
+  GlobalChangeFeedOkSchema,
+  ChangeFeedResyncRequiredSchema,
+]);
+export type GlobalChangeFeedResponse = z.infer<
+  typeof GlobalChangeFeedResponseSchema
+>;

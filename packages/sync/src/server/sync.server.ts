@@ -44,6 +44,7 @@ export function buildSyncApp(deps: {
     // Resumable invalidation outbox for Compass API → browser SSE (S40).
     registerChangeFeedRoutes(app, {
       authMiddleware: deps.connectionApi.authMiddleware,
+      serviceAuthMiddleware: deps.connectionApi.serviceAuthMiddleware,
       mongo: deps.connectionApi.mongo,
     });
     // Account-deletion hard purge for the signed principal (S43). Served in

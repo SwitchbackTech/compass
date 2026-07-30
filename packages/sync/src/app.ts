@@ -1,5 +1,8 @@
 import { Logger } from "@core/logger/winston.logger";
-import { createInternalAuthMiddleware } from "@sync/auth/internal-auth";
+import {
+  createInternalAuthMiddleware,
+  createInternalServiceAuthMiddleware,
+} from "@sync/auth/internal-auth";
 import { loadSyncConfig, type SyncConfig } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import {
@@ -78,6 +81,9 @@ export function createSyncService(
   const connectionApi = deps.mongo
     ? {
         authMiddleware: createInternalAuthMiddleware({
+          secret: config.INTERNAL_AUTH_TOKEN,
+        }),
+        serviceAuthMiddleware: createInternalServiceAuthMiddleware({
           secret: config.INTERNAL_AUTH_TOKEN,
         }),
         mongo: deps.mongo,

@@ -94,6 +94,37 @@ export class InvalidationRepository {
     return row?._id ?? null;
   }
 
+  // Keyset page strictly after `afterId` across EVERY tenant/principal —
+  // backs the single multiplexed change-feed poll the backend runs instead of
+  // one poller per connected user (S-multiplex). Same semantics as
+  // listAfter, just unscoped; the caller routes each row by its own
+  // tenantId/principalId.
+  async listAfterGlobal(
+    afterId: string | null,
+    limit: number,
+  ): Promise<InvalidationRecord[]> {
+    const filter: Record<string, unknown> = {};
+    if (afterId !== null) {
+      filter["_id"] = { $gt: afterId };
+    }
+    const rows = await this.collection
+      .find(filter)
+      .sort({ _id: 1 })
+      .limit(limit)
+      .toArray();
+    return rows.map((row) => InvalidationRecordSchema.parse(row));
+  }
+
+  // Highest retained outbox id across every tenant/principal, or null when
+  // the outbox is empty. The global feed's "resume from now" watermark.
+  async latestIdGlobal(): Promise<string | null> {
+    const row = await this.collection.findOne(
+      {},
+      { sort: { _id: -1 }, projection: { _id: 1 } },
+    );
+    return row?._id ?? null;
+  }
+
   // Hard-delete every invalidation for a principal (account deletion).
   async deleteByPrincipal(
     tenantId: TenantId,

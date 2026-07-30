@@ -3,8 +3,14 @@ import { type BusyAvailabilityRequest } from "@core/types/sync/availability.cont
 import { type CommandSubmitRequest } from "@core/types/sync/command.contracts";
 import { type EventInstanceListQuery } from "@core/types/sync/event.contracts";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
-import { verifyInternalRequest } from "@sync/auth/internal-auth";
-import { CHANGES_PATH } from "@sync/server/change-feed.routes";
+import {
+  verifyInternalRequest,
+  verifyServiceRequest,
+} from "@sync/auth/internal-auth";
+import {
+  CHANGES_ALL_PATH,
+  CHANGES_PATH,
+} from "@sync/server/change-feed.routes";
 import { COMMANDS_PATH } from "@sync/server/command.routes";
 import {
   AVAILABILITY_BUSY_PATH,
@@ -245,6 +251,69 @@ describe("SyncServiceClient", () => {
       now: NOW,
     });
     if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
+  });
+
+  it("polls the GLOBAL change feed with no principal, signed as the service", async () => {
+    const cursor = objectId();
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({
+        kind: "ok",
+        invalidations: [
+          {
+            invalidation: { kind: "connection", connectionId: objectId() },
+            emittedAt: "2026-07-30T00:00:00.000Z",
+            tenantId: objectId(),
+            principalId: objectId(),
+          },
+        ],
+        nextCursor: cursor,
+      }),
+    }));
+
+    const fromNow = await client(fn).getGlobalChanges(null);
+    if (!fromNow.ok) throw new Error(`expected ok, got ${fromNow.error.kind}`);
+    expect(fromNow.value.kind).toBe("ok");
+    expect(calls[0]?.url).toBe(`${BASE_URL}${CHANGES_ALL_PATH}`);
+    expect(calls[0]?.method).toBe("GET");
+
+    await client(fn).getGlobalChanges(cursor as never);
+    expect(calls[1]?.url).toBe(
+      `${BASE_URL}${CHANGES_ALL_PATH}?cursor=${encodeURIComponent(cursor)}`,
+    );
+
+    // No tenant/principal headers at all — the real Sync service-auth
+    // verifier accepts it on that basis alone.
+    expect(calls[0]?.headers).not.toHaveProperty("x-sync-tenant");
+    expect(calls[0]?.headers).not.toHaveProperty("x-sync-principal");
+    const verdict = verifyServiceRequest({
+      secret: SECRET,
+      headers: calls[0]?.headers ?? {},
+      now: NOW,
+    });
+    if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
+
+    // And the per-principal verifier must NOT accept it (missing identity).
+    expect(
+      verifyInternalRequest({
+        secret: SECRET,
+        headers: calls[0]?.headers ?? {},
+        now: NOW,
+      }).ok,
+    ).toBe(false);
+  });
+
+  it("rejects a global-changes body that does not match the contract", async () => {
+    const { fn } = fakeFetch(async () => ({
+      status: 200,
+      json: async () => ({ kind: "ok", invalidations: [{ bogus: true }] }),
+    }));
+
+    const result = await client(fn).getGlobalChanges(null);
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.kind).toBe("invalidResponse");
   });
 
   it("rejects a calendars body that does not match the contract", async () => {
