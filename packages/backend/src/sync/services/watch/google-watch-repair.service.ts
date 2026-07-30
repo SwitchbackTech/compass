@@ -9,11 +9,11 @@ import {
 import {
   isFullSyncRequired,
   isInvalidGoogleToken,
+  isMissingGoogleRefreshToken,
 } from "@backend/common/services/gcal/gcal.utils";
+import { pruneGoogleDataAndNotifyRevoked } from "@backend/common/services/gcal/google-revoked.util";
 import mongoService from "@backend/common/services/mongo.service";
 import { googleCalendarListService } from "@backend/sync/services/calendarlist/google-calendarlist.service";
-import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
-import { pruneGoogleDataAndNotifyRevoked } from "@backend/sync/services/google-sync/google-sync.revoked";
 import {
   createSyncImport,
   type SyncImport,

@@ -17,6 +17,7 @@ import {
   isInvalidGoogleToken,
   isInvalidValue,
 } from "@backend/common/services/gcal/gcal.utils";
+import { pruneGoogleDataAndNotifyRevoked } from "@backend/common/services/gcal/google-revoked.util";
 import {
   type CompassError,
   type Info_Error,
@@ -26,7 +27,6 @@ import {
   EventMutationException,
   toEventMutationError,
 } from "@backend/event/event.error";
-import { pruneGoogleDataAndNotifyRevoked } from "@backend/sync/services/google-sync/google-sync.revoked";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { getSyncByToken } from "@backend/sync/services/records/sync-records.repository";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";

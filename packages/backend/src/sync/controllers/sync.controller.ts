@@ -9,12 +9,12 @@ import {
   isFullSyncRequired,
   isGoogleError,
   isInvalidGoogleToken,
+  isMissingGoogleRefreshToken,
 } from "@backend/common/services/gcal/gcal.utils";
+import { pruneGoogleDataAndNotifyRevoked } from "@backend/common/services/gcal/google-revoked.util";
 import mongoService from "@backend/common/services/mongo.service";
 import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import { toEventMutationError } from "@backend/event/event.error";
-import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
-import { pruneGoogleDataAndNotifyRevoked } from "@backend/sync/services/google-sync/google-sync.revoked";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { type NotificationOutcome } from "@backend/sync/services/notify/notification.outcome";
 import { publicWatchNotificationIngress } from "@backend/sync/services/public-watch-notifications/public-watch-notification.ingress";
