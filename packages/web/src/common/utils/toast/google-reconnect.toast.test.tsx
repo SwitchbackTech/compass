@@ -1,6 +1,5 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
-import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
   GoogleReconnectToast,
   showGoogleReconnectToast,
@@ -8,31 +7,32 @@ import {
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
+const mockConnect = mock();
+const mockUseConnectGoogle = mock(() => ({ connect: mockConnect }));
+
+// useConnectGoogle owns the flush-pending-events -> delegation-fork ->
+// legacy-popup-or-sync-redirect logic (the exact thing that drifted out of
+// sync here before: this toast used to reimplement a legacy-only copy of it
+// directly). Mocking the hook keeps this file testing only what it owns —
+// that a click dismisses the toast and calls connect() — not re-deriving
+// useConnectGoogle's own behavior.
+mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
+  useConnectGoogle: mockUseConnectGoogle,
+}));
+
 describe("GoogleReconnectToast", () => {
   const { port, mocks } = createTestToastPort();
-  const mockStartGoogleAuthorization = mock();
-  const mockSyncPendingLocalEvents = mock();
 
   beforeEach(() => {
-    mockStartGoogleAuthorization.mockClear();
-    mockSyncPendingLocalEvents.mockClear();
+    mockConnect.mockClear();
     mocks.error.mockClear();
     mocks.dismiss.mockClear();
     mocks.isActive.mockReturnValue(false);
     registerToastPort(port);
-    registerUseStartGoogleAuthorizationForTests(() => ({
-      loading: false,
-      startGoogleAuthorization: mockStartGoogleAuthorization,
-    }));
   });
 
   const renderToast = () =>
-    render(
-      <GoogleReconnectToast
-        toastId="google-revoked-api"
-        syncPendingLocalEvents={mockSyncPendingLocalEvents}
-      />,
-    );
+    render(<GoogleReconnectToast toastId="google-revoked-api" />);
 
   it("explains the disconnect without blaming the user or implying data loss", () => {
     renderToast();
@@ -47,34 +47,15 @@ describe("GoogleReconnectToast", () => {
     ).toBeInTheDocument();
   });
 
-  it("flushes pending local events, dismisses itself, then starts the consent flow", async () => {
-    mockSyncPendingLocalEvents.mockResolvedValue(true);
+  it("dismisses itself and starts connect() on click", () => {
     renderToast();
 
     fireEvent.click(
       screen.getByRole("button", { name: "Reconnect Google Calendar" }),
     );
 
-    await waitFor(() => {
-      expect(mockStartGoogleAuthorization).toHaveBeenCalledTimes(1);
-    });
-    expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);
     expect(mocks.dismiss).toHaveBeenCalledWith("google-revoked-api");
-  }, 15_000);
-
-  it("stays open and does not start authorization when the local-event flush fails", async () => {
-    mockSyncPendingLocalEvents.mockResolvedValue(false);
-    renderToast();
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Reconnect Google Calendar" }),
-    );
-
-    await waitFor(() => {
-      expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);
-    });
-    expect(mockStartGoogleAuthorization).not.toHaveBeenCalled();
-    expect(mocks.dismiss).not.toHaveBeenCalled();
+    expect(mockConnect).toHaveBeenCalledTimes(1);
   });
 });
 
