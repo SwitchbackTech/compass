@@ -16,6 +16,7 @@ import {
 import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
 import { invalidSyncTokenError } from "@backend/__tests__/mocks.gcal/errors/error.invalidSyncToken";
 import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/error.missingRefreshToken";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
@@ -33,6 +34,7 @@ import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
   afterAll,
+  afterEach,
   beforeAll,
   beforeEach,
   describe,
@@ -695,6 +697,47 @@ describe("SyncController", () => {
 
         getAllEventsSpy.mockRestore();
         getGCalEventsSyncPageTokenSpy.mockRestore();
+      });
+    });
+
+    describe("Sync delegation:", () => {
+      const originalConnectionRouting = CONFIG.SYNC_CONNECTION_ROUTING;
+      const originalEventRouting = CONFIG.SYNC_EVENT_ROUTING;
+
+      afterEach(() => {
+        CONFIG.SYNC_CONNECTION_ROUTING = originalConnectionRouting;
+        CONFIG.SYNC_EVENT_ROUTING = originalEventRouting;
+      });
+
+      it("refuses with 409 and never starts the legacy engine once Sync owns connections/events", async () => {
+        // Assigned in-test (not beforeAll): the shared backend harness's
+        // global beforeEach resets CONFIG to baseline before every test body
+        // runs, so a beforeAll-only override never survives to see it.
+        CONFIG.SYNC_CONNECTION_ROUTING = "sync";
+        CONFIG.SYNC_EVENT_ROUTING = "sync";
+
+        const { user } = await UtilDriver.setupTestUser();
+        const userId = user._id.toString();
+        const repairSpy = spyOn(
+          googleCalendarSyncService,
+          "repairGoogleCalendarSync",
+        );
+        const startSpy = spyOn(
+          googleCalendarSyncService,
+          "startGoogleCalendarSyncIfNeeded",
+        );
+
+        await syncDriver.importGCal(
+          { userId },
+          { force: true },
+          Status.CONFLICT,
+        );
+
+        expect(repairSpy).not.toHaveBeenCalled();
+        expect(startSpy).not.toHaveBeenCalled();
+
+        repairSpy.mockRestore();
+        startSpy.mockRestore();
       });
     });
 
