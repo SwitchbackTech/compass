@@ -5,7 +5,7 @@ import { getModifierKeyLabel } from "@web/shortcuts/shortcut.util";
 
 const CMD_PALETTE_HINT_TOAST_ID = "cmd-palette-hint";
 
-export function hasSeenCmdPaletteHint(): boolean {
+function hasSeenCmdPaletteHint(): boolean {
   if (!persistentBrowserStore.isAvailable()) return true;
   return (
     persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_CMD_PALETTE_HINT) ===
@@ -13,7 +13,7 @@ export function hasSeenCmdPaletteHint(): boolean {
   );
 }
 
-export function markCmdPaletteHintSeen(): void {
+function markCmdPaletteHintSeen(): void {
   persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_CMD_PALETTE_HINT, "true");
 }
 

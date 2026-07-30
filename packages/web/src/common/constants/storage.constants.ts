@@ -1,22 +1,17 @@
-import { z } from "zod";
-
-export const StorageKeySchema = z.enum([
-  "compass.auth",
-  "compass.onboarding.has-seen-welcome",
-  "compass.onboarding.has-seen-cmd-palette-hint",
-  "compass.onboarding.has-seen-anonymous-save-toast",
-  "compass.onboarding.has-dismissed-demo-events-banner",
-  "compass.onboarding.has-dismissed-tasks-removal-notice",
-  "compass.sidebar.width",
-  "compass.theme",
-  "compass.life.preferences",
-  "compass.view.sidebar-open",
+type StorageKey =
+  | "compass.auth"
+  | "compass.onboarding.has-seen-welcome"
+  | "compass.onboarding.has-seen-cmd-palette-hint"
+  | "compass.onboarding.has-seen-anonymous-save-toast"
+  | "compass.onboarding.has-dismissed-demo-events-banner"
+  | "compass.onboarding.has-dismissed-tasks-removal-notice"
+  | "compass.sidebar.width"
+  | "compass.theme"
+  | "compass.life.preferences"
+  | "compass.view.sidebar-open"
   // S39 A2: client-owned calendar visibility (default visible). Device-local,
   // matching other compass.* prefs — not synced across browsers.
-  "compass.calendars.hidden-ids",
-]);
-
-export type StorageKey = z.infer<typeof StorageKeySchema>;
+  | "compass.calendars.hidden-ids";
 
 export const STORAGE_KEYS: Record<
   | "AUTH"

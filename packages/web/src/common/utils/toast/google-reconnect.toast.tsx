@@ -18,11 +18,8 @@ interface GoogleReconnectToastProps {
 // inside GoogleOAuthProvider (CompassProvider).
 //
 // Delegates to useConnectGoogle's connect() — the same trigger the command
-// palette uses — rather than driving the legacy popup flow directly: this
-// toast used to always open the legacy popup regardless of delegation,
-// silently wrong the moment eventRouting flips to sync (the redirect flow
-// needs to run instead). connect() forks correctly and it's the one place
-// that fork lives, so this can't drift out of sync with it again.
+// palette uses — rather than driving the OAuth redirect flow directly, so
+// this toast can't drift out of sync with the one place that flow lives.
 export const GoogleReconnectToast = ({
   toastId,
 }: GoogleReconnectToastProps) => {

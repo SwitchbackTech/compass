@@ -24,6 +24,3 @@ export const getModifierKeyLabel = (): string => {
   const platform = detectPlatform();
   return formatWithLabels("Mod+k", platform).split("+")[0] ?? "Ctrl";
 };
-
-export const getModifierKeyTestId = () =>
-  `${resolveModifier("Mod").toLowerCase()}-icon`;

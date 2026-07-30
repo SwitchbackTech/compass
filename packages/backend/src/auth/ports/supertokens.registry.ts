@@ -4,8 +4,6 @@ import {
 } from "supertokens-node";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
 import {
-  createInMemoryUserIdMappingStore,
-  createInMemoryUserMetadataStore,
   type UserIdMappingStore,
   type UserMetadataStore,
 } from "@backend/auth/ports/supertokens.stores";
@@ -46,5 +44,3 @@ export function resetSupertokensStores(): void {
   userMetadataStore = productionMetadataStore;
   userIdMappingStore = productionMappingStore;
 }
-
-export { createInMemoryUserIdMappingStore, createInMemoryUserMetadataStore };

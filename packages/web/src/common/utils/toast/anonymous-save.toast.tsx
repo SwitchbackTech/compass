@@ -8,7 +8,7 @@ import { VIEW_TO_PARAM } from "@web/components/AuthModal/hooks/useAuthModal";
 
 const ANONYMOUS_SAVE_TOAST_ID: Id = "anonymous-save-toast";
 
-export function hasSeenAnonymousSaveToast(): boolean {
+function hasSeenAnonymousSaveToast(): boolean {
   if (!persistentBrowserStore.isAvailable()) return true;
   return (
     persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_ANONYMOUS_SAVE_TOAST) ===
@@ -16,7 +16,7 @@ export function hasSeenAnonymousSaveToast(): boolean {
   );
 }
 
-export function markAnonymousSaveToastSeen(): void {
+function markAnonymousSaveToastSeen(): void {
   persistentBrowserStore.set(
     STORAGE_KEYS.HAS_SEEN_ANONYMOUS_SAVE_TOAST,
     "true",

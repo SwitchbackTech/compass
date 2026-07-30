@@ -3,7 +3,7 @@
   "description": "Compass Web App",
   "license": "MIT",
   "version": "1.0.0",
-  "main": "src/App.ts",
+  "main": "src/index.tsx",
   "typings": "declaration.d.ts",
   "dependencies": {
     "@compass/core": "1.0.0",

@@ -52,7 +52,7 @@ export async function initializeOfflineDataStore(): Promise<void> {
 /**
  * Check if the offline data store is ready for operations.
  */
-export function isOfflineDataStoreReady(): boolean {
+function isOfflineDataStoreReady(): boolean {
   return store?.isReady() ?? false;
 }
 
@@ -64,29 +64,6 @@ export async function ensureOfflineDataStoreReady(): Promise<void> {
   if (!isOfflineDataStoreReady()) {
     await initializeOfflineDataStore();
   }
-}
-
-/**
- * Reset the offline data store state. Used for testing only.
- */
-export function resetOfflineDataStore(): void {
-  store?.close?.();
-  store = null;
-  initPromise = null;
-}
-
-export async function resetOfflineDataStoreAsync(): Promise<void> {
-  const pendingInit = initPromise;
-
-  if (pendingInit) {
-    try {
-      await pendingInit;
-    } catch {
-      // Ignore init failures while resetting test state.
-    }
-  }
-
-  resetOfflineDataStore();
 }
 
 export type { MigrationRecord, OfflineDataStore } from "./offline-data.store";

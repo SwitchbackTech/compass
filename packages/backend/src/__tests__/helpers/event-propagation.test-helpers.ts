@@ -1,7 +1,4 @@
-import { ObjectId, type WithId } from "mongodb";
-import { type Schema_User } from "@core/types/user.types";
-import { UserDriver } from "@backend/__tests__/drivers/user.driver";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
+import { ObjectId } from "mongodb";
 import {
   type CalendarRecord,
   CalendarRecordSchema,
@@ -50,31 +47,6 @@ export const seedGoogleCalendar = async (
   return record;
 };
 
-export const seedLocalCalendar = async (
-  userId: ObjectId,
-  overrides: Partial<CalendarRecord> = {},
-): Promise<CalendarRecord> => {
-  const record = CalendarRecordSchema.parse({
-    _id: new ObjectId(),
-    userId,
-    name: "Compass",
-    description: "",
-    timeZone: null,
-    foregroundColor: "#000000",
-    backgroundColor: "#ffffff",
-    access: "owner",
-    isPrimary: false,
-    isVisible: true,
-    isActive: true,
-    source: { provider: "local" },
-    createdAt: new Date(),
-    updatedAt: null,
-    ...overrides,
-  });
-  await mongoService.calendar.insertOne(record);
-  return record;
-};
-
 export const buildEventRecord = (
   calendarId: ObjectId,
   overrides: Partial<EventRecord> = {},
@@ -94,20 +66,3 @@ export const buildEventRecord = (
   updatedAt: null,
   ...overrides,
 });
-
-/** A user with a healthy Google connection (has a refresh token). */
-export const setupGoogleUser = async (): Promise<{
-  user: WithId<Schema_User>;
-}> => UtilDriver.setupTestUser();
-
-/**
- * A user who has never connected Google (no refresh token) -- getGcalClient
- * throws MissingGoogleRefreshToken for this user, exercising the
- * propagation swallow path (isMissingGoogleRefreshToken).
- */
-export const setupNoGoogleUser = async (): Promise<{
-  user: WithId<Schema_User>;
-}> => {
-  const user = await UserDriver.createUser({ withGoogleRefreshToken: false });
-  return { user };
-};

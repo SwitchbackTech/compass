@@ -1,8 +1,3 @@
-export const COLUMN_WEEK = "weekEvents";
-export const COLUMN_MONTH = "monthEvents";
-
-export const GOOGLE = "google";
-
 export const ID_ROOT = "root";
 export const ID_ALLDAY_COLUMNS = "allDayColumns";
 export const ID_EVENT_FORM = "Event Form";
@@ -17,8 +12,6 @@ export const ID_DATEPICKER_SIDEBAR = "sidebarDatePicker";
 export const ID_SIDEBAR = "sidebar";
 export const ID_EVENT_FORM_ACTION_MENU = "event-action-menu";
 export const DATA_EVENT_ELEMENT_ID = "data-event-id";
-export const DATA_DRAFT_EVENT = "data-draft-event";
-export const DATA_NEW_DRAFT_EVENT = "data-new-draft-event";
 export const DATA_TIMED_GRID_ROW = "data-calendar-timed-grid-row";
 export const ID_CONTEXT_MENU_ITEMS = "context-menu-items";
 
