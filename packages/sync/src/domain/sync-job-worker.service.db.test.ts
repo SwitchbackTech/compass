@@ -140,12 +140,25 @@ describe("SyncJobWorker", () => {
   const worker = (reader: FakeReader) =>
     new SyncJobWorker(deps(reader), OWNER, { now });
 
+  // A worker that records every drop reason, so a test can assert the drop path
+  // was taken (and why) rather than only that the job row vanished.
+  const workerRecordingDrops = (reader: FakeReader) => {
+    const drops: string[] = [];
+    const w = new SyncJobWorker(deps(reader), OWNER, {
+      now,
+      onDrop: (_job, reason) => drops.push(reason),
+    });
+    return { worker: w, drops };
+  };
+
   const workerWith = (
     reader: FakeReader,
     options: { maxAttempts?: number; random?: () => number },
   ) => new SyncJobWorker(deps(reader), OWNER, { now, ...options });
 
-  const seedCalendar = (): Promise<ProviderCalendarRecord> =>
+  const seedCalendar = (
+    overrides: Partial<{ active: boolean }> = {},
+  ): Promise<ProviderCalendarRecord> =>
     calendars.upsertByProviderCalendar({
       tenantId: objectId() as ProviderCalendarRecord["tenantId"],
       principalId: objectId() as ProviderCalendarRecord["principalId"],
@@ -153,7 +166,7 @@ describe("SyncJobWorker", () => {
       providerCalendarId: "primary@google.com",
       displayName: "Google",
       color: null,
-      active: true,
+      active: overrides.active ?? true,
       primary: true,
       accessRole: "owner",
       capabilities: {
@@ -447,6 +460,143 @@ describe("SyncJobWorker", () => {
     expect(
       await jobs.findById(resource.tenantId, resource.principalId, job._id),
     ).toBeNull();
+  });
+
+  it("settles a job whose calendar went inactive instead of retrying it", async () => {
+    const calendar = await seedCalendar({ active: false });
+    const resource = await seedResource(calendar, null);
+    const job = await enqueue(resource, "initialImport");
+
+    // A reader with no scripted pages: reaching it at all would throw, so the
+    // job must be settled before any provider call is made.
+    const { worker: w, drops } = workerRecordingDrops(new FakeReader([]));
+    await w.runOnce();
+
+    expect(
+      await jobs.findById(resource.tenantId, resource.principalId, job._id),
+    ).toBeNull();
+    expect(drops).toHaveLength(1);
+    expect(drops[0]).toContain("inactive");
+  });
+
+  it("frees the coalescing key when an inactive calendar's job is settled", async () => {
+    const calendar = await seedCalendar({ active: false });
+    const resource = await seedResource(calendar, null);
+    await enqueue(resource, "initialImport");
+
+    await worker(new FakeReader([])).runOnce();
+
+    // Reactivating the calendar and re-triggering must produce a fresh pending
+    // job — the settled one left no row to swallow the re-enqueue.
+    await calendars.upsertByProviderCalendar({
+      tenantId: calendar.tenantId,
+      principalId: calendar.principalId,
+      connectionId: calendar.connectionId,
+      providerCalendarId: calendar.providerCalendarId,
+      displayName: calendar.displayName,
+      color: calendar.color,
+      active: true,
+      primary: calendar.primary,
+      accessRole: calendar.accessRole,
+      capabilities: calendar.capabilities,
+    });
+    const requeued = await enqueue(resource, "initialImport");
+    expect(requeued.state).toBe("pending");
+  });
+
+  it("settles a durably-rejected read instead of burning the retry ladder", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const job = await enqueue(resource, "incrementalPull");
+
+    const { worker: w, drops } = workerRecordingDrops(
+      new FakeReader(
+        [],
+        new ProviderEventReadError("readFailed", "Google rejected the read", {
+          cause: new Error("Not Found (HTTP 404, reason notFound)"),
+        }),
+      ),
+    );
+    await w.runOnce();
+
+    // Settled and removed — NOT left pending for 20 more attempts, and not
+    // parked in state:"failed" where it would need an operator to clear it.
+    expect(
+      await jobs.findById(resource.tenantId, resource.principalId, job._id),
+    ).toBeNull();
+    expect(drops).toHaveLength(1);
+    expect(drops[0]).toContain("HTTP 404");
+  });
+
+  it("keeps the coalescing key reusable after a durable read failure", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    await enqueue(resource, "incrementalPull");
+
+    await worker(
+      new FakeReader([], new ProviderEventReadError("readFailed", "rejected")),
+    ).runOnce();
+
+    // The whole reason this settles as a drop rather than failureClass
+    // "permanent": a failed row keeps its key and enqueue only $setOnInsert's,
+    // so a re-share/reconnect could never restart sync for this resource.
+    const requeued = await enqueue(resource, "incrementalPull");
+    expect(requeued.state).toBe("pending");
+    expect(
+      await storage
+        .db()
+        .collection(SYNC_COLLECTIONS.jobs)
+        .countDocuments({ coalescingKey: `incrementalPull:${resource._id}` }),
+    ).toBe(1);
+  });
+
+  it("records a durable read failure on the resource so health can see it", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    await enqueue(resource, "incrementalPull");
+
+    await worker(
+      new FakeReader(
+        [],
+        new ProviderEventReadError("readFailed", "Google rejected the read", {
+          cause: new Error("Not Found (HTTP 404, reason notFound)"),
+        }),
+      ),
+    ).runOnce();
+
+    // Dropping the job erases its evidence, so the resource marker is the only
+    // durable trace left for connection health and triage.
+    const after = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(after?.lastReadFailureAt).toEqual(now());
+    expect(after?.lastReadFailureDetail).toContain("HTTP 404");
+    expect(after?.lastReadFailureDetail).toContain("notFound");
+  });
+
+  it("clears the read-failure marker once the calendar reads again", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    await enqueue(resource, "incrementalPull");
+    await worker(
+      new FakeReader([], new ProviderEventReadError("readFailed", "rejected")),
+    ).runOnce();
+
+    // The calendar becomes readable again and a fresh pull succeeds.
+    await enqueue(resource, "incrementalPull");
+    await worker(
+      new FakeReader([pageOf([single("ok")], "cursor-1")]),
+    ).runOnce();
+
+    const after = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(after?.lastReadFailureAt).toBeNull();
+    expect(after?.lastReadFailureDetail).toBeNull();
   });
 
   it("drains every due job and then reports how many it processed", async () => {

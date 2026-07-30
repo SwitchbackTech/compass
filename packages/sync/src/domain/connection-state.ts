@@ -23,6 +23,12 @@ export interface ConnectionStateEvidence {
   readonly credential: CredentialState;
   // A permanent conflict the user must resolve (e.g. an unsafe version clash).
   readonly permanentConflict: boolean;
+  // At least one ACTIVE calendar's reads are durably rejected by the provider
+  // (see the readFailed settlement in sync-job-dispatch). Its job was settled
+  // rather than left retrying, so no overdue-work signal remains to notice —
+  // without this, a connection whose primary calendar had been dead for days
+  // still reported healthy, every other signal green (2026-07-30).
+  readonly durableReadFailure: boolean;
   // The provider account identity has been resolved.
   readonly accountIdentified: boolean;
   // The first complete in-horizon import has finished.
@@ -71,6 +77,15 @@ export function deriveConnectionState(
 
   if (evidence.permanentConflict) {
     return { state: "actionRequired", reason: "permanentConflict" };
+  }
+
+  // Ranked above connecting/importing deliberately: a calendar the provider
+  // durably refuses to read never earns a cursor, so the import-complete test
+  // below can never pass and the connection would otherwise sit on "importing"
+  // forever. Delayed/providerErrors says the true thing in both cases — the
+  // never-imported one and the imported-then-broken one.
+  if (evidence.durableReadFailure) {
+    return { state: "delayed", reason: "providerErrors" };
   }
 
   if (!evidence.accountIdentified) {

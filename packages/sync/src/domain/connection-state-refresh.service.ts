@@ -118,6 +118,11 @@ export async function gatherConnectionStateEvidence(
     disconnectedAt: connection.disconnectedAt,
     credential: credentialState(credential),
     permanentConflict: false,
+    // Only ACTIVE calendars count: a deactivated calendar's stale marker is not
+    // a problem the user can act on, and its jobs are dropped anyway.
+    durableReadFailure: activeCalendars.some(
+      (c) => eventsByCalendar.get(c._id)?.lastReadFailureAt != null,
+    ),
     accountIdentified: Boolean(connection.account.providerAccountId),
     // Discovery must have finished, and every currently-active calendar must
     // hold a durable events cursor (the initialImport settle condition).

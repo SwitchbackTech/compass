@@ -170,6 +170,121 @@ describe("refreshConnectionState", () => {
     expect(after.state).toBe("importing");
   });
 
+  it("reports delayed/providerErrors when an active calendar's reads durably fail", async () => {
+    const connection = await seedImportingConnection();
+    const calendar = await calendars.upsertByProviderCalendar({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      providerCalendarId: "primary@example.com" as ProviderCalendarSourceId,
+      displayName: "Primary",
+      color: null,
+      active: true,
+      primary: true,
+      accessRole: "owner",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: true,
+        canReadBusy: true,
+        canInviteAttendees: true,
+      },
+    });
+    const listResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      "list-cursor",
+      new Date(),
+    );
+    const eventsResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "events",
+      calendarId: calendar._id as ProviderCalendarId,
+    });
+    // Imported successfully, THEN the provider started durably rejecting reads —
+    // the case that used to leave every health signal green.
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      eventsResource._id,
+      "events-cursor",
+      new Date(),
+    );
+    await resources.markReadFailure(
+      connection.tenantId,
+      connection.principalId,
+      eventsResource._id,
+      new Date(),
+      "Not Found (HTTP 404, reason notFound)",
+    );
+
+    const after = await refreshConnectionState(deps(), connection);
+    expect(after.state).toBe("delayed");
+    expect(after.stateReason).toBe("providerErrors");
+  });
+
+  it("ignores a read-failure marker on a calendar that is no longer active", async () => {
+    const connection = await seedImportingConnection();
+    const calendar = await calendars.upsertByProviderCalendar({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      providerCalendarId: "retired@example.com" as ProviderCalendarSourceId,
+      displayName: "Retired",
+      color: null,
+      active: false,
+      primary: false,
+      accessRole: "owner",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: true,
+        canReadBusy: true,
+        canInviteAttendees: true,
+      },
+    });
+    const listResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      "list-cursor",
+      new Date(),
+    );
+    const eventsResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "events",
+      calendarId: calendar._id as ProviderCalendarId,
+    });
+    await resources.markReadFailure(
+      connection.tenantId,
+      connection.principalId,
+      eventsResource._id,
+      new Date(),
+      "Not Found (HTTP 404, reason notFound)",
+    );
+
+    // No active calendar is broken, so the connection is healthy.
+    const after = await refreshConnectionState(deps(), connection);
+    expect(after.state).toBe("healthy");
+  });
+
   it("derives actionRequired/authorizationRevoked when the credential is missing", async () => {
     const connection = await seedImportingConnection();
     await credentials.deleteByConnection(connection._id);

@@ -739,6 +739,7 @@ async function linkConnection(
       disconnectedAt: null,
       credential: "valid",
       permanentConflict: false,
+      durableReadFailure: false,
       accountIdentified: true,
       initialImportComplete: false,
       catchingUp: false,

@@ -55,6 +55,8 @@ export class SyncResourceRepository {
           activeGeneration: 0,
           lastAttemptAt: null,
           lastSuccessAt: null,
+          lastReadFailureAt: null,
+          lastReadFailureDetail: null,
           subscriptionId: null,
           subscriptionResourceId: null,
           subscriptionToken: null,
@@ -95,7 +97,10 @@ export class SyncResourceRepository {
   }
 
   // Advance the incremental cursor after a batch fully commits, clearing the
-  // mid-batch checkpoint and recording success.
+  // mid-batch checkpoint and recording success. A successful pass also clears
+  // any durable read-failure marker: the provider is answering again, so the
+  // connection must stop reporting delayed/providerErrors without an operator
+  // having to clear anything by hand.
   async advanceCursor(
     tenantId: TenantId,
     principalId: PrincipalId,
@@ -110,10 +115,38 @@ export class SyncResourceRepository {
           syncCursor,
           pageCursor: null,
           lastSuccessAt: succeededAt,
+          lastReadFailureAt: null,
+          lastReadFailureDetail: null,
           updatedAt: new Date(),
         },
       },
     );
+  }
+
+  // Record that the provider DURABLY rejected reads for this resource (a 4xx
+  // retrying cannot fix). The job that hit it is settled and removed rather than
+  // left to burn its retry ladder, so this marker is the only evidence left —
+  // connection health reads it, and a later successful pass clears it. Keeps the
+  // first failure's timestamp on repeat failures so health can show how long the
+  // calendar has been dead, but always refreshes the detail.
+  async markReadFailure(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    at: Date,
+    detail: string,
+  ): Promise<void> {
+    await this.collection.updateOne({ _id: id, tenantId, principalId }, [
+      {
+        $set: {
+          // $ifNull keeps the FIRST failure's timestamp across repeats (a row
+          // written before this field existed reads as null and takes `at`).
+          lastReadFailureAt: { $ifNull: ["$lastReadFailureAt", at] },
+          lastReadFailureDetail: detail,
+          updatedAt: new Date(),
+        },
+      },
+    ]);
   }
 
   async updateSubscription(
