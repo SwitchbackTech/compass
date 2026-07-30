@@ -30,7 +30,6 @@ import {
   toReplaceSubmitRequests,
 } from "@backend/common/services/sync-service/event-command.translation";
 import { syncEventInstanceToBrowser } from "@backend/common/services/sync-service/event-list.translation";
-import { getEventDelegation } from "@backend/common/services/sync-service/event-routing";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
@@ -246,10 +245,7 @@ class EventController {
     try {
       const userId = req.session?.getUserId() as string;
       const query = parseListQuery(req.query);
-      const events =
-        getEventDelegation() === "sync"
-          ? await readAllFromSync(userId, query)
-          : (await eventService.readAll(userId, query)).map(mapEventRecord);
+      const events = await readAllFromSync(userId, query);
 
       res.status(Status.OK).json({ events });
     } catch (e) {
@@ -274,10 +270,7 @@ class EventController {
       assertCloudMutationsAllowed();
       const userId = req.session?.getUserId() as string;
       const input = CreateEventInputSchema.parse(req.body);
-      const event =
-        getEventDelegation() === "sync"
-          ? await createFromSync(userId, input)
-          : mapEventRecord(await eventService.create(userId, input));
+      const event = await createFromSync(userId, input);
 
       res.status(Status.OK).json({ event });
     } catch (e) {
@@ -291,10 +284,7 @@ class EventController {
       const userId = req.session?.getUserId() as string;
       const eventId = req.params["id"] as string;
       const input = ReplaceEventInputSchema.parse(req.body);
-      const event =
-        getEventDelegation() === "sync"
-          ? await replaceFromSync(userId, eventId, input)
-          : mapEventRecord(await eventService.replace(userId, eventId, input));
+      const event = await replaceFromSync(userId, eventId, input);
 
       res.status(Status.OK).json({ event });
     } catch (e) {
@@ -312,11 +302,7 @@ class EventController {
         scope: typeof scopeParam === "string" ? scopeParam : "this",
       });
 
-      if (getEventDelegation() === "sync") {
-        await deleteFromSync(userId, eventId, input);
-      } else {
-        await eventService.delete(userId, eventId, input);
-      }
+      await deleteFromSync(userId, eventId, input);
 
       res.status(Status.NO_CONTENT).send();
     } catch (e) {
