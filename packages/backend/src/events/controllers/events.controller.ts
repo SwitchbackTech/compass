@@ -2,8 +2,6 @@ import { type Request, type Response } from "express";
 import { Logger } from "@core/logger/winston.logger";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import { syncChangeFeedBridge } from "@backend/servers/sse/sync-change-feed.bridge";
-import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
-import * as legacyWatchOwnership from "@backend/sync/services/watch/legacy-watch-ownership";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
@@ -31,23 +29,7 @@ class EventsController {
         metadata: metadata as Record<string, unknown>,
       });
 
-      // Defensive, fire-and-forget: a client reconnecting is a cheap,
-      // frequent moment to notice/repair stale Google watches. Cooldown +
-      // lease inside the coordinator keep this safe across multiple tabs
-      // and repeated reconnects; must never block or fail the stream.
-      // When Sync owns connections/events, Sync maintains its own push
-      // channels — legacy repair would re-register watches at
-      // /api/sync/gcal/notifications and split the write path (legacy
-      // Mongo + SSE) from Sync reads.
-      if (legacyWatchOwnership.isLegacyGoogleWatchOwner()) {
-        void googleWatchRepairService
-          .repairGoogleWatchesForUser(userId)
-          .catch((err) => {
-            logger.error(`Google watch repair failed for user ${userId}:`, err);
-          });
-      }
-
-      // Same fire-and-forget shape: lets scheduled watch maintenance (A40)
+      // Fire-and-forget: lets scheduled watch maintenance (A40)
       // tell an active user apart from an abandoned account without
       // blocking or failing the stream.
       void userService.touchLastSeenAt(userId).catch((err) => {
