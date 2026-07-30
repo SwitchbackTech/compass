@@ -87,7 +87,7 @@ Use this document to find the first files to inspect for common Compass changes.
 
 - Sync service entrypoints: `packages/sync/src/app.ts`, `packages/sync/src/server/sync.server.ts`
 - Backend Sync client / routing: `packages/backend/src/common/services/sync-service/`
-- Preseed / migrate CLI: `packages/scripts/src/commands/preseed-sync.ts`, `migrate-connections.ts`, `migrate-provider-state.ts`, `migrate-pending-intent.ts`, `inventory-legacy-sync.ts`
+- Migrate CLI: `packages/scripts/src/commands/migrate-connections.ts`
 - Sync DB backup/restore: `packages/scripts/src/commands/sync-backup.ts`, `sync-restore.ts`
 - Diagnostics / retention / principal purge: `packages/sync/src/server/diagnostic.routes.ts`, `packages/sync/src/domain/connection-retention.service.ts`, `packages/sync/src/domain/principal-purge.service.ts`
 

@@ -7,10 +7,6 @@ import {
   type gSchema$Events,
   type gSchema$FreeBusyResponse,
 } from "@core/types/gcal";
-import {
-  type Params_WatchEvents,
-  type SyncDetails,
-} from "@core/types/sync.types";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
@@ -18,6 +14,11 @@ import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.co
 import { withGoogleRetry } from "@backend/common/services/gcal/gcal.retry";
 
 const logger = Logger("app:gcal.service");
+
+interface CalendarListSyncCursor {
+  nextSyncToken?: string;
+  nextPageToken?: string;
+}
 
 class GCalService {
   private validateGCalResponse<T>(
@@ -320,7 +321,7 @@ class GCalService {
     {
       nextSyncToken: syncToken,
       nextPageToken: pageToken,
-    }: Partial<Pick<SyncDetails, "nextSyncToken" | "nextPageToken">> = {},
+    }: Partial<CalendarListSyncCursor> = {},
   ): AsyncGenerator<
     Pick<gSchema$CalendarList, "nextPageToken" | "nextSyncToken" | "items">
   > {
@@ -377,25 +378,6 @@ class GCalService {
 
     return this.validateGCalResponse(response).data;
   }
-
-  stopWatch = async (
-    { gcal, quotaUser }: GoogleRequestContext,
-    params: Pick<Params_WatchEvents, "channelId"> & {
-      resourceId: string;
-    },
-  ) => {
-    const response = await withGoogleRetry(() =>
-      gcal.channels.stop({
-        quotaUser,
-        requestBody: {
-          id: params.channelId,
-          resourceId: params.resourceId,
-        },
-      }),
-    );
-
-    return this.validateGCalResponse(response);
-  };
 }
 
 export default new GCalService();

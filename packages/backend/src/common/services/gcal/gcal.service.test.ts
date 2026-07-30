@@ -266,15 +266,6 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
       mock: () => context.gcal.events.patch as Mock,
     },
     {
-      method: "stopWatch",
-      call: () =>
-        gcalService.stopWatch(context, {
-          channelId: "channel-1",
-          resourceId: "resource-1",
-        }),
-      mock: () => context.gcal.channels.stop as Mock,
-    },
-    {
       method: "getAllEvents",
       call: async () => {
         for await (const _page of gcalService.getAllEvents({

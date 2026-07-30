@@ -34,7 +34,6 @@ import {
   enterTestGcalClient,
   setTestGcalIsolationKey,
 } from "@backend/common/services/gcal/gcal.test-context";
-import * as googleWatchCleanup from "@backend/common/services/gcal/google-watch-cleanup.util";
 import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import userService from "@backend/user/services/user.service";
@@ -236,7 +235,7 @@ function restoreMockedMethods(...targets: object[]): void {
 
 /** Clears per-test spies so sequential cases in a file do not leak call counts. */
 function restoreLeakedTestSpies(): void {
-  restoreMockedMethods(gcalService, sseServer, googleWatchCleanup, userService);
+  restoreMockedMethods(gcalService, sseServer, userService);
 }
 
 export function getTestLoggerInfoCalls(

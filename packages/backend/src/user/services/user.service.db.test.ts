@@ -1,9 +1,7 @@
 import { faker } from "@faker-js/faker";
-import { ObjectId } from "mongodb";
+import { type ObjectId } from "mongodb";
 import * as supertokensNode from "supertokens-node";
 import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
-import { CalendarProvider } from "@core/types/calendar.types";
-import { WatchSchema } from "@core/types/watch.types";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
   buildEventRecord,
@@ -17,12 +15,10 @@ import {
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import * as googleRevokeService from "@backend/auth/services/google/google.revoke.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
-import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import * as supertokensMiddleware from "@backend/common/middleware/supertokens.middleware";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
-import * as googleWatchCleanup from "@backend/common/services/gcal/google-watch-cleanup.util";
 import mongoService from "@backend/common/services/mongo.service";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import userService from "@backend/user/services/user.service";
@@ -52,29 +48,6 @@ const seedGoogleCalendarsWithEvents = async (userId: ObjectId, count = 1) => {
     calendars.map((calendar) => buildEventRecord(calendar._id)),
   );
   return calendars;
-};
-
-// Seeds a legacy `sync` collection row and a `watch` collection row directly -
-// a stand-in for the legacy engine's own watch-registration flow, which these
-// tests no longer have access to. Only the row's existence matters: these
-// tests assert deletion/cleanup clears it, not its content.
-const seedLegacySyncAndWatch = async (userId: string) => {
-  await mongoService.sync.insertOne({
-    user: userId,
-    google: {
-      events: [{ gCalendarId: "primary", nextSyncToken: "token" }],
-      calendarlist: [],
-    },
-  });
-  await mongoService.watch.insertOne(
-    WatchSchema.parse({
-      _id: new ObjectId(),
-      user: userId,
-      resourceId: "resource-1",
-      expiration: new Date(Date.now() + 60 * 60_000),
-      gCalendarId: "primary",
-    }),
-  );
 };
 
 const createSupertokensUser = (userId: string, recipeUserIds: string[]) => ({
@@ -342,7 +315,6 @@ describe("UserService", () => {
       deleteAccountSpies.length = 0;
       deleteAccountSpies.push(
         spyOn(googleRevokeService, "revokeGoogleGrant").mockResolvedValue(true),
-        spyOn(googleWatchCleanup, "stopWatches").mockResolvedValue([]),
         spyOn(
           supertokensUserCleanupService,
           "resolveByExternalUserId",
@@ -484,18 +456,15 @@ describe("UserService", () => {
         superTokensMetadata: 0,
       });
 
-      await seedLegacySyncAndWatch(userId);
       await seedGoogleCalendarsWithEvents(user._id);
 
       const summary: Summary_Delete =
-        await userService.deleteCompassDataForUser(userId, false);
+        await userService.deleteCompassDataForUser(userId);
 
       expect(summary).toEqual(
         expect.objectContaining({
           calendars: expect.any(Number) as number,
           events: expect.any(Number) as number,
-          syncs: expect.any(Number) as number,
-          eventWatches: expect.any(Number) as number,
           sessions: expect.any(Number) as number,
           superTokensUsers: 0,
           superTokensMappings: 0,
@@ -509,16 +478,6 @@ describe("UserService", () => {
         await mongoService.calendar.countDocuments({ userId: user._id }),
       ).toBe(0);
       expect(await mongoService.event.countDocuments({})).toBe(0);
-      expect(await mongoService.sync.findOne({ user: userId })).toBeNull();
-      expect(await mongoService.watch.findOne({ user: userId })).toBeNull();
-      expect(
-        await mongoService.sync.findOne({
-          $or: [
-            { "google.calendarlist.gCalendarId": user.email },
-            { "google.events.gCalendarId": user.email },
-          ],
-        }),
-      ).toBeNull();
 
       resolveSpy.mockRestore();
       revokeSpy.mockRestore();
@@ -562,7 +521,7 @@ describe("UserService", () => {
       });
       expect(archived).toBeGreaterThan(0);
 
-      const summary = await userService.deleteCompassDataForUser(userId, false);
+      const summary = await userService.deleteCompassDataForUser(userId);
 
       expect(summary.events).toBeGreaterThanOrEqual(archived);
       expect(await mongoService.event.countDocuments({})).toBe(0);
@@ -600,7 +559,7 @@ describe("UserService", () => {
         superTokensMetadata: 1,
       });
 
-      const summary = await userService.deleteCompassDataForUser(userId, false);
+      const summary = await userService.deleteCompassDataForUser(userId);
 
       expect(resolveSpy).toHaveBeenCalledWith(userId);
       expect(revokeSpy).toHaveBeenCalledWith(userId);
@@ -813,91 +772,36 @@ describe("UserService", () => {
     });
   });
 
-  describe("stopGoogleCalendarSync", () => {
-    it("cleans up google calendars, events, and sync records", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-
-      await seedGoogleCalendarsWithEvents(user._id, 2);
-      await seedLegacySyncAndWatch(userId);
-
-      const calendars = await calendarService.list(userId);
-
-      expect(calendars.length).toBeGreaterThan(0);
-
-      expect(
-        calendars.map((calendar) => CalendarRecordSchema.safeParse(calendar)),
-      ).toEqual(
-        expect.arrayContaining(
-          calendars.map((): unknown =>
-            expect.objectContaining({ success: true }),
-          ),
-        ),
-      );
-
-      await userService.stopGoogleCalendarSync(userId);
-
-      const sync = await mongoService.sync.findOne({ user: userId });
-
-      expect(
-        await mongoService.calendar.countDocuments({
-          userId: mongoService.objectId(userId),
-        }),
-      ).toBe(calendars.length);
-
-      expect(await mongoService.event.countDocuments({})).toBe(0);
-      expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
-      expect(sync?.user).toBe(userId);
-      expect(sync).not.toHaveProperty(CalendarProvider.GOOGLE);
-    });
-  });
-
   describe("handleLogoutCleanup", () => {
     it("skips Google metadata updates for email/password-only users", async () => {
       const user = await UserDriver.createUser({ withGoogle: false });
-      const stopWatchesSpy = spyOn(
-        googleWatchCleanup,
-        "stopWatches",
-      ).mockResolvedValue([]);
       const updateMetadataSpy = spyOn(
         userMetadataService,
         "updateUserMetadata",
       );
 
-      await userService.handleLogoutCleanup(user._id.toString(), {
-        isLastActiveSession: true,
-      });
+      await userService.handleLogoutCleanup(user._id.toString());
 
       expect(updateMetadataSpy).not.toHaveBeenCalled();
-      expect(stopWatchesSpy).toHaveBeenCalledWith(user._id.toString());
 
       updateMetadataSpy.mockRestore();
-      stopWatchesSpy.mockRestore();
     });
 
     it("updates Google metadata and stops watches for last active Google sessions", async () => {
       const user = await UserDriver.createUser();
-      const stopWatchesSpy = spyOn(
-        googleWatchCleanup,
-        "stopWatches",
-      ).mockResolvedValue([]);
       const updateMetadataSpy = spyOn(
         userMetadataService,
         "updateUserMetadata",
       ).mockResolvedValue({} as never);
 
-      await userService.handleLogoutCleanup(user._id.toString(), {
-        isLastActiveSession: true,
-      });
+      await userService.handleLogoutCleanup(user._id.toString());
 
       expect(updateMetadataSpy).toHaveBeenCalledWith({
         userId: user._id.toString(),
         data: { sync: { incrementalGCalSync: "RESTART" } },
       });
-      expect(stopWatchesSpy).toHaveBeenCalledWith(user._id.toString());
 
       updateMetadataSpy.mockRestore();
-      stopWatchesSpy.mockRestore();
     });
   });
 
@@ -933,8 +837,6 @@ describe("UserService", () => {
     it("stops sync, clears the Google refresh token, and resets sync metadata", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const stopWatchesSpy = spyOn(googleWatchCleanup, "stopWatches");
-      const deleteWatchesSpy = spyOn(googleWatchCleanup, "deleteWatchesByUser");
 
       expect(user.google).toBeDefined();
 
@@ -958,9 +860,6 @@ describe("UserService", () => {
 
       await userService.pruneGoogleData(userId);
 
-      expect(stopWatchesSpy).not.toHaveBeenCalled();
-      expect(deleteWatchesSpy).toHaveBeenCalledWith(userId);
-
       const storedUser = await mongoService.user.findOne({ _id: user._id });
       expect(storedUser?.google?.googleId).toBe(user.google?.googleId);
       expect(storedUser?.google?.picture).toBe(user.google?.picture);
@@ -968,7 +867,6 @@ describe("UserService", () => {
 
       // Events owned by Google-provider calendars are gone (B9).
       expect(await mongoService.event.countDocuments({})).toBe(0);
-      expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
 
       // Google calendars are archived, never deleted (A16).
       const calendarsAfter = await calendarService.list(userId);
@@ -982,8 +880,6 @@ describe("UserService", () => {
           .filter((c) => c.source.provider === "google")
           .every((c) => c.isActive === false),
       ).toBe(true);
-      const sync = await mongoService.sync.findOne({ user: userId });
-      expect(sync).not.toHaveProperty(CalendarProvider.GOOGLE);
 
       const metadata = await userMetadataService.fetchUserMetadata(userId);
       expect(metadata.sync?.importGCal).toBe("RESTART");

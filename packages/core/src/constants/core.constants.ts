@@ -1,5 +1,4 @@
 export const APP_NAME = "Compass Calendar";
-export const GCAL_NOTIFICATION_ENDPOINT = `/sync/gcal/notifications`;
 export const MB_50 = 50000000; // in bytes
 export const MS_IN_HR = 2.7777777777778e-7;
 export const PORT_DEFAULT_BACKEND = 3000;

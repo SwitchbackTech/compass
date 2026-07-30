@@ -12,7 +12,6 @@ import { revokeSessionMock } from "@backend/__tests__/helpers/mock.setup";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import * as googleWatchCleanup from "@backend/common/services/gcal/google-watch-cleanup.util";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
 import {
@@ -53,7 +52,6 @@ describe("UserController", () => {
         superTokensMappings: 0,
         superTokensMetadata: 0,
       });
-      spyOn(googleWatchCleanup, "stopWatches").mockResolvedValue([]);
     });
 
     it("should delete the account of the user in the session", async () => {

@@ -21,7 +21,6 @@ import {
   type gSchema$FreeBusyResponse,
   type WithGcalId,
 } from "@core/types/gcal";
-import { Resource_Sync } from "@core/types/sync.types";
 import {
   isBaseGCalEvent,
   isInstanceGCalEvent,
@@ -461,7 +460,7 @@ export const createMockGcalClient = (
             createMockGaxiosResponse<gSchema$Channel>(
               {
                 ...params.requestBody,
-                resourceId: Resource_Sync.CALENDAR,
+                resourceId: "calendarlist",
               },
               options,
               200,

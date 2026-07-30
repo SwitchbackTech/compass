@@ -22,8 +22,6 @@ describe("MongoService", () => {
     expect(client.db).toHaveBeenCalledWith(expect.any(String));
     expect(collection).toHaveBeenCalledWith("calendar");
     expect(collection).toHaveBeenCalledWith("event");
-    expect(collection).toHaveBeenCalledWith("sync");
     expect(collection).toHaveBeenCalledWith("user");
-    expect(collection).toHaveBeenCalledWith("watch");
   });
 });
