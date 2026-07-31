@@ -146,11 +146,26 @@ export function LifeSidebarContent({
               }
             }}
             onInputClick={() => setIsBirthDatePickerOpen(true)}
+            // Keep first impression on the grid: focus the field for new users
+            // without popping the calendar. Enter/arrows still open it.
+            onKeyDown={(event) => {
+              if (isBirthDatePickerOpen) return;
+              if (
+                event.key !== "Enter" &&
+                event.key !== "ArrowDown" &&
+                event.key !== "ArrowUp"
+              ) {
+                return;
+              }
+              event.preventDefault();
+              setIsBirthDatePickerOpen(true);
+            }}
             onSelect={(date) => {
               if (!date) return;
               setBirthDate(date);
             }}
             placeholderText="Select date"
+            preventOpenOnFocus
             selected={birthDate ?? undefined}
             title="Date of birth"
             view="grid"
