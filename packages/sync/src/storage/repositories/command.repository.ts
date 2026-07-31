@@ -104,6 +104,31 @@ export class CommandRepository {
     return existing !== null;
   }
 
+  // Whether any OTHER command (any state) exists for this event, created after
+  // the given one. Consulted by the stale-command retry sweep before
+  // reapplying an old command's payload: reapplying stale content onto an
+  // event a later command has since touched would silently revert whatever
+  // that later command did. _id comparison (not createdAt) matches every
+  // other "latest"/ordering query in this repository and is monotonic for
+  // ObjectId-shaped ids from the same cluster.
+  async hasNewerCommandForEvent(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    eventId: EventId,
+    afterId: SyncCommandId,
+  ): Promise<boolean> {
+    const newer = await this.collection.findOne(
+      {
+        tenantId,
+        principalId,
+        eventId,
+        _id: { $gt: afterId },
+      },
+      { projection: { _id: 1 } },
+    );
+    return newer !== null;
+  }
+
   // Record a state transition (pending -> applying -> confirmed/failed/...) and
   // the current attempt count. Returns the updated record, or null if the
   // command doesn't exist for this principal.

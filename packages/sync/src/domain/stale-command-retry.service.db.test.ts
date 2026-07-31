@@ -7,6 +7,7 @@ import {
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
+import { submitCloudCommand } from "@sync/domain/cloud-command.service";
 import { retryStaleCommands } from "@sync/domain/stale-command-retry.service";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
@@ -248,5 +249,127 @@ describe("retryStaleCommands", () => {
 
     expect(result).toEqual({ attempted: 1, stillStale: 1 });
     expect(writer.deleteCalls).toHaveLength(0);
+  });
+
+  // Reproduces the exact data-loss scenario independent review flagged:
+  // update A->B gets stuck pending (transient failure), the user edits again
+  // B->C and that one succeeds, then the sweep later finds the stale A->B
+  // command and must NOT reapply "B" over the already-current "C".
+  it("fails a stale update as superseded instead of reapplying its stale content over a newer edit", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const eventId = objectId() as EventId;
+    const calendarId = objectId();
+
+    await events.put({
+      _id: eventId,
+      tenantId,
+      principalId,
+      origin: "compass",
+      calendarId,
+      clientEventId: null,
+      connectionId: null,
+      providerEventId: null,
+      providerVersion: null,
+      providerUpdatedAt: null,
+      deliveryState: null,
+      providerMetadata: null,
+      content: {
+        title: "A",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      },
+      schedule,
+      recurrence: { kind: "single" },
+      lifecycleState: "active",
+      generation: 0,
+      createdAt: now(),
+      updatedAt: now(),
+      confirmedAt: now(),
+    } as never);
+
+    const updateTo = (title: string) => ({
+      tenantId,
+      principalId,
+      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+      eventId,
+      input: {
+        kind: "update",
+        invitation: "none",
+        content: {
+          title,
+          description: "",
+          location: null,
+          organizer: null,
+          attendees: [],
+          conference: null,
+        },
+        schedule,
+        recurrence: { kind: "preserve" },
+        scope: "all",
+        recurrenceId: null,
+      } as never,
+      expectedVersion: null,
+    });
+
+    // Submit A->B but never apply it: this is exactly the state a transient
+    // provider failure mid-execute leaves a command in (see
+    // provider-command.service.ts's "return command" branches) - the row
+    // stays pending, untouched, in storage.
+    const { record: staleCommand } = await commands.submit(updateTo("B"));
+    expect(staleCommand.outcome.state).toBe("pending");
+
+    // The user's follow-up edit B->C is submitted and applied normally.
+    const { command: laterCommand } = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        markers,
+        execution: "active",
+        provider: { writer: new FakeDeleteWriter(), custody: tokenSource() },
+      },
+      updateTo("C"),
+      now,
+    );
+    expect(laterCommand.outcome.state).toBe("confirmed");
+    expect(
+      (await events.findById(tenantId, principalId, eventId))?.content.title,
+    ).toBe("C");
+
+    const result = await retryStaleCommands(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        markers,
+        execution: "active",
+        provider: { writer: new FakeDeleteWriter(), custody: tokenSource() },
+      },
+      before(),
+      now,
+    );
+
+    expect(result).toEqual({ attempted: 1, stillStale: 0 });
+    const staleStored = await commands.findById(
+      tenantId,
+      principalId,
+      staleCommand._id,
+    );
+    expect(staleStored?.outcome.state).toBe("failed");
+    expect(
+      staleStored?.outcome.state === "failed" &&
+        staleStored.outcome.failureReason,
+    ).toBe("versionConflict");
+    // The critical assertion: the event's title is still the LATER edit,
+    // never reverted to the stale command's "B".
+    expect(
+      (await events.findById(tenantId, principalId, eventId))?.content.title,
+    ).toBe("C");
   });
 });

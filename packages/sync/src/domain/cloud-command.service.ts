@@ -175,11 +175,30 @@ export async function submitCloudCommand(
 // the command exactly as it was (see provider-command.service.ts's per-kind
 // executors), and nothing else ever revisits it, so this is the only thing
 // that gives it another attempt.
+//
+// Guards against reapplying stale content: applyCloudMutation's update path
+// merges the COMMAND's own (possibly minutes-old) title/description onto
+// whatever is currently stored (mergeUpdateContent), with no check that this
+// is still the latest intent for the event. If a later command already
+// touched the same event — succeeded on its own retry, or is itself
+// mid-flight — blindly reapplying this one would silently revert that later
+// edit with no error surfaced anywhere. When a newer command exists, this
+// command is superseded: fail it (versionConflict) instead of retrying, so
+// it stops being retried without ever overwriting newer intent.
 export async function retryCloudMutation(
   deps: CloudCommandDeps,
   command: CommandRecord,
   now: () => Date,
 ): Promise<CommandRecord> {
+  const superseded = await deps.commands.hasNewerCommandForEvent(
+    command.tenantId,
+    command.principalId,
+    command.eventId,
+    command._id,
+  );
+  if (superseded) {
+    return failCloud(deps, command, "versionConflict");
+  }
   return applyCloudMutation(deps, command, now);
 }
 

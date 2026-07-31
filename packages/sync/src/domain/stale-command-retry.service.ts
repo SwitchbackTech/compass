@@ -31,9 +31,14 @@ const RETRYABLE_KINDS: readonly SyncCommandInput["kind"][] = [
 // The self-heal sweep for commands stuck nonterminal (pending/applying/
 // reconciling) past the stale window. Re-runs the exact same routing logic
 // the original request used (retryCloudMutation -> applyCloudMutation), so a
-// command that recovers converges exactly as it would have inline. A GLOBAL
-// scan across owners (system liveness, not a user request) - mirrors
-// failed-job-requeue.service.ts's sweep shape.
+// command that recovers converges exactly as it would have inline.
+// retryCloudMutation itself refuses to reapply a command superseded by a
+// later one for the same event (failing it as versionConflict instead) - a
+// stale command that just sat pending for the retry window is not
+// necessarily still the latest intent, and reapplying old content over a
+// newer edit would be silent data loss. A GLOBAL scan across owners (system
+// liveness, not a user request) - mirrors failed-job-requeue.service.ts's
+// sweep shape.
 export async function retryStaleCommands(
   deps: StaleCommandRetryDeps,
   before: Date,
