@@ -10,7 +10,11 @@ import {
 } from "react";
 import { Frequency, type Options, RRule, type Weekday } from "rrule";
 import dayjs from "@core/util/date/dayjs";
-import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
+import {
+  CompassEventRRule,
+  localizeFloatingDate,
+} from "@core/util/event/compass.event.rrule";
+import { getCompassEventDateFormat } from "@core/util/event/event.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   patchGridDraftRecurrence,
@@ -134,9 +138,25 @@ export const useRecurrence = (
     [options?.wkst],
   );
 
+  // `options.until` (off the RRule library's internal, parsed representation)
+  // is in the floating frame used for candidate expansion for TIMED events
+  // only (see CompassEventRRule#initOptions - all-day UNTILs are never
+  // floated). Un-float a timed UNTIL before storing as editable state - the
+  // rebuilt `rrule` below feeds `until` back in as `_options.until`, which
+  // #initOptions floats again; seeding state with the already-floating value
+  // would double-float it every render and drift the persisted UNTIL by the
+  // timezone offset each time (never converging - the deep-equal guard in
+  // the effect below never passes).
+  const isTimed =
+    getCompassEventDateFormat(startDate) !==
+    dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
+  const timezone = dayjs.tz.guess();
+  const toRealUntil = (floating: Date | null): Date | null =>
+    floating && isTimed ? localizeFloatingDate(floating, timezone) : floating;
+
   const [freq, setFreq] = useState<Frequency>(options.freq);
   const [interval, setInterval] = useState<number>(options.interval);
-  const [until, setUntil] = useState<Date | null>(options.until);
+  const [until, setUntil] = useState<Date | null>(toRealUntil(options.until));
   const [count, setCount] = useState<number | null>(options.count);
   const [wkst, setWkst] = useState<Weekday | null>(defaultWkst);
   const [weekDays, setWeekDays] = useState<typeof WEEKDAYS>(defaultWeekDay);
@@ -148,7 +168,7 @@ export const useRecurrence = (
     setSyncedRuleSeedKey(ruleSeedKey);
     setFreq(options.freq);
     setInterval(options.interval);
-    setUntil(options.until);
+    setUntil(toRealUntil(options.until));
     setCount(options.count);
     setWkst(defaultWkst);
     setWeekDays(defaultWeekDay);

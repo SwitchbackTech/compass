@@ -42,7 +42,12 @@ function toFloatingDate(wall: Dayjs): Date {
 
 // The inverse: re-anchors a floating date (UTC fields = wall clock) back onto
 // the real timeline as the civil wall time in `timezone` (DST-aware).
-function localizeFloatingDate(floating: Date, timezone: string): Date {
+// Exported so callers that read `.options.until` off a constructed
+// CompassEventRRule (e.g. useRecurrence, to seed editable state) can undo the
+// float before feeding the value back into a new instance - otherwise
+// #initOptions floats an already-floating Date a second time, drifting it by
+// the timezone offset on every round trip.
+export function localizeFloatingDate(floating: Date, timezone: string): Date {
   const wall = dayjs.utc(floating).format("YYYY-MM-DDTHH:mm:ss.SSS");
 
   return dayjs.tz(wall, timezone).toDate();
