@@ -29,9 +29,6 @@ export const clearHoveredDayGridEventTarget =
 export const getFocusedDayGridEventTarget =
   dayGridEventTargeting.getFocusedGridEventTarget;
 
-export const getHoveredDayGridEventTarget =
-  dayGridEventTargeting.getHoveredGridEventTarget;
-
 export const getFirstVisibleDayGridEventTarget =
   dayGridEventTargeting.getFirstVisibleGridEventTarget;
 
