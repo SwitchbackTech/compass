@@ -436,11 +436,23 @@ describe("self-host helper", () => {
 });
 
 describe("staging deploy workflow", () => {
-  it("lets the self-host helper default compose profiles when none are set", () => {
+  it("always passes COMPOSE_PROFILES including sync to compass update", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
-    expect(workflow).toContain('if [ -n "$DEPLOY_PROFILES" ]; then');
-    expect(workflow).toContain("cd ~/compass && ./compass update");
+    // Sync is required, so the deploy never falls back to an unscoped
+    // `./compass update` that could omit the sync profile when an explicit
+    // COMPOSE_PROFILES var (e.g. `selfhosted`) is set.
+    expect(workflow).toContain(
+      'DEPLOY_PROFILES="$'.concat(
+        "{COMPOSE_PROFILES:+$",
+        '{COMPOSE_PROFILES},}sync"',
+      ),
+    );
+    expect(workflow).toContain(
+      "cd ~/compass && COMPOSE_PROFILES='$" +
+        "{DEPLOY_PROFILES}' ./compass update",
+    );
+    expect(workflow).not.toContain('if [ -n "$DEPLOY_PROFILES" ]; then');
   });
 
   it("falls back to the release tag when a configured compose ref is unavailable", () => {
@@ -495,7 +507,7 @@ describe("staging deploy workflow", () => {
     expect(dockerfile).toContain("'posthog:'");
   });
 
-  it("configures sync and enables its profile only when both secrets are set", () => {
+  it("always configures sync and fails early when required secrets are missing", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
     expect(workflow).toContain(
@@ -506,30 +518,35 @@ describe("staging deploy workflow", () => {
         "{{ secrets.SYNC_INTERNAL_AUTH_TOKEN }}",
       ),
     );
-    // Both secrets gate a single SYNC_ENABLED flag; a half-provisioned config
-    // must never abort the deploy, so there is no `exit` in the sync path.
+    // Sync is required (#2480): missing auth token aborts before compose starts.
+    expect(workflow).toContain('if [ -z "$SYNC_INTERNAL_AUTH_TOKEN" ]; then');
+    expect(workflow).toContain("Deploy requires SYNC_INTERNAL_AUTH_TOKEN");
+    // Cloud still needs an isolated SYNC_MONGO_URI; selfhosted derives one
+    // from the bundled mongo, matching install.sh / compass.example.yaml.
+    expect(workflow).toContain("Cloud deploy requires SYNC_MONGO_URI");
     expect(workflow).toContain(
-      'if [ -n "$SYNC_MONGO_URI" ] && [ -n "$SYNC_INTERNAL_AUTH_TOKEN" ]; then',
+      "mongodb://compass:$".concat(
+        "{MONGO_PASSWORD}@mongo:27017/compass_sync?authSource=admin&replicaSet=rs0",
+      ),
     );
-    expect(workflow).toContain('SYNC_ENABLED="1"');
-    expect(workflow).not.toContain(
-      "Sync deploy requires SYNC_INTERNAL_AUTH_TOKEN",
-    );
-    // Both the config section and the profile gate on the same flag, so the
-    // container never starts against a compass.yaml with no sync section.
-    expect(workflow).toContain('if [ -n "$SYNC_ENABLED" ]; then');
+    expect(workflow).toContain('SYNC_ENFORCE_LEAST_PRIVILEGE="false"');
+    // Sync config + profile are unconditional — never skip and leave the
+    // backend without SYNC_SERVICE_URL / SYNC_INTERNAL_AUTH_TOKEN.
+    expect(workflow).not.toContain("SYNC_ENABLED=");
+    expect(workflow).not.toContain("skipping sync");
     expect(workflow).toContain("'sync:'");
     expect(workflow).toContain('mongoUri: \\"$'.concat('{SYNC_MONGO_URI}\\"'));
-    expect(workflow).toContain("enforceLeastPrivilege: true");
-    // Backend reaches sync on the compose network.
+    expect(workflow).toContain(
+      "enforceLeastPrivilege: $".concat("{SYNC_ENFORCE_LEAST_PRIVILEGE}"),
+    );
     expect(workflow).toContain('serviceUrl: "http://sync:3010"');
     expect(workflow).toContain(
       "SYNC_EXECUTION: $".concat("{{ vars.SYNC_EXECUTION }}"),
     );
     expect(workflow).toContain(
       'DEPLOY_PROFILES="$'.concat(
-        "{DEPLOY_PROFILES:+$",
-        '{DEPLOY_PROFILES},}sync"',
+        "{COMPOSE_PROFILES:+$",
+        '{COMPOSE_PROFILES},}sync"',
       ),
     );
   });
