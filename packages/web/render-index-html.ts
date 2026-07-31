@@ -11,10 +11,7 @@ interface BuildOutput {
 // index.tsx's own top-level code), leaving #root permanently empty with no
 // error. Building from the JS entrypoint (src/index.tsx) instead guarantees
 // exactly one `entry-point` output, so we inject its real path ourselves.
-export async function renderIndexHtml(
-  outdir: string,
-  outputs: BuildOutput[],
-) {
+export async function renderIndexHtml(outdir: string, outputs: BuildOutput[]) {
   const entry = outputs.find((output) => output.kind === "entry-point");
   if (!entry) {
     throw new Error("Bun.build produced no entry-point output for index.tsx");
