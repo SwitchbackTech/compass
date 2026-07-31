@@ -198,8 +198,8 @@ const renderShortcuts = (options?: {
     initialData: toNormalizedEventQueryData(events),
   });
   // Always seed calendars so useWeekEventViewModel's visibility filter and
-  // useCalendarsQuery don't race a network fetch (MSW has no /api/calendars
-  // handler in this file). Default = writable calendar for the editable event.
+  // useCalendarsQuery see the fixture calendars instead of racing a fetch.
+  // Default = writable calendar for the editable event.
   queryClient.setQueryData(
     calendarQueryKeys.all,
     options?.calendars ?? [writableCalendar],
