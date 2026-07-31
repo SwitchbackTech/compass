@@ -116,21 +116,23 @@ describe("CalendarListHeader", () => {
     userMetadataActions.clear();
   });
 
-  it("shows a default-colored not-saved-yet heading with a sign-up tooltip before any changes are made", async () => {
+  it("shows a local-storage heading with a sign-up tooltip before any changes are made", async () => {
     const user = userEvent.setup();
 
     renderHeader();
 
     expect(
-      screen.getByRole("heading", { name: "Not saved yet" }),
+      screen.getByRole("heading", { name: "Saved on this device" }),
     ).toBeInTheDocument();
-    const trigger = screen.getByRole("button", { name: "Not saved yet" });
+    const trigger = screen.getByRole("button", {
+      name: "Saved on this device",
+    });
     expect(trigger).toHaveClass("text-text");
     expect(trigger).not.toHaveClass("c-sync-text-wave");
     expect(screen.queryByText("Sign up")).toBeNull();
 
     await user.hover(trigger);
-    await screen.findByText("Sign up to save your changes across devices");
+    await screen.findByText("Sign up to sync your changes across devices");
     const signUpButton = await screen.findByRole("button", { name: "Sign up" });
 
     await user.click(signUpButton);
@@ -138,22 +140,26 @@ describe("CalendarListHeader", () => {
     expect(mockUseConnectGoogle).not.toHaveBeenCalled();
   });
 
-  it("shows the wave shimmer on the not-saved-yet label once the anonymous user makes a change", () => {
+  it("shows the wave shimmer on the local-storage label once the anonymous user makes a change", () => {
     mockIsAnonymousDirty = true;
 
     renderHeader();
 
-    const trigger = screen.getByRole("button", { name: "Not saved yet" });
+    const trigger = screen.getByRole("button", {
+      name: "Saved on this device",
+    });
     expect(trigger).toHaveClass("c-sync-text-wave");
     expect(trigger).not.toHaveClass("text-text");
   });
 
-  it("also opens sign up by clicking the not-saved-yet label directly (keyboard path)", async () => {
+  it("also opens sign up by clicking the local-storage label directly (keyboard path)", async () => {
     const user = userEvent.setup();
 
     renderHeader();
 
-    await user.click(screen.getByRole("button", { name: "Not saved yet" }));
+    await user.click(
+      screen.getByRole("button", { name: "Saved on this device" }),
+    );
     expect(mockOpenModal).toHaveBeenCalledWith("signUp");
   });
 

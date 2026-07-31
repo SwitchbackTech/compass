@@ -2,6 +2,7 @@ import { CliValidator } from "@scripts/cli.validator";
 import { runPurgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events";
 import { runPurgeUser } from "@scripts/commands/purge-user";
 import { runRefreshConnectionStates } from "@scripts/commands/refresh-connection-states";
+import { runRepairRecurringSeries } from "@scripts/commands/repair-recurring-series";
 import { Command } from "commander";
 
 export default class CompassCLI {
@@ -27,6 +28,9 @@ export default class CompassCLI {
       case cmd === "purge-user":
         await runPurgeUser();
         break;
+      case cmd === "repair-recurring-series":
+        await runRepairRecurringSeries();
+        break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
     }
@@ -51,6 +55,14 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "Delete Sync events that fail EventRecordSchema (poison from aborted migrate)",
+      );
+
+    program
+      .command("repair-recurring-series")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "Reproject EXDATE/RDATE series and remove orphaned delete tombstones (--apply to write)",
       );
 
     program

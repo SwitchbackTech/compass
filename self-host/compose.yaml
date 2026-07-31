@@ -68,7 +68,8 @@ services:
     # Bound to loopback only so the host Caddy can reverse-proxy the public
     # `/sync/*` OAuth + webhook paths; not exposed on a public interface.
     # No depends_on mongo: Atlas environments have no mongo container, and the
-    # service tolerates a not-yet-ready store (liveness stays up, readiness 503).
+    # service tolerates a not-yet-ready store while its readiness probe stays
+    # unhealthy until storage is available.
     profiles: [sync]
     ports:
       - *sync-port
@@ -88,7 +89,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "bun -e \"fetch('http://127.0.0.1:3010/health/live').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"",
+          "bun -e \"fetch('http://127.0.0.1:3010/health/ready').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"",
         ]
       interval: 10s
       timeout: 5s

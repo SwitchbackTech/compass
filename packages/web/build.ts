@@ -56,12 +56,12 @@ const define: Record<string, string> = {
 console.log(`Building version ${BUILD_VERSION}...`);
 
 const result = await Bun.build({
-  entrypoints: [path.resolve(import.meta.dir, "src/index.html")],
+  entrypoints: [path.resolve(import.meta.dir, "src/index.tsx")],
   outdir: OUTDIR,
   target: "browser",
   sourcemap: "external",
   minify: true,
-  splitting: false,
+  splitting: true,
   define,
   plugins: [postcssPlugin],
   publicPath: "/",

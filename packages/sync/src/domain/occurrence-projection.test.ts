@@ -300,6 +300,157 @@ describe("projectOccurrences", () => {
     });
   });
 
+  describe("series masters with EXDATE/RDATE", () => {
+    // Multi-line rules used to flip rrulestr onto its RRuleSet branch, which
+    // ignores the dtstart option — the series re-anchored at "now" on every
+    // projection (dead series resurrected into the present, EXDATEs ignored,
+    // per-instance delete tombstones orphaned by shifting occurrenceKeys).
+
+    // A weekly Denver 09:00 series starting Mon 2026-07-06 (15:00Z), 30 min.
+    const weekly = (rules: string[]) =>
+      event(timed("2026-07-06T09:00:00-06:00", "2026-07-06T09:30:00-06:00"), {
+        kind: "seriesMaster",
+        rules,
+      });
+    const starts = (e: EventRecord) =>
+      projectOccurrences(e, HORIZON).map((o) => o.startAt.toISOString());
+
+    it("excludes an EXDATE instant stated in the event's own zone", () => {
+      const e = weekly([
+        "EXDATE;TZID=America/Denver:20260713T090000",
+        "RRULE:FREQ=WEEKLY;COUNT=3",
+      ]);
+      expect(starts(e)).toEqual([
+        "2026-07-06T15:00:00.000Z",
+        "2026-07-20T15:00:00.000Z",
+      ]);
+    });
+
+    it("excludes an EXDATE instant stated in a different zone", () => {
+      // 10:00 Chicago (CDT, -05:00) is the same instant as 09:00 Denver.
+      const e = weekly([
+        "EXDATE;TZID=America/Chicago:20260713T100000",
+        "RRULE:FREQ=WEEKLY;COUNT=3",
+      ]);
+      expect(starts(e)).toEqual([
+        "2026-07-06T15:00:00.000Z",
+        "2026-07-20T15:00:00.000Z",
+      ]);
+    });
+
+    it("excludes every value of a comma-separated EXDATE list", () => {
+      const e = weekly([
+        "EXDATE;TZID=America/Denver:20260713T090000,20260720T090000",
+        "RRULE:FREQ=WEEKLY;COUNT=3",
+      ]);
+      expect(starts(e)).toEqual(["2026-07-06T15:00:00.000Z"]);
+    });
+
+    it("excludes an EXDATE;VALUE=DATE instance of an all-day series", () => {
+      const e = event(allDay("2026-03-10", "2026-03-11"), {
+        kind: "seriesMaster",
+        rules: ["EXDATE;VALUE=DATE:20270310", "RRULE:FREQ=YEARLY;COUNT=2"],
+      });
+      expect(starts(e)).toEqual(["2026-03-10T00:00:00.000Z"]);
+    });
+
+    it("suppresses the DTSTART special-case instance when EXDATE names it", () => {
+      const e = weekly([
+        "EXDATE;TZID=America/Denver:20260706T090000",
+        "RRULE:FREQ=WEEKLY;COUNT=3",
+      ]);
+      expect(starts(e)).toEqual([
+        "2026-07-13T15:00:00.000Z",
+        "2026-07-20T15:00:00.000Z",
+      ]);
+    });
+
+    it("adds an RDATE instant with the master's duration and zone", () => {
+      // 11:00 Sydney (AEST, +10:00) on July 15 = 2026-07-15T01:00:00Z.
+      const e = weekly([
+        "RDATE;TZID=Australia/Sydney:20260715T110000",
+        "RRULE:FREQ=WEEKLY;COUNT=2",
+      ]);
+      const occ = projectOccurrences(e, HORIZON);
+      expect(occ.map((o) => o.startAt.toISOString())).toEqual([
+        "2026-07-06T15:00:00.000Z",
+        "2026-07-13T15:00:00.000Z",
+        "2026-07-15T01:00:00.000Z",
+      ]);
+      const extra = occ.at(-1);
+      if (extra?.schedule.kind !== "timed") throw new Error("expected timed");
+      expect(extra.schedule.timeZone).toBe("America/Denver");
+      expect(extra.endAt?.getTime()).toBe(
+        extra.startAt.getTime() + 30 * 60 * 1000,
+      );
+    });
+
+    it("combines RDATE and EXDATE without double-projecting a restated instant", () => {
+      const e = weekly([
+        // RDATE restates the second occurrence; EXDATE removes the third.
+        "RDATE;TZID=America/Denver:20260713T090000",
+        "EXDATE;TZID=America/Denver:20260720T090000",
+        "RRULE:FREQ=WEEKLY;COUNT=3",
+      ]);
+      expect(starts(e)).toEqual([
+        "2026-07-06T15:00:00.000Z",
+        "2026-07-13T15:00:00.000Z",
+      ]);
+    });
+
+    it("windows RDATEs to the series' own [DTSTART, UNTIL]", () => {
+      // A thisAndFollowing split truncates one half's UNTIL and re-anchors
+      // the other's DTSTART; out-of-window RDATEs belong to the other half.
+      const e = weekly([
+        "RDATE;TZID=America/Denver:20260601T090000,20260725T090000",
+        "RRULE:FREQ=WEEKLY;UNTIL=20260714T150000Z",
+      ]);
+      // Jun 1 precedes DTSTART, Jul 25 exceeds UNTIL: both dropped.
+      expect(starts(e)).toEqual([
+        "2026-07-06T15:00:00.000Z",
+        "2026-07-13T15:00:00.000Z",
+      ]);
+    });
+
+    it("projects zero occurrences for a long-dead COUNT series with EXDATE (History 201 regression)", () => {
+      // The prod phantom: a 2013 course whose EXDATE line re-anchored the
+      // whole series at the projection run's wall clock, dragging 15 weekly
+      // occurrences into the present-day horizon.
+      const e = event(
+        timed(
+          "2013-09-04T11:00:00-05:00",
+          "2013-09-04T11:50:00-05:00",
+          "America/Chicago",
+        ),
+        {
+          kind: "seriesMaster",
+          rules: [
+            "EXDATE;TZID=America/Chicago:20131023T110000",
+            "RRULE:FREQ=WEEKLY;COUNT=15;BYDAY=WE",
+          ],
+        },
+      );
+      expect(projectOccurrences(e, HORIZON)).toHaveLength(0);
+    });
+
+    it("still honors the floated UNTIL when an EXDATE line is present", () => {
+      const e = event(
+        timed("2026-06-01T03:00:00-06:00", "2026-06-01T03:15:00-06:00"),
+        {
+          kind: "seriesMaster",
+          rules: [
+            "EXDATE;TZID=America/Denver:20260603T030000",
+            "RRULE:FREQ=DAILY;UNTIL=20260610T055959Z",
+          ],
+        },
+      );
+      const result = starts(e);
+      expect(result).toHaveLength(8);
+      expect(result).not.toContain("2026-06-03T09:00:00.000Z");
+      expect(result.at(-1)).toBe("2026-06-09T09:00:00.000Z");
+    });
+  });
+
   describe("truncateRulesBefore", () => {
     it("appends a strictly-before UNTIL (one second earlier, inclusive bound)", () => {
       const [rule] = truncateRulesBefore(
@@ -315,6 +466,20 @@ describe("projectOccurrences", () => {
         new Date("2026-07-21T15:00:00.000Z"),
       );
       expect(rule).toBe("RRULE:FREQ=WEEKLY;UNTIL=20260721T145959Z");
+    });
+
+    it("bounds only RRULE lines, leaving EXDATE/RDATE lines untouched", () => {
+      const rules = truncateRulesBefore(
+        [
+          "EXDATE;TZID=America/Chicago:20131023T110000",
+          "RRULE:FREQ=WEEKLY;COUNT=15",
+        ],
+        new Date("2026-07-21T15:00:00.000Z"),
+      );
+      expect(rules).toEqual([
+        "EXDATE;TZID=America/Chicago:20131023T110000",
+        "RRULE:FREQ=WEEKLY;UNTIL=20260721T145959Z",
+      ]);
     });
 
     it("truncates the projection to occurrences before the split point", () => {
