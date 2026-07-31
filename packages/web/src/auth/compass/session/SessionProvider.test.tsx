@@ -7,13 +7,31 @@ import {
   userMetadataActions,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import * as sseProvider from "@web/sse/provider/SSEProvider";
+import {
+  afterAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 // Create mocks at module level
 const refreshUserMetadata = mock().mockResolvedValue(undefined);
-const openStream = mock();
-const closeStream = mock();
-const getStream = mock();
+// SSEProvider.test.tsx has its own dedicated test importing the real module —
+// mock.module leaks process-wide across files, so spy on the real module's
+// exports (restorable) instead of mock.module'ing the whole path.
+const openStream = spyOn(sseProvider, "openStream").mockImplementation(
+  (() => {}) as never,
+);
+const closeStream = spyOn(sseProvider, "closeStream").mockImplementation(
+  () => {},
+);
+const getStream = spyOn(sseProvider, "getStream").mockImplementation(
+  (() => null) as never,
+);
 const markUserAsAuthenticated = mock();
 const getLastKnownEmail = mock().mockReturnValue("test@example.com");
 const clearAnonymousCalendarChangeSignUpPrompt = mock();
@@ -28,12 +46,6 @@ const doesSessionExist = spyOn(session, "doesSessionExist");
 
 mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
   refreshUserMetadata,
-}));
-
-mock.module("@web/sse/provider/SSEProvider", () => ({
-  openStream,
-  closeStream,
-  getStream,
 }));
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
@@ -55,6 +67,12 @@ const { SessionProvider, sessionInit } =
   require("./SessionProvider") as typeof import("./SessionProvider");
 
 describe("SessionProvider sessionInit", () => {
+  afterAll(() => {
+    openStream.mockRestore();
+    closeStream.mockRestore();
+    getStream.mockRestore();
+  });
+
   beforeEach(() => {
     // Reset all mocks
     refreshUserMetadata.mockClear();
