@@ -34,6 +34,7 @@ import {
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { type ViewName } from "@web/shortcuts/shortcuts.constants";
 import { type CommandSection } from "./command-palette.types";
 
@@ -252,6 +253,7 @@ export const CommandPalette = ({
   mutationDependencies,
 }: CommandPaletteProps) => {
   const open = useSettingsStore(selectIsCmdPaletteOpen);
+  useAppLockReason("commandPalette", open);
   const navigate = useNavigate();
   const { items: calendarCmdItems } = useCalendarSyncCmdItems();
   const subscribeCmdItems = useSubscribeCmdItems(open);
@@ -327,6 +329,7 @@ export const LifeCommandPalette = ({
   placeholder: string;
 }) => {
   const open = useSettingsStore(selectIsCmdPaletteOpen);
+  useAppLockReason("commandPalette", open);
   const navigate = useNavigate();
   const themeCmdItems = useThemeCmdItems();
 

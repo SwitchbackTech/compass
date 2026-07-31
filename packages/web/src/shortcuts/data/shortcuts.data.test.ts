@@ -141,9 +141,47 @@ describe("shortcuts.data", () => {
 
         expect(edit?.shortcuts).toContainEqual({
           keys: ["Delete"],
-          label: "Delete calendar event",
+          label: "Delete focused event",
+        });
+        expect(edit?.shortcuts).toContainEqual({
+          keys: ["Mod", "D"],
+          label: "Duplicate focused event",
+        });
+        expect(edit?.shortcuts).toContainEqual({
+          keys: ["ArrowUp"],
+          label: "Focus previous event",
+        });
+        expect(edit?.shortcuts).toContainEqual({
+          keys: ["ArrowDown"],
+          label: "Focus next event",
+        });
+        expect(edit?.shortcuts).toContainEqual({
+          keys: ["Enter"],
+          label: "Open focused event",
         });
       }
+    });
+
+    it("lists Life and undo/redo in day/week navigate and other sections", () => {
+      const sections = getShortcutMenuSections({
+        view: "day",
+        isViewingCurrentPeriod: true,
+      });
+      const navigate = sections.find((section) => section.id === "navigate");
+      const other = sections.find((section) => section.id === "other");
+
+      expect(navigate?.shortcuts).toContainEqual({
+        keys: ["l"],
+        label: "Go to Life view",
+      });
+      expect(other?.shortcuts).toContainEqual({
+        keys: ["Mod", "Z"],
+        label: "Undo last change",
+      });
+      expect(other?.shortcuts).toContainEqual({
+        keys: ["Mod", "Shift", "Z"],
+        label: "Redo last change",
+      });
     });
 
     it("lists Shift+Arrow reschedule shortcuts in the day and week Edit sections", () => {

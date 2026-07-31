@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 
 const TOGGLE_SHORTCUTS_HOTKEY = { key: "?", shift: true } as const;
@@ -14,6 +15,7 @@ export function useSidebarShortcuts({
   onToggleSidebar,
 }: UseSidebarShortcutsArgs) {
   const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  useAppLockReason("shortcutsOverlay", isShortcutsOpen);
 
   const closeShortcuts = useCallback(() => {
     setIsShortcutsOpen(false);

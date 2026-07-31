@@ -52,8 +52,11 @@ Helpful notes:
 | `U`                         | Day view  | Focus first calendar event        |
 | `C`                         | Day view  | Create timed event                |
 | `A`                         | Day view  | Create all-day event              |
-| `Delete`                    | Day view  | Delete focused/hovered event      |
+| `Delete`                    | Day view  | Delete focused event              |
+| `ArrowUp` / `ArrowDown`     | Day view  | Focus previous/next event         |
 | `Arrow keys`                | Day view  | Move open draft event             |
+| `Enter`                     | Day view  | Open focused event                |
+| `Cmd+D` / `Ctrl+D`          | Day view  | Duplicate focused event           |
 | `Shift+ArrowLeft`           | Day view  | Move focused event to previous day |
 | `Shift+ArrowRight`          | Day view  | Move focused event to next day    |
 | `Shift+ArrowUp` / `Shift+ArrowDown` | Day view | Move focused timed event 15 min earlier/later |
@@ -64,11 +67,16 @@ Helpful notes:
 | `A`                         | Week view | Create all-day event              |
 | `I`                         | Week view | Focus sidebar                     |
 | `U`                         | Week view | Focus first calendar event        |
-| `Delete`                    | Week view | Delete focused/hovered event      |
+| `Delete`                    | Week view | Delete focused event              |
+| `ArrowUp` / `ArrowDown`     | Week view | Focus previous/next event         |
 | `Arrow keys`                | Week view | Move open draft event             |
+| `Enter`                     | Week view | Open focused event                |
+| `Cmd+D` / `Ctrl+D`          | Week view | Duplicate focused event           |
 | `Shift+ArrowLeft`           | Week view | Move focused event to previous day |
 | `Shift+ArrowRight`          | Week view | Move focused event to next day    |
 | `Shift+ArrowUp` / `Shift+ArrowDown` | Week view | Move focused timed event 15 min earlier/later |
+| `L`                         | Global    | Navigate to Life view             |
+| `Cmd+Enter` / `Ctrl+Enter`  | Form      | Save event form                   |
 
 ---
 
@@ -241,19 +249,20 @@ Pressing `]` toggles the sidebar open or closed from any view.
 
 ### UX
 
-Pressing Delete while an event is focused or hovered in the Day or Week grid deletes it — equivalent to a mouse-driven delete action.
+Pressing Delete while an event is focused in the Day or Week grid deletes it — equivalent to a mouse-driven delete action. Hover alone is not enough; the event must be focused.
 
 ### Steps
 
 1. Navigate to `/week`.
-2. Focus or hover an event in the grid.
+2. Focus an event in the grid (click it or press `U` then ArrowUp/ArrowDown).
 3. Press Delete.
-4. Navigate to `/day` and repeat with a focused or hovered event.
+4. Navigate to `/day` and repeat with a focused event.
 
 ### Expected Results
 
 - The event is removed from the grid in both views.
 - An undo toast appears.
+- Pressing Delete with no focused event does nothing (even if the mouse is hovering an event).
 
 ---
 
@@ -308,8 +317,10 @@ If time is limited, run these checks before shipping shortcut-related changes:
 4. Cmd+K opens the command palette; Escape closes it without action.
 5. `C` opens a timed event form and `A` an all-day event form, in both Day and Week view.
 6. `]` toggles the sidebar in both Week and Day view.
-7. Delete removes a focused/hovered event in Day and Week view and shows an undo toast.
+7. Delete removes a focused event in Day and Week view and shows an undo toast.
 8. Cmd+Z / Ctrl+Z undoes the last event action; Cmd+Shift+Z / Ctrl+Shift+Z redoes it.
 9. No shortcuts fire inside a focused text input except Cmd+K.
 10. Shift+ArrowLeft/Right move a focused event by one day in both Day and Week view.
 11. Arrow keys reposition an open draft in both Day and Week view.
+12. With a focused event and no draft open, ArrowUp/ArrowDown move focus to the previous/next event chronologically.
+13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.

@@ -40,17 +40,12 @@ export const createGridEventTargeting = <TType extends string>({
     getFirstVisibleGridEventTarget: (
       root: ParentNode = document,
     ): GridEventTarget<TType> | null => {
-      const candidates = root.querySelectorAll(targetSelector);
-
-      for (const candidate of candidates) {
-        const target = toTarget(candidate);
-        if (target && isVisibleEventElement(target.element)) {
-          return target;
-        }
-      }
-
-      return null;
+      const visible = listVisible(root);
+      return visible[0] ?? null;
     },
+    listVisibleGridEventTargets: (
+      root: ParentNode = document,
+    ): GridEventTarget<TType>[] => listVisible(root),
     getFocusedGridEventTarget: (): GridEventTarget<TType> | null =>
       toTarget(document.activeElement),
     getHoveredGridEventTarget: (): GridEventTarget<TType> | null =>
@@ -59,6 +54,20 @@ export const createGridEventTargeting = <TType extends string>({
       hoveredEventElement = element;
     },
   };
+
+  function listVisible(root: ParentNode): GridEventTarget<TType>[] {
+    const candidates = root.querySelectorAll(targetSelector);
+    const visible: GridEventTarget<TType>[] = [];
+
+    for (const candidate of candidates) {
+      const target = toTarget(candidate);
+      if (target && isVisibleEventElement(target.element)) {
+        visible.push(target);
+      }
+    }
+
+    return visible;
+  }
 };
 
 const isVisibleEventElement = (element: HTMLElement): boolean => {
