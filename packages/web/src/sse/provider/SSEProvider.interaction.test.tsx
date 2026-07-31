@@ -207,7 +207,7 @@ describe("useGcalSSE", () => {
     await waitFor(() => {
       expect(getGoogleSyncIndicatorOverride()).toBe(null);
       expect(mockShowErrorToast).toHaveBeenCalledWith(
-        undefined,
+        "We couldn't keep your Google Calendar connection healthy. Try Refresh, or reconnect if this lasts.",
         expect.anything(),
       );
     });

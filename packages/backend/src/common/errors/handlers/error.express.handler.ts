@@ -72,15 +72,14 @@ export const handleExpressError = async (
           ? e.status
           : undefined;
 
+  const correlationHeader = req.headers?.["x-correlation-id"];
   errorHandler.log(e, {
     method: req.method,
     path: req.originalUrl ?? req.url,
     status: statusHint,
     userId: sessionUserId ?? null,
     correlationId:
-      typeof req.headers["x-correlation-id"] === "string"
-        ? req.headers["x-correlation-id"]
-        : undefined,
+      typeof correlationHeader === "string" ? correlationHeader : undefined,
   });
   // Typed mutation/cutover errors must keep the EventMutationError envelope
   // (`code`/`message`/`retryable`), not the generic `{ result, message }` shape.
