@@ -1,3 +1,4 @@
+import { toColorLabelMap } from "@sync/domain/color-label-map";
 import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
 import { type ProviderEventReader } from "@sync/providers/provider-event-reader.port";
@@ -62,6 +63,18 @@ export async function repairCalendar(
     calendarId: calendar._id,
   });
 
+  // Stamp BEFORE the token fetch can throw — same reasoning as
+  // calendar-pull.service.ts and calendar-import.service.ts: the reconcile
+  // sweep selects least-recently-attempted resources, so a doomed
+  // connection's repair must rotate to the back after failing, not tie at
+  // null forever and keep winning sweep slots.
+  await deps.resources.markAttempt(
+    resource.tenantId,
+    resource.principalId,
+    resource._id,
+    now(),
+  );
+
   // Reuse an in-flight repair generation (a previous attempt bumped it but never
   // activated) instead of starting yet another; otherwise begin a fresh one.
   const newGeneration =
@@ -76,12 +89,6 @@ export async function repairCalendar(
   const accessToken = await deps.custody.getValidAccessToken(
     calendar.connectionId,
   );
-  await deps.resources.markAttempt(
-    resource.tenantId,
-    resource.principalId,
-    resource._id,
-    now(),
-  );
 
   // Rebuild the whole calendar into the new generation. A full unwindowed pass
   // (no cursor, no window) so the new generation is the provider's authoritative
@@ -95,6 +102,7 @@ export async function repairCalendar(
     newGeneration,
     now,
   );
+  const colorLabels = toColorLabelMap(calendar.eventLabels);
   let pageToken: string | null = null;
   let cursor: string | null = null;
   do {
@@ -102,6 +110,7 @@ export async function repairCalendar(
       accessToken,
       calendarId: calendar.providerCalendarId,
       pageToken,
+      colorLabels,
     });
     await applier.applyPage(page.events);
     pageToken = page.nextPageToken;

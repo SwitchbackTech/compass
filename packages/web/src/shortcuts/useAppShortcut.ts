@@ -1,10 +1,7 @@
 import {
   type ConflictBehavior,
-  type HotkeySequence,
   type RegisterableHotkey,
-  type UseHotkeySequenceOptions,
   useHotkey,
-  useHotkeySequence,
 } from "@tanstack/react-hotkeys";
 
 export interface UseAppShortcutOptions {
@@ -62,20 +59,3 @@ export const useAppShortcutUp = (
   handler: (event: KeyboardEvent) => void,
   options?: Omit<UseAppShortcutOptions, "eventType">,
 ) => useAppShortcut(hotkey, handler, { ...options, eventType: "keyup" });
-
-export function useAppShortcutSequence(
-  sequence: HotkeySequence,
-  handler: () => void,
-  options: UseHotkeySequenceOptions = {},
-) {
-  useHotkeySequence(
-    sequence,
-    () => {
-      if (document.body.dataset.appLocked === "true") {
-        return;
-      }
-      handler();
-    },
-    options,
-  );
-}

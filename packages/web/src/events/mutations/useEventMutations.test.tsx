@@ -97,9 +97,6 @@ const setup = () => {
   const calls: Array<{ method: string; value: unknown }> = [];
   const repository: EventRepository = {
     list: async () => [],
-    getById: async () => {
-      throw new Error("not implemented in test fake");
-    },
     create: async (input: CreateEventInput) => {
       calls.push({ method: "create", value: input });
       await pending.wait();
@@ -1107,7 +1104,7 @@ describe("undo history recording", () => {
     context.pending.resolve();
   });
 
-  test("skips recurring edits even at this-event scope", () => {
+  test("records a recurring occurrence edit at this-event scope (undoable via un-cancel replay)", () => {
     const context = setup();
     const seriesId = event().id;
     const instance = occurrence(seriesId);
@@ -1123,11 +1120,36 @@ describe("undo history recording", () => {
         }),
       ),
     );
+    const { past } = useUndoHistoryStore.getState();
+    expect(past).toHaveLength(1);
+    expect(past[0]).toMatchObject({
+      kind: "edit",
+      id: instance.id,
+      after: { content: { title: "Moved" } },
+    });
+    context.pending.resolve();
+  });
+
+  test("still skips a series-master edit (scope all/thisAndFollowing never reaches this-scope recording)", () => {
+    const context = setup();
+    const seriesBase = event({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(seriesBase));
+
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(seriesBase.id, {
+          content: { kind: "details", title: "Moved", description: "" },
+          scope: "all",
+        }),
+      ),
+    );
     expect(useUndoHistoryStore.getState().past).toHaveLength(0);
     context.pending.resolve();
   });
 
-  test("records create snapshots but skips recurring creates", () => {
+  test("records create snapshots for both a single event and a new series", () => {
     const context = setup();
     context.queryClient.setQueryData(calendarKey, normalized());
     const created = event({
@@ -1155,27 +1177,40 @@ describe("undo history recording", () => {
       event: { id: created.id, content: { title: "Created" } },
     });
 
+    // A brand-new series create is now also recordable — its undo is a
+    // scope-"all" delete of the whole series (see useUndoRedo.undoCreate).
+    const seriesCreated = event({
+      content: { kind: "details", title: "New series", description: "" },
+    });
     act(() =>
       context.hook.result.current.mutations.create({
-        id: created.id,
-        calendarId: created.calendarId,
-        content: created.content as {
+        id: seriesCreated.id,
+        calendarId: seriesCreated.calendarId,
+        content: seriesCreated.content as {
           kind: "details";
           title: string;
           description: string;
         },
-        schedule: created.schedule as never,
+        schedule: seriesCreated.schedule as never,
         recurrence: {
           kind: "series",
           rules: ["RRULE:FREQ=WEEKLY"],
         },
       }),
     );
-    expect(useUndoHistoryStore.getState().past).toHaveLength(1);
+    const after = useUndoHistoryStore.getState().past;
+    expect(after).toHaveLength(2);
+    expect(after[1]).toMatchObject({
+      kind: "create",
+      event: {
+        id: seriesCreated.id,
+        recurrence: { kind: "series" },
+      },
+    });
     context.pending.resolve();
   });
 
-  test("records delete snapshots but skips recurring deletes", () => {
+  test("records delete snapshots for both standalone and recurring-occurrence deletes", () => {
     const context = setup();
     const seriesId = event().id;
     const recurring = occurrence(seriesId);
@@ -1191,7 +1226,9 @@ describe("undo history recording", () => {
         scope: "this",
       }),
     );
-    expect(useUndoHistoryStore.getState().past).toHaveLength(0);
+    expect(useUndoHistoryStore.getState().past).toEqual([
+      { kind: "delete", event: recurring },
+    ]);
 
     act(() =>
       context.hook.result.current.mutations.delete({
@@ -1200,8 +1237,26 @@ describe("undo history recording", () => {
       }),
     );
     expect(useUndoHistoryStore.getState().past).toEqual([
+      { kind: "delete", event: recurring },
       { kind: "delete", event: standalone },
     ]);
+    context.pending.resolve();
+  });
+
+  test("still skips deleting a series master (scope all/thisAndFollowing never reaches this-scope recording)", () => {
+    const context = setup();
+    const seriesBase = event({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(seriesBase));
+
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: seriesBase.id,
+        scope: "all",
+      }),
+    );
+    expect(useUndoHistoryStore.getState().past).toHaveLength(0);
     context.pending.resolve();
   });
 

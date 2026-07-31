@@ -138,7 +138,9 @@ describe("importCalendarEvents", () => {
     calendars = new ProviderCalendarRepository(storage.db());
   });
 
-  const seedCalendar = (): Promise<ProviderCalendarRecord> =>
+  const seedCalendar = (
+    eventLabels: ProviderCalendarRecord["eventLabels"] = [],
+  ): Promise<ProviderCalendarRecord> =>
     calendars.upsertByProviderCalendar({
       tenantId: objectId() as ProviderCalendarRecord["tenantId"],
       principalId: objectId() as ProviderCalendarRecord["principalId"],
@@ -146,6 +148,7 @@ describe("importCalendarEvents", () => {
       providerCalendarId: "primary@google.com",
       displayName: "Google",
       color: null,
+      eventLabels,
       active: true,
       primary: true,
       accessRole: "owner",
@@ -207,6 +210,20 @@ describe("importCalendarEvents", () => {
 
     expect(reader.calls[0].window).not.toBeNull();
     expect(reader.calls.at(-1)?.window).toBeNull();
+  });
+
+  it("passes the calendar's event-color labels to every reader call", async () => {
+    const calendar = await seedCalendar([{ id: "label-1", hex: "#009688" }]);
+    const reader = new FakeReader({
+      window: [page([single("w")])],
+      full: [page([single("a")], { nextSyncToken: "cursor-1" })],
+    });
+
+    await importCalendarEvents(deps(reader), calendar, now);
+
+    for (const call of reader.calls) {
+      expect(call.colorLabels).toEqual(new Map([["label-1", "#009688"]]));
+    }
   });
 
   it("projects every occurrence of an imported series master", async () => {
@@ -461,6 +478,39 @@ describe("importCalendarEvents", () => {
       (await resourceId(resources, calendar)) as string,
     );
     expect(resource?.syncCursor).toBeNull();
+  });
+
+  it("stamps the attempt even when the token fetch throws", async () => {
+    // The reconcile sweep selects least-recently-attempted resources. A
+    // doomed connection's import must rotate to the back of the sweep after
+    // failing, not tie at lastAttemptAt: null forever and keep winning slots
+    // (2026-07-29: this exact ordering bug kept ~100 credential-less
+    // resources at the sweep's head even after the pull-path half of the fix
+    // had already shipped).
+    const calendar = await seedCalendar();
+    const reader = new FakeReader({ full: [emptyPage()] });
+    const deadCustody: AccessTokenSource = {
+      getValidAccessToken: async () => {
+        throw new Error("token fetch failed");
+      },
+      discardRevoked: async () => {},
+    };
+
+    await expect(
+      importCalendarEvents(
+        { events, occurrences, resources, reader, custody: deadCustody },
+        calendar,
+        now,
+      ),
+    ).rejects.toThrow("token fetch failed");
+
+    const resourceIdValue = (await resourceId(resources, calendar)) as string;
+    const resource = await resources.findById(
+      calendar.tenantId,
+      calendar.principalId,
+      resourceIdValue,
+    );
+    expect(resource?.lastAttemptAt).toEqual(now());
   });
 
   it("skips the windowed pass when resuming from a page checkpoint", async () => {

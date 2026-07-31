@@ -124,7 +124,9 @@ describe("pullCalendarChanges", () => {
     custody: tokenSource,
   });
 
-  const seedCalendar = (): Promise<ProviderCalendarRecord> =>
+  const seedCalendar = (
+    eventLabels: ProviderCalendarRecord["eventLabels"] = [],
+  ): Promise<ProviderCalendarRecord> =>
     calendars.upsertByProviderCalendar({
       tenantId: objectId() as ProviderCalendarRecord["tenantId"],
       principalId: objectId() as ProviderCalendarRecord["principalId"],
@@ -132,6 +134,7 @@ describe("pullCalendarChanges", () => {
       providerCalendarId: "primary@google.com",
       displayName: "Google",
       color: null,
+      eventLabels,
       active: true,
       primary: true,
       accessRole: "owner",
@@ -213,6 +216,15 @@ describe("pullCalendarChanges", () => {
 
     expect(result.status).toBe("notImported");
     expect(reader.calls).toHaveLength(0);
+    // Even an early-exit pull stamps the attempt: the reconcile sweep selects
+    // least-recently-attempted resources, so a resource whose pull cannot
+    // proceed must still rotate to the back of the line instead of being
+    // re-selected by every sweep (2026-07-29 head-of-line starvation).
+    const stamped = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne({ calendarId: calendar._id, resourceKind: "events" });
+    expect(stamped?.lastAttemptAt).toEqual(now());
   });
 
   it("reads from the stored cursor and advances to the new one", async () => {
@@ -229,6 +241,20 @@ describe("pullCalendarChanges", () => {
     if (result.status !== "applied") throw new Error("expected applied");
     expect(result.resource.syncCursor).toBe("cursor-1");
     expect(result.changed).toBe(1);
+  });
+
+  it("passes the calendar's event-color labels to the reader", async () => {
+    const calendar = await seedCalendar([{ id: "label-1", hex: "#009688" }]);
+    await seedImported(calendar, "cursor-0");
+    const reader = new FakeReader([
+      page([single("new-1")], { nextSyncToken: "cursor-1" }),
+    ]);
+
+    await pullCalendarChanges(deps(reader), calendar, now);
+
+    expect(reader.calls[0].colorLabels).toEqual(
+      new Map([["label-1", "#009688"]]),
+    );
   });
 
   it("writes into the active generation when a prior repair left one staged", async () => {

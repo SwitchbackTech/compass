@@ -1,3 +1,4 @@
+import { toColorLabelMap } from "@sync/domain/color-label-map";
 import { syncHorizon } from "@sync/domain/horizon";
 import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
@@ -81,14 +82,21 @@ export async function importCalendarEvents(
     return { resource, imported: 0, skipped: 0 };
   }
 
-  const accessToken = await deps.custody.getValidAccessToken(
-    calendar.connectionId,
-  );
+  // Stamp BEFORE the token fetch can throw. Same reasoning as
+  // calendar-pull.service.ts: the reconcile sweep selects least-recently-
+  // attempted resources, so a doomed connection's import must rotate to the
+  // back after failing, not tie at null forever and keep winning sweep slots
+  // (2026-07-29: this exact ordering bug in the import path — not yet caught
+  // by the pull-path fix — kept the same ~100 credential-less resources at
+  // the sweep's head after that fix had already shipped).
   await deps.resources.markAttempt(
     resource.tenantId,
     resource.principalId,
     resource._id,
     now(),
+  );
+  const accessToken = await deps.custody.getValidAccessToken(
+    calendar.connectionId,
   );
 
   const run = new ImportRun(deps, calendar, resource, now);
@@ -188,6 +196,7 @@ class ImportRun {
         calendarId: this.calendar.providerCalendarId,
         window: options.window ?? null,
         pageToken,
+        colorLabels: toColorLabelMap(this.calendar.eventLabels),
       });
       if (options.checkpointed) this.#readerSkipped += page.skipped;
       // A first import has no local events to delete, so standalone

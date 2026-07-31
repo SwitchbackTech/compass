@@ -32,11 +32,3 @@ export const findCompassUserBy = async (key: Ids_User, value: string) => {
 
   return user;
 };
-
-export const findCompassUsersBy = async (key: Ids_User, value: string) => {
-  const filter = getIdFilter(key, value);
-
-  const users = await mongoService.user.find(filter).toArray();
-
-  return users;
-};

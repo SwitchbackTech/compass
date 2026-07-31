@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { TIMED_VISIBLE_HOURS } from "@web/grid/grid.constants";
 import {
   type GridMeasurement,
@@ -161,30 +161,42 @@ export const useGridMeasurements = ({
     timedColumnsRef.current = node;
   }, []);
 
-  const colWidths = allDayColumnsMeasurements?.width
-    ? Array(safeVisibleDateCount).fill(
-        allDayColumnsMeasurements.width / safeVisibleDateCount,
-      )
-    : [];
+  const colWidths = useMemo(
+    () =>
+      allDayColumnsMeasurements?.width
+        ? Array(safeVisibleDateCount).fill(
+            allDayColumnsMeasurements.width / safeVisibleDateCount,
+          )
+        : [],
+    [allDayColumnsMeasurements?.width, safeVisibleDateCount],
+  );
 
-  const gridRefs: GridRefs = {
-    allDayRef,
-    allDayColumnsRef,
-    allDayRowRef,
-    mainGridElementRef,
-    mainGridRef,
-    timedColumnsElementRef,
-    timedColumnsRef,
-  };
+  const gridRefs: GridRefs = useMemo(
+    () => ({
+      allDayRef,
+      allDayColumnsRef,
+      allDayRowRef,
+      mainGridElementRef,
+      mainGridRef,
+      timedColumnsElementRef,
+      timedColumnsRef,
+    }),
+    // allDayColumnsRef/mainGridRef/timedColumnsRef are refs - stable identity,
+    // no need to depend on them.
+    [allDayRef, allDayRowRef, mainGridElementRef, timedColumnsElementRef],
+  );
 
-  const measurements: GridMeasurements = {
-    allDayRow: allDayMeasurements,
-    colWidths,
-    hourHeight: mainMeasurements?.height
-      ? mainMeasurements.height / TIMED_VISIBLE_HOURS
-      : 0,
-    mainGrid: mainMeasurements,
-  };
+  const measurements: GridMeasurements = useMemo(
+    () => ({
+      allDayRow: allDayMeasurements,
+      colWidths,
+      hourHeight: mainMeasurements?.height
+        ? mainMeasurements.height / TIMED_VISIBLE_HOURS
+        : 0,
+      mainGrid: mainMeasurements,
+    }),
+    [allDayMeasurements, colWidths, mainMeasurements],
+  );
 
   return {
     gridRefs,

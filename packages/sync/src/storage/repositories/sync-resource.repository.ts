@@ -55,6 +55,8 @@ export class SyncResourceRepository {
           activeGeneration: 0,
           lastAttemptAt: null,
           lastSuccessAt: null,
+          lastReadFailureAt: null,
+          lastReadFailureDetail: null,
           subscriptionId: null,
           subscriptionResourceId: null,
           subscriptionToken: null,
@@ -95,7 +97,10 @@ export class SyncResourceRepository {
   }
 
   // Advance the incremental cursor after a batch fully commits, clearing the
-  // mid-batch checkpoint and recording success.
+  // mid-batch checkpoint and recording success. A successful pass also clears
+  // any durable read-failure marker: the provider is answering again, so the
+  // connection must stop reporting delayed/providerErrors without an operator
+  // having to clear anything by hand.
   async advanceCursor(
     tenantId: TenantId,
     principalId: PrincipalId,
@@ -110,10 +115,38 @@ export class SyncResourceRepository {
           syncCursor,
           pageCursor: null,
           lastSuccessAt: succeededAt,
+          lastReadFailureAt: null,
+          lastReadFailureDetail: null,
           updatedAt: new Date(),
         },
       },
     );
+  }
+
+  // Record that the provider DURABLY rejected reads for this resource (a 4xx
+  // retrying cannot fix). The job that hit it is settled and removed rather than
+  // left to burn its retry ladder, so this marker is the only evidence left —
+  // connection health reads it, and a later successful pass clears it. Keeps the
+  // first failure's timestamp on repeat failures so health can show how long the
+  // calendar has been dead, but always refreshes the detail.
+  async markReadFailure(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    at: Date,
+    detail: string,
+  ): Promise<void> {
+    await this.collection.updateOne({ _id: id, tenantId, principalId }, [
+      {
+        $set: {
+          // $ifNull keeps the FIRST failure's timestamp across repeats (a row
+          // written before this field existed reads as null and takes `at`).
+          lastReadFailureAt: { $ifNull: ["$lastReadFailureAt", at] },
+          lastReadFailureDetail: detail,
+          updatedAt: new Date(),
+        },
+      },
+    ]);
   }
 
   async updateSubscription(
@@ -287,22 +320,52 @@ export class SyncResourceRepository {
 
   // Events resources whose last successful sync is older than `before` (or which
   // never succeeded), oldest first, bounded. This is the reconcile sweep's input
-  // — a missed-webhook fallback — so it is a GLOBAL scan across owners, not
-  // owner-scoped: each returned resource carries its own (tenantId, principalId)
-  // for the job the caller enqueues. A never-synced resource (lastSuccessAt
-  // null) sorts first so bootstrapping a new calendar is not starved by the
-  // stale ones. Uses the last_success index.
+  // — a missed-webhook fallback for connections that CAN still authenticate — so
+  // it is a GLOBAL scan across owners, not owner-scoped: each returned resource
+  // carries its own (tenantId, principalId) for the job the caller enqueues. A
+  // never-synced resource (lastSuccessAt null) sorts first so bootstrapping a
+  // new calendar is not starved by the stale ones. Uses the last_success index.
   async listStaleEvents(
     before: Date,
     limit: number,
   ): Promise<SyncResourceRecord[]> {
     const records = await this.collection
-      .find({
-        resourceKind: "events",
-        $or: [{ lastSuccessAt: { $lt: before } }, { lastSuccessAt: null }],
-      })
-      .sort({ lastSuccessAt: 1 })
-      .limit(limit)
+      .aggregate<SyncResourceRecord>([
+        {
+          $match: {
+            resourceKind: "events",
+            $or: [{ lastSuccessAt: { $lt: before } }, { lastSuccessAt: null }],
+          },
+        },
+        // A resource whose connection has no stored credential can never
+        // succeed here no matter how many sweeps retry it — reconnect is what
+        // resumes it (registerConnection's own calendarListSync enqueue), not
+        // reconcile. Excluding it at the query level, rather than relying on
+        // the lastAttemptAt rotation below, matters because the rotation only
+        // helps AFTER a resource's first attempt: the whole never-attempted
+        // population (dead-credential resources alongside genuinely healthy
+        // new ones) ties at lastAttemptAt: null, and Mongo's tie-break across
+        // that tie is not random — it reproducibly favored the dead-credential
+        // cohort (2026-07-29: an isolated post-rotation-fix sweep batch still
+        // selected 100 resources with only 1 holding a credential).
+        {
+          $lookup: {
+            from: SYNC_COLLECTIONS.credentials,
+            localField: "connectionId",
+            foreignField: "_id",
+            as: "_credential",
+          },
+        },
+        { $match: { "_credential.0": { $exists: true } } },
+        { $project: { _credential: 0 } },
+        // Round-robin by ATTEMPT, not success: never-attempted first (null
+        // sorts lowest), then least-recently-attempted, so a resource that
+        // fails without succeeding still rotates to the back after each try
+        // rather than re-winning every sweep. The pull stamps lastAttemptAt
+        // before it can fail, so this holds even on failure.
+        { $sort: { lastAttemptAt: 1, lastSuccessAt: 1 } },
+        { $limit: limit },
+      ])
       .toArray();
     return records.map((r) => SyncResourceRecordSchema.parse(r));
   }

@@ -44,9 +44,6 @@ const CompassConfigSchema = z
       .object({
         clientId: optionalString,
         clientSecret: optionalString,
-        channelExpirationMin: z.union([z.string(), z.number()]).optional(),
-        webhookUrl: optionalString,
-        notificationToken: optionalString,
       })
       .nullish(),
     email: z
@@ -63,32 +60,25 @@ const CompassConfigSchema = z
         host: optionalString,
       })
       .nullish(),
-    // Compass Sync service configuration. Optional so existing deployments
-    // (and the legacy backend) parse unchanged until Sync is provisioned.
-    // Sync owns its OWN isolated Mongo database (mongoUri) and never reads
-    // the backend's mongo.uri, per the sync-service ownership boundary.
+    // Compass Sync service configuration. Every deployment runs Sync (self-host
+    // included) and delegates provider-connection and event routes to it — there
+    // is no more legacy-vs-sync choice to make. The block itself stays optional
+    // at this layer (not required-and-non-nullish) because this same schema
+    // parses Sync's own compass.yaml section for non-backend consumers
+    // (packages/scripts commands); the backend enforces serviceUrl/
+    // internalAuthToken as hard-required itself and exits at startup without
+    // them. Sync owns its OWN isolated Mongo database (mongoUri) and never
+    // reads the backend's mongo.uri, per the sync-service ownership boundary.
     sync: z
       .object({
         port: z.union([z.string(), z.number()]).optional(),
         mongoUri: z.string(),
         internalAuthToken: z.string(),
         // The base URL the backend uses to reach the Sync service (e.g.
-        // http://localhost:3010 in dev, an internal service URL in prod). Optional
-        // so a deployment that does not delegate to Sync omits it.
+        // http://localhost:3010 in dev, an internal service URL in prod).
+        // Required in practice (the backend exits at startup without it);
+        // kept optional in the schema for the non-backend consumers above.
         serviceUrl: z.string().optional(),
-        // Which implementation serves the browser-facing provider-connection
-        // routes. "legacy" (default) keeps today's in-backend flow; "sync"
-        // delegates to the standalone Sync service. A single global switch, so
-        // every connection is owned end-to-end by one implementation. "sync"
-        // requires serviceUrl (validated backend-side).
-        connectionRouting: z.enum(["legacy", "sync"]).optional(),
-        // Which implementation serves the browser-facing calendar/event reads
-        // and durable write commands. Independent of connectionRouting so the
-        // riskier event path can be rolled out (and rolled back) on its own
-        // schedule. "legacy" (default) keeps today's in-backend event store;
-        // "sync" delegates to the standalone Sync service and requires
-        // serviceUrl (validated backend-side).
-        eventRouting: z.enum(["legacy", "sync"]).optional(),
         // Whether cloud event writes and provider-connection changes are
         // accepted (`enabled`) or rejected with a typed MAINTENANCE response
         // (`maintenance`). Independent of routing/execution so cutover can

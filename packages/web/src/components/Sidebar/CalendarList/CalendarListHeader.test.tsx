@@ -219,7 +219,6 @@ describe("CalendarListHeader", () => {
 
   it.each([
     "IMPORTING",
-    "repairing",
     "checking",
   ] as const)("shows the wave shimmer and a generic syncing status for %s, with no tooltip", async (state) => {
     const user = userEvent.setup();

@@ -8,7 +8,10 @@ import {
 } from "@core/types/sync/command.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
-import { submitCloudCommand } from "@sync/domain/cloud-command.service";
+import {
+  ProviderWriteUnavailableError,
+  submitCloudCommand,
+} from "@sync/domain/cloud-command.service";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
 import {
@@ -18,14 +21,8 @@ import {
   respondInternalError,
 } from "@sync/server/internal-http";
 import { type CommandRecord } from "@sync/storage/contracts/command.contracts";
-import { CommandRepository } from "@sync/storage/repositories/command.repository";
-import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
-import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
-import { EventRepository } from "@sync/storage/repositories/event.repository";
-import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
-import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
-import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { syncRepositories } from "@sync/storage/sync-repositories";
 
 export const COMMANDS_PATH = "/internal/commands";
 
@@ -73,6 +70,7 @@ export function registerCommandRoutes(
       const request = parsed.data;
 
       try {
+        const repos = syncRepositories(deps.mongo);
         // Build the provider write capability only when both adapters exist;
         // custody is per-request (it holds the request's db-backed credential
         // repo), the writer is shared.
@@ -81,13 +79,13 @@ export function registerCommandRoutes(
             ? {
                 writer: deps.writer,
                 custody: new CredentialCustody(
-                  new CredentialRepository(deps.mongo.db),
+                  repos.credentials,
                   deps.authAdapter,
                 ),
               }
             : undefined;
 
-        const events = new EventRepository(deps.mongo.db);
+        const events = repos.events;
         // Snapshot calendarId before apply: a confirmed delete removes the
         // event row, and the change-feed still needs an eventsChanged notice
         // so the SPA (and other tabs) drop it without a manual reload.
@@ -99,14 +97,11 @@ export function registerCommandRoutes(
 
         const { command, changed } = await submitCloudCommand(
           {
-            commands: new CommandRepository(deps.mongo.db),
+            commands: repos.commands,
             events,
-            calendars: new ProviderCalendarRepository(deps.mongo.db),
-            occurrences: new EventOccurrenceRepository(
-              deps.mongo.db,
-              deps.mongo.client,
-            ),
-            markers: new DeletionMarkerRepository(deps.mongo.db),
+            calendars: repos.calendars,
+            occurrences: repos.eventOccurrences,
+            markers: repos.deletionMarkers,
             execution: deps.execution,
             provider,
           },
@@ -131,7 +126,7 @@ export function registerCommandRoutes(
             command.eventId,
           );
           const calendarId = after?.calendarId ?? before?.calendarId;
-          const invalidations = new InvalidationRepository(deps.mongo.db);
+          const invalidations = repos.invalidations;
           const emittedAt = deps.now ? new Date(deps.now()) : new Date();
           const notices = [
             {
@@ -160,7 +155,16 @@ export function registerCommandRoutes(
           command: toSyncCommand(command),
         };
         res.status(Status.OK).json(response);
-      } catch {
+      } catch (error) {
+        // Provider writes being unavailable is a retryable service state, not a
+        // bug: answer 503 so the caller retries instead of believing a write
+        // landed that nothing will ever apply.
+        if (error instanceof ProviderWriteUnavailableError) {
+          res
+            .status(Status.SERVICE_UNAVAILABLE)
+            .json({ error: "provider_write_unavailable" });
+          return;
+        }
         respondInternalError(res);
       }
     },

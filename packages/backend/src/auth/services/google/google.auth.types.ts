@@ -1,12 +1,10 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
 
-export type AuthMode = "SIGNUP" | "SIGNIN_INCREMENTAL" | "RECONNECT_REPAIR";
+export type AuthMode = "SIGNUP" | "SIGNIN";
 
 export type AuthDecision = {
   authMode: AuthMode;
   compassUserId: string | null;
-  hasStoredRefreshToken: boolean;
-  hasHealthySync: boolean;
   createdNewRecipeUser: boolean;
 };
 

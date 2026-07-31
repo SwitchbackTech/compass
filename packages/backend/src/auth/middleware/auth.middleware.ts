@@ -1,6 +1,6 @@
 import { type NextFunction, type Request, type Response } from "express";
 import { Status } from "@core/errors/status.codes";
-import { CONFIG, IS_DEV } from "@backend/common/constants/config.constants";
+import { IS_DEV } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 
@@ -11,23 +11,6 @@ class AuthMiddleware {
         .status(Status.FORBIDDEN)
         .json({ error: error(AuthError.DevOnly, "Request Failed") });
     }
-    next();
-  };
-
-  verifyIsFromCompass = (req: Request, res: Response, next: NextFunction) => {
-    const tokenIsInvalid =
-      (req.headers["x-comp-token"] as string) !== CONFIG.TOKEN_COMPASS_SYNC;
-
-    if (tokenIsInvalid) {
-      res.status(Status.FORBIDDEN).send({
-        error: error(
-          AuthError.InadequatePermissions,
-          "Compass Verification Failed",
-        ),
-      });
-      return;
-    }
-
     next();
   };
 }

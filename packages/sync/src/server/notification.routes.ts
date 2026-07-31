@@ -1,10 +1,12 @@
 import { type Express } from "express";
 import { rateLimit } from "express-rate-limit";
 import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { verifyNotification } from "@sync/notifications/notification-verification";
 import { GoogleNotificationAdapter } from "@sync/providers/google/google-notifications.adapter";
 import { type NotificationSubscription } from "@sync/providers/provider-notifications.port";
+import { redactedCause } from "@sync/safety/redact-error";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
@@ -25,6 +27,8 @@ const notificationRateLimit = rateLimit({
 
 // Header parsing only — no network, no auth — so one shared instance is fine.
 const googleNotifications = new GoogleNotificationAdapter();
+
+const logger = Logger("sync:notification.routes");
 
 export interface NotificationApiDeps {
   mongo: SyncMongoService;
@@ -85,8 +89,12 @@ export function registerNotificationRoutes(
         });
       }
       res.status(Status.OK).end();
-    } catch {
+    } catch (error) {
       // A storage failure is the one case worth a retry, so signal it.
+      logger.error(
+        `Failed to process notification for channel ${notification.channelId}`,
+        redactedCause(error),
+      );
       res.status(Status.INTERNAL_SERVER).end();
     }
   });

@@ -1,7 +1,7 @@
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
-  isTimedEventMultiDay,
+  shouldRenderTimedInAllDayRow,
   timedMultiDayToAllDayDates,
 } from "@web/common/utils/event/event-nudge.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
@@ -17,7 +17,7 @@ export const isDraftRenderedInAllDayRow = (draft: GridEventDraft): boolean => {
   return (
     schedule.kind === "allDay" ||
     (schedule.kind === "timed" &&
-      isTimedEventMultiDay(dayjs(schedule.start), dayjs(schedule.end)))
+      shouldRenderTimedInAllDayRow(dayjs(schedule.start), dayjs(schedule.end)))
   );
 };
 

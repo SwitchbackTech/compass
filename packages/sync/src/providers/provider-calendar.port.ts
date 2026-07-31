@@ -3,6 +3,7 @@ import {
   type CalendarCapabilities,
 } from "@core/types/sync/connection.contracts";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
+import { ProviderError } from "@sync/providers/provider-error";
 
 // One calendar as the provider currently reports it, normalized to
 // provider-neutral facts. These map directly onto a persisted provider-calendar
@@ -13,6 +14,13 @@ export interface DiscoveredCalendar {
   readonly providerCalendarId: string;
   readonly displayName: string;
   readonly color: string | null;
+  // Custom event-color labels the calendar defines (id -> hex), for providers
+  // that support per-event custom colors beyond a fixed palette (e.g. Google's
+  // post-June-2026 event labels). Empty for a provider or calendar with none.
+  readonly eventLabels: readonly {
+    readonly id: string;
+    readonly hex: string;
+  }[];
   // The provider designates this as the account's default calendar.
   readonly primary: boolean;
   // The calendar is present and visible in the account's list. A deleted or
@@ -53,13 +61,4 @@ export type ProviderCalendarErrorReason =
   | "discoveryFailed" // the provider rejected or failed the calendar-list read
   | "cursorExpired"; // the incremental cursor is too old; a full re-list is required
 
-export class ProviderCalendarError extends Error {
-  constructor(
-    readonly reason: ProviderCalendarErrorReason,
-    message: string,
-    options?: { cause?: unknown },
-  ) {
-    super(message, options);
-    this.name = "ProviderCalendarError";
-  }
-}
+export class ProviderCalendarError extends ProviderError<ProviderCalendarErrorReason> {}

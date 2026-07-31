@@ -10,9 +10,7 @@ import {
 } from "mongodb";
 import { NodeEnv } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
-import { type Schema_Sync } from "@core/types/sync.types";
 import { type Schema_User } from "@core/types/user.types";
-import { type Schema_Watch } from "@core/types/watch.types";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { Collections } from "@backend/common/constants/collections";
 import { CONFIG } from "@backend/common/constants/config.constants";
@@ -25,9 +23,7 @@ interface InternalClient {
   client: MongoClient;
   calendar: Collection<CalendarRecord>;
   event: Collection<EventRecord>;
-  sync: Collection<Schema_Sync>;
   user: Collection<Schema_User>;
-  watch: Collection<Schema_Watch>;
 }
 
 class MongoService {
@@ -56,30 +52,12 @@ class MongoService {
   }
 
   /**
-   * sync
-   *
-   * mongo collection
-   */
-  get sync(): InternalClient["sync"] {
-    return this.#accessInternalCollectionProps("sync");
-  }
-
-  /**
    * user
    *
    * mongo collection
    */
   get user(): InternalClient["user"] {
     return this.#accessInternalCollectionProps("user");
-  }
-
-  /**
-   * watch
-   *
-   * mongo collection
-   */
-  get watch(): InternalClient["watch"] {
-    return this.#accessInternalCollectionProps("watch");
   }
 
   private onConnect(client: MongoClient, dbName?: string | null) {
@@ -110,9 +88,7 @@ class MongoService {
       client,
       calendar: db.collection<CalendarRecord>(Collections.CALENDAR),
       event: db.collection<EventRecord>(Collections.EVENT),
-      sync: db.collection<Schema_Sync>(Collections.SYNC),
       user: db.collection<Schema_User>(Collections.USER),
-      watch: db.collection<Schema_Watch>(Collections.WATCH),
     };
   }
 

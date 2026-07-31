@@ -32,7 +32,7 @@ interface CustomRenderOptions extends RenderOptions {
   queryClient?: QueryClient;
   router?: AnyRouter;
   wrapper?: ComponentType<PropsWithChildren>;
-  /** Seed the event query cache directly (replaces the Redux→query bridge). */
+  /** Seed the event query cache directly. */
   events?: Event[];
 }
 

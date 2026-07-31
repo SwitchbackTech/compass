@@ -1,6 +1,6 @@
 import { type calendar_v3 } from "@googleapis/calendar";
 import { EventScheduleSchema } from "@core/types/event.contracts";
-import { withColor } from "@core/types/event-color.contracts";
+import { withColor, withColorHex } from "@core/types/event-color.contracts";
 import { type gSchema$Event } from "@core/types/gcal";
 import {
   type Attendee,
@@ -9,6 +9,7 @@ import {
   type Organizer,
   SyncEventContentSchema,
 } from "@core/types/sync/event.contracts";
+import { TimezoneSchema } from "@core/types/type.utils";
 import dayjs from "@core/util/date/dayjs";
 import { googleColorIdToSlot } from "@sync/providers/google/google-color.map";
 import {
@@ -19,11 +20,22 @@ import {
 
 const RFC3339_OFFSET = dayjs.DateFormat.RFC3339_OFFSET;
 
+const NO_COLOR_LABELS: ReadonlyMap<string, string> = new Map();
+
 // Normalize one Google event read into a provider-neutral read. A cancelled
 // event becomes a cancellation (providers strip its content and schedule); an
 // active event becomes a full read. Throws ProviderEventError only when the
 // read is structurally unusable, never for merely sparse events.
-export function normalizeGoogleEvent(item: gSchema$Event): ProviderEventRead {
+//
+// `colorLabels` resolves the owning calendar's custom event-label ids (Google's
+// post-June-2026 color system, id -> hex) to a color when the event carries an
+// `eventLabelId` instead of a legacy `colorId`. Omit for calendars with no
+// custom labels; an id absent from the map (a label deleted after the event
+// was colored) simply leaves the event uncolored, same as no color at all.
+export function normalizeGoogleEvent(
+  item: gSchema$Event,
+  colorLabels: ReadonlyMap<string, string> = NO_COLOR_LABELS,
+): ProviderEventRead {
   const providerEventId = requireId(item);
   const providerVersion = requireVersion(item);
 
@@ -41,7 +53,7 @@ export function normalizeGoogleEvent(item: gSchema$Event): ProviderEventRead {
     providerEventId,
     providerVersion,
     providerUpdatedAt: item.updated ?? null,
-    content: mapContent(item),
+    content: mapContent(item, colorLabels),
     schedule: mapSchedule(item),
     // Absent transparency means "opaque" (busy) in Google's model.
     busy: item.transparency !== "transparent",
@@ -73,13 +85,21 @@ function cancellationSeries(
   };
 }
 
-function mapContent(item: gSchema$Event) {
+function mapContent(
+  item: gSchema$Event,
+  colorLabels: ReadonlyMap<string, string>,
+) {
   // safeParse, not parse: a provider can report a field the neutral contract
   // caps but the provider does not (e.g. an attendee displayName longer than
   // the contract's max). That makes one event unusable, so it must surface as a
   // ProviderEventError the reader can skip — never a raw ZodError that would
   // escape the per-event skip boundary and fail a whole import page.
   const color = googleColorIdToSlot(item.colorId);
+  // A label-colored event carries eventLabelId instead of colorId — the two
+  // are mutually exclusive on the wire, so resolving both is harmless.
+  const colorHex = item.eventLabelId
+    ? colorLabels.get(item.eventLabelId)
+    : undefined;
   const parsed = SyncEventContentSchema.safeParse({
     // Google omits summary/description for untitled/empty events; the neutral
     // contract models those as empty strings, not absence.
@@ -90,6 +110,7 @@ function mapContent(item: gSchema$Event) {
     attendees: mapAttendees(item.attendees),
     conference: mapConference(item),
     ...withColor(color),
+    ...withColorHex(colorHex),
   });
   if (!parsed.success) {
     throw new ProviderEventError(
@@ -174,13 +195,15 @@ function mapSchedule(item: gSchema$Event) {
         "Timed event carried no time zone",
       );
     }
-    // Re-anchor to the IANA zone so the emitted offset is correct for that
-    // date's DST rules rather than trusting the stored offset.
+    // Resolve to a valid IANA zone before re-anchoring: toOffsetIso's .tz()
+    // call needs one, and a fixed-offset string ("GMT-07:00") would otherwise
+    // reach it unvalidated.
+    const ianaTimeZone = toIanaTimeZone(timeZone);
     return parseSchedule({
       kind: "timed",
-      start: toOffsetIso(start),
-      end: toOffsetIso(end),
-      timeZone,
+      start: toOffsetIso({ ...start, timeZone: ianaTimeZone }),
+      end: toOffsetIso({ ...end, timeZone: ianaTimeZone }),
+      timeZone: ianaTimeZone,
     });
   }
 
@@ -188,6 +211,14 @@ function mapSchedule(item: gSchema$Event) {
     "unmappableSchedule",
     "Event start/end mixes date and dateTime",
   );
+}
+
+// Google mostly emits IANA zone names, but a small number of events carry a
+// fixed-offset string ("GMT-07:00") that TimeZoneSchema rejects. The instant
+// is unaffected either way, so falling back to UTC only loses the wall-clock
+// display context rather than dropping the event.
+function toIanaTimeZone(timeZone: string): string {
+  return TimezoneSchema.safeParse(timeZone).success ? timeZone : "UTC";
 }
 
 // safeParse the neutral schedule so a value the contract rejects surfaces as a

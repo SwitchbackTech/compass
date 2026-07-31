@@ -168,8 +168,9 @@ compass.example.com {  # <- this is the only line you need to change
   reverse_proxy 127.0.0.1:3000
  }
 
- # Sync public surface (OAuth callback + Google push). Only needed when the
- # compose `sync` profile is enabled; safe to omit otherwise.
+ # Sync public surface (OAuth callback + Google push). The `sync` container
+ # runs by default, so this block is required — omitting it breaks Google
+ # Calendar connect.
  handle /sync/* {
   reverse_proxy 127.0.0.1:3010
  }
@@ -254,7 +255,11 @@ backend:
   apiUrl: https://compass.example.com/api
   originsAllowed:
     - https://compass.example.com
+sync:
+  callbackBaseUrl: https://compass.example.com
 ```
+
+`sync.callbackBaseUrl` is what makes Google Calendar connect and push notifications work — it defaults to `http://localhost:3010` (installer default, fine for local-only setups), which Google can never reach. Skip this if you don't plan to connect Google Calendar.
 
 ### Apply config changes
 

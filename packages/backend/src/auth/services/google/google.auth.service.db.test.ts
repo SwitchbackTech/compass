@@ -7,11 +7,8 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { getTestLoggerInfoCalls } from "@backend/__tests__/helpers/mock.setup";
-import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oauth.client";
 import * as googleAuthUtil from "@backend/auth/services/google/util/google.auth.util";
-import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import mongoService from "@backend/common/services/mongo.service";
-import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
@@ -75,9 +72,6 @@ describe("googleAuthService", () => {
       spyOn(googleAuthService, "repairGoogleConnection").mockResolvedValue({
         cUserId: "repair-id",
       });
-      spyOn(googleAuthService, "googleSignin").mockResolvedValue({
-        cUserId: "signin-id",
-      });
     });
 
     afterEach(() => {
@@ -86,7 +80,6 @@ describe("googleAuthService", () => {
       // describe block below and cause unrelated assertions to fail.
       (googleAuthService.googleSignup as Mock).mockRestore();
       (googleAuthService.repairGoogleConnection as Mock).mockRestore();
-      (googleAuthService.googleSignin as Mock).mockRestore();
     });
 
     it("routes SIGNUP to googleSignup", async () => {
@@ -105,8 +98,6 @@ describe("googleAuthService", () => {
       const decision: AuthDecision = {
         authMode: "SIGNUP",
         compassUserId: null,
-        hasStoredRefreshToken: false,
-        hasHealthySync: false,
         createdNewRecipeUser: true,
       };
 
@@ -137,8 +128,6 @@ describe("googleAuthService", () => {
       const decision: AuthDecision = {
         authMode: "SIGNUP",
         compassUserId: null,
-        hasStoredRefreshToken: false,
-        hasHealthySync: false,
         createdNewRecipeUser: true,
       };
 
@@ -149,7 +138,7 @@ describe("googleAuthService", () => {
       );
     });
 
-    it("routes RECONNECT_REPAIR to repairGoogleConnection", async () => {
+    it("routes SIGNIN to repairGoogleConnection", async () => {
       const providerUser = makeProviderUser();
       const recipeUserId = faker.database.mongodbObjectId();
 
@@ -163,10 +152,8 @@ describe("googleAuthService", () => {
       };
 
       const decision: AuthDecision = {
-        authMode: "RECONNECT_REPAIR",
+        authMode: "SIGNIN",
         compassUserId: faker.string.uuid(),
-        hasStoredRefreshToken: false,
-        hasHealthySync: true,
         createdNewRecipeUser: false,
       };
 
@@ -176,37 +163,6 @@ describe("googleAuthService", () => {
 
       expect(googleAuthService.repairGoogleConnection).toHaveBeenCalledWith(
         decision.compassUserId!,
-        providerUser,
-        oAuthTokens,
-      );
-    });
-
-    it("routes SIGNIN_INCREMENTAL to googleSignin", async () => {
-      const providerUser = makeProviderUser();
-      const recipeUserId = faker.database.mongodbObjectId();
-      const oAuthTokens = makeOAuthTokens();
-
-      const success: GoogleSignInSuccess = {
-        providerUser,
-        oAuthTokens,
-        createdNewRecipeUser: false,
-        recipeUserId,
-        loginMethodsLength: 1,
-      };
-
-      const decision: AuthDecision = {
-        authMode: "SIGNIN_INCREMENTAL",
-        compassUserId: faker.string.uuid(),
-        hasStoredRefreshToken: true,
-        hasHealthySync: true,
-        createdNewRecipeUser: false,
-      };
-
-      mockDetermineGoogleAuthMode().mockResolvedValue(decision);
-
-      await googleAuthService.handleGoogleAuth(success);
-
-      expect(googleAuthService.googleSignin).toHaveBeenCalledWith(
         providerUser,
         oAuthTokens,
       );
@@ -230,10 +186,8 @@ describe("googleAuthService", () => {
       };
 
       const decision: AuthDecision = {
-        authMode: "SIGNIN_INCREMENTAL",
+        authMode: "SIGNIN",
         compassUserId,
-        hasStoredRefreshToken: true,
-        hasHealthySync: true,
         createdNewRecipeUser: false,
       };
 
@@ -249,15 +203,13 @@ describe("googleAuthService", () => {
       expect(decisionCall![0]).toBe("google_auth_decision");
       expect(decisionCall![1]).toEqual(
         expect.objectContaining({
-          authMode: "SIGNIN_INCREMENTAL",
+          authMode: "SIGNIN",
           compassUserTraceId: expect.any(String),
           createdNewRecipeUser: false,
           googleUserTraceId: expect.any(String),
           hasCompassUserId: true,
           hasGoogleUserId: true,
-          hasHealthySync: true,
           hasProviderEmail: true,
-          hasStoredRefreshToken: true,
           loginMethodsLength: 2,
           providerEmailTraceId: expect.any(String),
         }),
@@ -293,10 +245,6 @@ describe("googleAuthService", () => {
         access_token: faker.internet.jwt(),
         refresh_token: faker.string.uuid(),
       };
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
 
       await userService.pruneGoogleData(compassUserId);
 
@@ -320,43 +268,6 @@ describe("googleAuthService", () => {
       );
       expect(metadata.sync?.importGCal).toBe("RESTART");
       expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
-      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
-
-      restartSpy.mockRestore();
-    });
-
-    it("returns after persisting reconnect state even if the background sync fails", async () => {
-      const user = await UserDriver.createUser();
-      const compassUserId = user._id.toString();
-      const gUser = UserDriver.generateGoogleUser({
-        sub: faker.string.uuid(),
-        picture: faker.image.url(),
-      });
-      const oAuthTokens: Pick<Credentials, "access_token" | "refresh_token"> = {
-        access_token: faker.internet.jwt(),
-        refresh_token: faker.string.uuid(),
-      };
-      const restartError = new Error("sync failed");
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockImplementation(() => Promise.reject(restartError));
-
-      await userService.pruneGoogleData(compassUserId);
-
-      await expect(
-        googleAuthService.repairGoogleConnection(
-          compassUserId,
-          gUser,
-          oAuthTokens,
-        ),
-      ).resolves.toEqual({ cUserId: compassUserId });
-
-      await Promise.resolve();
-
-      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
-
-      restartSpy.mockRestore();
     });
 
     it("repairs sync with the stored refresh token when Google sign-in does not return a new one", async () => {
@@ -368,16 +279,10 @@ describe("googleAuthService", () => {
         sub: user.google?.googleId,
         picture: faker.image.url(),
       });
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
 
       mockDetermineGoogleAuthMode().mockResolvedValue({
-        authMode: "RECONNECT_REPAIR",
+        authMode: "SIGNIN",
         compassUserId,
-        hasStoredRefreshToken: true,
-        hasHealthySync: false,
         createdNewRecipeUser: false,
       });
 
@@ -401,211 +306,10 @@ describe("googleAuthService", () => {
       expect(updatedUser?.google?.picture).toBe(providerUser.picture);
       expect(metadata.sync?.importGCal).toBe("RESTART");
       expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
-      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
-
-      restartSpy.mockRestore();
-    });
-  });
-
-  describe("googleSignin", () => {
-    it("preserves the stored refresh token when Google does not return a new one", async () => {
-      const user = await UserDriver.createUser();
-      const compassUserId = user._id.toString();
-      const storedRefreshToken = user.google?.gRefreshToken;
-      const providerUser = UserDriver.generateGoogleUser({
-        sub: user.google?.googleId,
-        picture: faker.image.url(),
-      });
-      const importSpy = spyOn(
-        googleCalendarSyncService,
-        "importLatestGoogleCalendarChanges",
-      ).mockResolvedValue(undefined);
-
-      await expect(
-        googleAuthService.googleSignin(providerUser, {
-          access_token: faker.internet.jwt(),
-        }),
-      ).resolves.toEqual({ cUserId: compassUserId });
-
-      const updatedUser = await mongoService.user.findOne({ _id: user._id });
-
-      expect(updatedUser?.google?.gRefreshToken).toBe(storedRefreshToken);
-      expect(updatedUser?.google?.picture).toBe(providerUser.picture);
-      expect(importSpy).toHaveBeenCalledWith(compassUserId, expect.any(Object));
-
-      importSpy.mockRestore();
-    });
-  });
-
-  describe("connectGoogleToCurrentUser", () => {
-    it("connects Google to an email/password user and restarts sync", async () => {
-      const user = await UserDriver.createUser({ withGoogle: false });
-      const normalizedEmail = user.email.toLowerCase();
-      await mongoService.user.updateOne(
-        { _id: user._id },
-        { $set: { email: normalizedEmail } },
-      );
-      const compassUserId = user._id.toString();
-      const gUser = UserDriver.generateGoogleUser({
-        email: normalizedEmail,
-        sub: faker.string.uuid(),
-        picture: faker.image.url(),
-      });
-      const refreshToken = faker.string.uuid();
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
-      const exchangeSpy = spyOn(
-        GoogleOAuthClient.prototype,
-        "exchangeAuthCode",
-      ).mockResolvedValue({
-        gUser,
-        tokens: {
-          access_token: faker.internet.jwt(),
-          refresh_token: refreshToken,
-        },
-      } as never);
-
-      const result = await googleAuthService.connectGoogleToCurrentUser(
-        compassUserId,
-        {
-          clientType: "web",
-          thirdPartyId: "google",
-          redirectURIInfo: {
-            redirectURIOnProviderDashboard: "http://localhost:9080",
-            redirectURIQueryParams: { code: "auth-code" },
-          },
-        },
-      );
-
-      const updatedUser = await mongoService.user.findOne({ _id: user._id });
-      const metadata =
-        await userMetadataService.fetchUserMetadata(compassUserId);
-
-      expect(result).toEqual({ cUserId: compassUserId });
-      expect(updatedUser?.google?.googleId).toBe(gUser.sub);
-      expect(updatedUser?.google?.gRefreshToken).toBe(refreshToken);
-      expect(metadata.sync?.importGCal).toBe("RESTART");
-      expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
-      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
-
-      exchangeSpy.mockRestore();
-      restartSpy.mockRestore();
-    });
-
-    it("rejects when the Google account belongs to another Compass user", async () => {
-      const connectedUser = await UserDriver.createUser();
-      const emailPasswordUser = await UserDriver.createUser({
-        withGoogle: false,
-      });
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
-      const exchangeSpy = spyOn(
-        GoogleOAuthClient.prototype,
-        "exchangeAuthCode",
-      ).mockResolvedValue({
-        gUser: UserDriver.generateGoogleUser({
-          sub: connectedUser.google?.googleId,
-        }),
-        tokens: {
-          access_token: faker.internet.jwt(),
-          refresh_token: faker.string.uuid(),
-        },
-      } as never);
-
-      await expect(
-        googleAuthService.connectGoogleToCurrentUser(
-          emailPasswordUser._id.toString(),
-          {
-            clientType: "web",
-            thirdPartyId: "google",
-            redirectURIInfo: {
-              redirectURIOnProviderDashboard: "http://localhost:9080",
-              redirectURIQueryParams: { code: "auth-code" },
-            },
-          },
-        ),
-      ).rejects.toMatchObject({
-        description: AuthError.GoogleAccountAlreadyConnected.description,
-      });
-
-      expect(restartSpy).not.toHaveBeenCalled();
-
-      exchangeSpy.mockRestore();
-      restartSpy.mockRestore();
-    });
-
-    it("rejects when the Google account email does not match the current Compass user", async () => {
-      const user = await UserDriver.createUser({ withGoogle: false });
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
-      const exchangeSpy = spyOn(
-        GoogleOAuthClient.prototype,
-        "exchangeAuthCode",
-      ).mockResolvedValue({
-        gUser: UserDriver.generateGoogleUser({
-          email: faker.internet.email(),
-          sub: faker.string.uuid(),
-        }),
-        tokens: {
-          access_token: faker.internet.jwt(),
-          refresh_token: faker.string.uuid(),
-        },
-      } as never);
-
-      await expect(
-        googleAuthService.connectGoogleToCurrentUser(user._id.toString(), {
-          clientType: "web",
-          thirdPartyId: "google",
-          redirectURIInfo: {
-            redirectURIOnProviderDashboard: "http://localhost:9080",
-            redirectURIQueryParams: { code: "auth-code" },
-          },
-        }),
-      ).rejects.toMatchObject({
-        code: "GOOGLE_CONNECT_EMAIL_MISMATCH",
-        description: AuthError.GoogleConnectEmailMismatch.description,
-      });
-
-      expect(restartSpy).not.toHaveBeenCalled();
-
-      exchangeSpy.mockRestore();
-      restartSpy.mockRestore();
     });
   });
 
   describe("googleSignup", () => {
-    it("starts calendar repair in the background so Compass-only events sync after import completes", async () => {
-      const recipeUserId = faker.database.mongodbObjectId();
-      const providerUser = {
-        sub: faker.string.uuid(),
-        email: faker.internet.email(),
-        name: faker.person.fullName(),
-        picture: faker.image.url(),
-      } as TokenPayload;
-      const refreshToken = faker.string.uuid();
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
-
-      const result = await googleAuthService.googleSignup(
-        providerUser,
-        refreshToken,
-        recipeUserId,
-      );
-
-      expect(result.cUserId).toBe(recipeUserId);
-      expect(restartSpy).toHaveBeenCalledWith(recipeUserId);
-
-      restartSpy.mockRestore();
-    });
-
     it("reuses an existing same-email Compass user instead of creating a duplicate", async () => {
       const existingUser = await UserDriver.createUser({ withGoogle: false });
       const normalizedEmail = existingUser.email.toLowerCase();
@@ -621,10 +325,6 @@ describe("googleAuthService", () => {
         picture: faker.image.url(),
       } as TokenPayload;
       const refreshToken = faker.string.uuid();
-      const restartSpy = spyOn(
-        googleCalendarSyncService,
-        "startGoogleCalendarSyncIfNeeded",
-      ).mockResolvedValue();
 
       const result = await googleAuthService.googleSignup(
         providerUser,
@@ -641,9 +341,6 @@ describe("googleAuthService", () => {
       expect(storedUsers[0]?._id).toEqual(existingUser._id);
       expect(storedUsers[0]?.google?.googleId).toBe(providerUser.sub);
       expect(storedUsers[0]?.google?.gRefreshToken).toBe(refreshToken);
-      expect(restartSpy).toHaveBeenCalledWith(existingUser._id.toString());
-
-      restartSpy.mockRestore();
     });
   });
 });

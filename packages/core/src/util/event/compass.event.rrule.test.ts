@@ -177,7 +177,7 @@ describe("CompassEventRRule: ", () => {
       expect(rruleString.includes("DTEND")).toEqual(false);
     });
 
-    it("should append 'Z' to UNTIL date if not present", () => {
+    it("should round-trip UNTIL with a 'Z' suffix", () => {
       const until = dayjs().startOf("day").toRRuleDTSTARTString();
       const rule = [`RRULE:FREQ=DAILY;COUNT=10;UNTIL=${until}`];
       const baseEvent = createMockBaseEvent({ recurrence: { rule } });
@@ -188,7 +188,6 @@ describe("CompassEventRRule: ", () => {
 
       expect(rruleOriginalString).toBeDefined();
       expect(rruleOriginalString).toContain("RRULE:");
-      expect(rruleOriginalString).not.toContain(`UNTIL=${until}`);
 
       expect(rruleString).toBeDefined();
       expect(rruleString).toContain("RRULE:");
@@ -439,6 +438,106 @@ describe("CompassEventRRule: ", () => {
         expect(startDate.isSame(cStartDate)).toBe(true);
         expect(endDate.isSame(cEndDate)).toBe(true);
       });
+    });
+  });
+
+  // The whole suite runs under TZ=Etc/UTC (packages/scripts/src/testing/
+  // test-parallel.ts), where the timezone-shift bug below is invisible - a
+  // Denver event's expansion frame and the host's happen to coincide. The
+  // `tzid` option exists so these tests can pin a non-UTC expansion frame
+  // independently of the host, without changing process.env.TZ.
+  describe("non-UTC expansion (America/Denver, tzid injection)", () => {
+    const denver = "America/Denver";
+    // A real Thursday; both real Thursday, MDT.
+    const thursday = "2026-07-23T19:00:00-06:00";
+    const endOfThursday = "2026-07-23T20:00:00-06:00";
+
+    it("expands BYDAY=SA onto Saturday, not the previous local day", () => {
+      const rule = ["RRULE:FREQ=WEEKLY;BYDAY=SA"];
+      const baseEvent = createMockBaseEvent({
+        startDate: thursday,
+        endDate: endOfThursday,
+        recurrence: { rule },
+      });
+      const rrule = new CompassEventRRule(
+        { ...baseEvent, _id: new ObjectId(baseEvent._id) },
+        { tzid: denver },
+      );
+
+      const labeled = rrule
+        .all((_, index) => index < 1)
+        .map((d) => dayjs(d).tz(denver).format("dddd HH:mm"));
+
+      expect(labeled).toContain("Saturday 19:00");
+      expect(labeled).not.toContain("Friday 19:00");
+    });
+
+    it("expands BYDAY=FR onto Friday instead of silently reusing the draft's own day", () => {
+      const rule = ["RRULE:FREQ=WEEKLY;BYDAY=FR"];
+      const baseEvent = createMockBaseEvent({
+        startDate: thursday,
+        endDate: endOfThursday,
+        recurrence: { rule },
+      });
+      const rrule = new CompassEventRRule(
+        { ...baseEvent, _id: new ObjectId(baseEvent._id) },
+        { tzid: denver },
+      );
+
+      const labeled = rrule
+        .all((_, index) => index < 1)
+        .map((d) => dayjs(d).tz(denver).format("dddd HH:mm"));
+
+      expect(labeled).toContain("Friday 19:00");
+    });
+
+    it("round-trips a rule with a real-UTC UNTIL byte-identically", () => {
+      const until = dayjs
+        .tz("2027-05-31 19:00", denver)
+        .utc()
+        .format("YYYYMMDD[T]HHmmss[Z]");
+      const rule = [`RRULE:FREQ=WEEKLY;BYDAY=SA;UNTIL=${until}`];
+      const baseEvent = createMockBaseEvent({
+        startDate: thursday,
+        endDate: endOfThursday,
+        recurrence: { rule },
+      });
+      const rrule = new CompassEventRRule(
+        { ...baseEvent, _id: new ObjectId(baseEvent._id) },
+        { tzid: denver },
+      );
+
+      expect(rrule.toRecurrence()).toEqual(rule);
+    });
+
+    it("keeps the wall-clock time across the DST fallback boundary", () => {
+      const rule = ["RRULE:FREQ=WEEKLY;BYDAY=TH;COUNT=20"];
+      const baseEvent = createMockBaseEvent({
+        startDate: thursday,
+        endDate: endOfThursday,
+        recurrence: { rule },
+      });
+      const rrule = new CompassEventRRule(
+        { ...baseEvent, _id: new ObjectId(baseEvent._id) },
+        { tzid: denver },
+      );
+
+      const dates = rrule.all();
+      const beforeFallback = dates.find(
+        (d) => dayjs(d).tz(denver).format("YYYY-MM-DD") === "2026-10-29",
+      );
+      const afterFallback = dates.find(
+        (d) => dayjs(d).tz(denver).format("YYYY-MM-DD") === "2026-11-05",
+      );
+
+      expect(beforeFallback).toBeDefined();
+      expect(afterFallback).toBeDefined();
+      expect(dayjs(beforeFallback).tz(denver).format("HH:mm Z")).toEqual(
+        "19:00 -06:00",
+      );
+      expect(dayjs(afterFallback).tz(denver).format("HH:mm Z")).toEqual(
+        "19:00 -07:00",
+      );
     });
   });
 });

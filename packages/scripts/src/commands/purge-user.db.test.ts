@@ -55,12 +55,6 @@ describe("purge-user (db)", () => {
     await mongoService.db
       .collection(mongoService.event.collectionName)
       .insertOne({ _id: new ObjectId(), calendarId, title: "Standup" });
-    await mongoService.db
-      .collection(mongoService.sync.collectionName)
-      .insertOne({ _id: new ObjectId(), user: userId.toString() });
-    await mongoService.db
-      .collection(mongoService.watch.collectionName)
-      .insertOne({ _id: new ObjectId(), user: userId.toString() });
     await syncStorage
       .db()
       .collection(SYNC_COLLECTIONS.jobs)

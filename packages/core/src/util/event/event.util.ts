@@ -1,21 +1,9 @@
 import { type RRule } from "rrule";
 import { type ParsedOptions } from "rrule/dist/esm/types";
-import {
-  type BaseEvent,
-  type CompassEvent,
-  type InstanceEvent,
-} from "@core/types/compass-event.contracts";
-import { type UserMetadata } from "@core/types/user.types";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 
 /** Event utilities for Compass events */
-
-export const categorizeEvents = (events: Array<CompassEvent>) => {
-  const baseEvents = events.filter(isBase) as BaseEvent[];
-  const instances = events.filter(isInstance) as InstanceEvent[];
-  const standaloneEvents = events.filter(isRegularEvent);
-  return { baseEvents, instances, standaloneEvents };
-};
 
 export const isAllDay = (event: Pick<CompassEvent, "startDate" | "endDate">) =>
   event !== undefined &&
@@ -53,10 +41,6 @@ export const isInstance = (
   );
 };
 
-export const isRegularEvent = (
-  event: Pick<CompassEvent, "recurrence">,
-): boolean => !isInstance(event) && !isBase(event);
-
 /**
  * True when an event is part of a recurring series — either an instance
  * (has a series `eventId`) or a base with recurrence rules.
@@ -65,32 +49,6 @@ export const isRecurringEvent = (
   event: Pick<CompassEvent, "recurrence">,
 ): boolean =>
   Boolean(event.recurrence?.eventId || event.recurrence?.rule?.length);
-
-export const shouldImportGCal = (metadata: UserMetadata): boolean => {
-  const sync = metadata.sync;
-
-  switch (sync?.importGCal) {
-    case "IMPORTING":
-    case "COMPLETED":
-      return false;
-    default:
-      return true;
-  }
-};
-
-export const shouldDoIncrementalGCalSync = (
-  metadata: UserMetadata,
-): boolean => {
-  const sync = metadata.sync;
-
-  switch (sync?.incrementalGCalSync) {
-    case "IMPORTING":
-    case "COMPLETED":
-      return false;
-    default:
-      return true;
-  }
-};
 
 export const getCompassEventDateFormat = (
   date: Exclude<CompassEvent["startDate"], undefined>,

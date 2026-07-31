@@ -62,7 +62,10 @@ export class EventRepository {
       {
         connectionId: input.connectionId,
         calendarId: input.calendarId,
-        providerEventId: input.providerEventId,
+        // $type is a semantic no-op but makes the provider_event_identity
+        // partial index provable to the planner — without it, COLLSCAN.
+        // See the PLANNER TRAP note in index-manifest.ts.
+        providerEventId: { $eq: input.providerEventId, $type: "string" },
       },
       {
         // input already omits _id/createdAt/updatedAt (see ProviderEventUpsert).
@@ -146,9 +149,41 @@ export class EventRepository {
       principalId,
       connectionId: identity.connectionId,
       calendarId: identity.calendarId,
-      providerEventId: identity.providerEventId,
+      // $type: see the PLANNER TRAP note in index-manifest.ts.
+      providerEventId: { $eq: identity.providerEventId, $type: "string" },
     });
     return record ? EventRecordSchema.parse(record) : null;
+  }
+
+  // Like findByProviderIdentity, but a document that fails EventRecordSchema
+  // (e.g. written then rejected mid-migrate) is deleted and treated as missing
+  // so a poison row cannot abort an entire preseed/import job.
+  async findByProviderIdentitySafe(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    identity: {
+      connectionId: NonNullable<EventRecord["connectionId"]>;
+      calendarId: EventRecord["calendarId"];
+      providerEventId: NonNullable<EventRecord["providerEventId"]>;
+    },
+    options?: { deleteCorrupt?: boolean },
+  ): Promise<{ record: EventRecord | null; corruptDeletedId: string | null }> {
+    const record = await this.collection.findOne({
+      tenantId,
+      principalId,
+      connectionId: identity.connectionId,
+      calendarId: identity.calendarId,
+      // $type: see the PLANNER TRAP note in index-manifest.ts.
+      providerEventId: { $eq: identity.providerEventId, $type: "string" },
+    });
+    if (!record) return { record: null, corruptDeletedId: null };
+    const parsed = EventRecordSchema.safeParse(record);
+    if (parsed.success) return { record: parsed.data, corruptDeletedId: null };
+    const id = String(record._id);
+    if (options?.deleteCorrupt !== false) {
+      await this.collection.deleteOne({ _id: record._id });
+    }
+    return { record: null, corruptDeletedId: id };
   }
 
   // Remove one event by id, scoped to its owner so a caller can only delete its
@@ -202,9 +237,31 @@ export class EventRepository {
       content: EventRecord["content"];
       schedule: EventRecord["schedule"];
       cancelled: boolean;
+      // The instance's OWN provider identity, when it has one distinct from
+      // the master's. A provider-linked occurrence (Google instance) is its
+      // own addressable provider event — mirroring the master's identity
+      // here would collide the provider_event_identity unique index, since
+      // the master record already holds that exact (connectionId,
+      // calendarId, providerEventId) triple. Omitted (key absent) falls back
+      // to the master's identity, which is correct for a cloud-only series
+      // (always null on both sides). Pass `null` explicitly — not omit — for
+      // a provider-linked exception with no live provider counterpart (e.g.
+      // an instance already gone at the provider): omitting would fall back
+      // to the master's own (non-null) identity and collide the same index.
+      providerIdentity?: {
+        providerEventId: EventRecord["providerEventId"];
+        providerVersion: EventRecord["providerVersion"];
+      } | null;
     },
     now: Date,
   ): Promise<EventRecord> {
+    const hasExplicitProviderIdentity = "providerIdentity" in override;
+    const providerEventId = hasExplicitProviderIdentity
+      ? (override.providerIdentity?.providerEventId ?? null)
+      : master.providerEventId;
+    const providerVersion = hasExplicitProviderIdentity
+      ? (override.providerIdentity?.providerVersion ?? null)
+      : master.providerVersion;
     const result = await this.collection.findOneAndUpdate(
       {
         tenantId: master.tenantId,
@@ -214,19 +271,22 @@ export class EventRepository {
         "recurrence.recurrenceId": recurrenceId,
       },
       {
-        // Mirror the master's ownership/calendar/provider identity; set the
-        // instance's own content, schedule, and cancelled flag. recurrence.kind
-        // /seriesId/recurrenceId are seeded from the filter on insert, so only
-        // cancelled is set here (setting the whole recurrence would conflict).
+        // Mirror the master's ownership/calendar identity; set the
+        // instance's own content, schedule, provider identity, and cancelled
+        // flag. recurrence.kind/seriesId/recurrenceId are seeded from the
+        // filter on insert, so only cancelled is set here (setting the whole
+        // recurrence would conflict).
         $set: {
           origin: master.origin,
           calendarId: master.calendarId,
           clientEventId: null,
           connectionId: master.connectionId,
-          providerEventId: master.providerEventId,
-          providerVersion: master.providerVersion,
+          providerEventId,
+          providerVersion,
           providerUpdatedAt: master.providerUpdatedAt,
-          deliveryState: master.deliveryState,
+          deliveryState: master.connectionId
+            ? "confirmed"
+            : master.deliveryState,
           providerMetadata: master.providerMetadata,
           content: override.content,
           schedule: override.schedule,

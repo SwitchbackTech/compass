@@ -59,4 +59,41 @@ describe("addVisibleDraftEvent", () => {
     expect(result).toHaveLength(2);
     expect(result[0]?.startDate).toContain("2026-05-22T14:00:00");
   });
+
+  it("does not inject a midnight-to-midnight timed draft into the timed layer", () => {
+    const draft = createGridEventDraft({
+      kind: "timed",
+      start: new Date("2026-05-22T00:00:00"),
+      end: new Date("2026-05-23T00:00:00"),
+      timeZone: "UTC",
+    });
+
+    const result = addVisibleDraftEvent({
+      draft,
+      events: [savedTimed],
+      isAllDay: false,
+      visibleDates,
+    });
+
+    expect(result).toEqual([savedTimed]);
+  });
+
+  it("still injects an evening-to-midnight timed draft into the timed layer", () => {
+    const draft = createGridEventDraft({
+      kind: "timed",
+      start: new Date("2026-05-22T22:00:00"),
+      end: new Date("2026-05-23T00:00:00"),
+      timeZone: "UTC",
+    });
+
+    const result = addVisibleDraftEvent({
+      draft,
+      events: [savedTimed],
+      isAllDay: false,
+      visibleDates,
+    });
+
+    expect(result).toHaveLength(2);
+    expect(result[0]?.startDate).toContain("2026-05-22T22:00:00");
+  });
 });

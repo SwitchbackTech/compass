@@ -30,7 +30,6 @@ import {
   toReplaceSubmitRequests,
 } from "@backend/common/services/sync-service/event-command.translation";
 import { syncEventInstanceToBrowser } from "@backend/common/services/sync-service/event-list.translation";
-import { getEventDelegation } from "@backend/common/services/sync-service/event-routing";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
@@ -38,7 +37,6 @@ import {
   eventMutationError,
   toEventMutationError,
 } from "@backend/event/event.error";
-import { mapEventRecord } from "@backend/event/event.record.mapper";
 import eventService from "@backend/event/services/event.service";
 
 const send = (res: Response, e: unknown) => {
@@ -122,32 +120,17 @@ const listAllFullEvents = async (
   return instances;
 };
 
-// GET /api/event under SYNC_EVENT_ROUTING=sync: fetch full-fidelity instances
-// from sync and translate to the browser Event contract. Fail-closed — a sync
-// outage surfaces as an error rather than silently falling back to legacy
-// (which would show a different, stale store).
+// GET /api/event when event routing delegates to sync: fetch full-fidelity
+// instances from sync and translate to the browser Event contract.
+// Fail-closed — a sync outage surfaces as an error rather than silently
+// falling back to legacy (which would show a different, stale store).
 const readAllFromSync = async (userId: string, query: EventListQuery) => {
   const client = getSyncServiceClient();
-  if (!client) {
-    throw eventMutationError(
-      "PROVIDER_FAILURE",
-      "Sync event listing unavailable",
-    );
-  }
-
   const calendarIds = await resolveSyncCalendarIds(client, userId);
   if (calendarIds.length === 0) return [];
 
   const instances = await listAllFullEvents(client, userId, query, calendarIds);
   return instances.map(syncEventInstanceToBrowser);
-};
-
-const requireSyncClient = (): SyncServiceClient => {
-  const client = getSyncServiceClient();
-  if (!client) {
-    throw error(GenericError.NotSure, "Sync event commands unavailable");
-  }
-  return client;
 };
 
 const mapSyncFailure = (reason: SyncCommandFailureReason) => {
@@ -208,11 +191,27 @@ const submitCommandOrThrow = async (
   if (outcome.state === "cancelled") {
     throw eventMutationError("PROVIDER_FAILURE", "Sync command was cancelled");
   }
+  // Backstop for invariant 1 ("every write resolves definitively"): a
+  // command that is still pending/applying/reconciling has NOT actually
+  // applied anywhere. Nothing re-dispatches a stranded pending command (see
+  // ProviderWriteUnavailableError's docblock in cloud-command.service.ts), so
+  // returning success here would let the caller believe the write landed
+  // while it silently never did — the client optimistically applies the
+  // change, then a later refetch reverts it with no error ever shown. Every
+  // known path that could leave a command non-terminal already throws
+  // explicitly instead (ProviderWriteUnavailableError, failCloud); this is
+  // the safety net for any path that doesn't, today or in the future.
+  if (outcome.state !== "confirmed") {
+    throw eventMutationError(
+      "PROVIDER_FAILURE",
+      `Sync command did not resolve (${outcome.state})`,
+    );
+  }
   return result.value.command;
 };
 
 const createFromSync = async (userId: string, input: CreateEventInput) => {
-  const client = requireSyncClient();
+  const client = getSyncServiceClient();
   const { request, responseEvent } = toCreateSubmitRequest(input);
   await submitCommandOrThrow(client, userId, request);
   return responseEvent;
@@ -223,7 +222,7 @@ const replaceFromSync = async (
   eventId: string,
   input: ReplaceEventInput,
 ) => {
-  const client = requireSyncClient();
+  const client = getSyncServiceClient();
   const { requests, responseEvent } = toReplaceSubmitRequests(eventId, input);
   for (const request of requests) {
     await submitCommandOrThrow(client, userId, request);
@@ -236,7 +235,7 @@ const deleteFromSync = async (
   eventId: string,
   input: DeleteEventInput,
 ) => {
-  const client = requireSyncClient();
+  const client = getSyncServiceClient();
   const request = toDeleteSubmitRequest(eventId, input);
   await submitCommandOrThrow(client, userId, request);
 };
@@ -246,24 +245,9 @@ class EventController {
     try {
       const userId = req.session?.getUserId() as string;
       const query = parseListQuery(req.query);
-      const events =
-        getEventDelegation() === "sync"
-          ? await readAllFromSync(userId, query)
-          : (await eventService.readAll(userId, query)).map(mapEventRecord);
+      const events = await readAllFromSync(userId, query);
 
       res.status(Status.OK).json({ events });
-    } catch (e) {
-      send(res, e);
-    }
-  };
-
-  readById = async (req: SessionRequest, res: Response) => {
-    try {
-      const userId = req.session?.getUserId() as string;
-      const eventId = req.params["id"] as string;
-      const event = await eventService.readById(userId, eventId);
-
-      res.status(Status.OK).json({ event: mapEventRecord(event) });
     } catch (e) {
       send(res, e);
     }
@@ -274,10 +258,7 @@ class EventController {
       assertCloudMutationsAllowed();
       const userId = req.session?.getUserId() as string;
       const input = CreateEventInputSchema.parse(req.body);
-      const event =
-        getEventDelegation() === "sync"
-          ? await createFromSync(userId, input)
-          : mapEventRecord(await eventService.create(userId, input));
+      const event = await createFromSync(userId, input);
 
       res.status(Status.OK).json({ event });
     } catch (e) {
@@ -291,10 +272,7 @@ class EventController {
       const userId = req.session?.getUserId() as string;
       const eventId = req.params["id"] as string;
       const input = ReplaceEventInputSchema.parse(req.body);
-      const event =
-        getEventDelegation() === "sync"
-          ? await replaceFromSync(userId, eventId, input)
-          : mapEventRecord(await eventService.replace(userId, eventId, input));
+      const event = await replaceFromSync(userId, eventId, input);
 
       res.status(Status.OK).json({ event });
     } catch (e) {
@@ -312,11 +290,7 @@ class EventController {
         scope: typeof scopeParam === "string" ? scopeParam : "this",
       });
 
-      if (getEventDelegation() === "sync") {
-        await deleteFromSync(userId, eventId, input);
-      } else {
-        await eventService.delete(userId, eventId, input);
-      }
+      await deleteFromSync(userId, eventId, input);
 
       res.status(Status.NO_CONTENT).send();
     } catch (e) {

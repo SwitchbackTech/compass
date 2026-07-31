@@ -1,11 +1,4 @@
-import {
-  EVENT_WIDTH_MINIMUM,
-  GRID_MARGIN_LEFT,
-} from "@web/grid/grid.constants";
-
 export const AFTER_TMRW_MULTIPLE = 1.5;
-
-export const DIVIDER_GRID = 1;
 
 export const FLEX_TODAY = 21.4;
 export const FLEX_TMRW = 18.6;
@@ -13,15 +6,9 @@ export const FLEX_EQUAL = 14.285714285714286; // 100 / 7
 const HEADER_HEIGHT = 40;
 
 const PAGE_MARGIN_TOP = 35;
-const PAGE_MARGIN_X = 25;
 
 const WEEK_DAYS_HEIGHT = 26;
 const WEEK_DAYS_MARGIN_Y = 22;
 
-export const GRID_X_START = PAGE_MARGIN_X + GRID_MARGIN_LEFT;
 export const GRID_Y_START =
   PAGE_MARGIN_TOP + HEADER_HEIGHT + WEEK_DAYS_HEIGHT + WEEK_DAYS_MARGIN_Y;
-export const WEEK_GRID_TRACK_MIN_WIDTH =
-  GRID_MARGIN_LEFT + EVENT_WIDTH_MINIMUM * 7;
-
-export const SIDEBAR_MONTH_HEIGHT = 275;

@@ -24,10 +24,14 @@ only.
 - `packages/core/src/types/server-message.contracts.ts` — the discriminated
   SSE union every backend publish site must emit.
 - `packages/backend/src/calendar/calendar.record.ts`,
-  `packages/backend/src/event/event.record.ts` — Mongo record shapes
-  (ObjectIds/BSON dates, single nullable `externalReference`, no `origin`).
-- `packages/backend/src/event/google-event.adapter.ts` — Google↔record
-  mapping; provider writes are `events.patch` bodies.
+  `packages/backend/src/event/event.record.ts` — the backend's own record
+  shapes, now vestigial for events (the backend delegates event storage to
+  Sync; its own `event.record.ts` survives only for the calendar-cascade
+  delete path).
+- `packages/sync/src/storage/contracts/event.contracts.ts` — the actual
+  canonical event record Sync persists (`SyncEventSchema` in
+  `packages/core/src/types/sync/event.contracts.ts` is its wire-facing
+  counterpart). Google↔record mapping lives in `packages/sync/src/providers/google/`.
 - `packages/web/src/events/event-draft.types.ts` + `event-draft.parser.ts` —
   the only intentionally incomplete event shape and the single parser that can
   turn it into a command.
@@ -37,10 +41,8 @@ only.
 These are scoped out of the sub-calendar v1 contracts above, not overlooked.
 Each line names the decision in the project's
 [master doc](https://github.com/SwitchbackTech/compass-calendar/blob/90696e1dd9b279f7f1c56be0cef93b8b9c5787fe/team/archive/google-subcalendar-project/master-doc.md)'s
-assumption log (archived after v1 shipped — see
-`compass-calendar-internal/projects/google-subcalendars/master-doc.md`) that anchors
-the carve-out, so a future v2 effort starts from the recorded reasoning instead of
-rediscovering it:
+assumption log that anchors the carve-out, so a future v2 effort starts from
+the recorded reasoning instead of rediscovering it:
 
 - **Cross-calendar event moves.** An existing event's `calendarId` is
   immutable once created (A6) — creating and duplicating pick a calendar,
@@ -95,37 +97,33 @@ events to visible buckets:
 
 These are UI-facing categories, not storage categories.
 
-For the full recurring-event lifecycle, see [Recurrence Handling](../Features/recurring-events-handling.md).
+Recurrence planning, projection, and Google propagation are owned entirely
+by Sync now — see [Common Change Recipes](../development/common-change-recipes.md#change-recurring-event-behavior)
+for the current file list.
 
 ## Update Scopes
 
-Recurring edits use `RecurringEventUpdateScope`:
+Recurring edits use `RecurringEventUpdateScope` on the web side
+(`packages/web/src/common/types/web.event.types.ts`), which maps to the
+backend/Sync `RecurrenceScopeSchema` (`"this" | "all" | "thisAndFollowing"`,
+`packages/core/src/types/event-command.contracts.ts`):
 
-- `This Event`
-- `This and Following Events`
-- `All Events`
-
-If you change recurring edit behavior, check:
-
-- `packages/core/src/types/event.contracts.ts`
-- `packages/backend/src/event/controllers/event.controller.ts`
-- `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`
+- `This Event` → `this`
+- `This and Following Events` → `thisAndFollowing`
+- `All Events` → `all`
 
 ## Backend Event Shape Semantics
 
-The backend treats recurring events as:
+The backend's event contract mirrors Sync's recurrence model:
 
-- one series event (`recurrence.kind === "series"`) containing `rules`
-- zero or more generated occurrences (`recurrence.kind === "occurrence"`) referencing the series via `seriesId`
+- one series master event (`recurrence.kind === "series"` on the app-facing
+  `Event` / `"seriesMaster"` on Sync's internal record) containing `rules`
+- zero or more occurrences (`recurrence.kind === "occurrence"` /
+  `"exception"` internally) referencing the series via `seriesId`
 
-When reading occurrences back, the backend rehydrates them against their series event's recurrence rules before returning them.
-
-Primary code:
-
-- `packages/backend/src/event/services/event.service.ts`
-- `packages/backend/src/event/classes/compass.event.parser.ts`
-- `packages/backend/src/event/classes/compass.event.executor.ts`
-- `packages/backend/src/event/classes/compass.event.generator.ts`
+Sync projects occurrences into the rolling sync horizon rather than
+persisting every future instance — see
+`packages/sync/src/domain/occurrence-projection.ts` and `reproject.ts`.
 
 ## Optimistic IDs
 

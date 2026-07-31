@@ -221,7 +221,7 @@ describe("POST /internal/commands", () => {
     });
   });
 
-  it("leaves a create targeting a provider calendar pending for the provider path", async () => {
+  it("refuses a create targeting a provider calendar when the writer is unavailable", async () => {
     const tenantId = objectId();
     const principalId = objectId();
     await startService();
@@ -252,18 +252,21 @@ describe("POST /internal/commands", () => {
     });
     const res = await submit(tenantId, principalId, request);
 
-    const body = (await res.json()) as {
-      command: { outcome: { state: string } };
-    };
-    expect(body.command.outcome.state).toBe("pending");
+    // 503, not a pending 200: nothing re-dispatches a pending command, so
+    // answering OK would tell the caller a write landed that would never reach
+    // the provider (the 2026-07-29 production failure).
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: "provider_write_unavailable" });
     // No local cloud event is written for a provider-targeted create.
     expect(await mongo.db.collection("events").countDocuments()).toBe(0);
   });
 
-  it("persists an unhandled command kind as durable pending intent", async () => {
+  it("fails a move command as unsupportedCapability rather than stranding it pending", async () => {
     const tenantId = objectId();
     const principalId = objectId();
-    // move is not applied locally yet, so it is recorded pending.
+    // move has no executor anywhere yet - leaving it pending would strand the
+    // write forever while the caller sees success (nothing rejects a merely
+    // "pending" outcome), so it fails explicitly instead.
     const request = createRequest({
       input: { kind: "move", calendarId: objectId() },
     });
@@ -272,9 +275,12 @@ describe("POST /internal/commands", () => {
     const res = await submit(tenantId, principalId, request);
 
     const body = (await res.json()) as {
-      command: { outcome: { state: string } };
+      command: { outcome: { state: string; failureReason?: string } };
     };
-    expect(body.command.outcome.state).toBe("pending");
+    expect(body.command.outcome).toEqual({
+      state: "failed",
+      failureReason: "unsupportedCapability",
+    });
     // No event is written for a command that was only recorded, not applied.
     expect(await mongo.db.collection("events").countDocuments()).toBe(0);
     expect(await mongo.db.collection("commands").countDocuments()).toBe(1);
@@ -322,7 +328,7 @@ describe("POST /internal/commands", () => {
     expect(stored?.content.title).toBe("Renamed");
   });
 
-  it("defers an update that converts a single event into a series", async () => {
+  it("converts a single event into a series and confirms", async () => {
     const tenantId = objectId();
     const principalId = objectId();
     const created = createRequest();
@@ -346,16 +352,17 @@ describe("POST /internal/commands", () => {
     const body = (await res.json()) as {
       command: { outcome: { state: string } };
     };
-    // Converting to a series is a scope edit, deferred — the event stays single
-    // so a retry re-reads a single event and stays consistently pending.
-    expect(body.command.outcome.state).toBe("pending");
+    expect(body.command.outcome.state).toBe("confirmed");
     const events = new EventRepository(mongo.db);
     const stored = await events.findById(
       tenantId as TenantId,
       principalId as PrincipalId,
       created.eventId as never,
     );
-    expect(stored?.recurrence).toEqual({ kind: "single" });
+    expect(stored?.recurrence).toEqual({
+      kind: "seriesMaster",
+      rules: ["RRULE:FREQ=WEEKLY"],
+    });
   });
 
   it("deletes a cloud event and confirms", async () => {
@@ -421,7 +428,7 @@ describe("POST /internal/commands", () => {
     expect(body.command.outcome.state).toBe("confirmed");
   });
 
-  it("leaves an update of a missing event pending", async () => {
+  it("fails an update of a missing event instead of stranding it pending", async () => {
     const tenantId = objectId();
     const principalId = objectId();
     await startService();
@@ -450,7 +457,7 @@ describe("POST /internal/commands", () => {
     const body = (await res.json()) as {
       command: { outcome: { state: string } };
     };
-    expect(body.command.outcome.state).toBe("pending");
+    expect(body.command.outcome.state).toBe("failed");
   });
 
   it("promotes an anonymous device event, preserving its clientEventId", async () => {

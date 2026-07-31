@@ -1,0 +1,41 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [],
+      "project": []
+    },
+    "packages/core": {
+      "entry": ["src/**/*.ts!"],
+      "project": ["src/**/*.ts!"]
+    },
+    "packages/backend": {
+      "entry": [
+        "src/app.ts",
+        "src/**/*.routes.config.ts",
+        "src/__tests__/backend.test.start.ts",
+        "src/__tests__/helpers/mock.setup.ts"
+      ],
+      "project": ["src/**/*.ts!"]
+    },
+    "packages/sync": {
+      "entry": [
+        "src/app.ts",
+        "src/__tests__/sync.preload.ts",
+        "src/__tests__/sync.preload.fast.ts",
+        "src/__tests__/helpers/mongo-memory.ts"
+      ],
+      "project": ["src/**/*.ts!"]
+    },
+    "packages/scripts": {
+      "entry": ["src/commands/*.ts", "src/testing/*.ts"],
+      "project": ["src/**/*.ts!"]
+    },
+    "packages/web": {
+      "entry": ["src/__tests__/utils/render.test.util.tsx"],
+      "project": ["src/**/*.{ts,tsx}!"]
+    }
+  },
+  "ignoreDependencies": ["@compass/core", "@compass/backend"],
+  "ignoreExportsUsedInFile": true
+}

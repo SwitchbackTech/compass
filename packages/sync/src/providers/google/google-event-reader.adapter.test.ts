@@ -189,6 +189,23 @@ describe("GoogleEventReaderAdapter", () => {
     expect(result.skipped).toBe(1);
   });
 
+  it("threads colorLabels through to resolve an event's eventLabelId", async () => {
+    const api = new FakeEventListApi([
+      page({ items: [gEvent({ id: "labeled", eventLabelId: "label-1" })] }),
+    ]);
+    const { adapter } = adapterWith(api);
+
+    const result = await adapter.listEventPage({
+      accessToken: "tok",
+      calendarId: "primary@google.com",
+      colorLabels: new Map([["label-1", "#009688"]]),
+    });
+
+    expect(result.events[0]).toMatchObject({
+      content: { colorHex: "#009688" },
+    });
+  });
+
   it("maps an expired sync token (410) to cursorExpired", async () => {
     const api = new FakeEventListApi([], { response: { status: 410 } });
     const { adapter } = adapterWith(api);
@@ -237,6 +254,37 @@ describe("GoogleEventReaderAdapter", () => {
         calendarId: "primary@google.com",
       }),
     ).rejects.toMatchObject({ reason: "readFailed" });
+  });
+
+  it("keeps the HTTP status and Google's reason on the cause for triage", async () => {
+    const rejected = Object.assign(new Error("Not Found"), {
+      response: {
+        status: 404,
+        data: { error: { errors: [{ reason: "notFound" }] } },
+      },
+    });
+    const api = new FakeEventListApi([], rejected);
+    const { adapter } = adapterWith(api);
+
+    const error = await adapter
+      .listEventPage({ accessToken: "tok", calendarId: "primary@google.com" })
+      .catch((e) => e as ProviderEventReadError);
+
+    // Without these, a durable readFailed row is guesswork to diagnose: the
+    // message alone does not say which rejection Google gave.
+    expect((error.cause as Error)?.message).toContain("HTTP 404");
+    expect((error.cause as Error)?.message).toContain("notFound");
+  });
+
+  it("still reports the status when the error carries no Google reason", async () => {
+    const api = new FakeEventListApi([], { response: { status: 403 } });
+    const { adapter } = adapterWith(api);
+
+    const error = await adapter
+      .listEventPage({ accessToken: "tok", calendarId: "primary@google.com" })
+      .catch((e) => e as ProviderEventReadError);
+
+    expect((error.cause as Error)?.message).toContain("HTTP 403");
   });
 
   it("never leaks the access token onto a thrown error's cause", async () => {

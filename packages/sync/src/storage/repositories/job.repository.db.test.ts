@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
+import { type SyncJobId } from "@core/types/sync/identity.contracts";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type JobEnqueue } from "@sync/storage/contracts/job.contracts";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
@@ -203,6 +204,177 @@ describe("JobRepository", () => {
         .collection("jobs")
         .countDocuments({ state: "claimed" });
       expect(stillClaimed).toBe(0);
+    });
+
+    // Load-bearing for running several drain workers in one process: each has
+    // its own owner id, and one stopping must not yank a job another is still
+    // running. If releaseOwned were not owner-scoped, a rolling shutdown would
+    // flip a peer's in-flight job back to pending and it would be reprocessed.
+    it("releases only the leaving worker's jobs, not a peer's", async () => {
+      await repo.enqueue(enqueue({ coalescingKey: "a", runAfter: past(1000) }));
+      await repo.enqueue(enqueue({ coalescingKey: "b", runAfter: past(1000) }));
+      const leaving = await repo.claimDueJob("leaving-worker", NOW, LEASE_MS);
+      const staying = await repo.claimDueJob("staying-worker", NOW, LEASE_MS);
+      expect(leaving).not.toBeNull();
+      expect(staying).not.toBeNull();
+
+      expect(await repo.releaseOwned("leaving-worker")).toBe(1);
+
+      const peer = await db
+        .collection("jobs")
+        .findOne({ _id: staying!._id as never });
+      expect(peer?.state).toBe("claimed");
+      expect(peer?.leaseOwner).toBe("staying-worker");
+      const released = await db
+        .collection("jobs")
+        .findOne({ _id: leaving!._id as never });
+      expect(released?.state).toBe("pending");
+      expect(released?.leaseOwner).toBeNull();
+    });
+  });
+
+  describe("self-heal requeue", () => {
+    const NOW = new Date("2026-07-20T12:00:00.000Z");
+    const past = (ms: number) => new Date(NOW.getTime() - ms);
+
+    // Enqueue, claim, and fail a job in one step so a test can start directly
+    // from state:"failed" without driving a real worker's retry ladder.
+    const seedFailed = async (
+      overrides: Partial<JobEnqueue> = {},
+    ): Promise<SyncJobId> => {
+      const job = await repo.enqueue(
+        enqueue({ runAfter: past(1000), ...overrides }),
+      );
+      const claimed = await repo.claimDueJob("worker", NOW, 60_000);
+      await repo.fail(claimed!._id, "worker", "retryableTransient");
+      return job._id;
+    };
+
+    it("lists a failed job whose runAfter is before the cooldown cutoff", async () => {
+      const id = await seedFailed({ runAfter: past(60 * 60_000) });
+      const candidates = await repo.listFailedForRequeue(
+        past(30 * 60_000),
+        3,
+        100,
+      );
+      expect(candidates.map((j) => j._id)).toEqual([id]);
+    });
+
+    it("excludes a failed job that has not cooled down yet", async () => {
+      await seedFailed({ runAfter: past(5 * 60_000) });
+      const candidates = await repo.listFailedForRequeue(
+        past(30 * 60_000),
+        3,
+        100,
+      );
+      expect(candidates).toHaveLength(0);
+    });
+
+    it("excludes a failed job at or over the requeue cap", async () => {
+      const id = await seedFailed({ runAfter: past(60 * 60_000) });
+      // Simulate two prior requeue-then-fail-again cycles.
+      for (let cycle = 0; cycle < 2; cycle += 1) {
+        await repo.requeue(id, past(50 * 60_000));
+        const reclaimed = await repo.claimDueJob("worker", NOW, 60_000);
+        await repo.fail(reclaimed!._id, "worker", "retryableTransient");
+      }
+
+      const underCap = await repo.listFailedForRequeue(
+        past(30 * 60_000),
+        2,
+        100,
+      );
+      expect(underCap).toHaveLength(0);
+      expect(await repo.countExhaustedFailed(2)).toBe(1);
+    });
+
+    it("excludes a permanently classed failure from requeue and exhaustion", async () => {
+      await repo.enqueue(enqueue({ runAfter: past(60 * 60_000) }));
+      const claimed = await repo.claimDueJob("worker", NOW, 60_000);
+      await repo.fail(claimed!._id, "worker", "permanent");
+
+      expect(
+        await repo.listFailedForRequeue(past(30 * 60_000), 3, 100),
+      ).toHaveLength(0);
+      expect(await repo.countExhaustedFailed(0)).toBe(0);
+    });
+
+    it("requeue resets a failed job to pending with a fresh attempt budget", async () => {
+      const id = await seedFailed({ runAfter: past(60 * 60_000) });
+      expect(await repo.requeue(id, NOW)).toBe(true);
+
+      const after = await db.collection("jobs").findOne({ _id: id as never });
+      expect(after?.state).toBe("pending");
+      expect(after?.attempt).toBe(0);
+      expect(after?.leaseOwner).toBeNull();
+      expect(after?.failureClass).toBeNull();
+      expect(after?.runAfter).toEqual(NOW);
+      expect(after?.requeuedCount).toBe(1);
+    });
+
+    it("does not requeue a job that is not currently failed", async () => {
+      const job = await repo.enqueue(enqueue({ runAfter: past(1000) }));
+      expect(await repo.requeue(job._id, NOW)).toBe(false);
+    });
+
+    it("finds the oldest overdue job for a connection, including a failed one", async () => {
+      const connectionId = objectId() as JobEnqueue["connectionId"];
+      const tenantId = objectId() as JobEnqueue["tenantId"];
+      const principalId = objectId() as JobEnqueue["principalId"];
+      const failed = await repo.enqueue(
+        enqueue({
+          tenantId,
+          principalId,
+          connectionId,
+          runAfter: past(60 * 60_000),
+          coalescingKey: "pull:failed-resource",
+        }),
+      );
+      const claimed = await repo.claimDueJob("worker", NOW, 60_000);
+      await repo.fail(claimed!._id, "worker", "retryableTransient");
+      // A pending job on the same connection, due more recently — the failed
+      // job is still older and should win.
+      await repo.enqueue(
+        enqueue({
+          tenantId,
+          principalId,
+          connectionId,
+          runAfter: past(5 * 60_000),
+          coalescingKey: "pull:pending-resource",
+        }),
+      );
+
+      const oldest = await repo.findOldestOverdueByConnection(
+        tenantId,
+        principalId,
+        connectionId,
+        NOW,
+      );
+      expect(oldest?.runAfter).toEqual(failed.runAfter);
+      expect(oldest?.failureClass).toBe("retryableTransient");
+    });
+
+    it("reports no overdue work for a connection with only healthy pending jobs", async () => {
+      const connectionId = objectId() as JobEnqueue["connectionId"];
+      const tenantId = objectId() as JobEnqueue["tenantId"];
+      const principalId = objectId() as JobEnqueue["principalId"];
+      await repo.enqueue(
+        enqueue({
+          tenantId,
+          principalId,
+          connectionId,
+          runAfter: new Date(NOW.getTime() + 60_000), // not due yet
+        }),
+      );
+
+      expect(
+        await repo.findOldestOverdueByConnection(
+          tenantId,
+          principalId,
+          connectionId,
+          NOW,
+        ),
+      ).toBeNull();
     });
   });
 });

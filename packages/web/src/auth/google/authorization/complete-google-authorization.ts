@@ -1,9 +1,8 @@
-import { Status } from "@core/errors/status.codes";
 import {
   type GoogleAuthCodeRequest,
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
-import { type ApiError, type ApiMethodConfig } from "@web/api/api.types";
+import { type ApiError } from "@web/api/api.types";
 import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
 import {
   GOOGLE_AUTH_SCOPES_REQUIRED,
@@ -25,10 +24,6 @@ type CompleteAuthentication = (input: {
 }) => Promise<void>;
 
 export type GoogleAuthorizationAuthAdapter = {
-  connectGoogle(
-    data: GoogleAuthCodeRequest,
-    config?: ApiMethodConfig,
-  ): Promise<unknown>;
   loginOrSignup(data: GoogleAuthCodeRequest): Promise<{
     createdNewRecipeUser: boolean;
     user: { emails?: string[] };
@@ -38,9 +33,6 @@ export type GoogleAuthorizationAuthAdapter = {
 export type CompleteGoogleAuthorizationOptions = {
   authApi: GoogleAuthorizationAuthAdapter;
   completeAuthentication: CompleteAuthentication;
-  doesSessionExist?: () => Promise<boolean>;
-  refreshUserMetadata: () => Promise<void> | void;
-  requestEventFetch?: () => void;
   search: string;
 };
 
@@ -80,16 +72,9 @@ const parseGoogleConnectErrorMessage = (error: unknown): string | undefined => {
   return parsed.success ? parsed.data.message : undefined;
 };
 
-const isUnauthorizedSessionError = (error: unknown): boolean => {
-  return getApiError(error)?.response?.status === Status.UNAUTHORIZED;
-};
-
 export async function completeGoogleAuthorization({
   authApi,
   completeAuthentication,
-  doesSessionExist,
-  refreshUserMetadata,
-  requestEventFetch,
   search,
 }: CompleteGoogleAuthorizationOptions): Promise<CompleteGoogleAuthorizationResult> {
   const params = new URLSearchParams(search);
@@ -129,44 +114,16 @@ export async function completeGoogleAuthorization({
     redirectUri: buildGoogleAuthCallbackUrl(),
   });
 
-  const completeGoogleSignIn = async () => {
+  try {
     const result = await authApi.loginOrSignup(payload);
     await completeAuthentication({
       email: result.user.emails?.[0],
     });
-    return result.createdNewRecipeUser;
-  };
-
-  try {
-    let isNewUser = false;
-    if (savedIntent.intent === "signIn") {
-      isNewUser = await completeGoogleSignIn();
-    } else {
-      const hasActiveSession = doesSessionExist
-        ? await doesSessionExist()
-        : true;
-
-      if (!hasActiveSession) {
-        await completeGoogleSignIn();
-      } else {
-        try {
-          await authApi.connectGoogle(payload, { skipSessionRecovery: true });
-          await refreshUserMetadata();
-          requestEventFetch?.();
-        } catch (error) {
-          if (!isUnauthorizedSessionError(error)) {
-            throw error;
-          }
-
-          await completeGoogleSignIn();
-        }
-      }
-    }
 
     return {
       returnPath,
       status: "completed",
-      isNewUser,
+      isNewUser: result.createdNewRecipeUser,
     };
   } catch (error) {
     const parsedMessage = parseGoogleConnectErrorMessage(error);

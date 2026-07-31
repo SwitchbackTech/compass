@@ -6,7 +6,10 @@ import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { type ProviderCalendarAdapter } from "@sync/providers/provider-calendar.port";
-import { type ProviderEventReader } from "@sync/providers/provider-event-reader.port";
+import {
+  ProviderEventReadError,
+  type ProviderEventReader,
+} from "@sync/providers/provider-event-reader.port";
 import { type ProviderNotificationAdapter } from "@sync/providers/provider-notifications.port";
 import {
   type JobEnqueue,
@@ -96,7 +99,50 @@ export async function dispatchSyncJob(
     ) {
       // Belt and braces: custody already discards on authorizationRevoked.
       await deps.custody.discardRevoked(job.connectionId);
-      return { result: "done" };
+      // A reasoned drop, not a bare done: settling is identical, but the worker
+      // surfaces drop reasons. This path settled ~100 jobs per sweep invisibly
+      // on 2026-07-29 (credential-less migrated connections), which made the
+      // sweep look broken while it was running fine.
+      return {
+        result: "drop",
+        reason: `credential unusable (${error.reason}) for connection ${job.connectionId}; sync resumes on reconnect`,
+      };
+    }
+
+    // A DURABLE read rejection: Google answered with a 4xx that is not 410
+    // (cursor expired) or 429 (rate limited) — a calendar deleted out from under
+    // us, access revoked for it, or a permanently rejected id. Retrying cannot
+    // fix it, and treating it as retryableTransient burned all 20 attempts and
+    // wedged the job in state:"failed" (2026-07-30: 3 such jobs in prod).
+    //
+    // Settle it as a DROP, not failureClass:"permanent", for the same reason the
+    // credential path above does: a failed job keeps its coalescing key and
+    // enqueue only $setOnInsert's, so a permanent row would swallow the
+    // re-enqueue after the calendar is reconnected or re-shared and sync would
+    // never restart. Dropping frees the key.
+    //
+    // Dropping also erases the only evidence the job row carried, so stamp the
+    // resource first — that marker is what connection health reads, so a dead
+    // primary calendar stops reporting healthy.
+    if (
+      error instanceof ProviderEventReadError &&
+      error.reason === "readFailed"
+    ) {
+      const detail =
+        error.cause instanceof Error ? error.cause.message : error.message;
+      if (job.resourceId) {
+        await deps.resources.markReadFailure(
+          job.tenantId,
+          job.principalId,
+          job.resourceId,
+          now(),
+          detail,
+        );
+      }
+      return {
+        result: "drop",
+        reason: `provider durably rejected reads for resource ${job.resourceId} (${detail}); sync resumes once the calendar is readable again`,
+      };
     }
     throw error;
   }
@@ -152,6 +198,17 @@ async function runSyncJob(
   );
   if (!calendar) {
     return { result: "drop", reason: "calendar no longer exists" };
+  }
+  // The provider no longer lists this calendar (discovery marked it inactive),
+  // or the user turned it off. Nothing here is worth a provider call. Dropping
+  // settles the job instead of leaving it to retry: a pending/failed
+  // initialImport for a deactivated calendar kept its coalescing key and burned
+  // Google quota on every sweep until an operator noticed (2026-07-30).
+  if (!calendar.active) {
+    return {
+      result: "drop",
+      reason: `calendar ${calendar._id} is inactive; sync resumes if it is reactivated`,
+    };
   }
 
   switch (job.kind) {

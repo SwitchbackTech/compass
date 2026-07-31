@@ -1,7 +1,7 @@
 import { CONFIG } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { initExpressServer } from "@backend/servers/express/express.server";
-import { warnIfWebhookNotPublicHttps } from "@backend/sync/services/watch/google-watch-config";
+import { syncChangeFeedBridge } from "@backend/servers/sse/sync-change-feed.bridge";
 import { logger } from "./init"; //must be first import
 import { stopPostHogLogs } from "./logging/posthog-logs";
 import { createServer, type Server } from "node:http";
@@ -15,8 +15,6 @@ function onClose() {
 
 async function start() {
   try {
-    warnIfWebhookNotPublicHttps(logger);
-
     await mongoService.start();
 
     await new Promise((resolve) =>
@@ -25,10 +23,19 @@ async function start() {
         resolve(undefined);
       }),
     );
+
+    // One multiplexed poll of Sync's global change feed for the life of this
+    // process, fanning invalidations out to whichever SSE subscribers are
+    // locally connected. Started here (not at module import) so a test
+    // importing the bridge for its types never triggers a live network poll.
+    syncChangeFeedBridge.start();
   } catch (error) {
     logger.error("Problems encountered during startup", error);
 
-    process.exit(0);
+    // Exit 0 reads as success to supervisors using restart-on-failure
+    // policies (e.g. Docker's `restart: on-failure`), so a startup failure
+    // never gets retried.
+    process.exit(1);
   }
 }
 
@@ -42,6 +49,7 @@ async function closeHttpServer(): Promise<void> {
 
 async function gracefulShutdown(): Promise<void> {
   try {
+    syncChangeFeedBridge.stop();
     await closeHttpServer();
     await mongoService.stop();
     await stopPostHogLogs();
@@ -51,6 +59,24 @@ async function gracefulShutdown(): Promise<void> {
 }
 
 httpServer.on("close", onClose);
+
+// Registering a handler suppresses Node's default crash-on-unhandled-
+// rejection behavior, so without one of our own the process would keep
+// running silently after whatever left a promise dangling - no log, no
+// restart, just a process in an unknown state. Log with context, then exit
+// the same way an uncaught synchronous throw would. `reason` can be
+// anything, including a raw GaxiosError from an uncaught Google API call
+// (its `config`/`response` carry request headers/bearer tokens as own
+// enumerable properties) - never log it directly.
+process.on("unhandledRejection", (reason) => {
+  logger.error(
+    "Unhandled promise rejection",
+    reason instanceof Error
+      ? { message: reason.message, stack: reason.stack }
+      : { reason: String(reason) },
+  );
+  process.exit(1);
+});
 
 // graceful shutdown keeps Bun watch restarts and local exits clean
 process.on("SIGTERM", () => {

@@ -52,7 +52,7 @@ describe("google-authorization.storage", () => {
 
   it("clears a consumed intent", () => {
     writeGoogleAuthorizationIntent("state-1", {
-      intent: "connectCalendar",
+      intent: "signIn",
       returnPath: "/day",
       createdAt: Date.now(),
     });

@@ -10,8 +10,14 @@
  */
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import { backendTestSpawnEnv } from "./backend-test-env";
-import { formatDuration, resolveTestTargets } from "./runner-utils";
+import {
+  formatDuration,
+  resolveTestTargets,
+  warnIfBunVersionMismatch,
+} from "./runner-utils";
 import { resolve } from "node:path";
+
+warnIfBunVersionMismatch("1.3.14");
 
 type PackageName = "backend" | "scripts" | "sync";
 

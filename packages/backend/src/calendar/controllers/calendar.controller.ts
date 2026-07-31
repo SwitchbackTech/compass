@@ -3,10 +3,13 @@ import {
   type CalendarListResponse,
   SetCalendarVisibilityInputSchema,
 } from "@core/types/calendar.contracts";
+import { BusyPeriodSchema } from "@core/types/event.contracts";
 import {
   type AvailabilityQuery,
   AvailabilityQuerySchema,
+  type AvailabilityResponse,
 } from "@core/types/event-command.contracts";
+import { SyncEventCalendarIdSchema } from "@core/types/sync/event.contracts";
 import { zObjectId } from "@core/types/type.utils";
 import { mapCalendarRecord } from "@backend/calendar/calendar.record.mapper";
 import calendarService from "@backend/calendar/services/calendar.service";
@@ -14,13 +17,19 @@ import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { syncCalendarToBrowser } from "@backend/common/services/sync-service/calendar-list.translation";
-import { getEventDelegation } from "@backend/common/services/sync-service/event-routing";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import {
   type Res_Promise,
   type SReqBody,
 } from "@backend/common/types/express.types";
+
+// Availability is display-only decoration here (inert busy blocks on the
+// grid, not a booking decision), so a generous freshness tolerance avoids
+// flagging normal sync latency as stale. Sync still returns intervals past
+// this age — see busy-query.service.ts — this only affects the `complete`/
+// `bookable` flags, which this display-only caller doesn't act on.
+const AVAILABILITY_DISPLAY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 // A7 "bounded": AvailabilityQuerySchema (core) only enforces end > start, not
 // a maximum span - an unbounded range would let one request fan a Google
@@ -64,10 +73,6 @@ const listCalendarsFromSync = async (
   userId: string,
 ): Promise<CalendarListResponse> => {
   const client = getSyncServiceClient();
-  if (!client) {
-    throw error(GenericError.NotSure, "Sync calendar listing unavailable");
-  }
-
   const result = await client.listCalendars(toSyncPrincipal(userId));
   if (!result.ok) {
     throw error(
@@ -79,6 +84,52 @@ const listCalendarsFromSync = async (
   return { calendars: result.value.calendars.map(syncCalendarToBrowser) };
 };
 
+// Busy time from the sync service, translated to the browser's per-calendar
+// AvailabilityResponse contract. Sync's busy endpoint reports one MERGED set
+// of intervals across every calendar in a single request — it does not
+// attribute an interval back to its source calendar. The day-grid layout
+// (DayCalendarBusyPeriodsLayer) positions each busy block into a specific
+// per-calendar column and drops any block whose calendarId isn't in that
+// map, so a merged response with a guessed calendarId would silently lose
+// busy time for every calendar but one, not just mislabel it. Query each
+// calendar separately (bounded by AvailabilityQuerySchema's own array size,
+// same fan-out shape the legacy path already does per Google calendar id) so
+// every interval keeps its real, correct calendarId.
+const getAvailabilityFromSync = async (
+  userId: string,
+  query: AvailabilityQuery,
+): Promise<AvailabilityResponse> => {
+  const client = getSyncServiceClient();
+  const principal = toSyncPrincipal(userId);
+
+  const perCalendar = await Promise.all(
+    query.calendarIds.map(async (calendarId) => {
+      const result = await client.queryBusyAvailability(principal, {
+        calendarIds: [SyncEventCalendarIdSchema.parse(calendarId)],
+        start: query.start,
+        end: query.end,
+        maxAgeMs: AVAILABILITY_DISPLAY_MAX_AGE_MS,
+        purpose: "display",
+      });
+      if (!result.ok) {
+        throw error(
+          GenericError.NotSure,
+          `Failed to query availability from sync (${result.error.kind})`,
+        );
+      }
+      return result.value.intervals.map((interval) =>
+        BusyPeriodSchema.parse({
+          calendarId,
+          start: interval.start,
+          end: interval.end,
+        }),
+      );
+    }),
+  );
+
+  return { busyPeriods: perCalendar.flat() };
+};
+
 class CalendarController {
   list = async (req: SessionRequest, res: Res_Promise) => {
     try {
@@ -86,22 +137,15 @@ class CalendarController {
         error: () => error(AuthError.InadequatePermissions, "List Failed"),
       });
 
-      if (getEventDelegation() === "sync") {
-        const [syncResponse, localCalendar] = await Promise.all([
-          listCalendarsFromSync(userId.toString()),
-          calendarService.getLocalCalendar(userId),
-        ]);
-
-        res.promise({
-          calendars: localCalendar
-            ? [...syncResponse.calendars, mapCalendarRecord(localCalendar)]
-            : syncResponse.calendars,
-        });
-        return;
-      }
+      const [syncResponse, localCalendar] = await Promise.all([
+        listCalendarsFromSync(userId.toString()),
+        calendarService.getLocalCalendar(userId),
+      ]);
 
       res.promise({
-        calendars: (await calendarService.list(userId)).map(mapCalendarRecord),
+        calendars: localCalendar
+          ? [...syncResponse.calendars, mapCalendarRecord(localCalendar)]
+          : syncResponse.calendars,
       });
     } catch (e) {
       res.promise(Promise.reject(e));
@@ -133,7 +177,7 @@ class CalendarController {
       const query = parseAvailabilityQuery(req.query);
       assertBoundedAvailabilityRange(query);
 
-      const response = await calendarService.getAvailability(userId, query);
+      const response = await getAvailabilityFromSync(userId.toString(), query);
 
       res.promise(response);
     } catch (e) {

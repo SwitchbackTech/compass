@@ -18,8 +18,7 @@ export const SidebarActions = ({
 }: Props) => {
   const isCmdPaletteOpen = useSettingsStore(selectIsCmdPaletteOpen);
   const googleState = useGoogleUiState();
-  const isCalendarSyncing =
-    googleState === "IMPORTING" || googleState === "repairing";
+  const isCalendarSyncing = googleState === "IMPORTING";
 
   const toggleCmdPalette = () => {
     if (isCmdPaletteOpen) {

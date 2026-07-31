@@ -1,3 +1,4 @@
+import { toColorLabelMap } from "@sync/domain/color-label-map";
 import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
 import { type ProviderEventCancellation } from "@sync/providers/provider-event.port";
@@ -71,18 +72,24 @@ export async function pullCalendarChanges(
     resourceKind: "events",
     calendarId: calendar._id,
   });
+  // Stamp the attempt FIRST — before the cursor check and before the token
+  // fetch can throw. The reconcile sweep selects least-recently-attempted
+  // resources, so a resource whose pull dies early (dead credential, never
+  // imported) must still rotate to the back of the line. When this ran after
+  // getValidAccessToken, ~100 credential-less resources were re-selected by
+  // every sweep and starved the healthy backlog behind them (2026-07-29).
+  await deps.resources.markAttempt(
+    resource.tenantId,
+    resource.principalId,
+    resource._id,
+    now(),
+  );
   if (resource.syncCursor === null) {
     return { status: "notImported", resource };
   }
 
   const accessToken = await deps.custody.getValidAccessToken(
     calendar.connectionId,
-  );
-  await deps.resources.markAttempt(
-    resource.tenantId,
-    resource.principalId,
-    resource._id,
-    now(),
   );
 
   // Write into the active (live) generation, not importGeneration: an
@@ -102,6 +109,7 @@ export async function pullCalendarChanges(
   let pageToken = resource.pageCursor;
   let cursor = resource.syncCursor;
   let deleted = 0;
+  const colorLabels = toColorLabelMap(calendar.eventLabels);
 
   do {
     let page: Awaited<ReturnType<ProviderEventReader["listEventPage"]>>;
@@ -113,6 +121,7 @@ export async function pullCalendarChanges(
         // continues by pageToken alone.
         cursor: pageToken === null ? cursor : null,
         pageToken,
+        colorLabels,
       });
     } catch (error) {
       // An expired cursor cannot be resumed; hand off to repair without

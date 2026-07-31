@@ -4,9 +4,15 @@ import { NodeEnv } from "@core/constants/core.constants";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
-import { signInternalRequest } from "@sync/auth/internal-auth";
+import {
+  signInternalRequest,
+  signServiceRequest,
+} from "@sync/auth/internal-auth";
 import { type SyncConfig } from "@sync/config/sync.config";
-import { CHANGES_PATH } from "@sync/server/change-feed.routes";
+import {
+  CHANGES_ALL_PATH,
+  CHANGES_PATH,
+} from "@sync/server/change-feed.routes";
 import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { type AddressInfo } from "node:net";
@@ -42,6 +48,14 @@ const signedHeaders = (
       tenantId,
       principalId,
     }),
+  };
+};
+
+const serviceHeaders = (): Record<string, string> => {
+  const timestamp = Date.now();
+  return {
+    "x-sync-timestamp": String(timestamp),
+    "x-sync-signature": signServiceRequest(SECRET, timestamp),
   };
 };
 
@@ -210,6 +224,129 @@ describe("GET /internal/changes", () => {
   it("rejects an unsigned request", async () => {
     await startService();
     const res = await fetch(`${base}${CHANGES_PATH}`);
+    expect(res.status).toBe(401);
+  });
+});
+
+describe("GET /internal/changes/all (the multiplexed, cross-tenant feed)", () => {
+  let mongo: SyncMongoService;
+  let invalidations: InvalidationRepository;
+  let service: SyncService;
+  let base: string;
+
+  const startService = async (config: SyncConfig = testConfig()) => {
+    service = createSyncService(config, { mongo });
+    await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
+    const { port } = service.httpServer.address() as AddressInfo;
+    base = `http://127.0.0.1:${port}`;
+  };
+
+  const getGlobal = (query = "") =>
+    fetch(`${base}${CHANGES_ALL_PATH}${query}`, { headers: serviceHeaders() });
+
+  beforeEach(() => {
+    mongo = storage.mongo();
+    invalidations = new InvalidationRepository(mongo.db);
+  });
+
+  afterEach(async () => {
+    await service?.stop();
+  });
+
+  it("returns an empty page and watermark cursor when resuming from now", async () => {
+    await startService();
+    const res = await getGlobal();
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      kind: string;
+      invalidations: unknown[];
+      nextCursor: string;
+    };
+    expect(body.kind).toBe("ok");
+    expect(body.invalidations).toEqual([]);
+    expect(ObjectId.isValid(body.nextCursor)).toBe(true);
+  });
+
+  it("delivers invalidations across DIFFERENT tenants/principals, each tagged with its owner", async () => {
+    await startService();
+    const tenantA = objectId();
+    const principalA = objectId();
+    const tenantB = objectId();
+    const principalB = objectId();
+
+    const boot = (await (await getGlobal()).json()) as { nextCursor: string };
+
+    await invalidations.append({
+      tenantId: tenantA,
+      principalId: principalA,
+      invalidation: { kind: "connection", connectionId: objectId() as never },
+      emittedAt: new Date(),
+    });
+    await invalidations.append({
+      tenantId: tenantB,
+      principalId: principalB,
+      invalidation: {
+        kind: "event",
+        eventId: objectId() as never,
+        calendarId: objectId() as never,
+      },
+      emittedAt: new Date(),
+    });
+
+    const page = (await (
+      await getGlobal(`?cursor=${boot.nextCursor}`)
+    ).json()) as {
+      kind: string;
+      invalidations: Array<{
+        invalidation: { kind: string };
+        tenantId: string;
+        principalId: string;
+      }>;
+    };
+
+    expect(page.kind).toBe("ok");
+    expect(
+      page.invalidations.map((e) => [
+        e.invalidation.kind,
+        e.tenantId,
+        e.principalId,
+      ]),
+    ).toEqual([
+      ["connection", tenantA, principalA],
+      ["event", tenantB, principalB],
+    ]);
+  });
+
+  it("returns resyncRequired for a malformed or expired cursor", async () => {
+    await startService();
+
+    const bad = await getGlobal("?cursor=not-an-object-id");
+    expect(await bad.json()).toEqual({ kind: "resyncRequired" });
+
+    const stale = ObjectId.createFromTime(
+      Math.floor((Date.now() - 8 * 24 * 60 * 60 * 1000) / 1000),
+    ).toHexString();
+    const expired = await getGlobal(`?cursor=${stale}`);
+    expect(await expired.json()).toEqual({ kind: "resyncRequired" });
+  });
+
+  it("serves the feed in passive mode", async () => {
+    await startService(testConfig({ EXECUTION: "passive" }));
+    const res = await getGlobal();
+    expect(res.status).toBe(200);
+  });
+
+  it("rejects an unsigned request", async () => {
+    await startService();
+    const res = await fetch(`${base}${CHANGES_ALL_PATH}`);
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects a per-principal-signed request (wrong scheme)", async () => {
+    await startService();
+    const res = await fetch(`${base}${CHANGES_ALL_PATH}`, {
+      headers: signedHeaders(objectId(), objectId()),
+    });
     expect(res.status).toBe(401);
   });
 });

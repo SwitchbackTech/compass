@@ -11,12 +11,7 @@ import { removeEventsByCalendarFromQueries } from "@web/events/queries/event.que
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { refreshEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { closeStream, openStream } from "@web/sse/client/sse.client";
-import {
-  createGoogleAuthUtil,
-  LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
-  LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE,
-  type SyncLocalEventsResult,
-} from "./google.auth.util.factory";
+import { createGoogleAuthUtil } from "./google.auth.util.factory";
 
 const googleCalendarIds = (): Set<string> => {
   const calendars =
@@ -69,9 +64,6 @@ const {
 
 export {
   handleGoogleRevoked,
-  LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
-  LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE,
-  type SyncLocalEventsResult,
   showLocalEventsSyncFailure,
   syncLocalEvents,
   syncPendingLocalEvents,

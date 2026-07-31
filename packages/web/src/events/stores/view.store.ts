@@ -54,6 +54,4 @@ export const viewActions = {
   updateDates: (dates: ViewState["dates"]) =>
     useViewStore.setState({ dates }, false, { type: "updateDates" }),
 };
-
-export const selectDatesInView = (state: ViewState) => state.dates;
 export const selectIsSidebarOpen = (state: ViewState) => state.sidebar.isOpen;

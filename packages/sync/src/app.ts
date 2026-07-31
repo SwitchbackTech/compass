@@ -1,11 +1,15 @@
 import { Logger } from "@core/logger/winston.logger";
-import { createInternalAuthMiddleware } from "@sync/auth/internal-auth";
+import {
+  createInternalAuthMiddleware,
+  createInternalServiceAuthMiddleware,
+} from "@sync/auth/internal-auth";
 import { loadSyncConfig, type SyncConfig } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import {
   CONNECTION_CACHE_RETENTION_MS,
   purgeExpiredDisconnectedConnections,
 } from "@sync/domain/connection-retention.service";
+import { requeueFailedJobs } from "@sync/domain/failed-job-requeue.service";
 import { reconcileStaleCalendars } from "@sync/domain/reconcile.service";
 import { maintainExpiringSubscriptions } from "@sync/domain/subscription-sweep.service";
 import { SweepScheduler } from "@sync/domain/sweep-scheduler.service";
@@ -21,20 +25,12 @@ import { GoogleEventWriter } from "@sync/providers/google/google-event-writer.ad
 import { GoogleNotificationAdapter } from "@sync/providers/google/google-notifications.adapter";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
+import { redactedCause } from "@sync/safety/redact-error";
 import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
-import { CommandRepository } from "@sync/storage/repositories/command.repository";
-import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
-import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
-import { EventRepository } from "@sync/storage/repositories/event.repository";
-import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
-import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
-import { JobRepository } from "@sync/storage/repositories/job.repository";
-import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
-import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
-import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { syncRepositories } from "@sync/storage/sync-repositories";
 import { emitHealthSnapshot } from "@sync/telemetry/health-snapshot.service";
 import {
   createPostHogCaptureClient,
@@ -86,6 +82,9 @@ export function createSyncService(
   const connectionApi = deps.mongo
     ? {
         authMiddleware: createInternalAuthMiddleware({
+          secret: config.INTERNAL_AUTH_TOKEN,
+        }),
+        serviceAuthMiddleware: createInternalServiceAuthMiddleware({
           secret: config.INTERNAL_AUTH_TOKEN,
         }),
         mongo: deps.mongo,
@@ -223,14 +222,21 @@ async function start(): Promise<void> {
     // first and closes mongo last.
     const schedulers = buildSchedulers(config, mongo);
     if (schedulers) {
-      service.shutdown.register("scheduler", () => schedulers.drain.stop());
+      service.shutdown.register("scheduler", async () => {
+        // Stop every drain; each releases only its own owner's held jobs.
+        await Promise.all(schedulers.drains.map((drain) => drain.stop()));
+      });
       service.shutdown.register("reconcile", () => schedulers.reconcile.stop());
       service.shutdown.register("subscription", () =>
         schedulers.subscription.stop(),
       );
-      schedulers.drain.start();
+      service.shutdown.register("failedJobRequeue", () =>
+        schedulers.failedJobRequeue.stop(),
+      );
+      for (const drain of schedulers.drains) drain.start();
       schedulers.reconcile.start();
       schedulers.subscription.start();
+      schedulers.failedJobRequeue.start();
       logger.info(
         "Sync scheduler draining, reconciling, renewing channels, retaining, and reporting health",
       );
@@ -247,6 +253,13 @@ async function start(): Promise<void> {
   }
 }
 
+// A failed job is eligible for the self-heal sweep once it has sat failed for
+// at least this long — long enough that a real provider outage has had a
+// chance to clear before we burn another retry ladder on it.
+const FAILED_JOB_REQUEUE_COOLDOWN_MS = 30 * 60_000;
+// How many times the self-heal sweep will requeue the same job before
+// leaving it failed for an operator instead.
+const FAILED_JOB_MAX_REQUEUES = 3;
 // A resource not synced within this window is swept for a reconcile pull.
 const RECONCILE_STALE_AFTER_MS = 15 * 60_000;
 // A push channel expiring within this window is swept for renewal. Matches
@@ -295,17 +308,7 @@ function buildHealthSnapshotSweep(
 // Local-only: purge soft-disconnected connection caches past the retention
 // window. Safe without provider credentials and in passive execution.
 function buildRetentionSweep(mongo: SyncMongoService): SweepScheduler {
-  const db = mongo.db;
-  const deps = {
-    connections: new ProviderConnectionRepository(db),
-    credentials: new CredentialRepository(db),
-    calendars: new ProviderCalendarRepository(db),
-    events: new EventRepository(db),
-    eventOccurrences: new EventOccurrenceRepository(db, mongo.client),
-    syncResources: new SyncResourceRepository(db),
-    jobs: new JobRepository(db),
-    deletionMarkers: new DeletionMarkerRepository(db),
-  };
+  const deps = syncRepositories(mongo);
   return new SweepScheduler(
     {
       sweep: (before) => purgeExpiredDisconnectedConnections(deps, before),
@@ -320,61 +323,92 @@ function buildRetentionSweep(mongo: SyncMongoService): SweepScheduler {
 }
 
 // Build the background schedulers for an active, provider-configured deployment:
-// the queue DRAIN (claims and runs jobs), the RECONCILE sweep (the missed-webhook
+// the queue DRAINS (claim and run jobs), the RECONCILE sweep (the missed-webhook
 // fallback that enqueues pulls for stale calendars), and the SUBSCRIPTION sweep
 // (that renews push channels before they expire). Returns null when there is
 // nothing to run (passive execution, or no provider credentials to refresh access
-// tokens with). Repositories bind to the now-connected db; a fresh owner id per
-// process scopes the drain worker's leases.
+// tokens with). Repositories bind to the now-connected db.
+//
+// MAX_CONCURRENCY drains run in parallel. A worker's drain loop is sequential —
+// it awaits each job before claiming the next — so a single drain processes the
+// whole queue one job at a time, and one long initialImport stalls every queued
+// pull behind it. That starved change-propagation for hours after the
+// 2026-07-29 production cutover.
+//
+// Each drain gets its OWN owner id, which is load-bearing: leases are per-owner
+// and `releaseOwned(owner)` releases exactly that worker's held jobs on stop, so
+// sharing an id would let one worker's shutdown flip another's in-flight job
+// back to pending mid-run. Racing claims are already safe — claimDueJob is a
+// single atomic findOneAndUpdate, so two workers can never win the same job.
 function buildSchedulers(
   config: SyncConfig,
   mongo: SyncMongoService,
 ): {
-  drain: SyncScheduler;
+  drains: SyncScheduler[];
   reconcile: SweepScheduler;
   subscription: SweepScheduler;
+  failedJobRequeue: SweepScheduler;
 } | null {
   if (config.EXECUTION !== "active") return null;
   const authAdapter = buildAuthAdapter(config);
   if (!authAdapter) return null;
 
-  const db = mongo.db;
-  const owner = randomUUID();
-  const resources = new SyncResourceRepository(db);
-  const jobs = new JobRepository(db);
-  const worker = new SyncJobWorker(
-    {
-      events: new EventRepository(db),
-      occurrences: new EventOccurrenceRepository(db, mongo.client),
-      resources,
-      calendars: new ProviderCalendarRepository(db),
-      connections: new ProviderConnectionRepository(db),
-      discovery: new GoogleCalendarAdapter(),
-      commands: new CommandRepository(db),
-      jobs,
-      reader: new GoogleEventReaderAdapter(),
-      custody: new CredentialCustody(new CredentialRepository(db), authAdapter),
-      notifications: new GoogleNotificationAdapter(),
-      // Where the provider posts change notifications back; the callback route
-      // verifies them against the stored subscription.
-      callbackUrl: `${config.CALLBACK_BASE_URL}${NOTIFICATIONS_PATH}`,
-      invalidations: new InvalidationRepository(db),
-    },
-    owner,
-    {
-      onError: (error) => logger.error("Sync job engine failed", error),
-    },
-  );
-  const drain = new SyncScheduler(
-    { worker, jobs },
-    { owner, onError: (error) => logger.error("Sync job drain failed", error) },
-  );
+  const repos = syncRepositories(mongo);
+  const resources = repos.syncResources;
+  const jobs = repos.jobs;
+  const buildDrain = (): SyncScheduler => {
+    const owner = randomUUID();
+    const worker = new SyncJobWorker(
+      {
+        events: repos.events,
+        occurrences: repos.eventOccurrences,
+        resources,
+        calendars: repos.calendars,
+        connections: repos.connections,
+        discovery: new GoogleCalendarAdapter(),
+        commands: repos.commands,
+        jobs,
+        reader: new GoogleEventReaderAdapter(),
+        custody: new CredentialCustody(repos.credentials, authAdapter),
+        notifications: new GoogleNotificationAdapter(),
+        // Where the provider posts change notifications back; the callback route
+        // verifies them against the stored subscription.
+        callbackUrl: `${config.CALLBACK_BASE_URL}${NOTIFICATIONS_PATH}`,
+        invalidations: repos.invalidations,
+      },
+      owner,
+      {
+        onError: (error) => logger.error("Sync job engine failed", error),
+        onDrop: (job, reason) =>
+          logger.warn(`Sync job ${job.kind} (${job._id}) dropped: ${reason}`),
+      },
+    );
+    return new SyncScheduler(
+      { worker, jobs },
+      {
+        owner,
+        onError: (error) => logger.error("Sync job drain failed", error),
+      },
+    );
+  };
+  const drains = Array.from({ length: config.MAX_CONCURRENCY }, buildDrain);
   // The reconcile fallback looks BACK: enqueue a pull for any events resource not
   // synced within the stale window (negative offset from now).
   const reconcile = new SweepScheduler(
     {
-      sweep: (before) =>
-        reconcileStaleCalendars({ resources, jobs }, before, () => new Date()),
+      sweep: async (before) => {
+        const enqueued = await reconcileStaleCalendars(
+          { resources, jobs },
+          before,
+          () => new Date(),
+        );
+        // One line per cycle with work: silence here previously meant either
+        // "all fresh" or "sweep dead", indistinguishably.
+        if (enqueued > 0) {
+          logger.info(`Sync reconcile sweep enqueued ${enqueued} pull(s)`);
+        }
+        return enqueued;
+      },
     },
     {
       windowMs: -RECONCILE_STALE_AFTER_MS,
@@ -399,7 +433,38 @@ function buildSchedulers(
         logger.error("Sync subscription maintenance sweep failed", error),
     },
   );
-  return { drain, reconcile, subscription };
+  // Self-heal sweep: give jobs stuck in state:"failed" a fresh retry ladder
+  // once they have cooled down, and loudly log any that keep re-failing past
+  // the requeue cap. Looks BACK, like reconcile — a job is eligible once it
+  // has been failed since before the cooldown window.
+  const failedJobRequeue = new SweepScheduler(
+    {
+      sweep: async (before) => {
+        const result = await requeueFailedJobs(
+          { jobs },
+          before,
+          () => new Date(),
+          FAILED_JOB_MAX_REQUEUES,
+        );
+        if (result.requeued > 0) {
+          logger.info(
+            `Sync self-heal sweep requeued ${result.requeued} failed job(s)`,
+          );
+        }
+        if (result.exhausted > 0) {
+          logger.error(
+            `Sync self-heal sweep: ${result.exhausted} failed job(s) exhausted their requeue budget and need operator attention`,
+          );
+        }
+        return result.requeued;
+      },
+    },
+    {
+      windowMs: -FAILED_JOB_REQUEUE_COOLDOWN_MS,
+      onError: (error) => logger.error("Sync self-heal sweep failed", error),
+    },
+  );
+  return { drains, reconcile, subscription, failedJobRequeue };
 }
 
 function registerSignalHandlers(
@@ -417,12 +482,22 @@ function registerSignalHandlers(
   process.on("SIGQUIT", () => handle("SIGQUIT"));
 }
 
-// Retained for the scaffold identity test and quick manual smoke checks.
-export function describeSyncService(): string {
-  return "compass-sync scaffold ready";
-}
-
 if (import.meta.main) {
+  // Registering a handler suppresses Node/Bun's default crash-on-unhandled-
+  // rejection behavior, so without one of our own the process would keep
+  // running silently after whatever left a promise dangling - no log, no
+  // restart, just a process in an unknown state. Log with context, then exit
+  // the same way an uncaught synchronous throw would. Gated behind
+  // import.meta.main like the rest of this block so a test importing this
+  // module for its exports never installs a process-wide handler. `reason`
+  // can be anything, including a raw GaxiosError from an uncaught Google API
+  // call (this process talks to Google constantly) - redactedCause strips
+  // its config/response before logging.
+  process.on("unhandledRejection", (reason) => {
+    logger.error("Unhandled promise rejection", redactedCause(reason));
+    process.exit(1);
+  });
+
   start().catch((error) => {
     logger.error("Sync service failed to start", error);
     process.exit(1);

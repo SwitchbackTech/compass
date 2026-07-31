@@ -317,6 +317,30 @@ export function resolveDraftRecurrenceRules(
   return Array.isArray(rule) ? [...rule] : [];
 }
 
+// The draft renders its own recurrence preview separately (Draft.tsx's
+// getRecurringDraftPreviews), but the *saved* sibling occurrences of the
+// series being edited still come through the normal week query and render
+// on their own - unaffected by an in-progress edit to the shared rule. Once
+// the user has actually changed the recurrence (weekdays, frequency, until,
+// or cleared it), those siblings are stale: they reflect the rule as it
+// stood before this edit, not the draft's live preview. This returns the
+// series id whose OTHER occurrences should be hidden from the grid while
+// that's true, so the draft's own previews are the only thing shown for the
+// series - and null whenever recurrence hasn't been touched (the draft's
+// "preserve" kind), so dragging/editing non-recurrence fields never hides
+// anything.
+export function suppressedSeriesIdForDraft(
+  draft: GridEventDraft | null,
+): string | null {
+  if (!draft || draft.kind !== "edit") return null;
+  if (draft.values.recurrence.kind === "preserve") return null;
+
+  const { recurrence } = draft.source;
+  if (recurrence.kind === "occurrence") return recurrence.seriesId;
+  if (recurrence.kind === "series") return draft.source.id;
+  return null;
+}
+
 export function patchGridDraftRecurrence(
   draft: GridEventDraft,
   nextRules: readonly string[],
@@ -324,14 +348,24 @@ export function patchGridDraftRecurrence(
 ): GridEventDraft {
   const currentRules = resolveDraftRecurrenceRules(draft, seriesRules);
   const ruleUnchanged = fastDeepEqual(currentRules, [...nextRules]);
+  // Only useRecurrence calls this, and only with an explicit user edit (a
+  // weekday/frequency/until change, or the Repeat toggle turned off) - a
+  // draft that hasn't touched recurrence never reaches here, so it keeps
+  // "preserve" from editGridEventDraft instead. Empty rules is therefore
+  // always an explicit clear, on both create and edit drafts: "single",
+  // never "preserve" (which for an edit draft would just resolve back to
+  // the source event's original rules, making the Repeat toggle a no-op).
   const recurrence = ruleUnchanged
     ? draft.values.recurrence
     : nextRules.length > 0
       ? { kind: "series" as const, rules: [...nextRules] }
-      : draft.kind === "edit"
-        ? ({ kind: "preserve" } as const)
-        : ({ kind: "single" } as const);
+      : ({ kind: "single" } as const);
 
+  // The two branches look identical, but each is required to keep
+  // GridEventDraft's discriminated union narrowed (see
+  // replaceGridDraftSchedule above) - `recurrence` can structurally carry
+  // "preserve" here (from the ruleUnchanged passthrough on an edit draft),
+  // which isn't assignable to a create draft's NewEventRecurrenceDraft.
   if (draft.kind === "create") {
     return {
       ...draft,
@@ -343,13 +377,7 @@ export function patchGridDraftRecurrence(
     };
   }
 
-  return {
-    ...draft,
-    values: {
-      ...draft.values,
-      recurrence,
-    },
-  };
+  return { ...draft, values: { ...draft.values, recurrence } };
 }
 
 export function patchGridDraftScheduleDates(

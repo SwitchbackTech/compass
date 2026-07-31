@@ -14,6 +14,7 @@ import {
   patchGridDraftRecurrence,
   replaceGridDraftSchedule,
   resolveDraftRecurrenceRules,
+  suppressedSeriesIdForDraft,
 } from "./grid-event-draft.adapter";
 import { expect, test } from "bun:test";
 
@@ -301,4 +302,71 @@ test("a patch with a genuinely different rule converts the draft to an explicit 
     kind: "series",
     rules: ["RRULE:FREQ=DAILY"],
   });
+});
+
+test("clearing recurrence on an edit draft produces an explicit single, not preserve", () => {
+  // preserve would resolve back through the source event's own rules
+  // (legacyRecurrenceFromDraft), making the Repeat toggle a no-op for an
+  // existing recurring event - the exact bug this guards against.
+  const draft = editGridEventDraft(occurrenceEvent);
+  if (!draft) throw new Error("Expected scheduled event draft");
+
+  const updated = patchGridDraftRecurrence(draft, [], SERIES_RULES);
+
+  expect(updated.values.recurrence).toEqual({ kind: "single" });
+});
+
+test("suppressedSeriesIdForDraft: null for a null draft", () => {
+  expect(suppressedSeriesIdForDraft(null)).toBeNull();
+});
+
+test("suppressedSeriesIdForDraft: null for a create draft", () => {
+  const draft = createGridEventDraft({
+    kind: "allDay",
+    start: new Date("2026-07-11"),
+    end: new Date("2026-07-12"),
+  });
+
+  expect(suppressedSeriesIdForDraft(draft)).toBeNull();
+});
+
+test("suppressedSeriesIdForDraft: null for an untouched edit draft (preserve)", () => {
+  const draft = editGridEventDraft(occurrenceEvent);
+
+  expect(suppressedSeriesIdForDraft(draft)).toBeNull();
+});
+
+test("suppressedSeriesIdForDraft: the series id once an occurrence's recurrence is explicitly edited", () => {
+  const draft = editGridEventDraft(occurrenceEvent);
+  if (!draft) throw new Error("Expected scheduled event draft");
+
+  const edited = patchGridDraftRecurrence(
+    draft,
+    ["RRULE:FREQ=DAILY"],
+    SERIES_RULES,
+  );
+
+  expect(suppressedSeriesIdForDraft(edited)).toEqual(SERIES_ID);
+});
+
+test("suppressedSeriesIdForDraft: the series id once an occurrence's recurrence is cleared entirely", () => {
+  const draft = editGridEventDraft(occurrenceEvent);
+  if (!draft) throw new Error("Expected scheduled event draft");
+
+  const cleared = patchGridDraftRecurrence(draft, [], SERIES_RULES);
+
+  expect(suppressedSeriesIdForDraft(cleared)).toEqual(SERIES_ID);
+});
+
+test("suppressedSeriesIdForDraft: the base event's own id once a series base's recurrence is edited", () => {
+  const seriesEvent = {
+    ...(timedEvent as object),
+    recurrence: { kind: "series" as const, rules: SERIES_RULES },
+  } as unknown as Event;
+  const draft = editGridEventDraft(seriesEvent);
+  if (!draft) throw new Error("Expected scheduled event draft");
+
+  const edited = patchGridDraftRecurrence(draft, ["RRULE:FREQ=DAILY"]);
+
+  expect(suppressedSeriesIdForDraft(edited)).toEqual(seriesEvent.id);
 });

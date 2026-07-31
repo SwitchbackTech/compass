@@ -399,6 +399,7 @@ write_config_if_missing() {
   supertokens_key=$(generate_secret "SuperTokens API key") || exit 1
   compass_sync_token=$(generate_secret "Compass sync token") || exit 1
   gcal_notification_token=$(generate_secret "Google Calendar notification token") || exit 1
+  sync_internal_auth_token=$(generate_secret "Sync internal auth token") || exit 1
 
   umask 077
   TMP_ENV=$COMPASS_HOME/compass.yaml.$$
@@ -443,6 +444,23 @@ google:
 #   clientId: REPLACE_WITH_GOOGLE_CLIENT_ID # e.g. your-id.apps.googleusercontent.com
 #   clientSecret: REPLACE_WITH_GOOGLE_CLIENT_SECRET
 #   channelExpirationMin: 10
+
+# Compass Sync service — self-host runs the same architecture as Compass
+# Cloud. Uses the SAME bundled mongo as \`mongo:\` above, isolated to its own
+# compass_sync database (no separate database user exists on the bundled
+# image, so this reuses the root credentials against a different database
+# name). callbackBaseUrl defaults to localhost, which works for the OAuth
+# redirect but cannot receive Google push notifications — set it to your
+# public URL (and rerun with COMPASS_HOME set, or edit $CONFIG_FILE directly)
+# once you have a domain.
+sync:
+  port: 3010
+  mongoUri: mongodb://compass:$mongo_password@mongo:27017/compass_sync?authSource=admin&replicaSet=rs0
+  internalAuthToken: $sync_internal_auth_token
+  callbackBaseUrl: http://localhost:3010
+  serviceUrl: http://sync:3010
+  cloudMutationMode: enabled
+  execution: active
 EOF
 
   chmod 600 "$TMP_ENV" || fail "Could not secure temporary env file."
@@ -485,10 +503,29 @@ EOF
   [ $? -eq 0 ] || fail "Could not write marker file: $MARKER_FILE."
 }
 
+# Mirrors self-host/compass's default_profiles() (PR #2450) — duplicated
+# rather than sourced because the helper script isn't downloaded until after
+# this installer needs it once (start_stack, on first install). Keep the two
+# in sync; self-host/docker-compose.test.ts exercises the canonical copy.
+default_profiles() {
+  profiles=
+
+  mongo_uri=$(strip_quotes "$(read_config_value mongo.uri)")
+  case "$mongo_uri" in
+    "" | *//mongo:* | *@mongo:*) profiles=selfhosted ;;
+  esac
+
+  if [ -n "$(strip_quotes "$(read_config_value sync.mongoUri)")" ]; then
+    profiles="${profiles:+$profiles,}sync"
+  fi
+
+  printf '%s\n' "$profiles"
+}
+
 set_compose_env() {
   [ -f "$CONFIG_FILE" ] || fail "Missing config file: $CONFIG_FILE."
   export COMPASS_CONFIG_FILE="$CONFIG_FILE"
-  export COMPOSE_PROFILES="${COMPOSE_PROFILES-selfhosted}"
+  export COMPOSE_PROFILES="${COMPOSE_PROFILES-$(default_profiles)}"
   export COMPASS_VERSION="$(strip_quotes "$(read_config_value runtime.version)")"
   export WEB_PORT="$(strip_quotes "$(read_config_value web.port)")"
   export PORT="$(strip_quotes "$(read_config_value backend.port)")"

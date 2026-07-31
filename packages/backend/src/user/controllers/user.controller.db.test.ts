@@ -14,7 +14,6 @@ import supertokensUserCleanupService from "@backend/auth/services/supertokens/su
 import { UserError } from "@backend/common/errors/user/user.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
-import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import {
   afterAll,
   beforeAll,
@@ -53,7 +52,6 @@ describe("UserController", () => {
         superTokensMappings: 0,
         superTokensMetadata: 0,
       });
-      spyOn(googleWatchService, "stopWatches").mockResolvedValue([]);
     });
 
     it("should delete the account of the user in the session", async () => {

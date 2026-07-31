@@ -1,13 +1,9 @@
-import {
-  seedStoresFromState,
-  type TestAppState,
-} from "@web/__tests__/utils/state/seed-stores";
+import { type TestAppState } from "@web/__tests__/utils/state/seed-stores";
 import { initialDraftState } from "@web/events/stores/draft.store";
 
 /**
  * Build a baseline test state (draft empty) merged with overrides. Pass the
- * result to the render helpers' `state` option or seed it directly via
- * seedStoresFromState().
+ * result to the render helpers' `state` option.
  */
 export const createInitialState = (
   partialState: Partial<TestAppState> = {},
@@ -18,9 +14,4 @@ export const createInitialState = (
     },
     ...partialState,
   };
-};
-
-/** Seed the stores directly (outside the render helpers). */
-export const seedInitialState = (partialState: Partial<TestAppState> = {}) => {
-  seedStoresFromState(createInitialState(partialState));
 };

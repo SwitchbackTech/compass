@@ -1,10 +1,15 @@
 import { calendar, type calendar_v3 } from "@googleapis/calendar";
 import { OAuth2Client } from "google-auth-library";
 import { type EventSchedule } from "@core/types/event.contracts";
-import { type gCalendar, type gSchema$Event } from "@core/types/gcal";
+import {
+  type gCalendar,
+  type gSchema$Event,
+  type gSchema$Events,
+} from "@core/types/gcal";
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
 import { googleColorIdFields } from "@sync/providers/google/google-color.map";
 import { normalizeGoogleEvent } from "@sync/providers/google/google-event.normalizer";
+import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
 import { type ProviderEventRead } from "@sync/providers/provider-event.port";
 import {
   type InvitationIntent,
@@ -12,6 +17,7 @@ import {
   type ProviderDeleteInput,
   type ProviderEventWriter,
   type ProviderFetchInput,
+  type ProviderInstanceFetchInput,
   type ProviderPatchInput,
   ProviderWriteError,
   type ProviderWriteRecurrence,
@@ -43,6 +49,15 @@ export interface GoogleEventsApi {
     ifMatch: string | null;
   }): Promise<void>;
   get(params: { calendarId: string; eventId: string }): Promise<gSchema$Event>;
+  // originalStart, when given, filters to the single instance whose
+  // ORIGINAL scheduled start matches it — resolving one occurrence's own
+  // provider identity without guessing a time window (a rescheduled
+  // instance's CURRENT start can differ arbitrarily from its identity).
+  instances(params: {
+    calendarId: string;
+    eventId: string;
+    originalStart: string;
+  }): Promise<gSchema$Events>;
 }
 
 export type GoogleEventsApiFactory = (accessToken: string) => GoogleEventsApi;
@@ -50,7 +65,11 @@ export type GoogleEventsApiFactory = (accessToken: string) => GoogleEventsApi;
 const defaultApiFactory: GoogleEventsApiFactory = (accessToken) => {
   const auth = new OAuth2Client();
   auth.setCredentials({ access_token: accessToken });
-  const gcal: gCalendar = calendar({ version: "v3", auth });
+  const gcal: gCalendar = calendar({
+    version: "v3",
+    auth,
+    timeout: GOOGLE_REQUEST_TIMEOUT_MS,
+  });
   // An If-Match precondition is passed as a request header; googleapis takes
   // per-call gaxios options as the second argument.
   const ifMatchOptions = (ifMatch: string | null) =>
@@ -79,6 +98,14 @@ const defaultApiFactory: GoogleEventsApiFactory = (accessToken) => {
     },
     async get({ calendarId, eventId }) {
       const { data } = await gcal.events.get({ calendarId, eventId });
+      return data;
+    },
+    async instances({ calendarId, eventId, originalStart }) {
+      const { data } = await gcal.events.instances({
+        calendarId,
+        eventId,
+        originalStart,
+      });
       return data;
     },
   };
@@ -178,6 +205,31 @@ export class GoogleEventWriter implements ProviderEventWriter {
       });
       return normalizeGoogleEvent(event);
     } catch (error) {
+      if (isNotFound(error)) return null;
+      throw classifyWriteError(error);
+    }
+  }
+
+  async fetchInstanceAt(
+    input: ProviderInstanceFetchInput,
+  ): Promise<ProviderEventRead | null> {
+    const api = this.#makeApi(input.accessToken);
+    try {
+      const page = await api.instances({
+        calendarId: input.calendarId,
+        eventId: input.seriesProviderEventId,
+        originalStart: input.originalStartAt,
+      });
+      const item = page.items?.[0];
+      // No instance at that instant: never materialized (a rule that never
+      // actually produced an occurrence there), or the series itself is gone
+      // — either way, nothing for the caller to patch/delete.
+      if (!item) return null;
+      return normalizeGoogleEvent(item);
+    } catch (error) {
+      // A 404 on the SERIES itself (not just the instance) surfaces here too
+      // — both mean "nothing to resolve", so both return null rather than
+      // distinguishing (the caller treats either the same way).
       if (isNotFound(error)) return null;
       throw classifyWriteError(error);
     }

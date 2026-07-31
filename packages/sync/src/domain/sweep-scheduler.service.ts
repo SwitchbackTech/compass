@@ -1,7 +1,10 @@
+import { PollLoop } from "@sync/domain/poll-loop";
+
 // Periodically runs a sweep on a jittered interval. It owns only the timer and
-// its lifecycle; the sweep itself (find due resources, enqueue jobs) is injected,
-// so this is testable without repositories or real time. Both the reconcile
-// fallback and subscription maintenance drive their sweeps through it.
+// its lifecycle (via PollLoop); the sweep itself (find due resources, enqueue
+// jobs) is injected, so this is testable without repositories or real time.
+// Both the reconcile fallback and subscription maintenance drive their sweeps
+// through it.
 
 export interface SweepSchedulerDeps {
   // Run one sweep for the cutoff instant `before`; returns how many it enqueued.
@@ -32,78 +35,43 @@ const DEFAULT_INTERVAL_MS = 10 * 60_000;
 const DEFAULT_JITTER_RATIO = 0.2;
 
 export class SweepScheduler {
-  readonly #sweep: (before: Date) => Promise<number>;
-  readonly #intervalMs: number;
-  readonly #jitterRatio: number;
-  readonly #windowMs: number;
-  readonly #now: () => Date;
-  readonly #random: () => number;
-  readonly #onError: (error: unknown) => void;
-
-  #running = false;
-  #loop: Promise<void> | null = null;
-  #wake: (() => void) | null = null;
-  #timer: ReturnType<typeof setTimeout> | null = null;
+  readonly #loop: PollLoop;
 
   constructor(deps: SweepSchedulerDeps, options: SweepSchedulerOptions = {}) {
-    this.#sweep = deps.sweep;
-    this.#intervalMs = options.intervalMs ?? DEFAULT_INTERVAL_MS;
-    this.#jitterRatio = options.jitterRatio ?? DEFAULT_JITTER_RATIO;
-    this.#windowMs = options.windowMs ?? 0;
-    this.#now = options.now ?? (() => new Date());
-    this.#random = options.random ?? Math.random;
-    this.#onError = options.onError ?? (() => {});
+    const intervalMs = options.intervalMs ?? DEFAULT_INTERVAL_MS;
+    const jitterRatio = options.jitterRatio ?? DEFAULT_JITTER_RATIO;
+    const windowMs = options.windowMs ?? 0;
+    const now = options.now ?? (() => new Date());
+    const random = options.random ?? Math.random;
+
+    // interval * (1 ± jitterRatio).
+    const nextIntervalMs = (): number => {
+      const swing = jitterRatio * (random() * 2 - 1);
+      return Math.max(0, Math.round(intervalMs * (1 + swing)));
+    };
+
+    this.#loop = new PollLoop({
+      tick: async () => {
+        const before = new Date(now().getTime() + windowMs);
+        await deps.sweep(before);
+        // A sweep always waits the same jittered interval regardless of how
+        // much it found, so "did work" plays no part in its own delay.
+        return false;
+      },
+      nextDelayMs: () => nextIntervalMs(),
+      onError: options.onError,
+    });
   }
 
   // Begin sweeping. Runs a sweep immediately (so a restart promptly catches
   // anything missed while down), then on jittered intervals. Idempotent.
   start(): void {
-    if (this.#running) return;
-    this.#running = true;
-    this.#loop = this.#run();
+    this.#loop.start();
   }
 
   // Stop sweeping. Waits for an in-flight sweep to finish so nothing is torn
   // down mid-enqueue. Idempotent and safe when never started.
   async stop(): Promise<void> {
-    this.#running = false;
-    if (this.#timer) {
-      clearTimeout(this.#timer);
-      this.#timer = null;
-    }
-    this.#wake?.();
-    this.#wake = null;
-    if (this.#loop) await this.#loop;
-    this.#loop = null;
-  }
-
-  async #run(): Promise<void> {
-    while (this.#running) {
-      try {
-        const before = new Date(this.#now().getTime() + this.#windowMs);
-        await this.#sweep(before);
-      } catch (error) {
-        this.#onError(error);
-      }
-      if (!this.#running) break;
-      await this.#idle(this.#nextIntervalMs());
-    }
-  }
-
-  // interval * (1 ± jitterRatio).
-  #nextIntervalMs(): number {
-    const swing = this.#jitterRatio * (this.#random() * 2 - 1);
-    return Math.max(0, Math.round(this.#intervalMs * (1 + swing)));
-  }
-
-  #idle(ms: number): Promise<void> {
-    return new Promise((resolve) => {
-      this.#wake = resolve;
-      this.#timer = setTimeout(() => {
-        this.#wake = null;
-        this.#timer = null;
-        resolve();
-      }, ms);
-    });
+    await this.#loop.stop();
   }
 }

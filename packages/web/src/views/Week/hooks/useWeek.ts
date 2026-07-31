@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ROOT_ROUTES, ROUTE_IDS } from "@web/common/constants/routes";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
@@ -37,11 +37,14 @@ export const useWeek = (
     () => dayjs(anchorDateString, DATE_FORMAT),
     [anchorDateString],
   );
-  const setAnchor = (date: Dayjs) =>
-    navigate({
-      to: ROOT_ROUTES.WEEK_DATE,
-      params: { dateString: date.format(DATE_FORMAT) },
-    });
+  const setAnchor = useCallback(
+    (date: Dayjs) =>
+      navigate({
+        to: ROOT_ROUTES.WEEK_DATE,
+        params: { dateString: date.format(DATE_FORMAT) },
+      }),
+    [navigate],
+  );
   const navigationSourceRef = useRef<WeekNavigationSource>("manual");
 
   const start = useMemo(() => anchor.startOf("day"), [anchor]);
@@ -102,28 +105,41 @@ export const useWeek = (
     });
   }, [end, start]);
 
-  const goToDate = (date: Dayjs) => {
-    navigationSourceRef.current = "manual";
-    setAnchor(date);
-  };
+  const goToDate = useCallback(
+    (date: Dayjs) => {
+      navigationSourceRef.current = "manual";
+      setAnchor(date);
+    },
+    [setAnchor],
+  );
 
-  const pageWindow = (direction: 1 | -1, source: WeekNavigationSource) => {
-    navigationSourceRef.current = source;
-    setAnchor(start.add(direction * visibleDayCount, "day"));
-  };
+  const pageWindow = useCallback(
+    (direction: 1 | -1, source: WeekNavigationSource) => {
+      navigationSourceRef.current = source;
+      setAnchor(start.add(direction * visibleDayCount, "day"));
+    },
+    [setAnchor, start, visibleDayCount],
+  );
 
-  const incrementWeek = (source: WeekNavigationSource = "manual") =>
-    pageWindow(1, source);
+  const incrementWeek = useCallback(
+    (source: WeekNavigationSource = "manual") => pageWindow(1, source),
+    [pageWindow],
+  );
 
-  const decrementWeek = (source: WeekNavigationSource = "manual") =>
-    pageWindow(-1, source);
+  const decrementWeek = useCallback(
+    (source: WeekNavigationSource = "manual") => pageWindow(-1, source),
+    [pageWindow],
+  );
 
-  const shiftViewByDay = (direction: 1 | -1) => {
-    navigationSourceRef.current = "day-shift";
-    setAnchor(start.add(direction, "day"));
-  };
+  const shiftViewByDay = useCallback(
+    (direction: 1 | -1) => {
+      navigationSourceRef.current = "day-shift";
+      setAnchor(start.add(direction, "day"));
+    },
+    [setAnchor, start],
+  );
 
-  const goToToday = () => {
+  const goToToday = useCallback(() => {
     const navigationSource = navigationSourceRef.current;
     navigationSourceRef.current = "manual";
     if (!isCurrentWeek) {
@@ -134,32 +150,62 @@ export const useWeek = (
           : 0;
       setAnchor(todayWindowStart.add(shiftedWindowOffset, "day"));
     }
-  };
+  }, [isCurrentWeek, setAnchor, start, today]);
 
-  const getLastNavigationSource = () => navigationSourceRef.current;
+  const getLastNavigationSource = useCallback(
+    () => navigationSourceRef.current,
+    [],
+  );
 
-  const weekProps = {
-    component: {
+  const componentProps = useMemo(
+    () => ({
       category: (isCurrentWeek ? "current" : "pastFuture") as Category_View,
       endOfView: end,
       isCurrentWeek,
       startOfView: start,
       week,
       weekDays,
-    },
-    query: {
+    }),
+    [isCurrentWeek, end, start, week, weekDays],
+  );
+
+  const queryProps = useMemo(
+    () => ({
       endOfView: queryEnd,
       startOfView: start,
-    },
-    state: { goToDate },
-    util: {
+    }),
+    [queryEnd, start],
+  );
+
+  const stateProps = useMemo(() => ({ goToDate }), [goToDate]);
+
+  const utilProps = useMemo(
+    () => ({
       decrementWeek,
       getLastNavigationSource,
       goToToday,
       incrementWeek,
       shiftViewByDay,
-    },
-  };
+    }),
+    [
+      decrementWeek,
+      getLastNavigationSource,
+      goToToday,
+      incrementWeek,
+      shiftViewByDay,
+    ],
+  );
+
+  const weekProps = useMemo(
+    () => ({
+      component: componentProps,
+      query: queryProps,
+      state: stateProps,
+      util: utilProps,
+    }),
+    [componentProps, queryProps, stateProps, utilProps],
+  );
+
   return weekProps;
 };
 

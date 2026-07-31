@@ -55,13 +55,14 @@ export const formatLastSyncedLabel = (
 export const getGoogleConnectionConfig = (
   state: GoogleUiState,
   onConnectGoogle: () => void,
-  onRepairGoogle: () => void,
 ): GoogleUiConfig => {
   switch (state) {
     case "checking":
-    case "repairing":
     case "IMPORTING":
     case "HEALTHY":
+    // ATTENTION means a Sync outage or a permanent conflict; no client
+    // action can fix either, so it also renders no command action.
+    case "ATTENTION":
       return { commandAction: null };
     case "NOT_CONNECTED":
       return {
@@ -77,14 +78,6 @@ export const getGoogleConnectionConfig = (
           label: "Reconnect Google Calendar",
           icon: COMMAND_ICON,
           onSelect: onConnectGoogle,
-        },
-      };
-    case "ATTENTION":
-      return {
-        commandAction: {
-          label: "Sync Google Calendar",
-          icon: COMMAND_ICON,
-          onSelect: onRepairGoogle,
         },
       };
   }
@@ -118,7 +111,6 @@ export const getGoogleSyncStatus = (
     case "HEALTHY":
       return { variant: "healthy", text: "Calendar up-to-date" };
     case "IMPORTING":
-    case "repairing":
     case "checking":
       return { variant: "syncing", text: "Syncing your calendar…" };
     case "ATTENTION":

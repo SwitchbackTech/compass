@@ -1,4 +1,5 @@
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
+import { ProviderError } from "@sync/providers/provider-error";
 import { type ProviderEventRead } from "@sync/providers/provider-event.port";
 
 // A half-open working window over an event's time, as RFC3339 timestamps. The
@@ -33,6 +34,10 @@ export interface ProviderEventReadInput {
   // request of a pass; paging afterward is identified by pageToken alone.
   readonly cursor?: string | null;
   readonly pageToken?: string | null;
+  // The owning calendar's custom event-color labels (id -> hex), for
+  // providers that support them (e.g. Google's post-June-2026 event labels).
+  // A provider with no such concept simply ignores this.
+  readonly colorLabels?: ReadonlyMap<string, string>;
 }
 
 // A provider-neutral event read port. One call reads one page; the caller
@@ -55,13 +60,4 @@ export type ProviderEventReadErrorReason =
   | "transient"
   | "readFailed";
 
-export class ProviderEventReadError extends Error {
-  constructor(
-    readonly reason: ProviderEventReadErrorReason,
-    message: string,
-    options?: { cause?: unknown },
-  ) {
-    super(message, options);
-    this.name = "ProviderEventReadError";
-  }
-}
+export class ProviderEventReadError extends ProviderError<ProviderEventReadErrorReason> {}

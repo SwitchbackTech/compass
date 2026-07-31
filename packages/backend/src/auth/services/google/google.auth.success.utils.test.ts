@@ -1,23 +1,8 @@
 import { faker } from "@faker-js/faker";
 import { ObjectId } from "mongodb";
-import * as syncRecords from "@backend/sync/services/records/sync-records.repository";
 import * as userQueries from "@backend/user/queries/user.queries";
 import { determineGoogleAuthMode } from "./util/google.auth.util";
 import { describe, expect, it, spyOn } from "bun:test";
-
-function makeCompassUser(overrides?: {
-  googleId?: string;
-  hasRefreshToken?: boolean;
-}) {
-  return {
-    _id: new ObjectId(),
-    google: {
-      googleId: overrides?.googleId ?? faker.string.uuid(),
-      gRefreshToken:
-        overrides?.hasRefreshToken === false ? null : faker.string.uuid(),
-    },
-  };
-}
 
 describe("determineGoogleAuthMode", () => {
   it("returns SIGNUP when there is no linked Compass user", async () => {
@@ -29,8 +14,6 @@ describe("determineGoogleAuthMode", () => {
     ).resolves.toEqual({
       authMode: "SIGNUP",
       compassUserId: null,
-      hasStoredRefreshToken: false,
-      hasHealthySync: false,
       createdNewRecipeUser: true,
     });
 
@@ -40,57 +23,15 @@ describe("determineGoogleAuthMode", () => {
     });
   });
 
-  it("returns RECONNECT_REPAIR when the user is missing a stored refresh token", async () => {
-    const user = makeCompassUser({ hasRefreshToken: false });
+  it("returns SIGNIN when a Compass user is already linked", async () => {
+    const user = { _id: new ObjectId() };
     spyOn(userQueries, "findCanonicalCompassUser").mockResolvedValue(user);
-    spyOn(syncRecords, "getSync").mockResolvedValue({
-      google: { events: [{ nextSyncToken: "x" }] },
-    });
-    spyOn(syncRecords, "canDoIncrementalSync").mockReturnValue(true);
 
     await expect(
-      determineGoogleAuthMode(user.google.googleId, null, false),
+      determineGoogleAuthMode(faker.string.uuid(), null, false),
     ).resolves.toEqual({
-      authMode: "RECONNECT_REPAIR",
+      authMode: "SIGNIN",
       compassUserId: user._id.toString(),
-      hasStoredRefreshToken: false,
-      hasHealthySync: true,
-      createdNewRecipeUser: false,
-    });
-  });
-
-  it("returns RECONNECT_REPAIR when sync is not healthy", async () => {
-    const user = makeCompassUser();
-    spyOn(userQueries, "findCanonicalCompassUser").mockResolvedValue(user);
-    spyOn(syncRecords, "getSync").mockResolvedValue({ google: { events: [] } });
-    spyOn(syncRecords, "canDoIncrementalSync").mockReturnValue(false);
-
-    await expect(
-      determineGoogleAuthMode(user.google.googleId, null, false),
-    ).resolves.toEqual({
-      authMode: "RECONNECT_REPAIR",
-      compassUserId: user._id.toString(),
-      hasStoredRefreshToken: true,
-      hasHealthySync: false,
-      createdNewRecipeUser: false,
-    });
-  });
-
-  it("returns SIGNIN_INCREMENTAL when the user has a refresh token and healthy sync", async () => {
-    const user = makeCompassUser();
-    spyOn(userQueries, "findCanonicalCompassUser").mockResolvedValue(user);
-    spyOn(syncRecords, "getSync").mockResolvedValue({
-      google: { events: [{ nextSyncToken: "token" }] },
-    });
-    spyOn(syncRecords, "canDoIncrementalSync").mockReturnValue(true);
-
-    await expect(
-      determineGoogleAuthMode(user.google.googleId, null, false),
-    ).resolves.toEqual({
-      authMode: "SIGNIN_INCREMENTAL",
-      compassUserId: user._id.toString(),
-      hasStoredRefreshToken: true,
-      hasHealthySync: true,
       createdNewRecipeUser: false,
     });
   });
@@ -99,15 +40,12 @@ describe("determineGoogleAuthMode", () => {
     const user = { _id: new ObjectId() };
     const googleUserId = faker.string.uuid();
     spyOn(userQueries, "findCanonicalCompassUser").mockResolvedValueOnce(user);
-    spyOn(syncRecords, "getSync").mockResolvedValue(null);
 
     await expect(
       determineGoogleAuthMode(googleUserId, " Existing@Example.com ", false),
     ).resolves.toEqual({
-      authMode: "RECONNECT_REPAIR",
+      authMode: "SIGNIN",
       compassUserId: user._id.toString(),
-      hasStoredRefreshToken: false,
-      hasHealthySync: false,
       createdNewRecipeUser: false,
     });
 

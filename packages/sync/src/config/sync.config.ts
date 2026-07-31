@@ -85,28 +85,6 @@ export function parseSyncConfig(config: CompassConfig): SyncConfig {
   });
 }
 
-export function parseSyncConfigFromEnv(
-  rawEnv: Record<string, string | undefined>,
-): SyncConfig {
-  return SyncConfigSchema.parse({
-    NODE_ENV: rawEnv["NODE_ENV"],
-    PORT: rawEnv["SYNC_PORT"],
-    MONGO_URI: rawEnv["SYNC_MONGO_URI"],
-    INTERNAL_AUTH_TOKEN: rawEnv["SYNC_INTERNAL_AUTH_TOKEN"],
-    CALLBACK_BASE_URL: rawEnv["SYNC_CALLBACK_BASE_URL"],
-    POST_CONNECT_REDIRECT_URL:
-      rawEnv["SYNC_POST_CONNECT_REDIRECT_URL"] || undefined,
-    EXECUTION: rawEnv["SYNC_EXECUTION"],
-    MAX_CONCURRENCY: rawEnv["SYNC_MAX_CONCURRENCY"],
-    ENFORCE_LEAST_PRIVILEGE: rawEnv["SYNC_ENFORCE_LEAST_PRIVILEGE"],
-    COMPASS_API_DATABASE: rawEnv["SYNC_COMPASS_API_DATABASE"],
-    GOOGLE_CLIENT_ID: rawEnv["GOOGLE_CLIENT_ID"] || undefined,
-    GOOGLE_CLIENT_SECRET: rawEnv["GOOGLE_CLIENT_SECRET"] || undefined,
-    POSTHOG_KEY: rawEnv["POSTHOG_KEY"] || undefined,
-    POSTHOG_HOST: rawEnv["POSTHOG_HOST"] || undefined,
-  });
-}
-
 export function loadSyncConfig(): SyncConfig {
   return parseSyncConfig(loadCompassConfig());
 }

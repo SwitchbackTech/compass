@@ -1,5 +1,6 @@
 import { type CreateEventInput } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { looksLikeOccurrenceId } from "@core/util/occurrence-id";
 import { CalendarApi } from "@web/api/calendar.api";
 import { getLocalCalendar } from "@web/calendars/calendar.util";
 import { type OfflineDataStore } from "@web/common/storage/offline-data/offline-data.store";
@@ -8,7 +9,6 @@ import {
   getOfflineDataStore,
 } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { EventApi } from "@web/events/event.api";
-import { parseOccurrenceId } from "@web/events/recurrence/projectRecurringEdit";
 import { type LocalEventRecord } from "@web/events/types/local-event.record";
 
 type LocalEventSyncStorage = Pick<
@@ -60,7 +60,7 @@ function toCreateInput(
     // Composed occurrence ids (`${seriesId}::${start}`, minted by local-mode
     // series expansion) aren't valid server ids - let the backend generate
     // one instead of rejecting the POST.
-    id: parseOccurrenceId(record.event.id) ? undefined : record.event.id,
+    id: looksLikeOccurrenceId(record.event.id) ? undefined : record.event.id,
     calendarId: serverLocalCalendarId as CreateEventInput["calendarId"],
     schedule: record.event.schedule,
     recurrence:

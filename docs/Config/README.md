@@ -71,25 +71,23 @@ See [Google Calendar](../self-hosting/google-calendar.md) for full setup instruc
 
 ## Sync Service
 
-Optional standalone Sync service (`packages/sync`). Omit the whole `sync:`
-block until you run that service. When present, `mongoUri` and
-`internalAuthToken` are required; Sync uses an **isolated** Mongo database and
-must not share the backend's database user/data.
-
-Cutover and ops: [Sync Service Cutover](../backend/sync-service-cutover.md).
+Standalone service (`packages/sync`) that owns Google Calendar sync end to
+end. Every deployment runs it — the backend exits at startup without
+`sync.serviceUrl`/`sync.internalAuthToken` configured, and the self-host
+installer writes the `sync:` block by default (see
+[Self-Hosting](../self-hosting/README.md)). Sync uses an **isolated** Mongo
+database and must not share the backend's database user/data.
 
 | key | Required | Description |
 |---|---|---|
 | `sync.port` | No | Sync HTTP port. Defaults to `3010` in examples. |
-| `sync.mongoUri` | Yes (if `sync:` set) | Isolated Sync Mongo URI. Never point this at the API database. |
-| `sync.internalAuthToken` | Yes (if `sync:` set) | Shared secret for Sync internal routes. Must match what the API uses when `serviceUrl` is set. |
-| `sync.callbackBaseUrl` | Yes (if `sync:` set) | Public base URL for provider OAuth/webhook callbacks (proxied as `/sync/*`). |
+| `sync.mongoUri` | Yes | Isolated Sync Mongo URI. Never point this at the API database. |
+| `sync.internalAuthToken` | Yes | Shared secret for Sync internal routes. Must match what the API uses. |
+| `sync.callbackBaseUrl` | Yes | Public base URL for provider OAuth/webhook callbacks (proxied as `/sync/*`). |
 | `sync.postConnectRedirectUrl` | No | Browser redirect after OAuth connect; defaults to `callbackBaseUrl`. |
-| `sync.serviceUrl` | No | Base URL the **backend** uses to reach Sync (e.g. `http://localhost:3010`). Required for any routing of `sync`. |
-| `sync.connectionRouting` | No | `legacy` (default) or `sync`. Delegates provider-connection routes when `sync`. |
-| `sync.eventRouting` | No | `legacy` (default) or `sync`. Delegates calendar/event reads and durable commands when `sync`. |
+| `sync.serviceUrl` | Yes | Base URL the **backend** uses to reach Sync (e.g. `http://localhost:3010`). The backend refuses to start without this and `internalAuthToken` set. |
 | `sync.cloudMutationMode` | No | `enabled` (default) or `maintenance`. Maintenance rejects cloud edits/connect with typed `MAINTENANCE` (`503`). |
-| `sync.execution` | No | `passive` (default) or `active`. Active is required for OAuth begin and provider import/jobs. Startup refuses `active` + `enabled` mutations while any routing remains `legacy`. |
+| `sync.execution` | No | `passive` (default) or `active`. Active is required for OAuth begin and provider import/jobs. |
 | `sync.maxConcurrency` | No | Job concurrency hint for Sync workers. |
 | `sync.enforceLeastPrivilege` | No | When `true`, Sync verifies its Mongo user cannot read the API database. |
 | `sync.compassApiDatabase` | No | API database name the least-privilege check must be denied access to. |

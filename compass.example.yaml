@@ -36,9 +36,6 @@ supertokens:
 # google:
 #   clientId: REPLACE_WITH_GOOGLE_CLIENT_ID # e.g. your-id.apps.googleusercontent.com
 #   clientSecret: REPLACE_WITH_GOOGLE_CLIENT_SECRET
-#   channelExpirationMin: 10
-#   webhookUrl: REPLACE_WITH_GOOGLE_WEBHOOK_URL # e.g. https://example.trycloudflare.com/api
-#   notificationToken: REPLACE_WITH_NOTIFICATION_TOKEN
 
 # email:
 #   kitApiSecret: REPLACE_WITH_KIT_API_SECRET
@@ -47,21 +44,20 @@ supertokens:
 #   key: REPLACE_WITH_POSTHOG_KEY
 #   host: REPLACE_WITH_POSTHOG_HOST
 
-# Compass Sync service (optional; omit until you run the standalone service).
-# execution defaults to `passive` (health + read-only verification, no provider
-# calls or job claims). mongoUri MUST point at an isolated database/user that
-# cannot read the backend's database.
-# sync:
-#   port: 3010
-#   mongoUri: mongodb+srv://compass_sync:REPLACE_WITH_SYNC_MONGO_PASSWORD@cluster/compass_sync?retryWrites=true&w=majority
-#   internalAuthToken: REPLACE_WITH_SYNC_INTERNAL_AUTH_TOKEN # any string; must match the value the API uses
-#   callbackBaseUrl: http://localhost:3010 # public base URL for provider OAuth/webhook callbacks
-#   serviceUrl: http://localhost:3010 # base URL the API uses to reach this service; compose uses http://sync:3010
-#   connectionRouting: legacy # legacy (default) | sync; sync delegates provider-connection routes here and requires serviceUrl
-#   eventRouting: legacy # legacy (default) | sync; sync delegates calendar/event reads + commands here and requires serviceUrl
-#   cloudMutationMode: enabled # enabled (default) | maintenance — maintenance rejects cloud edits / connect with typed MAINTENANCE
-#   execution: passive # passive | active — active required for OAuth begin + provider import/jobs; refuse active+enabled while any routing is legacy
+# Compass Sync service — required. The backend exits at startup without
+# serviceUrl/internalAuthToken, and self-host runs Sync by default. mongoUri
+# MUST point at an isolated database/user that cannot read the backend's
+# database. execution defaults to `passive` (health + read-only verification,
+# no provider calls or job claims).
+sync:
+  port: 3010
+  mongoUri: mongodb+srv://compass_sync:REPLACE_WITH_SYNC_MONGO_PASSWORD@cluster/compass_sync?retryWrites=true&w=majority
+  internalAuthToken: REPLACE_WITH_SYNC_INTERNAL_AUTH_TOKEN # any string; must match the value the API uses
+  callbackBaseUrl: http://localhost:3010 # public base URL for provider OAuth/webhook callbacks
+  serviceUrl: http://localhost:3010 # base URL the API uses to reach this service; compose uses http://sync:3010
+  # cloudMutationMode: enabled # enabled (default) | maintenance — maintenance rejects cloud edits / connect with typed MAINTENANCE
+  # execution: passive # passive | active — active required for OAuth begin + provider import/jobs
 # Public OAuth/webhook paths (via Caddy → sync): /sync/google, /sync/notifications/google
-#   maxConcurrency: 4
-#   enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)
-#   compassApiDatabase: prod_calendar # API database the least-privilege check must be denied access to
+  # maxConcurrency: 4
+  # enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)
+  # compassApiDatabase: prod_calendar # API database the least-privilege check must be denied access to

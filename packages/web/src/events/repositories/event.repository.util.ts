@@ -14,7 +14,6 @@ import { isBackendUnavailable } from "@web/api/util/backend-unavailable-error.ut
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
 import {
-  createGetEventRepository,
   createGetEventRepositoryBySource,
   createGetEventRepositorySource,
 } from "./event.repository.factory";
@@ -58,12 +57,4 @@ export const getEventRepositorySource = createGetEventRepositorySource({
 export const getEventRepositoryBySource = createGetEventRepositoryBySource({
   createLocalEventRepository: () => new LocalEventRepository(),
   createRemoteEventRepository: () => new RemoteEventRepository(),
-});
-
-export const getEventRepository = createGetEventRepository({
-  createLocalEventRepository: () => new LocalEventRepository(),
-  createRemoteEventRepository: () => new RemoteEventRepository(),
-  hasUserEverAuthenticated,
-  isBackendUnavailable,
-  isGoogleRevoked,
 });

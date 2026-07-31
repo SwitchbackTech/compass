@@ -25,6 +25,15 @@ describe("RecurrenceSection utils", () => {
     );
   });
 
+  it("orders frequency options from day to year", () => {
+    expect(FREQUENCY_OPTIONS().map((option) => option.value)).toEqual([
+      Frequency.DAILY,
+      Frequency.WEEKLY,
+      Frequency.MONTHLY,
+      Frequency.YEARLY,
+    ]);
+  });
+
   it("WEEKDAYS contains all days", () => {
     expect(WEEKDAYS).toEqual([
       "sunday",

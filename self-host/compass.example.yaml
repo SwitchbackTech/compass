@@ -42,21 +42,20 @@ supertokens:
 #   webhookUrl: REPLACE_WITH_GOOGLE_WEBHOOK_URL # e.g. https://cal.yourdomain.com/api
 #   notificationToken: REPLACE_WITH_NOTIFICATION_TOKEN
 
-# Compass Sync service (optional; omit until you run the standalone service).
-# execution defaults to `passive` (health + read-only verification, no provider
-# calls or job claims). mongoUri MUST point at an isolated database/user that
-# cannot read the backend's database.
-# sync:
-#   port: 3010
-#   mongoUri: mongodb://compass_sync:REPLACE_WITH_SYNC_MONGO_PASSWORD@mongo:27017/compass_sync?authSource=admin&replicaSet=rs0
-#   internalAuthToken: REPLACE_WITH_SYNC_INTERNAL_AUTH_TOKEN # any string; must match the value the API uses
-#   callbackBaseUrl: https://cal.yourdomain.com # public base URL for provider OAuth/webhook callbacks
-#   serviceUrl: http://sync:3010 # base URL the API uses to reach this service; set when delegating to sync
-#   connectionRouting: legacy # legacy (default) | sync; sync delegates provider-connection routes here and requires serviceUrl
-#   eventRouting: legacy # legacy (default) | sync; sync delegates calendar/event reads + commands here and requires serviceUrl
-#   cloudMutationMode: enabled # enabled (default) | maintenance — maintenance rejects cloud edits / connect with typed MAINTENANCE
+# Compass Sync service — self-host runs the same architecture as Compass
+# Cloud: this is required, not optional. It uses the SAME bundled mongo as
+# `mongo:` above, isolated to its own `compass_sync` database — no separate
+# database user exists on the bundled image, so this reuses the root
+# credentials, just against a different database name.
+sync:
+  port: 3010
+  mongoUri: mongodb://compass:REPLACE_WITH_MONGO_PASSWORD@mongo:27017/compass_sync?authSource=admin&replicaSet=rs0
+  internalAuthToken: REPLACE_WITH_SYNC_INTERNAL_AUTH_TOKEN # any string; must match the value the API uses
+  callbackBaseUrl: REPLACE_WITH_YOUR_WEB_URL # public base URL for provider OAuth/webhook callbacks; needs a real domain for Google to deliver push notifications, localhost works for OAuth only
+  serviceUrl: http://sync:3010 # base URL the API uses to reach this service
+  cloudMutationMode: enabled # enabled (default) | maintenance — maintenance rejects cloud edits / connect with typed MAINTENANCE
+  execution: active
+  maxConcurrency: 4
+  enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)
+  compassApiDatabase: prod_calendar # API database the least-privilege check must be denied access to
 # Public OAuth/webhook paths (via Caddy → sync): /sync/google, /sync/notifications/google
-#   execution: passive # passive | active — active required for OAuth begin + provider import/jobs; refuse active+enabled while any routing is legacy
-#   maxConcurrency: 4
-#   enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)
-#   compassApiDatabase: prod_calendar # API database the least-privilege check must be denied access to

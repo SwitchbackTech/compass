@@ -56,8 +56,18 @@ class ErrorHandler {
   }
 
   public log(error: Error): void {
-    const msg = JSON.stringify(error);
-    logger.error(msg);
+    // JSON.stringify(error) on a plain Error serializes to "{}" - name,
+    // message, and stack are non-enumerable - and this used to be the ONLY
+    // log line emitted for every backend HTTP error (see
+    // error.express.handler.ts's handleExpressError), so failures left no
+    // trace of why. Log the message/stack, never the raw error object: this
+    // runs unconditionally, before the Google-error branch even checks the
+    // error's shape, so `error` here can be a GaxiosError whose `config`/
+    // `response` fields (request headers, client_secret, bearer tokens) are
+    // OWN ENUMERABLE properties (unlike Error.prototype's message/stack) -
+    // passing the object itself to the logger would serialize those secrets
+    // straight into the log output.
+    logger.error(error.message || String(error), { stack: error.stack });
   }
 
   exitAfterProgrammerError(): void {

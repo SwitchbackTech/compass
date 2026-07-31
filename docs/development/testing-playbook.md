@@ -156,7 +156,6 @@ Mongo-backed tests use the `*.db.test.ts` / `*.db.test.tsx` suffix. Everything e
 - `bun run test:backend` / `bun run test:scripts` / `bun run test:sync` — full package suite.
 - `bun run test:backend:fast` / `bun run test:scripts:fast` / `bun run test:sync:fast` — excludes `*.db.test.*` and skips mongod boot (parallel, mongo-free preloads).
 - `bun run test:backend:db` / `bun run test:scripts:db` — only `*.db.test.*` files.
-- `bun run test:migrations` — migration suites under `packages/scripts/src/migrations`.
 - Focus a run: `bun packages/scripts/src/testing/test-mongo-env.ts backend -- ./packages/backend/src/user/controllers/user.controller.db.test.ts`.
 
 ## What To Run By Change Type
@@ -290,7 +289,7 @@ await act(async () => {
 Files:
 
 - `packages/web/src/components/AuthenticatedLayout/useResponsiveLayout.ts`
-- `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
+- `packages/web/src/components/Sidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`
 - `packages/web/src/views/Day/view/DayViewContent.tsx`
 
 Reliable setup pattern:
@@ -341,7 +340,7 @@ A gotcha that produces confusing failures far from its actual cause:
 
 For components that depend on routing context (`Outlet`, nested routes, route transitions), prefer the shared memory-router helper:
 
-- `packages/web/src/__tests__/utils/providers/MemoryRouter.tsx`
+- `packages/web/src/__tests__/utils/providers/createTestRouter.tsx`
 
 Pass `initialEntries` when asserting nested or non-root routes.
 

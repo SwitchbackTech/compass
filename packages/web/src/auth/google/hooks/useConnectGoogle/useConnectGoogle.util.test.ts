@@ -47,7 +47,6 @@ describe("getGoogleSyncStatus", () => {
 
   it.each([
     "IMPORTING",
-    "repairing",
     "checking",
   ] as const)("returns syncing copy for %s", (state) => {
     expect(getGoogleSyncStatus(state)).toEqual({
@@ -118,30 +117,24 @@ describe("getGoogleSyncStatus", () => {
 
 describe("getGoogleConnectionConfig", () => {
   const onConnectGoogle = mock();
-  const onRepairGoogle = mock();
 
   beforeEach(() => {
     onConnectGoogle.mockClear();
-    onRepairGoogle.mockClear();
   });
 
   it.each([
     "HEALTHY",
     "checking",
-    "repairing",
     "IMPORTING",
+    "ATTENTION",
   ] as const)("returns no command action for %s", (state) => {
-    expect(
-      getGoogleConnectionConfig(state, onConnectGoogle, onRepairGoogle),
-    ).toEqual({ commandAction: null });
+    expect(getGoogleConnectionConfig(state, onConnectGoogle)).toEqual({
+      commandAction: null,
+    });
   });
 
   it("wires NOT_CONNECTED to onConnectGoogle", () => {
-    const config = getGoogleConnectionConfig(
-      "NOT_CONNECTED",
-      onConnectGoogle,
-      onRepairGoogle,
-    );
+    const config = getGoogleConnectionConfig("NOT_CONNECTED", onConnectGoogle);
 
     expect(config.commandAction?.label).toBe("Connect Google Calendar");
     config.commandAction?.onSelect?.();
@@ -152,23 +145,10 @@ describe("getGoogleConnectionConfig", () => {
     const config = getGoogleConnectionConfig(
       "RECONNECT_REQUIRED",
       onConnectGoogle,
-      onRepairGoogle,
     );
 
     expect(config.commandAction?.label).toBe("Reconnect Google Calendar");
     config.commandAction?.onSelect?.();
     expect(onConnectGoogle).toHaveBeenCalledTimes(1);
-  });
-
-  it("wires ATTENTION to onRepairGoogle", () => {
-    const config = getGoogleConnectionConfig(
-      "ATTENTION",
-      onConnectGoogle,
-      onRepairGoogle,
-    );
-
-    expect(config.commandAction?.label).toBe("Sync Google Calendar");
-    config.commandAction?.onSelect?.();
-    expect(onRepairGoogle).toHaveBeenCalledTimes(1);
   });
 });

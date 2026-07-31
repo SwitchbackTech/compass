@@ -45,9 +45,6 @@ const setup = () => {
   const calls: Array<{ method: string; value: unknown }> = [];
   const repository: EventRepository = {
     list: async () => [],
-    getById: async () => {
-      throw new Error("not implemented in test fake");
-    },
     create: async (input: CreateEventInput) => {
       calls.push({ method: "create", value: input });
       return event({ id: (input.id ?? event().id) as EventId });
@@ -247,5 +244,183 @@ describe("useUndoRedo", () => {
     expect(context.calls).toEqual([]);
     expect(context.hook.result.current.undoRedo.canUndo).toBe(false);
     expect(context.hook.result.current.undoRedo.canRedo).toBe(false);
+  });
+
+  const occurrence = (seriesId: EventId, overrides: Partial<Event> = {}) =>
+    event({ recurrence: { kind: "occurrence", seriesId }, ...overrides });
+
+  test("undoes a recurring occurrence delete by replaying it back (un-cancel), not recreating", async () => {
+    const context = setup();
+    const seriesId = event().id;
+    const instance = occurrence(seriesId);
+    context.queryClient.setQueryData(calendarKey, normalized(instance));
+
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: instance.id,
+        scope: "this",
+      }),
+    );
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.ids,
+      ).toEqual([]);
+    });
+
+    act(() => context.hook.result.current.undoRedo.undo());
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[instance.id],
+      ).toBeDefined();
+    });
+    // Replayed via replace (un-cancelling the tombstone) — never create,
+    // which would spawn a duplicate standalone event instead of restoring
+    // the instance.
+    expect(context.calls.some(({ method }) => method === "create")).toBe(false);
+    const replayCall = context.calls.find(({ method }) => method === "replace");
+    expect(replayCall?.value).toMatchObject({
+      id: instance.id,
+      input: { scope: "this", recurrence: { kind: "preserve" } },
+    });
+
+    act(() => context.hook.result.current.undoRedo.redo());
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.ids,
+      ).toEqual([]);
+    });
+    // Redo (re-deleting the instance) already worked correctly pre-rewrite —
+    // scope "this" on the composed occurrence id.
+    const deleteCall = context.calls.find(({ method }) => method === "delete");
+    expect(deleteCall?.value).toEqual({ id: instance.id, scope: "this" });
+  });
+
+  test("undoes and redoes a recurring occurrence edit", async () => {
+    const context = setup();
+    const seriesId = event().id;
+    const instance = occurrence(seriesId);
+    context.queryClient.setQueryData(calendarKey, normalized(instance));
+
+    act(() =>
+      context.hook.result.current.mutations.replace({
+        id: instance.id,
+        input: {
+          content: { kind: "details", title: "Moved", description: "" },
+          schedule: instance.schedule as never,
+          recurrence: { kind: "preserve" },
+          scope: "this",
+        },
+      }),
+    );
+    await waitFor(() => {
+      expect(context.hook.result.current.undoRedo.canUndo).toBe(true);
+    });
+
+    act(() => context.hook.result.current.undoRedo.undo());
+
+    await waitFor(() => {
+      const title =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[instance.id]?.content;
+      expect(title?.kind === "details" && title.title).toBe("Original");
+    });
+    const replayCalls = context.calls.filter(
+      ({ method }) => method === "replace",
+    );
+    // Both the original edit and the undo replay kept the occurrence linkage
+    // via "preserve" (never forced back to a standalone single).
+    expect(
+      replayCalls.every(
+        (call) =>
+          (call.value as { input: ReplaceEventInput }).input.recurrence.kind ===
+          "preserve",
+      ),
+    ).toBe(true);
+  });
+
+  test("declines an edit undo when the event changed since it was recorded (stale)", async () => {
+    const context = setup();
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
+
+    act(() =>
+      context.hook.result.current.mutations.replace({
+        id: original.id,
+        input: {
+          content: { kind: "details", title: "Moved", description: "" },
+          schedule: original.schedule as never,
+          recurrence: { kind: "preserve" },
+          scope: "this",
+        },
+      }),
+    );
+    await waitFor(() => {
+      expect(context.hook.result.current.undoRedo.canUndo).toBe(true);
+    });
+
+    // Something ELSE (an SSE-driven refetch, another tab) changed the event
+    // to different content after the edit landed — simulated directly on the
+    // cache, bypassing our own mutation path.
+    context.queryClient.setQueryData(
+      calendarKey,
+      normalized({
+        ...original,
+        id: original.id,
+        content: {
+          kind: "details",
+          title: "Changed elsewhere",
+          description: "",
+        },
+      }),
+    );
+    const callsBeforeUndo = context.calls.length;
+
+    act(() => context.hook.result.current.undoRedo.undo());
+
+    // Declined: no new replace call, and the entry is simply gone — not
+    // silently moved to the redo stack either.
+    expect(context.calls).toHaveLength(callsBeforeUndo);
+    expect(context.hook.result.current.undoRedo.canUndo).toBe(false);
+    expect(context.hook.result.current.undoRedo.canRedo).toBe(false);
+  });
+
+  test("undoes a series create with a scope-all delete", async () => {
+    const context = setup();
+    const created = event({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized());
+
+    act(() =>
+      context.hook.result.current.mutations.create({
+        id: created.id,
+        calendarId: created.calendarId,
+        content: created.content as {
+          kind: "details";
+          title: string;
+          description: string;
+        },
+        schedule: created.schedule as never,
+        recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+      }),
+    );
+    await waitFor(() => {
+      expect(context.hook.result.current.undoRedo.canUndo).toBe(true);
+    });
+
+    act(() => context.hook.result.current.undoRedo.undo());
+
+    await waitFor(() => {
+      expect(context.calls.some(({ method }) => method === "delete")).toBe(
+        true,
+      );
+    });
+    const deleteCall = context.calls.find(({ method }) => method === "delete");
+    expect(deleteCall?.value).toEqual({ id: created.id, scope: "all" });
   });
 });

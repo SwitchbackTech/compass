@@ -18,7 +18,20 @@ import {
   mergeUpdateContent,
   omitNullColor,
 } from "@sync/domain/merge-update-content";
+import {
+  occurrenceScheduleAt,
+  scheduleStartAt,
+  stripRuleBounds,
+  truncateRulesBefore,
+} from "@sync/domain/occurrence-projection";
 import { reprojectOccurrences } from "@sync/domain/reproject";
+import {
+  deleteFollowingExceptions,
+  exceptionInstant,
+  isCancelledException,
+  remainderMasterId,
+  reprojectMaster,
+} from "@sync/domain/series-exception";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
@@ -291,14 +304,15 @@ export async function executeProviderUpdate(
 
   // Merge so a title/description edit cannot wipe provider-sourced attendees.
   const content = mergeUpdateContent(event.content, input.content);
+  // Almost always "single" (event.recurrence.kind is single here, so
+  // "preserve" resolves to single via intendedSeriesRecurrence's own
+  // fallback) — except a single→series conversion, which writes real rules.
+  const intendedRecurrence = intendedSeriesRecurrence(input.recurrence, event);
 
   // Replay: the provider already holds this edit, so confirm at its version
-  // rather than writing again. A single-event update always writes recurrence
-  // "single", so that is the intended recurrence to compare against.
+  // rather than writing again.
   if (
-    matchesIntendedEdit(current, content, input.schedule, {
-      kind: "single",
-    })
+    matchesIntendedEdit(current, content, input.schedule, intendedRecurrence)
   ) {
     return commitProviderUpdate(
       deps,
@@ -317,7 +331,7 @@ export async function executeProviderUpdate(
       expectedVersion: command.expectedVersion,
       content,
       schedule: input.schedule,
-      recurrence: { kind: "single" },
+      recurrence: intendedRecurrence,
       invitation: input.invitation,
     });
   } catch (error) {
@@ -342,6 +356,8 @@ export async function executeProviderUpdate(
 // canonical record (owner-scoped, non-upsert so a concurrent delete is not
 // resurrected), then confirm. A miss means the local event vanished mid-flight,
 // so leave the command pending to re-evaluate rather than confirm a gone event.
+// recurrence is recomputed (not left as event.recurrence) so a single→series
+// conversion actually persists its new rules locally, not just at the provider.
 async function commitProviderUpdate(
   deps: ProviderMutationDeps,
   command: CommandRecord,
@@ -358,6 +374,7 @@ async function commitProviderUpdate(
     ...event,
     content,
     schedule: input.schedule,
+    recurrence: storedSeriesRecurrence(input.recurrence, event),
     providerVersion: providerVersion as ProviderEventVersion,
     providerUpdatedAt: null,
     deliveryState: "confirmed",
@@ -589,6 +606,669 @@ async function commitProviderSeriesUpdate(
   return confirmed ?? command;
 }
 
+// ---------------------------------------------------------------------------
+// Provider-linked recurring scopes "this" and "thisAndFollowing".
+//
+// A this/thisAndFollowing scope operates on ONE instance of a provider series,
+// which — unlike a cloud series exception — has no id of its own until
+// resolved via writer.fetchInstanceAt. Every executor below: resolves the
+// instance (or, for a split, patches the master directly), applies the same
+// replay-safe fetch-then-compare pattern executeProviderUpdate/
+// executeProviderSeriesUpdate already use, and commits locally through
+// upsertException/reprojectMaster — the exact local-commit shape the cloud
+// path's updateCloudOccurrence/deleteCloudOccurrence/*SeriesFollowing already
+// use (series-exception.ts), so a provider-linked and a cloud-only
+// series converge to the same on-disk shape.
+//
+// Known deferred gap, matching the documented one in
+// commitProviderSeriesUpdate above: un-cancelling a provider instance (a
+// scope-"this" edit of an instance the provider already reports as
+// cancelled) is not implemented — it fails with permanentProviderError
+// rather than silently no-op'ing. Restoring a cancelled Google instance to
+// "confirmed" is a distinct provider operation this slice does not need for
+// the common edit/delete-a-live-instance path.
+// ---------------------------------------------------------------------------
+
+// Apply a Compass-initiated scope-"this" edit to one occurrence of a
+// provider-linked series: resolve the instance's own provider identity, then
+// patch IT (never the master) — mirrors executeProviderUpdate's replay-safe
+// fetch-then-compare, but against the resolved instance's location.
+export async function executeProviderOccurrenceUpdate(
+  deps: ProviderMutationDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  calendar: ProviderCalendarRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (command.input.kind !== "update" || command.input.recurrenceId === null) {
+    throw new Error(
+      "executeProviderOccurrenceUpdate requires a this-scope update command",
+    );
+  }
+  if (!master.connectionId || !master.providerEventId) {
+    throw new Error(
+      "executeProviderOccurrenceUpdate requires a linked series master",
+    );
+  }
+  if (master.recurrence.kind !== "seriesMaster") {
+    throw new Error("executeProviderOccurrenceUpdate requires a series master");
+  }
+  const { input } = command;
+  const recurrenceId = input.recurrenceId as DateTime;
+  const connectionId = master.connectionId;
+  const seriesProviderEventId = master.providerEventId;
+
+  let accessToken: string;
+  try {
+    accessToken = await deps.custody.getValidAccessToken(connectionId);
+  } catch (error) {
+    if (
+      error instanceof ProviderAuthError &&
+      error.reason === "refreshFailed"
+    ) {
+      return command;
+    }
+    return failCommand(deps, command, "authorizationRevoked", connectionId);
+  }
+
+  let instance: ProviderEvent | null;
+  try {
+    const read = await deps.writer.fetchInstanceAt({
+      accessToken,
+      calendarId: calendar.providerCalendarId,
+      seriesProviderEventId,
+      originalStartAt: recurrenceId,
+    });
+    instance = read?.kind === "event" ? read : null;
+  } catch (error) {
+    if (error instanceof ProviderWriteError) {
+      if (error.reason === "transient") return command;
+      return failCommand(deps, command, error.reason, connectionId);
+    }
+    throw error;
+  }
+  // No live instance to override: never materialized at that instant, or
+  // already cancelled at the provider (see the deferred-gap note above).
+  if (!instance) {
+    return failCommand(deps, command, "permanentProviderError", connectionId);
+  }
+
+  const content = mergeUpdateContent(master.content, input.content);
+  const providerEventId = instance.providerEventId;
+  const location = {
+    accessToken,
+    calendarId: calendar.providerCalendarId,
+    providerEventId,
+  };
+
+  // An occurrence override is always a standalone provider event, never
+  // itself carrying recurrence rules.
+  if (
+    matchesIntendedEdit(instance, content, input.schedule, { kind: "single" })
+  ) {
+    return commitProviderOccurrenceUpdate(
+      deps,
+      command,
+      master,
+      recurrenceId,
+      content,
+      providerEventId,
+      instance.providerVersion,
+      now,
+    );
+  }
+
+  let result: ProviderWriteResult;
+  try {
+    result = await deps.writer.patchEvent({
+      ...location,
+      expectedVersion: command.expectedVersion,
+      content,
+      schedule: input.schedule,
+      recurrence: { kind: "single" },
+      invitation: input.invitation,
+    });
+  } catch (error) {
+    if (error instanceof ProviderWriteError) {
+      if (error.reason === "transient") return command;
+      return failCommand(deps, command, error.reason, connectionId);
+    }
+    throw error;
+  }
+
+  return commitProviderOccurrenceUpdate(
+    deps,
+    command,
+    master,
+    recurrenceId,
+    content,
+    providerEventId,
+    result.providerVersion,
+    now,
+  );
+}
+
+// Commit a provider occurrence override locally: upsert the exception
+// carrying the INSTANCE's own provider identity (never the master's — see
+// upsertException's providerIdentity param), reproject the master to exclude
+// that instant, then project the exception's own occurrence.
+async function commitProviderOccurrenceUpdate(
+  deps: ProviderMutationDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  recurrenceId: DateTime,
+  content: SyncEventContent,
+  providerEventId: string,
+  providerVersion: string,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (command.input.kind !== "update") {
+    throw new Error(
+      "commitProviderOccurrenceUpdate requires an update command",
+    );
+  }
+  const exception = await deps.events.upsertException(
+    master,
+    recurrenceId,
+    {
+      content,
+      schedule: command.input.schedule,
+      cancelled: false,
+      providerIdentity: {
+        providerEventId: providerEventId as ProviderEventId,
+        providerVersion: providerVersion as ProviderEventVersion,
+      },
+    },
+    now(),
+  );
+  await reprojectMaster(deps, command, master, now);
+  await reprojectOccurrences(deps.occurrences, exception, now);
+
+  const confirmed = await deps.commands.updateOutcome(
+    command.tenantId,
+    command.principalId,
+    command._id,
+    {
+      state: "confirmed",
+      providerEventId: providerEventId as ProviderEventId,
+      providerVersion: providerVersion as ProviderEventVersion,
+    },
+    command.attemptCount,
+  );
+  return confirmed ?? command;
+}
+
+// Apply a Compass-initiated scope-"this" delete to one occurrence of a
+// provider-linked series: resolve the instance, delete IT at the provider
+// (Google represents this as cancelling that one instance — the series and
+// every other instance are untouched), then cancel the local tombstone.
+// Idempotent: an already-cancelled or never-materialized instance converges
+// to the same local tombstone without a second provider call, mirroring how
+// a whole-event delete treats an already-absent target as success.
+export async function executeProviderOccurrenceDelete(
+  deps: ProviderMutationDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  calendar: ProviderCalendarRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (command.input.kind !== "delete" || command.input.recurrenceId === null) {
+    throw new Error(
+      "executeProviderOccurrenceDelete requires a this-scope delete command",
+    );
+  }
+  if (!master.connectionId || !master.providerEventId) {
+    throw new Error(
+      "executeProviderOccurrenceDelete requires a linked series master",
+    );
+  }
+  if (master.recurrence.kind !== "seriesMaster") {
+    throw new Error("executeProviderOccurrenceDelete requires a series master");
+  }
+  const { input } = command;
+  const recurrenceId = input.recurrenceId as DateTime;
+  const connectionId = master.connectionId;
+  const seriesProviderEventId = master.providerEventId;
+
+  let accessToken: string;
+  try {
+    accessToken = await deps.custody.getValidAccessToken(connectionId);
+  } catch (error) {
+    if (
+      error instanceof ProviderAuthError &&
+      error.reason === "refreshFailed"
+    ) {
+      return command;
+    }
+    return failCommand(deps, command, "authorizationRevoked", connectionId);
+  }
+
+  let instance: ProviderEvent | null;
+  try {
+    const read = await deps.writer.fetchInstanceAt({
+      accessToken,
+      calendarId: calendar.providerCalendarId,
+      seriesProviderEventId,
+      originalStartAt: recurrenceId,
+    });
+    instance = read?.kind === "event" ? read : null;
+  } catch (error) {
+    if (error instanceof ProviderWriteError) {
+      if (error.reason === "transient") return command;
+      return failCommand(deps, command, error.reason, connectionId);
+    }
+    throw error;
+  }
+
+  if (instance) {
+    try {
+      await deps.writer.deleteEvent({
+        accessToken,
+        calendarId: calendar.providerCalendarId,
+        providerEventId: instance.providerEventId,
+        // Unconditional, same rationale as the whole-event delete: cancelling
+        // one instance is not conditioned on its version.
+        expectedVersion: null,
+        invitation: input.invitation,
+      });
+    } catch (error) {
+      if (error instanceof ProviderWriteError) {
+        if (error.reason === "transient") return command;
+        return failCommand(deps, command, error.reason, connectionId);
+      }
+      throw error;
+    }
+  }
+
+  const exception = await deps.events.upsertException(
+    master,
+    recurrenceId,
+    {
+      content: master.content,
+      schedule: occurrenceScheduleAt(master.schedule, recurrenceId),
+      cancelled: true,
+      // `null`, not omitted: this exception is provider-linked (master is),
+      // and omitting would fall back to the master's own providerEventId —
+      // colliding the provider_event_identity unique index the master
+      // already occupies. When the instance is already gone at the provider
+      // there is no live counterpart to record.
+      providerIdentity: instance
+        ? {
+            providerEventId: instance.providerEventId as ProviderEventId,
+            providerVersion: instance.providerVersion as ProviderEventVersion,
+          }
+        : null,
+    },
+    now(),
+  );
+  await reprojectMaster(deps, command, master, now);
+  await reprojectOccurrences(deps.occurrences, exception, now);
+
+  const confirmed = await deps.commands.updateOutcome(
+    command.tenantId,
+    command.principalId,
+    command._id,
+    // No live provider target for this command once the instance is
+    // cancelled — same shape confirmDeletion uses for a whole-event delete.
+    { state: "confirmed", providerEventId: null, providerVersion: null },
+    command.attemptCount,
+  );
+  return confirmed ?? command;
+}
+
+// Apply a Compass-initiated scope-"thisAndFollowing" delete to a
+// provider-linked series: truncate the provider master's rules to end before
+// the split (Google removes every instance from that point on), drop the
+// local exceptions at/after it, and reproject. A split at the series' own
+// first occurrence removes the whole series, so it collapses to the existing
+// whole-series provider delete. Content/schedule are NOT part of this write —
+// only recurrence changes — so the replay check and patch both hold the
+// master's own content/schedule fixed.
+export async function executeProviderSeriesFollowingDelete(
+  deps: ProviderDeleteDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  calendar: ProviderCalendarRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (command.input.kind !== "delete" || command.input.recurrenceId === null) {
+    throw new Error(
+      "executeProviderSeriesFollowingDelete requires a thisAndFollowing-scope delete command",
+    );
+  }
+  if (!master.connectionId || !master.providerEventId) {
+    throw new Error(
+      "executeProviderSeriesFollowingDelete requires a linked series master",
+    );
+  }
+  if (master.recurrence.kind !== "seriesMaster") {
+    throw new Error(
+      "executeProviderSeriesFollowingDelete requires a series master",
+    );
+  }
+  const { input } = command;
+  const connectionId = master.connectionId;
+  const providerEventId = master.providerEventId;
+  const splitAt = new Date(input.recurrenceId as DateTime);
+
+  if (splitAt.getTime() <= scheduleStartAt(master.schedule).getTime()) {
+    return executeProviderDelete(deps, command, master, calendar, now);
+  }
+
+  let accessToken: string;
+  try {
+    accessToken = await deps.custody.getValidAccessToken(connectionId);
+  } catch (error) {
+    if (
+      error instanceof ProviderAuthError &&
+      error.reason === "refreshFailed"
+    ) {
+      return command;
+    }
+    return failCommand(deps, command, "authorizationRevoked", connectionId);
+  }
+
+  await deleteFollowingExceptions(deps, command, master._id, splitAt);
+  const truncatedRules = truncateRulesBefore(master.recurrence.rules, splitAt);
+  const location = {
+    accessToken,
+    calendarId: calendar.providerCalendarId,
+    providerEventId,
+  };
+
+  let current: ProviderEvent | null;
+  try {
+    const read = await deps.writer.fetchEvent(location);
+    current = read?.kind === "event" ? read : null;
+  } catch (error) {
+    if (error instanceof ProviderWriteError) {
+      if (error.reason === "transient") return command;
+      return failCommand(deps, command, error.reason, connectionId);
+    }
+    throw error;
+  }
+  if (!current) {
+    return failCommand(deps, command, "permanentProviderError", connectionId);
+  }
+
+  const truncateRecurrence: ProviderWriteRecurrence = {
+    kind: "series",
+    rules: truncatedRules,
+  };
+  if (
+    matchesIntendedEdit(
+      current,
+      master.content,
+      master.schedule,
+      truncateRecurrence,
+    )
+  ) {
+    return commitProviderSeriesFollowingDelete(
+      deps,
+      command,
+      master,
+      truncatedRules,
+      current.providerVersion,
+      now,
+    );
+  }
+
+  let result: ProviderWriteResult;
+  try {
+    result = await deps.writer.patchEvent({
+      ...location,
+      expectedVersion: command.expectedVersion,
+      content: master.content,
+      schedule: master.schedule,
+      recurrence: truncateRecurrence,
+      invitation: input.invitation,
+    });
+  } catch (error) {
+    if (error instanceof ProviderWriteError) {
+      if (error.reason === "transient") return command;
+      return failCommand(deps, command, error.reason, connectionId);
+    }
+    throw error;
+  }
+
+  return commitProviderSeriesFollowingDelete(
+    deps,
+    command,
+    master,
+    truncatedRules,
+    result.providerVersion,
+    now,
+  );
+}
+
+async function commitProviderSeriesFollowingDelete(
+  deps: ProviderMutationDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  truncatedRules: readonly string[],
+  providerVersion: string,
+  now: () => Date,
+): Promise<CommandRecord> {
+  const truncated: EventRecord = {
+    ...master,
+    recurrence: { kind: "seriesMaster", rules: truncatedRules },
+    providerVersion: providerVersion as ProviderEventVersion,
+    providerUpdatedAt: null,
+    deliveryState: "confirmed",
+    updatedAt: now(),
+  };
+  const applied = await deps.events.replaceExisting(truncated);
+  if (!applied) return command;
+  await reprojectMaster(deps, command, truncated, now);
+
+  const confirmed = await deps.commands.updateOutcome(
+    command.tenantId,
+    command.principalId,
+    command._id,
+    {
+      state: "confirmed",
+      providerEventId: master.providerEventId as ProviderEventId,
+      providerVersion: providerVersion as ProviderEventVersion,
+    },
+    command.attemptCount,
+  );
+  return confirmed ?? command;
+}
+
+// Apply a Compass-initiated scope-"thisAndFollowing" EDIT to a provider-linked
+// series by SPLITTING it, mirroring updateCloudSeriesFollowing: truncate the
+// original master's rules at the provider (same as the delete twin above),
+// then CREATE a new remainder series at the provider carrying the edit, at a
+// deterministic provider event id so a retry converges on one remainder
+// instead of duplicating it. A split at the series' own first occurrence
+// edits the whole series, so it collapses to the existing provider edit-all.
+export async function executeProviderSeriesFollowingUpdate(
+  deps: ProviderMutationDeps,
+  command: CommandRecord,
+  master: EventRecord,
+  calendar: ProviderCalendarRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (command.input.kind !== "update" || command.input.recurrenceId === null) {
+    throw new Error(
+      "executeProviderSeriesFollowingUpdate requires a thisAndFollowing-scope update command",
+    );
+  }
+  if (!master.connectionId || !master.providerEventId) {
+    throw new Error(
+      "executeProviderSeriesFollowingUpdate requires a linked series master",
+    );
+  }
+  if (master.recurrence.kind !== "seriesMaster") {
+    throw new Error(
+      "executeProviderSeriesFollowingUpdate requires a series master",
+    );
+  }
+  const { input } = command;
+  const connectionId = master.connectionId;
+  const providerEventId = master.providerEventId;
+  const splitAt = new Date(input.recurrenceId as DateTime);
+
+  if (splitAt.getTime() <= scheduleStartAt(master.schedule).getTime()) {
+    return executeProviderSeriesUpdate(deps, command, master, calendar, now);
+  }
+
+  let accessToken: string;
+  try {
+    accessToken = await deps.custody.getValidAccessToken(connectionId);
+  } catch (error) {
+    if (
+      error instanceof ProviderAuthError &&
+      error.reason === "refreshFailed"
+    ) {
+      return command;
+    }
+    return failCommand(deps, command, "authorizationRevoked", connectionId);
+  }
+
+  // Truncate the original master first — same ordering as the cloud path:
+  // the worst transient state between this step and the remainder create
+  // below is a momentary gap at the split, never a duplicate series.
+  await deleteFollowingExceptions(deps, command, master._id, splitAt);
+  const truncatedRules = truncateRulesBefore(master.recurrence.rules, splitAt);
+  const originalLocation = {
+    accessToken,
+    calendarId: calendar.providerCalendarId,
+    providerEventId,
+  };
+
+  let current: ProviderEvent | null;
+  try {
+    const read = await deps.writer.fetchEvent(originalLocation);
+    current = read?.kind === "event" ? read : null;
+  } catch (error) {
+    if (error instanceof ProviderWriteError) {
+      if (error.reason === "transient") return command;
+      return failCommand(deps, command, error.reason, connectionId);
+    }
+    throw error;
+  }
+  if (!current) {
+    return failCommand(deps, command, "permanentProviderError", connectionId);
+  }
+
+  const truncateRecurrence: ProviderWriteRecurrence = {
+    kind: "series",
+    rules: truncatedRules,
+  };
+  let originalVersion: string;
+  if (
+    matchesIntendedEdit(
+      current,
+      master.content,
+      master.schedule,
+      truncateRecurrence,
+    )
+  ) {
+    originalVersion = current.providerVersion;
+  } else {
+    let truncateResult: ProviderWriteResult;
+    try {
+      truncateResult = await deps.writer.patchEvent({
+        ...originalLocation,
+        expectedVersion: command.expectedVersion,
+        content: master.content,
+        schedule: master.schedule,
+        recurrence: truncateRecurrence,
+        invitation: input.invitation,
+      });
+    } catch (error) {
+      if (error instanceof ProviderWriteError) {
+        if (error.reason === "transient") return command;
+        return failCommand(deps, command, error.reason, connectionId);
+      }
+      throw error;
+    }
+    originalVersion = truncateResult.providerVersion;
+  }
+
+  const truncated: EventRecord = {
+    ...master,
+    recurrence: { kind: "seriesMaster", rules: truncatedRules },
+    providerVersion: originalVersion as ProviderEventVersion,
+    providerUpdatedAt: null,
+    deliveryState: "confirmed",
+    updatedAt: now(),
+  };
+  const appliedTruncate = await deps.events.replaceExisting(truncated);
+  if (!appliedTruncate) return command;
+  await reprojectMaster(deps, command, truncated, now);
+
+  // "preserve" continues the original (pre-truncation) cadence, open-ended
+  // from the split — mirroring buildRemainderMaster's own "preserve" case,
+  // NOT intendedSeriesRecurrence's (which would re-write the already-bounded
+  // rules the master just got truncated to).
+  const remainderRecurrence: ProviderWriteRecurrence =
+    input.recurrence.kind === "series"
+      ? { kind: "series", rules: input.recurrence.rules }
+      : input.recurrence.kind === "single"
+        ? { kind: "single" }
+        : { kind: "series", rules: stripRuleBounds(master.recurrence.rules) };
+  const remainderId = remainderMasterId(
+    master._id,
+    input.recurrenceId as DateTime,
+  );
+  const remainderContent = mergeUpdateContent(master.content, input.content);
+
+  let createResult: ProviderWriteResult;
+  try {
+    createResult = await deps.writer.createEvent({
+      accessToken,
+      calendarId: calendar.providerCalendarId,
+      providerEventId: remainderId,
+      content: remainderContent,
+      schedule: input.schedule,
+      recurrence: remainderRecurrence,
+      invitation: input.invitation,
+    });
+  } catch (error) {
+    if (error instanceof ProviderWriteError) {
+      if (error.reason === "transient") return command;
+      return failCommand(deps, command, error.reason, connectionId);
+    }
+    throw error;
+  }
+
+  const remainder: EventRecord = {
+    ...master,
+    _id: remainderId,
+    clientEventId: null,
+    providerEventId: createResult.providerEventId as ProviderEventId,
+    providerVersion: createResult.providerVersion as ProviderEventVersion,
+    providerUpdatedAt: null,
+    deliveryState: "confirmed",
+    content: remainderContent,
+    schedule: input.schedule,
+    recurrence:
+      remainderRecurrence.kind === "series"
+        ? { kind: "seriesMaster", rules: remainderRecurrence.rules }
+        : { kind: "single" },
+    createdAt: now(),
+    updatedAt: now(),
+    confirmedAt: now(),
+  };
+  await deps.events.put(remainder);
+  await reprojectOccurrences(deps.occurrences, remainder, now);
+
+  const confirmed = await deps.commands.updateOutcome(
+    command.tenantId,
+    command.principalId,
+    command._id,
+    {
+      state: "confirmed",
+      providerEventId: createResult.providerEventId as ProviderEventId,
+      providerVersion: createResult.providerVersion as ProviderEventVersion,
+    },
+    command.attemptCount,
+  );
+  return confirmed ?? command;
+}
+
 // The provider recurrence a series edit-all writes. "series" sets new rules;
 // "single" removes recurrence (converting the series to one event); "preserve"
 // re-writes the master's current rules unchanged (harmless, keeps the write
@@ -619,19 +1299,8 @@ function storedSeriesRecurrence(
   return master.recurrence;
 }
 
-// Whether a series exception is a cancelled tombstone (a per-instance deletion)
-// rather than a content override. Twin of the cloud path's helper.
-function isCancelledException(event: EventRecord): boolean {
-  return event.recurrence.kind === "exception" && event.recurrence.cancelled;
-}
-
-// The original instant a series exception overrides — its recurrence identity.
-function exceptionInstant(event: EventRecord): DateTime {
-  if (event.recurrence.kind !== "exception") {
-    throw new Error("exceptionInstant requires an exception event");
-  }
-  return event.recurrence.recurrenceId;
-}
+// isCancelledException / exceptionInstant now come from series-exception.ts,
+// shared with the cloud path.
 
 // Whether the provider's current event already carries this command's intended
 // edit — the signal that a prior attempt landed and this is a safe replay.

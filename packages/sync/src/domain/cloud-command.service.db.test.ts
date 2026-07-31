@@ -8,7 +8,10 @@ import {
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
-import { submitCloudCommand } from "@sync/domain/cloud-command.service";
+import {
+  ProviderWriteUnavailableError,
+  submitCloudCommand,
+} from "@sync/domain/cloud-command.service";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
@@ -59,6 +62,31 @@ class FakeWriter implements ProviderEventWriter {
     busy: true,
     recurrence: { kind: "single" },
   };
+  // The resolved instance a this/thisAndFollowing-scope fetchInstanceAt call
+  // returns — its own distinct provider identity, never the master's (see
+  // upsertException's providerIdentity param).
+  fetchedInstance: ProviderEvent | null = {
+    kind: "event",
+    providerEventId: "g-inst-1",
+    providerVersion: "etag-1",
+    providerUpdatedAt: null,
+    content: {
+      title: "Provider copy",
+      description: "",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+    },
+    schedule: {
+      kind: "timed",
+      start: "2026-07-21T09:00:00-06:00",
+      end: "2026-07-21T10:00:00-06:00",
+      timeZone: "America/Denver",
+    },
+    busy: true,
+    recurrence: { kind: "single" },
+  };
   async createEvent(input: ProviderCreateInput): Promise<ProviderWriteResult> {
     this.calls.push(input);
     return { providerEventId: "g-evt-1", providerVersion: "etag-1" };
@@ -73,6 +101,9 @@ class FakeWriter implements ProviderEventWriter {
   }
   async fetchEvent(): Promise<ProviderEvent | null> {
     return this.fetched;
+  }
+  async fetchInstanceAt(): Promise<ProviderEvent | null> {
+    return this.fetchedInstance;
   }
 }
 
@@ -178,13 +209,16 @@ describe("submitCloudCommand provider dispatch", () => {
     expect(writer.calls).toHaveLength(1);
   });
 
-  it("leaves a provider-targeted create pending when passive", async () => {
+  // Accepting these would strand the write: nothing re-dispatches a pending
+  // command, so the caller would see success for an event that never reaches
+  // the provider. Production hit exactly that on 2026-07-29.
+  it("refuses a provider-targeted create when passive", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const calendar = await seedProviderCalendar(tenantId, principalId);
     const writer = new FakeWriter();
 
-    const { command } = await submitCloudCommand(
+    const submit = submitCloudCommand(
       {
         commands,
         events,
@@ -198,16 +232,16 @@ describe("submitCloudCommand provider dispatch", () => {
       now,
     );
 
-    expect(command.outcome.state).toBe("pending");
+    await expect(submit).rejects.toThrow(ProviderWriteUnavailableError);
     expect(writer.calls).toHaveLength(0);
   });
 
-  it("leaves a provider-targeted create pending when no provider is configured", async () => {
+  it("refuses a provider-targeted create when no provider is configured", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const calendar = await seedProviderCalendar(tenantId, principalId);
 
-    const { command } = await submitCloudCommand(
+    const submit = submitCloudCommand(
       {
         commands,
         events,
@@ -220,7 +254,7 @@ describe("submitCloudCommand provider dispatch", () => {
       now,
     );
 
-    expect(command.outcome.state).toBe("pending");
+    await expect(submit).rejects.toThrow(ProviderWriteUnavailableError);
   });
 
   it("still confirms a cloud (non-provider) create locally when active", async () => {
@@ -245,6 +279,44 @@ describe("submitCloudCommand provider dispatch", () => {
 
     expect(command.outcome.state).toBe("confirmed");
     expect(writer.calls).toHaveLength(0);
+  });
+
+  // A "move" command has no executor anywhere yet - accepting it and leaving
+  // it pending would strand the write forever while the caller sees success
+  // (submitCommandOrThrow only rejects failed/cancelled outcomes). It must
+  // fail explicitly instead.
+  it("fails a move command as unsupportedCapability rather than leaving it pending", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const submit: CommandSubmit = {
+      tenantId,
+      principalId,
+      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+      eventId: objectId() as EventId,
+      input: {
+        kind: "move",
+        calendarId: objectId(),
+      } as unknown as SyncCommandInput,
+      expectedVersion: null,
+    };
+
+    const { command } = await submitCloudCommand(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        markers,
+        execution: "active",
+      },
+      submit,
+      now,
+    );
+
+    expect(command.outcome).toEqual({
+      state: "failed",
+      failureReason: "unsupportedCapability",
+    });
   });
 
   it("omits null color when persisting a cloud create", async () => {
@@ -347,7 +419,7 @@ describe("submitCloudCommand provider dispatch", () => {
     execution: "passive" as const,
   });
 
-  it("leaves a delete of a provider-linked event pending (provider path)", async () => {
+  it("refuses a delete of a provider-linked event when passive, rather than stranding it pending", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const eventId = objectId() as EventId;
@@ -358,13 +430,13 @@ describe("submitCloudCommand provider dispatch", () => {
       deliveryState: "confirmed",
     });
 
-    const { command } = await submitCloudCommand(
+    const submit = submitCloudCommand(
       deps(),
       deleteFor(tenantId, principalId, eventId),
       now,
     );
 
-    expect(command.outcome.state).toBe("pending");
+    await expect(submit).rejects.toThrow(ProviderWriteUnavailableError);
     // The event is untouched — never delete a provider event without the
     // provider's confirmation.
     expect(
@@ -505,7 +577,7 @@ describe("submitCloudCommand provider dispatch", () => {
     expect(await events.findById(tenantId, principalId, eventId)).toBeNull();
   });
 
-  it("leaves a provider-linked series this-scope delete pending", async () => {
+  it("resolves and deletes one occurrence of a provider-linked series (this scope)", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const calendar = await seedProviderCalendar(tenantId, principalId);
@@ -540,12 +612,23 @@ describe("submitCloudCommand provider dispatch", () => {
       now,
     );
 
-    // Provider per-occurrence deletes need provider exception ops (deferred).
-    expect(command.outcome.state).toBe("pending");
-    expect(writer.deleteCalls).toBe(0);
+    expect(command.outcome.state).toBe("confirmed");
+    // Deletes the RESOLVED INSTANCE at the provider — the series master and
+    // every other occurrence are untouched.
+    expect(writer.deleteCalls).toBe(1);
     expect(
       await events.findById(tenantId, principalId, eventId),
     ).not.toBeNull();
+    const exceptions = await events.findSeriesExceptions(
+      tenantId,
+      principalId,
+      eventId,
+    );
+    expect(exceptions).toHaveLength(1);
+    expect(
+      exceptions[0]?.recurrence.kind === "exception" &&
+        exceptions[0]?.recurrence.cancelled,
+    ).toBe(true);
   });
 
   const updateSeriesFor = (
@@ -616,7 +699,31 @@ describe("submitCloudCommand provider dispatch", () => {
     expect(writer.patchCalls).toHaveLength(1);
   });
 
-  it("leaves a provider-linked series this-scope update pending", async () => {
+  it("refuses an all-scope update of a provider-linked series when passive, rather than stranding it pending", async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const eventId = objectId() as EventId;
+    await seedEvent(tenantId, principalId, eventId, {
+      connectionId: objectId() as never,
+      providerEventId: "g-series-1" as never,
+      providerVersion: "etag-1" as never,
+      deliveryState: "confirmed",
+      recurrence: { kind: "seriesMaster", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+
+    const submit = submitCloudCommand(
+      deps(),
+      updateSeriesFor(tenantId, principalId, eventId, "all"),
+      now,
+    );
+
+    await expect(submit).rejects.toThrow(ProviderWriteUnavailableError);
+    expect(
+      await events.findById(tenantId, principalId, eventId),
+    ).not.toBeNull();
+  });
+
+  it("resolves and patches one occurrence of a provider-linked series (this scope)", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const calendar = await seedProviderCalendar(tenantId, principalId);
@@ -651,9 +758,17 @@ describe("submitCloudCommand provider dispatch", () => {
       now,
     );
 
-    // Provider per-occurrence edits need provider exception ops (deferred).
-    expect(command.outcome.state).toBe("pending");
-    expect(writer.patchCalls).toHaveLength(0);
+    expect(command.outcome.state).toBe("confirmed");
+    expect(writer.patchCalls).toHaveLength(1);
+    // Patched the RESOLVED INSTANCE's own id, never the master's.
+    expect(writer.patchCalls[0]?.providerEventId).toBe("g-inst-1");
+    const exceptions = await events.findSeriesExceptions(
+      tenantId,
+      principalId,
+      eventId,
+    );
+    expect(exceptions).toHaveLength(1);
+    expect(exceptions[0]?.content.title).toBe("Renamed series");
     expect(
       await events.findById(tenantId, principalId, eventId),
     ).not.toBeNull();
@@ -1000,7 +1115,7 @@ describe("submitCloudCommand provider dispatch", () => {
     expect(await occurrenceStartsFor(masterId)).toHaveLength(1);
   });
 
-  it("leaves an all-scope delete of a provider-linked series pending", async () => {
+  it("refuses an all-scope delete of a provider-linked series when passive, rather than stranding it pending", async () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const masterId = objectId() as EventId;
@@ -1011,13 +1126,13 @@ describe("submitCloudCommand provider dispatch", () => {
       deliveryState: "confirmed",
     });
 
-    const { command } = await submitCloudCommand(
+    const submit = submitCloudCommand(
       deps(),
       deleteFor(tenantId, principalId, masterId),
       now,
     );
 
-    expect(command.outcome.state).toBe("pending");
+    await expect(submit).rejects.toThrow(ProviderWriteUnavailableError);
     expect(
       await events.findById(tenantId, principalId, masterId),
     ).not.toBeNull();

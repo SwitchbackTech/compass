@@ -12,11 +12,7 @@ import { type ApiError } from "@web/api/api.types";
 import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 import { getUserId } from "@web/auth/compass/session/session.util";
 import { GENERIC_ERROR_TOAST_ID } from "@web/common/constants/toast.constants";
-import {
-  DATA_EVENT_ELEMENT_ID,
-  ID_GRID_ALLDAY_ROW,
-  ID_GRID_MAIN,
-} from "@web/common/constants/web.constants";
+import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Categories_Event,
@@ -50,10 +46,7 @@ export type EventWithDates = CompassEvent & {
   endDate: string;
 };
 
-export const hasEventDates = (event: CompassEvent): event is EventWithDates =>
-  typeof event.startDate === "string" && typeof event.endDate === "string";
-
-export const assembleWebEvent = (event: EventWithDates): WebEvent => ({
+const assembleWebEvent = (event: EventWithDates): WebEvent => ({
   ...event,
   startDate: event.startDate,
   endDate: event.endDate,
@@ -123,27 +116,9 @@ export const getEventDragOffset = (
   };
 };
 
-export const getCategory = (event: CompassEvent) => {
-  if (event?.isAllDay) {
-    return Categories_Event.ALLDAY;
-  }
-  return Categories_Event.TIMED;
-};
-
 export const getCalendarEventIdFromElement = (element: HTMLElement) => {
   const eventElement = element.closest(`[${DATA_EVENT_ELEMENT_ID}]`);
   return eventElement ? eventElement.getAttribute(DATA_EVENT_ELEMENT_ID) : null;
-};
-
-export const getCalendarEventElementFromGrid = (
-  eventId: string,
-): Element | null => {
-  const selector = `[${DATA_EVENT_ELEMENT_ID}="${eventId}"]`;
-  const allDaySection = document.getElementById(ID_GRID_ALLDAY_ROW);
-  const timedSection = document.getElementById(ID_GRID_MAIN);
-  const timedEvent = timedSection?.querySelector(selector);
-
-  return timedEvent ?? allDaySection?.querySelector(selector) ?? null;
 };
 
 /**
@@ -165,10 +140,6 @@ export const refocusEventElement = (eventId: string) => {
   };
 
   tryFocus();
-};
-
-export const getMonthListLabel = (start: Dayjs) => {
-  return start.format("MMMM");
 };
 
 export const getWeekDayLabel = (day: Dayjs | Date) => {
@@ -267,25 +238,3 @@ const _assembleBaseEvent = (
 
   return baseEvent;
 };
-
-export function compareEventsByTitle(a: CompassEvent, b: CompassEvent) {
-  return (a.title ?? "").localeCompare(b.title ?? "");
-}
-
-export function compareEventsById(prev: CompassEvent, next: CompassEvent) {
-  return prev._id?.localeCompare(next._id ?? "") ?? 0;
-}
-
-export function compareEventsByStartDate(
-  prev: CompassEvent,
-  next: CompassEvent,
-) {
-  const prevStart = dayjs(prev.startDate);
-  const nextStart = dayjs(next.startDate);
-  const before = prevStart.isBefore(nextStart);
-  const after = prevStart.isAfter(nextStart);
-
-  if (before) return -1;
-  if (after) return 1;
-  return 0;
-}

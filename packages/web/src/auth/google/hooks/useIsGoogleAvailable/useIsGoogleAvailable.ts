@@ -10,7 +10,6 @@ const googleAvailability = createGoogleAvailability({
 export const {
   resetGoogleAvailabilityForTests,
   setGoogleAvailabilityForTests,
-  setConnectDelegatedToSyncForTests,
   useIsGoogleAvailable,
-  useIsConnectDelegatedToSync,
+  useIsConnectGoogleAvailable,
 } = googleAvailability;

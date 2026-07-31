@@ -6,8 +6,6 @@ export const PurgeUserCountsSchema = z.strictObject({
   // archived calendars too, which the account-deletion path misses.
   events: z.number().int().nonnegative(),
   calendars: z.number().int().nonnegative(),
-  syncRecords: z.number().int().nonnegative(),
-  watches: z.number().int().nonnegative(),
   legacyCalendarLists: z.number().int().nonnegative(),
   legacyEvents: z.number().int().nonnegative(),
   user: z.number().int().nonnegative(),

@@ -1,5 +1,4 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
-import { useCallback } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { CalendarApi } from "@web/api/calendar.api";
 import { useSession } from "@web/auth/compass/session/useSession";
@@ -35,16 +34,48 @@ export function calendarsQueryOptions(authenticated: boolean) {
   });
 }
 
+// ~20 call sites read this query. TanStack Query mounts a separate observer
+// per useQuery() call site even when they share a queryKey, so a
+// useCallback-per-consumer `select` (its previous form) both allocates a new
+// function every render AND still runs applyClientVisibility's map+spread
+// once per consumer, since each observer only caches against its own last
+// select result. Cache the RESULT here, keyed on the (hiddenIds, data)
+// reference pair - both are stable across renders until the underlying
+// store/query data actually changes (see useHiddenCalendarIds and this
+// query's staleTime) - so every consumer on the same versions gets back the
+// exact same output array. That's also what lets
+// filter-events-by-visible-calendars.ts's WeakMap dedupe downstream instead
+// of re-filtering per consumer.
+const visibilityResultCache = new WeakMap<
+  ReadonlySet<string>,
+  WeakMap<Calendar[], Calendar[]>
+>();
+
+function selectVisibleCalendars(
+  calendars: Calendar[],
+  hiddenIds: ReadonlySet<string>,
+): Calendar[] {
+  let byData = visibilityResultCache.get(hiddenIds);
+  if (!byData) {
+    byData = new WeakMap();
+    visibilityResultCache.set(hiddenIds, byData);
+  }
+
+  let result = byData.get(calendars);
+  if (!result) {
+    result = applyClientVisibility(calendars, hiddenIds);
+    byData.set(calendars, result);
+  }
+  return result;
+}
+
 export function useCalendarsQuery() {
   const { authenticated } = useSession();
   const hiddenIds = useHiddenCalendarIds();
-  // A fresh arrow function every render would recompute select's full
-  // map+spread over every calendar on every render, not just when hiddenIds
-  // (or the underlying data) actually changes.
-  const select = useCallback(
-    (calendars: Calendar[]) => applyClientVisibility(calendars, hiddenIds),
-    [hiddenIds],
-  );
 
-  return useQuery({ ...calendarsQueryOptions(authenticated), select });
+  return useQuery({
+    ...calendarsQueryOptions(authenticated),
+    select: (calendars: Calendar[]) =>
+      selectVisibleCalendars(calendars, hiddenIds),
+  });
 }

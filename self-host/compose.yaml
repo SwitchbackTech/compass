@@ -1,6 +1,7 @@
 x-local-bindings:
   web: &web-port "127.0.0.1:${WEB_PORT:-9080}:9080"
   backend: &backend-port "127.0.0.1:${PORT:-3000}:3000"
+  sync: &sync-port "127.0.0.1:${SYNC_PORT:-3010}:3010"
 
 services:
   web:
@@ -70,7 +71,7 @@ services:
     # service tolerates a not-yet-ready store (liveness stays up, readiness 503).
     profiles: [sync]
     ports:
-      - "127.0.0.1:3010:3010"
+      - *sync-port
     environment:
       COMPASS_CONFIG_FILE: /app/compass.yaml
       LOG_LEVEL: ${LOG_LEVEL:-info}

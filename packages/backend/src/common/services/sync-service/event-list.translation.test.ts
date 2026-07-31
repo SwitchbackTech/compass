@@ -107,4 +107,24 @@ describe("syncEventInstanceToBrowser", () => {
 
     expect(event.content).not.toHaveProperty("color");
   });
+
+  it("forwards content.colorHex onto browser details content", () => {
+    const instance = baseInstance({
+      content: { title: "Standup", description: "Daily", colorHex: "#009688" },
+    });
+    const event = syncEventInstanceToBrowser(instance);
+
+    expect(event.content).toEqual({
+      kind: "details",
+      title: "Standup",
+      description: "Daily",
+      colorHex: "#009688",
+    });
+  });
+
+  it("omits content.colorHex on the browser event when sync has none", () => {
+    const event = syncEventInstanceToBrowser(baseInstance());
+
+    expect(event.content).not.toHaveProperty("colorHex");
+  });
 });

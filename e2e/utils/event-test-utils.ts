@@ -221,6 +221,13 @@ const waitForMainGridWidthToSettle = async (page: Page) => {
     }
     previousWidth = width;
   }
+
+  throw new Error(
+    `#mainGrid width never settled after 1s (still moving at ${previousWidth}px). ` +
+      "A caller computed click/drag targets against this width right after " +
+      "this timeout previously gave up silently, so a genuine layout stall " +
+      "would show up as a confusing downstream failure instead of here.",
+  );
 };
 
 export const ensureSidebarOpen = async (page: Page) => {

@@ -37,7 +37,7 @@ export async function setupTestDb(testFileUrl: string): Promise<void> {
 export async function cleanupCollections(): Promise<void> {
   const collections = await mongoService.db.collections();
 
-  const SKIP_COLLECTIONS = [Collections.USER, Collections.SYNC];
+  const SKIP_COLLECTIONS = [Collections.USER];
 
   const selectedCollections = collections.filter(
     (collection) => !SKIP_COLLECTIONS.includes(collection.collectionName),

@@ -21,8 +21,6 @@ import mongoService from "@backend/common/services/mongo.service";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import eventService from "@backend/event/services/event.service";
-import syncRecords from "@backend/sync/services/records/sync-records.repository";
-import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
@@ -184,7 +182,6 @@ class UserService {
 
   deleteCompassDataForUser = async (
     userId: string,
-    gcalAccess = true,
   ): Promise<Summary_Delete> => {
     const _id = zObjectId.parse(userId);
     const summary: Summary_Delete = {};
@@ -208,31 +205,6 @@ class UserService {
       const calendars = await calendarService.deleteAllByUser(userId, session);
       summary.calendars = calendars.deletedCount;
 
-      if (gcalAccess) {
-        const watches = await googleWatchService.stopWatches(
-          userId,
-          undefined,
-          session,
-        );
-        summary.eventWatches = watches.length;
-      } else {
-        const watches = await mongoService.watch.deleteMany(
-          { user: userId },
-          { session },
-        );
-        summary.eventWatches = watches.deletedCount;
-      }
-
-      const syncs = await syncRecords.deleteAllByUser(userId, session);
-      summary.syncs = syncs.deletedCount;
-
-      if (user) {
-        // delete other users sync with same Google calendar ID (email)
-        const gCalId = user.email;
-        const staleSyncs = await syncRecords.deleteAllByGcalId(gCalId, session);
-        summary.syncs += staleSyncs.deletedCount;
-      }
-
       // delete user
       const userDel = await mongoService.user.deleteOne({ _id }, { session });
       summary.user = userDel.deletedCount;
@@ -255,8 +227,7 @@ class UserService {
    * grant. Their Google Calendar data itself is never touched.
    *
    * Order matters: the refresh token has to be read before the delete
-   * transaction removes the user doc, and the grant can only be revoked after
-   * the delete stops their watches (stopping a watch needs a working grant).
+   * transaction removes the user doc, since deleting is what would erase it.
    * Sync principal purge is fail-open: a Sync outage must not strand an
    * undeleted Compass account.
    */
@@ -266,10 +237,7 @@ class UserService {
     });
     const gRefreshToken = user?.google?.gRefreshToken;
 
-    const summary = await this.deleteCompassDataForUser(
-      userId,
-      Boolean(gRefreshToken),
-    );
+    const summary = await this.deleteCompassDataForUser(userId);
 
     if (gRefreshToken) {
       await revokeGoogleGrant(gRefreshToken);
@@ -282,8 +250,6 @@ class UserService {
 
   #purgeSyncPrincipal = async (userId: string): Promise<void> => {
     const client = getSyncServiceClient();
-    if (!client) return;
-
     const result = await client.purgePrincipal(toSyncPrincipal(userId));
     if (!result.ok) {
       logger.warn(
@@ -303,26 +269,7 @@ class UserService {
     return cUser;
   };
 
-  stopGoogleCalendarSync = async (
-    user: string | ObjectId,
-    options?: { skipGoogleWatchStop?: boolean },
-  ): Promise<void> => {
-    const userId = zObjectId.parse(user).toString();
-    const skipGoogleWatchStop = options?.skipGoogleWatchStop === true;
-
-    await eventService.deleteByIntegration("google", userId);
-    if (skipGoogleWatchStop) {
-      await googleWatchService.deleteWatchesByUser(userId);
-    } else {
-      await googleWatchService.stopWatches(userId);
-    }
-    await syncRecords.deleteByIntegration("google", userId);
-  };
-
-  handleLogoutCleanup = async (
-    userId: string,
-    options: { isLastActiveSession: boolean },
-  ): Promise<void> => {
+  handleLogoutCleanup = async (userId: string): Promise<void> => {
     const _id = zObjectId.parse(userId);
     const user = await mongoService.user.findOne({ _id });
 
@@ -340,10 +287,6 @@ class UserService {
         userId,
         data: { sync: { incrementalGCalSync: "RESTART" } },
       });
-    }
-
-    if (options.isLastActiveSession) {
-      await googleWatchService.stopWatches(userId);
     }
   };
 
@@ -403,8 +346,6 @@ class UserService {
       { userId: _id, "source.provider": "google" },
       { $set: { isActive: false, updatedAt: new Date() } },
     );
-    await googleWatchService.deleteWatchesByUser(userId);
-    await syncRecords.deleteByIntegration("google", userId);
 
     await mongoService.user.updateOne(
       { _id },

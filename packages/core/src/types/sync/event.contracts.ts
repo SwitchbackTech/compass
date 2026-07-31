@@ -8,6 +8,7 @@ import {
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import {
   EventColorSlotSchema,
+  OptionalHexEventColorSchema,
   OptionalNullableEventColorSchema,
 } from "@core/types/event-color.contracts";
 import {
@@ -110,6 +111,9 @@ export const SyncEventContentSchema = z.strictObject({
   // Null means "clear the color tag" on an update command. Stored/read
   // records omit the field when there is no color.
   color: OptionalNullableEventColorSchema,
+  // A provider-assigned custom color with no Compass slot equivalent (e.g. a
+  // Google event label). Read-only: no write command ever sets this.
+  colorHex: OptionalHexEventColorSchema,
 });
 export type SyncEventContent = z.infer<typeof SyncEventContentSchema>;
 
@@ -186,43 +190,7 @@ export const OccurrenceKeySchema = z
   .brand<"OccurrenceKey">();
 export type OccurrenceKey = z.infer<typeof OccurrenceKeySchema>;
 
-export const SyncEventOccurrenceSchema = z.strictObject({
-  occurrenceKey: OccurrenceKeySchema,
-  eventId: EventIdSchema,
-  calendarId: SyncEventCalendarIdSchema,
-  schedule: EventScheduleSchema,
-  busy: z.boolean(),
-  title: z.string(),
-  cancelled: z.boolean(),
-});
-export type SyncEventOccurrence = z.infer<typeof SyncEventOccurrenceSchema>;
-
-export const EventOccurrenceListQuerySchema = z
-  .strictObject({
-    calendarIds: z.array(SyncEventCalendarIdSchema).min(1).readonly(),
-    start: DateTimeSchema,
-    end: DateTimeSchema,
-    cursor: z.string().trim().min(1).max(1024).optional(),
-    limit: z.number().int().min(1).max(500).optional(),
-  })
-  .refine(({ start, end }) => Date.parse(end) > Date.parse(start), {
-    message: "Range end must be after start",
-    path: ["end"],
-  });
-export type EventOccurrenceListQuery = z.infer<
-  typeof EventOccurrenceListQuerySchema
->;
-
-export const EventOccurrenceListResponseSchema = z.strictObject({
-  occurrences: z.array(SyncEventOccurrenceSchema).readonly(),
-  nextCursor: z.string().trim().min(1).max(1024).nullable(),
-});
-export type EventOccurrenceListResponse = z.infer<
-  typeof EventOccurrenceListResponseSchema
->;
-
-// A full-fidelity event row for the browser calendar read (distinct from the
-// stripped SyncEventOccurrence used by the busy/availability feed). It carries
+// A full-fidelity event row for the browser calendar read. It carries
 // everything the app needs to render AND edit an event: full content, the
 // projected instance schedule, and how the row relates to a series. The backend
 // translates one of these into an app-facing Event.
@@ -237,6 +205,7 @@ const SyncInstanceContentSchema = z.strictObject({
   title: z.string(),
   description: z.string(),
   color: EventColorSlotSchema.optional(),
+  colorHex: OptionalHexEventColorSchema,
 });
 export type SyncInstanceContent = z.infer<typeof SyncInstanceContentSchema>;
 

@@ -3,6 +3,7 @@ import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { reconcileStaleCalendars } from "@sync/domain/reconcile.service";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
@@ -15,29 +16,44 @@ describe("reconcileStaleCalendars", () => {
   const storage = setupSyncStorage(import.meta.url);
   let resources: SyncResourceRepository;
   let jobs: JobRepository;
+  let credentials: CredentialRepository;
 
   beforeEach(() => {
     resources = new SyncResourceRepository(storage.db());
     jobs = new JobRepository(storage.db());
+    credentials = new CredentialRepository(storage.db());
   });
 
   const deps = () => ({ resources, jobs });
 
   // Ensure an events resource and set its last success to `lastSuccessAt`
   // (omit for a never-synced resource). Each gets a distinct calendar so the
-  // unique (connection, kind, calendar) identity never collides.
+  // unique (connection, kind, calendar) identity never collides. The sweep
+  // only selects resources whose connection can still authenticate, so a
+  // credential is stored by default; pass withCredential: false to simulate a
+  // dead/disconnected connection.
   const seedResource = async (
     lastSuccessAt: Date | null,
+    options: { withCredential?: boolean } = {},
   ): Promise<SyncResourceRecord> => {
     const tenantId = objectId() as SyncResourceRecord["tenantId"];
     const principalId = objectId() as SyncResourceRecord["principalId"];
+    const connectionId = objectId() as SyncResourceRecord["connectionId"];
     const resource = await resources.ensure({
       tenantId,
       principalId,
-      connectionId: objectId() as SyncResourceRecord["connectionId"],
+      connectionId,
       resourceKind: "events",
       calendarId: objectId() as SyncResourceRecord["calendarId"],
     });
+    if (options.withCredential ?? true) {
+      await credentials.store({
+        connectionId,
+        provider: "google",
+        refreshToken: "refresh-token",
+        scopes: [],
+      });
+    }
     if (lastSuccessAt) {
       await resources.advanceCursor(
         tenantId,
@@ -123,5 +139,48 @@ describe("reconcileStaleCalendars", () => {
     expect(resource?.lastSuccessAt).toEqual(
       new Date("2026-07-02T00:00:00.000Z"),
     );
+  });
+
+  it("rotates an attempted-but-never-successful resource behind never-attempted ones", async () => {
+    // The 2026-07-29 regression: ~100 resources whose pulls always die early
+    // (dead credential) have lastSuccessAt null forever. Sorted by success
+    // they monopolize the head of every bounded sweep batch and starve the
+    // healthy stale resources behind them. Sorting by ATTEMPT rotates them:
+    // once tried, they go to the back until everything else has had a turn.
+    const doomed = await seedResource(null); // never succeeds
+    const healthy = await seedResource(new Date("2026-07-05T00:00:00.000Z"));
+    await resources.markAttempt(
+      doomed.tenantId,
+      doomed.principalId,
+      doomed._id,
+      new Date("2026-07-29T16:00:00.000Z"),
+    );
+
+    const enqueued = await reconcileStaleCalendars(deps(), staleBefore, now, 1);
+
+    expect(enqueued).toBe(1);
+    // The single slot goes to the never-attempted resource, even though the
+    // doomed one is "more stale" by success time (null).
+    expect(await jobByKey(`incrementalPull:${healthy._id}`)).not.toBeNull();
+    expect(await jobByKey(`incrementalPull:${doomed._id}`)).toBeNull();
+  });
+
+  it("excludes a resource whose connection has no stored credential, however stale", async () => {
+    // The rotation fix above only helps AFTER a first attempt: it does nothing
+    // for the population still tied at lastAttemptAt: null, where dead-
+    // credential resources and genuinely healthy never-attempted ones sit
+    // side by side. Mongo's tie-break there is not random — in prod it
+    // reproducibly favored the dead-credential cohort (2026-07-29: a clean
+    // post-rotation-fix sweep batch still selected 100 resources with only 1
+    // holding a credential). The sweep must exclude credential-less
+    // connections outright; they resume via reconnect, not reconcile.
+    const deadCredential = await seedResource(null, { withCredential: false });
+    const healthy = await seedResource(new Date("2026-07-05T00:00:00.000Z"));
+
+    const enqueued = await reconcileStaleCalendars(deps(), staleBefore, now, 1);
+
+    expect(enqueued).toBe(1);
+    expect(await jobByKey(`incrementalPull:${healthy._id}`)).not.toBeNull();
+    expect(await jobByKey(`incrementalPull:${deadCredential._id}`)).toBeNull();
   });
 });

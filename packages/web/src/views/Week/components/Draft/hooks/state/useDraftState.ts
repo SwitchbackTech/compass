@@ -105,18 +105,32 @@ export const useDraftState = () => {
 
   const draft = useDraftStore(selectGridDraft);
 
-  const state: State_Draft_Local = {
-    draft,
-    dragOffset,
-    dragStatus,
-    gestureOriginDraft,
-    isDragging,
-    isFormOpen,
-    isResizing,
-    resizeStatus,
-    dateBeingChanged,
-    isFormOpenBeforeDragging,
-  };
+  const state: State_Draft_Local = useMemo(
+    () => ({
+      draft,
+      dragOffset,
+      dragStatus,
+      gestureOriginDraft,
+      isDragging,
+      isFormOpen,
+      isResizing,
+      resizeStatus,
+      dateBeingChanged,
+      isFormOpenBeforeDragging,
+    }),
+    [
+      draft,
+      dragOffset,
+      dragStatus,
+      gestureOriginDraft,
+      isDragging,
+      isFormOpen,
+      isResizing,
+      resizeStatus,
+      dateBeingChanged,
+      isFormOpenBeforeDragging,
+    ],
+  );
 
   // Stable identity so discard/effects can depend on `setters` without
   // re-running every render. useState setters are stable; setIsFormOpen is

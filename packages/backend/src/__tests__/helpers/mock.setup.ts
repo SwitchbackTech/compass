@@ -1,4 +1,3 @@
-import { faker } from "@faker-js/faker";
 import { type NextFunction, type Response } from "express";
 import superTokensNode from "supertokens-node";
 import { type SessionRequest } from "supertokens-node/framework/express";
@@ -13,7 +12,6 @@ import {
 } from "@core/logger/logger.factory";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { getTestIsolationKey } from "@backend/__tests__/helpers/test-file-context";
-import { getTestGcalFixture } from "@backend/__tests__/helpers/test-gcal-fixture";
 import {
   registerUserIdMappingStore,
   registerUserMetadataStore,
@@ -30,18 +28,8 @@ import {
   resetVerifySession,
 } from "@backend/auth/session/session.middleware";
 import { CONFIG } from "@backend/common/constants/config.constants";
-import gcalService from "@backend/common/services/gcal/gcal.service";
-import {
-  enterTestGcalClient,
-  setTestGcalIsolationKey,
-} from "@backend/common/services/gcal/gcal.test-context";
 import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { googleCalendarListService } from "@backend/sync/services/calendarlist/google-calendarlist.service";
-import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
-import * as syncImportService from "@backend/sync/services/import/google-import.service";
-import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
-import { getChannelExpiration } from "@backend/sync/services/watch/google-watch-timing";
 import userService from "@backend/user/services/user.service";
 import { afterAll, afterEach, beforeEach, mock, spyOn } from "bun:test";
 import { randomUUID } from "node:crypto";
@@ -241,15 +229,7 @@ function restoreMockedMethods(...targets: object[]): void {
 
 /** Clears per-test spies so sequential cases in a file do not leak call counts. */
 function restoreLeakedTestSpies(): void {
-  restoreMockedMethods(
-    gcalService,
-    sseServer,
-    googleWatchService,
-    googleCalendarListService,
-    googleCalendarSyncService,
-    userService,
-    syncImportService,
-  );
+  restoreMockedMethods(sseServer, userService);
 }
 
 export function getTestLoggerInfoCalls(
@@ -263,40 +243,16 @@ export function setupBackendTestSeams(): void {
   restoreLeakedTestSpies();
   registerTestLoggerFactory();
 
-  const fixture = getTestGcalFixture();
   const { metadata, mappings } = getFileSupertokensStores();
 
-  fixture.reset();
   metadata.reset();
   mappings.reset();
   revokeSessionMock.mockClear();
   clearTestLoggerMocks();
 
-  setTestGcalIsolationKey(getTestIsolationKey());
-  enterTestGcalClient(fixture.createGcalClient());
   registerUserMetadataStore(metadata);
   registerUserIdMappingStore(mappings);
   registerTestVerifySession(createTestVerifySession());
-  ensureGcalWatchSpies();
-}
-
-function ensureGcalWatchSpies(): void {
-  const mockWatch = {
-    watch: {
-      resourceId: faker.string.uuid(),
-      expiration: getChannelExpiration(),
-    },
-  };
-
-  for (const method of ["watchEvents", "watchCalendars"] as const) {
-    const fn = gcalService[method];
-    if (!("mock" in fn) || !fn.mock) {
-      spyOn(gcalService, method).mockResolvedValue(mockWatch);
-    } else {
-      fn.mockClear();
-      fn.mockResolvedValue(mockWatch);
-    }
-  }
 }
 
 function applyPreloadSpies(): void {
@@ -338,9 +294,3 @@ export function teardownBackendTestSeams(): void {
   resetSupertokensStores();
   resetVerifySession();
 }
-
-// Re-export for tests that mutate gcal fixture data directly.
-export {
-  getTestGcalFixture,
-  getTestGcalFixture as compassTestState,
-} from "@backend/__tests__/helpers/test-gcal-fixture";

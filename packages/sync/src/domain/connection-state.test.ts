@@ -14,6 +14,7 @@ const healthy = (
   disconnectedAt: null,
   credential: "valid",
   permanentConflict: false,
+  durableReadFailure: false,
   accountIdentified: true,
   initialImportComplete: true,
   catchingUp: false,
@@ -49,6 +50,13 @@ describe("deriveConnectionState", () => {
     expect(derive({ permanentConflict: true })).toEqual({
       state: "actionRequired",
       reason: "permanentConflict",
+    });
+  });
+
+  it("is delayed with providerErrors when a calendar's reads are durably rejected", () => {
+    expect(derive({ durableReadFailure: true })).toEqual({
+      state: "delayed",
+      reason: "providerErrors",
     });
   });
 
@@ -128,6 +136,22 @@ describe("deriveConnectionState", () => {
       expect(
         derive({ credential: "expired", permanentConflict: true }).reason,
       ).toBe("authorizationExpired");
+    });
+
+    it("a durable read failure dominates importing", () => {
+      // The calendar the provider refuses to read can never earn a cursor, so
+      // without this precedence the connection would sit on "importing" forever
+      // rather than reporting the provider problem.
+      expect(
+        derive({ durableReadFailure: true, initialImportComplete: false })
+          .state,
+      ).toBe("delayed");
+    });
+
+    it("a bad credential dominates a durable read failure", () => {
+      expect(
+        derive({ credential: "revoked", durableReadFailure: true }).state,
+      ).toBe("actionRequired");
     });
 
     it("connecting dominates importing and overdue work", () => {

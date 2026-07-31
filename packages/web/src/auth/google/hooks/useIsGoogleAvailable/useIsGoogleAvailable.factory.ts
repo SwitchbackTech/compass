@@ -3,7 +3,7 @@ import { useEffect, useSyncExternalStore } from "react";
 type BackendGoogleAvailability = "available" | "unavailable" | "unknown";
 
 type AppConfigResponse = {
-  google?: { isConfigured?: boolean; connectDelegatedToSync?: boolean };
+  google?: { isConfigured?: boolean };
 };
 
 type GoogleAvailabilityDependencies = {
@@ -17,11 +17,6 @@ export function createGoogleAvailability({
 }: GoogleAvailabilityDependencies) {
   const listeners = new Set<() => void>();
   let backendGoogleAvailability: BackendGoogleAvailability = "unknown";
-  // Deployment posture: does the backend delegate Google connections to the
-  // sync service (redirect flow) instead of the legacy code-exchange flow?
-  // Loaded from the same /config response; false until known, so the connect
-  // UX stays on the legacy path unless delegation is confirmed on.
-  let connectDelegatedToSync = false;
   let loadPromise: Promise<void> | undefined;
 
   const emit = () => {
@@ -48,27 +43,22 @@ export function createGoogleAvailability({
   const getBackendGoogleAvailabilitySnapshot = (): boolean =>
     backendGoogleAvailability === "available";
 
-  const getConnectDelegatedToSyncSnapshot = (): boolean =>
-    connectDelegatedToSync;
-
   const loadBackendGoogleAvailability = async (): Promise<void> => {
-    if (!isGoogleAuthConfigured) {
-      setBackendGoogleAvailability("unavailable");
-      return;
-    }
-
+    // Always fetch /config, even without a baked GOOGLE_CLIENT_ID: the sync
+    // redirect connect flow needs no client-side id at all, so bailing out
+    // here would leave connect permanently unavailable for exactly the
+    // deployments that need it (e.g. a self-host web image that hasn't
+    // rebuilt with its own client id). Sign-in availability still requires
+    // the baked id — see useIsGoogleAvailable below.
     if (!loadPromise) {
       loadPromise = getConfig()
         .then((config) => {
-          connectDelegatedToSync =
-            config.google?.connectDelegatedToSync ?? false;
           setBackendGoogleAvailability(
             config.google?.isConfigured ? "available" : "unavailable",
           );
         })
         .catch(() => {
           loadPromise = undefined;
-          connectDelegatedToSync = false;
           setBackendGoogleAvailability("unavailable");
         });
     }
@@ -90,23 +80,26 @@ export function createGoogleAvailability({
     return isGoogleAuthConfigured && isBackendGoogleConfigured;
   };
 
-  const useIsConnectDelegatedToSync = (): boolean => {
-    const delegated = useSyncExternalStore(
+  // Connect-calendar availability, distinct from sign-in (useIsGoogleAvailable
+  // above): the sync redirect flow never runs client-side code exchange, so
+  // it needs no baked GOOGLE_CLIENT_ID — only that the backend has Google
+  // configured at all.
+  const useIsConnectGoogleAvailable = (): boolean => {
+    const isBackendGoogleConfigured = useSyncExternalStore(
       subscribe,
-      getConnectDelegatedToSyncSnapshot,
-      getConnectDelegatedToSyncSnapshot,
+      getBackendGoogleAvailabilitySnapshot,
+      getBackendGoogleAvailabilitySnapshot,
     );
 
     useEffect(() => {
       void loadBackendGoogleAvailability();
     }, []);
 
-    return delegated;
+    return isBackendGoogleConfigured;
   };
 
   const resetGoogleAvailabilityForTests = () => {
     backendGoogleAvailability = "unknown";
-    connectDelegatedToSync = false;
     loadPromise = undefined;
     emit();
   };
@@ -120,18 +113,10 @@ export function createGoogleAvailability({
     emit();
   };
 
-  /** Pins connect-delegation for tests and skips the config fetch. */
-  const setConnectDelegatedToSyncForTests = (delegated: boolean) => {
-    connectDelegatedToSync = delegated;
-    loadPromise = Promise.resolve();
-    emit();
-  };
-
   return {
     resetGoogleAvailabilityForTests,
     setGoogleAvailabilityForTests,
-    setConnectDelegatedToSyncForTests,
     useIsGoogleAvailable,
-    useIsConnectDelegatedToSync,
+    useIsConnectGoogleAvailable,
   };
 }

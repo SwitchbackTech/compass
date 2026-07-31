@@ -3,9 +3,7 @@ import { CalendarAccessSchema } from "@core/types/calendar.contracts";
 import { HexColorSchema, TimeZoneSchema } from "@core/types/domain-primitives";
 import { zObjectId } from "@core/types/type.utils";
 
-// Reuse the zObjectId sentinel, never z.instanceof(ObjectId):
-// zod-to-mongo-schema.ts maps zObjectId to bsonType "objectId" by reference,
-// while a raw instanceof degrades to an unvalidated {} in the $jsonSchema.
+// Accept an ObjectId or its valid 24-hex form, then normalize it to ObjectId.
 const ObjectIdSchema = zObjectId;
 
 export const LocalCalendarSourceRecordSchema = z.strictObject({

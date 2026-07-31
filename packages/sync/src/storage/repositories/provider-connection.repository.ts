@@ -85,7 +85,11 @@ export class ProviderConnectionRepository {
   async findByDiagnosticKey(
     diagnosticKey: string,
   ): Promise<ProviderConnectionRecord | null> {
-    const record = await this.collection.findOne({ diagnosticKey });
+    // $type makes the diagnostic_key partial index provable to the planner.
+    // See the PLANNER TRAP note in index-manifest.ts.
+    const record = await this.collection.findOne({
+      diagnosticKey: { $eq: diagnosticKey, $type: "string" },
+    });
     if (record) return this.parseRecord(record);
 
     // Pre-S45 rows omit diagnosticKey until first read; match derived keys.
@@ -219,8 +223,10 @@ export class ProviderConnectionRepository {
     before: Date,
     limit: number,
   ): Promise<ProviderConnectionRecord[]> {
+    // $type makes the disconnected_at partial index provable to the planner.
+    // See the PLANNER TRAP note in index-manifest.ts.
     const records = await this.collection
-      .find({ disconnectedAt: { $ne: null, $lt: before } })
+      .find({ disconnectedAt: { $type: "date", $lt: before } })
       .sort({ disconnectedAt: 1 })
       .limit(limit)
       .toArray();

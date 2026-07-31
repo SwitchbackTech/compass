@@ -88,7 +88,6 @@ const setMockGoogleConnection = (
   state:
     | "NOT_CONNECTED"
     | "ATTENTION"
-    | "repairing"
     | "IMPORTING"
     | "checking"
     | "HEALTHY" = "NOT_CONNECTED",
@@ -104,7 +103,6 @@ const setMockGoogleConnection = (
       icon: PlusIcon,
       onSelect: mockOnConnectGoogle,
     },
-    repairing: null,
     IMPORTING: null,
     checking: null,
     HEALTHY: null,
@@ -328,7 +326,6 @@ describe("CommandPalette", () => {
     });
     const repository: EventRepository = {
       list: async () => [],
-      getById: async () => before,
       create: async () => before,
       replace: async (id, input) => ({
         ...before,
@@ -394,7 +391,7 @@ describe("CommandPalette", () => {
   });
 
   it("shows the shimmer class for a syncing status", () => {
-    setMockGoogleConnection("repairing");
+    setMockGoogleConnection("IMPORTING");
     renderPalette();
 
     expect(screen.getByRole("status")).toHaveClass("c-sync-text-wave");

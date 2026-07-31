@@ -1,12 +1,12 @@
 import { Origin } from "@core/constants/core.constants";
 import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
-import { withColor } from "@core/types/event-color.contracts";
+import { withColor, withColorHex } from "@core/types/event-color.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
-  isTimedEventMultiDay,
+  shouldRenderTimedInAllDayRow,
   timedMultiDayToAllDayDates,
 } from "@web/common/utils/event/event-nudge.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
@@ -73,6 +73,7 @@ const eventToGridEvent = (
       ? { isTimedMultiDayDisplay: true }
       : {}),
     ...withColor(details?.color ?? undefined),
+    ...withColorHex(details?.colorHex),
   };
 };
 
@@ -118,7 +119,10 @@ const gridEventsFrom = (
 const timedEventsFrom = (events: Event[], demoEventIds?: readonly EventId[]) =>
   gridEventsFrom(events, "timed", demoEventIds).filter((event) => {
     if (!event.startDate || !event.endDate) return true;
-    return !isTimedEventMultiDay(dayjs(event.startDate), dayjs(event.endDate));
+    return !shouldRenderTimedInAllDayRow(
+      dayjs(event.startDate),
+      dayjs(event.endDate),
+    );
   });
 
 const multiDayTimedAsAllDayFrom = (
@@ -129,7 +133,7 @@ const multiDayTimedAsAllDayFrom = (
     .filter((event) => event.schedule.kind === "timed")
     .filter((event) => {
       const { start, end } = event.schedule;
-      return isTimedEventMultiDay(dayjs(start), dayjs(end));
+      return shouldRenderTimedInAllDayRow(dayjs(start), dayjs(end));
     })
     .map((event) => {
       const { start, end } = event.schedule;

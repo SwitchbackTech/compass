@@ -121,14 +121,20 @@ describe("self-host docker compose", () => {
     expect(compose).toContain("switchbacktech/compass-sync:");
     // Liveness probe, not readiness: a store-less passive service stays up.
     expect(compose).toContain("http://127.0.0.1:3010/health/live");
+    // "  sync:\n" (colon-then-newline) picks the services.sync: block, not
+    // the earlier "  sync: &sync-port ..." x-local-bindings anchor line.
     const syncBlock = compose
-      .slice(compose.indexOf("  sync:"))
+      .slice(compose.indexOf("  sync:\n"))
       .split(/\n {2}\w/)[0];
     // The `sync` profile lets a deploy start the container only where an
     // isolated sync database is provisioned.
     expect(syncBlock).toContain("profiles: [sync]");
-    // Loopback-only publish so host Caddy can proxy `/sync/*` OAuth/webhooks.
-    expect(syncBlock).toContain('"127.0.0.1:3010:3010"');
+    // Loopback-only publish so host Caddy can proxy `/sync/*` OAuth/webhooks,
+    // port configurable like the web/backend bindings.
+    expect(syncBlock).toContain("*sync-port");
+    expect(compose).toContain(
+      'sync: &sync-port "127.0.0.1:'.concat("$", '{SYNC_PORT:-3010}:3010"'),
+    );
     // The read-only root fs needs a writable mount for the logger's log file,
     // or the container crashes on startup.
     expect(syncBlock).toContain("compass_sync_logs:/app/logs");
@@ -197,15 +203,198 @@ describe("self-host installer", () => {
     expect(installer).toContain("self-host/compose.selfhosted.yaml");
     expect(manual).toContain("self-host/compose.selfhosted.yaml");
   });
+
+  it("writes a sync: block wired for sync-by-default, both installers", () => {
+    const installer = readRepoFile("self-host/install.sh");
+    const manual = readRepoFile("self-host/install-manual.sh");
+
+    for (const script of [installer, manual]) {
+      expect(script).toContain("sync:");
+      expect(script).toContain(
+        "mongo:27017/compass_sync?authSource=admin&replicaSet=rs0",
+      );
+      expect(script).toContain("execution: active");
+      expect(script).toContain("serviceUrl: http://sync:3010");
+    }
+  });
+
+  it("generates a sync internal auth token as a real secret, not a placeholder", () => {
+    const installer = readRepoFile("self-host/install.sh");
+    const manual = readRepoFile("self-host/install-manual.sh");
+
+    expect(installer).toContain('generate_secret "Sync internal auth token"');
+    expect(installer).toContain("internalAuthToken: $sync_internal_auth_token");
+    expect(manual).toContain("SYNC_INTERNAL_AUTH_TOKEN=$(random_hex)");
+    expect(manual).toContain("internalAuthToken: $SYNC_INTERNAL_AUTH_TOKEN");
+  });
+
+  it("install.sh's own first-boot profile derivation includes sync (not just the downloaded helper's)", async () => {
+    // install.sh hard-codes 'selfhosted}' as its COMPOSE_PROFILES default for
+    // the very first `docker compose up` (start_stack), separately from the
+    // self-host/compass helper it downloads for later use. PR #2450 fixed the
+    // helper's derivation but not this duplicate — meaning a fresh sync:
+    // config would silently never start the sync container on first install.
+    // Exercise install.sh's OWN default_profiles(), the same way the helper's
+    // is exercised above, so this can't regress silently again.
+    const dir = makeTempDir();
+    const configPath = join(dir, "compass.yaml");
+    writeFileSync(
+      configPath,
+      [
+        "mongo:",
+        '  uri: "mongodb://user:pass@mongo:27017/compass"',
+        "sync:",
+        '  mongoUri: "mongodb://user:pass@mongo:27017/compass_sync"',
+      ].join("\n"),
+      { encoding: "utf8" },
+    );
+
+    const installer = readRepoFile("self-host/install.sh");
+    const fns = ["strip_quotes", "read_config_value", "default_profiles"]
+      .map((name) => {
+        const match = installer.match(
+          new RegExp(`^${name}\\(\\)[\\s\\S]*?^}`, "m"),
+        );
+        if (!match)
+          throw new Error(`missing shell function in install.sh: ${name}`);
+        return match[0];
+      })
+      .join("\n\n");
+    const fnsPath = join(dir, "fns.sh");
+    writeFileSync(fnsPath, `${fns}\n`, { encoding: "utf8" });
+
+    const proc = Bun.spawn(
+      [
+        "bash",
+        "-c",
+        `CONFIG_FILE="$1"; . "$2"; default_profiles`,
+        "--",
+        configPath,
+        fnsPath,
+      ],
+      { cwd: repoRoot, stderr: "pipe", stdout: "pipe" },
+    );
+    const [stdout, exitCode] = await Promise.all([
+      new Response(proc.stdout).text(),
+      proc.exited,
+    ]);
+
+    expect(exitCode).toBe(0);
+    expect(stdout.trim()).toBe("selfhosted,sync");
+    expect(installer).toContain(
+      'export COMPOSE_PROFILES="' +
+        "$" +
+        '{COMPOSE_PROFILES-$(default_profiles)}"',
+    );
+
+    // install-manual.sh has no config-driven derivation (it only ever writes
+    // the bundled mongo URI), so it hardcodes both profiles directly instead.
+    const manual = readRepoFile("self-host/install-manual.sh");
+    expect(manual).toContain(
+      'export COMPOSE_PROFILES="' + "$" + '{COMPOSE_PROFILES-selfhosted,sync}"',
+    );
+    expect(manual).not.toContain("COMPOSE_PROFILES-selfhost}");
+  });
 });
 
+// Run the helper's profile derivation against a throwaway config. Sourcing just
+// the pure functions keeps this a behavior test rather than a string match, so
+// it fails if the derivation regresses instead of only if the source is retyped.
+async function runDefaultProfiles(configYaml: string) {
+  const dir = makeTempDir();
+  const configPath = join(dir, "compass.yaml");
+  writeFileSync(configPath, `${configYaml}\n`, { encoding: "utf8" });
+
+  // Lift the pure helpers out of the script so they can be exercised without
+  // running any docker command.
+  const helper = readRepoFile("self-host/compass");
+  const fns = ["strip_quotes", "read_config_value", "default_profiles"]
+    .map((name) => {
+      const match = helper.match(new RegExp(`^${name}\\(\\)[\\s\\S]*?^}`, "m"));
+      if (!match) throw new Error(`missing shell function: ${name}`);
+      return match[0];
+    })
+    .join("\n\n");
+
+  const fnsPath = join(dir, "fns.sh");
+  writeFileSync(fnsPath, `${fns}\n`, { encoding: "utf8" });
+
+  const proc = Bun.spawn(
+    [
+      "bash",
+      "-c",
+      `CONFIG_FILE="$1"; . "$2"; default_profiles`,
+      "--",
+      configPath,
+      fnsPath,
+    ],
+    { cwd: repoRoot, stderr: "pipe", stdout: "pipe" },
+  );
+
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+
+  return { exitCode, stderr, stdout: stdout.trim() };
+}
+
 describe("self-host helper", () => {
-  it("defaults Docker Compose to the self-host profile", () => {
+  it("lets an explicit COMPOSE_PROFILES override the derived default", () => {
     const helper = readRepoFile("self-host/compass");
 
     expect(helper).toContain(
-      'COMPOSE_PROFILES="' + "$" + '{COMPOSE_PROFILES-selfhosted}"',
+      'COMPOSE_PROFILES="' + "$" + '{COMPOSE_PROFILES-$(default_profiles)}"',
     );
+  });
+
+  it("omits the selfhosted profile when mongo is external", async () => {
+    // The 2026-07-29 production outage: an Atlas-backed install must not start
+    // the bundled mongo, whose selfhosted overlay gates backend startup.
+    const result = await runDefaultProfiles(
+      [
+        "mongo:",
+        '  uri: "mongodb+srv://u:p@cluster.mongodb.net/prod_calendar"',
+        "sync:",
+        '  mongoUri: "mongodb+srv://u:p@cluster.mongodb.net/compass_sync"',
+      ].join("\n"),
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe("sync");
+  });
+
+  it("keeps the selfhosted profile when mongo is the bundled service", async () => {
+    const result = await runDefaultProfiles(
+      ["mongo:", '  uri: "mongodb://user:pass@mongo:27017/compass"'].join("\n"),
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe("selfhosted");
+  });
+
+  it("adds sync alongside selfhosted when a sync database is provisioned", async () => {
+    const result = await runDefaultProfiles(
+      [
+        "mongo:",
+        '  uri: "mongodb://mongo:27017/compass"',
+        "sync:",
+        '  mongoUri: "mongodb://mongo:27017/compass_sync"',
+      ].join("\n"),
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe("selfhosted,sync");
+  });
+
+  it("defaults to selfhosted before a mongo uri is configured", async () => {
+    const result = await runDefaultProfiles(
+      ["web:", "  port: 9080"].join("\n"),
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toBe("selfhosted");
   });
 
   it("reads the Docker image version from runtime.version", () => {
@@ -213,6 +402,14 @@ describe("self-host helper", () => {
 
     expect(helper).toContain("read_config_value runtime.version");
     expect(helper).not.toContain("read_config_value compose.version");
+  });
+
+  it("exports SYNC_PORT from sync.port, matching the web/backend port pattern", () => {
+    const helper = readRepoFile("self-host/compass");
+
+    expect(helper).toContain(
+      'export SYNC_PORT="$(strip_quotes "$(read_config_value sync.port)")"',
+    );
   });
 
   it("updates in place with compose wait", () => {
@@ -239,11 +436,23 @@ describe("self-host helper", () => {
 });
 
 describe("staging deploy workflow", () => {
-  it("lets the self-host helper default compose profiles when none are set", () => {
+  it("always passes COMPOSE_PROFILES including sync to compass update", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
-    expect(workflow).toContain('if [ -n "$DEPLOY_PROFILES" ]; then');
-    expect(workflow).toContain("cd ~/compass && ./compass update");
+    // Sync is required, so the deploy never falls back to an unscoped
+    // `./compass update` that could omit the sync profile when an explicit
+    // COMPOSE_PROFILES var (e.g. `selfhosted`) is set.
+    expect(workflow).toContain(
+      'DEPLOY_PROFILES="$'.concat(
+        "{COMPOSE_PROFILES:+$",
+        '{COMPOSE_PROFILES},}sync"',
+      ),
+    );
+    expect(workflow).toContain(
+      "cd ~/compass && COMPOSE_PROFILES='$" +
+        "{DEPLOY_PROFILES}' ./compass update",
+    );
+    expect(workflow).not.toContain('if [ -n "$DEPLOY_PROFILES" ]; then');
   });
 
   it("falls back to the release tag when a configured compose ref is unavailable", () => {
@@ -298,7 +507,7 @@ describe("staging deploy workflow", () => {
     expect(dockerfile).toContain("'posthog:'");
   });
 
-  it("configures sync and enables its profile only when both secrets are set", () => {
+  it("always configures sync and fails early when required secrets are missing", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
     expect(workflow).toContain(
@@ -309,37 +518,35 @@ describe("staging deploy workflow", () => {
         "{{ secrets.SYNC_INTERNAL_AUTH_TOKEN }}",
       ),
     );
-    // Both secrets gate a single SYNC_ENABLED flag; a half-provisioned config
-    // must never abort the deploy, so there is no `exit` in the sync path.
+    // Sync is required (#2480): missing auth token aborts before compose starts.
+    expect(workflow).toContain('if [ -z "$SYNC_INTERNAL_AUTH_TOKEN" ]; then');
+    expect(workflow).toContain("Deploy requires SYNC_INTERNAL_AUTH_TOKEN");
+    // Cloud still needs an isolated SYNC_MONGO_URI; selfhosted derives one
+    // from the bundled mongo, matching install.sh / compass.example.yaml.
+    expect(workflow).toContain("Cloud deploy requires SYNC_MONGO_URI");
     expect(workflow).toContain(
-      'if [ -n "$SYNC_MONGO_URI" ] && [ -n "$SYNC_INTERNAL_AUTH_TOKEN" ]; then',
+      "mongodb://compass:$".concat(
+        "{MONGO_PASSWORD}@mongo:27017/compass_sync?authSource=admin&replicaSet=rs0",
+      ),
     );
-    expect(workflow).toContain('SYNC_ENABLED="1"');
-    expect(workflow).not.toContain(
-      "Sync deploy requires SYNC_INTERNAL_AUTH_TOKEN",
-    );
-    // Both the config section and the profile gate on the same flag, so the
-    // container never starts against a compass.yaml with no sync section.
-    expect(workflow).toContain('if [ -n "$SYNC_ENABLED" ]; then');
+    expect(workflow).toContain('SYNC_ENFORCE_LEAST_PRIVILEGE="false"');
+    // Sync config + profile are unconditional — never skip and leave the
+    // backend without SYNC_SERVICE_URL / SYNC_INTERNAL_AUTH_TOKEN.
+    expect(workflow).not.toContain("SYNC_ENABLED=");
+    expect(workflow).not.toContain("skipping sync");
     expect(workflow).toContain("'sync:'");
     expect(workflow).toContain('mongoUri: \\"$'.concat('{SYNC_MONGO_URI}\\"'));
-    expect(workflow).toContain("enforceLeastPrivilege: true");
-    // Backend reaches sync on the compose network; routing stays opt-in via
-    // GitHub Environment vars (prod must leave them unset = legacy).
+    expect(workflow).toContain(
+      "enforceLeastPrivilege: $".concat("{SYNC_ENFORCE_LEAST_PRIVILEGE}"),
+    );
     expect(workflow).toContain('serviceUrl: "http://sync:3010"');
-    expect(workflow).toContain(
-      "SYNC_CONNECTION_ROUTING: $".concat("{{ vars.SYNC_CONNECTION_ROUTING }}"),
-    );
-    expect(workflow).toContain(
-      "SYNC_EVENT_ROUTING: $".concat("{{ vars.SYNC_EVENT_ROUTING }}"),
-    );
     expect(workflow).toContain(
       "SYNC_EXECUTION: $".concat("{{ vars.SYNC_EXECUTION }}"),
     );
     expect(workflow).toContain(
       'DEPLOY_PROFILES="$'.concat(
-        "{DEPLOY_PROFILES:+$",
-        '{DEPLOY_PROFILES},}sync"',
+        "{COMPOSE_PROFILES:+$",
+        '{COMPOSE_PROFILES},}sync"',
       ),
     );
   });

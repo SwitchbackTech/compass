@@ -585,4 +585,42 @@ describe("projectSeriesMaterialization", () => {
       expect(instance.schedule.end).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
   });
+
+  test("flattens instance ids when the base id is already a composite occurrence id", () => {
+    // Simulates a "thisAndFollowing" rebase: the remainder series' optimistic
+    // id reuses the clicked instance's own composite id (SERIES_ID::start).
+    // A prior implementation composed new instance ids by nesting a second
+    // "::" onto that id — unparseable both client- and server-side, and (once
+    // the server codec is unified) exactly the shape resolveCommandTarget now
+    // rejects rather than silently escalating scope. Every produced id must
+    // decode as flat: eventId=SERIES_ID (never the nested prefix).
+    const alreadyComposite =
+      `${SERIES_ID}::2026-07-06T16:00:00.000Z` as EventId;
+    const base = createMockEvent({
+      id: alreadyComposite,
+      content: { kind: "details", title: "Standup", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-06T16:00:00.000Z",
+        end: "2026-07-06T17:00:00.000Z",
+        timeZone: "UTC",
+      } as never,
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=DAILY;COUNT=5"] },
+    });
+
+    const result = projectSeriesMaterialization({
+      base,
+      ranges: [
+        { start: "2026-07-05T00:00:00.000Z", end: "2026-07-12T00:00:00.000Z" },
+      ],
+    });
+
+    const instances = result.upserts.slice(1);
+    expect(instances.length).toBeGreaterThan(0);
+    for (const instance of instances) {
+      const separatorCount = instance.id.split("::").length - 1;
+      expect(separatorCount).toBe(1);
+      expect(instance.id).toStartWith(`${SERIES_ID}::`);
+    }
+  });
 });

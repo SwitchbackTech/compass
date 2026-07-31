@@ -114,6 +114,11 @@ export const EventMutationErrorCodeSchema = z.enum([
   "RECURRENCE_CONFLICT",
   "DUPLICATE_EVENT_ID",
   "INVALID_SCHEDULE",
+  // The event id addressed a specific occurrence (it carried the `::`
+  // composite separator) but failed to decode — never silently widen the
+  // scope to the whole event/series for an id shaped like an occurrence
+  // reference but malformed.
+  "INVALID_OCCURRENCE_ID",
   "PROVIDER_FAILURE",
   "GOOGLE_REVOKED",
   // Scoped cutover maintenance: cloud/provider mutations paused (S50).

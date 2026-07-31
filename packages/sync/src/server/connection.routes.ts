@@ -1,5 +1,6 @@
 import { type Express, type RequestHandler, type Response } from "express";
 import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
 import {
   BusyAvailabilityRequestSchema,
   type BusyAvailabilityResponse,
@@ -16,10 +17,6 @@ import {
 import {
   EventInstanceListQuerySchema,
   type EventInstanceListResponse,
-  EventOccurrenceListQuerySchema,
-  type EventOccurrenceListResponse,
-  type SyncEventOccurrence,
-  SyncEventOccurrenceSchema,
 } from "@core/types/sync/event.contracts";
 import {
   type ConnectionId,
@@ -34,7 +31,7 @@ import {
   type BusyAvailability,
   computeBusyAvailability,
 } from "@sync/domain/busy-query.service";
-import { deriveConnectionState } from "@sync/domain/connection-state";
+import { type DerivedConnectionState } from "@sync/domain/connection-state";
 import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
 import { assembleEventInstances } from "@sync/domain/event-instance-assembly";
 import {
@@ -45,6 +42,7 @@ import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
 import { googleCapabilitiesFromScopes } from "@sync/providers/google/google-capabilities";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
+import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
   internalRateLimit,
@@ -55,18 +53,15 @@ import { type EventOccurrenceRecord } from "@sync/storage/contracts/event-occurr
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
-import { EventRepository } from "@sync/storage/repositories/event.repository";
-import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
-import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
-import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
-import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { syncRepositories } from "@sync/storage/sync-repositories";
+
+const logger = Logger("sync:connection.routes");
 
 export const CONNECTIONS_PATH = "/internal/connections";
 export const CALENDARS_PATH = "/internal/calendars";
-export const EVENTS_PATH = "/internal/events";
 export const EVENTS_FULL_PATH = "/internal/events/full";
 export const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 export const BEGIN_PATH = "/internal/connections/begin";
@@ -85,6 +80,10 @@ const DEFAULT_EVENT_PAGE_LIMIT = 500;
 
 export interface ConnectionApiDeps {
   authMiddleware: RequestHandler;
+  // Guards the global (cross-tenant) change-feed poll only — see
+  // change-feed.routes.ts. Carried here because this is the shared deps bag
+  // every internal route slice is wired from.
+  serviceAuthMiddleware: RequestHandler;
   mongo: SyncMongoService;
   // Disconnect and begin make provider calls, so they are gated on execution.
   execution: SyncExecutionMode;
@@ -125,13 +124,15 @@ export function registerConnectionRoutes(
       if (!ensureConnected(deps.mongo, res)) return;
 
       try {
-        const connections = new ProviderConnectionRepository(deps.mongo.db);
+        const repos = syncRepositories(deps.mongo);
+        const connections = repos.connections;
         const refreshDeps = {
           connections,
-          calendars: new ProviderCalendarRepository(deps.mongo.db),
-          resources: new SyncResourceRepository(deps.mongo.db),
-          credentials: new CredentialRepository(deps.mongo.db),
-          invalidations: new InvalidationRepository(deps.mongo.db),
+          calendars: repos.calendars,
+          resources: repos.syncResources,
+          credentials: repos.credentials,
+          jobs: repos.jobs,
+          invalidations: repos.invalidations,
         };
         const records = await connections.listByPrincipal(
           auth.tenantId,
@@ -144,8 +145,12 @@ export function registerConnectionRoutes(
           connections: refreshed.map(toProviderConnection),
         };
         res.status(Status.OK).json(response);
-      } catch {
+      } catch (error) {
         // Never surface storage internals or identity to the caller.
+        logger.error(
+          "Failed to list/refresh connections",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },
@@ -192,107 +197,8 @@ export function registerConnectionRoutes(
           calendars: records.map(toProviderCalendar),
         };
         res.status(Status.OK).json(response);
-      } catch {
-        respondInternalError(res);
-      }
-    },
-  );
-
-  // List the caller's derived event occurrences within a bounded window, keyset
-  // paginated. The range is clamped to the sync horizon and the page is capped,
-  // so this never expands a series to completion or scans unboundedly. Scoped to
-  // the signed principal; a read, served in passive mode too.
-  app.get(
-    EVENTS_PATH,
-    internalRateLimit,
-    deps.authMiddleware,
-    async (req, res) => {
-      const auth = requireAuth(req, res);
-      if (!auth) return;
-      if (!ensureConnected(deps.mongo, res)) return;
-
-      const parsed = EventOccurrenceListQuerySchema.safeParse({
-        calendarIds: toQueryArray(req.query["calendarIds"]),
-        start: req.query["start"],
-        end: req.query["end"],
-        cursor: req.query["cursor"],
-        limit:
-          req.query["limit"] === undefined
-            ? undefined
-            : Number(req.query["limit"]),
-      });
-      if (!parsed.success) {
-        res.status(Status.BAD_REQUEST).json({ error: "invalid_query" });
-        return;
-      }
-      const query = parsed.data;
-
-      const after = decodeOccurrenceCursor(query.cursor);
-      if (query.cursor !== undefined && !after) {
-        res.status(Status.BAD_REQUEST).json({ error: "invalid_cursor" });
-        return;
-      }
-
-      // Clamp the requested range to the horizon. A range that falls entirely
-      // outside it collapses to empty rather than scanning anything.
-      const now = deps.now ? deps.now() : Date.now();
-      const start = maxDate(
-        new Date(query.start),
-        dayjs(now).subtract(HORIZON_PAST_MONTHS, "month").toDate(),
-      );
-      const end = minDate(
-        new Date(query.end),
-        dayjs(now).add(HORIZON_FUTURE_MONTHS, "month").toDate(),
-      );
-      if (start >= end) {
-        const empty: EventOccurrenceListResponse = {
-          occurrences: [],
-          nextCursor: null,
-        };
-        res.status(Status.OK).json(empty);
-        return;
-      }
-
-      const limit = query.limit ?? DEFAULT_EVENT_PAGE_LIMIT;
-      try {
-        const repo = new EventOccurrenceRepository(
-          deps.mongo.db,
-          deps.mongo.client,
-        );
-        // Resolve the active generation for each requested calendar so a repair
-        // in progress is never read; a calendar with no events resource yet
-        // (cloud-only, or not imported) reads generation 0.
-        const resources = new SyncResourceRepository(deps.mongo.db);
-        const activeByCalendar = await resources.activeGenerationByCalendar(
-          auth.tenantId,
-          auth.principalId,
-          [...query.calendarIds],
-        );
-        const calendars = [...query.calendarIds].map((calendarId) => ({
-          calendarId,
-          generation: activeByCalendar.get(calendarId) ?? 0,
-        }));
-        const records = await repo.listByCalendarRange({
-          tenantId: auth.tenantId,
-          principalId: auth.principalId,
-          calendars,
-          start,
-          end,
-          limit,
-          after,
-        });
-        // A full page means there may be more: hand back a cursor at the last
-        // row. A short page is the end of the range, so there is no next cursor.
-        const last = records.at(-1);
-        const response: EventOccurrenceListResponse = {
-          occurrences: records.map(toSyncEventOccurrence),
-          nextCursor:
-            records.length === limit && last
-              ? encodeOccurrenceCursor(last)
-              : null,
-        };
-        res.status(Status.OK).json(response);
-      } catch {
+      } catch (error) {
+        logger.error("Failed to list calendars", redactedCause(error));
         respondInternalError(res);
       }
     },
@@ -355,12 +261,10 @@ export function registerConnectionRoutes(
 
       const limit = query.limit ?? DEFAULT_EVENT_PAGE_LIMIT;
       try {
-        const occurrenceRepo = new EventOccurrenceRepository(
-          deps.mongo.db,
-          deps.mongo.client,
-        );
-        const eventRepo = new EventRepository(deps.mongo.db);
-        const resources = new SyncResourceRepository(deps.mongo.db);
+        const repos = syncRepositories(deps.mongo);
+        const occurrenceRepo = repos.eventOccurrences;
+        const eventRepo = repos.events;
+        const resources = repos.syncResources;
         const activeByCalendar = await resources.activeGenerationByCalendar(
           auth.tenantId,
           auth.principalId,
@@ -421,7 +325,11 @@ export function registerConnectionRoutes(
               : null,
         };
         res.status(Status.OK).json(response);
-      } catch {
+      } catch (error) {
+        logger.error(
+          "Failed to list full-fidelity event instances",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },
@@ -478,14 +386,12 @@ export function registerConnectionRoutes(
       }
 
       try {
+        const repos = syncRepositories(deps.mongo);
         const availability = await computeBusyAvailability(
           {
-            occurrences: new EventOccurrenceRepository(
-              deps.mongo.db,
-              deps.mongo.client,
-            ),
-            resources: new SyncResourceRepository(deps.mongo.db),
-            connections: new ProviderConnectionRepository(deps.mongo.db),
+            occurrences: repos.eventOccurrences,
+            resources: repos.syncResources,
+            connections: repos.connections,
           },
           {
             tenantId: auth.tenantId,
@@ -498,7 +404,11 @@ export function registerConnectionRoutes(
           },
         );
         res.status(Status.OK).json(toBusyAvailabilityResponse(availability));
-      } catch {
+      } catch (error) {
+        logger.error(
+          "Failed to compute busy availability",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },
@@ -544,7 +454,11 @@ export function registerConnectionRoutes(
             res.status(Status.NOT_FOUND).json({ error: "not_found" });
             return;
           }
-        } catch {
+        } catch (error) {
+          logger.error(
+            "Failed to look up connection for reconnect",
+            redactedCause(error),
+          );
           respondInternalError(res);
           return;
         }
@@ -604,8 +518,9 @@ export function registerConnectionRoutes(
         // Must match the redirect_uri begin used to build the consent URL.
         redirectUri: `${deps.callbackBaseUrl}${OAUTH_CALLBACK_PATH}`,
       });
-    } catch {
+    } catch (error) {
       // Bad code, no refresh token, unverifiable identity — nothing to link.
+      logger.error("OAuth code exchange failed", redactedCause(error));
       return redirect("error");
     }
 
@@ -619,7 +534,11 @@ export function registerConnectionRoutes(
         authorization,
       );
       return redirect("connected");
-    } catch {
+    } catch (error) {
+      logger.error(
+        "Failed to link connection after OAuth consent",
+        redactedCause(error),
+      );
       return redirect("error");
     }
   });
@@ -675,7 +594,8 @@ export function registerConnectionRoutes(
           id.data,
         );
         res.status(Status.NO_CONTENT).end();
-      } catch {
+      } catch (error) {
+        logger.error("Failed to disconnect connection", redactedCause(error));
         respondInternalError(res);
       }
     },
@@ -712,7 +632,8 @@ async function linkConnection(
     ReturnType<ProviderAuthAdapter["exchangeAuthorizationCode"]>
   >,
 ): Promise<void> {
-  const connections = new ProviderConnectionRepository(deps.mongo.db);
+  const repos = syncRepositories(deps.mongo);
+  const connections = repos.connections;
 
   // Reconnect: the state named a specific connection to re-authorize. Require
   // the account Google just returned to match that connection's account.
@@ -734,19 +655,12 @@ async function linkConnection(
     }
   }
 
-  const derived = deriveConnectionState(
-    {
-      disconnectedAt: null,
-      credential: "valid",
-      permanentConflict: false,
-      accountIdentified: true,
-      initialImportComplete: false,
-      catchingUp: false,
-      oldestDueWorkAt: null,
-      recentProviderErrors: false,
-    },
-    new Date(),
-  );
+  // Every field deriveConnectionState would take here is a fixed literal (a
+  // freshly linked connection always has a valid credential and an
+  // account just identified, and never starts already import-complete), so
+  // the derivation always lands on the same result — inlined rather than
+  // calling it with a wall of constant evidence.
+  const derived: DerivedConnectionState = { state: "importing", reason: null };
 
   const connection = await connections.upsertByProviderAccount({
     tenantId: state.tenantId,
@@ -761,10 +675,7 @@ async function linkConnection(
   });
 
   try {
-    const custody = new CredentialCustody(
-      new CredentialRepository(deps.mongo.db),
-      authAdapter,
-    );
+    const custody = new CredentialCustody(repos.credentials, authAdapter);
     await custody.store({
       connectionId: connection._id,
       provider: "google",
@@ -789,7 +700,7 @@ async function linkConnection(
   // connection, so a reconnect (which re-links) collapses into one discovery
   // rather than piling up. A failure throws so the connect is reported failed and
   // retried, rather than silently leaving a connection that never syncs.
-  const jobs = new JobRepository(deps.mongo.db);
+  const jobs = repos.jobs;
   await jobs.enqueue({
     tenantId: state.tenantId,
     principalId: state.principalId,
@@ -874,23 +785,6 @@ export function toProviderCalendar(
     capabilities: record.capabilities,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
-  });
-}
-
-// Map a stored occurrence record to the display wire contract, dropping the
-// storage-only fields (tenant/principal scope, startAt axis, generation) and
-// validating the projection through the schema on the way out.
-export function toSyncEventOccurrence(
-  record: EventOccurrenceRecord,
-): SyncEventOccurrence {
-  return SyncEventOccurrenceSchema.parse({
-    occurrenceKey: record.occurrenceKey,
-    eventId: record.eventId,
-    calendarId: record.calendarId,
-    schedule: record.schedule,
-    busy: record.busy,
-    title: record.title,
-    cancelled: record.cancelled,
   });
 }
 

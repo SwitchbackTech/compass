@@ -1,18 +1,19 @@
 import { type Express, type RequestHandler } from "express";
 import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
 import { DiagnosticConnectionResponseSchema } from "@core/types/sync/diagnostic.contracts";
 import { resolveDiagnosticConnection } from "@sync/domain/connection-diagnostic.service";
+import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
   internalRateLimit,
   requireAuth,
   respondInternalError,
 } from "@sync/server/internal-http";
-import { CommandRepository } from "@sync/storage/repositories/command.repository";
-import { JobRepository } from "@sync/storage/repositories/job.repository";
-import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
-import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
+import { syncRepositories } from "@sync/storage/sync-repositories";
+
+const logger = Logger("sync:diagnostic.routes");
 
 export const DIAGNOSTIC_CONNECTION_PATH =
   "/internal/diagnostics/connections/:diagnosticKey";
@@ -48,12 +49,7 @@ export function registerDiagnosticRoutes(
 
       try {
         const result = await resolveDiagnosticConnection(
-          {
-            connections: new ProviderConnectionRepository(deps.mongo.db),
-            calendars: new ProviderCalendarRepository(deps.mongo.db),
-            jobs: new JobRepository(deps.mongo.db),
-            commands: new CommandRepository(deps.mongo.db),
-          },
+          syncRepositories(deps.mongo),
           diagnosticKey,
         );
         if (!result) {
@@ -63,7 +59,11 @@ export function registerDiagnosticRoutes(
         res
           .status(Status.OK)
           .json(DiagnosticConnectionResponseSchema.parse(result));
-      } catch {
+      } catch (error) {
+        logger.error(
+          "Failed to resolve diagnostic connection",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },

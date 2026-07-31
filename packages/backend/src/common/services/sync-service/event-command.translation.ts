@@ -26,7 +26,8 @@ import {
   type SyncEventContent,
 } from "@core/types/sync/event.contracts";
 import { IdempotencyKeySchema } from "@core/types/sync/identity.contracts";
-import { decodeOccurrenceId } from "./occurrence-id";
+import { eventMutationError } from "@backend/event/event.error";
+import { decodeOccurrenceId, looksLikeOccurrenceId } from "./occurrence-id";
 import { createHash } from "node:crypto";
 
 // Acknowledgment filler when replace omits calendarId (no move). The web is
@@ -68,6 +69,14 @@ export interface CommandTarget {
 // (single or series master) has no occurrence to address — coerce to scope
 // "all" + null recurrenceId so sync's coherence refine accepts the request
 // (the web often sends scope "this" for singles).
+//
+// An id that LOOKS like a composite occurrence id (contains the `::`
+// separator) but fails to decode is a distinct, load-bearing case: it must
+// throw rather than fall through to the "plain id" branch below. Falling
+// through would silently retarget a "this event only" action at the WHOLE
+// series (scope "all") — exactly how an all-day instance composed with a
+// stale client-side format, or a doubly-composed thisAndFollowing split id,
+// once turned "delete this one instance" into "delete the entire series".
 export const resolveCommandTarget = (
   id: string,
   scope: RecurrenceScope,
@@ -86,6 +95,13 @@ export const resolveCommandTarget = (
       scope,
       recurrenceId: DateTimeSchema.parse(parts.recurrenceId),
     };
+  }
+
+  if (looksLikeOccurrenceId(id)) {
+    throw eventMutationError(
+      "INVALID_OCCURRENCE_ID",
+      `Event id "${id}" looks like an occurrence reference but could not be decoded`,
+    );
   }
 
   return {
