@@ -448,7 +448,13 @@ export class SyncServiceClient {
 function statusToKind(status: number): SyncClientErrorKind {
   if (status === 401) return "unauthorized";
   if (status === 400) return "badRequest";
-  if (status === 503) return "unavailable";
+  // 429 is sync's own internal rate limiter (internal-http.ts), tripped
+  // easily under normal-ish load (a shared 300/min bucket for the whole
+  // backend). Treated the same as 503: a retryable service-busy state, not
+  // an unexpected condition - previously this fell through to
+  // unexpectedStatus -> GenericError.NotSure, whose Status.UNSURE (600) is
+  // not a real HTTP status and reads as an unretryable mystery to the caller.
+  if (status === 429 || status === 503) return "unavailable";
   return "unexpectedStatus";
 }
 

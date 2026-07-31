@@ -88,6 +88,20 @@ describe("handleError", () => {
     expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
 
+  it("shows a toast on a 404 instead of silently reverting the optimistic edit", () => {
+    // Not a session failure (unlike GONE/UNAUTHORIZED) - the api interceptor
+    // only console.error's a 404 and rethrows, so without this the user's
+    // edit rolls back with zero visible feedback at all.
+    const error = createServerError(Status.NOT_FOUND);
+
+    handleError(error);
+
+    expect(mocks.error).toHaveBeenCalledTimes(1);
+    expect(mocks.error.mock.calls[0]?.[1]).toMatchObject({
+      toastId: GENERIC_ERROR_TOAST_ID,
+    });
+  });
+
   it("does not log a retryable, backend-authored mutation failure", () => {
     // A 502 PROVIDER_FAILURE the backend authored: it answered (so it isn't
     // "unavailable"), and it's retryable, so the user just needs a nudge. It

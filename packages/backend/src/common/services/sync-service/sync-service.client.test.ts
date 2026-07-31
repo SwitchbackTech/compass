@@ -598,6 +598,26 @@ describe("SyncServiceClient", () => {
     expect(result.error.kind).toBe("unavailable");
   });
 
+  it("maps a 429 to unavailable, not unexpectedStatus", async () => {
+    // Sync's internal rate limiter (a shared 300/min bucket) returns 429
+    // under normal-ish load. Previously this fell through to
+    // unexpectedStatus -> GenericError.NotSure (Status.UNSURE = 600, not a
+    // real HTTP status) instead of a retryable service-busy signal.
+    const { fn } = fakeFetch(async () => ({
+      status: 429,
+      json: async () => ({ error: "rate_limited" }),
+    }));
+
+    const result = await client(fn).queryBusyAvailability(
+      principal(),
+      request([objectId()]),
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.kind).toBe("unavailable");
+  });
+
   it("maps a connection failure to unavailable", async () => {
     const fn: SyncServiceClientOptions["fetch"] = async () => {
       throw new Error("ECONNREFUSED");

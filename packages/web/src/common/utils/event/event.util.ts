@@ -174,14 +174,23 @@ export const handleError = (error: Error) => {
     return;
   }
 
-  const codesToIgnore = [Status.NOT_FOUND, Status.GONE, Status.UNAUTHORIZED];
   // Prefer the structured status on ApiError; fall back to the trailing
   // status digits in the message for errors that only carry text.
   const code =
     (error as ApiError).response?.status ??
     parseInt(error.message.slice(-3), 10);
-  if (codesToIgnore.includes(code)) {
-    // api interceptor will handle these
+
+  // GONE/UNAUTHORIZED are session-level failures — the api interceptor signs
+  // the user out, which has its own messaging, so nothing more is shown here.
+  if (code === Status.GONE || code === Status.UNAUTHORIZED) {
+    return;
+  }
+  // NOT_FOUND is not a session failure (e.g. syncing onto a calendar the
+  // server hasn't provisioned yet) — the interceptor only console.error's it
+  // and rethrows. Left unhandled here, the optimistic edit silently rolls
+  // back with no visible feedback at all.
+  if (code === Status.NOT_FOUND) {
+    showCatchallToast(CATCHALL_TOAST_MESSAGE);
     return;
   }
 
