@@ -31,8 +31,12 @@ export function useSidebarShortcuts({
     setIsShortcutsOpen((isOpen) => !isOpen);
   }, [isSidebarOpen, onToggleSidebar]);
 
-  useAppShortcutUp(TOGGLE_SHORTCUTS_HOTKEY, toggleShortcuts);
-  useAppShortcutUp(TOGGLE_SHORTCUTS_SLASH_HOTKEY, toggleShortcuts);
+  useAppShortcutUp(TOGGLE_SHORTCUTS_HOTKEY, toggleShortcuts, {
+    ignoreAppLock: true,
+  });
+  useAppShortcutUp(TOGGLE_SHORTCUTS_SLASH_HOTKEY, toggleShortcuts, {
+    ignoreAppLock: true,
+  });
 
   useEffect(() => {
     if (!isSidebarOpen) {
