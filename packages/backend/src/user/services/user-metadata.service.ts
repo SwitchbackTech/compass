@@ -1,4 +1,4 @@
-import mergeWith from "lodash.mergewith";
+import mergeWith from "lodash/mergeWith";
 import {
   type GoogleConnectionState,
   type GoogleSyncConnectionSummary,
