@@ -7,8 +7,14 @@
  */
 
 import { backendTestSpawnEnv } from "./backend-test-env";
-import { formatDuration, resolveTestTargets } from "./runner-utils";
+import {
+  formatDuration,
+  resolveTestTargets,
+  warnIfBunVersionMismatch,
+} from "./runner-utils";
 import { resolve } from "node:path";
+
+warnIfBunVersionMismatch("1.3.14");
 
 type ProfileName =
   | "core"
@@ -67,7 +73,9 @@ if (!profile || !PROFILES[profile]) {
 
 const { preload, scan, label } = PROFILES[profile];
 const preloadPath = resolve(preload);
-const { targets, bunFlags } = resolveTestTargets(scan, extraArgs);
+const { targets, bunFlags } = resolveTestTargets(scan, extraArgs, {
+  expandDirectory: true,
+});
 
 const started = Date.now();
 

@@ -1,5 +1,17 @@
 import { Glob } from "bun";
 
+// Bun version behavior has drifted between patch releases (e.g. the 1.4
+// directory-scan regression this runner works around). Warn rather than
+// fail so a mismatched local bun doesn't block a run outright.
+export function warnIfBunVersionMismatch(pinned: string): void {
+  if (Bun.version !== pinned && !Bun.version.startsWith(`${pinned}-`)) {
+    console.warn(
+      `warning: running bun ${Bun.version}, repo pins bun@${pinned} (see package.json "packageManager"). ` +
+        `Test behavior may differ from CI.`,
+    );
+  }
+}
+
 export function resolveTestFiles(
   scan: string,
   extraArgs: string[],
@@ -69,6 +81,7 @@ export function parseExtraArgs(extraArgs: string[]): {
 export function resolveTestTargets(
   scan: string,
   extraArgs: string[],
+  options: { expandDirectory?: boolean } = {},
 ): { targets: string[]; bunFlags: string[]; label: string } {
   const { bunFlags, ignorePattern, explicitPaths } = parseExtraArgs(extraArgs);
 
@@ -85,40 +98,23 @@ export function resolveTestTargets(
     flags.push("--path-ignore-patterns", ignorePattern);
   }
 
-  return { targets: [scan], bunFlags: flags, label: scan };
-}
-
-export async function runPool<T>(
-  concurrency: number,
-  count: number,
-  task: (index: number) => Promise<T>,
-): Promise<T[]> {
-  const results: T[] = new Array(count);
-  let nextIndex = 0;
-
-  async function worker(): Promise<void> {
-    while (nextIndex < count) {
-      const index = nextIndex++;
-      results[index] = await task(index);
-    }
+  // Bun 1.4's directory-scan test discovery balloons memory (tens of GB,
+  // never finishing) on packages/web/src's ~200 files. Expand to an explicit
+  // file list instead. Not used by test-mongo-env.ts: those profiles run
+  // --parallel against a shared mongod, where a huge argv of per-file paths
+  // has previously hung the runner — directory passthrough stays there.
+  if (options.expandDirectory) {
+    const glob = `${scan.replace(/\/$/, "")}/**/*.{test,spec}.{ts,tsx}`;
+    return {
+      targets: resolveTestFiles(glob, []).files,
+      bunFlags: flags,
+      label: scan,
+    };
   }
 
-  await Promise.all(
-    Array.from({ length: Math.max(1, concurrency) }, () => worker()),
-  );
-
-  return results;
+  return { targets: [scan], bunFlags: flags, label: scan };
 }
 
 export function formatDuration(started: number): string {
   return ((Date.now() - started) / 1000).toFixed(1);
-}
-
-export function formatSummary(
-  label: string,
-  passed: number,
-  total: number,
-  started: number,
-): string {
-  return `${label}: ${passed}/${total} passed | ${formatDuration(started)}s`;
 }
