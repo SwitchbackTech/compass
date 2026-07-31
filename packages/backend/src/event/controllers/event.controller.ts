@@ -222,6 +222,19 @@ const replaceFromSync = async (
   eventId: string,
   input: ReplaceEventInput,
 ) => {
+  // toReplaceSubmitRequests builds an update command, plus a move command
+  // when calendarId is present — but Sync unconditionally fails every move
+  // command (no executor exists). Submitting them in sequence would apply
+  // the update, THEN throw on the move: a partial write the caller sees as a
+  // single failed request, and a naive retry re-runs the same broken pair.
+  // Reject up front, before anything is submitted.
+  if (input.calendarId !== undefined) {
+    throw eventMutationError(
+      "MOVE_UNSUPPORTED",
+      "Moving an event to a different calendar is not supported yet",
+    );
+  }
+
   const client = getSyncServiceClient();
   const { requests, responseEvent } = toReplaceSubmitRequests(eventId, input);
   for (const request of requests) {

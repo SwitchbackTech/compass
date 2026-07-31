@@ -168,6 +168,21 @@ export async function submitCloudCommand(
   return finish(await confirmCloud(deps, command));
 }
 
+// Re-run an already-submitted, still-nonterminal update/delete command
+// through the same routing applyCloudMutation used the first time (dedupe by
+// idempotencyKey does not apply here — the command already exists). For the
+// stale-command retry sweep: a transient provider failure mid-execute leaves
+// the command exactly as it was (see provider-command.service.ts's per-kind
+// executors), and nothing else ever revisits it, so this is the only thing
+// that gives it another attempt.
+export async function retryCloudMutation(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  return applyCloudMutation(deps, command, now);
+}
+
 // Apply a cloud-only update or delete to an existing event. Only single,
 // unlinked events are handled here: a provider-linked event needs the provider
 // mutation path, and a recurring series needs scope handling — both land in

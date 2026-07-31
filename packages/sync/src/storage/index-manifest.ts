@@ -176,6 +176,13 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       name: "principal_nonterminal",
       key: { tenantId: 1, principalId: 1, "outcome.state": 1, createdAt: 1 },
     },
+    // Covers the global stale-command retry sweep (listStaleNonterminal):
+    // filter on state + kind, ordered oldest-first by updatedAt, across every
+    // owner - deliberately NOT tenant/principal-scoped like the index above.
+    {
+      name: "stale_nonterminal",
+      key: { "outcome.state": 1, "input.kind": 1, updatedAt: 1 },
+    },
   ],
   [SYNC_COLLECTIONS.jobs]: [
     {

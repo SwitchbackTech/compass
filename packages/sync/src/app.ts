@@ -11,6 +11,7 @@ import {
 } from "@sync/domain/connection-retention.service";
 import { requeueFailedJobs } from "@sync/domain/failed-job-requeue.service";
 import { reconcileStaleCalendars } from "@sync/domain/reconcile.service";
+import { retryStaleCommands } from "@sync/domain/stale-command-retry.service";
 import { maintainExpiringSubscriptions } from "@sync/domain/subscription-sweep.service";
 import { SweepScheduler } from "@sync/domain/sweep-scheduler.service";
 import { SyncJobWorker } from "@sync/domain/sync-job-worker.service";
@@ -232,12 +233,16 @@ async function start(): Promise<void> {
       service.shutdown.register("failedJobRequeue", () =>
         schedulers.failedJobRequeue.stop(),
       );
+      service.shutdown.register("staleCommandRetry", () =>
+        schedulers.staleCommandRetry.stop(),
+      );
       for (const drain of schedulers.drains) drain.start();
       schedulers.reconcile.start();
       schedulers.subscription.start();
       schedulers.failedJobRequeue.start();
+      schedulers.staleCommandRetry.start();
       logger.info(
-        "Sync scheduler draining, reconciling, renewing channels, retaining, and reporting health",
+        "Sync scheduler draining, reconciling, renewing channels, retaining, retrying stale commands, and reporting health",
       );
     } else {
       logger.info(
@@ -261,6 +266,11 @@ const FAILED_JOB_REQUEUE_COOLDOWN_MS = 30 * 60_000;
 const FAILED_JOB_MAX_REQUEUES = 3;
 // A resource not synced within this window is swept for a reconcile pull.
 const RECONCILE_STALE_AFTER_MS = 15 * 60_000;
+// A cloud command left nonterminal past this long since its last update is
+// eligible for a retry - long enough that a transient provider blip has
+// almost certainly cleared, short enough that "deleting" doesn't sit visibly
+// stuck for too long.
+const STALE_COMMAND_RETRY_AFTER_MS = 5 * 60_000;
 // A push channel expiring within this window is swept for renewal. Matches
 // maintainSubscription's default renew guard so the sweep and the operation
 // agree on what "near expiry" means.
@@ -347,10 +357,13 @@ function buildSchedulers(
   reconcile: SweepScheduler;
   subscription: SweepScheduler;
   failedJobRequeue: SweepScheduler;
+  staleCommandRetry: SweepScheduler;
 } | null {
   if (config.EXECUTION !== "active") return null;
   const authAdapter = buildAuthAdapter(config);
   if (!authAdapter) return null;
+  const eventWriter = buildEventWriter(config);
+  if (!eventWriter) return null;
 
   const repos = syncRepositories(mongo);
   const resources = repos.syncResources;
@@ -463,7 +476,51 @@ function buildSchedulers(
       onError: (error) => logger.error("Sync self-heal sweep failed", error),
     },
   );
-  return { drains, reconcile, subscription, failedJobRequeue };
+  // Self-heal sweep for the OTHER kind of stuck work: a cloud-targeted
+  // update/delete command that hit a transient provider failure mid-execute.
+  // Those run inline from the HTTP request (not as a job), and nothing else
+  // ever revisits a command left nonterminal that way - see
+  // stale-command-retry.service.ts. Looks BACK, like reconcile/failedJobRequeue.
+  const staleCommandRetry = new SweepScheduler(
+    {
+      sweep: async (before) => {
+        const result = await retryStaleCommands(
+          {
+            commands: repos.commands,
+            events: repos.events,
+            calendars: repos.calendars,
+            occurrences: repos.eventOccurrences,
+            markers: repos.deletionMarkers,
+            execution: config.EXECUTION,
+            provider: {
+              writer: eventWriter,
+              custody: new CredentialCustody(repos.credentials, authAdapter),
+            },
+          },
+          before,
+          () => new Date(),
+        );
+        if (result.attempted > 0) {
+          logger.info(
+            `Sync stale-command sweep retried ${result.attempted} command(s), ${result.stillStale} still stuck`,
+          );
+        }
+        return result.attempted;
+      },
+    },
+    {
+      windowMs: -STALE_COMMAND_RETRY_AFTER_MS,
+      onError: (error) =>
+        logger.error("Sync stale-command retry sweep failed", error),
+    },
+  );
+  return {
+    drains,
+    reconcile,
+    subscription,
+    failedJobRequeue,
+    staleCommandRetry,
+  };
 }
 
 function registerSignalHandlers(

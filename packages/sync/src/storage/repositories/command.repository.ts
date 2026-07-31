@@ -1,6 +1,9 @@
 import { type Collection, type Db, ObjectId } from "mongodb";
 import { type EventId } from "@core/types/domain-primitives";
-import { type SyncCommandOutcome } from "@core/types/sync/command.contracts";
+import {
+  type SyncCommandInput,
+  type SyncCommandOutcome,
+} from "@core/types/sync/command.contracts";
 import {
   type ConnectionId,
   type PrincipalId,
@@ -181,6 +184,31 @@ export class CommandRepository {
       .toArray();
 
     return result?.count ?? 0;
+  }
+
+  // Commands stuck nonterminal past `before`, across every owner (system
+  // liveness, not a user request — same shape as JobRepository's failed-job
+  // sweep query). A transient provider failure mid-execute returns the
+  // command unchanged rather than retrying it (see provider-command.service.ts):
+  // nothing else ever picks a pending command back up, so without this sweep
+  // it stays visibly "deleting"/"updating" forever. Scoped to update/delete —
+  // the kinds executed inline and synchronously from the HTTP request, so a
+  // transient failure there has no other retry path at all.
+  async listStaleNonterminal(
+    before: Date,
+    kinds: readonly SyncCommandInput["kind"][],
+    limit: number,
+  ): Promise<CommandRecord[]> {
+    const records = await this.collection
+      .find({
+        "outcome.state": { $in: ["pending", "applying", "reconciling"] },
+        "input.kind": { $in: kinds },
+        updatedAt: { $lt: before },
+      })
+      .sort({ updatedAt: 1 })
+      .limit(limit)
+      .toArray();
+    return records.map((r) => CommandRecordSchema.parse(r));
   }
 
   // Hard-delete every command for a principal (account deletion).
