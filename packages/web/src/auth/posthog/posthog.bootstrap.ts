@@ -12,11 +12,10 @@ let client: PostHog | undefined;
  * `capture_unhandled_errors`/`capture_unhandled_rejections` handlers are
  * installed before IndexedDB and `sessionInit()` are awaited. A throw during
  * boot - the exact shape that left session 019fb57e blank with zero telemetry -
- * is then captured instead of vanishing. Idempotent: the React provider calls
- * it again during render and gets the same already-initialized instance back.
+ * is then captured instead of vanishing. The React provider reads this client
+ * after boot rather than owning a second initialization path.
  */
 export function initPosthog(): PostHog | undefined {
-  if (process.env.BUN_TEST_RUN) return undefined;
   if (!isPosthogEnabled()) return undefined;
   if (client) return client;
 

@@ -1,5 +1,5 @@
-import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
+import { usePostHog } from "@web/auth/posthog/posthog-react";
 
 /**
  * Identifies the user in PostHog when `userId` and profile email are available.

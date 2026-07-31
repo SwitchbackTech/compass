@@ -230,21 +230,17 @@ async function start(): Promise<void> {
         // Stop every drain; each releases only its own owner's held jobs.
         await Promise.all(schedulers.drains.map((drain) => drain.stop()));
       });
-      service.shutdown.register("reconcile", () => schedulers.reconcile.stop());
-      service.shutdown.register("subscription", () =>
-        schedulers.subscription.stop(),
-      );
-      service.shutdown.register("failedJobRequeue", () =>
-        schedulers.failedJobRequeue.stop(),
-      );
-      service.shutdown.register("staleCommandRetry", () =>
-        schedulers.staleCommandRetry.stop(),
-      );
+      const sweeps = [
+        ["reconcile", schedulers.reconcile],
+        ["subscription", schedulers.subscription],
+        ["failedJobRequeue", schedulers.failedJobRequeue],
+        ["staleCommandRetry", schedulers.staleCommandRetry],
+      ] as const;
+      for (const [name, sweep] of sweeps) {
+        service.shutdown.register(name, () => sweep.stop());
+      }
       for (const drain of schedulers.drains) drain.start();
-      schedulers.reconcile.start();
-      schedulers.subscription.start();
-      schedulers.failedJobRequeue.start();
-      schedulers.staleCommandRetry.start();
+      for (const [, sweep] of sweeps) sweep.start();
       logger.info(
         "Sync scheduler draining, reconciling, renewing channels, retaining, retrying stale commands, and reporting health",
       );
