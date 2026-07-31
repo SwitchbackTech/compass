@@ -632,23 +632,24 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
     useEscapeToCloseForm(onClose);
 
-    const titleError =
-      fieldErrors?.["content.title"] ?? fieldErrors?.title ?? null;
-    const calendarError = fieldErrors?.calendarId ?? null;
-    const scheduleError =
-      fieldErrors?.start ?? fieldErrors?.end ?? fieldErrors?.timeZone ?? null;
-    const scheduleErrorField = fieldErrors?.start
-      ? "start"
-      : fieldErrors?.end
-        ? "end"
-        : fieldErrors?.timeZone
-          ? "timeZone"
-          : null;
-    const recurrenceError = fieldErrors?.recurrence ?? null;
-    const titleErrorDescribedBy = titleError
-      ? eventFormErrorId(
-          fieldErrors?.["content.title"] ? "content.title" : "title",
-        )
+    const titleErrorField = fieldErrors?.["content.title"]
+      ? "content.title"
+      : fieldErrors?.title
+        ? "title"
+        : null;
+    const titleError = titleErrorField
+      ? fieldErrors?.[titleErrorField]
+      : undefined;
+    const calendarError = fieldErrors?.calendarId;
+    const scheduleErrorField = (["start", "end", "timeZone"] as const).find(
+      (field) => fieldErrors?.[field],
+    );
+    const scheduleError = scheduleErrorField
+      ? fieldErrors?.[scheduleErrorField]
+      : undefined;
+    const recurrenceError = fieldErrors?.recurrence;
+    const titleErrorDescribedBy = titleErrorField
+      ? eventFormErrorId(titleErrorField)
       : undefined;
     const calendarErrorDescribedBy = calendarError
       ? eventFormErrorId("calendarId")
