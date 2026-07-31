@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
@@ -19,6 +18,30 @@ export function buildCalendarLookup(
   return new Map(calendars.map((calendar) => [calendar.id, calendar]));
 }
 
+// Keyed on the calendars-query data reference, shared across every
+// useCalendarLookup() call site rather than a per-component useMemo: with
+// useCalendarsQuery's result now cached per (hiddenIds, data) (see
+// calendar.query.ts), every consumer in a render tree gets back the same
+// `data` reference, so a per-component useMemo would still rebuild the same
+// map once per consumer instead of once total.
+const lookupCache = new WeakMap<
+  Calendar[],
+  ReadonlyMap<CalendarId, Calendar>
+>();
+
+function getCalendarLookup(
+  data: Calendar[] | undefined,
+): ReadonlyMap<CalendarId, Calendar> {
+  if (!data) return EMPTY_CALENDAR_LOOKUP;
+
+  let lookup = lookupCache.get(data);
+  if (!lookup) {
+    lookup = buildCalendarLookup(data);
+    lookupCache.set(data, lookup);
+  }
+  return lookup;
+}
+
 /**
  * Memoized id -> Calendar lookup, built once per calendars-query data
  * reference rather than rescanned per event/card render.
@@ -29,7 +52,7 @@ export function buildCalendarLookup(
 export function useCalendarLookup(): ReadonlyMap<CalendarId, Calendar> {
   const { data } = useCalendarsQuery();
 
-  return useMemo(() => buildCalendarLookup(data), [data]);
+  return getCalendarLookup(data);
 }
 
 export type CalendarCardIdentity = {
