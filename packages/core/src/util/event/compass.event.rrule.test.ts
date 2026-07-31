@@ -94,6 +94,23 @@ describe("CompassEventRRule: ", () => {
     expect(allDates.some((d) => dayjs(d).isSame(startDateOnMonday))).toBe(true);
   });
 
+  it("keeps the RRULE pattern when EXDATE lines are present", () => {
+    // rrulestr returns an RRuleSet for multi-line input with EXDATE/RDATE,
+    // whose origOptions is {} — without the RRULE-only filter the pattern
+    // silently degraded to a default yearly rule.
+    const rule = [
+      "EXDATE;TZID=America/Chicago:20131023T110000",
+      "RRULE:FREQ=WEEKLY;COUNT=5",
+    ];
+    const baseEvent = createMockBaseEvent({ recurrence: { rule } });
+    const _id = new ObjectId(baseEvent._id);
+    const rrule = new CompassEventRRule({ ...baseEvent, _id });
+
+    expect(rrule.options.freq).toBe(RRule.WEEKLY.valueOf());
+    expect(rrule.count()).toBe(5);
+    expect(rrule.all()).toHaveLength(5);
+  });
+
   it("should correctly merge options when multiple rrules are present", () => {
     const rule = [
       "RRULE:FREQ=DAILY;COUNT=2",
