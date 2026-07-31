@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { ErrorBoundary } from "@web/components/ErrorBoundary/ErrorBoundary";
 import {
   afterEach,
@@ -69,14 +70,16 @@ describe("ErrorBoundary", () => {
     });
   });
 
-  it("reloads the app when the recovery button is clicked", () => {
+  it("reloads the app when the recovery button is clicked", async () => {
     render(
       <ErrorBoundary>
         <Boom />
       </ErrorBoundary>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /reload the app/i }));
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: /reload the app/i }));
 
     expect(mockReload).toHaveBeenCalledTimes(1);
   });

@@ -14,6 +14,7 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { DRAFT_DURATION_MIN } from "@web/grid/grid.constants";
+import { dismissExistingDraft } from "@web/grid/hooks/dismissExistingDraft";
 import {
   hasExceededInteractionMoveThreshold,
   isEligibleInteractionPointerDown,
@@ -52,7 +53,7 @@ export const useTimedDraftCreation = ({
     columnCalendarId: CalendarId | null = calendarId,
   ) => {
     if (isDrafting) {
-      draftActions.discard();
+      dismissExistingDraft();
       return;
     }
 

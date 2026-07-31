@@ -8,15 +8,19 @@ import { PixelPirate } from "@web/components/WelcomeModal/PixelPirate";
  * that were torn down. Borrows the BackendDownView pirate styling and offers a
  * full reload as the only reliable way back.
  */
-export const SomethingBrokeView = () => (
+interface SomethingBrokeViewProps {
+  message?: string;
+}
+
+export const SomethingBrokeView = ({
+  message = "Something broke and the crew has been alerted.",
+}: SomethingBrokeViewProps) => (
   <div className="c-not-found gap-4 px-6 text-center">
     <PixelPirate className="h-20 w-20" />
 
     <h1 className="font-[VT323,monospace] text-4xl">🏴‍☠️ We ran aground!</h1>
 
-    <p className="max-w-xl text-text-muted text-xl">
-      Something broke and the crew has been alerted.
-    </p>
+    <p className="max-w-xl text-text-muted text-xl">{message}</p>
     <p className="max-w-xl text-text-muted text-xl">
       Reload to get your calendar back.
     </p>
