@@ -962,7 +962,7 @@ describe("EventForm", () => {
       "event-form-error-content-title",
     );
 
-    const schedule = document.getElementById("event-form-schedule");
+    const schedule = screen.getByRole("group", { name: "Event schedule" });
     expect(schedule).toHaveAttribute("aria-invalid", "true");
     expect(schedule).toHaveAttribute(
       "aria-describedby",
@@ -970,10 +970,9 @@ describe("EventForm", () => {
     );
 
     expect(screen.getByRole("alert")).toHaveTextContent("Title is required");
-    expect(
-      document.getElementById("event-form-error-content-title"),
-    ).toHaveTextContent("Title is required");
-    expect(document.activeElement).toBe(schedule);
+    expect(screen.getByText("Title is required")).toBeInTheDocument();
+    // Title is first in DOM order, so it receives focus when both fields fail.
+    expect(title).toHaveFocus();
   });
 
   it("names the description field for assistive tech", () => {

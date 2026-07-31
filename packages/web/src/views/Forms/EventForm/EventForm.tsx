@@ -75,14 +75,15 @@ const EVENT_FORM_RECURRENCE_ID = "event-form-recurrence";
 const eventFormErrorId = (field: string) =>
   `event-form-error-${field.replaceAll(".", "-")}`;
 
+// DOM / reading order in the form: title → schedule → recurrence → calendar.
 const FIELD_CONTROL_FOCUS_ORDER = [
-  "calendarId",
+  "content.title",
+  "title",
   "start",
   "end",
   "timeZone",
   "recurrence",
-  "content.title",
-  "title",
+  "calendarId",
 ] as const;
 
 const controlIdForFieldError = (field: string): string | null => {

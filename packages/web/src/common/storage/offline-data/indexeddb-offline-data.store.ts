@@ -168,21 +168,25 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
 
   async getEvents(query: EventListQuery): Promise<LocalEventRecord[]> {
     const start = Date.parse(query.start);
+    const end = Date.parse(query.end);
     const allDayStart = query.start.slice(0, 10);
     const allDayEnd = query.end.slice(0, 10);
 
-    // Overlap: start < queryEnd AND end > queryStart. Candidates are rows
-    // whose schedule.start is strictly before the window end (index range);
-    // the end-bound filter finishes the overlap check in memory. Timed and
-    // all-day share the start index, so kind is filtered in `.and(...)`.
-    // Semantics match eventMatchesRange / backend range reads.
+    // Timed starts are offset ISO strings; lexicographic order is not
+    // chronological across time zones, so the start index is unsafe for the
+    // timed overlap gate. Use the kind index + Date.parse (same semantics as
+    // eventMatchesRange). All-day YYYY-MM-DD starts are chronological, so the
+    // start index can narrow candidates before the end-bound check.
     const [timed, allDay] = await Promise.all([
       this.db.events
-        .where("event.schedule.start")
-        .below(query.end)
-        .and((record) => {
-          if (record.event.schedule.kind !== "timed") return false;
-          return Date.parse(record.event.schedule.end) > start;
+        .where("event.schedule.kind")
+        .equals("timed")
+        .filter((record) => {
+          const schedule = record.event.schedule;
+          if (schedule.kind !== "timed") return false;
+          return (
+            Date.parse(schedule.start) < end && Date.parse(schedule.end) > start
+          );
         })
         .toArray(),
       this.db.events
