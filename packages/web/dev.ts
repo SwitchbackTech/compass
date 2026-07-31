@@ -1,7 +1,6 @@
 import { loadCompassConfig } from "@core/config/compass.config";
 import { copyStaticAssets } from "./copy-static-assets";
 import { postcssPlugin } from "./plugins/postcss.plugin";
-import { renderIndexHtml } from "./render-index-html";
 import { watch } from "node:fs";
 import path from "node:path";
 
@@ -67,7 +66,6 @@ async function build() {
     return false;
   }
 
-  await renderIndexHtml(OUTDIR, result.outputs);
   await copyStaticAssets(OUTDIR);
 
   return true;
