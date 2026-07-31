@@ -83,8 +83,7 @@ const toStrictEvent = (event: CompassEvent): Event =>
 
 function Provider({ children }: PropsWithChildren) {
   // useState initializer: one client per mounted tree. Rebuilding an empty
-  // client on re-render makes the grid's calendars query really fetch
-  // /api/calendars (no handler here) - timing-dependent on slow CI runners.
+  // client on re-render drops seeded event/pending-mutation cache.
   const [queryClient] = useState(() => {
     const client = createCompassQueryClient();
     seedPendingEventMutations(client, pendingEventIds);

@@ -17,10 +17,22 @@ const createGoogleImportEvent: typeof createMockStandaloneEvent = (
     dateDiff,
   );
 
+// Authenticated mounts that race past session auth may fetch /calendars.
+// Do not register a global handler here: a default success changes event-list
+// calendarIds and breaks suite-order-dependent hook/grid tests that expect
+// the legacy undefined (all-calendars) read until calendars are seeded.
+// Tests that need a default response can server.use(rest.get(...)) locally.
+
 export const globalHandlers = [
   rest.get("http://localhost/version.json", (_req, res, ctx) => {
     return res(ctx.json({ version: "dev" }));
   }),
+  rest.get(
+    `${ENV_WEB.API_BASEURL}/calendars/availability`,
+    (_req, res, ctx) => {
+      return res(ctx.status(Status.OK), ctx.json({ busyPeriods: [] }));
+    },
+  ),
   rest.get(`${ENV_WEB.API_BASEURL}/event`, (_req, res, ctx) => {
     const events = [
       createGoogleImportEvent(),
@@ -58,6 +70,12 @@ export const globalHandlers = [
   }),
   rest.post(`${ENV_WEB.API_BASEURL}/user/metadata`, (req, res, ctx) => {
     return res(ctx.status(Status.OK), ctx.json(req.json()));
+  }),
+  rest.get(`${ENV_WEB.API_BASEURL}/user/email-updates`, (_req, res, ctx) => {
+    return res(ctx.status(Status.OK), ctx.json({ status: "unavailable" }));
+  }),
+  rest.put(`${ENV_WEB.API_BASEURL}/user/email-updates`, (_req, res, ctx) => {
+    return res(ctx.status(Status.OK), ctx.json({ status: "subscribed" }));
   }),
   rest.post(`${ENV_WEB.API_BASEURL}/signinup`, (_req, res, ctx) => {
     return res(ctx.json({ isNewUser: true }));

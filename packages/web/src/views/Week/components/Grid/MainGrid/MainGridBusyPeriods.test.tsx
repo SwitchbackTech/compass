@@ -78,9 +78,8 @@ const measurements = {
 
 // useState initializer: exactly one client per mounted tree (matches
 // eventReadOnlyInteraction.test.tsx's Provider) - seeding in the render body
-// would rebuild an empty client on every re-render and the fresh cache would
-// then really try to fetch /api/calendars and /api/calendars/availability
-// (no handlers here), a timing-dependent failure on slow CI runners.
+// would rebuild an empty client on every re-render and drop the fixture
+// calendars/availability cache.
 function Provider({ children }: PropsWithChildren) {
   const [queryClient] = useState(() => {
     const client = createCompassQueryClient();
