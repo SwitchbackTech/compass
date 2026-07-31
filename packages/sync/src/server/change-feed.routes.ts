@@ -15,6 +15,7 @@ import {
   readChangeFeed,
   readGlobalChangeFeed,
 } from "@sync/domain/change-feed.service";
+import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
   internalRateLimit,
@@ -94,7 +95,7 @@ export function registerChangeFeedRoutes(
         );
         res.status(Status.OK).json(ChangeFeedResponseSchema.parse(response));
       } catch (error) {
-        logger.error("Failed to read change feed", error);
+        logger.error("Failed to read change feed", redactedCause(error));
         respondInternalError(res);
       }
     },
@@ -126,7 +127,7 @@ export function registerChangeFeedRoutes(
           .status(Status.OK)
           .json(GlobalChangeFeedResponseSchema.parse(response));
       } catch (error) {
-        logger.error("Failed to read global change feed", error);
+        logger.error("Failed to read global change feed", redactedCause(error));
         respondInternalError(res);
       }
     },

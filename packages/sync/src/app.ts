@@ -25,6 +25,7 @@ import { GoogleEventWriter } from "@sync/providers/google/google-event-writer.ad
 import { GoogleNotificationAdapter } from "@sync/providers/google/google-notifications.adapter";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
+import { redactedCause } from "@sync/safety/redact-error";
 import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
@@ -488,9 +489,12 @@ if (import.meta.main) {
   // restart, just a process in an unknown state. Log with context, then exit
   // the same way an uncaught synchronous throw would. Gated behind
   // import.meta.main like the rest of this block so a test importing this
-  // module for its exports never installs a process-wide handler.
+  // module for its exports never installs a process-wide handler. `reason`
+  // can be anything, including a raw GaxiosError from an uncaught Google API
+  // call (this process talks to Google constantly) - redactedCause strips
+  // its config/response before logging.
   process.on("unhandledRejection", (reason) => {
-    logger.error("Unhandled promise rejection", reason);
+    logger.error("Unhandled promise rejection", redactedCause(reason));
     process.exit(1);
   });
 

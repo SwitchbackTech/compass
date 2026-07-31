@@ -6,6 +6,7 @@ import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { verifyNotification } from "@sync/notifications/notification-verification";
 import { GoogleNotificationAdapter } from "@sync/providers/google/google-notifications.adapter";
 import { type NotificationSubscription } from "@sync/providers/provider-notifications.port";
+import { redactedCause } from "@sync/safety/redact-error";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
@@ -92,7 +93,7 @@ export function registerNotificationRoutes(
       // A storage failure is the one case worth a retry, so signal it.
       logger.error(
         `Failed to process notification for channel ${notification.channelId}`,
-        error,
+        redactedCause(error),
       );
       res.status(Status.INTERNAL_SERVER).end();
     }

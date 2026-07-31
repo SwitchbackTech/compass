@@ -42,6 +42,7 @@ import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
 import { googleCapabilitiesFromScopes } from "@sync/providers/google/google-capabilities";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
+import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
   internalRateLimit,
@@ -146,7 +147,10 @@ export function registerConnectionRoutes(
         res.status(Status.OK).json(response);
       } catch (error) {
         // Never surface storage internals or identity to the caller.
-        logger.error("Failed to list/refresh connections", error);
+        logger.error(
+          "Failed to list/refresh connections",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },
@@ -194,7 +198,7 @@ export function registerConnectionRoutes(
         };
         res.status(Status.OK).json(response);
       } catch (error) {
-        logger.error("Failed to list calendars", error);
+        logger.error("Failed to list calendars", redactedCause(error));
         respondInternalError(res);
       }
     },
@@ -322,7 +326,10 @@ export function registerConnectionRoutes(
         };
         res.status(Status.OK).json(response);
       } catch (error) {
-        logger.error("Failed to list full-fidelity event instances", error);
+        logger.error(
+          "Failed to list full-fidelity event instances",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },
@@ -398,7 +405,10 @@ export function registerConnectionRoutes(
         );
         res.status(Status.OK).json(toBusyAvailabilityResponse(availability));
       } catch (error) {
-        logger.error("Failed to compute busy availability", error);
+        logger.error(
+          "Failed to compute busy availability",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },
@@ -445,7 +455,10 @@ export function registerConnectionRoutes(
             return;
           }
         } catch (error) {
-          logger.error("Failed to look up connection for reconnect", error);
+          logger.error(
+            "Failed to look up connection for reconnect",
+            redactedCause(error),
+          );
           respondInternalError(res);
           return;
         }
@@ -507,7 +520,7 @@ export function registerConnectionRoutes(
       });
     } catch (error) {
       // Bad code, no refresh token, unverifiable identity — nothing to link.
-      logger.error("OAuth code exchange failed", error);
+      logger.error("OAuth code exchange failed", redactedCause(error));
       return redirect("error");
     }
 
@@ -522,7 +535,10 @@ export function registerConnectionRoutes(
       );
       return redirect("connected");
     } catch (error) {
-      logger.error("Failed to link connection after OAuth consent", error);
+      logger.error(
+        "Failed to link connection after OAuth consent",
+        redactedCause(error),
+      );
       return redirect("error");
     }
   });
@@ -579,7 +595,7 @@ export function registerConnectionRoutes(
         );
         res.status(Status.NO_CONTENT).end();
       } catch (error) {
-        logger.error("Failed to disconnect connection", error);
+        logger.error("Failed to disconnect connection", redactedCause(error));
         respondInternalError(res);
       }
     },

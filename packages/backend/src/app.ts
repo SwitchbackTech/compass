@@ -64,9 +64,17 @@ httpServer.on("close", onClose);
 // rejection behavior, so without one of our own the process would keep
 // running silently after whatever left a promise dangling - no log, no
 // restart, just a process in an unknown state. Log with context, then exit
-// the same way an uncaught synchronous throw would.
+// the same way an uncaught synchronous throw would. `reason` can be
+// anything, including a raw GaxiosError from an uncaught Google API call
+// (its `config`/`response` carry request headers/bearer tokens as own
+// enumerable properties) - never log it directly.
 process.on("unhandledRejection", (reason) => {
-  logger.error("Unhandled promise rejection", reason);
+  logger.error(
+    "Unhandled promise rejection",
+    reason instanceof Error
+      ? { message: reason.message, stack: reason.stack }
+      : { reason: String(reason) },
+  );
   process.exit(1);
 });
 

@@ -100,7 +100,7 @@ export class SyncChangeFeedBridge {
     } catch (error) {
       logger.error(
         `Sync global change-feed tick threw: ${error instanceof Error ? error.message : String(error)}`,
-        error,
+        error instanceof Error ? { stack: error.stack } : undefined,
       );
       if (!this.#stopped) this.#scheduleNext(this.#errorBackoffMs);
     }

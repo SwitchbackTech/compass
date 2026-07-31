@@ -5,6 +5,7 @@ import { PrincipalPurgeResponseSchema } from "@core/types/sync/principal.contrac
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import { purgePrincipal } from "@sync/domain/principal-purge.service";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
+import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
   internalRateLimit,
@@ -61,7 +62,7 @@ export function registerPrincipalRoutes(
         // the time this runs, so nothing else will ever retry a failure here.
         logger.error(
           `Failed to purge principal ${auth.tenantId}/${auth.principalId}`,
-          error,
+          redactedCause(error),
         );
         respondInternalError(res);
       }

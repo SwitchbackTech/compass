@@ -119,8 +119,14 @@ const handleGoogleError = async (
 
   // Neither branch above matched: without a fallback the request hangs
   // until the caller's own timeout, since the caller (handleExpressError)
-  // awaits this and sends nothing itself for the Google-error path.
-  logger.error(`${userId} (user) hit an unhandled Google API error`, e);
+  // awaits this and sends nothing itself for the Google-error path. Log
+  // message/stack only, never `e` itself: a GaxiosError's `config`/`response`
+  // (request headers, bearer token) are own enumerable properties the logger
+  // would otherwise serialize straight into the log output.
+  logger.error(`${userId} (user) hit an unhandled Google API error`, {
+    message: e.message,
+    stack: e.stack,
+  });
   res.status(Status.INTERNAL_SERVER).send({
     error: "Unexpected error communicating with Google Calendar",
   });

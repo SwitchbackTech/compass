@@ -3,6 +3,7 @@ import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { DiagnosticConnectionResponseSchema } from "@core/types/sync/diagnostic.contracts";
 import { resolveDiagnosticConnection } from "@sync/domain/connection-diagnostic.service";
+import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
   internalRateLimit,
@@ -59,7 +60,10 @@ export function registerDiagnosticRoutes(
           .status(Status.OK)
           .json(DiagnosticConnectionResponseSchema.parse(result));
       } catch (error) {
-        logger.error("Failed to resolve diagnostic connection", error);
+        logger.error(
+          "Failed to resolve diagnostic connection",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },
