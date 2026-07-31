@@ -1,7 +1,9 @@
 import { type Express, type RequestHandler } from "express";
 import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
 import { DiagnosticConnectionResponseSchema } from "@core/types/sync/diagnostic.contracts";
 import { resolveDiagnosticConnection } from "@sync/domain/connection-diagnostic.service";
+import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
   internalRateLimit,
@@ -10,6 +12,8 @@ import {
 } from "@sync/server/internal-http";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { syncRepositories } from "@sync/storage/sync-repositories";
+
+const logger = Logger("sync:diagnostic.routes");
 
 export const DIAGNOSTIC_CONNECTION_PATH =
   "/internal/diagnostics/connections/:diagnosticKey";
@@ -55,7 +59,11 @@ export function registerDiagnosticRoutes(
         res
           .status(Status.OK)
           .json(DiagnosticConnectionResponseSchema.parse(result));
-      } catch {
+      } catch (error) {
+        logger.error(
+          "Failed to resolve diagnostic connection",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },

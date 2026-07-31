@@ -5,6 +5,7 @@ import {
   type Response,
 } from "express";
 import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
 import {
   ChangeFeedResponseSchema,
   ChangeFeedResumeQuerySchema,
@@ -14,6 +15,7 @@ import {
   readChangeFeed,
   readGlobalChangeFeed,
 } from "@sync/domain/change-feed.service";
+import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
   internalRateLimit,
@@ -22,6 +24,8 @@ import {
 } from "@sync/server/internal-http";
 import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
+
+const logger = Logger("sync:change-feed.routes");
 
 export const CHANGES_PATH = "/internal/changes";
 // The global (cross-tenant) variant: one multiplexed poll for the whole
@@ -90,7 +94,8 @@ export function registerChangeFeedRoutes(
           parsed.data.cursor,
         );
         res.status(Status.OK).json(ChangeFeedResponseSchema.parse(response));
-      } catch {
+      } catch (error) {
+        logger.error("Failed to read change feed", redactedCause(error));
         respondInternalError(res);
       }
     },
@@ -121,7 +126,8 @@ export function registerChangeFeedRoutes(
         res
           .status(Status.OK)
           .json(GlobalChangeFeedResponseSchema.parse(response));
-      } catch {
+      } catch (error) {
+        logger.error("Failed to read global change feed", redactedCause(error));
         respondInternalError(res);
       }
     },

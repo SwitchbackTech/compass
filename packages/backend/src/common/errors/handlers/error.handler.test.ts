@@ -1,3 +1,4 @@
+import { GaxiosError } from "gaxios";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
@@ -121,6 +122,70 @@ describe("error.handler", () => {
         retryable: false,
       });
       handleGoogleRevokedSpy.mockRestore();
+    });
+
+    it("sends a 500 fallback for a Google error matching neither known case, instead of hanging with no response", async () => {
+      const userId = "507f1f77bcf86cd799439011";
+      spyOn(errorHandler, "isOperational").mockReturnValue(true);
+
+      const send = mock();
+      const res = {
+        header: mock().mockReturnThis(),
+        status: mock().mockReturnThis(),
+        send,
+      } as unknown as Parameters<typeof handleExpressError>[1];
+      const req = {
+        session: { getUserId: () => userId },
+      } as Parameters<typeof handleExpressError>[0];
+      (res as { req?: typeof req }).req = req;
+
+      const quotaError = new GaxiosError(
+        "quota exceeded",
+        { headers: new Headers(), url: new URL("https://example.com") },
+        {
+          config: {
+            headers: new Headers(),
+            url: new URL("https://example.com"),
+          },
+          data: { error: "rateLimitExceeded" },
+          status: 403,
+          statusText: "Forbidden",
+          headers: new Headers(),
+          ok: false,
+          redirected: false,
+          type: "error" as ResponseType,
+          url: "https://example.com",
+          body: null,
+          bodyUsed: false,
+          clone: () => {
+            throw new Error("Not implemented");
+          },
+          arrayBuffer: async () => {
+            throw new Error("Not implemented");
+          },
+          blob: async () => {
+            throw new Error("Not implemented");
+          },
+          formData: async () => {
+            throw new Error("Not implemented");
+          },
+          json: async () => ({ error: "rateLimitExceeded" }),
+          text: async () => {
+            throw new Error("Not implemented");
+          },
+          bytes: async () => {
+            throw new Error("Not implemented");
+          },
+        },
+      );
+      quotaError.code = "403";
+
+      await handleExpressError(req, res, quotaError as never);
+
+      expect(res.status).toHaveBeenCalledWith(Status.INTERNAL_SERVER);
+      expect(send).toHaveBeenCalledWith(
+        expect.objectContaining({ error: expect.any(String) }),
+      );
     });
   });
 });
