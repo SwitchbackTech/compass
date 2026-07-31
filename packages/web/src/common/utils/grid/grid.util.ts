@@ -1,5 +1,8 @@
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { TIMED_VISIBLE_HOURS } from "@web/grid/grid.constants";
+import {
+  GRID_EVENT_TITLE_LINE_HEIGHT_PX,
+  TIMED_VISIBLE_HOURS,
+} from "@web/grid/grid.constants";
 import {
   AFTER_TMRW_MULTIPLE,
   FLEX_EQUAL,
@@ -80,7 +83,8 @@ export const getFlexBasis = (day: Dayjs, week: number, today: Dayjs) => {
 
 export const getLineClamp = (height: number) => {
   const min = 1;
-  const computed = Math.round((height - 7) / 16);
+  // 7px accounts for the card's vertical padding/slack around the text block.
+  const computed = Math.round((height - 7) / GRID_EVENT_TITLE_LINE_HEIGHT_PX);
   const lineClamp = Math.max(min, computed);
   return lineClamp;
 };
