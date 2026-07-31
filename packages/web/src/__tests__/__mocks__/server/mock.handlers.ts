@@ -3,10 +3,6 @@ import { rest } from "msw";
 import { Origin } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
-import {
-  getLocalCalendarSentinelId,
-  synthesizeLocalCalendar,
-} from "@web/calendars/local-calendar.sentinel";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { freshenEventStartEndDate } from "@web/views/Week/week-view.render.test.utils";
 
@@ -21,25 +17,11 @@ const createGoogleImportEvent: typeof createMockStandaloneEvent = (
     dateDiff,
   );
 
-// Default authenticated calendars response. Uses the local sentinel id so
-// unseeded mounts that race past session auth still get a writable column
-// instead of an MSW unhandled-request error. Scoped to per-test server.use
-// overrides when tests need a different fixture list — not registered globally
-// because a default /calendars success changes event-list calendarIds and
-// breaks suite-order-dependent hook/grid tests that expect the legacy
-// undefined (all-calendars) read until calendars are explicitly seeded.
-export const defaultMockCalendars = [
-  synthesizeLocalCalendar(getLocalCalendarSentinelId()),
-];
-
-export const defaultCalendarsHandlers = [
-  rest.get(`${ENV_WEB.API_BASEURL}/calendars`, (_req, res, ctx) => {
-    return res(
-      ctx.status(Status.OK),
-      ctx.json({ calendars: defaultMockCalendars }),
-    );
-  }),
-];
+// Authenticated mounts that race past session auth may fetch /calendars.
+// Do not register a global handler here: a default success changes event-list
+// calendarIds and breaks suite-order-dependent hook/grid tests that expect
+// the legacy undefined (all-calendars) read until calendars are seeded.
+// Tests that need a default response can server.use(rest.get(...)) locally.
 
 export const globalHandlers = [
   rest.get("http://localhost/version.json", (_req, res, ctx) => {
