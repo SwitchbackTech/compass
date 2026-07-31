@@ -1,4 +1,4 @@
-import posthog, { type PostHog } from "posthog-js";
+import { type PostHog } from "posthog-js";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { filterPosthogBeforeSend } from "@web/auth/posthog/posthog-exception-filter.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
@@ -16,9 +16,11 @@ let client: PostHog | undefined;
  * it again during render and gets the same already-initialized instance back.
  */
 export function initPosthog(): PostHog | undefined {
+  if (process.env.BUN_TEST_RUN) return undefined;
   if (!isPosthogEnabled()) return undefined;
   if (client) return client;
 
+  const posthog = require("posthog-js").posthog as PostHog;
   posthog.init(ENV_WEB.POSTHOG_KEY as string, {
     api_host: ENV_WEB.POSTHOG_HOST!,
     // Assumes the US cloud; self-hosters on another instance would differ.
