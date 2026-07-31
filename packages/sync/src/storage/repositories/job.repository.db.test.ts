@@ -150,6 +150,30 @@ describe("JobRepository", () => {
       expect(reclaimed?.attempt).toBe(2);
     });
 
+    // Load-bearing with the split claim arms: reclaim must not wait for the
+    // entire pending queue to drain, or a crashed worker's coalesced resource
+    // stays stuck under a sustained backlog.
+    it("reclaims an expired lease even when other pending work is due", async () => {
+      await repo.enqueue(
+        enqueue({ coalescingKey: "stuck", priority: 1, runAfter: past(1000) }),
+      );
+      const stuck = await repo.claimDueJob("crashed-worker", NOW, LEASE_MS);
+      expect(stuck?.coalescingKey).toBe("stuck");
+
+      await repo.enqueue(
+        enqueue({
+          coalescingKey: "backlog",
+          priority: 9,
+          runAfter: past(500),
+        }),
+      );
+
+      const later = future(LEASE_MS + 1000);
+      const next = await repo.claimDueJob("fresh-worker", later, LEASE_MS);
+      expect(next?._id).toBe(stuck?._id);
+      expect(next?.leaseOwner).toBe("fresh-worker");
+    });
+
     it("does not let a stale worker heartbeat, complete, retry, or fail", async () => {
       await repo.enqueue(enqueue({ runAfter: past(1000) }));
       const job = await repo.claimDueJob("owner", NOW, LEASE_MS);
@@ -375,6 +399,73 @@ describe("JobRepository", () => {
           NOW,
         ),
       ).toBeNull();
+    });
+  });
+
+  // Plan pins for the Atlas Query Targeting residual after #2473: idle claims
+  // must not walk pending-not-due backoff jobs, and connection overdue lookups
+  // must not COLLSCAN the jobs collection.
+  describe("index plans", () => {
+    const NOW = new Date("2026-07-20T12:00:00.000Z");
+
+    it("due-pending claim filter is served by state_runafter_priority", async () => {
+      // Seed many future-backoff jobs so a wrong index order would examine them.
+      for (let i = 0; i < 20; i += 1) {
+        await repo.enqueue(
+          enqueue({
+            coalescingKey: `backoff:${i}`,
+            runAfter: new Date(NOW.getTime() + (i + 1) * 60_000),
+          }),
+        );
+      }
+
+      const plan = await db
+        .collection("jobs")
+        .find({ state: "pending", runAfter: { $lte: NOW } })
+        .sort({ priority: -1, runAfter: 1 })
+        .explain("executionStats");
+      const winning = JSON.stringify(plan);
+      expect(winning).toContain("state_runafter_priority");
+      expect(winning).not.toContain("COLLSCAN");
+      // With runAfter leading after state, future backoff rows are not examined.
+      expect(
+        plan.executionStats?.totalKeysExamined ?? Infinity,
+      ).toBeLessThanOrEqual(1);
+    });
+
+    it("connection overdue filter is served by connection_runafter", async () => {
+      const connectionId = objectId();
+      await repo.enqueue(
+        enqueue({
+          connectionId: connectionId as JobEnqueue["connectionId"],
+          runAfter: NOW,
+        }),
+      );
+      // Noise on other connections.
+      for (let i = 0; i < 10; i += 1) {
+        await repo.enqueue(
+          enqueue({
+            coalescingKey: `other:${i}`,
+            runAfter: NOW,
+          }),
+        );
+      }
+
+      const plan = await db
+        .collection("jobs")
+        .find({
+          connectionId,
+          $or: [
+            { state: "pending", runAfter: { $lte: NOW } },
+            { state: "claimed", leaseExpiresAt: { $lt: NOW } },
+            { state: "failed" },
+          ],
+        })
+        .sort({ runAfter: 1 })
+        .explain("queryPlanner");
+      const winning = JSON.stringify(plan);
+      expect(winning).toContain("connection_runafter");
+      expect(winning).not.toContain("COLLSCAN");
     });
   });
 });
