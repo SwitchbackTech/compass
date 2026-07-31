@@ -18,7 +18,6 @@ export function applyBackendTestEnv(mongoUri: string): void {
   process.env["TZ"] = "Etc/UTC";
   process.env["NODE_ENV"] = "test";
   process.env["LOG_LEVEL"] = "debug";
-  process.env["MONGO_BATCH_SIZE"] = "250";
 }
 
 export function backendTestSpawnEnv(

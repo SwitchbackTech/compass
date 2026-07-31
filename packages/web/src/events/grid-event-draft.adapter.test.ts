@@ -83,13 +83,13 @@ test("replaces only the draft schedule during a drag or resize", () => {
 });
 
 test("keeps the schedule's own UTC offset instead of forcing Z", () => {
-  // _getTimeLabel (web.date.util.ts) reads the offset embedded in
-  // CompassEvent.startDate/endDate to decide what time to display - it does
-  // not localize to the browser's timezone. Date#toISOString() always
-  // produces a "Z" (UTC) suffix, which made every grid-created/dragged event
-  // display in UTC instead of local time for any non-UTC browser. dayjs's
-  // default format() preserves the local offset instead, matching every
-  // other CompassEvent producer (draft.util.ts, etc).
+  // Grid position and time label both localize CompassEvent.startDate/
+  // endDate to the browser's timezone on read, so the stored offset itself
+  // doesn't affect what's displayed - but Date#toISOString() always produces
+  // a "Z" (UTC) suffix, which is a needless loss of the source offset and
+  // out of step with every other CompassEvent producer. dayjs's default
+  // format() preserves the local offset instead, matching every other
+  // CompassEvent producer (draft.util.ts, etc).
   const draft = editGridEventDraft(timedEvent);
   if (!draft) throw new Error("Expected scheduled event draft");
 

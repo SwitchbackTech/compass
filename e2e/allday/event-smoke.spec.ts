@@ -7,11 +7,6 @@ import {
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
-test.skip(
-  ({ isMobile }) => isMobile,
-  "Mouse flows are desktop-only in week view.",
-);
-
 test("creates an all-day event", async ({ page }) => {
   await prepareCalendarPage(page);
 

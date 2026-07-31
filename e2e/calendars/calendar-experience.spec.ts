@@ -5,11 +5,6 @@ import {
   openTimedEventFormWithMouse,
 } from "../utils/event-test-utils";
 
-test.skip(
-  ({ isMobile }) => isMobile,
-  "Mouse/keyboard flows are desktop-only in week view.",
-);
-
 // Wide enough for all 7 week columns (track needs GRID_MARGIN_LEFT +
 // 7 * DAY_COLUMN_MIN_USABLE_WIDTH beside the sidebar). At the default
 // 1280px, bare /week shows a 6-day Sun-Fri window anchored on the week

@@ -84,31 +84,43 @@ export class JobRepository {
 
   // Atomically claim the highest-priority due job for one worker. A job is due
   // when it's pending and its runAfter has passed, OR it's claimed but its
-  // lease has expired (the previous owner crashed). Because findOneAndUpdate is
-  // a single atomic operation, two workers racing for the same job can never
-  // both win — the loser simply gets the next job or null. Returns null when no
-  // job is due.
+  // lease has expired (the previous owner crashed). The two arms are claimed
+  // separately so each can use its own index (state_runafter_priority /
+  // lease_expiry) — a single $or + sort forced the planner to walk every
+  // pending-not-due backoff job on every idle poll. Expired-lease reclaim
+  // runs FIRST so a sustained pending backlog cannot starve crash recovery
+  // (a coalesced resource stuck in claimed-with-expired-lease would otherwise
+  // never get a fresh pending row). Within each arm, priority then age wins.
+  // findOneAndUpdate stays atomic per arm, so two workers still never both
+  // win the same job. Returns null when no job is due.
   async claimDueJob(
     owner: string,
     now: Date,
     leaseDurationMs: number,
   ): Promise<JobRecord | null> {
     const leaseExpiresAt = new Date(now.getTime() + leaseDurationMs);
-    const result = await this.collection.findOneAndUpdate(
-      {
-        $or: [
-          { state: "pending", runAfter: { $lte: now } },
-          { state: "claimed", leaseExpiresAt: { $lt: now } },
-        ],
-      },
-      {
-        $set: { state: "claimed", leaseOwner: owner, leaseExpiresAt },
-        $inc: { attempt: 1 },
-        $currentDate: { updatedAt: true },
-      },
-      { sort: { priority: -1, runAfter: 1 }, returnDocument: "after" },
-    );
-    return result ? JobRecordSchema.parse(result) : null;
+    const claimUpdate = {
+      $set: { state: "claimed" as const, leaseOwner: owner, leaseExpiresAt },
+      $inc: { attempt: 1 },
+      $currentDate: { updatedAt: true as const },
+    };
+    const claimOpts = {
+      sort: { priority: -1 as const, runAfter: 1 as const },
+      returnDocument: "after" as const,
+    };
+
+    for (const filter of [
+      { state: "claimed" as const, leaseExpiresAt: { $lt: now } },
+      { state: "pending" as const, runAfter: { $lte: now } },
+    ]) {
+      const claimed = await this.collection.findOneAndUpdate(
+        filter,
+        claimUpdate,
+        claimOpts,
+      );
+      if (claimed) return JobRecordSchema.parse(claimed);
+    }
+    return null;
   }
 
   // Extend the lease while a worker is still processing. Only the current owner

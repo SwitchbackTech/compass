@@ -126,6 +126,11 @@ describe("LifeView", () => {
     expect(
       screen.getByRole("textbox", { name: "Date of birth" }),
     ).toHaveFocus();
+    // New users get the birth-date field focused, but the calendar stays closed
+    // so the first impression stays on the life grid.
+    expect(
+      screen.queryByRole("button", { name: "Previous month" }),
+    ).not.toBeInTheDocument();
     expect(
       (screen.getByLabelText(/age of death/i) as HTMLInputElement).value,
     ).toBe("77");
@@ -153,6 +158,33 @@ describe("LifeView", () => {
       screen.queryByRole("button", { name: /zoom/i }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/ctrl\+scroll|pinch/i)).not.toBeInTheDocument();
+  });
+
+  it("opens the birth date picker when Enter is pressed on the focused field", async () => {
+    const user = userEvent.setup({ skipHover: true });
+    await renderLifeViewWithSidebar();
+
+    const birthDateInput = screen.getByRole("textbox", {
+      name: "Date of birth",
+    });
+    expect(birthDateInput).toHaveFocus();
+    expect(
+      screen.queryByRole("button", { name: "Previous month" }),
+    ).not.toBeInTheDocument();
+
+    await user.keyboard("{Enter}");
+
+    expect(
+      screen.getByRole("button", { name: "Previous month" }),
+    ).toBeInTheDocument();
+
+    // Keyboard-open must use react-datepicker's click/open path so Escape
+    // still closes (that path keeps internal open state in sync).
+    await user.keyboard("{Escape}");
+    expect(
+      screen.queryByRole("button", { name: "Previous month" }),
+    ).not.toBeInTheDocument();
+    expect(birthDateInput).toHaveFocus();
   });
 
   it("updates weeks lived when the birth date changes", async () => {

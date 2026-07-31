@@ -105,8 +105,6 @@ the full picture.
 
 - CLI entrypoint: `packages/scripts/src/cli.ts`
 - Build commands: `packages/scripts/src/commands/build.backend.ts`, `build.sync.ts`
-- Migration command: `packages/scripts/src/commands/migrate.ts`
-- Migrations: `packages/scripts/src/migrations`
 - Other CLI commands: see [CLI](./cli.md)
 
 ## Test Anchors

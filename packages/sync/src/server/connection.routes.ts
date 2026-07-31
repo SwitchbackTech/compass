@@ -1,5 +1,6 @@
 import { type Express, type RequestHandler, type Response } from "express";
 import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
 import {
   BusyAvailabilityRequestSchema,
   type BusyAvailabilityResponse,
@@ -41,6 +42,7 @@ import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
 import { googleCapabilitiesFromScopes } from "@sync/providers/google/google-capabilities";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
+import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
   internalRateLimit,
@@ -55,6 +57,8 @@ import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { syncRepositories } from "@sync/storage/sync-repositories";
+
+const logger = Logger("sync:connection.routes");
 
 export const CONNECTIONS_PATH = "/internal/connections";
 export const CALENDARS_PATH = "/internal/calendars";
@@ -141,8 +145,12 @@ export function registerConnectionRoutes(
           connections: refreshed.map(toProviderConnection),
         };
         res.status(Status.OK).json(response);
-      } catch {
+      } catch (error) {
         // Never surface storage internals or identity to the caller.
+        logger.error(
+          "Failed to list/refresh connections",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },
@@ -189,7 +197,8 @@ export function registerConnectionRoutes(
           calendars: records.map(toProviderCalendar),
         };
         res.status(Status.OK).json(response);
-      } catch {
+      } catch (error) {
+        logger.error("Failed to list calendars", redactedCause(error));
         respondInternalError(res);
       }
     },
@@ -316,7 +325,11 @@ export function registerConnectionRoutes(
               : null,
         };
         res.status(Status.OK).json(response);
-      } catch {
+      } catch (error) {
+        logger.error(
+          "Failed to list full-fidelity event instances",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },
@@ -391,7 +404,11 @@ export function registerConnectionRoutes(
           },
         );
         res.status(Status.OK).json(toBusyAvailabilityResponse(availability));
-      } catch {
+      } catch (error) {
+        logger.error(
+          "Failed to compute busy availability",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },
@@ -437,7 +454,11 @@ export function registerConnectionRoutes(
             res.status(Status.NOT_FOUND).json({ error: "not_found" });
             return;
           }
-        } catch {
+        } catch (error) {
+          logger.error(
+            "Failed to look up connection for reconnect",
+            redactedCause(error),
+          );
           respondInternalError(res);
           return;
         }
@@ -497,8 +518,9 @@ export function registerConnectionRoutes(
         // Must match the redirect_uri begin used to build the consent URL.
         redirectUri: `${deps.callbackBaseUrl}${OAUTH_CALLBACK_PATH}`,
       });
-    } catch {
+    } catch (error) {
       // Bad code, no refresh token, unverifiable identity — nothing to link.
+      logger.error("OAuth code exchange failed", redactedCause(error));
       return redirect("error");
     }
 
@@ -512,7 +534,11 @@ export function registerConnectionRoutes(
         authorization,
       );
       return redirect("connected");
-    } catch {
+    } catch (error) {
+      logger.error(
+        "Failed to link connection after OAuth consent",
+        redactedCause(error),
+      );
       return redirect("error");
     }
   });
@@ -568,7 +594,8 @@ export function registerConnectionRoutes(
           id.data,
         );
         res.status(Status.NO_CONTENT).end();
-      } catch {
+      } catch (error) {
+        logger.error("Failed to disconnect connection", redactedCause(error));
         respondInternalError(res);
       }
     },

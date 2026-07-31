@@ -9,11 +9,6 @@ import {
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
-test.skip(
-  ({ isMobile }) => isMobile,
-  "Mouse flows are desktop-only in week view.",
-);
-
 // Regression: the drag layout cache used to assume 7 day columns and seed the
 // event's day index week-absolutely, so at a reduced day count the mid-drag
 // visual snapped between two days and drops could land on the wrong day.

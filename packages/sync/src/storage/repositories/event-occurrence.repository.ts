@@ -13,6 +13,10 @@ import {
 
 export type OccurrenceInput = Omit<EventOccurrenceRecord, "_id">;
 
+// Longest occurrence start we still consider when answering a busy window.
+// Keeps calendar_gen_start range-bounded; see listBusyOverlapping.
+export const BUSY_MAX_LOOKBACK_MS = 366 * 24 * 60 * 60 * 1000;
+
 export interface OccurrenceRangeCursor {
   startAt: Date;
   id: string;
@@ -83,18 +87,50 @@ export class EventOccurrenceRepository {
     generation: number,
     occurrences: OccurrenceInput[],
   ): Promise<void> {
-    const docs = occurrences.map((occurrence) =>
-      EventOccurrenceRecordSchema.parse({
-        _id: new ObjectId().toHexString(),
-        ...occurrence,
-      }),
-    );
+    await this.replaceForEvents([{ eventId, generation, occurrences }]);
+  }
+
+  // Batched form of replaceForEvent: every entry's delete+insert runs in ONE
+  // transaction instead of one per event. A single-event import page can touch
+  // thousands of events, and a separate Mongo transaction per event (each its
+  // own commit round-trip) was the dominant cost of an initial import — see
+  // provider-page-applier.ts, which accumulates a page's projections and
+  // flushes them through this method in chunks (bounded by the caller so one
+  // transaction never approaches Atlas's 60s transaction lifetime limit).
+  // Same per-event safety as replaceForEvent: each entry is scoped to its own
+  // (eventId, generation), so entries never touch each other's rows; grouping
+  // them in one transaction only changes when the commit happens, not what
+  // becomes visible together.
+  async replaceForEvents(
+    entries: readonly {
+      eventId: EventId;
+      generation: number;
+      occurrences: OccurrenceInput[];
+    }[],
+  ): Promise<void> {
+    if (entries.length === 0) return;
 
     const session = this.client.startSession();
     try {
       await session.withTransaction(async () => {
-        await this.collection.deleteMany({ eventId, generation }, { session });
-        if (docs.length > 0) {
+        // Delete-then-insert PER ENTRY (not a batched delete phase followed by
+        // a batched insert phase): if the same (eventId, generation) somehow
+        // appeared twice in one call, a split-phase delete-all-then-insert-all
+        // would silently duplicate that event's rows, since the second entry's
+        // delete would find nothing left to remove. Interleaving keeps the
+        // same one-transaction win (a single commit) without that risk.
+        for (const entry of entries) {
+          await this.collection.deleteMany(
+            { eventId: entry.eventId, generation: entry.generation },
+            { session },
+          );
+          if (entry.occurrences.length === 0) continue;
+          const docs = entry.occurrences.map((occurrence) =>
+            EventOccurrenceRecordSchema.parse({
+              _id: new ObjectId().toHexString(),
+              ...occurrence,
+            }),
+          );
           await this.collection.insertMany(docs, { session });
         }
       });
@@ -192,10 +228,17 @@ export class EventOccurrenceRepository {
   // it is included. Cancelled occurrences are not busy and are excluded; one with
   // no endAt (predating the field and not yet reprojected) is excluded until it
   // reprojects — the `endAt > start` filter never matches a missing field.
+  //
+  // `startAt` is also lower-bounded by (windowStart - BUSY_MAX_LOOKBACK_MS): an
+  // unbounded `startAt < end` walks the entire historical calendar_gen_start
+  // range on every busy query. Occurrences longer than the lookback are still
+  // found when they start inside it; longer-than-lookback events are outside
+  // Compass's practical horizon (multi-year single instances).
   async listBusyOverlapping(
     query: BusyOverlapQuery,
   ): Promise<OccurrenceInterval[]> {
     if (query.calendars.length === 0) return [];
+    const startAtFloor = new Date(query.start.getTime() - BUSY_MAX_LOOKBACK_MS);
     const filter = {
       tenantId: query.tenantId,
       principalId: query.principalId,
@@ -208,7 +251,7 @@ export class EventOccurrenceRepository {
             generation: c.generation,
           })),
         },
-        { startAt: { $lt: query.end } },
+        { startAt: { $gte: startAtFloor, $lt: query.end } },
         { endAt: { $gt: query.start } },
       ],
     };

@@ -2,6 +2,7 @@ import { calendar } from "@googleapis/calendar";
 import { OAuth2Client } from "google-auth-library";
 import { type gCalendar, type gSchema$Event } from "@core/types/gcal";
 import { normalizeGoogleEvent } from "@sync/providers/google/google-event.normalizer";
+import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
 import { ProviderEventError } from "@sync/providers/provider-event.port";
 import {
   type EventWindow,
@@ -42,7 +43,11 @@ export type GoogleEventListApiFactory = (
 const defaultApiFactory: GoogleEventListApiFactory = (accessToken) => {
   const auth = new OAuth2Client();
   auth.setCredentials({ access_token: accessToken });
-  const gcal: gCalendar = calendar({ version: "v3", auth });
+  const gcal: gCalendar = calendar({
+    version: "v3",
+    auth,
+    timeout: GOOGLE_REQUEST_TIMEOUT_MS,
+  });
   return {
     async listPage({ calendarId, window, syncToken, pageToken }) {
       const { data } = await gcal.events.list({

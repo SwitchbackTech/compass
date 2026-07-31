@@ -123,6 +123,10 @@ export const EventMutationErrorCodeSchema = z.enum([
   "GOOGLE_REVOKED",
   // Scoped cutover maintenance: cloud/provider mutations paused (S50).
   "MAINTENANCE",
+  // A replace tried to move a provider-linked event to a different calendar.
+  // Sync has no executor for a "move" command yet (unconditionally fails it),
+  // so this is rejected before any command is submitted — never retryable.
+  "MOVE_UNSUPPORTED",
 ]);
 
 export const EventMutationErrorSchema = z.strictObject({

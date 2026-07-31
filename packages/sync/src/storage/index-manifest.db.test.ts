@@ -107,6 +107,32 @@ describe("installIndexManifest", () => {
     expect(ttl?.expireAfterSeconds).toBe(0);
   });
 
+  it("installs due-claim and connection-led indexes on jobs", async () => {
+    const indexes = await db.collection(SYNC_COLLECTIONS.jobs).indexes();
+    const dueClaim = indexes.find((i) => i.name === "state_runafter_priority");
+    expect(dueClaim?.key).toEqual({ state: 1, runAfter: 1, priority: -1 });
+    // The priority-led predecessor walked every pending-not-due row on idle claim.
+    expect(indexes.some((i) => i.name === "state_priority_runafter")).toBe(
+      false,
+    );
+    expect(indexes.some((i) => i.name === "connection_runafter")).toBe(true);
+  });
+
+  it("installs owner-calendar and resourceKind-led indexes on sync_resources", async () => {
+    const indexes = await db
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .indexes();
+    expect(indexes.some((i) => i.name === "principal_resource_calendar")).toBe(
+      true,
+    );
+    const lastSuccess = indexes.find((i) => i.name === "resource_last_success");
+    expect(lastSuccess?.key).toEqual({ resourceKind: 1, lastSuccessAt: 1 });
+    const lastAttempt = indexes.find((i) => i.name === "resource_last_attempt");
+    expect(lastAttempt?.key).toEqual({ resourceKind: 1, lastAttemptAt: 1 });
+    expect(indexes.some((i) => i.name === "last_success")).toBe(false);
+    expect(indexes.some((i) => i.name === "last_attempt")).toBe(false);
+  });
+
   it("enforces the unique command idempotency key", async () => {
     const commands = db.collection(SYNC_COLLECTIONS.commands);
     const key = {

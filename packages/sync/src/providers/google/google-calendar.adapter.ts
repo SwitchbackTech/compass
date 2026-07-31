@@ -9,6 +9,7 @@ import {
   type CalendarAccessRole,
   type CalendarCapabilities,
 } from "@core/types/sync/connection.contracts";
+import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
 import {
   type CalendarDiscovery,
   type DiscoveredCalendar,
@@ -57,7 +58,11 @@ export type GoogleCalendarListApiFactory = (
 const defaultApiFactory: GoogleCalendarListApiFactory = (accessToken) => {
   const auth = new OAuth2Client();
   auth.setCredentials({ access_token: accessToken });
-  const gcal: gCalendar = calendar({ version: "v3", auth });
+  const gcal: gCalendar = calendar({
+    version: "v3",
+    auth,
+    timeout: GOOGLE_REQUEST_TIMEOUT_MS,
+  });
   return {
     async listPage({ pageToken, syncToken }) {
       const { data } = await gcal.calendarList.list({

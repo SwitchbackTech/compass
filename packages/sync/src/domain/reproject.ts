@@ -17,3 +17,28 @@ export async function reprojectOccurrences(
   const rows = projectOccurrences(event, syncHorizon(now()), excludedInstants);
   await occurrences.replaceForEvent(event._id, event.generation, rows);
 }
+
+export interface ReprojectBatchEntry {
+  event: EventRecord;
+  excludedInstants?: readonly DateTime[];
+}
+
+// Batched form of reprojectOccurrences: every entry's rows are computed the
+// same way, but written in one transaction instead of one per event. For a
+// provider page touching hundreds/thousands of events (an initial import),
+// this is what lets provider-page-applier.ts collapse its per-event
+// transaction count.
+export async function reprojectOccurrencesBatch(
+  occurrences: EventOccurrenceRepository,
+  entries: readonly ReprojectBatchEntry[],
+  now: () => Date,
+): Promise<void> {
+  if (entries.length === 0) return;
+  const horizon = syncHorizon(now());
+  const replacements = entries.map(({ event, excludedInstants = [] }) => ({
+    eventId: event._id,
+    generation: event.generation,
+    occurrences: projectOccurrences(event, horizon, excludedInstants),
+  }));
+  await occurrences.replaceForEvents(replacements);
+}

@@ -28,12 +28,7 @@
       "project": ["src/**/*.ts!"]
     },
     "packages/scripts": {
-      "entry": [
-        "src/commands/*.ts",
-        "src/testing/*.ts",
-        "src/migrations/*.ts",
-        "src/common/migrator-template.ts"
-      ],
+      "entry": ["src/commands/*.ts", "src/testing/*.ts"],
       "project": ["src/**/*.ts!"]
     },
     "packages/web": {
