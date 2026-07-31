@@ -146,8 +146,9 @@ export function LifeSidebarContent({
               }
             }}
             onInputClick={() => setIsBirthDatePickerOpen(true)}
-            // Keep first impression on the grid: focus the field for new users
-            // without popping the calendar. Enter/arrows still open it.
+            // Keep first impression on the grid: focus without opening. Enter/
+            // arrows open via click so react-datepicker's internal open state
+            // stays in sync (Escape / day-grid focus depend on it).
             onKeyDown={(event) => {
               if (isBirthDatePickerOpen) return;
               if (
@@ -158,7 +159,7 @@ export function LifeSidebarContent({
                 return;
               }
               event.preventDefault();
-              setIsBirthDatePickerOpen(true);
+              (event.target as HTMLElement).click();
             }}
             onSelect={(date) => {
               if (!date) return;

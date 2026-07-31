@@ -177,6 +177,14 @@ describe("LifeView", () => {
     expect(
       screen.getByRole("button", { name: "Previous month" }),
     ).toBeInTheDocument();
+
+    // Keyboard-open must use react-datepicker's click/open path so Escape
+    // still closes (that path keeps internal open state in sync).
+    await user.keyboard("{Escape}");
+    expect(
+      screen.queryByRole("button", { name: "Previous month" }),
+    ).not.toBeInTheDocument();
+    expect(birthDateInput).toHaveFocus();
   });
 
   it("updates weeks lived when the birth date changes", async () => {
