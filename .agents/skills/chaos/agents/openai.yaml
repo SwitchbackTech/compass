@@ -1,0 +1,4 @@
+interface:
+  display_name: "Chaos"
+  short_description: "Probe real user flows for release-ready defects"
+  default_prompt: "Use $chaos to adversarially test the current Compass change, fix confirmed defects, and ship it safely."
