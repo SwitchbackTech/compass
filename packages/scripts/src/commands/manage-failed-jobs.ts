@@ -25,10 +25,6 @@ function flagValue(args: string[], name: string): string | undefined {
   return args[index + 1];
 }
 
-function hasFlag(args: string[], name: string): boolean {
-  return args.includes(name);
-}
-
 /**
  * Operator tooling for Sync jobs that exhausted the self-heal requeue budget
  * and still occupy a coalescing key. Default actions are dry-run; `--apply`
@@ -47,7 +43,7 @@ export async function runManageFailedJobs(): Promise<void> {
     );
   }
 
-  const apply = hasFlag(args, "--apply");
+  const apply = args.includes("--apply");
   const syncMongo = new SyncMongoService();
   try {
     await syncMongo.connect({
@@ -58,11 +54,16 @@ export async function runManageFailedJobs(): Promise<void> {
     const jobs = new JobRepository(syncMongo.db);
 
     if (action === "list") {
-      const exhausted = await jobs.listExhaustedFailed(FAILED_JOB_MAX_REQUEUES);
+      const [count, sample] = await Promise.all([
+        jobs.countExhaustedFailed(FAILED_JOB_MAX_REQUEUES),
+        jobs.listExhaustedFailed(FAILED_JOB_MAX_REQUEUES),
+      ]);
       const report = {
         maxRequeues: FAILED_JOB_MAX_REQUEUES,
-        count: exhausted.length,
-        jobs: exhausted.map((job) => ({
+        count,
+        sampleSize: sample.length,
+        truncated: count > sample.length,
+        jobs: sample.map((job) => ({
           id: job.id,
           coalescingKey: job.coalescingKey,
           connectionId: job.connectionId,
@@ -73,7 +74,7 @@ export async function runManageFailedJobs(): Promise<void> {
       };
       process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
       logger.info(
-        `manage-failed-jobs list count=${report.count} maxRequeues=${FAILED_JOB_MAX_REQUEUES}`,
+        `manage-failed-jobs list count=${report.count} sample=${report.sampleSize} truncated=${report.truncated}`,
       );
       await syncMongo.disconnect();
       process.exit(0);
@@ -88,6 +89,11 @@ export async function runManageFailedJobs(): Promise<void> {
     if (!existing) {
       throw new Error(`No job found for id=${id}`);
     }
+    if (existing.state !== "failed") {
+      throw new Error(
+        `Job id=${id} is state=${existing.state}; ${action} only accepts failed jobs`,
+      );
+    }
 
     if (action === "clear") {
       const coalescingKey =
@@ -99,13 +105,16 @@ export async function runManageFailedJobs(): Promise<void> {
       }
       const report = {
         dryRun: !apply,
-        action: "clear",
+        action: "clear" as const,
         id,
         coalescingKey,
         state: existing.state,
       };
       if (apply) {
-        await jobs.remove(id, coalescingKey);
+        const ok = await jobs.remove(id, coalescingKey);
+        if (!ok) {
+          throw new Error(`Failed to clear id=${id} key=${coalescingKey}`);
+        }
       }
       process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
       logger.info(
@@ -115,15 +124,9 @@ export async function runManageFailedJobs(): Promise<void> {
       process.exit(0);
     }
 
-    // requeue
-    if (existing.state !== "failed") {
-      throw new Error(
-        `Job id=${id} is state=${existing.state}; requeue only accepts failed jobs`,
-      );
-    }
     const report = {
       dryRun: !apply,
-      action: "requeue",
+      action: "requeue" as const,
       id,
       coalescingKey: existing.coalescingKey,
       requeuedCount: existing.requeuedCount,

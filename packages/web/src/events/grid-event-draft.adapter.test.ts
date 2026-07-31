@@ -1,3 +1,4 @@
+import { Origin } from "@core/constants/core.constants";
 import {
   type Calendar,
   getCalendarCapabilities,
@@ -150,17 +151,17 @@ test("projects a grid draft into a grid event without a CompassEvent bridge", ()
   expect(allDayGrid.isAllDay).toBe(true);
   expect(allDayGrid.title).toBe("All day");
   expect(allDayGrid.calendarId).toBe(timedEvent.calendarId);
-  expect(allDayGrid.origin).toBe("compass");
+  expect(allDayGrid.origin).toBe(Origin.COMPASS);
 
   const timed = editGridEventDraft(timedEvent);
   if (!timed) throw new Error("Expected timed edit draft");
-  timed.values.color = "tomato";
+  timed.values.color = "coral";
   const timedGrid = gridEventDraftToGridEvent(timed);
 
   expect(timedGrid.isAllDay).toBe(false);
   expect(timedGrid.startDate).toBe(dayjs(timed.values.schedule.start).format());
   expect(timedGrid.endDate).toBe(dayjs(timed.values.schedule.end).format());
-  expect(timedGrid.color).toBe("tomato");
+  expect(timedGrid.color).toBe("coral");
   expect(timedGrid.isBusy).toBe(false);
 });
 

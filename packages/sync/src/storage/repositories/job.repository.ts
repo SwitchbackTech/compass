@@ -22,6 +22,14 @@ export type ExhaustedFailedJob = {
   updatedAt: Date;
 };
 
+function exhaustedFailedFilter(maxRequeues: number) {
+  return {
+    state: "failed" as const,
+    failureClass: { $ne: "permanent" as const },
+    requeuedCount: { $gte: maxRequeues },
+  };
+}
+
 // Repository for `jobs`. Enqueue coalesces on a unique key so repeated
 // notifications for the same resource collapse into one pending job instead of
 // an unbounded queue. Terminal jobs are removed so a later notification can
@@ -283,11 +291,7 @@ export class JobRepository {
   // the sweep will not touch them again; an operator must. Used to drive a
   // loud, recurring alert rather than a silent terminal state.
   async countExhaustedFailed(maxRequeues: number): Promise<number> {
-    return this.collection.countDocuments({
-      state: "failed",
-      failureClass: { $ne: "permanent" },
-      requeuedCount: { $gte: maxRequeues },
-    });
+    return this.collection.countDocuments(exhaustedFailedFilter(maxRequeues));
   }
 
   // Same filter as countExhaustedFailed, returning the rows an operator needs
@@ -297,11 +301,7 @@ export class JobRepository {
     limit = 50,
   ): Promise<ExhaustedFailedJob[]> {
     const rows = await this.collection
-      .find({
-        state: "failed",
-        failureClass: { $ne: "permanent" },
-        requeuedCount: { $gte: maxRequeues },
-      })
+      .find(exhaustedFailedFilter(maxRequeues))
       .sort({ updatedAt: 1 })
       .limit(limit)
       .project({
@@ -315,7 +315,7 @@ export class JobRepository {
       .toArray();
 
     return rows.map((row) => ({
-      id: row._id as SyncJobId,
+      id: row["_id"] as SyncJobId,
       coalescingKey: String(row["coalescingKey"]),
       connectionId: row["connectionId"] as ConnectionId,
       failureClass: (row["failureClass"] ?? "retryableTransient") as Exclude<
@@ -351,9 +351,7 @@ export class JobRepository {
       tenantId,
       principalId,
       connectionId,
-      state: "failed",
-      failureClass: { $ne: "permanent" },
-      requeuedCount: { $gte: maxRequeues },
+      ...exhaustedFailedFilter(maxRequeues),
     });
   }
 
