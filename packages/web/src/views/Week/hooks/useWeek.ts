@@ -1,10 +1,8 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { ROOT_ROUTES, ROUTE_IDS } from "@web/common/constants/routes";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
-import { deriveEventListCalendarIds } from "@web/events/queries/derive-event-list-calendar-ids";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjacentEvents";
 import { useWeekEventsQuery } from "@web/events/queries/useWeekEventsQuery";
@@ -73,11 +71,6 @@ export const useWeek = (
     [start, visibleDayCount],
   );
 
-  const { data: calendars } = useCalendarsQuery();
-  const calendarIds = useMemo(
-    () => deriveEventListCalendarIds(calendars),
-    [calendars],
-  );
   const weekQuery = useWeekEventsQuery({
     startOfView: start,
     endOfView: queryEnd,
@@ -101,14 +94,14 @@ export const useWeek = (
       endDate: toUTCOffset(
         previousStart.add(WEEK_DAY_COUNT - 1, "day").endOf("day"),
       ),
-      calendarIds,
+      calendarIds: weekQuery.calendarIds,
     },
     {
       startDate: toUTCOffset(nextStart),
       endDate: toUTCOffset(
         nextStart.add(WEEK_DAY_COUNT - 1, "day").endOf("day"),
       ),
-      calendarIds,
+      calendarIds: weekQuery.calendarIds,
     },
     weekQuery.isSuccess,
   );

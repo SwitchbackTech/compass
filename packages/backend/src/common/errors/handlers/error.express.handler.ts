@@ -52,6 +52,14 @@ const parseUserId = async (res: SessionResponse, e: Error) => {
   return null;
 };
 
+const statusHintFromError = (e: CompassError): number | undefined => {
+  if (e instanceof BaseError) return e.statusCode;
+  if (e instanceof EventMutationException)
+    return toEventMutationError(e).status;
+  if (typeof e.status === "number") return e.status;
+  return undefined;
+};
+
 export const handleExpressError = async (
   req: Request | SessionRequest,
   res: SessionResponse,
@@ -63,20 +71,11 @@ export const handleExpressError = async (
     typeof (req as SessionRequest).session?.getUserId === "function"
       ? (req as SessionRequest).session?.getUserId()
       : undefined;
-  const statusHint =
-    e instanceof BaseError
-      ? e.statusCode
-      : e instanceof EventMutationException
-        ? toEventMutationError(e).status
-        : typeof e.status === "number"
-          ? e.status
-          : undefined;
-
   const correlationHeader = req.headers?.["x-correlation-id"];
   errorHandler.log(e, {
     method: req.method,
     path: req.originalUrl ?? req.url,
-    status: statusHint,
+    status: statusHintFromError(e),
     userId: sessionUserId ?? null,
     correlationId:
       typeof correlationHeader === "string" ? correlationHeader : undefined,

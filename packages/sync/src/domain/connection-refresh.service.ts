@@ -29,19 +29,21 @@ export async function refreshPrincipalCalendars(
     principalId,
   );
   const runAfter = now();
-  for (const resource of resources) {
-    const enqueue: JobEnqueue = {
-      tenantId: resource.tenantId,
-      principalId: resource.principalId,
-      connectionId: resource.connectionId,
-      resourceId: resource._id,
-      commandId: null,
-      kind: "incrementalPull",
-      priority: 0,
-      runAfter,
-      coalescingKey: `incrementalPull:${resource._id}`,
-    };
-    await deps.jobs.enqueue(enqueue);
-  }
+  await Promise.all(
+    resources.map((resource) => {
+      const enqueue: JobEnqueue = {
+        tenantId: resource.tenantId,
+        principalId: resource.principalId,
+        connectionId: resource.connectionId,
+        resourceId: resource._id,
+        commandId: null,
+        kind: "incrementalPull",
+        priority: 0,
+        runAfter,
+        coalescingKey: `incrementalPull:${resource._id}`,
+      };
+      return deps.jobs.enqueue(enqueue);
+    }),
+  );
   return resources.length;
 }

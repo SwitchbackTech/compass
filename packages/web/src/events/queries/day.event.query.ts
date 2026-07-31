@@ -6,20 +6,25 @@ import { fetchLocalEventsRange } from "./event.query.local";
 import { normalizeEventList } from "./event.query.normalize";
 import { type NormalizedEventQueryData } from "./event.query.types";
 
-type FetchDayEventsPayload = {
+type FetchEventsRangePayload = {
   startDate: string;
   endDate: string;
   calendarIds?: CalendarId[];
 };
 
 /**
- * Pure async day-events read. No dispatching. Calls the repository with a
- * "range" EventListQuery and normalizes the result. The backend range read
- * does its own exact [start, end) overlap filtering (event.repository.ts
- * listRange) — no client-side date-window adjustment or re-filter needed.
+ * Pure async range-events read for day and week queries. No dispatching.
+ * Calls the repository with a "range" EventListQuery and normalizes the
+ * result. The backend range read does its own exact [start, end) overlap
+ * filtering (event.repository.ts listRange) — no client-side date-window
+ * adjustment or re-filter needed.
+ *
+ * An empty `calendarIds` array means every calendar is hidden: skip the
+ * network and return []. `undefined` keeps the legacy "all calendars" read
+ * until visibility is known.
  */
 export async function fetchDayEvents(
-  payload: FetchDayEventsPayload,
+  payload: FetchEventsRangePayload,
   repository: EventRepository,
   source: EventRepositorySource = "remote",
 ): Promise<NormalizedEventQueryData> {

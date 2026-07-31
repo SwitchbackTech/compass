@@ -1,8 +1,6 @@
 import { useMemo } from "react";
 import type dayjs from "@core/util/date/dayjs";
-import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
-import { deriveEventListCalendarIds } from "@web/events/queries/derive-event-list-calendar-ids";
 import { dayEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { useDayEventsQuery } from "@web/events/queries/useDayEventsQuery";
 import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjacentEvents";
@@ -26,12 +24,6 @@ export function useDayEvents(dateInView: dayjs.Dayjs) {
     () => dayEventQueryRange(dateInView),
     [dateInView],
   );
-  const { data: calendars } = useCalendarsQuery();
-  const calendarIds = useMemo(
-    () => deriveEventListCalendarIds(calendars),
-    [calendars],
-  );
-
   const query = useDayEventsQuery({ startDate, endDate });
 
   // Warm the previous/next day so the next prev/next click resolves from
@@ -41,16 +33,16 @@ export function useDayEvents(dateInView: dayjs.Dayjs) {
   const previous = useMemo(
     () => ({
       ...dayEventQueryRange(dateInView.subtract(1, "day")),
-      calendarIds,
+      calendarIds: query.calendarIds,
     }),
-    [dateInView, calendarIds],
+    [dateInView, query.calendarIds],
   );
   const next = useMemo(
     () => ({
       ...dayEventQueryRange(dateInView.add(1, "day")),
-      calendarIds,
+      calendarIds: query.calendarIds,
     }),
-    [dateInView, calendarIds],
+    [dateInView, query.calendarIds],
   );
   usePrefetchAdjacentEvents(
     dayEventsQueryOptions,

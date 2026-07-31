@@ -6,9 +6,9 @@ import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { deriveOverlappingEventQueryData } from "@web/events/queries/event.query.cache";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
-import { deriveEventListCalendarIds } from "./derive-event-list-calendar-ids";
 import { deriveCalendarEventViewModel } from "./event.view-model";
 import { filterEventsByVisibleCalendars } from "./filter-events-by-visible-calendars";
+import { useEventListCalendarIds } from "./useEventListCalendarIds";
 
 type WeekEventsQueryArgs = {
   startOfView: Dayjs;
@@ -26,15 +26,11 @@ export function useWeekEventsQuery({
 }: WeekEventsQueryArgs) {
   const queryClient = useQueryClient();
   const source = useEventRepositorySource();
-  const { data: calendars } = useCalendarsQuery();
-  const calendarIds = useMemo(
-    () => deriveEventListCalendarIds(calendars),
-    [calendars],
-  );
+  const calendarIds = useEventListCalendarIds();
   const startDate = toUTCOffset(startOfView);
   const endDate = toUTCOffset(endOfView);
 
-  return useQuery({
+  const query = useQuery({
     ...weekEventsQueryOptions({ source, startDate, endDate, calendarIds }),
     placeholderData: () =>
       deriveOverlappingEventQueryData(queryClient, {
@@ -43,6 +39,7 @@ export function useWeekEventsQuery({
         endDate,
       }),
   });
+  return { ...query, calendarIds };
 }
 
 export function useWeekEventViewModel(args: WeekEventsQueryArgs) {

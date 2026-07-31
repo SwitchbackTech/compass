@@ -27,21 +27,22 @@ export type EventsQueryArgs = {
   calendarIds?: CalendarId[];
 };
 
-export function dayEventsQueryOptions({
-  source,
-  startDate,
-  endDate,
-  calendarIds,
-}: EventsQueryArgs) {
+type RangeFetch = typeof fetchDayEvents;
+
+function rangeEventsQueryOptions(
+  scope: "day" | "week",
+  fetchFn: RangeFetch,
+  { source, startDate, endDate, calendarIds }: EventsQueryArgs,
+) {
   return queryOptions({
-    queryKey: eventQueryKeys.day({
+    queryKey: eventQueryKeys[scope]({
       source,
       start: startDate,
       end: endDate,
       calendarIds,
     }),
     queryFn: () =>
-      fetchDayEvents(
+      fetchFn(
         { startDate, endDate, calendarIds },
         getEventRepositoryBySource(source),
         source,
@@ -50,25 +51,10 @@ export function dayEventsQueryOptions({
   });
 }
 
-export function weekEventsQueryOptions({
-  source,
-  startDate,
-  endDate,
-  calendarIds,
-}: EventsQueryArgs) {
-  return queryOptions({
-    queryKey: eventQueryKeys.week({
-      source,
-      start: startDate,
-      end: endDate,
-      calendarIds,
-    }),
-    queryFn: () =>
-      fetchWeekEvents(
-        { startDate, endDate, calendarIds },
-        getEventRepositoryBySource(source),
-        source,
-      ),
-    ...EVENT_QUERY_CACHE_OPTIONS,
-  });
+export function dayEventsQueryOptions(args: EventsQueryArgs) {
+  return rangeEventsQueryOptions("day", fetchDayEvents, args);
+}
+
+export function weekEventsQueryOptions(args: EventsQueryArgs) {
+  return rangeEventsQueryOptions("week", fetchWeekEvents, args);
 }

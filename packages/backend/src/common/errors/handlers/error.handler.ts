@@ -76,18 +76,22 @@ class ErrorHandler {
     // OWN ENUMERABLE properties (unlike Error.prototype's message/stack) -
     // passing the object itself to the logger would serialize those secrets
     // straight into the log output.
-    logger.error(error.message || String(error), {
-      stack: error.stack,
-      ...(context?.method !== undefined ? { method: context.method } : {}),
-      ...(context?.path !== undefined ? { path: context.path } : {}),
-      ...(context?.status !== undefined ? { status: context.status } : {}),
-      ...(context?.userId !== undefined && context.userId !== null
-        ? { userId: context.userId }
-        : {}),
-      ...(context?.correlationId !== undefined
-        ? { correlationId: context.correlationId }
-        : {}),
-    });
+    const meta: {
+      stack?: string;
+      method?: string;
+      path?: string;
+      status?: number;
+      userId?: string;
+      correlationId?: string;
+    } = { stack: error.stack };
+    if (context?.method !== undefined) meta.method = context.method;
+    if (context?.path !== undefined) meta.path = context.path;
+    if (context?.status !== undefined) meta.status = context.status;
+    if (context?.userId != null) meta.userId = context.userId;
+    if (context?.correlationId !== undefined) {
+      meta.correlationId = context.correlationId;
+    }
+    logger.error(error.message || String(error), meta);
   }
 
   exitAfterProgrammerError(): void {

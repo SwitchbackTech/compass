@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 const WAITLIST_URL = "https://tylerdane.kit.com/compass-mobile";
 
@@ -10,7 +10,7 @@ export const MobileGate: React.FC = () => {
     window.open(WAITLIST_URL, "_blank", "noopener,noreferrer");
   };
 
-  const handleCopyLink = useCallback(async () => {
+  const handleCopyLink = async () => {
     const url = window.location.href;
     try {
       await navigator.clipboard.writeText(url);
@@ -20,7 +20,7 @@ export const MobileGate: React.FC = () => {
       // Fallback for older mobile browsers without clipboard permission.
       window.prompt("Copy this link and open it on a computer:", url);
     }
-  }, []);
+  };
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background p-4">
