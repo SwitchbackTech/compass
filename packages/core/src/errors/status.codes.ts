@@ -23,5 +23,4 @@ export enum Status {
 
   /* 6xx - Custom */
   UNSURE = 600,
-  REDUX_REFRESH_NEEDED = 601,
 }

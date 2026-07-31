@@ -7,10 +7,7 @@ import {
 import { session } from "@web/auth/compass/session/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
-import {
-  assignLocation,
-  reloadLocation,
-} from "@web/common/utils/browser/browser-navigation.util";
+import { assignLocation } from "@web/common/utils/browser/browser-navigation.util";
 import {
   showErrorToast,
   showSessionExpiredToast,
@@ -126,17 +123,12 @@ interface ApiErrorResponseDependencies {
   onGoogleRevoked?: () => void;
 }
 
-export const handleErrorResponse = async <T>(
+export const handleErrorResponse = async (
   error: ApiError,
   { onGoogleRevoked }: ApiErrorResponseDependencies,
-) => {
+): Promise<never> => {
   const requestUrl = error.config?.url;
   const status = error.response?.status;
-
-  if (status === Status.REDUX_REFRESH_NEEDED) {
-    reloadLocation();
-    return undefined as T;
-  }
 
   const isUserProfileNotFound =
     status === Status.NOT_FOUND && requestUrl?.includes("/user/profile");
