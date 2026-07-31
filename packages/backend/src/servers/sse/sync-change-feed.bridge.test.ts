@@ -257,6 +257,51 @@ describe("SyncChangeFeedBridge", () => {
     bridge.stop();
   });
 
+  it("reschedules after a throw instead of dying — a bad invalidation must not stop the global poller forever", async () => {
+    const scheduler = new FakeScheduler();
+    const client = new FakeClient([
+      {
+        ok: true,
+        correlationId: "c1",
+        value: {
+          kind: "ok",
+          invalidations: [
+            {
+              invalidation: { kind: "connection", connectionId: objectId() },
+              emittedAt: "2026-07-30T00:00:00.000Z",
+              tenantId: objectId(),
+              principalId: objectId(),
+            },
+          ],
+          nextCursor: objectId(),
+        },
+      },
+      {
+        ok: true,
+        correlationId: "c2",
+        value: { kind: "ok", invalidations: [], nextCursor: objectId() },
+      },
+    ]);
+    const sse = new FakeSse();
+    sse.publish = () => {
+      throw new Error("boom: malformed invalidation");
+    };
+    const bridge = new SyncChangeFeedBridge(
+      { client, sse: sse as never },
+      { schedule: scheduler.schedule, errorBackoffMs: 9999 },
+    );
+
+    bridge.start();
+    await scheduler.fireNext(); // publish() throws mid-tick
+    expect(scheduler.pending).toHaveLength(1); // still rescheduled, on the backoff
+    expect(scheduler.pending[0]?.delayMs).toBe(9999);
+
+    await scheduler.fireNext(); // next tick runs normally, not stuck
+    bridge.stop();
+
+    expect(client.calls).toEqual([null, null]); // cursor never advanced past the throw
+  });
+
   it("stop() clears the pending tick before it ever runs", () => {
     const scheduler = new FakeScheduler();
     const client = new FakeClient([]);

@@ -88,6 +88,25 @@ export class SyncChangeFeedBridge {
 
   async #tick(): Promise<void> {
     if (this.#stopped) return;
+
+    // Everything below can throw: getGlobalChanges rejects on a network
+    // fault, and syncInvalidationToServerMessages/JSON.stringify inside
+    // publish() throw on a malformed id or payload. Uncaught, either one
+    // would fall out of the scheduling chain and silently stop the global
+    // poller for the life of the process - every connected user's live
+    // updates stop with no signal. Always reschedule, even on failure.
+    try {
+      await this.#tickUnsafe();
+    } catch (error) {
+      logger.error(
+        `Sync global change-feed tick threw: ${error instanceof Error ? error.message : String(error)}`,
+        error,
+      );
+      if (!this.#stopped) this.#scheduleNext(this.#errorBackoffMs);
+    }
+  }
+
+  async #tickUnsafe(): Promise<void> {
     const result = await this.#client.getGlobalChanges(this.#cursor);
     if (this.#stopped) return;
 

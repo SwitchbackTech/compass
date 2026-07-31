@@ -482,6 +482,18 @@ function registerSignalHandlers(
 }
 
 if (import.meta.main) {
+  // Registering a handler suppresses Node/Bun's default crash-on-unhandled-
+  // rejection behavior, so without one of our own the process would keep
+  // running silently after whatever left a promise dangling - no log, no
+  // restart, just a process in an unknown state. Log with context, then exit
+  // the same way an uncaught synchronous throw would. Gated behind
+  // import.meta.main like the rest of this block so a test importing this
+  // module for its exports never installs a process-wide handler.
+  process.on("unhandledRejection", (reason) => {
+    logger.error("Unhandled promise rejection", reason);
+    process.exit(1);
+  });
+
   start().catch((error) => {
     logger.error("Sync service failed to start", error);
     process.exit(1);

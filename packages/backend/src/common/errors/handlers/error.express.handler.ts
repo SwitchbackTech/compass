@@ -116,4 +116,12 @@ const handleGoogleError = async (
     res.status(Status.BAD_REQUEST).send({ error: UserError.InvalidValue });
     return;
   }
+
+  // Neither branch above matched: without a fallback the request hangs
+  // until the caller's own timeout, since the caller (handleExpressError)
+  // awaits this and sends nothing itself for the Google-error path.
+  logger.error(`${userId} (user) hit an unhandled Google API error`, e);
+  res.status(Status.INTERNAL_SERVER).send({
+    error: "Unexpected error communicating with Google Calendar",
+  });
 };
