@@ -203,7 +203,7 @@ const _cleanStartMeridiem = (start: string, end: string) => {
 };
 
 const _getTimeLabel = (date: string) =>
-  dayjs(date).format(HOURS_AM_FORMAT).replace(":00", "");
+  getTimeLabel(dayjs(date).format(HOURS_AM_FORMAT));
 
 export const computeCurrentEventDateRange = (
   to: {
