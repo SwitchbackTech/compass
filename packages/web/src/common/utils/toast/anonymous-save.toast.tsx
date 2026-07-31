@@ -47,7 +47,7 @@ const AnonymousSaveToast = ({ toastId }: AnonymousSaveToastProps) => {
   return (
     <div className="flex w-full flex-col gap-2">
       <p className="text-sm text-text">
-        Sign up to save your calendar across devices.
+        Sign up to save your calendar across browsers.
       </p>
       <button
         className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-on-accent text-sm transition-colors hover:bg-accent-secondary-hover"
