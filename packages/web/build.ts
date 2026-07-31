@@ -1,6 +1,7 @@
 import { loadCompassConfig } from "@core/config/compass.config";
 import { copyStaticAssets } from "./copy-static-assets";
 import { postcssPlugin } from "./plugins/postcss.plugin";
+import { renderIndexHtml } from "./render-index-html";
 import { execSync } from "node:child_process";
 import path from "node:path";
 
@@ -56,7 +57,7 @@ const define: Record<string, string> = {
 console.log(`Building version ${BUILD_VERSION}...`);
 
 const result = await Bun.build({
-  entrypoints: [path.resolve(import.meta.dir, "src/index.html")],
+  entrypoints: [path.resolve(import.meta.dir, "src/index.tsx")],
   outdir: OUTDIR,
   target: "browser",
   sourcemap: "external",
@@ -74,6 +75,8 @@ if (!result.success) {
   }
   process.exit(1);
 }
+
+await renderIndexHtml(OUTDIR, result.outputs);
 
 await Bun.write(
   path.join(OUTDIR, "version.json"),

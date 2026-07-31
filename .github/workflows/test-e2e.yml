@@ -40,7 +40,7 @@ jobs:
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: canary
+          bun-version: 1.2.18
 
       - name: Cache Bun dependencies
         uses: actions/cache@v5

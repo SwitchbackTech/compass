@@ -1,6 +1,7 @@
 import { loadCompassConfig } from "@core/config/compass.config";
 import { copyStaticAssets } from "./copy-static-assets";
 import { postcssPlugin } from "./plugins/postcss.plugin";
+import { renderIndexHtml } from "./render-index-html";
 import { watch } from "node:fs";
 import path from "node:path";
 
@@ -45,7 +46,7 @@ function notifyReload() {
 
 async function build() {
   const result = await Bun.build({
-    entrypoints: [path.resolve(import.meta.dir, "src/index.html")],
+    entrypoints: [path.resolve(import.meta.dir, "src/index.tsx")],
     outdir: OUTDIR,
     target: "browser",
     // Dev: inline sourcemaps for easy debugging; non-dev (e.g. test): strip them
@@ -66,6 +67,7 @@ async function build() {
     return false;
   }
 
+  await renderIndexHtml(OUTDIR, result.outputs);
   await copyStaticAssets(OUTDIR);
 
   return true;
