@@ -14,10 +14,9 @@ Primary file:
 
 | Command | Implementation | Notes |
 | --- | --- | --- |
-| `bun run cli migrate <umzug-subcommand>` | `packages/scripts/src/commands/migrate.ts` | Runs wrapped Umzug subcommands: `pending`, `executed`, `up`, `down`, and `create`. Inspect `bun run cli migrate --help` before bounded execution. |
-| `bun run cli migrate pending` | `packages/scripts/src/commands/migrate.ts` | Lists pending migrations. |
-| `bun run cli migrate executed` | `packages/scripts/src/commands/migrate.ts` | Lists executed migrations. |
-| `bun run cli migrate-connections [--apply] [--out report.json] [--user-id id]...` | `packages/scripts/src/commands/migrate-connections.ts` | S47: idempotently upsert Sync connections + credentials from legacy users. Default dry-run; `--apply` writes. Never clears source tokens or enqueues Sync jobs. |
+| `bun run cli purge-user --email <address> [--apply] [--out report.json]` | `packages/scripts/src/commands/purge-user.ts` | Deletes one user's API, Sync, and SuperTokens data. Defaults to dry-run. |
+| `bun run cli purge-corrupt-sync-events [--apply]` | `packages/scripts/src/commands/purge-corrupt-sync-events.ts` | Deletes invalid Sync event documents. Defaults to dry-run. |
+| `bun run cli refresh-connection-states [--apply]` | `packages/scripts/src/commands/refresh-connection-states.ts` | Re-derives Sync connection state. Defaults to dry-run. |
 
 ## Sync Database Backup / Restore
 
@@ -32,13 +31,10 @@ bun packages/scripts/src/commands/sync-restore.ts --from DIR [--drop]
 
 Use `--drop` only against a throwaway Sync database during a restore drill.
 
-## Migration Internals
+## Historical Migrations
 
-The migration command:
-
-- starts Mongo
-- builds an Umzug CLI dynamically
-- loads migrations from `packages/scripts/src/migrations`
-- stores execution state in Mongo collections
-
-There is also a separate web-local migration system under `packages/web/src/common/storage/migrations`; do not confuse the two.
+The server-side migration runner and completed Sync cutover tools were removed.
+Current releases do not ship pending database migrations. An installation that
+still needs the sub-calendar v1 cutover must use the documented historical
+`v1.0.310` stepping-stone release. Browser-local migrations remain under
+`packages/web/src/common/storage/migrations`.

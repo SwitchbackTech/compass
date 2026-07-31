@@ -7,17 +7,11 @@
   "private": true,
   "dependencies": {
     "@compass/core": "1.0.0",
-    "@inquirer/prompts": "^8.3.0",
     "commander": "^10.0.0",
-    "fast-glob": "^3.3.3",
-    "inquirer": "^8.0.0",
-    "open": "^10.1.0",
-    "umzug": "^3.8.2",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@sinonjs/fake-timers": "^10.3.0",
-    "@types/inquirer": "^9.0.1",
     "@types/node": "^24.7.2",
     "mongodb": "^7.2.0",
     "mongodb-memory-server": "^9.2.0",

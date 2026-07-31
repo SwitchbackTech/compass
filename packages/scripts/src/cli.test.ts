@@ -1,12 +1,9 @@
-import { MigratorType } from "./common/cli.types";
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { createRequire } from "node:module";
 
 const requireActual = createRequire(import.meta.url);
 
 const mockExitHelpfully = mock();
-const mockRunMigrator = mock((): Promise<void> => Promise.resolve());
-const mockRunMigrateConnections = mock((): Promise<void> => Promise.resolve());
 const mockRunPurgeCorrupt = mock((): Promise<void> => Promise.resolve());
 const mockRunPurgeUser = mock((): Promise<void> => Promise.resolve());
 
@@ -14,16 +11,6 @@ mock.module("@scripts/cli.validator", () => ({
   CliValidator: mock().mockImplementation(() => ({
     exitHelpfully: mockExitHelpfully,
   })),
-}));
-
-mock.module("@scripts/commands/migrate", () => ({
-  __esModule: true,
-  runMigrator: mock((type: MigratorType) => mockRunMigrator(type)),
-}));
-
-mock.module("@scripts/commands/migrate-connections", () => ({
-  __esModule: true,
-  runMigrateConnections: mock(() => mockRunMigrateConnections()),
 }));
 
 mock.module("@scripts/commands/purge-corrupt-sync-events", () => ({
@@ -42,22 +29,6 @@ const { default: CompassCLI } = requireActual(
 describe("CompassCLI", () => {
   afterEach(() => {
     mock.restore();
-  });
-
-  it("runs migrate command and does not throw", async () => {
-    const cli = new CompassCLI(["node", "cli", "migrate", "--help"]);
-
-    await cli.run();
-
-    expect(mockRunMigrator).toHaveBeenCalledWith(MigratorType.MIGRATION);
-  });
-
-  it("runs migrate-connections command", async () => {
-    const cli = new CompassCLI(["node", "cli", "migrate-connections"]);
-
-    await cli.run();
-
-    expect(mockRunMigrateConnections).toHaveBeenCalled();
   });
 
   it("runs purge-corrupt-sync-events command", async () => {
