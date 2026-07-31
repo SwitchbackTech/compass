@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 
-import mergeWith from "lodash.mergewith";
+import mergeWith from "lodash/mergeWith";
 import { Origin } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { CalendarProvider } from "@core/types/calendar.types";

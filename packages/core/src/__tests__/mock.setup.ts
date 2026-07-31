@@ -1,5 +1,5 @@
 import { faker as mockFaker } from "@faker-js/faker";
-import { default as mockMergeWith } from "lodash.mergewith";
+import { default as mockMergeWith } from "lodash/mergeWith";
 import { mock } from "bun:test";
 import { createRequire } from "node:module";
 
