@@ -150,6 +150,30 @@ describe("JobRepository", () => {
       expect(reclaimed?.attempt).toBe(2);
     });
 
+    // Load-bearing with the split claim arms: reclaim must not wait for the
+    // entire pending queue to drain, or a crashed worker's coalesced resource
+    // stays stuck under a sustained backlog.
+    it("reclaims an expired lease even when other pending work is due", async () => {
+      await repo.enqueue(
+        enqueue({ coalescingKey: "stuck", priority: 1, runAfter: past(1000) }),
+      );
+      const stuck = await repo.claimDueJob("crashed-worker", NOW, LEASE_MS);
+      expect(stuck?.coalescingKey).toBe("stuck");
+
+      await repo.enqueue(
+        enqueue({
+          coalescingKey: "backlog",
+          priority: 9,
+          runAfter: past(500),
+        }),
+      );
+
+      const later = future(LEASE_MS + 1000);
+      const next = await repo.claimDueJob("fresh-worker", later, LEASE_MS);
+      expect(next?._id).toBe(stuck?._id);
+      expect(next?.leaseOwner).toBe("fresh-worker");
+    });
+
     it("does not let a stale worker heartbeat, complete, retry, or fail", async () => {
       await repo.enqueue(enqueue({ runAfter: past(1000) }));
       const job = await repo.claimDueJob("owner", NOW, LEASE_MS);

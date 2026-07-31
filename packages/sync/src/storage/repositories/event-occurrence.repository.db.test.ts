@@ -3,6 +3,7 @@ import { type Db } from "mongodb";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type EventOccurrenceRecord } from "@sync/storage/contracts/event-occurrence.contracts";
 import {
+  BUSY_MAX_LOOKBACK_MS,
   EventOccurrenceRepository,
   type OccurrenceInput,
 } from "@sync/storage/repositories/event-occurrence.repository";
@@ -356,6 +357,78 @@ describe("EventOccurrenceRepository", () => {
       });
       expect(repaired).toHaveLength(1);
       expect(repaired[0]?.occurrenceKey).toBe(`${cal}:repair`);
+    });
+  });
+
+  describe("listBusyOverlapping", () => {
+    it("includes overlapping busy rows inside the lookback and skips older starts", async () => {
+      const tenantId = objectId() as OccurrenceInput["tenantId"];
+      const principalId = objectId() as OccurrenceInput["principalId"];
+      const calendarId = objectId() as OccurrenceInput["calendarId"];
+      const windowStart = new Date("2026-07-14T00:00:00.000Z");
+      const windowEnd = new Date("2026-07-15T00:00:00.000Z");
+      const inLookbackStart = new Date(
+        windowStart.getTime() - BUSY_MAX_LOOKBACK_MS + 60_000,
+      );
+      const outOfLookbackStart = new Date(
+        windowStart.getTime() - BUSY_MAX_LOOKBACK_MS - 60_000,
+      );
+
+      const eventIn = objectId() as OccurrenceInput["eventId"];
+      const eventOut = objectId() as OccurrenceInput["eventId"];
+      await repo.replaceForEvents([
+        {
+          eventId: eventIn,
+          generation: 0,
+          occurrences: [
+            occurrence({
+              tenantId,
+              principalId,
+              calendarId,
+              eventId: eventIn,
+              occurrenceKey: `${eventIn}:in`,
+              startAt: inLookbackStart,
+              endAt: windowEnd,
+              schedule: {
+                kind: "timed",
+                start: inLookbackStart.toISOString(),
+                end: windowEnd.toISOString(),
+                timeZone: "UTC",
+              },
+            }),
+          ],
+        },
+        {
+          eventId: eventOut,
+          generation: 0,
+          occurrences: [
+            occurrence({
+              tenantId,
+              principalId,
+              calendarId,
+              eventId: eventOut,
+              occurrenceKey: `${eventOut}:out`,
+              startAt: outOfLookbackStart,
+              endAt: windowEnd,
+              schedule: {
+                kind: "timed",
+                start: outOfLookbackStart.toISOString(),
+                end: windowEnd.toISOString(),
+                timeZone: "UTC",
+              },
+            }),
+          ],
+        },
+      ]);
+
+      const busy = await repo.listBusyOverlapping({
+        tenantId,
+        principalId,
+        calendars: [{ calendarId, generation: 0 }],
+        start: windowStart,
+        end: windowEnd,
+      });
+      expect(busy).toEqual([{ startAt: inLookbackStart, endAt: windowEnd }]);
     });
   });
 });

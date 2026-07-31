@@ -15,7 +15,7 @@ export type OccurrenceInput = Omit<EventOccurrenceRecord, "_id">;
 
 // Longest occurrence start we still consider when answering a busy window.
 // Keeps calendar_gen_start range-bounded; see listBusyOverlapping.
-const BUSY_MAX_LOOKBACK_MS = 366 * 24 * 60 * 60 * 1000;
+export const BUSY_MAX_LOOKBACK_MS = 366 * 24 * 60 * 60 * 1000;
 
 export interface OccurrenceRangeCursor {
   startAt: Date;

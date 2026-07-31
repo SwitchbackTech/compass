@@ -87,8 +87,10 @@ export class JobRepository {
   // lease has expired (the previous owner crashed). The two arms are claimed
   // separately so each can use its own index (state_runafter_priority /
   // lease_expiry) — a single $or + sort forced the planner to walk every
-  // pending-not-due backoff job on every idle poll. Due pending work is
-  // preferred over lease reclaim; within each arm, priority then age wins.
+  // pending-not-due backoff job on every idle poll. Expired-lease reclaim
+  // runs FIRST so a sustained pending backlog cannot starve crash recovery
+  // (a coalesced resource stuck in claimed-with-expired-lease would otherwise
+  // never get a fresh pending row). Within each arm, priority then age wins.
   // findOneAndUpdate stays atomic per arm, so two workers still never both
   // win the same job. Returns null when no job is due.
   async claimDueJob(
@@ -108,8 +110,8 @@ export class JobRepository {
     };
 
     for (const filter of [
-      { state: "pending" as const, runAfter: { $lte: now } },
       { state: "claimed" as const, leaseExpiresAt: { $lt: now } },
+      { state: "pending" as const, runAfter: { $lte: now } },
     ]) {
       const claimed = await this.collection.findOneAndUpdate(
         filter,
