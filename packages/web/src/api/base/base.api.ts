@@ -74,7 +74,7 @@ const request = async <T>(
     }
 
     if (isApiError(error)) {
-      return handleErrorResponse<ApiResponse<T>>(error, {
+      return handleErrorResponse(error, {
         onGoogleRevoked: BaseApi.defaults.onGoogleRevoked,
       });
     }

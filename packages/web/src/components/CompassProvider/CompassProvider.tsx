@@ -7,8 +7,7 @@ import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
-import { filterPosthogBeforeSend } from "@web/auth/posthog/posthog-exception-filter.util";
-import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
+import { initPosthog } from "@web/auth/posthog/posthog.bootstrap";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { queryClient as defaultQueryClient } from "@web/api/query-client";
 import { DeleteAccountConfirmationProvider } from "@web/components/DeleteAccountConfirmation/DeleteAccountConfirmationProvider";
@@ -78,39 +77,20 @@ export const CompassRequiredProviders = ({
 );
 
 export const CompassOptionalProviders = ({ children }: PropsWithChildren) => {
-  let wrappedChildren = children;
+  // PostHog is initialized once outside the React tree (see index.tsx) so its
+  // exception handlers cover boot before this ever mounts. initPosthog() is
+  // idempotent: here it just hands back that already-initialized instance (or
+  // undefined when PostHog is disabled, e.g. in tests).
+  const posthogClient = initPosthog();
 
-  if (isPosthogEnabled()) {
-    wrappedChildren = (
-      <PostHogProvider
-        apiKey={ENV_WEB.POSTHOG_KEY as string}
-        options={{
-          api_host: ENV_WEB.POSTHOG_HOST!,
-          // Assumes the US cloud; self-hosters on another instance would differ.
-          ui_host: "https://us.posthog.com",
-          capture_exceptions: {
-            capture_unhandled_errors: true,
-            capture_unhandled_rejections: true,
-            // Off on purpose: the app deliberately console.error's errors it
-            // has already handled (a network blip during a session check, a
-            // retryable 502 from a provider), so capturing console.error as an
-            // exception turns every expected transient failure into a fresh
-            // error-tracking issue. Genuinely uncaught errors/rejections are
-            // still captured by the two handlers above.
-            capture_console_errors: false,
-          },
-          // Drop known-unactionable exception signatures (SuperTokens/browser
-          // network blips, CefSharp scanner noise) before they become issues.
-          before_send: filterPosthogBeforeSend,
-          opt_in_site_apps: true,
-          person_profiles: "always",
-        }}
-      >
-        {wrappedChildren}
-        <FeedbackDialogHost />
-      </PostHogProvider>
-    );
+  if (!posthogClient) {
+    return children;
   }
 
-  return wrappedChildren;
+  return (
+    <PostHogProvider client={posthogClient}>
+      {children}
+      <FeedbackDialogHost />
+    </PostHogProvider>
+  );
 };

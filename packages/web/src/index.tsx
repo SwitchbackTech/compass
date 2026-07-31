@@ -1,44 +1,25 @@
-import "react-datepicker/dist/react-datepicker.css";
-import { createRoot } from "react-dom/client";
-import "react-toastify/dist/ReactToastify.css";
-import { sessionInit } from "@web/auth/compass/session/SessionProvider";
-import { configureGoogleRevocationApiHandler } from "@web/auth/google/util/google-revocation-api.config";
 import {
-  initializeDatabaseWithErrorHandling,
-  showDbInitErrorToast,
-} from "@web/common/utils/app-init.util";
-import { App } from "@web/components/App/App";
-import "./index.css";
+  getPosthogClient,
+  initPosthog,
+} from "@web/auth/posthog/posthog.bootstrap";
 
-configureGoogleRevocationApiHandler();
+initPosthog();
 
-const container = document.getElementById("root");
+void import("./app.bootstrap")
+  .then(({ bootstrapApp }) => bootstrapApp())
+  .catch((error) => {
+    getPosthogClient()?.captureException(error, {
+      $exception_handled: false,
+      $exception_source: "app-boot",
+    });
+    console.error("Failed to initialize the app:", error);
 
-if (!container) {
-  throw new Error("Root container with id 'root' not found in index.html");
-}
+    const container = document.getElementById("root");
+    if (!container) return;
 
-const root = createRoot(container);
-
-/**
- * Initialize the application after local storage is ready.
- * This ensures IndexedDB is ready before any database operations occur.
- */
-async function initializeApp() {
-  const { dbInitError } = await initializeDatabaseWithErrorHandling();
-  // biome-ignore lint/suspicious/noConsole: Don't remove this plz.
-  console.debug(
-    "aHR0cHM6Ly9jb21wYXNzY2FsZW5kYXIubm90aW9uLnNpdGUvaDNsbDAtZGF0LTMwYzIzN2JkZThmNDgwNTdhZmYxZDRiODU0YjAzMjYz",
-  );
-  sessionInit();
-
-  root.render(<App />);
-
-  // Show error toast after app renders (so toast container is available)
-  if (dbInitError) {
-    console.error(dbInitError);
-    showDbInitErrorToast(dbInitError);
-  }
-}
-
-initializeApp();
+    container.innerHTML =
+      '<main style="align-items:center;display:flex;flex-direction:column;height:100vh;justify-content:center;padding:1.5rem;text-align:center"><h1>🏴‍☠️ We ran aground!</h1><p>The app failed to start.</p><button type="button">Reload the app</button></main>';
+    container.querySelector("button")?.addEventListener("click", () => {
+      window.location.reload();
+    });
+  });
