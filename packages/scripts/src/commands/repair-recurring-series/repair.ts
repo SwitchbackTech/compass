@@ -18,15 +18,16 @@ export type RepairRecurringSeriesReport = {
   generatedAt: string;
   dryRun: boolean;
   mastersScanned: number;
-  mastersRepaired: number;
-  wouldRepair: number;
-  junkExceptionsDeleted: number;
-  wouldDelete: number;
+  // Every master reprojected (or that would be) — the pre-write id list the
+  // migration playbook asks for. junkExceptionIds are the tombstones deleted
+  // (or that would be) alongside them.
+  masterIds: string[];
   junkExceptionIds: string[];
   // Non-cancelled overrides whose recurrenceId is not an instant of the fixed
   // expansion. They carry user content, so they are reported, never deleted.
   suspectOverrideIds: string[];
-  unparseableMasters: Array<{ id: string; detail: string }>;
+  // Skipped; run purge-corrupt-sync-events for the per-doc detail.
+  unparseableMasters: number;
 };
 
 // One-shot repair for series masters whose rules carry EXDATE/RDATE lines.
@@ -39,7 +40,7 @@ export type RepairRecurringSeriesReport = {
 export async function repairRecurringSeries(
   db: Db,
   client: MongoClient,
-  options: { dryRun: boolean; now?: () => Date } = { dryRun: true },
+  options: { dryRun: boolean; now?: () => Date },
 ): Promise<RepairRecurringSeriesReport> {
   const now = options.now ?? (() => new Date());
   const events = new EventRepository(db);
@@ -50,34 +51,32 @@ export async function repairRecurringSeries(
     generatedAt: now().toISOString(),
     dryRun: options.dryRun,
     mastersScanned: 0,
-    mastersRepaired: 0,
-    wouldRepair: 0,
-    junkExceptionsDeleted: 0,
-    wouldDelete: 0,
+    masterIds: [],
     junkExceptionIds: [],
     suspectOverrideIds: [],
-    unparseableMasters: [],
+    unparseableMasters: 0,
   };
 
-  const cursor = db.collection(SYNC_COLLECTIONS.events).find({
-    "recurrence.kind": "seriesMaster",
-    "recurrence.rules": { $elemMatch: { $not: /^RRULE:/i } },
-  });
+  const cursor = db.collection(SYNC_COLLECTIONS.events).find(
+    {
+      "recurrence.kind": "seriesMaster",
+      "recurrence.rules": { $elemMatch: { $not: /^RRULE:/i } },
+    },
+    // Rules content isn't indexed, so this is a one-shot COLLSCAN over
+    // events: read from a secondary so the scan doesn't compete with the
+    // primary's working set.
+    { readPreference: "secondaryPreferred", batchSize: 200 },
+  );
 
   for await (const doc of cursor) {
     report.mastersScanned += 1;
     const parsed = EventRecordSchema.safeParse(doc);
     if (!parsed.success) {
-      report.unparseableMasters.push({
-        id: String(doc["_id"]),
-        detail: parsed.error.issues
-          .slice(0, 3)
-          .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-          .join("; "),
-      });
+      report.unparseableMasters += 1;
       continue;
     }
     const master = parsed.data;
+    report.masterIds.push(master._id);
     const scope = {
       tenantId: master.tenantId,
       principalId: master.principalId,
@@ -90,8 +89,7 @@ export async function repairRecurringSeries(
     );
     const junk: EventRecord[] = [];
     for (const exception of exceptions) {
-      const member = isSeriesInstant(master, exceptionInstant(exception));
-      if (member) continue;
+      if (isSeriesInstant(master, exceptionInstant(exception))) continue;
       if (isCancelledException(exception)) {
         junk.push(exception);
         report.junkExceptionIds.push(exception._id);
@@ -100,18 +98,12 @@ export async function repairRecurringSeries(
       }
     }
 
-    if (options.dryRun) {
-      report.wouldRepair += 1;
-      report.wouldDelete += junk.length;
-      continue;
-    }
+    if (options.dryRun) continue;
 
     // Delete junk tombstones BEFORE reprojecting: reprojectMaster re-reads
     // exceptions fresh, so only survivors' instants get excluded.
     await deleteExceptions(deps, scope, junk);
-    report.junkExceptionsDeleted += junk.length;
     await reprojectMaster(deps, scope, master, now);
-    report.mastersRepaired += 1;
   }
 
   return report;

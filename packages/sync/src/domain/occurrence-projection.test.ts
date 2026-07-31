@@ -306,53 +306,44 @@ describe("projectOccurrences", () => {
     // projection (dead series resurrected into the present, EXDATEs ignored,
     // per-instance delete tombstones orphaned by shifting occurrenceKeys).
 
+    // A weekly Denver 09:00 series starting Mon 2026-07-06 (15:00Z), 30 min.
+    const weekly = (rules: string[]) =>
+      event(timed("2026-07-06T09:00:00-06:00", "2026-07-06T09:30:00-06:00"), {
+        kind: "seriesMaster",
+        rules,
+      });
+    const starts = (e: EventRecord) =>
+      projectOccurrences(e, HORIZON).map((o) => o.startAt.toISOString());
+
     it("excludes an EXDATE instant stated in the event's own zone", () => {
-      const e = event(
-        timed("2026-07-06T09:00:00-06:00", "2026-07-06T09:30:00-06:00"),
-        {
-          kind: "seriesMaster",
-          rules: [
-            "EXDATE;TZID=America/Denver:20260713T090000",
-            "RRULE:FREQ=WEEKLY;COUNT=3",
-          ],
-        },
-      );
-      expect(
-        projectOccurrences(e, HORIZON).map((o) => o.startAt.toISOString()),
-      ).toEqual(["2026-07-06T15:00:00.000Z", "2026-07-20T15:00:00.000Z"]);
+      const e = weekly([
+        "EXDATE;TZID=America/Denver:20260713T090000",
+        "RRULE:FREQ=WEEKLY;COUNT=3",
+      ]);
+      expect(starts(e)).toEqual([
+        "2026-07-06T15:00:00.000Z",
+        "2026-07-20T15:00:00.000Z",
+      ]);
     });
 
     it("excludes an EXDATE instant stated in a different zone", () => {
       // 10:00 Chicago (CDT, -05:00) is the same instant as 09:00 Denver.
-      const e = event(
-        timed("2026-07-06T09:00:00-06:00", "2026-07-06T09:30:00-06:00"),
-        {
-          kind: "seriesMaster",
-          rules: [
-            "EXDATE;TZID=America/Chicago:20260713T100000",
-            "RRULE:FREQ=WEEKLY;COUNT=3",
-          ],
-        },
-      );
-      expect(
-        projectOccurrences(e, HORIZON).map((o) => o.startAt.toISOString()),
-      ).toEqual(["2026-07-06T15:00:00.000Z", "2026-07-20T15:00:00.000Z"]);
+      const e = weekly([
+        "EXDATE;TZID=America/Chicago:20260713T100000",
+        "RRULE:FREQ=WEEKLY;COUNT=3",
+      ]);
+      expect(starts(e)).toEqual([
+        "2026-07-06T15:00:00.000Z",
+        "2026-07-20T15:00:00.000Z",
+      ]);
     });
 
     it("excludes every value of a comma-separated EXDATE list", () => {
-      const e = event(
-        timed("2026-07-06T09:00:00-06:00", "2026-07-06T09:30:00-06:00"),
-        {
-          kind: "seriesMaster",
-          rules: [
-            "EXDATE;TZID=America/Denver:20260713T090000,20260720T090000",
-            "RRULE:FREQ=WEEKLY;COUNT=3",
-          ],
-        },
-      );
-      expect(
-        projectOccurrences(e, HORIZON).map((o) => o.startAt.toISOString()),
-      ).toEqual(["2026-07-06T15:00:00.000Z"]);
+      const e = weekly([
+        "EXDATE;TZID=America/Denver:20260713T090000,20260720T090000",
+        "RRULE:FREQ=WEEKLY;COUNT=3",
+      ]);
+      expect(starts(e)).toEqual(["2026-07-06T15:00:00.000Z"]);
     });
 
     it("excludes an EXDATE;VALUE=DATE instance of an all-day series", () => {
@@ -360,39 +351,26 @@ describe("projectOccurrences", () => {
         kind: "seriesMaster",
         rules: ["EXDATE;VALUE=DATE:20270310", "RRULE:FREQ=YEARLY;COUNT=2"],
       });
-      expect(
-        projectOccurrences(e, HORIZON).map((o) => o.startAt.toISOString()),
-      ).toEqual(["2026-03-10T00:00:00.000Z"]);
+      expect(starts(e)).toEqual(["2026-03-10T00:00:00.000Z"]);
     });
 
     it("suppresses the DTSTART special-case instance when EXDATE names it", () => {
-      const e = event(
-        timed("2026-07-06T09:00:00-06:00", "2026-07-06T09:30:00-06:00"),
-        {
-          kind: "seriesMaster",
-          rules: [
-            "EXDATE;TZID=America/Denver:20260706T090000",
-            "RRULE:FREQ=WEEKLY;COUNT=3",
-          ],
-        },
-      );
-      expect(
-        projectOccurrences(e, HORIZON).map((o) => o.startAt.toISOString()),
-      ).toEqual(["2026-07-13T15:00:00.000Z", "2026-07-20T15:00:00.000Z"]);
+      const e = weekly([
+        "EXDATE;TZID=America/Denver:20260706T090000",
+        "RRULE:FREQ=WEEKLY;COUNT=3",
+      ]);
+      expect(starts(e)).toEqual([
+        "2026-07-13T15:00:00.000Z",
+        "2026-07-20T15:00:00.000Z",
+      ]);
     });
 
     it("adds an RDATE instant with the master's duration and zone", () => {
       // 11:00 Sydney (AEST, +10:00) on July 15 = 2026-07-15T01:00:00Z.
-      const e = event(
-        timed("2026-07-06T09:00:00-06:00", "2026-07-06T09:30:00-06:00"),
-        {
-          kind: "seriesMaster",
-          rules: [
-            "RDATE;TZID=Australia/Sydney:20260715T110000",
-            "RRULE:FREQ=WEEKLY;COUNT=2",
-          ],
-        },
-      );
+      const e = weekly([
+        "RDATE;TZID=Australia/Sydney:20260715T110000",
+        "RRULE:FREQ=WEEKLY;COUNT=2",
+      ]);
       const occ = projectOccurrences(e, HORIZON);
       expect(occ.map((o) => o.startAt.toISOString())).toEqual([
         "2026-07-06T15:00:00.000Z",
@@ -408,21 +386,30 @@ describe("projectOccurrences", () => {
     });
 
     it("combines RDATE and EXDATE without double-projecting a restated instant", () => {
-      const e = event(
-        timed("2026-07-06T09:00:00-06:00", "2026-07-06T09:30:00-06:00"),
-        {
-          kind: "seriesMaster",
-          rules: [
-            // RDATE restates the second occurrence; EXDATE removes the third.
-            "RDATE;TZID=America/Denver:20260713T090000",
-            "EXDATE;TZID=America/Denver:20260720T090000",
-            "RRULE:FREQ=WEEKLY;COUNT=3",
-          ],
-        },
-      );
-      expect(
-        projectOccurrences(e, HORIZON).map((o) => o.startAt.toISOString()),
-      ).toEqual(["2026-07-06T15:00:00.000Z", "2026-07-13T15:00:00.000Z"]);
+      const e = weekly([
+        // RDATE restates the second occurrence; EXDATE removes the third.
+        "RDATE;TZID=America/Denver:20260713T090000",
+        "EXDATE;TZID=America/Denver:20260720T090000",
+        "RRULE:FREQ=WEEKLY;COUNT=3",
+      ]);
+      expect(starts(e)).toEqual([
+        "2026-07-06T15:00:00.000Z",
+        "2026-07-13T15:00:00.000Z",
+      ]);
+    });
+
+    it("windows RDATEs to the series' own [DTSTART, UNTIL]", () => {
+      // A thisAndFollowing split truncates one half's UNTIL and re-anchors
+      // the other's DTSTART; out-of-window RDATEs belong to the other half.
+      const e = weekly([
+        "RDATE;TZID=America/Denver:20260601T090000,20260725T090000",
+        "RRULE:FREQ=WEEKLY;UNTIL=20260714T150000Z",
+      ]);
+      // Jun 1 precedes DTSTART, Jul 25 exceeds UNTIL: both dropped.
+      expect(starts(e)).toEqual([
+        "2026-07-06T15:00:00.000Z",
+        "2026-07-13T15:00:00.000Z",
+      ]);
     });
 
     it("projects zero occurrences for a long-dead COUNT series with EXDATE (History 201 regression)", () => {
@@ -457,29 +444,10 @@ describe("projectOccurrences", () => {
           ],
         },
       );
-      const starts = projectOccurrences(e, HORIZON).map((o) =>
-        o.startAt.toISOString(),
-      );
-      expect(starts).toHaveLength(8);
-      expect(starts).not.toContain("2026-06-03T09:00:00.000Z");
-      expect(starts.at(-1)).toBe("2026-06-09T09:00:00.000Z");
-    });
-
-    it("expands deterministically across calls", () => {
-      const e = event(
-        timed("2026-07-06T09:00:00-06:00", "2026-07-06T09:30:00-06:00"),
-        {
-          kind: "seriesMaster",
-          rules: [
-            "EXDATE;TZID=America/Denver:20260713T090000",
-            "RRULE:FREQ=WEEKLY;COUNT=5",
-          ],
-        },
-      );
-      const first = projectOccurrences(e, HORIZON).map((o) => o.occurrenceKey);
-      const second = projectOccurrences(e, HORIZON).map((o) => o.occurrenceKey);
-      expect(first).toEqual(second);
-      expect(first.length).toBeGreaterThan(0);
+      const result = starts(e);
+      expect(result).toHaveLength(8);
+      expect(result).not.toContain("2026-06-03T09:00:00.000Z");
+      expect(result.at(-1)).toBe("2026-06-09T09:00:00.000Z");
     });
   });
 

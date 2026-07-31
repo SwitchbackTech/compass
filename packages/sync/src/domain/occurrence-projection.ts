@@ -74,15 +74,22 @@ function projectSeriesMaster(
     occurrences.push(toOccurrence(event, event.schedule, dtstart, false));
   }
 
-  // RDATEs are extra instants alongside the rule's expansion; merge, dedupe
-  // (an RDATE may restate an expanded instant), sort, and re-cap.
+  // RDATEs are extra instants alongside the rule's expansion, windowed to the
+  // series' own [DTSTART, UNTIL] so a thisAndFollowing split never projects
+  // the same RDATE from both halves (the truncated master drops post-UNTIL
+  // RDATEs, the remainder drops pre-DTSTART ones). Merge and dedupe — an
+  // RDATE may restate an expanded instant. RDATEs ride above the recurrence
+  // cap, which only bounds rule expansion.
   const expanded = expandInstants(event.schedule, rules, horizon);
+  const untilMs = ruleUntilMs(rules);
   const rdates = dateListInstants(rules, "RDATE", event.schedule).filter(
-    (instant) => withinHorizon(instant, horizon),
+    (instant) =>
+      withinHorizon(instant, horizon) &&
+      instant.getTime() >= dtstartMs &&
+      (untilMs === null || instant.getTime() <= untilMs),
   );
   const starts = [...new Set([...expanded, ...rdates].map((d) => d.getTime()))]
     .sort((a, b) => a - b)
-    .slice(0, GCAL_MAX_RECURRENCES)
     .map((ms) => new Date(ms));
 
   for (const originalStart of starts) {
@@ -101,32 +108,37 @@ function projectSeriesMaster(
 // crosses a DST transition keeps its wall-clock time (matching how the app
 // already materializes series). Iteration is bounded by the horizon end and
 // the recurrence cap.
+// Whether a rules-array line is the RRULE (vs EXDATE/RDATE) — the
+// load-bearing predicate of this module: only RRULE lines are expanded by
+// rrulestr or take bounds.
+const isRRuleLine = (line: string): boolean => /^RRULE:/i.test(line);
+
 function expandInstants(
   schedule: EventSchedule,
   rules: readonly string[],
   horizon: ProjectionHorizon,
 ): Date[] {
-  // Only RRULE lines go to rrulestr, one at a time. Feeding it a multi-line
-  // string with EXDATE/RDATE lines flips it onto its RRuleSet branch, which
-  // silently IGNORES the dtstart option — the inner RRule then anchors at
-  // `new Date()`, re-basing the whole series on "now" at every projection.
-  // That resurrected dead series into the present and shifted every
-  // occurrenceKey per run, so per-instance delete tombstones never matched.
-  // EXDATE/RDATE are handled by dateListInstants in projectSeriesMaster.
-  const rruleLines = rules.filter((line) => /^RRULE:/i.test(line));
+  // Only the RRULE line goes to rrulestr. Feeding it a multi-line string with
+  // EXDATE/RDATE lines flips it onto its RRuleSet branch, which silently
+  // IGNORES the dtstart option — the inner RRule then anchors at `new Date()`,
+  // re-basing the whole series on "now" at every projection. That resurrected
+  // dead series into the present and shifted every occurrenceKey per run, so
+  // per-instance delete tombstones never matched. EXDATE/RDATE are handled by
+  // dateListInstants in projectSeriesMaster. Google emits at most one RRULE;
+  // extras are ignored.
+  const line = rules.find(isRRuleLine);
+  if (!line) return [];
+  const rule = rrulestr(floatingRules(line, schedule), {
+    dtstart: floatingAnchor(schedule),
+  });
 
   const wallInstants: Date[] = [];
-  for (const line of rruleLines) {
-    const rule = rrulestr(floatingRules([line], schedule), {
-      dtstart: floatingAnchor(schedule),
-    });
-    rule.all((date) => {
-      const instant = localizeInstant(date, schedule);
-      if (instant.getTime() >= horizon.end.getTime()) return false;
-      if (instant.getTime() >= horizon.start.getTime()) wallInstants.push(date);
-      return wallInstants.length < GCAL_MAX_RECURRENCES;
-    });
-  }
+  rule.all((date) => {
+    const instant = localizeInstant(date, schedule);
+    if (instant.getTime() >= horizon.end.getTime()) return false;
+    if (instant.getTime() >= horizon.start.getTime()) wallInstants.push(date);
+    return wallInstants.length < GCAL_MAX_RECURRENCES;
+  });
 
   return wallInstants.map((date) => localizeInstant(date, schedule));
 }
@@ -135,31 +147,35 @@ function expandInstants(
 // wall times in the line's TZID (or the event's zone when absent), date-only
 // for VALUE=DATE, or real UTC when suffixed Z — each resolves to the same
 // real instant localizeInstant produces for an expanded candidate, so they
-// compare exactly. A malformed value or unknown zone skips that value only:
-// one bad line must never sink a whole projection or import page.
+// compare exactly.
 function dateListInstants(
   rules: readonly string[],
   name: "EXDATE" | "RDATE",
   schedule: EventSchedule,
 ): Date[] {
   const zone = schedule.kind === "timed" ? schedule.timeZone : "UTC";
+  const pattern = new RegExp(`^${name}(;[^:]*)?:(.+)$`, "i");
   const instants: Date[] = [];
   for (const line of rules) {
-    const match = /^(EXDATE|RDATE)((?:;[^:]*)?):(.+)$/i.exec(line);
-    if (!match || match[1]!.toUpperCase() !== name) continue;
-    const params = match[2] ?? "";
-    const tzid = /TZID=([^;:]+)/i.exec(params)?.[1];
-    for (const raw of match[3]!.split(",")) {
+    const match = pattern.exec(line);
+    if (!match) continue;
+    const tzid = /TZID=([^;:]+)/i.exec(match[1] ?? "")?.[1];
+    for (const raw of match[2]!.split(",")) {
       const value = raw.trim();
       if (/^\d{8}$/.test(value)) {
-        instants.push(new Date(`${basicToIso(`${value}T000000`)}Z`));
+        instants.push(basicUtcToDate(`${value}T000000`));
       } else if (/^\d{8}T\d{6}Z$/.test(value)) {
         instants.push(basicUtcToDate(value.slice(0, -1)));
       } else if (/^\d{8}T\d{6}$/.test(value)) {
         try {
-          instants.push(dayjs.tz(basicToIso(value), tzid ?? zone).toDate());
+          instants.push(
+            dayjs
+              .tz(value, dayjs.DateFormat.RFC5545_ZONELESS, tzid ?? zone)
+              .toDate(),
+          );
         } catch {
-          instants.push(dayjs.tz(basicToIso(value), zone).toDate());
+          // A non-IANA TZID would throw; Google never sends one. Skip the
+          // value rather than sink the whole projection or import page.
         }
       }
     }
@@ -167,9 +183,14 @@ function dateListInstants(
   return instants;
 }
 
-// "20260610T055959" → "2026-06-10T05:59:59" (no zone attached).
-function basicToIso(basic: string): string {
-  return `${basic.slice(0, 4)}-${basic.slice(4, 6)}-${basic.slice(6, 8)}T${basic.slice(9, 11)}:${basic.slice(11, 13)}:${basic.slice(13, 15)}`;
+// The RRULE's UNTIL as a real instant (a date-only UNTIL is inclusive through
+// its end of day), or null when unbounded or COUNT-bounded. Used only to
+// window RDATEs; rule expansion re-frames UNTIL via floatingRules instead.
+function ruleUntilMs(rules: readonly string[]): number | null {
+  const rule = rules.find(isRRuleLine);
+  const match = rule ? /UNTIL=(\d{8})(T\d{6})?Z?/i.exec(rule) : null;
+  if (!match) return null;
+  return basicUtcToDate(`${match[1]}${match[2] ?? "T235959"}`).getTime();
 }
 
 // Rewrites a rule's UNTIL into the same floating frame as the dtstart. rrule
@@ -180,14 +201,10 @@ function basicToIso(basic: string): string {
 // of it. Reinterpreting UNTIL's instant as wall time in the event's zone, then
 // relabeling it UTC, makes the boundary comparison apples-to-apples. All-day
 // series already expand in real UTC, so their UNTIL needs no rewrite.
-function floatingRules(
-  rules: readonly string[],
-  schedule: EventSchedule,
-): string {
-  const joined = rules.join("\n");
-  if (schedule.kind !== "timed") return joined;
+function floatingRules(rule: string, schedule: EventSchedule): string {
+  if (schedule.kind !== "timed") return rule;
   const { timeZone } = schedule;
-  return joined.replace(/UNTIL=(\d{8}T\d{6})Z?/g, (_match, basic: string) => {
+  return rule.replace(/UNTIL=(\d{8}T\d{6})Z?/g, (_match, basic: string) => {
     const wall = dayjs(basicUtcToDate(basic))
       .tz(timeZone)
       .format("YYYYMMDD[T]HHmmss");
@@ -255,24 +272,24 @@ export function truncateRulesBefore(
   // per RFC 5545, and a stale UNTIL would otherwise survive alongside the new one.
   // Only RRULE lines take the bound — appending UNTIL to an EXDATE/RDATE line
   // would corrupt it. (A pre-split EXDATE surviving on both halves is a no-op:
-  // an EXDATE naming a non-instant excludes nothing.)
+  // an EXDATE naming a non-instant excludes nothing. Split RDATEs are windowed
+  // to [DTSTART, UNTIL] by projectSeriesMaster, so each half projects only its
+  // own.)
   return stripRuleBounds(rules).map((rule) =>
-    /^RRULE:/i.test(rule) ? `${rule};UNTIL=${until}` : rule,
+    isRRuleLine(rule) ? `${rule};UNTIL=${until}` : rule,
   );
 }
 
-// Removes COUNT and UNTIL from each RRULE line (other lines pass through
-// untouched), leaving an open-ended pattern. Used to derive the remainder
-// series of a thisAndFollowing split (it continues the original cadence from
-// the split point, unbounded).
+// Removes COUNT and UNTIL from each rule, leaving an open-ended pattern. Used to
+// derive the remainder series of a thisAndFollowing split (it continues the
+// original cadence from the split point, unbounded). Naturally a no-op on
+// EXDATE/RDATE lines: none of their `;`-separated parts start with COUNT/UNTIL.
 export function stripRuleBounds(rules: readonly string[]): string[] {
   return rules.map((rule) =>
-    /^RRULE:/i.test(rule)
-      ? rule
-          .split(";")
-          .filter((part) => !/^COUNT=/i.test(part) && !/^UNTIL=/i.test(part))
-          .join(";")
-      : rule,
+    rule
+      .split(";")
+      .filter((part) => !/^COUNT=/i.test(part) && !/^UNTIL=/i.test(part))
+      .join(";"),
   );
 }
 

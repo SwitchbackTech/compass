@@ -98,7 +98,15 @@ export class CompassEventRRule extends RRule {
       : startDate.local().toDate();
 
     const opts: Partial<RRuleStrOptions> = { dtstart };
-    const recurrence = event.recurrence?.rule?.join("\n").trim();
+    // Only the RRULE line goes to rrulestr: with EXDATE/RDATE lines present it
+    // returns an RRuleSet, whose origOptions is {} — silently discarding the
+    // whole pattern (and the dtstart option). The client only expands the
+    // rule; EXDATE gaps come from server-projected occurrences (see
+    // packages/sync/src/domain/occurrence-projection.ts).
+    const recurrence = event.recurrence?.rule
+      ?.filter((line) => /^RRULE:/i.test(line))
+      .join("\n")
+      .trim();
     const valid = (recurrence?.length ?? 0) > 0;
     const rruleSet = valid ? rrulestr(recurrence, opts) : { origOptions: {} };
     const rruleOptions = { ...rruleSet.origOptions, ..._options };

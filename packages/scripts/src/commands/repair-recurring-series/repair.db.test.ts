@@ -142,12 +142,10 @@ describe("repair-recurring-series (db)", () => {
     expect(report).toMatchObject({
       dryRun: true,
       mastersScanned: 1,
-      wouldRepair: 1,
-      wouldDelete: 1,
-      mastersRepaired: 0,
-      junkExceptionsDeleted: 0,
+      masterIds: [master["_id"]],
       junkExceptionIds: [junkTombstone["_id"]],
       suspectOverrideIds: [],
+      unparseableMasters: 0,
     });
     // Nothing changed: junk doc and phantom rows are still there.
     expect(await events().countDocuments({ _id: junkTombstone["_id"] })).toBe(
@@ -165,8 +163,7 @@ describe("repair-recurring-series (db)", () => {
       now: NOW,
     });
     expect(report).toMatchObject({
-      mastersRepaired: 1,
-      junkExceptionsDeleted: 1,
+      masterIds: [master["_id"]],
       junkExceptionIds: [junkTombstone["_id"]],
     });
 
@@ -205,9 +202,8 @@ describe("repair-recurring-series (db)", () => {
     });
     expect(second).toMatchObject({
       mastersScanned: 1,
-      mastersRepaired: 1,
-      junkExceptionsDeleted: 0,
       junkExceptionIds: [],
+      suspectOverrideIds: [],
     });
   });
 

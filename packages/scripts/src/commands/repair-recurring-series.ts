@@ -38,7 +38,7 @@ export async function runRepairRecurringSeries(): Promise<void> {
     });
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     logger.info(
-      `repair-recurring-series dryRun=${report.dryRun} scanned=${report.mastersScanned} repaired=${report.mastersRepaired} wouldRepair=${report.wouldRepair} junkDeleted=${report.junkExceptionsDeleted} wouldDelete=${report.wouldDelete}`,
+      `repair-recurring-series dryRun=${report.dryRun} scanned=${report.mastersScanned} masters=${report.masterIds.length} junk=${report.junkExceptionIds.length} suspectOverrides=${report.suspectOverrideIds.length} unparseable=${report.unparseableMasters}`,
     );
     await syncMongo.disconnect();
     process.exit(0);
