@@ -1,5 +1,6 @@
 import { calendar } from "@googleapis/calendar";
 import { OAuth2Client } from "google-auth-library";
+import { Logger } from "@core/logger/winston.logger";
 import {
   type gCalendar,
   type gSchema$Calendar,
@@ -17,6 +18,8 @@ import {
   ProviderCalendarError,
 } from "@sync/providers/provider-calendar.port";
 import { redactedCause } from "@sync/safety/redact-error";
+
+const logger = Logger("sync:google-calendar.adapter");
 
 // One page of a Google calendar-list read, narrowed to the fields discovery
 // needs. Google returns `nextSyncToken` only on the final page; intermediate
@@ -87,7 +90,11 @@ const defaultApiFactory: GoogleCalendarListApiFactory = (accessToken) => {
       } catch {
         // A label-fetch failure (permissions, transient error) should never
         // fail calendar discovery — the calendar just discovers with no
-        // custom colors resolvable this pass.
+        // custom colors resolvable this pass. Warn so a systemic failure is
+        // visible instead of silently rendering label-colored events default.
+        logger.warn(
+          "Event-label fetch failed for a calendar; its custom colors are unresolvable this discovery pass",
+        );
         return [];
       }
       return (data.labelProperties?.eventLabels ?? [])

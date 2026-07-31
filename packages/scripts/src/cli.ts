@@ -1,4 +1,5 @@
 import { CliValidator } from "@scripts/cli.validator";
+import { runBackfillEventColors } from "@scripts/commands/backfill-event-colors";
 import { runPurgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events";
 import { runPurgeUser } from "@scripts/commands/purge-user";
 import { runRefreshConnectionStates } from "@scripts/commands/refresh-connection-states";
@@ -26,6 +27,9 @@ export default class CompassCLI {
         break;
       case cmd === "purge-user":
         await runPurgeUser();
+        break;
+      case cmd === "backfill-event-colors":
+        await runBackfillEventColors();
         break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
@@ -59,6 +63,14 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "Re-derive every provider connection's stored state from live evidence (--apply to write)",
+      );
+
+    program
+      .command("backfill-event-colors")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "Copy Google event colors onto stored events that predate color sync (--apply to write)",
       );
 
     return program;
