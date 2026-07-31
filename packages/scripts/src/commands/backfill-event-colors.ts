@@ -27,11 +27,13 @@ function syncMongoUri(): string {
 }
 
 function googleClientCredentials(): { clientId: string; clientSecret: string } {
-  const google = loadCompassConfig().google;
-  const clientId =
-    process.env["GOOGLE_CLIENT_ID"]?.trim() || google?.clientId?.trim();
-  const clientSecret =
-    process.env["GOOGLE_CLIENT_SECRET"]?.trim() || google?.clientSecret?.trim();
+  let clientId = process.env["GOOGLE_CLIENT_ID"]?.trim();
+  let clientSecret = process.env["GOOGLE_CLIENT_SECRET"]?.trim();
+  if (!clientId || !clientSecret) {
+    const google = loadCompassConfig().google;
+    clientId ||= google?.clientId?.trim();
+    clientSecret ||= google?.clientSecret?.trim();
+  }
   if (!clientId || !clientSecret) {
     throw new Error(
       "Set GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET or add google.clientId/clientSecret to compass.yaml before backfill-event-colors",
