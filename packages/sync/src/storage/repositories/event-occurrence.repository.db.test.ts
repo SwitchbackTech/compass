@@ -110,6 +110,86 @@ describe("EventOccurrenceRepository", () => {
     ).toBe(0);
   });
 
+  describe("replaceForEvents", () => {
+    it("writes every entry's rows in one call, matching sequential replaceForEvent", async () => {
+      const eventA = objectId() as OccurrenceInput["eventId"];
+      const eventB = objectId() as OccurrenceInput["eventId"];
+      const eventC = objectId() as OccurrenceInput["eventId"];
+
+      await repo.replaceForEvents([
+        {
+          eventId: eventA,
+          generation: 0,
+          occurrences: [
+            occurrence({ eventId: eventA, occurrenceKey: `${eventA}:a1` }),
+            occurrence({ eventId: eventA, occurrenceKey: `${eventA}:a2` }),
+          ],
+        },
+        {
+          eventId: eventB,
+          generation: 0,
+          occurrences: [
+            occurrence({ eventId: eventB, occurrenceKey: `${eventB}:b1` }),
+          ],
+        },
+        // An empty occurrence set (e.g. a fully-truncated recurring series)
+        // must still clear any prior rows for that event.
+        { eventId: eventC, generation: 0, occurrences: [] },
+      ]);
+
+      const docs = await db.collection("event_occurrences").find({}).toArray();
+      expect(docs.map((d) => d.occurrenceKey).sort()).toEqual(
+        [`${eventA}:a1`, `${eventA}:a2`, `${eventB}:b1`].sort(),
+      );
+    });
+
+    it("replaces stale rows for every entry, not just the first", async () => {
+      const eventA = objectId() as OccurrenceInput["eventId"];
+      const eventB = objectId() as OccurrenceInput["eventId"];
+      await repo.replaceForEvent(eventA, 0, [
+        occurrence({ eventId: eventA, occurrenceKey: `${eventA}:old` }),
+      ]);
+      await repo.replaceForEvent(eventB, 0, [
+        occurrence({ eventId: eventB, occurrenceKey: `${eventB}:old` }),
+      ]);
+
+      await repo.replaceForEvents([
+        {
+          eventId: eventA,
+          generation: 0,
+          occurrences: [
+            occurrence({ eventId: eventA, occurrenceKey: `${eventA}:new` }),
+          ],
+        },
+        {
+          eventId: eventB,
+          generation: 0,
+          occurrences: [
+            occurrence({ eventId: eventB, occurrenceKey: `${eventB}:new` }),
+          ],
+        },
+      ]);
+
+      const docs = await db.collection("event_occurrences").find({}).toArray();
+      expect(docs.map((d) => d.occurrenceKey).sort()).toEqual(
+        [`${eventA}:new`, `${eventB}:new`].sort(),
+      );
+    });
+
+    it("is a no-op for an empty entry list", async () => {
+      const eventId = objectId() as OccurrenceInput["eventId"];
+      await repo.replaceForEvent(eventId, 0, [
+        occurrence({ eventId, occurrenceKey: `${eventId}:kept` }),
+      ]);
+
+      await repo.replaceForEvents([]);
+
+      expect(
+        await db.collection("event_occurrences").countDocuments({ eventId }),
+      ).toBe(1);
+    });
+  });
+
   describe("listByCalendarRange", () => {
     const tenantId = objectId();
     const principalId = objectId();

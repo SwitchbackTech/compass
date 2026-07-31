@@ -157,4 +157,23 @@ describe("ProviderPageApplier", () => {
     expect(orphans).toBe(1);
     expect(run.importedCount).toBe(0);
   });
+
+  it("writes every event's occurrences for a page larger than one projection batch", async () => {
+    // PROJECTION_BATCH_SIZE is 200 — a page bigger than that must still
+    // project every event correctly, chunked across multiple transactions
+    // rather than dropping/duplicating anything at the boundary.
+    const calendar = await seedCalendar();
+    const run = applier(calendar);
+    const ids = Array.from({ length: 250 }, (_, i) => `bulk-${i}`);
+
+    await run.applyPage(ids.map((id) => single(id)));
+
+    expect(run.importedCount).toBe(250);
+    const occCount = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.eventOccurrences)
+      .countDocuments({ calendarId: calendar._id });
+    // One single-occurrence event each.
+    expect(occCount).toBe(250);
+  });
 });

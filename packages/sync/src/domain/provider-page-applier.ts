@@ -1,7 +1,10 @@
 import { type DateTime, type EventId } from "@core/types/domain-primitives";
 import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { occurrenceScheduleAt } from "@sync/domain/occurrence-projection";
-import { reprojectOccurrences } from "@sync/domain/reproject";
+import {
+  type ReprojectBatchEntry,
+  reprojectOccurrencesBatch,
+} from "@sync/domain/reproject";
 import {
   type ProviderEvent,
   type ProviderEventCancellation,
@@ -11,6 +14,12 @@ import { type EventRecord } from "@sync/storage/contracts/event.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+
+// Events per batched occurrence-projection transaction. A single Google page
+// can hold up to 2500 events (google-event-reader.adapter.ts's maxResults);
+// keeping each transaction to a few hundred events comfortably avoids Atlas's
+// 60s transaction lifetime limit on the shared tier.
+const PROJECTION_BATCH_SIZE = 200;
 
 // Applies pages of provider event reads to the canonical store, shared by
 // initial import and incremental pull. It owns the parts both paths do
@@ -34,6 +43,11 @@ export class ProviderPageApplier {
   #masters = new Map<string, EventRecord>();
   // Series members read before their master, awaiting it.
   #pending: ProviderEventRead[] = [];
+  // Occurrence reprojections accumulated across the page (singles, masters,
+  // exceptions), written in one batched transaction per flush instead of one
+  // transaction per event — see event-occurrence.repository.ts's
+  // replaceForEvents. Cleared by #flushProjections.
+  #pendingProjections: ReprojectBatchEntry[] = [];
 
   constructor(
     private readonly events: EventRepository,
@@ -73,7 +87,7 @@ export class ProviderPageApplier {
     for (const read of reads) {
       if (read.kind === "event" && read.recurrence.kind === "single") {
         const single = await this.#upsertRead(read, { kind: "single" });
-        await reprojectOccurrences(this.occurrences, single, this.now);
+        this.#pendingProjections.push({ event: single });
       } else if (this.#needsMaster(read)) {
         const master = await this.#link(read);
         if (master) touchedSeries.set(master._id, master);
@@ -91,6 +105,7 @@ export class ProviderPageApplier {
     for (const master of touchedSeries.values()) {
       await this.#projectSeries(master);
     }
+    await this.#flushProjections();
 
     return standaloneCancellations;
   }
@@ -102,9 +117,26 @@ export class ProviderPageApplier {
     for (const master of await this.#drainPending()) {
       await this.#projectSeries(master);
     }
+    await this.#flushProjections();
     const orphans = this.#pending.length;
     this.#pending = [];
     return orphans;
+  }
+
+  // Write every accumulated projection in this page as one batched
+  // transaction (chunked so a very large page never approaches Atlas's 60s
+  // transaction lifetime limit — see event-occurrence.repository.ts).
+  async #flushProjections(): Promise<void> {
+    if (this.#pendingProjections.length === 0) return;
+    const batch = this.#pendingProjections;
+    this.#pendingProjections = [];
+    for (let i = 0; i < batch.length; i += PROJECTION_BATCH_SIZE) {
+      await reprojectOccurrencesBatch(
+        this.occurrences,
+        batch.slice(i, i + PROJECTION_BATCH_SIZE),
+        this.now,
+      );
+    }
   }
 
   // Whether a read is a series member that must resolve to a master before it
@@ -240,9 +272,12 @@ export class ProviderPageApplier {
       }
       return exception.recurrence.recurrenceId;
     });
-    await reprojectOccurrences(this.occurrences, master, this.now, instants);
+    this.#pendingProjections.push({
+      event: master,
+      excludedInstants: instants,
+    });
     for (const exception of exceptions) {
-      await reprojectOccurrences(this.occurrences, exception, this.now);
+      this.#pendingProjections.push({ event: exception });
     }
   }
 

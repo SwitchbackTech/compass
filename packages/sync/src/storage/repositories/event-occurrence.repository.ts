@@ -83,18 +83,50 @@ export class EventOccurrenceRepository {
     generation: number,
     occurrences: OccurrenceInput[],
   ): Promise<void> {
-    const docs = occurrences.map((occurrence) =>
-      EventOccurrenceRecordSchema.parse({
-        _id: new ObjectId().toHexString(),
-        ...occurrence,
-      }),
-    );
+    await this.replaceForEvents([{ eventId, generation, occurrences }]);
+  }
+
+  // Batched form of replaceForEvent: every entry's delete+insert runs in ONE
+  // transaction instead of one per event. A single-event import page can touch
+  // thousands of events, and a separate Mongo transaction per event (each its
+  // own commit round-trip) was the dominant cost of an initial import — see
+  // provider-page-applier.ts, which accumulates a page's projections and
+  // flushes them through this method in chunks (bounded by the caller so one
+  // transaction never approaches Atlas's 60s transaction lifetime limit).
+  // Same per-event safety as replaceForEvent: each entry is scoped to its own
+  // (eventId, generation), so entries never touch each other's rows; grouping
+  // them in one transaction only changes when the commit happens, not what
+  // becomes visible together.
+  async replaceForEvents(
+    entries: readonly {
+      eventId: EventId;
+      generation: number;
+      occurrences: OccurrenceInput[];
+    }[],
+  ): Promise<void> {
+    if (entries.length === 0) return;
 
     const session = this.client.startSession();
     try {
       await session.withTransaction(async () => {
-        await this.collection.deleteMany({ eventId, generation }, { session });
-        if (docs.length > 0) {
+        // Delete-then-insert PER ENTRY (not a batched delete phase followed by
+        // a batched insert phase): if the same (eventId, generation) somehow
+        // appeared twice in one call, a split-phase delete-all-then-insert-all
+        // would silently duplicate that event's rows, since the second entry's
+        // delete would find nothing left to remove. Interleaving keeps the
+        // same one-transaction win (a single commit) without that risk.
+        for (const entry of entries) {
+          await this.collection.deleteMany(
+            { eventId: entry.eventId, generation: entry.generation },
+            { session },
+          );
+          if (entry.occurrences.length === 0) continue;
+          const docs = entry.occurrences.map((occurrence) =>
+            EventOccurrenceRecordSchema.parse({
+              _id: new ObjectId().toHexString(),
+              ...occurrence,
+            }),
+          );
           await this.collection.insertMany(docs, { session });
         }
       });
