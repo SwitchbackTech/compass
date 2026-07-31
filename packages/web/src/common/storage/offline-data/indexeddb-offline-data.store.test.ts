@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 import Dexie from "dexie";
 import { EventSchema } from "@core/types/event.contracts";
-import { type EventListQuery } from "@core/types/event-command.contracts";
+import { EventListQuerySchema } from "@core/types/event-command.contracts";
 import { deleteCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { type LocalEventRecord } from "@web/events/types/local-event.record";
 import { IndexedDbOfflineDataStore } from "./indexeddb-offline-data.store";
@@ -29,8 +29,8 @@ const localRecord = (overrides: {
   return { version: 2, id: event.id, event, isDemo: false };
 };
 
-const eventListQuery = (start: string, end: string): EventListQuery =>
-  ({ start, end }) as EventListQuery;
+const eventListQuery = (start: string, end: string) =>
+  EventListQuerySchema.parse({ kind: "range", start, end });
 
 const detailsTitle = (record: LocalEventRecord): string =>
   record.event.content.kind === "details" ? record.event.content.title : "";
