@@ -18,7 +18,7 @@ performed the write-pause-and-rename cutover, or `mongosh` shows no
    [backup & restore guide](https://github.com/SwitchbackTech/compass-calendar/blob/v1.0.310/docs/self-hosting/backup-and-restore.md)
    in full.
 3. Once the cutover is verified, upgrade to the latest release as a
-   [normal upgrade](./upgrades.md) and run any remaining pending migrations.
+   [normal upgrade](./upgrades.md).
 
 If your install already cut over (or was first installed after v1.0.236),
 nothing here applies — upgrade normally.

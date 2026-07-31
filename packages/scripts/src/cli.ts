@@ -1,10 +1,7 @@
 import { CliValidator } from "@scripts/cli.validator";
-import { runMigrator } from "@scripts/commands/migrate";
-import { runMigrateConnections } from "@scripts/commands/migrate-connections";
 import { runPurgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events";
 import { runPurgeUser } from "@scripts/commands/purge-user";
 import { runRefreshConnectionStates } from "@scripts/commands/refresh-connection-states";
-import { MigratorType } from "@scripts/common/cli.types";
 import { Command } from "commander";
 
 export default class CompassCLI {
@@ -21,12 +18,6 @@ export default class CompassCLI {
     const cmd = this.program.args[0];
 
     switch (true) {
-      case cmd === "migrate":
-        await runMigrator(MigratorType.MIGRATION);
-        break;
-      case cmd === "migrate-connections":
-        await runMigrateConnections();
-        break;
       case cmd === "purge-corrupt-sync-events":
         await runPurgeCorruptSyncEvents();
         break;
@@ -46,8 +37,6 @@ export default class CompassCLI {
 
     program.enablePositionalOptions(true).passThroughOptions(true);
 
-    // Register longer `migrate-*` / preseed names before `migrate` so Commander
-    // does not treat them as unknown args to the Umzug migrate command.
     program
       .command("purge-user")
       .helpOption(false)
@@ -71,20 +60,6 @@ export default class CompassCLI {
       .description(
         "Re-derive every provider connection's stored state from live evidence (--apply to write)",
       );
-
-    program
-      .command("migrate-connections")
-      .helpOption(false)
-      .allowUnknownOption(true)
-      .description(
-        "idempotently copy legacy Google connections into Sync (S47; --apply to write)",
-      );
-
-    program
-      .command("migrate")
-      .helpOption(false)
-      .allowUnknownOption(true)
-      .description("run database schema migrations");
 
     return program;
   }

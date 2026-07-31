@@ -40,7 +40,7 @@ consistent.
 
 ### Common Mistakes
 
-- **Missing a database migration for existing recurring events** — existing user data will not be retroactively updated by code changes alone. If you modify how recurring series are stored or processed, add a migration to `packages/scripts/src/migrations`.
+- **Assuming a retired migration runner can repair existing records** — current releases ship no server-side migration framework. Plan a bounded Sync repair or provider re-import deliberately, with an operator runbook, instead of reviving the completed cutover tooling.
 - **Testing only the happy-path transition** — cancellation transitions follow a different code path (`series-exception.ts`). A test that only covers the primary create/update flow can pass while cancellation transitions break silently.
 
 ## Add An SSE Event
@@ -87,13 +87,7 @@ Use this for overlays mounted in both `WeekView` and `DayViewContent` (for examp
 
 Common pitfall: calling `dialog.close()` directly in an event handler will skip the CSS exit transition and can produce abrupt UI changes.
 
-## Add A Migration
-
-For database migrations:
-
-1. inspect `packages/scripts/src/commands/migrate.ts`
-2. add migration under `packages/scripts/src/migrations`
-3. run the relevant scripts tests
+## Add A Web Local-Data Migration
 
 For web local-data migrations:
 

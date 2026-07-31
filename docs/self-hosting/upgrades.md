@@ -1,7 +1,7 @@
 # Upgrades
 
-How to upgrade a self-hosted Compass install: normal image updates, when a
-database migration is involved, and the one-time sub-calendar v1 cutover.
+How to upgrade a self-hosted Compass install: normal image updates and the
+one-time sub-calendar v1 cutover.
 
 **Back up first, every time.** See [Back up & restore](./backup-and-restore.md)
 — `./compass update` and `./compass rebuild` don't snapshot your data or your
@@ -17,9 +17,9 @@ cd ~/compass
 ```
 
 This runs `docker compose pull` then `docker compose up -d` and waits for
-the backend health check. It does not touch your data volumes, and it does
-not run database migrations (see below) — it only replaces the running
-containers with newer images at whatever version `compass.yaml` points at.
+the backend health check. It does not touch your data volumes — it only
+replaces the running containers with newer images at whatever version
+`compass.yaml` points at.
 
 ## Upgrades from your own source checkout
 
@@ -39,34 +39,12 @@ the full repo checkout present alongside it — see the [Custom code
 guide](./customizing.md). It restarts and health-checks the same way
 `update` does.
 
-## When you need to run a migration manually
+## Database migrations
 
-Migrations **never run automatically** on deploy — neither `./compass
-update`, `./compass rebuild`, nor the backend container's own startup (its
-entrypoint is the app server, nothing else) invokes the migration runner. If
-a release adds one, you run it yourself; check the release notes for
-whether it belongs before or after the image update.
-
-```bash
-bun run cli migrate pending   # check what's pending
-bun run cli migrate up        # run everything pending
-```
-
-Both live in `packages/scripts`. The runner reads its Mongo connection from
-your config file — set `COMPASS_CONFIG_FILE=~/compass/compass.yaml` outside
-the dev repo — and needs to run from a machine or container that can reach
-the compose network, since Docker installs don't publish the Mongo port to
-the host.
-
-Back up before running any migration; see [Back up &
-restore](./backup-and-restore.md). Migrations here are written to be
-additive and non-destructive (`packages/scripts/src/migrations/`), but the
-backup is still the only rollback if one behaves unexpectedly.
-
-One current migration is cleanup rather than additive: `priority-data-cleanup`
-(`2026.07.14T10.00.00`) removes the now-dead `priority` field left over from
-the removed priority-tagging feature and drops its orphaned collection. It's
-routine — run it like any other pending migration.
+Current releases do not ship a server-side migration runner or pending
+database migrations. Normal upgrades only replace the running images. Back up
+before an upgrade as usual; a future data repair will ship with its own
+operator runbook rather than silently running during deployment.
 
 ## Upgrading from a pre-cutover install (before v1.0.236)
 
@@ -82,8 +60,7 @@ If your install has never performed the cutover, upgrade in two steps:
    [v1.0.310](https://github.com/SwitchbackTech/compass-calendar/tree/v1.0.310)
    and complete the cutover following that version's
    [event migration runbook](https://github.com/SwitchbackTech/compass-calendar/blob/v1.0.310/docs/self-hosting/event-migration-runbook.md).
-2. Then upgrade to the latest release as a normal upgrade and run any
-   remaining pending migrations.
+2. Then upgrade to the latest release as a normal upgrade.
 
 Installs that already cut over (or were first installed after v1.0.236)
 upgrade normally and can ignore this section.
