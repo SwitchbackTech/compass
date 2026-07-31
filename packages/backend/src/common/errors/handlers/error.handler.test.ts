@@ -143,7 +143,10 @@ describe("error.handler", () => {
         "quota exceeded",
         { headers: new Headers(), url: new URL("https://example.com") },
         {
-          config: { headers: new Headers(), url: new URL("https://example.com") },
+          config: {
+            headers: new Headers(),
+            url: new URL("https://example.com"),
+          },
           data: { error: "rateLimitExceeded" },
           status: 403,
           statusText: "Forbidden",
