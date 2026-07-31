@@ -45,7 +45,7 @@ function notifyReload() {
 
 async function build() {
   const result = await Bun.build({
-    entrypoints: [path.resolve(import.meta.dir, "src/index.html")],
+    entrypoints: [path.resolve(import.meta.dir, "src/index.tsx")],
     outdir: OUTDIR,
     target: "browser",
     // Dev: inline sourcemaps for easy debugging; non-dev (e.g. test): strip them
@@ -54,7 +54,7 @@ async function build() {
     // time is the difference between passing and hitting the 30 s timeout.
     sourcemap: IS_DEV ? "inline" : "none",
     minify: !IS_DEV,
-    splitting: false,
+    splitting: true,
     define,
     plugins: [postcssPlugin],
     publicPath: "/",
