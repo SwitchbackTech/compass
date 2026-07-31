@@ -3,6 +3,7 @@ import {
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
 import { type Event } from "@core/types/event.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraft,
@@ -134,17 +135,33 @@ test("duplicate defaults to the source event's calendar when it's still writable
   });
 });
 
-test("projects a grid draft into a grid event", () => {
-  const draft = createGridEventDraft({
+test("projects a grid draft into a grid event without a CompassEvent bridge", () => {
+  const allDay = createGridEventDraft({
     kind: "allDay",
     start: new Date("2026-05-20"),
     end: new Date("2026-05-21"),
   });
-  const gridEvent = gridEventDraftToGridEvent(draft);
+  allDay.values.title = "All day";
+  allDay.values.calendarId = timedEvent.calendarId;
+  const allDayGrid = gridEventDraftToGridEvent(allDay);
 
-  expect(gridEvent.startDate).toBe("2026-05-20");
-  expect(gridEvent.endDate).toBe("2026-05-21");
-  expect(gridEvent.isAllDay).toBe(true);
+  expect(allDayGrid.startDate).toBe("2026-05-20");
+  expect(allDayGrid.endDate).toBe("2026-05-21");
+  expect(allDayGrid.isAllDay).toBe(true);
+  expect(allDayGrid.title).toBe("All day");
+  expect(allDayGrid.calendarId).toBe(timedEvent.calendarId);
+  expect(allDayGrid.origin).toBe("compass");
+
+  const timed = editGridEventDraft(timedEvent);
+  if (!timed) throw new Error("Expected timed edit draft");
+  timed.values.color = "tomato";
+  const timedGrid = gridEventDraftToGridEvent(timed);
+
+  expect(timedGrid.isAllDay).toBe(false);
+  expect(timedGrid.startDate).toBe(dayjs(timed.values.schedule.start).format());
+  expect(timedGrid.endDate).toBe(dayjs(timed.values.schedule.end).format());
+  expect(timedGrid.color).toBe("tomato");
+  expect(timedGrid.isBusy).toBe(false);
 });
 
 test("duplicate falls back to no calendar (later defaulted) when the source calendar is read-only", () => {

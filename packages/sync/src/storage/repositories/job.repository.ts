@@ -13,6 +13,15 @@ import {
   JobRecordSchema,
 } from "@sync/storage/contracts/job.contracts";
 
+export type ExhaustedFailedJob = {
+  id: SyncJobId;
+  coalescingKey: string;
+  connectionId: ConnectionId;
+  failureClass: Exclude<JobRecord["failureClass"], null>;
+  requeuedCount: number;
+  updatedAt: Date;
+};
+
 // Repository for `jobs`. Enqueue coalesces on a unique key so repeated
 // notifications for the same resource collapse into one pending job instead of
 // an unbounded queue. Terminal jobs are removed so a later notification can
@@ -279,6 +288,80 @@ export class JobRepository {
       failureClass: { $ne: "permanent" },
       requeuedCount: { $gte: maxRequeues },
     });
+  }
+
+  // Same filter as countExhaustedFailed, returning the rows an operator needs
+  // to clear or requeue (bounded so the sweep log stays readable).
+  async listExhaustedFailed(
+    maxRequeues: number,
+    limit = 50,
+  ): Promise<ExhaustedFailedJob[]> {
+    const rows = await this.collection
+      .find({
+        state: "failed",
+        failureClass: { $ne: "permanent" },
+        requeuedCount: { $gte: maxRequeues },
+      })
+      .sort({ updatedAt: 1 })
+      .limit(limit)
+      .project({
+        _id: 1,
+        coalescingKey: 1,
+        connectionId: 1,
+        failureClass: 1,
+        requeuedCount: 1,
+        updatedAt: 1,
+      })
+      .toArray();
+
+    return rows.map((row) => ({
+      id: row._id as SyncJobId,
+      coalescingKey: String(row["coalescingKey"]),
+      connectionId: row["connectionId"] as ConnectionId,
+      failureClass: (row["failureClass"] ?? "retryableTransient") as Exclude<
+        JobRecord["failureClass"],
+        null
+      >,
+      requeuedCount: Number(row["requeuedCount"] ?? 0),
+      updatedAt:
+        row["updatedAt"] instanceof Date ? row["updatedAt"] : new Date(0),
+    }));
+  }
+
+  async countFailedByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+  ): Promise<number> {
+    return this.collection.countDocuments({
+      tenantId,
+      principalId,
+      connectionId,
+      state: "failed",
+    });
+  }
+
+  async countExhaustedFailedByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+    maxRequeues: number,
+  ): Promise<number> {
+    return this.collection.countDocuments({
+      tenantId,
+      principalId,
+      connectionId,
+      state: "failed",
+      failureClass: { $ne: "permanent" },
+      requeuedCount: { $gte: maxRequeues },
+    });
+  }
+
+  // Operator tooling only — looks up by id without tenant/principal scope.
+  // Prefer findById(tenantId, principalId, id) for request-path reads.
+  async findByIdUnscoped(id: SyncJobId): Promise<JobRecord | null> {
+    const row = await this.collection.findOne({ _id: id });
+    return row ? JobRecordSchema.parse(row) : null;
   }
 
   // The oldest piece of overdue work for one connection, if any: a pending

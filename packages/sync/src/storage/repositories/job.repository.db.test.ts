@@ -310,6 +310,56 @@ describe("JobRepository", () => {
       );
       expect(underCap).toHaveLength(0);
       expect(await repo.countExhaustedFailed(2)).toBe(1);
+      expect(await repo.listExhaustedFailed(2)).toEqual([
+        expect.objectContaining({
+          id,
+          failureClass: "retryableTransient",
+          requeuedCount: 2,
+        }),
+      ]);
+    });
+
+    it("counts failed and exhausted jobs per connection", async () => {
+      const connectionId = objectId() as JobEnqueue["connectionId"];
+      const tenantId = objectId() as JobEnqueue["tenantId"];
+      const principalId = objectId() as JobEnqueue["principalId"];
+      const id = await seedFailed({
+        tenantId,
+        principalId,
+        connectionId,
+        runAfter: past(60 * 60_000),
+        coalescingKey: `pull:${objectId()}`,
+      });
+      for (let cycle = 0; cycle < 2; cycle += 1) {
+        await repo.requeue(id, past(50 * 60_000));
+        const reclaimed = await repo.claimDueJob("worker", NOW, 60_000);
+        await repo.fail(reclaimed!._id, "worker", "retryableTransient");
+      }
+      // A second failed job under the same connection, still under the cap.
+      await seedFailed({
+        tenantId,
+        principalId,
+        connectionId,
+        runAfter: past(60 * 60_000),
+        coalescingKey: `pull:${objectId()}`,
+      });
+
+      expect(
+        await repo.countFailedByConnection(tenantId, principalId, connectionId),
+      ).toBe(2);
+      expect(
+        await repo.countExhaustedFailedByConnection(
+          tenantId,
+          principalId,
+          connectionId,
+          2,
+        ),
+      ).toBe(1);
+      expect(await repo.findByIdUnscoped(id)).toMatchObject({
+        _id: id,
+        state: "failed",
+        requeuedCount: 2,
+      });
     });
 
     it("excludes a permanently classed failure from requeue and exhaustion", async () => {

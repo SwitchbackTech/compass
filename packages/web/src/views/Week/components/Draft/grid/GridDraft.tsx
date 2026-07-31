@@ -1,6 +1,4 @@
 import { type FC, type MouseEvent } from "react";
-import { Origin } from "@core/constants/core.constants";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type GridEvent as GridEventEntity } from "@web/common/types/web.event.types";
 import {
@@ -8,7 +6,7 @@ import {
   gridEventDefaultPosition,
 } from "@web/common/utils/event/event.util";
 import { focusEventFormTitle } from "@web/common/utils/form/form.util";
-import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
+import { gridEventDraftToGridEvent } from "@web/events/grid-event-draft.adapter";
 import {
   selectDraftActivity,
   useDraftStore,
@@ -49,20 +47,13 @@ export const GridDraft: FC<Props> = ({
   // the draft. It just isn't a local resize, so `isResizing` stays false.
   const isCreating = useDraftStore(selectDraftActivity) === "creating";
 
-  // GridEvent-shaped projection of the canonical GridEventDraft, for
-  // the still-unconverted renderer components (GridEvent/AllDayEventMemo)
-  // and the forms cluster (EventForm/RecurrenceSection) — see
-  // grid-event-draft.adapter.ts's gridEventDraftToSchemaEvent doc comment.
-  const draftSchemaEvent: CompassEvent | null = draft
-    ? gridEventDraftToSchemaEvent(draft)
-    : null;
-  const draftAsGridEvent: GridEventEntity | null = draftSchemaEvent
-    ? ({
-        ...draftSchemaEvent,
-        origin: draftSchemaEvent.origin ?? Origin.COMPASS,
-        user: draftSchemaEvent.user ?? "",
+  // Direct GridEventDraft → GridEvent for card renderers; live dragOffset is
+  // applied onto the default position without a CompassEvent hop.
+  const draftAsGridEvent: GridEventEntity | null = draft
+    ? {
+        ...gridEventDraftToGridEvent(draft),
         position: { ...gridEventDefaultPosition, dragOffset },
-      } as GridEventEntity)
+      }
     : null;
 
   const handleDrag = (_: GridEventEntity, moveEvent: PartialMouseEvent) => {
