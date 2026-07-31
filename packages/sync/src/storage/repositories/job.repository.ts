@@ -107,22 +107,18 @@ export class JobRepository {
       returnDocument: "after" as const,
     };
 
-    // Prefer due pending work; only then reclaim an expired lease. Splitting
-    // the former $or keeps each arm on its own index (see state_runafter_priority
-    // / lease_expiry in the manifest).
-    const duePending = await this.collection.findOneAndUpdate(
-      { state: "pending", runAfter: { $lte: now } },
-      claimUpdate,
-      claimOpts,
-    );
-    if (duePending) return JobRecordSchema.parse(duePending);
-
-    const expiredLease = await this.collection.findOneAndUpdate(
-      { state: "claimed", leaseExpiresAt: { $lt: now } },
-      claimUpdate,
-      claimOpts,
-    );
-    return expiredLease ? JobRecordSchema.parse(expiredLease) : null;
+    for (const filter of [
+      { state: "pending" as const, runAfter: { $lte: now } },
+      { state: "claimed" as const, leaseExpiresAt: { $lt: now } },
+    ]) {
+      const claimed = await this.collection.findOneAndUpdate(
+        filter,
+        claimUpdate,
+        claimOpts,
+      );
+      if (claimed) return JobRecordSchema.parse(claimed);
+    }
+    return null;
   }
 
   // Extend the lease while a worker is still processing. Only the current owner

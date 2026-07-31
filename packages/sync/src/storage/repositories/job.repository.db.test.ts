@@ -404,10 +404,9 @@ describe("JobRepository", () => {
       expect(winning).toContain("state_runafter_priority");
       expect(winning).not.toContain("COLLSCAN");
       // With runAfter leading after state, future backoff rows are not examined.
-      const examined =
-        (plan as { executionStats?: { totalKeysExamined?: number } })
-          .executionStats?.totalKeysExamined ?? Number.POSITIVE_INFINITY;
-      expect(examined).toBeLessThanOrEqual(1);
+      expect(
+        plan.executionStats?.totalKeysExamined ?? Infinity,
+      ).toBeLessThanOrEqual(1);
     });
 
     it("connection overdue filter is served by connection_runafter", async () => {
