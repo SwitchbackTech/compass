@@ -146,6 +146,19 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       options: { unique: true },
     },
     {
+      // Owner-scoped calendar lookups (activeGenerationByCalendar,
+      // listEventResourceFreshnessByCalendar) filter on
+      // (tenantId, principalId, resourceKind, calendarId) — the unique
+      // connection-led index above cannot serve that shape.
+      name: "principal_resource_calendar",
+      key: {
+        tenantId: 1,
+        principalId: 1,
+        resourceKind: 1,
+        calendarId: 1,
+      },
+    },
+    {
       name: "subscription_expiry",
       key: { subscriptionExpiresAt: 1 },
       options: { sparse: true },
@@ -157,10 +170,19 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       key: { subscriptionId: 1 },
       options: { sparse: true },
     },
-    { name: "last_success", key: { lastSuccessAt: 1 } },
-    // Backs the reconcile sweep's round-robin sort (lastAttemptAt asc, nulls
-    // first). The filter still selects on lastSuccessAt via last_success.
-    { name: "last_attempt", key: { lastAttemptAt: 1 } },
+    // Reconcile always filters resourceKind:"events" before lastSuccessAt /
+    // lastAttemptAt, so lead with resourceKind to avoid walking every
+    // calendarList row on each sweep. New names (not last_success /
+    // last_attempt) so installIndexManifest drops the old single-field keys
+    // instead of conflicting on same-name/different-spec.
+    {
+      name: "resource_last_success",
+      key: { resourceKind: 1, lastSuccessAt: 1 },
+    },
+    {
+      name: "resource_last_attempt",
+      key: { resourceKind: 1, lastAttemptAt: 1 },
+    },
   ],
   [SYNC_COLLECTIONS.commands]: [
     {
@@ -191,11 +213,21 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       options: { unique: true },
     },
     {
-      // Field order matches the due-job claim: filter on state, then sort by
-      // priority (desc) then runAfter (asc), so the claim is served from the
-      // index without a blocking in-memory sort.
-      name: "state_priority_runafter",
-      key: { state: 1, priority: -1, runAfter: 1 },
+      // Due-job claim filters `{ state, runAfter: { $lte: now } }`. Leading with
+      // runAfter (not priority) means pending-but-not-due backoff jobs are NOT
+      // examined — the previous `{ state, priority, runAfter }` ordering walked
+      // every pending row on every idle claim, which is what kept Atlas Query
+      // Targeting above 1000 after the events COLLSCAN fix (#2473). Due matches
+      // are usually few, so an in-memory priority sort of that small set is fine.
+      name: "state_runafter_priority",
+      key: { state: 1, runAfter: 1, priority: -1 },
+    },
+    {
+      // Connection-state refresh asks for the oldest overdue job per connection
+      // on every GET /internal/connections. Without a connection-led index that
+      // is a jobs COLLSCAN per connection.
+      name: "connection_runafter",
+      key: { connectionId: 1, runAfter: 1 },
     },
     {
       name: "lease_expiry",

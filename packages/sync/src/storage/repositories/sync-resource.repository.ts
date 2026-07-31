@@ -324,7 +324,8 @@ export class SyncResourceRepository {
   // it is a GLOBAL scan across owners, not owner-scoped: each returned resource
   // carries its own (tenantId, principalId) for the job the caller enqueues. A
   // never-synced resource (lastSuccessAt null) sorts first so bootstrapping a
-  // new calendar is not starved by the stale ones. Uses the last_success index.
+  // new calendar is not starved by the stale ones. Uses the
+  // resource_last_success index.
   async listStaleEvents(
     before: Date,
     limit: number,

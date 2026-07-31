@@ -13,6 +13,10 @@ import {
 
 export type OccurrenceInput = Omit<EventOccurrenceRecord, "_id">;
 
+// Longest occurrence start we still consider when answering a busy window.
+// Keeps calendar_gen_start range-bounded; see listBusyOverlapping.
+export const BUSY_MAX_LOOKBACK_MS = 366 * 24 * 60 * 60 * 1000;
+
 export interface OccurrenceRangeCursor {
   startAt: Date;
   id: string;
@@ -224,10 +228,17 @@ export class EventOccurrenceRepository {
   // it is included. Cancelled occurrences are not busy and are excluded; one with
   // no endAt (predating the field and not yet reprojected) is excluded until it
   // reprojects — the `endAt > start` filter never matches a missing field.
+  //
+  // `startAt` is also lower-bounded by (windowStart - BUSY_MAX_LOOKBACK_MS): an
+  // unbounded `startAt < end` walks the entire historical calendar_gen_start
+  // range on every busy query. Occurrences longer than the lookback are still
+  // found when they start inside it; longer-than-lookback events are outside
+  // Compass's practical horizon (multi-year single instances).
   async listBusyOverlapping(
     query: BusyOverlapQuery,
   ): Promise<OccurrenceInterval[]> {
     if (query.calendars.length === 0) return [];
+    const startAtFloor = new Date(query.start.getTime() - BUSY_MAX_LOOKBACK_MS);
     const filter = {
       tenantId: query.tenantId,
       principalId: query.principalId,
@@ -240,7 +251,7 @@ export class EventOccurrenceRepository {
             generation: c.generation,
           })),
         },
-        { startAt: { $lt: query.end } },
+        { startAt: { $gte: startAtFloor, $lt: query.end } },
         { endAt: { $gt: query.start } },
       ],
     };
