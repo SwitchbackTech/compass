@@ -250,7 +250,9 @@ describe("useRecurrence hook", () => {
         if (next) draft = next;
       };
 
-      const { rerender } = renderHook(() => useRecurrence(draft, { setDraft }));
+      const { result, rerender } = renderHook(() =>
+        useRecurrence(draft, { setDraft }),
+      );
 
       // A real infinite loop would still be climbing after a handful of
       // renders (React itself aborts at 50 nested updates). A convergent
@@ -269,6 +271,15 @@ describe("useRecurrence hook", () => {
       const finalRules = resolveDraftRecurrenceRules(draft);
       expect(finalRules).toHaveLength(1);
       expect(finalRules[0]).toContain("UNTIL=20260810T010000Z");
+
+      // The hook's own returned `until` (what EndsOnDate's DatePicker
+      // renders) must be the real instant, not the floating stand-in - a
+      // pre-existing display bug in this same path (the "Ends on" date
+      // showing a day earlier for non-UTC users) that CompassEventRRule's
+      // `until` getter now fixes alongside the loop.
+      expect(result.current.until?.toISOString()).toBe(
+        "2026-08-10T01:00:00.000Z",
+      );
     });
   });
 });

@@ -10,11 +10,7 @@ import {
 } from "react";
 import { Frequency, type Options, RRule, type Weekday } from "rrule";
 import dayjs from "@core/util/date/dayjs";
-import {
-  CompassEventRRule,
-  localizeFloatingDate,
-} from "@core/util/event/compass.event.rrule";
-import { getCompassEventDateFormat } from "@core/util/event/event.util";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   patchGridDraftRecurrence,
@@ -103,7 +99,7 @@ export const useRecurrence = (
   const { startDate, endDate } = scheduleDatesFromDraft(draft);
   const _startDate = dayjs(startDate);
 
-  const { options } = useMemo(() => {
+  const parsed = useMemo(() => {
     if (!hasRecurrence) {
       return {
         options: {
@@ -112,19 +108,22 @@ export const useRecurrence = (
           byweekday: undefined,
           wkst: WEEKDAY_MAP[0].weekday,
           count: null,
-          until: null,
           dtstart: _startDate.toDate(),
         },
+        until: null as Date | null,
       };
     }
 
-    return new CompassEventRRule({
+    const rrule = new CompassEventRRule({
       _id: new ObjectId(),
       startDate,
       endDate,
       recurrence: { rule: currentRules },
     });
+
+    return { options: rrule.options, until: rrule.until };
   }, [_startDate, startDate, endDate, hasRecurrence, currentRules]);
+  const { options } = parsed;
 
   const defaultWeekDay: typeof WEEKDAYS = useMemo(
     () => options?.byweekday?.map((day) => weekdayKeyFromByweekday(day)) ?? [],
@@ -138,25 +137,16 @@ export const useRecurrence = (
     [options?.wkst],
   );
 
-  // `options.until` (off the RRule library's internal, parsed representation)
-  // is in the floating frame used for candidate expansion for TIMED events
-  // only (see CompassEventRRule#initOptions - all-day UNTILs are never
-  // floated). Un-float a timed UNTIL before storing as editable state - the
-  // rebuilt `rrule` below feeds `until` back in as `_options.until`, which
-  // #initOptions floats again; seeding state with the already-floating value
-  // would double-float it every render and drift the persisted UNTIL by the
-  // timezone offset each time (never converging - the deep-equal guard in
-  // the effect below never passes).
-  const isTimed =
-    getCompassEventDateFormat(startDate) !==
-    dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
-  const timezone = dayjs.tz.guess();
-  const toRealUntil = (floating: Date | null): Date | null =>
-    floating && isTimed ? localizeFloatingDate(floating, timezone) : floating;
-
+  // `parsed.until` is already un-floated (CompassEventRRule#until handles
+  // the timed-vs-all-day distinction) - it's a real instant, safe to feed
+  // back into a new CompassEventRRule's `options.until` below without
+  // drifting it on every render (the bug this guards against: seeding from
+  // the still-floating `options.until` would double-float on round-trip and
+  // never converge, since the deep-equal guard in the effect below would
+  // never pass).
   const [freq, setFreq] = useState<Frequency>(options.freq);
   const [interval, setInterval] = useState<number>(options.interval);
-  const [until, setUntil] = useState<Date | null>(toRealUntil(options.until));
+  const [until, setUntil] = useState<Date | null>(() => parsed.until);
   const [count, setCount] = useState<number | null>(options.count);
   const [wkst, setWkst] = useState<Weekday | null>(defaultWkst);
   const [weekDays, setWeekDays] = useState<typeof WEEKDAYS>(defaultWeekDay);
@@ -168,7 +158,7 @@ export const useRecurrence = (
     setSyncedRuleSeedKey(ruleSeedKey);
     setFreq(options.freq);
     setInterval(options.interval);
-    setUntil(toRealUntil(options.until));
+    setUntil(parsed.until);
     setCount(options.count);
     setWkst(defaultWkst);
     setWeekDays(defaultWeekDay);
@@ -260,7 +250,7 @@ export const useRecurrence = (
     weekDays,
     interval: rrule.options.interval,
     freq: rrule.options.freq as FrequencyValues,
-    until: rrule.options.until,
+    until: rrule.until,
     setFreq,
     setInterval,
     setUntil,

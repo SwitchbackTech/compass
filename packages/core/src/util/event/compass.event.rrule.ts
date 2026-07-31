@@ -90,6 +90,19 @@ export class CompassEventRRule extends RRule {
     this.#durationMs = this.#endDate.diff(this.#startDate, "milliseconds");
   }
 
+  // `this.options.until` (inherited from RRule) is the internal floating
+  // value used for candidate expansion - not a real instant. This is the
+  // outbound counterpart to #initOptions' inbound floating: it un-floats
+  // before handing `until` to a caller, the same way `all()` already
+  // un-floats its returned dates, so round-tripping this value back into a
+  // new CompassEventRRule's `options.until` is idempotent by construction.
+  get until(): Date | null {
+    const until = this.options.until;
+    if (!until) return null;
+
+    return this.#isTimed ? localizeFloatingDate(until, this.#timezone) : until;
+  }
+
   static #initOptions(
     event: WithObjectId<Omit<BaseEvent, "_id">>,
     _options: Partial<Options> = {},
