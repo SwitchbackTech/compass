@@ -186,10 +186,65 @@ describe("LocalEventRepository", () => {
     await repository.delete(id, "this");
 
     expect(deleteEvent).toHaveBeenCalledWith(id);
+    // Stored in schedule.start format (RFC3339 offset), not the id-suffix ISO.
     expect(putEvent.mock.calls[0][0]).toMatchObject({
       id: record.id,
-      exdates: [occurrenceStart],
+      exdates: ["2026-05-06T09:00:00+00:00"],
     });
+  });
+
+  it("delete scope this round-trips: occurrence stays gone after list refetch", async () => {
+    const record = seriesRecord();
+    getAllEvents.mockResolvedValue([record]);
+
+    const before = await repository.list(rangeQuery as never);
+    const target = before.find(
+      (event) =>
+        event.recurrence.kind === "occurrence" &&
+        event.schedule.start.startsWith("2026-05-06"),
+    );
+    expect(target).toBeDefined();
+
+    await repository.delete(target!.id, "this");
+    getAllEvents.mockResolvedValue([putEvent.mock.calls[0][0]]);
+
+    const after = await repository.list(rangeQuery as never);
+    expect(after.some((event) => event.id === target!.id)).toBe(false);
+  });
+
+  it("delete scope this round-trips for all-day series", async () => {
+    const record = createMockLocalEventRecord({
+      schedule: {
+        kind: "allDay",
+        start: "2026-07-06" as never,
+        end: "2026-07-07" as never,
+      },
+      recurrence: {
+        kind: "series",
+        rules: ["RRULE:FREQ=DAILY;COUNT=5"] as never,
+      },
+    });
+    getAllEvents.mockResolvedValue([record]);
+    const allDayRange = {
+      kind: "range" as const,
+      start: "2026-07-05T00:00:00.000Z" as never,
+      end: "2026-07-12T00:00:00.000Z" as never,
+    };
+
+    const before = await repository.list(allDayRange as never);
+    const target = before.find(
+      (event) =>
+        event.recurrence.kind === "occurrence" &&
+        event.schedule.start === "2026-07-08",
+    );
+    expect(target).toBeDefined();
+
+    await repository.delete(target!.id, "this");
+    expect(putEvent.mock.calls[0][0].exdates).toEqual(["2026-07-08"]);
+    getAllEvents.mockResolvedValue([putEvent.mock.calls[0][0]]);
+
+    const after = await repository.list(allDayRange as never);
+    expect(after.some((event) => event.id === target!.id)).toBe(false);
   });
 
   it("delete scope thisAndFollowing truncates the series rules", async () => {
