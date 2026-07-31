@@ -13,10 +13,14 @@ export const GRID_EVENT_TIME_LABEL_OPACITY = "0.82";
 // so the label keeps its row instead of being pushed past the card's clipped edge.
 export const GRID_EVENT_TIME_LABEL_LINE_HEIGHT = 13;
 // Numeric line-height getLineClamp divides by to convert a card's remaining
-// pixel height into a clamp line count; keep the two in sync.
+// pixel height into a clamp line count. Only reflects the normal-height
+// title; getLineClamp doesn't special-case the shorter compact line-height
+// below, which predates this constant.
 export const GRID_EVENT_TITLE_LINE_HEIGHT_PX = 16;
 export const GRID_EVENT_TITLE_LINE_HEIGHT = `${GRID_EVENT_TITLE_LINE_HEIGHT_PX}px`;
 export const GRID_EVENT_TITLE_FONT_SIZE = "13px";
+// Vertical padding/slack getLineClamp reserves around the title text block.
+export const GRID_EVENT_TITLE_VERTICAL_SLACK_PX = 7;
 // Below this height the card only has room for a single cramped line.
 export const COMPACT_EVENT_MAX_HEIGHT = 15;
 export const GRID_EVENT_TITLE_COMPACT_FONT_SIZE = "10px";
