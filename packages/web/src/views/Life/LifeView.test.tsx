@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ReactNode } from "react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
@@ -369,6 +375,38 @@ describe("LifeView", () => {
     expect(
       screen.queryByRole("button", { name: /zoom/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it("lets a narrow viewport close the sidebar from inside the sidebar", async () => {
+    const user = userEvent.setup();
+    mockViewport(true);
+    // Narrow mounts auto-collapse the sidebar; reopen as a user would.
+    renderLifeView();
+    act(() => {
+      viewActions.setSidebarOpen(true);
+    });
+    const sidebar = await screen.findByRole("complementary", {
+      name: "Sidebar",
+    });
+
+    const closeButtons = screen.getAllByRole("button", {
+      name: "Close sidebar",
+    });
+    const inSidebarClose = closeButtons.find((button) =>
+      sidebar.contains(button),
+    );
+    expect(inSidebarClose).toBeTruthy();
+
+    await user.click(inSidebarClose!);
+
+    // Collapse keeps the panel mounted until the width transition ends; the
+    // toggle label flipping off "Close" is the observable close signal in jsdom.
+    expect(
+      screen.queryByRole("button", { name: "Close sidebar" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: "Open sidebar" }).length,
+    ).toBeGreaterThan(0);
   });
 
   it("shows the privacy tooltip on the date of birth label", async () => {
