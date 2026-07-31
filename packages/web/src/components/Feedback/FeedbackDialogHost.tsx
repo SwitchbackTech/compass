@@ -23,7 +23,7 @@ export function FeedbackDialogHost() {
   const posthog = usePostHog();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!request) return null;
+  if (!request || !posthog) return null;
 
   const handleSubmit = async (details: string) => {
     if (isSubmitting) return;

@@ -1,15 +1,14 @@
-// biome-ignore-all assist/source/organizeImports: PostHog must load before SuperTokens patches XMLHttpRequest in tests.
-import { PostHogProvider } from "@web/auth/posthog/posthog-react";
-import { type PropsWithChildren } from "react";
-import { Slide, ToastContainer } from "react-toastify";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
-import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
+import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
-import { initPosthog } from "@web/auth/posthog/posthog.bootstrap";
-import { ENV_WEB } from "@web/common/constants/env.constants";
+import { type PropsWithChildren } from "react";
+import { Slide, ToastContainer } from "react-toastify";
 import { queryClient as defaultQueryClient } from "@web/api/query-client";
+import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
+import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
+import { PostHogProvider } from "@web/auth/posthog/posthog-react";
+import { ENV_WEB } from "@web/common/constants/env.constants";
 import { DeleteAccountConfirmationProvider } from "@web/components/DeleteAccountConfirmation/DeleteAccountConfirmationProvider";
 import { FeedbackDialogHost } from "@web/components/Feedback/FeedbackDialogHost";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
@@ -77,11 +76,7 @@ export const CompassRequiredProviders = ({
 );
 
 export const CompassOptionalProviders = ({ children }: PropsWithChildren) => {
-  // PostHog is initialized once outside the React tree (see index.tsx) so its
-  // exception handlers cover boot before this ever mounts. initPosthog() is
-  // idempotent: here it just hands back that already-initialized instance (or
-  // undefined when PostHog is disabled, e.g. in tests).
-  const posthogClient = initPosthog();
+  const posthogClient = getPosthogClient();
 
   if (!posthogClient) {
     return children;

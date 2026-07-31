@@ -1,4 +1,11 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { TIMED_VISIBLE_HOURS } from "@web/grid/grid.constants";
 import {
   type GridMeasurement,
@@ -54,65 +61,11 @@ export const useGridMeasurements = ({
   const timedColumnsRef = useRef<HTMLDivElement | null>(null);
   const observersRef = useRef(new Map<string, ResizeObserver>());
 
-  const updateAllDayRowMeasurement = useCallback(
-    (node: HTMLElement) => {
-      if (isInteractionMotionActive()) {
-        return;
-      }
-
-      const next = toMeasurementSnapshot(node.getBoundingClientRect());
-      setAllDayMeasurements((current) => {
-        if (isInteractionMotionActive()) {
-          return current;
-        }
-
-        return areMeasurementsEqual(current, next) ? current : next;
-      });
-    },
-    [isInteractionMotionActive],
-  );
-
-  const updateAllDayColumnsMeasurement = useCallback(
-    (node: HTMLDivElement) => {
-      if (isInteractionMotionActive()) {
-        return;
-      }
-
-      const next = toMeasurementSnapshot(node.getBoundingClientRect());
-      setAllDayColumnsMeasurements((current) => {
-        if (isInteractionMotionActive()) {
-          return current;
-        }
-
-        return areMeasurementsEqual(current, next) ? current : next;
-      });
-    },
-    [isInteractionMotionActive],
-  );
-
-  const updateMainGridMeasurement = useCallback(
-    (node: HTMLElement) => {
-      if (isInteractionMotionActive()) {
-        return;
-      }
-
-      const next = toMeasurementSnapshot(node.getBoundingClientRect());
-      setMainMeasurements((current) => {
-        if (isInteractionMotionActive()) {
-          return current;
-        }
-
-        return areMeasurementsEqual(current, next) ? current : next;
-      });
-    },
-    [isInteractionMotionActive],
-  );
-
   const observeElement = useCallback(
-    <T extends HTMLElement>(
+    (
       key: string,
-      node: T | null,
-      measure: (node: T) => void,
+      node: HTMLElement | null,
+      setMeasurement: Dispatch<SetStateAction<GridMeasurement | null>>,
     ) => {
       observersRef.current.get(key)?.disconnect();
       observersRef.current.delete(key);
@@ -121,40 +74,50 @@ export const useGridMeasurements = ({
         return;
       }
 
-      measure(node);
+      const measure = () => {
+        if (isInteractionMotionActive()) return;
+
+        const next = toMeasurementSnapshot(node.getBoundingClientRect());
+        setMeasurement((current) => {
+          if (isInteractionMotionActive()) return current;
+          return areMeasurementsEqual(current, next) ? current : next;
+        });
+      };
+
+      measure();
 
       if (typeof ResizeObserver === "undefined") {
         return;
       }
 
-      const observer = new ResizeObserver(() => measure(node));
+      const observer = new ResizeObserver(measure);
       observer.observe(node);
       observersRef.current.set(key, observer);
     },
-    [],
+    [isInteractionMotionActive],
   );
 
   const allDayRowRef = useCallback(
     (node: HTMLElement | null) => {
-      observeElement("allDayRow", node, updateAllDayRowMeasurement);
+      observeElement("allDayRow", node, setAllDayMeasurements);
     },
-    [observeElement, updateAllDayRowMeasurement],
+    [observeElement],
   );
 
   const allDayRef = useCallback(
     (node: HTMLDivElement | null) => {
       allDayColumnsRef.current = node;
-      observeElement("allDayColumns", node, updateAllDayColumnsMeasurement);
+      observeElement("allDayColumns", node, setAllDayColumnsMeasurements);
     },
-    [observeElement, updateAllDayColumnsMeasurement],
+    [observeElement],
   );
 
   const mainGridElementRef = useCallback(
     (node: HTMLElement | null) => {
       mainGridRef.current = node;
-      observeElement("mainGrid", node, updateMainGridMeasurement);
+      observeElement("mainGrid", node, setMainMeasurements);
     },
-    [observeElement, updateMainGridMeasurement],
+    [observeElement],
   );
 
   const timedColumnsElementRef = useCallback((node: HTMLDivElement | null) => {
