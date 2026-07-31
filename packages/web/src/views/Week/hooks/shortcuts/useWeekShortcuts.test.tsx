@@ -351,22 +351,52 @@ describe("useWeekShortcuts calendar event targeting", () => {
     ).toBe(true);
   });
 
-  it("deletes the hovered calendar event with Delete when no event is focused", () => {
+  it("does not delete a hovered calendar event with Delete when nothing is focused", () => {
     const button = addCalendarTarget();
     setHoveredWeekGridEventTarget(button);
 
     const { queryClient } = renderShortcuts();
     pressKey("Delete");
 
-    expect(
-      queryClient
-        .getMutationCache()
-        .getAll()
-        .some(
-          (mutation) =>
-            (mutation.state.variables as { id?: string }).id === EVENT_1_ID,
-        ),
-    ).toBe(true);
+    expect(queryClient.getMutationCache().getAll()).toHaveLength(0);
+  });
+
+  it("duplicates the focused calendar event with Mod+D", () => {
+    const button = addCalendarTarget();
+    button.focus();
+    renderShortcuts();
+
+    pressKey("d", {
+      keyDownInit: { ctrlKey: true },
+      keyUpInit: { ctrlKey: true },
+    });
+
+    const state = useDraftStore.getState();
+    expect(state.status?.isFormOpen).toBe(true);
+    expect(state.gridDraft?.kind).toBe("create");
+    expect(state.gridDraft?.values.title).toBe("Editable event");
+  });
+
+  it("focuses the chronologically next event with ArrowDown", () => {
+    const earlier = addCalendarTarget(leftmostEvent.id);
+    const later = addCalendarTarget(editableEvent.id);
+    earlier.focus();
+    renderShortcuts({ includeLeftmostEvent: true });
+
+    pressKey("ArrowDown");
+
+    expect(document.activeElement).toBe(later);
+  });
+
+  it("focuses the chronologically previous event with ArrowUp", () => {
+    const earlier = addCalendarTarget(leftmostEvent.id);
+    const later = addCalendarTarget(editableEvent.id);
+    later.focus();
+    renderShortcuts({ includeLeftmostEvent: true });
+
+    pressKey("ArrowUp");
+
+    expect(document.activeElement).toBe(earlier);
   });
 
   it("deletes pending calendar events with Delete", () => {

@@ -80,6 +80,7 @@ export function useNavigationShortcuts() {
     {
       ignoreInputs: false,
       blurOnTrigger: true,
+      ignoreAppLock: true,
     },
   );
 
@@ -91,6 +92,7 @@ export function useNavigationShortcuts() {
     {
       ignoreInputs: false,
       blurOnTrigger: true,
+      ignoreAppLock: true,
     },
   );
 }

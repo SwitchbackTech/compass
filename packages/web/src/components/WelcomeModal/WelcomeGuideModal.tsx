@@ -5,12 +5,14 @@ import {
   useState,
 } from "react";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
+import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { welcomeGuideActions } from "./welcome.guide.store";
 
 export function WelcomeGuideModal() {
   const [closing, setClosing] = useState(false);
+  useAppLockReason("welcomeGuide", true);
 
   const focusOnMount = useCallback((node: HTMLDivElement | null) => {
     node?.focus();

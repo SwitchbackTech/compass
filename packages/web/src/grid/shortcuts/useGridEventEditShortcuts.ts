@@ -1,4 +1,6 @@
+import { useQueryClient } from "@tanstack/react-query";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   isGridEventInteractionReadOnly,
   useCalendarLookup,
@@ -13,12 +15,19 @@ import {
   isEventFormKeyboardTarget,
   isEventFormOpen,
 } from "@web/common/utils/form/form.util";
+import { duplicateGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import {
   type EventMutationDependencies,
   useEventMutations,
 } from "@web/events/mutations/useEventMutations";
 import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
+import { findEventInCache } from "@web/events/queries/event.query.cache";
 import { draftActions } from "@web/events/stores/draft.store";
+import {
+  type FocusableGridEventTarget,
+  type GridEventShortcutTarget,
+  getChronologicallyAdjacentTarget,
+} from "@web/grid/shortcuts/focus-adjacent-grid-event";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
 
@@ -27,11 +36,6 @@ const DRAFT_MOVEMENT_HOTKEY_OPTIONS = {
   preventDefault: false,
   stopPropagation: false,
 } as const;
-
-export type GridEventShortcutTarget = {
-  eventId: string;
-  eventType: "all-day" | "timed";
-};
 
 export type GridEventEditDayBoundary =
   | {
@@ -46,9 +50,10 @@ export type GridEventEditDayBoundary =
     };
 
 /**
- * Shared Delete / Shift+arrow nudge / draft Arrow reposition shortcuts for
- * Day and Week. Targeting, day-boundary policy, and draft reposition stay
- * view-specific (Day follows across midnight; Week clamps to weekDays).
+ * Shared Delete / Mod+D / Shift+arrow nudge / draft Arrow reposition / focus
+ * traversal shortcuts for Day and Week. Targeting, day-boundary policy, and
+ * draft reposition stay view-specific (Day follows across midnight; Week
+ * clamps to weekDays).
  *
  * Handlers close over latest render values; TanStack Hotkeys syncs the
  * callback each render, so event-list refs are unnecessary.
@@ -70,13 +75,15 @@ export function useGridEventEditShortcuts({
    */
   repositionDraftByKey: (key: string) => boolean;
   targeting: {
+    focus: (target: FocusableGridEventTarget) => void;
     getFocused: () => GridEventShortcutTarget | null;
-    getHovered: () => GridEventShortcutTarget | null;
-    getFirstVisible: () => GridEventShortcutTarget | null;
+    listVisible: () => FocusableGridEventTarget[];
   };
   timedEvents: GridEvent[];
 }) {
   const calendarLookup = useCalendarLookup();
+  const { data: calendars } = useCalendarsQuery();
+  const queryClient = useQueryClient();
   const { delete: deleteEvent } = useEventMutations(dependencies);
   const updateEvent = useUpdateEvent(dependencies);
 
@@ -85,7 +92,26 @@ export function useGridEventEditShortcuts({
     return events.find((candidate) => candidate._id === target.eventId) ?? null;
   };
 
-  const deleteTargetedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
+  // Focused only (no hover/first-visible fallback): edit actions must
+  // demand an explicit target.
+  const getFocusedMutableCalendarEvent = () => {
+    const target = targeting.getFocused();
+    if (!target) return null;
+
+    const event = findCalendarEventForTarget(target);
+    if (!event) return null;
+
+    if (isGridEventInteractionReadOnly(calendarLookup, event)) {
+      return null;
+    }
+
+    return event;
+  };
+
+  const isFocusInSidebar = () =>
+    Boolean(document.activeElement?.closest(`#${ID_SIDEBAR}`));
+
+  const deleteFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
     if (
       isDeleteTextEditingTarget(keyboardEvent) ||
       isEventFormKeyboardTarget(keyboardEvent)
@@ -93,42 +119,43 @@ export function useGridEventEditShortcuts({
       return;
     }
 
-    if (document.activeElement?.closest(`#${ID_SIDEBAR}`)) {
-      return;
-    }
+    if (isFocusInSidebar()) return;
 
-    const target =
-      targeting.getFocused() ??
-      targeting.getHovered() ??
-      targeting.getFirstVisible();
-    if (!target) return;
-
-    const event = findCalendarEventForTarget(target);
+    const event = getFocusedMutableCalendarEvent();
     if (!event) return;
-
-    if (isGridEventInteractionReadOnly(calendarLookup, event)) {
-      return;
-    }
 
     keyboardEvent.preventDefault();
     keyboardEvent.stopPropagation();
     deleteEventAndDiscardDraft(deleteEvent, event);
   };
 
+  const duplicateFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
+    if (isEventFormOpen() || isEventFormKeyboardTarget(keyboardEvent)) {
+      return;
+    }
+
+    if (isFocusInSidebar()) return;
+
+    const gridEvent = getFocusedMutableCalendarEvent();
+    if (!gridEvent?._id) return;
+
+    const sourceEvent = findEventInCache(queryClient, gridEvent._id);
+    if (!sourceEvent) return;
+
+    const duplicate = duplicateGridEventDraft(sourceEvent, calendars ?? []);
+    if (!duplicate) return;
+
+    keyboardEvent.preventDefault();
+    keyboardEvent.stopPropagation();
+    draftActions.startGridDraft({ activity: "gridClick", draft: duplicate });
+    draftActions.setFormOpen(true);
+  };
+
   const moveFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
     if (isEventFormOpen()) return;
 
-    // Focused only (no hover/first-visible fallback): moving an event the
-    // user isn't focused on would be surprising.
-    const target = targeting.getFocused();
-    if (!target) return;
-
-    const event = findCalendarEventForTarget(target);
+    const event = getFocusedMutableCalendarEvent();
     if (!event?._id) return;
-
-    if (isGridEventInteractionReadOnly(calendarLookup, event)) {
-      return;
-    }
 
     const movement = getArrowKeyMovement(
       keyboardEvent.key,
@@ -168,37 +195,61 @@ export function useGridEventEditShortcuts({
     });
   };
 
-  const moveShortcutCreatedDraft = (keyboardEvent: KeyboardEvent) => {
+  const moveDraftOrFocusAdjacent = (keyboardEvent: KeyboardEvent) => {
     if (isEditableKeyboardTarget(keyboardEvent)) return;
 
     const didMove = repositionDraftByKey(keyboardEvent.key);
-    if (!didMove) return;
+    if (didMove) {
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
+      return;
+    }
+
+    if (isEventFormOpen()) return;
+    if (keyboardEvent.key !== "ArrowUp" && keyboardEvent.key !== "ArrowDown") {
+      return;
+    }
+
+    const adjacent = getChronologicallyAdjacentTarget({
+      allDayEvents,
+      direction: keyboardEvent.key === "ArrowUp" ? "previous" : "next",
+      focused: targeting.getFocused(),
+      timedEvents,
+      visible: targeting.listVisible(),
+    });
+    if (!adjacent) return;
 
     keyboardEvent.preventDefault();
     keyboardEvent.stopPropagation();
+    adjacent.element.scrollIntoView({ block: "nearest" });
+    targeting.focus(adjacent);
   };
 
-  useAppShortcut("Delete", deleteTargetedCalendarEvent, {
+  useAppShortcut("Delete", deleteFocusedCalendarEvent, {
     ignoreInputs: false,
+  });
+  useAppShortcut("Mod+D", duplicateFocusedCalendarEvent, {
+    ignoreInputs: false,
+    conflictBehavior: "allow",
   });
   useAppShortcut(
     "ArrowUp",
-    moveShortcutCreatedDraft,
+    moveDraftOrFocusAdjacent,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
   useAppShortcut(
     "ArrowDown",
-    moveShortcutCreatedDraft,
+    moveDraftOrFocusAdjacent,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
   useAppShortcut(
     "ArrowLeft",
-    moveShortcutCreatedDraft,
+    moveDraftOrFocusAdjacent,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
   useAppShortcut(
     "ArrowRight",
-    moveShortcutCreatedDraft,
+    moveDraftOrFocusAdjacent,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
   useAppShortcut("Shift+ArrowUp", moveFocusedCalendarEvent);

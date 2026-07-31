@@ -25,7 +25,7 @@ import {
   focusWeekGridEventTarget,
   getFirstVisibleWeekGridEventTarget,
   getFocusedWeekGridEventTarget,
-  getHoveredWeekGridEventTarget,
+  listVisibleWeekGridEventTargets,
 } from "@web/views/Week/interaction/targeting/week-event.targeting";
 
 export interface ShortcutProps {
@@ -168,9 +168,9 @@ export const useWeekShortcuts = ({
     timedEvents,
     dayBoundary: { kind: "clamp", weekDays },
     targeting: {
+      focus: focusWeekGridEventTarget,
       getFocused: getFocusedWeekGridEventTarget,
-      getHovered: getHoveredWeekGridEventTarget,
-      getFirstVisible: getFirstVisibleWeekGridEventTarget,
+      listVisible: listVisibleWeekGridEventTargets,
     },
     repositionDraftByKey: repositionDraftByKeyboard,
   });

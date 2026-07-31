@@ -1,6 +1,9 @@
 import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { type Shortcut } from "@web/shortcuts/global.shortcut.types";
-import { VIEW_SHORTCUTS } from "@web/shortcuts/shortcuts.constants";
+import {
+  LIFE_SHORTCUT,
+  VIEW_SHORTCUTS,
+} from "@web/shortcuts/shortcuts.constants";
 
 export type ShortcutMenuView = "day" | "week" | "life";
 
@@ -49,6 +52,10 @@ const getNavigateShortcuts = ({
       keys: [alternateView.key],
       label: `Go to ${alternateView.label} view`,
     },
+    {
+      keys: [LIFE_SHORTCUT.key],
+      label: `Go to ${LIFE_SHORTCUT.label} view`,
+    },
   ];
 };
 
@@ -64,13 +71,21 @@ const getEditShortcuts = (view: ShortcutMenuView): Shortcut[] =>
   view === "life"
     ? []
     : [
-        { keys: ["Delete"], label: "Delete calendar event" },
+        { keys: ["Enter"], label: "Open focused event" },
+        { keys: ["Delete"], label: "Delete focused event" },
+        { keys: ["Mod", "D"], label: "Duplicate focused event" },
+        { keys: ["Mod", "Enter"], label: "Save event form" },
+        { keys: ["ArrowUp"], label: "Focus previous event" },
+        { keys: ["ArrowDown"], label: "Focus next event" },
         { keys: ["Arrow keys"], label: "Move draft event" },
         {
           keys: ["Shift", "ArrowLeft"],
           label: "Move event to previous day",
         },
-        { keys: ["Shift", "ArrowRight"], label: "Move event to next day" },
+        {
+          keys: ["Shift", "ArrowRight"],
+          label: "Move event to next day",
+        },
         { keys: ["Shift", "ArrowUp"], label: "Move event 15 min earlier" },
         { keys: ["Shift", "ArrowDown"], label: "Move event 15 min later" },
       ];
@@ -87,6 +102,8 @@ const getOtherShortcuts = (): Shortcut[] => [
   { keys: ["]"], label: "Toggle sidebar" },
   { keys: ["?"], label: "Toggle shortcuts" },
   { keys: ["Mod", "k"], label: "Command Palette" },
+  { keys: ["Mod", "Z"], label: "Undo last change" },
+  { keys: ["Mod", "Shift", "Z"], label: "Redo last change" },
 ];
 
 /**

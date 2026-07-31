@@ -14,6 +14,7 @@ import {
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
+import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { maybeShowCmdPaletteHint } from "./cmd-palette-hint.util";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
@@ -32,6 +33,7 @@ export function WelcomeModal() {
   // screen simply hides while it is open and reappears when the browser
   // back button (or Escape) removes the param again.
   const visible = isOpen && !isAuthModalOpen && !authenticated;
+  useAppLockReason("welcomeModal", visible);
 
   useEffect(() => {
     if (visible) {
