@@ -162,7 +162,7 @@ describe("self-host docker compose", () => {
     expect(compose).toContain("stop_grace_period: 30s");
   });
 
-  it("waits for mongo before starting backend via the selfhosted overlay", () => {
+  it("waits for mongo before starting backend and sync via the selfhosted overlay", () => {
     const overlay = readFileSync(
       join(import.meta.dir, "compose.selfhosted.yaml"),
       { encoding: "utf8" },
@@ -172,6 +172,7 @@ describe("self-host docker compose", () => {
     expect(overlay).toContain("mongo:");
     expect(overlay).toContain("condition: service_healthy");
     expect(overlay).not.toContain("required: false");
+    expect(overlay).toContain("  sync:\n    depends_on:");
   });
 });
 

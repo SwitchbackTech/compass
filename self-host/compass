@@ -315,7 +315,7 @@ case $command_name in
     compose pull || fail "Could not pull updated Compass images from Docker Hub."
     if ! compose up -d --remove-orphans --wait; then
       compose ps -a >&2 || true
-      compose logs --tail=100 mongo backend >&2 || true
+      compose logs --tail=100 mongo backend sync >&2 || true
       fail "Docker Compose failed to start updated Compass."
     fi
     prune_unused_images
@@ -323,7 +323,7 @@ case $command_name in
       info "Compass updated and running at $APP_URL"
     else
       compose ps -a >&2 || true
-      compose logs --tail=100 mongo backend >&2 || true
+      compose logs --tail=100 mongo backend sync >&2 || true
       fail "Compass updated, but the backend health check did not pass. Run './compass logs' for details."
     fi
     ;;

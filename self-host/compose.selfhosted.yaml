@@ -7,3 +7,7 @@ services:
     depends_on:
       mongo:
         condition: service_healthy
+  sync:
+    depends_on:
+      mongo:
+        condition: service_healthy
