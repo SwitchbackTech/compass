@@ -51,7 +51,7 @@ class CompassDB extends Dexie {
 
     // Version 4 (B13): events store LocalEventRecord ({ version, id, event,
     // isDemo }), keyed by "id", indexed on the nested schedule so range
-    // reads can eventually use the index instead of a full scan.
+    // reads can use `event.schedule.start` instead of a full scan.
     // The primary key rename from "_id" to "id" is not an in-place Dexie
     // upgrade (see isPrimaryKeyUpgradeError); rows are migrated in
     // migrateFromLegacySchema below.
@@ -167,29 +167,35 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
   // ─── Event Operations ──────────────────────────────────────────────────────
 
   async getEvents(query: EventListQuery): Promise<LocalEventRecord[]> {
-    const all = await this.db.events.toArray();
-
     const start = Date.parse(query.start);
-    const end = Date.parse(query.end);
     const allDayStart = query.start.slice(0, 10);
     const allDayEnd = query.end.slice(0, 10);
 
-    return all.filter(({ event }) => {
-      if (event.schedule.kind === "timed") {
-        return (
-          Date.parse(event.schedule.start) < end &&
-          Date.parse(event.schedule.end) > start
-        );
-      }
+    // Overlap: start < queryEnd AND end > queryStart. Candidates are rows
+    // whose schedule.start is strictly before the window end (index range);
+    // the end-bound filter finishes the overlap check in memory. Timed and
+    // all-day share the start index, so kind is filtered in `.and(...)`.
+    // Semantics match eventMatchesRange / backend range reads.
+    const [timed, allDay] = await Promise.all([
+      this.db.events
+        .where("event.schedule.start")
+        .below(query.end)
+        .and((record) => {
+          if (record.event.schedule.kind !== "timed") return false;
+          return Date.parse(record.event.schedule.end) > start;
+        })
+        .toArray(),
+      this.db.events
+        .where("event.schedule.start")
+        .below(allDayEnd)
+        .and((record) => {
+          if (record.event.schedule.kind !== "allDay") return false;
+          return record.event.schedule.end > allDayStart;
+        })
+        .toArray(),
+    ]);
 
-      if (event.schedule.kind === "allDay") {
-        return (
-          event.schedule.start < allDayEnd && event.schedule.end > allDayStart
-        );
-      }
-
-      return false;
-    });
+    return timed.concat(allDay);
   }
 
   async getAllEvents(): Promise<LocalEventRecord[]> {

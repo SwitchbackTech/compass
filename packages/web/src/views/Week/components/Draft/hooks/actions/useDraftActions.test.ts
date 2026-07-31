@@ -521,4 +521,26 @@ describe("useDraftActions", () => {
       ),
     ).toBe(CROSS_ROW_TIMED_DURATION_MIN);
   });
+
+  it("keeps the actions object identity stable across idle re-renders", () => {
+    const draft = createEditDraft();
+    const setDragOffset = mock();
+    const setDragStatus = mock();
+    const state = createState({ draft });
+    const setters = createSetters({ setDragOffset, setDragStatus });
+    currentState.events!.draft = {
+      ...currentState.events!.draft,
+      gridDraft: draft,
+    };
+    draftActions.setGridDraft(draft);
+    const { wrapper } = createStoreWrapper(currentState);
+    const { result, rerender } = renderHook(
+      () => useDraftActions(state, setters, dateCalcs, weekProps),
+      { wrapper },
+    );
+
+    const first = result.current;
+    rerender();
+    expect(result.current).toBe(first);
+  });
 });

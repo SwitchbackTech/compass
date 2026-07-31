@@ -403,8 +403,10 @@ class FakeUpdateWriter implements ProviderEventWriter {
     providerVersion: "etag-2",
   };
   patchError?: unknown;
+  deleteError?: unknown;
   fetchCalls: ProviderFetchInput[] = [];
   patchCalls: ProviderPatchInput[] = [];
+  deleteCalls: ProviderDeleteInput[] = [];
   createEvent(): Promise<ProviderWriteResult> {
     throw new Error("unused");
   }
@@ -413,8 +415,9 @@ class FakeUpdateWriter implements ProviderEventWriter {
     if (this.patchError) throw this.patchError;
     return this.patchResult;
   }
-  deleteEvent(): Promise<void> {
-    throw new Error("unused");
+  async deleteEvent(input: ProviderDeleteInput): Promise<void> {
+    this.deleteCalls.push(input);
+    if (this.deleteError) throw this.deleteError;
   }
   async fetchEvent(input: ProviderFetchInput): Promise<ProviderEvent | null> {
     this.fetchCalls.push(input);
@@ -1642,6 +1645,14 @@ describe("executeProviderSeriesUpdate", () => {
     );
 
     expect(result.outcome.state).toBe("confirmed");
+    // Provider cancel only for the content override — not the kept tombstone.
+    expect(writer.deleteCalls).toHaveLength(1);
+    expect(writer.deleteCalls[0]).toMatchObject({
+      providerEventId: "g-inst-override",
+      expectedVersion: null,
+      invitation: "all",
+      calendarId: calendar.providerCalendarId,
+    });
     // The override is gone; the cancelled tombstone survives the edit.
     expect(
       await events.findById(tenantId, principalId, override._id),
@@ -1665,6 +1676,37 @@ describe("executeProviderSeriesUpdate", () => {
       "2026-07-21T15:00:00.000Z",
       "2026-08-04T15:00:00.000Z",
     ]);
+  });
+
+  it("leaves the override local when provider cancel is transient", async () => {
+    const { tenantId, principalId, calendar, master } = await seedMaster();
+    const override = await putException(master, {
+      providerEventId: "g-inst-override",
+      recurrenceId: "2026-07-21T09:00:00-06:00",
+      cancelled: false,
+      title: "Moved",
+    });
+    const command = await editAllCommand(master, {
+      title: "New",
+      recurrence: { kind: "preserve" },
+    });
+    const writer = new FakeUpdateWriter();
+    writer.fetched = providerSeries("Old", "etag-1", weekly4);
+    writer.deleteError = new ProviderWriteError("transient", "rate limited");
+
+    const result = await executeProviderSeriesUpdate(
+      deps(writer),
+      command,
+      master,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("pending");
+    expect(writer.deleteCalls).toHaveLength(1);
+    expect(
+      await events.findById(tenantId, principalId, override._id),
+    ).not.toBeNull();
   });
 
   it("converts a series to a single event, dropping every exception", async () => {
@@ -1693,6 +1735,11 @@ describe("executeProviderSeriesUpdate", () => {
     expect(result.outcome.state).toBe("confirmed");
     // The provider write removes recurrence.
     expect(writer.patchCalls[0].recurrence).toEqual({ kind: "single" });
+    // Convert-to-single also cancels every discarded exception at the provider
+    // (including former cancellations) so a later pull cannot resurrect them.
+    expect(writer.deleteCalls).toEqual([
+      expect.objectContaining({ providerEventId: "g-inst-cancelled" }),
+    ]);
     const stored = await events.findById(tenantId, principalId, master._id);
     expect(stored?.recurrence).toEqual({ kind: "single" });
     // No exceptions survive a conversion to a single event, and the master
