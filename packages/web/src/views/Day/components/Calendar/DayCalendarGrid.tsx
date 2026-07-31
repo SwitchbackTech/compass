@@ -87,7 +87,7 @@ export function DayCalendarGrid() {
     !isPending &&
     !isErrorEvents &&
     dayEvents.length === 0 &&
-    (googleState === "IMPORTING" || googleState === "checking");
+    googleState === "IMPORTING";
   const {
     calendarColumnIndexById,
     displayedAllDayEvents,

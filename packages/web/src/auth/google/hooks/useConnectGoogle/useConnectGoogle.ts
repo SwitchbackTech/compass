@@ -114,12 +114,14 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
         await refreshUserMetadata({ force: true });
         void queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
       } catch {
-        clearSyncingSyncIndicatorOverride();
         showErrorToast(
           "We couldn't refresh your calendar. Please try again in a moment.",
           { toastId: GOOGLE_REFRESH_FAILED_TOAST_ID },
         );
       } finally {
+        // Drop the optimistic syncing override once the request settles.
+        // Metadata/SSE still drive IMPORTING when a real import is in flight.
+        clearSyncingSyncIndicatorOverride();
         isRefreshingRef.current = false;
         setIsRefreshing(false);
       }

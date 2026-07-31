@@ -53,9 +53,7 @@ export const Grid: FC<Props> = ({
   );
   const hasVisibleEvents = (data?.ids?.length ?? 0) > 0;
   const isImportingEmpty =
-    isSuccess &&
-    !hasVisibleEvents &&
-    (googleState === "IMPORTING" || googleState === "checking");
+    isSuccess && !hasVisibleEvents && googleState === "IMPORTING";
 
   useDragEdgeNavigation(mainGridRef, weekProps);
 

@@ -1,10 +1,19 @@
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const WAITLIST_URL = "https://tylerdane.kit.com/compass-mobile";
 
 export const MobileGate: React.FC = () => {
   const [copied, setCopied] = useState(false);
+  const copiedResetTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedResetTimeoutRef.current !== null) {
+        window.clearTimeout(copiedResetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleJoinWaitlist = () => {
     window.open(WAITLIST_URL, "_blank", "noopener,noreferrer");
@@ -15,7 +24,13 @@ export const MobileGate: React.FC = () => {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
+      if (copiedResetTimeoutRef.current !== null) {
+        window.clearTimeout(copiedResetTimeoutRef.current);
+      }
+      copiedResetTimeoutRef.current = window.setTimeout(() => {
+        copiedResetTimeoutRef.current = null;
+        setCopied(false);
+      }, 2000);
     } catch {
       // Fallback for older mobile browsers without clipboard permission.
       window.prompt("Copy this link and open it on a computer:", url);
