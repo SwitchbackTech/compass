@@ -31,7 +31,13 @@ export const DiagnosticConnectionResponseSchema = z.strictObject({
   lastHealthyAt: DateTimeSchema.nullable(),
   disconnectedAt: DateTimeSchema.nullable(),
   calendarCount: z.number().int().nonnegative(),
+  // pending + claimed only — active work still eligible to run.
   pendingJobCount: z.number().int().nonnegative(),
+  // All failed jobs for the connection (including permanent and exhausted).
+  failedJobCount: z.number().int().nonnegative(),
+  // Failed jobs that exhausted the self-heal requeue budget and need an
+  // operator (`bun run cli manage-failed-jobs …`).
+  exhaustedJobCount: z.number().int().nonnegative(),
   pendingCommandCount: z.number().int().nonnegative(),
 });
 export type DiagnosticConnectionResponse = z.infer<

@@ -1,4 +1,12 @@
-import { type JobRepository } from "@sync/storage/repositories/job.repository";
+import {
+  type ExhaustedFailedJob,
+  type JobRepository,
+} from "@sync/storage/repositories/job.repository";
+
+// How many times the self-heal sweep will requeue the same job before leaving
+// it failed for an operator instead. Shared with diagnostics so exhausted
+// counts use the same budget the sweep enforces.
+export const FAILED_JOB_MAX_REQUEUES = 3;
 
 export interface FailedJobRequeueDeps {
   jobs: JobRepository;
@@ -10,6 +18,8 @@ export interface FailedJobRequeueResult {
   // How many failed jobs have hit the requeue cap and re-failed anyway — the
   // sweep will not touch them again; they need an operator.
   exhausted: number;
+  // Bounded sample of exhausted rows for operator-facing logs / CLI.
+  exhaustedJobs: ExhaustedFailedJob[];
 }
 
 // The self-heal sweep for jobs terminalized as state:"failed". A worker marks
@@ -34,7 +44,7 @@ export async function requeueFailedJobs(
   deps: FailedJobRequeueDeps,
   before: Date,
   now: () => Date,
-  maxRequeues: number,
+  maxRequeues: number = FAILED_JOB_MAX_REQUEUES,
   limit = 100,
 ): Promise<FailedJobRequeueResult> {
   const candidates = await deps.jobs.listFailedForRequeue(
@@ -45,6 +55,13 @@ export async function requeueFailedJobs(
   for (const job of candidates) {
     await deps.jobs.requeue(job._id, now());
   }
-  const exhausted = await deps.jobs.countExhaustedFailed(maxRequeues);
-  return { requeued: candidates.length, exhausted };
+  const [exhausted, exhaustedJobs] = await Promise.all([
+    deps.jobs.countExhaustedFailed(maxRequeues),
+    deps.jobs.listExhaustedFailed(maxRequeues),
+  ]);
+  return {
+    requeued: candidates.length,
+    exhausted,
+    exhaustedJobs,
+  };
 }

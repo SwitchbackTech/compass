@@ -49,7 +49,7 @@ describe("requeueFailedJobs", () => {
 
     const result = await requeueFailedJobs(deps(), cooldownBefore, now, 3);
 
-    expect(result).toEqual({ requeued: 1, exhausted: 0 });
+    expect(result).toEqual({ requeued: 1, exhausted: 0, exhaustedJobs: [] });
     const raw = await storage
       .db()
       .collection("jobs")
@@ -64,7 +64,7 @@ describe("requeueFailedJobs", () => {
 
     const result = await requeueFailedJobs(deps(), cooldownBefore, now, 3);
 
-    expect(result).toEqual({ requeued: 0, exhausted: 0 });
+    expect(result).toEqual({ requeued: 0, exhausted: 0, exhaustedJobs: [] });
   });
 
   it("stops requeuing once a job hits the cap and reports it as exhausted", async () => {
@@ -84,13 +84,22 @@ describe("requeueFailedJobs", () => {
 
     const result = await requeueFailedJobs(deps(), cooldownBefore, now, 2);
 
-    expect(result).toEqual({ requeued: 0, exhausted: 1 });
+    expect(result.requeued).toBe(0);
+    expect(result.exhausted).toBe(1);
+    expect(result.exhaustedJobs).toEqual([
+      expect.objectContaining({
+        id,
+        failureClass: "retryableTransient",
+        requeuedCount: 2,
+      }),
+    ]);
   });
 
   it("does nothing when there are no failed jobs", async () => {
     expect(await requeueFailedJobs(deps(), cooldownBefore, now, 3)).toEqual({
       requeued: 0,
       exhausted: 0,
+      exhaustedJobs: [],
     });
   });
 });

@@ -9,7 +9,10 @@ import {
   CONNECTION_CACHE_RETENTION_MS,
   purgeExpiredDisconnectedConnections,
 } from "@sync/domain/connection-retention.service";
-import { requeueFailedJobs } from "@sync/domain/failed-job-requeue.service";
+import {
+  FAILED_JOB_MAX_REQUEUES,
+  requeueFailedJobs,
+} from "@sync/domain/failed-job-requeue.service";
 import { reconcileStaleCalendars } from "@sync/domain/reconcile.service";
 import { retryStaleCommands } from "@sync/domain/stale-command-retry.service";
 import { maintainExpiringSubscriptions } from "@sync/domain/subscription-sweep.service";
@@ -262,9 +265,6 @@ async function start(): Promise<void> {
 // at least this long — long enough that a real provider outage has had a
 // chance to clear before we burn another retry ladder on it.
 const FAILED_JOB_REQUEUE_COOLDOWN_MS = 30 * 60_000;
-// How many times the self-heal sweep will requeue the same job before
-// leaving it failed for an operator instead.
-const FAILED_JOB_MAX_REQUEUES = 3;
 // A resource not synced within this window is swept for a reconcile pull.
 const RECONCILE_STALE_AFTER_MS = 15 * 60_000;
 // A cloud command left nonterminal past this long since its last update is
@@ -467,6 +467,16 @@ function buildSchedulers(
         if (result.exhausted > 0) {
           logger.error(
             `Sync self-heal sweep: ${result.exhausted} failed job(s) exhausted their requeue budget and need operator attention`,
+            {
+              exhaustedJobs: result.exhaustedJobs.map((job) => ({
+                id: job.id,
+                coalescingKey: job.coalescingKey,
+                connectionId: job.connectionId,
+                failureClass: job.failureClass,
+                requeuedCount: job.requeuedCount,
+                updatedAt: job.updatedAt.toISOString(),
+              })),
+            },
           );
         }
         return result.requeued;

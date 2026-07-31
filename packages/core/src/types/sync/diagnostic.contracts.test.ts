@@ -18,6 +18,8 @@ const sample = (): DiagnosticConnectionResponse => ({
   disconnectedAt: null,
   calendarCount: 2,
   pendingJobCount: 1,
+  failedJobCount: 0,
+  exhaustedJobCount: 0,
   pendingCommandCount: 0,
 });
 

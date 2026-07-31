@@ -1,4 +1,5 @@
 import { CliValidator } from "@scripts/cli.validator";
+import { runManageFailedJobs } from "@scripts/commands/manage-failed-jobs";
 import { runPurgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events";
 import { runPurgeUser } from "@scripts/commands/purge-user";
 import { runRefreshConnectionStates } from "@scripts/commands/refresh-connection-states";
@@ -24,6 +25,9 @@ export default class CompassCLI {
         break;
       case cmd === "refresh-connection-states":
         await runRefreshConnectionStates();
+        break;
+      case cmd === "manage-failed-jobs":
+        await runManageFailedJobs();
         break;
       case cmd === "purge-user":
         await runPurgeUser();
@@ -71,6 +75,14 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "Re-derive every provider connection's stored state from live evidence (--apply to write)",
+      );
+
+    program
+      .command("manage-failed-jobs")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "List/clear/requeue Sync jobs that exhausted the self-heal budget (list | clear | requeue)",
       );
 
     return program;
