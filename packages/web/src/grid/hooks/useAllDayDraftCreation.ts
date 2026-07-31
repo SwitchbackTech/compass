@@ -11,6 +11,7 @@ import {
   gridEventDraftToSchemaEvent,
 } from "@web/events/grid-event-draft.adapter";
 import {
+  draftActions,
   selectIsDrafting,
   useDraftStore,
 } from "@web/events/stores/draft.store";
@@ -40,6 +41,7 @@ export const useAllDayDraftCreation = ({
     event.stopPropagation();
 
     if (isDrafting) {
+      draftActions.discard();
       return;
     }
 

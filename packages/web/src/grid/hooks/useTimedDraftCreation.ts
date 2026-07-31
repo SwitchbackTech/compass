@@ -52,6 +52,7 @@ export const useTimedDraftCreation = ({
     columnCalendarId: CalendarId | null = calendarId,
   ) => {
     if (isDrafting) {
+      draftActions.discard();
       return;
     }
 
