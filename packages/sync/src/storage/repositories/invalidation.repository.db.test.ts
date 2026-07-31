@@ -46,6 +46,45 @@ describe("InvalidationRepository", () => {
     ]);
   });
 
+  it("appendMany writes every invalidation with the same emittedAt/TTL", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const connectionId = objectId() as ConnectionId;
+    const eventId = objectId() as never;
+    const calendarId = objectId() as never;
+    const emittedAt = new Date("2026-07-24T12:00:00.000Z");
+
+    const rows = await repo.appendMany(
+      tenantId,
+      principalId,
+      [
+        { kind: "connection", connectionId },
+        { kind: "event", eventId, calendarId },
+      ],
+      emittedAt,
+    );
+
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => r.invalidation.kind).sort()).toEqual([
+      "connection",
+      "event",
+    ]);
+    for (const row of rows) {
+      expect(row.emittedAt).toEqual(emittedAt);
+      expect(row.expiresAt.getTime()).toBe(
+        emittedAt.getTime() + INVALIDATION_RETENTION_MS,
+      );
+    }
+    // Every row actually landed in storage, not just returned in memory.
+    const listed = await repo.listAfter(tenantId, principalId, null, 10);
+    expect(listed).toHaveLength(2);
+  });
+
+  it("appendMany is a no-op for an empty list", async () => {
+    const rows = await repo.appendMany(objectId(), objectId(), []);
+    expect(rows).toEqual([]);
+  });
+
   it("keyset-lists only the caller's rows after a cursor", async () => {
     const tenantId = objectId();
     const mine = objectId();
