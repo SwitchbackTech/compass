@@ -108,7 +108,7 @@ Secrets and variables are split between repository level (shared across workflow
 | `DOCKERHUB_TOKEN` | Docker Hub personal access token (Read & Write) |
 | `DISCORD_DEPLOY_WEBHOOK_URL` | Discord webhook for deploy health check failure alerts |
 
-**`Staging` environment** — GitHub → Settings → Environments → Staging:
+**Staging environments** (`staging-cloud`, `staging-selfhosted`) — GitHub → Settings → Environments:
 
 | Secret | Value |
 |---|---|
@@ -117,9 +117,13 @@ Secrets and variables are split between repository level (shared across workflow
 | `GCAL_NOTIFICATION_TOKEN` | Google Calendar notification token |
 | `GOOGLE_CLIENT_SECRET` | OAuth client secret |
 | `MONGO_PASSWORD` | MongoDB compass user password |
-| `MONGO_REPLICA_SET_KEY` | MongoDB replica set key |
+| `MONGO_REPLICA_SET_KEY` | MongoDB replica set key (`staging-selfhosted`) |
+| `MONGO_URI` | Backend MongoDB URI |
 | `SUPERTOKENS_KEY` | SuperTokens API key |
-| `SUPERTOKENS_POSTGRES_PASSWORD` | SuperTokens PostgreSQL password |
+| `SUPERTOKENS_POSTGRES_PASSWORD` | SuperTokens PostgreSQL password (`staging-selfhosted`) |
+| `SUPERTOKENS_URI` | SuperTokens connection URI |
+| `SYNC_INTERNAL_AUTH_TOKEN` | Shared secret between backend and Sync (required) |
+| `SYNC_MONGO_URI` | Isolated Sync MongoDB URI (`staging-cloud` / production; selfhosted derives this from `MONGO_PASSWORD`) |
 
 | Variable | Value |
 |---|---|
@@ -128,6 +132,7 @@ Secrets and variables are split between repository level (shared across workflow
 | `BACKEND_API_URL` | Staging backend API URL |
 | `FRONTEND_URL` | Staging frontend URL |
 | `GOOGLE_CLIENT_ID` | OAuth client ID |
+| `COMPOSE_PROFILES` | Compose profiles (`selfhosted` on `staging-selfhosted`; sync is always appended by the deploy) |
 
 ---
 

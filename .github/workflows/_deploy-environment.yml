@@ -106,14 +106,36 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
-          # Sync activates only when BOTH its secrets are present. Sync is an
-          # optional passive add-on, so a half-provisioned config must never
-          # block the web/backend deploy — skip it cleanly instead.
-          SYNC_ENABLED=""
-          if [ -n "$SYNC_MONGO_URI" ] && [ -n "$SYNC_INTERNAL_AUTH_TOKEN" ]; then
-            SYNC_ENABLED="1"
-          elif [ -n "$SYNC_MONGO_URI" ] || [ -n "$SYNC_INTERNAL_AUTH_TOKEN" ]; then
-            echo "Note: sync is only partially configured (need both SYNC_MONGO_URI and SYNC_INTERNAL_AUTH_TOKEN); skipping sync." >&2
+          # Sync is required on every deploy: the backend hard-requires
+          # SYNC_SERVICE_URL + SYNC_INTERNAL_AUTH_TOKEN at startup (#2480) and
+          # there is no legacy in-backend engine to fall back to. Fail early
+          # with a clear message rather than writing a compass.yaml the
+          # backend will reject after compose starts.
+          if [ -z "$SYNC_INTERNAL_AUTH_TOKEN" ]; then
+            echo "Deploy requires SYNC_INTERNAL_AUTH_TOKEN." >&2
+            exit 1
+          fi
+          # Cloud uses an isolated Atlas sync DB (SYNC_MONGO_URI secret) with
+          # a scoped user, so least-privilege enforcement stays on. Selfhosted
+          # reuses the bundled mongo's compass_sync database — same derived
+          # URI as install.sh / compass.example.yaml — and turns enforcement
+          # off because the bundled image has no separate sync DB user.
+          SYNC_ENFORCE_LEAST_PRIVILEGE="true"
+          if [ -z "$SYNC_MONGO_URI" ]; then
+            case ",${COMPOSE_PROFILES}," in
+              *,selfhosted,*)
+                if [ -z "$MONGO_PASSWORD" ]; then
+                  echo "Selfhosted sync requires MONGO_PASSWORD to derive sync.mongoUri." >&2
+                  exit 1
+                fi
+                SYNC_MONGO_URI="mongodb://compass:${MONGO_PASSWORD}@mongo:27017/compass_sync?authSource=admin&replicaSet=rs0"
+                SYNC_ENFORCE_LEAST_PRIVILEGE="false"
+                ;;
+              *)
+                echo "Cloud deploy requires SYNC_MONGO_URI." >&2
+                exit 1
+                ;;
+            esac
           fi
           {
             printf '%s\n' \
@@ -159,24 +181,20 @@ jobs:
                 'email:' \
                 "  kitApiSecret: \"${KIT_API_SECRET}\""
             fi
-            # The scoped Atlas user for the isolated sync database must be
-            # denied the API database, so least-privilege enforcement is on.
-            if [ -n "$SYNC_ENABLED" ]; then
-              printf '%s\n' \
-                'sync:' \
-                "  mongoUri: \"${SYNC_MONGO_URI}\"" \
-                "  internalAuthToken: \"${SYNC_INTERNAL_AUTH_TOKEN}\"" \
-                "  callbackBaseUrl: \"${FRONTEND_URL}\"" \
-                '  serviceUrl: "http://sync:3010"' \
-                '  enforceLeastPrivilege: true'
-              # Optional per-environment execution/mutation-mode knobs (GitHub
-              # Environment vars). Empty → schema defaults (enabled / passive).
-              if [ -n "$SYNC_CLOUD_MUTATION_MODE" ]; then
-                printf '%s\n' "  cloudMutationMode: \"${SYNC_CLOUD_MUTATION_MODE}\""
-              fi
-              if [ -n "$SYNC_EXECUTION" ]; then
-                printf '%s\n' "  execution: \"${SYNC_EXECUTION}\""
-              fi
+            printf '%s\n' \
+              'sync:' \
+              "  mongoUri: \"${SYNC_MONGO_URI}\"" \
+              "  internalAuthToken: \"${SYNC_INTERNAL_AUTH_TOKEN}\"" \
+              "  callbackBaseUrl: \"${FRONTEND_URL}\"" \
+              '  serviceUrl: "http://sync:3010"' \
+              "  enforceLeastPrivilege: ${SYNC_ENFORCE_LEAST_PRIVILEGE}"
+            # Optional per-environment execution/mutation-mode knobs (GitHub
+            # Environment vars). Empty → schema defaults (enabled / passive).
+            if [ -n "$SYNC_CLOUD_MUTATION_MODE" ]; then
+              printf '%s\n' "  cloudMutationMode: \"${SYNC_CLOUD_MUTATION_MODE}\""
+            fi
+            if [ -n "$SYNC_EXECUTION" ]; then
+              printf '%s\n' "  execution: \"${SYNC_EXECUTION}\""
             fi
           } | ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" \
                 "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml && chmod 644 ~/compass/compass.yaml"
@@ -189,15 +207,8 @@ jobs:
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compose.yaml -o ~/compass/compose.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compose.selfhosted.yaml -o ~/compass/compose.selfhosted.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compass -o ~/compass/compass && chmod +x ~/compass/compass"
-          # Enable the `sync` profile only when sync is fully configured, so the
-          # container starts exactly where its config was written (never against
-          # a compass.yaml that has no sync section).
-          DEPLOY_PROFILES="$COMPOSE_PROFILES"
-          if [ -n "$SYNC_ENABLED" ]; then
-            DEPLOY_PROFILES="${DEPLOY_PROFILES:+${DEPLOY_PROFILES},}sync"
-          fi
-          if [ -n "$DEPLOY_PROFILES" ]; then
-            ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && COMPOSE_PROFILES='${DEPLOY_PROFILES}' ./compass update"
-          else
-            ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && ./compass update"
-          fi
+          # Always enable the sync profile: config is always written above, and
+          # an explicit COMPOSE_PROFILES var (e.g. `selfhosted`) would otherwise
+          # override the helper's default_profiles() and leave sync unstarted.
+          DEPLOY_PROFILES="${COMPOSE_PROFILES:+${COMPOSE_PROFILES},}sync"
+          ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && COMPOSE_PROFILES='${DEPLOY_PROFILES}' ./compass update"
