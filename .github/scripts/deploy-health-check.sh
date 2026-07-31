@@ -368,14 +368,14 @@ ssh_remote() {
 
 remote_compose_prefix() {
   if [ "${PROFILE:-}" = "selfhosted" ]; then
-    printf 'cd ~/compass && COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yaml'
+    printf 'cd ~/compass && COMPOSE_PROFILES=selfhosted,sync docker compose --project-name compass -f compose.yaml'
   else
-    printf 'cd ~/compass && docker compose --project-name compass -f compose.yaml'
+    printf 'cd ~/compass && COMPOSE_PROFILES=sync docker compose --project-name compass -f compose.yaml'
   fi
 }
 
 remote_check_stack() {
-  local expected_services=("web" "backend")
+  local expected_services=("web" "backend" "sync")
   local version=${RELEASE_TAG:-${TAG:-}}
   version=${version#v}
 
@@ -407,7 +407,7 @@ for service in \$services; do
   fi
 done
 
-for service in web backend; do
+for service in web backend sync; do
   line=\$(printf '%s\n' "\$ps_output" | awk -v service="\$service" '\$1 == service { print }')
   # web uses an environment-prefixed tag (e.g. staging-selfhosted-0.5.25); backend uses :0.5.25.
   # Check that the version string appears anywhere in the image tag for both.
