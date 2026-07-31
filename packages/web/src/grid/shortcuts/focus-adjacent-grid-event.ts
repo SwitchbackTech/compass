@@ -29,16 +29,16 @@ export function getChronologicallyAdjacentTarget({
 }): FocusableGridEventTarget | null {
   if (visible.length === 0 || !focused) return null;
 
-  const startById = new Map<string, string>();
+  const startMsById = new Map<string, number>();
   for (const event of [...allDayEvents, ...timedEvents]) {
     if (event._id && event.startDate) {
-      startById.set(event._id, event.startDate);
+      startMsById.set(event._id, dayjs(event.startDate).valueOf());
     }
   }
 
   const sorted = [...visible].sort((a, b) => {
-    const aStart = dayjs(startById.get(a.eventId) ?? 0).valueOf();
-    const bStart = dayjs(startById.get(b.eventId) ?? 0).valueOf();
+    const aStart = startMsById.get(a.eventId) ?? 0;
+    const bStart = startMsById.get(b.eventId) ?? 0;
     if (aStart !== bStart) return aStart - bStart;
     if (a.eventType !== b.eventType) {
       return a.eventType === "all-day" ? -1 : 1;

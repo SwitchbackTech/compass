@@ -31,8 +31,6 @@ import {
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
 
-export type { GridEventShortcutTarget };
-
 const DRAFT_MOVEMENT_HOTKEY_OPTIONS = {
   ignoreInputs: false,
   preventDefault: false,
@@ -94,6 +92,25 @@ export function useGridEventEditShortcuts({
     return events.find((candidate) => candidate._id === target.eventId) ?? null;
   };
 
+  // Focused only (no hover/first-visible fallback): edit actions must
+  // demand an explicit target.
+  const getFocusedMutableCalendarEvent = () => {
+    const target = targeting.getFocused();
+    if (!target) return null;
+
+    const event = findCalendarEventForTarget(target);
+    if (!event) return null;
+
+    if (isGridEventInteractionReadOnly(calendarLookup, event)) {
+      return null;
+    }
+
+    return event;
+  };
+
+  const isFocusInSidebar = () =>
+    Boolean(document.activeElement?.closest(`#${ID_SIDEBAR}`));
+
   const deleteFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
     if (
       isDeleteTextEditingTarget(keyboardEvent) ||
@@ -102,21 +119,10 @@ export function useGridEventEditShortcuts({
       return;
     }
 
-    if (document.activeElement?.closest(`#${ID_SIDEBAR}`)) {
-      return;
-    }
+    if (isFocusInSidebar()) return;
 
-    // Focused only (no hover/first-visible fallback): destructive actions
-    // must demand an explicit target.
-    const target = targeting.getFocused();
-    if (!target) return;
-
-    const event = findCalendarEventForTarget(target);
+    const event = getFocusedMutableCalendarEvent();
     if (!event) return;
-
-    if (isGridEventInteractionReadOnly(calendarLookup, event)) {
-      return;
-    }
 
     keyboardEvent.preventDefault();
     keyboardEvent.stopPropagation();
@@ -128,19 +134,10 @@ export function useGridEventEditShortcuts({
       return;
     }
 
-    if (document.activeElement?.closest(`#${ID_SIDEBAR}`)) {
-      return;
-    }
+    if (isFocusInSidebar()) return;
 
-    const target = targeting.getFocused();
-    if (!target) return;
-
-    const gridEvent = findCalendarEventForTarget(target);
+    const gridEvent = getFocusedMutableCalendarEvent();
     if (!gridEvent?._id) return;
-
-    if (isGridEventInteractionReadOnly(calendarLookup, gridEvent)) {
-      return;
-    }
 
     const sourceEvent = findEventInCache(queryClient, gridEvent._id);
     if (!sourceEvent) return;
@@ -157,17 +154,8 @@ export function useGridEventEditShortcuts({
   const moveFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
     if (isEventFormOpen()) return;
 
-    // Focused only (no hover/first-visible fallback): moving an event the
-    // user isn't focused on would be surprising.
-    const target = targeting.getFocused();
-    if (!target) return;
-
-    const event = findCalendarEventForTarget(target);
+    const event = getFocusedMutableCalendarEvent();
     if (!event?._id) return;
-
-    if (isGridEventInteractionReadOnly(calendarLookup, event)) {
-      return;
-    }
 
     const movement = getArrowKeyMovement(
       keyboardEvent.key,

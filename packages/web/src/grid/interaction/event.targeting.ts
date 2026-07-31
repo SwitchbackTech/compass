@@ -28,34 +28,7 @@ export const createGridEventTargeting = <TType extends string>({
     };
   };
 
-  return {
-    clearHoveredGridEventTarget: (element?: HTMLElement): void => {
-      if (!element || hoveredEventElement === element) {
-        hoveredEventElement = null;
-      }
-    },
-    focusGridEventTarget: (target: GridEventTarget<TType>): void => {
-      target.element.focus();
-    },
-    getFirstVisibleGridEventTarget: (
-      root: ParentNode = document,
-    ): GridEventTarget<TType> | null => {
-      const visible = listVisible(root);
-      return visible[0] ?? null;
-    },
-    listVisibleGridEventTargets: (
-      root: ParentNode = document,
-    ): GridEventTarget<TType>[] => listVisible(root),
-    getFocusedGridEventTarget: (): GridEventTarget<TType> | null =>
-      toTarget(document.activeElement),
-    getHoveredGridEventTarget: (): GridEventTarget<TType> | null =>
-      toTarget(hoveredEventElement),
-    setHoveredGridEventTarget: (element: HTMLElement | null): void => {
-      hoveredEventElement = element;
-    },
-  };
-
-  function listVisible(root: ParentNode): GridEventTarget<TType>[] {
+  function listVisible(root: ParentNode = document): GridEventTarget<TType>[] {
     const candidates = root.querySelectorAll(targetSelector);
     const visible: GridEventTarget<TType>[] = [];
 
@@ -68,6 +41,28 @@ export const createGridEventTargeting = <TType extends string>({
 
     return visible;
   }
+
+  return {
+    clearHoveredGridEventTarget: (element?: HTMLElement): void => {
+      if (!element || hoveredEventElement === element) {
+        hoveredEventElement = null;
+      }
+    },
+    focusGridEventTarget: (target: GridEventTarget<TType>): void => {
+      target.element.focus();
+    },
+    getFirstVisibleGridEventTarget: (
+      root: ParentNode = document,
+    ): GridEventTarget<TType> | null => listVisible(root)[0] ?? null,
+    listVisibleGridEventTargets: listVisible,
+    getFocusedGridEventTarget: (): GridEventTarget<TType> | null =>
+      toTarget(document.activeElement),
+    getHoveredGridEventTarget: (): GridEventTarget<TType> | null =>
+      toTarget(hoveredEventElement),
+    setHoveredGridEventTarget: (element: HTMLElement | null): void => {
+      hoveredEventElement = element;
+    },
+  };
 };
 
 const isVisibleEventElement = (element: HTMLElement): boolean => {
