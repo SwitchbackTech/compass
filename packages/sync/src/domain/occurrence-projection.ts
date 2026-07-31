@@ -58,6 +58,11 @@ function projectSeriesMaster(
   const excluded = new Set(
     excludedInstants.map((instant) => new Date(instant).getTime()),
   );
+  // EXDATEs are exclusions the provider baked into the rules themselves —
+  // same mechanism as exception-owned instants, so they share the set.
+  for (const exdate of dateListInstants(rules, "EXDATE", event.schedule)) {
+    excluded.add(exdate.getTime());
+  }
   const occurrences: OccurrenceInput[] = [];
   // DTSTART is always an instance of the series when it falls in the horizon,
   // even if BYDAY/COUNT would skip it on expansion. Matches CompassEventRRule
@@ -69,7 +74,18 @@ function projectSeriesMaster(
     occurrences.push(toOccurrence(event, event.schedule, dtstart, false));
   }
 
-  for (const originalStart of expandInstants(event.schedule, rules, horizon)) {
+  // RDATEs are extra instants alongside the rule's expansion; merge, dedupe
+  // (an RDATE may restate an expanded instant), sort, and re-cap.
+  const expanded = expandInstants(event.schedule, rules, horizon);
+  const rdates = dateListInstants(rules, "RDATE", event.schedule).filter(
+    (instant) => withinHorizon(instant, horizon),
+  );
+  const starts = [...new Set([...expanded, ...rdates].map((d) => d.getTime()))]
+    .sort((a, b) => a - b)
+    .slice(0, GCAL_MAX_RECURRENCES)
+    .map((ms) => new Date(ms));
+
+  for (const originalStart of starts) {
     if (excluded.has(originalStart.getTime())) continue;
     // Already emitted as the DTSTART instance above.
     if (originalStart.getTime() === dtstartMs) continue;
@@ -90,19 +106,70 @@ function expandInstants(
   rules: readonly string[],
   horizon: ProjectionHorizon,
 ): Date[] {
-  const rule = rrulestr(floatingRules(rules, schedule), {
-    dtstart: floatingAnchor(schedule),
-  });
+  // Only RRULE lines go to rrulestr, one at a time. Feeding it a multi-line
+  // string with EXDATE/RDATE lines flips it onto its RRuleSet branch, which
+  // silently IGNORES the dtstart option — the inner RRule then anchors at
+  // `new Date()`, re-basing the whole series on "now" at every projection.
+  // That resurrected dead series into the present and shifted every
+  // occurrenceKey per run, so per-instance delete tombstones never matched.
+  // EXDATE/RDATE are handled by dateListInstants in projectSeriesMaster.
+  const rruleLines = rules.filter((line) => /^RRULE:/i.test(line));
 
   const wallInstants: Date[] = [];
-  rule.all((date) => {
-    const instant = localizeInstant(date, schedule);
-    if (instant.getTime() >= horizon.end.getTime()) return false;
-    if (instant.getTime() >= horizon.start.getTime()) wallInstants.push(date);
-    return wallInstants.length < GCAL_MAX_RECURRENCES;
-  });
+  for (const line of rruleLines) {
+    const rule = rrulestr(floatingRules([line], schedule), {
+      dtstart: floatingAnchor(schedule),
+    });
+    rule.all((date) => {
+      const instant = localizeInstant(date, schedule);
+      if (instant.getTime() >= horizon.end.getTime()) return false;
+      if (instant.getTime() >= horizon.start.getTime()) wallInstants.push(date);
+      return wallInstants.length < GCAL_MAX_RECURRENCES;
+    });
+  }
 
   return wallInstants.map((date) => localizeInstant(date, schedule));
+}
+
+// Real start instants named by the rules' EXDATE or RDATE lines. Values are
+// wall times in the line's TZID (or the event's zone when absent), date-only
+// for VALUE=DATE, or real UTC when suffixed Z — each resolves to the same
+// real instant localizeInstant produces for an expanded candidate, so they
+// compare exactly. A malformed value or unknown zone skips that value only:
+// one bad line must never sink a whole projection or import page.
+function dateListInstants(
+  rules: readonly string[],
+  name: "EXDATE" | "RDATE",
+  schedule: EventSchedule,
+): Date[] {
+  const zone = schedule.kind === "timed" ? schedule.timeZone : "UTC";
+  const instants: Date[] = [];
+  for (const line of rules) {
+    const match = /^(EXDATE|RDATE)((?:;[^:]*)?):(.+)$/i.exec(line);
+    if (!match || match[1]!.toUpperCase() !== name) continue;
+    const params = match[2] ?? "";
+    const tzid = /TZID=([^;:]+)/i.exec(params)?.[1];
+    for (const raw of match[3]!.split(",")) {
+      const value = raw.trim();
+      if (/^\d{8}$/.test(value)) {
+        instants.push(new Date(`${basicToIso(`${value}T000000`)}Z`));
+      } else if (/^\d{8}T\d{6}Z$/.test(value)) {
+        instants.push(basicUtcToDate(value.slice(0, -1)));
+      } else if (/^\d{8}T\d{6}$/.test(value)) {
+        try {
+          instants.push(dayjs.tz(basicToIso(value), tzid ?? zone).toDate());
+        } catch {
+          instants.push(dayjs.tz(basicToIso(value), zone).toDate());
+        }
+      }
+    }
+  }
+  return instants;
+}
+
+// "20260610T055959" → "2026-06-10T05:59:59" (no zone attached).
+function basicToIso(basic: string): string {
+  return `${basic.slice(0, 4)}-${basic.slice(4, 6)}-${basic.slice(6, 8)}T${basic.slice(9, 11)}:${basic.slice(11, 13)}:${basic.slice(13, 15)}`;
 }
 
 // Rewrites a rule's UNTIL into the same floating frame as the dtstart. rrule
@@ -186,18 +253,26 @@ export function truncateRulesBefore(
     .replace(/\.\d{3}/, "");
   // Drop any existing COUNT/UNTIL first: COUNT and UNTIL are mutually exclusive
   // per RFC 5545, and a stale UNTIL would otherwise survive alongside the new one.
-  return stripRuleBounds(rules).map((rule) => `${rule};UNTIL=${until}`);
+  // Only RRULE lines take the bound — appending UNTIL to an EXDATE/RDATE line
+  // would corrupt it. (A pre-split EXDATE surviving on both halves is a no-op:
+  // an EXDATE naming a non-instant excludes nothing.)
+  return stripRuleBounds(rules).map((rule) =>
+    /^RRULE:/i.test(rule) ? `${rule};UNTIL=${until}` : rule,
+  );
 }
 
-// Removes COUNT and UNTIL from each rule, leaving an open-ended pattern. Used to
-// derive the remainder series of a thisAndFollowing split (it continues the
-// original cadence from the split point, unbounded).
+// Removes COUNT and UNTIL from each RRULE line (other lines pass through
+// untouched), leaving an open-ended pattern. Used to derive the remainder
+// series of a thisAndFollowing split (it continues the original cadence from
+// the split point, unbounded).
 export function stripRuleBounds(rules: readonly string[]): string[] {
   return rules.map((rule) =>
-    rule
-      .split(";")
-      .filter((part) => !/^COUNT=/i.test(part) && !/^UNTIL=/i.test(part))
-      .join(";"),
+    /^RRULE:/i.test(rule)
+      ? rule
+          .split(";")
+          .filter((part) => !/^COUNT=/i.test(part) && !/^UNTIL=/i.test(part))
+          .join(";")
+      : rule,
   );
 }
 
