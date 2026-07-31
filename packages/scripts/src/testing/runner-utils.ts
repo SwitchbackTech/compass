@@ -105,8 +105,18 @@ export function resolveTestTargets(
   // has previously hung the runner — directory passthrough stays there.
   if (options.expandDirectory) {
     const glob = `${scan.replace(/\/$/, "")}/**/*.{test,spec}.{ts,tsx}`;
+    const files = resolveTestFiles(glob, []).files;
+    // A zero-match glob (a typo'd scan path, a package with no matching test
+    // files) would otherwise silently fall through to spawning `bun test`
+    // with no path args at all - which reverts to the exact directory-scan
+    // discovery this expansion exists to avoid, with no diagnostic pointing
+    // at the real cause.
+    if (files.length === 0) {
+      console.error(`No test files matched: ${glob}`);
+      process.exit(1);
+    }
     return {
-      targets: resolveTestFiles(glob, []).files,
+      targets: files,
       bunFlags: flags,
       label: scan,
     };
