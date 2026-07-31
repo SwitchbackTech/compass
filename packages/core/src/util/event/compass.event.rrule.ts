@@ -42,7 +42,12 @@ function toFloatingDate(wall: Dayjs): Date {
 
 // The inverse: re-anchors a floating date (UTC fields = wall clock) back onto
 // the real timeline as the civil wall time in `timezone` (DST-aware).
-function localizeFloatingDate(floating: Date, timezone: string): Date {
+// Exported so callers that read `.options.until` off a constructed
+// CompassEventRRule (e.g. useRecurrence, to seed editable state) can undo the
+// float before feeding the value back into a new instance - otherwise
+// #initOptions floats an already-floating Date a second time, drifting it by
+// the timezone offset on every round trip.
+export function localizeFloatingDate(floating: Date, timezone: string): Date {
   const wall = dayjs.utc(floating).format("YYYY-MM-DDTHH:mm:ss.SSS");
 
   return dayjs.tz(wall, timezone).toDate();
@@ -83,6 +88,19 @@ export class CompassEventRRule extends RRule {
       getCompassEventDateFormat(this.#event.endDate!),
     ).tz(this.#timezone);
     this.#durationMs = this.#endDate.diff(this.#startDate, "milliseconds");
+  }
+
+  // `this.options.until` (inherited from RRule) is the internal floating
+  // value used for candidate expansion - not a real instant. This is the
+  // outbound counterpart to #initOptions' inbound floating: it un-floats
+  // before handing `until` to a caller, the same way `all()` already
+  // un-floats its returned dates, so round-tripping this value back into a
+  // new CompassEventRRule's `options.until` is idempotent by construction.
+  get until(): Date | null {
+    const until = this.options.until;
+    if (!until) return null;
+
+    return this.#isTimed ? localizeFloatingDate(until, this.#timezone) : until;
   }
 
   static #initOptions(
