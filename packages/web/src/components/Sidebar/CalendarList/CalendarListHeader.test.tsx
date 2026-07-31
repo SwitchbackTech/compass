@@ -22,7 +22,7 @@ const googleCommandActionFor = (state: GoogleUiState) => {
         onSelect: mockConnectGoogle,
       };
     case "ATTENTION":
-      return { label: "Sync Google Calendar", onSelect: mockConnectGoogle };
+      return { label: "Refresh calendar", onSelect: mockConnectGoogle };
     default:
       return null;
   }
@@ -241,7 +241,7 @@ describe("CalendarListHeader", () => {
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
-  it("shows a sync Google button when the calendar is out of date", async () => {
+  it("shows a refresh calendar button when the calendar is out of date", async () => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "ATTENTION";
@@ -255,7 +255,7 @@ describe("CalendarListHeader", () => {
     expect(screen.queryByRole("status")).toBeNull();
 
     const syncButton = screen.getByRole("button", {
-      name: "Sync Google Calendar",
+      name: "Refresh calendar",
     });
     await user.click(syncButton);
     expect(mockConnectGoogle).toHaveBeenCalledTimes(1);

@@ -24,20 +24,30 @@ export function useDayEvents(dateInView: dayjs.Dayjs) {
     () => dayEventQueryRange(dateInView),
     [dateInView],
   );
-
-  useDayEventsQuery({ startDate, endDate });
+  const query = useDayEventsQuery({ startDate, endDate });
 
   // Warm the previous/next day so the next prev/next click resolves from
   // cache. Uses the same start/end-of-day formatting as the read above,
   // so the prefetched entries land under the exact keys a subsequent read
-  // looks up.
+  // looks up. Wait until the current day settles so first paint wins.
   const previous = useMemo(
-    () => dayEventQueryRange(dateInView.subtract(1, "day")),
-    [dateInView],
+    () => ({
+      ...dayEventQueryRange(dateInView.subtract(1, "day")),
+      calendarIds: query.calendarIds,
+    }),
+    [dateInView, query.calendarIds],
   );
   const next = useMemo(
-    () => dayEventQueryRange(dateInView.add(1, "day")),
-    [dateInView],
+    () => ({
+      ...dayEventQueryRange(dateInView.add(1, "day")),
+      calendarIds: query.calendarIds,
+    }),
+    [dateInView, query.calendarIds],
   );
-  usePrefetchAdjacentEvents(dayEventsQueryOptions, previous, next);
+  usePrefetchAdjacentEvents(
+    dayEventsQueryOptions,
+    previous,
+    next,
+    query.isSuccess,
+  );
 }

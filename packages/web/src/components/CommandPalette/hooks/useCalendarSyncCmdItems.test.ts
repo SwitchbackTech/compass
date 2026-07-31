@@ -56,7 +56,7 @@ describe("useCalendarSyncCmdItems", () => {
       isAvailable: true,
       isConnecting: false,
       commandAction: {
-        label: "Sync Google Calendar",
+        label: "Refresh calendar",
         icon: CloudArrowUpIcon,
         onSelect,
       },
@@ -69,7 +69,7 @@ describe("useCalendarSyncCmdItems", () => {
     expect(result.current.items).toEqual([
       {
         id: "connect-google-calendar",
-        label: "Sync Google Calendar",
+        label: "Refresh calendar",
         icon: CloudArrowUpIcon,
         onClick: onSelect,
         keepOpen: true,
@@ -77,7 +77,7 @@ describe("useCalendarSyncCmdItems", () => {
     ]);
     expect(result.current.syncStatus).toEqual({
       variant: "warning",
-      text: "Calendar is out of date",
+      text: "Calendar needs a refresh",
     });
   });
 

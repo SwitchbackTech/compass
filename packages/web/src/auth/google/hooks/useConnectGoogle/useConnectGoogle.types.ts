@@ -17,6 +17,8 @@ export type UseConnectGoogleResult = GoogleUiConfig & {
   isAvailable: boolean;
   /** True while connect/reconnect OAuth is starting (before redirect). */
   isConnecting: boolean;
+  /** True while a user-triggered Sync refresh is in flight. */
+  isRefreshing: boolean;
   state: GoogleUiState;
   /**
    * Start connect/reconnect: flushes pending local events, then navigates to
@@ -26,4 +28,9 @@ export type UseConnectGoogleResult = GoogleUiConfig & {
    * it (google-reconnect.toast.tsx).
    */
   connect: () => void;
+  /**
+   * Enqueue Sync catch-up pulls for the signed-in user's calendars. Used by
+   * the ATTENTION / delayed Refresh CTA and delayed toast.
+   */
+  refresh: () => void;
 };

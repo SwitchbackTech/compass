@@ -71,9 +71,14 @@ export const useWeek = (
     [start, visibleDayCount],
   );
 
-  useWeekEventsQuery({ startOfView: start, endOfView: queryEnd });
+  const weekQuery = useWeekEventsQuery({
+    startOfView: start,
+    endOfView: queryEnd,
+  });
 
   // Warm the previous and next paged windows (J/K) using 7-day read keys.
+  // Defer until the current range has settled so first paint is not competing
+  // with adjacent Sync drains.
   const previousStart = useMemo(
     () => start.subtract(visibleDayCount, "day"),
     [start, visibleDayCount],
@@ -89,13 +94,16 @@ export const useWeek = (
       endDate: toUTCOffset(
         previousStart.add(WEEK_DAY_COUNT - 1, "day").endOf("day"),
       ),
+      calendarIds: weekQuery.calendarIds,
     },
     {
       startDate: toUTCOffset(nextStart),
       endDate: toUTCOffset(
         nextStart.add(WEEK_DAY_COUNT - 1, "day").endOf("day"),
       ),
+      calendarIds: weekQuery.calendarIds,
     },
+    weekQuery.isSuccess,
   );
 
   useEffect(() => {

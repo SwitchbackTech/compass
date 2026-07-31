@@ -55,7 +55,16 @@ class ErrorHandler {
     return true;
   }
 
-  public log(error: Error): void {
+  public log(
+    error: Error,
+    context?: {
+      method?: string;
+      path?: string;
+      status?: number;
+      userId?: string | null;
+      correlationId?: string;
+    },
+  ): void {
     // JSON.stringify(error) on a plain Error serializes to "{}" - name,
     // message, and stack are non-enumerable - and this used to be the ONLY
     // log line emitted for every backend HTTP error (see
@@ -67,7 +76,22 @@ class ErrorHandler {
     // OWN ENUMERABLE properties (unlike Error.prototype's message/stack) -
     // passing the object itself to the logger would serialize those secrets
     // straight into the log output.
-    logger.error(error.message || String(error), { stack: error.stack });
+    const meta: {
+      stack?: string;
+      method?: string;
+      path?: string;
+      status?: number;
+      userId?: string;
+      correlationId?: string;
+    } = { stack: error.stack };
+    if (context?.method !== undefined) meta.method = context.method;
+    if (context?.path !== undefined) meta.path = context.path;
+    if (context?.status !== undefined) meta.status = context.status;
+    if (context?.userId != null) meta.userId = context.userId;
+    if (context?.correlationId !== undefined) {
+      meta.correlationId = context.correlationId;
+    }
+    logger.error(error.message || String(error), meta);
   }
 
   exitAfterProgrammerError(): void {

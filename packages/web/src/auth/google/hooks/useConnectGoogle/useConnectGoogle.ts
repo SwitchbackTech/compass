@@ -1,13 +1,23 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { AuthApi } from "@web/api/auth.api";
+import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
+import {
+  clearSyncingSyncIndicatorOverride,
+  setSyncingSyncIndicatorOverride,
+} from "@web/auth/google/state/google.sync.state";
 import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import {
   selectGoogleSyncConnection,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
-import { GOOGLE_CONNECT_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
+import {
+  GOOGLE_CONNECT_FAILED_TOAST_ID,
+  GOOGLE_REFRESH_FAILED_TOAST_ID,
+} from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { settingsActions } from "@web/settings/settings.store";
 import { useIsConnectGoogleAvailable } from "../useIsGoogleAvailable/useIsGoogleAvailable";
 import { type UseConnectGoogleResult } from "./useConnectGoogle.types";
@@ -18,10 +28,13 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
   const isAvailable = useIsConnectGoogleAvailable();
   const state = useGoogleUiState();
   const syncConnection = useUserMetadataStore(selectGoogleSyncConnection);
+  const queryClient = useQueryClient();
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   // Sync guard so rapid re-clicks before React re-renders cannot start a
   // second OAuth attempt; isConnecting alone would still be false in-handler.
   const isConnectingRef = useRef(false);
+  const isRefreshingRef = useRef(false);
   const stopConnecting = useCallback(() => {
     isConnectingRef.current = false;
     setIsConnecting(false);
@@ -85,11 +98,48 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
     void start();
   }, [state, stopConnecting, syncConnection?.id]);
 
+  const onRefreshGoogle = useCallback(() => {
+    if (isRefreshingRef.current || isConnectingRef.current) {
+      return;
+    }
+
+    isRefreshingRef.current = true;
+    setIsRefreshing(true);
+    setSyncingSyncIndicatorOverride();
+    settingsActions.closeCmdPalette();
+
+    const run = async () => {
+      try {
+        await AuthApi.refreshGoogleSync();
+        await refreshUserMetadata({ force: true });
+        void queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
+      } catch {
+        showErrorToast(
+          "We couldn't refresh your calendar. Please try again in a moment.",
+          { toastId: GOOGLE_REFRESH_FAILED_TOAST_ID },
+        );
+      } finally {
+        // Drop the optimistic syncing override once the request settles.
+        // Metadata/SSE still drive IMPORTING when a real import is in flight.
+        clearSyncingSyncIndicatorOverride();
+        isRefreshingRef.current = false;
+        setIsRefreshing(false);
+      }
+    };
+
+    void run();
+  }, [queryClient]);
+
   return {
-    ...getGoogleConnectionConfig(state, onOpenGoogleAuth),
+    ...getGoogleConnectionConfig(state, {
+      onConnectGoogle: onOpenGoogleAuth,
+      onRefreshGoogle,
+    }),
     connect: onOpenGoogleAuth,
+    refresh: onRefreshGoogle,
     isAvailable,
     isConnecting,
+    isRefreshing,
     state,
   };
 };

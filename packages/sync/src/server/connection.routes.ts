@@ -9,6 +9,7 @@ import {
 import {
   type CalendarListResponse,
   type ConnectionListResponse,
+  ConnectionRefreshResponseSchema,
   type ProviderCalendar,
   ProviderCalendarSchema,
   type ProviderConnection,
@@ -31,6 +32,7 @@ import {
   type BusyAvailability,
   computeBusyAvailability,
 } from "@sync/domain/busy-query.service";
+import { refreshPrincipalCalendars } from "@sync/domain/connection-refresh.service";
 import { type DerivedConnectionState } from "@sync/domain/connection-state";
 import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
 import { assembleEventInstances } from "@sync/domain/event-instance-assembly";
@@ -65,6 +67,7 @@ export const CALENDARS_PATH = "/internal/calendars";
 export const EVENTS_FULL_PATH = "/internal/events/full";
 export const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 export const BEGIN_PATH = "/internal/connections/begin";
+export const REFRESH_PATH = "/internal/connections/refresh";
 // Where the provider redirects the browser after consent; `begin` builds the
 // redirect_uri from it and the public callback route below mounts on it.
 // Public reverse-proxy path (Caddy `/sync/*` → sync). Must match the Google
@@ -476,6 +479,43 @@ export function registerConnectionRoutes(
         redirectUri: `${deps.callbackBaseUrl}${OAUTH_CALLBACK_PATH}`,
       });
       res.status(Status.OK).json({ authorizationUrl });
+    },
+  );
+
+  // User-triggered catch-up: enqueue an incremental pull for each events
+  // resource owned by the signed principal. Passive-only deployments refuse —
+  // there is no worker to drain the jobs.
+  app.post(
+    REFRESH_PATH,
+    internalRateLimit,
+    deps.authMiddleware,
+    async (req, res) => {
+      const auth = requireAuth(req, res);
+      if (!auth) return;
+      if (!ensureConnected(deps.mongo, res)) return;
+      if (deps.execution === "passive") {
+        res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
+        return;
+      }
+
+      try {
+        const repos = syncRepositories(deps.mongo);
+        const enqueued = await refreshPrincipalCalendars(
+          { resources: repos.syncResources, jobs: repos.jobs },
+          auth.tenantId,
+          auth.principalId,
+          () => new Date((deps.now ?? Date.now)()),
+        );
+        res
+          .status(Status.OK)
+          .json(ConnectionRefreshResponseSchema.parse({ enqueued }));
+      } catch (error) {
+        logger.error(
+          `Failed to refresh calendars for ${auth.tenantId}/${auth.principalId}`,
+          redactedCause(error),
+        );
+        respondInternalError(res);
+      }
     },
   );
 

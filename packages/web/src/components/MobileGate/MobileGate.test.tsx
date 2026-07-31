@@ -6,18 +6,24 @@ import { MobileGate } from "./MobileGate";
 
 describe("MobileGate", () => {
   const mockWindowOpen = mock();
+  const mockWriteText = mock(() => Promise.resolve());
 
   beforeEach(() => {
     mockWindowOpen.mockClear();
+    mockWriteText.mockClear();
     window.open = mockWindowOpen;
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: mockWriteText },
+    });
   });
 
   describe("Component Rendering", () => {
-    it("renders the title message", () => {
+    it("renders the desktop-first title", () => {
       render(<MobileGate />);
 
       expect(
-        screen.getByText("Compass isn't built for mobile yet"),
+        screen.getByText("Open Compass on a computer"),
       ).toBeInTheDocument();
     });
 
@@ -25,19 +31,34 @@ describe("MobileGate", () => {
       render(<MobileGate />);
 
       expect(
-        screen.getByText(
-          /We're focusing on perfecting the web experience first/,
-        ),
+        screen.getByText(/Copy this link and open it on a laptop or desktop/),
       ).toBeInTheDocument();
     });
 
-    it("renders the Join Mobile Waitlist button", () => {
+    it("renders the copy-link and waitlist buttons", () => {
       render(<MobileGate />);
 
-      const waitlistButton = screen.getByRole("button", {
-        name: /join mobile waitlist/i,
-      });
-      expect(waitlistButton).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /copy link for desktop/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /join mobile waitlist/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe("Copy link", () => {
+    it("copies the current URL to the clipboard", async () => {
+      const user = userEvent.setup();
+      render(<MobileGate />);
+
+      await user.click(
+        screen.getByRole("button", { name: /copy link for desktop/i }),
+      );
+
+      expect(
+        await screen.findByRole("button", { name: /link copied/i }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -61,20 +82,12 @@ describe("MobileGate", () => {
   });
 
   describe("Accessibility", () => {
-    it("has proper button role", () => {
-      render(<MobileGate />);
-
-      const button = screen.getByRole("button");
-      expect(button).toBeInTheDocument();
-      expect(button).toHaveTextContent("Join Mobile Waitlist");
-    });
-
     it("renders heading for the title", () => {
       render(<MobileGate />);
 
       const heading = screen.getByRole("heading", { level: 1 });
       expect(heading).toBeInTheDocument();
-      expect(heading).toHaveTextContent("Compass isn't built for mobile yet");
+      expect(heading).toHaveTextContent("Open Compass on a computer");
     });
   });
 });

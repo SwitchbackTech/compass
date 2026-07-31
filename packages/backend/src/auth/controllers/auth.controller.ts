@@ -8,6 +8,7 @@ import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import { beginSyncConnection } from "@backend/common/services/sync-service/sync-connection-begin";
+import { refreshSyncConnection } from "@backend/common/services/sync-service/sync-connection-refresh";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import {
@@ -73,6 +74,16 @@ class AuthController {
     const request = ConnectionBeginRequestSchema.parse(req.body ?? {});
 
     res.promise(beginSyncConnection(client, toSyncPrincipal(userId), request));
+  };
+
+  // User-triggered Google calendar catch-up (Refresh calendar CTA).
+  refreshGoogleSync = (req: SessionRequest, res: Res_Promise): void => {
+    if (rejectIfMaintenance(res)) return;
+
+    const client = getSyncServiceClient();
+    const userId = zObjectId.parse(req.session?.getUserId()).toString();
+
+    res.promise(refreshSyncConnection(client, toSyncPrincipal(userId)));
   };
 }
 

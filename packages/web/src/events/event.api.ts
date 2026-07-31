@@ -18,6 +18,9 @@ function buildListQueryString(query: EventListQuery): string {
   params.set("kind", query.kind);
   params.set("start", query.start);
   params.set("end", query.end);
+  if (query.calendarIds !== undefined && query.calendarIds.length > 0) {
+    params.set("calendarIds", query.calendarIds.join(","));
+  }
 
   return params.toString();
 }

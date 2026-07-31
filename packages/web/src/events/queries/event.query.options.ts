@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
+import { type CalendarId } from "@core/types/domain-primitives";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { getEventRepositoryBySource } from "@web/events/repositories/event.repository.util";
 import { fetchDayEvents } from "./day.event.query";
@@ -23,18 +24,26 @@ export type EventsQueryArgs = {
   source: EventRepositorySource;
   startDate: string;
   endDate: string;
+  calendarIds?: CalendarId[];
 };
 
-export function dayEventsQueryOptions({
-  source,
-  startDate,
-  endDate,
-}: EventsQueryArgs) {
+type RangeFetch = typeof fetchDayEvents;
+
+function rangeEventsQueryOptions(
+  scope: "day" | "week",
+  fetchFn: RangeFetch,
+  { source, startDate, endDate, calendarIds }: EventsQueryArgs,
+) {
   return queryOptions({
-    queryKey: eventQueryKeys.day({ source, start: startDate, end: endDate }),
+    queryKey: eventQueryKeys[scope]({
+      source,
+      start: startDate,
+      end: endDate,
+      calendarIds,
+    }),
     queryFn: () =>
-      fetchDayEvents(
-        { startDate, endDate },
+      fetchFn(
+        { startDate, endDate, calendarIds },
         getEventRepositoryBySource(source),
         source,
       ),
@@ -42,19 +51,10 @@ export function dayEventsQueryOptions({
   });
 }
 
-export function weekEventsQueryOptions({
-  source,
-  startDate,
-  endDate,
-}: EventsQueryArgs) {
-  return queryOptions({
-    queryKey: eventQueryKeys.week({ source, start: startDate, end: endDate }),
-    queryFn: () =>
-      fetchWeekEvents(
-        { startDate, endDate },
-        getEventRepositoryBySource(source),
-        source,
-      ),
-    ...EVENT_QUERY_CACHE_OPTIONS,
-  });
+export function dayEventsQueryOptions(args: EventsQueryArgs) {
+  return rangeEventsQueryOptions("day", fetchDayEvents, args);
+}
+
+export function weekEventsQueryOptions(args: EventsQueryArgs) {
+  return rangeEventsQueryOptions("week", fetchWeekEvents, args);
 }

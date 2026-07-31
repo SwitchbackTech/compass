@@ -214,7 +214,16 @@ async function runSyncJob(
   switch (job.kind) {
     case "initialImport": {
       // Idempotent: a resource that already holds a cursor no-ops inside.
-      await importCalendarEvents(deps, calendar, now);
+      // Notify the browser after the windowed horizon pass so events in the
+      // current view can appear before the full historical scrape finishes.
+      await importCalendarEvents(deps, calendar, now, {
+        onWindowedPassComplete: async () => {
+          await appendCalendarInvalidation(deps, calendar, now());
+        },
+      });
+      // Full import finished — surface the remaining events and let metadata
+      // leave IMPORTING once connection-state refresh runs.
+      await appendCalendarInvalidation(deps, calendar, now());
       // Bootstrap the push channel once the calendar is imported. The followup
       // is coalesced and maintainSubscription no-ops on an already-live channel,
       // so a repeated import (a reclaimed lease, a re-import) never churns it.

@@ -34,6 +34,7 @@ Internal documentation for engineers and agents working in the Compass repo.
 - [Hosting Modes](./development/hosting-modes.md)
 - [Self-Hosting](./self-hosting/README.md)
 - [Testing Playbook](./development/testing-playbook.md)
+- [Launch Ops Checklist](./development/launch-ops-checklist.md)
 - [Performance Baselines](./development/performance-baselines.md)
 - [Types And Validation](./development/types-and-validation.md)
 - [CI/CD Workflows](./CI-CD/workflows.md)

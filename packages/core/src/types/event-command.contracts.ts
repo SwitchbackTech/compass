@@ -71,11 +71,23 @@ export const EventListQuerySchema = z
     kind: z.literal("range"),
     start: DateTimeSchema,
     end: DateTimeSchema,
+    // Optional server-side calendar scope. When present, the backend
+    // intersects with calendars the principal owns (never trusts the client
+    // blindly). Omitted keeps the legacy "all calendars" read for older
+    // clients; the web passes visible calendar ids to avoid draining hidden
+    // calendars on first paint.
+    calendarIds: z.array(CalendarIdSchema).min(1).max(100).optional(),
   })
   .refine(({ start, end }) => Date.parse(end) > Date.parse(start), {
     message: "Range end must be after start",
     path: ["end"],
-  });
+  })
+  .refine(
+    ({ calendarIds }) =>
+      calendarIds === undefined ||
+      new Set(calendarIds).size === calendarIds.length,
+    { message: "Calendar ids must be unique", path: ["calendarIds"] },
+  );
 export type EventListQuery = z.infer<typeof EventListQuerySchema>;
 
 export const EventResponseSchema = z.strictObject({ event: EventSchema });

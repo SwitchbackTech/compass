@@ -57,9 +57,12 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
       void dependencies.refreshUserMetadata();
 
       if (message.sync.code === "WATCH_REPAIR_FAILED") {
-        dependencies.showErrorToast(undefined, {
-          toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
-        });
+        dependencies.showErrorToast(
+          "We couldn't keep your Google Calendar connection healthy. Try Refresh, or reconnect if this lasts.",
+          {
+            toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
+          },
+        );
       }
     }, []);
 
