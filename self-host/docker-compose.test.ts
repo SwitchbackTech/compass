@@ -119,8 +119,8 @@ describe("self-host docker compose", () => {
     });
 
     expect(compose).toContain("switchbacktech/compass-sync:");
-    // Liveness probe, not readiness: a store-less passive service stays up.
-    expect(compose).toContain("http://127.0.0.1:3010/health/live");
+    // Sync must be ready to reach storage before a deploy is healthy.
+    expect(compose).toContain("http://127.0.0.1:3010/health/ready");
     // "  sync:\n" (colon-then-newline) picks the services.sync: block, not
     // the earlier "  sync: &sync-port ..." x-local-bindings anchor line.
     const syncBlock = compose
@@ -711,13 +711,22 @@ describe("deploy health check script", () => {
     expect(result.stderr).toContain("expected 0.5.27, got 0.5.26");
   });
 
-  it("uses selfhosted profile for selfhosted deployments", async () => {
+  it("uses the sync profile for cloud deployments", async () => {
+    const result = await runHealthScriptFunction("remote_compose_prefix", {
+      PROFILE: "cloud",
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("COMPOSE_PROFILES=sync");
+  });
+
+  it("uses selfhosted and sync profiles for selfhosted deployments", async () => {
     const result = await runHealthScriptFunction("remote_compose_prefix", {
       PROFILE: "selfhosted",
     });
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("COMPOSE_PROFILES=selfhosted");
+    expect(result.stdout).toContain("COMPOSE_PROFILES=selfhosted,sync");
     expect(result.stdout).toContain("docker compose --project-name compass");
   });
 });
