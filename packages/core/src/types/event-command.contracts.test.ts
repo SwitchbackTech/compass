@@ -143,6 +143,29 @@ describe("Event Command Contracts", () => {
       expect(EventListQuerySchema.safeParse(query).success).toBe(true);
     });
 
+    it("parses a range query with unique calendarIds", () => {
+      const query = {
+        kind: "range",
+        start: "2026-07-14T00:00:00Z",
+        end: "2026-07-21T00:00:00Z",
+        calendarIds: [calendarId(), calendarId()],
+      };
+
+      expect(EventListQuerySchema.safeParse(query).success).toBe(true);
+    });
+
+    it("rejects duplicate calendarIds", () => {
+      const id = calendarId();
+      const query = {
+        kind: "range",
+        start: "2026-07-14T00:00:00Z",
+        end: "2026-07-21T00:00:00Z",
+        calendarIds: [id, id],
+      };
+
+      expect(EventListQuerySchema.safeParse(query).success).toBe(false);
+    });
+
     it("rejects a range end before start", () => {
       const query = {
         kind: "range",

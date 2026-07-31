@@ -24,6 +24,8 @@ import {
   ConnectionBeginResponseSchema,
   type ConnectionListResponse,
   ConnectionListResponseSchema,
+  type ConnectionRefreshResponse,
+  ConnectionRefreshResponseSchema,
 } from "@core/types/sync/connection.contracts";
 import {
   type EventInstanceListQuery,
@@ -44,6 +46,7 @@ const CHANGES_PATH = "/internal/changes";
 const CHANGES_ALL_PATH = "/internal/changes/all";
 const CONNECTIONS_PATH = "/internal/connections";
 const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
+const CONNECTIONS_REFRESH_PATH = "/internal/connections/refresh";
 const EVENTS_FULL_PATH = "/internal/events/full";
 const COMMANDS_PATH = "/internal/commands";
 const PRINCIPAL_PATH = "/internal/principal";
@@ -209,6 +212,22 @@ export class SyncServiceClient {
       principal,
       body: request,
       schema: ConnectionBeginResponseSchema,
+      correlationId,
+    });
+  }
+
+  // Enqueue incremental pulls for every events resource owned by the principal
+  // (user-triggered "Refresh calendar").
+  refreshConnection(
+    principal: SyncPrincipal,
+    correlationId?: string,
+  ): Promise<SyncClientResult<ConnectionRefreshResponse>> {
+    return this.#request({
+      method: "POST",
+      path: CONNECTIONS_REFRESH_PATH,
+      principal,
+      body: {},
+      schema: ConnectionRefreshResponseSchema,
       correlationId,
     });
   }

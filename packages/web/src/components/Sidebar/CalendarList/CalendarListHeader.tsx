@@ -96,7 +96,7 @@ const AnonymousAccountHeader: FC = () => {
 };
 
 const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
-  const { commandAction, isAvailable, isConnecting, state } =
+  const { commandAction, isAvailable, isConnecting, isRefreshing, state } =
     useConnectGoogle();
   const syncConnection = useUserMetadataStore(selectGoogleSyncConnection);
   const hasPendingEventMutations = useHasPendingEventMutations();
@@ -112,7 +112,9 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
         ? state === "RECONNECT_REQUIRED"
           ? "Reconnecting…"
           : "Connecting…"
-        : commandAction.label;
+        : isRefreshing
+          ? "Refreshing…"
+          : commandAction.label;
 
   return (
     <>
@@ -134,9 +136,9 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
       commandAction != null &&
       googleActionLabel != null ? (
         <button
-          aria-busy={isConnecting || undefined}
+          aria-busy={isConnecting || isRefreshing || undefined}
           className={CONNECT_GOOGLE_BUTTON_CLASSNAME}
-          disabled={isConnecting}
+          disabled={isConnecting || isRefreshing}
           onClick={commandAction.onSelect}
           type="button"
         >

@@ -6,6 +6,8 @@ import {
   type ConnectionBeginRequest,
   type ConnectionBeginResponse,
   ConnectionBeginResponseSchema,
+  type ConnectionRefreshResponse,
+  ConnectionRefreshResponseSchema,
 } from "@core/types/sync/connection.contracts";
 import { BaseApi } from "@web/api/base/base.api";
 
@@ -34,6 +36,16 @@ const AuthApi = {
     );
 
     return ConnectionBeginResponseSchema.parse(response.data);
+  },
+
+  // Enqueue Sync catch-up pulls for the signed-in user's calendars.
+  async refreshGoogleSync(): Promise<ConnectionRefreshResponse> {
+    const response = await BaseApi.post<ConnectionRefreshResponse>(
+      `/auth/google/sync/refresh`,
+      {},
+    );
+
+    return ConnectionRefreshResponseSchema.parse(response.data);
   },
 };
 

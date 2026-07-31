@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import type dayjs from "@core/util/date/dayjs";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
+import { deriveEventListCalendarIds } from "@web/events/queries/derive-event-list-calendar-ids";
 import { dayEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { useDayEventsQuery } from "@web/events/queries/useDayEventsQuery";
 import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjacentEvents";
@@ -24,20 +26,36 @@ export function useDayEvents(dateInView: dayjs.Dayjs) {
     () => dayEventQueryRange(dateInView),
     [dateInView],
   );
+  const { data: calendars } = useCalendarsQuery();
+  const calendarIds = useMemo(
+    () => deriveEventListCalendarIds(calendars),
+    [calendars],
+  );
 
-  useDayEventsQuery({ startDate, endDate });
+  const query = useDayEventsQuery({ startDate, endDate });
 
   // Warm the previous/next day so the next prev/next click resolves from
   // cache. Uses the same start/end-of-day formatting as the read above,
   // so the prefetched entries land under the exact keys a subsequent read
-  // looks up.
+  // looks up. Wait until the current day settles so first paint wins.
   const previous = useMemo(
-    () => dayEventQueryRange(dateInView.subtract(1, "day")),
-    [dateInView],
+    () => ({
+      ...dayEventQueryRange(dateInView.subtract(1, "day")),
+      calendarIds,
+    }),
+    [dateInView, calendarIds],
   );
   const next = useMemo(
-    () => dayEventQueryRange(dateInView.add(1, "day")),
-    [dateInView],
+    () => ({
+      ...dayEventQueryRange(dateInView.add(1, "day")),
+      calendarIds,
+    }),
+    [dateInView, calendarIds],
   );
-  usePrefetchAdjacentEvents(dayEventsQueryOptions, previous, next);
+  usePrefetchAdjacentEvents(
+    dayEventsQueryOptions,
+    previous,
+    next,
+    query.isSuccess,
+  );
 }

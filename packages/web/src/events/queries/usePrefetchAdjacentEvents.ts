@@ -14,6 +14,9 @@ type AdjacentRange = Omit<EventsQueryArgs, "source">;
  * subsequent read would look up — a mismatched format prefetches a phantom
  * entry the real read never finds.
  *
+ * Prefetch waits until `enabled` is true (typically after the current range
+ * has settled) so first paint does not compete with adjacent-week drains.
+ *
  * `prefetchQuery` is a no-op for entries that are already cached and fresh
  * (within `staleTime`), so re-running this on every render is safe.
  */
@@ -28,6 +31,7 @@ export function usePrefetchAdjacentEvents<
   ) => FetchQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
   previous: AdjacentRange,
   next: AdjacentRange,
+  enabled = true,
 ) {
   const queryClient = useQueryClient();
   const source = useEventRepositorySource();
@@ -38,15 +42,19 @@ export function usePrefetchAdjacentEvents<
   // re-prefetch) every render instead of only when the actual range changes.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see comment above.
   useEffect(() => {
+    if (!enabled) return;
     void queryClient.prefetchQuery(queryOptionsFn({ source, ...previous }));
     void queryClient.prefetchQuery(queryOptionsFn({ source, ...next }));
   }, [
     queryClient,
     queryOptionsFn,
     source,
+    enabled,
     previous.startDate,
     previous.endDate,
+    previous.calendarIds,
     next.startDate,
     next.endDate,
+    next.calendarIds,
   ]);
 }

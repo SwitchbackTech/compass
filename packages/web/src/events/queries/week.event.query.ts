@@ -1,3 +1,4 @@
+import { type CalendarId } from "@core/types/domain-primitives";
 import { EventListQuerySchema } from "@core/types/event-command.contracts";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
@@ -5,7 +6,11 @@ import { fetchLocalEventsRange } from "./event.query.local";
 import { normalizeEventList } from "./event.query.normalize";
 import { type NormalizedEventQueryData } from "./event.query.types";
 
-type FetchWeekEventsPayload = { startDate: string; endDate: string };
+type FetchWeekEventsPayload = {
+  startDate: string;
+  endDate: string;
+  calendarIds?: CalendarId[];
+};
 
 /**
  * Pure async week-events read. No dispatching. Calls the repository with a
@@ -32,10 +37,17 @@ export async function fetchWeekEvents(
     return fetchLocalEventsRange(payload);
   }
 
+  if (payload.calendarIds !== undefined && payload.calendarIds.length === 0) {
+    return normalizeEventList([]);
+  }
+
   const query = EventListQuerySchema.parse({
     kind: "range",
     start: payload.startDate,
     end: payload.endDate,
+    ...(payload.calendarIds !== undefined && payload.calendarIds.length > 0
+      ? { calendarIds: payload.calendarIds }
+      : {}),
   });
 
   const events = await repository.list(query);

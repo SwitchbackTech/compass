@@ -1,6 +1,7 @@
 import { type FC } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
 import { useWeekEventsQueryStatus } from "@web/events/queries/useWeekEventsQuery";
 import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
 import { AllDayRow } from "@web/views/Week/components/Grid/AllDayRow/AllDayRow";
@@ -37,16 +38,24 @@ export const Grid: FC<Props> = ({
     isPending,
     isFetching,
     isError: isErrorEvents,
+    isSuccess,
+    data,
     refetch,
   } = useWeekEventsQueryStatus({
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
+  const googleState = useGoogleUiState();
   const isLoadingEvents = isEventGridLoading(
     isPending,
     isErrorEvents,
     isFetching,
   );
+  const hasVisibleEvents = (data?.ids?.length ?? 0) > 0;
+  const isImportingEmpty =
+    isSuccess &&
+    !hasVisibleEvents &&
+    (googleState === "IMPORTING" || googleState === "checking");
 
   useDragEdgeNavigation(mainGridRef, weekProps);
 
@@ -90,6 +99,7 @@ export const Grid: FC<Props> = ({
                 allDayRowsCount={allDayRowsCount}
                 gridRefs={gridRefs}
                 isErrorEvents={isErrorEvents}
+                isImportingEmpty={isImportingEmpty}
                 isLoadingEvents={isLoadingEvents}
                 onAllDayMouseDown={onAllDayMouseDown}
                 onRetryEvents={() => void refetch()}

@@ -1,8 +1,10 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { ROOT_ROUTES, ROUTE_IDS } from "@web/common/constants/routes";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
+import { deriveEventListCalendarIds } from "@web/events/queries/derive-event-list-calendar-ids";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjacentEvents";
 import { useWeekEventsQuery } from "@web/events/queries/useWeekEventsQuery";
@@ -71,9 +73,19 @@ export const useWeek = (
     [start, visibleDayCount],
   );
 
-  useWeekEventsQuery({ startOfView: start, endOfView: queryEnd });
+  const { data: calendars } = useCalendarsQuery();
+  const calendarIds = useMemo(
+    () => deriveEventListCalendarIds(calendars),
+    [calendars],
+  );
+  const weekQuery = useWeekEventsQuery({
+    startOfView: start,
+    endOfView: queryEnd,
+  });
 
   // Warm the previous and next paged windows (J/K) using 7-day read keys.
+  // Defer until the current range has settled so first paint is not competing
+  // with adjacent Sync drains.
   const previousStart = useMemo(
     () => start.subtract(visibleDayCount, "day"),
     [start, visibleDayCount],
@@ -89,13 +101,16 @@ export const useWeek = (
       endDate: toUTCOffset(
         previousStart.add(WEEK_DAY_COUNT - 1, "day").endOf("day"),
       ),
+      calendarIds,
     },
     {
       startDate: toUTCOffset(nextStart),
       endDate: toUTCOffset(
         nextStart.add(WEEK_DAY_COUNT - 1, "day").endOf("day"),
       ),
+      calendarIds,
     },
+    weekQuery.isSuccess,
   );
 
   useEffect(() => {

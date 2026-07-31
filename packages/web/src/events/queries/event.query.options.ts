@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
+import { type CalendarId } from "@core/types/domain-primitives";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { getEventRepositoryBySource } from "@web/events/repositories/event.repository.util";
 import { fetchDayEvents } from "./day.event.query";
@@ -23,18 +24,25 @@ export type EventsQueryArgs = {
   source: EventRepositorySource;
   startDate: string;
   endDate: string;
+  calendarIds?: CalendarId[];
 };
 
 export function dayEventsQueryOptions({
   source,
   startDate,
   endDate,
+  calendarIds,
 }: EventsQueryArgs) {
   return queryOptions({
-    queryKey: eventQueryKeys.day({ source, start: startDate, end: endDate }),
+    queryKey: eventQueryKeys.day({
+      source,
+      start: startDate,
+      end: endDate,
+      calendarIds,
+    }),
     queryFn: () =>
       fetchDayEvents(
-        { startDate, endDate },
+        { startDate, endDate, calendarIds },
         getEventRepositoryBySource(source),
         source,
       ),
@@ -46,12 +54,18 @@ export function weekEventsQueryOptions({
   source,
   startDate,
   endDate,
+  calendarIds,
 }: EventsQueryArgs) {
   return queryOptions({
-    queryKey: eventQueryKeys.week({ source, start: startDate, end: endDate }),
+    queryKey: eventQueryKeys.week({
+      source,
+      start: startDate,
+      end: endDate,
+      calendarIds,
+    }),
     queryFn: () =>
       fetchWeekEvents(
-        { startDate, endDate },
+        { startDate, endDate, calendarIds },
         getEventRepositoryBySource(source),
         source,
       ),

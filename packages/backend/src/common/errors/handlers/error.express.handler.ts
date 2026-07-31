@@ -59,7 +59,29 @@ export const handleExpressError = async (
 ) => {
   res.header("Content-Type", "application/json");
 
-  errorHandler.log(e);
+  const sessionUserId =
+    typeof (req as SessionRequest).session?.getUserId === "function"
+      ? (req as SessionRequest).session?.getUserId()
+      : undefined;
+  const statusHint =
+    e instanceof BaseError
+      ? e.statusCode
+      : e instanceof EventMutationException
+        ? toEventMutationError(e).status
+        : typeof e.status === "number"
+          ? e.status
+          : undefined;
+
+  errorHandler.log(e, {
+    method: req.method,
+    path: req.originalUrl ?? req.url,
+    status: statusHint,
+    userId: sessionUserId ?? null,
+    correlationId:
+      typeof req.headers["x-correlation-id"] === "string"
+        ? req.headers["x-correlation-id"]
+        : undefined,
+  });
   // Typed mutation/cutover errors must keep the EventMutationError envelope
   // (`code`/`message`/`retryable`), not the generic `{ result, message }` shape.
   if (e instanceof EventMutationException) {

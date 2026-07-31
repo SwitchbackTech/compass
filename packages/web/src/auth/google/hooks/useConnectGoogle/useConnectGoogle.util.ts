@@ -1,4 +1,4 @@
-import { CloudArrowUpIcon } from "@phosphor-icons/react";
+import { ArrowsClockwiseIcon, CloudArrowUpIcon } from "@phosphor-icons/react";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { type SyncStatus } from "@web/calendars/sync-status.types";
 import {
@@ -7,7 +7,8 @@ import {
   type GoogleUiState,
 } from "./useConnectGoogle.types";
 
-const COMMAND_ICON: CommandActionIcon = CloudArrowUpIcon;
+const CONNECT_ICON: CommandActionIcon = CloudArrowUpIcon;
+const REFRESH_ICON: CommandActionIcon = ArrowsClockwiseIcon;
 
 /** Short relative label for Sync connection `lastSyncedAt` (ISO). */
 export const formatLastSyncedLabel = (
@@ -52,32 +53,44 @@ export const formatLastSyncedLabel = (
   return `Last synced ${new Date(syncedMs).toLocaleDateString()}`;
 };
 
+export type GoogleConnectionHandlers = {
+  onConnectGoogle: () => void;
+  onRefreshGoogle: () => void;
+};
+
 export const getGoogleConnectionConfig = (
   state: GoogleUiState,
-  onConnectGoogle: () => void,
+  handlers: GoogleConnectionHandlers,
 ): GoogleUiConfig => {
   switch (state) {
     case "checking":
     case "IMPORTING":
     case "HEALTHY":
-    // ATTENTION means a Sync outage or a permanent conflict; no client
-    // action can fix either, so it also renders no command action.
-    case "ATTENTION":
       return { commandAction: null };
+    // Soft Sync failures still get a Refresh CTA — even permanent conflicts
+    // benefit from a catch-up attempt plus clearer copy than a dead-end.
+    case "ATTENTION":
+      return {
+        commandAction: {
+          label: "Refresh calendar",
+          icon: REFRESH_ICON,
+          onSelect: handlers.onRefreshGoogle,
+        },
+      };
     case "NOT_CONNECTED":
       return {
         commandAction: {
           label: "Connect Google Calendar",
-          icon: COMMAND_ICON,
-          onSelect: onConnectGoogle,
+          icon: CONNECT_ICON,
+          onSelect: handlers.onConnectGoogle,
         },
       };
     case "RECONNECT_REQUIRED":
       return {
         commandAction: {
           label: "Reconnect Google Calendar",
-          icon: COMMAND_ICON,
-          onSelect: onConnectGoogle,
+          icon: CONNECT_ICON,
+          onSelect: handlers.onConnectGoogle,
         },
       };
   }
@@ -99,7 +112,10 @@ export const getGoogleSyncStatus = (
       case "catchingUp":
         return { variant: "syncing", text: "Catching up your calendar…" };
       case "delayed":
-        return { variant: "warning", text: "Calendar sync is delayed" };
+        return {
+          variant: "warning",
+          text: "Calendar sync is delayed — try Refresh",
+        };
       case "actionRequired":
       case "disconnected":
         // Product enum already distinguishes reconnect vs soft attention.
@@ -114,7 +130,10 @@ export const getGoogleSyncStatus = (
     case "checking":
       return { variant: "syncing", text: "Syncing your calendar…" };
     case "ATTENTION":
-      return { variant: "warning", text: "Calendar is out of date" };
+      return {
+        variant: "warning",
+        text: "Calendar needs a refresh",
+      };
     case "RECONNECT_REQUIRED":
       return { variant: "error", text: "Calendar needs reconnecting" };
     case "NOT_CONNECTED":

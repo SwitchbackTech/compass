@@ -318,6 +318,18 @@ export class SyncResourceRepository {
     return records.map((r) => SyncResourceRecordSchema.parse(r));
   }
 
+  // Events resources owned by the signed principal — input for a user-
+  // triggered refresh (enqueue one incrementalPull per resource).
+  async listEventsByPrincipal(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+  ): Promise<SyncResourceRecord[]> {
+    const records = await this.collection
+      .find({ tenantId, principalId, resourceKind: "events" })
+      .toArray();
+    return records.map((r) => SyncResourceRecordSchema.parse(r));
+  }
+
   // Events resources whose last successful sync is older than `before` (or which
   // never succeeded), oldest first, bounded. This is the reconcile sweep's input
   // — a missed-webhook fallback for connections that CAN still authenticate — so

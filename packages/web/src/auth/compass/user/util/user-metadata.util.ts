@@ -1,10 +1,12 @@
 import { Status } from "@core/errors/status.codes";
 import { UserApi } from "@web/api/user.api";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
+import { showGoogleDelayedToast } from "@web/common/utils/toast/google-delayed.toast";
 import { showGoogleReconnectToast } from "@web/common/utils/toast/google-reconnect.toast";
 
 let refreshUserMetadataRequest: Promise<void> | null = null;
 let hasShownReconnectToastThisLoad = false;
+let hasShownDelayedToastThisLoad = false;
 
 export const refreshUserMetadata = async (options?: {
   force?: boolean;
@@ -36,6 +38,12 @@ export const refreshUserMetadata = async (options?: {
       ) {
         hasShownReconnectToastThisLoad = true;
         showGoogleReconnectToast();
+      } else if (
+        metadata.google?.connectionState === "ATTENTION" &&
+        !hasShownDelayedToastThisLoad
+      ) {
+        hasShownDelayedToastThisLoad = true;
+        showGoogleDelayedToast();
       }
     })
     .catch((error) => {

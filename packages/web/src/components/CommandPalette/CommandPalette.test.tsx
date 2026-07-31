@@ -99,7 +99,7 @@ const setMockGoogleConnection = (
       onSelect: mockOnConnectGoogle,
     },
     ATTENTION: {
-      label: "Sync Google Calendar",
+      label: "Refresh calendar",
       icon: PlusIcon,
       onSelect: mockOnConnectGoogle,
     },
@@ -379,14 +379,14 @@ describe("CommandPalette", () => {
     renderPalette();
 
     const status = screen.getByRole("status");
-    expect(status).toHaveTextContent("Calendar is out of date");
+    expect(status).toHaveTextContent("Calendar needs a refresh");
     expect(status).toHaveClass("text-warning");
     expect(status).not.toHaveAttribute("role", "option");
 
     // Survives an unrelated search that empties the list.
     fireEvent.change(getInput(), { target: { value: "zzzzz" } });
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Calendar is out of date",
+      "Calendar needs a refresh",
     );
   });
 
@@ -400,11 +400,11 @@ describe("CommandPalette", () => {
     );
   });
 
-  it("keeps the palette open when syncing Google Calendar", () => {
+  it("keeps the palette open when refreshing a delayed calendar", () => {
     setMockGoogleConnection("ATTENTION");
     renderPalette();
 
-    fireEvent.click(screen.getByText("Sync Google Calendar"));
+    fireEvent.click(screen.getByText("Refresh calendar"));
 
     expect(mockOnConnectGoogle).toHaveBeenCalledTimes(1);
     expect(isOpen()).toBe(true);

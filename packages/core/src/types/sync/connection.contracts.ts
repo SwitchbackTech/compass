@@ -156,6 +156,16 @@ export type ConnectionBeginResponse = z.infer<
   typeof ConnectionBeginResponseSchema
 >;
 
+// User-triggered catch-up: enqueue an incremental pull for each events
+// resource owned by the signed principal. `enqueued` is how many jobs were
+// accepted (coalesced duplicates still count as one acceptance each).
+export const ConnectionRefreshResponseSchema = z.strictObject({
+  enqueued: z.number().int().nonnegative(),
+});
+export type ConnectionRefreshResponse = z.infer<
+  typeof ConnectionRefreshResponseSchema
+>;
+
 export const CalendarListQuerySchema = z.strictObject({
   // Optional narrowing; principal scope always comes from authenticated
   // context, never from the request body.

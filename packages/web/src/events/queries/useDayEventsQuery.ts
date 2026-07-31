@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { dayEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
+import { deriveEventListCalendarIds } from "./derive-event-list-calendar-ids";
 import { deriveCalendarEventViewModel } from "./event.view-model";
 import { filterEventsByVisibleCalendars } from "./filter-events-by-visible-calendars";
 
@@ -11,14 +12,17 @@ type DayEventsQueryArgs = {
   endDate: string;
 };
 
-/**
- * Primary day-events read hook. TanStack Query owns the normalized result.
- * Load failures are shown contextually (e.g. EventGrid) — no global toast.
- */
 export function useDayEventsQuery({ startDate, endDate }: DayEventsQueryArgs) {
   const source = useEventRepositorySource();
+  const { data: calendars } = useCalendarsQuery();
+  const calendarIds = useMemo(
+    () => deriveEventListCalendarIds(calendars),
+    [calendars],
+  );
 
-  return useQuery(dayEventsQueryOptions({ source, startDate, endDate }));
+  return useQuery(
+    dayEventsQueryOptions({ source, startDate, endDate, calendarIds }),
+  );
 }
 
 export function useDayEventViewModel(args: DayEventsQueryArgs) {

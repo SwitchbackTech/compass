@@ -8,6 +8,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
+import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -81,6 +82,12 @@ export function DayCalendarGrid() {
     isErrorEvents,
     isFetching,
   );
+  const googleState = useGoogleUiState();
+  const isImportingEmpty =
+    !isPending &&
+    !isErrorEvents &&
+    dayEvents.length === 0 &&
+    (googleState === "IMPORTING" || googleState === "checking");
   const {
     calendarColumnIndexById,
     displayedAllDayEvents,
@@ -346,6 +353,7 @@ export function DayCalendarGrid() {
           allDayRowsCount={allDayRowsCount}
           gridRefs={gridRefs}
           isErrorEvents={isErrorEvents}
+          isImportingEmpty={isImportingEmpty}
           isLoadingEvents={isLoadingEvents}
           onAllDayMouseDown={handleAllDayMouseDown}
           onRetryEvents={() => void refetch()}
