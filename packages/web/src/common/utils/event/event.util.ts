@@ -11,6 +11,7 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type ApiError } from "@web/api/api.types";
 import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 import { getUserId } from "@web/auth/compass/session/session.util";
+import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
 import { GENERIC_ERROR_TOAST_ID } from "@web/common/constants/toast.constants";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
@@ -150,17 +151,14 @@ export const getWeekDayLabel = (day: Dayjs | Date) => {
 };
 
 /**
- * A retryable mutation failure the backend authored - e.g. a 502
- * PROVIDER_FAILURE thrown when Google rejects a write. The app already treats
- * these as retryable, so they only warrant a toast; console.error'ing them
- * re-surfaces every routine provider hiccup as a brand-new error-tracking issue
- * (capture_console_errors turns deliberate logging into exception capture).
+ * A known mutation failure authored by the backend. These have user-facing
+ * feedback already, so they must not create error-tracking issues.
  */
-const isRetryableMutationError = (error: Error): boolean => {
+const isExpectedMutationError = (error: Error): boolean => {
   const parsed = EventMutationErrorSchema.safeParse(
     (error as ApiError).response?.data,
   );
-  return parsed.success && parsed.data.retryable;
+  return parsed.success;
 };
 
 const CATCHALL_TOAST_MESSAGE =
@@ -194,12 +192,18 @@ export const handleError = (error: Error) => {
     return;
   }
 
-  if (isRetryableMutationError(error)) {
-    // Expected transient failure: nudge the user to retry without logging it.
+  if (isExpectedMutationError(error)) {
+    // The backend authored a known mutation failure. Show its existing UI
+    // feedback without creating an error-tracking issue.
     showCatchallToast(CATCHALL_TOAST_MESSAGE);
     return;
   }
 
+  getPosthogClient()?.captureException(error, {
+    $exception_handled: true,
+    $exception_source: "event-mutation",
+    httpStatus: Number.isNaN(code) ? undefined : code,
+  });
   console.error(error);
 
   if (code === Status.INTERNAL_SERVER) {
