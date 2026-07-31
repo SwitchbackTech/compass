@@ -66,6 +66,44 @@ const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
   ignoreInputs: false,
 } as const;
 
+const EVENT_FORM_TITLE_ID = "event-form-title";
+const EVENT_FORM_DESCRIPTION_ID = "event-form-description";
+const EVENT_FORM_CALENDAR_ID = "event-form-calendar";
+const EVENT_FORM_SCHEDULE_ID = "event-form-schedule";
+const EVENT_FORM_RECURRENCE_ID = "event-form-recurrence";
+
+const eventFormErrorId = (field: string) =>
+  `event-form-error-${field.replaceAll(".", "-")}`;
+
+// DOM / reading order in the form: title → schedule → recurrence → calendar.
+const FIELD_CONTROL_FOCUS_ORDER = [
+  "content.title",
+  "title",
+  "start",
+  "end",
+  "timeZone",
+  "recurrence",
+  "calendarId",
+] as const;
+
+const controlIdForFieldError = (field: string): string | null => {
+  switch (field) {
+    case "calendarId":
+      return EVENT_FORM_CALENDAR_ID;
+    case "start":
+    case "end":
+    case "timeZone":
+      return EVENT_FORM_SCHEDULE_ID;
+    case "recurrence":
+      return EVENT_FORM_RECURRENCE_ID;
+    case "content.title":
+    case "title":
+      return EVENT_FORM_TITLE_ID;
+    default:
+      return null;
+  }
+};
+
 /**
  * Subtle raised surface grouping related fields on the sidebar's translucent
  * panel background — same recipe as CommandPalette rows / c-button-secondary.
@@ -595,6 +633,50 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
     useEscapeToCloseForm(onClose);
 
+    const titleErrorField = fieldErrors?.["content.title"]
+      ? "content.title"
+      : fieldErrors?.title
+        ? "title"
+        : null;
+    const titleError = titleErrorField
+      ? fieldErrors?.[titleErrorField]
+      : undefined;
+    const calendarError = fieldErrors?.calendarId;
+    const scheduleErrorField = (["start", "end", "timeZone"] as const).find(
+      (field) => fieldErrors?.[field],
+    );
+    const scheduleError = scheduleErrorField
+      ? fieldErrors?.[scheduleErrorField]
+      : undefined;
+    const recurrenceError = fieldErrors?.recurrence;
+    const titleErrorDescribedBy = titleErrorField
+      ? eventFormErrorId(titleErrorField)
+      : undefined;
+    const calendarErrorDescribedBy = calendarError
+      ? eventFormErrorId("calendarId")
+      : undefined;
+    const scheduleErrorDescribedBy = scheduleErrorField
+      ? eventFormErrorId(scheduleErrorField)
+      : undefined;
+    const recurrenceErrorDescribedBy = recurrenceError
+      ? eventFormErrorId("recurrence")
+      : undefined;
+
+    useEffect(() => {
+      if (!fieldErrors || Object.keys(fieldErrors).length === 0) return;
+
+      for (const field of FIELD_CONTROL_FOCUS_ORDER) {
+        if (!(field in fieldErrors)) continue;
+        const controlId = controlIdForFieldError(field);
+        if (!controlId) continue;
+        const control = document.getElementById(controlId);
+        if (control instanceof HTMLElement) {
+          control.focus();
+          break;
+        }
+      }
+    }, [fieldErrors]);
+
     return (
       <EventFormShell
         {...props}
@@ -617,6 +699,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           <TitleActionsRow
             title={
               <Focusable
+                id={EVENT_FORM_TITLE_ID}
                 Component="input"
                 className={classNames(
                   INPUT_RESET_CLASSNAME,
@@ -629,7 +712,10 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                 onChange={onChangeEventTextField("title")}
                 onKeyDown={handleTitleKeyDown}
                 placeholder="Title"
+                aria-label="Title"
                 name="Event Title"
+                aria-invalid={titleError ? true : undefined}
+                aria-describedby={titleErrorDescribedBy}
                 underlineColor={eventColor}
                 value={displayTitle}
                 withUnderline
@@ -651,20 +737,47 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
               gap-3 body. */}
           <fieldset className="contents" disabled={isReadOnly}>
             <FormCard>
-              <DateControlsSection
-                dateTimeSectionProps={dateTimeSectionProps}
-                eventCategory={category}
-                onToggleAllDay={onToggleAllDay}
-              />
+              <fieldset
+                id={EVENT_FORM_SCHEDULE_ID}
+                aria-label="Event schedule"
+                aria-invalid={scheduleError ? true : undefined}
+                aria-describedby={scheduleErrorDescribedBy}
+                tabIndex={scheduleError ? -1 : undefined}
+                className={classNames(
+                  "min-w-0 rounded-xs border-0 p-0",
+                  scheduleError && "ring-1 ring-error",
+                )}
+              >
+                <DateControlsSection
+                  dateTimeSectionProps={dateTimeSectionProps}
+                  eventCategory={category}
+                  onToggleAllDay={onToggleAllDay}
+                />
+              </fieldset>
 
-              <RecurrenceSection {...recurrenceSectionProps} />
+              <fieldset
+                id={EVENT_FORM_RECURRENCE_ID}
+                aria-label="Recurrence"
+                aria-invalid={recurrenceError ? true : undefined}
+                aria-describedby={recurrenceErrorDescribedBy}
+                tabIndex={recurrenceError ? -1 : undefined}
+                className={classNames(
+                  "min-w-0 rounded-xs border-0 p-0",
+                  recurrenceError && "ring-1 ring-error",
+                )}
+              >
+                <RecurrenceSection {...recurrenceSectionProps} />
+              </fieldset>
             </FormCard>
 
             <FormCard>
               {draft.kind === "create" ? (
                 <CalendarSelect
+                  id={EVENT_FORM_CALENDAR_ID}
                   onChange={onSelectCalendar}
                   value={draft.values.calendarId}
+                  error={calendarError ?? undefined}
+                  errorId={calendarErrorDescribedBy}
                 />
               ) : (
                 <p className="text-text-muted text-xs">
@@ -679,6 +792,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
 
             <FormCard>
               <Textarea
+                id={EVENT_FORM_DESCRIPTION_ID}
+                aria-label="Description"
                 underlineColor={eventColor}
                 onChange={onChangeEventTextField("description")}
                 onKeyDown={handleIgnoredKeys}
@@ -704,7 +819,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                 role="alert"
               >
                 {Object.entries(fieldErrors).map(([field, message]) => (
-                  <li key={field}>{message}</li>
+                  <li key={field} id={eventFormErrorId(field)}>
+                    {message}
+                  </li>
                 ))}
               </ul>
             ) : null}

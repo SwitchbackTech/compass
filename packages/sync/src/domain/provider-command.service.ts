@@ -482,6 +482,11 @@ export async function executeProviderSeriesUpdate(
       content,
       current.providerVersion,
       now,
+      {
+        accessToken,
+        calendarId: calendar.providerCalendarId,
+        connectionId,
+      },
     );
   }
 
@@ -510,6 +515,11 @@ export async function executeProviderSeriesUpdate(
     content,
     result.providerVersion,
     now,
+    {
+      accessToken,
+      calendarId: calendar.providerCalendarId,
+      connectionId,
+    },
   );
 }
 
@@ -519,14 +529,18 @@ export async function executeProviderSeriesUpdate(
 // from the reprojected master so a deleted occurrence is not resurrected. A
 // conversion to a single event drops every exception.
 //
-// Overrides are deleted BEFORE the master is replaced, on purpose — the same
-// crash-safety ordering the cloud path uses. A convert-to-single edit changes
-// the master's recurrence kind, and a retry that read the converted single
-// master would take the single-event path, which never cleans exceptions;
-// clearing first closes that hole. Gating the kept/discarded split on the
-// command's immutable recurrence intent keeps a retry classifying identically.
-// A false from replaceExisting means the master vanished mid-flight, so leave
-// the command pending rather than confirm a gone series.
+// Overrides are cancelled at the provider, then deleted locally BEFORE the
+// master is replaced — the same crash-safety ordering the cloud path uses.
+// Google does not drop instance overrides when the master is patched, so a
+// later pull would otherwise resurrect them. Cancel-before-local-delete keeps
+// retries idempotent (provider delete is 404-OK). A convert-to-single edit
+// changes the master's recurrence kind, and a retry that read the converted
+// single master would take the single-event path, which never cleans
+// exceptions; clearing first closes that hole. Gating the kept/discarded
+// split on the command's immutable recurrence intent keeps a retry
+// classifying identically. A false from replaceExisting means the master
+// vanished mid-flight, so leave the command pending rather than confirm a
+// gone series.
 async function commitProviderSeriesUpdate(
   deps: ProviderMutationDeps,
   command: CommandRecord,
@@ -534,6 +548,11 @@ async function commitProviderSeriesUpdate(
   content: SyncEventContent,
   providerVersion: string,
   now: () => Date,
+  provider: {
+    accessToken: string;
+    calendarId: string;
+    connectionId: ConnectionId;
+  },
 ): Promise<CommandRecord> {
   if (command.input.kind !== "update") {
     throw new Error("commitProviderSeriesUpdate requires an update command");
@@ -550,17 +569,32 @@ async function commitProviderSeriesUpdate(
     ? exceptions
     : exceptions.filter((exception) => !isCancelledException(exception));
 
-  // Clear each discarded override's occurrences, then remove it. (Twin of the
-  // cloud path's deleteExceptions — kept local so the working cloud path is
-  // untouched; both are a plain occurrence-clear-then-delete loop.)
-  //
-  // Deferred gap: for a provider-linked series this removes only the LOCAL copy
-  // of the override, not the override event at the provider — patching a Google
-  // master does not delete its instance overrides. An edit-all must also cancel
-  // the discarded overrides at the provider, or a later pull could resurrect
-  // them. (Provider series delete cascades local exceptions in
-  // executeProviderDelete; edit-all still needs the provider cancel.)
+  // Cancel discarded overrides at Google first, then clear local copies.
+  // Kept cancelled tombstones are not touched at the provider.
   for (const exception of discarded) {
+    if (exception.providerEventId) {
+      try {
+        await deps.writer.deleteEvent({
+          accessToken: provider.accessToken,
+          calendarId: provider.calendarId,
+          providerEventId: exception.providerEventId,
+          expectedVersion: null,
+          invitation: input.invitation,
+        });
+      } catch (error) {
+        if (error instanceof ProviderWriteError) {
+          if (error.reason === "transient") return command;
+          return failCommand(
+            deps,
+            command,
+            error.reason,
+            provider.connectionId,
+          );
+        }
+        throw error;
+      }
+    }
+
     await deps.occurrences.replaceForEvent(
       exception._id,
       exception.generation,

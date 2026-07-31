@@ -473,7 +473,7 @@ describe("useEventMutations", () => {
     context.pending.resolve();
   });
 
-  test("settle invalidates with refetchType all so inactive entries refetch", async () => {
+  test("settle invalidates with refetchType active so only observed ranges refetch", async () => {
     const context = setup();
     const single = event();
     context.queryClient.setQueryData(calendarKey, normalized(single));
@@ -494,7 +494,7 @@ describe("useEventMutations", () => {
     await waitFor(() => {
       expect(invalidations).toContainEqual({
         queryKey: eventQueryKeys.all,
-        refetchType: "all",
+        refetchType: "active",
       });
     });
   });
