@@ -233,6 +233,27 @@ async function runSyncJob(
       const pull = await pullCalendarChanges(deps, calendar, now);
       if (pull.status === "applied") {
         await appendCalendarInvalidation(deps, calendar, now());
+        // Bootstrap a channel for an imported calendar that has none. The
+        // initialImport followup is otherwise the ONLY thing that ever opens
+        // one, and the renewal sweep only renews channels that already exist
+        // (listExpiringSubscriptions filters on subscriptionId), so a calendar
+        // imported by any other route could never become watchable. Production
+        // preseeded 938 calendars straight into the store during the Sync
+        // cutover, bypassing that job: they held cursors, synced correctly, and
+        // had no push channel with nothing in the system able to give them one
+        // (2026-08-01). Pulls already run for every stale calendar, so
+        // piggybacking here needs no new sweep and heals the whole fleet.
+        //
+        // Wart: a calendar the provider refuses to watch reports "unsupported"
+        // and is not recorded as such, so it re-attempts one watch per pull
+        // (~1/100min at current sweep cadence). Cheap, bounded, and self-
+        // limiting in practice since unwatchable calendars are rare.
+        if (pull.resource.subscriptionId === null) {
+          return {
+            result: "done",
+            followup: subscriptionFollowup(pull.resource, now),
+          };
+        }
         return { result: "done" };
       }
       if (pull.status === "notImported") {
