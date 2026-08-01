@@ -132,7 +132,7 @@ describe("CalendarListHeader", () => {
     expect(screen.queryByText("Sign up")).toBeNull();
 
     await user.hover(trigger);
-    await screen.findByText("Sign up to sync your changes across devices");
+    await screen.findByText("Sign up to save your changes across browsers");
     const signUpButton = await screen.findByRole("button", { name: "Sign up" });
 
     await user.click(signUpButton);

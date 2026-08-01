@@ -11,10 +11,10 @@ import {
   gridEventDraftToSchemaEvent,
 } from "@web/events/grid-event-draft.adapter";
 import {
+  draftActions,
   selectIsDrafting,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { dismissExistingDraft } from "@web/grid/hooks/dismissExistingDraft";
 
 interface UseAllDayDraftCreationOptions {
   getStartDate: (clientX: number, clientY: number) => string;
@@ -41,7 +41,7 @@ export const useAllDayDraftCreation = ({
     event.stopPropagation();
 
     if (isDrafting) {
-      dismissExistingDraft();
+      draftActions.discard();
       return;
     }
 

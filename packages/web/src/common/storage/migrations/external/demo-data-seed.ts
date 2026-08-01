@@ -96,7 +96,7 @@ function generateDemoData() {
     createEventRecord({
       title: "Call a friend",
       description:
-        "Your calendar, your data. Sign up whenever you're ready to save across devices.",
+        "Your calendar, your data. Sign up whenever you're ready to save across browsers.",
       schedule: {
         kind: "timed",
         start: todayAt(17, 0),

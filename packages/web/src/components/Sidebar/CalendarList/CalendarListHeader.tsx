@@ -22,7 +22,7 @@ import {
 } from "@web/components/Tooltip";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 
-const ANONYMOUS_SAVE_MESSAGE = "Sign up to sync your changes across devices";
+const ANONYMOUS_SAVE_MESSAGE = "Sign up to save your changes across browsers";
 
 const TOOLTIP_ACTION_BUTTON_CLASSNAME =
   "c-focus-ring self-start rounded-xs bg-accent px-2 py-1 font-medium text-s text-on-accent hover:brightness-110";

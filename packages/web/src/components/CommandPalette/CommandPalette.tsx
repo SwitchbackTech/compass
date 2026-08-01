@@ -280,7 +280,7 @@ export const CommandPalette = ({
     },
     {
       id: "general",
-      heading: "Common Tasks",
+      heading: "Common Actions",
       items: [
         ...eventCommandPaletteItems,
         ...demoEventsCmdItems,

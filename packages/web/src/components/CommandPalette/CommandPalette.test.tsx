@@ -157,7 +157,7 @@ describe("CommandPalette", () => {
     const { container } = renderPalette();
 
     expect(screen.getByText("Navigation")).toBeInTheDocument();
-    expect(screen.getByText("Common Tasks")).toBeInTheDocument();
+    expect(screen.getByText("Common Actions")).toBeInTheDocument();
     expect(screen.getByText("Settings")).toBeInTheDocument();
     expect(screen.getByText("More")).toBeInTheDocument();
 
