@@ -61,3 +61,23 @@ export const SyncHealthSnapshotSchema = z.strictObject({
 export type SyncHealthSnapshot = z.infer<typeof SyncHealthSnapshotSchema>;
 
 export const SYNC_HEALTH_SNAPSHOT_EVENT = "sync_health_snapshot" as const;
+
+// Emitted once per reconcile-sweep cycle completion (~every 10 min), rather
+// than on a fixed telemetry timer like the health snapshot above. A queue
+// depth GAUGE sampled every 5 minutes cannot reliably detect a sweep that
+// enqueues and fully drains work in well under a minute — an alert built on
+// jobs.pending fired repeatedly on a healthy fleet because the 5-minute
+// sampler almost never caught the queue non-empty (2026-08-01). Counting
+// discrete sweep-completion events instead sidesteps the sampling gap
+// entirely: a sweep either ran or it didn't, with nothing in between for a
+// sampler to miss.
+export const SyncReconcileSweepEventSchema = z.strictObject({
+  environment: z.string().min(1),
+  service: z.literal("compass-sync"),
+  enqueued: z.number().int().nonnegative(),
+});
+export type SyncReconcileSweepEvent = z.infer<
+  typeof SyncReconcileSweepEventSchema
+>;
+
+export const SYNC_RECONCILE_SWEEP_EVENT = "sync_reconcile_sweep" as const;
