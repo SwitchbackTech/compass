@@ -8,6 +8,13 @@ import { VIEW_TO_PARAM } from "@web/components/AuthModal/hooks/useAuthModal";
 
 const ANONYMOUS_SAVE_TOAST_ID: Id = "anonymous-save-toast";
 
+function isAuthModalOpen(): boolean {
+  if (typeof window === "undefined") return false;
+
+  const auth = new URLSearchParams(window.location.search).get("auth");
+  return Object.values(VIEW_TO_PARAM).includes(auth?.toLowerCase() ?? "");
+}
+
 function hasSeenAnonymousSaveToast(): boolean {
   if (!persistentBrowserStore.isAvailable()) return true;
   return (
@@ -61,7 +68,7 @@ const AnonymousSaveToast = ({ toastId }: AnonymousSaveToastProps) => {
 };
 
 export function maybeShowAnonymousSaveToast(): void {
-  if (hasSeenAnonymousSaveToast()) return;
+  if (isAuthModalOpen() || hasSeenAnonymousSaveToast()) return;
 
   markAnonymousSaveToastSeen();
   showStatusToast(
