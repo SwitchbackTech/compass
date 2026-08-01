@@ -1,8 +1,17 @@
 import userEvent from "@testing-library/user-event";
-import { EventIdSchema } from "@core/types/domain-primitives";
+import {
+  CalendarIdSchema,
+  EventIdSchema,
+  TimeZoneSchema,
+} from "@core/types/domain-primitives";
+import {
+  type Calendar,
+  getCalendarCapabilities,
+} from "@core/types/calendar.contracts";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -10,6 +19,9 @@ import {
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { createCompassQueryClient } from "@web/api/query-client";
+import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import { setCalendarVisibility } from "@web/calendars/calendar-visibility.store";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { formatStartsIn, UpNextCard } from "./UpNextCard";
 import { useUpNextEventShortcut } from "./useUpNextEvent";
@@ -18,6 +30,21 @@ import "@testing-library/jest-dom";
 
 const SOON_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
 const LATER_EVENT_ID = "bbbbbbbbbbbbbbbbbbbbbbbb";
+const CALENDAR_ID = CalendarIdSchema.parse("cccccccccccccccccccccccc");
+const CALENDAR: Calendar = {
+  id: CALENDAR_ID,
+  name: "Work",
+  description: "",
+  timeZone: TimeZoneSchema.parse("America/Denver"),
+  foregroundColor: "#000000",
+  backgroundColor: "#3b82f6",
+  provider: "google",
+  access: "owner",
+  capabilities: getCalendarCapabilities("owner"),
+  isPrimary: false,
+  isVisible: true,
+  isActive: true,
+};
 
 // Events are built relative to the real clock because the card's whole job is
 // comparing today's events against "now".
@@ -84,7 +111,7 @@ describe("UpNextCard", () => {
     expect(screen.getByText("N")).toBeInTheDocument();
   });
 
-  it("renders nothing when today has no upcoming timed events", () => {
+  it("keeps its slot with an all-clear state when today has no upcoming timed events", () => {
     render(<UpNextCard />, {
       events: [
         // Already underway, so nothing is "up next".
@@ -101,12 +128,44 @@ describe("UpNextCard", () => {
       ],
     });
 
-    expect(screen.queryByRole("region", { name: "Up next" })).toBeNull();
-    expect(
-      screen.queryByText("Nothing scheduled — press C to add an event."),
-    ).toBeNull();
+    expect(screen.getByRole("region", { name: "Up next" })).toBeInTheDocument();
+    expect(screen.getByText("All clear")).toBeInTheDocument();
     expect(screen.queryByText("Past Event")).toBeNull();
     expect(screen.queryByText("All Day Event")).toBeNull();
+    expect(screen.queryByRole("button", { name: /up next:/i })).toBeNull();
+  });
+
+  it("keeps its card while hiding the calendar with the only upcoming event", async () => {
+    const queryClient = createCompassQueryClient();
+    queryClient.setQueryData(calendarQueryKeys.all, [CALENDAR]);
+
+    render(<UpNextCard />, {
+      events: [
+        createMockEvent({
+          id: EventIdSchema.parse(SOON_EVENT_ID),
+          calendarId: CALENDAR_ID,
+          content: { kind: "details", title: "Soon Event", description: "" },
+          schedule: EventScheduleSchema.parse({
+            kind: "timed",
+            start: dayjs().add(30, "minute").format(),
+            end: dayjs().add(60, "minute").format(),
+            timeZone: "UTC",
+          }),
+        }),
+      ],
+      queryClient,
+    });
+
+    expect(screen.getByRole("button", { name: /up next: soon event/i })).toBeInTheDocument();
+
+    act(() => {
+      expect(setCalendarVisibility(CALENDAR_ID, false)).toBe(true);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Up next" })).toBeInTheDocument();
+      expect(screen.getByText("All clear")).toBeInTheDocument();
+    });
   });
 
   it("opens the event's details in the sidebar when clicked", async () => {

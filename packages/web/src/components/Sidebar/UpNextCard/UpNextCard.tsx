@@ -29,29 +29,34 @@ export function formatStartsIn(start: Dayjs, now: Dayjs): string {
  */
 export const UpNextCard: FC = () => {
   const { now, openEventDetails, upNext } = useUpNextEvent();
-
-  if (!upNext) {
-    return null;
-  }
-
-  const countdown = formatStartsIn(dayjs(upNext.startDate), now);
+  const countdown = upNext
+    ? formatStartsIn(dayjs(upNext.startDate), now)
+    : undefined;
 
   return (
     <section aria-label="Up next">
-      <button
-        aria-label={`Up next: ${upNext.title}. ${countdown}.`}
-        className="c-focus-ring group relative flex w-full min-w-0 flex-col gap-0.5 rounded border border-border bg-surface px-2 py-1.5 text-left hover:brightness-110"
-        onClick={() => openEventDetails("gridClick")}
-        type="button"
-      >
-        <span className="pr-8 text-accent text-xs">{countdown}</span>
-        <ShortcutHint className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-          N
-        </ShortcutHint>
-        <span className="min-w-0 truncate font-medium text-sm text-text">
-          {upNext.title}
-        </span>
-      </button>
+      {upNext ? (
+        <button
+          aria-label={`Up next: ${upNext.title}. ${countdown}.`}
+          className="c-focus-ring group relative flex min-h-14 w-full min-w-0 flex-col gap-0.5 rounded border border-border bg-surface px-2 py-1.5 text-left hover:brightness-110"
+          onClick={() => openEventDetails("gridClick")}
+          type="button"
+        >
+          <span className="pr-8 text-accent text-xs">
+            {countdown}
+          </span>
+          <ShortcutHint className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+            N
+          </ShortcutHint>
+          <span className="min-w-0 truncate font-medium text-sm text-text">
+            {upNext.title}
+          </span>
+        </button>
+      ) : (
+        <p className="flex min-h-14 items-center rounded border border-border bg-surface px-2 py-1.5 font-medium text-sm text-text-muted">
+          All clear
+        </p>
+      )}
     </section>
   );
 };
