@@ -94,6 +94,21 @@ describe("useSyncFocusRefresh", () => {
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 
+  it("does not retrigger after the refresh changes connection state", () => {
+    const refresh = mock();
+    let state: UseConnectGoogleResult["state"] = "HEALTHY";
+    const hook = renderHook(() =>
+      useSyncFocusRefresh(() => fakeConnectGoogle({ refresh, state })),
+    );
+
+    state = "IMPORTING";
+    hook.rerender();
+    state = "HEALTHY";
+    hook.rerender();
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
   it("refreshes again when the tab regains focus after being hidden long enough", () => {
     setSystemTime(new Date("2026-02-05T00:00:00.000Z"));
     const refresh = mock();

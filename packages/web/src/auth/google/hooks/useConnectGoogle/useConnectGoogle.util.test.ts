@@ -16,19 +16,19 @@ describe("formatLastSyncedLabel", () => {
 
   it("formats recent relative ages", () => {
     expect(formatLastSyncedLabel("2026-07-24T11:59:30.000Z", nowMs)).toBe(
-      "Last synced just now",
+      "Updated just now",
     );
     expect(formatLastSyncedLabel("2026-07-24T11:59:00.000Z", nowMs)).toBe(
-      "Last synced 1 minute ago",
+      "Updated 1 minute ago",
     );
     expect(formatLastSyncedLabel("2026-07-24T11:45:00.000Z", nowMs)).toBe(
-      "Last synced 15 minutes ago",
+      "Updated 15 minutes ago",
     );
     expect(formatLastSyncedLabel("2026-07-24T10:00:00.000Z", nowMs)).toBe(
-      "Last synced 2 hours ago",
+      "Updated 2 hours ago",
     );
     expect(formatLastSyncedLabel("2026-07-22T12:00:00.000Z", nowMs)).toBe(
-      "Last synced 2 days ago",
+      "Updated 2 days ago",
     );
   });
 });
@@ -41,25 +41,22 @@ describe("getGoogleSyncStatus", () => {
   it("returns healthy copy for connected Google", () => {
     expect(getGoogleSyncStatus("HEALTHY")).toEqual({
       variant: "healthy",
-      text: "Calendar up-to-date",
+      text: "Calendar connected",
     });
   });
 
-  it("returns checking copy while metadata loads", () => {
-    expect(getGoogleSyncStatus("checking")).toEqual({
-      variant: "syncing",
-      text: "Checking calendar status…",
-    });
+  it("hides transient metadata loading without a connection summary", () => {
+    expect(getGoogleSyncStatus("checking")).toBeNull();
   });
 
-  it("returns syncing copy while importing", () => {
+  it("uses setup copy while importing", () => {
     expect(getGoogleSyncStatus("IMPORTING")).toEqual({
       variant: "syncing",
-      text: "Syncing your calendar…",
+      text: "Adding your calendar…",
     });
   });
 
-  it("shows checking progress over a cached healthy connection", () => {
+  it("keeps a cached healthy connection calm while metadata loads", () => {
     expect(
       getGoogleSyncStatus("checking", {
         id: "c1",
@@ -70,12 +67,12 @@ describe("getGoogleSyncStatus", () => {
         accountEmail: "a@example.com",
       }),
     ).toEqual({
-      variant: "syncing",
-      text: "Checking calendar status…",
+      variant: "healthy",
+      text: "Calendar connected",
     });
   });
 
-  it("shows import progress over a cached healthy connection", () => {
+  it("keeps a cached healthy connection calm during a routine refresh", () => {
     expect(
       getGoogleSyncStatus("IMPORTING", {
         id: "c1",
@@ -86,8 +83,8 @@ describe("getGoogleSyncStatus", () => {
         accountEmail: "a@example.com",
       }),
     ).toEqual({
-      variant: "syncing",
-      text: "Syncing your calendar…",
+      variant: "healthy",
+      text: "Calendar connected",
     });
   });
 
@@ -95,15 +92,16 @@ describe("getGoogleSyncStatus", () => {
     const status = getGoogleSyncStatus("ATTENTION");
 
     expect(status?.variant).toBe("warning");
-    expect(status?.text.toLowerCase()).not.toContain("repair");
-    expect(status?.text.toLowerCase()).toContain("refresh");
+    expect(status?.text).toBe(
+      "Calendar updates are taking longer than usual. We'll keep trying.",
+    );
   });
 
   it("returns error copy for RECONNECT_REQUIRED", () => {
     expect(getGoogleSyncStatus("RECONNECT_REQUIRED")?.variant).toBe("error");
   });
 
-  it("uses the same syncing copy for every in-progress Sync state", () => {
+  it("shows setup copy for a connection that has never been healthy", () => {
     expect(
       getGoogleSyncStatus("IMPORTING", {
         id: "c1",
@@ -115,7 +113,7 @@ describe("getGoogleSyncStatus", () => {
       }),
     ).toEqual({
       variant: "syncing",
-      text: "Syncing your calendar…",
+      text: "Adding your calendar…",
     });
   });
 
@@ -131,7 +129,7 @@ describe("getGoogleSyncStatus", () => {
       }),
     ).toEqual({
       variant: "warning",
-      text: "Calendar sync is delayed — try Refresh",
+      text: "Calendar updates are taking longer than usual. We'll keep trying.",
     });
   });
 
@@ -147,7 +145,7 @@ describe("getGoogleSyncStatus", () => {
       }),
     ).toEqual({
       variant: "healthy",
-      text: "Calendar up-to-date",
+      text: "Calendar connected",
     });
   });
 });

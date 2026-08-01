@@ -9,6 +9,14 @@ import {
 
 const CONNECT_ICON: CommandActionIcon = CloudArrowUpIcon;
 const REFRESH_ICON: CommandActionIcon = ArrowsClockwiseIcon;
+const CONNECTED_STATUS: SyncStatus = {
+  variant: "healthy",
+  text: "Calendar connected",
+};
+const DELAYED_STATUS: SyncStatus = {
+  variant: "warning",
+  text: "Calendar updates are taking longer than usual. We'll keep trying.",
+};
 
 /** Short relative label for Sync connection `lastSyncedAt` (ISO). */
 export const formatLastSyncedLabel = (
@@ -26,31 +34,31 @@ export const formatLastSyncedLabel = (
 
   const deltaSec = Math.max(0, Math.floor((nowMs - syncedMs) / 1000));
   if (deltaSec < 60) {
-    return "Last synced just now";
+    return "Updated just now";
   }
 
   const deltaMin = Math.floor(deltaSec / 60);
   if (deltaMin < 60) {
     return deltaMin === 1
-      ? "Last synced 1 minute ago"
-      : `Last synced ${deltaMin} minutes ago`;
+      ? "Updated 1 minute ago"
+      : `Updated ${deltaMin} minutes ago`;
   }
 
   const deltaHr = Math.floor(deltaMin / 60);
   if (deltaHr < 24) {
     return deltaHr === 1
-      ? "Last synced 1 hour ago"
-      : `Last synced ${deltaHr} hours ago`;
+      ? "Updated 1 hour ago"
+      : `Updated ${deltaHr} hours ago`;
   }
 
   const deltaDay = Math.floor(deltaHr / 24);
   if (deltaDay < 7) {
     return deltaDay === 1
-      ? "Last synced 1 day ago"
-      : `Last synced ${deltaDay} days ago`;
+      ? "Updated 1 day ago"
+      : `Updated ${deltaDay} days ago`;
   }
 
-  return `Last synced ${new Date(syncedMs).toLocaleDateString()}`;
+  return `Updated ${new Date(syncedMs).toLocaleDateString()}`;
 };
 
 export type GoogleConnectionHandlers = {
@@ -102,29 +110,21 @@ export const getGoogleSyncStatus = (
   state: GoogleUiState,
   connection?: GoogleSyncConnectionSummary | null,
 ): SyncStatus => {
-  // Local transient states are newer than a cached server summary, which can
-  // still report healthy while a fresh check or import is underway.
-  if (state === "checking") {
-    return { variant: "syncing", text: "Checking calendar status…" };
-  }
-
-  if (state === "IMPORTING") {
-    return { variant: "syncing", text: "Syncing your calendar…" };
-  }
-
+  // A connection summary describes durable provider work. Local metadata
+  // loading and a routine incremental pull must not replace a calm, usable
+  // calendar with transient "checking" or "syncing" copy.
   if (connection) {
     switch (connection.state) {
       case "healthy":
-        return { variant: "healthy", text: "Calendar up-to-date" };
+        return CONNECTED_STATUS;
       case "connecting":
       case "importing":
       case "catchingUp":
-        return { variant: "syncing", text: "Syncing your calendar…" };
+        return connection.lastHealthyAt
+          ? CONNECTED_STATUS
+          : { variant: "syncing", text: "Adding your calendar…" };
       case "delayed":
-        return {
-          variant: "warning",
-          text: "Calendar sync is delayed — try Refresh",
-        };
+        return DELAYED_STATUS;
       case "actionRequired":
       case "disconnected":
         // Product enum already distinguishes reconnect vs soft attention.
@@ -133,13 +133,14 @@ export const getGoogleSyncStatus = (
   }
 
   switch (state) {
+    case "checking":
+      return null;
+    case "IMPORTING":
+      return { variant: "syncing", text: "Adding your calendar…" };
     case "HEALTHY":
-      return { variant: "healthy", text: "Calendar up-to-date" };
+      return CONNECTED_STATUS;
     case "ATTENTION":
-      return {
-        variant: "warning",
-        text: "Calendar needs a refresh",
-      };
+      return DELAYED_STATUS;
     case "RECONNECT_REQUIRED":
       return { variant: "error", text: "Calendar needs reconnecting" };
     case "NOT_CONNECTED":
