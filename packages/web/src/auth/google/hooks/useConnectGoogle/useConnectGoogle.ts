@@ -98,37 +98,47 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
     void start();
   }, [state, stopConnecting, syncConnection?.id]);
 
-  const onRefreshGoogle = useCallback(() => {
-    if (isRefreshingRef.current || isConnectingRef.current) {
-      return;
-    }
-
-    isRefreshingRef.current = true;
-    setIsRefreshing(true);
-    setSyncingSyncIndicatorOverride();
-    settingsActions.closeCmdPalette();
-
-    const run = async () => {
-      try {
-        await AuthApi.refreshGoogleSync();
-        await refreshUserMetadata({ force: true });
-        void queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
-      } catch {
-        showErrorToast(
-          "We couldn't refresh your calendar. Please try again in a moment.",
-          { toastId: GOOGLE_REFRESH_FAILED_TOAST_ID },
-        );
-      } finally {
-        // Drop the optimistic syncing override once the request settles.
-        // Metadata/SSE still drive IMPORTING when a real import is in flight.
-        clearSyncingSyncIndicatorOverride();
-        isRefreshingRef.current = false;
-        setIsRefreshing(false);
+  const onRefreshGoogle = useCallback(
+    (options?: { silent?: boolean }) => {
+      if (isRefreshingRef.current || isConnectingRef.current) {
+        return;
       }
-    };
 
-    void run();
-  }, [queryClient]);
+      isRefreshingRef.current = true;
+      setIsRefreshing(true);
+      setSyncingSyncIndicatorOverride();
+      if (!options?.silent) {
+        settingsActions.closeCmdPalette();
+      }
+
+      const run = async () => {
+        try {
+          await AuthApi.refreshGoogleSync();
+          await refreshUserMetadata({ force: true });
+          void queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
+        } catch {
+          // A background-triggered refresh (tab focus) failing transiently
+          // isn't worth interrupting the user for — only a refresh they
+          // explicitly asked for surfaces the failure.
+          if (!options?.silent) {
+            showErrorToast(
+              "We couldn't refresh your calendar. Please try again in a moment.",
+              { toastId: GOOGLE_REFRESH_FAILED_TOAST_ID },
+            );
+          }
+        } finally {
+          // Drop the optimistic syncing override once the request settles.
+          // Metadata/SSE still drive IMPORTING when a real import is in flight.
+          clearSyncingSyncIndicatorOverride();
+          isRefreshingRef.current = false;
+          setIsRefreshing(false);
+        }
+      };
+
+      void run();
+    },
+    [queryClient],
+  );
 
   return {
     ...getGoogleConnectionConfig(state, {
