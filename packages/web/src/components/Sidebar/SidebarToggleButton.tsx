@@ -19,7 +19,18 @@ export const SidebarToggleButton: FC = () => {
   return (
     <TooltipWrapper
       description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
-      onClick={() => viewActions.toggleSidebar()}
+      onClick={() => {
+        const willOpen = !isSidebarOpen;
+        viewActions.toggleSidebar();
+        if (!willOpen) return;
+        // On narrow layouts the header control can be clipped once the panel
+        // opens; move focus to the in-sidebar dismiss control when present.
+        window.setTimeout(() => {
+          document
+            .querySelector<HTMLButtonElement>('[aria-label="Dismiss sidebar"]')
+            ?.focus();
+        }, 0);
+      }}
       shortcut="]"
     >
       <button

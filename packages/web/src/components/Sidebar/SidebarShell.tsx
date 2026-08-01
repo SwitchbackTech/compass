@@ -2,6 +2,10 @@ import { type HTMLAttributes, type ReactNode } from "react";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import {
+  selectIsEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
+import {
   selectIsSidebarOpen,
   useViewStore,
 } from "@web/events/stores/view.store";
@@ -34,8 +38,10 @@ export function SidebarShell({
 }: SidebarShellProps) {
   const isNarrowLayout = useIsNarrowSidebarLayout();
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
-  // Only while open: during the collapse transition the shell stays mounted.
-  const showSidebarClose = isNarrowLayout && isSidebarOpen;
+  const isEventFormOpen = useDraftStore(selectIsEventFormOpen);
+  // Day/Week keep the panel mounted for event details even when the sidebar
+  // preference is closed; keep dismiss available for that case too.
+  const showSidebarClose = isNarrowLayout && (isSidebarOpen || isEventFormOpen);
 
   return (
     <aside
