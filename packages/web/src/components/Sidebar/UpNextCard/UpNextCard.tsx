@@ -42,9 +42,7 @@ export const UpNextCard: FC = () => {
           onClick={() => openEventDetails("gridClick")}
           type="button"
         >
-          <span className="pr-8 text-accent text-xs">
-            {countdown}
-          </span>
+          <span className="pr-8 text-accent text-xs">{countdown}</span>
           <ShortcutHint className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
             N
           </ShortcutHint>

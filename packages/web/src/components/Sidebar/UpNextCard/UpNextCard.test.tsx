@@ -1,13 +1,13 @@
 import userEvent from "@testing-library/user-event";
 import {
+  type Calendar,
+  getCalendarCapabilities,
+} from "@core/types/calendar.contracts";
+import {
   CalendarIdSchema,
   EventIdSchema,
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
-import {
-  type Calendar,
-  getCalendarCapabilities,
-} from "@core/types/calendar.contracts";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
@@ -156,14 +156,18 @@ describe("UpNextCard", () => {
       queryClient,
     });
 
-    expect(screen.getByRole("button", { name: /up next: soon event/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /up next: soon event/i }),
+    ).toBeInTheDocument();
 
     act(() => {
       expect(setCalendarVisibility(CALENDAR_ID, false)).toBe(true);
     });
 
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: "Up next" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("region", { name: "Up next" }),
+      ).toBeInTheDocument();
       expect(screen.getByText("All clear")).toBeInTheDocument();
     });
   });
