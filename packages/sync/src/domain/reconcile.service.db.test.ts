@@ -183,4 +183,56 @@ describe("reconcileStaleCalendars", () => {
     expect(await jobByKey(`incrementalPull:${healthy._id}`)).not.toBeNull();
     expect(await jobByKey(`incrementalPull:${deadCredential._id}`)).toBeNull();
   });
+
+  it("skips a resource whose existing job cannot be read and sweeps the rest", async () => {
+    // 2026-07-31: three job docs written before `requeuedCount` existed made
+    // enqueue's coalescing read throw, and the sweep's loop had no per-item
+    // guard — so one unreadable doc abandoned the whole batch on every cycle
+    // and froze calendar sync fleet-wide for 23h. The finders sort
+    // deterministically, so the poisoned resource re-won the front of the
+    // ordering every time; nothing behind it ever ran again.
+    const poisoned = await seedResource(new Date("2026-07-01T00:00:00.000Z"));
+    const healthy = await seedResource(new Date("2026-07-02T00:00:00.000Z"));
+    // A job doc that cannot be parsed back out (kind is not a JobKind), sitting
+    // on the coalescing key the sweep is about to reuse.
+    await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.jobs)
+      .insertOne({
+        _id: objectId(),
+        coalescingKey: `incrementalPull:${poisoned._id}`,
+        kind: "notAJobKind",
+      } as never);
+    const failures: string[] = [];
+
+    const enqueued = await reconcileStaleCalendars(
+      { resources, jobs, onEnqueueError: (_e, id) => failures.push(id) },
+      staleBefore,
+      now,
+    );
+
+    // The healthy resource behind the poisoned one still got its pull, and the
+    // count reflects what was actually enqueued rather than what was found.
+    expect(enqueued).toBe(1);
+    expect(await jobByKey(`incrementalPull:${healthy._id}`)).not.toBeNull();
+    expect(failures).toEqual([poisoned._id]);
+  });
+
+  it("enqueues onto a job written before requeuedCount existed", async () => {
+    // The specific doc shape that caused the freeze: valid work, just older
+    // than the field. It must read back as zero requeues, not as an error.
+    const stale = await seedResource(new Date("2026-07-01T00:00:00.000Z"));
+    await reconcileStaleCalendars(deps(), staleBefore, now);
+    await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.jobs)
+      .updateOne(
+        { coalescingKey: `incrementalPull:${stale._id}` },
+        { $unset: { requeuedCount: "" } },
+      );
+
+    const enqueued = await reconcileStaleCalendars(deps(), staleBefore, now);
+
+    expect(enqueued).toBe(1);
+  });
 });

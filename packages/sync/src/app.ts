@@ -407,7 +407,15 @@ function buildSchedulers(
     {
       sweep: async (before) => {
         const enqueued = await reconcileStaleCalendars(
-          { resources, jobs },
+          {
+            resources,
+            jobs,
+            onEnqueueError: (error, resourceId) =>
+              logger.error(
+                `Sync reconcile sweep could not enqueue resource ${resourceId}; skipping it and continuing`,
+                error,
+              ),
+          },
           before,
           () => new Date(),
         );
@@ -431,7 +439,15 @@ function buildSchedulers(
     {
       sweep: (before) =>
         maintainExpiringSubscriptions(
-          { resources, jobs },
+          {
+            resources,
+            jobs,
+            onEnqueueError: (error, resourceId) =>
+              logger.error(
+                `Sync subscription sweep could not enqueue resource ${resourceId}; skipping it and continuing`,
+                error,
+              ),
+          },
           before,
           () => new Date(),
         ),

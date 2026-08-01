@@ -102,4 +102,30 @@ describe("requeueFailedJobs", () => {
       exhaustedJobs: [],
     });
   });
+
+  it("requeues a job written before requeuedCount existed", async () => {
+    // Mongo's {$lt: n} does not match a missing field, so the self-heal sweep
+    // could not see the very jobs most likely to be wedged: the ones old
+    // enough to predate its own bookkeeping field. Three such jobs sat failed
+    // in prod while this sweep reported nothing to do (2026-07-31).
+    const id = await seedFailed({
+      runAfter: new Date("2026-07-20T10:00:00.000Z"),
+    });
+    await storage
+      .db()
+      .collection("jobs")
+      .updateOne({ _id: id as never }, { $unset: { requeuedCount: "" } });
+
+    const result = await requeueFailedJobs(deps(), cooldownBefore, now, 3);
+
+    expect(result.requeued).toBe(1);
+    expect(result.exhausted).toBe(0);
+    const raw = await storage
+      .db()
+      .collection("jobs")
+      .findOne({ _id: id as never });
+    expect(raw?.state).toBe("pending");
+    // Absence counted as zero, so the requeue is its first, not its last.
+    expect(raw?.requeuedCount).toBe(1);
+  });
 });

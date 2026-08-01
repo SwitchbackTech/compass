@@ -7,11 +7,23 @@ import { type JobRepository } from "@sync/storage/repositories/job.repository";
 
 // The shared shape behind reconcile.service.ts and subscription-sweep.service.ts:
 // find due resources with `finder`, enqueue one `kind` job per resource, and
-// return how many. The only difference between the two sweeps is which finder
-// they call and which job kind they enqueue — everything else, including the
-// coalescing key template, is identical.
+// return how many were enqueued. The only difference between the two sweeps is
+// which finder they call and which job kind they enqueue — everything else,
+// including the coalescing key template, is identical.
+//
+// Each resource is enqueued independently: one that throws is reported and
+// skipped, never allowed to abandon the rest of the batch. The sweeps are the
+// only liveness path for resources without a push channel, and the finders sort
+// deterministically, so a single doomed resource at the front of the ordering
+// would otherwise starve every resource behind it on every cycle, forever
+// (2026-07-31: one unparseable job doc froze calendar sync fleet-wide for 23h).
 export async function enqueueForResources(
-  deps: { jobs: JobRepository },
+  deps: {
+    jobs: JobRepository;
+    // Called once per resource that could not be enqueued. The sweep keeps
+    // going; the caller decides how loud to be.
+    onEnqueueError?: (error: unknown, resourceId: string) => void;
+  },
   finder: (before: Date, limit: number) => Promise<SyncResourceRecord[]>,
   kind: JobKind,
   before: Date,
@@ -19,6 +31,7 @@ export async function enqueueForResources(
   limit = 100,
 ): Promise<number> {
   const due = await finder(before, limit);
+  let enqueued = 0;
   for (const resource of due) {
     const enqueue: JobEnqueue = {
       tenantId: resource.tenantId,
@@ -31,7 +44,12 @@ export async function enqueueForResources(
       runAfter: now(),
       coalescingKey: `${kind}:${resource._id}`,
     };
-    await deps.jobs.enqueue(enqueue);
+    try {
+      await deps.jobs.enqueue(enqueue);
+      enqueued += 1;
+    } catch (error) {
+      deps.onEnqueueError?.(error, resource._id);
+    }
   }
-  return due.length;
+  return enqueued;
 }

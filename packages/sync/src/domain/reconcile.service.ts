@@ -5,6 +5,8 @@ import { type SyncResourceRepository } from "@sync/storage/repositories/sync-res
 export interface ReconcileDeps {
   resources: SyncResourceRepository;
   jobs: JobRepository;
+  // Reported per resource that fails to enqueue; the sweep continues.
+  onEnqueueError?: (error: unknown, resourceId: string) => void;
 }
 
 // The reconcile sweep — the missed-webhook fallback. Find events resources that

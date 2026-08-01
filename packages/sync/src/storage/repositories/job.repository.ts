@@ -22,6 +22,9 @@ export type ExhaustedFailedJob = {
   updatedAt: Date;
 };
 
+// The exact complement of listFailedForRequeue's eligibility filter: {$gte}
+// does not match a missing requeuedCount, so a legacy job counts as eligible
+// there and never as exhausted here. Keep the two in step.
 function exhaustedFailedFilter(maxRequeues: number) {
   return {
     state: "failed" as const,
@@ -251,7 +254,15 @@ export class JobRepository {
       .find({
         state: "failed",
         failureClass: { $ne: "permanent" },
-        requeuedCount: { $lt: maxRequeues },
+        // A job predating the requeuedCount field has been requeued zero
+        // times, not too many. Mongo's {$lt: n} does not match a missing
+        // field, so the absence has to be spelled out — otherwise the very
+        // jobs most likely to be wedged (the oldest ones) are the only ones
+        // the self-heal sweep can never see.
+        $or: [
+          { requeuedCount: { $lt: maxRequeues } },
+          { requeuedCount: { $exists: false } },
+        ],
         runAfter: { $lte: before },
       })
       .sort({ runAfter: 1 })
