@@ -614,7 +614,11 @@ describe("SyncJobWorker", () => {
       ]),
     ).drain();
 
-    expect(processed).toBe(2);
+    // Four, not two: neither seeded resource has a push channel, so each
+    // applied pull enqueues a subscriptionMaintain followup that this same
+    // drain then picks up. That is the property under test — drain keeps going
+    // until nothing is due, including work spawned partway through it.
+    expect(processed).toBe(4);
     expect(
       await storage
         .db()

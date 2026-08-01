@@ -260,7 +260,9 @@ describe("dispatchSyncJob", () => {
       jobFor(resource, "incrementalPull"),
       now,
     );
-    expect(outcome).toEqual({ result: "done" });
+    // Subject is the invalidation feed; this seed has no channel, so it also
+    // carries a bootstrap followup that is not what this test is about.
+    expect(outcome.result).toBe("done");
 
     const feed = await storage
       .db()
@@ -275,9 +277,20 @@ describe("dispatchSyncJob", () => {
     });
   });
 
-  it("settles an applied incremental pull as done with no followup", async () => {
+  it("settles an applied incremental pull as done when the channel is already live", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
+    await resources.updateSubscription(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+      {
+        subscriptionId: "channel-1",
+        subscriptionResourceId: "provider-resource-1",
+        subscriptionToken: "token-1",
+        subscriptionExpiresAt: new Date("2026-08-01T00:00:00.000Z"),
+      },
+    );
     const reader = new FakeReader([page([single("new-1")], "cursor-1")]);
 
     const outcome = await dispatchSyncJob(
@@ -298,6 +311,34 @@ describe("dispatchSyncJob", () => {
       connectionId: calendar.connectionId,
       calendarId: calendar._id,
     });
+  });
+
+  it("bootstraps a push channel when an applied pull finds the calendar has none", async () => {
+    // The initialImport followup used to be the only thing that ever opened a
+    // channel, and the renewal sweep only renews channels that already exist,
+    // so a calendar imported by any other route could never become watchable.
+    // Production preseeded 938 calendars straight into the store during the
+    // Sync cutover: cursors present, syncing fine, no channel, and nothing in
+    // the system able to give them one (2026-08-01).
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    expect(resource.subscriptionId).toBeNull();
+    const reader = new FakeReader([page([single("new-1")], "cursor-1")]);
+
+    const outcome = await dispatchSyncJob(
+      deps(reader),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    if (outcome.result !== "done" || !outcome.followup) {
+      throw new Error("expected a followup");
+    }
+    expect(outcome.followup.kind).toBe("subscriptionMaintain");
+    expect(outcome.followup.coalescingKey).toBe(
+      `subscriptionMaintain:${resource._id}`,
+    );
+    expect(outcome.followup.resourceId).toBe(resource._id);
   });
 
   it("hands off an expired-cursor pull to a repair followup", async () => {
