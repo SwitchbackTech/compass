@@ -8,8 +8,7 @@ Use this guide to validate:
 
 - creating weekly recurring events
 - creating daily recurring events with an end date
-- editing a recurring event with each of the three scopes: This Event, This and Following Events, All Events
-- deleting a recurring event with each of the three scopes
+- editing and deleting an occurrence, then optionally promoting that exact change to a wider scope
 - duplicating a recurring series (Cmd+D)
 
 Do not use this guide to validate:
@@ -26,8 +25,9 @@ Do not use this guide to validate:
 
 Helpful notes:
 
-- The "Apply Changes To" scope dialog appears any time you edit or delete an instance or base event of a recurring series.
-- If you are changing the recurrence rule itself (for example removing recurrence entirely), the "This Event" option is removed from the scope dialog — only "This and Following Events" and "All Events" are available.
+- Editing or deleting an occurrence applies to **This Event** immediately. A live toast offers **1 This and Following** and **2 All**; both options are clickable.
+- The scope keys work only while that toast is visible and never while typing in a form field.
+- Changing the recurrence rule itself (for example removing recurrence entirely) remains an explicit scope choice. "This Event" is not offered for that structural change.
 - Recurring events synced with Google Calendar will push scope changes back to Google automatically.
 
 ---
@@ -86,7 +86,7 @@ Setting an end date on a recurring event stops the series on that date. No insta
 
 ### UX
 
-Editing a single instance of a recurring series and selecting "This Event" updates only that instance. All other instances in the series remain unchanged.
+Editing a single instance of a recurring series updates that instance immediately. All other instances remain unchanged unless the toast is promoted.
 
 ### Steps
 
@@ -94,12 +94,10 @@ Editing a single instance of a recurring series and selecting "This Event" updat
 2. Right-click one instance (for example, next Monday's) and select Edit.
 3. Change the title to something distinct (for example, "Team Sync — Special").
 4. Submit the form.
-5. In the "Apply Changes To" dialog, select This Event.
-6. Confirm.
 
 ### Expected Results
 
-- The dialog presents three options: This Event, This and Following Events, All Events.
+- A toast offers This and Following (`1`) and All (`2`) without blocking the calendar.
 - Only the selected instance updates to the new title.
 - All other instances in the series retain the original title.
 - The change persists after a page reload.
@@ -119,8 +117,7 @@ Selecting "This and Following Events" splits the series. The selected instance a
 3. Right-click the instance and select Edit.
 4. Change the title.
 5. Submit the form.
-6. In the scope dialog, select This and Following Events.
-7. Confirm.
+6. While the toast is visible, press `1` or select **This and Following**.
 
 ### Expected Results
 
@@ -142,8 +139,7 @@ Selecting "All Events" updates the base event, which propagates the change to ev
 2. Right-click any instance and select Edit.
 3. Change the title.
 4. Submit the form.
-5. In the scope dialog, select All Events.
-6. Confirm.
+5. While the toast is visible, press `2` or select **All**.
 
 ### Expected Results
 
@@ -185,8 +181,6 @@ Deleting a single instance removes only that occurrence. The rest of the series 
 
 1. Create a weekly recurring event.
 2. Right-click one instance and select Delete.
-3. In the scope dialog, select This Event.
-4. Confirm.
 
 ### Expected Results
 
@@ -206,8 +200,7 @@ Deleting "This and Following Events" truncates the series. The selected instance
 
 1. Create a weekly recurring event with at least four future instances.
 2. Right-click the second instance and select Delete.
-3. In the scope dialog, select This and Following Events.
-4. Confirm.
+3. While the toast is visible, press `1` or select **This and Following**.
 
 ### Expected Results
 
@@ -227,8 +220,7 @@ Deleting "All Events" removes the entire recurring series from the calendar.
 
 1. Create a weekly recurring event.
 2. Right-click any instance and select Delete.
-3. In the scope dialog, select All Events.
-4. Confirm.
+3. While the toast is visible, press `2` or select **All**.
 
 ### Expected Results
 
@@ -264,9 +256,9 @@ If time is limited, run these checks before shipping recurring event changes:
 
 1. Creating a weekly recurring event with specific days shows instances on only those days.
 2. A daily recurring event with an end date shows no instances after that date.
-3. "This Event" scope updates only the selected instance.
-4. "This and Following Events" scope splits the series at the selected instance.
-5. "All Events" scope propagates the change to every instance.
+3. The immediate change updates only the selected instance.
+4. `1` splits the series at the selected instance.
+5. `2` propagates the change to every instance.
 6. Disabling the Repeat toggle removes the "This Event" option from the scope dialog.
 7. Deleting "This Event" removes only that instance; the rest of the series persists.
 8. Deleting "This and Following Events" truncates the series at the selected instance.

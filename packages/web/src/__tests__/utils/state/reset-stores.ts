@@ -13,6 +13,7 @@ import { resetCalendarVisibilityStoreForTests } from "@web/calendars/calendar-vi
 import { useFeedbackStore } from "@web/components/Feedback/feedback.store";
 import { useReleaseNotesPromptStore } from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
 import { useWelcomeGuideStore } from "@web/components/WelcomeModal/welcome.guide.store";
+import { recurrenceScopeOpportunityActions } from "@web/events/recurrence/recurrence-scope-opportunity.store";
 import { resetEventRepositorySourceForTests } from "@web/events/repositories/event.repository.source.store";
 import {
   initialDraftState,
@@ -38,6 +39,7 @@ const storeResets: StoreReset[] = [
   () => useUserMetadataStore.setState(initialUserMetadataState, true),
   () => useDraftStore.setState(initialDraftState, true),
   () => useUndoHistoryStore.setState(initialUndoHistoryState, true),
+  recurrenceScopeOpportunityActions.clear,
   // Order matters for this pair: the availability flag must be cleared
   // BEFORE the source store recomputes, or a test that tripped
   // markBackendUnavailable() leaves every later file's repository source

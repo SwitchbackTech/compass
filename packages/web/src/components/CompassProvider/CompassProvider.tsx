@@ -13,6 +13,7 @@ import { DeleteAccountConfirmationProvider } from "@web/components/DeleteAccount
 import { FeedbackDialogHost } from "@web/components/Feedback/FeedbackDialogHost";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
+import { RecurrenceScopeOpportunityHost } from "@web/events/recurrence/RecurrenceScopeOpportunityHost";
 import { selectTheme, useThemeStore } from "@web/settings/theme/theme.store";
 import { useUndoRedoShortcuts } from "@web/views/Week/hooks/shortcuts/useUndoRedoShortcuts";
 
@@ -22,7 +23,7 @@ import { useUndoRedoShortcuts } from "@web/views/Week/hooks/shortcuts/useUndoRed
  */
 export function GlobalShortcutsHost() {
   useUndoRedoShortcuts();
-  return null;
+  return <RecurrenceScopeOpportunityHost />;
 }
 
 function ThemeAwareToastContainer() {

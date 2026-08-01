@@ -149,7 +149,7 @@ describe("SidebarEventDetails", () => {
     );
   });
 
-  it("asks for a recurrence scope before deleting a recurring day event", async () => {
+  it("deletes a recurring day event immediately", async () => {
     const recurringEvent = createMockEvent({
       id: EventIdSchema.parse(RECURRING_EVENT_ID),
       content: {
@@ -186,14 +186,21 @@ describe("SidebarEventDetails", () => {
     act(() => titleField.blur());
     fireEvent.keyDown(screen.getByRole("form"), { key: "Delete" });
 
+    await waitFor(() =>
+      expect(
+        queryClient
+          .getMutationCache()
+          .getAll()
+          .some(
+            (mutation) =>
+              mutation.options.mutationKey?.[2] === "delete" &&
+              (mutation.state.variables as { id?: string }).id ===
+                RECURRING_EVENT_ID,
+          ),
+      ).toBe(true),
+    );
     expect(
-      await screen.findByRole("radiogroup", { name: "Delete events" }),
-    ).toBeInTheDocument();
-    expect(
-      queryClient
-        .getMutationCache()
-        .getAll()
-        .some((mutation) => mutation.options.mutationKey?.[2] === "delete"),
-    ).toBe(false);
+      screen.queryByRole("radiogroup", { name: "Delete events" }),
+    ).toBeNull();
   });
 });

@@ -15,6 +15,12 @@ const event = (id: string) =>
     content: { kind: "details", title: id, description: "" },
   });
 
+const occurrence = (id: string, seriesId: string) =>
+  createMockEvent({
+    id: id as EventId,
+    recurrence: { kind: "occurrence", seriesId: seriesId as EventId },
+  });
+
 const editEntry = (id: string, title = `${id}-moved`): UndoHistoryEntry => ({
   kind: "edit",
   id,
@@ -160,6 +166,19 @@ describe("undoHistoryActions", () => {
     undoHistoryActions.clear();
 
     expect(useUndoHistoryStore.getState()).toEqual({ past: [], future: [] });
+  });
+
+  it("discards only history for a promoted series", () => {
+    const seriesId = "series";
+    const seriesOccurrence = occurrence("occurrence", seriesId);
+    undoHistoryActions.record({ kind: "delete", event: seriesOccurrence });
+    undoHistoryActions.record(editEntry("unrelated"));
+
+    undoHistoryActions.discardSeries(seriesId);
+
+    expect(useUndoHistoryStore.getState().past).toEqual([
+      editEntry("unrelated"),
+    ]);
   });
 
   it("commitRedo caps past at 30, dropping the oldest on a long redo run", () => {

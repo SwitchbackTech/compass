@@ -19,6 +19,7 @@ import {
 } from "@web/calendars/useCalendarLookup";
 import { handleError } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { dismissRecurrenceScopeToast } from "@web/common/utils/toast/recurrence-scope.toast";
 import {
   applyEventProjectionAcrossQueries,
   eventBelongsToEntry,
@@ -43,11 +44,18 @@ import {
   projectSeriesMaterialization,
   projectSeriesRulesChange,
 } from "@web/events/recurrence/projectRecurringEdit";
+import {
+  type RecurrenceScopeOpportunity,
+  recurrenceScopeOpportunityActions,
+} from "@web/events/recurrence/recurrence-scope-opportunity.store";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import { getEventRepositoryBySource } from "@web/events/repositories/event.repository.util";
-import { isRestoringHistory } from "@web/events/stores/undo.store";
+import {
+  isRestoringHistory,
+  undoHistoryActions,
+} from "@web/events/stores/undo.store";
 import {
   type EventMutationOperation,
   eventMutationKeys,
@@ -115,7 +123,7 @@ const nowDateTime = () => DateTimeSchema.parse(new Date().toISOString());
 // An occurrence's series is its own recurrence pointer; the series base's
 // series is itself. Shared by the replace and delete optimistic callbacks,
 // which both need the series id to gather every cached instance.
-function seriesIdOf(event: Event | null): EventId | null {
+function seriesIdOf(event: Event | null | undefined): EventId | null {
   if (event?.recurrence.kind === "occurrence") return event.recurrence.seriesId;
   if (event?.recurrence.kind === "series") return event.id;
   return null;
@@ -175,18 +183,26 @@ type ReplaceVariables = {
   id: EventId;
   input: ReplaceEventInput;
   writeKey: EventId;
+  originalOverride?: Event;
+  opportunityId?: number;
 };
 type DeleteVariables = {
   id: EventId;
   scope: RecurrenceScope;
   writeKey: EventId;
   skipRepository: boolean;
+  originalOverride?: Event;
+  opportunityId?: number;
 };
 
 export type EventMutations = {
   create: (input: CreateEventInput) => void;
   replace: (payload: { id: EventId; input: ReplaceEventInput }) => void;
   delete: (payload: { id: EventId; scope: RecurrenceScope }) => void;
+  promoteRecurring: (
+    opportunity: RecurrenceScopeOpportunity,
+    scope: "thisAndFollowing" | "all",
+  ) => void;
 };
 
 export type EventMutationDependencies = {
@@ -301,6 +317,12 @@ export function useEventMutations(
       context: EventMutationContext | undefined,
     ) => {
       reportError(error);
+      const opportunityId = (variables as { opportunityId?: number })
+        .opportunityId;
+      if (opportunityId) {
+        dismissRecurrenceScopeToast(opportunityId);
+        recurrenceScopeOpportunityActions.complete(opportunityId);
+      }
       if (!context) return;
       // TanStack still counts *this* mutation as pending while onError runs
       // (it dispatches status "error" only afterwards), so isMutating === 1
@@ -409,14 +431,19 @@ export function useEventMutations(
           variables,
           precedingCreateOk,
           () => repository.replace(variables.id, variables.input),
-          { coalesce: true },
+          // A promotion replays the saved occurrence mutation at a broader
+          // scope. It must reach the repository even if a later narrow edit
+          // shares its occurrence write key.
+          { coalesce: !variables.originalOverride },
         );
       },
-      ({ id, input }) => {
-        const existing = findEventInCache(queryClient, id, source);
+      ({ id, input, originalOverride }) => {
+        const existing =
+          findEventInCache(queryClient, id, source) ?? originalOverride;
         if (!existing) return;
         const edited = mergeReplaceInput(existing, input);
-        const seriesId = seriesIdOf(existing);
+        const original = originalOverride ?? existing;
+        const seriesId = seriesIdOf(original);
 
         // (Re)defining recurrence rules changes which instances exist, so
         // shifting cached instances isn't enough: expand the new rules into
@@ -444,7 +471,7 @@ export function useEventMutations(
               projectSeriesRulesChange({
                 scope: input.scope,
                 edited,
-                original: existing,
+                original,
                 seriesId,
                 seriesEvents: seriesId
                   ? findSeriesEventsInCache(queryClient, seriesId, source)
@@ -463,7 +490,7 @@ export function useEventMutations(
             projectRecurringEdit({
               scope: input.scope,
               edited,
-              original: existing,
+              original,
               seriesEvents: findSeriesEventsInCache(
                 queryClient,
                 seriesId,
@@ -499,16 +526,17 @@ export function useEventMutations(
           () => repository.delete(variables.id, variables.scope),
         );
       },
-      ({ id, scope }) => {
-        const existing = findEventInCache(queryClient, id, source);
-        const seriesId = seriesIdOf(existing);
+      ({ id, scope, originalOverride }) => {
+        const existing =
+          findEventInCache(queryClient, id, source) ?? originalOverride;
+        const seriesId = seriesIdOf(originalOverride ?? existing);
 
         if (existing && seriesId && scope !== "this") {
           applyEventProjectionAcrossQueries(
             queryClient,
             projectRecurringDelete({
               scope,
-              target: existing,
+              target: originalOverride ?? existing,
               seriesId,
               seriesEvents: findSeriesEventsInCache(
                 queryClient,
@@ -552,6 +580,19 @@ export function useEventMutations(
           payload.input.scope,
           payload.id,
         );
+        const opportunityId =
+          original &&
+          original.recurrence.kind === "occurrence" &&
+          payload.input.scope === "this" &&
+          payload.input.recurrence.kind === "preserve" &&
+          !isRestoringHistory()
+            ? recurrenceScopeOpportunityActions.begin({
+                kind: "replace",
+                original,
+                input: payload.input,
+                source,
+              })
+            : undefined;
         if (original) {
           recordEventEditHistory({
             id: payload.id,
@@ -561,7 +602,7 @@ export function useEventMutations(
             source,
           });
         }
-        replaceMutation.mutate({ ...payload, writeKey });
+        replaceMutation.mutate({ ...payload, writeKey, opportunityId });
       },
       delete: (payload: { id: EventId; scope: RecurrenceScope }) => {
         if (
@@ -573,6 +614,18 @@ export function useEventMutations(
           );
           return;
         }
+        const original = findEventInCache(queryClient, payload.id, source);
+        const opportunityId =
+          original &&
+          original.recurrence.kind === "occurrence" &&
+          payload.scope === "this" &&
+          !isRestoringHistory()
+            ? recurrenceScopeOpportunityActions.begin({
+                kind: "delete",
+                original,
+                source,
+              })
+            : undefined;
         const existing = recordEventDeleteHistory({
           id: payload.id,
           scope: payload.scope,
@@ -583,7 +636,53 @@ export function useEventMutations(
           ...payload,
           writeKey: payload.id,
           skipRepository: !existing,
+          opportunityId,
         });
+      },
+      promoteRecurring: (
+        opportunity: RecurrenceScopeOpportunity,
+        scope: "thisAndFollowing" | "all",
+      ) => {
+        if (opportunity.source !== source) {
+          dismissRecurrenceScopeToast(opportunity.id);
+          recurrenceScopeOpportunityActions.complete(opportunity.id);
+          return;
+        }
+        // Broader recurring operations rewrite/split this series, so its
+        // narrow client snapshots are no longer safe to replay. Keep history
+        // for unrelated events the user changed while this toast was live.
+        const seriesId = seriesIdOf(opportunity.original);
+        if (seriesId) undoHistoryActions.discardSeries(seriesId);
+
+        const onSettled = () => {
+          recurrenceScopeOpportunityActions.complete(opportunity.id);
+        };
+        if (opportunity.kind === "replace") {
+          replaceMutation.mutate(
+            {
+              id: opportunity.original.id as EventId,
+              input: { ...opportunity.input, scope },
+              // Serialize behind the narrow write for this occurrence. The
+              // optimistic projection still uses originalOverride so a
+              // deleted/overridden cache entry cannot lose the promotion.
+              writeKey: opportunity.original.id as EventId,
+              originalOverride: opportunity.original,
+            },
+            { onSettled },
+          );
+          return;
+        }
+
+        deleteMutation.mutate(
+          {
+            id: opportunity.original.id as EventId,
+            scope,
+            writeKey: opportunity.original.id as EventId,
+            skipRepository: false,
+            originalOverride: opportunity.original,
+          },
+          { onSettled },
+        );
       },
     }),
     [
