@@ -161,7 +161,8 @@ Pressing Cmd+K opens the command palette from any view, including while a text i
 ### Expected Results
 
 - The command palette opens immediately.
-- Items include: Create Event, Create All-Day Event, Go to Today, Connect Google Calendar (if not connected), Log Out.
+- Items include: Create Event, Create All-Day Event, Go to Today, Log Out.
+- Google Calendar connection status and actions appear in the sidebar, not the command palette.
 - Typing filters the list.
 - Selecting "Create Event" opens the event creation form.
 - Pressing Escape closes the palette without taking action.

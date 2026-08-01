@@ -27,8 +27,8 @@ export const GoogleDelayedToast = ({ toastId }: GoogleDelayedToastProps) => {
     <div className="flex w-full flex-col gap-2">
       <p className="font-medium text-sm text-text">Calendar sync is delayed</p>
       <p className="text-sm text-text">
-        We&apos;re catching up with Google. Refresh to nudge sync, or reconnect
-        if this lasts.
+        Calendar sync is taking longer than expected. Refresh to try again, or
+        reconnect if this continues.
       </p>
       <button
         className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-on-accent text-sm transition-colors hover:bg-accent-secondary-hover"

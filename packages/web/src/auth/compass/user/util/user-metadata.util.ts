@@ -29,9 +29,9 @@ export const refreshUserMetadata = async (options?: {
       userMetadataActions.set(metadata);
 
       // Catches returning users whose Google grant died while they were away:
-      // they get the actionable reconnect toast instead of having to discover
-      // the palette's "Reconnect Google Calendar" action. At most once per
-      // page load, so a dismissal isn't nagged by later refreshes.
+      // they get the actionable reconnect toast in addition to the sidebar
+      // action. At most once per page load, so a dismissal isn't nagged by
+      // later refreshes.
       if (
         metadata.google?.connectionState === "RECONNECT_REQUIRED" &&
         !hasShownReconnectToastThisLoad

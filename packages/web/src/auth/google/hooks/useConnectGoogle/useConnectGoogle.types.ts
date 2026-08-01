@@ -23,9 +23,9 @@ export type UseConnectGoogleResult = GoogleUiConfig & {
   /**
    * Start connect/reconnect: flushes pending local events, then navigates to
    * the sync service's OAuth consent URL. The same trigger
-   * `commandAction.onSelect` wraps for the command palette — call this
-   * directly from any other surface (e.g. a toast) instead of reimplementing
-   * it (google-reconnect.toast.tsx).
+   * `commandAction.onSelect` wraps this for the sidebar — call this directly
+   * from other surfaces (e.g. a toast) instead of reimplementing it
+   * (google-reconnect.toast.tsx).
    */
   connect: () => void;
   /**

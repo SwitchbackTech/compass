@@ -317,19 +317,19 @@ Files:
 - `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.ts`
 - `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.util.ts`
 - `packages/web/src/components/Sidebar/CalendarList/CalendarListHeader.tsx`
-- `packages/web/src/components/CommandPalette/hooks/useCalendarSyncCmdItems.ts`
 
-UI state comes from a single server-enriched metadata field (`google.connectionState`) plus one client-only state (`checking`). The sidebar's calendar-list heading (the account email, or "Temporary account" when anonymous) is the lightweight status indicator: it renders with a `c-sync-text-wave` shimmer whenever `getGoogleSyncStatus(state)?.variant === "syncing"` or an event mutation is still pending, and an `sr-only role="status"` live region announces "Syncing…" alongside it. `CalendarListHeader` does not render per-state tooltips or actions itself.
+UI state comes from a single server-enriched metadata field (`google.connectionState`) plus one client-only state (`checking`). The sidebar is the one visible home for Google status and actions: it displays a polite live status below the account email, keeps the shimmer while Google work or a local save is in progress, and only shows the last-synced timestamp when the connection is healthy. The command palette deliberately does not show Google status or actions.
 
-Detailed sync status and the reconnect/sync actions live in the command palette instead, via `useCalendarSyncCmdItems`/`getGoogleConnectionConfig`:
+`getGoogleConnectionConfig` supplies sidebar actions:
 
-- `HEALTHY` → no command action (`syncStatus.text` is "Calendar up-to-date")
-- `ATTENTION` → **Sync Google Calendar** command action (`onRepairGoogle`); `syncStatus.text` is "Calendar is out of date"
-- `RECONNECT_REQUIRED` → **Reconnect Google Calendar** command action (`onConnectGoogle`); `syncStatus.text` is "Calendar needs reconnecting"
-- `NOT_CONNECTED` → **Connect Google Calendar** command action (`onConnectGoogle`); no `syncStatus`
-- `checking` / `IMPORTING` → no command action; `syncStatus.text` is "Syncing calendar…"
+- `HEALTHY` → “Calendar up-to-date”
+- `ATTENTION` → “Calendar needs a refresh” and **Refresh calendar**
+- `RECONNECT_REQUIRED` → “Calendar needs reconnecting” and **Reconnect Google Calendar**
+- `NOT_CONNECTED` → **Connect Google Calendar**
+- `checking` → “Checking calendar status…”
+- `IMPORTING` → “Syncing your calendar…”
 
-User-facing copy avoids the word "repair" — the `ATTENTION` state is framed as needing a sync, not a repair.
+User-facing copy avoids internal terms such as “repair” and “catching up.”
 
 Important constraint:
 
