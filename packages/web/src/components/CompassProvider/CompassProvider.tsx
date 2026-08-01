@@ -40,10 +40,7 @@ function ThemeAwareToastContainer() {
       draggable
       pauseOnHover
       theme={theme === "dark-abyss" ? "dark" : "light"}
-      // Not 1: with a single slot, a routine toast already on screen (an undo
-      // notice, an autosave) silently queues out a critical one behind it, so
-      // "your session expired" or "that didn't save" could never appear.
-      limit={3}
+      limit={1}
       transition={Slide}
     />
   );
