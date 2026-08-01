@@ -79,6 +79,21 @@ describe("useSyncFocusRefresh", () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
+  it("does not retrigger when shared refresh status changes", () => {
+    const refresh = mock();
+    let isRefreshing = false;
+    const hook = renderHook(() =>
+      useSyncFocusRefresh(() => fakeConnectGoogle({ refresh, isRefreshing })),
+    );
+
+    isRefreshing = true;
+    hook.rerender();
+    isRefreshing = false;
+    hook.rerender();
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
   it("refreshes again when the tab regains focus after being hidden long enough", () => {
     setSystemTime(new Date("2026-02-05T00:00:00.000Z"));
     const refresh = mock();

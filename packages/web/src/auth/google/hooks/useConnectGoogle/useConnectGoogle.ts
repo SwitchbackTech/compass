@@ -2,11 +2,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { AuthApi } from "@web/api/auth.api";
-import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import {
-  clearSyncingSyncIndicatorOverride,
-  setSyncingSyncIndicatorOverride,
-} from "@web/auth/google/state/google.sync.state";
+  refreshGoogleSync,
+  useIsGoogleSyncRefreshInFlight,
+} from "@web/auth/google/state/google.sync.refresh";
 import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import {
   selectGoogleSyncConnection,
@@ -30,11 +29,10 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
   const syncConnection = useUserMetadataStore(selectGoogleSyncConnection);
   const queryClient = useQueryClient();
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   // Sync guard so rapid re-clicks before React re-renders cannot start a
   // second OAuth attempt; isConnecting alone would still be false in-handler.
   const isConnectingRef = useRef(false);
-  const isRefreshingRef = useRef(false);
+  const isRefreshing = useIsGoogleSyncRefreshInFlight();
   const stopConnecting = useCallback(() => {
     isConnectingRef.current = false;
     setIsConnecting(false);
@@ -100,23 +98,19 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
 
   const onRefreshGoogle = useCallback(
     (options?: { silent?: boolean }) => {
-      if (isRefreshingRef.current || isConnectingRef.current) {
+      if (isConnectingRef.current) {
         return;
       }
 
-      isRefreshingRef.current = true;
-      setIsRefreshing(true);
-      setSyncingSyncIndicatorOverride();
       if (!options?.silent) {
         settingsActions.closeCmdPalette();
       }
 
-      const run = async () => {
-        try {
-          await AuthApi.refreshGoogleSync();
-          await refreshUserMetadata({ force: true });
+      void refreshGoogleSync()
+        .then(() => {
           void queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
-        } catch {
+        })
+        .catch(() => {
           // A background-triggered refresh (tab focus) failing transiently
           // isn't worth interrupting the user for — only a refresh they
           // explicitly asked for surfaces the failure.
@@ -126,16 +120,7 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
               { toastId: GOOGLE_REFRESH_FAILED_TOAST_ID },
             );
           }
-        } finally {
-          // Drop the optimistic syncing override once the request settles.
-          // Metadata/SSE still drive IMPORTING when a real import is in flight.
-          clearSyncingSyncIndicatorOverride();
-          isRefreshingRef.current = false;
-          setIsRefreshing(false);
-        }
-      };
-
-      void run();
+        });
     },
     [queryClient],
   );

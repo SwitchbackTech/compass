@@ -329,7 +329,7 @@ describe("CalendarListHeader", () => {
     expect(connectButton).toHaveAttribute("aria-busy", "true");
   });
 
-  it("shows an immediate refreshing status while a calendar refresh starts", () => {
+  it("shows an immediate refresh-request status while a calendar refresh starts", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "ATTENTION";
     mockIsRefreshing = true;
@@ -340,7 +340,7 @@ describe("CalendarListHeader", () => {
       name: "Refreshing…",
     });
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Refreshing your calendar…",
+      "Requesting a calendar refresh…",
     );
     expect(refreshButton).toBeDisabled();
     expect(refreshButton).toHaveAttribute("aria-busy", "true");

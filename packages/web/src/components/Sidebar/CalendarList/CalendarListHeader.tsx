@@ -72,7 +72,7 @@ const getSidebarSyncStatus = ({
   }
 
   if (isRefreshing) {
-    return { variant: "syncing", text: "Refreshing your calendar…" };
+    return { variant: "syncing", text: "Requesting a calendar refresh…" };
   }
 
   if (googleStatus && googleStatus.variant !== "healthy") {

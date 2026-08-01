@@ -10,6 +10,7 @@ import {
 export const JobKindSchema = z.enum([
   "calendarListSync",
   "initialImport",
+  "bootstrapCatchup",
   "incrementalPull",
   "commandApply",
   "reconcile",

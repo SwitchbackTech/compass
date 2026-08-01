@@ -67,7 +67,7 @@ describe("deriveConnectionState", () => {
     });
   });
 
-  it("is importing until the first in-horizon import completes", () => {
+  it("is importing until the first sync bootstrap completes", () => {
     expect(derive({ initialImportComplete: false })).toEqual({
       state: "importing",
       reason: null,
@@ -164,22 +164,22 @@ describe("deriveConnectionState", () => {
       ).toBe("connecting");
     });
 
-    it("importing dominates overdue work (no delayed during first import)", () => {
+    it("surfaces overdue bootstrap work instead of importing forever", () => {
       expect(
         derive({
           initialImportComplete: false,
           oldestDueWorkAt: agoMs(DELAYED_THRESHOLD_MS + 1000),
         }).state,
-      ).toBe("importing");
+      ).toBe("delayed");
     });
 
-    it("catchingUp dominates overdue work", () => {
+    it("surfaces overdue catch-up work instead of syncing forever", () => {
       expect(
         derive({
           catchingUp: true,
           oldestDueWorkAt: agoMs(DELAYED_THRESHOLD_MS + 1000),
         }).state,
-      ).toBe("catchingUp");
+      ).toBe("delayed");
     });
   });
 });

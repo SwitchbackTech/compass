@@ -15,10 +15,9 @@ const MIN_HIDDEN_DURATION_MS = 30_000;
  * Refresh themselves. Passes `silent: true` — the user didn't ask for this
  * one, so a transient failure shouldn't surface an error toast the way a
  * manual click's would. The sync service still coalesces redundant enqueues
- * regardless. This mounts its own `useConnectGoogle()` instance (independent
- * of the sidebar's), so its in-flight guard is independent too — a refresh
- * from here and a near-simultaneous manual click aren't deduplicated against
- * each other, only against repeats of themselves.
+ * regardless. Every `useConnectGoogle()` instance delegates to the same
+ * browser-wide refresh coordinator, so a focus refresh and a manual click
+ * share work and status instead of racing each other.
  *
  * No-ops while there's no established connection worth refreshing (not yet
  * connected, reconnect required, or still on the initial import).
