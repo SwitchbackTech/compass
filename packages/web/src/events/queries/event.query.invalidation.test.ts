@@ -86,7 +86,7 @@ describe("owed event invalidation", () => {
 });
 
 describe("invalidateAllEventQueries", () => {
-  test("invalidates the broad event key with refetchType all", () => {
+  test("invalidates the broad event key with refetchType active", () => {
     const queryClient = new QueryClient();
     const invalidateQueries = mock(() => Promise.resolve());
     queryClient.invalidateQueries = invalidateQueries;
@@ -95,7 +95,7 @@ describe("invalidateAllEventQueries", () => {
 
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: eventQueryKeys.all,
-      refetchType: "all",
+      refetchType: "active",
     });
   });
 });

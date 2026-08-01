@@ -5,6 +5,7 @@ import {
   CalendarListResponseSchema,
   ConnectionListResponseSchema,
   ConnectionStateSchema,
+  GoogleConnectionAdoptionRequestSchema,
   ProviderAccountFactsSchema,
   ProviderCalendarSchema,
   ProviderConnectionSchema,
@@ -185,6 +186,44 @@ describe("Sync connection contracts", () => {
         refreshToken: "leak",
       };
       expect(ProviderAccountFactsSchema.safeParse(facts).success).toBe(false);
+    });
+  });
+
+  describe("GoogleConnectionAdoptionRequestSchema", () => {
+    it("accepts the trusted server-side authorization handoff", () => {
+      expect(
+        GoogleConnectionAdoptionRequestSchema.safeParse({
+          account: {
+            providerAccountId: "1122334455",
+            email: "connected@example.com",
+            displayName: "Connected User",
+          },
+          credential: {
+            iv: "aGVsbG8=",
+            ciphertext: "Y2lwaGVydGV4dA==",
+            authTag: "dGFn",
+          },
+          grantedScopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+        }).success,
+      ).toBe(true);
+    });
+
+    it("rejects an empty scope set", () => {
+      expect(
+        GoogleConnectionAdoptionRequestSchema.safeParse({
+          account: {
+            providerAccountId: "1122334455",
+            email: null,
+            displayName: null,
+          },
+          credential: {
+            iv: "aGVsbG8=",
+            ciphertext: "Y2lwaGVydGV4dA==",
+            authTag: "dGFn",
+          },
+          grantedScopes: [],
+        }).success,
+      ).toBe(false);
     });
   });
 

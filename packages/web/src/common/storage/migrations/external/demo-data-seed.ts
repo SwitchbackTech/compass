@@ -9,7 +9,6 @@ import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentin
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type LocalEventRecord } from "@web/events/types/local-event.record";
-import { getModifierKeyLabel } from "@web/shortcuts/shortcut.util";
 import { VIEW_SHORTCUTS } from "@web/shortcuts/shortcuts.constants";
 import { type OfflineDataStore } from "../../offline-data/offline-data.store";
 import { type ExternalMigration } from "../migration.types";
@@ -52,7 +51,6 @@ function createEventRecord(overrides: {
 function generateDemoData() {
   const now = dayjs();
   const today = now.toYearMonthDayString();
-  const modKey = getModifierKeyLabel();
   const timeZone = getBrowserTimeZone();
 
   // Helper for creating timed events today (clone to avoid mutating now).
@@ -75,7 +73,8 @@ function generateDemoData() {
     }),
     createEventRecord({
       title: "Try Compass",
-      description: `Welcome! Click any empty time slot to create an event, or press C. When you're ready to sync Google Calendar, open the command palette (${modKey}+K) and choose Connect Google Calendar.`,
+      description:
+        "Welcome! Click any empty time slot to create an event, or press C. When you're ready to sync Google Calendar, use the Connect Google Calendar button in the sidebar.",
       schedule: {
         kind: "timed",
         start: todayAt(10, 0),
@@ -96,7 +95,7 @@ function generateDemoData() {
     createEventRecord({
       title: "Call a friend",
       description:
-        "Your calendar, your data. Sign up whenever you're ready to save across devices.",
+        "Your calendar, your data. Sign up whenever you're ready to save across browsers.",
       schedule: {
         kind: "timed",
         start: todayAt(17, 0),

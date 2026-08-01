@@ -10,6 +10,10 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { resetCalendarVisibilityStoreForTests } from "@web/calendars/calendar-visibility.store";
+import { useFeedbackStore } from "@web/components/Feedback/feedback.store";
+import { useReleaseNotesPromptStore } from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
+import { useWelcomeGuideStore } from "@web/components/WelcomeModal/welcome.guide.store";
+import { recurrenceScopeOpportunityActions } from "@web/events/recurrence/recurrence-scope-opportunity.store";
 import { resetEventRepositorySourceForTests } from "@web/events/repositories/event.repository.source.store";
 import {
   initialDraftState,
@@ -24,6 +28,7 @@ import {
   initialSettingsState,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import { useThemeStore } from "@web/settings/theme/theme.store";
 import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
 
 type StoreReset = () => void;
@@ -34,6 +39,7 @@ const storeResets: StoreReset[] = [
   () => useUserMetadataStore.setState(initialUserMetadataState, true),
   () => useDraftStore.setState(initialDraftState, true),
   () => useUndoHistoryStore.setState(initialUndoHistoryState, true),
+  recurrenceScopeOpportunityActions.clear,
   // Order matters for this pair: the availability flag must be cleared
   // BEFORE the source store recomputes, or a test that tripped
   // markBackendUnavailable() leaves every later file's repository source
@@ -50,6 +56,15 @@ const storeResets: StoreReset[] = [
   // file's grid mousedown handlers inert (they early-return while motion
   // is active) - order-dependent, so it only surfaces on some runners.
   () => setWeekInteractionMotionActive(false),
+  () => useFeedbackStore.setState(useFeedbackStore.getInitialState(), true),
+  () =>
+    useReleaseNotesPromptStore.setState(
+      useReleaseNotesPromptStore.getInitialState(),
+      true,
+    ),
+  () =>
+    useWelcomeGuideStore.setState(useWelcomeGuideStore.getInitialState(), true),
+  () => useThemeStore.setState(useThemeStore.getInitialState(), true),
 ];
 
 export function resetAllStores() {

@@ -106,7 +106,6 @@ describe("refreshConnectionState", () => {
       "list-cursor",
       new Date(),
     );
-
     const eventsResource = await resources.ensure({
       tenantId: connection.tenantId,
       principalId: connection.principalId,
@@ -119,24 +118,73 @@ describe("refreshConnectionState", () => {
       connection.principalId,
       eventsResource._id,
       "events-cursor",
-      new Date(),
+      new Date("2026-07-11T00:00:00.000Z"),
+    );
+    await resources.setBootstrapState(
+      connection.tenantId,
+      connection.principalId,
+      eventsResource._id,
+      "ready",
     );
 
     const after = await refreshConnectionState(deps(), connection);
     expect(after.state).toBe("healthy");
     expect(after.stateReason).toBeNull();
     expect(after.lastHealthyAt).toBeInstanceOf(Date);
-    expect(after.lastSyncedAt).toBeInstanceOf(Date);
+    expect(after.lastSyncedAt).toEqual(new Date("2026-07-11T00:00:00.000Z"));
+
+    const slowerCalendar = await calendars.upsertByProviderCalendar({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      providerCalendarId: "shared@example.com" as ProviderCalendarSourceId,
+      displayName: "Shared",
+      color: null,
+      active: true,
+      primary: false,
+      accessRole: "viewer",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: false,
+        canReadBusy: true,
+        canInviteAttendees: false,
+      },
+    });
+    const slowerResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "events",
+      calendarId: slowerCalendar._id as ProviderCalendarId,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      slowerResource._id,
+      "shared-cursor",
+      new Date("2026-07-10T00:00:00.000Z"),
+    );
+    await resources.setBootstrapState(
+      connection.tenantId,
+      connection.principalId,
+      slowerResource._id,
+      "ready",
+    );
+
+    const withSlowerCalendar = await refreshConnectionState(deps(), after);
+    expect(withSlowerCalendar.lastSyncedAt).toEqual(
+      new Date("2026-07-10T00:00:00.000Z"),
+    );
   });
 
-  it("reports delayed/providerErrors when a job for the connection is wedged in state:failed", async () => {
+  it("reports delayed/providerErrors when a failed bootstrap would otherwise keep syncing", async () => {
     // The 2026-07-30 gap: oldestDueWorkAt was hardcoded to null here, so a job
     // that exhausted its retry ladder and terminalized as state:"failed" was
     // invisible to the connection's own health state — every signal green
     // while a calendar sat unsynced for ~25h. A failed job is unconditionally
     // overdue (see findOldestOverdueByConnection), so this must flip the
     // connection to delayed the moment one exists, independent of any
-    // otherwise-healthy import evidence.
+    // otherwise-incomplete bootstrap evidence.
     const connection = await seedImportingConnection();
     const calendar = await calendars.upsertByProviderCalendar({
       tenantId: connection.tenantId,
@@ -183,17 +231,16 @@ describe("refreshConnectionState", () => {
       "events-cursor",
       new Date(),
     );
-
     await jobs.enqueue({
       tenantId: connection.tenantId,
       principalId: connection.principalId,
       connectionId: connection._id,
       resourceId: eventsResource._id,
       commandId: null,
-      kind: "incrementalPull",
+      kind: "bootstrapCatchup",
       priority: 0,
       runAfter: new Date("2026-01-01T00:00:00.000Z"),
-      coalescingKey: `incrementalPull:${eventsResource._id}`,
+      coalescingKey: `bootstrapCatchup:${eventsResource._id}`,
     } as JobEnqueue);
     const claimed = await jobs.claimDueJob(
       "worker",
@@ -250,6 +297,127 @@ describe("refreshConnectionState", () => {
 
     const after = await refreshConnectionState(deps(), connection);
     expect(after.state).toBe("importing");
+  });
+
+  it("keeps importing after a cursor until the post-watch catch-up is ready", async () => {
+    const connection = await seedImportingConnection();
+    const calendar = await calendars.upsertByProviderCalendar({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      providerCalendarId: "primary@example.com" as ProviderCalendarSourceId,
+      displayName: "Primary",
+      color: null,
+      active: true,
+      primary: true,
+      accessRole: "owner",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: true,
+        canReadBusy: true,
+        canInviteAttendees: true,
+      },
+    });
+    const listResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      "list-cursor",
+      new Date(),
+    );
+    const eventsResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "events",
+      calendarId: calendar._id as ProviderCalendarId,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      eventsResource._id,
+      "events-cursor",
+      new Date(),
+    );
+
+    const after = await refreshConnectionState(deps(), connection);
+    expect(after.state).toBe("importing");
+  });
+
+  it("reports catchingUp while a user-requested pull is queued", async () => {
+    const connection = await seedImportingConnection();
+    const calendar = await calendars.upsertByProviderCalendar({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      providerCalendarId: "primary@example.com" as ProviderCalendarSourceId,
+      displayName: "Primary",
+      color: null,
+      active: true,
+      primary: true,
+      accessRole: "owner",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: true,
+        canReadBusy: true,
+        canInviteAttendees: true,
+      },
+    });
+    const listResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      "list-cursor",
+      new Date(),
+    );
+    const eventsResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "events",
+      calendarId: calendar._id as ProviderCalendarId,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      eventsResource._id,
+      "events-cursor",
+      new Date(),
+    );
+    await resources.setBootstrapState(
+      connection.tenantId,
+      connection.principalId,
+      eventsResource._id,
+      "ready",
+    );
+    await jobs.enqueue({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceId: eventsResource._id,
+      commandId: null,
+      kind: "incrementalPull",
+      priority: 0,
+      runAfter: new Date(),
+      coalescingKey: `incrementalPull:${eventsResource._id}`,
+    } as JobEnqueue);
+
+    const after = await refreshConnectionState(deps(), connection);
+    expect(after.state).toBe("catchingUp");
   });
 
   it("reports delayed/providerErrors when an active calendar's reads durably fail", async () => {

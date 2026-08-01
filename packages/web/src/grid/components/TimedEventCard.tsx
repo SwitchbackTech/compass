@@ -21,9 +21,13 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
 import {
+  COMPACT_EVENT_MAX_HEIGHT,
   GRID_EVENT_TIME_LABEL_FONT_SIZE,
   GRID_EVENT_TIME_LABEL_LINE_HEIGHT,
   GRID_EVENT_TIME_LABEL_OPACITY,
+  GRID_EVENT_TITLE_COMPACT_FONT_SIZE,
+  GRID_EVENT_TITLE_COMPACT_LINE_HEIGHT,
+  GRID_EVENT_TITLE_FONT_SIZE,
   GRID_EVENT_TITLE_LINE_HEIGHT,
   MIN_EVENT_HEIGHT_FOR_TIME_LABEL,
   MIN_EVENT_WIDTH_FOR_TIME_LABEL,
@@ -179,14 +183,22 @@ const TimedEventCardBase = (
     filter: isDraft ? "drop-shadow(2px 4px 4px black)" : undefined,
   } as CSSProperties;
 
+  const isCompactEvent = position.height <= COMPACT_EVENT_MAX_HEIGHT;
+
   const titleStyle: CSSProperties = {
-    fontSize: position.height <= 15 ? "10px" : "13px",
-    lineHeight: position.height <= 15 ? "1.1" : GRID_EVENT_TITLE_LINE_HEIGHT,
+    fontSize: isCompactEvent
+      ? GRID_EVENT_TITLE_COMPACT_FONT_SIZE
+      : GRID_EVENT_TITLE_FONT_SIZE,
+    lineHeight: isCompactEvent
+      ? GRID_EVENT_TITLE_COMPACT_LINE_HEIGHT
+      : GRID_EVENT_TITLE_LINE_HEIGHT,
     minHeight: "3px",
     display: "-webkit-box",
     overflow: "hidden",
-    textOverflow: "ellipsis",
-    wordBreak: "break-all",
+    // overflowWrap wraps at word boundaries and only breaks mid-word when a
+    // single token (e.g. a long URL) can't fit; -webkit-line-clamp supplies
+    // the trailing ellipsis itself, so text-overflow has no effect here.
+    overflowWrap: "anywhere",
     WebkitBoxOrient: "vertical",
     WebkitLineClamp: lineClamp,
   };

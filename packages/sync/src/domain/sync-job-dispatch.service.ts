@@ -170,6 +170,7 @@ async function runSyncJob(
 
   if (
     job.kind !== "initialImport" &&
+    job.kind !== "bootstrapCatchup" &&
     job.kind !== "incrementalPull" &&
     job.kind !== "repair" &&
     job.kind !== "subscriptionMaintain"
@@ -214,7 +215,28 @@ async function runSyncJob(
   switch (job.kind) {
     case "initialImport": {
       // Idempotent: a resource that already holds a cursor no-ops inside.
-      await importCalendarEvents(deps, calendar, now);
+      // Notify the browser after the windowed horizon pass so events in the
+      // current view can appear before the full historical scrape finishes.
+      await importCalendarEvents(deps, calendar, now, {
+        onWindowedPassComplete: async () => {
+          await appendCalendarInvalidation(deps, calendar, now());
+        },
+      });
+      // A cursor is not yet a trustworthy initial sync: Google changes can
+      // land after the import's cursor but before the push channel exists.
+      // Established resources stay ready during an idempotent import; a legacy
+      // row without a cursor still follows the bootstrap path.
+      if (needsBootstrapCompletion(resource)) {
+        await deps.resources.setBootstrapState(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+          "watching",
+        );
+      }
+      // Full import finished — surface the remaining events. Connection state
+      // leaves IMPORTING only after the subscription and post-watch pull.
+      await appendCalendarInvalidation(deps, calendar, now());
       // Bootstrap the push channel once the calendar is imported. The followup
       // is coalesced and maintainSubscription no-ops on an already-live channel,
       // so a repeated import (a reclaimed lease, a re-import) never churns it.
@@ -224,6 +246,27 @@ async function runSyncJob(
       const pull = await pullCalendarChanges(deps, calendar, now);
       if (pull.status === "applied") {
         await appendCalendarInvalidation(deps, calendar, now());
+        // Bootstrap a channel for an imported calendar that has none. The
+        // initialImport followup is otherwise the ONLY thing that ever opens
+        // one, and the renewal sweep only renews channels that already exist
+        // (listExpiringSubscriptions filters on subscriptionId), so a calendar
+        // imported by any other route could never become watchable. Production
+        // preseeded 938 calendars straight into the store during the Sync
+        // cutover, bypassing that job: they held cursors, synced correctly, and
+        // had no push channel with nothing in the system able to give them one
+        // (2026-08-01). Pulls already run for every stale calendar, so
+        // piggybacking here needs no new sweep and heals the whole fleet.
+        //
+        // Wart: a calendar the provider refuses to watch reports "unsupported"
+        // and is not recorded as such, so it re-attempts one watch per pull
+        // (~1/100min at current sweep cadence). Cheap, bounded, and self-
+        // limiting in practice since unwatchable calendars are rare.
+        if (pull.resource.subscriptionId === null) {
+          return {
+            result: "done",
+            followup: subscriptionFollowup(pull.resource, now),
+          };
+        }
         return { result: "done" };
       }
       if (pull.status === "notImported") {
@@ -233,12 +276,39 @@ async function runSyncJob(
       // cursorExpired: the provider cursor is unusable; a repair rebuilds.
       return { result: "done", followup: repairFollowup(resource, now) };
     }
+    case "bootstrapCatchup": {
+      // This pull closes the gap between saving the import cursor and making a
+      // provider watch durable. It deliberately has its own job kind so an
+      // unrelated reconcile/manual pull can never make a new connection look
+      // ready before watch setup has completed.
+      const pull = await pullCalendarChanges(deps, calendar, now);
+      if (pull.status === "applied") {
+        await deps.resources.setBootstrapState(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+          "ready",
+        );
+        await appendCalendarInvalidation(deps, calendar, now());
+        return { result: "done" };
+      }
+      if (pull.status === "notImported") {
+        return { result: "done", followup: importFollowup(resource, now) };
+      }
+      return { result: "done", followup: repairFollowup(resource, now) };
+    }
     case "repair": {
       const repair = await repairCalendar(deps, calendar, now);
       // An incomplete repair (the pass yielded no durable cursor) left the old
       // generation intact; retry the whole rebuild later rather than settle.
       if (repair.status === "repaired") {
         await appendCalendarInvalidation(deps, calendar, now());
+        if (needsBootstrapCompletion(resource)) {
+          return {
+            result: "done",
+            followup: subscriptionFollowup(repair.resource, now),
+          };
+        }
         return { result: "done" };
       }
       return {
@@ -251,7 +321,27 @@ async function runSyncJob(
       // Open or renew the push channel. Every terminal outcome (watched /
       // renewed / current / unsupported / authRevoked) settles the job; a
       // transient watch failure throws and the worker retries with backoff.
-      await maintainSubscription(deps, calendar, resource, now);
+      const subscription = await maintainSubscription(
+        deps,
+        calendar,
+        resource,
+        now,
+      );
+      if (
+        needsBootstrapCompletion(resource) &&
+        subscription.status !== "authRevoked"
+      ) {
+        await deps.resources.setBootstrapState(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+          "catchingUp",
+        );
+        return {
+          result: "done",
+          followup: bootstrapCatchupFollowup(resource, now),
+        };
+      }
       return { result: "done" };
     }
   }
@@ -289,6 +379,31 @@ function importFollowup(
     runAfter: now(),
     coalescingKey: `initialImport:${resource._id}`,
   };
+}
+
+function bootstrapCatchupFollowup(
+  resource: SyncResourceRecord,
+  now: () => Date,
+): JobEnqueue {
+  return {
+    tenantId: resource.tenantId,
+    principalId: resource.principalId,
+    connectionId: resource.connectionId,
+    resourceId: resource._id,
+    commandId: null,
+    kind: "bootstrapCatchup",
+    priority: 0,
+    runAfter: now(),
+    coalescingKey: `bootstrapCatchup:${resource._id}`,
+  };
+}
+
+// Rows written before bootstrapState existed parse as ready so an established
+// calendar does not restart its onboarding after deploy. A missing cursor is
+// the important exception: it proves the old row was still mid-import and
+// must complete the watch + post-watch pull boundary before becoming healthy.
+function needsBootstrapCompletion(resource: SyncResourceRecord): boolean {
+  return resource.bootstrapState !== "ready" || resource.syncCursor == null;
 }
 
 async function appendCalendarInvalidation(

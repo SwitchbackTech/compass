@@ -13,6 +13,26 @@ import {
   JobRecordSchema,
 } from "@sync/storage/contracts/job.contracts";
 
+export type ExhaustedFailedJob = {
+  id: SyncJobId;
+  coalescingKey: string;
+  connectionId: ConnectionId;
+  failureClass: Exclude<JobRecord["failureClass"], null>;
+  requeuedCount: number;
+  updatedAt: Date;
+};
+
+// The exact complement of listFailedForRequeue's eligibility filter: {$gte}
+// does not match a missing requeuedCount, so a legacy job counts as eligible
+// there and never as exhausted here. Keep the two in step.
+function exhaustedFailedFilter(maxRequeues: number) {
+  return {
+    state: "failed" as const,
+    failureClass: { $ne: "permanent" as const },
+    requeuedCount: { $gte: maxRequeues },
+  };
+}
+
 // Repository for `jobs`. Enqueue coalesces on a unique key so repeated
 // notifications for the same resource collapse into one pending job instead of
 // an unbounded queue. Terminal jobs are removed so a later notification can
@@ -84,31 +104,43 @@ export class JobRepository {
 
   // Atomically claim the highest-priority due job for one worker. A job is due
   // when it's pending and its runAfter has passed, OR it's claimed but its
-  // lease has expired (the previous owner crashed). Because findOneAndUpdate is
-  // a single atomic operation, two workers racing for the same job can never
-  // both win — the loser simply gets the next job or null. Returns null when no
-  // job is due.
+  // lease has expired (the previous owner crashed). The two arms are claimed
+  // separately so each can use its own index (state_runafter_priority /
+  // lease_expiry) — a single $or + sort forced the planner to walk every
+  // pending-not-due backoff job on every idle poll. Expired-lease reclaim
+  // runs FIRST so a sustained pending backlog cannot starve crash recovery
+  // (a coalesced resource stuck in claimed-with-expired-lease would otherwise
+  // never get a fresh pending row). Within each arm, priority then age wins.
+  // findOneAndUpdate stays atomic per arm, so two workers still never both
+  // win the same job. Returns null when no job is due.
   async claimDueJob(
     owner: string,
     now: Date,
     leaseDurationMs: number,
   ): Promise<JobRecord | null> {
     const leaseExpiresAt = new Date(now.getTime() + leaseDurationMs);
-    const result = await this.collection.findOneAndUpdate(
-      {
-        $or: [
-          { state: "pending", runAfter: { $lte: now } },
-          { state: "claimed", leaseExpiresAt: { $lt: now } },
-        ],
-      },
-      {
-        $set: { state: "claimed", leaseOwner: owner, leaseExpiresAt },
-        $inc: { attempt: 1 },
-        $currentDate: { updatedAt: true },
-      },
-      { sort: { priority: -1, runAfter: 1 }, returnDocument: "after" },
-    );
-    return result ? JobRecordSchema.parse(result) : null;
+    const claimUpdate = {
+      $set: { state: "claimed" as const, leaseOwner: owner, leaseExpiresAt },
+      $inc: { attempt: 1 },
+      $currentDate: { updatedAt: true as const },
+    };
+    const claimOpts = {
+      sort: { priority: -1 as const, runAfter: 1 as const },
+      returnDocument: "after" as const,
+    };
+
+    for (const filter of [
+      { state: "claimed" as const, leaseExpiresAt: { $lt: now } },
+      { state: "pending" as const, runAfter: { $lte: now } },
+    ]) {
+      const claimed = await this.collection.findOneAndUpdate(
+        filter,
+        claimUpdate,
+        claimOpts,
+      );
+      if (claimed) return JobRecordSchema.parse(claimed);
+    }
+    return null;
   }
 
   // Extend the lease while a worker is still processing. Only the current owner
@@ -222,7 +254,15 @@ export class JobRepository {
       .find({
         state: "failed",
         failureClass: { $ne: "permanent" },
-        requeuedCount: { $lt: maxRequeues },
+        // A job predating the requeuedCount field has been requeued zero
+        // times, not too many. Mongo's {$lt: n} does not match a missing
+        // field, so the absence has to be spelled out — otherwise the very
+        // jobs most likely to be wedged (the oldest ones) are the only ones
+        // the self-heal sweep can never see.
+        $or: [
+          { requeuedCount: { $lt: maxRequeues } },
+          { requeuedCount: { $exists: false } },
+        ],
         runAfter: { $lte: before },
       })
       .sort({ runAfter: 1 })
@@ -262,11 +302,75 @@ export class JobRepository {
   // the sweep will not touch them again; an operator must. Used to drive a
   // loud, recurring alert rather than a silent terminal state.
   async countExhaustedFailed(maxRequeues: number): Promise<number> {
+    return this.collection.countDocuments(exhaustedFailedFilter(maxRequeues));
+  }
+
+  // Same filter as countExhaustedFailed, returning the rows an operator needs
+  // to clear or requeue (bounded so the sweep log stays readable).
+  async listExhaustedFailed(
+    maxRequeues: number,
+    limit = 50,
+  ): Promise<ExhaustedFailedJob[]> {
+    const rows = await this.collection
+      .find(exhaustedFailedFilter(maxRequeues))
+      .sort({ updatedAt: 1 })
+      .limit(limit)
+      .project({
+        _id: 1,
+        coalescingKey: 1,
+        connectionId: 1,
+        failureClass: 1,
+        requeuedCount: 1,
+        updatedAt: 1,
+      })
+      .toArray();
+
+    return rows.map((row) => ({
+      id: row["_id"] as SyncJobId,
+      coalescingKey: String(row["coalescingKey"]),
+      connectionId: row["connectionId"] as ConnectionId,
+      failureClass: (row["failureClass"] ?? "retryableTransient") as Exclude<
+        JobRecord["failureClass"],
+        null
+      >,
+      requeuedCount: Number(row["requeuedCount"] ?? 0),
+      updatedAt:
+        row["updatedAt"] instanceof Date ? row["updatedAt"] : new Date(0),
+    }));
+  }
+
+  async countFailedByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+  ): Promise<number> {
     return this.collection.countDocuments({
+      tenantId,
+      principalId,
+      connectionId,
       state: "failed",
-      failureClass: { $ne: "permanent" },
-      requeuedCount: { $gte: maxRequeues },
     });
+  }
+
+  async countExhaustedFailedByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+    maxRequeues: number,
+  ): Promise<number> {
+    return this.collection.countDocuments({
+      tenantId,
+      principalId,
+      connectionId,
+      ...exhaustedFailedFilter(maxRequeues),
+    });
+  }
+
+  // Operator tooling only — looks up by id without tenant/principal scope.
+  // Prefer findById(tenantId, principalId, id) for request-path reads.
+  async findByIdUnscoped(id: SyncJobId): Promise<JobRecord | null> {
+    const row = await this.collection.findOne({ _id: id });
+    return row ? JobRecordSchema.parse(row) : null;
   }
 
   // The oldest piece of overdue work for one connection, if any: a pending
@@ -320,6 +424,35 @@ export class JobRepository {
       connectionId,
       state: { $in: ["pending", "claimed"] },
     });
+  }
+
+  // Read work that makes a connected calendar's freshness unknown. Command
+  // writes and subscription renewal are intentionally excluded: they should
+  // not turn an otherwise current sidebar into a broad "Syncing" state.
+  async hasOutstandingReadWorkByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+  ): Promise<boolean> {
+    const job = await this.collection.findOne(
+      {
+        tenantId,
+        principalId,
+        connectionId,
+        state: { $in: ["pending", "claimed"] },
+        kind: {
+          $in: [
+            "calendarListSync",
+            "initialImport",
+            "bootstrapCatchup",
+            "incrementalPull",
+            "repair",
+          ],
+        },
+      },
+      { projection: { _id: 1 } },
+    );
+    return job !== null;
   }
 
   // Hard-delete every job for one connection (post-disconnect retention).

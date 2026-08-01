@@ -1,18 +1,27 @@
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { LoggerFactory } from "@core/logger/logger.factory";
+import {
+  type ProviderAccountFacts,
+  ProviderAccountFactsSchema,
+} from "@core/types/sync/connection.contracts";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import {
   determineGoogleAuthMode,
   parseReconnectGoogleParams,
 } from "@backend/auth/services/google/util/google.auth.util";
 import { CONFIG } from "@backend/common/constants/config.constants";
+import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
+import { adoptGoogleAuthorization } from "@backend/common/services/sync-service/sync-connection-adoption";
+import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
+import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
+import { GOOGLE_AUTH_SCOPES } from "./google.auth.scopes";
 import {
   type AuthDecision,
   type GoogleSignInSuccess,
@@ -87,7 +96,7 @@ async function persistGoogleConnection(
     },
   });
 
-  return { cUserId: compassUserId };
+  return { cUserId: compassUserId, refreshToken };
 }
 
 async function persistStoredGoogleConnection(
@@ -117,7 +126,7 @@ async function persistStoredGoogleConnection(
     },
   });
 
-  return { cUserId };
+  return { cUserId, refreshToken: existingUser.google.gRefreshToken };
 }
 
 async function googleSignup(
@@ -151,7 +160,7 @@ async function googleSignup(
       },
     });
 
-    return { cUserId: cUser.user.userId };
+    return { cUserId: cUser.user.userId, refreshToken };
   });
 
   return user;
@@ -175,6 +184,45 @@ async function repairGoogleConnection(
   return persistGoogleConnection(cUserId, validatedGUser, refreshToken);
 }
 
+function googleAccount(providerUser: TokenPayload): ProviderAccountFacts {
+  return ProviderAccountFactsSchema.parse({
+    providerAccountId: providerUser.sub,
+    email: providerUser.email ?? null,
+    displayName: providerUser.name ?? null,
+  });
+}
+
+function grantedGoogleScopes(scope: string | null | undefined): string[] {
+  const grantedScopes = (scope ?? "").split(/\s+/).filter(Boolean);
+  if (
+    !GOOGLE_AUTH_SCOPES.every((required) => grantedScopes.includes(required))
+  ) {
+    throw error(
+      AuthError.InadequatePermissions,
+      "Google Calendar permissions are required",
+    );
+  }
+  return grantedScopes;
+}
+
+async function adoptConnection(
+  compassUserId: string,
+  providerUser: TokenPayload,
+  refreshToken: string,
+  grantedScopes: readonly string[],
+): Promise<void> {
+  const request = {
+    account: googleAccount(providerUser),
+    refreshToken,
+    grantedScopes,
+  };
+  await adoptGoogleAuthorization(
+    syncServiceFactory.getSyncServiceClient(),
+    toSyncPrincipal(compassUserId),
+    request,
+  );
+}
+
 async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
   const {
     providerUser,
@@ -188,6 +236,7 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
   if (!googleUserId) {
     throw new Error("Google user ID (sub) is required");
   }
+  const scopes = grantedGoogleScopes(oAuthTokens.scope);
 
   // Determine auth mode based on server-side state
   const decision = await determineGoogleAuthMode(
@@ -226,10 +275,16 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
         throw new Error("Refresh token expected for new user sign-up");
       }
 
-      await googleAuthService.googleSignup(
+      const persisted = await googleAuthService.googleSignup(
         providerUser,
         refreshToken,
         recipeUserId,
+      );
+      await adoptConnection(
+        persisted.cUserId,
+        providerUser,
+        persisted.refreshToken,
+        scopes,
       );
       return;
     }
@@ -244,10 +299,16 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
         throw new Error("Compass user ID expected for Google sign-in");
       }
 
-      await googleAuthService.repairGoogleConnection(
+      const persisted = await googleAuthService.repairGoogleConnection(
         compassUserId,
         providerUser,
         oAuthTokens,
+      );
+      await adoptConnection(
+        persisted.cUserId,
+        providerUser,
+        persisted.refreshToken,
+        scopes,
       );
       return;
     }

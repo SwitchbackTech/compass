@@ -1,6 +1,7 @@
 import { calendar, type calendar_v3 } from "@googleapis/calendar";
 import { OAuth2Client } from "google-auth-library";
 import { type gCalendar } from "@core/types/gcal";
+import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
 import {
   type NotificationChannel,
   type NotificationState,
@@ -30,7 +31,11 @@ export type GoogleChannelsApiFactory = (
 const defaultApiFactory: GoogleChannelsApiFactory = (accessToken) => {
   const auth = new OAuth2Client();
   auth.setCredentials({ access_token: accessToken });
-  const gcal: gCalendar = calendar({ version: "v3", auth });
+  const gcal: gCalendar = calendar({
+    version: "v3",
+    auth,
+    timeout: GOOGLE_REQUEST_TIMEOUT_MS,
+  });
   return {
     async watchEvents({ calendarId, requestBody }) {
       const { data } = await gcal.events.watch({ calendarId, requestBody });

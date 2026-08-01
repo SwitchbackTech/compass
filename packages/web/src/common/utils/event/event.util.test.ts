@@ -12,7 +12,21 @@ import {
   refocusEventElement,
 } from "@web/common/utils/event/event.util";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
-import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
+
+const mockCaptureException = mock();
+
+mock.module("@web/auth/posthog/posthog.bootstrap", () => ({
+  getPosthogClient: () => ({ captureException: mockCaptureException }),
+}));
 
 const { handleError } = await import("@web/common/utils/event/event.util");
 
@@ -30,6 +44,7 @@ describe("handleError", () => {
   beforeEach(() => {
     consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
     mocks.error.mockClear();
+    mockCaptureException.mockClear();
     mocks.isActive.mockReturnValue(false);
     registerToastPort(port);
   });
@@ -60,6 +75,11 @@ describe("handleError", () => {
     // proves handleError reached the notify path (rather than early-returning).
     expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
     expect(consoleErrorSpy).toHaveBeenCalledWith(error);
+    expect(mockCaptureException).toHaveBeenCalledWith(error, {
+      $exception_handled: true,
+      $exception_source: "event-mutation",
+      httpStatus: Status.INTERNAL_SERVER,
+    });
     expect(mocks.error).toHaveBeenCalledTimes(1);
     expect(mocks.error.mock.calls[0]?.[1]).toMatchObject({
       toastId: GENERIC_ERROR_TOAST_ID,
@@ -86,9 +106,24 @@ describe("handleError", () => {
     handleError(error);
 
     expect(consoleErrorSpy).not.toHaveBeenCalled();
+    expect(mockCaptureException).not.toHaveBeenCalled();
   });
 
-  it("does not log a retryable, backend-authored mutation failure", () => {
+  it("shows a toast on a 404 instead of silently reverting the optimistic edit", () => {
+    // Not a session failure (unlike GONE/UNAUTHORIZED) - the api interceptor
+    // only console.error's a 404 and rethrows, so without this the user's
+    // edit rolls back with zero visible feedback at all.
+    const error = createServerError(Status.NOT_FOUND);
+
+    handleError(error);
+
+    expect(mocks.error).toHaveBeenCalledTimes(1);
+    expect(mocks.error.mock.calls[0]?.[1]).toMatchObject({
+      toastId: GENERIC_ERROR_TOAST_ID,
+    });
+  });
+
+  it("does not report a backend-authored mutation failure", () => {
     // A 502 PROVIDER_FAILURE the backend authored: it answered (so it isn't
     // "unavailable"), and it's retryable, so the user just needs a nudge. It
     // must not console.error - otherwise every transient provider hiccup
@@ -106,10 +141,27 @@ describe("handleError", () => {
     handleError(error);
 
     expect(consoleErrorSpy).not.toHaveBeenCalled();
+    expect(mockCaptureException).not.toHaveBeenCalled();
     expect(mocks.error).toHaveBeenCalledTimes(1);
     expect(mocks.error.mock.calls[0]?.[1]).toMatchObject({
       toastId: GENERIC_ERROR_TOAST_ID,
     });
+  });
+
+  it("does not report a non-retryable domain mutation failure", () => {
+    const error = createServerError(Status.FORBIDDEN);
+    error.response = {
+      status: Status.FORBIDDEN,
+      data: {
+        code: "CALENDAR_READ_ONLY",
+        message: "Calendar is read-only",
+        retryable: false,
+      },
+    } as ApiResponse<unknown>;
+
+    handleError(error);
+
+    expect(mockCaptureException).not.toHaveBeenCalled();
   });
 });
 

@@ -174,4 +174,29 @@ describe("CalendarSelect", () => {
       expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     });
   });
+
+  it("marks the trigger invalid and links the error id when provided", () => {
+    const calendar = makeCalendar({ name: "Personal", isPrimary: true });
+    const { queryClient, wrapper } = createStoreWrapper();
+    queryClient.setQueryData(calendarQueryKeys.all, [calendar]);
+
+    render(
+      <CalendarSelect
+        onChange={mock()}
+        value={null}
+        error="Calendar is required"
+        errorId="event-form-error-calendarId"
+        id="event-form-calendar"
+      />,
+      { wrapper },
+    );
+
+    const button = screen.getByRole("combobox", { name: /calendar/i });
+    expect(button).toHaveAttribute("id", "event-form-calendar");
+    expect(button).toHaveAttribute("aria-invalid", "true");
+    expect(button).toHaveAttribute(
+      "aria-describedby",
+      "event-form-error-calendarId",
+    );
+  });
 });

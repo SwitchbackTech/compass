@@ -45,13 +45,14 @@ export const markEventInvalidationOwed = (queryClient: QueryClient): void => {
   owedInvalidation.set(queryClient, true);
 };
 
-// The single broad invalidation both settle() and an owed-flag flush perform:
-// refetchType "all" so inactive entries (prefetched neighbor weeks, recently
-// visited ranges) refetch too, instead of serving stale instances until the
-// user navigates back onto them.
+// Broad invalidation for settle() and owed-flag flush. Marks every event
+// cache entry stale and refetches only active observers. Inactive ranges
+// (prefetched neighbors, recently visited weeks) stay cached but refetch on
+// the next observe/mount instead of eagerly refetching every window after
+// each mutation.
 export const invalidateAllEventQueries = (queryClient: QueryClient): void => {
   void queryClient.invalidateQueries({
     queryKey: eventQueryKeys.all,
-    refetchType: "all",
+    refetchType: "active",
   });
 };

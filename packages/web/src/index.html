@@ -24,7 +24,7 @@
       } catch {}
     </script>
 
-    <title>Compass Calendar | get organized, simply</title>
+    <title>Compass Calendar</title>
     <meta
       name="description"
       content="Compass is a small but mighty calendar for busy minimalists — a simple, keyboard-first way to plan your week around what matters."
@@ -84,7 +84,7 @@
       }
     </script>
 
-    <link rel="icon" href="./favicon.ico" />
+    <link rel="icon" href="/favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -99,10 +99,17 @@
       href="https://fonts.googleapis.com/css2?family=VT323&display=swap"
       rel="stylesheet"
     />
+
+    <!--
+      Bun names the src/index.tsx entrypoint's outputs after the entry file
+      (/index.js + /index.css), so this file can reference them statically.
+      copy-static-assets.ts asserts both exist at build time.
+    -->
+    <link rel="stylesheet" href="/index.css" />
   </head>
 
   <body>
     <div id="root"></div>
-    <script type="module" src="./index.tsx"></script>
+    <script type="module" src="/index.js"></script>
   </body>
 </html>

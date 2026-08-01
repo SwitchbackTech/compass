@@ -1,4 +1,5 @@
 import { type z } from "zod/v4";
+import { encryptInternalCredential } from "@core/security/internal-credential-envelope";
 import {
   type BusyAvailabilityRequest,
   type BusyAvailabilityResponse,
@@ -24,6 +25,11 @@ import {
   ConnectionBeginResponseSchema,
   type ConnectionListResponse,
   ConnectionListResponseSchema,
+  type ConnectionRefreshResponse,
+  ConnectionRefreshResponseSchema,
+  type GoogleConnectionAdoptionRequest,
+  type GoogleConnectionAdoptionResponse,
+  GoogleConnectionAdoptionResponseSchema,
 } from "@core/types/sync/connection.contracts";
 import {
   type EventInstanceListQuery,
@@ -44,6 +50,9 @@ const CHANGES_PATH = "/internal/changes";
 const CHANGES_ALL_PATH = "/internal/changes/all";
 const CONNECTIONS_PATH = "/internal/connections";
 const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
+const CONNECTIONS_REFRESH_PATH = "/internal/connections/refresh";
+const ADOPT_GOOGLE_AUTHORIZATION_PATH =
+  "/internal/connections/adopt-google-authorization";
 const EVENTS_FULL_PATH = "/internal/events/full";
 const COMMANDS_PATH = "/internal/commands";
 const PRINCIPAL_PATH = "/internal/principal";
@@ -209,6 +218,54 @@ export class SyncServiceClient {
       principal,
       body: request,
       schema: ConnectionBeginResponseSchema,
+      correlationId,
+    });
+  }
+
+  // Adopt a Google authorization that Compass API exchanged during sign-in.
+  // This is trusted internal traffic; refresh tokens never cross the browser.
+  adoptGoogleAuthorization(
+    principal: SyncPrincipal,
+    request: Omit<GoogleConnectionAdoptionRequest, "credential"> & {
+      refreshToken: string;
+    },
+    correlationId?: string,
+  ): Promise<SyncClientResult<GoogleConnectionAdoptionResponse>> {
+    return this.#request({
+      method: "POST",
+      path: ADOPT_GOOGLE_AUTHORIZATION_PATH,
+      principal,
+      body: {
+        account: request.account,
+        credential: encryptInternalCredential(
+          this.#secret,
+          request.refreshToken,
+          {
+            tenantId: principal.tenantId,
+            principalId: principal.principalId,
+            account: request.account,
+            grantedScopes: request.grantedScopes,
+          },
+        ),
+        grantedScopes: request.grantedScopes,
+      },
+      schema: GoogleConnectionAdoptionResponseSchema,
+      correlationId,
+    });
+  }
+
+  // Enqueue incremental pulls for every events resource owned by the principal
+  // (user-triggered "Refresh calendar").
+  refreshConnection(
+    principal: SyncPrincipal,
+    correlationId?: string,
+  ): Promise<SyncClientResult<ConnectionRefreshResponse>> {
+    return this.#request({
+      method: "POST",
+      path: CONNECTIONS_REFRESH_PATH,
+      principal,
+      body: {},
+      schema: ConnectionRefreshResponseSchema,
       correlationId,
     });
   }
@@ -448,7 +505,13 @@ export class SyncServiceClient {
 function statusToKind(status: number): SyncClientErrorKind {
   if (status === 401) return "unauthorized";
   if (status === 400) return "badRequest";
-  if (status === 503) return "unavailable";
+  // 429 is sync's own internal rate limiter (internal-http.ts), tripped
+  // easily under normal-ish load (a shared 300/min bucket for the whole
+  // backend). Treated the same as 503: a retryable service-busy state, not
+  // an unexpected condition - previously this fell through to
+  // unexpectedStatus -> GenericError.NotSure, whose Status.UNSURE (600) is
+  // not a real HTTP status and reads as an unretryable mystery to the caller.
+  if (status === 429 || status === 503) return "unavailable";
   return "unexpectedStatus";
 }
 

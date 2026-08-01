@@ -1,8 +1,10 @@
+import { Origin } from "@core/constants/core.constants";
 import {
   type Calendar,
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
 import { type Event } from "@core/types/event.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraft,
@@ -83,13 +85,13 @@ test("replaces only the draft schedule during a drag or resize", () => {
 });
 
 test("keeps the schedule's own UTC offset instead of forcing Z", () => {
-  // _getTimeLabel (web.date.util.ts) reads the offset embedded in
-  // CompassEvent.startDate/endDate to decide what time to display - it does
-  // not localize to the browser's timezone. Date#toISOString() always
-  // produces a "Z" (UTC) suffix, which made every grid-created/dragged event
-  // display in UTC instead of local time for any non-UTC browser. dayjs's
-  // default format() preserves the local offset instead, matching every
-  // other CompassEvent producer (draft.util.ts, etc).
+  // Grid position and time label both localize CompassEvent.startDate/
+  // endDate to the browser's timezone on read, so the stored offset itself
+  // doesn't affect what's displayed - but Date#toISOString() always produces
+  // a "Z" (UTC) suffix, which is a needless loss of the source offset and
+  // out of step with every other CompassEvent producer. dayjs's default
+  // format() preserves the local offset instead, matching every other
+  // CompassEvent producer (draft.util.ts, etc).
   const draft = editGridEventDraft(timedEvent);
   if (!draft) throw new Error("Expected scheduled event draft");
 
@@ -134,17 +136,33 @@ test("duplicate defaults to the source event's calendar when it's still writable
   });
 });
 
-test("projects a grid draft into a grid event", () => {
-  const draft = createGridEventDraft({
+test("projects a grid draft into a grid event without a CompassEvent bridge", () => {
+  const allDay = createGridEventDraft({
     kind: "allDay",
     start: new Date("2026-05-20"),
     end: new Date("2026-05-21"),
   });
-  const gridEvent = gridEventDraftToGridEvent(draft);
+  allDay.values.title = "All day";
+  allDay.values.calendarId = timedEvent.calendarId;
+  const allDayGrid = gridEventDraftToGridEvent(allDay);
 
-  expect(gridEvent.startDate).toBe("2026-05-20");
-  expect(gridEvent.endDate).toBe("2026-05-21");
-  expect(gridEvent.isAllDay).toBe(true);
+  expect(allDayGrid.startDate).toBe("2026-05-20");
+  expect(allDayGrid.endDate).toBe("2026-05-21");
+  expect(allDayGrid.isAllDay).toBe(true);
+  expect(allDayGrid.title).toBe("All day");
+  expect(allDayGrid.calendarId).toBe(timedEvent.calendarId);
+  expect(allDayGrid.origin).toBe(Origin.COMPASS);
+
+  const timed = editGridEventDraft(timedEvent);
+  if (!timed) throw new Error("Expected timed edit draft");
+  timed.values.color = "coral";
+  const timedGrid = gridEventDraftToGridEvent(timed);
+
+  expect(timedGrid.isAllDay).toBe(false);
+  expect(timedGrid.startDate).toBe(dayjs(timed.values.schedule.start).format());
+  expect(timedGrid.endDate).toBe(dayjs(timed.values.schedule.end).format());
+  expect(timedGrid.color).toBe("coral");
+  expect(timedGrid.isBusy).toBe(false);
 });
 
 test("duplicate falls back to no calendar (later defaulted) when the source calendar is read-only", () => {

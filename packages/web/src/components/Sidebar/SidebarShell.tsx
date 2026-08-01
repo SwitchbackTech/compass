@@ -1,8 +1,18 @@
 import { type HTMLAttributes, type ReactNode } from "react";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
+import {
+  selectIsEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
+import {
+  selectIsSidebarOpen,
+  useViewStore,
+} from "@web/events/stores/view.store";
+import { useIsNarrowSidebarLayout } from "./hooks/useIsNarrowSidebarLayout";
 import { ShortcutsOverlay } from "./ShortcutsOverlay/ShortcutsOverlay";
 import { SidebarActions } from "./SidebarActions/SidebarActions";
+import { SidebarCloseButton } from "./SidebarCloseButton";
 
 interface SidebarShellProps extends HTMLAttributes<HTMLElement> {
   children: ReactNode;
@@ -26,6 +36,13 @@ export function SidebarShell({
   ShortcutsOverlayComponent = ShortcutsOverlay,
   ...props
 }: SidebarShellProps) {
+  const isNarrowLayout = useIsNarrowSidebarLayout();
+  const isSidebarOpen = useViewStore(selectIsSidebarOpen);
+  const isEventFormOpen = useDraftStore(selectIsEventFormOpen);
+  // Day/Week keep the panel mounted for event details even when the sidebar
+  // preference is closed; keep dismiss available for that case too.
+  const showSidebarClose = isNarrowLayout && (isSidebarOpen || isEventFormOpen);
+
   return (
     <aside
       {...props}
@@ -33,6 +50,11 @@ export function SidebarShell({
       className="relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-surface-panel pt-5 text-text"
       id={ID_SIDEBAR}
     >
+      {showSidebarClose ? (
+        <div className="flex shrink-0 items-center justify-end px-5 pb-2">
+          <SidebarCloseButton />
+        </div>
+      ) : null}
       {children}
       <SidebarActionsComponent
         isShortcutsOpen={isShortcutsOpen}

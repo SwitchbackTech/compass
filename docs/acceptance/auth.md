@@ -161,12 +161,12 @@ Password-authenticated users should be able to use Compass event CRUD without an
 3. Create a normal event in Compass.
 4. Edit the event.
 5. Delete the event.
-6. Open the command palette and inspect the Google action.
+6. Inspect the sidebar Google action.
 
 ### Expected Results
 
 - Event create, edit, and delete all work without Google already connected.
-- The Google action still shows `Connect Google Calendar` rather than a healthy connected state.
+- The sidebar still shows `Connect Google Calendar` rather than a healthy connected state.
 
 ## Scenario 7: Connect Google Later From A Password Session
 
@@ -178,11 +178,10 @@ An already-authenticated password user should be able to connect Google from ins
 
 1. Sign up or log in with email/password and stay signed in.
 2. Create at least one Compass event before connecting Google.
-3. Open the command palette or use the sidebar Google status control.
-4. Select `Connect Google Calendar`.
-5. Complete Google OAuth with the intended Google account.
-6. Return to Compass and refresh the page.
-7. If available in your environment, verify the pre-existing Compass event appears in Google Calendar after the initial sync finishes.
+3. In the sidebar, select `Connect Google Calendar`.
+4. Complete Google OAuth with the intended Google account.
+5. Return to Compass and refresh the page.
+6. If available in your environment, verify the pre-existing Compass event appears in Google Calendar after the initial sync finishes.
 
 ### Expected Results
 

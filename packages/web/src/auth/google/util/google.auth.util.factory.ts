@@ -52,7 +52,7 @@ export function createGoogleAuthUtil({
     refreshEventRepositorySource();
 
     // The server prunes before notifying, so this refetch lands in
-    // RECONNECT_REQUIRED and the palette/sidebar offer "Reconnect" right away.
+    // RECONNECT_REQUIRED and the sidebar offers "Reconnect" right away.
     refreshUserMetadata();
 
     removeEventsByGoogleCalendars();

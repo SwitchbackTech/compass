@@ -31,7 +31,7 @@ export async function determineGoogleAuthMode(
 export function parseReconnectGoogleParams(
   compassUserId: string,
   gUser: TokenPayload,
-  oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
+  oAuthTokens: Pick<Credentials, "refresh_token" | "access_token" | "scope">,
 ): ParsedReconnectGoogleParams {
   const cUserId = zObjectId.parse(compassUserId).toString();
   StringV4Schema.parse(gUser.sub);

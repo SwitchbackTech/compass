@@ -21,6 +21,7 @@ const STATUS_BY_CODE: Record<EventMutationErrorCode, Status> = {
   PROVIDER_FAILURE: 502 as Status,
   GOOGLE_REVOKED: Status.UNAUTHORIZED,
   MAINTENANCE: Status.SERVICE_UNAVAILABLE,
+  MOVE_UNSUPPORTED: Status.BAD_REQUEST,
 };
 
 const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
@@ -34,6 +35,7 @@ const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
   PROVIDER_FAILURE: true,
   GOOGLE_REVOKED: false,
   MAINTENANCE: true,
+  MOVE_UNSUPPORTED: false,
 };
 
 export class EventMutationException extends BaseError {

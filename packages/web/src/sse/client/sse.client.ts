@@ -3,6 +3,7 @@ import {
   type ServerMessage,
   ServerMessageSchema,
 } from "@core/types/server-message.contracts";
+import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 
 // The backend publishes one `message` SSE event per B10; its JSON `data` is a
@@ -30,6 +31,36 @@ const reopenListeners = new Set<() => void>();
 let es: EventSource | null = null;
 let forwardingHandler: ((e: MessageEvent) => void) | null = null;
 let openHandler: (() => void) | null = null;
+let errorHandler: (() => void) | null = null;
+let degradedTimer: ReturnType<typeof setTimeout> | null = null;
+let reconnectCount = 0;
+let hasReportedDegraded = false;
+
+const DEGRADED_AFTER_MS = 15_000;
+
+function clearDegradedTimer() {
+  if (degradedTimer !== null) {
+    clearTimeout(degradedTimer);
+    degradedTimer = null;
+  }
+}
+
+function reportSseDegraded() {
+  if (hasReportedDegraded) return;
+  hasReportedDegraded = true;
+  getPosthogClient()?.capture("sse_connection_degraded", {
+    reconnect_count: reconnectCount,
+  });
+}
+
+function armDegradedTimer() {
+  clearDegradedTimer();
+  degradedTimer = setTimeout(() => {
+    if (es && es.readyState !== EventSource.OPEN) {
+      reportSseDegraded();
+    }
+  }, DEGRADED_AFTER_MS);
+}
 
 export const openStream = (): EventSource => {
   if (es) return es;
@@ -60,26 +91,38 @@ export const openStream = (): EventSource => {
   // Native EventSource reconnects after laptop sleep without going through
   // openStream() again; the open event is the seam that refetches the gap.
   openHandler = () => {
+    clearDegradedTimer();
+    hasReportedDegraded = false;
     for (const listener of reopenListeners) {
       listener();
     }
   };
+  errorHandler = () => {
+    reconnectCount += 1;
+    armDegradedTimer();
+  };
   es.addEventListener(SSE_MESSAGE_EVENT, forwardingHandler);
   es.addEventListener("open", openHandler);
+  es.addEventListener("error", errorHandler);
   return es;
 };
 
 export const closeStream = (): void => {
+  clearDegradedTimer();
   if (es && forwardingHandler) {
     es.removeEventListener(SSE_MESSAGE_EVENT, forwardingHandler);
   }
   if (es && openHandler) {
     es.removeEventListener("open", openHandler);
   }
+  if (es && errorHandler) {
+    es.removeEventListener("error", errorHandler);
+  }
   es?.close();
   es = null;
   forwardingHandler = null;
   openHandler = null;
+  errorHandler = null;
 };
 
 export const getStream = (): EventSource | null => es;

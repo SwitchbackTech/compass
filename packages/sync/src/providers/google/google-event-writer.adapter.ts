@@ -9,6 +9,7 @@ import {
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
 import { googleColorIdFields } from "@sync/providers/google/google-color.map";
 import { normalizeGoogleEvent } from "@sync/providers/google/google-event.normalizer";
+import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
 import { type ProviderEventRead } from "@sync/providers/provider-event.port";
 import {
   type InvitationIntent,
@@ -64,7 +65,11 @@ export type GoogleEventsApiFactory = (accessToken: string) => GoogleEventsApi;
 const defaultApiFactory: GoogleEventsApiFactory = (accessToken) => {
   const auth = new OAuth2Client();
   auth.setCredentials({ access_token: accessToken });
-  const gcal: gCalendar = calendar({ version: "v3", auth });
+  const gcal: gCalendar = calendar({
+    version: "v3",
+    auth,
+    timeout: GOOGLE_REQUEST_TIMEOUT_MS,
+  });
   // An If-Match precondition is passed as a request header; googleapis takes
   // per-call gaxios options as the second argument.
   const ifMatchOptions = (ifMatch: string | null) =>

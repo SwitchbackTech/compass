@@ -1,6 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { getEventPalette } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import {
+  GRID_EVENT_TITLE_COMPACT_FONT_SIZE,
+  GRID_EVENT_TITLE_COMPACT_LINE_HEIGHT,
+  GRID_EVENT_TITLE_FONT_SIZE,
+} from "@web/grid/grid.constants";
 import { describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
@@ -82,6 +87,56 @@ describe("EventCard", () => {
 
     fireEvent.mouseDown(card);
     expect(onEventMouseDown).toHaveBeenCalledTimes(1);
+  });
+
+  it("wraps a long timed event title at word boundaries and clamps with an ellipsis", () => {
+    render(
+      <TimedEventCard
+        displayMode="saved"
+        event={createEvent({
+          startDate: "2099-01-15T09:00:00.000Z",
+          endDate: "2099-01-15T10:00:00.000Z",
+          title:
+            "Journaling-Flow-Experiment with James: Part 2/2: The Miner's Sifting Pan",
+        })}
+        motionMode="idle"
+        position={position}
+      />,
+    );
+
+    const title = screen.getByText(
+      "Journaling-Flow-Experiment with James: Part 2/2: The Miner's Sifting Pan",
+    );
+
+    // Word-boundary wrapping with a mid-word fallback for unbreakable tokens,
+    // not the old wordBreak: "break-all" that split every word.
+    expect(title.style.overflowWrap).toBe("anywhere");
+    expect(title.style.wordBreak).toBe("");
+    expect(title.style.fontSize).toBe(GRID_EVENT_TITLE_FONT_SIZE);
+
+    // -webkit-line-clamp renders the trailing ellipsis itself once the title
+    // overflows its clamped line count.
+    expect(title.style.display).toBe("-webkit-box");
+    expect(title.style.webkitLineClamp).toBe("3");
+  });
+
+  it("renders a compact single-line title for a very short event", () => {
+    render(
+      <TimedEventCard
+        displayMode="saved"
+        event={createEvent({
+          startDate: "2099-01-15T09:00:00.000Z",
+          endDate: "2099-01-15T09:15:00.000Z",
+        })}
+        motionMode="idle"
+        position={{ ...position, height: 15 }}
+      />,
+    );
+
+    const title = screen.getByText("Planning block");
+    expect(title.style.fontSize).toBe(GRID_EVENT_TITLE_COMPACT_FONT_SIZE);
+    expect(title.style.lineHeight).toBe(GRID_EVENT_TITLE_COMPACT_LINE_HEIGHT);
+    expect(title.style.webkitLineClamp).toBe("1");
   });
 
   it("keeps the timed selected state on the flat event color", () => {

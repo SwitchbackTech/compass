@@ -5,6 +5,7 @@ import {
   getFirstVisibleWeekGridEventTarget,
   getFocusedWeekGridEventTarget,
   getHoveredWeekGridEventTarget,
+  listVisibleWeekGridEventTargets,
   setHoveredWeekGridEventTarget,
 } from "./week-event.targeting";
 import { afterEach, describe, expect, it } from "bun:test";
@@ -91,5 +92,16 @@ describe("weekGridEventTargeting", () => {
     focusWeekGridEventTarget(target);
 
     expect(document.activeElement).toBe(button);
+  });
+
+  it("lists every visible registered event", () => {
+    addEventButton({ eventId: "hidden", isVisible: false });
+    const first = addEventButton({ eventId: "first" });
+    const second = addEventButton({ eventId: "second" });
+
+    expect(listVisibleWeekGridEventTargets()).toEqual([
+      expect.objectContaining({ element: first, eventId: "first" }),
+      expect.objectContaining({ element: second, eventId: "second" }),
+    ]);
   });
 });

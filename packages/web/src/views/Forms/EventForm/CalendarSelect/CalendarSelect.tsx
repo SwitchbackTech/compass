@@ -16,6 +16,10 @@ import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 interface CalendarSelectProps {
   value: CalendarId | null;
   onChange: (calendarId: CalendarId) => void;
+  /** When set, marks the control invalid and links it for assistive tech. */
+  error?: string;
+  errorId?: string;
+  id?: string;
 }
 
 // Only calendars the user can actually write to are offered as a create
@@ -50,7 +54,13 @@ const calendarOptionLabel = (calendar: Calendar): string =>
  * component is view-switcher-specific and this field has its own writable-
  * filter/no-calendar-state concerns.
  */
-export const CalendarSelect = ({ value, onChange }: CalendarSelectProps) => {
+export const CalendarSelect = ({
+  value,
+  onChange,
+  error,
+  errorId,
+  id,
+}: CalendarSelectProps) => {
   const { data } = useCalendarsQuery();
   const writableCalendars = sortWritableCalendars(
     getWritableCalendars(data ?? []),
@@ -119,16 +129,24 @@ export const CalendarSelect = ({ value, onChange }: CalendarSelectProps) => {
     ? `Calendar: ${calendarOptionLabel(displayedCalendar)}`
     : "Calendar";
 
+  const hasError = Boolean(error);
+
   return (
     <div className="relative">
       <button
+        id={id}
         ref={refs.setReference}
         {...getReferenceProps()}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-controls={isOpen ? dropdownId : undefined}
         aria-label={buttonLabel}
-        className="c-focus-ring flex w-full items-center gap-2 rounded-xs px-1.5 py-1 text-left text-text text-xs hover:bg-text/10"
+        aria-invalid={hasError ? true : undefined}
+        aria-describedby={hasError ? errorId : undefined}
+        className={classNames(
+          "c-focus-ring flex w-full items-center gap-2 rounded-xs px-1.5 py-1 text-left text-text text-xs hover:bg-text/10",
+          hasError && "ring-1 ring-error",
+        )}
         type="button"
       >
         <span

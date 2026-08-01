@@ -47,6 +47,7 @@ import { type CommandRepository } from "@sync/storage/repositories/command.repos
 import { type DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 // The slice of credential custody the executor needs — a valid access token for
 // a connection, plus discard of a provider-invalidated grant. Narrow so tests
@@ -62,6 +63,9 @@ export interface ProviderMutationDeps {
   // The derived occurrence projection, rebuilt (or cleared, on delete) so a
   // provider-linked event appears in range queries.
   occurrences: EventOccurrenceRepository;
+  // Reads serve a calendar's active generation, so a create has to ask which
+  // generation that is rather than assume the calendar has never been repaired.
+  resources: SyncResourceRepository;
   writer: ProviderEventWriter;
   custody: AccessTokenSource;
 }
@@ -135,7 +139,21 @@ export async function executeProviderCreate(
   // Commit the provider identity to the canonical event and project its
   // occurrences, then confirm. Both run before confirmation, so a crash leaves
   // the command pending and a retry re-runs them idempotently.
-  const record = buildLinkedEventRecord(command, calendar, result, now());
+  // Ask which generation reads will serve this calendar before projecting, so
+  // a create onto a repaired calendar is visible immediately rather than
+  // waiting for a pull to reproject it.
+  const generations = await deps.resources.activeGenerationByCalendar(
+    command.tenantId,
+    command.principalId,
+    [input.calendarId],
+  );
+  const record = buildLinkedEventRecord(
+    command,
+    calendar,
+    result,
+    now(),
+    generations.get(input.calendarId) ?? 0,
+  );
   await deps.events.put(record);
   await reprojectOccurrences(deps.occurrences, record, now);
 
@@ -181,6 +199,7 @@ function buildLinkedEventRecord(
   calendar: ProviderCalendarRecord,
   result: ProviderWriteResult,
   now: Date,
+  generation: number,
 ): EventRecord {
   if (command.input.kind !== "create") {
     throw new Error("buildLinkedEventRecord requires a create command");
@@ -207,17 +226,14 @@ function buildLinkedEventRecord(
         ? { kind: "seriesMaster", rules: input.recurrence.rules }
         : { kind: "single" },
     lifecycleState: "active",
-    // generation 0 is correct in steady state (a calendar's active generation is
-    // 0 until a repair bumps it). The one gap it leaves is self-healing: if a
-    // repair has already advanced this calendar's active generation, a just-
-    // created event's occurrences land at generation 0 and reads (which serve
-    // the active generation) miss it — until the next incremental pull, which
-    // re-reads this event from the provider (it IS at the provider, linked here)
-    // and reprojects it at the active generation. Repairs are rare and pulls are
-    // frequent, so the window is small and closes on its own; resolving the
-    // active generation here would thread a resources dependency through the
-    // whole command path for a case that corrects itself.
-    generation: 0,
+    // The calendar's active generation, resolved by the caller — NOT a
+    // hardcoded 0. Reads serve the active generation, so on a calendar a
+    // repair has already advanced, generation-0 occurrences are invisible.
+    // That gap used to be left to "the next incremental pull will reproject
+    // it", which holds only while pulls are running: when the sweeps froze on
+    // 2026-07-31 the window stayed open for a day and users watched their new
+    // events save successfully to Google and then vanish from Compass.
+    generation,
     createdAt: now,
     updatedAt: now,
     confirmedAt: now,
@@ -482,6 +498,11 @@ export async function executeProviderSeriesUpdate(
       content,
       current.providerVersion,
       now,
+      {
+        accessToken,
+        calendarId: calendar.providerCalendarId,
+        connectionId,
+      },
     );
   }
 
@@ -510,6 +531,11 @@ export async function executeProviderSeriesUpdate(
     content,
     result.providerVersion,
     now,
+    {
+      accessToken,
+      calendarId: calendar.providerCalendarId,
+      connectionId,
+    },
   );
 }
 
@@ -519,14 +545,18 @@ export async function executeProviderSeriesUpdate(
 // from the reprojected master so a deleted occurrence is not resurrected. A
 // conversion to a single event drops every exception.
 //
-// Overrides are deleted BEFORE the master is replaced, on purpose — the same
-// crash-safety ordering the cloud path uses. A convert-to-single edit changes
-// the master's recurrence kind, and a retry that read the converted single
-// master would take the single-event path, which never cleans exceptions;
-// clearing first closes that hole. Gating the kept/discarded split on the
-// command's immutable recurrence intent keeps a retry classifying identically.
-// A false from replaceExisting means the master vanished mid-flight, so leave
-// the command pending rather than confirm a gone series.
+// Overrides are cancelled at the provider, then deleted locally BEFORE the
+// master is replaced — the same crash-safety ordering the cloud path uses.
+// Google does not drop instance overrides when the master is patched, so a
+// later pull would otherwise resurrect them. Cancel-before-local-delete keeps
+// retries idempotent (provider delete is 404-OK). A convert-to-single edit
+// changes the master's recurrence kind, and a retry that read the converted
+// single master would take the single-event path, which never cleans
+// exceptions; clearing first closes that hole. Gating the kept/discarded
+// split on the command's immutable recurrence intent keeps a retry
+// classifying identically. A false from replaceExisting means the master
+// vanished mid-flight, so leave the command pending rather than confirm a
+// gone series.
 async function commitProviderSeriesUpdate(
   deps: ProviderMutationDeps,
   command: CommandRecord,
@@ -534,6 +564,11 @@ async function commitProviderSeriesUpdate(
   content: SyncEventContent,
   providerVersion: string,
   now: () => Date,
+  provider: {
+    accessToken: string;
+    calendarId: string;
+    connectionId: ConnectionId;
+  },
 ): Promise<CommandRecord> {
   if (command.input.kind !== "update") {
     throw new Error("commitProviderSeriesUpdate requires an update command");
@@ -550,17 +585,32 @@ async function commitProviderSeriesUpdate(
     ? exceptions
     : exceptions.filter((exception) => !isCancelledException(exception));
 
-  // Clear each discarded override's occurrences, then remove it. (Twin of the
-  // cloud path's deleteExceptions — kept local so the working cloud path is
-  // untouched; both are a plain occurrence-clear-then-delete loop.)
-  //
-  // Deferred gap: for a provider-linked series this removes only the LOCAL copy
-  // of the override, not the override event at the provider — patching a Google
-  // master does not delete its instance overrides. An edit-all must also cancel
-  // the discarded overrides at the provider, or a later pull could resurrect
-  // them. (Provider series delete cascades local exceptions in
-  // executeProviderDelete; edit-all still needs the provider cancel.)
+  // Cancel discarded overrides at Google first, then clear local copies.
+  // Kept cancelled tombstones are not touched at the provider.
   for (const exception of discarded) {
+    if (exception.providerEventId) {
+      try {
+        await deps.writer.deleteEvent({
+          accessToken: provider.accessToken,
+          calendarId: provider.calendarId,
+          providerEventId: exception.providerEventId,
+          expectedVersion: null,
+          invitation: input.invitation,
+        });
+      } catch (error) {
+        if (error instanceof ProviderWriteError) {
+          if (error.reason === "transient") return command;
+          return failCommand(
+            deps,
+            command,
+            error.reason,
+            provider.connectionId,
+          );
+        }
+        throw error;
+      }
+    }
+
     await deps.occurrences.replaceForEvent(
       exception._id,
       exception.generation,

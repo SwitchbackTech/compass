@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import * as envConstants from "@web/common/constants/env.constants";
 import { APP_VERSION } from "@web/common/constants/version.constants";
+import { useVisibleAfterHidden } from "@web/common/hooks/useVisibleAfterHidden";
 
 const MIN_HIDDEN_DURATION_MS = 30_000;
 const BACKUP_CHECK_INTERVAL_MS = 5 * 60 * 1000;
@@ -40,7 +41,6 @@ export interface VersionCheckResult {
  */
 export const useVersionCheck = (): VersionCheckResult => {
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
-  const hiddenAtRef = useRef<number | null>(null);
   const isCheckingRef = useRef(false);
 
   const checkVersion = useCallback(async () => {
@@ -92,42 +92,22 @@ export const useVersionCheck = (): VersionCheckResult => {
       return;
     }
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        hiddenAtRef.current = Date.now();
-        return;
-      }
-
-      if (document.visibilityState !== "visible") {
-        return;
-      }
-
-      const hiddenAt = hiddenAtRef.current;
-      hiddenAtRef.current = null;
-
-      if (hiddenAt === null) {
-        return;
-      }
-
-      const hiddenDuration = Date.now() - hiddenAt;
-      if (hiddenDuration >= MIN_HIDDEN_DURATION_MS) {
-        checkVersion();
-      }
-    };
-
     checkVersion();
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
     const backupInterval = window.setInterval(
       checkVersion,
       BACKUP_CHECK_INTERVAL_MS,
     );
 
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
       clearInterval(backupInterval);
     };
   }, [checkVersion]);
+
+  useVisibleAfterHidden(
+    checkVersion,
+    MIN_HIDDEN_DURATION_MS,
+    !envConstants.IS_DEV,
+  );
 
   return { isUpdateAvailable, currentVersion: APP_VERSION };
 };

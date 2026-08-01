@@ -121,13 +121,16 @@ describe("getScopeDecisionRecurrenceRule", () => {
 
 describe("resolveRecurrenceScopeDecision", () => {
   describe("delete", () => {
-    it("prompts before deleting recurring events", () => {
+    it("deletes recurring events as this-event changes", () => {
       expect(
         resolveRecurrenceScopeDecision({
           action: "delete",
           isRecurring: true,
         }),
-      ).toEqual({ kind: "prompt" });
+      ).toEqual({
+        kind: "apply",
+        scope: RecurringEventUpdateScope.THIS_EVENT,
+      });
     });
 
     it("deletes non-recurring events immediately", () => {
@@ -163,7 +166,7 @@ describe("resolveRecurrenceScopeDecision", () => {
       });
     });
 
-    it("prompts for existing multi-occurrence recurring instances", () => {
+    it("applies THIS_EVENT for existing recurring instances", () => {
       const baseEventId = new ObjectId().toString();
       const baseEvent = createMockEvent({
         id: EventIdSchema.parse(baseEventId),
@@ -185,7 +188,10 @@ describe("resolveRecurrenceScopeDecision", () => {
           isInstance: true,
           isRecurring: true,
         }),
-      ).toEqual({ kind: "prompt" });
+      ).toEqual({
+        kind: "apply",
+        scope: RecurringEventUpdateScope.THIS_EVENT,
+      });
     });
 
     it("applies THIS_EVENT when a standalone draft is made recurring", () => {
@@ -207,7 +213,7 @@ describe("resolveRecurrenceScopeDecision", () => {
       });
     });
 
-    it("applies ALL_EVENTS for a single-occurrence recurring instance", () => {
+    it("applies THIS_EVENT for a single-occurrence recurring instance", () => {
       const baseEventId = new ObjectId().toString();
       const baseEvent = createMockEvent({
         id: EventIdSchema.parse(baseEventId),
@@ -231,7 +237,7 @@ describe("resolveRecurrenceScopeDecision", () => {
         }),
       ).toEqual({
         kind: "apply",
-        scope: RecurringEventUpdateScope.ALL_EVENTS,
+        scope: RecurringEventUpdateScope.THIS_EVENT,
       });
     });
 

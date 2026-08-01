@@ -1,10 +1,9 @@
 import { CliValidator } from "@scripts/cli.validator";
-import { runMigrator } from "@scripts/commands/migrate";
-import { runMigrateConnections } from "@scripts/commands/migrate-connections";
+import { runManageFailedJobs } from "@scripts/commands/manage-failed-jobs";
 import { runPurgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events";
 import { runPurgeUser } from "@scripts/commands/purge-user";
 import { runRefreshConnectionStates } from "@scripts/commands/refresh-connection-states";
-import { MigratorType } from "@scripts/common/cli.types";
+import { runRepairRecurringSeries } from "@scripts/commands/repair-recurring-series";
 import { Command } from "commander";
 
 export default class CompassCLI {
@@ -21,20 +20,20 @@ export default class CompassCLI {
     const cmd = this.program.args[0];
 
     switch (true) {
-      case cmd === "migrate":
-        await runMigrator(MigratorType.MIGRATION);
-        break;
-      case cmd === "migrate-connections":
-        await runMigrateConnections();
-        break;
       case cmd === "purge-corrupt-sync-events":
         await runPurgeCorruptSyncEvents();
         break;
       case cmd === "refresh-connection-states":
         await runRefreshConnectionStates();
         break;
+      case cmd === "manage-failed-jobs":
+        await runManageFailedJobs();
+        break;
       case cmd === "purge-user":
         await runPurgeUser();
+        break;
+      case cmd === "repair-recurring-series":
+        await runRepairRecurringSeries();
         break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
@@ -46,8 +45,6 @@ export default class CompassCLI {
 
     program.enablePositionalOptions(true).passThroughOptions(true);
 
-    // Register longer `migrate-*` / preseed names before `migrate` so Commander
-    // does not treat them as unknown args to the Umzug migrate command.
     program
       .command("purge-user")
       .helpOption(false)
@@ -65,6 +62,14 @@ export default class CompassCLI {
       );
 
     program
+      .command("repair-recurring-series")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "Reproject EXDATE/RDATE series and remove orphaned delete tombstones (--apply to write)",
+      );
+
+    program
       .command("refresh-connection-states")
       .helpOption(false)
       .allowUnknownOption(true)
@@ -73,18 +78,12 @@ export default class CompassCLI {
       );
 
     program
-      .command("migrate-connections")
+      .command("manage-failed-jobs")
       .helpOption(false)
       .allowUnknownOption(true)
       .description(
-        "idempotently copy legacy Google connections into Sync (S47; --apply to write)",
+        "List/clear/requeue Sync jobs that exhausted the self-heal budget (list | clear | requeue)",
       );
-
-    program
-      .command("migrate")
-      .helpOption(false)
-      .allowUnknownOption(true)
-      .description("run database schema migrations");
 
     return program;
   }

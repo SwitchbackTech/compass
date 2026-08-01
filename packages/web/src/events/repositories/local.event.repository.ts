@@ -7,6 +7,7 @@ import {
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { getCompassEventDateFormat } from "@core/util/event/event.util";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import {
   getOfflineDataStore,
@@ -285,10 +286,15 @@ export class LocalEventRepository implements EventRepository {
 
     // "this": exclude the date from expansion, and drop any stored override
     // record for this occurrence so it can't resurface via the id dedupe.
+    // Occurrence ids embed a canonical ISO recurrenceId (Z / midnight-Z);
+    // expansion skips by schedule.start format (RFC3339 offset or YYYY-MM-DD),
+    // so normalize before storing.
+    const format = getCompassEventDateFormat(record.event.schedule.start);
+    const exdate = dayjs(occurrenceStart).format(format);
     await this.store.deleteEvent(id);
     await this.store.putEvent({
       ...record,
-      exdates: [...(record.exdates ?? []), occurrenceStart],
+      exdates: [...(record.exdates ?? []), exdate],
     });
   }
 }

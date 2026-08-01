@@ -45,11 +45,47 @@ describe("getGoogleSyncStatus", () => {
     });
   });
 
-  it.each([
-    "IMPORTING",
-    "checking",
-  ] as const)("returns syncing copy for %s", (state) => {
-    expect(getGoogleSyncStatus(state)).toEqual({
+  it("returns checking copy while metadata loads", () => {
+    expect(getGoogleSyncStatus("checking")).toEqual({
+      variant: "syncing",
+      text: "Checking calendar status…",
+    });
+  });
+
+  it("returns syncing copy while importing", () => {
+    expect(getGoogleSyncStatus("IMPORTING")).toEqual({
+      variant: "syncing",
+      text: "Syncing your calendar…",
+    });
+  });
+
+  it("shows checking progress over a cached healthy connection", () => {
+    expect(
+      getGoogleSyncStatus("checking", {
+        id: "c1",
+        state: "healthy",
+        stateReason: null,
+        lastSyncedAt: "2026-07-24T12:00:00.000Z",
+        lastHealthyAt: "2026-07-24T12:00:00.000Z",
+        accountEmail: "a@example.com",
+      }),
+    ).toEqual({
+      variant: "syncing",
+      text: "Checking calendar status…",
+    });
+  });
+
+  it("shows import progress over a cached healthy connection", () => {
+    expect(
+      getGoogleSyncStatus("IMPORTING", {
+        id: "c1",
+        state: "healthy",
+        stateReason: null,
+        lastSyncedAt: "2026-07-24T12:00:00.000Z",
+        lastHealthyAt: "2026-07-24T12:00:00.000Z",
+        accountEmail: "a@example.com",
+      }),
+    ).toEqual({
       variant: "syncing",
       text: "Syncing your calendar…",
     });
@@ -60,13 +96,14 @@ describe("getGoogleSyncStatus", () => {
 
     expect(status?.variant).toBe("warning");
     expect(status?.text.toLowerCase()).not.toContain("repair");
+    expect(status?.text.toLowerCase()).toContain("refresh");
   });
 
   it("returns error copy for RECONNECT_REQUIRED", () => {
     expect(getGoogleSyncStatus("RECONNECT_REQUIRED")?.variant).toBe("error");
   });
 
-  it("uses Sync catchingUp copy when a connection summary is present", () => {
+  it("uses the same syncing copy for every in-progress Sync state", () => {
     expect(
       getGoogleSyncStatus("IMPORTING", {
         id: "c1",
@@ -78,7 +115,7 @@ describe("getGoogleSyncStatus", () => {
       }),
     ).toEqual({
       variant: "syncing",
-      text: "Catching up your calendar…",
+      text: "Syncing your calendar…",
     });
   });
 
@@ -94,7 +131,7 @@ describe("getGoogleSyncStatus", () => {
       }),
     ).toEqual({
       variant: "warning",
-      text: "Calendar sync is delayed",
+      text: "Calendar sync is delayed — try Refresh",
     });
   });
 
@@ -117,24 +154,35 @@ describe("getGoogleSyncStatus", () => {
 
 describe("getGoogleConnectionConfig", () => {
   const onConnectGoogle = mock();
+  const onRefreshGoogle = mock();
+  const handlers = { onConnectGoogle, onRefreshGoogle };
 
   beforeEach(() => {
     onConnectGoogle.mockClear();
+    onRefreshGoogle.mockClear();
   });
 
   it.each([
     "HEALTHY",
     "checking",
     "IMPORTING",
-    "ATTENTION",
   ] as const)("returns no command action for %s", (state) => {
-    expect(getGoogleConnectionConfig(state, onConnectGoogle)).toEqual({
+    expect(getGoogleConnectionConfig(state, handlers)).toEqual({
       commandAction: null,
     });
   });
 
+  it("wires ATTENTION to onRefreshGoogle", () => {
+    const config = getGoogleConnectionConfig("ATTENTION", handlers);
+
+    expect(config.commandAction?.label).toBe("Refresh calendar");
+    config.commandAction?.onSelect?.();
+    expect(onRefreshGoogle).toHaveBeenCalledTimes(1);
+    expect(onConnectGoogle).not.toHaveBeenCalled();
+  });
+
   it("wires NOT_CONNECTED to onConnectGoogle", () => {
-    const config = getGoogleConnectionConfig("NOT_CONNECTED", onConnectGoogle);
+    const config = getGoogleConnectionConfig("NOT_CONNECTED", handlers);
 
     expect(config.commandAction?.label).toBe("Connect Google Calendar");
     config.commandAction?.onSelect?.();
@@ -142,10 +190,7 @@ describe("getGoogleConnectionConfig", () => {
   });
 
   it("wires RECONNECT_REQUIRED to onConnectGoogle", () => {
-    const config = getGoogleConnectionConfig(
-      "RECONNECT_REQUIRED",
-      onConnectGoogle,
-    );
+    const config = getGoogleConnectionConfig("RECONNECT_REQUIRED", handlers);
 
     expect(config.commandAction?.label).toBe("Reconnect Google Calendar");
     config.commandAction?.onSelect?.();

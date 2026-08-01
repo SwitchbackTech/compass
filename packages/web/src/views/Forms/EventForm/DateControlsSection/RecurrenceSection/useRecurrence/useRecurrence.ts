@@ -99,7 +99,7 @@ export const useRecurrence = (
   const { startDate, endDate } = scheduleDatesFromDraft(draft);
   const _startDate = dayjs(startDate);
 
-  const { options } = useMemo(() => {
+  const parsed = useMemo(() => {
     if (!hasRecurrence) {
       return {
         options: {
@@ -108,19 +108,22 @@ export const useRecurrence = (
           byweekday: undefined,
           wkst: WEEKDAY_MAP[0].weekday,
           count: null,
-          until: null,
           dtstart: _startDate.toDate(),
         },
+        until: null as Date | null,
       };
     }
 
-    return new CompassEventRRule({
+    const rrule = new CompassEventRRule({
       _id: new ObjectId(),
       startDate,
       endDate,
       recurrence: { rule: currentRules },
     });
+
+    return { options: rrule.options, until: rrule.until };
   }, [_startDate, startDate, endDate, hasRecurrence, currentRules]);
+  const { options } = parsed;
 
   const defaultWeekDay: typeof WEEKDAYS = useMemo(
     () => options?.byweekday?.map((day) => weekdayKeyFromByweekday(day)) ?? [],
@@ -134,9 +137,16 @@ export const useRecurrence = (
     [options?.wkst],
   );
 
+  // `parsed.until` is already un-floated (CompassEventRRule#until handles
+  // the timed-vs-all-day distinction) - it's a real instant, safe to feed
+  // back into a new CompassEventRRule's `options.until` below without
+  // drifting it on every render (the bug this guards against: seeding from
+  // the still-floating `options.until` would double-float on round-trip and
+  // never converge, since the deep-equal guard in the effect below would
+  // never pass).
   const [freq, setFreq] = useState<Frequency>(options.freq);
   const [interval, setInterval] = useState<number>(options.interval);
-  const [until, setUntil] = useState<Date | null>(options.until);
+  const [until, setUntil] = useState<Date | null>(() => parsed.until);
   const [count, setCount] = useState<number | null>(options.count);
   const [wkst, setWkst] = useState<Weekday | null>(defaultWkst);
   const [weekDays, setWeekDays] = useState<typeof WEEKDAYS>(defaultWeekDay);
@@ -148,7 +158,7 @@ export const useRecurrence = (
     setSyncedRuleSeedKey(ruleSeedKey);
     setFreq(options.freq);
     setInterval(options.interval);
-    setUntil(options.until);
+    setUntil(parsed.until);
     setCount(options.count);
     setWkst(defaultWkst);
     setWeekDays(defaultWeekDay);
@@ -240,7 +250,7 @@ export const useRecurrence = (
     weekDays,
     interval: rrule.options.interval,
     freq: rrule.options.freq as FrequencyValues,
-    until: rrule.options.until,
+    until: rrule.until,
     setFreq,
     setInterval,
     setUntil,

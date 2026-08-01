@@ -44,6 +44,7 @@ import { type DeletionMarkerRepository } from "@sync/storage/repositories/deleti
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 // A provider-targeted write arrived while provider work is unavailable
 // (execution is passive, or no provider is configured). Nothing re-dispatches a
@@ -67,6 +68,9 @@ export interface CloudCommandDeps {
   // The derived occurrence projection, rebuilt for an event's horizon whenever
   // a cloud command changes it so range queries stay current.
   occurrences: EventOccurrenceRepository;
+  // Which generation reads serve per calendar, so a provider-linked create
+  // projects where reads will look for it.
+  resources: SyncResourceRepository;
   // The deletion-marker store, for the tombstone a provider delete leaves.
   markers: DeletionMarkerRepository;
   execution: SyncExecutionMode;
@@ -146,6 +150,7 @@ export async function submitCloudCommand(
             commands: deps.commands,
             events: deps.events,
             occurrences: deps.occurrences,
+            resources: deps.resources,
             writer: deps.provider.writer,
             custody: deps.provider.custody,
           },
@@ -166,6 +171,40 @@ export async function submitCloudCommand(
   await deps.events.put(record);
   await reprojectOccurrences(deps.occurrences, record, now);
   return finish(await confirmCloud(deps, command));
+}
+
+// Re-run an already-submitted, still-nonterminal update/delete command
+// through the same routing applyCloudMutation used the first time (dedupe by
+// idempotencyKey does not apply here — the command already exists). For the
+// stale-command retry sweep: a transient provider failure mid-execute leaves
+// the command exactly as it was (see provider-command.service.ts's per-kind
+// executors), and nothing else ever revisits it, so this is the only thing
+// that gives it another attempt.
+//
+// Guards against reapplying stale content: applyCloudMutation's update path
+// merges the COMMAND's own (possibly minutes-old) title/description onto
+// whatever is currently stored (mergeUpdateContent), with no check that this
+// is still the latest intent for the event. If a later command already
+// touched the same event — succeeded on its own retry, or is itself
+// mid-flight — blindly reapplying this one would silently revert that later
+// edit with no error surfaced anywhere. When a newer command exists, this
+// command is superseded: fail it (versionConflict) instead of retrying, so
+// it stops being retried without ever overwriting newer intent.
+export async function retryCloudMutation(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  const superseded = await deps.commands.hasNewerCommandForEvent(
+    command.tenantId,
+    command.principalId,
+    command.eventId,
+    command._id,
+  );
+  if (superseded) {
+    return failCloud(deps, command, "versionConflict");
+  }
+  return applyCloudMutation(deps, command, now);
 }
 
 // Apply a cloud-only update or delete to an existing event. Only single,
@@ -305,6 +344,7 @@ async function applyCloudMutation(
             commands: deps.commands,
             events: deps.events,
             occurrences: deps.occurrences,
+            resources: deps.resources,
             writer: deps.provider.writer,
             custody: deps.provider.custody,
           },
@@ -352,6 +392,7 @@ async function dispatchProviderDelete(
       commands: deps.commands,
       events: deps.events,
       occurrences: deps.occurrences,
+      resources: deps.resources,
       writer: deps.provider.writer,
       custody: deps.provider.custody,
       markers: deps.markers,
@@ -387,6 +428,7 @@ async function dispatchProviderSeriesUpdate(
       commands: deps.commands,
       events: deps.events,
       occurrences: deps.occurrences,
+      resources: deps.resources,
       writer: deps.provider.writer,
       custody: deps.provider.custody,
     },
@@ -424,6 +466,7 @@ async function dispatchProviderOccurrenceDelete(
       commands: deps.commands,
       events: deps.events,
       occurrences: deps.occurrences,
+      resources: deps.resources,
       writer: deps.provider.writer,
       custody: deps.provider.custody,
     },
@@ -454,6 +497,7 @@ async function dispatchProviderOccurrenceUpdate(
       commands: deps.commands,
       events: deps.events,
       occurrences: deps.occurrences,
+      resources: deps.resources,
       writer: deps.provider.writer,
       custody: deps.provider.custody,
     },
@@ -484,6 +528,7 @@ async function dispatchProviderSeriesFollowingDelete(
       commands: deps.commands,
       events: deps.events,
       occurrences: deps.occurrences,
+      resources: deps.resources,
       writer: deps.provider.writer,
       custody: deps.provider.custody,
       markers: deps.markers,
@@ -515,6 +560,7 @@ async function dispatchProviderSeriesFollowingUpdate(
       commands: deps.commands,
       events: deps.events,
       occurrences: deps.occurrences,
+      resources: deps.resources,
       writer: deps.provider.writer,
       custody: deps.provider.custody,
     },

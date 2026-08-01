@@ -37,5 +37,8 @@ export const getHoveredWeekGridEventTarget =
 export const getFirstVisibleWeekGridEventTarget =
   weekGridEventTargeting.getFirstVisibleGridEventTarget;
 
+export const listVisibleWeekGridEventTargets =
+  weekGridEventTargeting.listVisibleGridEventTargets;
+
 export const focusWeekGridEventTarget =
   weekGridEventTargeting.focusGridEventTarget;

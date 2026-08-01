@@ -1,11 +1,13 @@
 import { faker } from "@faker-js/faker";
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
+import { GOOGLE_AUTH_SCOPES } from "@backend/auth/services/google/google.auth.scopes";
 import {
   type AuthDecision,
   type GoogleSignInSuccess,
 } from "@backend/auth/services/google/google.auth.types";
 import * as googleAuthUtil from "@backend/auth/services/google/util/google.auth.util";
+import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import {
   afterAll,
   beforeAll,
@@ -31,11 +33,12 @@ function makeProviderUser(overrides?: Partial<TokenPayload>): TokenPayload {
 
 function makeOAuthTokens(): Pick<
   Credentials,
-  "refresh_token" | "access_token"
+  "refresh_token" | "access_token" | "scope"
 > {
   return {
     refresh_token: faker.string.uuid(),
     access_token: faker.internet.jwt(),
+    scope: GOOGLE_AUTH_SCOPES.join(" "),
   };
 }
 
@@ -52,6 +55,7 @@ describe("handleGoogleAuth", () => {
   let mockDetermineGoogleAuthMode: Mock<
     typeof googleAuthUtil.determineGoogleAuthMode
   >;
+  let adoptCalls: Array<[unknown, unknown]>;
 
   beforeAll(async () => {
     mockDetermineGoogleAuthMode = spyOn(
@@ -63,14 +67,31 @@ describe("handleGoogleAuth", () => {
     ));
     spyOn(googleAuthService, "repairGoogleConnection").mockResolvedValue({
       cUserId: "repair-id",
+      refreshToken: faker.string.uuid(),
     });
     spyOn(googleAuthService, "googleSignup").mockResolvedValue({
       cUserId: "signup-id",
+      refreshToken: faker.string.uuid(),
     });
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockImplementation(
+      () =>
+        ({
+          listConnections: async () => ({
+            ok: true,
+            value: { connections: [] },
+            correlationId: "corr-1",
+          }),
+          adoptGoogleAuthorization: async (...args: [unknown, unknown]) => {
+            adoptCalls.push(args);
+            return { ok: true, value: {}, correlationId: "corr-1" };
+          },
+        }) as ReturnType<typeof syncServiceFactory.getSyncServiceClient>,
+    );
   });
 
   beforeEach(() => {
     mockDetermineGoogleAuthMode.mockReset();
+    adoptCalls = [];
     (googleAuthService.repairGoogleConnection as Mock).mockClear();
     (googleAuthService.googleSignup as Mock).mockClear();
   });
@@ -106,12 +127,28 @@ describe("handleGoogleAuth", () => {
         recipeUserId,
       );
       expect(googleAuthService.repairGoogleConnection).not.toHaveBeenCalled();
+      expect(adoptCalls).toHaveLength(1);
+      expect(adoptCalls[0]).toEqual([
+        { tenantId: "signup-id", principalId: "signup-id" },
+        expect.objectContaining({
+          account: expect.objectContaining({
+            providerAccountId: providerUser.sub,
+          }),
+          refreshToken: expect.any(String),
+          grantedScopes: expect.arrayContaining([
+            "https://www.googleapis.com/auth/calendar.events",
+          ]),
+        }),
+      ]);
     });
 
     it("throws when refresh_token is missing for new user", async () => {
       const success: GoogleSignInSuccess = {
         providerUser: makeProviderUser(),
-        oAuthTokens: { access_token: faker.internet.jwt() },
+        oAuthTokens: {
+          access_token: faker.internet.jwt(),
+          scope: GOOGLE_AUTH_SCOPES.join(" "),
+        },
         createdNewRecipeUser: true,
         recipeUserId: faker.database.mongodbObjectId(),
         loginMethodsLength: 1,
@@ -126,6 +163,32 @@ describe("handleGoogleAuth", () => {
       );
 
       expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
+      expect(adoptCalls).toHaveLength(0);
+    });
+
+    it("rejects missing server-returned calendar scopes before sign-up", async () => {
+      const success: GoogleSignInSuccess = {
+        providerUser: makeProviderUser(),
+        oAuthTokens: {
+          access_token: faker.internet.jwt(),
+          refresh_token: faker.string.uuid(),
+          scope: "https://www.googleapis.com/auth/userinfo.email",
+        },
+        createdNewRecipeUser: true,
+        recipeUserId: faker.database.mongodbObjectId(),
+        loginMethodsLength: 1,
+      };
+      mockDetermineGoogleAuthMode.mockResolvedValue(
+        makeDecision({ authMode: "SIGNUP" }),
+      );
+
+      await expect(
+        googleAuthService.handleGoogleAuth(success),
+      ).rejects.toMatchObject({
+        result: "Google Calendar permissions are required",
+      });
+      expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
+      expect(adoptCalls).toHaveLength(0);
     });
   });
 
@@ -160,6 +223,7 @@ describe("handleGoogleAuth", () => {
         oAuthTokens,
       );
       expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
+      expect(adoptCalls).toHaveLength(1);
     });
   });
 

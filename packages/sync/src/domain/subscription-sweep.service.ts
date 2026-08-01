@@ -5,6 +5,8 @@ import { type SyncResourceRepository } from "@sync/storage/repositories/sync-res
 export interface SubscriptionSweepDeps {
   resources: SyncResourceRepository;
   jobs: JobRepository;
+  // Reported per resource that fails to enqueue; the sweep continues.
+  onEnqueueError?: (error: unknown, resourceId: string) => void;
 }
 
 // The subscription-maintenance sweep. Find events resources whose push channel

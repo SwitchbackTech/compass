@@ -45,22 +45,31 @@ const send = (res: Response, e: unknown) => {
 };
 
 const parseListQuery = (query: Request["query"]): EventListQuery => {
+  const calendarIdsParam = query["calendarIds"];
+  const calendarIds =
+    typeof calendarIdsParam === "string" && calendarIdsParam.length > 0
+      ? calendarIdsParam.split(",")
+      : undefined;
+
   return EventListQuerySchema.parse({
     kind: "range",
     start: query["start"],
     end: query["end"],
+    ...(calendarIds !== undefined ? { calendarIds } : {}),
   });
 };
 
 // Resolve every calendar the principal owns under sync delegation: provider
 // calendars from sync, plus the Compass-native local calendar (local-first
-// events are keyed by its legacy CalendarId). V1 queries ALL of them — the
-// web filters by localStorage visibility client-side (A2). Empty means the
-// user has nothing to read yet; return [] rather than calling sync with an
-// invalid empty calendarIds.
+// events are keyed by its legacy CalendarId). When the client passes
+// `calendarIds`, intersect with owned ids so hidden calendars are never
+// drained (and unowned ids cannot be probed). Empty means the user has
+// nothing to read yet; return [] rather than calling sync with an invalid
+// empty calendarIds.
 const resolveSyncCalendarIds = async (
   client: SyncServiceClient,
   userId: string,
+  requestedIds?: readonly string[],
 ): Promise<SyncEventCalendarId[]> => {
   const principal = toSyncPrincipal(userId);
   const [calendarsResult, localCalendar] = await Promise.all([
@@ -81,7 +90,15 @@ const resolveSyncCalendarIds = async (
   if (localCalendar) {
     ids.push(SyncEventCalendarIdSchema.parse(localCalendar._id.toHexString()));
   }
-  return ids;
+
+  if (requestedIds === undefined) {
+    return ids;
+  }
+
+  const owned = new Set(ids);
+  return requestedIds
+    .filter((id) => owned.has(id as SyncEventCalendarId))
+    .map((id) => SyncEventCalendarIdSchema.parse(id));
 };
 
 // Drain every page of full-fidelity instances for the range. Sync pages at
@@ -126,7 +143,11 @@ const listAllFullEvents = async (
 // falling back to legacy (which would show a different, stale store).
 const readAllFromSync = async (userId: string, query: EventListQuery) => {
   const client = getSyncServiceClient();
-  const calendarIds = await resolveSyncCalendarIds(client, userId);
+  const calendarIds = await resolveSyncCalendarIds(
+    client,
+    userId,
+    query.calendarIds,
+  );
   if (calendarIds.length === 0) return [];
 
   const instances = await listAllFullEvents(client, userId, query, calendarIds);
@@ -222,6 +243,19 @@ const replaceFromSync = async (
   eventId: string,
   input: ReplaceEventInput,
 ) => {
+  // toReplaceSubmitRequests builds an update command, plus a move command
+  // when calendarId is present — but Sync unconditionally fails every move
+  // command (no executor exists). Submitting them in sequence would apply
+  // the update, THEN throw on the move: a partial write the caller sees as a
+  // single failed request, and a naive retry re-runs the same broken pair.
+  // Reject up front, before anything is submitted.
+  if (input.calendarId !== undefined) {
+    throw eventMutationError(
+      "MOVE_UNSUPPORTED",
+      "Moving an event to a different calendar is not supported yet",
+    );
+  }
+
   const client = getSyncServiceClient();
   const { requests, responseEvent } = toReplaceSubmitRequests(eventId, input);
   for (const request of requests) {

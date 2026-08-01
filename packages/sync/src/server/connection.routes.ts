@@ -1,5 +1,7 @@
 import { type Express, type RequestHandler, type Response } from "express";
 import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
+import { decryptInternalCredential } from "@core/security/internal-credential-envelope";
 import {
   BusyAvailabilityRequestSchema,
   type BusyAvailabilityResponse,
@@ -8,6 +10,8 @@ import {
 import {
   type CalendarListResponse,
   type ConnectionListResponse,
+  ConnectionRefreshResponseSchema,
+  GoogleConnectionAdoptionRequestSchema,
   type ProviderCalendar,
   ProviderCalendarSchema,
   type ProviderConnection,
@@ -30,6 +34,7 @@ import {
   type BusyAvailability,
   computeBusyAvailability,
 } from "@sync/domain/busy-query.service";
+import { refreshPrincipalCalendars } from "@sync/domain/connection-refresh.service";
 import { type DerivedConnectionState } from "@sync/domain/connection-state";
 import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
 import { assembleEventInstances } from "@sync/domain/event-instance-assembly";
@@ -41,6 +46,7 @@ import { signOAuthState, verifyOAuthState } from "@sync/oauth/oauth-state";
 import { googleCapabilitiesFromScopes } from "@sync/providers/google/google-capabilities";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
+import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
   internalRateLimit,
@@ -56,11 +62,16 @@ import { ProviderConnectionRepository } from "@sync/storage/repositories/provide
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { syncRepositories } from "@sync/storage/sync-repositories";
 
+const logger = Logger("sync:connection.routes");
+
 export const CONNECTIONS_PATH = "/internal/connections";
 export const CALENDARS_PATH = "/internal/calendars";
 export const EVENTS_FULL_PATH = "/internal/events/full";
 export const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 export const BEGIN_PATH = "/internal/connections/begin";
+export const REFRESH_PATH = "/internal/connections/refresh";
+export const ADOPT_GOOGLE_AUTHORIZATION_PATH =
+  "/internal/connections/adopt-google-authorization";
 // Where the provider redirects the browser after consent; `begin` builds the
 // redirect_uri from it and the public callback route below mounts on it.
 // Public reverse-proxy path (Caddy `/sync/*` → sync). Must match the Google
@@ -99,6 +110,8 @@ export interface ConnectionApiDeps {
   postConnectRedirectUrl: string;
   // Injectable clock so state issuance/verification is deterministic in tests.
   now?: () => number;
+  // Shared secret that encrypts credentials on the Compass API → Sync hop.
+  credentialEncryptionSecret: string;
 }
 
 // Internal, authenticated connection endpoints. The tenant/principal comes from
@@ -141,8 +154,12 @@ export function registerConnectionRoutes(
           connections: refreshed.map(toProviderConnection),
         };
         res.status(Status.OK).json(response);
-      } catch {
+      } catch (error) {
         // Never surface storage internals or identity to the caller.
+        logger.error(
+          "Failed to list/refresh connections",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },
@@ -189,7 +206,8 @@ export function registerConnectionRoutes(
           calendars: records.map(toProviderCalendar),
         };
         res.status(Status.OK).json(response);
-      } catch {
+      } catch (error) {
+        logger.error("Failed to list calendars", redactedCause(error));
         respondInternalError(res);
       }
     },
@@ -316,7 +334,11 @@ export function registerConnectionRoutes(
               : null,
         };
         res.status(Status.OK).json(response);
-      } catch {
+      } catch (error) {
+        logger.error(
+          "Failed to list full-fidelity event instances",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },
@@ -391,7 +413,11 @@ export function registerConnectionRoutes(
           },
         );
         res.status(Status.OK).json(toBusyAvailabilityResponse(availability));
-      } catch {
+      } catch (error) {
+        logger.error(
+          "Failed to compute busy availability",
+          redactedCause(error),
+        );
         respondInternalError(res);
       }
     },
@@ -437,7 +463,11 @@ export function registerConnectionRoutes(
             res.status(Status.NOT_FOUND).json({ error: "not_found" });
             return;
           }
-        } catch {
+        } catch (error) {
+          logger.error(
+            "Failed to look up connection for reconnect",
+            redactedCause(error),
+          );
           respondInternalError(res);
           return;
         }
@@ -455,6 +485,97 @@ export function registerConnectionRoutes(
         redirectUri: `${deps.callbackBaseUrl}${OAUTH_CALLBACK_PATH}`,
       });
       res.status(Status.OK).json({ authorizationUrl });
+    },
+  );
+
+  // The regular Compass Google sign-in flow already exchanged consent with
+  // Google. Adopt that server-side authorization into Sync so sign-up creates
+  // the same connection and initial import as the dedicated Connect flow.
+  app.post(
+    ADOPT_GOOGLE_AUTHORIZATION_PATH,
+    internalRateLimit,
+    deps.authMiddleware,
+    async (req, res) => {
+      const auth = requireAuth(req, res);
+      if (!auth) return;
+      if (!ensureConnected(deps.mongo, res)) return;
+      if (deps.execution === "passive" || !deps.authAdapter) {
+        res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
+        return;
+      }
+
+      const parsed = GoogleConnectionAdoptionRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(Status.BAD_REQUEST).json({ error: "invalid_authorization" });
+        return;
+      }
+
+      try {
+        const refreshToken = decryptInternalCredential(
+          deps.credentialEncryptionSecret,
+          parsed.data.credential,
+          {
+            tenantId: auth.tenantId,
+            principalId: auth.principalId,
+            account: parsed.data.account,
+            grantedScopes: parsed.data.grantedScopes,
+          },
+        );
+        await linkConnection(
+          deps,
+          deps.authAdapter,
+          {
+            tenantId: auth.tenantId,
+            principalId: auth.principalId,
+            connectionId: null,
+          },
+          { ...parsed.data, refreshToken },
+        );
+        res.status(Status.OK).json({});
+      } catch (error) {
+        logger.error(
+          "Failed to adopt Google authorization",
+          redactedCause(error),
+        );
+        respondInternalError(res);
+      }
+    },
+  );
+
+  // User-triggered catch-up: enqueue an incremental pull for each events
+  // resource owned by the signed principal. Passive-only deployments refuse —
+  // there is no worker to drain the jobs.
+  app.post(
+    REFRESH_PATH,
+    internalRateLimit,
+    deps.authMiddleware,
+    async (req, res) => {
+      const auth = requireAuth(req, res);
+      if (!auth) return;
+      if (!ensureConnected(deps.mongo, res)) return;
+      if (deps.execution === "passive") {
+        res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
+        return;
+      }
+
+      try {
+        const repos = syncRepositories(deps.mongo);
+        const enqueued = await refreshPrincipalCalendars(
+          { resources: repos.syncResources, jobs: repos.jobs },
+          auth.tenantId,
+          auth.principalId,
+          () => new Date((deps.now ?? Date.now)()),
+        );
+        res
+          .status(Status.OK)
+          .json(ConnectionRefreshResponseSchema.parse({ enqueued }));
+      } catch (error) {
+        logger.error(
+          `Failed to refresh calendars for ${auth.tenantId}/${auth.principalId}`,
+          redactedCause(error),
+        );
+        respondInternalError(res);
+      }
     },
   );
 
@@ -497,8 +618,9 @@ export function registerConnectionRoutes(
         // Must match the redirect_uri begin used to build the consent URL.
         redirectUri: `${deps.callbackBaseUrl}${OAUTH_CALLBACK_PATH}`,
       });
-    } catch {
+    } catch (error) {
       // Bad code, no refresh token, unverifiable identity — nothing to link.
+      logger.error("OAuth code exchange failed", redactedCause(error));
       return redirect("error");
     }
 
@@ -512,7 +634,11 @@ export function registerConnectionRoutes(
         authorization,
       );
       return redirect("connected");
-    } catch {
+    } catch (error) {
+      logger.error(
+        "Failed to link connection after OAuth consent",
+        redactedCause(error),
+      );
       return redirect("error");
     }
   });
@@ -568,7 +694,8 @@ export function registerConnectionRoutes(
           id.data,
         );
         res.status(Status.NO_CONTENT).end();
-      } catch {
+      } catch (error) {
+        logger.error("Failed to disconnect connection", redactedCause(error));
         respondInternalError(res);
       }
     },

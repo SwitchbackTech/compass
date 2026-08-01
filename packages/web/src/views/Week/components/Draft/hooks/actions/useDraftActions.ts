@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import { devAlert } from "@core/util/app.util";
@@ -527,20 +527,20 @@ export const useDraftActions = (
     // local mirror or resize start needed.
   }, [isDrafting, activity, setIsFormOpen]);
 
-  const actions = {
-    submit,
-    discard,
-    drag,
-    repositionDraftByKeyboard,
-    resize,
-    startDragging: (
+  // Read at call time so startDragging's identity does not churn when the form
+  // opens or when dragStatus updates mid-gesture (#2497 memo chain).
+  const isFormOpenRef = useRef(isFormOpen);
+  isFormOpenRef.current = isFormOpen;
+  const dragStatusRef = useRef(dragStatus);
+  dragStatusRef.current = dragStatus;
+
+  const startDraggingAction = useCallback(
+    (
       offset?: DragOffset,
       initialEvent?: Omit<PartialMouseEvent, "currentTarget">,
     ) => {
-      // Capture form-open before startDragging so the callback identity of
-      // startDragging does not depend on isFormOpen (which would recreate it
-      // and disrupt gesture start). Gesture policy only — not draft ownership.
-      setIsFormOpenBeforeDragging(isFormOpen);
+      // Gesture policy only — not draft ownership.
+      setIsFormOpenBeforeDragging(isFormOpenRef.current);
       const nextOffset = offset ?? { x: 0, y: 0 };
       startDragging(offset);
       // Apply the pointer position immediately. Drag often begins only after the
@@ -548,13 +548,36 @@ export const useDraftActions = (
       // (and for isDragging to commit) can miss the cross-row conversion entirely
       // on a short gesture.
       if (initialEvent) {
-        applyDragPosition(initialEvent, nextOffset, dragStatus);
+        applyDragPosition(initialEvent, nextOffset, dragStatusRef.current);
       }
     },
-    startResizing,
-    stopDragging,
-    stopResizing,
-  };
+    [applyDragPosition, setIsFormOpenBeforeDragging, startDragging],
+  );
+
+  const actions = useMemo(
+    () => ({
+      submit,
+      discard,
+      drag,
+      repositionDraftByKeyboard,
+      resize,
+      startDragging: startDraggingAction,
+      startResizing,
+      stopDragging,
+      stopResizing,
+    }),
+    [
+      discard,
+      drag,
+      repositionDraftByKeyboard,
+      resize,
+      startDraggingAction,
+      startResizing,
+      stopDragging,
+      stopResizing,
+      submit,
+    ],
+  );
 
   useDraftEffects(draftState, setters, weekProps, isDrafting, handleChange);
 

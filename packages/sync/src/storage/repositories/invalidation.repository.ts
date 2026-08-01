@@ -50,13 +50,21 @@ export class InvalidationRepository {
     invalidations: readonly SyncInvalidation[],
     emittedAt: Date = new Date(),
   ): Promise<InvalidationRecord[]> {
-    const out: InvalidationRecord[] = [];
-    for (const invalidation of invalidations) {
-      out.push(
-        await this.append({ tenantId, principalId, invalidation, emittedAt }),
-      );
-    }
-    return out;
+    if (invalidations.length === 0) return [];
+
+    const expiresAt = new Date(emittedAt.getTime() + INVALIDATION_RETENTION_MS);
+    const records = invalidations.map((invalidation) =>
+      InvalidationRecordSchema.parse({
+        _id: new ObjectId().toHexString(),
+        tenantId,
+        principalId,
+        invalidation,
+        emittedAt,
+        expiresAt,
+      }),
+    );
+    await this.collection.insertMany(records);
+    return records;
   }
 
   // Keyset page strictly after `afterId` for the signed principal. `afterId`

@@ -135,6 +135,46 @@ describe("EventController", () => {
     });
   });
 
+  it("rejects a calendar move before submitting anything to sync", async () => {
+    // toReplaceSubmitRequests would build an update command plus a move
+    // command when calendarId is present, but sync unconditionally fails
+    // every move (no executor exists) - submitting them in sequence would
+    // apply the update, then throw on the move: a partial write. This must
+    // never reach sync at all.
+    const submitCommand = mock();
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      submitCommand,
+    } as never);
+
+    const { res, json } = jsonRes();
+    await eventController.replace(
+      sessionReq(objectId(), {
+        params: { id: objectId() },
+        body: {
+          calendarId: objectId(),
+          content: { kind: "details", title: "Lunch", description: "" },
+          schedule: {
+            kind: "timed",
+            start: "2026-07-14T12:00:00.000Z",
+            end: "2026-07-14T13:00:00.000Z",
+            timeZone: "UTC",
+          },
+          recurrence: { kind: "single" },
+          scope: "all",
+        },
+      }),
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(Status.BAD_REQUEST);
+    expect(json).toHaveBeenCalledWith({
+      code: "MOVE_UNSUPPORTED",
+      message: "Moving an event to a different calendar is not supported yet",
+      retryable: false,
+    });
+    expect(submitCommand).not.toHaveBeenCalled();
+  });
+
   it("fails closed on a sync outage when creating an event", async () => {
     const { res, json } = jsonRes();
     await eventController.create(

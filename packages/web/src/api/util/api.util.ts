@@ -8,10 +8,6 @@ import { session } from "@web/auth/compass/session/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
 import {
-  assignLocation,
-  reloadLocation,
-} from "@web/common/utils/browser/browser-navigation.util";
-import {
   showErrorToast,
   showSessionExpiredToast,
 } from "@web/common/utils/toast/error-toast.util";
@@ -94,7 +90,13 @@ export const signOut = async (status: SignoutStatus) => {
   if (window.location.pathname.startsWith(DEFAULT_CALENDAR_ROUTE)) {
     return;
   }
-  assignLocation(DEFAULT_CALENDAR_ROUTE);
+  // Navigate in-app rather than assigning window.location: a document
+  // navigation tears down the toast we just raised, so the one message telling
+  // the user they were signed out was destroyed on every route that needed it.
+  // Imported dynamically for the same module-cycle reason SessionExpiredToast
+  // documents (this file sits on the API error path the router pulls back in).
+  const { router } = await import("@web/routers");
+  await router.navigate({ to: DEFAULT_CALENDAR_ROUTE });
 };
 
 export const getRequestUrl = (url: string): string => {
@@ -126,17 +128,12 @@ interface ApiErrorResponseDependencies {
   onGoogleRevoked?: () => void;
 }
 
-export const handleErrorResponse = async <T>(
+export const handleErrorResponse = async (
   error: ApiError,
   { onGoogleRevoked }: ApiErrorResponseDependencies,
-) => {
+): Promise<never> => {
   const requestUrl = error.config?.url;
   const status = error.response?.status;
-
-  if (status === Status.REDUX_REFRESH_NEEDED) {
-    reloadLocation();
-    return undefined as T;
-  }
 
   const isUserProfileNotFound =
     status === Status.NOT_FOUND && requestUrl?.includes("/user/profile");

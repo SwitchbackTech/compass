@@ -222,6 +222,15 @@ describe("dispatchSyncJob", () => {
         cursor,
         now(),
       );
+      // A seeded cursor represents an established calendar from before this
+      // test's job begins; new connections exercise the bootstrap lifecycle
+      // explicitly below.
+      await resources.setBootstrapState(
+        calendar.tenantId,
+        calendar.principalId,
+        resource._id,
+        "ready",
+      );
     }
     return resource;
   };
@@ -260,7 +269,9 @@ describe("dispatchSyncJob", () => {
       jobFor(resource, "incrementalPull"),
       now,
     );
-    expect(outcome).toEqual({ result: "done" });
+    // Subject is the invalidation feed; this seed has no channel, so it also
+    // carries a bootstrap followup that is not what this test is about.
+    expect(outcome.result).toBe("done");
 
     const feed = await storage
       .db()
@@ -275,9 +286,20 @@ describe("dispatchSyncJob", () => {
     });
   });
 
-  it("settles an applied incremental pull as done with no followup", async () => {
+  it("settles an applied incremental pull as done when the channel is already live", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
+    await resources.updateSubscription(
+      calendar.tenantId,
+      calendar.principalId,
+      resource._id,
+      {
+        subscriptionId: "channel-1",
+        subscriptionResourceId: "provider-resource-1",
+        subscriptionToken: "token-1",
+        subscriptionExpiresAt: new Date("2026-08-01T00:00:00.000Z"),
+      },
+    );
     const reader = new FakeReader([page([single("new-1")], "cursor-1")]);
 
     const outcome = await dispatchSyncJob(
@@ -298,6 +320,34 @@ describe("dispatchSyncJob", () => {
       connectionId: calendar.connectionId,
       calendarId: calendar._id,
     });
+  });
+
+  it("bootstraps a push channel when an applied pull finds the calendar has none", async () => {
+    // The initialImport followup used to be the only thing that ever opened a
+    // channel, and the renewal sweep only renews channels that already exist,
+    // so a calendar imported by any other route could never become watchable.
+    // Production preseeded 938 calendars straight into the store during the
+    // Sync cutover: cursors present, syncing fine, no channel, and nothing in
+    // the system able to give them one (2026-08-01).
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    expect(resource.subscriptionId).toBeNull();
+    const reader = new FakeReader([page([single("new-1")], "cursor-1")]);
+
+    const outcome = await dispatchSyncJob(
+      deps(reader),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    if (outcome.result !== "done" || !outcome.followup) {
+      throw new Error("expected a followup");
+    }
+    expect(outcome.followup.kind).toBe("subscriptionMaintain");
+    expect(outcome.followup.coalescingKey).toBe(
+      `subscriptionMaintain:${resource._id}`,
+    );
+    expect(outcome.followup.resourceId).toBe(resource._id);
   });
 
   it("hands off an expired-cursor pull to a repair followup", async () => {
@@ -347,7 +397,10 @@ describe("dispatchSyncJob", () => {
       jobFor(resource, "repair"),
       now,
     );
-    expect(outcome).toEqual({ result: "done" });
+    expect(outcome).toMatchObject({
+      result: "done",
+      followup: { kind: "subscriptionMaintain" },
+    });
   });
 
   it("retries a repair that did not complete", async () => {
@@ -496,6 +549,119 @@ describe("dispatchSyncJob", () => {
       resource._id,
     );
     expect(saved?.subscriptionResourceId).toBe("provider-resource");
+  });
+
+  it("does not declare a fresh calendar ready until the post-watch pull completes", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, null);
+    notifications.watched = [];
+
+    const importOutcome = await dispatchSyncJob(
+      deps(
+        new FakeReader([
+          page([single("imported")]),
+          page([single("imported")], "cursor-1"),
+        ]),
+      ),
+      jobFor(resource, "initialImport"),
+      now,
+    );
+    expect(importOutcome).toMatchObject({
+      result: "done",
+      followup: { kind: "subscriptionMaintain" },
+    });
+    expect(
+      (
+        await resources.findById(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+        )
+      )?.bootstrapState,
+    ).toBe("watching");
+
+    const subscriptionOutcome = await dispatchSyncJob(
+      deps(new FakeReader([])),
+      jobFor(resource, "subscriptionMaintain"),
+      now,
+    );
+    expect(subscriptionOutcome).toMatchObject({
+      result: "done",
+      followup: {
+        kind: "bootstrapCatchup",
+        coalescingKey: `bootstrapCatchup:${resource._id}`,
+      },
+    });
+    expect(
+      (
+        await resources.findById(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+        )
+      )?.bootstrapState,
+    ).toBe("catchingUp");
+
+    const catchupOutcome = await dispatchSyncJob(
+      deps(
+        new FakeReader([page([single("created-after-import")], "cursor-2")]),
+      ),
+      jobFor(resource, "bootstrapCatchup"),
+      now,
+    );
+    expect(catchupOutcome).toEqual({ result: "done" });
+    expect(
+      (
+        await resources.findById(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+        )
+      )?.bootstrapState,
+    ).toBe("ready");
+  });
+
+  it("bootstraps a legacy no-cursor resource through the post-watch pull", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, null);
+    // Simulate a deployment while an older version's initial import was in
+    // flight. Parsing a missing field intentionally yields ready for established
+    // rows, but its absent cursor must still make this row bootstrap.
+    await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .updateOne({ _id: resource._id }, { $unset: { bootstrapState: "" } });
+    const legacyResource = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(legacyResource?.bootstrapState).toBe("ready");
+
+    const outcome = await dispatchSyncJob(
+      deps(
+        new FakeReader([
+          page([single("imported")]),
+          page([single("imported")], "cursor-1"),
+        ]),
+      ),
+      jobFor(legacyResource!, "initialImport"),
+      now,
+    );
+
+    expect(outcome).toMatchObject({
+      result: "done",
+      followup: { kind: "subscriptionMaintain" },
+    });
+    expect(
+      (
+        await resources.findById(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+        )
+      )?.bootstrapState,
+    ).toBe("watching");
   });
 
   const calendarListJob = (

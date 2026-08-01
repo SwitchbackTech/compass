@@ -94,6 +94,23 @@ describe("CompassEventRRule: ", () => {
     expect(allDates.some((d) => dayjs(d).isSame(startDateOnMonday))).toBe(true);
   });
 
+  it("keeps the RRULE pattern when EXDATE lines are present", () => {
+    // rrulestr returns an RRuleSet for multi-line input with EXDATE/RDATE,
+    // whose origOptions is {} — without the RRULE-only filter the pattern
+    // silently degraded to a default yearly rule.
+    const rule = [
+      "EXDATE;TZID=America/Chicago:20131023T110000",
+      "RRULE:FREQ=WEEKLY;COUNT=5",
+    ];
+    const baseEvent = createMockBaseEvent({ recurrence: { rule } });
+    const _id = new ObjectId(baseEvent._id);
+    const rrule = new CompassEventRRule({ ...baseEvent, _id });
+
+    expect(rrule.options.freq).toBe(RRule.WEEKLY.valueOf());
+    expect(rrule.count()).toBe(5);
+    expect(rrule.all()).toHaveLength(5);
+  });
+
   it("should correctly merge options when multiple rrules are present", () => {
     const rule = [
       "RRULE:FREQ=DAILY;COUNT=2",
@@ -508,6 +525,69 @@ describe("CompassEventRRule: ", () => {
       );
 
       expect(rrule.toRecurrence()).toEqual(rule);
+    });
+
+    it("until returns the real instant, not the internal floating stand-in", () => {
+      const until = dayjs
+        .tz("2027-05-31 19:00", denver)
+        .utc()
+        .format("YYYYMMDD[T]HHmmss[Z]");
+      const rule = [`RRULE:FREQ=WEEKLY;BYDAY=SA;UNTIL=${until}`];
+      const baseEvent = createMockBaseEvent({
+        startDate: thursday,
+        endDate: endOfThursday,
+        recurrence: { rule },
+      });
+      const rrule = new CompassEventRRule(
+        { ...baseEvent, _id: new ObjectId(baseEvent._id) },
+        { tzid: denver },
+      );
+
+      expect(rrule.until).not.toBeNull();
+      expect(dayjs(rrule.until).utc().format("YYYYMMDD[T]HHmmss[Z]")).toEqual(
+        until,
+      );
+      // Feeding it straight back into `_options.until` (as useRecurrence
+      // does every render) must not float it a second time - the round trip
+      // that used to double-float and never converge, exercised end-to-end
+      // in useRecurrence.test.ts's "real setDraft feedback loop" case.
+      const rebuilt = new CompassEventRRule(
+        {
+          ...baseEvent,
+          _id: new ObjectId(baseEvent._id),
+          recurrence: { rule: [] },
+        },
+        { ...rrule.options, until: rrule.until, tzid: denver },
+      );
+      expect(rebuilt.until?.toISOString()).toEqual(rrule.until?.toISOString());
+    });
+
+    it("until is null when the rule has no UNTIL", () => {
+      const rule = ["RRULE:FREQ=WEEKLY;BYDAY=SA"];
+      const baseEvent = createMockBaseEvent({
+        startDate: thursday,
+        endDate: endOfThursday,
+        recurrence: { rule },
+      });
+      const rrule = new CompassEventRRule(
+        { ...baseEvent, _id: new ObjectId(baseEvent._id) },
+        { tzid: denver },
+      );
+
+      expect(rrule.until).toBeNull();
+    });
+
+    it("until returns an all-day UNTIL unmodified (never floated)", () => {
+      const date = dayjs.tz("2027-05-31", denver);
+      const dates = generateCompassEventDates({ date, allDay: true });
+      const rule = ["RRULE:FREQ=DAILY;UNTIL=20270615"];
+      const baseEvent = createMockBaseEvent({ ...dates, recurrence: { rule } });
+      const rrule = new CompassEventRRule(
+        { ...baseEvent, _id: new ObjectId(baseEvent._id) },
+        { tzid: denver },
+      );
+
+      expect(rrule.until).toEqual(rrule.options.until);
     });
 
     it("keeps the wall-clock time across the DST fallback boundary", () => {

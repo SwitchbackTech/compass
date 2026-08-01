@@ -5,6 +5,7 @@ import { type Event } from "@core/types/event.contracts";
 import { UNDO_DECLINED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { showRestoredToast } from "@web/common/utils/toast/deleted-toast.util";
+import { dismissRecurrenceScopeToast } from "@web/common/utils/toast/recurrence-scope.toast";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import {
   type EventMutationDependencies,
@@ -15,6 +16,10 @@ import {
   findEventInCache,
   upsertEventAcrossQueries,
 } from "@web/events/queries/event.query.cache";
+import {
+  recurrenceScopeOpportunityActions,
+  useRecurrenceScopeOpportunityStore,
+} from "@web/events/recurrence/recurrence-scope-opportunity.store";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import {
   runHistoryRestore,
@@ -181,6 +186,18 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
   const undo = useCallback(() => {
     const entry = undoHistoryActions.peekUndo();
     if (!entry) return;
+
+    // Remove a promotion affordance only when undoing its own narrow action.
+    // Undoing a later, unrelated event must leave the earlier opportunity live.
+    const opportunity =
+      useRecurrenceScopeOpportunityStore.getState().opportunity;
+    if (
+      opportunity?.source === source &&
+      opportunity.original.id === entryEventId(entry)
+    ) {
+      dismissRecurrenceScopeToast(opportunity.id);
+      recurrenceScopeOpportunityActions.clear();
+    }
 
     if (entry.kind === "edit") {
       const current = findEventInCache(queryClient, entry.id, source);

@@ -67,6 +67,12 @@ export async function importCalendarEvents(
   deps: CalendarImportDeps,
   calendar: ProviderCalendarRecord,
   now: () => Date,
+  options?: {
+    // Fired once after the horizon windowed pass commits (fresh starts only).
+    // Lets Sync notify the browser so the current week can paint before the
+    // full unwindowed scrape finishes.
+    onWindowedPassComplete?: () => Promise<void>;
+  },
 ): Promise<CalendarImportResult> {
   const resource = await deps.resources.ensure({
     tenantId: calendar.tenantId,
@@ -105,6 +111,9 @@ export async function importCalendarEvents(
   // already imported the window, and redoing it would only repeat work.
   if (resource.pageCursor === null) {
     await run.readPass({ accessToken, window: horizonWindow(now()) });
+    if (options?.onWindowedPassComplete) {
+      await options.onWindowedPassComplete();
+    }
   }
 
   const syncCursor = await run.readPass({

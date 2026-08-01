@@ -3,6 +3,7 @@ import { type Db } from "mongodb";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { type EventOccurrenceRecord } from "@sync/storage/contracts/event-occurrence.contracts";
 import {
+  BUSY_MAX_LOOKBACK_MS,
   EventOccurrenceRepository,
   type OccurrenceInput,
 } from "@sync/storage/repositories/event-occurrence.repository";
@@ -108,6 +109,86 @@ describe("EventOccurrenceRepository", () => {
     expect(
       await db.collection("event_occurrences").countDocuments({ eventId }),
     ).toBe(0);
+  });
+
+  describe("replaceForEvents", () => {
+    it("writes every entry's rows in one call, matching sequential replaceForEvent", async () => {
+      const eventA = objectId() as OccurrenceInput["eventId"];
+      const eventB = objectId() as OccurrenceInput["eventId"];
+      const eventC = objectId() as OccurrenceInput["eventId"];
+
+      await repo.replaceForEvents([
+        {
+          eventId: eventA,
+          generation: 0,
+          occurrences: [
+            occurrence({ eventId: eventA, occurrenceKey: `${eventA}:a1` }),
+            occurrence({ eventId: eventA, occurrenceKey: `${eventA}:a2` }),
+          ],
+        },
+        {
+          eventId: eventB,
+          generation: 0,
+          occurrences: [
+            occurrence({ eventId: eventB, occurrenceKey: `${eventB}:b1` }),
+          ],
+        },
+        // An empty occurrence set (e.g. a fully-truncated recurring series)
+        // must still clear any prior rows for that event.
+        { eventId: eventC, generation: 0, occurrences: [] },
+      ]);
+
+      const docs = await db.collection("event_occurrences").find({}).toArray();
+      expect(docs.map((d) => d.occurrenceKey).sort()).toEqual(
+        [`${eventA}:a1`, `${eventA}:a2`, `${eventB}:b1`].sort(),
+      );
+    });
+
+    it("replaces stale rows for every entry, not just the first", async () => {
+      const eventA = objectId() as OccurrenceInput["eventId"];
+      const eventB = objectId() as OccurrenceInput["eventId"];
+      await repo.replaceForEvent(eventA, 0, [
+        occurrence({ eventId: eventA, occurrenceKey: `${eventA}:old` }),
+      ]);
+      await repo.replaceForEvent(eventB, 0, [
+        occurrence({ eventId: eventB, occurrenceKey: `${eventB}:old` }),
+      ]);
+
+      await repo.replaceForEvents([
+        {
+          eventId: eventA,
+          generation: 0,
+          occurrences: [
+            occurrence({ eventId: eventA, occurrenceKey: `${eventA}:new` }),
+          ],
+        },
+        {
+          eventId: eventB,
+          generation: 0,
+          occurrences: [
+            occurrence({ eventId: eventB, occurrenceKey: `${eventB}:new` }),
+          ],
+        },
+      ]);
+
+      const docs = await db.collection("event_occurrences").find({}).toArray();
+      expect(docs.map((d) => d.occurrenceKey).sort()).toEqual(
+        [`${eventA}:new`, `${eventB}:new`].sort(),
+      );
+    });
+
+    it("is a no-op for an empty entry list", async () => {
+      const eventId = objectId() as OccurrenceInput["eventId"];
+      await repo.replaceForEvent(eventId, 0, [
+        occurrence({ eventId, occurrenceKey: `${eventId}:kept` }),
+      ]);
+
+      await repo.replaceForEvents([]);
+
+      expect(
+        await db.collection("event_occurrences").countDocuments({ eventId }),
+      ).toBe(1);
+    });
   });
 
   describe("listByCalendarRange", () => {
@@ -276,6 +357,78 @@ describe("EventOccurrenceRepository", () => {
       });
       expect(repaired).toHaveLength(1);
       expect(repaired[0]?.occurrenceKey).toBe(`${cal}:repair`);
+    });
+  });
+
+  describe("listBusyOverlapping", () => {
+    it("includes overlapping busy rows inside the lookback and skips older starts", async () => {
+      const tenantId = objectId() as OccurrenceInput["tenantId"];
+      const principalId = objectId() as OccurrenceInput["principalId"];
+      const calendarId = objectId() as OccurrenceInput["calendarId"];
+      const windowStart = new Date("2026-07-14T00:00:00.000Z");
+      const windowEnd = new Date("2026-07-15T00:00:00.000Z");
+      const inLookbackStart = new Date(
+        windowStart.getTime() - BUSY_MAX_LOOKBACK_MS + 60_000,
+      );
+      const outOfLookbackStart = new Date(
+        windowStart.getTime() - BUSY_MAX_LOOKBACK_MS - 60_000,
+      );
+
+      const eventIn = objectId() as OccurrenceInput["eventId"];
+      const eventOut = objectId() as OccurrenceInput["eventId"];
+      await repo.replaceForEvents([
+        {
+          eventId: eventIn,
+          generation: 0,
+          occurrences: [
+            occurrence({
+              tenantId,
+              principalId,
+              calendarId,
+              eventId: eventIn,
+              occurrenceKey: `${eventIn}:in`,
+              startAt: inLookbackStart,
+              endAt: windowEnd,
+              schedule: {
+                kind: "timed",
+                start: inLookbackStart.toISOString(),
+                end: windowEnd.toISOString(),
+                timeZone: "UTC",
+              },
+            }),
+          ],
+        },
+        {
+          eventId: eventOut,
+          generation: 0,
+          occurrences: [
+            occurrence({
+              tenantId,
+              principalId,
+              calendarId,
+              eventId: eventOut,
+              occurrenceKey: `${eventOut}:out`,
+              startAt: outOfLookbackStart,
+              endAt: windowEnd,
+              schedule: {
+                kind: "timed",
+                start: outOfLookbackStart.toISOString(),
+                end: windowEnd.toISOString(),
+                timeZone: "UTC",
+              },
+            }),
+          ],
+        },
+      ]);
+
+      const busy = await repo.listBusyOverlapping({
+        tenantId,
+        principalId,
+        calendars: [{ calendarId, generation: 0 }],
+        start: windowStart,
+        end: windowEnd,
+      });
+      expect(busy).toEqual([{ startAt: inLookbackStart, endAt: windowEnd }]);
     });
   });
 });

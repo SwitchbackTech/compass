@@ -49,9 +49,7 @@ let seededCalendars: Calendar[] = [];
 function Provider({ children }: PropsWithChildren) {
   // useState initializer: exactly one client per mounted tree. Creating and
   // seeding in the render body rebuilds an EMPTY client on every re-render,
-  // and the fresh cache then really fetches /api/calendars (no handler in
-  // this file) - a timing-dependent failure that only shows on slow (CI)
-  // runners.
+  // which drops the seeded calendars/events and races a network refetch.
   const [queryClient] = useState(() => {
     const client = createCompassQueryClient();
     seedEventQueries(client, seededEvents);

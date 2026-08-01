@@ -55,9 +55,43 @@ class ErrorHandler {
     return true;
   }
 
-  public log(error: Error): void {
-    const msg = JSON.stringify(error);
-    logger.error(msg);
+  public log(
+    error: Error,
+    context?: {
+      method?: string;
+      path?: string;
+      status?: number;
+      userId?: string | null;
+      correlationId?: string;
+    },
+  ): void {
+    // JSON.stringify(error) on a plain Error serializes to "{}" - name,
+    // message, and stack are non-enumerable - and this used to be the ONLY
+    // log line emitted for every backend HTTP error (see
+    // error.express.handler.ts's handleExpressError), so failures left no
+    // trace of why. Log the message/stack, never the raw error object: this
+    // runs unconditionally, before the Google-error branch even checks the
+    // error's shape, so `error` here can be a GaxiosError whose `config`/
+    // `response` fields (request headers, client_secret, bearer tokens) are
+    // OWN ENUMERABLE properties (unlike Error.prototype's message/stack) -
+    // passing the object itself to the logger would serialize those secrets
+    // straight into the log output.
+    const meta: {
+      stack?: string;
+      method?: string;
+      path?: string;
+      status?: number;
+      userId?: string;
+      correlationId?: string;
+    } = { stack: error.stack };
+    if (context?.method !== undefined) meta.method = context.method;
+    if (context?.path !== undefined) meta.path = context.path;
+    if (context?.status !== undefined) meta.status = context.status;
+    if (context?.userId != null) meta.userId = context.userId;
+    if (context?.correlationId !== undefined) {
+      meta.correlationId = context.correlationId;
+    }
+    logger.error(error.message || String(error), meta);
   }
 
   exitAfterProgrammerError(): void {

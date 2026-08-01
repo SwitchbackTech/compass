@@ -11,6 +11,12 @@ export interface UseAppShortcutOptions {
   eventType?: "keydown" | "keyup";
   preventDefault?: boolean;
   stopPropagation?: boolean;
+  /**
+   * When true, the handler still runs while `document.body.dataset.appLocked`
+   * is set. Use for the keys that open/close those locks (Mod+K, Shift+?,
+   * Escape) so overlays remain dismissible from the keyboard.
+   */
+  ignoreAppLock?: boolean;
   /** @default 'allow' — multiple features often register the same global key (e.g. Escape). */
   conflictBehavior?: ConflictBehavior;
 }
@@ -27,13 +33,14 @@ export function useAppShortcut(
     eventType = "keydown",
     preventDefault,
     stopPropagation,
+    ignoreAppLock = false,
     conflictBehavior = "allow",
   } = options;
 
   useHotkey(
     hotkey,
     (event) => {
-      if (document.body.dataset.appLocked === "true") {
+      if (!ignoreAppLock && document.body.dataset.appLocked === "true") {
         return;
       }
 

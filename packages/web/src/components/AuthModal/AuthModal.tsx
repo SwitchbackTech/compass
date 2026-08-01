@@ -9,6 +9,7 @@ import {
 } from "@web/common/utils/toast/error-toast.util";
 import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
+import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { ForgotPasswordForm } from "./forms/ForgotPasswordForm";
 import { LogInForm } from "./forms/LogInForm";
 import { ResetPasswordForm } from "./forms/ResetPasswordForm";
@@ -38,6 +39,7 @@ function getInitialAuthToken(search: AuthSearch): string | undefined {
  */
 export const AuthModal: FC = () => {
   const { isOpen, currentView, closeModal, setView } = useAuthModal();
+  useAppLockReason("authModal", isOpen);
   const handleGoogleAuthStart = useCallback(() => {
     dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
   }, []);

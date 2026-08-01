@@ -936,4 +936,61 @@ describe("EventForm", () => {
       }),
     );
   });
+
+  it("wires field errors to controls with aria-invalid and describedby", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft({ title: "" })}
+        fieldErrors={{
+          "content.title": "Title is required",
+          end: "End must be after start",
+        }}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const title = screen.getByRole("textbox", { name: "Title" });
+    expect(title).toHaveAttribute("aria-invalid", "true");
+    expect(title).toHaveAttribute(
+      "aria-describedby",
+      "event-form-error-content-title",
+    );
+
+    const schedule = screen.getByRole("group", { name: "Event schedule" });
+    expect(schedule).toHaveAttribute("aria-invalid", "true");
+    expect(schedule).toHaveAttribute(
+      "aria-describedby",
+      "event-form-error-end",
+    );
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Title is required");
+    expect(screen.getByText("Title is required")).toBeInTheDocument();
+    // Title is first in DOM order, so it receives focus when both fields fail.
+    expect(title).toHaveFocus();
+  });
+
+  it("names the description field for assistive tech", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft({ description: "Notes" })}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Description" })).toHaveValue(
+      "Notes",
+    );
+  });
 });

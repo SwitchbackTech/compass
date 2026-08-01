@@ -88,6 +88,10 @@ const focusCalendarTarget = (
   eventType: "all-day" | "timed",
 ) => {
   const button = document.createElement("button");
+  Object.defineProperty(button, "offsetParent", {
+    configurable: true,
+    get: () => document.body,
+  });
   document.body.appendChild(button);
   dayEventRegistry.register({
     element: button,
@@ -294,7 +298,7 @@ describe("useDayEventNudgeShortcuts", () => {
     ).toBe(TIMED_EVENT_ID);
   });
 
-  it("deletes the hovered calendar event with Delete when no event is focused", () => {
+  it("does not delete a hovered calendar event with Delete when nothing is focused", () => {
     const button = focusCalendarTarget(TIMED_EVENT_ID, "timed");
     button.blur();
     setHoveredDayGridEventTarget(button);
@@ -302,9 +306,40 @@ describe("useDayEventNudgeShortcuts", () => {
 
     pressKey("Delete");
 
-    expect(
-      (getDeleteMutation(queryClient)?.state.variables as { id?: string })?.id,
-    ).toBe(TIMED_EVENT_ID);
+    expect(getDeleteMutation(queryClient)).toBeUndefined();
+  });
+
+  it("duplicates the focused calendar event with Mod+D", () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    renderEditShortcuts();
+
+    pressKey("d", {
+      keyDownInit: { ctrlKey: true },
+      keyUpInit: { ctrlKey: true },
+    });
+
+    const state = useDraftStore.getState();
+    expect(state.status?.isFormOpen).toBe(true);
+    expect(state.gridDraft?.kind).toBe("create");
+    expect(state.gridDraft?.values.title).toBe("Timed event");
+  });
+
+  it("focuses the chronologically next event with ArrowDown", () => {
+    const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const laterEvent: GridEvent = {
+      ...timedEvent,
+      _id: "cccccccccccccccccccccccc",
+      startDate: "2026-05-20T11:00:00.000",
+      endDate: "2026-05-20T12:00:00.000",
+      title: "Later event",
+    };
+    const later = focusCalendarTarget(laterEvent._id!, "timed");
+    earlier.focus();
+    renderEditShortcuts({ timedEvents: [timedEvent, laterEvent] });
+
+    pressKey("ArrowDown");
+
+    expect(document.activeElement).toBe(later);
   });
 
   it("does not delete a grid event when Delete is pressed inside an open event form", () => {

@@ -1,17 +1,11 @@
 import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { type FC } from "react";
-import { colors } from "@web/common/styles/colors";
 import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
-import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { useVersionCheck } from "@web/components/Sidebar/SidebarActions/useVersionCheck";
+import { SidebarToggleButton } from "@web/components/Sidebar/SidebarToggleButton";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import {
-  selectIsSidebarOpen,
-  useViewStore,
-  viewActions,
-} from "@web/events/stores/view.store";
 
 interface Props {
   /** Left-aligned heading text (e.g. "June 2026" or "Wednesday, July 1"). */
@@ -43,51 +37,51 @@ export const CalendarHeader: FC<Props> = ({
   nextLabel = "Next",
   showNavigation = true,
 }) => {
-  const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const { isUpdateAvailable } = useVersionCheck();
 
   return (
     <div className="flex h-12 w-full shrink-0 items-center gap-3 text-text-muted">
-      {showNavigation && onPrev && onNext && (
-        <>
-          <TooltipWrapper shortcut="J">
-            <ArrowButton direction="left" label={prevLabel} onClick={onPrev} />
-          </TooltipWrapper>
-          <TooltipWrapper shortcut="K">
-            <ArrowButton direction="right" label={nextLabel} onClick={onNext} />
-          </TooltipWrapper>
-        </>
-      )}
-      <SelectView label={label} onToday={onToday} />
-      {isUpdateAvailable ? (
-        <TooltipWrapper
-          description="Get latest version"
-          onClick={reloadLocation}
-        >
-          <button
-            aria-label="Get latest version"
-            className="flex size-7 items-center justify-center rounded-default text-accent transition hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            type="button"
+      {/* min-w-0 lets the title cluster shrink so the sidebar toggle stays in
+          layout. Avoid overflow-hidden here — SelectView's menu is absolutely
+          positioned inside this cluster and must paint below the header. */}
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        {showNavigation && onPrev && onNext && (
+          <>
+            <TooltipWrapper shortcut="J">
+              <ArrowButton
+                direction="left"
+                label={prevLabel}
+                onClick={onPrev}
+              />
+            </TooltipWrapper>
+            <TooltipWrapper shortcut="K">
+              <ArrowButton
+                direction="right"
+                label={nextLabel}
+                onClick={onNext}
+              />
+            </TooltipWrapper>
+          </>
+        )}
+        <SelectView label={label} onToday={onToday} />
+        {isUpdateAvailable ? (
+          <TooltipWrapper
+            description="Get latest version"
+            onClick={reloadLocation}
           >
-            <ArrowClockwiseIcon aria-hidden="true" size={16} />
-          </button>
-        </TooltipWrapper>
-      ) : null}
+            <button
+              aria-label="Get latest version"
+              className="flex size-7 shrink-0 items-center justify-center rounded-default text-accent transition hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              type="button"
+            >
+              <ArrowClockwiseIcon aria-hidden="true" size={16} />
+            </button>
+          </TooltipWrapper>
+        ) : null}
+      </div>
 
-      <div className="z-2 ml-auto flex items-center pr-5">
-        <TooltipWrapper
-          description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
-          onClick={() => viewActions.toggleSidebar()}
-          shortcut="]"
-        >
-          <button
-            type="button"
-            aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
-            className="c-focus-ring flex h-6 w-6 cursor-pointer items-center justify-center"
-          >
-            <SidebarIcon color={colors.textMuted} size={21} />
-          </button>
-        </TooltipWrapper>
+      <div className="z-2 flex shrink-0 items-center pr-5">
+        <SidebarToggleButton />
       </div>
     </div>
   );

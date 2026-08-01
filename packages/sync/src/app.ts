@@ -1,5 +1,9 @@
 import { Logger } from "@core/logger/winston.logger";
 import {
+  SYNC_RECONCILE_SWEEP_EVENT,
+  SyncReconcileSweepEventSchema,
+} from "@core/types/sync/health.contracts";
+import {
   createInternalAuthMiddleware,
   createInternalServiceAuthMiddleware,
 } from "@sync/auth/internal-auth";
@@ -9,8 +13,12 @@ import {
   CONNECTION_CACHE_RETENTION_MS,
   purgeExpiredDisconnectedConnections,
 } from "@sync/domain/connection-retention.service";
-import { requeueFailedJobs } from "@sync/domain/failed-job-requeue.service";
+import {
+  FAILED_JOB_MAX_REQUEUES,
+  requeueFailedJobs,
+} from "@sync/domain/failed-job-requeue.service";
 import { reconcileStaleCalendars } from "@sync/domain/reconcile.service";
+import { retryStaleCommands } from "@sync/domain/stale-command-retry.service";
 import { maintainExpiringSubscriptions } from "@sync/domain/subscription-sweep.service";
 import { SweepScheduler } from "@sync/domain/sweep-scheduler.service";
 import { SyncJobWorker } from "@sync/domain/sync-job-worker.service";
@@ -25,6 +33,7 @@ import { GoogleEventWriter } from "@sync/providers/google/google-event-writer.ad
 import { GoogleNotificationAdapter } from "@sync/providers/google/google-notifications.adapter";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
+import { redactedCause } from "@sync/safety/redact-error";
 import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
@@ -32,6 +41,7 @@ import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { syncRepositories } from "@sync/storage/sync-repositories";
 import { emitHealthSnapshot } from "@sync/telemetry/health-snapshot.service";
 import {
+  captureSafely,
   createPostHogCaptureClient,
   DEFAULT_POSTHOG_HOST,
   type PostHogCaptureClient,
@@ -98,6 +108,7 @@ export function createSyncService(
         // secret (domain-separated from internal-auth signing); the callback
         // resolves against the public base URL.
         stateSecret: deriveOAuthStateSecret(config.INTERNAL_AUTH_TOKEN),
+        credentialEncryptionSecret: config.INTERNAL_AUTH_TOKEN,
         callbackBaseUrl: config.CALLBACK_BASE_URL,
         // Fall back to the callback base when no explicit redirect is set.
         postConnectRedirectUrl:
@@ -219,25 +230,30 @@ async function start(): Promise<void> {
     // Active, provider-configured deployments also drain jobs and renew
     // channels. Those register AFTER the mongo drain so teardown stops them
     // first and closes mongo last.
-    const schedulers = buildSchedulers(config, mongo);
+    const schedulers = buildSchedulers(
+      config,
+      mongo,
+      service.identity,
+      posthog,
+    );
     if (schedulers) {
       service.shutdown.register("scheduler", async () => {
         // Stop every drain; each releases only its own owner's held jobs.
         await Promise.all(schedulers.drains.map((drain) => drain.stop()));
       });
-      service.shutdown.register("reconcile", () => schedulers.reconcile.stop());
-      service.shutdown.register("subscription", () =>
-        schedulers.subscription.stop(),
-      );
-      service.shutdown.register("failedJobRequeue", () =>
-        schedulers.failedJobRequeue.stop(),
-      );
+      const sweeps = [
+        ["reconcile", schedulers.reconcile],
+        ["subscription", schedulers.subscription],
+        ["failedJobRequeue", schedulers.failedJobRequeue],
+        ["staleCommandRetry", schedulers.staleCommandRetry],
+      ] as const;
+      for (const [name, sweep] of sweeps) {
+        service.shutdown.register(name, () => sweep.stop());
+      }
       for (const drain of schedulers.drains) drain.start();
-      schedulers.reconcile.start();
-      schedulers.subscription.start();
-      schedulers.failedJobRequeue.start();
+      for (const [, sweep] of sweeps) sweep.start();
       logger.info(
-        "Sync scheduler draining, reconciling, renewing channels, retaining, and reporting health",
+        "Sync scheduler draining, reconciling, renewing channels, retaining, retrying stale commands, and reporting health",
       );
     } else {
       logger.info(
@@ -256,11 +272,13 @@ async function start(): Promise<void> {
 // at least this long — long enough that a real provider outage has had a
 // chance to clear before we burn another retry ladder on it.
 const FAILED_JOB_REQUEUE_COOLDOWN_MS = 30 * 60_000;
-// How many times the self-heal sweep will requeue the same job before
-// leaving it failed for an operator instead.
-const FAILED_JOB_MAX_REQUEUES = 3;
 // A resource not synced within this window is swept for a reconcile pull.
 const RECONCILE_STALE_AFTER_MS = 15 * 60_000;
+// A cloud command left nonterminal past this long since its last update is
+// eligible for a retry - long enough that a transient provider blip has
+// almost certainly cleared, short enough that "deleting" doesn't sit visibly
+// stuck for too long.
+const STALE_COMMAND_RETRY_AFTER_MS = 5 * 60_000;
 // A push channel expiring within this window is swept for renewal. Matches
 // maintainSubscription's default renew guard so the sweep and the operation
 // agree on what "near expiry" means.
@@ -342,15 +360,20 @@ function buildRetentionSweep(mongo: SyncMongoService): SweepScheduler {
 function buildSchedulers(
   config: SyncConfig,
   mongo: SyncMongoService,
+  identity: ReturnType<typeof buildServiceIdentity>,
+  posthog: PostHogCaptureClient | null,
 ): {
   drains: SyncScheduler[];
   reconcile: SweepScheduler;
   subscription: SweepScheduler;
   failedJobRequeue: SweepScheduler;
+  staleCommandRetry: SweepScheduler;
 } | null {
   if (config.EXECUTION !== "active") return null;
   const authAdapter = buildAuthAdapter(config);
   if (!authAdapter) return null;
+  const eventWriter = buildEventWriter(config);
+  if (!eventWriter) return null;
 
   const repos = syncRepositories(mongo);
   const resources = repos.syncResources;
@@ -397,7 +420,15 @@ function buildSchedulers(
     {
       sweep: async (before) => {
         const enqueued = await reconcileStaleCalendars(
-          { resources, jobs },
+          {
+            resources,
+            jobs,
+            onEnqueueError: (error, resourceId) =>
+              logger.error(
+                `Sync reconcile sweep could not enqueue resource ${resourceId}; skipping it and continuing`,
+                error,
+              ),
+          },
           before,
           () => new Date(),
         );
@@ -406,6 +437,22 @@ function buildSchedulers(
         if (enqueued > 0) {
           logger.info(`Sync reconcile sweep enqueued ${enqueued} pull(s)`);
         }
+        // Captured on every cycle, including enqueued: 0 — this is a
+        // liveness heartbeat, not a backlog report (the health snapshot's
+        // jobs.pending already covers backlog, and is too coarse a sample
+        // rate to catch a queue that drains in seconds; see the event's own
+        // doc comment). An alert built on "N of these landed in the last
+        // hour" can't be fooled by sampling gaps the way a periodic gauge
+        // read can.
+        await captureSafely(posthog, {
+          event: SYNC_RECONCILE_SWEEP_EVENT,
+          distinctId: "compass-sync",
+          properties: SyncReconcileSweepEventSchema.parse({
+            environment: identity.environment,
+            service: "compass-sync",
+            enqueued,
+          }),
+        });
         return enqueued;
       },
     },
@@ -421,7 +468,15 @@ function buildSchedulers(
     {
       sweep: (before) =>
         maintainExpiringSubscriptions(
-          { resources, jobs },
+          {
+            resources,
+            jobs,
+            onEnqueueError: (error, resourceId) =>
+              logger.error(
+                `Sync subscription sweep could not enqueue resource ${resourceId}; skipping it and continuing`,
+                error,
+              ),
+          },
           before,
           () => new Date(),
         ),
@@ -453,6 +508,16 @@ function buildSchedulers(
         if (result.exhausted > 0) {
           logger.error(
             `Sync self-heal sweep: ${result.exhausted} failed job(s) exhausted their requeue budget and need operator attention`,
+            {
+              exhaustedJobs: result.exhaustedJobs.map((job) => ({
+                id: job.id,
+                coalescingKey: job.coalescingKey,
+                connectionId: job.connectionId,
+                failureClass: job.failureClass,
+                requeuedCount: job.requeuedCount,
+                updatedAt: job.updatedAt.toISOString(),
+              })),
+            },
           );
         }
         return result.requeued;
@@ -463,7 +528,52 @@ function buildSchedulers(
       onError: (error) => logger.error("Sync self-heal sweep failed", error),
     },
   );
-  return { drains, reconcile, subscription, failedJobRequeue };
+  // Self-heal sweep for the OTHER kind of stuck work: a cloud-targeted
+  // update/delete command that hit a transient provider failure mid-execute.
+  // Those run inline from the HTTP request (not as a job), and nothing else
+  // ever revisits a command left nonterminal that way - see
+  // stale-command-retry.service.ts. Looks BACK, like reconcile/failedJobRequeue.
+  const staleCommandRetry = new SweepScheduler(
+    {
+      sweep: async (before) => {
+        const result = await retryStaleCommands(
+          {
+            commands: repos.commands,
+            events: repos.events,
+            calendars: repos.calendars,
+            occurrences: repos.eventOccurrences,
+            resources: repos.syncResources,
+            markers: repos.deletionMarkers,
+            execution: config.EXECUTION,
+            provider: {
+              writer: eventWriter,
+              custody: new CredentialCustody(repos.credentials, authAdapter),
+            },
+          },
+          before,
+          () => new Date(),
+        );
+        if (result.attempted > 0) {
+          logger.info(
+            `Sync stale-command sweep retried ${result.attempted} command(s), ${result.stillStale} still stuck`,
+          );
+        }
+        return result.attempted;
+      },
+    },
+    {
+      windowMs: -STALE_COMMAND_RETRY_AFTER_MS,
+      onError: (error) =>
+        logger.error("Sync stale-command retry sweep failed", error),
+    },
+  );
+  return {
+    drains,
+    reconcile,
+    subscription,
+    failedJobRequeue,
+    staleCommandRetry,
+  };
 }
 
 function registerSignalHandlers(
@@ -482,6 +592,21 @@ function registerSignalHandlers(
 }
 
 if (import.meta.main) {
+  // Registering a handler suppresses Node/Bun's default crash-on-unhandled-
+  // rejection behavior, so without one of our own the process would keep
+  // running silently after whatever left a promise dangling - no log, no
+  // restart, just a process in an unknown state. Log with context, then exit
+  // the same way an uncaught synchronous throw would. Gated behind
+  // import.meta.main like the rest of this block so a test importing this
+  // module for its exports never installs a process-wide handler. `reason`
+  // can be anything, including a raw GaxiosError from an uncaught Google API
+  // call (this process talks to Google constantly) - redactedCause strips
+  // its config/response before logging.
+  process.on("unhandledRejection", (reason) => {
+    logger.error("Unhandled promise rejection", redactedCause(reason));
+    process.exit(1);
+  });
+
   start().catch((error) => {
     logger.error("Sync service failed to start", error);
     process.exit(1);

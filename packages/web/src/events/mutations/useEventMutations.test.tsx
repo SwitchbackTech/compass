@@ -7,9 +7,17 @@ import {
   type CreateEventInput,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { EVENT_DELETED_TOAST_ID } from "@web/common/constants/toast.constants";
+import { RECURRENCE_SCOPE_TOAST_ID } from "@web/common/utils/toast/recurrence-scope.toast";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
+import {
+  recurrenceScopeOpportunityActions,
+  useRecurrenceScopeOpportunityStore,
+} from "@web/events/recurrence/recurrence-scope-opportunity.store";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import {
   runHistoryRestore,
@@ -150,6 +158,132 @@ const replacePayload = (
 });
 
 describe("useEventMutations", () => {
+  afterEach(() => {
+    recurrenceScopeOpportunityActions.clear();
+  });
+
+  test("promotes a deleted occurrence even after the narrow optimistic delete removes it from cache", async () => {
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+    const context = setup();
+    const seriesId = event().id;
+    const first = occurrence(seriesId);
+    const second = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(first, second));
+
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: first.id,
+        scope: "this",
+      }),
+    );
+    const opportunity =
+      useRecurrenceScopeOpportunityStore.getState().opportunity;
+    expect(opportunity).toMatchObject({ kind: "delete", original: first });
+    if (!opportunity) throw new Error("Expected a recurrence opportunity");
+
+    act(() =>
+      context.hook.result.current.mutations.promoteRecurring(
+        opportunity,
+        "all",
+      ),
+    );
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.ids,
+      ).toEqual([]);
+    });
+    await waitFor(() => {
+      expect(context.calls).toContainEqual({
+        method: "delete",
+        value: { id: first.id, scope: "this" },
+      });
+    });
+
+    act(() => context.pending.resolveNext());
+    await waitFor(() => {
+      expect(context.calls).toContainEqual({
+        method: "delete",
+        value: { id: first.id, scope: "all" },
+      });
+    });
+    context.pending.resolve();
+    await waitFor(() => {
+      expect(mocks.update).toHaveBeenCalledWith(
+        EVENT_DELETED_TOAST_ID,
+        expect.objectContaining({ render: expect.anything() }),
+      );
+    });
+  });
+
+  test("does not coalesce a promoted series edit behind a later narrow edit", async () => {
+    const context = setup();
+    const seriesId = event().id;
+    const first = occurrence(seriesId);
+    const second = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(first, second));
+
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(first.id, {
+          content: {
+            kind: "details",
+            title: "First narrow edit",
+            description: "",
+          },
+        }),
+      ),
+    );
+    const opportunity =
+      useRecurrenceScopeOpportunityStore.getState().opportunity;
+    if (!opportunity || opportunity.kind !== "replace") {
+      throw new Error("Expected a recurrence edit opportunity");
+    }
+
+    act(() =>
+      context.hook.result.current.mutations.promoteRecurring(
+        opportunity,
+        "all",
+      ),
+    );
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(first.id, {
+          content: {
+            kind: "details",
+            title: "Later narrow edit",
+            description: "",
+          },
+        }),
+      ),
+    );
+
+    await waitFor(() => expect(context.calls).toHaveLength(1));
+    act(() => context.pending.resolveNext());
+    await waitFor(() => {
+      expect(context.calls).toContainEqual({
+        method: "replace",
+        value: expect.objectContaining({
+          id: first.id,
+          input: expect.objectContaining({ scope: "all" }),
+        }),
+      });
+    });
+    context.pending.resolve();
+  });
+
   test("optimistically patches recurring instances across day and week caches", async () => {
     const context = setup();
     const seriesId = event().id;
@@ -473,7 +607,7 @@ describe("useEventMutations", () => {
     context.pending.resolve();
   });
 
-  test("settle invalidates with refetchType all so inactive entries refetch", async () => {
+  test("settle invalidates with refetchType active so only observed ranges refetch", async () => {
     const context = setup();
     const single = event();
     context.queryClient.setQueryData(calendarKey, normalized(single));
@@ -494,7 +628,7 @@ describe("useEventMutations", () => {
     await waitFor(() => {
       expect(invalidations).toContainEqual({
         queryKey: eventQueryKeys.all,
-        refetchType: "all",
+        refetchType: "active",
       });
     });
   });
@@ -619,6 +753,34 @@ describe("useEventMutations", () => {
       expect(
         context.queryClient.getQueryState(calendarKey)?.isInvalidated,
       ).toBe(true);
+    });
+  });
+
+  test("withdraws the scope offer when a default occurrence change fails", async () => {
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+    const context = setup();
+    const item = occurrence(event().id);
+    context.queryClient.setQueryData(calendarKey, normalized(item));
+
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(item.id, {
+          content: { kind: "details", title: "Changed", description: "" },
+        }),
+      ),
+    );
+    await waitFor(() =>
+      expect(
+        context.calls.filter(({ method }) => method === "replace"),
+      ).toHaveLength(1),
+    );
+
+    context.pending.reject(new Error("write failed"));
+
+    await waitFor(() => {
+      expect(context.errors[0]?.message).toBe("write failed");
+      expect(mocks.dismiss).toHaveBeenCalledWith(RECURRENCE_SCOPE_TOAST_ID);
     });
   });
 

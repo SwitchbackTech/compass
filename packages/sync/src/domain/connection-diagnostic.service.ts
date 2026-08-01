@@ -2,6 +2,7 @@ import {
   type DiagnosticConnectionResponse,
   DiagnosticConnectionResponseSchema,
 } from "@core/types/sync/diagnostic.contracts";
+import { FAILED_JOB_MAX_REQUEUES } from "@sync/domain/failed-job-requeue.service";
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
@@ -19,6 +20,7 @@ export interface ConnectionDiagnosticDeps {
 export async function resolveDiagnosticConnection(
   deps: ConnectionDiagnosticDeps,
   diagnosticKey: string,
+  maxRequeues: number = FAILED_JOB_MAX_REQUEUES,
 ): Promise<DiagnosticConnectionResponse | null> {
   const connection = await deps.connections.findByDiagnosticKey(diagnosticKey);
   if (!connection) return null;
@@ -28,11 +30,27 @@ export async function resolveDiagnosticConnection(
     connection.principalId,
     connection._id,
   );
-  const [pendingJobCount, pendingCommandCount] = await Promise.all([
+  const [
+    pendingJobCount,
+    failedJobCount,
+    exhaustedJobCount,
+    pendingCommandCount,
+  ] = await Promise.all([
     deps.jobs.countOutstandingByConnection(
       connection.tenantId,
       connection.principalId,
       connection._id,
+    ),
+    deps.jobs.countFailedByConnection(
+      connection.tenantId,
+      connection.principalId,
+      connection._id,
+    ),
+    deps.jobs.countExhaustedFailedByConnection(
+      connection.tenantId,
+      connection.principalId,
+      connection._id,
+      maxRequeues,
     ),
     deps.commands.countNonterminalByConnection(
       connection.tenantId,
@@ -56,6 +74,8 @@ export async function resolveDiagnosticConnection(
     disconnectedAt: connection.disconnectedAt?.toISOString() ?? null,
     calendarCount: calendars.length,
     pendingJobCount,
+    failedJobCount,
+    exhaustedJobCount,
     pendingCommandCount,
   });
 }

@@ -21,6 +21,11 @@ export interface EventGridProps {
   isLoadingEvents?: boolean;
   /** Failed fetch with nothing reliable to show. */
   isErrorEvents?: boolean;
+  /**
+   * Google import is in progress and the visible range has no events yet —
+   * show expectation-setting copy instead of a blank grid (non-blocking).
+   */
+  isImportingEmpty?: boolean;
   onRetryEvents?: () => void;
   onAllDayMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
   onTimedMouseDown: (event: ReactMouseEvent<HTMLElement>) => void;
@@ -36,6 +41,7 @@ export const EventGrid: FC<EventGridProps> = ({
   gridRefs,
   isLoadingEvents = false,
   isErrorEvents = false,
+  isImportingEmpty = false,
   onRetryEvents,
   onAllDayMouseDown,
   onTimedMouseDown,
@@ -81,11 +87,22 @@ export const EventGrid: FC<EventGridProps> = ({
         role="status"
       />
     )}
+    {isImportingEmpty && !isLoadingEvents && !isErrorEvents && (
+      <div
+        aria-live="polite"
+        className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-4"
+        role="status"
+      >
+        <p className="max-w-sm text-center text-sm text-text-muted">
+          Importing from Google — events usually appear within a minute.
+        </p>
+      </div>
+    )}
     {isErrorEvents && !isLoadingEvents && (
       <div className="absolute inset-0 z-20 flex items-center justify-center bg-background px-4">
         <div className="flex max-w-sm flex-col items-center gap-3 rounded-md border border-border-strong bg-surface-raised px-5 py-4 text-center shadow-[0_8px_24px_var(--color-shadow-default)]">
           <p className="text-sm text-text" role="alert">
-            Couldn't load events.
+            Couldn&apos;t load events.
           </p>
           {onRetryEvents ? (
             <button

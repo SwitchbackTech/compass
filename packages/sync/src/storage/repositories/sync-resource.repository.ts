@@ -7,6 +7,7 @@ import {
 } from "@core/types/sync/identity.contracts";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
+  type ResourceBootstrapState,
   type SyncResourceRecord,
   SyncResourceRecordSchema,
   type SyncResourceUpsert,
@@ -57,6 +58,8 @@ export class SyncResourceRepository {
           lastSuccessAt: null,
           lastReadFailureAt: null,
           lastReadFailureDetail: null,
+          bootstrapState:
+            fields.resourceKind === "events" ? "importing" : "ready",
           subscriptionId: null,
           subscriptionResourceId: null,
           subscriptionToken: null,
@@ -147,6 +150,22 @@ export class SyncResourceRepository {
         },
       },
     ]);
+  }
+
+  // Advance first-connection readiness only after the caller has completed a
+  // durable boundary (initial import, watch setup, or the post-watch pull).
+  // Existing rows default to ready at read time; this method only writes the
+  // stricter lifecycle for calendars created after the invariant was added.
+  async setBootstrapState(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    bootstrapState: ResourceBootstrapState,
+  ): Promise<void> {
+    await this.collection.updateOne(
+      { _id: id, tenantId, principalId },
+      { $set: { bootstrapState, updatedAt: new Date() } },
+    );
   }
 
   async updateSubscription(
@@ -318,13 +337,26 @@ export class SyncResourceRepository {
     return records.map((r) => SyncResourceRecordSchema.parse(r));
   }
 
+  // Events resources owned by the signed principal — input for a user-
+  // triggered refresh (enqueue one incrementalPull per resource).
+  async listEventsByPrincipal(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+  ): Promise<SyncResourceRecord[]> {
+    const records = await this.collection
+      .find({ tenantId, principalId, resourceKind: "events" })
+      .toArray();
+    return records.map((r) => SyncResourceRecordSchema.parse(r));
+  }
+
   // Events resources whose last successful sync is older than `before` (or which
   // never succeeded), oldest first, bounded. This is the reconcile sweep's input
   // — a missed-webhook fallback for connections that CAN still authenticate — so
   // it is a GLOBAL scan across owners, not owner-scoped: each returned resource
   // carries its own (tenantId, principalId) for the job the caller enqueues. A
   // never-synced resource (lastSuccessAt null) sorts first so bootstrapping a
-  // new calendar is not starved by the stale ones. Uses the last_success index.
+  // new calendar is not starved by the stale ones. Uses the
+  // resource_last_success index.
   async listStaleEvents(
     before: Date,
     limit: number,

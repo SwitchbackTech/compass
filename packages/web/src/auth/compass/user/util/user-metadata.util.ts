@@ -1,10 +1,12 @@
 import { Status } from "@core/errors/status.codes";
 import { UserApi } from "@web/api/user.api";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
+import { showGoogleDelayedToast } from "@web/common/utils/toast/google-delayed.toast";
 import { showGoogleReconnectToast } from "@web/common/utils/toast/google-reconnect.toast";
 
 let refreshUserMetadataRequest: Promise<void> | null = null;
 let hasShownReconnectToastThisLoad = false;
+let hasShownDelayedToastThisLoad = false;
 
 export const refreshUserMetadata = async (options?: {
   force?: boolean;
@@ -27,15 +29,21 @@ export const refreshUserMetadata = async (options?: {
       userMetadataActions.set(metadata);
 
       // Catches returning users whose Google grant died while they were away:
-      // they get the actionable reconnect toast instead of having to discover
-      // the palette's "Reconnect Google Calendar" action. At most once per
-      // page load, so a dismissal isn't nagged by later refreshes.
+      // they get the actionable reconnect toast in addition to the sidebar
+      // action. At most once per page load, so a dismissal isn't nagged by
+      // later refreshes.
       if (
         metadata.google?.connectionState === "RECONNECT_REQUIRED" &&
         !hasShownReconnectToastThisLoad
       ) {
         hasShownReconnectToastThisLoad = true;
         showGoogleReconnectToast();
+      } else if (
+        metadata.google?.connectionState === "ATTENTION" &&
+        !hasShownDelayedToastThisLoad
+      ) {
+        hasShownDelayedToastThisLoad = true;
+        showGoogleDelayedToast();
       }
     })
     .catch((error) => {

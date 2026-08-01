@@ -35,6 +35,14 @@ export class AuthRoutes extends CommonRoutesConfig {
         authController.beginGoogleConnection(req, res);
       });
 
+    // Enqueue Sync catch-up pulls for the signed-in user's calendars.
+    this.app
+      .route(`/api/auth/google/sync/refresh`)
+      .all(requireSession)
+      .post((req, res) => {
+        authController.refreshGoogleSync(req, res);
+      });
+
     return this.app;
   }
 }

@@ -3,7 +3,6 @@ import {
   getCurrentMinute,
   getMinuteHeight,
 } from "@web/common/utils/grid/grid.util";
-import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 export const useScroll = (
   timedGridRef: MutableRefObject<HTMLElement | null>,
@@ -24,10 +23,8 @@ export const useScroll = (
     }
   }, [timedGridRef]);
 
-  // Scroll when pressing "c"
-  useAppShortcut("C", scrollToNow);
-
-  // Optional: scroll to now on mount
+  // Optional: scroll to now on mount. "t" (today) owns scroll-to-now while
+  // viewing the current week; do not bind "c" here — that creates a draft.
   useEffect(() => {
     if (!timedGridRef.current) return;
     scrollToNow();

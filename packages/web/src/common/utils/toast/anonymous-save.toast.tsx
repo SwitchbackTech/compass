@@ -8,6 +8,13 @@ import { VIEW_TO_PARAM } from "@web/components/AuthModal/hooks/useAuthModal";
 
 const ANONYMOUS_SAVE_TOAST_ID: Id = "anonymous-save-toast";
 
+function isAuthModalOpen(): boolean {
+  if (typeof window === "undefined") return false;
+
+  const auth = new URLSearchParams(window.location.search).get("auth");
+  return Object.values(VIEW_TO_PARAM).includes(auth?.toLowerCase() ?? "");
+}
+
 function hasSeenAnonymousSaveToast(): boolean {
   if (!persistentBrowserStore.isAvailable()) return true;
   return (
@@ -47,7 +54,7 @@ const AnonymousSaveToast = ({ toastId }: AnonymousSaveToastProps) => {
   return (
     <div className="flex w-full flex-col gap-2">
       <p className="text-sm text-text">
-        Sign up to save your calendar across devices.
+        Sign up to save your calendar across browsers.
       </p>
       <button
         className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-on-accent text-sm transition-colors hover:bg-accent-secondary-hover"
@@ -61,7 +68,7 @@ const AnonymousSaveToast = ({ toastId }: AnonymousSaveToastProps) => {
 };
 
 export function maybeShowAnonymousSaveToast(): void {
-  if (hasSeenAnonymousSaveToast()) return;
+  if (isAuthModalOpen() || hasSeenAnonymousSaveToast()) return;
 
   markAnonymousSaveToastSeen();
   showStatusToast(

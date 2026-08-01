@@ -268,4 +268,28 @@ describe("handleErrorResponse", () => {
     expect(signOutSpy).toHaveBeenCalledTimes(1);
     signOutSpy.mockRestore();
   });
+
+  it("leaves a non-calendar route through the router, not a document navigation", async () => {
+    // A document navigation tears down the toast signOut just raised, so on
+    // every route that actually needed it the "you've been signed out" message
+    // was destroyed before it could be read. Routing in-app keeps it alive.
+    window.history.pushState({}, "", "/day/2026-07-31");
+    const navigate = mock((_options: { to: string }) => Promise.resolve());
+    mock.module("@web/routers", () => ({ router: { navigate } }));
+    const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
+    const error = createApiError(
+      { status: Status.UNAUTHORIZED },
+      { url: "/event" },
+    );
+
+    await expect(
+      handleErrorResponse(error, { onGoogleRevoked: undefined }),
+    ).rejects.toBe(error);
+
+    expect(signOutSpy).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith({ to: "/week" });
+    signOutSpy.mockRestore();
+    window.history.pushState({}, "", "/week");
+  });
 });

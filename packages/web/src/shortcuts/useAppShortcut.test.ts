@@ -150,4 +150,16 @@ describe("useAppShortcut", () => {
       expect(mockHandler).not.toHaveBeenCalled();
     });
   });
+
+  it("still calls the handler when locked if ignoreAppLock is true", async () => {
+    document.body.dataset.appLocked = "true";
+
+    renderHook(() => useAppShortcut("A", mockHandler, { ignoreAppLock: true }));
+
+    dispatchKeyEvent("a", "keydown");
+
+    await waitFor(() => {
+      expect(mockHandler).toHaveBeenCalledTimes(1);
+    });
+  });
 });

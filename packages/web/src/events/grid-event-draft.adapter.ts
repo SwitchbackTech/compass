@@ -1,4 +1,5 @@
 import fastDeepEqual from "fast-deep-equal/react";
+import { Origin } from "@core/constants/core.constants";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
@@ -11,7 +12,7 @@ import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
-import { assembleGridEvent } from "@web/common/utils/event/event.util";
+import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
   type ParseEventDraftResult,
   parseEventDraft,
@@ -261,13 +262,35 @@ export function getGridDraftId(draft: GridEventDraft): string | undefined {
   return draft.kind === "edit" ? draft.source.id : draft.clientId;
 }
 
+/**
+ * Direct GridEventDraft → GridEvent for the draft render hot path.
+ * Avoids the CompassEvent bridge (`gridEventDraftToSchemaEvent`); overlays /
+ * Day placeholders that still need CompassEvent keep that helper separately.
+ */
 export function gridEventDraftToGridEvent(draft: GridEventDraft): GridEvent {
-  const schemaEvent = gridEventDraftToSchemaEvent(draft);
-  return assembleGridEvent({
-    ...schemaEvent,
-    startDate: schemaEvent.startDate!,
-    endDate: schemaEvent.endDate!,
-  });
+  const { schedule } = draft.values;
+  const color = draft.values.color ?? undefined;
+  const isAllDay = schedule.kind === "allDay";
+
+  return {
+    _id: getGridDraftId(draft)!,
+    title: draft.values.title,
+    description: draft.values.description,
+    origin: Origin.COMPASS,
+    user: "",
+    isAllDay,
+    startDate: isAllDay
+      ? toDateOnlyString(schedule.start)
+      : dayjs(schedule.start).format(),
+    endDate: isAllDay
+      ? toDateOnlyString(schedule.end)
+      : dayjs(schedule.end).format(),
+    recurrence: legacyRecurrenceFromDraft(draft),
+    position: gridEventDefaultPosition,
+    calendarId: draft.values.calendarId ?? undefined,
+    isBusy: draft.kind === "edit" && draft.source.content.kind === "busy",
+    ...withColor(color),
+  };
 }
 
 // Converts a grid draft to the CompassEvent-shaped view used by schema

@@ -10,6 +10,7 @@ import {
 export const JobKindSchema = z.enum([
   "calendarListSync",
   "initialImport",
+  "bootstrapCatchup",
   "incrementalPull",
   "commandApply",
   "reconcile",
@@ -54,7 +55,13 @@ export const JobRecordSchema = z.strictObject({
   // state:"failed". Distinct from `attempt` (which a requeue resets to give
   // the job a fresh retry ladder) so a resource that keeps failing cannot be
   // requeued forever — the sweep stops once this hits its cap.
-  requeuedCount: z.number().int().min(0),
+  //
+  // Defaulted, not required: this field was introduced after jobs already
+  // existed in production, and a job doc predating it is still perfectly
+  // valid work. Parsing one must not throw — enqueue coalesces onto whatever
+  // doc already holds a key and re-parses it, so a single unparseable job
+  // took down every sweep fleet-wide for 23h (2026-07-31).
+  requeuedCount: z.number().int().min(0).default(0),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
