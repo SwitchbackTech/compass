@@ -48,6 +48,7 @@ import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-ma
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 
 const storage = setupSyncStorage(import.meta.url);
@@ -143,6 +144,7 @@ describe("executeProviderCreate", () => {
   let commands: CommandRepository;
   let events: EventRepository;
   let occurrences: EventOccurrenceRepository;
+  let resources: SyncResourceRepository;
   let calendars: ProviderCalendarRepository;
 
   const createInput = (
@@ -210,6 +212,7 @@ describe("executeProviderCreate", () => {
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
     occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
+    resources = new SyncResourceRepository(mongo.db);
     calendars = new ProviderCalendarRepository(mongo.db);
   });
 
@@ -220,7 +223,14 @@ describe("executeProviderCreate", () => {
     const writer = new FakeWriter();
 
     const result = await executeProviderCreate(
-      { commands, events, occurrences, writer, custody: tokenSource() },
+      {
+        commands,
+        events,
+        occurrences,
+        resources,
+        writer,
+        custody: tokenSource(),
+      },
       command,
       calendar,
       now,
@@ -261,7 +271,14 @@ describe("executeProviderCreate", () => {
     const writer = new FakeWriter();
 
     await executeProviderCreate(
-      { commands, events, occurrences, writer, custody: tokenSource() },
+      {
+        commands,
+        events,
+        occurrences,
+        resources,
+        writer,
+        custody: tokenSource(),
+      },
       command,
       calendar,
       now,
@@ -277,6 +294,7 @@ describe("executeProviderCreate", () => {
       commands,
       events,
       occurrences,
+      resources,
       writer,
       custody: tokenSource(),
     };
@@ -294,13 +312,63 @@ describe("executeProviderCreate", () => {
     expect(owned).toHaveLength(1);
   });
 
+  it("projects a create at the calendar's active generation, not zero", async () => {
+    // 2026-08-01: a repaired calendar reads at generation 1, but creates
+    // hardcoded their occurrences to generation 0, so a new event saved
+    // successfully to Google and was then invisible in Compass. That was
+    // meant to self-heal on the next incremental pull; when the sweeps froze,
+    // the window stayed open for a day.
+    const { tenantId, principalId, calendar, command } = await seed();
+    const resource = await resources.ensure({
+      tenantId,
+      principalId,
+      connectionId: calendar.connectionId,
+      resourceKind: "events",
+      calendarId: calendar._id,
+    });
+    await resources.startNewGeneration(tenantId, principalId, resource._id);
+    await resources.activateGeneration(tenantId, principalId, resource._id, 1);
+
+    await executeProviderCreate(
+      {
+        commands,
+        events,
+        occurrences,
+        resources,
+        writer: new FakeWriter(),
+        custody: tokenSource(),
+      },
+      command,
+      calendar,
+      now,
+    );
+
+    // Visible to a read at the generation the calendar actually serves.
+    const atActive = await events.listByCalendar({
+      tenantId,
+      principalId,
+      calendarId: calendar._id,
+      generation: 1,
+      limit: 10,
+    });
+    expect(atActive).toHaveLength(1);
+    expect(atActive[0]?._id).toBe(command.eventId);
+  });
+
   it("leaves the command pending on a transient write failure", async () => {
     const { tenantId, principalId, calendar, command } = await seed();
     const writer = new FakeWriter();
     writer.error = new ProviderWriteError("transient", "network blip");
 
     const result = await executeProviderCreate(
-      { commands, events, occurrences, writer, custody: tokenSource() },
+      {
+        commands,
+        events,
+        occurrences,
+        resources,
+        writer,
+        custody: tokenSource(),
+      },
       command,
       calendar,
       now,
@@ -318,7 +386,14 @@ describe("executeProviderCreate", () => {
     writer.error = new ProviderWriteError("readOnlyCalendar", "read only");
 
     const result = await executeProviderCreate(
-      { commands, events, occurrences, writer, custody: tokenSource() },
+      {
+        commands,
+        events,
+        occurrences,
+        resources,
+        writer,
+        custody: tokenSource(),
+      },
       command,
       calendar,
       now,
@@ -431,6 +506,7 @@ describe("executeProviderUpdate", () => {
   let commands: CommandRepository;
   let events: EventRepository;
   let occurrences: EventOccurrenceRepository;
+  let resources: SyncResourceRepository;
   let calendars: ProviderCalendarRepository;
 
   const now = () => new Date("2026-07-10T00:00:00.000Z");
@@ -531,6 +607,7 @@ describe("executeProviderUpdate", () => {
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
     occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
+    resources = new SyncResourceRepository(mongo.db);
     calendars = new ProviderCalendarRepository(mongo.db);
   });
 
@@ -541,7 +618,14 @@ describe("executeProviderUpdate", () => {
     writer.fetched = providerEvent("Old", "etag-1");
 
     const result = await executeProviderUpdate(
-      { commands, events, occurrences, writer, custody: tokenSource() },
+      {
+        commands,
+        events,
+        occurrences,
+        resources,
+        writer,
+        custody: tokenSource(),
+      },
       command,
       event,
       calendar,
@@ -573,7 +657,14 @@ describe("executeProviderUpdate", () => {
     writer.fetched = providerEvent("New", "etag-2");
 
     const result = await executeProviderUpdate(
-      { commands, events, occurrences, writer, custody: tokenSource() },
+      {
+        commands,
+        events,
+        occurrences,
+        resources,
+        writer,
+        custody: tokenSource(),
+      },
       command,
       event,
       calendar,
@@ -619,7 +710,14 @@ describe("executeProviderUpdate", () => {
     };
 
     const result = await executeProviderUpdate(
-      { commands, events, occurrences, writer, custody: tokenSource() },
+      {
+        commands,
+        events,
+        occurrences,
+        resources,
+        writer,
+        custody: tokenSource(),
+      },
       command,
       event,
       calendar,
@@ -639,7 +737,14 @@ describe("executeProviderUpdate", () => {
     writer.patchError = new ProviderWriteError("versionConflict", "stale");
 
     const result = await executeProviderUpdate(
-      { commands, events, occurrences, writer, custody: tokenSource() },
+      {
+        commands,
+        events,
+        occurrences,
+        resources,
+        writer,
+        custody: tokenSource(),
+      },
       command,
       event,
       calendar,
@@ -658,7 +763,14 @@ describe("executeProviderUpdate", () => {
     writer.fetched = null;
 
     const result = await executeProviderUpdate(
-      { commands, events, occurrences, writer, custody: tokenSource() },
+      {
+        commands,
+        events,
+        occurrences,
+        resources,
+        writer,
+        custody: tokenSource(),
+      },
       command,
       event,
       calendar,
@@ -679,7 +791,14 @@ describe("executeProviderUpdate", () => {
     writer.patchError = new ProviderWriteError("transient", "blip");
 
     const result = await executeProviderUpdate(
-      { commands, events, occurrences, writer, custody: tokenSource() },
+      {
+        commands,
+        events,
+        occurrences,
+        resources,
+        writer,
+        custody: tokenSource(),
+      },
       command,
       event,
       calendar,

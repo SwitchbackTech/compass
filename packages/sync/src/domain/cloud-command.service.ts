@@ -44,6 +44,7 @@ import { type DeletionMarkerRepository } from "@sync/storage/repositories/deleti
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 // A provider-targeted write arrived while provider work is unavailable
 // (execution is passive, or no provider is configured). Nothing re-dispatches a
@@ -67,6 +68,9 @@ export interface CloudCommandDeps {
   // The derived occurrence projection, rebuilt for an event's horizon whenever
   // a cloud command changes it so range queries stay current.
   occurrences: EventOccurrenceRepository;
+  // Which generation reads serve per calendar, so a provider-linked create
+  // projects where reads will look for it.
+  resources: SyncResourceRepository;
   // The deletion-marker store, for the tombstone a provider delete leaves.
   markers: DeletionMarkerRepository;
   execution: SyncExecutionMode;
@@ -146,6 +150,7 @@ export async function submitCloudCommand(
             commands: deps.commands,
             events: deps.events,
             occurrences: deps.occurrences,
+            resources: deps.resources,
             writer: deps.provider.writer,
             custody: deps.provider.custody,
           },
@@ -339,6 +344,7 @@ async function applyCloudMutation(
             commands: deps.commands,
             events: deps.events,
             occurrences: deps.occurrences,
+            resources: deps.resources,
             writer: deps.provider.writer,
             custody: deps.provider.custody,
           },
@@ -386,6 +392,7 @@ async function dispatchProviderDelete(
       commands: deps.commands,
       events: deps.events,
       occurrences: deps.occurrences,
+      resources: deps.resources,
       writer: deps.provider.writer,
       custody: deps.provider.custody,
       markers: deps.markers,
@@ -421,6 +428,7 @@ async function dispatchProviderSeriesUpdate(
       commands: deps.commands,
       events: deps.events,
       occurrences: deps.occurrences,
+      resources: deps.resources,
       writer: deps.provider.writer,
       custody: deps.provider.custody,
     },
@@ -458,6 +466,7 @@ async function dispatchProviderOccurrenceDelete(
       commands: deps.commands,
       events: deps.events,
       occurrences: deps.occurrences,
+      resources: deps.resources,
       writer: deps.provider.writer,
       custody: deps.provider.custody,
     },
@@ -488,6 +497,7 @@ async function dispatchProviderOccurrenceUpdate(
       commands: deps.commands,
       events: deps.events,
       occurrences: deps.occurrences,
+      resources: deps.resources,
       writer: deps.provider.writer,
       custody: deps.provider.custody,
     },
@@ -518,6 +528,7 @@ async function dispatchProviderSeriesFollowingDelete(
       commands: deps.commands,
       events: deps.events,
       occurrences: deps.occurrences,
+      resources: deps.resources,
       writer: deps.provider.writer,
       custody: deps.provider.custody,
       markers: deps.markers,
@@ -549,6 +560,7 @@ async function dispatchProviderSeriesFollowingUpdate(
       commands: deps.commands,
       events: deps.events,
       occurrences: deps.occurrences,
+      resources: deps.resources,
       writer: deps.provider.writer,
       custody: deps.provider.custody,
     },

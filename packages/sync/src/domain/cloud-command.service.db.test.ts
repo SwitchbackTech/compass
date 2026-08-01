@@ -28,6 +28,7 @@ import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-ma
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 
@@ -120,6 +121,7 @@ describe("submitCloudCommand provider dispatch", () => {
   let commands: CommandRepository;
   let events: EventRepository;
   let occurrences: EventOccurrenceRepository;
+  let resources: SyncResourceRepository;
   let calendars: ProviderCalendarRepository;
   let markers: DeletionMarkerRepository;
 
@@ -181,6 +183,7 @@ describe("submitCloudCommand provider dispatch", () => {
     commands = new CommandRepository(mongo.db);
     events = new EventRepository(mongo.db);
     occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
+    resources = new SyncResourceRepository(mongo.db);
     calendars = new ProviderCalendarRepository(mongo.db);
     markers = new DeletionMarkerRepository(mongo.db);
   });
@@ -197,6 +200,7 @@ describe("submitCloudCommand provider dispatch", () => {
         events,
         calendars,
         occurrences,
+        resources,
         markers,
         execution: "active",
         provider: provider(writer),
@@ -224,6 +228,7 @@ describe("submitCloudCommand provider dispatch", () => {
         events,
         calendars,
         occurrences,
+        resources,
         markers,
         execution: "passive",
         provider: provider(writer),
@@ -247,6 +252,7 @@ describe("submitCloudCommand provider dispatch", () => {
         events,
         calendars,
         occurrences,
+        resources,
         markers,
         execution: "active",
       },
@@ -268,6 +274,7 @@ describe("submitCloudCommand provider dispatch", () => {
         events,
         calendars,
         occurrences,
+        resources,
         markers,
         execution: "active",
         provider: provider(writer),
@@ -306,6 +313,7 @@ describe("submitCloudCommand provider dispatch", () => {
         events,
         calendars,
         occurrences,
+        resources,
         markers,
         execution: "active",
       },
@@ -335,6 +343,7 @@ describe("submitCloudCommand provider dispatch", () => {
         events,
         calendars,
         occurrences,
+        resources,
         markers,
         execution: "active",
       },
@@ -415,6 +424,7 @@ describe("submitCloudCommand provider dispatch", () => {
     events,
     calendars,
     occurrences,
+    resources,
     markers,
     execution: "passive" as const,
   });
@@ -464,6 +474,7 @@ describe("submitCloudCommand provider dispatch", () => {
         events,
         calendars,
         occurrences,
+        resources,
         markers,
         execution: "active",
         provider: provider(writer),
@@ -522,6 +533,7 @@ describe("submitCloudCommand provider dispatch", () => {
         events,
         calendars,
         occurrences,
+        resources,
         markers,
         execution: "active",
         provider: provider(writer),
@@ -564,6 +576,7 @@ describe("submitCloudCommand provider dispatch", () => {
         events,
         calendars,
         occurrences,
+        resources,
         markers,
         execution: "active",
         provider: provider(writer),
@@ -598,6 +611,7 @@ describe("submitCloudCommand provider dispatch", () => {
         events,
         calendars,
         occurrences,
+        resources,
         markers,
         execution: "active",
         provider: provider(writer),
@@ -687,6 +701,7 @@ describe("submitCloudCommand provider dispatch", () => {
         events,
         calendars,
         occurrences,
+        resources,
         markers,
         execution: "active",
         provider: provider(writer),
@@ -744,6 +759,7 @@ describe("submitCloudCommand provider dispatch", () => {
         events,
         calendars,
         occurrences,
+        resources,
         markers,
         execution: "active",
         provider: provider(writer),

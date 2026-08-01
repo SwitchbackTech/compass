@@ -101,6 +101,7 @@ export function registerCommandRoutes(
             events,
             calendars: repos.calendars,
             occurrences: repos.eventOccurrences,
+            resources: repos.syncResources,
             markers: repos.deletionMarkers,
             execution: deps.execution,
             provider,
