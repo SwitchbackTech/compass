@@ -390,20 +390,20 @@ describe("LifeView", () => {
     });
 
     const inSidebarClose = screen.getByRole("button", {
-      name: "Close sidebar",
+      name: "Dismiss sidebar",
     });
     expect(sidebar.contains(inSidebarClose)).toBe(true);
 
     await user.click(inSidebarClose);
 
-    // Collapse keeps the panel mounted until the width transition ends; the
-    // header "Open sidebar" control returning is the observable close signal.
     expect(
-      screen.queryByRole("button", { name: "Close sidebar" }),
+      screen.queryByRole("button", { name: "Dismiss sidebar" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Open sidebar" }),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Open sidebar" }),
+      ).toHaveFocus();
+    });
   });
 
   it("shows the privacy tooltip on the date of birth label", async () => {

@@ -8,7 +8,7 @@ import {
 import { useIsNarrowSidebarLayout } from "./hooks/useIsNarrowSidebarLayout";
 import { ShortcutsOverlay } from "./ShortcutsOverlay/ShortcutsOverlay";
 import { SidebarActions } from "./SidebarActions/SidebarActions";
-import { SidebarToggleButton } from "./SidebarToggleButton";
+import { SidebarCloseButton } from "./SidebarCloseButton";
 
 interface SidebarShellProps extends HTMLAttributes<HTMLElement> {
   children: ReactNode;
@@ -34,8 +34,7 @@ export function SidebarShell({
 }: SidebarShellProps) {
   const isNarrowLayout = useIsNarrowSidebarLayout();
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
-  // Only while open: during the collapse transition the shell stays mounted,
-  // and a still-rendered toggle would duplicate the header's "Open sidebar".
+  // Only while open: during the collapse transition the shell stays mounted.
   const showSidebarClose = isNarrowLayout && isSidebarOpen;
 
   return (
@@ -47,7 +46,7 @@ export function SidebarShell({
     >
       {showSidebarClose ? (
         <div className="flex shrink-0 items-center justify-end px-5 pb-2">
-          <SidebarToggleButton />
+          <SidebarCloseButton />
         </div>
       ) : null}
       {children}

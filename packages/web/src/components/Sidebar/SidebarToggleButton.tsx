@@ -9,9 +9,9 @@ import {
 } from "@web/events/stores/view.store";
 
 /**
- * Shared open/close control for the right sidebar. Used in the calendar
- * header and, on narrow viewports, inside the sidebar itself when the
- * header control is squeezed out of view.
+ * Shared open/close control for the right sidebar. Lives in the calendar
+ * header; on narrow viewports SidebarShell also hosts a close control so the
+ * panel can be dismissed when this header control is hard to reach.
  */
 export const SidebarToggleButton: FC = () => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);

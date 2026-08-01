@@ -3,14 +3,9 @@ import { type FC } from "react";
 import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
 import { SelectView } from "@web/components/SelectView/SelectView";
-import { useIsNarrowSidebarLayout } from "@web/components/Sidebar/hooks/useIsNarrowSidebarLayout";
 import { useVersionCheck } from "@web/components/Sidebar/SidebarActions/useVersionCheck";
 import { SidebarToggleButton } from "@web/components/Sidebar/SidebarToggleButton";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import {
-  selectIsSidebarOpen,
-  useViewStore,
-} from "@web/events/stores/view.store";
 
 interface Props {
   /** Left-aligned heading text (e.g. "June 2026" or "Wednesday, July 1"). */
@@ -43,18 +38,13 @@ export const CalendarHeader: FC<Props> = ({
   showNavigation = true,
 }) => {
   const { isUpdateAvailable } = useVersionCheck();
-  const isSidebarOpen = useViewStore(selectIsSidebarOpen);
-  const isNarrowLayout = useIsNarrowSidebarLayout();
-  // On narrow layouts the open sidebar hosts its own close control; keep a
-  // single "Close sidebar" name in the accessibility tree.
-  const showHeaderSidebarToggle = !isNarrowLayout || !isSidebarOpen;
 
   return (
     <div className="flex h-12 w-full shrink-0 items-center gap-3 text-text-muted">
-      {/* min-w-0 + overflow-hidden lets the title cluster yield space so the
-          sidebar toggle (shrink-0) stays visible when the main column is
-          squeezed by an open sidebar on a narrow viewport. */}
-      <div className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden">
+      {/* min-w-0 lets the title cluster shrink so the sidebar toggle stays in
+          layout. Avoid overflow-hidden here — SelectView's menu is absolutely
+          positioned inside this cluster and must paint below the header. */}
+      <div className="flex min-w-0 flex-1 items-center gap-3">
         {showNavigation && onPrev && onNext && (
           <>
             <TooltipWrapper shortcut="J">
@@ -90,11 +80,9 @@ export const CalendarHeader: FC<Props> = ({
         ) : null}
       </div>
 
-      {showHeaderSidebarToggle ? (
-        <div className="z-2 flex shrink-0 items-center pr-5">
-          <SidebarToggleButton />
-        </div>
-      ) : null}
+      <div className="z-2 flex shrink-0 items-center pr-5">
+        <SidebarToggleButton />
+      </div>
     </div>
   );
 };

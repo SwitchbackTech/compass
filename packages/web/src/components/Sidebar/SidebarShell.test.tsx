@@ -55,28 +55,28 @@ afterEach(() => {
 });
 
 describe("SidebarShell", () => {
-  it("keeps the close control out of the sidebar on wide layouts", () => {
+  it("keeps the dismiss control out of the sidebar on wide layouts", () => {
     mockViewport(false);
     renderShell();
 
     expect(
-      screen.queryByRole("button", { name: "Close sidebar" }),
+      screen.queryByRole("button", { name: "Dismiss sidebar" }),
     ).not.toBeInTheDocument();
     expect(screen.getByText("Sidebar body")).toBeInTheDocument();
   });
 
-  it("shows a close control inside the sidebar on narrow layouts", async () => {
+  it("shows a dismiss control inside the sidebar on narrow layouts", async () => {
     const user = userEvent.setup();
     mockViewport(true);
     renderShell();
 
-    const closeButton = screen.getByRole("button", { name: "Close sidebar" });
+    const closeButton = screen.getByRole("button", { name: "Dismiss sidebar" });
     expect(closeButton).toBeInTheDocument();
 
     await user.click(closeButton);
 
     expect(
-      screen.queryByRole("button", { name: "Close sidebar" }),
+      screen.queryByRole("button", { name: "Dismiss sidebar" }),
     ).not.toBeInTheDocument();
   });
 });
