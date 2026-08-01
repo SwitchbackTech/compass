@@ -3,7 +3,6 @@ import { runManageFailedJobs } from "@scripts/commands/manage-failed-jobs";
 import { runPurgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events";
 import { runPurgeUser } from "@scripts/commands/purge-user";
 import { runRefreshConnectionStates } from "@scripts/commands/refresh-connection-states";
-import { runRepairLegacySeriesWeekday } from "@scripts/commands/repair-legacy-series-weekday";
 import { runRepairRecurringSeries } from "@scripts/commands/repair-recurring-series";
 import { Command } from "commander";
 
@@ -35,9 +34,6 @@ export default class CompassCLI {
         break;
       case cmd === "repair-recurring-series":
         await runRepairRecurringSeries();
-        break;
-      case cmd === "repair-legacy-series-weekday":
-        await runRepairLegacySeriesWeekday();
         break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
@@ -79,14 +75,6 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "Re-derive every provider connection's stored state from live evidence (--apply to write)",
-      );
-
-    program
-      .command("repair-legacy-series-weekday")
-      .helpOption(false)
-      .allowUnknownOption(true)
-      .description(
-        "Fix legacy-migrated weekly series with a wrong-frame RRULE BYDAY (--apply to write)",
       );
 
     program
