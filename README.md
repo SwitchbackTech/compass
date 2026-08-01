@@ -10,12 +10,18 @@ A simple calendar that helps you manage your time.
 - The **minimal UI** will help you focus on what matters: your events.
 - The **Google Calendar two-way sync** will ensure you don't miss anything.
 
+### You'll get less done
+
+- The [**life view**](https://www.compasscalendar.com/life?utm_source=github&utm_medium=referral&utm_campaign=readme) shows your existance as a grid of dots. Seeing how few you have left may make you pause before scheduling more busy work.
+- The absense of AI automation will keep unnecessary work out of your schedule.
+
 ### It'll be around for the long-term
 
 - **We're bootstrapped.** While VC-backed teams think in terms of months and funding rounds, we think in terms of decades and profit. We don't need to make $1B in 5 years or sell your data to an acquirer. As long as we keep users like you happy, we'll be fine.
 - **We have a plan.** Our long-term [vision](https://alpaca-ty.notion.site/about-us) will keep us busy for generations. Our practical roadmap and focus on profitability will keep our feet on the ground along the way.
 
 ### It'll help others
+
 We donate 10% of revenue to support mental health programs in our home city of Bozeman, Montana. Your support helps us support others in need.
 
 ## Features
@@ -41,7 +47,7 @@ Things you can't do in Compass (yet):
 ## Getting started
 
 | Option | Description | Instructions |
-|---|---|---|
+| --- | --- | --- |
 | **1. Try Compass web** | Use Compass now (no signup required). | [compasscalendar.com](https://www.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme) |
 | **2. Run Compass locally** | Run Compass on your machine. | `bun install`<br><br>`cp compass.example.yaml compass.yaml` <br><br>`bun run dev:web`<br><br>`bun run dev:backend`<br><br>Open [http://localhost:9080](http://localhost:9080). |
 | **3. Self-host Compass** | Run Compass on your server. | See [the self-hosting guide](./docs/self-hosting/README.md). |
