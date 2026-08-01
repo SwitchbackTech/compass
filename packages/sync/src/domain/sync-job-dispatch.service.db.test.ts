@@ -222,6 +222,15 @@ describe("dispatchSyncJob", () => {
         cursor,
         now(),
       );
+      // A seeded cursor represents an established calendar from before this
+      // test's job begins; new connections exercise the bootstrap lifecycle
+      // explicitly below.
+      await resources.setBootstrapState(
+        calendar.tenantId,
+        calendar.principalId,
+        resource._id,
+        "ready",
+      );
     }
     return resource;
   };
@@ -388,7 +397,10 @@ describe("dispatchSyncJob", () => {
       jobFor(resource, "repair"),
       now,
     );
-    expect(outcome).toEqual({ result: "done" });
+    expect(outcome).toMatchObject({
+      result: "done",
+      followup: { kind: "subscriptionMaintain" },
+    });
   });
 
   it("retries a repair that did not complete", async () => {
@@ -537,6 +549,119 @@ describe("dispatchSyncJob", () => {
       resource._id,
     );
     expect(saved?.subscriptionResourceId).toBe("provider-resource");
+  });
+
+  it("does not declare a fresh calendar ready until the post-watch pull completes", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, null);
+    notifications.watched = [];
+
+    const importOutcome = await dispatchSyncJob(
+      deps(
+        new FakeReader([
+          page([single("imported")]),
+          page([single("imported")], "cursor-1"),
+        ]),
+      ),
+      jobFor(resource, "initialImport"),
+      now,
+    );
+    expect(importOutcome).toMatchObject({
+      result: "done",
+      followup: { kind: "subscriptionMaintain" },
+    });
+    expect(
+      (
+        await resources.findById(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+        )
+      )?.bootstrapState,
+    ).toBe("watching");
+
+    const subscriptionOutcome = await dispatchSyncJob(
+      deps(new FakeReader([])),
+      jobFor(resource, "subscriptionMaintain"),
+      now,
+    );
+    expect(subscriptionOutcome).toMatchObject({
+      result: "done",
+      followup: {
+        kind: "bootstrapCatchup",
+        coalescingKey: `bootstrapCatchup:${resource._id}`,
+      },
+    });
+    expect(
+      (
+        await resources.findById(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+        )
+      )?.bootstrapState,
+    ).toBe("catchingUp");
+
+    const catchupOutcome = await dispatchSyncJob(
+      deps(
+        new FakeReader([page([single("created-after-import")], "cursor-2")]),
+      ),
+      jobFor(resource, "bootstrapCatchup"),
+      now,
+    );
+    expect(catchupOutcome).toEqual({ result: "done" });
+    expect(
+      (
+        await resources.findById(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+        )
+      )?.bootstrapState,
+    ).toBe("ready");
+  });
+
+  it("bootstraps a legacy no-cursor resource through the post-watch pull", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, null);
+    // Simulate a deployment while an older version's initial import was in
+    // flight. Parsing a missing field intentionally yields ready for established
+    // rows, but its absent cursor must still make this row bootstrap.
+    await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .updateOne({ _id: resource._id }, { $unset: { bootstrapState: "" } });
+    const legacyResource = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(legacyResource?.bootstrapState).toBe("ready");
+
+    const outcome = await dispatchSyncJob(
+      deps(
+        new FakeReader([
+          page([single("imported")]),
+          page([single("imported")], "cursor-1"),
+        ]),
+      ),
+      jobFor(legacyResource!, "initialImport"),
+      now,
+    );
+
+    expect(outcome).toMatchObject({
+      result: "done",
+      followup: { kind: "subscriptionMaintain" },
+    });
+    expect(
+      (
+        await resources.findById(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+        )
+      )?.bootstrapState,
+    ).toBe("watching");
   });
 
   const calendarListJob = (

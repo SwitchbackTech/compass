@@ -426,6 +426,35 @@ export class JobRepository {
     });
   }
 
+  // Read work that makes a connected calendar's freshness unknown. Command
+  // writes and subscription renewal are intentionally excluded: they should
+  // not turn an otherwise current sidebar into a broad "Syncing" state.
+  async hasOutstandingReadWorkByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+  ): Promise<boolean> {
+    const job = await this.collection.findOne(
+      {
+        tenantId,
+        principalId,
+        connectionId,
+        state: { $in: ["pending", "claimed"] },
+        kind: {
+          $in: [
+            "calendarListSync",
+            "initialImport",
+            "bootstrapCatchup",
+            "incrementalPull",
+            "repair",
+          ],
+        },
+      },
+      { projection: { _id: 1 } },
+    );
+    return job !== null;
+  }
+
   // Hard-delete every job for one connection (post-disconnect retention).
   async deleteByConnection(
     tenantId: TenantId,

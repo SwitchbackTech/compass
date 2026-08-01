@@ -34,10 +34,7 @@ export async function refreshConnectionState(
   const evidence = await gatherConnectionStateEvidence(deps, connection, at);
   const derived = deriveConnectionState(evidence, at);
 
-  const lastSyncedAt = maxDate(
-    connection.lastSyncedAt,
-    ...evidence.resourceSuccessAts,
-  );
+  const lastSyncedAt = evidence.lastSyncedAt;
   const lastHealthyAt =
     derived.state === "healthy"
       ? (connection.lastHealthyAt ?? at)
@@ -84,26 +81,32 @@ export async function gatherConnectionStateEvidence(
   deps: ConnectionStateRefreshDeps,
   connection: ProviderConnectionRecord,
   now: Date,
-): Promise<ConnectionStateEvidence & { resourceSuccessAts: Date[] }> {
-  const [credential, calendars, resources, oldestOverdue] = await Promise.all([
-    deps.credentials.findByConnection(connection._id),
-    deps.calendars.listByConnection(
-      connection.tenantId,
-      connection.principalId,
-      connection._id,
-    ),
-    deps.resources.listByConnection(
-      connection.tenantId,
-      connection.principalId,
-      connection._id,
-    ),
-    deps.jobs.findOldestOverdueByConnection(
-      connection.tenantId,
-      connection.principalId,
-      connection._id,
-      now,
-    ),
-  ]);
+): Promise<ConnectionStateEvidence & { lastSyncedAt: Date | null }> {
+  const [credential, calendars, resources, oldestOverdue, catchingUp] =
+    await Promise.all([
+      deps.credentials.findByConnection(connection._id),
+      deps.calendars.listByConnection(
+        connection.tenantId,
+        connection.principalId,
+        connection._id,
+      ),
+      deps.resources.listByConnection(
+        connection.tenantId,
+        connection.principalId,
+        connection._id,
+      ),
+      deps.jobs.findOldestOverdueByConnection(
+        connection.tenantId,
+        connection.principalId,
+        connection._id,
+        now,
+      ),
+      deps.jobs.hasOutstandingReadWorkByConnection(
+        connection.tenantId,
+        connection.principalId,
+        connection._id,
+      ),
+    ]);
 
   const activeCalendars = calendars.filter((c) => c.active);
   const eventsByCalendar = new Map(
@@ -113,15 +116,28 @@ export async function gatherConnectionStateEvidence(
   );
   const calendarList = resources.find((r) => r.resourceKind === "calendarList");
   const discoveryDone = calendarList?.lastSuccessAt != null;
-  const allActiveImported =
+  const allActiveBootstrapReady =
     activeCalendars.length === 0 ||
-    activeCalendars.every(
-      (c) => eventsByCalendar.get(c._id)?.syncCursor != null,
-    );
+    activeCalendars.every((c) => {
+      const resource = eventsByCalendar.get(c._id);
+      return (
+        resource?.syncCursor != null && resource.bootstrapState === "ready"
+      );
+    });
 
-  const resourceSuccessAts = resources
-    .map((r) => r.lastSuccessAt)
-    .filter((d): d is Date => d instanceof Date);
+  // "Last synced" must be as old as the least-recent active calendar. Taking
+  // the newest success would let one busy calendar say "just now" while a
+  // second visible calendar is stale. No active calendars fall back to the
+  // calendar-list pass, which is the only provider data remaining to sync.
+  const activeEventSuccessAts = activeCalendars.map(
+    (calendar) => eventsByCalendar.get(calendar._id)?.lastSuccessAt ?? null,
+  );
+  const lastSyncedAt =
+    activeEventSuccessAts.length === 0
+      ? (calendarList?.lastSuccessAt ?? null)
+      : activeEventSuccessAts.every((at) => at instanceof Date)
+        ? minDate(...activeEventSuccessAts)
+        : null;
 
   return {
     disconnectedAt: connection.disconnectedAt,
@@ -134,14 +150,15 @@ export async function gatherConnectionStateEvidence(
     ),
     accountIdentified: Boolean(connection.account.providerAccountId),
     // Discovery must have finished, and every currently-active calendar must
-    // hold a durable events cursor (the initialImport settle condition).
-    initialImportComplete: discoveryDone && allActiveImported,
-    catchingUp: false,
+    // have a cursor plus a successful post-watch catch-up pull. A cursor alone
+    // has a gap between the import and the provider watch registration.
+    initialImportComplete: discoveryDone && allActiveBootstrapReady,
+    catchingUp,
     oldestDueWorkAt: oldestOverdue?.runAfter ?? null,
     // A job that used up its retry ladder on retryableTransient failures is
     // itself provider-error evidence, distinct from a plain backlog.
     recentProviderErrors: oldestOverdue?.failureClass === "retryableTransient",
-    resourceSuccessAts,
+    lastSyncedAt,
   };
 }
 
@@ -152,13 +169,13 @@ function credentialState(
   return "valid";
 }
 
-function maxDate(...dates: Array<Date | null | undefined>): Date | null {
-  let max: Date | null = null;
+function minDate(...dates: Array<Date | null | undefined>): Date | null {
+  let min: Date | null = null;
   for (const d of dates) {
     if (!(d instanceof Date)) continue;
-    if (!max || d.getTime() > max.getTime()) max = d;
+    if (!min || d.getTime() < min.getTime()) min = d;
   }
-  return max;
+  return min;
 }
 
 function sameDate(a: Date | null, b: Date | null): boolean {

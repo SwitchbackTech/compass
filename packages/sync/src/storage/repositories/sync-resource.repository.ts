@@ -7,6 +7,7 @@ import {
 } from "@core/types/sync/identity.contracts";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
+  type ResourceBootstrapState,
   type SyncResourceRecord,
   SyncResourceRecordSchema,
   type SyncResourceUpsert,
@@ -57,6 +58,8 @@ export class SyncResourceRepository {
           lastSuccessAt: null,
           lastReadFailureAt: null,
           lastReadFailureDetail: null,
+          bootstrapState:
+            fields.resourceKind === "events" ? "importing" : "ready",
           subscriptionId: null,
           subscriptionResourceId: null,
           subscriptionToken: null,
@@ -147,6 +150,22 @@ export class SyncResourceRepository {
         },
       },
     ]);
+  }
+
+  // Advance first-connection readiness only after the caller has completed a
+  // durable boundary (initial import, watch setup, or the post-watch pull).
+  // Existing rows default to ready at read time; this method only writes the
+  // stricter lifecycle for calendars created after the invariant was added.
+  async setBootstrapState(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    bootstrapState: ResourceBootstrapState,
+  ): Promise<void> {
+    await this.collection.updateOne(
+      { _id: id, tenantId, principalId },
+      { $set: { bootstrapState, updatedAt: new Date() } },
+    );
   }
 
   async updateSubscription(

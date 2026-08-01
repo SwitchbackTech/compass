@@ -17,7 +17,7 @@ export type UseConnectGoogleResult = GoogleUiConfig & {
   isAvailable: boolean;
   /** True while connect/reconnect OAuth is starting (before redirect). */
   isConnecting: boolean;
-  /** True while a user-triggered Sync refresh is in flight. */
+  /** True while any Compass surface is requesting a Sync refresh. */
   isRefreshing: boolean;
   state: GoogleUiState;
   /**
@@ -33,7 +33,8 @@ export type UseConnectGoogleResult = GoogleUiConfig & {
    * the ATTENTION / delayed Refresh CTA, the delayed toast, and an automatic
    * focus-triggered check (useSyncFocusRefresh). Pass `silent: true` for a
    * background trigger the user didn't ask for, so a transient failure
-   * doesn't surface an error toast or close an open command palette.
+   * doesn't surface an error toast or close an open command palette. All
+   * callers share one in-flight request.
    */
   refresh: (options?: { silent?: boolean }) => void;
 };

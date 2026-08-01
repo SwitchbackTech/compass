@@ -31,7 +31,7 @@ export interface ConnectionStateEvidence {
   readonly durableReadFailure: boolean;
   // The provider account identity has been resolved.
   readonly accountIdentified: boolean;
-  // The first complete in-horizon import has finished.
+  // The first import, watch setup, and post-watch catch-up have finished.
   readonly initialImportComplete: boolean;
   // A non-destructive repair or post-gap reconciliation is running while
   // existing data stays queryable.
@@ -92,19 +92,23 @@ export function deriveConnectionState(
     return { state: "connecting", reason: null };
   }
 
+  // Do not let a failed or overdue bootstrap hide behind a perpetual
+  // "importing"/"syncing" message. The normal threshold preserves a calm
+  // progress state for active work, while terminal jobs are immediately
+  // overdue (their original runAfter is in the past).
+  if (isOverdue(evidence.oldestDueWorkAt, now)) {
+    return {
+      state: "delayed",
+      reason: evidence.recentProviderErrors ? "providerErrors" : "workOverdue",
+    };
+  }
+
   if (!evidence.initialImportComplete) {
     return { state: "importing", reason: null };
   }
 
   if (evidence.catchingUp) {
     return { state: "catchingUp", reason: null };
-  }
-
-  if (isOverdue(evidence.oldestDueWorkAt, now)) {
-    return {
-      state: "delayed",
-      reason: evidence.recentProviderErrors ? "providerErrors" : "workOverdue",
-    };
   }
 
   return { state: "healthy", reason: null };
