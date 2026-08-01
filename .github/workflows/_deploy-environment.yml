@@ -206,7 +206,11 @@ jobs:
           fi
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compose.yaml -o ~/compass/compose.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compose.selfhosted.yaml -o ~/compass/compose.selfhosted.yaml"
-          ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compass -o ~/compass/compass && chmod +x ~/compass/compass"
+          # Install the shared parser before the helper that sources it. Each
+          # download is promoted atomically so a network failure leaves the
+          # previously working helper untouched.
+          ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/config.sh -o ~/compass/config.sh.$$ && mv ~/compass/config.sh.$$ ~/compass/config.sh"
+          ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compass -o ~/compass/compass.$$ && chmod +x ~/compass/compass.$$ && mv ~/compass/compass.$$ ~/compass/compass"
           # Always enable the sync profile: config is always written above, and
           # an explicit COMPOSE_PROFILES var (e.g. `selfhosted`) would otherwise
           # override the helper's default_profiles() and leave sync unstarted.

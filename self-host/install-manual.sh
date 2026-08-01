@@ -46,6 +46,7 @@ esac
 CONFIG_FILE=$COMPASS_HOME/compass.yaml      # Your configuration (secrets, ports, etc.)
 MARKER_FILE=$COMPASS_HOME/.compass-self-host # Marks this as a Compass install directory
 HELPER_FILE=$COMPASS_HOME/compass            # CLI helper script for day-to-day management
+CONFIG_HELPER_FILE=$COMPASS_HOME/config.sh   # Shared config/profile parser
 COMPOSE_FILE=$COMPASS_HOME/compose.yaml      # Docker Compose configuration
 COMPOSE_SELFHOSTED_FILE=$COMPASS_HOME/compose.selfhosted.yaml
 
@@ -279,6 +280,18 @@ fi
 
 echo "Downloading Compass files for version $COMPASS_VERSION..."
 
+download_atomically() {
+  url=$1
+  destination=$2
+  temporary_file="${destination}.$$"
+
+  curl -fsSL "$url" -o "$temporary_file" || {
+    rm -f "$temporary_file"
+    return 1
+  }
+  mv "$temporary_file" "$destination"
+}
+
 # Download compose.yaml - defines all the Docker services (mongo, backend, web, etc.)
 curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compose.yaml" -o "$COMPOSE_FILE" \
   || { echo "ERROR: Could not download compose.yaml"; exit 1; }
@@ -290,8 +303,15 @@ curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compose.selfhosted.y
   || { echo "ERROR: Could not download compose.selfhosted.yaml"; exit 1; }
 echo "  ✓ Downloaded compose.selfhosted.yaml"
 
+# Install the dependency before the helper that sources it. Atomic moves keep
+# a failed refresh from replacing a working installation with a partial file.
+download_atomically "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/config.sh" "$CONFIG_HELPER_FILE" \
+  || { echo "ERROR: Could not download config helper"; exit 1; }
+. "$CONFIG_HELPER_FILE"
+echo "  ✓ Downloaded config helper"
+
 # Download the compass helper script - provides commands like "compass logs", "compass restart"
-curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compass" -o "$HELPER_FILE" \
+download_atomically "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compass" "$HELPER_FILE" \
   || { echo "ERROR: Could not download compass helper"; exit 1; }
 chmod +x "$HELPER_FILE"
 echo "  ✓ Downloaded compass helper script"
@@ -320,56 +340,9 @@ echo "  ✓ Created marker file"
 
 echo "Setting up environment for Docker Compose..."
 
-# Helper function to read a value from the YAML config.
-# This is a simplified parser that handles basic YAML structure.
-strip_quotes() {
-  value=$1
-  case $value in
-    \"*\")
-      value=${value#\"}
-      value=${value%%\"*}
-      ;;
-    \'*\')
-      value=${value#\'}
-      value=${value%%\'*}
-      ;;
-  esac
-  printf '%s\n' "$value"
-}
-
-read_config_value() {
-  path=$1
-  [ -f "$CONFIG_FILE" ] || return 0
-  awk -v path="$path" '
-    BEGIN { count = split(path, parts, ".") }
-    /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
-    {
-      line = $0
-      sub(/[[:space:]]+#.*/, "", line)
-      indent = match(line, /[^ ]/) - 1
-      level = int(indent / 2) + 1
-      key = line
-      sub(/:.*/, "", key)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
-      value = line
-      sub(/^[^:]+:[[:space:]]*/, "", value)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
-      gsub(/^"|"$/, "", value)
-      gsub(/^'\''|'\''$/, "", value)
-      stack[level] = key
-      for (i = level + 1; i <= 8; i++) stack[i] = ""
-      if (level != count || key != parts[count] || value == "") next
-      for (i = 1; i < count; i++) {
-        if (stack[i] != parts[i]) next
-      }
-      print value
-    }
-  ' "$CONFIG_FILE" | tail -n 1
-}
-
 # Export all variables needed by compose.yaml.
 export COMPASS_CONFIG_FILE="$CONFIG_FILE"
-export COMPOSE_PROFILES="${COMPOSE_PROFILES-selfhosted,sync}"
+export COMPOSE_PROFILES="${COMPOSE_PROFILES-$(default_profiles)}"
 export COMPASS_VERSION="$(strip_quotes "$(read_config_value runtime.version)")"
 export WEB_PORT="$(strip_quotes "$(read_config_value web.port)")"
 export PORT="$(strip_quotes "$(read_config_value backend.port)")"

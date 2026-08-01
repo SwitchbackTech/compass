@@ -12,6 +12,7 @@ esac
 CONFIG_FILE=$COMPASS_HOME/compass.yaml
 MARKER_FILE=$COMPASS_HOME/.compass-self-host
 HELPER_FILE=$COMPASS_HOME/compass
+CONFIG_HELPER_FILE=$COMPASS_HOME/config.sh
 COMPOSE_FILE=$COMPASS_HOME/compose.yaml
 COMPOSE_SELFHOSTED_FILE=$COMPASS_HOME/compose.selfhosted.yaml
 
@@ -201,68 +202,6 @@ validate_port_value() {
   if [ "$value" -lt 1 ] || [ "$value" -gt 65535 ]; then
     fail "$name must be a number from 1 to 65535. Found: $value"
   fi
-}
-
-strip_quotes() {
-  value=$1
-
-  case $value in
-    \"*\")
-      value=${value#\"}
-      value=${value%%\"*}
-      ;;
-    \'*\')
-      value=${value#\'}
-      value=${value%%\'*}
-      ;;
-    *" #"*)
-      value=${value%%" #"*}
-      while :; do
-        case $value in
-          *" ")
-            value=${value% }
-            ;;
-          *)
-            break
-            ;;
-        esac
-      done
-      ;;
-  esac
-
-  printf '%s\n' "$value"
-}
-
-read_config_value() {
-  path=$1
-
-  [ -f "$CONFIG_FILE" ] || return 0
-
-  awk -v path="$path" '
-    BEGIN { count = split(path, parts, ".") }
-    /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
-    {
-      line = $0
-      sub(/[[:space:]]+#.*/, "", line)
-      indent = match(line, /[^ ]/) - 1
-      level = int(indent / 2) + 1
-      key = line
-      sub(/:.*/, "", key)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
-      value = line
-      sub(/^[^:]+:[[:space:]]*/, "", value)
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
-      gsub(/^"|"$/, "", value)
-      gsub(/^'\''|'\''$/, "", value)
-      stack[level] = key
-      for (i = level + 1; i <= 8; i++) stack[i] = ""
-      if (level != count || key != parts[count] || value == "") next
-      for (i = 1; i < count; i++) {
-        if (stack[i] != parts[i]) next
-      }
-      print value
-    }
-  ' "$CONFIG_FILE" | tail -n 1
 }
 
 load_runtime_config() {
@@ -489,9 +428,20 @@ download_compose_file() {
 
 download_helper() {
   info "Downloading compass helper for Compass ${COMPASS_VERSION}."
-  curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compass" -o "$HELPER_FILE" \
+  tmp_helper=$COMPASS_HOME/compass.$$
+  curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compass" -o "$tmp_helper" \
     || fail "Could not download compass helper for version ${COMPASS_VERSION}."
-  chmod +x "$HELPER_FILE" || fail "Could not make $HELPER_FILE executable."
+  chmod +x "$tmp_helper" || fail "Could not make $tmp_helper executable."
+  mv "$tmp_helper" "$HELPER_FILE" || fail "Could not install compass helper."
+}
+
+download_config_helper() {
+  tmp_config_helper=$COMPASS_HOME/config.sh.$$
+  curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/config.sh" -o "$tmp_config_helper" \
+    || fail "Could not download config helper for version ${COMPASS_VERSION}."
+  mv "$tmp_config_helper" "$CONFIG_HELPER_FILE" \
+    || fail "Could not install config helper."
+  . "$CONFIG_HELPER_FILE"
 }
 
 write_marker() {
@@ -501,25 +451,6 @@ COMPASS_HOME=$COMPASS_HOME
 COMPASS_VERSION=$COMPASS_VERSION
 EOF
   [ $? -eq 0 ] || fail "Could not write marker file: $MARKER_FILE."
-}
-
-# Mirrors self-host/compass's default_profiles() (PR #2450) — duplicated
-# rather than sourced because the helper script isn't downloaded until after
-# this installer needs it once (start_stack, on first install). Keep the two
-# in sync; self-host/docker-compose.test.ts exercises the canonical copy.
-default_profiles() {
-  profiles=
-
-  mongo_uri=$(strip_quotes "$(read_config_value mongo.uri)")
-  case "$mongo_uri" in
-    "" | *//mongo:* | *@mongo:*) profiles=selfhosted ;;
-  esac
-
-  if [ -n "$(strip_quotes "$(read_config_value sync.mongoUri)")" ]; then
-    profiles="${profiles:+$profiles,}sync"
-  fi
-
-  printf '%s\n' "$profiles"
 }
 
 set_compose_env() {
@@ -660,8 +591,10 @@ EOF
 
 check_install_dir
 require_prerequisites
-load_runtime_config
 check_missing_config_with_existing_volumes
+prepare_install_dir
+download_config_helper
+load_runtime_config
 
 if [ "$IS_REFRESH" -eq 0 ]; then
   check_required_ports
@@ -669,7 +602,6 @@ else
   info "Refreshing existing install; Docker Compose will reuse configured ports $WEB_PORT_VALUE and $PORT_VALUE."
 fi
 
-prepare_install_dir
 write_config_if_missing
 load_runtime_config
 download_compose_file
