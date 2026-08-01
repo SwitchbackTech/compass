@@ -1,4 +1,5 @@
 import { type z } from "zod/v4";
+import { encryptInternalCredential } from "@core/security/internal-credential-envelope";
 import {
   type BusyAvailabilityRequest,
   type BusyAvailabilityResponse,
@@ -26,6 +27,9 @@ import {
   ConnectionListResponseSchema,
   type ConnectionRefreshResponse,
   ConnectionRefreshResponseSchema,
+  type GoogleConnectionAdoptionRequest,
+  type GoogleConnectionAdoptionResponse,
+  GoogleConnectionAdoptionResponseSchema,
 } from "@core/types/sync/connection.contracts";
 import {
   type EventInstanceListQuery,
@@ -47,6 +51,8 @@ const CHANGES_ALL_PATH = "/internal/changes/all";
 const CONNECTIONS_PATH = "/internal/connections";
 const CONNECTIONS_BEGIN_PATH = "/internal/connections/begin";
 const CONNECTIONS_REFRESH_PATH = "/internal/connections/refresh";
+const ADOPT_GOOGLE_AUTHORIZATION_PATH =
+  "/internal/connections/adopt-google-authorization";
 const EVENTS_FULL_PATH = "/internal/events/full";
 const COMMANDS_PATH = "/internal/commands";
 const PRINCIPAL_PATH = "/internal/principal";
@@ -212,6 +218,38 @@ export class SyncServiceClient {
       principal,
       body: request,
       schema: ConnectionBeginResponseSchema,
+      correlationId,
+    });
+  }
+
+  // Adopt a Google authorization that Compass API exchanged during sign-in.
+  // This is trusted internal traffic; refresh tokens never cross the browser.
+  adoptGoogleAuthorization(
+    principal: SyncPrincipal,
+    request: Omit<GoogleConnectionAdoptionRequest, "credential"> & {
+      refreshToken: string;
+    },
+    correlationId?: string,
+  ): Promise<SyncClientResult<GoogleConnectionAdoptionResponse>> {
+    return this.#request({
+      method: "POST",
+      path: ADOPT_GOOGLE_AUTHORIZATION_PATH,
+      principal,
+      body: {
+        account: request.account,
+        credential: encryptInternalCredential(
+          this.#secret,
+          request.refreshToken,
+          {
+            tenantId: principal.tenantId,
+            principalId: principal.principalId,
+            account: request.account,
+            grantedScopes: request.grantedScopes,
+          },
+        ),
+        grantedScopes: request.grantedScopes,
+      },
+      schema: GoogleConnectionAdoptionResponseSchema,
       correlationId,
     });
   }

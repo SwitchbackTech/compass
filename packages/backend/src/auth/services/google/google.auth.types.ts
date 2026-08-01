@@ -10,7 +10,7 @@ export type AuthDecision = {
 
 export type GoogleSignInSuccess = {
   providerUser: TokenPayload;
-  oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">;
+  oAuthTokens: Pick<Credentials, "refresh_token" | "access_token" | "scope">;
   createdNewRecipeUser: boolean;
   recipeUserId: string;
   loginMethodsLength: number;

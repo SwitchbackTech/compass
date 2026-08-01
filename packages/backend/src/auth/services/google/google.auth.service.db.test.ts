@@ -9,8 +9,10 @@ import {
 import { getTestLoggerInfoCalls } from "@backend/__tests__/helpers/mock.setup";
 import * as googleAuthUtil from "@backend/auth/services/google/util/google.auth.util";
 import mongoService from "@backend/common/services/mongo.service";
+import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
+import { GOOGLE_AUTH_SCOPES } from "./google.auth.scopes";
 import {
   type AuthDecision,
   type GoogleSignInSuccess,
@@ -33,6 +35,18 @@ let googleAuthService: Awaited<
 describe("googleAuthService", () => {
   beforeAll(async () => {
     spyOn(googleAuthUtil, "determineGoogleAuthMode");
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      adoptGoogleAuthorization: async () => ({
+        ok: true,
+        value: {},
+        correlationId: "corr-1",
+      }),
+      listConnections: async () => ({
+        ok: true,
+        value: { connections: [] },
+        correlationId: "corr-1",
+      }),
+    } as ReturnType<typeof syncServiceFactory.getSyncServiceClient>);
     ({ googleAuthService } = await import("./google.auth.service"));
   });
   beforeEach(() => setupTestDb(import.meta.url));
@@ -57,20 +71,24 @@ describe("googleAuthService", () => {
       ({
         refresh_token: faker.string.uuid(),
         access_token: faker.internet.jwt(),
-      }) as Pick<Credentials, "refresh_token" | "access_token">;
+        scope: GOOGLE_AUTH_SCOPES.join(" "),
+      }) as Pick<Credentials, "refresh_token" | "access_token" | "scope">;
 
     const makeOAuthTokensNoRefresh = () =>
       ({
         access_token: faker.internet.jwt(),
-      }) as Pick<Credentials, "refresh_token" | "access_token">;
+        scope: GOOGLE_AUTH_SCOPES.join(" "),
+      }) as Pick<Credentials, "refresh_token" | "access_token" | "scope">;
 
     beforeEach(() => {
       mockDetermineGoogleAuthMode().mockReset();
       spyOn(googleAuthService, "googleSignup").mockResolvedValue({
         cUserId: "signup-id",
+        refreshToken: faker.string.uuid(),
       });
       spyOn(googleAuthService, "repairGoogleConnection").mockResolvedValue({
         cUserId: "repair-id",
+        refreshToken: faker.string.uuid(),
       });
     });
 
@@ -248,7 +266,7 @@ describe("googleAuthService", () => {
 
       await userService.pruneGoogleData(compassUserId);
 
-      const result: { cUserId: string } =
+      const result: { cUserId: string; refreshToken: string } =
         await googleAuthService.repairGoogleConnection(
           compassUserId,
           gUser,
@@ -259,7 +277,10 @@ describe("googleAuthService", () => {
       const metadata =
         await userMetadataService.fetchUserMetadata(compassUserId);
 
-      expect(result).toEqual({ cUserId: compassUserId });
+      expect(result).toEqual({
+        cUserId: compassUserId,
+        refreshToken: oAuthTokens.refresh_token,
+      });
       expect(updatedUser?._id.toString()).toBe(compassUserId);
       expect(updatedUser?.google?.googleId).toBe(gUser.sub);
       expect(updatedUser?.google?.picture).toBe(gUser.picture);
@@ -291,6 +312,7 @@ describe("googleAuthService", () => {
           providerUser,
           oAuthTokens: {
             access_token: faker.internet.jwt(),
+            scope: GOOGLE_AUTH_SCOPES.join(" "),
           },
           createdNewRecipeUser: false,
           recipeUserId: compassUserId,
@@ -336,7 +358,10 @@ describe("googleAuthService", () => {
         .find({ email: normalizedEmail })
         .toArray();
 
-      expect(result).toEqual({ cUserId: existingUser._id.toString() });
+      expect(result).toEqual({
+        cUserId: existingUser._id.toString(),
+        refreshToken,
+      });
       expect(storedUsers).toHaveLength(1);
       expect(storedUsers[0]?._id).toEqual(existingUser._id);
       expect(storedUsers[0]?.google?.googleId).toBe(providerUser.sub);

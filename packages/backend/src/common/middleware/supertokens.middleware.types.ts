@@ -22,7 +22,7 @@ type ThirdPartySignInUpSuccess = Extract<
 >;
 type GoogleThirdPartySignInUpSuccess = ThirdPartySignInUpSuccess & {
   rawUserInfoFromProvider: { fromIdTokenPayload: TokenPayload };
-  oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">;
+  oAuthTokens: Pick<Credentials, "refresh_token" | "access_token" | "scope">;
   user: { id: string; loginMethods: unknown[] };
   session?: SessionContainerInterface;
 };
