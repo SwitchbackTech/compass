@@ -1,0 +1,7 @@
+{
+  "plugins": {
+    "mongodb": {
+      "enabled": true
+    }
+  }
+}

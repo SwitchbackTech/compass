@@ -8,6 +8,7 @@
         "@compass/backend": "*",
         "@compass/core": "*",
         "module-alias": "^2.2.2",
+        "posthog-js": "^1.409.0",
         "tslib": "^2.4.0",
       },
       "devDependencies": {

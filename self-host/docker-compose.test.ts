@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -229,72 +236,80 @@ describe("self-host installer", () => {
     expect(manual).toContain("internalAuthToken: $SYNC_INTERNAL_AUTH_TOKEN");
   });
 
-  it("install.sh's own first-boot profile derivation includes sync (not just the downloaded helper's)", async () => {
-    // install.sh hard-codes 'selfhosted}' as its COMPOSE_PROFILES default for
-    // the very first `docker compose up` (start_stack), separately from the
-    // self-host/compass helper it downloads for later use. PR #2450 fixed the
-    // helper's derivation but not this duplicate — meaning a fresh sync:
-    // config would silently never start the sync container on first install.
-    // Exercise install.sh's OWN default_profiles(), the same way the helper's
-    // is exercised above, so this can't regress silently again.
-    const dir = makeTempDir();
-    const configPath = join(dir, "compass.yaml");
-    writeFileSync(
-      configPath,
-      [
-        "mongo:",
-        '  uri: "mongodb://user:pass@mongo:27017/compass"',
-        "sync:",
-        '  mongoUri: "mongodb://user:pass@mongo:27017/compass_sync"',
-      ].join("\n"),
-      { encoding: "utf8" },
+  it("uses the shared config helper in every self-host entry point", () => {
+    const helper = readRepoFile("self-host/compass");
+    const installer = readRepoFile("self-host/install.sh");
+    const manual = readRepoFile("self-host/install-manual.sh");
+
+    expect(readRepoFile("self-host/config.sh")).toContain("default_profiles()");
+    expect(helper).toContain("CONFIG_HELPER_FILE=$INSTALL_DIR/config.sh");
+    expect(helper).toContain('. "$CONFIG_HELPER_FILE"');
+    expect(installer).toContain("download_config_helper");
+    expect(installer).toContain('. "$CONFIG_HELPER_FILE"');
+    expect(manual).toContain("CONFIG_HELPER_FILE=$COMPASS_HOME/config.sh");
+    expect(manual).toContain('. "$CONFIG_HELPER_FILE"');
+    expect(manual).toContain("download_atomically");
+    expect(manual.indexOf('config.sh" "$CONFIG_HELPER_FILE')).toBeLessThan(
+      manual.indexOf('compass" "$HELPER_FILE'),
     );
 
-    const installer = readRepoFile("self-host/install.sh");
-    const fns = ["strip_quotes", "read_config_value", "default_profiles"]
-      .map((name) => {
-        const match = installer.match(
-          new RegExp(`^${name}\\(\\)[\\s\\S]*?^}`, "m"),
-        );
-        if (!match)
-          throw new Error(`missing shell function in install.sh: ${name}`);
-        return match[0];
-      })
-      .join("\n\n");
-    const fnsPath = join(dir, "fns.sh");
-    writeFileSync(fnsPath, `${fns}\n`, { encoding: "utf8" });
+    for (const source of [helper, installer, manual]) {
+      expect(source).not.toMatch(/^read_config_value\(\)/m);
+      expect(source).not.toMatch(/^strip_quotes\(\)/m);
+      expect(source).not.toMatch(/^default_profiles\(\)/m);
+    }
+
+    expect(installer).toContain(
+      'COMPOSE_PROFILES="' + "$" + '{COMPOSE_PROFILES-$(default_profiles)}"',
+    );
+    expect(manual).toContain(
+      'COMPOSE_PROFILES="' + "$" + '{COMPOSE_PROFILES-$(default_profiles)}"',
+    );
+
+    const deploy = readRepoFile(".github/workflows/_deploy-environment.yml");
+    expect(deploy).toContain("self-host/config.sh");
+    expect(deploy.indexOf("self-host/config.sh")).toBeLessThan(
+      deploy.lastIndexOf("self-host/compass"),
+    );
+  });
+
+  it("keeps an existing config helper when the manual install download fails", async () => {
+    const manual = readRepoFile("self-host/install-manual.sh");
+    const functionMatch = manual.match(/^download_atomically\(\)[\s\S]*?^}/m);
+    if (!functionMatch)
+      throw new Error("missing manual atomic download helper");
+
+    const dir = makeTempDir();
+    const helperPath = join(dir, "config.sh");
+    const fakeBin = join(dir, "bin");
+    const functionPath = join(dir, "download.sh");
+    writeFileSync(helperPath, "working helper\n", { encoding: "utf8" });
+    mkdirSync(fakeBin);
+    const fakeCurl = join(fakeBin, "curl");
+    writeFileSync(fakeCurl, '#!/bin/sh\nprintf partial > "$4"\nexit 1\n');
+    chmodSync(fakeCurl, 0o755);
+    writeFileSync(functionPath, `${functionMatch[0]}\n`, { encoding: "utf8" });
 
     const proc = Bun.spawn(
       [
-        "bash",
+        "sh",
         "-c",
-        `CONFIG_FILE="$1"; . "$2"; default_profiles`,
+        '. "$1"; download_atomically test "$2"',
         "--",
-        configPath,
-        fnsPath,
+        functionPath,
+        helperPath,
       ],
-      { cwd: repoRoot, stderr: "pipe", stdout: "pipe" },
+      {
+        cwd: repoRoot,
+        env: { ...process.env, PATH: `${fakeBin}:${process.env.PATH}` },
+        stderr: "pipe",
+        stdout: "pipe",
+      },
     );
-    const [stdout, exitCode] = await Promise.all([
-      new Response(proc.stdout).text(),
-      proc.exited,
-    ]);
-
-    expect(exitCode).toBe(0);
-    expect(stdout.trim()).toBe("selfhosted,sync");
-    expect(installer).toContain(
-      'export COMPOSE_PROFILES="' +
-        "$" +
-        '{COMPOSE_PROFILES-$(default_profiles)}"',
+    expect(await proc.exited).toBe(1);
+    expect(readFileSync(helperPath, { encoding: "utf8" })).toBe(
+      "working helper\n",
     );
-
-    // install-manual.sh has no config-driven derivation (it only ever writes
-    // the bundled mongo URI), so it hardcodes both profiles directly instead.
-    const manual = readRepoFile("self-host/install-manual.sh");
-    expect(manual).toContain(
-      'export COMPOSE_PROFILES="' + "$" + '{COMPOSE_PROFILES-selfhosted,sync}"',
-    );
-    expect(manual).not.toContain("COMPOSE_PROFILES-selfhost}");
   });
 });
 
@@ -306,28 +321,14 @@ async function runDefaultProfiles(configYaml: string) {
   const configPath = join(dir, "compass.yaml");
   writeFileSync(configPath, `${configYaml}\n`, { encoding: "utf8" });
 
-  // Lift the pure helpers out of the script so they can be exercised without
-  // running any docker command.
-  const helper = readRepoFile("self-host/compass");
-  const fns = ["strip_quotes", "read_config_value", "default_profiles"]
-    .map((name) => {
-      const match = helper.match(new RegExp(`^${name}\\(\\)[\\s\\S]*?^}`, "m"));
-      if (!match) throw new Error(`missing shell function: ${name}`);
-      return match[0];
-    })
-    .join("\n\n");
-
-  const fnsPath = join(dir, "fns.sh");
-  writeFileSync(fnsPath, `${fns}\n`, { encoding: "utf8" });
-
   const proc = Bun.spawn(
     [
-      "bash",
+      "sh",
       "-c",
       `CONFIG_FILE="$1"; . "$2"; default_profiles`,
       "--",
       configPath,
-      fnsPath,
+      join(repoRoot, "self-host/config.sh"),
     ],
     { cwd: repoRoot, stderr: "pipe", stdout: "pipe" },
   );
