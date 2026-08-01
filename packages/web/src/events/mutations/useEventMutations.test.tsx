@@ -9,6 +9,7 @@ import {
 } from "@core/types/event-command.contracts";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { EVENT_DELETED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { RECURRENCE_SCOPE_TOAST_ID } from "@web/common/utils/toast/recurrence-scope.toast";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
@@ -162,6 +163,8 @@ describe("useEventMutations", () => {
   });
 
   test("promotes a deleted occurrence even after the narrow optimistic delete removes it from cache", async () => {
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
     const context = setup();
     const seriesId = event().id;
     const first = occurrence(seriesId);
@@ -212,6 +215,12 @@ describe("useEventMutations", () => {
       });
     });
     context.pending.resolve();
+    await waitFor(() => {
+      expect(mocks.update).toHaveBeenCalledWith(
+        EVENT_DELETED_TOAST_ID,
+        expect.objectContaining({ render: expect.anything() }),
+      );
+    });
   });
 
   test("does not coalesce a promoted series edit behind a later narrow edit", async () => {
