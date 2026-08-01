@@ -47,6 +47,7 @@ import { type CommandRepository } from "@sync/storage/repositories/command.repos
 import { type DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
+import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 // The slice of credential custody the executor needs — a valid access token for
 // a connection, plus discard of a provider-invalidated grant. Narrow so tests
@@ -62,6 +63,9 @@ export interface ProviderMutationDeps {
   // The derived occurrence projection, rebuilt (or cleared, on delete) so a
   // provider-linked event appears in range queries.
   occurrences: EventOccurrenceRepository;
+  // Reads serve a calendar's active generation, so a create has to ask which
+  // generation that is rather than assume the calendar has never been repaired.
+  resources: SyncResourceRepository;
   writer: ProviderEventWriter;
   custody: AccessTokenSource;
 }
@@ -135,7 +139,21 @@ export async function executeProviderCreate(
   // Commit the provider identity to the canonical event and project its
   // occurrences, then confirm. Both run before confirmation, so a crash leaves
   // the command pending and a retry re-runs them idempotently.
-  const record = buildLinkedEventRecord(command, calendar, result, now());
+  // Ask which generation reads will serve this calendar before projecting, so
+  // a create onto a repaired calendar is visible immediately rather than
+  // waiting for a pull to reproject it.
+  const generations = await deps.resources.activeGenerationByCalendar(
+    command.tenantId,
+    command.principalId,
+    [input.calendarId],
+  );
+  const record = buildLinkedEventRecord(
+    command,
+    calendar,
+    result,
+    now(),
+    generations.get(input.calendarId) ?? 0,
+  );
   await deps.events.put(record);
   await reprojectOccurrences(deps.occurrences, record, now);
 
@@ -181,6 +199,7 @@ function buildLinkedEventRecord(
   calendar: ProviderCalendarRecord,
   result: ProviderWriteResult,
   now: Date,
+  generation: number,
 ): EventRecord {
   if (command.input.kind !== "create") {
     throw new Error("buildLinkedEventRecord requires a create command");
@@ -207,17 +226,14 @@ function buildLinkedEventRecord(
         ? { kind: "seriesMaster", rules: input.recurrence.rules }
         : { kind: "single" },
     lifecycleState: "active",
-    // generation 0 is correct in steady state (a calendar's active generation is
-    // 0 until a repair bumps it). The one gap it leaves is self-healing: if a
-    // repair has already advanced this calendar's active generation, a just-
-    // created event's occurrences land at generation 0 and reads (which serve
-    // the active generation) miss it — until the next incremental pull, which
-    // re-reads this event from the provider (it IS at the provider, linked here)
-    // and reprojects it at the active generation. Repairs are rare and pulls are
-    // frequent, so the window is small and closes on its own; resolving the
-    // active generation here would thread a resources dependency through the
-    // whole command path for a case that corrects itself.
-    generation: 0,
+    // The calendar's active generation, resolved by the caller — NOT a
+    // hardcoded 0. Reads serve the active generation, so on a calendar a
+    // repair has already advanced, generation-0 occurrences are invisible.
+    // That gap used to be left to "the next incremental pull will reproject
+    // it", which holds only while pulls are running: when the sweeps froze on
+    // 2026-07-31 the window stayed open for a day and users watched their new
+    // events save successfully to Google and then vanish from Compass.
+    generation,
     createdAt: now,
     updatedAt: now,
     confirmedAt: now,

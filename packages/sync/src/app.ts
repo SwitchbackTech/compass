@@ -513,6 +513,7 @@ function buildSchedulers(
             events: repos.events,
             calendars: repos.calendars,
             occurrences: repos.eventOccurrences,
+            resources: repos.syncResources,
             markers: repos.deletionMarkers,
             execution: config.EXECUTION,
             provider: {
