@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { SIDEBAR_AUTO_COLLAPSE_BREAKPOINT } from "@web/components/AuthenticatedLayout/responsive.constants";
@@ -41,8 +41,8 @@ function renderShell() {
       onCloseShortcuts={mock()}
       onToggleShortcuts={mock()}
       shortcutSections={[]}
-      SidebarActionsComponent={() => null}
-      ShortcutsOverlayComponent={() => null}
+      SidebarActionsComponent={() => <></>}
+      ShortcutsOverlayComponent={() => <></>}
     >
       <div>Sidebar body</div>
     </SidebarShell>,
@@ -89,17 +89,19 @@ describe("SidebarShell", () => {
 
   it("keeps dismiss available on narrow layouts while an event form is open", () => {
     mockViewport(true);
-    viewActions.setSidebarOpen(false);
-    draftActions.startGridDraft({
-      activity: "gridClick",
-      draft: createGridEventDraft(
-        timedGridSchedule(
-          new Date("2026-05-20T09:00:00.000Z"),
-          new Date("2026-05-20T10:00:00.000Z"),
+    act(() => {
+      viewActions.setSidebarOpen(false);
+      draftActions.startGridDraft({
+        activity: "gridClick",
+        draft: createGridEventDraft(
+          timedGridSchedule(
+            new Date("2026-05-20T09:00:00.000Z"),
+            new Date("2026-05-20T10:00:00.000Z"),
+          ),
         ),
-      ),
+      });
+      draftActions.setFormOpen(true);
     });
-    draftActions.setFormOpen(true);
 
     renderShell();
 

@@ -7,8 +7,11 @@ const originalMatchMedia = window.matchMedia;
 
 function mockMatchMedia(matchesMinWidth: boolean) {
   const listeners = new Set<(event: MediaQueryListEvent) => void>();
+  let matches = matchesMinWidth;
   const query = {
-    matches: matchesMinWidth,
+    get matches() {
+      return matches;
+    },
     media: `(min-width: ${SIDEBAR_AUTO_COLLAPSE_BREAKPOINT}px)`,
     onchange: null,
     addEventListener: mock(
@@ -32,14 +35,16 @@ function mockMatchMedia(matchesMinWidth: boolean) {
     }
     return {
       ...query,
-      matches: false,
+      get matches() {
+        return false;
+      },
       media,
     } as MediaQueryList;
   }) as typeof window.matchMedia;
 
   return {
     setMatches(next: boolean) {
-      query.matches = next;
+      matches = next;
       const event = { matches: next } as MediaQueryListEvent;
       listeners.forEach((listener) => listener(event));
     },
