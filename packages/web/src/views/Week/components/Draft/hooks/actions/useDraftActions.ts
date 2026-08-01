@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useRef } from "react";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
@@ -9,10 +8,7 @@ import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import { repositionDraftByKeyboard as applyDraftKeyboardReposition } from "@web/common/utils/draft/reposition-draft-by-keyboard.util";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
-import {
-  type GridEventDraft,
-  type GridScheduleDraft,
-} from "@web/events/event-draft.types";
+import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   parseGridEventDraft,
   replaceGridDraftSchedule,
@@ -23,7 +19,6 @@ import {
   selectDraftStatus,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { GRID_TIME_STEP } from "@web/grid/grid.constants";
 import {
   clearGestureEphemera,
   useDraftEffects,
@@ -37,6 +32,7 @@ import {
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { resolveDraftDragSchedule } from "./draft-drag-schedule.util";
+import { resizeDraft } from "./draft-resize.util";
 
 const scopeFromApplyTo = (
   applyTo: RecurringEventUpdateScope,
@@ -315,133 +311,12 @@ export const useDraftActions = (
     [applyDragPosition, dragOffset, dragStatus, isDragging],
   );
 
-  const isValidMovement = useCallback(
-    (currTime: dayjs.Dayjs, liveDraft: GridEventDraft) => {
-      if (!dateBeingChanged) return false;
-
-      const isAllDay = liveDraft.values.schedule.kind === "allDay";
-      if (isAllDay) {
-        return true;
-      }
-
-      const draftDate =
-        dateBeingChanged === "startDate"
-          ? liveDraft.values.schedule.start
-          : liveDraft.values.schedule.end;
-      const _currTime = currTime.format();
-      const noChange = dayjs(draftDate).format() === _currTime;
-
-      if (noChange) return false;
-
-      const diffDay =
-        currTime.day() !== dayjs(liveDraft.values.schedule.start).day();
-      if (diffDay) return false;
-
-      const sameStart =
-        _currTime === dayjs(liveDraft.values.schedule.start).format();
-      if (sameStart) return false;
-
-      return true;
-    },
-    [dateBeingChanged],
-  );
-
   const resize = useCallback(
     (e: MouseEvent) => {
       const liveDraft = readLiveDraft();
       // Freeze the origin against the gesture snapshot so live store updates
       // mid-gesture must not shift the resize baseline.
-      if (!liveDraft || !gestureOriginDraft) return;
-
-      const isAllDay = liveDraft.values.schedule.kind === "allDay";
-      const _dateBeingChanged = dateBeingChanged as "startDate" | "endDate";
-      const oppositeKey =
-        _dateBeingChanged === "startDate" ? "endDate" : "startDate";
-
-      // String mirrors of the draft's live schedule, formatted exactly as
-      // the legacy GridEvent draft stored them (all-day: day-only
-      // YEAR_MONTH_DAY_FORMAT strings; timed: full offset strings). The flip
-      // math below is unchanged dayjs-string arithmetic ported verbatim from
-      // before the GridEventDraft conversion, reading/writing through this
-      // mirror instead of native GridEvent fields.
-      const formatDraftDate = (date: Date) =>
-        isAllDay
-          ? dayjs(date).format(YEAR_MONTH_DAY_FORMAT)
-          : dayjs(date).format();
-      const draftDates: Record<"startDate" | "endDate", string> = {
-        startDate: formatDraftDate(liveDraft.values.schedule.start),
-        endDate: formatDraftDate(liveDraft.values.schedule.end),
-      };
-      const originDates: Record<"startDate" | "endDate", string> = {
-        startDate: formatDraftDate(gestureOriginDraft.values.schedule.start),
-        endDate: formatDraftDate(gestureOriginDraft.values.schedule.end),
-      };
-
-      let workingDraft = liveDraft;
-      let workingDateBeingChanged = dateBeingChanged;
-
-      const flipIfNeeded = (currTime: Dayjs) => {
-        let startDate = draftDates.startDate;
-        let endDate = draftDates.endDate;
-
-        let justFlipped = false;
-        let dateKey = workingDateBeingChanged;
-        const opposite = dayjs(draftDates[oppositeKey]);
-        const comparisonKeyword =
-          workingDateBeingChanged === "startDate" ? "after" : "before";
-
-        if (comparisonKeyword === "after") {
-          if (currTime.isAfter(opposite)) {
-            dateKey = oppositeKey;
-            startDate = draftDates.endDate;
-            workingDateBeingChanged = dateKey;
-            setDateBeingChanged(dateKey);
-
-            justFlipped = true;
-          }
-        } else if (comparisonKeyword === "before") {
-          if (currTime.isBefore(opposite)) {
-            workingDateBeingChanged = oppositeKey;
-            setDateBeingChanged(oppositeKey);
-            if (isAllDay) {
-              // For all-day events, move by day
-              startDate = dayjs(startDate)
-                .subtract(1, "day")
-                .format(YEAR_MONTH_DAY_FORMAT);
-              endDate = dayjs(startDate)
-                .add(1, "day")
-                .format(YEAR_MONTH_DAY_FORMAT);
-            } else {
-              // For timed events, move by time step
-              startDate = dayjs(startDate)
-                .subtract(GRID_TIME_STEP, "minutes")
-                .format();
-              endDate = dayjs(startDate)
-                .add(GRID_TIME_STEP, "minutes")
-                .format();
-            }
-
-            justFlipped = true;
-          }
-        }
-
-        setIsFormOpen(false);
-
-        const schedule: GridScheduleDraft = isAllDay
-          ? {
-              kind: "allDay",
-              start: dayjs(startDate).toDate(),
-              end: dayjs(endDate).toDate(),
-            }
-          : {
-              ...workingDraft.values.schedule,
-              start: dayjs(startDate).toDate(),
-              end: dayjs(endDate).toDate(),
-            };
-
-        workingDraft = replaceGridDraftSchedule(workingDraft, schedule);
-        return justFlipped;
-      };
+      if (!liveDraft || !gestureOriginDraft || !dateBeingChanged) return;
 
       e.preventDefault();
       e.stopPropagation();
@@ -449,60 +324,33 @@ export const useDraftActions = (
       if (!isResizing) return;
 
       // For all-day events, use a fixed Y coordinate (0) because Y positioning is irrelevant:
-      const y = isAllDay ? 0 : e.clientY;
+      const y = liveDraft.values.schedule.kind === "allDay" ? 0 : e.clientY;
       const currTime = dateCalcs.getDateByXY(
         e.clientX,
         y,
         weekProps.component.startOfView,
       );
 
-      if (!isValidMovement(currTime, workingDraft)) {
-        return;
-      }
+      const result = resizeDraft({
+        currTime,
+        dateBeingChanged,
+        draft: liveDraft,
+        origin: gestureOriginDraft,
+      });
+      if (!result) return;
 
-      const justFlipped = flipIfNeeded(currTime);
-      const dateChanged = justFlipped ? oppositeKey : _dateBeingChanged;
-
-      const origTime = dayjs(originDates[dateChanged]).add(-1, "day");
-
-      let updatedTime: string;
-      let hasMoved: boolean;
-
-      if (isAllDay) {
-        // For all-day events, work with day differences
-        const diffDays = currTime.diff(origTime, "day", true);
-        updatedTime = currTime
-          .add(dateChanged === "endDate" ? 1 : 0, "day")
-          .format(YEAR_MONTH_DAY_FORMAT);
-        hasMoved = diffDays !== 0;
-      } else {
-        // For timed events, work with minute differences
-        const diffMin = currTime.diff(origTime, "minute");
-        updatedTime = origTime.add(diffMin, "minutes").format();
-        hasMoved = diffMin !== 0;
-      }
-
-      if (!resizeStatus?.hasMoved && hasMoved) {
+      setIsFormOpen(false);
+      if (result.flippedTo) setDateBeingChanged(result.flippedTo);
+      if (!resizeStatus?.hasMoved && result.hasMoved) {
         setResizeStatus({ hasMoved: true });
       }
-
-      const nextSchedule: GridScheduleDraft = {
-        ...workingDraft.values.schedule,
-        ...(dateChanged === "startDate"
-          ? { start: dayjs(updatedTime).toDate() }
-          : { end: dayjs(updatedTime).toDate() }),
-      } as GridScheduleDraft;
-
-      draftActions.setGridDraft(
-        replaceGridDraftSchedule(workingDraft, nextSchedule),
-      );
+      draftActions.setGridDraft(result.draft);
     },
     [
       dateBeingChanged,
       dateCalcs,
       gestureOriginDraft,
       isResizing,
-      isValidMovement,
       resizeStatus?.hasMoved,
       setDateBeingChanged,
       setIsFormOpen,
