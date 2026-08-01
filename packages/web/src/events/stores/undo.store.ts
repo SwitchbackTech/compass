@@ -71,6 +71,17 @@ export const runHistoryRestore = (fn: () => void) => {
 const coalesceTargetId = (entry: UndoHistoryEntry): string | null =>
   entry.kind === "edit" ? entry.id : null;
 
+const entryEvent = (entry: UndoHistoryEntry): Event =>
+  entry.kind === "edit" ? entry.before : entry.event;
+
+const entrySeriesId = (entry: UndoHistoryEntry): string | null => {
+  const event = entryEvent(entry);
+  if (event.recurrence.kind === "occurrence") {
+    return event.recurrence.seriesId;
+  }
+  return event.recurrence.kind === "series" ? event.id : null;
+};
+
 export const undoHistoryActions = {
   // Consecutive edits to the SAME event within COALESCE_WINDOW_MS merge into
   // one history entry (keep the run's first `before`, take its last
@@ -172,6 +183,20 @@ export const undoHistoryActions = {
       (state) => ({ future: state.future.slice(0, -1) }),
       false,
       { type: "dropTopRedo" },
+    ),
+
+  // A scope-all/following operation rewrites this series, invalidating only
+  // its narrow snapshots. Keep independent event history intact.
+  discardSeries: (seriesId: string): void =>
+    useUndoHistoryStore.setState(
+      (state) => ({
+        past: state.past.filter((entry) => entrySeriesId(entry) !== seriesId),
+        future: state.future.filter(
+          (entry) => entrySeriesId(entry) !== seriesId,
+        ),
+      }),
+      false,
+      { type: "discardSeries" },
     ),
 
   clear: (): void =>

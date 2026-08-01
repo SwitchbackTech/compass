@@ -87,10 +87,6 @@ export const resolveRecurrenceScopeDecision = (
   input: ResolveRecurrenceScopeDecisionInput,
 ): RecurrenceScopeDecision => {
   if (input.action === "delete") {
-    if (input.isRecurring) {
-      return { kind: "prompt" };
-    }
-
     return { kind: "apply", scope: RecurringEventUpdateScope.THIS_EVENT };
   }
 
@@ -106,13 +102,19 @@ export const resolveRecurrenceScopeDecision = (
     return { kind: "apply", scope: RecurringEventUpdateScope.THIS_EVENT };
   }
 
-  if (confirmAllRecurringEdits) {
-    if (isRecurring) {
-      return { kind: "prompt" };
-    }
-
+  // Ordinary occurrence changes stay in flow: apply to this instance now and
+  // let the live toast promote the exact mutation to following/all. An
+  // explicit recurrence edit remains structural, so it keeps the existing
+  // scope chooser below — "this" is not a valid rule-change operation.
+  if (
+    isRecurring &&
+    isInstance &&
+    draft.values.recurrence.kind === "preserve"
+  ) {
     return { kind: "apply", scope: RecurringEventUpdateScope.THIS_EVENT };
   }
+
+  if (confirmAllRecurringEdits && isRecurring) return { kind: "prompt" };
 
   const rule = getScopeDecisionRecurrenceRule(draft, baseEvent);
   const toStandAlone = isInstance && rule === null;

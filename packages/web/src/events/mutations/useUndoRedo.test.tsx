@@ -7,9 +7,13 @@ import {
   type CreateEventInput,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { EVENT_DELETED_TOAST_ID } from "@web/common/constants/toast.constants";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
+import { useRecurrenceScopeOpportunityStore } from "@web/events/recurrence/recurrence-scope-opportunity.store";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import { useUndoHistoryStore } from "@web/events/stores/undo.store";
 import { useEventMutations } from "./useEventMutations";
@@ -250,6 +254,8 @@ describe("useUndoRedo", () => {
     event({ recurrence: { kind: "occurrence", seriesId }, ...overrides });
 
   test("undoes a recurring occurrence delete by replaying it back (un-cancel), not recreating", async () => {
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
     const context = setup();
     const seriesId = event().id;
     const instance = occurrence(seriesId);
@@ -269,6 +275,8 @@ describe("useUndoRedo", () => {
     });
 
     act(() => context.hook.result.current.undoRedo.undo());
+
+    expect(mocks.dismiss).toHaveBeenCalledWith(EVENT_DELETED_TOAST_ID);
 
     await waitFor(() => {
       expect(
@@ -341,6 +349,60 @@ describe("useUndoRedo", () => {
           "preserve",
       ),
     ).toBe(true);
+  });
+
+  test("keeps an unrelated live recurrence offer when undoing a later change", async () => {
+    const context = setup();
+    const seriesId = event().id;
+    const instance = occurrence(seriesId);
+    const other = event({
+      content: { kind: "details", title: "Other", description: "" },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(instance, other));
+
+    act(() =>
+      context.hook.result.current.mutations.replace({
+        id: instance.id,
+        input: {
+          content: { kind: "details", title: "Changed", description: "" },
+          schedule: instance.schedule as never,
+          recurrence: { kind: "preserve" },
+          scope: "this",
+        },
+      }),
+    );
+    await waitFor(() =>
+      expect(
+        useRecurrenceScopeOpportunityStore.getState().opportunity,
+      ).toMatchObject({
+        original: { id: instance.id },
+        status: "ready",
+      }),
+    );
+
+    act(() =>
+      context.hook.result.current.mutations.replace({
+        id: other.id,
+        input: {
+          content: { kind: "details", title: "Later", description: "" },
+          schedule: other.schedule as never,
+          recurrence: { kind: "preserve" },
+          scope: "this",
+        },
+      }),
+    );
+    await waitFor(() => {
+      expect(context.hook.result.current.undoRedo.canUndo).toBe(true);
+    });
+
+    act(() => context.hook.result.current.undoRedo.undo());
+
+    expect(
+      useRecurrenceScopeOpportunityStore.getState().opportunity,
+    ).toMatchObject({
+      original: { id: instance.id },
+      status: "ready",
+    });
   });
 
   test("declines an edit undo when the event changed since it was recorded (stale)", async () => {
