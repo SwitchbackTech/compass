@@ -30,7 +30,10 @@ export type UseConnectGoogleResult = GoogleUiConfig & {
   connect: () => void;
   /**
    * Enqueue Sync catch-up pulls for the signed-in user's calendars. Used by
-   * the ATTENTION / delayed Refresh CTA and delayed toast.
+   * the ATTENTION / delayed Refresh CTA, the delayed toast, and an automatic
+   * focus-triggered check (useSyncFocusRefresh). Pass `silent: true` for a
+   * background trigger the user didn't ask for, so a transient failure
+   * doesn't surface an error toast or close an open command palette.
    */
-  refresh: () => void;
+  refresh: (options?: { silent?: boolean }) => void;
 };

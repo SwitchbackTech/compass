@@ -36,11 +36,12 @@ describe("useSyncFocusRefresh", () => {
     setSystemTime();
   });
 
-  it("refreshes on mount for a healthy connection", () => {
+  it("silently refreshes on mount for a healthy connection", () => {
     const refresh = mock();
     renderHook(() => useSyncFocusRefresh(() => fakeConnectGoogle({ refresh })));
 
     expect(refresh).toHaveBeenCalledTimes(1);
+    expect(refresh).toHaveBeenCalledWith({ silent: true });
   });
 
   it("refreshes on mount for an ATTENTION connection", () => {
@@ -91,6 +92,7 @@ describe("useSyncFocusRefresh", () => {
     });
 
     expect(refresh).toHaveBeenCalledTimes(1);
+    expect(refresh).toHaveBeenCalledWith({ silent: true });
   });
 
   it("does not refresh on a short hide", () => {
