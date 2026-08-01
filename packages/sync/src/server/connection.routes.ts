@@ -1,6 +1,7 @@
 import { type Express, type RequestHandler, type Response } from "express";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
+import { decryptInternalCredential } from "@core/security/internal-credential-envelope";
 import {
   BusyAvailabilityRequestSchema,
   type BusyAvailabilityResponse,
@@ -10,6 +11,7 @@ import {
   type CalendarListResponse,
   type ConnectionListResponse,
   ConnectionRefreshResponseSchema,
+  GoogleConnectionAdoptionRequestSchema,
   type ProviderCalendar,
   ProviderCalendarSchema,
   type ProviderConnection,
@@ -68,6 +70,8 @@ export const EVENTS_FULL_PATH = "/internal/events/full";
 export const AVAILABILITY_BUSY_PATH = "/internal/availability/busy";
 export const BEGIN_PATH = "/internal/connections/begin";
 export const REFRESH_PATH = "/internal/connections/refresh";
+export const ADOPT_GOOGLE_AUTHORIZATION_PATH =
+  "/internal/connections/adopt-google-authorization";
 // Where the provider redirects the browser after consent; `begin` builds the
 // redirect_uri from it and the public callback route below mounts on it.
 // Public reverse-proxy path (Caddy `/sync/*` → sync). Must match the Google
@@ -106,6 +110,8 @@ export interface ConnectionApiDeps {
   postConnectRedirectUrl: string;
   // Injectable clock so state issuance/verification is deterministic in tests.
   now?: () => number;
+  // Shared secret that encrypts credentials on the Compass API → Sync hop.
+  credentialEncryptionSecret: string;
 }
 
 // Internal, authenticated connection endpoints. The tenant/principal comes from
@@ -479,6 +485,60 @@ export function registerConnectionRoutes(
         redirectUri: `${deps.callbackBaseUrl}${OAUTH_CALLBACK_PATH}`,
       });
       res.status(Status.OK).json({ authorizationUrl });
+    },
+  );
+
+  // The regular Compass Google sign-in flow already exchanged consent with
+  // Google. Adopt that server-side authorization into Sync so sign-up creates
+  // the same connection and initial import as the dedicated Connect flow.
+  app.post(
+    ADOPT_GOOGLE_AUTHORIZATION_PATH,
+    internalRateLimit,
+    deps.authMiddleware,
+    async (req, res) => {
+      const auth = requireAuth(req, res);
+      if (!auth) return;
+      if (!ensureConnected(deps.mongo, res)) return;
+      if (deps.execution === "passive" || !deps.authAdapter) {
+        res.status(Status.CONFLICT).json({ error: "provider_work_disabled" });
+        return;
+      }
+
+      const parsed = GoogleConnectionAdoptionRequestSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(Status.BAD_REQUEST).json({ error: "invalid_authorization" });
+        return;
+      }
+
+      try {
+        const refreshToken = decryptInternalCredential(
+          deps.credentialEncryptionSecret,
+          parsed.data.credential,
+          {
+            tenantId: auth.tenantId,
+            principalId: auth.principalId,
+            account: parsed.data.account,
+            grantedScopes: parsed.data.grantedScopes,
+          },
+        );
+        await linkConnection(
+          deps,
+          deps.authAdapter,
+          {
+            tenantId: auth.tenantId,
+            principalId: auth.principalId,
+            connectionId: null,
+          },
+          { ...parsed.data, refreshToken },
+        );
+        res.status(Status.OK).json({});
+      } catch (error) {
+        logger.error(
+          "Failed to adopt Google authorization",
+          redactedCause(error),
+        );
+        respondInternalError(res);
+      }
     },
   );
 

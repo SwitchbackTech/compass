@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { NodeEnv } from "@core/constants/core.constants";
+import { encryptInternalCredential } from "@core/security/internal-credential-envelope";
 import {
   type ConnectionId,
   type PrincipalId,
@@ -22,6 +23,7 @@ import {
 } from "@sync/providers/provider-auth.port";
 import { COMMANDS_PATH } from "@sync/server/command.routes";
 import {
+  ADOPT_GOOGLE_AUTHORIZATION_PATH,
   BEGIN_PATH,
   CALENDARS_PATH,
   CONNECTIONS_PATH,
@@ -797,6 +799,138 @@ describe("GET /sync/google", () => {
 
     expect(statusOf(res)).toBe("error");
     expect(adapter.exchanges).toHaveLength(0);
+  });
+});
+
+describe("POST /internal/connections/adopt-google-authorization", () => {
+  let mongo: SyncMongoService;
+  let connections: ProviderConnectionRepository;
+  let credentials: CredentialRepository;
+  let service: SyncService;
+  let base: string;
+
+  const startService = async () => {
+    service = createSyncService(testConfig({ EXECUTION: "active" }), {
+      mongo,
+      authAdapter: new FakeAuthAdapter(),
+    });
+    await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
+    const { port } = service.httpServer.address() as AddressInfo;
+    base = `http://127.0.0.1:${port}`;
+  };
+
+  beforeEach(() => {
+    mongo = storage.mongo();
+    connections = new ProviderConnectionRepository(mongo.db);
+    credentials = new CredentialRepository(mongo.db);
+  });
+
+  afterEach(async () => {
+    await service?.stop();
+  });
+
+  it("adopts a signed Google authorization and bootstraps its import", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const account = {
+      providerAccountId: "google-sub-from-signin",
+      email: "connected@example.com",
+      displayName: "Connected User",
+    };
+    const grantedScopes = [
+      "https://www.googleapis.com/auth/calendar.readonly",
+      "https://www.googleapis.com/auth/calendar.events",
+    ];
+    await startService();
+
+    const res = await fetch(`${base}${ADOPT_GOOGLE_AUTHORIZATION_PATH}`, {
+      method: "POST",
+      headers: {
+        ...signedHeaders(tenantId, principalId),
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        account,
+        credential: encryptInternalCredential(
+          SECRET,
+          "server-exchanged-refresh-token",
+          { tenantId, principalId, account, grantedScopes },
+        ),
+        grantedScopes,
+      }),
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({});
+    const [connection] = await connections.listByPrincipal(
+      tenantId as TenantId,
+      principalId as PrincipalId,
+    );
+    expect(connection?.state).toBe("importing");
+    expect(connection?.account.providerAccountId).toBe(
+      "google-sub-from-signin",
+    );
+    const stored = await credentials.findByConnection(connection!._id);
+    expect(stored?.refreshToken).toBe("server-exchanged-refresh-token");
+    const job = await mongo.db.collection(SYNC_COLLECTIONS.jobs).findOne({
+      coalescingKey: `calendarListSync:${connection!._id}`,
+    });
+    expect(job?.kind).toBe("calendarListSync");
+  });
+
+  it("rejects an envelope replayed under another principal", async () => {
+    const tenantId = objectId();
+    const sourcePrincipalId = objectId();
+    const targetPrincipalId = objectId();
+    const account = {
+      providerAccountId: "google-sub-from-signin",
+      email: "connected@example.com",
+      displayName: "Connected User",
+    };
+    const grantedScopes = ["https://www.googleapis.com/auth/calendar.events"];
+    await startService();
+
+    const res = await fetch(`${base}${ADOPT_GOOGLE_AUTHORIZATION_PATH}`, {
+      method: "POST",
+      headers: {
+        ...signedHeaders(tenantId, targetPrincipalId),
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        account,
+        credential: encryptInternalCredential(
+          SECRET,
+          "server-exchanged-refresh-token",
+          {
+            tenantId,
+            principalId: sourcePrincipalId,
+            account,
+            grantedScopes,
+          },
+        ),
+        grantedScopes,
+      }),
+    });
+
+    expect(res.status).toBe(500);
+    await expect(
+      connections.listByPrincipal(
+        tenantId as TenantId,
+        targetPrincipalId as PrincipalId,
+      ),
+    ).resolves.toEqual([]);
+  });
+
+  it("rejects an unsigned authorization adoption", async () => {
+    await startService();
+
+    const res = await fetch(`${base}${ADOPT_GOOGLE_AUTHORIZATION_PATH}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({}),
+    });
+
+    expect(res.status).toBe(401);
   });
 });
 

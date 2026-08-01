@@ -51,6 +51,38 @@ export const ProviderAccountFactsSchema = z.strictObject({
 });
 export type ProviderAccountFacts = z.infer<typeof ProviderAccountFactsSchema>;
 
+// Opaque authenticated-encryption envelope for credentials sent between the
+// Compass API and Sync services. The browser never sees this transport type.
+export const EncryptedCredentialEnvelopeSchema = z.strictObject({
+  iv: z.string().base64().min(1).max(128),
+  ciphertext: z.string().base64().min(1).max(8192),
+  authTag: z.string().base64().min(1).max(128),
+});
+export type EncryptedCredentialEnvelope = z.infer<
+  typeof EncryptedCredentialEnvelopeSchema
+>;
+
+// Trusted Compass API → Sync handoff after the normal Google sign-in flow has
+// exchanged an authorization code. This is intentionally an internal contract:
+// the browser never receives or submits the credential.
+export const GoogleConnectionAdoptionRequestSchema = z.strictObject({
+  account: ProviderAccountFactsSchema,
+  credential: EncryptedCredentialEnvelopeSchema,
+  grantedScopes: z
+    .array(z.string().trim().min(1).max(512))
+    .min(1)
+    .max(64)
+    .readonly(),
+});
+export type GoogleConnectionAdoptionRequest = z.infer<
+  typeof GoogleConnectionAdoptionRequestSchema
+>;
+
+export const GoogleConnectionAdoptionResponseSchema = z.strictObject({});
+export type GoogleConnectionAdoptionResponse = z.infer<
+  typeof GoogleConnectionAdoptionResponseSchema
+>;
+
 const STATES_WITH_REASON: ReadonlySet<ConnectionState> = new Set([
   "delayed",
   "actionRequired",

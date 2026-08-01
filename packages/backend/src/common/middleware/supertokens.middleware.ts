@@ -12,6 +12,7 @@ import UserMetadata from "supertokens-node/recipe/usermetadata";
 import { APP_NAME } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
+import { GOOGLE_AUTH_SCOPES } from "@backend/auth/services/google/google.auth.scopes";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { isGoogleConfigured } from "@backend/common/constants/config.util";
 import {
@@ -24,12 +25,6 @@ import {
   sendPasswordResetEmail,
 } from "@backend/common/middleware/supertokens.middleware.handlers";
 
-const GOOGLE_SCOPES = [
-  "https://www.googleapis.com/auth/userinfo.email",
-  "https://www.googleapis.com/auth/calendar.readonly",
-  "https://www.googleapis.com/auth/calendar.events",
-];
-
 const createGoogleProvider = (
   clientId: string,
   clientSecret: string,
@@ -41,7 +36,7 @@ const createGoogleProvider = (
         clientType: "web",
         clientId,
         clientSecret,
-        scope: GOOGLE_SCOPES,
+        scope: GOOGLE_AUTH_SCOPES,
       },
     ],
   },

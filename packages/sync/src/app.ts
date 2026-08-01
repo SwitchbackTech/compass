@@ -103,6 +103,7 @@ export function createSyncService(
         // secret (domain-separated from internal-auth signing); the callback
         // resolves against the public base URL.
         stateSecret: deriveOAuthStateSecret(config.INTERNAL_AUTH_TOKEN),
+        credentialEncryptionSecret: config.INTERNAL_AUTH_TOKEN,
         callbackBaseUrl: config.CALLBACK_BASE_URL,
         // Fall back to the callback base when no explicit redirect is set.
         postConnectRedirectUrl:
