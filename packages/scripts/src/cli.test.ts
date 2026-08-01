@@ -9,9 +9,6 @@ const mockRunPurgeUser = mock((): Promise<void> => Promise.resolve());
 const mockRunRepairRecurringSeries = mock(
   (): Promise<void> => Promise.resolve(),
 );
-const mockRunRepairLegacySeriesWeekday = mock(
-  (): Promise<void> => Promise.resolve(),
-);
 
 mock.module("@scripts/cli.validator", () => ({
   CliValidator: mock().mockImplementation(() => ({
@@ -30,10 +27,6 @@ mock.module("@scripts/commands/purge-user", () => ({
 mock.module("@scripts/commands/repair-recurring-series", () => ({
   __esModule: true,
   runRepairRecurringSeries: mock(() => mockRunRepairRecurringSeries()),
-}));
-mock.module("@scripts/commands/repair-legacy-series-weekday", () => ({
-  __esModule: true,
-  runRepairLegacySeriesWeekday: mock(() => mockRunRepairLegacySeriesWeekday()),
 }));
 
 const { default: CompassCLI } = requireActual(
@@ -67,14 +60,6 @@ describe("CompassCLI", () => {
     await cli.run();
 
     expect(mockRunRepairRecurringSeries).toHaveBeenCalled();
-  });
-
-  it("runs repair-legacy-series-weekday command", async () => {
-    const cli = new CompassCLI(["node", "cli", "repair-legacy-series-weekday"]);
-
-    await cli.run();
-
-    expect(mockRunRepairLegacySeriesWeekday).toHaveBeenCalled();
   });
 
   it("calls exitHelpfully for unsupported command", async () => {
