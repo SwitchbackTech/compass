@@ -1,5 +1,9 @@
 import { Logger } from "@core/logger/winston.logger";
 import {
+  SYNC_RECONCILE_SWEEP_EVENT,
+  SyncReconcileSweepEventSchema,
+} from "@core/types/sync/health.contracts";
+import {
   createInternalAuthMiddleware,
   createInternalServiceAuthMiddleware,
 } from "@sync/auth/internal-auth";
@@ -37,6 +41,7 @@ import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { syncRepositories } from "@sync/storage/sync-repositories";
 import { emitHealthSnapshot } from "@sync/telemetry/health-snapshot.service";
 import {
+  captureSafely,
   createPostHogCaptureClient,
   DEFAULT_POSTHOG_HOST,
   type PostHogCaptureClient,
@@ -225,7 +230,12 @@ async function start(): Promise<void> {
     // Active, provider-configured deployments also drain jobs and renew
     // channels. Those register AFTER the mongo drain so teardown stops them
     // first and closes mongo last.
-    const schedulers = buildSchedulers(config, mongo);
+    const schedulers = buildSchedulers(
+      config,
+      mongo,
+      service.identity,
+      posthog,
+    );
     if (schedulers) {
       service.shutdown.register("scheduler", async () => {
         // Stop every drain; each releases only its own owner's held jobs.
@@ -350,6 +360,8 @@ function buildRetentionSweep(mongo: SyncMongoService): SweepScheduler {
 function buildSchedulers(
   config: SyncConfig,
   mongo: SyncMongoService,
+  identity: ReturnType<typeof buildServiceIdentity>,
+  posthog: PostHogCaptureClient | null,
 ): {
   drains: SyncScheduler[];
   reconcile: SweepScheduler;
@@ -425,6 +437,22 @@ function buildSchedulers(
         if (enqueued > 0) {
           logger.info(`Sync reconcile sweep enqueued ${enqueued} pull(s)`);
         }
+        // Captured on every cycle, including enqueued: 0 — this is a
+        // liveness heartbeat, not a backlog report (the health snapshot's
+        // jobs.pending already covers backlog, and is too coarse a sample
+        // rate to catch a queue that drains in seconds; see the event's own
+        // doc comment). An alert built on "N of these landed in the last
+        // hour" can't be fooled by sampling gaps the way a periodic gauge
+        // read can.
+        await captureSafely(posthog, {
+          event: SYNC_RECONCILE_SWEEP_EVENT,
+          distinctId: "compass-sync",
+          properties: SyncReconcileSweepEventSchema.parse({
+            environment: identity.environment,
+            service: "compass-sync",
+            enqueued,
+          }),
+        });
         return enqueued;
       },
     },
