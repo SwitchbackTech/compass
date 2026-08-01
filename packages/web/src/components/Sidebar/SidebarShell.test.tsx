@@ -76,7 +76,7 @@ describe("SidebarShell", () => {
     await user.click(closeButton);
 
     expect(
-      screen.getByRole("button", { name: "Open sidebar" }),
-    ).toBeInTheDocument();
+      screen.queryByRole("button", { name: "Close sidebar" }),
+    ).not.toBeInTheDocument();
   });
 });

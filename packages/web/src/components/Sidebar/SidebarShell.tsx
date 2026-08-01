@@ -1,6 +1,10 @@
 import { type HTMLAttributes, type ReactNode } from "react";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
+import {
+  selectIsSidebarOpen,
+  useViewStore,
+} from "@web/events/stores/view.store";
 import { useIsNarrowSidebarLayout } from "./hooks/useIsNarrowSidebarLayout";
 import { ShortcutsOverlay } from "./ShortcutsOverlay/ShortcutsOverlay";
 import { SidebarActions } from "./SidebarActions/SidebarActions";
@@ -29,6 +33,10 @@ export function SidebarShell({
   ...props
 }: SidebarShellProps) {
   const isNarrowLayout = useIsNarrowSidebarLayout();
+  const isSidebarOpen = useViewStore(selectIsSidebarOpen);
+  // Only while open: during the collapse transition the shell stays mounted,
+  // and a still-rendered toggle would duplicate the header's "Open sidebar".
+  const showSidebarClose = isNarrowLayout && isSidebarOpen;
 
   return (
     <aside
@@ -37,7 +45,7 @@ export function SidebarShell({
       className="relative flex h-full w-full min-w-0 flex-col overflow-hidden bg-surface-panel pt-5 text-text"
       id={ID_SIDEBAR}
     >
-      {isNarrowLayout ? (
+      {showSidebarClose ? (
         <div className="flex shrink-0 items-center justify-end px-5 pb-2">
           <SidebarToggleButton />
         </div>

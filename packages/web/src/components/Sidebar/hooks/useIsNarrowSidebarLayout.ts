@@ -8,12 +8,11 @@ import { SIDEBAR_AUTO_COLLAPSE_BREAKPOINT } from "@web/components/AuthenticatedL
  * control.
  */
 export function useIsNarrowSidebarLayout() {
-  const [isNarrow, setIsNarrow] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return !window.matchMedia(
-      `(min-width: ${SIDEBAR_AUTO_COLLAPSE_BREAKPOINT}px)`,
-    ).matches;
-  });
+  const [isNarrow, setIsNarrow] = useState(
+    () =>
+      !window.matchMedia(`(min-width: ${SIDEBAR_AUTO_COLLAPSE_BREAKPOINT}px)`)
+        .matches,
+  );
 
   useLayoutEffect(() => {
     const query = window.matchMedia(
