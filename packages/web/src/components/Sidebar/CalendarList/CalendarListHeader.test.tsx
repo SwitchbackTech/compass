@@ -194,8 +194,8 @@ describe("CalendarListHeader", () => {
     expect(email.tagName).toBe("SPAN");
     expect(email).toHaveClass("text-text");
     expect(email).not.toHaveClass("c-sync-text-wave");
-    expect(screen.getByRole("status")).toHaveTextContent("Calendar up-to-date");
-    expect(screen.queryByText(/Last synced/)).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("Calendar connected");
+    expect(screen.queryByText(/Updated/)).toBeNull();
 
     await user.hover(email);
     expect(screen.queryByRole("tooltip")).toBeNull();
@@ -220,26 +220,25 @@ describe("CalendarListHeader", () => {
 
     renderHeader();
 
-    expect(screen.getByRole("status")).toHaveTextContent("Calendar up-to-date");
-    expect(screen.getByText("Last synced just now")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Calendar connected");
+    expect(screen.getByText("Updated just now")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Google Calendar/ }),
     ).toBeNull();
   });
 
-  it.each([
-    ["IMPORTING", "Syncing your calendar…"],
-    ["checking", "Checking calendar status…"],
-  ] as const)("shows the visible %s status for %s", async (state, status) => {
+  it("shows setup status only while the first calendar import is in progress", async () => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
-    mockGoogleState = state;
+    mockGoogleState = "IMPORTING";
 
     renderHeader();
 
     const email = screen.getByText("ahab@pequod.com");
     expect(email).toHaveClass("c-sync-text-wave");
-    expect(screen.getByRole("status")).toHaveTextContent(status);
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Adding your calendar…",
+    );
 
     await user.hover(email);
     expect(screen.queryByRole("tooltip")).toBeNull();
@@ -257,7 +256,7 @@ describe("CalendarListHeader", () => {
     expect(email).toHaveClass("text-text");
     expect(email).not.toHaveClass("text-warning");
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Calendar needs a refresh",
+      "Calendar updates are taking longer than usual. We'll keep trying.",
     );
     expect(screen.getByRole("status")).toHaveClass("text-warning");
 
@@ -340,7 +339,7 @@ describe("CalendarListHeader", () => {
       name: "Refreshing…",
     });
     expect(screen.getByRole("status")).toHaveTextContent(
-      "Requesting a calendar refresh…",
+      "Calendar updates are taking longer than usual. We'll keep trying.",
     );
     expect(refreshButton).toBeDisabled();
     expect(refreshButton).toHaveAttribute("aria-busy", "true");
@@ -379,7 +378,7 @@ describe("CalendarListHeader", () => {
     );
   });
 
-  it("uses the same syncing copy for an in-progress reconciliation", () => {
+  it("keeps an established calendar calm during reconciliation", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "HEALTHY";
     userMetadataActions.set({
@@ -398,10 +397,8 @@ describe("CalendarListHeader", () => {
 
     renderHeader();
 
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Syncing your calendar…",
-    );
-    expect(screen.queryByText("Catching up your calendar…")).toBeNull();
-    expect(screen.queryByText(/Last synced/)).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("Calendar connected");
+    expect(screen.queryByText("Adding your calendar…")).toBeNull();
+    expect(screen.getByText("Updated just now")).toBeInTheDocument();
   });
 });

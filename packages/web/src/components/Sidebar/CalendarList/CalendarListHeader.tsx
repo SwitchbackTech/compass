@@ -52,13 +52,11 @@ const getSidebarSyncStatus = ({
   googleStatus,
   hasPendingEventMutations,
   isConnecting,
-  isRefreshing,
   state,
 }: {
   googleStatus: SyncStatus;
   hasPendingEventMutations: boolean;
   isConnecting: boolean;
-  isRefreshing: boolean;
   state: GoogleUiState;
 }): SyncStatus => {
   if (isConnecting) {
@@ -69,10 +67,6 @@ const getSidebarSyncStatus = ({
           ? "Reconnecting your calendar…"
           : "Connecting your calendar…",
     };
-  }
-
-  if (isRefreshing) {
-    return { variant: "syncing", text: "Requesting a calendar refresh…" };
   }
 
   if (googleStatus && googleStatus.variant !== "healthy") {
@@ -154,7 +148,6 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
     googleStatus: getGoogleSyncStatus(state, syncConnection),
     hasPendingEventMutations,
     isConnecting,
-    isRefreshing,
     state,
   });
   const isSyncing =

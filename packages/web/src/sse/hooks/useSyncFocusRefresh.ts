@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { type UseConnectGoogleResult } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { useVisibleAfterHidden } from "@web/common/hooks/useVisibleAfterHidden";
@@ -30,12 +30,17 @@ export const useSyncFocusRefresh = (
   useConnectGoogleImpl: () => UseConnectGoogleResult = useConnectGoogle,
 ) => {
   const { isAvailable, refresh, state } = useConnectGoogleImpl();
+  const didRefreshOnMount = useRef(false);
   const canRefresh =
     isAvailable && (state === "HEALTHY" || state === "ATTENTION");
   const silentRefresh = useCallback(() => refresh({ silent: true }), [refresh]);
 
   useEffect(() => {
-    if (!canRefresh) return;
+    if (!canRefresh || didRefreshOnMount.current) return;
+    // Metadata briefly changes the connection state while a refresh is
+    // requested. A mount refresh must not run again when that state settles,
+    // or every completion enqueues another pull forever.
+    didRefreshOnMount.current = true;
     silentRefresh();
   }, [canRefresh, silentRefresh]);
 
