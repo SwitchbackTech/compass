@@ -28,10 +28,12 @@ const googleCommandActionFor = (state: GoogleUiState) => {
   }
 };
 let mockIsConnecting = false;
+let mockIsRefreshing = false;
 const mockUseConnectGoogle = mock(() => ({
   state: mockGoogleState,
   isAvailable: true,
   isConnecting: mockIsConnecting,
+  isRefreshing: mockIsRefreshing,
   commandAction: googleCommandActionFor(mockGoogleState),
 }));
 
@@ -109,6 +111,7 @@ describe("CalendarListHeader", () => {
     mockEmail = undefined;
     mockGoogleState = "NOT_CONNECTED";
     mockIsConnecting = false;
+    mockIsRefreshing = false;
     mockIsAnonymousDirty = false;
     mockOpenModal.mockClear();
     mockUseConnectGoogle.mockClear();
@@ -180,7 +183,7 @@ describe("CalendarListHeader", () => {
     expect(mockConnectGoogle).toHaveBeenCalledTimes(1);
   });
 
-  it("renders a plain email heading without a connect button when Google is healthy", async () => {
+  it("shows a healthy status without a connect button when Google is healthy", async () => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "HEALTHY";
@@ -191,7 +194,7 @@ describe("CalendarListHeader", () => {
     expect(email.tagName).toBe("SPAN");
     expect(email).toHaveClass("text-text");
     expect(email).not.toHaveClass("c-sync-text-wave");
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent("Calendar up-to-date");
     expect(screen.queryByText(/Last synced/)).toBeNull();
 
     await user.hover(email);
@@ -217,6 +220,7 @@ describe("CalendarListHeader", () => {
 
     renderHeader();
 
+    expect(screen.getByRole("status")).toHaveTextContent("Calendar up-to-date");
     expect(screen.getByText("Last synced just now")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /Google Calendar/ }),
@@ -224,9 +228,9 @@ describe("CalendarListHeader", () => {
   });
 
   it.each([
-    "IMPORTING",
-    "checking",
-  ] as const)("shows the wave shimmer and a generic syncing status for %s, with no tooltip", async (state) => {
+    ["IMPORTING", "Syncing your calendar…"],
+    ["checking", "Checking calendar status…"],
+  ] as const)("shows the visible %s status for %s", async (state, status) => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = state;
@@ -235,7 +239,7 @@ describe("CalendarListHeader", () => {
 
     const email = screen.getByText("ahab@pequod.com");
     expect(email).toHaveClass("c-sync-text-wave");
-    expect(screen.getByRole("status")).toHaveTextContent("Syncing…");
+    expect(screen.getByRole("status")).toHaveTextContent(status);
 
     await user.hover(email);
     expect(screen.queryByRole("tooltip")).toBeNull();
@@ -252,7 +256,10 @@ describe("CalendarListHeader", () => {
     expect(email.tagName).toBe("SPAN");
     expect(email).toHaveClass("text-text");
     expect(email).not.toHaveClass("text-warning");
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Calendar needs a refresh",
+    );
+    expect(screen.getByRole("status")).toHaveClass("text-warning");
 
     const syncButton = screen.getByRole("button", {
       name: "Refresh calendar",
@@ -271,7 +278,10 @@ describe("CalendarListHeader", () => {
     const email = screen.getByText("ahab@pequod.com");
     expect(email).toHaveClass("text-text");
     expect(email).not.toHaveClass("text-error");
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Calendar needs reconnecting",
+    );
+    expect(screen.getByRole("status")).toHaveClass("text-error");
 
     const reconnectButton = screen.getByRole("button", {
       name: "Reconnect Google Calendar",
@@ -292,6 +302,9 @@ describe("CalendarListHeader", () => {
     const reconnectButton = screen.getByRole("button", {
       name: "Reconnecting…",
     });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Reconnecting your calendar…",
+    );
     expect(reconnectButton).toBeDisabled();
     expect(reconnectButton).toHaveAttribute("aria-busy", "true");
     expect(
@@ -309,8 +322,28 @@ describe("CalendarListHeader", () => {
     const connectButton = screen.getByRole("button", {
       name: "Connecting…",
     });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Connecting your calendar…",
+    );
     expect(connectButton).toBeDisabled();
     expect(connectButton).toHaveAttribute("aria-busy", "true");
+  });
+
+  it("shows an immediate refreshing status while a calendar refresh starts", () => {
+    mockEmail = "ahab@pequod.com";
+    mockGoogleState = "ATTENTION";
+    mockIsRefreshing = true;
+
+    renderHeader();
+
+    const refreshButton = screen.getByRole("button", {
+      name: "Refreshing…",
+    });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Refreshing your calendar…",
+    );
+    expect(refreshButton).toBeDisabled();
+    expect(refreshButton).toHaveAttribute("aria-busy", "true");
   });
 
   it("shows the shimmer and syncing status while an event mutation is pending", () => {
@@ -321,7 +354,7 @@ describe("CalendarListHeader", () => {
 
     const email = screen.getByText("ahab@pequod.com");
     expect(email).toHaveClass("c-sync-text-wave");
-    expect(screen.getByRole("status")).toHaveTextContent("Syncing…");
+    expect(screen.getByRole("status")).toHaveTextContent("Saving changes…");
   });
 
   it("shows the shimmer for pending mutations even without Google", () => {
@@ -331,6 +364,7 @@ describe("CalendarListHeader", () => {
     renderHeader({ pendingEventIds: ["event-1"] });
 
     expect(screen.getByText("ahab@pequod.com")).toHaveClass("c-sync-text-wave");
+    expect(screen.getByRole("status")).toHaveTextContent("Saving changes…");
   });
 
   it("shows the shimmer for pending mutations even when reconnect is required", () => {
@@ -340,5 +374,34 @@ describe("CalendarListHeader", () => {
     renderHeader({ pendingEventIds: ["event-1"] });
 
     expect(screen.getByText("ahab@pequod.com")).toHaveClass("c-sync-text-wave");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Calendar needs reconnecting",
+    );
+  });
+
+  it("uses the same syncing copy for an in-progress reconciliation", () => {
+    mockEmail = "ahab@pequod.com";
+    mockGoogleState = "HEALTHY";
+    userMetadataActions.set({
+      google: {
+        connectionState: "IMPORTING",
+        connection: {
+          id: "conn-1",
+          state: "catchingUp",
+          stateReason: null,
+          lastSyncedAt: new Date().toISOString(),
+          lastHealthyAt: new Date().toISOString(),
+          accountEmail: "compasscaltest3@gmail.com",
+        },
+      },
+    });
+
+    renderHeader();
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Syncing your calendar…",
+    );
+    expect(screen.queryByText("Catching up your calendar…")).toBeNull();
+    expect(screen.queryByText(/Last synced/)).toBeNull();
   });
 });

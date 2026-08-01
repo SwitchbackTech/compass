@@ -55,13 +55,13 @@ Helpful notes:
 
 ### UX
 
-A password-authenticated user can connect Google Calendar from inside the app using the command palette or the sidebar account email. Existing Compass data must remain intact after connecting.
+A password-authenticated user can connect Google Calendar from the sidebar. Existing Compass data must remain intact after connecting.
 
 ### Steps
 
 1. Sign up or log in with email/password. Do not connect Google.
 2. Create at least one Compass event so there is pre-existing data.
-3. Open the command palette (Cmd+K) and select Connect Google Calendar (the sidebar email has no action while NOT_CONNECTED, so use the command palette here).
+3. In the sidebar, select Connect Google Calendar.
 4. Complete the Google authorization redirect with the intended Google account.
 5. Return to Compass and observe the sidebar account email.
 6. Reload the page.
@@ -69,7 +69,7 @@ A password-authenticated user can connect Google Calendar from inside the app us
 ### Expected Results
 
 - The Google authorization redirect returns to Compass through `/auth/google/callback`.
-- The sidebar email transitions from plain text into the syncing shimmer (`c-sync-text-wave`).
+- The sidebar shows “Syncing your calendar…” with the syncing shimmer. It remains visible until the complete import is healthy, even as individual Google events appear.
 - Pre-existing Compass events remain visible on the calendar.
 - The network flow uses `POST /api/auth/google/connect`, not the logged-out sign-in path.
 - After reload, the Google connection state persists.
@@ -205,8 +205,7 @@ If the user removes Compass's access in Google's account settings, the next time
 - A toast appears: "Google access revoked. Your Google data has been removed."
 - All events that originated from Google (or were imported from Google) are removed from the Compass calendar.
 - Compass-originated events that were pushed to Google remain visible in Compass.
-- The sidebar email returns to plain text (NOT_CONNECTED — no tooltip).
-- The command palette shows "Connect Google Calendar" again.
+- The sidebar shows **Connect Google Calendar** again.
 
 ---
 
@@ -219,14 +218,14 @@ After revocation, the user can reconnect Google using the same flow as the initi
 ### Steps
 
 1. Complete Scenario 7 so the connection is in the NOT_CONNECTED state.
-2. Open the command palette and select Connect Google Calendar.
+2. In the sidebar, select Connect Google Calendar.
 3. Complete the Google authorization redirect.
 4. Wait for the import to complete.
 
 ### Expected Results
 
 - The Google authorization redirect returns to Compass without error.
-- The sidebar email shows the syncing shimmer during import.
+- The sidebar shows “Syncing your calendar…” with the syncing shimmer during import.
 - Google events repopulate the calendar after import completes.
 - The sidebar email returns to normal color (HEALTHY).
 - Previously revoked-and-removed events reappear if they still exist in Google Calendar.

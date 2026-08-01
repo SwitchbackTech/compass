@@ -6,6 +6,7 @@ import {
 } from "@web/auth/compass/state/auth.state.util";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import {
   formatLastSyncedLabel,
   getGoogleSyncStatus,
@@ -14,6 +15,10 @@ import {
   selectGoogleSyncConnection,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
+import {
+  type SyncStatus,
+  type SyncStatusVariant,
+} from "@web/calendars/sync-status.types";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
   Tooltip,
@@ -36,12 +41,57 @@ const ANONYMOUS_ACCOUNT_TRIGGER_CLASSNAME =
 const CONNECT_GOOGLE_BUTTON_CLASSNAME =
   "c-focus-ring mb-2 w-full rounded-xs bg-accent px-2 py-1.5 text-left font-medium text-on-accent text-xs hover:brightness-110 disabled:pointer-events-none disabled:opacity-60";
 
+const SYNC_STATUS_VARIANT_CLASSNAME: Record<SyncStatusVariant, string> = {
+  syncing: "c-sync-text-wave",
+  healthy: "text-text",
+  warning: "text-warning",
+  error: "text-error",
+};
+
+const getSidebarSyncStatus = ({
+  googleStatus,
+  hasPendingEventMutations,
+  isConnecting,
+  isRefreshing,
+  state,
+}: {
+  googleStatus: SyncStatus;
+  hasPendingEventMutations: boolean;
+  isConnecting: boolean;
+  isRefreshing: boolean;
+  state: GoogleUiState;
+}): SyncStatus => {
+  if (isConnecting) {
+    return {
+      variant: "syncing",
+      text:
+        state === "RECONNECT_REQUIRED"
+          ? "Reconnecting your calendar…"
+          : "Connecting your calendar…",
+    };
+  }
+
+  if (isRefreshing) {
+    return { variant: "syncing", text: "Refreshing your calendar…" };
+  }
+
+  if (googleStatus && googleStatus.variant !== "healthy") {
+    return googleStatus;
+  }
+
+  if (hasPendingEventMutations) {
+    return { variant: "syncing", text: "Saving changes…" };
+  }
+
+  return googleStatus;
+};
+
 /**
  * The calendar list's heading is the account identity (email, or the
  * not-saved-yet label when anonymous) rather than a generic "Calendars"
  * title, and carries the syncing wave shimmer plus the sign-up-to-save CTA
- * for anonymous users. Google connect / reconnect / repair actions mirror
- * the command palette when Sync (or legacy) exposes a commandAction.
+ * for anonymous users. Google connection actions and status live here so
+ * users have one reliable place to check their calendar.
  */
 export const CalendarListHeader: FC = () => {
   const { email } = useUser();
@@ -100,11 +150,20 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
     useConnectGoogle();
   const syncConnection = useUserMetadataStore(selectGoogleSyncConnection);
   const hasPendingEventMutations = useHasPendingEventMutations();
+  const syncStatus = getSidebarSyncStatus({
+    googleStatus: getGoogleSyncStatus(state, syncConnection),
+    hasPendingEventMutations,
+    isConnecting,
+    isRefreshing,
+    state,
+  });
   const isSyncing =
-    getGoogleSyncStatus(state, syncConnection)?.variant === "syncing" ||
-    hasPendingEventMutations;
+    syncStatus?.variant === "syncing" || hasPendingEventMutations;
   const showGoogleAction = isAvailable && commandAction != null;
-  const lastSyncedLabel = formatLastSyncedLabel(syncConnection?.lastSyncedAt);
+  const lastSyncedLabel =
+    syncStatus?.variant === "healthy"
+      ? formatLastSyncedLabel(syncConnection?.lastSyncedAt)
+      : null;
   const googleActionLabel =
     commandAction == null
       ? null
@@ -129,6 +188,15 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
           {email}
         </span>
       </h2>
+      {syncStatus ? (
+        <p
+          aria-live="polite"
+          className={`mb-1 text-xs ${SYNC_STATUS_VARIANT_CLASSNAME[syncStatus.variant]}`}
+          role="status"
+        >
+          {syncStatus.text}
+        </p>
+      ) : null}
       {lastSyncedLabel ? (
         <p className="mb-2 text-text-muted text-xs">{lastSyncedLabel}</p>
       ) : null}
@@ -144,16 +212,6 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
         >
           {googleActionLabel}
         </button>
-      ) : null}
-      {isSyncing ? (
-        <span
-          aria-label="Syncing…"
-          aria-live="polite"
-          className="sr-only"
-          role="status"
-        >
-          Syncing…
-        </span>
       ) : null}
     </>
   );

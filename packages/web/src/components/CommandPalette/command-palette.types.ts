@@ -4,7 +4,6 @@ export interface CommandItem {
   id: string;
   label: string;
   icon: Icon;
-  iconClassName?: string;
   onClick?: () => void;
   disabled?: boolean;
   /** When true, selecting the item does not close the palette. */

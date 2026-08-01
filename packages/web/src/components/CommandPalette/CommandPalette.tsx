@@ -10,11 +10,9 @@ import {
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useRef, useState } from "react";
-import { type SyncStatusVariant } from "@web/calendars/sync-status.types";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { eventCommandPaletteItems } from "@web/components/CommandPalette/event.cmd.constants";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
-import { useCalendarSyncCmdItems } from "@web/components/CommandPalette/hooks/useCalendarSyncCmdItems";
 import { useDeleteAccountCmdItems } from "@web/components/CommandPalette/hooks/useDeleteAccountCmdItems";
 import { useDemoEventsCmdItems } from "@web/components/CommandPalette/hooks/useDemoEventsCmdItems";
 import { useExportDataCmdItems } from "@web/components/CommandPalette/hooks/useExportDataCmdItems";
@@ -37,13 +35,6 @@ import {
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { type ViewName } from "@web/shortcuts/shortcuts.constants";
 import { type CommandSection } from "./command-palette.types";
-
-const SYNC_STATUS_VARIANT_CLASSNAME: Record<SyncStatusVariant, string> = {
-  syncing: "c-sync-text-wave",
-  healthy: "text-text",
-  warning: "text-warning",
-  error: "text-error",
-};
 
 interface CommandPaletteProps {
   currentView: ViewName;
@@ -85,8 +76,6 @@ const CommandPaletteContent = ({
   placeholder,
   sections,
 }: CommandPaletteContentProps) => {
-  const { syncStatus } = useCalendarSyncCmdItems();
-
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState<number | null>(0);
   const listRef = useRef<Array<HTMLElement | null>>([]);
@@ -146,14 +135,6 @@ const CommandPaletteContent = ({
           ref={refs.setFloating}
           className="mt-[15vh] h-fit w-[640px] max-w-[90vw] overflow-hidden rounded-xl border border-border bg-surface shadow-[0_16px_48px_var(--color-shadow-default)]"
         >
-          {syncStatus ? (
-            <div
-              role="status"
-              className={`px-4 pt-3 text-xs ${SYNC_STATUS_VARIANT_CLASSNAME[syncStatus.variant]}`}
-            >
-              {syncStatus.text}
-            </div>
-          ) : null}
           <input
             {...getReferenceProps({
               onKeyDown(event) {
@@ -198,7 +179,7 @@ const CommandPaletteContent = ({
 
                     const content = (
                       <>
-                        <item.icon size={18} className={item.iconClassName} />
+                        <item.icon size={18} />
                         <span className="min-w-0 flex-1 truncate">
                           {item.label}
                         </span>
@@ -255,7 +236,6 @@ export const CommandPalette = ({
   const open = useSettingsStore(selectIsCmdPaletteOpen);
   useAppLockReason("commandPalette", open);
   const navigate = useNavigate();
-  const { items: calendarCmdItems } = useCalendarSyncCmdItems();
   const subscribeCmdItems = useSubscribeCmdItems(open);
   const exportDataCmdItems = useExportDataCmdItems();
   const demoEventsCmdItems = useDemoEventsCmdItems();
@@ -305,7 +285,6 @@ export const CommandPalette = ({
       id: "settings",
       heading: "Settings",
       items: [
-        ...calendarCmdItems,
         ...subscribeCmdItems,
         ...exportDataCmdItems,
         ...authCmdItems,

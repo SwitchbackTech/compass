@@ -102,15 +102,24 @@ export const getGoogleSyncStatus = (
   state: GoogleUiState,
   connection?: GoogleSyncConnectionSummary | null,
 ): SyncStatus => {
+  // Local transient states are newer than a cached server summary, which can
+  // still report healthy while a fresh check or import is underway.
+  if (state === "checking") {
+    return { variant: "syncing", text: "Checking calendar status…" };
+  }
+
+  if (state === "IMPORTING") {
+    return { variant: "syncing", text: "Syncing your calendar…" };
+  }
+
   if (connection) {
     switch (connection.state) {
       case "healthy":
         return { variant: "healthy", text: "Calendar up-to-date" };
       case "connecting":
       case "importing":
-        return { variant: "syncing", text: "Syncing your calendar…" };
       case "catchingUp":
-        return { variant: "syncing", text: "Catching up your calendar…" };
+        return { variant: "syncing", text: "Syncing your calendar…" };
       case "delayed":
         return {
           variant: "warning",
@@ -126,9 +135,6 @@ export const getGoogleSyncStatus = (
   switch (state) {
     case "HEALTHY":
       return { variant: "healthy", text: "Calendar up-to-date" };
-    case "IMPORTING":
-    case "checking":
-      return { variant: "syncing", text: "Syncing your calendar…" };
     case "ATTENTION":
       return {
         variant: "warning",
