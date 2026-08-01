@@ -96,11 +96,20 @@ jobs:
           SUPERTOKENS_URI: ${{ secrets.SUPERTOKENS_URI }}
         run: |
           echo "Deploying Compass ${RELEASE_TAG} (image version: ${IMAGE_VERSION}) to ${{ inputs.environment }}"
+          # Only "production" ever runs the production runtime.nodeEnv; every
+          # other GitHub Environment (staging-cloud, staging-selfhosted, ...)
+          # is "staging". This used to be hardcoded to "production"
+          # unconditionally, so staging told its own telemetry it was
+          # production and polluted any prod-scoped alert or dashboard
+          # (2026-08-01).
           if [ "${{ inputs.environment }}" = "production" ]; then
+            NODE_ENV="production"
             if [ -z "$KIT_API_SECRET" ]; then
               echo "Production deploy requires KIT_API_SECRET." >&2
               exit 1
             fi
+          else
+            NODE_ENV="staging"
           fi
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/staging_key
@@ -141,7 +150,7 @@ jobs:
             printf '%s\n' \
               'runtime:' \
               "  version: \"${IMAGE_VERSION}\"" \
-              '  nodeEnv: production' \
+              "  nodeEnv: ${NODE_ENV}" \
               '  timezone: Etc/UTC' \
               'web:' \
               '  port: 9080' \

@@ -456,6 +456,20 @@ describe("staging deploy workflow", () => {
     expect(workflow).not.toContain('if [ -n "$DEPLOY_PROFILES" ]; then');
   });
 
+  it("derives runtime.nodeEnv from the GitHub Environment instead of hardcoding production", () => {
+    // 2026-08-01: this was unconditionally "production" for every GitHub
+    // Environment, including staging-cloud and staging-selfhosted. Staging
+    // told its own telemetry (and any prod-scoped alert reading it) that it
+    // was production, which silently polluted health signals with an idle
+    // environment's data alongside the real thing.
+    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
+
+    expect(workflow).not.toContain("'  nodeEnv: production'");
+    expect(workflow).toContain('"  nodeEnv: ${NODE_ENV}"');
+    expect(workflow).toContain('NODE_ENV="production"');
+    expect(workflow).toContain('NODE_ENV="staging"');
+  });
+
   it("falls back to the release tag when a configured compose ref is unavailable", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
