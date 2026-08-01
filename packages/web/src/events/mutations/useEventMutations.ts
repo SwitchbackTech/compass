@@ -19,7 +19,10 @@ import {
 } from "@web/calendars/useCalendarLookup";
 import { handleError } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
-import { dismissRecurrenceScopeToast } from "@web/common/utils/toast/recurrence-scope.toast";
+import {
+  dismissRecurrenceScopeToast,
+  showRecurrenceScopeSuccessToast,
+} from "@web/common/utils/toast/recurrence-scope.toast";
 import {
   applyEventProjectionAcrossQueries,
   eventBelongsToEntry,
@@ -654,6 +657,9 @@ export function useEventMutations(
         const seriesId = seriesIdOf(opportunity.original);
         if (seriesId) undoHistoryActions.discardSeries(seriesId);
 
+        const onSuccess = () => {
+          showRecurrenceScopeSuccessToast(opportunity, scope);
+        };
         const onSettled = () => {
           recurrenceScopeOpportunityActions.complete(opportunity.id);
         };
@@ -668,7 +674,7 @@ export function useEventMutations(
               writeKey: opportunity.original.id as EventId,
               originalOverride: opportunity.original,
             },
-            { onSettled },
+            { onSuccess, onSettled },
           );
           return;
         }
@@ -681,7 +687,7 @@ export function useEventMutations(
             skipRepository: false,
             originalOverride: opportunity.original,
           },
-          { onSettled },
+          { onSuccess, onSettled },
         );
       },
     }),
