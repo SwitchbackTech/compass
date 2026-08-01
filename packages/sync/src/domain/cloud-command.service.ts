@@ -23,6 +23,7 @@ import {
   executeProviderSeriesFollowingUpdate,
   executeProviderSeriesUpdate,
   executeProviderUpdate,
+  type ProviderDeleteDeps,
 } from "@sync/domain/provider-command.service";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import {
@@ -39,6 +40,7 @@ import {
   type CommandSubmit,
 } from "@sync/storage/contracts/command.contracts";
 import { type EventRecord } from "@sync/storage/contracts/event.contracts";
+import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
 import { type DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
@@ -235,16 +237,29 @@ async function applyCloudMutation(
     if (existing.recurrence.kind === "seriesMaster") {
       if (existing.connectionId !== null) {
         if (command.input.scope === "all") {
-          return dispatchProviderDelete(deps, command, existing, now);
+          return dispatchProviderMutation(
+            deps,
+            command,
+            existing,
+            now,
+            executeProviderDelete,
+          );
         }
         if (command.input.scope === "this") {
-          return dispatchProviderOccurrenceDelete(deps, command, existing, now);
+          return dispatchProviderMutation(
+            deps,
+            command,
+            existing,
+            now,
+            executeProviderOccurrenceDelete,
+          );
         }
-        return dispatchProviderSeriesFollowingDelete(
+        return dispatchProviderMutation(
           deps,
           command,
           existing,
           now,
+          executeProviderSeriesFollowingDelete,
         );
       }
       if (command.input.scope === "all") {
@@ -266,7 +281,13 @@ async function applyCloudMutation(
     // A provider-linked event goes to the provider delete path; a cloud event is
     // removed locally below. Content is removed only after the provider confirms.
     if (existing.connectionId !== null) {
-      return dispatchProviderDelete(deps, command, existing, now);
+      return dispatchProviderMutation(
+        deps,
+        command,
+        existing,
+        now,
+        executeProviderDelete,
+      );
     }
     // Clear the derived occurrences BEFORE removing the event. If this crashes
     // before the delete, a retry still finds the event and re-runs both steps;
@@ -301,16 +322,29 @@ async function applyCloudMutation(
   if (existing.recurrence.kind === "seriesMaster") {
     if (existing.connectionId !== null) {
       if (command.input.scope === "all") {
-        return dispatchProviderSeriesUpdate(deps, command, existing, now);
+        return dispatchProviderMutation(
+          deps,
+          command,
+          existing,
+          now,
+          executeProviderSeriesUpdate,
+        );
       }
       if (command.input.scope === "this") {
-        return dispatchProviderOccurrenceUpdate(deps, command, existing, now);
+        return dispatchProviderMutation(
+          deps,
+          command,
+          existing,
+          now,
+          executeProviderOccurrenceUpdate,
+        );
       }
-      return dispatchProviderSeriesFollowingUpdate(
+      return dispatchProviderMutation(
         deps,
         command,
         existing,
         now,
+        executeProviderSeriesFollowingUpdate,
       );
     }
     if (command.input.scope === "all") {
@@ -332,30 +366,13 @@ async function applyCloudMutation(
   // otherwise the write is refused rather than stranded pending (same rationale
   // as the create path above: nothing re-dispatches a pending command).
   if (existing.connectionId !== null) {
-    if (deps.execution === "active" && deps.provider) {
-      const calendar = await deps.calendars.findById(
-        command.tenantId,
-        command.principalId,
-        existing.calendarId as ProviderCalendarId,
-      );
-      if (calendar) {
-        return executeProviderUpdate(
-          {
-            commands: deps.commands,
-            events: deps.events,
-            occurrences: deps.occurrences,
-            resources: deps.resources,
-            writer: deps.provider.writer,
-            custody: deps.provider.custody,
-          },
-          command,
-          existing,
-          calendar,
-          now,
-        );
-      }
-    }
-    throw new ProviderWriteUnavailableError();
+    return dispatchProviderMutation(
+      deps,
+      command,
+      existing,
+      now,
+      executeProviderUpdate,
+    );
   }
 
   // Cloud single event: conditional replace (no upsert), so a concurrent delete
@@ -367,16 +384,24 @@ async function applyCloudMutation(
   return confirmCloud(deps, command);
 }
 
-// Route a delete of a provider-linked event to the provider executor when
-// provider work is enabled and the owning calendar resolves; otherwise leave the
-// command pending. Content is removed only after the provider confirms. Deleting
-// a series master here cancels the whole series at the provider. Shared by the
-// single-event and provider-series-all delete paths.
-async function dispatchProviderDelete(
+type ProviderMutationExecutor = (
+  deps: ProviderDeleteDeps,
+  command: CommandRecord,
+  event: EventRecord,
+  calendar: ProviderCalendarRecord,
+  now: () => Date,
+) => Promise<CommandRecord>;
+
+// Provider-linked writes all share the same boundary: provider execution must
+// be active, the owning calendar must resolve, and executors receive the same
+// repository slice. Keeping it here makes every recurrence scope follow the
+// same refusal semantics rather than carrying six subtly different copies.
+async function dispatchProviderMutation(
   deps: CloudCommandDeps,
   command: CommandRecord,
   event: EventRecord,
   now: () => Date,
+  execute: ProviderMutationExecutor,
 ): Promise<CommandRecord> {
   if (deps.execution !== "active" || !deps.provider) {
     throw new ProviderWriteUnavailableError();
@@ -387,7 +412,7 @@ async function dispatchProviderDelete(
     event.calendarId as ProviderCalendarId,
   );
   if (!calendar) throw new ProviderWriteUnavailableError();
-  return executeProviderDelete(
+  return execute(
     {
       commands: deps.commands,
       events: deps.events,
@@ -399,173 +424,6 @@ async function dispatchProviderDelete(
     },
     command,
     event,
-    calendar,
-    now,
-  );
-}
-
-// Route a scope-"all" edit of a provider-linked series master to the provider
-// executor when provider work is enabled and the owning calendar resolves;
-// otherwise leave the command pending. This edits the whole series at the
-// provider (Google's edit-all).
-async function dispatchProviderSeriesUpdate(
-  deps: CloudCommandDeps,
-  command: CommandRecord,
-  master: EventRecord,
-  now: () => Date,
-): Promise<CommandRecord> {
-  if (deps.execution !== "active" || !deps.provider) {
-    throw new ProviderWriteUnavailableError();
-  }
-  const calendar = await deps.calendars.findById(
-    command.tenantId,
-    command.principalId,
-    master.calendarId as ProviderCalendarId,
-  );
-  if (!calendar) throw new ProviderWriteUnavailableError();
-  return executeProviderSeriesUpdate(
-    {
-      commands: deps.commands,
-      events: deps.events,
-      occurrences: deps.occurrences,
-      resources: deps.resources,
-      writer: deps.provider.writer,
-      custody: deps.provider.custody,
-    },
-    command,
-    master,
-    calendar,
-    now,
-  );
-}
-
-// The four provider-linked recurring dispatchers below share one shape with
-// the two above: resolve the owning calendar, then hand off to the matching
-// executor. Provider work unavailable or the calendar unresolved refuses the
-// write outright (ProviderWriteUnavailableError) rather than stranding it
-// pending — these are new code paths, so unlike the two above (which predate
-// that fix) they never reintroduce the silent-pending failure mode.
-
-async function dispatchProviderOccurrenceDelete(
-  deps: CloudCommandDeps,
-  command: CommandRecord,
-  master: EventRecord,
-  now: () => Date,
-): Promise<CommandRecord> {
-  if (deps.execution !== "active" || !deps.provider) {
-    throw new ProviderWriteUnavailableError();
-  }
-  const calendar = await deps.calendars.findById(
-    command.tenantId,
-    command.principalId,
-    master.calendarId as ProviderCalendarId,
-  );
-  if (!calendar) throw new ProviderWriteUnavailableError();
-  return executeProviderOccurrenceDelete(
-    {
-      commands: deps.commands,
-      events: deps.events,
-      occurrences: deps.occurrences,
-      resources: deps.resources,
-      writer: deps.provider.writer,
-      custody: deps.provider.custody,
-    },
-    command,
-    master,
-    calendar,
-    now,
-  );
-}
-
-async function dispatchProviderOccurrenceUpdate(
-  deps: CloudCommandDeps,
-  command: CommandRecord,
-  master: EventRecord,
-  now: () => Date,
-): Promise<CommandRecord> {
-  if (deps.execution !== "active" || !deps.provider) {
-    throw new ProviderWriteUnavailableError();
-  }
-  const calendar = await deps.calendars.findById(
-    command.tenantId,
-    command.principalId,
-    master.calendarId as ProviderCalendarId,
-  );
-  if (!calendar) throw new ProviderWriteUnavailableError();
-  return executeProviderOccurrenceUpdate(
-    {
-      commands: deps.commands,
-      events: deps.events,
-      occurrences: deps.occurrences,
-      resources: deps.resources,
-      writer: deps.provider.writer,
-      custody: deps.provider.custody,
-    },
-    command,
-    master,
-    calendar,
-    now,
-  );
-}
-
-async function dispatchProviderSeriesFollowingDelete(
-  deps: CloudCommandDeps,
-  command: CommandRecord,
-  master: EventRecord,
-  now: () => Date,
-): Promise<CommandRecord> {
-  if (deps.execution !== "active" || !deps.provider) {
-    throw new ProviderWriteUnavailableError();
-  }
-  const calendar = await deps.calendars.findById(
-    command.tenantId,
-    command.principalId,
-    master.calendarId as ProviderCalendarId,
-  );
-  if (!calendar) throw new ProviderWriteUnavailableError();
-  return executeProviderSeriesFollowingDelete(
-    {
-      commands: deps.commands,
-      events: deps.events,
-      occurrences: deps.occurrences,
-      resources: deps.resources,
-      writer: deps.provider.writer,
-      custody: deps.provider.custody,
-      markers: deps.markers,
-    },
-    command,
-    master,
-    calendar,
-    now,
-  );
-}
-
-async function dispatchProviderSeriesFollowingUpdate(
-  deps: CloudCommandDeps,
-  command: CommandRecord,
-  master: EventRecord,
-  now: () => Date,
-): Promise<CommandRecord> {
-  if (deps.execution !== "active" || !deps.provider) {
-    throw new ProviderWriteUnavailableError();
-  }
-  const calendar = await deps.calendars.findById(
-    command.tenantId,
-    command.principalId,
-    master.calendarId as ProviderCalendarId,
-  );
-  if (!calendar) throw new ProviderWriteUnavailableError();
-  return executeProviderSeriesFollowingUpdate(
-    {
-      commands: deps.commands,
-      events: deps.events,
-      occurrences: deps.occurrences,
-      resources: deps.resources,
-      writer: deps.provider.writer,
-      custody: deps.provider.custody,
-    },
-    command,
-    master,
     calendar,
     now,
   );
