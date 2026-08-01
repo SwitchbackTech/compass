@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ReactNode } from "react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
@@ -369,6 +375,35 @@ describe("LifeView", () => {
     expect(
       screen.queryByRole("button", { name: /zoom/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it("lets a narrow viewport close the sidebar from inside the sidebar", async () => {
+    const user = userEvent.setup();
+    mockViewport(true);
+    // Narrow mounts auto-collapse the sidebar; reopen as a user would.
+    renderLifeView();
+    act(() => {
+      viewActions.setSidebarOpen(true);
+    });
+    const sidebar = await screen.findByRole("complementary", {
+      name: "Sidebar",
+    });
+
+    const inSidebarClose = screen.getByRole("button", {
+      name: "Dismiss sidebar",
+    });
+    expect(sidebar.contains(inSidebarClose)).toBe(true);
+
+    await user.click(inSidebarClose);
+
+    expect(
+      screen.queryByRole("button", { name: "Dismiss sidebar" }),
+    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Open sidebar" }),
+      ).toHaveFocus();
+    });
   });
 
   it("shows the privacy tooltip on the date of birth label", async () => {
