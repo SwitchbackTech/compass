@@ -25,10 +25,17 @@ export function RecurrenceSection({
   const { setInterval, setFreq, setWeekDays, setUntil } = recurrenceHook;
   const { weekDays, interval, freq, until, toggleRecurrence } = recurrenceHook;
   const { hasRecurrence } = recurrenceHook;
-  const scheduleEndDate =
-    draft.values.schedule.kind === "allDay"
-      ? dayjs(draft.values.schedule.end).toYearMonthDayString()
-      : dayjs(draft.values.schedule.end).format();
+  // Lower bound for the "Ends on" picker: the recurrence can't stop before the
+  // event's own occurrence, so the floor is the event's *start* date. Anchoring
+  // it to the *end* used to disable the event's own date whenever the event ran
+  // past local midnight (e.g. 23:00-00:30, or anything ending at 00:00 the next
+  // day): the end lands on the following calendar day, and react-datepicker
+  // compares day cells by calendar day, so the start date - the date the user
+  // sees and most naturally reaches for - rendered disabled. A bare
+  // YYYY-MM-DD keeps the bound date-only for both event kinds.
+  const recurrenceMinDate = dayjs(
+    draft.values.schedule.start,
+  ).toYearMonthDayString();
 
   return (
     <div className="flex w-full basis-full flex-col items-center gap-2 p-0">
@@ -52,7 +59,7 @@ export function RecurrenceSection({
 
           <EndsOnDate
             until={until}
-            minDate={scheduleEndDate}
+            minDate={recurrenceMinDate}
             setUntil={setUntil}
           />
         </>
