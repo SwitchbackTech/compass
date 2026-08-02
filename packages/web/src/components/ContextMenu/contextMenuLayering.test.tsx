@@ -92,6 +92,25 @@ describe("context menu layering", () => {
     expectMenuFloatsAboveTheGrid();
   });
 
+  // Right-clicking a card whose id isn't in the cache (unsaved drafts,
+  // week-transition placeholderData, optimistically removed events) used to
+  // throw an uncaught "Selected event not found" and take down the grid.
+  // Now the miss is a no-op: no throw, no menu.
+  it("ignores a right-click on an event that isn't in the cache", () => {
+    render(
+      <ContextMenuWrapper id={WRAPPER_ID}>
+        <div {...{ [DATA_EVENT_ELEMENT_ID]: "not-in-cache" }}>Orphan event</div>
+      </ContextMenuWrapper>,
+      { queryClient: createCompassQueryClient() },
+    );
+
+    expect(() =>
+      fireEvent.contextMenu(screen.getByText("Orphan event")),
+    ).not.toThrow();
+
+    expect(document.querySelector(".c-context-menu")).toBeNull();
+  });
+
   // The day view builds its own menu around the same component. It used to
   // lean on a z-index baked into the shared stylesheet, so removing that
   // silently dropped it behind every card.
