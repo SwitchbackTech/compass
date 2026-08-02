@@ -3,7 +3,11 @@ import { filterPosthogBeforeSend } from "./posthog-exception-filter.util";
 import { describe, expect, it } from "bun:test";
 
 const exceptionEvent = (
-  entries: Array<{ type?: string; value?: string }>,
+  entries: Array<{
+    type?: string;
+    value?: string;
+    stacktrace?: { frames?: Array<Record<string, unknown>> };
+  }>,
 ): CaptureResult =>
   ({
     uuid: "test-uuid",
@@ -56,6 +60,27 @@ describe("filterPosthogBeforeSend", () => {
         ]),
       ),
     ).toBeNull();
+  });
+
+  it("drops opaque browser Script error. with no stack frames", () => {
+    expect(
+      filterPosthogBeforeSend(
+        exceptionEvent([{ type: "Error", value: "Script error." }]),
+      ),
+    ).toBeNull();
+  });
+
+  it("keeps Script error. when stack frames are present", () => {
+    const event = exceptionEvent([
+      {
+        type: "Error",
+        value: "Script error.",
+        stacktrace: {
+          frames: [{ filename: "/index.js", function: "boot" }],
+        },
+      },
+    ]);
+    expect(filterPosthogBeforeSend(event)).toBe(event);
   });
 
   it("keeps ApiError exceptions", () => {

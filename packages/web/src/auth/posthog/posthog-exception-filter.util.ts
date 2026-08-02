@@ -8,9 +8,20 @@ import { isTransientBrowserNetworkMessage } from "@web/api/util/backend-unavaila
 const CEFSHARP_SCANNER_MESSAGE =
   "Object Not Found Matching Id:1, MethodName:update, ParamCount:4";
 
+/**
+ * Browser-sanitized cross-origin `window.onerror` message. Same-origin app
+ * scripts (this app's `/index.js` module) report real messages + frames;
+ * "Script error." with no stack is almost always an extension, in-app browser,
+ * or other third-party script — never actionable from our code alone.
+ */
+const SCRIPT_ERROR_MESSAGE = "Script error.";
+
 type ExceptionEntry = {
   type?: unknown;
   value?: unknown;
+  stacktrace?: {
+    frames?: unknown[];
+  };
 };
 
 const readExceptionEntries = (
@@ -40,10 +51,21 @@ const readExceptionEntries = (
   }));
 };
 
+const hasStackFrames = (entry: ExceptionEntry): boolean => {
+  const frames = entry.stacktrace?.frames;
+  return Array.isArray(frames) && frames.length > 0;
+};
+
 const isDroppableException = (entry: ExceptionEntry): boolean => {
   if (typeof entry.value !== "string") return false;
 
   if (entry.value === CEFSHARP_SCANNER_MESSAGE) return true;
+
+  // Opaque cross-origin errors. Keep the rare case where frames somehow
+  // survived sanitization so a real stack is never discarded.
+  if (entry.value === SCRIPT_ERROR_MESSAGE && !hasStackFrames(entry)) {
+    return true;
+  }
 
   // SuperTokens/browser network blips that escape as unhandledrejections.
   // The app already treats these as expected unavailability; capturing them
