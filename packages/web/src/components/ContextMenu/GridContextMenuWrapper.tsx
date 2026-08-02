@@ -3,8 +3,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useState } from "react";
 import { getCalendarEventIdFromElement } from "@web/common/utils/event/event.util";
+import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   editGridEventDraft,
+  getGridDraftId,
   gridEventDraftToGridEvent,
 } from "@web/events/grid-event-draft.adapter";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
@@ -46,14 +48,23 @@ export const ContextMenuWrapper = ({
     },
   });
 
-  const getSelectedEvent = (eventId: string) => {
-    const selectedEvent = findEventInCache(queryClient, eventId);
-
-    if (!selectedEvent) {
-      throw new Error("Selected event not found");
+  const getDraftForEvent = (eventId: string): GridEventDraft | null => {
+    // The id comes from the DOM (`data-event-id`), which can legitimately
+    // disagree with the react-query cache: an in-progress grid draft renders
+    // with `draft.clientId`/its edited source id (never cached), so match it
+    // directly rather than looking it up.
+    if (gridDraft && getGridDraftId(gridDraft) === eventId) {
+      return gridDraft;
     }
 
-    return selectedEvent;
+    // A cache miss is an ordinary outcome (unsaved drafts, non-cache-backed
+    // placeholderData during week navigation, optimistically removed events
+    // still in the DOM for a frame). Treat it as a no-op — like every other
+    // `findEventInCache` caller — instead of throwing and taking down the grid.
+    const selectedEvent = findEventInCache(queryClient, eventId);
+    if (!selectedEvent) return null;
+
+    return editGridEventDraft(selectedEvent);
   };
 
   const handleDiscard = () => {
@@ -73,7 +84,7 @@ export const ContextMenuWrapper = ({
     if (hasClickedOnEvent) {
       e.preventDefault();
 
-      const draft = editGridEventDraft(getSelectedEvent(eventId));
+      const draft = getDraftForEvent(eventId);
       if (!draft) return;
 
       refs.setReference(cursorReference(e.clientX, e.clientY));
