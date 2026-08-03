@@ -29,8 +29,20 @@ export class ErrorBoundary extends Component<
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    getPosthogClient()?.captureException(error, {
+  componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
+    // React can deliver non-Error throwables (including `undefined`). Pass a
+    // real Error to PostHog so we don't get "Primitive value captured as
+    // exception: undefined" with no actionable message.
+    const reportable =
+      error instanceof Error
+        ? error
+        : new Error(
+            `Non-Error render throw: ${
+              error === undefined ? "undefined" : String(error)
+            }`,
+          );
+
+    getPosthogClient()?.captureException(reportable, {
       $exception_handled: false,
       $exception_source: "react-error-boundary",
       componentStack: errorInfo.componentStack,
