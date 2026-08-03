@@ -142,10 +142,14 @@ export const DescriptionEditor = ({
         attributes: {
           role: "textbox",
           "aria-label": placeholder,
+          "aria-multiline": "true",
           ...(id ? { id } : {}),
         },
       },
-      onUpdate: ({ editor: updated }) => onChange(updated.getHTML()),
+      // TipTap's empty document is still `<p></p>` from getHTML(); normalize
+      // to "" so DirtyParser and persistence treat "cleared" like never set.
+      onUpdate: ({ editor: updated }) =>
+        onChange(updated.isEmpty ? "" : updated.getHTML()),
       onFocus: () => setIsFocused(true),
       onBlur: () => setIsFocused(false),
     },

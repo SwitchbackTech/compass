@@ -409,6 +409,36 @@ describe("EventForm", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it("does not submit when Enter is pressed in the description field", async () => {
+    // Regression: existing-event Enter-to-save used ignoreInputs:false and
+    // skipped only drafts/comboboxes, so TipTap never received Enter as a
+    // newline. shouldDeferEnterToTarget must stand the hotkey down here.
+    const user = userEvent.setup();
+    const onSubmit = mock();
+
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft({ description: "Plan the launch" })}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={onSubmit}
+        setDraft={mock()}
+      />,
+    );
+
+    const descriptionField = screen.getByRole("textbox", {
+      name: "Description",
+    });
+    act(() => descriptionField.focus());
+
+    await user.keyboard("{Enter}");
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it("still deletes an existing event when Delete is pressed on a non-text form target", async () => {
     const onClose = mock();
     const onDelete = mock();

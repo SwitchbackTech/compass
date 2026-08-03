@@ -8,6 +8,7 @@ import {
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
   isEventFormOpen,
+  shouldDeferEnterToTarget,
 } from "./form.util";
 import {
   afterEach,
@@ -200,6 +201,46 @@ describe("form.util", () => {
       const select = document.createElement("select");
 
       expect(isEditableKeyboardTarget(createEvent(select))).toBe(true);
+    });
+  });
+
+  describe("shouldDeferEnterToTarget", () => {
+    const createEvent = (element: HTMLElement | null) =>
+      ({ target: element }) as unknown as KeyboardEvent;
+
+    it("defers Enter for contenteditable targets", () => {
+      const editable = document.createElement("div");
+      editable.contentEditable = "true";
+
+      expect(shouldDeferEnterToTarget(createEvent(editable))).toBe(true);
+    });
+
+    it("defers Enter for textareas", () => {
+      const textarea = document.createElement("textarea");
+
+      expect(shouldDeferEnterToTarget(createEvent(textarea))).toBe(true);
+    });
+
+    it("defers Enter for buttons", () => {
+      const button = document.createElement("button");
+
+      expect(shouldDeferEnterToTarget(createEvent(button))).toBe(true);
+    });
+
+    it("defers Enter for role=button and links", () => {
+      const roleButton = document.createElement("div");
+      roleButton.setAttribute("role", "button");
+      const link = document.createElement("a");
+      link.setAttribute("href", "https://example.com");
+
+      expect(shouldDeferEnterToTarget(createEvent(roleButton))).toBe(true);
+      expect(shouldDeferEnterToTarget(createEvent(link))).toBe(true);
+    });
+
+    it("does not defer Enter for single-line inputs", () => {
+      const input = document.createElement("input");
+
+      expect(shouldDeferEnterToTarget(createEvent(input))).toBe(false);
     });
   });
 

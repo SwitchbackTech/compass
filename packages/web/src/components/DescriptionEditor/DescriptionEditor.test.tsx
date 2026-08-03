@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { DescriptionEditor } from "@web/components/DescriptionEditor/DescriptionEditor";
 import { describe, expect, it, mock } from "bun:test";
 
@@ -23,12 +24,34 @@ describe("DescriptionEditor", () => {
       />,
     );
 
-    expect(screen.getByRole("textbox", { name: "Description" })).toBeTruthy();
+    const textbox = screen.getByRole("textbox", { name: "Description" });
+    expect(textbox).toBeTruthy();
+    expect(textbox).toHaveAttribute("aria-multiline", "true");
     // TipTap's `content` option is only read at editor creation - onUpdate
     // must not fire just from mounting with existing content, or the
     // dirty-check (DirtyParser.isGridDraftDirty) would show every opened
     // event as dirty before the user touches anything.
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("reports an empty string when the document is cleared", async () => {
+    const user = userEvent.setup();
+    const onChange = mock();
+    render(
+      <DescriptionEditor
+        value="<p>Hello</p>"
+        onChange={onChange}
+        editable={true}
+        resetKey="test-empty"
+      />,
+    );
+
+    const textbox = screen.getByRole("textbox", { name: "Description" });
+    await user.click(textbox);
+    await user.keyboard("{Control>}a{/Control}{Backspace}");
+
+    expect(onChange).toHaveBeenCalled();
+    expect(onChange.mock.calls.at(-1)?.[0]).toBe("");
   });
 
   it("hides the toolbar and marks the textbox non-editable when read-only", () => {

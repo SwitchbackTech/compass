@@ -31,6 +31,7 @@ import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
 import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
+  shouldDeferEnterToTarget,
 } from "@web/common/utils/form/form.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { DescriptionEditor } from "@web/components/DescriptionEditor/DescriptionEditor";
@@ -618,6 +619,10 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         }
 
         if (isComboboxInteraction(keyboardEvent)) {
+          return;
+        }
+
+        if (shouldDeferEnterToTarget(keyboardEvent)) {
           return;
         }
 
