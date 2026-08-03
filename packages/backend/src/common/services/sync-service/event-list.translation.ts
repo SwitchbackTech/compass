@@ -7,6 +7,10 @@ const toBrowserDetails = (content: SyncEventInstance["content"]) => ({
   kind: "details" as const,
   title: content.title,
   description: content.description,
+  location: content.location,
+  organizer: content.organizer,
+  attendees: content.attendees,
+  conference: content.conference,
   ...withColor(content.color),
   ...withColorHex(content.colorHex),
 });

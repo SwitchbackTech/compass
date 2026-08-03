@@ -92,6 +92,10 @@ describe("assembleEventInstances", () => {
     expect(instance?.content).toEqual({
       title: "Standup",
       description: "Daily sync",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
     });
     // The instance schedule comes from the occurrence, timestamps from the event.
     expect(instance?.schedule).toEqual(occurrence.schedule);
@@ -118,6 +122,10 @@ describe("assembleEventInstances", () => {
     expect(instance?.content).toEqual({
       title: "Standup",
       description: "Daily sync",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
       color: "coral",
     });
   });
@@ -141,6 +149,10 @@ describe("assembleEventInstances", () => {
     expect(instance?.content).toEqual({
       title: "Standup",
       description: "Daily sync",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
       colorHex: "#009688",
     });
   });
@@ -164,6 +176,53 @@ describe("assembleEventInstances", () => {
     expect(instance?.content).toEqual({
       title: "Standup",
       description: "Daily sync",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+    });
+  });
+
+  it("carries event content.location, organizer, attendees, and conference onto assembled instance content", () => {
+    const event = makeEvent({
+      content: {
+        title: "Sprint Planning",
+        description: "Quarterly planning",
+        location: "200 Main St, Anytown",
+        organizer: { email: "lead@example.com", displayName: "Team Lead" },
+        attendees: [
+          {
+            email: "guest@example.com",
+            displayName: "Guest",
+            responseStatus: "accepted",
+          },
+        ],
+        conference: {
+          url: "https://meet.google.com/abc-defg-hij",
+          label: "Google Meet",
+        },
+      },
+    });
+    const occurrence = makeOccurrence({ eventId: event._id });
+
+    const [instance] = assembleEventInstances([occurrence], byId(event));
+
+    expect(instance?.content).toEqual({
+      title: "Sprint Planning",
+      description: "Quarterly planning",
+      location: "200 Main St, Anytown",
+      organizer: { email: "lead@example.com", displayName: "Team Lead" },
+      attendees: [
+        {
+          email: "guest@example.com",
+          displayName: "Guest",
+          responseStatus: "accepted",
+        },
+      ],
+      conference: {
+        url: "https://meet.google.com/abc-defg-hij",
+        label: "Google Meet",
+      },
     });
   });
 

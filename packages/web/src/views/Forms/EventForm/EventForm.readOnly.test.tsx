@@ -86,7 +86,14 @@ describe("EventForm read-only gate", () => {
     const { container } = renderEventForm(draft, [readOnlyCalendar]);
 
     expect(screen.getByPlaceholderText("Title")).toBeDisabled();
-    expect(screen.getByPlaceholderText("Description")).toBeDisabled();
+    // The description editor is a contenteditable div, not a native form
+    // control - <fieldset disabled> has no effect on it, so read-only is
+    // expressed via TipTap's own `editable` option instead (EventForm.tsx
+    // passes editable={!isReadOnly} directly, outside the fieldset).
+    expect(
+      screen.getByRole("textbox", { name: "Description" }),
+    ).toHaveAttribute("contenteditable", "false");
+    expect(screen.queryByRole("toolbar")).not.toBeInTheDocument();
     // The date/recurrence/description block is wrapped in a native
     // <fieldset disabled>, which auto-disables every native control it
     // contains (see EventForm.tsx) - checked on the fieldset itself rather
@@ -136,7 +143,9 @@ describe("EventForm read-only gate", () => {
     renderEventForm(draft, [writableCalendar]);
 
     expect(screen.getByPlaceholderText("Title")).toHaveValue("Busy");
-    expect(screen.getByPlaceholderText("Description")).toHaveValue("");
+    expect(
+      screen.getByRole("textbox", { name: "Description" }).textContent,
+    ).toBe("");
     expect(screen.getByPlaceholderText("Title")).toBeDisabled();
     expect(
       screen.queryByRole("button", { name: "Save" }),
@@ -163,7 +172,10 @@ describe("EventForm read-only gate", () => {
     });
 
     expect(screen.getByPlaceholderText("Title")).not.toBeDisabled();
-    expect(screen.getByPlaceholderText("Description")).not.toBeDisabled();
+    expect(
+      screen.getByRole("textbox", { name: "Description" }),
+    ).toHaveAttribute("contenteditable", "true");
+    expect(screen.getByRole("toolbar")).toBeInTheDocument();
     for (const fieldset of container.querySelectorAll("fieldset")) {
       expect(fieldset).not.toBeDisabled();
     }

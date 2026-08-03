@@ -32,11 +32,11 @@ import {
   isDeleteTextEditingTarget,
 } from "@web/common/utils/form/form.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import { DescriptionEditor } from "@web/components/DescriptionEditor/DescriptionEditor";
 import {
   Focusable,
   INPUT_RESET_CLASSNAME,
 } from "@web/components/Focusable/Focusable";
-import { Textarea } from "@web/components/Textarea/Textarea";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   patchGridDraftFields,
@@ -52,6 +52,7 @@ import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/Dat
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
 import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
 import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/EventColorPicker";
+import { EventDetailsSection } from "@web/views/Forms/EventForm/EventDetailsSection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
@@ -244,6 +245,14 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       draft.kind === "edit" &&
       isEventReadOnly(calendarLookup, draft.source.calendarId, isBusy);
     const displayTitle = isBusy ? BUSY_EVENT_TITLE : title;
+    // Read-only, provider-sourced fields live on the source event's content,
+    // never on draft.values (EditableContentSchema doesn't carry them) - a
+    // create draft has no source event, and a busy source carries none of
+    // this either.
+    const sourceDetails =
+      draft.kind === "edit" && draft.source.content.kind === "details"
+        ? draft.source.content
+        : undefined;
     const latestDraftRef = useRef(draft);
     const { startDate: eventStartDate, endDate: eventEndDate } =
       scheduleDateStrings(draft);
@@ -379,13 +388,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     /***********
      * Handlers
      **********/
-    const onChangeEventTextField =
-      (fieldName: "title" | "description") =>
-      <T extends HTMLInputElement | HTMLTextAreaElement = HTMLTextAreaElement>(
-        e: React.ChangeEvent<T>,
-      ) => {
-        patchDraftFields({ [fieldName]: e.target.value });
-      };
+    const onChangeTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
+      patchDraftFields({ title: e.target.value });
+    };
 
     const onClose = useCallback(() => {
       setTimeout(() => {
@@ -709,7 +714,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                 )}
                 autoFocus
                 disabled={isReadOnly}
-                onChange={onChangeEventTextField("title")}
+                onChange={onChangeTitle}
                 onKeyDown={handleTitleKeyDown}
                 placeholder="Title"
                 aria-label="Title"
@@ -791,18 +796,30 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
             </FormCard>
 
             <FormCard>
-              <Textarea
+              <DescriptionEditor
                 id={EVENT_FORM_DESCRIPTION_ID}
-                aria-label="Description"
-                underlineColor={eventColor}
-                onChange={onChangeEventTextField("description")}
-                onKeyDown={handleIgnoredKeys}
-                placeholder="Description"
+                resetKey={draft.kind === "edit" ? draft.source.id : "create"}
                 value={description}
-                className="relative w-full border-hidden bg-transparent"
+                onChange={(html) => patchDraftFields({ description: html })}
+                editable={!isReadOnly}
+                underlineColor={eventColor}
+                onKeyDown={handleIgnoredKeys}
               />
             </FormCard>
           </fieldset>
+
+          {/* Outside the fieldset: read-only display, not an editable
+              control, so it stays interactive (the "+N more" toggle) even
+              when the event itself is read-only. Renders its own card
+              styling and returns null when the event has none of this data. */}
+          {sourceDetails && (
+            <EventDetailsSection
+              location={sourceDetails.location}
+              organizer={sourceDetails.organizer}
+              attendees={sourceDetails.attendees}
+              conference={sourceDetails.conference}
+            />
+          )}
 
           {isReadOnly && (
             <p role="note" className="text-text-muted text-xs">

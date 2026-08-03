@@ -87,6 +87,33 @@ window.scrollTo = () => {};
 window.document.elementFromPoint = () => null;
 window.PointerEvent = getPointerEvent(window.MouseEvent);
 
+// jsdom has no layout engine, so Range has neither getClientRects nor
+// getBoundingClientRect (Element gets a zeroed getBoundingClientRect stub,
+// but not Range). ProseMirror's cursor/coordinate math (used by TipTap-backed
+// editors, e.g. DescriptionEditor) calls both on Range objects during
+// arrow-key/gap-cursor handling. A zeroed rect is a safe stand-in - it's the
+// same "no real layout" answer jsdom already gives for Element.
+const zeroDOMRect = (): DOMRect => ({
+  x: 0,
+  y: 0,
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  width: 0,
+  height: 0,
+  toJSON: () => ({}),
+});
+if (!window.Element.prototype.getClientRects) {
+  window.Element.prototype.getClientRects = () => [] as unknown as DOMRectList;
+}
+if (!window.Range.prototype.getClientRects) {
+  window.Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+}
+if (!window.Range.prototype.getBoundingClientRect) {
+  window.Range.prototype.getBoundingClientRect = zeroDOMRect;
+}
+
 window.fetch = globalThis.fetch.bind(globalThis);
 window.Blob = globalThis.Blob;
 window.File = globalThis.File;

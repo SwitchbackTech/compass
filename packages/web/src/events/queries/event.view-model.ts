@@ -74,6 +74,10 @@ const eventToGridEvent = (
       : {}),
     ...withColor(details?.color ?? undefined),
     ...withColorHex(details?.colorHex),
+    location: details?.location,
+    organizer: details?.organizer,
+    attendees: details?.attendees,
+    conference: details?.conference,
   };
 };
 

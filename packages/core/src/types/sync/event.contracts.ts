@@ -7,6 +7,11 @@ import {
 } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import {
+  AttendeeSchema,
+  ConferenceSchema,
+  OrganizerSchema,
+} from "@core/types/event-attendance.contracts";
+import {
   EventColorSlotSchema,
   OptionalHexEventColorSchema,
   OptionalNullableEventColorSchema,
@@ -71,35 +76,6 @@ export const SyncEventOwnershipSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 export type SyncEventOwnership = z.infer<typeof SyncEventOwnershipSchema>;
-
-export const OrganizerSchema = z.strictObject({
-  email: z.string().trim().min(1).max(320),
-  displayName: z.string().trim().min(1).max(256).nullable(),
-});
-export type Organizer = z.infer<typeof OrganizerSchema>;
-
-export const AttendeeResponseStatusSchema = z.enum([
-  "needsAction",
-  "accepted",
-  "declined",
-  "tentative",
-]);
-export type AttendeeResponseStatus = z.infer<
-  typeof AttendeeResponseStatusSchema
->;
-
-export const AttendeeSchema = z.strictObject({
-  email: z.string().trim().min(1).max(320),
-  displayName: z.string().trim().min(1).max(256).nullable(),
-  responseStatus: AttendeeResponseStatusSchema,
-});
-export type Attendee = z.infer<typeof AttendeeSchema>;
-
-export const ConferenceSchema = z.strictObject({
-  url: z.url(),
-  label: z.string().trim().min(1).max(256).nullable(),
-});
-export type Conference = z.infer<typeof ConferenceSchema>;
 
 export const SyncEventContentSchema = z.strictObject({
   title: z.string(),
@@ -204,6 +180,10 @@ export type OccurrenceKey = z.infer<typeof OccurrenceKeySchema>;
 const SyncInstanceContentSchema = z.strictObject({
   title: z.string(),
   description: z.string(),
+  location: z.string().nullable(),
+  organizer: OrganizerSchema.nullable(),
+  attendees: z.array(AttendeeSchema).readonly(),
+  conference: ConferenceSchema.nullable(),
   color: EventColorSlotSchema.optional(),
   colorHex: OptionalHexEventColorSchema,
 });

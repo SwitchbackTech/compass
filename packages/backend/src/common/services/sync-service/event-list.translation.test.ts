@@ -10,13 +10,22 @@ import { describe, expect, it } from "bun:test";
 
 const objectId = () => faker.database.mongodbObjectId();
 
+const baseContent = {
+  title: "Standup",
+  description: "Daily",
+  location: null,
+  organizer: null,
+  attendees: [],
+  conference: null,
+};
+
 const baseInstance = (
   overrides: Partial<SyncEventInstance> = {},
 ): SyncEventInstance =>
   SyncEventInstanceSchema.parse({
     eventId: objectId(),
     calendarId: objectId(),
-    content: { title: "Standup", description: "Daily" },
+    content: baseContent,
     schedule: {
       kind: "timed",
       start: "2026-07-14T09:00:00.000Z",
@@ -41,6 +50,10 @@ describe("syncEventInstanceToBrowser", () => {
       kind: "details",
       title: "Standup",
       description: "Daily",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
     });
     expect(event.calendarId).toBe(instance.calendarId);
   });
@@ -90,7 +103,7 @@ describe("syncEventInstanceToBrowser", () => {
 
   it("forwards content.color onto browser details content", () => {
     const instance = baseInstance({
-      content: { title: "Standup", description: "Daily", color: "blue" },
+      content: { ...baseContent, color: "blue" },
     });
     const event = syncEventInstanceToBrowser(instance);
 
@@ -98,6 +111,10 @@ describe("syncEventInstanceToBrowser", () => {
       kind: "details",
       title: "Standup",
       description: "Daily",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
       color: "blue",
     });
   });
@@ -110,7 +127,7 @@ describe("syncEventInstanceToBrowser", () => {
 
   it("forwards content.colorHex onto browser details content", () => {
     const instance = baseInstance({
-      content: { title: "Standup", description: "Daily", colorHex: "#009688" },
+      content: { ...baseContent, colorHex: "#009688" },
     });
     const event = syncEventInstanceToBrowser(instance);
 
@@ -118,6 +135,10 @@ describe("syncEventInstanceToBrowser", () => {
       kind: "details",
       title: "Standup",
       description: "Daily",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
       colorHex: "#009688",
     });
   });
@@ -126,5 +147,57 @@ describe("syncEventInstanceToBrowser", () => {
     const event = syncEventInstanceToBrowser(baseInstance());
 
     expect(event.content).not.toHaveProperty("colorHex");
+  });
+
+  it("forwards location, organizer, attendees, and conference onto browser details content", () => {
+    const instance = baseInstance({
+      content: {
+        title: "Sprint Planning",
+        description: "Quarterly planning",
+        location: "200 Main St, Anytown",
+        organizer: { email: "lead@example.com", displayName: "Team Lead" },
+        attendees: [
+          {
+            email: "lead@example.com",
+            displayName: "Team Lead",
+            responseStatus: "accepted",
+          },
+          {
+            email: "guest@example.com",
+            displayName: null,
+            responseStatus: "tentative",
+          },
+        ],
+        conference: {
+          url: "https://meet.google.com/abc-defg-hij",
+          label: "Google Meet",
+        },
+      },
+    });
+    const event = syncEventInstanceToBrowser(instance);
+
+    expect(event.content).toEqual({
+      kind: "details",
+      title: "Sprint Planning",
+      description: "Quarterly planning",
+      location: "200 Main St, Anytown",
+      organizer: { email: "lead@example.com", displayName: "Team Lead" },
+      attendees: [
+        {
+          email: "lead@example.com",
+          displayName: "Team Lead",
+          responseStatus: "accepted",
+        },
+        {
+          email: "guest@example.com",
+          displayName: null,
+          responseStatus: "tentative",
+        },
+      ],
+      conference: {
+        url: "https://meet.google.com/abc-defg-hij",
+        label: "Google Meet",
+      },
+    });
   });
 });

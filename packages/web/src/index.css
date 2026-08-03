@@ -427,6 +427,42 @@
   @apply c-focus-ring flex w-full cursor-pointer appearance-none items-center gap-2 whitespace-nowrap border-0 bg-transparent px-3 py-2.5 text-left text-[14px] text-text select-none hover:bg-surface-overlay focus-visible:bg-surface-overlay disabled:cursor-wait disabled:opacity-50;
 }
 
+/* The event description editor (DescriptionEditor.tsx). TipTap renders its
+   own `.tiptap` contenteditable element as a child of whatever wrapper
+   className is passed to <EditorContent>, so list/placeholder styling has
+   to target that descendant rather than the wrapper itself. */
+@utility c-rich-text {
+  & .tiptap {
+    @apply min-h-8 outline-none;
+  }
+
+  & p {
+    @apply my-0;
+  }
+
+  & ul,
+  & ol {
+    @apply my-1 pl-5;
+  }
+
+  & ul {
+    @apply list-disc;
+  }
+
+  & ol {
+    @apply list-decimal;
+  }
+
+  & li p {
+    @apply inline;
+  }
+
+  & p.is-editor-empty:first-child::before {
+    @apply pointer-events-none float-left h-0 text-text-muted;
+    content: attr(data-placeholder);
+  }
+}
+
 @utility c-not-found {
   @apply flex h-screen w-screen flex-col items-center justify-center text-text;
   background: linear-gradient(
