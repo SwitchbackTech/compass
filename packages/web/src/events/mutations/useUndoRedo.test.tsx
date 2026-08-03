@@ -94,6 +94,7 @@ describe("useUndoRedo", () => {
             kind: "details";
             title: string;
             description: string;
+            location: string;
           },
           schedule: {
             kind: "timed",
@@ -156,6 +157,7 @@ describe("useUndoRedo", () => {
           kind: "details";
           title: string;
           description: string;
+          location: string;
         },
         schedule: created.schedule as never,
         recurrence: { kind: "single" },
@@ -318,7 +320,12 @@ describe("useUndoRedo", () => {
       context.hook.result.current.mutations.replace({
         id: instance.id,
         input: {
-          content: { kind: "details", title: "Moved", description: "" },
+          content: {
+            kind: "details",
+            title: "Moved",
+            description: "",
+            location: "",
+          },
           schedule: instance.schedule as never,
           recurrence: { kind: "preserve" },
           scope: "this",
@@ -364,7 +371,12 @@ describe("useUndoRedo", () => {
       context.hook.result.current.mutations.replace({
         id: instance.id,
         input: {
-          content: { kind: "details", title: "Changed", description: "" },
+          content: {
+            kind: "details",
+            title: "Changed",
+            description: "",
+            location: "",
+          },
           schedule: instance.schedule as never,
           recurrence: { kind: "preserve" },
           scope: "this",
@@ -384,7 +396,12 @@ describe("useUndoRedo", () => {
       context.hook.result.current.mutations.replace({
         id: other.id,
         input: {
-          content: { kind: "details", title: "Later", description: "" },
+          content: {
+            kind: "details",
+            title: "Later",
+            description: "",
+            location: "",
+          },
           schedule: other.schedule as never,
           recurrence: { kind: "preserve" },
           scope: "this",
@@ -414,7 +431,12 @@ describe("useUndoRedo", () => {
       context.hook.result.current.mutations.replace({
         id: original.id,
         input: {
-          content: { kind: "details", title: "Moved", description: "" },
+          content: {
+            kind: "details",
+            title: "Moved",
+            description: "",
+            location: "",
+          },
           schedule: original.schedule as never,
           recurrence: { kind: "preserve" },
           scope: "this",
@@ -466,6 +488,7 @@ describe("useUndoRedo", () => {
           kind: "details";
           title: string;
           description: string;
+          location: string;
         },
         schedule: created.schedule as never,
         recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },

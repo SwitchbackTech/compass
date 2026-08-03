@@ -1022,7 +1022,7 @@ describe("EventForm", () => {
     ).toBe("Notes");
   });
 
-  describe("read-only event details (meeting link, location, attendees)", () => {
+  describe("event details (meeting link, location, attendees)", () => {
     it("shows a meeting link that opens in a new tab", () => {
       renderWithStore(
         <EventForm
@@ -1051,7 +1051,7 @@ describe("EventForm", () => {
       expect(link).toHaveAttribute("rel", "noopener noreferrer");
     });
 
-    it("shows the location linking out to Google Maps", () => {
+    it("shows an editable location field with a link to Google Maps", () => {
       renderWithStore(
         <EventForm
           draft={createEditDraft({ location: "200 Main St, Anytown" })}
@@ -1065,15 +1065,69 @@ describe("EventForm", () => {
         />,
       );
 
-      const link = screen.getByRole("link", {
-        name: "200 Main St, Anytown",
-      });
+      expect(screen.getByRole("textbox", { name: "Location" })).toHaveValue(
+        "200 Main St, Anytown",
+      );
+
+      const link = screen.getByRole("link", { name: "Open in Google Maps" });
       expect(link).toHaveAttribute(
         "href",
         "https://www.google.com/maps/search/?api=1&query=200%20Main%20St%2C%20Anytown",
       );
       expect(link).toHaveAttribute("target", "_blank");
       expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    });
+
+    it("updates the draft location as the user types and shows the Maps link once populated", async () => {
+      const user = userEvent.setup();
+
+      function Harness() {
+        const [draft, setDraftState] = useState<GridEventDraft>(
+          createEditDraft({ location: "" }),
+        );
+        const setDraftFromForm = (
+          nextDraft: SetStateAction<GridEventDraft | null>,
+        ) => {
+          setDraftState((currentDraft) => {
+            const resolvedDraft =
+              typeof nextDraft === "function"
+                ? nextDraft(currentDraft)
+                : nextDraft;
+
+            return resolvedDraft ?? currentDraft;
+          });
+        };
+
+        return (
+          <EventForm
+            draft={draft}
+            isDraft={false}
+            isExistingEvent={true}
+            onClose={mock()}
+            onDelete={mock()}
+            onDuplicate={mock()}
+            onSubmit={mock()}
+            setDraft={setDraftFromForm}
+          />
+        );
+      }
+
+      renderWithStore(<Harness />);
+
+      expect(
+        screen.queryByRole("link", { name: "Open in Google Maps" }),
+      ).not.toBeInTheDocument();
+
+      const locationField = screen.getByRole("textbox", { name: "Location" });
+      await user.type(locationField, "200 Main St");
+
+      expect(locationField).toHaveValue("200 Main St");
+      expect(
+        screen.getByRole("link", { name: "Open in Google Maps" }),
+      ).toHaveAttribute(
+        "href",
+        "https://www.google.com/maps/search/?api=1&query=200%20Main%20St",
+      );
     });
 
     it("shows attendees with RSVP status and marks the organizer", () => {
@@ -1118,7 +1172,7 @@ describe("EventForm", () => {
       ).toBeInTheDocument();
     });
 
-    it("renders nothing when the event has no location, attendees, or conference", () => {
+    it("renders an empty, link-less location field and no attendees/conference section when the event has none of them", () => {
       renderWithStore(
         <EventForm
           draft={createEditDraft()}
@@ -1132,6 +1186,7 @@ describe("EventForm", () => {
         />,
       );
 
+      expect(screen.getByRole("textbox", { name: "Location" })).toHaveValue("");
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
       expect(screen.queryByText(/guest/)).not.toBeInTheDocument();
     });

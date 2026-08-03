@@ -96,6 +96,7 @@ describe("showRecurrenceScopeToast", () => {
           kind: "details",
           title: "Updated plan",
           description: "",
+          location: "",
         },
         schedule: original.schedule,
         recurrence: { kind: "preserve" },
@@ -170,7 +171,12 @@ describe("showRecurrenceScopeToast", () => {
       kind: "replace",
       original,
       input: {
-        content: { kind: "details", title: "Original", description: "" },
+        content: {
+          kind: "details",
+          title: "Original",
+          description: "",
+          location: "",
+        },
         schedule: original.schedule,
         recurrence: { kind: "preserve" },
         scope: "this",

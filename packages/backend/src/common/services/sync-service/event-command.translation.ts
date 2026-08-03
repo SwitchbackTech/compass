@@ -36,21 +36,22 @@ import { createHash } from "node:crypto";
 const UNKNOWN_CALENDAR_ID = CalendarIdSchema.parse("000000000000000000000000");
 
 // Expand browser details-content into sync's fuller content shape. Browser
-// edits never touch location/organizer/attendees/conference — pad with nulls
-// so the strict SyncEventContent schema accepts the wire payload. On create
-// those nulls are correct (new event). On update, sync's apply path merges
-// title/description onto the existing record (mergeUpdateContent) so a rename
-// cannot wipe provider-sourced attendees/location/conference. Optional color
-// is forwarded when the browser sets one; omitted color leaves merge to keep
-// whatever Sync already stores.
+// edits never touch organizer/attendees/conference — pad with nulls so the
+// strict SyncEventContent schema accepts the wire payload. On create those
+// nulls are correct (new event). On update, sync's apply path merges
+// title/description/location onto the existing record (mergeUpdateContent)
+// so a rename cannot wipe provider-sourced attendees/conference. Optional
+// color is forwarded when the browser sets one; omitted color leaves merge
+// to keep whatever Sync already stores.
 export const toSyncContent = (content: {
   title: string;
   description: string;
+  location: string;
   color?: EventColorSlot | null;
 }): SyncEventContent => ({
   title: content.title,
   description: content.description,
-  location: null,
+  location: content.location,
   organizer: null,
   attendees: [],
   conference: null,

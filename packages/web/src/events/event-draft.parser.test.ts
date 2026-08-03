@@ -44,6 +44,7 @@ const newFormValues = (
 ): NewEventFormValues => ({
   title: "Standup",
   description: "",
+  location: "",
   schedule: timedSchedule(),
   calendarId: calendarId(),
   color: null,
@@ -65,6 +66,7 @@ const editFormValues = (
 ): EditEventFormValues => ({
   title: "Standup",
   description: "",
+  location: "",
   schedule: timedSchedule(),
   calendarId: calendarId(),
   color: null,
@@ -111,6 +113,7 @@ describe("parseEventDraft", () => {
         kind: "details",
         title: "Standup",
         description: "",
+        location: "",
         color: "coral",
       });
 
@@ -118,6 +121,13 @@ describe("parseEventDraft", () => {
       expect(cleared.ok).toBe(true);
       if (!cleared.ok) throw new Error("expected ok");
       expect(cleared.input.content.color).toBeNull();
+    });
+
+    it("includes the edited location", () => {
+      const result = parseEventDraft(newDraft({ location: "Room A" }));
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error("expected ok");
+      expect(result.input.content.location).toBe("Room A");
     });
 
     it("normalizes a same-day all-day selection to an exclusive end", () => {

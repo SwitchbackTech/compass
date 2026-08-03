@@ -22,10 +22,29 @@ const timedSchedule = {
 
 describe("toSyncContent", () => {
   it("pads browser details into the full sync content shape", () => {
-    expect(toSyncContent({ title: "Standup", description: "Daily" })).toEqual({
+    expect(
+      toSyncContent({ title: "Standup", description: "Daily", location: "" }),
+    ).toEqual({
       title: "Standup",
       description: "Daily",
-      location: null,
+      location: "",
+      organizer: null,
+      attendees: [],
+      conference: null,
+    });
+  });
+
+  it("forwards the browser's location onto sync content", () => {
+    expect(
+      toSyncContent({
+        title: "Standup",
+        description: "Daily",
+        location: "Room A",
+      }),
+    ).toEqual({
+      title: "Standup",
+      description: "Daily",
+      location: "Room A",
       organizer: null,
       attendees: [],
       conference: null,
@@ -34,11 +53,16 @@ describe("toSyncContent", () => {
 
   it("forwards an optional color onto sync content", () => {
     expect(
-      toSyncContent({ title: "Standup", description: "Daily", color: "coral" }),
+      toSyncContent({
+        title: "Standup",
+        description: "Daily",
+        location: "",
+        color: "coral",
+      }),
     ).toEqual({
       title: "Standup",
       description: "Daily",
-      location: null,
+      location: "",
       organizer: null,
       attendees: [],
       conference: null,
@@ -48,7 +72,7 @@ describe("toSyncContent", () => {
 
   it("omits color when the browser did not set one", () => {
     expect(
-      toSyncContent({ title: "Standup", description: "Daily" }),
+      toSyncContent({ title: "Standup", description: "Daily", location: "" }),
     ).not.toHaveProperty("color");
   });
 });
@@ -117,7 +141,12 @@ describe("toCreateSubmitRequest", () => {
     const { request, responseEvent } = toCreateSubmitRequest({
       id: eventId,
       calendarId,
-      content: { kind: "details", title: "Lunch", description: "" },
+      content: {
+        kind: "details",
+        title: "Lunch",
+        description: "",
+        location: "",
+      },
       schedule: timedSchedule,
       recurrence: { kind: "single" },
     });
@@ -140,7 +169,7 @@ describe("toCreateSubmitRequest", () => {
   it("mints an eventId when the client omits one", () => {
     const { request } = toCreateSubmitRequest({
       calendarId: objectId(),
-      content: { kind: "details", title: "X", description: "" },
+      content: { kind: "details", title: "X", description: "", location: "" },
       schedule: timedSchedule,
       recurrence: { kind: "single" },
     });
@@ -158,7 +187,12 @@ describe("toReplaceSubmitRequests", () => {
   it("emits a single update for a plain-id replace without a calendar move", () => {
     const eventId = objectId();
     const { requests, responseEvent } = toReplaceSubmitRequests(eventId, {
-      content: { kind: "details", title: "Renamed", description: "" },
+      content: {
+        kind: "details",
+        title: "Renamed",
+        description: "",
+        location: "",
+      },
       schedule: timedSchedule,
       recurrence: { kind: "preserve" },
       scope: "this",
@@ -178,7 +212,12 @@ describe("toReplaceSubmitRequests", () => {
     const recurrenceId = "2026-07-14T09:00:00.000Z";
     const id = composeOccurrenceId({ eventId, recurrenceId });
     const { requests } = toReplaceSubmitRequests(id, {
-      content: { kind: "details", title: "Moved", description: "" },
+      content: {
+        kind: "details",
+        title: "Moved",
+        description: "",
+        location: "",
+      },
       schedule: timedSchedule,
       recurrence: { kind: "preserve" },
       scope: "this",
@@ -197,7 +236,7 @@ describe("toReplaceSubmitRequests", () => {
     const calendarId = objectId();
     const { requests } = toReplaceSubmitRequests(eventId, {
       calendarId,
-      content: { kind: "details", title: "X", description: "" },
+      content: { kind: "details", title: "X", description: "", location: "" },
       schedule: timedSchedule,
       recurrence: { kind: "single" },
       scope: "this",

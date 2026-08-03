@@ -200,6 +200,7 @@ export function parseEventDraft(draft: EventDraft): ParseEventDraftResult {
     kind: "details" as const,
     title: draft.values.title,
     description: draft.values.description,
+    location: draft.values.location,
     // Always include: a slot sets the tag, null clears it on edit (and is a
     // no-op clear on create). Omitting would preserve an existing sync color
     // on title-only saves that still carry an explicit draft color of null.

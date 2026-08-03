@@ -34,7 +34,12 @@ describe("LocalEventRepository", () => {
     getAllEvents.mockResolvedValue([existing]);
 
     await repository.replace(existing.id, {
-      content: { kind: "details", title: "Renamed sample", description: "" },
+      content: {
+        kind: "details",
+        title: "Renamed sample",
+        description: "",
+        location: "",
+      },
       schedule: existing.event.schedule,
       recurrence: { kind: "preserve" },
       scope: "this",
@@ -51,7 +56,7 @@ describe("LocalEventRepository", () => {
 
     const id = "c".repeat(24) as EventId;
     const result = await repository.replace(id, {
-      content: { kind: "details", title: "x", description: "" },
+      content: { kind: "details", title: "x", description: "", location: "" },
       schedule: {
         kind: "timed",
         start: DateTimeSchema.parse("2026-05-05T09:00:00.000-05:00"),
@@ -77,7 +82,7 @@ describe("LocalEventRepository", () => {
     const id = "d".repeat(24) as EventId;
     const calendarId = "e".repeat(24) as EventId;
     const result = await repository.replace(id, {
-      content: { kind: "details", title: "y", description: "" },
+      content: { kind: "details", title: "y", description: "", location: "" },
       calendarId: calendarId as unknown as CalendarId,
       schedule: {
         kind: "timed",
@@ -324,7 +329,12 @@ describe("LocalEventRepository", () => {
     const result = await repository.replace(
       `${record.id}::2026-05-06T09:00:00Z` as EventId,
       {
-        content: { kind: "details", title: "Renamed series", description: "" },
+        content: {
+          kind: "details",
+          title: "Renamed series",
+          description: "",
+          location: "",
+        },
         schedule: record.event.schedule,
         recurrence: {
           kind: "series",
@@ -351,7 +361,12 @@ describe("LocalEventRepository", () => {
     const id = `${record.id}::${occurrenceStart}` as EventId;
 
     const result = await repository.replace(id, {
-      content: { kind: "details", title: "New leg", description: "" },
+      content: {
+        kind: "details",
+        title: "New leg",
+        description: "",
+        location: "",
+      },
       schedule: {
         kind: "timed",
         start: DateTimeSchema.parse("2026-05-06T11:00:00.000Z"),

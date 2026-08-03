@@ -2,7 +2,7 @@ import { mergeUpdateContent, omitNullColor } from "./merge-update-content";
 import { describe, expect, it } from "bun:test";
 
 describe("mergeUpdateContent", () => {
-  it("updates title and description without wiping richer fields", () => {
+  it("updates title, description, and location without wiping richer fields", () => {
     const existing = {
       title: "Old",
       description: "Old desc",
@@ -20,7 +20,7 @@ describe("mergeUpdateContent", () => {
     const incoming = {
       title: "New",
       description: "New desc",
-      location: null,
+      location: "Room B",
       organizer: null,
       attendees: [],
       conference: null,
@@ -29,7 +29,7 @@ describe("mergeUpdateContent", () => {
     expect(mergeUpdateContent(existing, incoming)).toEqual({
       title: "New",
       description: "New desc",
-      location: "Room A",
+      location: "Room B",
       organizer: existing.organizer,
       attendees: existing.attendees,
       conference: existing.conference,
