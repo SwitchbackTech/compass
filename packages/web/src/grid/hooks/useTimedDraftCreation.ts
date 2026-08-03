@@ -92,8 +92,6 @@ export const useTimedDraftCreation = ({
       // Clicks keep the 30-minute default. Once the pointer has moved, the end
       // can shrink to one grid step (15) without flipping past the origin.
       const defaultEndDate = start.add(DRAFT_DURATION_MIN, "minutes");
-      const minimumEndDate = start.add(GRID_TIME_STEP, "minutes");
-      const pointerDate = getStartDate(point);
 
       if (!hasMoved) {
         return replaceGridDraftSchedule(
@@ -102,16 +100,22 @@ export const useTimedDraftCreation = ({
         );
       }
 
+      const minimumEndDate = start.add(GRID_TIME_STEP, "minutes");
+      const pointerDate = getStartDate(point);
       const isSameDayDrag = pointerDate.isSame(start, "day");
       const isUpwardDrag = isSameDayDrag && pointerDate.isBefore(start);
-      const resolvedStartDate = isUpwardDrag ? pointerDate : start;
-      const resolvedEndDate = isUpwardDrag
-        ? start
-        : isSameDayDrag
-          ? pointerDate.isBefore(minimumEndDate)
-            ? minimumEndDate
-            : pointerDate
-          : defaultEndDate;
+
+      let resolvedStartDate = start;
+      let resolvedEndDate = defaultEndDate;
+
+      if (isUpwardDrag) {
+        resolvedStartDate = pointerDate;
+        resolvedEndDate = start;
+      } else if (isSameDayDrag) {
+        resolvedEndDate = pointerDate.isBefore(minimumEndDate)
+          ? minimumEndDate
+          : pointerDate;
+      }
 
       return replaceGridDraftSchedule(
         draftEvent,
