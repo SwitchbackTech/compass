@@ -120,9 +120,10 @@ _Avoid_: calling every Google import path "the Sync service"
 **Google Import**:
 A Google Calendar import into Compass.
 
-**Google Repair**:
-A Google sync recovery path that refreshes or restarts Google data when metadata
-says the existing sync needs repair.
+**Google Refresh / Repair**:
+A Sync catch-up path that refreshes Google data when connection health needs
+attention. The sidebar CTA is **Refresh calendar**; internal logs and Sync jobs
+may still say “repair.”
 
 **Google Watch repair**:
 A repair path that recreates missing, expired, stale, or incomplete **Google
@@ -132,8 +133,10 @@ watches are already healthy. When sync tokens are usable, watch repair should
 also catch up missed Google-side changes through incremental import; when sync
 tokens are missing or invalid, fall back to full **Repair**.
 
-**Primary Calendar**: The main Google Calendar Compass currently syncs. Compass
-does not yet support choosing multiple Google calendars in the UI.
+**Primary Calendar**: The user's main Google Calendar identity used for
+reconnect binding. Compass imports every eligible Google calendar by default;
+the sidebar visibility toggles control which calendars' events are shown, not
+which calendars sync.
 
 **Google Watch notifications**: A Google Calendar watch subscription used to notify Compass when Google-side calendar data changes. Use "channel" only for Google API fields such as `channelId`. These are separate from browser API and **SSE** traffic; browser traffic can be local, but Google webhook posts need public HTTPS when continuous sync is expected.
 _Avoid_: Sync Channel

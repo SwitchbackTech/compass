@@ -294,21 +294,36 @@ Files:
 - `packages/web/src/sse/hooks/useSSEConnection.ts`
 - `packages/web/src/sse/hooks/useEventSSE.ts`
 - `packages/web/src/sse/hooks/useGcalSSE.ts`
+- `packages/web/src/sse/hooks/useSyncFocusRefresh.ts`
+- `packages/web/src/common/hooks/useVisibleAfterHidden.ts`
 
 Responsibilities:
 
 - open/close `EventSource` to `GET /api/events/stream` based on auth state
-- refetch events when background event changes arrive (`EVENT_CHANGED`)
+- refetch events when background `eventsChanged` messages arrive
 - refetch events/calendars when the native EventSource fires `open` again
   (reconnect after sleep) via `onStreamReopen`
-- react to Google import progress and Google revocation events
-- apply `USER_METADATA` pushed on stream connect and when the backend refreshes metadata
+- react to Google import/health via `syncStatusChanged` / `importCompleted`
+- apply `userMetadataChanged` pushed on stream connect and when the backend refreshes metadata
+- trigger a silent Google Calendar refresh on mount and after the tab was hidden
+  for 30+ seconds (`useSyncFocusRefresh`, same path as the sidebar **Refresh
+  calendar** CTA)
 
 Runtime nuances:
 
-- `useGcalSSE` uses `USER_METADATA` as the source of truth for sync metadata and Google connection status.
+- The SSE wire format uses one event name (`message`) whose `data.type` is a
+  `ServerMessage` member. Prefer those type names (`eventsChanged`,
+  `userMetadataChanged`, `syncStatusChanged`) over the retired uppercase
+  signal names.
+- `useGcalSSE` uses `userMetadataChanged` as the source of truth for sync
+  metadata and Google connection status.
 - auto-import is triggered only when `sync.importGCal === "RESTART"` and `google.connectionState` is neither `NOT_CONNECTED` nor `RECONNECT_REQUIRED`.
-- On connect, backend may proactively send `GOOGLE_REVOKED`; the client clears Google-origin events and falls back to local event storage until reconnect.
+- On connect, backend may proactively send `syncStatusChanged` with
+  `code: "GOOGLE_REVOKED"`; the client clears Google-origin events and falls
+  back to local event storage until reconnect.
+- Focus refresh is a no-op unless the connection is `HEALTHY` or `ATTENTION`.
+  It passes `silent: true` so a transient failure does not toast. Manual
+  refresh and focus refresh share one browser-wide coordinator.
 
 ## Google Connection UI Contract
 
@@ -318,16 +333,23 @@ Files:
 - `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.util.ts`
 - `packages/web/src/components/Sidebar/CalendarList/CalendarListHeader.tsx`
 
-UI state comes from a single server-enriched metadata field (`google.connectionState`) plus one client-only state (`checking`). The sidebar is the one visible home for Google status and actions: it displays a polite live status below the account email, keeps the shimmer while Google work or a local save is in progress, and only shows the last-synced timestamp when the connection is healthy. The command palette deliberately does not show Google status or actions.
+UI state comes from a server-enriched metadata field (`google.connectionState`)
+plus optional Sync connection summary (`google.syncConnection`) and one
+client-only state (`checking`). The sidebar account header is the one visible
+home for Google status and actions: a polite live status line under the email,
+an optional relative “Updated …” timestamp when healthy, and a CTA button when
+an action is available. The email itself is identity text, not the action
+control. The command palette deliberately does not show Google status or actions.
 
-`getGoogleConnectionConfig` supplies sidebar actions:
+`getGoogleSyncStatus` / `getGoogleConnectionConfig` supply the status line and
+CTA (prefer Sync connection vocabulary when a summary is present):
 
-- `HEALTHY` → “Calendar up-to-date”
-- `ATTENTION` → “Calendar needs a refresh” and **Refresh calendar**
+- `HEALTHY` / connection `healthy` → “Calendar connected” (no CTA)
+- `ATTENTION` / connection `delayed` → “Calendar updates are taking longer than usual. We'll keep trying.” and **Refresh calendar**
+- `IMPORTING` / early connection work → “Adding your calendar…” (no CTA)
 - `RECONNECT_REQUIRED` → “Calendar needs reconnecting” and **Reconnect Google Calendar**
 - `NOT_CONNECTED` → **Connect Google Calendar**
-- `checking` → “Checking calendar status…”
-- `IMPORTING` → “Syncing your calendar…”
+- `checking` → no status line
 
 User-facing copy avoids internal terms such as “repair” and “catching up.”
 
@@ -337,8 +359,9 @@ Important constraint:
 
 Connect-later guardrail:
 
-- In the password-session "connect Google" flow, `useConnectGoogle` calls
-  `syncPendingLocalEvents(dispatch)` before `AuthApi.connectGoogle(...)`.
+- In the password-session "connect Google" flow, `useConnectGoogle` flushes
+  pending local events before beginning the Sync-owned OAuth redirect
+  (`AuthApi.beginGoogleConnection(...)`).
 - If local sync fails, connect is aborted and a toast is shown:
   `"We could not sync your local events. Your changes are still saved on this device."`
 - This prevents IndexedDB-only Compass events from disappearing during the

@@ -69,6 +69,9 @@ Use this document to find the first files to inspect for common Compass changes.
 
 - SSE client: `packages/web/src/sse/client/sse.client.ts`
 - SSE hooks: `packages/web/src/sse/hooks`
+- Focus refresh (silent Sync catch-up on mount / long hide): `packages/web/src/sse/hooks/useSyncFocusRefresh.ts`
+- Shared “visible after hidden” helper: `packages/web/src/common/hooks/useVisibleAfterHidden.ts`
+- Google refresh coordinator: `packages/web/src/auth/google/state/google.sync.refresh.ts`
 - SSE provider: `packages/web/src/sse/provider/SSEProvider.tsx`
 - SSE transport constant + message union: `packages/core/src/constants/sse.constants.ts`, `packages/core/src/types/server-message.contracts.ts`
 - Backend SSE server: `packages/backend/src/servers/sse/sse.server.ts`
@@ -100,6 +103,7 @@ the full picture.
 - Web env parsing: `packages/web/src/common/constants/env.constants.ts`
 - Express middleware order: `packages/backend/src/servers/express/express.server.ts`
 - Health endpoint route/controller/tests: `packages/backend/src/health/health.routes.config.ts`, `packages/backend/src/health/controllers/health.controller.ts`, `packages/backend/src/health/controllers/health.controller.db.test.ts`
+- Self-host compose profile derivation (`selfhosted` / `sync` from `compass.yaml`): `self-host/config.sh` (sourced by `install.sh`, `install-manual.sh`, and `~/compass/compass`)
 
 ## CLI / Maintenance
 

@@ -72,7 +72,8 @@ entirely by the Sync service (`packages/sync`), not the backend.
 
 The web app opens `GET /api/events/stream` with the active SuperTokens session
 cookie. The backend subscribes that response to per-user fan-out and immediately
-pushes `USER_METADATA`.
+pushes a `userMetadataChanged` message (SSE event name is always `message`;
+clients switch on `data.type`).
 
 Primary files:
 

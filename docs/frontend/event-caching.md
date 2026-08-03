@@ -128,10 +128,12 @@ sides call the **same** predicate:
 ## What refreshes the cache
 
 - **Mutations** — invalidate `["events"]` on settle (see above).
-- **SSE** — background `EVENT_CHANGED` invalidates the
+- **SSE** — background `eventsChanged` invalidates the
   relevant scope so it refetches. Native EventSource reconnect (`open`) and
   window focus also invalidate/refetch so a laptop-sleep gap is not silent.
-  See [SSE Runtime](./frontend-runtime-flow.md#sse-runtime).
+  Separately, `useSyncFocusRefresh` asks Sync for a silent calendar catch-up
+  after mount / long hide — that complements cache invalidation; it does not
+  replace it. See [SSE Runtime](./frontend-runtime-flow.md#sse-runtime).
 - **Auth / source transitions** — refresh the repository source store and drop
   stale entries (e.g. Google revoked → fall back to `local`).
 

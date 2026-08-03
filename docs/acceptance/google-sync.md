@@ -11,7 +11,8 @@ Use this guide to validate:
 - real-time sync: event created in Google appears in Compass
 - real-time sync: event created in Compass appears in Google
 - Google Calendar status displaying as HEALTHY
-- sync needing attention and user triggering a sync
+- sync needing attention and user triggering a refresh
+- automatic silent refresh on app focus / long tab hide
 - Google access revoked — events removed and reconnect prompt shown
 - re-connecting Google after revocation
 - per-calendar visibility hide/show and its server-side read filtering
@@ -46,8 +47,12 @@ Helpful notes:
   calendar out of import. The sidebar's "Calendars" list controls per-calendar
   *visibility* in Compass instead (Scenario 9); a hidden calendar keeps
   syncing in the background, it just stops showing events.
-- The email shimmer animation appears during import and sync. There is no granular progress bar.
-- Toasts appear only on errors, not on successful sync operations.
+- Google status lives under the account email as a live status line (plus an
+  optional “Updated …” timestamp when healthy). Action CTAs are separate
+  buttons, not email tooltips.
+- The email shimmer animation appears during import and local saves. There is no granular progress bar.
+- Manual refresh failures toast; automatic focus refresh is silent on failure.
+- Successful sync operations do not toast.
 
 ---
 
@@ -69,9 +74,10 @@ A password-authenticated user can connect Google Calendar from the sidebar. Exis
 ### Expected Results
 
 - The Google authorization redirect returns to Compass through `/auth/google/callback`.
-- The sidebar shows “Syncing your calendar…” with the syncing shimmer. It remains visible until the complete import is healthy, even as individual Google events appear.
+- The sidebar shows “Adding your calendar…” with the syncing shimmer. It remains visible until the complete import is healthy, even as individual Google events appear.
 - Pre-existing Compass events remain visible on the calendar.
-- The network flow uses `POST /api/auth/google/connect`, not the logged-out sign-in path.
+- The browser navigates to a Sync-owned Google OAuth URL from
+  `AuthApi.beginGoogleConnection` (not the logged-out Google sign-in path).
 - After reload, the Google connection state persists.
 
 ---
@@ -93,12 +99,13 @@ After connecting Google, Compass imports all events from the user's Google calen
 
 ### Expected Results
 
-- The sidebar email shows the shimmer with tooltip "Syncing...".
+- The sidebar status line shows “Adding your calendar…” with the email shimmer.
 - The app remains fully interactive during import (no blocking overlay).
 - Google events gradually appear on the calendar as import progresses.
-- When import completes, the shimmer stops and the email returns to normal color.
-- The email's status transitions to its post-import state.
-- No success toast is shown — completion is indicated only by the shimmer stopping and events appearing.
+- When import completes, the shimmer stops and the status line becomes
+  “Calendar connected” (optionally with an “Updated …” timestamp).
+- No success toast is shown — completion is indicated only by the status
+  settling and events appearing.
 
 ---
 
@@ -110,7 +117,8 @@ After Google is connected and import is complete, creating an event in Google Ca
 
 ### Steps
 
-1. Confirm Google Calendar is connected and the sidebar email shows the HEALTHY (normal color, "Up-to-date" tooltip) state.
+1. Confirm Google Calendar is connected and the sidebar shows HEALTHY
+   (“Calendar connected”, optional “Updated …” timestamp).
 2. Open Google Calendar in another browser tab.
 3. Create a new event in Google Calendar for today with a recognizable title (for example, "GCal Test Event").
 4. Save the event in Google Calendar.
@@ -148,42 +156,80 @@ Creating a new event in Compass pushes it to Google Calendar in the background. 
 
 ### UX
 
-After a successful import with no sync infrastructure issues, the sidebar account email renders in its normal color with no shimmer. Hovering over it confirms the connection is healthy.
+After a successful import with no sync infrastructure issues, the sidebar
+shows a calm “Calendar connected” status under the account email. No refresh
+CTA is shown while healthy.
 
 ### Steps
 
 1. Connect Google and let the initial import complete.
-2. Hover over the account email in the sidebar.
+2. Read the status line under the account email in the sidebar.
 
 ### Expected Results
 
-- The tooltip reads "Up-to-date."
-- The email is not shimmering, warning or error color.
+- The status line reads “Calendar connected.”
+- An “Updated …” relative timestamp may appear beneath it when
+  `lastSyncedAt` is available.
+- The email is not shimmering, and the status is not warning or error color.
+- No **Refresh calendar** button is shown.
 
 ---
 
-## Scenario 6: Sync Needs Attention — User Triggers A Sync
+## Scenario 6: Sync Needs Attention — User Triggers A Refresh
 
 ### UX
 
-If the sync infrastructure degrades (for example, watch channels expire), the sidebar account email turns to `text-status-warning`, the ATTENTION state). The user can trigger a sync directly from the sidebar — either by hovering the email and clicking "Sync now" in the tooltip, or by clicking/activating the email itself (it renders as a button when an action is available) — which re-imports recent events and refreshes the sync infrastructure.
+If the sync infrastructure degrades (for example, watch channels expire), the
+sidebar status line turns warning-colored (ATTENTION / delayed). The user can
+click **Refresh calendar** to catch up recent events and refresh sync
+infrastructure.
 
 ### Steps
 
 1. Simulate or wait for an ATTENTION state (this can be forced in a dev environment by expiring watch tokens, or observed in a long-running account).
-2. Observe the sidebar account email.
-3. Hover over the email to read the tooltip, or Tab to it to focus it.
-4. Click "Sync now" in the tooltip, or press Enter/Space on the focused email.
-5. Observe the email during the sync (it should switch to the shimmer treatment).
-6. Wait for the sync to complete.
+2. Observe the sidebar status line under the account email.
+3. Click **Refresh calendar**.
+4. Observe the button while the refresh runs (it should show “Refreshing…” and disable).
+5. Wait for the refresh to complete.
 
 ### Expected Results
 
-- The sidebar email renders in `text-status-warning`.
-- The tooltip explains a sync is needed, without using the word "repair", and includes a "Sync now" button.
-- Clicking "Sync now" (or activating the email directly) triggers `onRepairGoogle`, which flips the state to the syncing shimmer treatment immediately.
-- When the sync completes, the shimmer stops and the email returns to normal color (HEALTHY).
-- If the sync fails, an error toast appears: "Google Calendar sync failed. Please try again."
+- The status line uses warning styling and reads “Calendar updates are taking
+  longer than usual. We'll keep trying.” (no “repair” wording).
+- **Refresh calendar** is visible as its own button under the status.
+- Clicking it calls `useConnectGoogle().refresh` (not a separate repair API);
+  the button flips to “Refreshing…” immediately.
+- When the refresh completes, status returns to “Calendar connected” (HEALTHY).
+- If the manual refresh fails, an error toast appears: “We couldn't refresh
+  your calendar. Please try again in a moment.”
+
+---
+
+## Scenario 6b: Automatic Silent Refresh On App Focus
+
+### UX
+
+Compass also runs the same refresh path automatically when a connected
+calendar is already `HEALTHY` or `ATTENTION`: once on mount, and again when
+the tab returns to visible after being hidden for at least 30 seconds. Focus
+refresh is silent — a transient failure must not toast.
+
+### Steps
+
+1. Confirm Google Calendar is connected and HEALTHY.
+2. Note the current “Updated …” timestamp (if shown).
+3. Switch to another tab/app for at least 30 seconds, then return to Compass.
+4. Optionally create an event in Google Calendar while away, then return.
+
+### Expected Results
+
+- Returning after 30+ seconds triggers a silent refresh without a toast on
+  success or transient failure.
+- A quick alt-tab under 30 seconds does **not** trigger a refresh.
+- If a Google-side event was created while away, it appears after the catch-up
+  (or via normal SSE) without requiring a manual **Refresh calendar** click.
+- While disconnected, reconnect-required, or still importing, focus refresh
+  is a no-op.
 
 ---
 
@@ -225,9 +271,9 @@ After revocation, the user can reconnect Google using the same flow as the initi
 ### Expected Results
 
 - The Google authorization redirect returns to Compass without error.
-- The sidebar shows “Syncing your calendar…” with the syncing shimmer during import.
+- The sidebar shows “Adding your calendar…” with the syncing shimmer during import.
 - Google events repopulate the calendar after import completes.
-- The sidebar email returns to normal color (HEALTHY).
+- The sidebar status returns to “Calendar connected” (HEALTHY).
 - Previously revoked-and-removed events reappear if they still exist in Google Calendar.
 
 ---
@@ -310,8 +356,9 @@ require a reconnect or a full reimport of the account.
 
 Compass keeps a live Google notification subscription ("watch") per
 syncable calendar. If a watch expires or is deleted outside Compass,
-reopening the app repairs it automatically — no manual "Sync now" click
-required (compare Scenario 6, which covers the manual trigger).
+reopening the app repairs it automatically — no manual **Refresh calendar**
+click required (compare Scenario 6 for the manual trigger and Scenario 6b
+for the automatic focus refresh).
 
 ### Steps
 
@@ -327,10 +374,9 @@ required (compare Scenario 6, which covers the manual trigger).
 ### Expected Results
 
 - Reopening/reloading the app alone triggers a defensive repair check on
-  reconnect — you don't need to notice an ATTENTION state or click "Sync
-  now" for the watch to be repaired.
-- The sidebar email converges to HEALTHY (normal color, "Up-to-date"
-  tooltip) on its own.
+  reconnect — you don't need to notice an ATTENTION state or click
+  **Refresh calendar** for the watch to be repaired.
+- The sidebar status converges to HEALTHY (“Calendar connected”) on its own.
 - The event created directly in Google Calendar appears in Compass without
   a page reload, proving the repaired watch (or the incremental catch-up
   sync behind it) is live again.
@@ -409,18 +455,19 @@ is never touched.
 
 If time is limited, run these checks before shipping Google sync changes:
 
-1. Connecting Google from a password session uses `POST /api/auth/google/connect` and does not lose existing Compass data.
-2. The sidebar email shimmers during import and stops when import completes.
+1. Connecting Google from a password session begins Sync-owned OAuth and does not lose existing Compass data.
+2. The sidebar shows “Adding your calendar…” during import and settles to “Calendar connected” when import completes.
 3. The app remains interactive (no blocking overlay) during import.
 4. An event created in Google Calendar appears in Compass within ~30 seconds without a page reload.
 5. An event created in Compass appears in Google Calendar within ~30 seconds.
-6. The sidebar email tooltip reads "Up-to-date" when healthy.
-7. An ATTENTION state turns the email warning color with a tooltip offering "Sync now".
-8. After the sync completes, status returns to HEALTHY.
-9. Revoking access in Google's settings removes all Google-origin events from Compass and shows the revocation toast.
-10. Re-connecting after revocation triggers a fresh import and repopulates Google events.
-11. Hiding/showing a calendar in the sidebar persists across reload, and the server excludes hidden-calendar events from event reads.
-12. A Google-side calendar add/rename/recolor/hide/delete reconciles into the sidebar without a full reset.
-13. Reopening the app after a watch expires or is deleted repairs it automatically, with no manual action.
-14. A freeBusyReader calendar's busy blocks show no title, details, or event actions.
-15. Revoking access prunes only Google-sourced calendars/events; the Compass-local calendar and its events survive.
+6. The sidebar status reads “Calendar connected” when healthy (optional “Updated …” timestamp).
+7. An ATTENTION state shows warning status copy and a **Refresh calendar** button.
+8. After the refresh completes, status returns to HEALTHY.
+9. Returning to a HEALTHY/ATTENTION tab after 30+ seconds hidden triggers a silent refresh with no failure toast.
+10. Revoking access in Google's settings removes all Google-origin events from Compass and shows the revocation toast.
+11. Re-connecting after revocation triggers a fresh import and repopulates Google events.
+12. Hiding/showing a calendar in the sidebar persists across reload, and the server excludes hidden-calendar events from event reads.
+13. A Google-side calendar add/rename/recolor/hide/delete reconciles into the sidebar without a full reset.
+14. Reopening the app after a watch expires or is deleted repairs it automatically, with no manual action.
+15. A freeBusyReader calendar's busy blocks show no title, details, or event actions.
+16. Revoking access prunes only Google-sourced calendars/events; the Compass-local calendar and its events survive.
