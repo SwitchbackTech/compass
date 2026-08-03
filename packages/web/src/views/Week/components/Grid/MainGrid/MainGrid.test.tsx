@@ -32,7 +32,11 @@ import {
   selectGridDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { DECK_INDENT, DRAFT_DURATION_MIN } from "@web/grid/grid.constants";
+import {
+  DECK_INDENT,
+  DRAFT_DURATION_MIN,
+  GRID_TIME_STEP,
+} from "@web/grid/grid.constants";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import {
@@ -497,6 +501,21 @@ describe("MainGrid empty-grid draft creation", () => {
     await expectDraftRange(
       startOfView.add(11, "hour").format(),
       startOfView.add(11, "hour").add(DRAFT_DURATION_MIN, "minute").format(),
+    );
+  });
+
+  it("shrinks a downward drag to one grid step without flipping the start", async () => {
+    const { container } = renderMainGrid();
+    const row = getFirstTimedGridRow(container);
+
+    dragEmptyGrid(row, {
+      fromMinute: 11 * 60,
+      toMinute: 11 * 60 + GRID_TIME_STEP,
+    });
+
+    await expectDraftRange(
+      startOfView.add(11, "hour").format(),
+      startOfView.add(11, "hour").add(GRID_TIME_STEP, "minute").format(),
     );
   });
 });

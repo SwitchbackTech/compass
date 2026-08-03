@@ -1052,6 +1052,34 @@ describe("DayCalendarGrid", () => {
     });
   });
 
+  it("shrinks a downward drag to one grid step without flipping the start", async () => {
+    renderDayCalendarGrid();
+
+    fireEvent.mouseDown(getTimedSlot(3), {
+      button: 0,
+      clientX: 100,
+      clientY: 120,
+    });
+    fireEvent.mouseMove(window, {
+      buttons: 1,
+      clientX: 100,
+      clientY: 135,
+    });
+    fireEvent.mouseUp(window, {
+      button: 0,
+      clientX: 100,
+      clientY: 135,
+    });
+
+    await waitFor(() => {
+      const draft = getDraft();
+
+      expect(draft).not.toBeNull();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("02:15");
+    });
+  });
+
   it("opens the timed draft form after stray zero-button mousemove events", async () => {
     renderDayCalendarGrid();
 

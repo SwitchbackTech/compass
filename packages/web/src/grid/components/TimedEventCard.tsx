@@ -133,7 +133,8 @@ const TimedEventCardBase = (
   );
   // Draft fills use the same base as saved cards so the Week overlay matches
   // the form/context-menu swatch (and the eventual save). Draft vs saved is
-  // carried by the drop-shadow filter below, not by darkening the color away.
+  // carried by a light drop-shadow below — enough lift to read as a draft
+  // without a heavy bottom shadow that obscures the end edge.
   // Past events recede in the direction of the theme's grid: the dark theme's
   // light steel fill dims slightly, the light theme's ink fill fades toward
   // the paper (brighten 14 keeps light text >= 4.5:1 and stays clearly apart
@@ -180,7 +181,7 @@ const TimedEventCardBase = (
     width: position.width || 0,
     zIndex: position.zIndex ?? ZIndex.LAYER_1,
     boxShadow: eventBoxShadow,
-    filter: isDraft ? "drop-shadow(2px 4px 4px black)" : undefined,
+    filter: isDraft ? "drop-shadow(0 1px 2px rgb(0 0 0 / 0.28))" : undefined,
   } as CSSProperties;
 
   const isCompactEvent = position.height <= COMPACT_EVENT_MAX_HEIGHT;

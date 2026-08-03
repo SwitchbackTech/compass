@@ -13,7 +13,7 @@ import {
   selectIsDrafting,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { DRAFT_DURATION_MIN } from "@web/grid/grid.constants";
+import { DRAFT_DURATION_MIN, GRID_TIME_STEP } from "@web/grid/grid.constants";
 import {
   hasExceededInteractionMoveThreshold,
   isEligibleInteractionPointerDown,
@@ -89,18 +89,33 @@ export const useTimedDraftCreation = ({
     let isPreviewStarted = false;
 
     const resolveDraftForPointer = (point: { x: number; y: number }) => {
-      const minimumEndDate = start.add(DRAFT_DURATION_MIN, "minutes");
+      // Clicks keep the 30-minute default. Once the pointer has moved, the end
+      // can shrink to one grid step (15) without flipping past the origin.
+      const defaultEndDate = start.add(DRAFT_DURATION_MIN, "minutes");
+
+      if (!hasMoved) {
+        return replaceGridDraftSchedule(
+          draftEvent,
+          timedGridSchedule(start.toDate(), defaultEndDate.toDate()),
+        );
+      }
+
+      const minimumEndDate = start.add(GRID_TIME_STEP, "minutes");
       const pointerDate = getStartDate(point);
-      const isSameDayDrag = hasMoved && pointerDate.isSame(start, "day");
+      const isSameDayDrag = pointerDate.isSame(start, "day");
       const isUpwardDrag = isSameDayDrag && pointerDate.isBefore(start);
-      const isDownwardDragPastMinimum =
-        isSameDayDrag && pointerDate.isAfter(minimumEndDate);
-      const resolvedStartDate = isUpwardDrag ? pointerDate : start;
-      const resolvedEndDate = isDownwardDragPastMinimum
-        ? pointerDate
-        : isUpwardDrag
-          ? start
-          : minimumEndDate;
+
+      let resolvedStartDate = start;
+      let resolvedEndDate = defaultEndDate;
+
+      if (isUpwardDrag) {
+        resolvedStartDate = pointerDate;
+        resolvedEndDate = start;
+      } else if (isSameDayDrag) {
+        resolvedEndDate = pointerDate.isBefore(minimumEndDate)
+          ? minimumEndDate
+          : pointerDate;
+      }
 
       return replaceGridDraftSchedule(
         draftEvent,
