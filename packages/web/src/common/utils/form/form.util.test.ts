@@ -210,9 +210,20 @@ describe("form.util", () => {
 
     it("defers Enter for contenteditable targets", () => {
       const editable = document.createElement("div");
-      editable.contentEditable = "true";
+      // Set the attribute explicitly: jsdom often leaves isContentEditable
+      // undefined even after assigning the contentEditable property.
+      editable.setAttribute("contenteditable", "true");
 
       expect(shouldDeferEnterToTarget(createEvent(editable))).toBe(true);
+    });
+
+    it("defers Enter for descendants of a contenteditable host", () => {
+      const editable = document.createElement("div");
+      editable.setAttribute("contenteditable", "true");
+      const paragraph = document.createElement("p");
+      editable.appendChild(paragraph);
+
+      expect(shouldDeferEnterToTarget(createEvent(paragraph))).toBe(true);
     });
 
     it("defers Enter for textareas", () => {

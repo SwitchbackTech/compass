@@ -56,6 +56,15 @@ export const isComboboxInteraction = (
   return Boolean(container);
 };
 
+// Prefer the contenteditable attribute (and ancestors) over
+// `HTMLElement.isContentEditable`: jsdom often leaves that getter undefined
+// even when TipTap has set contenteditable="true" on the focused node.
+const isContentEditableElement = (target: HTMLElement) =>
+  Boolean(
+    target.isContentEditable ||
+      target.closest("[contenteditable='true'], [contenteditable='']"),
+  );
+
 export const isEditableKeyboardTarget = (
   keyboardEvent: Pick<KeyboardEvent, "target">,
 ) => {
@@ -64,7 +73,7 @@ export const isEditableKeyboardTarget = (
   const target = getKeyboardTarget(keyboardEvent);
   if (!target) return false;
 
-  if (target.isContentEditable) return true;
+  if (isContentEditableElement(target)) return true;
 
   const tagName = target.tagName.toLowerCase();
 
@@ -84,7 +93,7 @@ export const shouldDeferEnterToTarget = (
   const target = getKeyboardTarget(keyboardEvent);
   if (!target) return false;
 
-  if (target.isContentEditable) return true;
+  if (isContentEditableElement(target)) return true;
 
   const tagName = target.tagName.toLowerCase();
   if (tagName === "textarea" || tagName === "button") return true;
