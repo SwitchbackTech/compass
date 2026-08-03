@@ -36,7 +36,8 @@ export function initPosthog(): PostHog | undefined {
       capture_console_errors: false,
     },
     // Drop known-unactionable exception signatures (SuperTokens/browser
-    // network blips, CefSharp scanner noise) before they become issues.
+    // network blips, CefSharp scanner noise, opaque "Script error.") before
+    // they become issues.
     before_send: filterPosthogBeforeSend,
     opt_in_site_apps: true,
     person_profiles: "always",
