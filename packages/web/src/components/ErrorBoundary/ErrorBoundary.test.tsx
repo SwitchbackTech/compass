@@ -70,6 +70,26 @@ describe("ErrorBoundary", () => {
     });
   });
 
+  it("normalizes a thrown undefined into a real Error for PostHog", () => {
+    const BoomUndefined = () => {
+      throw undefined;
+    };
+
+    render(
+      <ErrorBoundary>
+        <BoomUndefined />
+      </ErrorBoundary>,
+    );
+
+    expect(mockCaptureException).toHaveBeenCalledTimes(1);
+    const [error] = mockCaptureException.mock.calls[0];
+    expect(error).toBeInstanceOf(Error);
+    expect((error as Error).message).toBe("Non-Error render throw: undefined");
+    expect(
+      screen.getByRole("button", { name: /reload the app/i }),
+    ).toBeInTheDocument();
+  });
+
   it("reloads the app when the recovery button is clicked", async () => {
     render(
       <ErrorBoundary>
