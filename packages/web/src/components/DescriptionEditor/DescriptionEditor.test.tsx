@@ -108,6 +108,44 @@ describe("DescriptionEditor", () => {
     expect(link).toHaveAttribute("rel", "noopener noreferrer nofollow");
   });
 
+  it("neutralizes attacker-supplied target/rel pasted mid-session, not just on load", () => {
+    // The previous test only covers the `value`-prop load path, which goes
+    // through DOMPurify. Pasting into a live editor skips DOMPurify entirely
+    // and goes straight through ProseMirror's own HTML parser instead - this
+    // is the path the stock TipTap Link mark left unguarded (it reads
+    // target/rel/class straight off the pasted <a> when no parseHTML is
+    // configured for them), which is what SafeLink's addAttributes override
+    // closes.
+    render(
+      <DescriptionEditor
+        value=""
+        onChange={mock()}
+        editable={true}
+        resetKey="test-paste"
+      />,
+    );
+
+    const textbox = screen.getByRole("textbox", { name: "Description" });
+
+    // jsdom has no DataTransfer (jsdom/jsdom#1568) - RTL's fireEvent falls
+    // back to assigning a plain object as `clipboardData` verbatim when
+    // window.DataTransfer isn't a constructor, so a minimal getData stub is
+    // enough for ProseMirror's paste handler to read the pasted HTML.
+    const clipboardData = {
+      getData: (type: string) =>
+        type === "text/html"
+          ? '<a href="https://evil.example" target="_self" rel="opener">click</a>'
+          : "",
+    };
+
+    fireEvent.paste(textbox, { clipboardData });
+
+    const link = screen.getByRole("link", { name: "click" });
+    expect(link).toHaveAttribute("href", "https://evil.example");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer nofollow");
+  });
+
   it("neutralizes a javascript: href instead of rendering it as a link", () => {
     render(
       <DescriptionEditor

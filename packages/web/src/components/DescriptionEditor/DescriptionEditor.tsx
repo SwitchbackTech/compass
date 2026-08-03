@@ -17,15 +17,41 @@ import { Divider } from "@web/components/Divider/Divider";
 // formatting this editor actually supports. TipTap's own schema (StarterKit
 // with headings/code/blockquote/etc disabled below) is a second filter: any
 // surviving tag it doesn't recognize as a node/mark just becomes plain text.
-// `href` is the only attribute let through - the Link extension below
-// applies its own target/rel at render time regardless of what (if
-// anything) survived on the source tag, so a malicious rel/target in the
-// source HTML can never reach the DOM.
+// `href` is the only attribute let through - target/rel are forced by the
+// SafeLink mark below regardless of what (if anything) survived on the
+// source tag.
 const sanitizeDescriptionHtml = (html: string): string =>
   DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ["p", "br", "b", "strong", "i", "em", "ul", "ol", "li", "a"],
     ALLOWED_ATTR: ["href"],
   });
+
+// DOMPurify only runs on the `value` prop at (re)creation - pasting into a
+// live editor goes straight through ProseMirror's own HTML parser instead,
+// bypassing it entirely. TipTap's stock Link mark reads target/rel/class off
+// the source element when no `parseHTML` is configured for them (only
+// `href` gets one upstream), so without this override a pasted
+// `<a target="_self" rel="opener">` would carry its attacker-supplied
+// target/rel straight into the DOM - defeating the point of forcing safe
+// values in HTMLAttributes below. `parseHTML: () => null` makes the mark
+// itself incapable of reading these from any source, paste included, so the
+// guarantee doesn't depend on which entry point fed it HTML.
+const SafeLink = Link.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      target: {
+        default: this.options.HTMLAttributes.target,
+        parseHTML: () => null,
+      },
+      rel: { default: this.options.HTMLAttributes.rel, parseHTML: () => null },
+      class: {
+        default: this.options.HTMLAttributes.class,
+        parseHTML: () => null,
+      },
+    };
+  },
+});
 
 interface DescriptionEditorProps {
   value: string;
@@ -91,9 +117,9 @@ export const DescriptionEditor = ({
         // so clicking mid-edit places the cursor instead of navigating away
         // (matches Google Docs/Notion) - a read-only region already lets
         // native `<a>` clicks through once contenteditable is false.
-        // HTMLAttributes are applied at render time regardless of what
-        // survived sanitization, so target/rel are never attacker-controlled.
-        Link.configure({
+        // SafeLink (not the stock Link mark) is what makes target/rel
+        // untouchable by source HTML - see its definition above.
+        SafeLink.configure({
           openOnClick: false,
           autolink: true,
           defaultProtocol: "https",

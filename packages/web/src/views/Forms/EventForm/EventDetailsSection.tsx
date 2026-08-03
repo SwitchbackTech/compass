@@ -102,7 +102,7 @@ export const EventDetailsSection = ({ details }: EventDetailsSectionProps) => {
                     title={statusText}
                     className={`size-2.5 shrink-0 rounded-full ${ATTENDEE_STATUS_DOT[attendee.responseStatus]}`}
                   />
-                  <span aria-hidden className="min-w-0 flex-1 truncate">
+                  <span className="min-w-0 flex-1 truncate">
                     {name}
                     {isOrganizer && " (organizer)"}
                   </span>
