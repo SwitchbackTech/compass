@@ -34,6 +34,17 @@ const baseDraft = () =>
     timeZone: "UTC",
   });
 
+// A timed event that runs past local midnight: it starts on Aug 3 but its end
+// lands on Aug 4. The "Ends on" floor is anchored to the start date, so the
+// event's own date (Aug 3) stays selectable.
+const pastMidnightDraft = () =>
+  createGridEventDraft({
+    kind: "timed",
+    start: new Date("2026-08-03T23:00:00.000Z"),
+    end: new Date("2026-08-04T00:30:00.000Z"),
+    timeZone: "UTC",
+  });
+
 const recurringDraft = () => {
   const source = createMockEvent({
     schedule: SCHEDULE,
@@ -125,6 +136,26 @@ describe("RecurrenceSection", () => {
       "false",
       "false",
     ]);
+  });
+
+  // Regression: the "Ends on" floor used to be the event's *end*, so an event
+  // running past local midnight (end on the next calendar day) disabled its own
+  // start date - the date the user most naturally picks. react-datepicker
+  // compares day cells by calendar day, so the fix is to anchor the floor to
+  // the start date. See RecurrenceSectionView's recurrenceMinDate.
+  it("keeps the event's own date selectable when the event ends after midnight", async () => {
+    const user = userEvent.setup();
+    renderRecurrenceSection({ initialDraft: pastMidnightDraft() });
+
+    // Enable recurrence to reveal the "Ends on" picker, then open it via its
+    // input and assert the event's own (start) date is offered, not blocked.
+    await user.click(screen.getByRole("button", { name: /edit recurrence/i }));
+    await user.click(await screen.findByRole("textbox"));
+
+    const ownDate = await screen.findByLabelText(/Monday, August 3rd, 2026/);
+    expect(ownDate.getAttribute("aria-label")).toMatch(/^Choose /);
+    expect(ownDate).not.toHaveClass("react-datepicker__day--disabled");
+    expect(ownDate.getAttribute("aria-disabled")).not.toBe("true");
   });
 
   it("turning off Repeat on an existing recurring event clears the controls", async () => {
