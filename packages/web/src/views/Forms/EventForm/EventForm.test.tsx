@@ -439,6 +439,33 @@ describe("EventForm", () => {
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
+  it("submits when Enter is pressed on the focused Save button", async () => {
+    // Companion to the description carve-out: Enter hotkey must not
+    // preventDefault when deferring to buttons, or Tab→Save→Enter dies.
+    const user = userEvent.setup();
+    const onSubmit = mock();
+
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={onSubmit}
+        setDraft={mock()}
+      />,
+    );
+
+    const save = screen.getByRole("button", { name: "Save" });
+    act(() => save.focus());
+
+    await user.keyboard("{Enter}");
+
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
   it("still deletes an existing event when Delete is pressed on a non-text form target", async () => {
     const onClose = mock();
     const onDelete = mock();

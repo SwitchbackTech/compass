@@ -611,6 +611,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
+    // preventDefault/stopPropagation stay off until we actually submit:
+    // TanStack applies those before the callback, so an early return for
+    // TipTap/buttons would otherwise swallow native Enter (newline / click).
     useAppShortcut(
       "Enter",
       (keyboardEvent) => {
@@ -626,9 +629,15 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           return;
         }
 
+        keyboardEvent.preventDefault();
+        keyboardEvent.stopPropagation();
         onSubmitForm();
       },
-      EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
+      {
+        ...EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
+        preventDefault: false,
+        stopPropagation: false,
+      },
     );
 
     useAppShortcut(
