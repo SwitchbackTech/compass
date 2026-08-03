@@ -83,22 +83,32 @@ export const EventDetailsSection = ({ details }: EventDetailsSectionProps) => {
             </span>
           </div>
           <ul className="flex flex-col gap-1 pl-6">
-            {visibleAttendees.map((attendee) => (
-              <li
-                key={attendee.email}
-                className="flex items-center gap-2"
-                title={attendeeStatusLabel(attendee.responseStatus)}
-              >
-                <span
-                  aria-hidden
-                  className={`size-2.5 shrink-0 rounded-full ${ATTENDEE_STATUS_DOT[attendee.responseStatus]}`}
-                />
-                <span className="min-w-0 flex-1 truncate">
-                  {attendee.displayName ?? attendee.email}
-                  {organizer?.email === attendee.email && " (organizer)"}
-                </span>
-              </li>
-            ))}
+            {visibleAttendees.map((attendee) => {
+              const name = attendee.displayName ?? attendee.email;
+              const isOrganizer = organizer?.email === attendee.email;
+              // The dot alone is a color-only signal (bg-success vs
+              // bg-error), invisible to colorblind users and unannounced by
+              // screen readers - title is a mouse-only tooltip, so the row's
+              // aria-label carries the same info as accessible text.
+              const statusText = attendeeStatusLabel(attendee.responseStatus);
+              return (
+                <li
+                  key={attendee.email}
+                  className="flex items-center gap-2"
+                  aria-label={`${name}, ${statusText}${isOrganizer ? ", organizer" : ""}`}
+                >
+                  <span
+                    aria-hidden
+                    title={statusText}
+                    className={`size-2.5 shrink-0 rounded-full ${ATTENDEE_STATUS_DOT[attendee.responseStatus]}`}
+                  />
+                  <span className="min-w-0 flex-1 truncate">
+                    {name}
+                    {isOrganizer && " (organizer)"}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
           {hiddenAttendeeCount > 0 && (
             <button

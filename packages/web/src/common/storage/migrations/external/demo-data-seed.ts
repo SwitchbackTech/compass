@@ -4,6 +4,11 @@ import {
   type EventContent,
   EventScheduleSchema,
 } from "@core/types/event.contracts";
+import {
+  type Attendee,
+  type Conference,
+  type Organizer,
+} from "@core/types/event-attendance.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
@@ -23,12 +28,24 @@ function createEventRecord(overrides: {
   schedule:
     | { kind: "timed"; start: string; end: string; timeZone: string }
     | { kind: "allDay"; start: string; end: string };
+  // Read-only, provider-sourced fields on a real synced event - only
+  // showcased here so first-time users (who never connect Google before
+  // seeing the calendar) discover the meeting-link/location/attendees UI at
+  // all, since it otherwise only ever renders for Google-synced events.
+  location?: string;
+  organizer?: Organizer;
+  attendees?: Attendee[];
+  conference?: Conference;
 }): LocalEventRecord {
   const id = EventIdSchema.parse(createObjectIdString());
   const content: EventContent = {
     kind: "details",
     title: overrides.title,
     description: overrides.description ?? "",
+    location: overrides.location,
+    organizer: overrides.organizer,
+    attendees: overrides.attendees,
+    conference: overrides.conference,
   };
   const now = DateTimeSchema.parse(new Date().toISOString());
 
@@ -70,6 +87,36 @@ function generateDemoData() {
         end: todayAt(9, 30),
         timeZone,
       },
+      // Showcases the meeting-link and attendee UI (normally only populated
+      // from a synced Google event) for first-time users who haven't
+      // connected Google yet.
+      conference: {
+        url: "https://meet.google.com/abc-defg-hij",
+        label: "Google Meet",
+      },
+      organizer: { email: "avery@example.com", displayName: "Avery" },
+      attendees: [
+        {
+          email: "avery@example.com",
+          displayName: "Avery",
+          responseStatus: "accepted",
+        },
+        {
+          email: "sam@example.com",
+          displayName: "Sam",
+          responseStatus: "accepted",
+        },
+        {
+          email: "jordan@example.com",
+          displayName: "Jordan",
+          responseStatus: "tentative",
+        },
+        {
+          email: "riley@example.com",
+          displayName: "Riley",
+          responseStatus: "needsAction",
+        },
+      ],
     }),
     createEventRecord({
       title: "Try Compass",
@@ -85,6 +132,8 @@ function generateDemoData() {
     createEventRecord({
       title: "Exercise",
       description: "I'm sorry for what I said during burpees.",
+      // Showcases the location → Google Maps link.
+      location: "Fitness First Gym, 123 Main St",
       schedule: {
         kind: "timed",
         start: todayAt(12, 0),

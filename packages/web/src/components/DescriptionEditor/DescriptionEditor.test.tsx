@@ -86,6 +86,82 @@ describe("DescriptionEditor", () => {
     expect(textbox.textContent).toContain("Safe text");
   });
 
+  it("preserves a plain link and forces target/rel regardless of the source", () => {
+    // Meeting links pasted into a Google description (Zoom/Teams - the
+    // structured `conference` field only ever covers Google Meet) must stay
+    // clickable rather than getting flattened to plain text by sanitization.
+    render(
+      <DescriptionEditor
+        value='Join here: <a href="https://zoom.us/j/123456789" target="_self" rel="opener">Zoom meeting</a>'
+        onChange={mock()}
+        editable={false}
+        resetKey="test-5"
+      />,
+    );
+
+    const link = screen.getByRole("link", { name: "Zoom meeting" });
+    expect(link).toHaveAttribute("href", "https://zoom.us/j/123456789");
+    // Forced at render time by the Link extension's HTMLAttributes, not
+    // read from the source - an attacker-controlled target/rel in the
+    // source HTML (target="_self" rel="opener" above) must never survive.
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer nofollow");
+  });
+
+  it("neutralizes attacker-supplied target/rel pasted mid-session, not just on load", () => {
+    // The previous test only covers the `value`-prop load path, which goes
+    // through DOMPurify. Pasting into a live editor skips DOMPurify entirely
+    // and goes straight through ProseMirror's own HTML parser instead - this
+    // is the path the stock TipTap Link mark left unguarded (it reads
+    // target/rel/class straight off the pasted <a> when no parseHTML is
+    // configured for them), which is what SafeLink's addAttributes override
+    // closes.
+    render(
+      <DescriptionEditor
+        value=""
+        onChange={mock()}
+        editable={true}
+        resetKey="test-paste"
+      />,
+    );
+
+    const textbox = screen.getByRole("textbox", { name: "Description" });
+
+    // jsdom has no DataTransfer (jsdom/jsdom#1568) - RTL's fireEvent falls
+    // back to assigning a plain object as `clipboardData` verbatim when
+    // window.DataTransfer isn't a constructor, so a minimal getData stub is
+    // enough for ProseMirror's paste handler to read the pasted HTML.
+    const clipboardData = {
+      getData: (type: string) =>
+        type === "text/html"
+          ? '<a href="https://evil.example" target="_self" rel="opener">click</a>'
+          : "",
+    };
+
+    fireEvent.paste(textbox, { clipboardData });
+
+    const link = screen.getByRole("link", { name: "click" });
+    expect(link).toHaveAttribute("href", "https://evil.example");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer nofollow");
+  });
+
+  it("neutralizes a javascript: href instead of rendering it as a link", () => {
+    render(
+      <DescriptionEditor
+        value='<a href="javascript:alert(1)">click me</a>'
+        onChange={mock()}
+        editable={false}
+        resetKey="test-6"
+      />,
+    );
+
+    const textbox = screen.getByRole("textbox", { name: "Description" });
+    expect(textbox.innerHTML).not.toContain("javascript:");
+    expect(screen.queryByRole("link")).toBeNull();
+    expect(textbox.textContent).toBe("click me");
+  });
+
   it("re-syncs contenteditable when editable flips on the same event", () => {
     // Regression: useEditor only recreates the editor when `resetKey`
     // changes, so `editable` must be applied via editor.setEditable in its

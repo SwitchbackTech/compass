@@ -1107,6 +1107,15 @@ describe("EventForm", () => {
       expect(screen.getByText("2 guests")).toBeInTheDocument();
       expect(screen.getByText("Team Lead (organizer)")).toBeInTheDocument();
       expect(screen.getByText("guest@example.com")).toBeInTheDocument();
+
+      // RSVP status is otherwise a color-only dot - each row needs an
+      // accessible name carrying the same status text for screen readers.
+      expect(
+        screen.getByLabelText("Team Lead, accepted, organizer"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByLabelText("guest@example.com, declined"),
+      ).toBeInTheDocument();
     });
 
     it("renders nothing when the event has no location, attendees, or conference", () => {
