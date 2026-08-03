@@ -2,6 +2,11 @@ import { z } from "zod/v4";
 import { ValidatedCompassEventSchema } from "@core/types/compass-event.contracts";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
 import {
+  AttendeeSchema,
+  ConferenceSchema,
+  OrganizerSchema,
+} from "@core/types/event-attendance.contracts";
+import {
   EventColorSlotSchema,
   OptionalHexEventColorSchema,
 } from "@core/types/event-color.contracts";
@@ -64,5 +69,10 @@ export const GridEventSchema = WebEventSchema.extend({
   // A provider custom color (e.g. a Google event label) with no Compass slot
   // equivalent. Takes precedence over `color` when both are somehow present.
   colorHex: OptionalHexEventColorSchema,
+  // Read-only, provider-sourced. Joined like calendarId/color above.
+  location: z.string().nullable().optional(),
+  organizer: OrganizerSchema.nullable().optional(),
+  attendees: z.array(AttendeeSchema).readonly().optional(),
+  conference: ConferenceSchema.nullable().optional(),
 });
 export type GridEvent = z.infer<typeof GridEventSchema>;

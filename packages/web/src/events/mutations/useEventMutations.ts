@@ -147,6 +147,19 @@ function optimisticEventFromCreate(input: CreateEventInput): Event {
   };
 }
 
+// The form only ever submits the editable subset (title/description/color) —
+// location/organizer/attendees/conference are read-only, provider-sourced
+// fields the server never asks the client to resubmit. Merging input.content
+// wholesale onto the optimistic cache entry would make those fields flicker
+// away until the settle-time refetch restores them from the server.
+function mergeReplaceContent(
+  existing: Event["content"],
+  input: ReplaceEventInput["content"],
+): Event["content"] {
+  if (existing.kind !== "details") return input;
+  return { ...existing, ...input };
+}
+
 function mergeReplaceInput(existing: Event, input: ReplaceEventInput): Event {
   const recurrence: EventRecurrence =
     input.recurrence.kind === "preserve"
@@ -158,7 +171,7 @@ function mergeReplaceInput(existing: Event, input: ReplaceEventInput): Event {
   return {
     ...existing,
     calendarId: input.calendarId ?? existing.calendarId,
-    content: input.content,
+    content: mergeReplaceContent(existing.content, input.content),
     schedule: input.schedule,
     recurrence,
     updatedAt: nowDateTime(),

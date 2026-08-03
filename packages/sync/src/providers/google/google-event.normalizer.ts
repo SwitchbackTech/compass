@@ -1,14 +1,14 @@
 import { type calendar_v3 } from "@googleapis/calendar";
 import { EventScheduleSchema } from "@core/types/event.contracts";
-import { withColor, withColorHex } from "@core/types/event-color.contracts";
-import { type gSchema$Event } from "@core/types/gcal";
 import {
   type Attendee,
   type Conference,
   ConferenceSchema,
   type Organizer,
-  SyncEventContentSchema,
-} from "@core/types/sync/event.contracts";
+} from "@core/types/event-attendance.contracts";
+import { withColor, withColorHex } from "@core/types/event-color.contracts";
+import { type gSchema$Event } from "@core/types/gcal";
+import { SyncEventContentSchema } from "@core/types/sync/event.contracts";
 import { TimezoneSchema } from "@core/types/type.utils";
 import dayjs from "@core/util/date/dayjs";
 import { googleColorIdToSlot } from "@sync/providers/google/google-color.map";

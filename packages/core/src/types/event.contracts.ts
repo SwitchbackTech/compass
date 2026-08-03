@@ -8,6 +8,11 @@ import {
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
 import {
+  AttendeeSchema,
+  ConferenceSchema,
+  OrganizerSchema,
+} from "@core/types/event-attendance.contracts";
+import {
   OptionalHexEventColorSchema,
   OptionalNullableEventColorSchema,
 } from "@core/types/event-color.contracts";
@@ -17,6 +22,12 @@ export const EventContentSchema = z.discriminatedUnion("kind", [
     kind: z.literal("details"),
     title: z.string(),
     description: z.string(),
+    // Read-only, provider-sourced. Optional so existing local records
+    // (persisted before these fields existed) still parse.
+    location: z.string().nullable().optional(),
+    organizer: OrganizerSchema.nullable().optional(),
+    attendees: z.array(AttendeeSchema).readonly().optional(),
+    conference: ConferenceSchema.nullable().optional(),
     // Null clears a previously set color tag on replace. Reads omit the field
     // when there is no color.
     color: OptionalNullableEventColorSchema,

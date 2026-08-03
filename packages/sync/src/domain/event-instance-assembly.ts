@@ -126,6 +126,10 @@ export function assembleEventInstances(
 const toInstanceContent = (content: EventRecord["content"]) => ({
   title: content.title,
   description: content.description,
+  location: content.location,
+  organizer: content.organizer,
+  attendees: content.attendees,
+  conference: content.conference,
   // Heal rows that persisted write-command `color: null`.
   ...withColor(content.color ?? undefined),
   ...withColorHex(content.colorHex),

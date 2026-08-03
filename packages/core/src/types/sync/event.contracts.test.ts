@@ -2,9 +2,11 @@ import { faker } from "@faker-js/faker";
 import {
   AttendeeSchema,
   ConferenceSchema,
+  OrganizerSchema,
+} from "@core/types/event-attendance.contracts";
+import {
   EventInstanceListQuerySchema,
   EventInstanceListResponseSchema,
-  OrganizerSchema,
   SyncEventCalendarIdSchema,
   SyncEventInstanceSchema,
   SyncEventOwnershipSchema,
@@ -326,10 +328,19 @@ describe("Sync event contracts", () => {
   });
 
   describe("SyncEventInstanceSchema", () => {
+    const baseInstanceContent = {
+      title: "Standup",
+      description: "Daily sync",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+    };
+
     const baseInstance = (overrides: Record<string, unknown> = {}) => ({
       eventId: objectId(),
       calendarId: objectId(),
-      content: { title: "Standup", description: "Daily sync" },
+      content: baseInstanceContent,
       schedule: timedSchedule,
       recurrence: { kind: "single" },
       createdAt: "2026-07-01T00:00:00.000Z",
@@ -370,9 +381,7 @@ describe("Sync event contracts", () => {
       // the description — the whole point of the full-fidelity read. Assert on
       // the PARSED output, not the input object, so this proves the schema.
       const parsed = SyncEventInstanceSchema.safeParse(
-        baseInstance({
-          content: { title: "Standup", description: "Daily sync" },
-        }),
+        baseInstance({ content: baseInstanceContent }),
       );
       expect(parsed.success).toBe(true);
       if (parsed.success) {

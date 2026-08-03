@@ -139,6 +139,14 @@ const createEditDraft = (
     endDate?: string;
     startDate?: string;
     title?: string;
+    location?: string | null;
+    organizer?: { email: string; displayName: string | null } | null;
+    attendees?: Array<{
+      email: string;
+      displayName: string | null;
+      responseStatus: "needsAction" | "accepted" | "declined" | "tentative";
+    }>;
+    conference?: { url: string; label: string | null } | null;
   } = {},
 ): GridEventDraft => {
   const {
@@ -146,10 +154,22 @@ const createEditDraft = (
     endDate = "2026-04-24T15:00:00.000Z",
     startDate = "2026-04-24T14:00:00.000Z",
     title = "Keyboard duplicate event",
+    location = null,
+    organizer = null,
+    attendees = [],
+    conference = null,
   } = overrides;
 
   const event = createMockEvent({
-    content: { kind: "details", title, description },
+    content: {
+      kind: "details",
+      title,
+      description,
+      location,
+      organizer,
+      attendees,
+      conference,
+    },
     schedule: EventScheduleSchema.parse({
       kind: "timed",
       start: startDate,
@@ -244,7 +264,7 @@ describe("EventForm", () => {
 
     // The save footer is pinned outside the scrollable field body, so it must
     // follow the description in DOM order.
-    const description = screen.getByPlaceholderText("Description");
+    const description = screen.getByRole("textbox", { name: "Description" });
     const save = screen.getByRole("button", { name: "Save" });
     expect(
       description.compareDocumentPosition(save) &
@@ -256,8 +276,8 @@ describe("EventForm", () => {
     const longDescription = Array.from(
       { length: 12 },
       (_, index) =>
-        `Paragraph ${index + 1}: event details that should remain visible without an inner scroll trap.`,
-    ).join("\n\n");
+        `<p>Paragraph ${index + 1}: event details that should remain visible without an inner scroll trap.</p>`,
+    ).join("");
 
     renderWithStore(
       <EventForm
@@ -272,11 +292,13 @@ describe("EventForm", () => {
       />,
     );
 
-    const description = screen.getByPlaceholderText("Description");
+    const description = screen.getByRole("textbox", { name: "Description" });
+    const wrapper = description.closest(".c-rich-text");
 
-    expect(description.className).not.toContain("max-h-45");
-    expect(description.className).not.toContain("overflow-y-auto");
-    expect(description).toHaveValue(longDescription);
+    expect(wrapper?.className).not.toContain("max-h-45");
+    expect(wrapper?.className).not.toContain("overflow-y-auto");
+    expect(description.textContent).toContain("Paragraph 1:");
+    expect(description.textContent).toContain("Paragraph 12:");
   });
 
   it("duplicates the event with Mod+D while the title field is focused", async () => {
@@ -375,7 +397,9 @@ describe("EventForm", () => {
       />,
     );
 
-    const descriptionField = screen.getByPlaceholderText("Description");
+    const descriptionField = screen.getByRole("textbox", {
+      name: "Description",
+    });
     act(() => descriptionField.focus());
 
     const event = dispatchDelete(descriptionField);
@@ -712,7 +736,9 @@ describe("EventForm", () => {
       />,
     );
 
-    const descriptionField = screen.getByPlaceholderText("Description");
+    const descriptionField = screen.getByRole("textbox", {
+      name: "Description",
+    });
     const eventResult = dispatchArrowDown(descriptionField);
 
     expect(eventResult.defaultPrevented).toBe(false);
@@ -989,8 +1015,116 @@ describe("EventForm", () => {
       />,
     );
 
-    expect(screen.getByRole("textbox", { name: "Description" })).toHaveValue(
-      "Notes",
-    );
+    // A contenteditable rich-text region, not a native input/textarea, so
+    // jest-dom's value-based matcher doesn't apply - assert on rendered text.
+    expect(
+      screen.getByRole("textbox", { name: "Description" }).textContent,
+    ).toBe("Notes");
+  });
+
+  describe("read-only event details (meeting link, location, attendees)", () => {
+    it("shows a meeting link that opens in a new tab", () => {
+      renderWithStore(
+        <EventForm
+          draft={createEditDraft({
+            conference: {
+              url: "https://meet.google.com/abc-defg-hij",
+              label: "Google Meet",
+            },
+          })}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setDraft={mock()}
+        />,
+      );
+
+      const link = screen.getByRole("link", { name: "Google Meet" });
+      expect(link).toHaveAttribute(
+        "href",
+        "https://meet.google.com/abc-defg-hij",
+      );
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    });
+
+    it("shows the location linking out to Google Maps", () => {
+      renderWithStore(
+        <EventForm
+          draft={createEditDraft({ location: "200 Main St, Anytown" })}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setDraft={mock()}
+        />,
+      );
+
+      const link = screen.getByRole("link", {
+        name: "200 Main St, Anytown",
+      });
+      expect(link).toHaveAttribute(
+        "href",
+        "https://www.google.com/maps/search/?api=1&query=200%20Main%20St%2C%20Anytown",
+      );
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    });
+
+    it("shows attendees with RSVP status and marks the organizer", () => {
+      renderWithStore(
+        <EventForm
+          draft={createEditDraft({
+            organizer: { email: "lead@example.com", displayName: "Team Lead" },
+            attendees: [
+              {
+                email: "lead@example.com",
+                displayName: "Team Lead",
+                responseStatus: "accepted",
+              },
+              {
+                email: "guest@example.com",
+                displayName: null,
+                responseStatus: "declined",
+              },
+            ],
+          })}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setDraft={mock()}
+        />,
+      );
+
+      expect(screen.getByText("2 guests")).toBeInTheDocument();
+      expect(screen.getByText("Team Lead (organizer)")).toBeInTheDocument();
+      expect(screen.getByText("guest@example.com")).toBeInTheDocument();
+    });
+
+    it("renders nothing when the event has no location, attendees, or conference", () => {
+      renderWithStore(
+        <EventForm
+          draft={createEditDraft()}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setDraft={mock()}
+        />,
+      );
+
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.queryByText(/guest/)).not.toBeInTheDocument();
+    });
   });
 });
