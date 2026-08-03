@@ -189,6 +189,48 @@ describe("UpNextCard", () => {
       );
     });
   });
+
+  it("shows a Join link to the meeting when the event has a conference", () => {
+    const start = dayjs().add(30, "minute");
+    render(<UpNextCard />, {
+      events: [
+        createMockEvent({
+          id: EventIdSchema.parse(SOON_EVENT_ID),
+          content: {
+            kind: "details",
+            title: "Soon Event",
+            description: "",
+            conference: {
+              url: "https://meet.google.com/abc-defg-hij",
+              label: "Google Meet",
+            },
+          },
+          schedule: EventScheduleSchema.parse({
+            kind: "timed",
+            start: start.format(),
+            end: start.add(30, "minute").format(),
+            timeZone: "UTC",
+          }),
+        }),
+      ],
+    });
+
+    const link = screen.getByRole("link", { name: "Join" });
+    expect(link).toHaveAttribute(
+      "href",
+      "https://meet.google.com/abc-defg-hij",
+    );
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  it("shows no Join link when the event has no conference", () => {
+    render(<UpNextCard />, {
+      events: [timedEvent(SOON_EVENT_ID, "Soon Event", 30)],
+    });
+
+    expect(screen.queryByRole("link", { name: "Join" })).toBeNull();
+  });
 });
 
 describe("useUpNextEventShortcut", () => {

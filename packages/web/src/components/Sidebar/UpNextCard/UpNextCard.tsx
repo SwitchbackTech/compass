@@ -1,3 +1,4 @@
+import { VideoCameraIcon } from "@phosphor-icons/react";
 import { type FC } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
@@ -36,20 +37,40 @@ export const UpNextCard: FC = () => {
   return (
     <section aria-label="Up next">
       {upNext ? (
-        <button
-          aria-label={`Up next: ${upNext.title}. ${countdown}.`}
-          className="c-focus-ring group relative flex min-h-14 w-full min-w-0 flex-col gap-0.5 rounded border border-border bg-surface px-2 py-1.5 text-left hover:brightness-110"
-          onClick={() => openEventDetails("gridClick")}
-          type="button"
-        >
+        <div className="group relative flex min-h-14 w-full min-w-0 flex-col gap-0.5 rounded border border-border bg-surface px-2 py-1.5 hover:brightness-110">
+          {/* Covers the whole card so clicking anywhere opens the event -
+              the Join link below sits in normal flow above this in paint
+              order (via relative + z-10), so it still receives its own
+              clicks instead of the card intercepting them. */}
+          <button
+            aria-label={`Up next: ${upNext.title}. ${countdown}.`}
+            className="c-focus-ring absolute inset-0 w-full text-left"
+            onClick={() => openEventDetails("gridClick")}
+            type="button"
+          />
           <span className="pr-8 text-accent text-xs">{countdown}</span>
-          <ShortcutHint className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+          {/* group-has-[:focus-visible], not group-focus-visible: the
+              focusable element is this button's sibling (a descendant of
+              .group), not .group itself, so a plain :focus-visible variant
+              on the group never matches. */}
+          <ShortcutHint className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100 group-has-[:focus-visible]:opacity-100">
             N
           </ShortcutHint>
           <span className="min-w-0 truncate font-medium text-sm text-text">
             {upNext.title}
           </span>
-        </button>
+          {upNext.conference && (
+            <a
+              href={upNext.conference.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="c-focus-ring relative z-10 flex w-fit items-center gap-1 text-accent text-xs hover:underline"
+            >
+              <VideoCameraIcon size={12} />
+              Join
+            </a>
+          )}
+        </div>
       ) : (
         <p className="flex min-h-14 items-center rounded border border-border bg-surface px-2 py-1.5 font-medium text-sm text-text-muted">
           All clear
