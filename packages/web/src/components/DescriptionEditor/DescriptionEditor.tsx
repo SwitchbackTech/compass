@@ -9,7 +9,7 @@ import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
 import classNames from "classnames";
 import DOMPurify from "dompurify";
-import { type KeyboardEvent, useState } from "react";
+import { type KeyboardEvent, useMemo, useState } from "react";
 import { Divider } from "@web/components/Divider/Divider";
 
 // Google's description HTML is untrusted input - strip everything but the
@@ -55,6 +55,17 @@ export const DescriptionEditor = ({
 }: DescriptionEditorProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
+  // Sanitizing is only meaningful for the editor's initial content - TipTap
+  // reads `content` once at (re)creation, gated by the same [resetKey] below.
+  // Recomputing it on every render would re-run a full HTML parse/filter pass
+  // on every keystroke (onUpdate → onChange → parent re-render → this prop
+  // ticks), for a value TipTap would just discard. Deliberately keyed on
+  // resetKey only, matching useEditor's own [resetKey] below.
+  const initialContent = useMemo(
+    () => sanitizeDescriptionHtml(value),
+    [resetKey],
+  );
+
   const editor = useEditor(
     {
       extensions: [
@@ -70,7 +81,7 @@ export const DescriptionEditor = ({
         }),
         Placeholder.configure({ placeholder }),
       ],
-      content: sanitizeDescriptionHtml(value),
+      content: initialContent,
       editable,
       // Supplying a custom `attributes` object replaces TipTap's own
       // defaults on the contenteditable element rather than merging with

@@ -812,14 +812,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
               control, so it stays interactive (the "+N more" toggle) even
               when the event itself is read-only. Renders its own card
               styling and returns null when the event has none of this data. */}
-          {sourceDetails && (
-            <EventDetailsSection
-              location={sourceDetails.location}
-              organizer={sourceDetails.organizer}
-              attendees={sourceDetails.attendees}
-              conference={sourceDetails.conference}
-            />
-          )}
+          {sourceDetails && <EventDetailsSection details={sourceDetails} />}
 
           {isReadOnly && (
             <p role="note" className="text-text-muted text-xs">

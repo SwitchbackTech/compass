@@ -1,17 +1,15 @@
 import { MapPinIcon, UsersIcon, VideoCameraIcon } from "@phosphor-icons/react";
 import { useState } from "react";
-import {
-  type Attendee,
-  type AttendeeResponseStatus,
-  type Conference,
-  type Organizer,
-} from "@core/types/event-attendance.contracts";
+import { type EventContent } from "@core/types/event.contracts";
+import { type AttendeeResponseStatus } from "@core/types/event-attendance.contracts";
+
+type EventDetails = Extract<EventContent, { kind: "details" }>;
 
 interface EventDetailsSectionProps {
-  location?: string | null;
-  organizer?: Organizer | null;
-  attendees?: readonly Attendee[];
-  conference?: Conference | null;
+  details: Pick<
+    EventDetails,
+    "location" | "organizer" | "attendees" | "conference"
+  >;
 }
 
 const ATTENDEE_STATUS_DOT: Record<AttendeeResponseStatus, string> = {
@@ -21,12 +19,8 @@ const ATTENDEE_STATUS_DOT: Record<AttendeeResponseStatus, string> = {
   needsAction: "bg-text-subtle",
 };
 
-const ATTENDEE_STATUS_LABEL: Record<AttendeeResponseStatus, string> = {
-  accepted: "accepted",
-  declined: "declined",
-  tentative: "tentative",
-  needsAction: "hasn't responded",
-};
+const attendeeStatusLabel = (status: AttendeeResponseStatus): string =>
+  status === "needsAction" ? "hasn't responded" : status;
 
 const mapsUrlForLocation = (location: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
@@ -40,24 +34,17 @@ const MAX_VISIBLE_ATTENDEES = 6;
  * least one of these - absent for a plain Compass-native event and for a
  * busy-projection event (whose content carries none of this).
  */
-export const EventDetailsSection = ({
-  location,
-  organizer,
-  attendees,
-  conference,
-}: EventDetailsSectionProps) => {
+export const EventDetailsSection = ({ details }: EventDetailsSectionProps) => {
+  const { location, organizer, attendees = [], conference } = details;
   const [showAllAttendees, setShowAllAttendees] = useState(false);
-  const hasAttendees = attendees != null && attendees.length > 0;
+  const hasAttendees = attendees.length > 0;
 
   if (!location && !conference && !hasAttendees) return null;
 
-  const visibleAttendees =
-    hasAttendees && !showAllAttendees
-      ? attendees.slice(0, MAX_VISIBLE_ATTENDEES)
-      : (attendees ?? []);
-  const hiddenAttendeeCount = hasAttendees
-    ? attendees.length - visibleAttendees.length
-    : 0;
+  const visibleAttendees = showAllAttendees
+    ? attendees
+    : attendees.slice(0, MAX_VISIBLE_ATTENDEES);
+  const hiddenAttendeeCount = attendees.length - visibleAttendees.length;
 
   return (
     <div className="flex flex-col gap-2 rounded-md bg-surface-overlay p-3 text-text text-xs">
@@ -100,7 +87,7 @@ export const EventDetailsSection = ({
               <li
                 key={attendee.email}
                 className="flex items-center gap-2"
-                title={ATTENDEE_STATUS_LABEL[attendee.responseStatus]}
+                title={attendeeStatusLabel(attendee.responseStatus)}
               >
                 <span
                   aria-hidden
