@@ -122,9 +122,10 @@ describe("normalizeGoogleEvent", () => {
       start: "2022-02-22",
       end: "2022-02-23",
     });
-    // No description/location on this fixture; absence becomes empty/null.
+    // No description/location on this fixture; absence becomes empty string
+    // for both, matching the editable-write side's "no location" convention.
     expect(read.content.description).toBe("");
-    expect(read.content.location).toBeNull();
+    expect(read.content.location).toBe("");
     // Organizer without a display name normalizes to null, not "".
     expect(read.content.organizer).toEqual({
       email: "foo@gmail.com",

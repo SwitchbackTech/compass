@@ -146,7 +146,12 @@ const replacePayload = (
 ) => ({
   id,
   input: {
-    content: { kind: "details" as const, title: "Original", description: "" },
+    content: {
+      kind: "details" as const,
+      title: "Original",
+      description: "",
+      location: "",
+    },
     schedule: timedSchedule(
       "2026-07-02T16:00:00.000Z",
       "2026-07-02T17:00:00.000Z",
@@ -242,6 +247,7 @@ describe("useEventMutations", () => {
             kind: "details",
             title: "First narrow edit",
             description: "",
+            location: "",
           },
         }),
       ),
@@ -265,6 +271,7 @@ describe("useEventMutations", () => {
             kind: "details",
             title: "Later narrow edit",
             description: "",
+            location: "",
           },
         }),
       ),
@@ -309,6 +316,7 @@ describe("useEventMutations", () => {
             kind: "details",
             title: "Updated series",
             description: "",
+            location: "",
           },
           schedule: first.schedule as ReplaceEventInput["schedule"],
           scope: "all",
@@ -476,7 +484,12 @@ describe("useEventMutations", () => {
     act(() =>
       context.hook.result.current.mutations.create({
         calendarId: event().calendarId,
-        content: { kind: "details", title: "New series", description: "" },
+        content: {
+          kind: "details",
+          title: "New series",
+          description: "",
+          location: "",
+        },
         schedule: timedSchedule(
           "2026-07-02T16:00:00.000Z",
           "2026-07-02T17:00:00.000Z",
@@ -648,7 +661,12 @@ describe("useEventMutations", () => {
     act(() =>
       context.hook.result.current.mutations.replace(
         replacePayload(first.id, {
-          content: { kind: "details", title: "First edit", description: "" },
+          content: {
+            kind: "details",
+            title: "First edit",
+            description: "",
+            location: "",
+          },
           scope: "all",
         }),
       ),
@@ -662,7 +680,12 @@ describe("useEventMutations", () => {
     act(() =>
       context.hook.result.current.mutations.replace(
         replacePayload(second.id, {
-          content: { kind: "details", title: "Second edit", description: "" },
+          content: {
+            kind: "details",
+            title: "Second edit",
+            description: "",
+            location: "",
+          },
           scope: "all",
         }),
       ),
@@ -695,6 +718,7 @@ describe("useEventMutations", () => {
           kind: "details";
           title: string;
           description: string;
+          location: string;
         },
         schedule: created.schedule as never,
         recurrence: { kind: "single" },
@@ -731,7 +755,12 @@ describe("useEventMutations", () => {
     act(() =>
       context.hook.result.current.mutations.replace(
         replacePayload(original.id, {
-          content: { kind: "details", title: "Changed", description: "" },
+          content: {
+            kind: "details",
+            title: "Changed",
+            description: "",
+            location: "",
+          },
         }),
       ),
     );
@@ -766,7 +795,12 @@ describe("useEventMutations", () => {
     act(() =>
       context.hook.result.current.mutations.replace(
         replacePayload(item.id, {
-          content: { kind: "details", title: "Changed", description: "" },
+          content: {
+            kind: "details",
+            title: "Changed",
+            description: "",
+            location: "",
+          },
         }),
       ),
     );
@@ -791,7 +825,7 @@ describe("useEventMutations", () => {
     const editEvent = (title: string) =>
       context.hook.result.current.mutations.replace(
         replacePayload(original.id, {
-          content: { kind: "details", title, description: "" },
+          content: { kind: "details", title, description: "", location: "" },
         }),
       );
 
@@ -840,7 +874,7 @@ describe("useEventMutations", () => {
     const editEvent = (title: string) =>
       context.hook.result.current.mutations.replace(
         replacePayload(original.id, {
-          content: { kind: "details", title, description: "" },
+          content: { kind: "details", title, description: "", location: "" },
         }),
       );
 
@@ -888,7 +922,7 @@ describe("useEventMutations", () => {
     const editEvent = (title: string) =>
       context.hook.result.current.mutations.replace(
         replacePayload(original.id, {
-          content: { kind: "details", title, description: "" },
+          content: { kind: "details", title, description: "", location: "" },
         }),
       );
 
@@ -945,7 +979,12 @@ describe("useEventMutations", () => {
     act(() =>
       context.hook.result.current.mutations.replace(
         replacePayload(doomed.id, {
-          content: { kind: "details", title: "Doomed", description: "" },
+          content: {
+            kind: "details",
+            title: "Doomed",
+            description: "",
+            location: "",
+          },
         }),
       ),
     );
@@ -957,7 +996,12 @@ describe("useEventMutations", () => {
     act(() =>
       context.hook.result.current.mutations.replace(
         replacePayload(other.id, {
-          content: { kind: "details", title: "Survivor", description: "" },
+          content: {
+            kind: "details",
+            title: "Survivor",
+            description: "",
+            location: "",
+          },
         }),
       ),
     );
@@ -1024,6 +1068,7 @@ describe("useEventMutations", () => {
           kind: "details";
           title: string;
           description: string;
+          location: string;
         },
         schedule: created.schedule as never,
         recurrence: { kind: "single" },
@@ -1073,6 +1118,7 @@ describe("useEventMutations", () => {
           kind: "details";
           title: string;
           description: string;
+          location: string;
         },
         schedule: created.schedule as never,
         recurrence: { kind: "single" },
@@ -1111,6 +1157,7 @@ describe("useEventMutations", () => {
           kind: "details";
           title: string;
           description: string;
+          location: string;
         },
         schedule: created.schedule as never,
         recurrence: { kind: "single" },
@@ -1125,7 +1172,12 @@ describe("useEventMutations", () => {
     act(() =>
       context.hook.result.current.mutations.replace(
         replacePayload(created.id, {
-          content: { kind: "details", title: "Edited", description: "" },
+          content: {
+            kind: "details",
+            title: "Edited",
+            description: "",
+            location: "",
+          },
         }),
       ),
     );
@@ -1178,7 +1230,12 @@ describe("useEventMutations", () => {
     act(() =>
       context.hook.result.current.mutations.replace(
         replacePayload(movedIn.id, {
-          content: { kind: "details", title: "Moved In", description: "" },
+          content: {
+            kind: "details",
+            title: "Moved In",
+            description: "",
+            location: "",
+          },
           schedule: timedSchedule(
             "2026-07-04T16:00:00.000Z",
             "2026-07-04T17:00:00.000Z",
@@ -1232,7 +1289,12 @@ describe("undo history recording", () => {
     act(() =>
       context.hook.result.current.mutations.replace(
         replacePayload(original.id, {
-          content: { kind: "details", title: "Moved", description: "" },
+          content: {
+            kind: "details",
+            title: "Moved",
+            description: "",
+            location: "",
+          },
         }),
       ),
     );
@@ -1278,7 +1340,12 @@ describe("undo history recording", () => {
     act(() =>
       context.hook.result.current.mutations.replace(
         replacePayload(instance.id, {
-          content: { kind: "details", title: "Moved", description: "" },
+          content: {
+            kind: "details",
+            title: "Moved",
+            description: "",
+            location: "",
+          },
         }),
       ),
     );
@@ -1302,7 +1369,12 @@ describe("undo history recording", () => {
     act(() =>
       context.hook.result.current.mutations.replace(
         replacePayload(seriesBase.id, {
-          content: { kind: "details", title: "Moved", description: "" },
+          content: {
+            kind: "details",
+            title: "Moved",
+            description: "",
+            location: "",
+          },
           scope: "all",
         }),
       ),
@@ -1326,6 +1398,7 @@ describe("undo history recording", () => {
           kind: "details";
           title: string;
           description: string;
+          location: string;
         },
         schedule: created.schedule as never,
         recurrence: { kind: "single" },
@@ -1352,6 +1425,7 @@ describe("undo history recording", () => {
           kind: "details";
           title: string;
           description: string;
+          location: string;
         },
         schedule: seriesCreated.schedule as never,
         recurrence: {
@@ -1431,7 +1505,12 @@ describe("undo history recording", () => {
       act(() =>
         context.hook.result.current.mutations.replace(
           replacePayload(original.id, {
-            content: { kind: "details", title: "Replayed", description: "" },
+            content: {
+              kind: "details",
+              title: "Replayed",
+              description: "",
+              location: "",
+            },
           }),
         ),
       );
@@ -1449,6 +1528,7 @@ describe("undo history recording", () => {
             kind: "details";
             title: string;
             description: string;
+            location: string;
           },
           schedule: original.schedule as never,
           recurrence: { kind: "single" },
@@ -1485,6 +1565,7 @@ describe("undo history recording", () => {
           kind: "details";
           title: string;
           description: string;
+          location: string;
         },
         schedule: original.schedule as never,
         recurrence: { kind: "single" },
@@ -1529,6 +1610,7 @@ describe("undo history recording", () => {
           kind: "details";
           title: string;
           description: string;
+          location: string;
         },
         schedule: original.schedule as never,
         recurrence: { kind: "single" },

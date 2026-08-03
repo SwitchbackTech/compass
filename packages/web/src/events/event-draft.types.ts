@@ -29,6 +29,8 @@ export type EditEventRecurrenceDraft =
 type SharedEventFormValues = {
   title: string;
   description: string;
+  // Same convention as description: empty string means no location.
+  location: string;
   schedule: EventScheduleDraft;
   // Null means calendar-default / no event color tag.
   color: EventColorSlot | null;

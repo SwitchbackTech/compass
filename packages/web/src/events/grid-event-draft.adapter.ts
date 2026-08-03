@@ -54,6 +54,7 @@ export function createGridEventDraft(
     values: {
       title: "",
       description: "",
+      location: "",
       schedule,
       calendarId,
       color: null,
@@ -439,7 +440,10 @@ export function patchGridDraftScheduleDates(
 export function patchGridDraftFields(
   current: GridEventDraft,
   patch: Partial<
-    Pick<GridEventDraft["values"], "title" | "description" | "color">
+    Pick<
+      GridEventDraft["values"],
+      "title" | "description" | "location" | "color"
+    >
   >,
 ): GridEventDraft {
   // Branching on kind keeps create/edit values correlated with the
@@ -457,11 +461,17 @@ export function patchGridDraftFields(
 }
 
 const applyDraftFieldPatch = <
-  T extends Pick<GridEventDraft["values"], "title" | "description" | "color">,
+  T extends Pick<
+    GridEventDraft["values"],
+    "title" | "description" | "location" | "color"
+  >,
 >(
   values: T,
   patch: Partial<
-    Pick<GridEventDraft["values"], "title" | "description" | "color">
+    Pick<
+      GridEventDraft["values"],
+      "title" | "description" | "location" | "color"
+    >
   >,
 ): T => ({
   ...values,
@@ -469,18 +479,35 @@ const applyDraftFieldPatch = <
   ...(patch.description !== undefined
     ? { description: patch.description }
     : {}),
+  ...(patch.location !== undefined ? { location: patch.location } : {}),
   ...(patch.color !== undefined ? { color: patch.color } : {}),
 });
 
+// Event["content"].location is nullable/optional (a provider-sourced event
+// may never have set one, and older local records predate the field
+// entirely), but every editable-content consumer (draft values, replay
+// payloads sent to mutations.replace/create) needs a definite string. Shared
+// so every read of a stored event's location defaults it the same way -
+// also used by useUndoRedo.ts's replay/comparison paths.
+export const detailsLocation = (
+  content: Extract<Event["content"], { kind: "details" }>,
+): string => content.location ?? "";
+
 const editableDetailsFromEvent = (
   event: Event,
-): { title: string; description: string; color: EventColorSlot | null } => {
+): {
+  title: string;
+  description: string;
+  location: string;
+  color: EventColorSlot | null;
+} => {
   if (event.content.kind !== "details") {
-    return { title: "", description: "", color: null };
+    return { title: "", description: "", location: "", color: null };
   }
   return {
     title: event.content.title,
     description: event.content.description,
+    location: detailsLocation(event.content),
     color: event.content.color ?? null,
   };
 };

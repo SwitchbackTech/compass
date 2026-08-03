@@ -131,6 +131,7 @@ export class DirtyParser {
 
     if (values.title !== orig.title) return true;
     if (values.description !== orig.description) return true;
+    if (values.location !== orig.location) return true;
     if (values.calendarId !== orig.calendarId) return true;
     if (values.schedule.kind !== orig.schedule.kind) return true;
     if (values.schedule.start.getTime() !== orig.schedule.start.getTime()) {

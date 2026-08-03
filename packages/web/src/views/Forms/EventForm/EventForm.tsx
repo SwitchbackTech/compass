@@ -1,3 +1,4 @@
+import { MapPinIcon } from "@phosphor-icons/react";
 import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import type React from "react";
@@ -115,6 +116,9 @@ const FormCard = ({ children }: { children: ReactNode }) => (
   </div>
 );
 
+const mapsUrlForLocation = (location: string) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+
 interface EventFormDateTimeState {
   displayEndDate: Date;
   endTime: SelectOption<string>;
@@ -218,7 +222,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         ? seriesBase.recurrence.rules
         : undefined;
 
-    const { title, description, color } = draft.values;
+    const { title, description, location, color } = draft.values;
     const { base: eventColor } = useEventPalette(color ?? undefined);
     const category =
       draft.values.schedule.kind === "allDay"
@@ -360,7 +364,10 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     const patchDraftFields = useCallback(
       (
         patch: Partial<
-          Pick<GridEventDraft["values"], "title" | "description" | "color">
+          Pick<
+            GridEventDraft["values"],
+            "title" | "description" | "location" | "color"
+          >
         >,
       ) => {
         setLatestDraft((current) => {
@@ -390,6 +397,10 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
      **********/
     const onChangeTitle = (e: React.ChangeEvent<HTMLInputElement>) => {
       patchDraftFields({ title: e.target.value });
+    };
+
+    const onChangeLocation = (e: React.ChangeEvent<HTMLInputElement>) => {
+      patchDraftFields({ location: e.target.value });
     };
 
     const onClose = useCallback(() => {
@@ -793,6 +804,38 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                 value={color}
                 onChange={(next) => patchDraftFields({ color: next })}
               />
+            </FormCard>
+
+            <FormCard>
+              <div className="flex items-center gap-2">
+                {location ? (
+                  <a
+                    href={mapsUrlForLocation(location)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Open in Google Maps"
+                    className="shrink-0 text-text-muted hover:text-text"
+                  >
+                    <MapPinIcon size={16} />
+                  </a>
+                ) : (
+                  <MapPinIcon size={16} className="shrink-0 text-text-muted" />
+                )}
+                <Focusable
+                  Component="input"
+                  className={classNames(
+                    INPUT_RESET_CLASSNAME,
+                    "w-full bg-transparent text-sm",
+                  )}
+                  disabled={isReadOnly}
+                  onChange={onChangeLocation}
+                  onKeyDown={handleIgnoredKeys}
+                  placeholder="Location"
+                  aria-label="Location"
+                  name="Event Location"
+                  value={location}
+                />
+              </div>
             </FormCard>
 
             <FormCard>

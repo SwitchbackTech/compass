@@ -40,7 +40,7 @@ const jsonRes = () => {
 const sampleCreateBody = () => ({
   id: objectId(),
   calendarId: objectId(),
-  content: { kind: "details", title: "Lunch", description: "" },
+  content: { kind: "details", title: "Lunch", description: "", location: "" },
   schedule: {
     kind: "timed",
     start: "2026-07-14T12:00:00.000Z",
@@ -152,7 +152,12 @@ describe("EventController", () => {
         params: { id: objectId() },
         body: {
           calendarId: objectId(),
-          content: { kind: "details", title: "Lunch", description: "" },
+          content: {
+            kind: "details",
+            title: "Lunch",
+            description: "",
+            location: "",
+          },
           schedule: {
             kind: "timed",
             start: "2026-07-14T12:00:00.000Z",
@@ -182,7 +187,12 @@ describe("EventController", () => {
         body: {
           id: objectId(),
           calendarId: objectId(),
-          content: { kind: "details", title: "Lunch", description: "" },
+          content: {
+            kind: "details",
+            title: "Lunch",
+            description: "",
+            location: "",
+          },
           schedule: {
             kind: "timed",
             start: "2026-07-14T12:00:00.000Z",
@@ -206,7 +216,12 @@ describe("EventController", () => {
       sessionReq(objectId(), {
         params: { id: objectId() },
         body: {
-          content: { kind: "details", title: "Renamed", description: "" },
+          content: {
+            kind: "details",
+            title: "Renamed",
+            description: "",
+            location: "",
+          },
           schedule: {
             kind: "timed",
             start: "2026-07-14T12:00:00.000Z",

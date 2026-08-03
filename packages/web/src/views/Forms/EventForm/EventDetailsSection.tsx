@@ -1,4 +1,4 @@
-import { MapPinIcon, UsersIcon, VideoCameraIcon } from "@phosphor-icons/react";
+import { UsersIcon, VideoCameraIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { type EventContent } from "@core/types/event.contracts";
 import { type AttendeeResponseStatus } from "@core/types/event-attendance.contracts";
@@ -6,10 +6,7 @@ import { type AttendeeResponseStatus } from "@core/types/event-attendance.contra
 type EventDetails = Extract<EventContent, { kind: "details" }>;
 
 interface EventDetailsSectionProps {
-  details: Pick<
-    EventDetails,
-    "location" | "organizer" | "attendees" | "conference"
-  >;
+  details: Pick<EventDetails, "organizer" | "attendees" | "conference">;
 }
 
 const ATTENDEE_STATUS_DOT: Record<AttendeeResponseStatus, string> = {
@@ -22,24 +19,22 @@ const ATTENDEE_STATUS_DOT: Record<AttendeeResponseStatus, string> = {
 const attendeeStatusLabel = (status: AttendeeResponseStatus): string =>
   status === "needsAction" ? "hasn't responded" : status;
 
-const mapsUrlForLocation = (location: string) =>
-  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
-
 const MAX_VISIBLE_ATTENDEES = 6;
 
 /**
  * Read-only display for provider-sourced event fields Compass doesn't let
- * the user edit: the Google Meet link, location (linked out to Maps), and
- * the attendee list with RSVP status. Rendered only when the event has at
+ * the user edit: the Google Meet link and the attendee list with RSVP
+ * status. Location is editable now (see EventForm.tsx's own location
+ * field) and no longer rendered here. Rendered only when the event has at
  * least one of these - absent for a plain Compass-native event and for a
  * busy-projection event (whose content carries none of this).
  */
 export const EventDetailsSection = ({ details }: EventDetailsSectionProps) => {
-  const { location, organizer, attendees = [], conference } = details;
+  const { organizer, attendees = [], conference } = details;
   const [showAllAttendees, setShowAllAttendees] = useState(false);
   const hasAttendees = attendees.length > 0;
 
-  if (!location && !conference && !hasAttendees) return null;
+  if (!conference && !hasAttendees) return null;
 
   const visibleAttendees = showAllAttendees
     ? attendees
@@ -59,18 +54,6 @@ export const EventDetailsSection = ({ details }: EventDetailsSectionProps) => {
           <span className="min-w-0 flex-1 truncate">
             {conference.label ?? "Join meeting"}
           </span>
-        </a>
-      )}
-
-      {location && (
-        <a
-          href={mapsUrlForLocation(location)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 hover:underline"
-        >
-          <MapPinIcon size={16} className="shrink-0 text-text-muted" />
-          <span className="min-w-0 flex-1 truncate">{location}</span>
         </a>
       )}
 

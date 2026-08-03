@@ -7,6 +7,7 @@ import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { showRestoredToast } from "@web/common/utils/toast/deleted-toast.util";
 import { dismissRecurrenceScopeToast } from "@web/common/utils/toast/recurrence-scope.toast";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
+import { detailsLocation } from "@web/events/grid-event-draft.adapter";
 import {
   type EventMutationDependencies,
   useEventMutations,
@@ -67,6 +68,19 @@ const refocusAfterReplay = (eventId: string) => {
 const showUndoDeclinedToast = () =>
   showStatusToast(UNDO_DECLINED_TOAST_ID, "Can't undo — event changed since");
 
+// A snapshot recorded before this event was ever replayed may omit `location`
+// entirely (an older local record, or any Event built without it) — replaying
+// it always fills the key in (replaySnapshot below), since the editable-
+// content contract requires a definite string. Comparing raw JSON.stringify
+// output would then read "gained a location key" as an external change.
+// Normalizing both sides the same way (via the same detailsLocation default
+// replaySnapshot/undoDelete/redo use below) keeps the comparison about the
+// actual value, not whether the key happened to be present.
+const normalizedDetailsContent = (content: Event["content"]) =>
+  content.kind === "details"
+    ? { ...content, location: detailsLocation(content) }
+    : content;
+
 // Whether `current` still matches the state an undo/redo entry expects to
 // find before it replays — the staleness guard. Deliberately narrow: it
 // compares only the fields our own snapshots capture and our own replays
@@ -79,7 +93,10 @@ const showUndoDeclinedToast = () =>
 // toast instead of applying stale data.
 function snapshotMatches(current: Event, expected: Event): boolean {
   if (current.calendarId !== expected.calendarId) return false;
-  if (JSON.stringify(current.content) !== JSON.stringify(expected.content)) {
+  if (
+    JSON.stringify(normalizedDetailsContent(current.content)) !==
+    JSON.stringify(normalizedDetailsContent(expected.content))
+  ) {
     return false;
   }
   return JSON.stringify(current.schedule) === JSON.stringify(expected.schedule);
@@ -120,7 +137,10 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
           // Restores the snapshot's calendar too, so undoing a cross-calendar
           // move puts the event back on its original calendar.
           calendarId: snapshot.calendarId,
-          content: snapshot.content,
+          content: {
+            ...snapshot.content,
+            location: detailsLocation(snapshot.content),
+          },
           schedule: snapshot.schedule,
           // "preserve" keeps whatever recurrence linkage the target already
           // has (single, or one occurrence of a series) — scope "this"
@@ -159,7 +179,7 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
       mutations.create({
         id: event.id,
         calendarId: event.calendarId,
-        content: event.content,
+        content: { ...event.content, location: detailsLocation(event.content) },
         schedule: event.schedule,
         recurrence:
           event.recurrence.kind === "series"
@@ -250,7 +270,10 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
         mutations.create({
           id: event.id,
           calendarId: event.calendarId,
-          content: event.content,
+          content: {
+            ...event.content,
+            location: detailsLocation(event.content),
+          },
           schedule: event.schedule,
           recurrence:
             event.recurrence.kind === "series"

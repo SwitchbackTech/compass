@@ -12,7 +12,12 @@ import {
 const calendarId = () => faker.database.mongodbObjectId();
 const eventId = () => faker.database.mongodbObjectId();
 
-const content = { kind: "details", title: "Standup", description: "" };
+const content = {
+  kind: "details",
+  title: "Standup",
+  description: "",
+  location: "",
+};
 const timedSchedule = {
   kind: "timed",
   start: "2026-07-14T09:00:00-06:00",

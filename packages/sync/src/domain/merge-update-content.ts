@@ -1,9 +1,9 @@
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
 
-// Browser edits only title + description (+ optional color). An update command
-// still carries a full SyncEventContent (strict schema), and the Compass API
-// pads richer fields with null/[] — applying that verbatim would wipe
-// attendees/location/conference Sync already holds from the provider.
+// Browser edits only title + description + location (+ optional color). An
+// update command still carries a full SyncEventContent (strict schema), and
+// the Compass API pads richer fields with null/[] — applying that verbatim
+// would wipe attendees/conference Sync already holds from the provider.
 //
 // Merge editable fields from the command; keep the rest from existing.
 // Color: slot replaces, null clears (omit the field), omit keeps existing.
@@ -16,6 +16,7 @@ export function mergeUpdateContent(
     ...existingWithoutColor,
     title: incoming.title,
     description: incoming.description,
+    location: incoming.location,
   };
 
   if (incoming.color === null) return merged;

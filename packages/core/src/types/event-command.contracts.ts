@@ -17,6 +17,10 @@ const EditableContentSchema = z.strictObject({
   kind: z.literal("details"),
   title: z.string(),
   description: z.string(),
+  // Same convention as description: empty string means no location, always
+  // sent and always overwritten on save (no separate "leave alone" state -
+  // location has no calendar-default to inherit the way color does).
+  location: z.string(),
   // Null clears a previously set color on replace; omit leaves sync color
   // alone when the client did not touch it.
   color: OptionalNullableEventColorSchema,
