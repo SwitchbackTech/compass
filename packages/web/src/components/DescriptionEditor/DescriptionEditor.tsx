@@ -4,6 +4,7 @@ import {
   TextBIcon,
   TextItalicIcon,
 } from "@phosphor-icons/react";
+import { Link } from "@tiptap/extension-link";
 import { Placeholder } from "@tiptap/extension-placeholder";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
@@ -16,10 +17,14 @@ import { Divider } from "@web/components/Divider/Divider";
 // formatting this editor actually supports. TipTap's own schema (StarterKit
 // with headings/code/blockquote/etc disabled below) is a second filter: any
 // surviving tag it doesn't recognize as a node/mark just becomes plain text.
+// `href` is the only attribute let through - the Link extension below
+// applies its own target/rel at render time regardless of what (if
+// anything) survived on the source tag, so a malicious rel/target in the
+// source HTML can never reach the DOM.
 const sanitizeDescriptionHtml = (html: string): string =>
   DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ["p", "br", "b", "strong", "i", "em", "ul", "ol", "li"],
-    ALLOWED_ATTR: [],
+    ALLOWED_TAGS: ["p", "br", "b", "strong", "i", "em", "ul", "ol", "li", "a"],
+    ALLOWED_ATTR: ["href"],
   });
 
 interface DescriptionEditorProps {
@@ -78,6 +83,26 @@ export const DescriptionEditor = ({
           strike: false,
           underline: false,
           link: false,
+        }),
+        // Preserve-only, not editable via the toolbar: a meeting link pasted
+        // into a Google description (Zoom/Teams, most often - `conference`
+        // only ever covers Google Meet) should stay clickable rather than
+        // getting flattened to plain text. openOnClick is off in BOTH modes
+        // so clicking mid-edit places the cursor instead of navigating away
+        // (matches Google Docs/Notion) - a read-only region already lets
+        // native `<a>` clicks through once contenteditable is false.
+        // HTMLAttributes are applied at render time regardless of what
+        // survived sanitization, so target/rel are never attacker-controlled.
+        Link.configure({
+          openOnClick: false,
+          autolink: true,
+          defaultProtocol: "https",
+          protocols: ["http", "https"],
+          HTMLAttributes: {
+            target: "_blank",
+            rel: "noopener noreferrer nofollow",
+            class: "text-accent underline",
+          },
         }),
         Placeholder.configure({ placeholder }),
       ],
