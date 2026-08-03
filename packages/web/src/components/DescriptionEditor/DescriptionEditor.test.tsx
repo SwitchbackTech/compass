@@ -2,6 +2,15 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { DescriptionEditor } from "@web/components/DescriptionEditor/DescriptionEditor";
 import { describe, expect, it, mock } from "bun:test";
 
+const DescriptionEditorHarness = ({ editable }: { editable: boolean }) => (
+  <DescriptionEditor
+    value="<p>Hello</p>"
+    onChange={mock()}
+    editable={editable}
+    resetKey="same-event"
+  />
+);
+
 describe("DescriptionEditor", () => {
   it("exposes an accessible textbox and does not call onChange on mount", () => {
     const onChange = mock();
@@ -75,5 +84,25 @@ describe("DescriptionEditor", () => {
     expect(textbox.innerHTML).not.toContain("<script");
     expect(textbox.innerHTML).not.toContain("onclick");
     expect(textbox.textContent).toContain("Safe text");
+  });
+
+  it("re-syncs contenteditable when editable flips on the same event", () => {
+    // Regression: useEditor only recreates the editor when `resetKey`
+    // changes, so `editable` must be applied via editor.setEditable in its
+    // own effect - otherwise a mid-session read-only flip on the SAME event
+    // (e.g. permissions revoked, a calendars-query refetch) would hide the
+    // toolbar but leave the underlying region silently still editable.
+    const { rerender } = render(<DescriptionEditorHarness editable={true} />);
+
+    const textbox = screen.getByRole("textbox", {
+      name: "Description",
+    }) as HTMLElement;
+    expect(textbox.getAttribute("contenteditable")).toBe("true");
+
+    rerender(<DescriptionEditorHarness editable={false} />);
+    expect(textbox.getAttribute("contenteditable")).toBe("false");
+
+    rerender(<DescriptionEditorHarness editable={true} />);
+    expect(textbox.getAttribute("contenteditable")).toBe("true");
   });
 });

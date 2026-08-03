@@ -9,7 +9,7 @@ import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
 import classNames from "classnames";
 import DOMPurify from "dompurify";
-import { type KeyboardEvent, useMemo, useState } from "react";
+import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { Divider } from "@web/components/Divider/Divider";
 
 // Google's description HTML is untrusted input - strip everything but the
@@ -100,6 +100,21 @@ export const DescriptionEditor = ({
     },
     [resetKey],
   );
+
+  // `useEditor`'s deps array only recreates the editor when `resetKey`
+  // changes - `editable` is read once at that creation and never resynced by
+  // the hook itself, so a read-only flip on the SAME event (e.g. a
+  // calendars-query refetch revoking write access mid-session) would
+  // otherwise leave the contenteditable region silently still editable, with
+  // only the toolbar visually hidden. `setEditable` is TipTap's documented
+  // imperative escape hatch for exactly this: an externally-driven option
+  // that isn't part of the recreate-gated config. The `false` suppresses
+  // setEditable's default `emitUpdate` - a pure read-only toggle firing
+  // `onUpdate`/`onChange` would trip the dirty-check on mount and on every
+  // permission flip, for content that never actually changed.
+  useEffect(() => {
+    editor?.setEditable(editable, false);
+  }, [editor, editable]);
 
   // editor.isActive(...) is imperative editor-instance state, not reactive
   // React state - reading it directly in the render body would show a
