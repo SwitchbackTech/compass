@@ -72,6 +72,23 @@ describe("syncLocalEventsToCloud", () => {
     expect(clearAllEvents).toHaveBeenCalledTimes(1);
   });
 
+  it("defaults location to an empty string for a record that predates the field", async () => {
+    // createMockLocalEventRecord's default content has no `location` key at
+    // all (matching a real pre-existing local record) - CreateEventInput
+    // requires a definite string, and the backend's strict schema rejects a
+    // POST body missing it outright.
+    const record = createMockLocalEventRecord({}, false);
+    getAllEvents.mockResolvedValue([record]);
+
+    await syncLocalEventsToCloud();
+
+    expect(createEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: expect.objectContaining({ location: "" }),
+      }),
+    );
+  });
+
   it("clears local demo events without sending them to the backend", async () => {
     getAllEvents.mockResolvedValue([createMockLocalEventRecord({}, true)]);
 

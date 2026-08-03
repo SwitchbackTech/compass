@@ -9,6 +9,7 @@ import {
   getOfflineDataStore,
 } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { EventApi } from "@web/events/event.api";
+import { detailsLocation } from "@web/events/grid-event-draft.adapter";
 import { type LocalEventRecord } from "@web/events/types/local-event.record";
 
 type LocalEventSyncStorage = Pick<
@@ -55,6 +56,16 @@ function toCreateInput(
 ): CreateEventInput {
   const recurrence = record.event.recurrence;
   const allDay = record.event.schedule.kind === "allDay";
+  // Local storage only ever holds "details" content (never a synthesized
+  // "busy" block), so this narrowing cast is safe - but its location is
+  // read-side optional/nullable (a record predating this field, or one that
+  // never had a location), while CreateEventInput requires a definite
+  // string, so it needs the same default every other editable-content
+  // consumer uses.
+  const content = record.event.content as Extract<
+    typeof record.event.content,
+    { kind: "details" }
+  >;
 
   return {
     // Composed occurrence ids (`${seriesId}::${start}`, minted by local-mode
@@ -73,9 +84,10 @@ function toCreateInput(
             ],
           }
         : { kind: "single" },
-    // Local storage only ever holds "details" content (never a synthesized
-    // "busy" block), so this narrowing cast is safe.
-    content: record.event.content as CreateEventInput["content"],
+    content: {
+      ...content,
+      location: detailsLocation(content),
+    } as CreateEventInput["content"],
   };
 }
 

@@ -105,7 +105,11 @@ function mapContent(
     // contract models those as empty strings, not absence.
     title: item.summary ?? "",
     description: item.description ?? "",
-    location: item.location ?? null,
+    // Same convention as title/description above (empty string, not
+    // absence) - toSyncContent's editable-write side always sends a
+    // definite string for location too, so matchesIntendedEdit's replay
+    // comparison needs both sides using the same "no location" value.
+    location: item.location ?? "",
     organizer: mapOrganizer(item.organizer),
     attendees: mapAttendees(item.attendees),
     conference: mapConference(item),
