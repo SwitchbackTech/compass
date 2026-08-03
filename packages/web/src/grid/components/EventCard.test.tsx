@@ -209,6 +209,7 @@ describe("EventCard", () => {
     expect(card.style.getPropertyValue("--event-bg")).toBe(
       getEventPalette("red").base,
     );
+    expect(card.style.filter).toBe("drop-shadow(0 1px 2px rgb(0 0 0 / 0.28))");
   });
 
   it("keeps timed event keyboard activation from reaching parent shortcuts", () => {
