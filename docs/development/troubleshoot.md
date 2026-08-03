@@ -36,7 +36,10 @@ Quick checks:
 2. open browser Network tab and verify `/api/events/stream` stays open with `200`
 3. verify response headers include `content-type: text/event-stream`
 4. confirm periodic `: keepalive` frames are visible (roughly every 25 seconds)
-5. trigger a known publish path (for example event write or import) and verify named events appear (`EVENT_CHANGED`, `IMPORT_GCAL_*`, `USER_METADATA`)
+5. trigger a known publish path (for example event write or import) and verify
+   SSE frames arrive as `event: message` with a JSON `data.type` such as
+   `eventsChanged`, `syncStatusChanged`, `importCompleted`, or
+   `userMetadataChanged` (the old uppercase signal names are retired)
 
 If the stream does not open:
 
@@ -82,40 +85,48 @@ To fix this:
 3. Verify the connection URI format matches what Supertokens provides (should include the protocol, domain, and port if applicable)
 4. Ensure there are no extra spaces or characters in the environment variable values
 
-## Google Calendar Repair Fails Or Stops Unexpectedly
+## Google Calendar Refresh Fails Or Stops Unexpectedly
 
-When a user triggers repair from the UI (`Repair Google Calendar`) and the flow does not complete as expected, first classify the failure mode from the message and SSE behavior.
+When a user clicks **Refresh calendar** (or the automatic focus refresh runs)
+and the calendar does not catch up, first classify the failure mode from the
+sidebar status line and SSE behavior.
 
-For Google sign-in or reconnect repair, check the backend
-`google_auth_decision` log. It shows the selected mode, token/sync health
-flags, and safe trace ids. To keep sensitive account details out of logs, it
-should not show raw emails, Google ids, or Compass user ids.
+Manual refresh surfaces:
+
+- `We couldn't refresh your calendar. Please try again in a moment.`
+
+Focus-triggered refresh uses the same Sync path but passes `silent: true`, so
+a transient failure does **not** toast. If the UI looks stuck after returning
+to the tab, try the sidebar CTA explicitly.
+
+For Google sign-in or reconnect, check the backend `google_auth_decision` log.
+It shows the selected mode, token/sync health flags, and safe trace ids. To
+keep sensitive account details out of logs, it should not show raw emails,
+Google ids, or Compass user ids.
 
 If the mode is `RECONNECT_REPAIR` and a stored refresh token exists, backend can
 repair with that token even when Google does not return a new one.
 
-### Quota / rate-limit during repair
+### Quota / rate-limit during refresh
 
-If the user sees:
-
-- `Google Calendar repair hit a Google API limit. Please wait a few minutes and try again.`
-
-then backend detected a Google quota/rate-limit response (`403`/`429`), and this is usually transient.
+If the user sees a Google API limit toast (or Sync reports a quota/rate-limit
+response via `403`/`429`), the failure is usually transient.
 
 Recommended action:
 
 1. wait a few minutes
-2. retry repair
+2. retry **Refresh calendar**
 3. if this repeats across many users, investigate Google API quota usage for the project
 
-### Revoked token during repair
+### Revoked token during refresh
 
-If access was revoked (for example Google returns `invalid_grant`), backend prunes Google data and emits `GOOGLE_REVOKED`.
+If access was revoked (for example Google returns `invalid_grant`), backend
+prunes Google data and emits `syncStatusChanged` with `code: "GOOGLE_REVOKED"`.
 
 Operational notes:
 
-- this path does **not** end with an `IMPORT_GCAL_END` payload with `status: "ERRORED"`
-- UI should transition to reconnect-required behavior rather than repeatedly retrying repair
+- this path does **not** end with a successful `importCompleted`
+- UI should transition to reconnect-required behavior rather than repeatedly retrying refresh
 - user action is to reconnect Google, then allow sync/import restart
 
 ## Google Connect Aborts With Local Events Sync Error

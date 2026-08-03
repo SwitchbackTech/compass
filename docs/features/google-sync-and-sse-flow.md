@@ -153,7 +153,11 @@ Files:
 - `packages/web/src/sse/hooks/useSSEConnection.ts`
 - `packages/web/src/sse/hooks/useEventSSE.ts`
 - `packages/web/src/sse/hooks/useGcalSSE.ts` (+ `useGcalSSE.factory.ts`)
+- `packages/web/src/sse/hooks/useSyncFocusRefresh.ts`
+- `packages/web/src/common/hooks/useVisibleAfterHidden.ts`
 - `packages/web/src/sse/provider/SSEProvider.tsx`
+- `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.ts`
+- `packages/web/src/auth/google/state/google.sync.refresh.ts`
 
 The client:
 
@@ -161,10 +165,32 @@ The client:
 - refetches events when `eventsChanged` arrives (by invalidating the matching event query scopes)
 - tracks Google sync/import status from `syncStatusChanged`/`importCompleted` and `userMetadataChanged`
 - handles the `GOOGLE_REVOKED` `syncStatusChanged` code consistently with REST error payloads
+- auto-refreshes Google Calendar sync on app focus (below)
 
 Refetches are driven by TanStack Query invalidation keyed to the message
 `type`; `userMetadataChanged` payloads land in the userMetadata Zustand
 store.
+
+### Focus Refresh
+
+`SSEProvider` mounts `useSyncFocusRefresh`, which calls the same
+`useConnectGoogle().refresh` path as the sidebar **Refresh calendar** button:
+
+1. once when a refreshable connection becomes available on mount
+2. again whenever the tab returns to visible after being hidden for at least
+   30 seconds (`useVisibleAfterHidden`; same threshold as version checks)
+
+Constraints:
+
+- runs only for `HEALTHY` or `ATTENTION` connections (no-op while disconnected,
+  reconnect-required, or still on the initial import)
+- passes `silent: true` so a transient background failure does not toast the
+  way a manual click's failure does
+- shares the browser-wide refresh coordinator with manual clicks, so focus and
+  CTA refreshes coalesce instead of racing
+
+Without this, a user can stare at a stale “Updated …” label until they
+remember to click **Refresh calendar**.
 
 ## Revoked Token And Reconnect Lifecycle
 
