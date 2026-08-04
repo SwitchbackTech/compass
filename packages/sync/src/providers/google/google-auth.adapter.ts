@@ -62,12 +62,19 @@ export class GoogleAuthAdapter implements ProviderAuthAdapter {
     this.#makeClient = makeClient;
   }
 
-  buildAuthorizationUrl(input: { state: string; redirectUri: string }): string {
+  buildAuthorizationUrl(input: {
+    state: string;
+    redirectUri: string;
+    selectAccount?: boolean;
+  }): string {
     return this.#makeClient(input.redirectUri).generateAuthUrl({
       // offline + consent guarantees a refresh token even on re-authorization,
-      // which Google otherwise omits after the first consent.
+      // which Google otherwise omits after the first consent. select_account
+      // additionally forces the chooser, so adding an account cannot silently
+      // re-authorize the one already connected. Google takes the prompt as a
+      // space-delimited list.
       access_type: "offline",
-      prompt: "consent",
+      prompt: input.selectAccount ? "select_account consent" : "consent",
       include_granted_scopes: true,
       scope: [...GOOGLE_SCOPES],
       state: input.state,

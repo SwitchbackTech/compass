@@ -71,8 +71,16 @@ const testConfig = (overrides: Partial<SyncConfig> = {}): SyncConfig =>
 class FakeAuthAdapter implements ProviderAuthAdapter {
   readonly provider = "google" as const;
   revoked: string[] = [];
-  authorizations: Array<{ state: string; redirectUri: string }> = [];
-  buildAuthorizationUrl(input: { state: string; redirectUri: string }): string {
+  authorizations: Array<{
+    state: string;
+    redirectUri: string;
+    selectAccount?: boolean;
+  }> = [];
+  buildAuthorizationUrl(input: {
+    state: string;
+    redirectUri: string;
+    selectAccount?: boolean;
+  }): string {
     this.authorizations.push(input);
     return `https://consent.example.com/?state=${input.state}`;
   }
@@ -487,6 +495,49 @@ describe("POST /internal/connections/begin", () => {
     expect(verified.ok && verified.payload.principalId).toBe(principalId);
     expect(verified.ok && verified.payload.tenantId).toBe(tenantId);
     expect(verified.ok && verified.payload.connectionId).toBeNull();
+  });
+
+  it("does not force the account chooser for a principal's first connection", async () => {
+    await startService(activeConfig(), adapter);
+
+    await begin(objectId(), objectId());
+
+    // Nothing to choose between yet, and the chooser is an extra click.
+    expect(adapter.authorizations[0].selectAccount).toBe(false);
+  });
+
+  it("forces the account chooser when the principal already has a connection", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await seedConnection(
+      connections,
+      tenantId,
+      principalId,
+      "first@example.com",
+    );
+    await startService(activeConfig(), adapter);
+
+    await begin(tenantId, principalId);
+
+    // Otherwise Google re-authorizes the connected account and nothing
+    // appears to happen.
+    expect(adapter.authorizations[0].selectAccount).toBe(true);
+  });
+
+  it("never forces the account chooser on reconnect (it is account-pinned)", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const existing = await seedConnection(
+      connections,
+      tenantId,
+      principalId,
+      "reconnect@example.com",
+    );
+    await startService(activeConfig(), adapter);
+
+    await begin(tenantId, principalId, { connectionId: existing._id });
+
+    expect(adapter.authorizations[0].selectAccount).toBe(false);
   });
 
   it("binds the state to an owned connection for reconnect", async () => {

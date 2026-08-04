@@ -127,6 +127,23 @@ describe("GoogleAuthAdapter", () => {
       expect(options.scope).toEqual([...GOOGLE_SCOPES]);
       expect(url).toContain("state=opaque-state");
     });
+
+    it("forces the account chooser when adding an account", () => {
+      const client = new FakeGoogleClient();
+      const { adapter } = adapterWith(client);
+
+      adapter.buildAuthorizationUrl({
+        state: "opaque-state",
+        redirectUri: "https://staging.example.com/sync/google",
+        selectAccount: true,
+      });
+
+      // Without select_account, a browser signed into one Google account
+      // re-authorizes that same account and the user never gets to pick.
+      // consent must stay so the exchange still returns a refresh token.
+      expect(client.authUrlOptions[0].prompt).toBe("select_account consent");
+      expect(client.authUrlOptions[0].access_type).toBe("offline");
+    });
   });
 
   describe("exchangeAuthorizationCode", () => {

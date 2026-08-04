@@ -90,7 +90,7 @@ interface Props {
 
 export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
   const { authenticated } = useSession();
-  const { isAvailable, state } = useConnectGoogle();
+  const { connect, isAvailable, isConnecting, state } = useConnectGoogle();
   const { data, isPending, isError, refetch } = useCalendarsQuery();
   const { toggleCalendarVisibility, failureAnnouncement } =
     useCalendarVisibility();
@@ -158,6 +158,22 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
       ) : (
         renderRows(calendars)
       )}
+
+      {/* Adding a second account is only meaningful once the first one is
+          connected; before that the header's own Connect action covers it. */}
+      {authenticated &&
+      isAvailable &&
+      (state === "HEALTHY" || state === "IMPORTING") ? (
+        <button
+          aria-busy={isConnecting || undefined}
+          className="c-focus-ring mt-3 rounded-xs px-1 py-0.5 text-accent text-xs hover:brightness-110 disabled:pointer-events-none disabled:opacity-60"
+          disabled={isConnecting}
+          onClick={connect}
+          type="button"
+        >
+          {isConnecting ? "Opening Google…" : "Add account"}
+        </button>
+      ) : null}
 
       <span aria-live="polite" className="sr-only" role="status">
         {failureAnnouncement}

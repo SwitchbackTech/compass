@@ -38,6 +38,11 @@ export interface ProviderAuthAdapter {
   buildAuthorizationUrl(input: {
     readonly state: string;
     readonly redirectUri: string;
+    // Ask the provider to show its account chooser. Set when the principal is
+    // adding an account alongside ones it already has: without it a provider
+    // with one signed-in session silently re-authorizes that same account, so
+    // the user never gets to pick the account they meant to add.
+    readonly selectAccount?: boolean;
   }): string;
 
   // Exchange an authorization code for durable credentials and account
