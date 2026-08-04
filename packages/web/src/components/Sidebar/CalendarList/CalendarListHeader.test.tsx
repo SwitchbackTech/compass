@@ -204,17 +204,19 @@ describe("CalendarListHeader", () => {
   it("shows last-synced timing when Sync connection metadata includes lastSyncedAt", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "HEALTHY";
+    const connection = {
+      id: "conn-1",
+      state: "healthy",
+      stateReason: null,
+      lastSyncedAt: new Date().toISOString(),
+      lastHealthyAt: new Date().toISOString(),
+      accountEmail: "ahab@pequod.com",
+    };
     userMetadataActions.set({
       google: {
         connectionState: "HEALTHY",
-        connection: {
-          id: "conn-1",
-          state: "healthy",
-          stateReason: null,
-          lastSyncedAt: new Date().toISOString(),
-          lastHealthyAt: new Date().toISOString(),
-          accountEmail: "compasscaltest3@gmail.com",
-        },
+        connection,
+        connections: [connection],
       },
     });
 
@@ -381,17 +383,19 @@ describe("CalendarListHeader", () => {
   it("keeps an established calendar calm during reconciliation", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "HEALTHY";
+    const connection = {
+      id: "conn-1",
+      state: "catchingUp",
+      stateReason: null,
+      lastSyncedAt: new Date().toISOString(),
+      lastHealthyAt: new Date().toISOString(),
+      accountEmail: "ahab@pequod.com",
+    };
     userMetadataActions.set({
       google: {
         connectionState: "IMPORTING",
-        connection: {
-          id: "conn-1",
-          state: "catchingUp",
-          stateReason: null,
-          lastSyncedAt: new Date().toISOString(),
-          lastHealthyAt: new Date().toISOString(),
-          accountEmail: "compasscaltest3@gmail.com",
-        },
+        connection,
+        connections: [connection],
       },
     });
 
@@ -400,5 +404,46 @@ describe("CalendarListHeader", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Calendar connected");
     expect(screen.queryByText("Adding your calendar…")).toBeNull();
     expect(screen.getByText("Updated just now")).toBeInTheDocument();
+  });
+
+  it("scopes to the connection matching the signed-in user's own email, not sync's aggregate precedence winner across every connected account", () => {
+    // The 2026-08-04 bug: with two accounts connected, disconnecting the
+    // OTHER one made this header - which is keyed to the signed-in user's
+    // OWN email - flash "needs reconnecting" anyway, because the singular
+    // `google.connection` field is sync's most-actionable-state-wins pick
+    // across ALL connections, not specifically this user's own connection.
+    mockEmail = "ahab@pequod.com";
+    mockGoogleState = "RECONNECT_REQUIRED";
+    const ownConnection = {
+      id: "conn-mine",
+      state: "healthy",
+      stateReason: null,
+      lastSyncedAt: new Date().toISOString(),
+      lastHealthyAt: new Date().toISOString(),
+      accountEmail: "ahab@pequod.com",
+      connectionState: "HEALTHY" as const,
+    };
+    const otherAccountsBrokenConnection = {
+      id: "conn-other",
+      state: "disconnected",
+      stateReason: null,
+      lastSyncedAt: null,
+      lastHealthyAt: null,
+      accountEmail: "starbuck@pequod.com",
+      connectionState: "RECONNECT_REQUIRED" as const,
+    };
+    userMetadataActions.set({
+      google: {
+        connectionState: "RECONNECT_REQUIRED",
+        connection: otherAccountsBrokenConnection,
+        connections: [otherAccountsBrokenConnection, ownConnection],
+      },
+    });
+
+    renderHeader();
+
+    expect(mockUseConnectGoogle).toHaveBeenCalledWith({
+      connection: ownConnection,
+    });
   });
 });

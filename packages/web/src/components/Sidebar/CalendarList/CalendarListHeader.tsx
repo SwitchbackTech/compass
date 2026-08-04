@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { type FC, useCallback, useSyncExternalStore } from "react";
+import { type FC, useCallback, useMemo, useSyncExternalStore } from "react";
 import {
   shouldShowAnonymousCalendarChangeSignUpPrompt,
   subscribeToAuthState,
@@ -12,7 +12,7 @@ import {
   getGoogleSyncStatus,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import {
-  selectGoogleSyncConnection,
+  selectGoogleSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import {
@@ -133,12 +133,22 @@ const AnonymousAccountHeader: FC = () => {
 };
 
 const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
+  // This header shows before per-account sections take over (single account,
+  // or the moment metadata loads for a multi-account user) - it must show
+  // THIS email's own status, not sync's precedence-winning "most actionable
+  // connection across everyone", or a second account's problem flashes under
+  // the first account's name for as long as that gap lasts (2026-08-04,
+  // caught disconnecting one of two live accounts).
+  const connections = useUserMetadataStore(selectGoogleSyncConnections);
+  const ownConnection = useMemo(
+    () => connections.find((c) => c.accountEmail === email) ?? null,
+    [connections, email],
+  );
   const { commandAction, isAvailable, isConnecting, isRefreshing, state } =
-    useConnectGoogle();
-  const syncConnection = useUserMetadataStore(selectGoogleSyncConnection);
+    useConnectGoogle({ connection: ownConnection });
   const hasPendingEventMutations = useHasPendingEventMutations();
   const syncStatus = getSidebarSyncStatus({
-    googleStatus: getGoogleSyncStatus(state, syncConnection),
+    googleStatus: getGoogleSyncStatus(state, ownConnection),
     hasPendingEventMutations,
     isConnecting,
     state,
@@ -148,7 +158,7 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
   const showGoogleAction = isAvailable && commandAction != null;
   const lastSyncedLabel =
     syncStatus?.variant === "healthy"
-      ? formatLastSyncedLabel(syncConnection?.lastSyncedAt)
+      ? formatLastSyncedLabel(ownConnection?.lastSyncedAt)
       : null;
   const googleActionLabel =
     commandAction == null
