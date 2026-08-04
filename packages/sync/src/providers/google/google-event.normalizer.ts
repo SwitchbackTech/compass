@@ -57,6 +57,7 @@ export function normalizeGoogleEvent(
     schedule: mapSchedule(item),
     // Absent transparency means "opaque" (busy) in Google's model.
     busy: item.transparency !== "transparent",
+    ...(item.iCalUID ? { icalUid: item.iCalUID } : {}),
     recurrence: mapRecurrence(item),
   };
 }

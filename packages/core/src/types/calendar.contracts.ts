@@ -38,6 +38,12 @@ export const CalendarSchema = z.strictObject({
   isPrimary: z.boolean(),
   isVisible: z.boolean(),
   isActive: z.boolean(),
+  // Email of the connected provider account this calendar belongs to. This is
+  // the calendar's only account identity on the wire: emails are unique per
+  // user (one Google account = one connection), so grouping and labelling key
+  // off it directly. Absent for the local calendar, and for provider accounts
+  // that reported no email.
+  accountEmail: z.string().optional(),
 });
 export type Calendar = z.infer<typeof CalendarSchema>;
 

@@ -334,6 +334,18 @@ describe("normalizeGoogleEvent", () => {
     expect(error.reason).toBe("unmappableContent");
   });
 
+  it("maps iCalUID onto the read (the cross-account correlation key)", () => {
+    const read = asProviderEvent(
+      normalizeGoogleEvent(gEvent({ iCalUID: "abc123@google.com" })),
+    );
+    expect(read.icalUid).toBe("abc123@google.com");
+  });
+
+  it("omits icalUid when Google reports no iCalUID", () => {
+    const read = asProviderEvent(normalizeGoogleEvent(gEvent({})));
+    expect("icalUid" in read).toBe(false);
+  });
+
   it("maps Google colorId 7 to content.color blue", () => {
     const read = asProviderEvent(
       normalizeGoogleEvent(gEvent({ colorId: "7" })),

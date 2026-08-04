@@ -88,6 +88,18 @@ describe("syncCalendarToBrowser", () => {
     expect(result.timeZone).toBeNull();
   });
 
+  it("carries the owning account's email when the caller supplies one", () => {
+    const result = syncCalendarToBrowser(providerCalendar(), "bob@acme.co");
+    expect(result.accountEmail).toBe("bob@acme.co");
+  });
+
+  it("omits accountEmail entirely when the caller supplies none", () => {
+    // Absence (not null/empty) is the contract for the local calendar and for
+    // provider accounts that reported no email.
+    const result = syncCalendarToBrowser(providerCalendar());
+    expect("accountEmail" in result).toBe(false);
+  });
+
   it.each([
     ["owner", "owner"],
     ["editor", "writer"],

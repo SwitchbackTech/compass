@@ -99,6 +99,35 @@ describe("ProviderPageApplier", () => {
   const applier = (calendar: ProviderCalendarRecord) =>
     new ProviderPageApplier(events, occurrences, calendar, 0, now);
 
+  it("stores transparency and iCalUID in providerMetadata, null when neither applies", async () => {
+    const calendar = await seedCalendar();
+    const run = applier(calendar);
+
+    await run.applyPage([
+      { ...single("plain") },
+      { ...single("correlated"), icalUid: "correlated@google.com" },
+      { ...single("free-correlated"), busy: false, icalUid: "free@google.com" },
+    ]);
+
+    const byId = (providerEventId: string) =>
+      events.findByProviderIdentity(calendar.tenantId, calendar.principalId, {
+        connectionId: calendar.connectionId,
+        calendarId: calendar._id,
+        providerEventId,
+      });
+
+    // Busy with no correlation key is the overwhelming default: no bag at all.
+    expect((await byId("plain"))?.providerMetadata).toBeNull();
+    expect((await byId("correlated"))?.providerMetadata).toEqual({
+      iCalUID: "correlated@google.com",
+    });
+    // Both facts coexist in one bag rather than one overwriting the other.
+    expect((await byId("free-correlated"))?.providerMetadata).toEqual({
+      transparency: "transparent",
+      iCalUID: "free@google.com",
+    });
+  });
+
   it("returns standalone cancellations unconsumed and writes nothing for them", async () => {
     const calendar = await seedCalendar();
     const run = applier(calendar);

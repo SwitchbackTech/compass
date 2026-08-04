@@ -21,6 +21,21 @@ import { type EventOccurrenceRepository } from "@sync/storage/repositories/event
 // 60s transaction lifetime limit on the shared tier.
 const PROJECTION_BATCH_SIZE = 200;
 
+// The stored provider-fact bag for an imported read, null when empty. Busy is
+// the overwhelming default, so only a free ("transparent") event records its
+// transparency. iCalUID is the provider's cross-copy correlation key (copies
+// of one meeting on different accounts share it) — stored so duplicate
+// meetings across connected accounts can be recognized downstream.
+function providerMetadataFor(
+  read: ProviderEvent,
+): Record<string, string> | null {
+  const metadata = {
+    ...(read.busy ? {} : { transparency: "transparent" }),
+    ...(read.icalUid ? { iCalUID: read.icalUid } : {}),
+  };
+  return Object.keys(metadata).length > 0 ? metadata : null;
+}
+
 // Applies pages of provider event reads to the canonical store, shared by
 // initial import and incremental pull. It owns the parts both paths do
 // identically: upserting masters/singles, linking series members (modified
@@ -303,10 +318,7 @@ export class ProviderPageApplier {
         : null,
       // Imported provider events carry no Compass delivery intent.
       deliveryState: null,
-      // Busy is the overwhelming default; only a free ("transparent") event
-      // records its transparency, so the fact survives until the busy-query
-      // slice decides how to read it.
-      providerMetadata: read.busy ? null : { transparency: "transparent" },
+      providerMetadata: providerMetadataFor(read),
       content: read.content,
       schedule: read.schedule,
       recurrence,
