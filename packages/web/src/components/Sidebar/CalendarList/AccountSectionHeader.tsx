@@ -1,23 +1,29 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { type FC, useCallback, useState } from "react";
+import { CaretDownIcon } from "@phosphor-icons/react";
+import { type FC } from "react";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
-import { AuthApi } from "@web/api/auth.api";
-import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
   formatLastSyncedLabel,
   getGoogleSyncStatus,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
-import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import {
+  accountCalendarListId,
+  toggleAccountCollapsed,
+  useCollapsedAccountKeys,
+} from "@web/calendars/collapsed-accounts.store";
 import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
-import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
-import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { AddAccountButton } from "./AddAccountButton";
 
 /**
- * Heading for one connected account's calendars: the account email, that
+ * Heading for one connected account's calendars: the account email (also the
+ * collapse toggle for its calendar rows, see CalendarList.tsx), that
  * account's own sync status, and its own reconnect/refresh action. Rendered
  * only when more than one account is connected - with a single account the
- * calendar list heading already carries all of this.
+ * calendar list heading already carries all of this. Adding/disconnecting
+ * accounts lives in the command palette's "Add/remove accounts" (a full
+ * account-management surface) and this heading's own hover-revealed plus
+ * icon - not a permanent row here, which stayed noisy for accounts with many
+ * subcalendars.
  */
 export const AccountSectionHeader: FC<{
   accountEmail: string;
@@ -39,17 +45,34 @@ export const AccountSectionHeader: FC<{
         : isRefreshing
           ? "Refreshing…"
           : commandAction.label;
+  const collapsedKeys = useCollapsedAccountKeys();
+  const isCollapsed = collapsedKeys.has(accountEmail);
 
   return (
     <div className="mb-1.5">
-      <h3
-        className={`mb-0.5 min-w-0 truncate font-semibold text-xs leading-none ${
-          isSyncing ? "c-sync-text-wave" : "text-text"
-        }`}
-        translate="no"
-      >
-        {accountEmail}
-      </h3>
+      <div className="group/header mb-0.5 flex min-w-0 items-center justify-between gap-1">
+        <h3 className="min-w-0 flex-1 font-semibold text-xs leading-none">
+          <button
+            aria-controls={accountCalendarListId(accountEmail)}
+            aria-expanded={!isCollapsed}
+            className={`c-focus-ring flex w-full min-w-0 items-center gap-1 rounded-xs text-left ${
+              isSyncing ? "c-sync-text-wave" : "text-text"
+            }`}
+            onClick={() => toggleAccountCollapsed(accountEmail)}
+            type="button"
+          >
+            <CaretDownIcon
+              aria-hidden="true"
+              className={`shrink-0 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
+              size={10}
+            />
+            <span className="min-w-0 truncate" translate="no">
+              {accountEmail}
+            </span>
+          </button>
+        </h3>
+        <AddAccountButton />
+      </div>
       {syncStatus ? (
         <p
           aria-live="polite"
@@ -62,100 +85,18 @@ export const AccountSectionHeader: FC<{
       {lastSyncedLabel ? (
         <p className="text-text-muted text-xs">{lastSyncedLabel}</p>
       ) : null}
-      <div className="mt-1 flex flex-wrap items-center gap-1">
-        {isAvailable && commandAction != null && actionLabel != null ? (
-          <button
-            aria-busy={isConnecting || isRefreshing || undefined}
-            aria-label={`${actionLabel} for ${accountEmail}`}
-            className="c-focus-ring rounded-xs px-1.5 py-0.5 text-accent text-xs hover:brightness-110 disabled:pointer-events-none disabled:opacity-60"
-            disabled={isConnecting || isRefreshing}
-            onClick={commandAction.onSelect}
-            type="button"
-          >
-            {actionLabel}
-          </button>
-        ) : null}
-        {connection ? (
-          <DisconnectAccountAction
-            accountEmail={accountEmail}
-            connectionId={connection.id}
-          />
-        ) : null}
-      </div>
+      {isAvailable && commandAction != null && actionLabel != null ? (
+        <button
+          aria-busy={isConnecting || isRefreshing || undefined}
+          aria-label={`${actionLabel} for ${accountEmail}`}
+          className="c-focus-ring mt-1 rounded-xs px-1.5 py-0.5 text-accent text-xs hover:brightness-110 disabled:pointer-events-none disabled:opacity-60"
+          disabled={isConnecting || isRefreshing}
+          onClick={commandAction.onSelect}
+          type="button"
+        >
+          {actionLabel}
+        </button>
+      ) : null}
     </div>
-  );
-};
-
-/**
- * Removes one account's calendars and events from Compass. Two-step, since it
- * is not undoable without redoing the whole OAuth flow: the first press swaps
- * in an explicit confirm. The user's other accounts, and their Compass
- * sign-in, are untouched.
- */
-const DisconnectAccountAction: FC<{
-  accountEmail: string;
-  connectionId: string;
-}> = ({ accountEmail, connectionId }) => {
-  const queryClient = useQueryClient();
-  const [isConfirming, setIsConfirming] = useState(false);
-  const [isDisconnecting, setIsDisconnecting] = useState(false);
-
-  const disconnect = useCallback(() => {
-    setIsDisconnecting(true);
-    AuthApi.disconnectGoogleConnection(connectionId)
-      .then(async () => {
-        // The account's calendars and its events both disappear, and the
-        // remaining connections are what drive the sidebar's sections.
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: calendarQueryKeys.all }),
-          queryClient.invalidateQueries({ queryKey: eventQueryKeys.all }),
-          refreshUserMetadata({ force: true }),
-        ]);
-      })
-      .catch(() => {
-        showErrorToast(
-          `We couldn't disconnect ${accountEmail}. Please try again in a moment.`,
-        );
-      })
-      .finally(() => {
-        setIsDisconnecting(false);
-        setIsConfirming(false);
-      });
-  }, [accountEmail, connectionId, queryClient]);
-
-  if (!isConfirming) {
-    return (
-      <button
-        aria-label={`Disconnect ${accountEmail}`}
-        className="c-focus-ring rounded-xs px-1.5 py-0.5 text-text-muted text-xs hover:text-text"
-        onClick={() => setIsConfirming(true)}
-        type="button"
-      >
-        Disconnect
-      </button>
-    );
-  }
-
-  return (
-    <>
-      <button
-        aria-busy={isDisconnecting || undefined}
-        aria-label={`Confirm disconnecting ${accountEmail}`}
-        className="c-focus-ring rounded-xs px-1.5 py-0.5 text-error text-xs hover:brightness-110 disabled:pointer-events-none disabled:opacity-60"
-        disabled={isDisconnecting}
-        onClick={disconnect}
-        type="button"
-      >
-        {isDisconnecting ? "Disconnecting…" : "Confirm disconnect"}
-      </button>
-      <button
-        className="c-focus-ring rounded-xs px-1.5 py-0.5 text-text-muted text-xs hover:text-text disabled:pointer-events-none disabled:opacity-60"
-        disabled={isDisconnecting}
-        onClick={() => setIsConfirming(false)}
-        type="button"
-      >
-        Cancel
-      </button>
-    </>
   );
 };

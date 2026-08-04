@@ -9,6 +9,11 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import {
+  accountCalendarListId,
+  SINGLE_ACCOUNT_COLLAPSE_KEY,
+  useCollapsedAccountKeys,
+} from "@web/calendars/collapsed-accounts.store";
 import { setDefaultCalendarId } from "@web/calendars/default-calendar.store";
 import { useCalendarVisibility } from "@web/calendars/useCalendarVisibility";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
@@ -90,11 +95,12 @@ interface Props {
 
 export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
   const { authenticated } = useSession();
-  const { connect, isAvailable, isConnecting, state } = useConnectGoogle();
+  const { isAvailable, state } = useConnectGoogle();
   const { data, isPending, isError, refetch } = useCalendarsQuery();
   const { toggleCalendarVisibility, failureAnnouncement } =
     useCalendarVisibility();
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
+  const collapsedKeys = useCollapsedAccountKeys();
 
   const calendars = sortCalendars(
     (data ?? []).filter((calendar) => calendar.isActive),
@@ -103,8 +109,8 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
   const { groups, ungrouped } = groupCalendarsByAccount(calendars, connections);
   const showAccountSections = groups.length > 1;
 
-  const renderRows = (rows: Calendar[]) => (
-    <ul className="flex flex-col gap-1.5">
+  const renderRows = (rows: Calendar[], id?: string) => (
+    <ul className="flex flex-col gap-1.5" id={id}>
       {rows.map((calendar) => (
         <CalendarRow
           calendar={calendar}
@@ -115,6 +121,14 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
       ))}
     </ul>
   );
+
+  // Renders nothing (rather than an aria-hidden wrapper) when collapsed: the
+  // toggle in the account's own heading still announces aria-expanded, and
+  // this way a hidden section's rows are never briefly stale mid-toggle.
+  const renderCollapsible = (key: string, rows: Calendar[]) =>
+    collapsedKeys.has(key)
+      ? null
+      : renderRows(rows, accountCalendarListId(key));
 
   return (
     <section aria-label="Calendars">
@@ -158,30 +172,16 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
                 accountEmail={group.accountEmail}
                 connection={group.connection}
               />
-              {renderRows(group.calendars)}
+              {renderCollapsible(group.accountEmail, group.calendars)}
             </section>
           ))}
           {ungrouped.length > 0 ? renderRows(ungrouped) : null}
         </div>
+      ) : authenticated ? (
+        renderCollapsible(SINGLE_ACCOUNT_COLLAPSE_KEY, calendars)
       ) : (
         renderRows(calendars)
       )}
-
-      {/* Adding a second account is only meaningful once the first one is
-          connected; before that the header's own Connect action covers it. */}
-      {authenticated &&
-      isAvailable &&
-      (state === "HEALTHY" || state === "IMPORTING") ? (
-        <button
-          aria-busy={isConnecting || undefined}
-          className="c-focus-ring mt-3 rounded-xs px-1 py-0.5 text-accent text-xs hover:brightness-110 disabled:pointer-events-none disabled:opacity-60"
-          disabled={isConnecting}
-          onClick={connect}
-          type="button"
-        >
-          {isConnecting ? "Opening Google…" : "Add account"}
-        </button>
-      ) : null}
 
       <span aria-live="polite" className="sr-only" role="status">
         {failureAnnouncement}

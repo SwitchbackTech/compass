@@ -1,10 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
-import { AuthApi } from "@web/api/auth.api";
+import { toggleAccountCollapsed } from "@web/calendars/collapsed-accounts.store";
 import { AccountSectionHeader } from "./AccountSectionHeader";
-import { describe, expect, it, spyOn } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
 const connection = (
   overrides: Partial<GoogleSyncConnectionSummary> = {},
@@ -30,119 +30,28 @@ const renderHeader = (summary = connection()) => {
   );
 };
 
-describe("AccountSectionHeader disconnect", () => {
-  it("asks for confirmation before disconnecting", async () => {
-    const disconnect = spyOn(
-      AuthApi,
-      "disconnectGoogleConnection",
-    ).mockResolvedValue(undefined);
-
+describe("AccountSectionHeader", () => {
+  it("expands by default, and toggles aria-expanded on click", async () => {
     const user = userEvent.setup({ delay: null });
     renderHeader();
 
-    await user.click(
-      screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
-    );
+    const toggle = screen.getByRole("button", { name: "ahab@pequod.com" });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
 
-    // Disconnecting is not undoable without redoing the whole OAuth flow, so
-    // the first press must not call the API.
-    expect(disconnect).not.toHaveBeenCalled();
-    expect(
-      screen.getByRole("button", {
-        name: "Confirm disconnecting ahab@pequod.com",
-      }),
-    ).toBeInTheDocument();
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
 
-    disconnect.mockRestore();
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
   });
 
-  it("disconnects that connection once confirmed", async () => {
-    const disconnect = spyOn(
-      AuthApi,
-      "disconnectGoogleConnection",
-    ).mockResolvedValue(undefined);
+  it("starts collapsed when the account's key is already in the collapsed store", () => {
+    toggleAccountCollapsed("ahab@pequod.com");
 
-    const user = userEvent.setup({ delay: null });
-    renderHeader(connection({ id: "connection-second" }));
-
-    await user.click(
-      screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
-    );
-    await user.click(
-      screen.getByRole("button", {
-        name: "Confirm disconnecting ahab@pequod.com",
-      }),
-    );
-
-    await waitFor(() => {
-      expect(disconnect).toHaveBeenCalledWith("connection-second");
-    });
-
-    disconnect.mockRestore();
-  });
-
-  it("backs out of the confirm without disconnecting", async () => {
-    const disconnect = spyOn(
-      AuthApi,
-      "disconnectGoogleConnection",
-    ).mockResolvedValue(undefined);
-
-    const user = userEvent.setup({ delay: null });
     renderHeader();
 
-    await user.click(
-      screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
-    );
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
-
-    expect(disconnect).not.toHaveBeenCalled();
     expect(
-      screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
-    ).toBeInTheDocument();
-
-    disconnect.mockRestore();
-  });
-
-  it("returns to the un-confirmed state when the disconnect fails", async () => {
-    const disconnect = spyOn(
-      AuthApi,
-      "disconnectGoogleConnection",
-    ).mockRejectedValue(new Error("nope"));
-
-    const user = userEvent.setup({ delay: null });
-    renderHeader();
-
-    await user.click(
-      screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
-    );
-    await user.click(
-      screen.getByRole("button", {
-        name: "Confirm disconnecting ahab@pequod.com",
-      }),
-    );
-
-    // A stuck "Disconnecting…" would read as a disconnect that half-happened.
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
-      ).toBeInTheDocument();
-    });
-
-    disconnect.mockRestore();
-  });
-
-  it("offers no disconnect for an account with no connection summary yet", () => {
-    const { wrapper } = createStoreWrapper();
-    render(
-      <AccountSectionHeader
-        accountEmail="ahab@pequod.com"
-        connection={undefined}
-      />,
-      { wrapper },
-    );
-
-    expect(
-      screen.queryByRole("button", { name: /^Disconnect/ }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: "ahab@pequod.com" }),
+    ).toHaveAttribute("aria-expanded", "false");
   });
 });
