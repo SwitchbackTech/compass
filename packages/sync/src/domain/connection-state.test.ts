@@ -17,6 +17,7 @@ const healthy = (
   durableReadFailure: false,
   accountIdentified: true,
   initialImportComplete: true,
+  bootstrapOverdue: false,
   catchingUp: false,
   oldestDueWorkAt: null,
   recentProviderErrors: false,
@@ -70,6 +71,33 @@ describe("deriveConnectionState", () => {
   it("is importing until the first sync bootstrap completes", () => {
     expect(derive({ initialImportComplete: false })).toEqual({
       state: "importing",
+      reason: null,
+    });
+  });
+
+  it("is delayed (workOverdue) when bootstrap has been incomplete past the overdue window, even with no overdue job", () => {
+    expect(
+      derive({ initialImportComplete: false, bootstrapOverdue: true }),
+    ).toEqual({
+      state: "delayed",
+      reason: "workOverdue",
+    });
+  });
+
+  it("stays importing when bootstrap is incomplete but not yet overdue", () => {
+    expect(
+      derive({ initialImportComplete: false, bootstrapOverdue: false }),
+    ).toEqual({
+      state: "importing",
+      reason: null,
+    });
+  });
+
+  it("bootstrapOverdue is irrelevant once bootstrap has completed", () => {
+    expect(
+      derive({ initialImportComplete: true, bootstrapOverdue: true }),
+    ).toEqual({
+      state: "healthy",
       reason: null,
     });
   });

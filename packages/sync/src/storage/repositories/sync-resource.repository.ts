@@ -402,6 +402,47 @@ export class SyncResourceRepository {
     return records.map((r) => SyncResourceRecordSchema.parse(r));
   }
 
+  // Events resources whose bootstrap chain has stalled: not yet "ready" and
+  // untouched since `before`. This is the bootstrap-recovery sweep's input — the
+  // self-heal for a lost chain link (a job dropped on a durable failure with no
+  // followup, or any other way the importing -> watching -> catchingUp -> ready
+  // handoff loses its thread without ever settling into a retryable state).
+  // Ordinary in-progress bootstrapping resources are excluded by the `before`
+  // cutoff itself: a resource whose chain is alive keeps advancing updatedAt on
+  // every step, so only a genuinely stuck one goes quiet long enough to match.
+  // Same GLOBAL scan + credential-exclusion shape as listStaleEvents, for the
+  // same reason (2026-07-29 dead-credential tie-break bias) - uses the
+  // resource_bootstrap_stalled index.
+  async listStalledBootstraps(
+    before: Date,
+    limit: number,
+  ): Promise<SyncResourceRecord[]> {
+    const records = await this.collection
+      .aggregate<SyncResourceRecord>([
+        {
+          $match: {
+            resourceKind: "events",
+            bootstrapState: { $ne: "ready" },
+            updatedAt: { $lt: before },
+          },
+        },
+        {
+          $lookup: {
+            from: SYNC_COLLECTIONS.credentials,
+            localField: "connectionId",
+            foreignField: "_id",
+            as: "_credential",
+          },
+        },
+        { $match: { "_credential.0": { $exists: true } } },
+        { $project: { _credential: 0 } },
+        { $sort: { updatedAt: 1 } },
+        { $limit: limit },
+      ])
+      .toArray();
+    return records.map((r) => SyncResourceRecordSchema.parse(r));
+  }
+
   // Events resources whose push subscription expires before `before` (soonest
   // first, bounded). This is the subscription-maintenance sweep's input, so like
   // listStaleEvents it is a GLOBAL scan across owners (system liveness, not a

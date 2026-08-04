@@ -49,6 +49,11 @@ export interface SyncJobDispatchDeps {
   // provider pull. Without this, incremental pulls update Sync storage but the
   // open SPA never refetches (S40 gap).
   invalidations: InvalidationRepository;
+  // Optional: a bootstrap/repair job settling "done" is otherwise invisible
+  // (drops and errors are logged; "done" is not) - an hour of a resource
+  // repairing every ~2 minutes produced zero log lines (2026-08-04 staging).
+  // Defaults to a no-op so tests stay dependency-free.
+  log?: { warn: (message: string) => void };
 }
 
 // The decision a dispatch makes about a claimed job. The worker loop (a later
@@ -274,6 +279,9 @@ async function runSyncJob(
         return { result: "done", followup: importFollowup(resource, now) };
       }
       // cursorExpired: the provider cursor is unusable; a repair rebuilds.
+      deps.log?.warn(
+        `Sync resource ${resource._id} (calendar ${calendar._id}): cursor expired on incremental pull, enqueuing repair`,
+      );
       return { result: "done", followup: repairFollowup(resource, now) };
     }
     case "bootstrapCatchup": {
@@ -295,6 +303,9 @@ async function runSyncJob(
       if (pull.status === "notImported") {
         return { result: "done", followup: importFollowup(resource, now) };
       }
+      deps.log?.warn(
+        `Sync resource ${resource._id} (calendar ${calendar._id}): cursor expired on bootstrap catch-up pull, enqueuing repair`,
+      );
       return { result: "done", followup: repairFollowup(resource, now) };
     }
     case "repair": {
@@ -327,10 +338,32 @@ async function runSyncJob(
         resource,
         now,
       );
-      if (
-        needsBootstrapCompletion(resource) &&
-        subscription.status !== "authRevoked"
-      ) {
+      if (!needsBootstrapCompletion(resource)) {
+        return { result: "done" };
+      }
+      // Unsupported means the provider will never push for this calendar (e.g.
+      // Google's public holiday calendars) - there is no watch to align with, so
+      // bootstrapCatchup's "close the gap before the channel" pull has nothing
+      // to close. Without this branch, a resource that is BOTH unwatchable and
+      // has an expired sync cursor loops forever: bootstrapCatchup's pull 410s
+      // (cursorExpired) -> repair -> subscriptionMaintain -> unsupported again,
+      // never reaching "ready" (2026-08-04, both staging soak test accounts'
+      // Holidays calendars). The import that already ran is the best available
+      // state; the reconcile sweep's periodic pulls keep it current from here.
+      if (subscription.status === "unsupported") {
+        deps.log?.warn(
+          `Sync resource ${resource._id} (calendar ${calendar._id}): provider does not support watching this calendar, completing bootstrap without a push channel`,
+        );
+        await deps.resources.setBootstrapState(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+          "ready",
+        );
+        await appendCalendarInvalidation(deps, calendar, now());
+        return { result: "done" };
+      }
+      if (subscription.status !== "authRevoked") {
         await deps.resources.setBootstrapState(
           resource.tenantId,
           resource.principalId,

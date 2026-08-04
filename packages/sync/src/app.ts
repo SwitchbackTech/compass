@@ -9,6 +9,7 @@ import {
 } from "@sync/auth/internal-auth";
 import { loadSyncConfig, type SyncConfig } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
+import { recoverStalledBootstraps } from "@sync/domain/bootstrap-recovery.service";
 import {
   CONNECTION_CACHE_RETENTION_MS,
   purgeExpiredDisconnectedConnections,
@@ -244,6 +245,7 @@ async function start(): Promise<void> {
       const sweeps = [
         ["reconcile", schedulers.reconcile],
         ["subscription", schedulers.subscription],
+        ["bootstrapRecovery", schedulers.bootstrapRecovery],
         ["failedJobRequeue", schedulers.failedJobRequeue],
         ["staleCommandRetry", schedulers.staleCommandRetry],
       ] as const;
@@ -274,6 +276,11 @@ async function start(): Promise<void> {
 const FAILED_JOB_REQUEUE_COOLDOWN_MS = 30 * 60_000;
 // A resource not synced within this window is swept for a reconcile pull.
 const RECONCILE_STALE_AFTER_MS = 15 * 60_000;
+// A resource whose bootstrap chain (importing -> watching -> catchingUp ->
+// ready) has not advanced within this window is swept for recovery. Matches
+// reconcile's window: both are "the fallback fires this long after normal
+// forward progress should have happened".
+const BOOTSTRAP_STALLED_AFTER_MS = 15 * 60_000;
 // A cloud command left nonterminal past this long since its last update is
 // eligible for a retry - long enough that a transient provider blip has
 // almost certainly cleared, short enough that "deleting" doesn't sit visibly
@@ -366,6 +373,7 @@ function buildSchedulers(
   drains: SyncScheduler[];
   reconcile: SweepScheduler;
   subscription: SweepScheduler;
+  bootstrapRecovery: SweepScheduler;
   failedJobRequeue: SweepScheduler;
   staleCommandRetry: SweepScheduler;
 } | null {
@@ -397,6 +405,7 @@ function buildSchedulers(
         // verifies them against the stored subscription.
         callbackUrl: `${config.CALLBACK_BASE_URL}${NOTIFICATIONS_PATH}`,
         invalidations: repos.invalidations,
+        log: logger,
       },
       owner,
       {
@@ -487,6 +496,38 @@ function buildSchedulers(
         logger.error("Sync subscription maintenance sweep failed", error),
     },
   );
+  // Bootstrap-recovery looks BACK, like reconcile: enqueue a bootstrapCatchup
+  // for any events resource whose bootstrap chain has gone quiet before ready.
+  const bootstrapRecovery = new SweepScheduler(
+    {
+      sweep: async (before) => {
+        const enqueued = await recoverStalledBootstraps(
+          {
+            resources,
+            jobs,
+            onEnqueueError: (error, resourceId) =>
+              logger.error(
+                `Sync bootstrap-recovery sweep could not enqueue resource ${resourceId}; skipping it and continuing`,
+                error,
+              ),
+          },
+          before,
+          () => new Date(),
+        );
+        if (enqueued > 0) {
+          logger.warn(
+            `Sync bootstrap-recovery sweep re-entered ${enqueued} stalled bootstrap(s)`,
+          );
+        }
+        return enqueued;
+      },
+    },
+    {
+      windowMs: -BOOTSTRAP_STALLED_AFTER_MS,
+      onError: (error) =>
+        logger.error("Sync bootstrap-recovery sweep failed", error),
+    },
+  );
   // Self-heal sweep: give jobs stuck in state:"failed" a fresh retry ladder
   // once they have cooled down, and loudly log any that keep re-failing past
   // the requeue cap. Looks BACK, like reconcile — a job is eligible once it
@@ -571,6 +612,7 @@ function buildSchedulers(
     drains,
     reconcile,
     subscription,
+    bootstrapRecovery,
     failedJobRequeue,
     staleCommandRetry,
   };

@@ -183,6 +183,13 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       name: "resource_last_attempt",
       key: { resourceKind: 1, lastAttemptAt: 1 },
     },
+    {
+      // The bootstrap-recovery sweep's finder: lead with resourceKind (as
+      // above), then bootstrapState so the common "ready" majority never
+      // enters the updatedAt range scan.
+      name: "resource_bootstrap_stalled",
+      key: { resourceKind: 1, bootstrapState: 1, updatedAt: 1 },
+    },
   ],
   [SYNC_COLLECTIONS.commands]: [
     {

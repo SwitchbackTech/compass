@@ -15,6 +15,7 @@ import {
   type ProviderEventReader,
   type ProviderEventReadInput,
 } from "@sync/providers/provider-event-reader.port";
+import { ProviderNotificationError } from "@sync/providers/provider-notifications.port";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type JobRecord } from "@sync/storage/contracts/job.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
@@ -166,6 +167,7 @@ describe("dispatchSyncJob", () => {
   const deps = (
     reader: FakeReader,
     custody: SyncJobDispatchDeps["custody"] = tokenSource,
+    notificationsOverride: SyncJobDispatchDeps["notifications"] = notifications,
   ): SyncJobDispatchDeps => ({
     events,
     occurrences,
@@ -177,7 +179,7 @@ describe("dispatchSyncJob", () => {
     commands,
     reader,
     custody,
-    notifications,
+    notifications: notificationsOverride,
     callbackUrl: "https://sync.example/sync/notifications/google",
     invalidations,
   });
@@ -619,6 +621,67 @@ describe("dispatchSyncJob", () => {
         )
       )?.bootstrapState,
     ).toBe("ready");
+  });
+
+  it("completes bootstrap straight to ready when the provider cannot watch the calendar", async () => {
+    // The 2026-08-04 staging loop: a calendar the provider refuses to watch
+    // (Google's public holiday calendars) used to still go through
+    // catchingUp -> bootstrapCatchup, whose pull is the ONLY place "ready" is
+    // set. A calendar with an expired sync cursor as well as no watch support
+    // then cycled cursorExpired -> repair -> subscriptionMaintain ->
+    // unsupported -> catchingUp -> cursorExpired forever, never reaching
+    // ready. There is no watch to catch up to, so unsupported must complete
+    // bootstrap directly.
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, null);
+    const refusing = {
+      ...notifications,
+      watchEvents: async () => {
+        throw new ProviderNotificationError(
+          "watchUnsupported",
+          "push not supported for this calendar",
+        );
+      },
+    };
+
+    const importOutcome = await dispatchSyncJob(
+      deps(
+        new FakeReader([
+          page([single("imported")]),
+          page([single("imported")], "cursor-1"),
+        ]),
+      ),
+      jobFor(resource, "initialImport"),
+      now,
+    );
+    expect(importOutcome).toMatchObject({
+      result: "done",
+      followup: { kind: "subscriptionMaintain" },
+    });
+
+    const subscriptionOutcome = await dispatchSyncJob(
+      deps(new FakeReader([]), tokenSource, refusing),
+      jobFor(resource, "subscriptionMaintain"),
+      now,
+    );
+    expect(subscriptionOutcome).toEqual({ result: "done" });
+
+    const saved = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(saved?.bootstrapState).toBe("ready");
+    expect(saved?.subscriptionId).toBeNull();
+
+    const feed = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.invalidations)
+      .find({ principalId: calendar.principalId })
+      .toArray();
+    // One from the import's own windowed-pass/full-finish notifications, one
+    // more from unsupported completing bootstrap.
+    expect(feed.length).toBeGreaterThanOrEqual(2);
   });
 
   it("bootstraps a legacy no-cursor resource through the post-watch pull", async () => {
