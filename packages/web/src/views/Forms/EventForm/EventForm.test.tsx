@@ -92,7 +92,7 @@ mock.module("@web/views/Forms/EventForm/SaveSection", () => ({
 
 const { EventForm } = require("./EventForm") as typeof import("./EventForm");
 
-function dispatchModD(target: HTMLElement) {
+function dispatchModKey(target: HTMLElement, key: string) {
   const modifierKey = resolveModifier("Mod");
   const isControl = modifierKey === "Control";
 
@@ -102,23 +102,7 @@ function dispatchModD(target: HTMLElement) {
       cancelable: true,
       composed: true,
       ctrlKey: isControl,
-      key: "d",
-      metaKey: !isControl,
-    }),
-  );
-}
-
-function dispatchModEnter(target: HTMLElement) {
-  const modifierKey = resolveModifier("Mod");
-  const isControl = modifierKey === "Control";
-
-  target.dispatchEvent(
-    new KeyboardEvent("keydown", {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      ctrlKey: isControl,
-      key: "Enter",
+      key,
       metaKey: !isControl,
     }),
   );
@@ -337,7 +321,7 @@ describe("EventForm", () => {
     const titleField = screen.getByPlaceholderText("Title");
     act(() => titleField.focus());
 
-    dispatchModD(titleField);
+    dispatchModKey(titleField, "d");
 
     await waitFor(() => {
       expect(onDuplicate).toHaveBeenCalledTimes(1);
@@ -490,21 +474,11 @@ describe("EventForm", () => {
     const onSubmit = mock();
 
     function Harness() {
-      const [draft, setDraftState] = useState<GridEventDraft>(
+      const [draft, setDraft] = useState<GridEventDraft | null>(
         createEditDraft(),
       );
-      const setDraftFromForm = (
-        nextDraft: SetStateAction<GridEventDraft | null>,
-      ) => {
-        setDraftState((currentDraft) => {
-          const resolvedDraft =
-            typeof nextDraft === "function"
-              ? nextDraft(currentDraft)
-              : nextDraft;
 
-          return resolvedDraft ?? currentDraft;
-        });
-      };
+      if (!draft) return null;
 
       return (
         <EventForm
@@ -515,7 +489,7 @@ describe("EventForm", () => {
           onDelete={mock()}
           onDuplicate={mock()}
           onSubmit={onSubmit}
-          setDraft={setDraftFromForm}
+          setDraft={setDraft}
         />
       );
     }
@@ -527,7 +501,35 @@ describe("EventForm", () => {
 
     expect(blueSwatch).toHaveFocus();
 
-    dispatchModEnter(blueSwatch);
+    dispatchModKey(blueSwatch, "Enter");
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("submits exactly once with Mod+Enter from the title field", async () => {
+    // Local handleIgnoredKeys only preventDefaults Mod+Enter; the global
+    // useAppShortcut owns submit. Both must not call onSubmit.
+    const onSubmit = mock();
+
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={onSubmit}
+        setDraft={mock()}
+      />,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    dispatchModKey(titleField, "Enter");
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledTimes(1);
