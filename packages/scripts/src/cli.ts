@@ -1,4 +1,5 @@
 import { CliValidator } from "@scripts/cli.validator";
+import { runAuditConnectionIdentity } from "@scripts/commands/audit-connection-identity";
 import { runBackfillIcalUid } from "@scripts/commands/backfill-icaluid";
 import { runManageFailedJobs } from "@scripts/commands/manage-failed-jobs";
 import { runPurgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events";
@@ -38,6 +39,9 @@ export default class CompassCLI {
         break;
       case cmd === "backfill-icaluid":
         await runBackfillIcalUid();
+        break;
+      case cmd === "audit-connection-identity":
+        await runAuditConnectionIdentity();
         break;
       default:
         this.validator.exitHelpfully(`${cmd as string} is not a supported cmd`);
@@ -87,6 +91,14 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "Copy Google's cross-copy correlation key onto events that predate it (--apply to write)",
+      );
+
+    program
+      .command("audit-connection-identity")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "Report connected Google accounts that are another Compass user's login identity (read-only)",
       );
 
     program
