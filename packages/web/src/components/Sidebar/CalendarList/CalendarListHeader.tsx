@@ -1,3 +1,4 @@
+import { CaretDownIcon } from "@phosphor-icons/react";
 import classNames from "classnames";
 import { type FC, useCallback, useMemo, useSyncExternalStore } from "react";
 import {
@@ -16,6 +17,12 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import {
+  accountCalendarListId,
+  SINGLE_ACCOUNT_COLLAPSE_KEY,
+  toggleAccountCollapsed,
+  useCollapsedAccountKeys,
+} from "@web/calendars/collapsed-accounts.store";
+import {
   SYNC_STATUS_VARIANT_CLASSNAME,
   type SyncStatus,
 } from "@web/calendars/sync-status.types";
@@ -26,14 +33,18 @@ import {
   TooltipTrigger,
 } from "@web/components/Tooltip";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
+import { AddAccountButton } from "./AddAccountButton";
 
 const ANONYMOUS_SAVE_MESSAGE = "Sign up to save your changes across browsers";
 
 const TOOLTIP_ACTION_BUTTON_CLASSNAME =
   "c-focus-ring self-start rounded-xs bg-accent px-2 py-1 font-medium text-s text-on-accent hover:brightness-110";
 
+const HEADER_ROW_CLASSNAME =
+  "group/header mb-2 flex min-w-0 items-center justify-between gap-1";
+
 const HEADING_CLASSNAME =
-  "mb-2 flex min-w-0 font-semibold text-sm leading-none";
+  "flex min-w-0 flex-1 font-semibold text-sm leading-none";
 
 const ANONYMOUS_ACCOUNT_TRIGGER_CLASSNAME =
   "min-w-0 truncate appearance-none border-0 bg-transparent p-0 text-left font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
@@ -103,7 +114,7 @@ const AnonymousAccountHeader: FC = () => {
   }, [openModal]);
 
   return (
-    <h2 className={HEADING_CLASSNAME}>
+    <h2 className={classNames(HEADING_CLASSNAME, "mb-2")}>
       <Tooltip interactive>
         <TooltipTrigger asChild>
           <button
@@ -170,20 +181,38 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
         : isRefreshing
           ? "Refreshing…"
           : commandAction.label;
+  const collapsedKeys = useCollapsedAccountKeys();
+  const isCollapsed = collapsedKeys.has(SINGLE_ACCOUNT_COLLAPSE_KEY);
 
   return (
     <>
-      <h2 className={HEADING_CLASSNAME}>
-        <span
-          className={classNames(
-            "min-w-0 truncate",
-            isSyncing ? "c-sync-text-wave" : "text-text",
-          )}
-          translate="no"
-        >
-          {email}
-        </span>
-      </h2>
+      <div className={HEADER_ROW_CLASSNAME}>
+        <h2 className={HEADING_CLASSNAME}>
+          <button
+            aria-controls={accountCalendarListId(SINGLE_ACCOUNT_COLLAPSE_KEY)}
+            aria-expanded={!isCollapsed}
+            className="c-focus-ring flex w-full min-w-0 items-center gap-1 rounded-xs text-left"
+            onClick={() => toggleAccountCollapsed(SINGLE_ACCOUNT_COLLAPSE_KEY)}
+            type="button"
+          >
+            <CaretDownIcon
+              aria-hidden="true"
+              className={`shrink-0 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
+              size={12}
+            />
+            <span
+              className={classNames(
+                "min-w-0 truncate",
+                isSyncing ? "c-sync-text-wave" : "text-text",
+              )}
+              translate="no"
+            >
+              {email}
+            </span>
+          </button>
+        </h2>
+        <AddAccountButton />
+      </div>
       {syncStatus ? (
         <p
           aria-live="polite"

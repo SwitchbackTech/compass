@@ -14,7 +14,10 @@ type StorageKey =
   | "compass.calendars.hidden-ids"
   // Which calendar new events are created on. Device-local like the rest;
   // an unknown or stale id falls back to the derived default.
-  | "compass.calendars.default-id";
+  | "compass.calendars.default-id"
+  // Which accounts' calendar rows are collapsed in the sidebar. Device-local;
+  // an unknown or stale key falls back to expanded (default).
+  | "compass.calendars.collapsed-accounts";
 
 export const STORAGE_KEYS: Record<
   | "AUTH"
@@ -28,7 +31,8 @@ export const STORAGE_KEYS: Record<
   | "SIDEBAR_OPEN"
   | "THEME"
   | "HIDDEN_CALENDAR_IDS"
-  | "DEFAULT_CALENDAR_ID",
+  | "DEFAULT_CALENDAR_ID"
+  | "COLLAPSED_ACCOUNTS",
   StorageKey
 > = {
   AUTH: "compass.auth",
@@ -46,4 +50,5 @@ export const STORAGE_KEYS: Record<
   THEME: "compass.theme",
   HIDDEN_CALENDAR_IDS: "compass.calendars.hidden-ids",
   DEFAULT_CALENDAR_ID: "compass.calendars.default-id",
+  COLLAPSED_ACCOUNTS: "compass.calendars.collapsed-accounts",
 } as const;

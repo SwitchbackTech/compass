@@ -446,4 +446,21 @@ describe("CalendarListHeader", () => {
       connection: ownConnection,
     });
   });
+
+  it("toggles the collapse state of the calendar list on heading click", async () => {
+    mockEmail = "ahab@pequod.com";
+    mockGoogleState = "HEALTHY";
+    const user = userEvent.setup({ delay: null });
+
+    renderHeader();
+
+    const toggle = screen.getByRole("button", { name: "ahab@pequod.com" });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+  });
 });

@@ -572,38 +572,62 @@ describe("CalendarList", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("offers to add another account once one is connected", async () => {
-    const connect = mock();
-    mockUseConnectGoogle.mockReturnValue({
-      commandAction: null,
-      connect,
-      isAvailable: true,
-      isConnecting: false,
-      state: "HEALTHY" as const,
+  it("collapses and re-expands an account's calendar rows on heading click", async () => {
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const personal = makeCalendar({
+      name: "Personal",
+      accountEmail: "ahab@gmail.com",
     });
 
     const user = userEvent.setup({ delay: null });
-    renderCalendarList([makeCalendar({ name: "Work" })]);
-
-    await user.click(screen.getByRole("button", { name: "Add account" }));
-    expect(connect).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not offer to add an account before the first one is connected", () => {
-    // The header's own Connect action covers this case.
-    mockUseConnectGoogle.mockReturnValue({
-      commandAction: null,
-      connect: mock(),
-      isAvailable: true,
-      isConnecting: false,
-      state: "NOT_CONNECTED" as const,
+    renderCalendarList([work, personal], {
+      connections: [
+        makeConnection("ahab@pequod.com"),
+        makeConnection("ahab@gmail.com"),
+      ],
     });
 
-    renderCalendarList([makeCalendar({ name: "Compass", provider: "local" })]);
+    expect(screen.getByText("Work")).toBeInTheDocument();
+    const toggle = screen.getByRole("button", { name: "ahab@pequod.com" });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
 
-    expect(
-      screen.queryByRole("button", { name: "Add account" }),
-    ).not.toBeInTheDocument();
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Work")).not.toBeInTheDocument();
+    // The other section is unaffected.
+    expect(screen.getByText("Personal")).toBeInTheDocument();
+
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Work")).toBeInTheDocument();
+  });
+
+  it("keeps the ungrouped local calendar visible regardless of account collapse state", async () => {
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const personal = makeCalendar({
+      name: "Personal",
+      accountEmail: "ahab@gmail.com",
+    });
+    const local = makeCalendar({ name: "Compass", provider: "local" });
+
+    const user = userEvent.setup({ delay: null });
+    renderCalendarList([work, personal, local], {
+      connections: [
+        makeConnection("ahab@pequod.com"),
+        makeConnection("ahab@gmail.com"),
+      ],
+    });
+
+    await user.click(screen.getByRole("button", { name: "ahab@pequod.com" }));
+    await user.click(screen.getByRole("button", { name: "ahab@gmail.com" }));
+
+    expect(screen.getByText("Compass")).toBeInTheDocument();
   });
 
   it("shows a loading state while calendars are pending", () => {
