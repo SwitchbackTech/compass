@@ -32,6 +32,10 @@ export interface ProviderEvent {
   readonly schedule: EventSchedule;
   // Whether the event marks its time as busy. Free/"transparent" events do not.
   readonly busy: boolean;
+  // The provider's cross-copy correlation key (Google's iCalUID): copies of
+  // the same meeting on different accounts share it, unlike providerEventId.
+  // Absent when the provider reported none.
+  readonly icalUid?: string;
   readonly recurrence: ProviderEventRecurrence;
 }
 

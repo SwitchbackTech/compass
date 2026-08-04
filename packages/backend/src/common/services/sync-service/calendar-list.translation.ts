@@ -41,7 +41,14 @@ const mapCalendarAccessRole = (
 // becomes the background (foreground defaults), and isVisible is always true —
 // visibility is owned client-side now, so the server reports every calendar
 // visible and the web applies its own hidden set.
-export const syncCalendarToBrowser = (calendar: ProviderCalendar): Calendar => {
+//
+// `accountEmail` is the owning connection's account email, joined by the
+// caller from the principal's connection list (sync's ProviderCalendar only
+// carries connectionId). Omitted when the connection reported no email.
+export const syncCalendarToBrowser = (
+  calendar: ProviderCalendar,
+  accountEmail?: string,
+): Calendar => {
   const access = mapCalendarAccessRole(calendar.accessRole);
   // Sync stores the provider colour as a loose string; the browser Calendar
   // requires a hex colour. Fall back to the default rather than 500 the whole
@@ -63,5 +70,6 @@ export const syncCalendarToBrowser = (calendar: ProviderCalendar): Calendar => {
     isPrimary: calendar.primary,
     isVisible: true,
     isActive: calendar.active,
+    ...(accountEmail ? { accountEmail } : {}),
   });
 };

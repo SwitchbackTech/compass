@@ -122,6 +122,42 @@ describe("CalendarController list", () => {
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
             },
+            {
+              id: "507f1f77bcf86cd799439097",
+              tenantId: userId,
+              principalId: userId,
+              connectionId: "507f1f77bcf86cd799439096",
+              providerCalendarId: "gcal-2",
+              displayName: "Personal",
+              color: "#000000",
+              active: true,
+              primary: false,
+              accessRole: "owner" as const,
+              capabilities: {
+                canWriteEvents: true,
+                canReadBusy: true,
+                canInviteAttendees: true,
+              },
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          ],
+        },
+      }),
+    );
+    // The controller joins each calendar to its owning connection's account
+    // email by connectionId; the second connection reported no email, so its
+    // calendar must omit accountEmail rather than carry null/empty.
+    const listConnections = mock(() =>
+      Promise.resolve({
+        ok: true as const,
+        value: {
+          connections: [
+            {
+              id: "507f1f77bcf86cd799439098",
+              account: { email: "bob@acme.co" },
+            },
+            { id: "507f1f77bcf86cd799439096", account: { email: null } },
           ],
         },
       }),
@@ -129,7 +165,7 @@ describe("CalendarController list", () => {
     const clientSpy = spyOn(
       syncServiceFactory,
       "getSyncServiceClient",
-    ).mockReturnValue({ listCalendars } as never);
+    ).mockReturnValue({ listCalendars, listConnections } as never);
     // Not a .db.test.ts file, so there's no real Mongo connection here —
     // getLocalCalendar's own findOne would throw ("did you forget to call
     // `start`?") without this.
@@ -148,10 +184,17 @@ describe("CalendarController list", () => {
     await calendarController.list(req, res);
 
     expect(listCalendars).toHaveBeenCalledTimes(1);
+    expect(listConnections).toHaveBeenCalledTimes(1);
     expect(promise).toHaveBeenCalledTimes(1);
 
     const sentBody = promise.mock.calls[0]?.[0];
     expect(() => CalendarListResponseSchema.parse(sentBody)).not.toThrow();
+
+    const parsed = CalendarListResponseSchema.parse(sentBody);
+    expect(parsed.calendars[0]?.accountEmail).toBe("bob@acme.co");
+    expect(parsed.calendars[1] && "accountEmail" in parsed.calendars[1]).toBe(
+      false,
+    );
 
     clientSpy.mockRestore();
     localCalendarSpy.mockRestore();

@@ -66,22 +66,49 @@ const parseAvailabilityQuery = (query: SessionRequest["query"]) => {
 };
 
 // List the caller's calendars from the sync service and translate them to the
-// browser Calendar contract. A sync failure rejects (rather than returning an
-// empty list) so the browser surfaces a load error and retries, instead of
-// silently hiding every calendar.
+// browser Calendar contract. The connection list rides along (both are cheap
+// passive-mode reads on the same service) so each calendar can carry its
+// owning account's email — sync's ProviderCalendar only has a connectionId.
+// A sync failure on either call rejects (rather than returning an empty or
+// email-less list) so the browser surfaces a load error and retries, instead
+// of silently hiding every calendar.
 const listCalendarsFromSync = async (
   userId: string,
 ): Promise<CalendarListResponse> => {
   const client = getSyncServiceClient();
-  const result = await client.listCalendars(toSyncPrincipal(userId));
-  if (!result.ok) {
+  const principal = toSyncPrincipal(userId);
+  const [calendarsResult, connectionsResult] = await Promise.all([
+    client.listCalendars(principal),
+    client.listConnections(principal),
+  ]);
+  if (!calendarsResult.ok) {
     throw error(
       GenericError.NotSure,
-      `Failed to list calendars from sync (${result.error.kind})`,
+      `Failed to list calendars from sync (${calendarsResult.error.kind})`,
+    );
+  }
+  if (!connectionsResult.ok) {
+    throw error(
+      GenericError.NotSure,
+      `Failed to list connections from sync (${connectionsResult.error.kind})`,
     );
   }
 
-  return { calendars: result.value.calendars.map(syncCalendarToBrowser) };
+  const emailByConnectionId = new Map(
+    connectionsResult.value.connections.map((connection) => [
+      connection.id,
+      connection.account.email,
+    ]),
+  );
+
+  return {
+    calendars: calendarsResult.value.calendars.map((calendar) =>
+      syncCalendarToBrowser(
+        calendar,
+        emailByConnectionId.get(calendar.connectionId) ?? undefined,
+      ),
+    ),
+  };
 };
 
 // Busy time from the sync service, translated to the browser's per-calendar
