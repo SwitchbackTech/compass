@@ -656,9 +656,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
         e.preventDefault();
         onSubmitForm();
       },
-      {
-        enabled: true,
-      },
+      EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
     useEscapeToCloseForm(onClose);

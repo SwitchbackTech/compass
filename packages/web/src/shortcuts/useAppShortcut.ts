@@ -37,6 +37,8 @@ export function useAppShortcut(
     conflictBehavior = "allow",
   } = options;
 
+  // Omit undefined option keys so TanStack's setOptions cannot clobber
+  // registration defaults (e.g. Mod shortcuts resolve ignoreInputs: false).
   useHotkey(
     hotkey,
     (event) => {
@@ -52,11 +54,11 @@ export function useAppShortcut(
     },
     {
       enabled,
-      ignoreInputs,
       eventType,
-      preventDefault,
-      stopPropagation,
       conflictBehavior,
+      ...(ignoreInputs !== undefined ? { ignoreInputs } : {}),
+      ...(preventDefault !== undefined ? { preventDefault } : {}),
+      ...(stopPropagation !== undefined ? { stopPropagation } : {}),
     },
   );
 }

@@ -112,6 +112,40 @@ describe("useAppShortcut", () => {
     document.body.removeChild(input);
   });
 
+  it("keeps Mod shortcuts active on focused radios after re-render", async () => {
+    // Omitting ignoreInputs must not clobber TanStack's Mod default
+    // (ignoreInputs: false) via setOptions({ ignoreInputs: undefined }).
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    document.body.appendChild(radio);
+    radio.focus();
+
+    const modifierKey = resolveModifier("Mod");
+    const isCtrl = modifierKey === "Control";
+
+    const { rerender } = renderHook(() =>
+      useAppShortcut("Mod+Enter", mockHandler),
+    );
+
+    rerender();
+
+    dispatchKeyEvent(
+      "Enter",
+      "keydown",
+      {
+        ctrlKey: isCtrl,
+        metaKey: !isCtrl,
+      },
+      radio,
+    );
+
+    await waitFor(() => {
+      expect(mockHandler).toHaveBeenCalledTimes(1);
+    });
+
+    document.body.removeChild(radio);
+  });
+
   it("blurs the active element before handling the shortcut when requested", async () => {
     const input = document.createElement("input");
     const blurSpy = mock();

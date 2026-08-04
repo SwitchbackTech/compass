@@ -108,6 +108,22 @@ function dispatchModD(target: HTMLElement) {
   );
 }
 
+function dispatchModEnter(target: HTMLElement) {
+  const modifierKey = resolveModifier("Mod");
+  const isControl = modifierKey === "Control";
+
+  target.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      ctrlKey: isControl,
+      key: "Enter",
+      metaKey: !isControl,
+    }),
+  );
+}
+
 function dispatchArrowDown(target: HTMLElement) {
   const event = new KeyboardEvent("keydown", {
     bubbles: true,
@@ -464,6 +480,58 @@ describe("EventForm", () => {
     await user.keyboard("{Enter}");
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it("submits with Mod+Enter while a color swatch is focused", async () => {
+    // Color radios are HTMLInputElements; after a color change the form
+    // re-renders with focus still on the swatch. Mod+Enter must still submit
+    // (ignoreInputs: false), not only when focus returns to a text field.
+    const user = userEvent.setup();
+    const onSubmit = mock();
+
+    function Harness() {
+      const [draft, setDraftState] = useState<GridEventDraft>(
+        createEditDraft(),
+      );
+      const setDraftFromForm = (
+        nextDraft: SetStateAction<GridEventDraft | null>,
+      ) => {
+        setDraftState((currentDraft) => {
+          const resolvedDraft =
+            typeof nextDraft === "function"
+              ? nextDraft(currentDraft)
+              : nextDraft;
+
+          return resolvedDraft ?? currentDraft;
+        });
+      };
+
+      return (
+        <EventForm
+          draft={draft}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={onSubmit}
+          setDraft={setDraftFromForm}
+        />
+      );
+    }
+
+    renderWithStore(<Harness />);
+
+    const blueSwatch = screen.getByRole("radio", { name: "Blue" });
+    await user.click(blueSwatch);
+
+    expect(blueSwatch).toHaveFocus();
+
+    dispatchModEnter(blueSwatch);
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("still deletes an existing event when Delete is pressed on a non-text form target", async () => {
