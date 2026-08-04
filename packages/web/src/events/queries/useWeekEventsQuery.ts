@@ -2,12 +2,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { deriveOverlappingEventQueryData } from "@web/events/queries/event.query.cache";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { deriveCalendarEventViewModel } from "./event.view-model";
 import { filterEventsByVisibleCalendars } from "./filter-events-by-visible-calendars";
+import { mergeCrossAccountDuplicates } from "./merge-cross-account-duplicates";
 import { useEventListCalendarIds } from "./useEventListCalendarIds";
 
 type WeekEventsQueryArgs = {
@@ -45,14 +47,23 @@ export function useWeekEventsQuery({
 export function useWeekEventViewModel(args: WeekEventsQueryArgs) {
   const query = useWeekEventsQuery(args);
   const { data: calendars } = useCalendarsQuery();
-  const viewModel = useMemo(
+  const defaultAccountEmail = useDefaultTargetCalendar(
+    calendars ?? [],
+  )?.accountEmail;
+  // Merge AFTER the visibility filter, so hiding one account's calendar
+  // unmerges on its own, and BEFORE the view model, so the grid and the Up
+  // Next banner both see one event per meeting.
+  const { data, duplicates } = useMemo(
     () =>
-      deriveCalendarEventViewModel(
+      mergeCrossAccountDuplicates(
         filterEventsByVisibleCalendars(query.data, calendars),
+        calendars,
+        defaultAccountEmail,
       ),
-    [query.data, calendars],
+    [query.data, calendars, defaultAccountEmail],
   );
-  return { ...query, ...viewModel };
+  const viewModel = useMemo(() => deriveCalendarEventViewModel(data), [data]);
+  return { ...query, ...viewModel, crossAccountDuplicates: duplicates };
 }
 
 /**
