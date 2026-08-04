@@ -117,7 +117,7 @@ describe("resolveGoogleConnectionFromSync", () => {
     });
   });
 
-  it("returns a null summary when Sync is unavailable", async () => {
+  it("returns a null summary and no connections when Sync is unavailable", async () => {
     const client = clientReturning({
       ok: false,
       error: { kind: "unavailable", correlationId: "corr-1" },
@@ -125,7 +125,52 @@ describe("resolveGoogleConnectionFromSync", () => {
 
     expect(await resolveGoogleConnectionFromSync(client, principal)).toEqual({
       connectionState: "ATTENTION",
+      connections: [],
       connection: null,
     });
+  });
+
+  it("summarizes every connection, in the order sync returned them", async () => {
+    const client = clientReturning({
+      ok: true,
+      value: {
+        connections: [
+          {
+            ...connection("healthy", null),
+            id: "c-first",
+            account: {
+              providerAccountId: "a1",
+              email: "first@example.com",
+              displayName: null,
+            },
+          },
+          {
+            ...connection("actionRequired", "authorizationRevoked"),
+            id: "c-second",
+            account: {
+              providerAccountId: "a2",
+              email: "second@example.com",
+              displayName: null,
+            },
+          },
+        ],
+      },
+      correlationId: "corr-1",
+    });
+
+    const result = await resolveGoogleConnectionFromSync(client, principal);
+
+    expect(
+      result.connections.map((summary) => [
+        summary.accountEmail,
+        summary.connectionState,
+      ]),
+    ).toEqual([
+      ["first@example.com", "HEALTHY"],
+      ["second@example.com", "RECONNECT_REQUIRED"],
+    ]);
+    // The singular summary stays the precedence winner (the broken account),
+    // which is deliberately NOT the first connection here.
+    expect(result.connection?.id).toBe("c-second");
   });
 });

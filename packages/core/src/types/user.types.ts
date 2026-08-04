@@ -33,18 +33,26 @@ export type GoogleConnectionState =
   | "HEALTHY"
   | "ATTENTION";
 
-// Sync-backed primary connection summary for the browser (S41). Present only
-// when connection routing is delegated to Sync. IDs/timestamps/state only —
-// never credentials or event content. Plain strings so the payload stays a
+// Sync-backed connection summary for the browser (S41). Present only when
+// connection routing is delegated to Sync. IDs/timestamps/state only — never
+// credentials or event content. Plain strings so the payload stays a
 // SuperTokens JSONObject (no Zod brands on the metadata wire).
-export interface GoogleSyncConnectionSummary {
+// A type alias, not an interface: only aliases get the implicit index
+// signature that lets these values sit inside SuperTokens' JSONObject
+// metadata payload without a cast at every call site.
+export type GoogleSyncConnectionSummary = {
   id: string;
   state: string;
   stateReason: string | null;
   lastSyncedAt: string | null;
   lastHealthyAt: string | null;
   accountEmail: string | null;
-}
+  // This one connection's own product state, translated server-side from its
+  // sync state/reason. The browser renders per-account status and reconnect
+  // from it directly, so sync's state vocabulary stays on the server. Optional
+  // so a summary cached by an older tab still parses.
+  connectionState?: GoogleConnectionState;
+};
 
 // Intersection (not extends): SuperTokens JSONObject's string index signature
 // rejects a nested `google.connection` object on an interface extends clause,
@@ -57,6 +65,10 @@ export type UserMetadata = SupertokensUserMetadata.JSONObject & {
   };
   google?: {
     connectionState?: GoogleConnectionState;
+    // Every connected provider account, in connection order. The singular
+    // `connection` below stays as the precedence-winning derivation of this
+    // list, for the top-level banner and for tabs holding older metadata.
+    connections?: GoogleSyncConnectionSummary[];
     connection?: GoogleSyncConnectionSummary | null;
   };
 };

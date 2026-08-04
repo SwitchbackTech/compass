@@ -82,3 +82,17 @@ export const selectGoogleSyncConnection = (
   state: UserMetadataState,
 ): GoogleSyncConnectionSummary | null =>
   state.current?.google?.connection ?? null;
+
+// Stable identity so the selector below never hands the store a fresh array
+// (which would re-render on every state change; see the note above the hook).
+const NO_CONNECTIONS: GoogleSyncConnectionSummary[] = [];
+
+/**
+ * Every connected provider account, in connection order. Empty when metadata
+ * hasn't loaded, no account is connected, or the payload predates the plural
+ * field.
+ */
+export const selectGoogleSyncConnections = (
+  state: UserMetadataState,
+): GoogleSyncConnectionSummary[] =>
+  state.current?.google?.connections ?? NO_CONNECTIONS;

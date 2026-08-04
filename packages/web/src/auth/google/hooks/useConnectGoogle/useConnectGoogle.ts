@@ -1,6 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type ConnectionId } from "@core/types/sync/identity.contracts";
+import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { AuthApi } from "@web/api/auth.api";
 import {
   refreshGoogleSync,
@@ -23,10 +24,26 @@ import { type UseConnectGoogleResult } from "./useConnectGoogle.types";
 import { getGoogleConnectionConfig } from "./useConnectGoogle.util";
 import { useGoogleUiState } from "./useGoogleUiState";
 
-export const useConnectGoogle = (): UseConnectGoogleResult => {
+export interface UseConnectGoogleOptions {
+  /**
+   * Scope the hook to one connected account: its own state drives the action
+   * and status, and reconnect rebinds consent to that connection rather than
+   * the precedence-winning one. Omit for the aggregate (whole-user) view.
+   */
+  connection?: GoogleSyncConnectionSummary | null;
+}
+
+export const useConnectGoogle = (
+  options?: UseConnectGoogleOptions,
+): UseConnectGoogleResult => {
   const isAvailable = useIsConnectGoogleAvailable();
-  const state = useGoogleUiState();
-  const syncConnection = useUserMetadataStore(selectGoogleSyncConnection);
+  const aggregateState = useGoogleUiState();
+  const primaryConnection = useUserMetadataStore(selectGoogleSyncConnection);
+  const scopedConnection = options?.connection;
+  const syncConnection = scopedConnection ?? primaryConnection;
+  // A scoped connection reports its own product state; fall back to the
+  // aggregate when it predates that field.
+  const state = scopedConnection?.connectionState ?? aggregateState;
   const queryClient = useQueryClient();
   const [isConnecting, setIsConnecting] = useState(false);
   // Sync guard so rapid re-clicks before React re-renders cannot start a

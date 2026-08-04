@@ -17,6 +17,10 @@ const logger = Logger("app:google-connection-status");
 
 export interface GoogleConnectionFromSync {
   connectionState: GoogleConnectionState;
+  // Every connected account, in the order sync returned them (connection
+  // order), so the browser can render one section per account. Empty on
+  // none / outage.
+  connections: GoogleSyncConnectionSummary[];
   // Primary Sync connection summary for the browser (null when none / outage).
   connection: GoogleSyncConnectionSummary | null;
 }
@@ -41,6 +45,7 @@ export async function resolveGoogleConnectionFromSync(
     const primary = selectPrimaryGoogleConnection(connections);
     return {
       connectionState: toGoogleConnectionState(connections),
+      connections: connections.map(toGoogleSyncConnectionSummary),
       connection: primary ? toGoogleSyncConnectionSummary(primary) : null,
     };
   }
@@ -49,5 +54,5 @@ export async function resolveGoogleConnectionFromSync(
     `Sync connection status unavailable (${result.error.kind}); reporting ATTENTION ` +
       `[correlationId=${result.error.correlationId}]`,
   );
-  return { connectionState: "ATTENTION", connection: null };
+  return { connectionState: "ATTENTION", connections: [], connection: null };
 }

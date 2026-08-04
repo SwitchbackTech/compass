@@ -13,6 +13,7 @@ import { type GetUserMetadataResponse } from "@backend/user/types/user.types";
 
 type GoogleMetadataAssessment = {
   connectionState: GoogleConnectionState;
+  connections?: GoogleSyncConnectionSummary[];
   connection?: GoogleSyncConnectionSummary | null;
 };
 
@@ -123,18 +124,17 @@ class UserMetadataService {
       };
     }
 
-    const { connectionState, connection } =
+    const { connectionState, connections, connection } =
       await this.assessGoogleMetadata(userId);
 
-    // Cast: SuperTokens JSONObject's index signature doesn't accept our nested
-    // google.connection summary type even though every field is JSON-safe.
     return {
       ...metadata,
       google: {
         connectionState,
+        ...(connections !== undefined ? { connections } : {}),
         ...(connection !== undefined ? { connection } : {}),
       },
-    } as UserMetadata;
+    };
   };
 }
 

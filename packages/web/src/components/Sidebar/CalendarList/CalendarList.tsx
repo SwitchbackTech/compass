@@ -1,9 +1,15 @@
 import { type FC } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
+import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import {
+  selectGoogleSyncConnections,
+  useUserMetadataStore,
+} from "@web/auth/state/user-metadata.store";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { useCalendarVisibility } from "@web/calendars/useCalendarVisibility";
+import { AccountSectionHeader } from "./AccountSectionHeader";
 import { CalendarListHeader } from "./CalendarListHeader";
 
 // Primary calendars first, then alphabetical by name; the local calendar
@@ -19,6 +25,61 @@ function sortCalendars(calendars: Calendar[]): Calendar[] {
   });
 }
 
+interface AccountGroup {
+  accountEmail: string;
+  connection: GoogleSyncConnectionSummary | undefined;
+  calendars: Calendar[];
+}
+
+/**
+ * Bucket calendars by the account they belong to, in connection order, with
+ * anything lacking an account email (the local calendar) left ungrouped.
+ *
+ * Grouping only earns its keep once a second account exists: with one account
+ * the list heading already names it, so a single labelled section would just
+ * repeat the heading. Callers render the flat list whenever this returns
+ * fewer than two groups.
+ */
+export function groupCalendarsByAccount(
+  calendars: Calendar[],
+  connections: GoogleSyncConnectionSummary[],
+): { groups: AccountGroup[]; ungrouped: Calendar[] } {
+  const groups: AccountGroup[] = [];
+  const byEmail = new Map<string, AccountGroup>();
+  const ungrouped: Calendar[] = [];
+
+  // Seed in connection order so accounts appear oldest-connected first,
+  // regardless of the order calendars came back in.
+  for (const connection of connections) {
+    const { accountEmail } = connection;
+    if (!accountEmail || byEmail.has(accountEmail)) continue;
+    const group: AccountGroup = { accountEmail, connection, calendars: [] };
+    byEmail.set(accountEmail, group);
+    groups.push(group);
+  }
+
+  for (const calendar of calendars) {
+    const { accountEmail } = calendar;
+    if (!accountEmail) {
+      ungrouped.push(calendar);
+      continue;
+    }
+    let group = byEmail.get(accountEmail);
+    if (!group) {
+      // A calendar whose account has no connection summary yet (metadata and
+      // the calendar list can load a moment apart). Still give it a section.
+      group = { accountEmail, connection: undefined, calendars: [] };
+      byEmail.set(accountEmail, group);
+      groups.push(group);
+    }
+    group.calendars.push(calendar);
+  }
+
+  // An account can be connected before its calendars have imported; an empty
+  // section would render a heading with nothing under it.
+  return { groups: groups.filter((g) => g.calendars.length > 0), ungrouped };
+}
+
 interface Props {
   /** Test seam only: lets list tests stub the account header's auth/sync hooks. */
   Header?: FC;
@@ -30,9 +91,24 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
   const { data, isPending, isError, refetch } = useCalendarsQuery();
   const { toggleCalendarVisibility, failureAnnouncement } =
     useCalendarVisibility();
+  const connections = useUserMetadataStore(selectGoogleSyncConnections);
 
   const calendars = sortCalendars(
     (data ?? []).filter((calendar) => calendar.isActive),
+  );
+  const { groups, ungrouped } = groupCalendarsByAccount(calendars, connections);
+  const showAccountSections = groups.length > 1;
+
+  const renderRows = (rows: Calendar[]) => (
+    <ul className="flex flex-col gap-1.5">
+      {rows.map((calendar) => (
+        <CalendarRow
+          calendar={calendar}
+          key={calendar.id}
+          onToggle={toggleCalendarVisibility}
+        />
+      ))}
+    </ul>
   );
 
   return (
@@ -58,55 +134,68 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
             ? "Connect Google to see your calendars."
             : "No calendars yet."}
         </p>
+      ) : showAccountSections ? (
+        <div className="flex flex-col gap-3">
+          {groups.map((group) => (
+            <section
+              aria-label={`Calendars for ${group.accountEmail}`}
+              key={group.accountEmail}
+            >
+              <AccountSectionHeader
+                accountEmail={group.accountEmail}
+                connection={group.connection}
+              />
+              {renderRows(group.calendars)}
+            </section>
+          ))}
+          {ungrouped.length > 0 ? renderRows(ungrouped) : null}
+        </div>
       ) : (
-        <ul className="flex flex-col gap-1.5">
-          {calendars.map((calendar) => {
-            // The header already shows the primary calendar's name (the account
-            // email), so its row reads "primary" instead. The anonymous local
-            // sentinel is also isPrimary, but a lone "primary" row under a
-            // "Temporary account" header reads wrong - keep its own name.
-            const displayName =
-              calendar.isPrimary && calendar.provider !== "local"
-                ? "primary"
-                : calendar.name;
-            const calendarRow = (
-              <>
-                <span
-                  aria-hidden
-                  className="size-3.5 shrink-0 rounded-full border-2 transition-[background-color,border-color] motion-reduce:transition-none"
-                  style={{
-                    backgroundColor: calendar.isVisible
-                      ? calendar.backgroundColor
-                      : "transparent",
-                    borderColor: calendar.backgroundColor,
-                  }}
-                />
-                <span className="min-w-0 flex-1 truncate">{displayName}</span>
-              </>
-            );
-
-            return (
-              <li key={calendar.id}>
-                <button
-                  aria-label={`${calendar.isVisible ? "Hide" : "Show"} ${displayName} calendar`}
-                  aria-pressed={calendar.isVisible}
-                  className="c-focus-ring group flex w-full min-w-0 items-center gap-2 rounded px-1 py-0.5 text-left text-text text-xs hover:bg-surface-panel"
-                  onClick={() =>
-                    toggleCalendarVisibility(calendar.id, !calendar.isVisible)
-                  }
-                  type="button"
-                >
-                  {calendarRow}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        renderRows(calendars)
       )}
 
       <span aria-live="polite" className="sr-only" role="status">
         {failureAnnouncement}
       </span>
     </section>
+  );
+};
+
+const CalendarRow: FC<{
+  calendar: Calendar;
+  onToggle: (calendarId: Calendar["id"], isVisible: boolean) => void;
+}> = ({ calendar, onToggle }) => {
+  // The heading above the row already names the account (the list heading with
+  // one account, the section heading with several), so a primary calendar's
+  // row reads "primary" instead of repeating it. The anonymous local sentinel
+  // is also isPrimary, but a lone "primary" row under a "Temporary account"
+  // header reads wrong - keep its own name.
+  const displayName =
+    calendar.isPrimary && calendar.provider !== "local"
+      ? "primary"
+      : calendar.name;
+
+  return (
+    <li>
+      <button
+        aria-label={`${calendar.isVisible ? "Hide" : "Show"} ${displayName} calendar`}
+        aria-pressed={calendar.isVisible}
+        className="c-focus-ring group flex w-full min-w-0 items-center gap-2 rounded px-1 py-0.5 text-left text-text text-xs hover:bg-surface-panel"
+        onClick={() => onToggle(calendar.id, !calendar.isVisible)}
+        type="button"
+      >
+        <span
+          aria-hidden
+          className="size-3.5 shrink-0 rounded-full border-2 transition-[background-color,border-color] motion-reduce:transition-none"
+          style={{
+            backgroundColor: calendar.isVisible
+              ? calendar.backgroundColor
+              : "transparent",
+            borderColor: calendar.backgroundColor,
+          }}
+        />
+        <span className="min-w-0 flex-1 truncate">{displayName}</span>
+      </button>
+    </li>
   );
 };
