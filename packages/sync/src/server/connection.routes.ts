@@ -474,6 +474,27 @@ export function registerConnectionRoutes(
         connectionId = parsed.data;
       }
 
+      // A fresh connect by a principal that already has connections is an
+      // add-account: show the provider's account chooser so the user can pick
+      // a different account instead of silently re-authorizing the connected
+      // one. Reconnect is account-pinned and must never show the chooser. A
+      // lookup failure here only costs the chooser, so it does not fail the
+      // request.
+      let selectAccount = false;
+      if (connectionId === null) {
+        try {
+          const existing = await new ProviderConnectionRepository(
+            deps.mongo.db,
+          ).listByPrincipal(auth.tenantId, auth.principalId);
+          selectAccount = existing.length > 0;
+        } catch (error) {
+          logger.warn(
+            "Failed to count connections for the account chooser",
+            redactedCause(error),
+          );
+        }
+      }
+
       const state = signOAuthState(deps.stateSecret, {
         tenantId: auth.tenantId,
         principalId: auth.principalId,
@@ -483,6 +504,7 @@ export function registerConnectionRoutes(
       const authorizationUrl = deps.authAdapter.buildAuthorizationUrl({
         state,
         redirectUri: `${deps.callbackBaseUrl}${OAUTH_CALLBACK_PATH}`,
+        selectAccount,
       });
       res.status(Status.OK).json({ authorizationUrl });
     },

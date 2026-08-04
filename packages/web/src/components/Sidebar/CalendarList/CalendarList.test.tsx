@@ -54,15 +54,18 @@ const actualUseConnectGoogle = (
 let isConnectGoogleMocked = true;
 // Mirrors the real hook's one behavior these tests depend on: scoping to a
 // connection reports that account's own state. (The real scoping is covered
-// directly in useConnectGoogle.scope.test.tsx.)
-const mockUseConnectGoogle = mock(
-  (options?: Parameters<typeof actualUseConnectGoogle>[0]) => ({
-    commandAction: null,
-    isAvailable: true,
-    isConnecting: false,
-    state: options?.connection?.connectionState ?? ("NOT_CONNECTED" as const),
-  }),
-);
+// directly in useConnectGoogle.scope.test.tsx.) Restored in beforeEach, since
+// a test that swaps in mockReturnValue would otherwise poison later ones.
+const defaultUseConnectGoogle = (
+  options?: Parameters<typeof actualUseConnectGoogle>[0],
+) => ({
+  commandAction: null,
+  connect: mock(),
+  isAvailable: true,
+  isConnecting: false,
+  state: options?.connection?.connectionState ?? ("NOT_CONNECTED" as const),
+});
+const mockUseConnectGoogle = mock(defaultUseConnectGoogle);
 mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
   useConnectGoogle: (...args: Parameters<typeof actualUseConnectGoogle>) =>
     isConnectGoogleMocked
@@ -159,6 +162,7 @@ const renderCalendarList = (
 
 describe("CalendarList", () => {
   beforeEach(() => {
+    mockUseConnectGoogle.mockImplementation(defaultUseConnectGoogle);
     mockUseSession.mockReturnValue({
       authenticated: true,
       setAuthenticated: () => {},
@@ -549,6 +553,40 @@ describe("CalendarList", () => {
 
     expect(
       screen.queryByRole("button", { name: /where new events go/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("offers to add another account once one is connected", async () => {
+    const connect = mock();
+    mockUseConnectGoogle.mockReturnValue({
+      commandAction: null,
+      connect,
+      isAvailable: true,
+      isConnecting: false,
+      state: "HEALTHY" as const,
+    });
+
+    const user = userEvent.setup({ delay: null });
+    renderCalendarList([makeCalendar({ name: "Work" })]);
+
+    await user.click(screen.getByRole("button", { name: "Add account" }));
+    expect(connect).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not offer to add an account before the first one is connected", () => {
+    // The header's own Connect action covers this case.
+    mockUseConnectGoogle.mockReturnValue({
+      commandAction: null,
+      connect: mock(),
+      isAvailable: true,
+      isConnecting: false,
+      state: "NOT_CONNECTED" as const,
+    });
+
+    renderCalendarList([makeCalendar({ name: "Compass", provider: "local" })]);
+
+    expect(
+      screen.queryByRole("button", { name: "Add account" }),
     ).not.toBeInTheDocument();
   });
 
