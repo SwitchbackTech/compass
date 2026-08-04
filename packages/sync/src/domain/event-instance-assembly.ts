@@ -49,6 +49,7 @@ export function assembleEventInstances(
       createdAt: event.createdAt.toISOString(),
       updatedAt: event.updatedAt.toISOString(),
     };
+    const correlation = toIcalUid(event);
 
     if (event.recurrence.kind === "single") {
       instances.push(
@@ -59,6 +60,7 @@ export function assembleEventInstances(
           schedule: occurrence.schedule,
           recurrence: { kind: "single" },
           ...timestamps,
+          ...correlation,
         }),
       );
       continue;
@@ -77,6 +79,7 @@ export function assembleEventInstances(
             recurrenceId: occurrence.startAt.toISOString(),
           },
           ...timestamps,
+          ...correlation,
         }),
       );
       seriesMasterIds.add(event._id);
@@ -96,6 +99,9 @@ export function assembleEventInstances(
         schedule: occurrence.schedule,
         recurrence: { kind: "occurrence", recurrenceId },
         ...timestamps,
+        // An overridden instance is its own provider event, so its own copy
+        // key is the one that identifies this slot across accounts.
+        ...correlation,
       }),
     );
     seriesMasterIds.add(seriesId);
@@ -116,12 +122,21 @@ export function assembleEventInstances(
         recurrence: { kind: "series", rules: master.recurrence.rules },
         createdAt: master.createdAt.toISOString(),
         updatedAt: master.updatedAt.toISOString(),
+        ...toIcalUid(master),
       }),
     );
   }
 
   return instances;
 }
+
+// The provider's cross-copy correlation key, stored in the ownership metadata
+// bag at import (google-event.normalizer.ts). Omitted rather than nulled so
+// events imported before it was recorded stay contract-valid.
+const toIcalUid = (event: EventRecord): { icalUid?: string } => {
+  const icalUid = event.providerMetadata?.["iCalUID"];
+  return icalUid ? { icalUid } : {};
+};
 
 const toInstanceContent = (content: EventRecord["content"]) => ({
   title: content.title,
