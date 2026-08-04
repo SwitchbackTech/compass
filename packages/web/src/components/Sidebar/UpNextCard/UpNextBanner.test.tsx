@@ -1,0 +1,186 @@
+import userEvent from "@testing-library/user-event";
+import { EventIdSchema } from "@core/types/domain-primitives";
+import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
+import dayjs from "@core/util/date/dayjs";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@web/__tests__/__mocks__/mock.render";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
+import { UpNextBanner } from "./UpNextBanner";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import "@testing-library/jest-dom";
+
+const SOON_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
+const LATER_EVENT_ID = "bbbbbbbbbbbbbbbbbbbbbbbb";
+
+// Events are built relative to the real clock because the banner's whole job
+// is comparing today's events against "now".
+const timedEvent = (
+  id: string,
+  title: string,
+  startsInMinutes: number,
+  conference?: { url: string; label: string | null },
+): Event => {
+  const start = dayjs().add(startsInMinutes, "minute");
+  return createMockEvent({
+    id: EventIdSchema.parse(id),
+    content: {
+      kind: "details",
+      title,
+      description: "",
+      ...(conference ? { conference } : {}),
+    },
+    schedule: EventScheduleSchema.parse({
+      kind: "timed",
+      start: start.format(),
+      end: start.add(30, "minute").format(),
+      timeZone: "UTC",
+    }),
+  });
+};
+
+const mockWindowOpen = mock();
+
+beforeEach(() => {
+  draftActions.discard();
+  mockWindowOpen.mockClear();
+  window.open = mockWindowOpen;
+});
+
+afterEach(() => {
+  cleanup();
+});
+
+describe("UpNextBanner", () => {
+  it("shows a countdown and Open action for an event within 2 minutes", () => {
+    render(<UpNextBanner />, {
+      events: [timedEvent(SOON_EVENT_ID, "Soon Event", 2)],
+    });
+
+    expect(screen.getByText("Starts in 2 minutes")).toBeInTheDocument();
+    expect(screen.getByText("Soon Event")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Open" })).toBeInTheDocument();
+    expect(screen.getByText("N")).toBeInTheDocument();
+  });
+
+  it("renders nothing for an event more than 2 minutes out", () => {
+    render(<UpNextBanner />, {
+      events: [timedEvent(LATER_EVENT_ID, "Later Event", 30)],
+    });
+
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("shows a Join action with the meeting link instead of Open", () => {
+    render(<UpNextBanner />, {
+      events: [
+        timedEvent(SOON_EVENT_ID, "Standup", 2, {
+          url: "https://meet.google.com/abc-defg-hij",
+          label: null,
+        }),
+      ],
+    });
+
+    const joinButton = screen.getByRole("button", { name: "Join" });
+    expect(joinButton).toBeInTheDocument();
+    expect(screen.getByText("V")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Open" })).toBeNull();
+
+    fireEvent.click(joinButton);
+
+    expect(mockWindowOpen).toHaveBeenCalledWith(
+      "https://meet.google.com/abc-defg-hij",
+      "_blank",
+      "noopener,noreferrer",
+    );
+  });
+
+  it("pressing v opens the meeting link", async () => {
+    const user = userEvent.setup();
+    render(<UpNextBanner />, {
+      events: [
+        timedEvent(SOON_EVENT_ID, "Standup", 2, {
+          url: "https://meet.google.com/abc-defg-hij",
+          label: null,
+        }),
+      ],
+    });
+
+    await user.keyboard("v");
+
+    expect(mockWindowOpen).toHaveBeenCalledWith(
+      "https://meet.google.com/abc-defg-hij",
+      "_blank",
+      "noopener,noreferrer",
+    );
+  });
+
+  it("pressing n opens the event details form even when Join is shown", async () => {
+    const user = userEvent.setup();
+    render(<UpNextBanner />, {
+      events: [
+        timedEvent(SOON_EVENT_ID, "Standup", 2, {
+          url: "https://meet.google.com/abc-defg-hij",
+          label: null,
+        }),
+      ],
+    });
+
+    await user.keyboard("n");
+
+    await waitFor(() => {
+      const state = useDraftStore.getState();
+      expect(state.status?.isFormOpen).toBe(true);
+      expect(state.status?.activity).toBe("keyboardEdit");
+      expect(state.gridDraft?.source?.id).toBe(
+        EventIdSchema.parse(SOON_EVENT_ID),
+      );
+    });
+  });
+
+  it("clicking Open opens the event details form", async () => {
+    render(<UpNextBanner />, {
+      events: [timedEvent(SOON_EVENT_ID, "Soon Event", 2)],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Open" }));
+
+    await waitFor(() => {
+      const state = useDraftStore.getState();
+      expect(state.status?.isFormOpen).toBe(true);
+      expect(state.gridDraft?.source?.id).toBe(
+        EventIdSchema.parse(SOON_EVENT_ID),
+      );
+    });
+  });
+
+  it("dismissing hides the banner and it stays hidden for that event", () => {
+    render(<UpNextBanner />, {
+      events: [timedEvent(SOON_EVENT_ID, "Soon Event", 2)],
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+
+    expect(screen.queryByText("Soon Event")).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("pressing Escape dismisses the banner", async () => {
+    const user = userEvent.setup();
+    render(<UpNextBanner />, {
+      events: [timedEvent(SOON_EVENT_ID, "Soon Event", 2)],
+    });
+
+    expect(screen.getByText("Soon Event")).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByText("Soon Event")).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+});

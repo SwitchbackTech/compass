@@ -3,7 +3,6 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
-import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 
 function useMinuteTick(): Dayjs {
@@ -53,11 +52,10 @@ export function useUpNextEvent() {
     [sourceEvent],
   );
 
-  return { now, openEventDetails, upNext };
-}
+  const conferenceUrl =
+    sourceEvent?.content.kind === "details"
+      ? sourceEvent.content.conference?.url
+      : undefined;
 
-export function useUpNextEventShortcut() {
-  const { openEventDetails } = useUpNextEvent();
-
-  useAppShortcutUp("N", () => openEventDetails("keyboardEdit"));
+  return { now, openEventDetails, upNext, conferenceUrl };
 }
