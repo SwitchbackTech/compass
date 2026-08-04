@@ -10,6 +10,7 @@ import {
 } from "@core/types/domain-primitives";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
+import { createMockConnection as makeConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { setDefaultCalendarId } from "@web/calendars/default-calendar.store";
@@ -31,16 +32,6 @@ const makeCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
   isVisible: true,
   isActive: true,
   ...overrides,
-});
-
-const makeConnection = (accountEmail: string): GoogleSyncConnectionSummary => ({
-  id: createObjectIdString(),
-  state: "healthy",
-  stateReason: null,
-  lastSyncedAt: null,
-  lastHealthyAt: null,
-  accountEmail,
-  connectionState: "HEALTHY",
 });
 
 const renderCalendarSelect = (

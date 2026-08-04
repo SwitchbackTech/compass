@@ -9,11 +9,7 @@ import {
 } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { isRecurringEvent } from "@core/util/event/event.util";
-import {
-  type CalendarCardIdentity,
-  calendarAccentAccessibleSuffix,
-  calendarAccentStyle,
-} from "@web/calendars/useCalendarLookup";
+import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
@@ -24,6 +20,10 @@ import { useEventPalette } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
+import {
+  calendarAccentAccessibleSuffix,
+  calendarAccentStyle,
+} from "@web/grid/components/calendar-accent.util";
 import {
   COMPACT_EVENT_MAX_HEIGHT,
   GRID_EVENT_TIME_LABEL_FONT_SIZE,

@@ -8,11 +8,7 @@ import {
 } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { isRecurringEvent } from "@core/util/event/event.util";
-import {
-  type CalendarCardIdentity,
-  calendarAccentAccessibleSuffix,
-  calendarAccentStyle,
-} from "@web/calendars/useCalendarLookup";
+import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
@@ -21,6 +17,10 @@ import { brighten, darken, isDark } from "@web/common/styles/color.utils";
 import { theme } from "@web/common/styles/theme";
 import { useEventPalette } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import {
+  calendarAccentAccessibleSuffix,
+  calendarAccentStyle,
+} from "@web/grid/components/calendar-accent.util";
 import { EVENT_RESIZE_HANDLE_ATTRIBUTE } from "@web/grid/interaction/dom";
 import { type EventPosition } from "@web/grid/types/grid.types";
 import { EventRepeatIcon } from "./EventRepeatIcon";

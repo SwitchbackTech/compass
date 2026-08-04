@@ -9,18 +9,9 @@ import {
   getGoogleSyncStatus,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
-import { type SyncStatusVariant } from "@web/calendars/sync-status.types";
+import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
-
-// Status is conveyed as text, never colour alone, so the variant class is
-// decoration on top of a message that already says what is happening.
-const SYNC_STATUS_VARIANT_CLASSNAME: Record<SyncStatusVariant, string> = {
-  syncing: "c-sync-text-wave",
-  healthy: "text-text",
-  warning: "text-warning",
-  error: "text-error",
-};
 
 /**
  * Heading for one connected account's calendars: the account email, that

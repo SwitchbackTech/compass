@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import {
   type CalendarCardIdentity,
-  findCrossAccountDuplicate,
   isGridEventInteractionReadOnly,
   resolveCalendarCardIdentity,
   useCalendarLookup,
@@ -41,7 +40,6 @@ interface Props {
 export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const draftOverlay = useGridDraftSchemaOverlay();
   const {
-    crossAccountDuplicates,
     events: weekEvents,
     isPending: isLoadingWeekView,
     timedEvents,
@@ -96,7 +94,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
         calendarIdentity: resolveCalendarCardIdentity(
           calendarLookup,
           item.event.calendarId,
-          findCrossAccountDuplicate(crossAccountDuplicates, item.event._id),
+          item.event.otherAccount,
         ),
         // Read-only (unwritable calendar or busy content) events never
         // attach interaction attributes/registration below, so the drag/
@@ -104,7 +102,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
         // optimistic state change (packet 08 step 8).
         isReadOnly: isGridEventInteractionReadOnly(calendarLookup, item.event),
       })),
-    [timedEventItems, calendarLookup, crossAccountDuplicates],
+    [timedEventItems, calendarLookup],
   );
 
   const { onEventKeyDown, onOpenReadOnlyDetails } =
@@ -127,10 +125,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
               ? resolveCalendarCardIdentity(
                   calendarLookup,
                   eventForDisplay.calendarId,
-                  findCrossAccountDuplicate(
-                    crossAccountDuplicates,
-                    eventForDisplay._id,
-                  ),
+                  eventForDisplay.otherAccount,
                 )
               : calendarIdentity;
 

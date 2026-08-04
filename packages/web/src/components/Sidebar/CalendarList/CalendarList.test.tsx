@@ -11,6 +11,7 @@ import {
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
+import { createMockConnection as makeConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type ApiRequestConfig } from "@web/api/api.types";
 import { BaseApi } from "@web/api/base/base.api";
@@ -112,20 +113,6 @@ const makeCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
   isPrimary: false,
   isVisible: true,
   isActive: true,
-  ...overrides,
-});
-
-const makeConnection = (
-  accountEmail: string,
-  overrides: Partial<GoogleSyncConnectionSummary> = {},
-): GoogleSyncConnectionSummary => ({
-  id: createObjectIdString(),
-  state: "healthy",
-  stateReason: null,
-  lastSyncedAt: null,
-  lastHealthyAt: null,
-  accountEmail,
-  connectionState: "HEALTHY",
   ...overrides,
 });
 

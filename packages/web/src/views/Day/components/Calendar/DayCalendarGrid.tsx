@@ -69,7 +69,6 @@ export function DayCalendarGrid() {
     useDefaultTargetCalendar(calendars)?.id ?? null;
   const {
     allDayEvents,
-    crossAccountDuplicates,
     events: dayEvents,
     isError: isErrorEvents,
     isFetching,
@@ -284,7 +283,6 @@ export function DayCalendarGrid() {
   const allDayEventsLayer = useMemo(
     () => (
       <DayCalendarAllDayEventsLayer
-        crossAccountDuplicates={crossAccountDuplicates}
         events={displayedAllDayEvents}
         getCalendarColumnIndex={getCalendarColumnIndex}
         draft={gridDraft}
@@ -294,7 +292,6 @@ export function DayCalendarGrid() {
       />
     ),
     [
-      crossAccountDuplicates,
       displayedAllDayEvents,
       gridDraft,
       getCalendarColumnIndex,
@@ -313,7 +310,6 @@ export function DayCalendarGrid() {
           visibleDates={visibleDates}
         />
         <DayCalendarTimedEventsLayer
-          crossAccountDuplicates={crossAccountDuplicates}
           events={displayedTimedEvents}
           getCalendarColumnIndex={getCalendarColumnIndex}
           draft={gridDraft}
@@ -325,7 +321,6 @@ export function DayCalendarGrid() {
     ),
     [
       calendarColumnIndexById,
-      crossAccountDuplicates,
       dateInView,
       displayedTimedEvents,
       gridDraft,

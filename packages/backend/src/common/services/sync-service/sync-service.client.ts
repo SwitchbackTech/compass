@@ -392,9 +392,8 @@ export class SyncServiceClient {
       method: "DELETE",
       path: `${CONNECTIONS_PATH}/${encodeURIComponent(connectionId)}`,
       principal,
-      // Sync answers 204 with no body, so there is nothing to parse and no
-      // schema to give.
-      expectNoContent: true,
+      // No schema: sync answers 204 with no body, so there is nothing to
+      // parse - #send treats a schema-less request as expecting 204.
       correlationId,
     });
   }
@@ -420,9 +419,8 @@ export class SyncServiceClient {
     query?: URLSearchParams;
     principal: SyncPrincipal;
     body?: unknown;
-    // Absent only for a no-content route, which has no body to validate.
+    // Absent only for a no-content route: #send then expects a 204.
     schema?: z.ZodType<T>;
-    expectNoContent?: boolean;
     correlationId?: string;
     timeoutMs?: number;
   }): Promise<SyncClientResult<T>> {
@@ -469,7 +467,6 @@ export class SyncServiceClient {
     query?: URLSearchParams;
     body?: unknown;
     schema?: z.ZodType<T>;
-    expectNoContent?: boolean;
     correlationId: string;
     headers: Record<string, string>;
     timeoutMs?: number;
@@ -503,11 +500,17 @@ export class SyncServiceClient {
       clearTimeout(timer);
     }
 
-    // A no-content route succeeds with 204 and an empty body; reading it as
-    // JSON would fail, and treating it as an unexpected status would turn a
-    // successful disconnect into an error.
-    if (input.expectNoContent && response.status === 204) {
-      return { ok: true, value: undefined as T, correlationId };
+    // A schema-less request is a no-content route: it succeeds with 204 and
+    // an empty body, so there is nothing to parse and a 200-with-body would
+    // itself be unexpected.
+    if (!input.schema) {
+      return response.status === 204
+        ? { ok: true, value: undefined as T, correlationId }
+        : errorResult(
+            statusToKind(response.status),
+            correlationId,
+            response.status,
+          );
     }
 
     if (response.status === 200) {
@@ -517,8 +520,8 @@ export class SyncServiceClient {
       } catch {
         return errorResult("invalidResponse", correlationId, 200);
       }
-      const parsed = input.schema?.safeParse(body);
-      if (!parsed?.success) {
+      const parsed = input.schema.safeParse(body);
+      if (!parsed.success) {
         return errorResult("invalidResponse", correlationId, 200);
       }
       return { ok: true, value: parsed.data, correlationId };

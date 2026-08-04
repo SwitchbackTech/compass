@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import {
-  findCrossAccountDuplicate,
   isGridEventInteractionReadOnly,
   resolveCalendarCardIdentity,
   useCalendarLookup,
@@ -11,7 +10,6 @@ import {
 } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import { type CrossAccountDuplicates } from "@web/events/queries/merge-cross-account-duplicates";
 import { GRID_MARGIN_LEFT } from "@web/grid/grid.constants";
 import { createTimedEventLayout } from "@web/grid/layout/timed-deck.layout";
 import {
@@ -30,7 +28,6 @@ import {
 } from "./dayCalendarDraft.util";
 
 interface DayEventsProps {
-  crossAccountDuplicates: CrossAccountDuplicates;
   getCalendarColumnIndex: (event: GridEvent) => number;
   draft: GridEventDraft | null;
   events: GridEvent[];
@@ -40,7 +37,6 @@ interface DayEventsProps {
 }
 
 export const DayCalendarAllDayEventsLayer = ({
-  crossAccountDuplicates,
   draft,
   events: allDayEvents,
   getCalendarColumnIndex,
@@ -80,7 +76,7 @@ export const DayCalendarAllDayEventsLayer = ({
           calendarIdentity={resolveCalendarCardIdentity(
             calendarLookup,
             event.calendarId,
-            findCrossAccountDuplicate(crossAccountDuplicates, event._id),
+            event.otherAccount,
           )}
           columnIndex={getCalendarColumnIndex(event)}
           event={event}
@@ -98,7 +94,6 @@ export const DayCalendarAllDayEventsLayer = ({
 };
 
 export const DayCalendarTimedEventsLayer = ({
-  crossAccountDuplicates,
   draft,
   events: timedEvents,
   getCalendarColumnIndex,
@@ -140,7 +135,7 @@ export const DayCalendarTimedEventsLayer = ({
           calendarIdentity={resolveCalendarCardIdentity(
             calendarLookup,
             event.calendarId,
-            findCrossAccountDuplicate(crossAccountDuplicates, event._id),
+            event.otherAccount,
           )}
           columnIndex={getCalendarColumnIndex(event)}
           deckLayout={deckLayout}
