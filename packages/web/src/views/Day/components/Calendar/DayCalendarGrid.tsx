@@ -10,7 +10,7 @@ import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
+import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
@@ -66,7 +66,7 @@ export function DayCalendarGrid() {
     useCalendarsQuery();
   // Seed shortcuts with the form's default create target, not day-column order.
   const defaultTargetCalendarId =
-    getDefaultTargetCalendar(calendars)?.id ?? null;
+    useDefaultTargetCalendar(calendars)?.id ?? null;
   const {
     allDayEvents,
     events: dayEvents,

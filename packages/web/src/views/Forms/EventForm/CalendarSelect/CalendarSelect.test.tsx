@@ -8,8 +8,11 @@ import {
   type CalendarId,
   CalendarIdSchema,
 } from "@core/types/domain-primitives";
+import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
+import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import { setDefaultCalendarId } from "@web/calendars/default-calendar.store";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -30,16 +33,34 @@ const makeCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
   ...overrides,
 });
 
+const makeConnection = (accountEmail: string): GoogleSyncConnectionSummary => ({
+  id: createObjectIdString(),
+  state: "healthy",
+  stateReason: null,
+  lastSyncedAt: null,
+  lastHealthyAt: null,
+  accountEmail,
+  connectionState: "HEALTHY",
+});
+
 const renderCalendarSelect = (
   calendars: Calendar[],
   {
     value = null,
     onChange = mock(),
+    connections,
   }: {
     value?: CalendarId | null;
     onChange?: (id: CalendarId) => void;
+    connections?: GoogleSyncConnectionSummary[];
   } = {},
 ) => {
+  if (connections) {
+    userMetadataActions.set({
+      google: { connectionState: "HEALTHY", connections },
+    });
+  }
+
   const { queryClient, wrapper } = createStoreWrapper();
   queryClient.setQueryData(calendarQueryKeys.all, calendars);
 
@@ -198,5 +219,91 @@ describe("CalendarSelect", () => {
       "aria-describedby",
       "event-form-error-calendarId",
     );
+  });
+
+  it("names each option's account when two accounts are connected", async () => {
+    // Both accounts have a calendar called "Work" with a primary; without the
+    // account the two options would be indistinguishable.
+    const work = makeCalendar({
+      name: "Work",
+      isPrimary: true,
+      accountEmail: "ahab@pequod.com",
+    });
+    const personal = makeCalendar({
+      name: "Work",
+      isPrimary: true,
+      accountEmail: "ahab@gmail.com",
+    });
+
+    renderCalendarSelect([work, personal], {
+      connections: [
+        makeConnection("ahab@pequod.com"),
+        makeConnection("ahab@gmail.com"),
+      ],
+    });
+    await openDropdown();
+
+    expect(
+      screen.getByRole("option", { name: "Work (primary) on ahab@pequod.com" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("option", { name: "Work (primary) on ahab@gmail.com" }),
+    ).toBeInTheDocument();
+  });
+
+  it("leaves option labels alone with a single account", async () => {
+    const work = makeCalendar({
+      name: "Work",
+      isPrimary: true,
+      accountEmail: "ahab@pequod.com",
+    });
+
+    renderCalendarSelect([work], {
+      connections: [makeConnection("ahab@pequod.com")],
+    });
+    await openDropdown();
+
+    expect(
+      screen.getByRole("option", { name: "Work (primary)" }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps each account's calendars together, oldest-connected account first", async () => {
+    const newer = makeCalendar({
+      name: "Aardvark",
+      accountEmail: "new@example.com",
+    });
+    const older = makeCalendar({
+      name: "Zebra",
+      accountEmail: "old@example.com",
+    });
+
+    renderCalendarSelect([newer, older], {
+      connections: [
+        makeConnection("old@example.com"),
+        makeConnection("new@example.com"),
+      ],
+    });
+    await openDropdown();
+
+    // Alphabetically "Aardvark" sorts first, but it belongs to the newer
+    // account, so it comes second.
+    expect(
+      screen.getAllByRole("option").map((option) => option.textContent),
+    ).toEqual(["Zebraold@example.com", "Aardvarknew@example.com"]);
+  });
+
+  it("displays the user's starred calendar as the default target", async () => {
+    const primary = makeCalendar({ name: "Personal", isPrimary: true });
+    const starred = makeCalendar({ name: "Side project" });
+    setDefaultCalendarId(starred.id);
+
+    renderCalendarSelect([primary, starred], { value: null });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("combobox", { name: "Calendar: Side project" }),
+      ).toBeInTheDocument();
+    });
   });
 });

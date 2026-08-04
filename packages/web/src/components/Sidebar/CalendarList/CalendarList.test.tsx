@@ -17,6 +17,7 @@ import { BaseApi } from "@web/api/base/base.api";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { isCalendarHidden } from "@web/calendars/calendar-visibility.storage";
+import { getStoredDefaultCalendarId } from "@web/calendars/default-calendar.store";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
@@ -472,6 +473,83 @@ describe("CalendarList", () => {
         ).queryByText("Compass"),
       ).not.toBeInTheDocument();
     }
+  });
+
+  it("stars the calendar new events go to, and moves the star on click", async () => {
+    const primary = makeCalendar({ name: "Personal", isPrimary: true });
+    const side = makeCalendar({ name: "Side project" });
+
+    const user = userEvent.setup({ delay: null });
+    renderCalendarList([primary, side]);
+
+    // The derived default (the primary) starts starred.
+    expect(
+      screen.getByRole("button", {
+        name: "primary is where new events go. Select again to undo.",
+      }),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Make Side project where new events go",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(getStoredDefaultCalendarId()).toBe(side.id);
+    });
+    expect(
+      screen.getByRole("button", {
+        name: "Side project is where new events go. Select again to undo.",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("clears the preference when the starred calendar is starred again", async () => {
+    const primary = makeCalendar({ name: "Personal", isPrimary: true });
+    const side = makeCalendar({ name: "Side project" });
+
+    const user = userEvent.setup({ delay: null });
+    renderCalendarList([primary, side]);
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Make Side project where new events go",
+      }),
+    );
+    await waitFor(() => {
+      expect(getStoredDefaultCalendarId()).toBe(side.id);
+    });
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "Side project is where new events go. Select again to undo.",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(getStoredDefaultCalendarId()).toBeNull();
+    });
+    // Back to the derived default.
+    expect(
+      screen.getByRole("button", {
+        name: "primary is where new events go. Select again to undo.",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers no star on a calendar the user cannot write to", () => {
+    const readOnly = makeCalendar({
+      name: "Team",
+      access: "reader",
+      capabilities: getCalendarCapabilities("reader"),
+    });
+
+    renderCalendarList([readOnly]);
+
+    expect(
+      screen.queryByRole("button", { name: /where new events go/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows a loading state while calendars are pending", () => {

@@ -11,7 +11,10 @@ type StorageKey =
   | "compass.view.sidebar-open"
   // S39 A2: client-owned calendar visibility (default visible). Device-local,
   // matching other compass.* prefs — not synced across browsers.
-  | "compass.calendars.hidden-ids";
+  | "compass.calendars.hidden-ids"
+  // Which calendar new events are created on. Device-local like the rest;
+  // an unknown or stale id falls back to the derived default.
+  | "compass.calendars.default-id";
 
 export const STORAGE_KEYS: Record<
   | "AUTH"
@@ -24,7 +27,8 @@ export const STORAGE_KEYS: Record<
   | "SIDEBAR_WIDTH"
   | "SIDEBAR_OPEN"
   | "THEME"
-  | "HIDDEN_CALENDAR_IDS",
+  | "HIDDEN_CALENDAR_IDS"
+  | "DEFAULT_CALENDAR_ID",
   StorageKey
 > = {
   AUTH: "compass.auth",
@@ -41,4 +45,5 @@ export const STORAGE_KEYS: Record<
   SIDEBAR_OPEN: "compass.view.sidebar-open",
   THEME: "compass.theme",
   HIDDEN_CALENDAR_IDS: "compass.calendars.hidden-ids",
+  DEFAULT_CALENDAR_ID: "compass.calendars.default-id",
 } as const;
