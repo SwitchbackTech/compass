@@ -38,6 +38,14 @@ const AuthApi = {
     return ConnectionBeginResponseSchema.parse(response.data);
   },
 
+  // Disconnect one connected Google account. The user's other accounts, and
+  // their Compass sign-in, are unaffected.
+  async disconnectGoogleConnection(connectionId: string): Promise<void> {
+    await BaseApi.delete(
+      `/auth/google/connect/${encodeURIComponent(connectionId)}`,
+    );
+  },
+
   // Enqueue Sync catch-up pulls for the signed-in user's calendars.
   async refreshGoogleSync(): Promise<ConnectionRefreshResponse> {
     const response = await BaseApi.post<ConnectionRefreshResponse>(

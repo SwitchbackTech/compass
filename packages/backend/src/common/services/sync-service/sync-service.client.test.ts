@@ -192,6 +192,50 @@ describe("SyncServiceClient", () => {
     expect(verdict.context.principalId).toBe(who.principalId);
   });
 
+  it("disconnects one connection with a signed DELETE the real Sync verifier accepts", async () => {
+    const who = principal();
+    const connectionId = "64b7f9c2e1a2b3c4d5e6f7ff";
+    // Sync answers 204 with an empty body; reading it as JSON would throw.
+    const { fn, calls } = fakeFetch(async () => ({
+      status: 204,
+      json: async () => {
+        throw new Error("204 has no body");
+      },
+    }));
+
+    const result = await client(fn).disconnectConnection(who, connectionId);
+
+    expect(result.ok).toBe(true);
+
+    const sent = calls[0];
+    expect(sent?.url).toBe(`${BASE_URL}/internal/connections/${connectionId}`);
+    expect(sent?.method).toBe("DELETE");
+
+    const verdict = verifyInternalRequest({
+      secret: SECRET,
+      headers: sent?.headers ?? {},
+      now: NOW,
+    });
+    if (!verdict.ok) throw new Error(`verify failed: ${verdict.reason}`);
+    // Sync scopes the disconnect to the signed principal, so a foreign
+    // connection id can never be disconnected through this client.
+    expect(verdict.context.principalId).toBe(who.principalId);
+  });
+
+  it("reports a disconnect of an unknown connection as a failure", async () => {
+    const { fn } = fakeFetch(async () => ({
+      status: 404,
+      json: async () => ({ error: "not_found" }),
+    }));
+
+    const result = await client(fn).disconnectConnection(
+      principal(),
+      "64b7f9c2e1a2b3c4d5e6f7ff",
+    );
+
+    expect(result.ok).toBe(false);
+  });
+
   it("lists calendars with a signed GET the real Sync verifier accepts", async () => {
     const who = principal();
     const { fn, calls } = fakeFetch(async () => ({

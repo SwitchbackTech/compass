@@ -4,10 +4,12 @@ import {
   type ConnectionBeginRequest,
   ConnectionBeginRequestSchema,
 } from "@core/types/sync/connection.contracts";
+import { ConnectionIdSchema } from "@core/types/sync/identity.contracts";
 import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import { beginSyncConnection } from "@backend/common/services/sync-service/sync-connection-begin";
+import { disconnectSyncConnection } from "@backend/common/services/sync-service/sync-connection-disconnect";
 import { refreshSyncConnection } from "@backend/common/services/sync-service/sync-connection-refresh";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
@@ -74,6 +76,28 @@ class AuthController {
     const request = ConnectionBeginRequestSchema.parse(req.body ?? {});
 
     res.promise(beginSyncConnection(client, toSyncPrincipal(userId), request));
+  };
+
+  // Disconnect one connected Google account, leaving the user's others (and
+  // their Compass sign-in) alone. Sync scopes the disconnect to the signed
+  // principal, so a connection id the caller does not own is rejected there.
+  disconnectGoogleConnection = (
+    req: SessionRequest,
+    res: Res_Promise,
+  ): void => {
+    if (rejectIfMaintenance(res)) return;
+
+    const client = getSyncServiceClient();
+    const userId = zObjectId.parse(req.session?.getUserId()).toString();
+    const connectionId = ConnectionIdSchema.parse(req.params["connectionId"]);
+
+    res.promise(
+      disconnectSyncConnection(
+        client,
+        toSyncPrincipal(userId),
+        connectionId,
+      ).then(() => ({ statusCode: 204 })),
+    );
   };
 
   // User-triggered Google calendar catch-up (Refresh calendar CTA).
