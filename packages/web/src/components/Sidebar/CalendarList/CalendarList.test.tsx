@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   type Calendar,
@@ -8,11 +8,13 @@ import {
   CalendarIdSchema,
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
+import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type ApiRequestConfig } from "@web/api/api.types";
 import { BaseApi } from "@web/api/base/base.api";
+import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { isCalendarHidden } from "@web/calendars/calendar-visibility.storage";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
@@ -49,12 +51,17 @@ const actualUseConnectGoogle = (
   await import("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle")
 ).useConnectGoogle;
 let isConnectGoogleMocked = true;
-const mockUseConnectGoogle = mock(() => ({
-  commandAction: null,
-  isAvailable: true,
-  isConnecting: false,
-  state: "NOT_CONNECTED" as const,
-}));
+// Mirrors the real hook's one behavior these tests depend on: scoping to a
+// connection reports that account's own state. (The real scoping is covered
+// directly in useConnectGoogle.scope.test.tsx.)
+const mockUseConnectGoogle = mock(
+  (options?: Parameters<typeof actualUseConnectGoogle>[0]) => ({
+    commandAction: null,
+    isAvailable: true,
+    isConnecting: false,
+    state: options?.connection?.connectionState ?? ("NOT_CONNECTED" as const),
+  }),
+);
 mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
   useConnectGoogle: (...args: Parameters<typeof actualUseConnectGoogle>) =>
     isConnectGoogleMocked
@@ -104,14 +111,40 @@ const makeCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
   ...overrides,
 });
 
+const makeConnection = (
+  accountEmail: string,
+  overrides: Partial<GoogleSyncConnectionSummary> = {},
+): GoogleSyncConnectionSummary => ({
+  id: createObjectIdString(),
+  state: "healthy",
+  stateReason: null,
+  lastSyncedAt: null,
+  lastHealthyAt: null,
+  accountEmail,
+  connectionState: "HEALTHY",
+  ...overrides,
+});
+
 const renderCalendarList = (
   calendars: Calendar[],
-  { authenticated = true }: { authenticated?: boolean } = {},
+  {
+    authenticated = true,
+    connections,
+  }: {
+    authenticated?: boolean;
+    connections?: GoogleSyncConnectionSummary[];
+  } = {},
 ) => {
   mockUseSession.mockReturnValue({
     authenticated,
     setAuthenticated: () => {},
   });
+
+  if (connections) {
+    userMetadataActions.set({
+      google: { connectionState: "HEALTHY", connections },
+    });
+  }
 
   const { queryClient, wrapper } = createStoreWrapper();
   queryClient.setQueryData(calendarQueryKeys.all, calendars);
@@ -298,6 +331,147 @@ describe("CalendarList", () => {
     await waitFor(() => {
       expect(toggle.getAttribute("aria-pressed")).toBe("true");
     });
+  });
+
+  it("groups calendars under a labelled section per account when two are connected", () => {
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const personal = makeCalendar({
+      name: "Personal",
+      accountEmail: "ahab@gmail.com",
+    });
+
+    renderCalendarList([work, personal], {
+      connections: [
+        makeConnection("ahab@pequod.com"),
+        makeConnection("ahab@gmail.com"),
+      ],
+    });
+
+    expect(
+      screen.getByRole("region", { name: "Calendars for ahab@pequod.com" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "Calendars for ahab@gmail.com" }),
+    ).toBeInTheDocument();
+    // Each account's calendars live under its own section, not one flat list.
+    expect(
+      within(
+        screen.getByRole("region", { name: "Calendars for ahab@pequod.com" }),
+      ).getByText("Work"),
+    ).toBeInTheDocument();
+    expect(
+      within(
+        screen.getByRole("region", { name: "Calendars for ahab@gmail.com" }),
+      ).getByText("Personal"),
+    ).toBeInTheDocument();
+  });
+
+  it("orders sections by connection order, not calendar order", () => {
+    const gmail = makeCalendar({
+      name: "Personal",
+      accountEmail: "ahab@gmail.com",
+    });
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+
+    renderCalendarList([gmail, work], {
+      // pequod connected first, so its section comes first even though the
+      // gmail calendar sorts ahead of it by name.
+      connections: [
+        makeConnection("ahab@pequod.com"),
+        makeConnection("ahab@gmail.com"),
+      ],
+    });
+
+    const headings = screen
+      .getAllByRole("heading", { level: 3 })
+      .map((heading) => heading.textContent);
+    expect(headings).toEqual(["ahab@pequod.com", "ahab@gmail.com"]);
+  });
+
+  it("gives each account its own status line", () => {
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const personal = makeCalendar({
+      name: "Personal",
+      accountEmail: "ahab@gmail.com",
+    });
+
+    renderCalendarList([work, personal], {
+      connections: [
+        makeConnection("ahab@pequod.com"),
+        // One broken account must not be hidden behind the healthy one.
+        makeConnection("ahab@gmail.com", {
+          state: "actionRequired",
+          stateReason: "authorizationRevoked",
+          connectionState: "RECONNECT_REQUIRED",
+        }),
+      ],
+    });
+
+    const healthy = within(
+      screen.getByRole("region", { name: "Calendars for ahab@pequod.com" }),
+    );
+    const broken = within(
+      screen.getByRole("region", { name: "Calendars for ahab@gmail.com" }),
+    );
+    expect(healthy.getByRole("status").textContent).toBe("Calendar connected");
+    expect(broken.getByRole("status").textContent).toBe(
+      "Calendar needs reconnecting",
+    );
+  });
+
+  it("keeps the flat list with a single connected account", () => {
+    // The list heading already names the sole account, so a labelled section
+    // would just repeat it.
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+
+    renderCalendarList([work], {
+      connections: [makeConnection("ahab@pequod.com")],
+    });
+
+    expect(
+      screen.queryByRole("region", { name: /Calendars for/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Work")).toBeInTheDocument();
+  });
+
+  it("leaves the local calendar outside the account sections", () => {
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const personal = makeCalendar({
+      name: "Personal",
+      accountEmail: "ahab@gmail.com",
+    });
+    const local = makeCalendar({ name: "Compass", provider: "local" });
+
+    renderCalendarList([work, personal, local], {
+      connections: [
+        makeConnection("ahab@pequod.com"),
+        makeConnection("ahab@gmail.com"),
+      ],
+    });
+
+    expect(screen.getByText("Compass")).toBeInTheDocument();
+    for (const email of ["ahab@pequod.com", "ahab@gmail.com"]) {
+      expect(
+        within(
+          screen.getByRole("region", { name: `Calendars for ${email}` }),
+        ).queryByText("Compass"),
+      ).not.toBeInTheDocument();
+    }
   });
 
   it("shows a loading state while calendars are pending", () => {

@@ -120,5 +120,13 @@ export function toGoogleSyncConnectionSummary(
     lastSyncedAt: connection.lastSyncedAt,
     lastHealthyAt: connection.lastHealthyAt,
     accountEmail: connection.account.email,
+    // This connection's own product state, so the browser can render one
+    // account's status and reconnect without knowing sync's vocabulary. The
+    // top-level `connectionState` stays the precedence winner across all
+    // connections; this is deliberately per-connection and may differ.
+    connectionState: translateConnection(
+      connection.state,
+      connection.stateReason,
+    ),
   };
 }

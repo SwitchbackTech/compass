@@ -137,7 +137,7 @@ describe("selectPrimaryGoogleConnection", () => {
 });
 
 describe("toGoogleSyncConnectionSummary", () => {
-  it("maps id, state, timestamps, and account email only", () => {
+  it("maps id, state, timestamps, account email, and the connection's own product state", () => {
     const record = {
       ...connection("delayed", "workOverdue"),
       id: "c-summary",
@@ -156,6 +156,9 @@ describe("toGoogleSyncConnectionSummary", () => {
       lastSyncedAt: "2026-07-24T10:00:00.000Z",
       lastHealthyAt: "2026-07-23T10:00:00.000Z",
       accountEmail: "user@example.com",
+      // This connection's own state, so the browser can render one account's
+      // status without knowing sync's vocabulary. delayed maps to ATTENTION.
+      connectionState: "ATTENTION",
     });
   });
 });
