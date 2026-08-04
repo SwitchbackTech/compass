@@ -10,6 +10,7 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { resetCalendarVisibilityStoreForTests } from "@web/calendars/calendar-visibility.store";
+import { resetDefaultCalendarStoreForTests } from "@web/calendars/default-calendar.store";
 import { useFeedbackStore } from "@web/components/Feedback/feedback.store";
 import { useReleaseNotesPromptStore } from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
 import { useWelcomeGuideStore } from "@web/components/WelcomeModal/welcome.guide.store";
@@ -50,6 +51,7 @@ const storeResets: StoreReset[] = [
   // Storage itself is cleared by resetBrowserState() (test-lifecycle.ts)
   // before this runs; this just resyncs the module-singleton store to match.
   resetCalendarVisibilityStoreForTests,
+  resetDefaultCalendarStoreForTests,
   // Lives on window.__weekInteractionMotionActive, which survives across
   // test files (the preload reuses one jsdom window). A test that starts a
   // real drag and never completes it would otherwise leave every later

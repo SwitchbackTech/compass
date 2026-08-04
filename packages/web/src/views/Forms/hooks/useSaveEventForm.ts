@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
+import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { parseGridEventDraft } from "@web/events/grid-event-draft.adapter";
@@ -12,6 +12,7 @@ export function useSaveEventForm() {
   const closeEventForm = useCloseEventForm();
   const { create, replace } = useEventMutations();
   const { data: calendars } = useCalendarsQuery();
+  const defaultTargetCalendarId = useDefaultTargetCalendar(calendars ?? [])?.id;
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const clearFieldErrors = useCallback(() => {
@@ -32,9 +33,7 @@ export function useSaveEventForm() {
         // Respects a calendar the user explicitly chose via CalendarSelect;
         // only an untouched draft (calendarId still null) falls back to the
         // default target calendar.
-        const calendarId =
-          draft.values.calendarId ??
-          getDefaultTargetCalendar(calendars ?? [])?.id;
+        const calendarId = draft.values.calendarId ?? defaultTargetCalendarId;
         if (!calendarId) {
           setFieldErrors({ calendarId: "Calendar is required" });
           return;
@@ -75,7 +74,13 @@ export function useSaveEventForm() {
         closeEventForm();
       }
     },
-    [calendars, clearFieldErrors, closeEventForm, create, replace],
+    [
+      defaultTargetCalendarId,
+      clearFieldErrors,
+      closeEventForm,
+      create,
+      replace,
+    ],
   );
 
   return { saveEventForm, fieldErrors, clearFieldErrors };

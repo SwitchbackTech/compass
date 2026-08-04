@@ -87,4 +87,115 @@ describe("getDefaultTargetCalendar", () => {
   it("returns undefined when there is no calendar at all", () => {
     expect(getDefaultTargetCalendar([])).toBeUndefined();
   });
+
+  it("honors the user's starred calendar over the derived default", () => {
+    const primaryGoogle = makeCalendar({
+      provider: "google",
+      isPrimary: true,
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+    const starred = makeCalendar({
+      provider: "google",
+      isPrimary: false,
+      id: "507f1f77bcf86cd799439013" as Calendar["id"],
+    });
+
+    expect(
+      getDefaultTargetCalendar([primaryGoogle, starred], {
+        preferredCalendarId: starred.id,
+      }),
+    ).toBe(starred);
+  });
+
+  it("lets the local calendar be starred explicitly", () => {
+    const local = makeCalendar({ provider: "local" });
+    const primaryGoogle = makeCalendar({
+      provider: "google",
+      isPrimary: true,
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+
+    expect(
+      getDefaultTargetCalendar([local, primaryGoogle], {
+        preferredCalendarId: local.id,
+      }),
+    ).toBe(local);
+  });
+
+  it("falls back to the derived default when the starred calendar is gone", () => {
+    const primaryGoogle = makeCalendar({
+      provider: "google",
+      isPrimary: true,
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+
+    expect(
+      getDefaultTargetCalendar([primaryGoogle], {
+        preferredCalendarId: "507f1f77bcf86cd799439099",
+      }),
+    ).toBe(primaryGoogle);
+  });
+
+  it("falls back when the starred calendar is no longer writable", () => {
+    const primaryGoogle = makeCalendar({
+      provider: "google",
+      isPrimary: true,
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+    const demoted = makeCalendar({
+      provider: "google",
+      id: "507f1f77bcf86cd799439013" as Calendar["id"],
+      capabilities: {
+        canReadAvailability: true,
+        canReadDetails: true,
+        canWrite: false,
+        canManage: false,
+        canWatchEvents: true,
+      },
+    });
+
+    expect(
+      getDefaultTargetCalendar([primaryGoogle, demoted], {
+        preferredCalendarId: demoted.id,
+      }),
+    ).toBe(primaryGoogle);
+  });
+
+  it("picks the oldest-connected account's primary when two accounts each have one", () => {
+    // Both are primary and writable, so without connection order this is a
+    // coin flip decided by array position.
+    const newerAccountPrimary = makeCalendar({
+      provider: "google",
+      isPrimary: true,
+      accountEmail: "new@example.com",
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+    const olderAccountPrimary = makeCalendar({
+      provider: "google",
+      isPrimary: true,
+      accountEmail: "old@example.com",
+      id: "507f1f77bcf86cd799439013" as Calendar["id"],
+    });
+
+    expect(
+      getDefaultTargetCalendar([newerAccountPrimary, olderAccountPrimary], {
+        accountEmailOrder: ["old@example.com", "new@example.com"],
+      }),
+    ).toBe(olderAccountPrimary);
+  });
+
+  it("still resolves when the connection order names an account with no primary", () => {
+    const primary = makeCalendar({
+      provider: "google",
+      isPrimary: true,
+      accountEmail: "new@example.com",
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+
+    expect(
+      getDefaultTargetCalendar([primary], {
+        accountEmailOrder: ["old@example.com", "new@example.com"],
+      }),
+    ).toBe(primary);
+  });
 });

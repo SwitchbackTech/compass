@@ -1,3 +1,4 @@
+import { StarIcon } from "@phosphor-icons/react";
 import { type FC } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
@@ -8,7 +9,9 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import { setDefaultCalendarId } from "@web/calendars/default-calendar.store";
 import { useCalendarVisibility } from "@web/calendars/useCalendarVisibility";
+import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { AccountSectionHeader } from "./AccountSectionHeader";
 import { CalendarListHeader } from "./CalendarListHeader";
 
@@ -96,6 +99,7 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
   const calendars = sortCalendars(
     (data ?? []).filter((calendar) => calendar.isActive),
   );
+  const defaultTargetCalendarId = useDefaultTargetCalendar(calendars)?.id;
   const { groups, ungrouped } = groupCalendarsByAccount(calendars, connections);
   const showAccountSections = groups.length > 1;
 
@@ -104,6 +108,7 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
       {rows.map((calendar) => (
         <CalendarRow
           calendar={calendar}
+          isDefaultTarget={calendar.id === defaultTargetCalendarId}
           key={calendar.id}
           onToggle={toggleCalendarVisibility}
         />
@@ -163,8 +168,9 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
 
 const CalendarRow: FC<{
   calendar: Calendar;
+  isDefaultTarget: boolean;
   onToggle: (calendarId: Calendar["id"], isVisible: boolean) => void;
-}> = ({ calendar, onToggle }) => {
+}> = ({ calendar, isDefaultTarget, onToggle }) => {
   // The heading above the row already names the account (the list heading with
   // one account, the section heading with several), so a primary calendar's
   // row reads "primary" instead of repeating it. The anonymous local sentinel
@@ -176,11 +182,11 @@ const CalendarRow: FC<{
       : calendar.name;
 
   return (
-    <li>
+    <li className="group/row flex min-w-0 items-center gap-1">
       <button
         aria-label={`${calendar.isVisible ? "Hide" : "Show"} ${displayName} calendar`}
         aria-pressed={calendar.isVisible}
-        className="c-focus-ring group flex w-full min-w-0 items-center gap-2 rounded px-1 py-0.5 text-left text-text text-xs hover:bg-surface-panel"
+        className="c-focus-ring group flex min-w-0 flex-1 items-center gap-2 rounded px-1 py-0.5 text-left text-text text-xs hover:bg-surface-panel"
         onClick={() => onToggle(calendar.id, !calendar.isVisible)}
         type="button"
       >
@@ -196,6 +202,44 @@ const CalendarRow: FC<{
         />
         <span className="min-w-0 flex-1 truncate">{displayName}</span>
       </button>
+      {calendar.capabilities.canWrite ? (
+        <DefaultCalendarStar
+          calendar={calendar}
+          displayName={displayName}
+          isDefaultTarget={isDefaultTarget}
+        />
+      ) : null}
     </li>
   );
 };
+
+/**
+ * Marks one calendar as where new events go. Starring another calendar moves
+ * the default; starring the current default clears it, falling back to the
+ * derived default. Only offered on calendars the user can write to.
+ */
+const DefaultCalendarStar: FC<{
+  calendar: Calendar;
+  displayName: string;
+  isDefaultTarget: boolean;
+}> = ({ calendar, displayName, isDefaultTarget }) => (
+  <button
+    aria-label={
+      isDefaultTarget
+        ? `${displayName} is where new events go. Select again to undo.`
+        : `Make ${displayName} where new events go`
+    }
+    aria-pressed={isDefaultTarget}
+    className={`c-focus-ring shrink-0 rounded px-1 py-0.5 text-xs hover:bg-surface-panel ${
+      isDefaultTarget
+        ? "text-accent"
+        : // Kept discoverable without cluttering every row: revealed on hover
+          // or keyboard focus, and always present for assistive tech.
+          "text-text-muted opacity-0 focus-visible:opacity-100 group-hover/row:opacity-100"
+    }`}
+    onClick={() => setDefaultCalendarId(isDefaultTarget ? null : calendar.id)}
+    type="button"
+  >
+    <StarIcon aria-hidden weight={isDefaultTarget ? "fill" : "regular"} />
+  </button>
+);

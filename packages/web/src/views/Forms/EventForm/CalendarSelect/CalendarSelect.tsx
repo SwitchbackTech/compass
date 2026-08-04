@@ -11,7 +11,10 @@ import { useRef, useState } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
+import {
+  useConnectedAccountEmails,
+  useDefaultTargetCalendar,
+} from "@web/calendars/useDefaultTargetCalendar";
 
 interface CalendarSelectProps {
   value: CalendarId | null;
@@ -32,15 +35,42 @@ const getWritableCalendars = (calendars: Calendar[]): Calendar[] =>
 
 // Primary first (it's the default target), then alphabetical - mirrors
 // CalendarList's sort so the same calendar lands in the same relative
-// position across the sidebar list and this picker.
-const sortWritableCalendars = (calendars: Calendar[]): Calendar[] =>
-  [...calendars].sort((a, b) => {
+// position across the sidebar list and this picker. With several accounts
+// connected, calendars are additionally kept together by account, in
+// connection order, so the list reads as one block per account.
+const sortWritableCalendars = (
+  calendars: Calendar[],
+  accountEmailOrder: readonly string[],
+): Calendar[] => {
+  const accountRank = (calendar: Calendar): number => {
+    const index = calendar.accountEmail
+      ? accountEmailOrder.indexOf(calendar.accountEmail)
+      : -1;
+    // Unknown account or no account (the local calendar) sorts last.
+    return index === -1 ? accountEmailOrder.length : index;
+  };
+
+  return [...calendars].sort((a, b) => {
+    const rankDelta = accountRank(a) - accountRank(b);
+    if (rankDelta !== 0) return rankDelta;
     if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
     return a.name.localeCompare(b.name);
   });
+};
 
 const calendarOptionLabel = (calendar: Calendar): string =>
   calendar.isPrimary ? `${calendar.name} (primary)` : calendar.name;
+
+// With two accounts connected, each has its own primary and its own calendar
+// named e.g. "Work", so an option needs its account to be unambiguous. With
+// one account the label is already unique and stays as it was.
+const calendarOptionDescription = (
+  calendar: Calendar,
+  showAccount: boolean,
+): string =>
+  showAccount && calendar.accountEmail
+    ? `${calendarOptionLabel(calendar)} on ${calendar.accountEmail}`
+    : calendarOptionLabel(calendar);
 
 /**
  * Labeled calendar picker for NEW/DUPLICATE event forms (writable calendars
@@ -62,9 +92,18 @@ export const CalendarSelect = ({
   id,
 }: CalendarSelectProps) => {
   const { data } = useCalendarsQuery();
+  const accountEmailOrder = useConnectedAccountEmails();
   const writableCalendars = sortWritableCalendars(
     getWritableCalendars(data ?? []),
+    accountEmailOrder,
   );
+  // Only disambiguate by account when there is something to disambiguate.
+  const showAccount =
+    new Set(
+      writableCalendars
+        .map((calendar) => calendar.accountEmail)
+        .filter(Boolean),
+    ).size > 1;
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const listRef = useRef<Array<HTMLElement | null>>([]);
@@ -76,7 +115,7 @@ export const CalendarSelect = ({
   // display default - it doesn't write to the draft until the user actually
   // picks something. useSaveEventForm.ts/useDraftActions.ts fall back to the
   // same default target at submit time if the user never touches this.
-  const defaultCalendar = getDefaultTargetCalendar(writableCalendars) ?? null;
+  const defaultCalendar = useDefaultTargetCalendar(writableCalendars) ?? null;
   const displayedCalendar = selectedCalendar ?? defaultCalendar;
   const displayedIndex = displayedCalendar
     ? writableCalendars.findIndex(
@@ -126,7 +165,7 @@ export const CalendarSelect = ({
 
   const dropdownId = "calendar-select-dropdown";
   const buttonLabel = displayedCalendar
-    ? `Calendar: ${calendarOptionLabel(displayedCalendar)}`
+    ? `Calendar: ${calendarOptionDescription(displayedCalendar, showAccount)}`
     : "Calendar";
 
   const hasError = Boolean(error);
@@ -201,6 +240,7 @@ export const CalendarSelect = ({
                   active: isActive,
                 })}
                 role="option"
+                aria-label={calendarOptionDescription(calendar, showAccount)}
                 aria-selected={isSelected}
                 tabIndex={isActive ? 0 : -1}
                 className={classNames(
@@ -217,6 +257,14 @@ export const CalendarSelect = ({
                 <span className="min-w-0 flex-1 truncate">
                   {calendarOptionLabel(calendar)}
                 </span>
+                {showAccount && calendar.accountEmail ? (
+                  <span
+                    className="min-w-0 shrink truncate text-text-muted"
+                    translate="no"
+                  >
+                    {calendar.accountEmail}
+                  </span>
+                ) : null}
               </div>
             );
           })}

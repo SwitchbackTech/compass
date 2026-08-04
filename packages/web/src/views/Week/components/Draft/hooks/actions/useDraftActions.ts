@@ -3,7 +3,7 @@ import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
+import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import { repositionDraftByKeyboard as applyDraftKeyboardReposition } from "@web/common/utils/draft/reposition-draft-by-keyboard.util";
@@ -54,6 +54,7 @@ export const useDraftActions = (
 ) => {
   const mutations = useEventMutations();
   const { data: calendars } = useCalendarsQuery();
+  const defaultTargetCalendarId = useDefaultTargetCalendar(calendars ?? [])?.id;
   const { activity, isDrafting } = useDraftStore(selectDraftStatus)!;
 
   const {
@@ -163,9 +164,7 @@ export const useDraftActions = (
           // Respects a calendar the user explicitly chose via CalendarSelect;
           // only an untouched draft (calendarId still null) falls back to the
           // default target calendar.
-          const calendarId =
-            draft.values.calendarId ??
-            getDefaultTargetCalendar(calendars ?? [])?.id;
+          const calendarId = draft.values.calendarId ?? defaultTargetCalendarId;
           if (!calendarId) return;
 
           const parsed = parseGridEventDraft({
@@ -206,7 +205,7 @@ export const useDraftActions = (
       }
     },
     [
-      calendars,
+      defaultTargetCalendarId,
       determineSubmitAction,
       discard,
       isFormOpenBeforeDragging,

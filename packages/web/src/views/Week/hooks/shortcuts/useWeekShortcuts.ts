@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
+import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
   createAlldayDraft,
@@ -52,7 +52,7 @@ export const useWeekShortcuts = ({
   const { data: calendars = [], isPending: isCalendarsPending } =
     useCalendarsQuery();
   const defaultTargetCalendarId =
-    getDefaultTargetCalendar(calendars)?.id ?? null;
+    useDefaultTargetCalendar(calendars)?.id ?? null;
   const {
     actions: { repositionDraftByKeyboard },
   } = useDraftContext();
