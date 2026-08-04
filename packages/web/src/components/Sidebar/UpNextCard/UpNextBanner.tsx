@@ -13,9 +13,12 @@ const MINUTES_BEFORE_START = 2;
  * start, mirroring Vimcal. N opens the event's details; when the event has a
  * meeting link, the primary action switches to V for "Join" instead.
  */
+const DISMISS_ANIMATION_MS = 200;
+
 export const UpNextBanner: FC = () => {
   const { now, openEventDetails, upNext, conferenceUrl } = useUpNextEvent();
   const [dismissedId, setDismissedId] = useState<string | undefined>(undefined);
+  const [isClosing, setIsClosing] = useState(false);
 
   const isWithinWindow =
     Boolean(upNext) &&
@@ -25,6 +28,22 @@ export const UpNextBanner: FC = () => {
   const openConference = () =>
     window.open(conferenceUrl, "_blank", "noopener,noreferrer");
 
+  // Keeps the banner mounted for one fade-out beat instead of yanking it
+  // instantly, matching ReleaseNotesPrompt's dismiss pattern.
+  const dismiss = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    const reducedMotion =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    window.setTimeout(
+      () => {
+        setDismissedId(upNext?._id);
+        setIsClosing(false);
+      },
+      reducedMotion ? 0 : DISMISS_ANIMATION_MS,
+    );
+  };
+
   useAppShortcutUp("N", () => openEventDetails("keyboardEdit"));
   useAppShortcutUp("V", openConference, {
     enabled: Boolean(conferenceUrl) && isWithinWindow,
@@ -33,9 +52,7 @@ export const UpNextBanner: FC = () => {
   // other Escape handling (e.g. useEscapeToCloseForm closing the event form)
   // the same way every other Escape shortcut in the app does - Escape is
   // never scoped to "not while typing" here, matching that convention.
-  useAppShortcutUp("Escape", () => setDismissedId(upNext?._id), {
-    enabled: isVisible,
-  });
+  useAppShortcutUp("Escape", dismiss, { enabled: isVisible });
 
   if (!isVisible || !upNext) {
     return null;
@@ -45,7 +62,9 @@ export const UpNextBanner: FC = () => {
 
   return (
     <div
-      className="fixed bottom-6 left-1/2 flex w-72 -translate-x-1/2 items-center gap-3 rounded border border-border bg-surface-overlay px-3 py-2 text-sm text-text shadow-lg"
+      aria-atomic="true"
+      className="fixed bottom-6 left-1/2 flex w-72 -translate-x-1/2 starting:translate-y-2 items-center gap-3 rounded-lg border border-border bg-surface-panel/80 px-3 py-2 text-sm text-text starting:opacity-0 shadow-xl backdrop-blur-md transition-all duration-300 ease-out data-closing:opacity-0 motion-reduce:transition-none"
+      data-closing={isClosing || undefined}
       role="status"
       style={{ zIndex: Z_INDEX_FLOATING_MENU }}
     >
@@ -72,7 +91,7 @@ export const UpNextBanner: FC = () => {
       <button
         aria-label="Dismiss"
         className="c-focus-ring shrink-0 rounded-xs px-1 text-text-muted hover:text-text"
-        onClick={() => setDismissedId(upNext._id)}
+        onClick={dismiss}
         type="button"
       >
         &times;

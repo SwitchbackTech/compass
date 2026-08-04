@@ -159,15 +159,20 @@ describe("UpNextBanner", () => {
     });
   });
 
-  it("dismissing hides the banner and it stays hidden for that event", () => {
+  it("dismissing fades the banner out, then hides it for that event", async () => {
     render(<UpNextBanner />, {
       events: [timedEvent(SOON_EVENT_ID, "Soon Event", 2)],
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
 
-    expect(screen.queryByText("Soon Event")).toBeNull();
-    expect(screen.queryByRole("status")).toBeNull();
+    // Stays mounted for the fade-out beat rather than vanishing instantly.
+    expect(screen.getByRole("status")).toHaveAttribute("data-closing");
+
+    await waitFor(() => {
+      expect(screen.queryByText("Soon Event")).toBeNull();
+      expect(screen.queryByRole("status")).toBeNull();
+    });
   });
 
   it("pressing Escape dismisses the banner", async () => {
@@ -180,7 +185,9 @@ describe("UpNextBanner", () => {
 
     await user.keyboard("{Escape}");
 
-    expect(screen.queryByText("Soon Event")).toBeNull();
-    expect(screen.queryByRole("status")).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByText("Soon Event")).toBeNull();
+      expect(screen.queryByRole("status")).toBeNull();
+    });
   });
 });
