@@ -430,8 +430,14 @@ test("a new event form offers only writable calendars and supports keyboard sele
   ).toHaveCount(0);
 
   // Keyboard flow: Down moves off the default (primary, index 0) selection,
-  // Enter commits it.
+  // Enter commits it. floating-ui applies the arrow-key move a frame later
+  // (roving tabindex), so wait for the active option to visibly change hands
+  // before committing - a human cannot type both keys inside one frame, but
+  // Playwright can, and an instant Enter would re-commit the old selection.
   await page.keyboard.press("ArrowDown");
+  await expect(
+    listbox.getByRole("option", { name: LOCAL_CALENDAR_NAME, exact: true }),
+  ).toHaveAttribute("tabindex", "0");
   await page.keyboard.press("Enter");
 
   await expect(
