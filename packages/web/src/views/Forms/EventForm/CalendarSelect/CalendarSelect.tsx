@@ -175,7 +175,27 @@ export const CalendarSelect = ({
       <button
         id={id}
         ref={refs.setReference}
-        {...getReferenceProps()}
+        {...getReferenceProps({
+          onKeyDown: (e) => {
+            // While the list is open, focus can sit on this trigger for a
+            // frame - useListNavigation moves it to the active option
+            // asynchronously - so a fast ArrowDown+Enter lands Enter here.
+            // The button's native Enter-click would then toggle the dropdown
+            // closed and LOSE the selection. Commit the active option
+            // instead, mirroring the floating element's own handler.
+            if (
+              isOpen &&
+              activeIndex !== null &&
+              (e.key === "Enter" || e.key === " ")
+            ) {
+              e.preventDefault();
+              const calendar = writableCalendars[activeIndex];
+              if (calendar) {
+                selectCalendar(calendar);
+              }
+            }
+          },
+        })}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-controls={isOpen ? dropdownId : undefined}

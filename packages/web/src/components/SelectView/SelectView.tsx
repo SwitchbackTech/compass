@@ -122,7 +122,27 @@ export const SelectView = ({ label, onToday }: SelectViewProps) => {
       <h1 className="text-text" aria-live="polite">
         <button
           ref={refs.setReference}
-          {...getReferenceProps()}
+          {...getReferenceProps({
+            onKeyDown: (e) => {
+              // While the list is open, focus can sit on this trigger for a
+              // frame - useListNavigation moves it to the active option
+              // asynchronously - so a fast ArrowDown+Enter lands Enter here.
+              // The button's native Enter-click would then toggle the
+              // dropdown closed and LOSE the selection. Commit the active
+              // option instead, mirroring the floating element's handler.
+              if (
+                isOpen &&
+                activeIndex !== null &&
+                (e.key === "Enter" || e.key === " ")
+              ) {
+                e.preventDefault();
+                const option = options[activeIndex];
+                if (option) {
+                  selectOption(option.onSelect);
+                }
+              }
+            },
+          })}
           type="button"
           className="c-focus-ring flex cursor-pointer items-center gap-1.5 rounded px-1 text-xl transition-colors hover:bg-text/10"
           aria-expanded={isOpen}
