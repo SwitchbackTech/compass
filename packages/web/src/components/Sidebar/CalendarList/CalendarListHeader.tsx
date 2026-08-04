@@ -1,4 +1,3 @@
-import { CaretDownIcon } from "@phosphor-icons/react";
 import classNames from "classnames";
 import { type FC, useCallback, useMemo, useSyncExternalStore } from "react";
 import {
@@ -17,15 +16,11 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import {
-  accountCalendarListId,
   SINGLE_ACCOUNT_COLLAPSE_KEY,
-  toggleAccountCollapsed,
   useCollapsedAccountKeys,
 } from "@web/calendars/collapsed-accounts.store";
-import {
-  SYNC_STATUS_VARIANT_CLASSNAME,
-  type SyncStatus,
-} from "@web/calendars/sync-status.types";
+import { SyncStatusLine } from "@web/calendars/SyncStatusLine";
+import { type SyncStatus } from "@web/calendars/sync-status.types";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
   Tooltip,
@@ -33,6 +28,7 @@ import {
   TooltipTrigger,
 } from "@web/components/Tooltip";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
+import { AccountDisclosureHeading } from "./AccountDisclosureHeading";
 import { AddAccountButton } from "./AddAccountButton";
 
 const ANONYMOUS_SAVE_MESSAGE = "Sign up to save your changes across browsers";
@@ -187,41 +183,17 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
   return (
     <>
       <div className={HEADER_ROW_CLASSNAME}>
-        <h2 className={HEADING_CLASSNAME}>
-          <button
-            aria-controls={accountCalendarListId(SINGLE_ACCOUNT_COLLAPSE_KEY)}
-            aria-expanded={!isCollapsed}
-            className="c-focus-ring flex w-full min-w-0 items-center gap-1 rounded-xs text-left"
-            onClick={() => toggleAccountCollapsed(SINGLE_ACCOUNT_COLLAPSE_KEY)}
-            type="button"
-          >
-            <CaretDownIcon
-              aria-hidden="true"
-              className={`shrink-0 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
-              size={12}
-            />
-            <span
-              className={classNames(
-                "min-w-0 truncate",
-                isSyncing ? "c-sync-text-wave" : "text-text",
-              )}
-              translate="no"
-            >
-              {email}
-            </span>
-          </button>
-        </h2>
+        <AccountDisclosureHeading
+          as="h2"
+          className="text-sm"
+          collapseKey={SINGLE_ACCOUNT_COLLAPSE_KEY}
+          email={email}
+          isCollapsed={isCollapsed}
+          isSyncing={isSyncing}
+        />
         <AddAccountButton />
       </div>
-      {syncStatus ? (
-        <p
-          aria-live="polite"
-          className={`mb-1 text-xs ${SYNC_STATUS_VARIANT_CLASSNAME[syncStatus.variant]}`}
-          role="status"
-        >
-          {syncStatus.text}
-        </p>
-      ) : null}
+      <SyncStatusLine className="mb-1" status={syncStatus} />
       {lastSyncedLabel ? (
         <p className="mb-2 text-text-muted text-xs">{lastSyncedLabel}</p>
       ) : null}

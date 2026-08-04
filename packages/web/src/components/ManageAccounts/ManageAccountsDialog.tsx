@@ -7,7 +7,7 @@ import {
   selectGoogleSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
-import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
+import { SyncStatusLine } from "@web/calendars/SyncStatusLine";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
@@ -101,13 +101,7 @@ const AccountRow: FC<AccountRowProps> = ({
         <p className="truncate text-sm text-text" translate="no">
           {accountEmail}
         </p>
-        {status ? (
-          <p
-            className={`text-xs ${SYNC_STATUS_VARIANT_CLASSNAME[status.variant]}`}
-          >
-            {status.text}
-          </p>
-        ) : null}
+        <SyncStatusLine status={status} />
       </div>
       {isConfirming ? (
         <div className="flex shrink-0 items-center gap-1">

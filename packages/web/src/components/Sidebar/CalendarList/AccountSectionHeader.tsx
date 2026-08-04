@@ -1,4 +1,3 @@
-import { CaretDownIcon } from "@phosphor-icons/react";
 import { type FC } from "react";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
@@ -6,12 +5,9 @@ import {
   formatLastSyncedLabel,
   getGoogleSyncStatus,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
-import {
-  accountCalendarListId,
-  toggleAccountCollapsed,
-  useCollapsedAccountKeys,
-} from "@web/calendars/collapsed-accounts.store";
-import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
+import { useCollapsedAccountKeys } from "@web/calendars/collapsed-accounts.store";
+import { SyncStatusLine } from "@web/calendars/SyncStatusLine";
+import { AccountDisclosureHeading } from "./AccountDisclosureHeading";
 import { AddAccountButton } from "./AddAccountButton";
 
 /**
@@ -51,37 +47,18 @@ export const AccountSectionHeader: FC<{
   return (
     <div className="mb-1.5">
       <div className="group/header mb-0.5 flex min-w-0 items-center justify-between gap-1">
-        <h3 className="min-w-0 flex-1 font-semibold text-xs leading-none">
-          <button
-            aria-controls={accountCalendarListId(accountEmail)}
-            aria-expanded={!isCollapsed}
-            className={`c-focus-ring flex w-full min-w-0 items-center gap-1 rounded-xs text-left ${
-              isSyncing ? "c-sync-text-wave" : "text-text"
-            }`}
-            onClick={() => toggleAccountCollapsed(accountEmail)}
-            type="button"
-          >
-            <CaretDownIcon
-              aria-hidden="true"
-              className={`shrink-0 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
-              size={10}
-            />
-            <span className="min-w-0 truncate" translate="no">
-              {accountEmail}
-            </span>
-          </button>
-        </h3>
+        <AccountDisclosureHeading
+          as="h3"
+          caretSize={10}
+          className="text-xs"
+          collapseKey={accountEmail}
+          email={accountEmail}
+          isCollapsed={isCollapsed}
+          isSyncing={isSyncing}
+        />
         <AddAccountButton />
       </div>
-      {syncStatus ? (
-        <p
-          aria-live="polite"
-          className={`text-xs ${SYNC_STATUS_VARIANT_CLASSNAME[syncStatus.variant]}`}
-          role="status"
-        >
-          {syncStatus.text}
-        </p>
-      ) : null}
+      <SyncStatusLine status={syncStatus} />
       {lastSyncedLabel ? (
         <p className="text-text-muted text-xs">{lastSyncedLabel}</p>
       ) : null}
