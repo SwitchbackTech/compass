@@ -9,7 +9,6 @@ import { DemoEventsBannerGate } from "@web/components/DemoEventsBanner/DemoEvent
 import { SidebarEventDetails } from "@web/components/Sidebar/EventDetails/SidebarEventDetails";
 import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";
 import { Sidebar } from "@web/components/Sidebar/Sidebar";
-import { useUpNextEventShortcut } from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
 import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
 import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
 import { toDemoEventsRange } from "@web/events/demo-events.util";
@@ -43,7 +42,6 @@ import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 
 export const WeekView = () => {
-  useUpNextEventShortcut();
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   // Event details live in the sidebar, so an open form reveals the sidebar
   // even when the user keeps it collapsed; their persisted preference is

@@ -6,6 +6,7 @@ import { isMobileOS } from "@web/common/utils/device/device.util";
 import { AuthenticatedLayout } from "@web/components/AuthenticatedLayout/AuthenticatedLayout";
 import { GlobalShortcutsHost } from "@web/components/CompassProvider/CompassProvider";
 import { MobileGate } from "@web/components/MobileGate/MobileGate";
+import { UpNextBanner } from "@web/components/Sidebar/UpNextCard/UpNextBanner";
 import SSEProvider from "@web/sse/provider/SSEProvider";
 import { BackendDownView } from "@web/views/BackendDown/BackendDown";
 
@@ -30,6 +31,7 @@ export const RootView = () => {
     <UserProvider>
       <SSEProvider>
         <GlobalShortcutsHost />
+        <UpNextBanner />
         <AuthenticatedLayout />
       </SSEProvider>
     </UserProvider>

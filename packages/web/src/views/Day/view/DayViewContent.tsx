@@ -9,7 +9,6 @@ import { DemoEventsBannerGate } from "@web/components/DemoEventsBanner/DemoEvent
 import { SidebarEventDetails } from "@web/components/Sidebar/EventDetails/SidebarEventDetails";
 import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";
 import { Sidebar } from "@web/components/Sidebar/Sidebar";
-import { useUpNextEventShortcut } from "@web/components/Sidebar/UpNextCard/useUpNextEvent";
 import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
 import { focusFirstSidebarItem } from "@web/components/Sidebar/util/sidebarFocus.util";
 import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
@@ -56,7 +55,6 @@ export const DayViewContent = memo(() => {
     onPrevious: navigateToPreviousDay,
   });
   useDayEvents(dateInView);
-  useUpNextEventShortcut();
 
   const toggleSidebar = useCallback(() => {
     viewActions.toggleSidebar();

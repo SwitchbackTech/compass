@@ -72,7 +72,7 @@ describe("shortcuts.data", () => {
       ]);
     });
 
-    it("lists the Up Next shortcut in both views", () => {
+    it("lists the Up Next shortcuts in both views", () => {
       for (const view of ["day", "week"] as const) {
         const [navigate] = getShortcutMenuSections({
           view,
@@ -82,6 +82,10 @@ describe("shortcuts.data", () => {
         expect(navigate.shortcuts).toContainEqual({
           keys: ["n"],
           label: "Open Up Next event",
+        });
+        expect(navigate.shortcuts).toContainEqual({
+          keys: ["v"],
+          label: "Join Up Next meeting",
         });
       }
     });

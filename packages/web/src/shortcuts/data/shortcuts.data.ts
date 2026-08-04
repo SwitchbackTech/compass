@@ -32,6 +32,7 @@ const getNavigateShortcuts = ({
 
   return [
     { keys: ["n"], label: "Open Up Next event" },
+    { keys: ["v"], label: "Join Up Next meeting" },
     { keys: ["j"], label: `Previous ${view}` },
     { keys: ["k"], label: `Next ${view}` },
     ...(view === "week"

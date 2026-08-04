@@ -71,6 +71,44 @@ describe("Event Contracts", () => {
 
       expect(result.success).toBe(false);
     });
+
+    it("accepts an optional conference link on details content", () => {
+      const result = EventContentSchema.safeParse({
+        kind: "details",
+        title: "x",
+        description: "y",
+        conference: {
+          url: "https://meet.google.com/abc-defg-hij",
+          label: null,
+        },
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual({
+          kind: "details",
+          title: "x",
+          description: "y",
+          conference: {
+            url: "https://meet.google.com/abc-defg-hij",
+            label: null,
+          },
+        });
+      }
+    });
+
+    it("omits conference when not provided", () => {
+      const result = EventContentSchema.safeParse({
+        kind: "details",
+        title: "x",
+        description: "y",
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).not.toHaveProperty("conference");
+      }
+    });
   });
 
   describe("EventScheduleSchema (timed)", () => {

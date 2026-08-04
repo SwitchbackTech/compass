@@ -1,4 +1,3 @@
-import userEvent from "@testing-library/user-event";
 import {
   type Calendar,
   getCalendarCapabilities,
@@ -24,7 +23,6 @@ import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { setCalendarVisibility } from "@web/calendars/calendar-visibility.store";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { formatStartsIn, UpNextCard } from "./UpNextCard";
-import { useUpNextEventShortcut } from "./useUpNextEvent";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 
@@ -230,44 +228,5 @@ describe("UpNextCard", () => {
     });
 
     expect(screen.queryByRole("link", { name: "Join" })).toBeNull();
-  });
-});
-
-describe("useUpNextEventShortcut", () => {
-  it("opens the next event form with n", async () => {
-    const user = userEvent.setup();
-    const ShortcutHarness = () => {
-      useUpNextEventShortcut();
-      return null;
-    };
-
-    render(<ShortcutHarness />, {
-      events: [timedEvent(SOON_EVENT_ID, "Soon Event", 30)],
-    });
-
-    await user.keyboard("n");
-
-    await waitFor(() => {
-      const state = useDraftStore.getState();
-      expect(state.status?.isFormOpen).toBe(true);
-      expect(state.status?.activity).toBe("keyboardEdit");
-      expect(state.gridDraft?.source?.id).toBe(
-        EventIdSchema.parse(SOON_EVENT_ID),
-      );
-    });
-  });
-
-  it("does nothing when there is no upcoming event", async () => {
-    const user = userEvent.setup();
-    const ShortcutHarness = () => {
-      useUpNextEventShortcut();
-      return null;
-    };
-
-    render(<ShortcutHarness />, { events: [] });
-
-    await user.keyboard("n");
-
-    expect(useDraftStore.getState().status?.isFormOpen).toBe(false);
   });
 });
