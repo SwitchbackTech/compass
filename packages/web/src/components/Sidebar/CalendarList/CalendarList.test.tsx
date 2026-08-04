@@ -361,6 +361,35 @@ describe("CalendarList", () => {
     ).toBeInTheDocument();
   });
 
+  it("hides the generic single-account header once account sections take over", () => {
+    // Found live on staging: the Compass login's own Google account (A7
+    // adopts it as a connection at sign-up) is always one of the sections
+    // below, so a THIRD "Calendars" header on top just repeats one section's
+    // status under a heading with no account name attached - confusing, not
+    // merely redundant.
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const personal = makeCalendar({
+      name: "Personal",
+      accountEmail: "ahab@gmail.com",
+    });
+
+    renderCalendarList([work, personal], {
+      connections: [
+        makeConnection("ahab@pequod.com"),
+        makeConnection("ahab@gmail.com"),
+      ],
+    });
+
+    expect(screen.queryByText("Calendars")).not.toBeInTheDocument();
+    // The account sections' own headings are unaffected.
+    expect(
+      screen.getByRole("region", { name: "Calendars for ahab@pequod.com" }),
+    ).toBeInTheDocument();
+  });
+
   it("orders sections by connection order, not calendar order", () => {
     const gmail = makeCalendar({
       name: "Personal",

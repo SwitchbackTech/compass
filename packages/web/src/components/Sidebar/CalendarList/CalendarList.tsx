@@ -118,7 +118,15 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
 
   return (
     <section aria-label="Calendars">
-      <Header />
+      {/* The generic single-account banner (email + connection status +
+          connect/reconnect) is redundant once account sections take over -
+          it always reflects the Compass login's own Google account (A7
+          adopts it as a connection at sign-up), which is always one of the
+          sections below, so showing both duplicates one section's status
+          under a second, unlabeled heading with no way to tell them apart.
+          Anonymous/no-accounts users never reach showAccountSections, so
+          this never hides the sign-up-prompt header they still need. */}
+      {!showAccountSections && <Header />}
 
       {isPending ? (
         <p className="text-text-muted text-xs">Loading calendars…</p>
