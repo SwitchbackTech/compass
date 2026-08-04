@@ -1,5 +1,5 @@
 import { StarIcon } from "@phosphor-icons/react";
-import { type FC } from "react";
+import { type FC, useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { useSession } from "@web/auth/compass/session/useSession";
@@ -102,11 +102,17 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
   const collapsedKeys = useCollapsedAccountKeys();
 
-  const calendars = sortCalendars(
-    (data ?? []).filter((calendar) => calendar.isActive),
+  // Re-groups on every calendar-visibility/collapse toggle otherwise, since
+  // those live in sibling external stores this component also subscribes to.
+  const calendars = useMemo(
+    () => sortCalendars((data ?? []).filter((calendar) => calendar.isActive)),
+    [data],
   );
   const defaultTargetCalendarId = useDefaultTargetCalendar(calendars)?.id;
-  const { groups, ungrouped } = groupCalendarsByAccount(calendars, connections);
+  const { groups, ungrouped } = useMemo(
+    () => groupCalendarsByAccount(calendars, connections),
+    [calendars, connections],
+  );
   const showAccountSections = groups.length > 1;
 
   const renderRows = (rows: Calendar[], id?: string) => (
