@@ -58,6 +58,22 @@ describe("syncEventInstanceToBrowser", () => {
     expect(event.calendarId).toBe(instance.calendarId);
   });
 
+  it("carries the cross-copy key through to the browser event", () => {
+    const event = syncEventInstanceToBrowser(
+      baseInstance({ icalUid: "shared@google.com" }),
+    );
+
+    expect(event.icalUid).toBe("shared@google.com");
+  });
+
+  it("leaves the cross-copy key absent when sync reported none", () => {
+    // Absent must stay absent, not become an empty string: the grid reads a
+    // missing key as "no correlation", and "" would match every other "".
+    const event = syncEventInstanceToBrowser(baseInstance());
+
+    expect("icalUid" in event).toBe(false);
+  });
+
   it("maps a series master row keeping the real eventId and rules", () => {
     const instance = baseInstance({
       recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },

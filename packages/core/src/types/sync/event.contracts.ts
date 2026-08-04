@@ -228,6 +228,10 @@ export const SyncEventInstanceSchema = z.strictObject({
   recurrence: SyncInstanceRecurrenceSchema,
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema,
+  // The provider's cross-copy correlation key, lifted out of the ownership
+  // metadata bag so consumers get a plain scalar. Copies of one meeting on
+  // different accounts share it. Absent when the provider reported none.
+  icalUid: z.string().optional(),
 });
 export type SyncEventInstance = z.infer<typeof SyncEventInstanceSchema>;
 

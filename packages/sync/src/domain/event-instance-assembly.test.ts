@@ -79,6 +79,49 @@ const byId = (...events: EventRecord[]) =>
   new Map(events.map((event) => [event._id, event]));
 
 describe("assembleEventInstances", () => {
+  it("lifts the provider's cross-copy key out of the metadata bag", () => {
+    const event = makeEvent({
+      recurrence: { kind: "single" },
+      providerMetadata: { iCalUID: "shared@google.com" },
+    });
+
+    const [instance] = assembleEventInstances(
+      [makeOccurrence({ eventId: event._id })],
+      byId(event),
+    );
+
+    expect(instance?.icalUid).toBe("shared@google.com");
+  });
+
+  it("omits the cross-copy key for an event imported without one", () => {
+    // Events imported before the key was recorded must stay contract-valid.
+    const event = makeEvent({
+      recurrence: { kind: "single" },
+      providerMetadata: null,
+    });
+
+    const [instance] = assembleEventInstances(
+      [makeOccurrence({ eventId: event._id })],
+      byId(event),
+    );
+
+    expect(instance && "icalUid" in instance).toBe(false);
+  });
+
+  it("ignores unrelated metadata when looking for the cross-copy key", () => {
+    const event = makeEvent({
+      recurrence: { kind: "single" },
+      providerMetadata: { transparency: "transparent" },
+    });
+
+    const [instance] = assembleEventInstances(
+      [makeOccurrence({ eventId: event._id })],
+      byId(event),
+    );
+
+    expect(instance && "icalUid" in instance).toBe(false);
+  });
+
   it("maps a single event to one single row carrying full content", () => {
     const event = makeEvent({ recurrence: { kind: "single" } });
     const occurrence = makeOccurrence({ eventId: event._id });

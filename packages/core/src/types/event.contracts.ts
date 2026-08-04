@@ -105,6 +105,12 @@ export const EventSchema = z.strictObject({
   recurrence: EventRecurrenceSchema,
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema.nullable(),
+  // The provider's cross-copy correlation key. When the same meeting is on
+  // two of the user's connected accounts, both copies carry the same value
+  // (unlike `id`, which is per copy), so the grid can recognize them as one
+  // meeting. Absent for events the provider reported none for, and for
+  // locally created events.
+  icalUid: z.string().optional(),
 });
 export type Event = z.infer<typeof EventSchema>;
 
