@@ -31,6 +31,7 @@ import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
 import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
+  shouldDeferEnterToTarget,
 } from "@web/common/utils/form/form.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { DescriptionEditor } from "@web/components/DescriptionEditor/DescriptionEditor";
@@ -610,6 +611,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
+    // preventDefault/stopPropagation stay off until we actually submit:
+    // TanStack applies those before the callback, so an early return for
+    // TipTap/buttons would otherwise swallow native Enter (newline / click).
     useAppShortcut(
       "Enter",
       (keyboardEvent) => {
@@ -621,9 +625,19 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           return;
         }
 
+        if (shouldDeferEnterToTarget(keyboardEvent)) {
+          return;
+        }
+
+        keyboardEvent.preventDefault();
+        keyboardEvent.stopPropagation();
         onSubmitForm();
       },
-      EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
+      {
+        ...EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
+        preventDefault: false,
+        stopPropagation: false,
+      },
     );
 
     useAppShortcut(
