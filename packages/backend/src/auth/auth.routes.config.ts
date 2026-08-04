@@ -35,6 +35,15 @@ export class AuthRoutes extends CommonRoutesConfig {
         authController.beginGoogleConnection(req, res);
       });
 
+    // Disconnect one connected Google account (the user's others are
+    // unaffected, as is their Compass sign-in).
+    this.app
+      .route(`/api/auth/google/connect/:connectionId`)
+      .all(requireSession)
+      .delete((req, res) => {
+        authController.disconnectGoogleConnection(req, res);
+      });
+
     // Enqueue Sync catch-up pulls for the signed-in user's calendars.
     this.app
       .route(`/api/auth/google/sync/refresh`)

@@ -379,6 +379,26 @@ export class SyncServiceClient {
     });
   }
 
+  // Disconnect one of the caller's connections: Sync revokes the credential at
+  // the provider and marks the connection disconnected. Scoped to the signed
+  // principal, so a foreign or missing connection is a clean not-found that
+  // revokes nothing. Idempotent. The other connections are untouched.
+  disconnectConnection(
+    principal: SyncPrincipal,
+    connectionId: string,
+    correlationId?: string,
+  ): Promise<SyncClientResult<void>> {
+    return this.#request({
+      method: "DELETE",
+      path: `${CONNECTIONS_PATH}/${encodeURIComponent(connectionId)}`,
+      principal,
+      // Sync answers 204 with no body, so there is nothing to parse and no
+      // schema to give.
+      expectNoContent: true,
+      correlationId,
+    });
+  }
+
   // Hard-delete every Sync-held row for the signed principal (account deletion).
   // Served in Sync passive mode too. Idempotent: a retry returns zero counts.
   purgePrincipal(
@@ -400,7 +420,9 @@ export class SyncServiceClient {
     query?: URLSearchParams;
     principal: SyncPrincipal;
     body?: unknown;
-    schema: z.ZodType<T>;
+    // Absent only for a no-content route, which has no body to validate.
+    schema?: z.ZodType<T>;
+    expectNoContent?: boolean;
     correlationId?: string;
     timeoutMs?: number;
   }): Promise<SyncClientResult<T>> {
@@ -446,7 +468,8 @@ export class SyncServiceClient {
     path: string;
     query?: URLSearchParams;
     body?: unknown;
-    schema: z.ZodType<T>;
+    schema?: z.ZodType<T>;
+    expectNoContent?: boolean;
     correlationId: string;
     headers: Record<string, string>;
     timeoutMs?: number;
@@ -480,6 +503,13 @@ export class SyncServiceClient {
       clearTimeout(timer);
     }
 
+    // A no-content route succeeds with 204 and an empty body; reading it as
+    // JSON would fail, and treating it as an unexpected status would turn a
+    // successful disconnect into an error.
+    if (input.expectNoContent && response.status === 204) {
+      return { ok: true, value: undefined as T, correlationId };
+    }
+
     if (response.status === 200) {
       let body: unknown;
       try {
@@ -487,8 +517,8 @@ export class SyncServiceClient {
       } catch {
         return errorResult("invalidResponse", correlationId, 200);
       }
-      const parsed = input.schema.safeParse(body);
-      if (!parsed.success) {
+      const parsed = input.schema?.safeParse(body);
+      if (!parsed?.success) {
         return errorResult("invalidResponse", correlationId, 200);
       }
       return { ok: true, value: parsed.data, correlationId };
