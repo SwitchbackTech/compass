@@ -1,4 +1,5 @@
 import {
+  BOOTSTRAP_OVERDUE_MS,
   type ConnectionStateEvidence,
   type CredentialState,
   deriveConnectionState,
@@ -124,6 +125,11 @@ export async function gatherConnectionStateEvidence(
         resource?.syncCursor != null && resource.bootstrapState === "ready"
       );
     });
+  const bootstrapOverdue = activeCalendars.some((c) => {
+    const resource = eventsByCalendar.get(c._id);
+    if (!resource || resource.bootstrapState === "ready") return false;
+    return now.getTime() - resource.createdAt.getTime() >= BOOTSTRAP_OVERDUE_MS;
+  });
 
   // "Last synced" must be as old as the least-recent active calendar. Taking
   // the newest success would let one busy calendar say "just now" while a
@@ -153,6 +159,7 @@ export async function gatherConnectionStateEvidence(
     // have a cursor plus a successful post-watch catch-up pull. A cursor alone
     // has a gap between the import and the provider watch registration.
     initialImportComplete: discoveryDone && allActiveBootstrapReady,
+    bootstrapOverdue,
     catchingUp,
     oldestDueWorkAt: oldestOverdue?.runAfter ?? null,
     // A job that used up its retry ladder on retryableTransient failures is

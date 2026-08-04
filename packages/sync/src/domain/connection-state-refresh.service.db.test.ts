@@ -4,6 +4,7 @@ import {
   type ProviderCalendarSourceId,
 } from "@core/types/sync/identity.contracts";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
+import { BOOTSTRAP_OVERDUE_MS } from "@sync/domain/connection-state";
 import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
 import { type JobEnqueue } from "@sync/storage/contracts/job.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
@@ -349,6 +350,75 @@ describe("refreshConnectionState", () => {
 
     const after = await refreshConnectionState(deps(), connection);
     expect(after.state).toBe("importing");
+  });
+
+  it("reports delayed/workOverdue once bootstrap has been incomplete past the overdue window, with no overdue job to point to", async () => {
+    // The unwatchable-calendar loop (2026-08-04): a resource that is BOTH
+    // unwatchable and has an expired sync cursor cycles cursorExpired -> repair
+    // -> subscriptionMaintain -> unsupported -> repair forever, and EVERY job
+    // in that cycle settles "done" - never overdue, never failed - so nothing
+    // in the oldestDueWorkAt evidence ever fires. Without a time-bound
+    // fallback, the connection reports "importing" with no bound, forever.
+    const connection = await seedImportingConnection();
+    const calendar = await calendars.upsertByProviderCalendar({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      providerCalendarId: "primary@example.com" as ProviderCalendarSourceId,
+      displayName: "Primary",
+      color: null,
+      active: true,
+      primary: true,
+      accessRole: "owner",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: true,
+        canReadBusy: true,
+        canInviteAttendees: true,
+      },
+    });
+    const listResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      "list-cursor",
+      new Date(),
+    );
+    const eventsResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "events",
+      calendarId: calendar._id as ProviderCalendarId,
+    });
+    // Still mid-bootstrap (never reaches "ready"), same as the live loop.
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      eventsResource._id,
+      "events-cursor",
+      new Date(),
+    );
+
+    const stillFresh = await refreshConnectionState(deps(), connection);
+    expect(stillFresh.state).toBe("importing");
+
+    const wellPastOverdue = () =>
+      new Date(eventsResource.createdAt.getTime() + BOOTSTRAP_OVERDUE_MS);
+    const after = await refreshConnectionState(
+      deps(),
+      connection,
+      wellPastOverdue,
+    );
+    expect(after.state).toBe("delayed");
+    expect(after.stateReason).toBe("workOverdue");
   });
 
   it("reports catchingUp while a user-requested pull is queued", async () => {

@@ -10,6 +10,14 @@ import {
 
 // Work overdue by at least this long stops a connection from looking healthy.
 export const DELAYED_THRESHOLD_MS = 2 * 60 * 1000;
+// An active calendar still bootstrapping after this long is delayed rather
+// than perpetually "importing", even with no retrying/overdue job to point to
+// (a chain that keeps settling every job "done" - e.g. the unsupported-watch
+// loop this guards against - never trips the oldestDueWorkAt check above,
+// since nothing is ever actually overdue). Generous relative to
+// DELAYED_THRESHOLD_MS: a large first import legitimately takes minutes, so
+// this should only fire once that explanation has been exhausted.
+export const BOOTSTRAP_OVERDUE_MS = 20 * 60 * 1000;
 
 export type CredentialState =
   | "valid"
@@ -33,6 +41,9 @@ export interface ConnectionStateEvidence {
   readonly accountIdentified: boolean;
   // The first import, watch setup, and post-watch catch-up have finished.
   readonly initialImportComplete: boolean;
+  // An active calendar has been mid-bootstrap longer than BOOTSTRAP_OVERDUE_MS.
+  // Only consulted when initialImportComplete is false.
+  readonly bootstrapOverdue: boolean;
   // A non-destructive repair or post-gap reconciliation is running while
   // existing data stays queryable.
   readonly catchingUp: boolean;
@@ -104,6 +115,13 @@ export function deriveConnectionState(
   }
 
   if (!evidence.initialImportComplete) {
+    // Same reasoning as the durableReadFailure branch above, for a bootstrap
+    // that is technically still "in progress" by job-retry bookkeeping (every
+    // job keeps settling "done") but has made no real progress in ages - don't
+    // let that hide behind a perpetual "importing" message either.
+    if (evidence.bootstrapOverdue) {
+      return { state: "delayed", reason: "workOverdue" };
+    }
     return { state: "importing", reason: null };
   }
 

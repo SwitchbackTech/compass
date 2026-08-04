@@ -131,6 +131,14 @@ describe("installIndexManifest", () => {
     expect(lastAttempt?.key).toEqual({ resourceKind: 1, lastAttemptAt: 1 });
     expect(indexes.some((i) => i.name === "last_success")).toBe(false);
     expect(indexes.some((i) => i.name === "last_attempt")).toBe(false);
+    const bootstrapStalled = indexes.find(
+      (i) => i.name === "resource_bootstrap_stalled",
+    );
+    expect(bootstrapStalled?.key).toEqual({
+      resourceKind: 1,
+      bootstrapState: 1,
+      updatedAt: 1,
+    });
   });
 
   it("enforces the unique command idempotency key", async () => {
