@@ -1,6 +1,7 @@
 import { type MouseEvent, useMemo } from "react";
 import {
   type CalendarCardIdentity,
+  findCrossAccountDuplicate,
   isGridEventInteractionReadOnly,
   resolveCalendarCardIdentity,
   useCalendarLookup,
@@ -38,6 +39,7 @@ export const AllDayEvents = ({
   const draftOverlay = useGridDraftSchemaOverlay();
   const {
     allDayEvents,
+    crossAccountDuplicates,
     events: weekEvents,
     isPending: isLoadingWeekView,
   } = useWeekEventViewModel({
@@ -73,6 +75,7 @@ export const AllDayEvents = ({
         calendarIdentity: resolveCalendarCardIdentity(
           calendarLookup,
           event.calendarId,
+          findCrossAccountDuplicate(crossAccountDuplicates, event._id),
         ),
         // Read-only (unwritable calendar or busy content) events never
         // attach interaction attributes/registration below, so the drag/
@@ -80,7 +83,7 @@ export const AllDayEvents = ({
         // optimistic state change (packet 08 step 8).
         isReadOnly: isGridEventInteractionReadOnly(calendarLookup, event),
       })),
-    [visibleAllDayEvents, calendarLookup],
+    [visibleAllDayEvents, calendarLookup, crossAccountDuplicates],
   );
 
   const { onEventKeyDown, onOpenReadOnlyDetails } =
@@ -107,6 +110,10 @@ export const AllDayEvents = ({
               ? resolveCalendarCardIdentity(
                   calendarLookup,
                   eventForDisplay.calendarId,
+                  findCrossAccountDuplicate(
+                    crossAccountDuplicates,
+                    eventForDisplay._id,
+                  ),
                 )
               : calendarIdentity;
 

@@ -9,7 +9,11 @@ import {
 } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { isRecurringEvent } from "@core/util/event/event.util";
-import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
+import {
+  type CalendarCardIdentity,
+  calendarAccentAccessibleSuffix,
+  calendarAccentStyle,
+} from "@web/calendars/useCalendarLookup";
 import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
@@ -238,7 +242,7 @@ const TimedEventCardBase = (
   // calendar signal, and the name (never color alone) is what makes it
   // accessible (A9).
   const accessibleLabel = calendarIdentity
-    ? `${samplePrefix}${baseAccessibleLabel}, ${calendarIdentity.name} calendar`
+    ? `${samplePrefix}${baseAccessibleLabel}${calendarAccentAccessibleSuffix(calendarIdentity)}`
     : `${samplePrefix}${baseAccessibleLabel}`;
 
   return (
@@ -288,7 +292,7 @@ const TimedEventCardBase = (
         <div
           aria-hidden="true"
           className="absolute inset-y-0 left-0 w-[3px]"
-          style={{ backgroundColor: calendarIdentity.backgroundColor }}
+          style={calendarAccentStyle(calendarIdentity)}
         />
       )}
       <div
