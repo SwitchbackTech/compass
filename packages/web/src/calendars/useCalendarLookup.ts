@@ -1,6 +1,10 @@
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import {
+  type CrossAccountDuplicate,
+  type CrossAccountDuplicates,
+} from "@web/events/queries/merge-cross-account-duplicates";
 
 const EMPTY_CALENDAR_LOOKUP: ReadonlyMap<CalendarId, Calendar> = new Map();
 
@@ -58,6 +62,15 @@ export function useCalendarLookup(): ReadonlyMap<CalendarId, Calendar> {
 export type CalendarCardIdentity = {
   name: string;
   backgroundColor: string;
+  /**
+   * Set when this card is standing in for a meeting that also exists on
+   * another connected account (mergeCrossAccountDuplicates). The accent
+   * becomes a two-color gradient of this calendar's color and the other
+   * account's, and the accessible label names the other account - the merge
+   * is otherwise invisible (A5), so this is the only surviving signal that a
+   * second copy exists.
+   */
+  otherAccount?: CrossAccountDuplicate;
 };
 
 /**
@@ -67,17 +80,69 @@ export type CalendarCardIdentity = {
  * active calendar - a single-calendar account's cards gain nothing from
  * either the accent or a redundant name suffix, since every card would say
  * the same thing.
+ *
+ * `duplicate` is looked up by the caller (keyed by event id) and passed in
+ * rather than looked up here, since a card's merge status is a property of
+ * the specific event instance, not of its calendar.
  */
 export function resolveCalendarCardIdentity(
   lookup: ReadonlyMap<CalendarId, Calendar>,
   calendarId: CalendarId | null | undefined,
+  duplicate?: CrossAccountDuplicate,
 ): CalendarCardIdentity | null {
   if (!calendarId || lookup.size <= 1) return null;
 
   const calendar = lookup.get(calendarId);
-  return calendar
-    ? { name: calendar.name, backgroundColor: calendar.backgroundColor }
-    : null;
+  if (!calendar) return null;
+
+  return {
+    name: calendar.name,
+    backgroundColor: calendar.backgroundColor,
+    ...(duplicate ? { otherAccount: duplicate } : {}),
+  };
+}
+
+/** Looks up a card's cross-account duplicate info by event id, or undefined. */
+export function findCrossAccountDuplicate(
+  duplicates: CrossAccountDuplicates | undefined,
+  eventId: string | undefined,
+): CrossAccountDuplicate | undefined {
+  if (!duplicates || !eventId) return undefined;
+  return duplicates.get(eventId);
+}
+
+/**
+ * The accent fill for a card's identity strip: this calendar's color, or a
+ * top-to-bottom two-stop gradient into the other account's color when the
+ * card is standing in for a cross-account duplicate (A5). Shared by
+ * TimedEventCard and AllDayEventCard so the gradient direction/shape can't
+ * drift between the two.
+ */
+export function calendarAccentStyle(identity: CalendarCardIdentity): {
+  backgroundColor?: string;
+  backgroundImage?: string;
+} {
+  if (identity.otherAccount) {
+    return {
+      backgroundImage: `linear-gradient(to bottom, ${identity.backgroundColor}, ${identity.otherAccount.backgroundColor})`,
+    };
+  }
+  return { backgroundColor: identity.backgroundColor };
+}
+
+/**
+ * The accessible-label suffix for a card's calendar identity, naming the
+ * other account when this card is a cross-account duplicate merge - the
+ * gradient accent is otherwise the only visual sign a second copy exists, and
+ * accent color alone is never how identity is conveyed (A9).
+ */
+export function calendarAccentAccessibleSuffix(
+  identity: CalendarCardIdentity,
+): string {
+  const calendarSuffix = `, ${identity.name} calendar`;
+  return identity.otherAccount
+    ? `${calendarSuffix}, also on ${identity.otherAccount.accountEmail}`
+    : calendarSuffix;
 }
 
 /**
