@@ -16,8 +16,8 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import {
+  SYNC_STATUS_VARIANT_CLASSNAME,
   type SyncStatus,
-  type SyncStatusVariant,
 } from "@web/calendars/sync-status.types";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
@@ -40,13 +40,6 @@ const ANONYMOUS_ACCOUNT_TRIGGER_CLASSNAME =
 
 const CONNECT_GOOGLE_BUTTON_CLASSNAME =
   "c-focus-ring mb-2 w-full rounded-xs bg-accent px-2 py-1.5 text-left font-medium text-on-accent text-xs hover:brightness-110 disabled:pointer-events-none disabled:opacity-60";
-
-const SYNC_STATUS_VARIANT_CLASSNAME: Record<SyncStatusVariant, string> = {
-  syncing: "c-sync-text-wave",
-  healthy: "text-text",
-  warning: "text-warning",
-  error: "text-error",
-};
 
 const getSidebarSyncStatus = ({
   googleStatus,

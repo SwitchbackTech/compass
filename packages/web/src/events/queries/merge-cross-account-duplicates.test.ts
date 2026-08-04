@@ -1,29 +1,9 @@
-import {
-  type Calendar,
-  getCalendarCapabilities,
-} from "@core/types/calendar.contracts";
-import { CalendarIdSchema } from "@core/types/domain-primitives";
+import { type Calendar } from "@core/types/calendar.contracts";
 import { type Event } from "@core/types/event.contracts";
+import { createMockCalendar as calendar } from "@web/__tests__/utils/factories/calendar.factory";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
-import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { mergeCrossAccountDuplicates } from "./merge-cross-account-duplicates";
 import { describe, expect, it } from "bun:test";
-
-const calendar = (overrides: Partial<Calendar> = {}): Calendar => ({
-  id: CalendarIdSchema.parse(createObjectIdString()),
-  name: "Work",
-  description: "",
-  timeZone: null,
-  foregroundColor: "#000000",
-  backgroundColor: "#3b82f6",
-  provider: "google",
-  access: "owner",
-  capabilities: getCalendarCapabilities("owner"),
-  isPrimary: false,
-  isVisible: true,
-  isActive: true,
-  ...overrides,
-});
 
 // The schedule fields are branded strings; one cast here keeps every test
 // below reading as plain literals.
@@ -57,34 +37,47 @@ describe("mergeCrossAccountDuplicates", () => {
 
   it("passes data through when calendars have not loaded", () => {
     const data = dataOf(copy(work));
-    expect(mergeCrossAccountDuplicates(data, undefined).data).toBe(data);
+    expect(mergeCrossAccountDuplicates(data, undefined)).toBe(data);
+  });
+
+  it("passes data through untouched with a single connected account", () => {
+    // The overwhelmingly common case: no second account means no duplicate is
+    // possible, so the per-event pass must not run at all - same reference
+    // back, no annotation.
+    const data = dataOf(copy(work), copy(work));
+    const sameAccountOnly = [
+      work,
+      calendar({ accountEmail: work.accountEmail }),
+    ];
+
+    expect(mergeCrossAccountDuplicates(data, sameAccountOnly)).toBe(data);
   });
 
   it("merges the same meeting on two accounts into one event", () => {
     const onWork = copy(work);
     const onPersonal = copy(personal);
 
-    const { data } = mergeCrossAccountDuplicates(dataOf(onWork, onPersonal), [
+    const merged = mergeCrossAccountDuplicates(dataOf(onWork, onPersonal), [
       work,
       personal,
     ]);
 
-    expect(data?.ids).toEqual([onWork.id]);
-    expect(data?.entities[onPersonal.id]).toBeUndefined();
+    expect(merged?.ids).toEqual([onWork.id]);
+    expect(merged?.entities[onPersonal.id]).toBeUndefined();
   });
 
-  it("reports the other account and its calendar colour for the survivor", () => {
+  it("stamps the other account and its calendar colour onto the data", () => {
     const onWork = copy(work);
     const onPersonal = copy(personal);
 
-    const { duplicates } = mergeCrossAccountDuplicates(
-      dataOf(onWork, onPersonal),
-      [work, personal],
-    );
+    const merged = mergeCrossAccountDuplicates(dataOf(onWork, onPersonal), [
+      work,
+      personal,
+    ]);
 
-    // The grid decorates the winning copy with the other calendar's colour;
-    // there is no synthetic merged event.
-    expect(duplicates.get(onWork.id)).toEqual({
+    // The view model joins this onto the surviving GridEvent as
+    // `otherAccount`; there is no synthetic merged event.
+    expect(merged?.crossAccountDuplicates?.get(onWork.id)).toEqual({
       accountEmail: "ahab@gmail.com",
       backgroundColor: "#ef4444",
     });
@@ -97,39 +90,41 @@ describe("mergeCrossAccountDuplicates", () => {
       schedule: slot("2026-08-04T17:00:00+00:00", "2026-08-04T18:00:00+00:00"),
     });
 
-    const { data } = mergeCrossAccountDuplicates(dataOf(onWork, onPersonal), [
+    const merged = mergeCrossAccountDuplicates(dataOf(onWork, onPersonal), [
       work,
       personal,
     ]);
 
-    expect(data?.ids).toHaveLength(2);
+    expect(merged?.ids).toHaveLength(2);
   });
 
   it("keeps both copies when they share an account", () => {
     // An invite plus a copy the user made on another of their own calendars
-    // is not a cross-account duplicate.
+    // is not a cross-account duplicate. A calendar on a second account is
+    // present so the single-account early-out does not mask the rule.
     const otherWorkCalendar = calendar({ accountEmail: "ahab@pequod.com" });
     const first = copy(work);
     const second = copy(otherWorkCalendar);
 
-    const { data } = mergeCrossAccountDuplicates(dataOf(first, second), [
+    const merged = mergeCrossAccountDuplicates(dataOf(first, second), [
       work,
       otherWorkCalendar,
+      personal,
     ]);
 
-    expect(data?.ids).toHaveLength(2);
+    expect(merged?.ids).toHaveLength(2);
   });
 
   it("keeps both copies when they carry different correlation keys", () => {
     const onWork = copy(work);
     const onPersonal = copy(personal, { icalUid: "different@google.com" });
 
-    const { data } = mergeCrossAccountDuplicates(dataOf(onWork, onPersonal), [
+    const merged = mergeCrossAccountDuplicates(dataOf(onWork, onPersonal), [
       work,
       personal,
     ]);
 
-    expect(data?.ids).toHaveLength(2);
+    expect(merged?.ids).toHaveLength(2);
   });
 
   it("never merges events with no correlation key", () => {
@@ -138,19 +133,19 @@ describe("mergeCrossAccountDuplicates", () => {
     const onWork = copy(work, { icalUid: undefined });
     const onPersonal = copy(personal, { icalUid: undefined });
 
-    const { data } = mergeCrossAccountDuplicates(dataOf(onWork, onPersonal), [
+    const merged = mergeCrossAccountDuplicates(dataOf(onWork, onPersonal), [
       work,
       personal,
     ]);
 
-    expect(data?.ids).toHaveLength(2);
+    expect(merged?.ids).toHaveLength(2);
   });
 
   it("keeps the copy on the default calendar's account", () => {
     const onWork = copy(work);
     const onPersonal = copy(personal);
 
-    const { data, duplicates } = mergeCrossAccountDuplicates(
+    const merged = mergeCrossAccountDuplicates(
       dataOf(onWork, onPersonal),
       // work sorts first, so only the default-account preference can make
       // the personal copy win.
@@ -158,14 +153,16 @@ describe("mergeCrossAccountDuplicates", () => {
       "ahab@gmail.com",
     );
 
-    expect(data?.ids).toEqual([onPersonal.id]);
-    expect(duplicates.get(onPersonal.id)?.accountEmail).toBe("ahab@pequod.com");
+    expect(merged?.ids).toEqual([onPersonal.id]);
+    expect(
+      merged?.crossAccountDuplicates?.get(onPersonal.id)?.accountEmail,
+    ).toBe("ahab@pequod.com");
   });
 
-  it("leaves a single copy untouched, returning the same data reference", () => {
+  it("returns the same data reference when nothing merges", () => {
     const data = dataOf(copy(work));
 
-    expect(mergeCrossAccountDuplicates(data, [work, personal]).data).toBe(data);
+    expect(mergeCrossAccountDuplicates(data, [work, personal])).toBe(data);
   });
 
   it("reuses the cached result for the same data and calendars", () => {
@@ -178,7 +175,7 @@ describe("mergeCrossAccountDuplicates", () => {
 
     // Same (data, calendars) references must not re-derive; a fresh object
     // each call would defeat the view model's own WeakMap downstream.
-    expect(third.data).toBe(second.data);
-    expect(first.data).not.toBe(second.data);
+    expect(third).toBe(second);
+    expect(first).not.toBe(second);
   });
 });

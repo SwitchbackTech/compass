@@ -171,61 +171,51 @@ export async function backfillIcalUid(
               .toArray();
             report.matchedMissingIcalUid += missing.length;
 
+            const now = new Date();
+            const writes: AnyBulkWriteOperation<EventRecord>[] = [];
             for (const match of missing) {
-              if (
-                report.samples.length >= 20 ||
-                !match.providerEventId ||
-                !icalUidById.has(match.providerEventId)
-              ) {
-                continue;
-              }
-              report.samples.push({
-                connectionId: connection._id,
-                calendarId: calendar._id,
-                providerEventId: match.providerEventId,
-                icalUid: icalUidById.get(match.providerEventId) as string,
-              });
-            }
+              // The query matched only rows whose providerEventId is $in the
+              // map's keys, so the lookup cannot miss; the guard is for the
+              // nullable column type only.
+              const icalUid = match.providerEventId
+                ? icalUidById.get(match.providerEventId)
+                : undefined;
+              if (!icalUid || !match.providerEventId) continue;
 
-            if (!options.dryRun && missing.length > 0) {
-              const now = new Date();
-              const writes: AnyBulkWriteOperation<EventRecord>[] = missing
-                .filter(
-                  (
-                    match,
-                  ): match is typeof match & { providerEventId: string } =>
-                    match.providerEventId !== null &&
-                    icalUidById.has(match.providerEventId),
-                )
-                .map((match) => {
-                  const icalUid = icalUidById.get(
-                    match.providerEventId,
-                  ) as string;
-                  // Full-field replace, not a dotted $set - see the function
-                  // doc comment for why.
-                  const mergedProviderMetadata = {
-                    ...(match.providerMetadata ?? {}),
-                    iCalUID: icalUid,
-                  };
-                  return {
-                    updateOne: {
-                      filter: {
-                        _id: match._id,
-                        "providerMetadata.iCalUID": { $exists: false },
-                      },
-                      update: {
-                        $set: {
-                          providerMetadata: mergedProviderMetadata,
-                          updatedAt: now,
+              if (report.samples.length < 20) {
+                report.samples.push({
+                  connectionId: connection._id,
+                  calendarId: calendar._id,
+                  providerEventId: match.providerEventId,
+                  icalUid,
+                });
+              }
+
+              if (!options.dryRun) {
+                writes.push({
+                  updateOne: {
+                    filter: {
+                      _id: match._id,
+                      "providerMetadata.iCalUID": { $exists: false },
+                    },
+                    update: {
+                      $set: {
+                        // Full-field replace, not a dotted $set - see the
+                        // function doc comment for why.
+                        providerMetadata: {
+                          ...(match.providerMetadata ?? {}),
+                          iCalUID: icalUid,
                         },
+                        updatedAt: now,
                       },
                     },
-                  };
+                  },
                 });
-              if (writes.length > 0) {
-                const result = await events.bulkWrite(writes);
-                report.updated += result.modifiedCount;
               }
+            }
+            if (writes.length > 0) {
+              const result = await events.bulkWrite(writes);
+              report.updated += result.modifiedCount;
             }
           }
 

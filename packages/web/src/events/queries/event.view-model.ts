@@ -22,8 +22,15 @@ import { type NormalizedEventQueryData } from "./event.query.types";
 // there's nothing real to duplicate/resubmit.
 export const BUSY_EVENT_TITLE = "Busy";
 
-type EventToGridEventOptions = {
-  demoEventIds?: readonly EventId[];
+// The per-event annotations stamped on NormalizedEventQueryData that this
+// view model joins onto each GridEvent (demoEventIds -> isDemo,
+// crossAccountDuplicates -> otherAccount).
+type EventAnnotations = Pick<
+  NormalizedEventQueryData,
+  "demoEventIds" | "crossAccountDuplicates"
+>;
+
+type EventToGridEventOptions = EventAnnotations & {
   /** Override schedule dates / all-day for multi-day timed display promotion. */
   scheduleOverride?: {
     isAllDay: boolean;
@@ -40,7 +47,11 @@ type EventToGridEventOptions = {
  */
 const eventToGridEvent = (
   event: Event,
-  { demoEventIds, scheduleOverride }: EventToGridEventOptions = {},
+  {
+    demoEventIds,
+    crossAccountDuplicates,
+    scheduleOverride,
+  }: EventToGridEventOptions = {},
 ): GridEvent => {
   const { schedule } = event;
   const isAllDay = scheduleOverride?.isAllDay ?? schedule.kind === "allDay";
@@ -69,6 +80,9 @@ const eventToGridEvent = (
     calendarId: event.calendarId,
     isBusy,
     isDemo: Boolean(demoEventIds?.includes(event.id)),
+    ...(crossAccountDuplicates?.has(event.id)
+      ? { otherAccount: crossAccountDuplicates.get(event.id) }
+      : {}),
     ...(scheduleOverride?.isTimedMultiDayDisplay
       ? { isTimedMultiDayDisplay: true }
       : {}),
@@ -114,14 +128,14 @@ const scheduledNonSeries = (events: Event[]) =>
 const gridEventsFrom = (
   events: Event[],
   kind: "timed" | "allDay",
-  demoEventIds?: readonly EventId[],
+  annotations?: EventAnnotations,
 ) =>
   scheduledNonSeries(events)
     .filter((event) => event.schedule.kind === kind)
-    .map((event) => eventToGridEvent(event, { demoEventIds }));
+    .map((event) => eventToGridEvent(event, { ...annotations }));
 
-const timedEventsFrom = (events: Event[], demoEventIds?: readonly EventId[]) =>
-  gridEventsFrom(events, "timed", demoEventIds).filter((event) => {
+const timedEventsFrom = (events: Event[], annotations?: EventAnnotations) =>
+  gridEventsFrom(events, "timed", annotations).filter((event) => {
     if (!event.startDate || !event.endDate) return true;
     return !shouldRenderTimedInAllDayRow(
       dayjs(event.startDate),
@@ -131,7 +145,7 @@ const timedEventsFrom = (events: Event[], demoEventIds?: readonly EventId[]) =>
 
 const multiDayTimedAsAllDayFrom = (
   events: Event[],
-  demoEventIds?: readonly EventId[],
+  annotations?: EventAnnotations,
 ): GridEvent[] =>
   scheduledNonSeries(events)
     .filter((event) => event.schedule.kind === "timed")
@@ -143,7 +157,7 @@ const multiDayTimedAsAllDayFrom = (
       const { start, end } = event.schedule;
       const dates = timedMultiDayToAllDayDates(dayjs(start), dayjs(end));
       return eventToGridEvent(event, {
-        demoEventIds,
+        ...annotations,
         scheduleOverride: {
           isAllDay: true,
           startDate: dates.startDate,
@@ -153,10 +167,10 @@ const multiDayTimedAsAllDayFrom = (
       });
     });
 
-const allDayEventsFrom = (events: Event[], demoEventIds?: readonly EventId[]) =>
+const allDayEventsFrom = (events: Event[], annotations?: EventAnnotations) =>
   assignEventsToRow([
-    ...gridEventsFrom(events, "allDay", demoEventIds),
-    ...multiDayTimedAsAllDayFrom(events, demoEventIds),
+    ...gridEventsFrom(events, "allDay", annotations),
+    ...multiDayTimedAsAllDayFrom(events, annotations),
   ]).allDayEvents;
 
 const rowCountFrom = (events: GridEvent[]) => {
@@ -180,8 +194,12 @@ const computeCalendarEventViewModel = (
 ): CalendarEventViewModel => {
   const events = eventsFrom(data);
   const demoEventIds = data?.demoEventIds;
-  const timedEvents = timedEventsFrom(events, demoEventIds);
-  const allDayEvents = allDayEventsFrom(events, demoEventIds);
+  const annotations: EventAnnotations = {
+    demoEventIds,
+    crossAccountDuplicates: data?.crossAccountDuplicates,
+  };
+  const timedEvents = timedEventsFrom(events, annotations);
+  const allDayEvents = allDayEventsFrom(events, annotations);
   return {
     entities: data?.entities ?? {},
     events,

@@ -68,7 +68,12 @@ export function useDefaultCalendarId(): string | null {
   return useSyncExternalStore(subscribe, defaultCalendarIdStore.get);
 }
 
-/** Read outside React (event handlers, non-hook utilities). */
+/**
+ * Test-only observability today: no production code reads the preference
+ * outside React (everything goes through useDefaultCalendarId /
+ * useDefaultTargetCalendar). Kept exported for the store's and the calendar
+ * list's tests; give it a real doc if a non-hook caller ever appears.
+ */
 export function getStoredDefaultCalendarId(): string | null {
   return defaultCalendarIdStore.get();
 }

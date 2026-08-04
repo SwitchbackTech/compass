@@ -1,21 +1,17 @@
 import mergeWith from "lodash/mergeWith";
 import {
   type GoogleConnectionState,
-  type GoogleSyncConnectionSummary,
   type UserMetadata,
 } from "@core/types/user.types";
 import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
-import { resolveGoogleConnectionFromSync } from "@backend/common/services/sync-service/google-connection-status";
+import {
+  type GoogleConnectionFromSync,
+  resolveGoogleConnectionFromSync,
+} from "@backend/common/services/sync-service/google-connection-status";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import { type GetUserMetadataResponse } from "@backend/user/types/user.types";
-
-type GoogleMetadataAssessment = {
-  connectionState: GoogleConnectionState;
-  connections?: GoogleSyncConnectionSummary[];
-  connection?: GoogleSyncConnectionSummary | null;
-};
 
 const legacyEmailUpdatesKey = "subscribeToUpdates";
 
@@ -51,7 +47,7 @@ class UserMetadataService {
 
   assessGoogleMetadata = async (
     userId: string,
-  ): Promise<GoogleMetadataAssessment> => {
+  ): Promise<GoogleConnectionFromSync> => {
     const client = getSyncServiceClient();
     return resolveGoogleConnectionFromSync(client, toSyncPrincipal(userId));
   };
