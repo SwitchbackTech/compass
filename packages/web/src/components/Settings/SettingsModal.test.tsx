@@ -345,9 +345,29 @@ describe("SettingsModal", () => {
     ).toBeInTheDocument();
   });
 
-  it("lists the local calendar after the account groups, not before", () => {
+  it("lists the local calendar after the account groups when no account is connected", () => {
     // The sidebar renders account sections first and the local/ungrouped
-    // calendar last; this picker used to disagree.
+    // calendar last; this picker used to disagree. With no account connected
+    // the local calendar is still a legitimate writable target (see the next
+    // test for the connected case).
+    const work = createMockCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const local = createMockCalendar({ name: "Compass", provider: "local" });
+
+    renderSettings({ connections: [], calendars: [work, local] });
+
+    const options = screen
+      .getAllByRole("option")
+      .map((option) => option.textContent);
+    expect(options).toEqual(["Work", "Compass"]);
+  });
+
+  it("excludes the local calendar once an account is connected", () => {
+    // Once any account is connected, new events belong on a provider
+    // calendar - the local calendar drops out of the writable set entirely
+    // rather than sorting last (local-calendar-visibility LCV2).
     const work = createMockCalendar({
       name: "Work",
       accountEmail: "ahab@pequod.com",
@@ -359,7 +379,7 @@ describe("SettingsModal", () => {
     const options = screen
       .getAllByRole("option")
       .map((option) => option.textContent);
-    expect(options).toEqual(["Work", "Compass"]);
+    expect(options).toEqual(["Work"]);
   });
 
   it("badges the account that owns the default calendar", () => {

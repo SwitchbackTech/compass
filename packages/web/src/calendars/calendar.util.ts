@@ -5,15 +5,37 @@ export function getLocalCalendar(calendars: Calendar[]): Calendar | undefined {
   return calendars.find((calendar) => calendar.provider === "local");
 }
 
+export interface GetWritableCalendarsOptions {
+  /**
+   * True once any account is connected. The local calendar then drops out of
+   * the writable set - a connected user's events belong on a provider
+   * calendar, and this is the prerequisite that makes it safe to stop
+   * rendering the local calendar's sidebar row (see
+   * local-calendar-visibility LCV2/LCV3). Derive this from connection state
+   * (e.g. useConnectedAccountEmails().length > 0), never from calendar rows:
+   * a just-disconnected account's Google calendars can still be present for
+   * a retention window after the connection itself is gone.
+   */
+  hasConnectedAccount?: boolean;
+}
+
 /**
  * Calendars offered as a create target: a reader/freeBusy-only calendar
  * would silently fail to accept a new event. Shared by the event form's
  * picker and the Settings default-calendar picker, which offer the same set
  * for the same reason.
  */
-export function getWritableCalendars(calendars: Calendar[]): Calendar[] {
+export function getWritableCalendars(
+  calendars: Calendar[],
+  options: GetWritableCalendarsOptions = {},
+): Calendar[] {
+  const { hasConnectedAccount = false } = options;
+
   return calendars.filter(
-    (calendar) => calendar.isActive && calendar.capabilities.canWrite,
+    (calendar) =>
+      calendar.isActive &&
+      calendar.capabilities.canWrite &&
+      (!hasConnectedAccount || calendar.provider !== "local"),
   );
 }
 

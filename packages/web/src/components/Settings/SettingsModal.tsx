@@ -78,9 +78,9 @@ export const SettingsModal: FC = () => {
   const { data } = useCalendarsQuery();
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
   const accountEmailOrder = useConnectedAccountEmails();
-  const writableCalendars = getWritableCalendars(data ?? []).sort(
-    compareCalendars(accountEmailOrder),
-  );
+  const writableCalendars = getWritableCalendars(data ?? [], {
+    hasConnectedAccount: accountEmailOrder.length > 0,
+  }).sort(compareCalendars(accountEmailOrder));
   const resolvedDefault = useDefaultTargetCalendar(writableCalendars);
 
   if (!isOpen) return null;
