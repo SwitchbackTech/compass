@@ -10,10 +10,11 @@ import {
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   accountCalendarListId,
-  SINGLE_ACCOUNT_COLLAPSE_KEY,
   useCollapsedAccountKeys,
 } from "@web/calendars/collapsed-accounts.store";
+import { SyncStatusLine } from "@web/calendars/SyncStatusLine";
 import { useCalendarVisibility } from "@web/calendars/useCalendarVisibility";
+import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 import { AccountSectionHeader } from "./AccountSectionHeader";
 import { CalendarListHeader } from "./CalendarListHeader";
 
@@ -39,11 +40,6 @@ interface AccountGroup {
 /**
  * Bucket calendars by the account they belong to, in connection order, with
  * anything lacking an account email (the local calendar) left ungrouped.
- *
- * Grouping only earns its keep once a second account exists: with one account
- * the list heading already names it, so a single labelled section would just
- * repeat the heading. Callers render the flat list whenever this returns
- * fewer than two groups.
  */
 export function groupCalendarsByAccount(
   calendars: Calendar[],
@@ -85,12 +81,7 @@ export function groupCalendarsByAccount(
   return { groups: groups.filter((g) => g.calendars.length > 0), ungrouped };
 }
 
-interface Props {
-  /** Test seam only: lets list tests stub the account header's auth/sync hooks. */
-  Header?: FC;
-}
-
-export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
+export const CalendarList: FC = () => {
   const { authenticated } = useSession();
   const { isAvailable, state } = useConnectGoogle();
   const { data, isPending, isError, refetch } = useCalendarsQuery();
@@ -98,6 +89,7 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
     useCalendarVisibility();
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
   const collapsedKeys = useCollapsedAccountKeys();
+  const hasPendingEventMutations = useHasPendingEventMutations();
 
   // Re-groups on every calendar-visibility/collapse toggle otherwise, since
   // those live in sibling external stores this component also subscribes to.
@@ -109,7 +101,6 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
     () => groupCalendarsByAccount(calendars, connections),
     [calendars, connections],
   );
-  const showAccountSections = groups.length > 1;
 
   const renderRows = (rows: Calendar[], id?: string) => (
     <ul className="flex flex-col gap-1.5" id={id}>
@@ -133,15 +124,21 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
 
   return (
     <section aria-label="Calendars">
-      {/* The generic single-account banner (email + connection status +
-          connect/reconnect) is redundant once account sections take over -
-          it always reflects the Compass login's own Google account (A7
-          adopts it as a connection at sign-up), which is always one of the
-          sections below, so showing both duplicates one section's status
-          under a second, unlabeled heading with no way to tell them apart.
-          Anonymous/no-accounts users never reach showAccountSections, so
-          this never hides the sign-up-prompt header they still need. */}
-      {!showAccountSections && <Header />}
+      {/* Every connected account carries its own heading below, so the generic
+          banner is only for users who have none yet: anonymous (sign-up
+          prompt) or signed in before connecting Google (connect CTA). Showing
+          it alongside account sections duplicated one section's status under a
+          second, unlabeled heading with no way to tell them apart. */}
+      {groups.length === 0 && <CalendarListHeader />}
+
+      {/* Event saves aren't per-account, so this belongs to the list rather
+          than to any one account's heading. */}
+      {hasPendingEventMutations ? (
+        <SyncStatusLine
+          className="mb-1"
+          status={{ variant: "syncing", text: "Saving changes…" }}
+        />
+      ) : null}
 
       {isPending ? null : isError ? (
         <div className="flex items-center justify-between gap-2 text-xs">
@@ -160,7 +157,7 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
             ? "Connect Google to see your calendars."
             : "No calendars yet."}
         </p>
-      ) : showAccountSections ? (
+      ) : (
         <div className="flex flex-col gap-3">
           {groups.map((group) => (
             <section
@@ -176,10 +173,6 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
           ))}
           {ungrouped.length > 0 ? renderRows(ungrouped) : null}
         </div>
-      ) : authenticated ? (
-        renderCollapsible(SINGLE_ACCOUNT_COLLAPSE_KEY, calendars)
-      ) : (
-        renderRows(calendars)
       )}
 
       <span aria-live="polite" className="sr-only" role="status">
@@ -193,9 +186,8 @@ const CalendarRow: FC<{
   calendar: Calendar;
   onToggle: (calendarId: Calendar["id"], isVisible: boolean) => void;
 }> = ({ calendar, onToggle }) => {
-  // The heading above the row already names the account (the list heading with
-  // one account, the section heading with several), so a primary calendar's
-  // row reads "primary" instead of repeating it. The anonymous local sentinel
+  // The account heading above the row already names the account, so a primary
+  // calendar's row reads "primary" instead of repeating it. The local sentinel
   // is also isPrimary, but a lone "primary" row under a "Temporary account"
   // header reads wrong - keep its own name.
   const displayName =

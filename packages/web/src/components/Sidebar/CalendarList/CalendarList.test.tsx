@@ -10,7 +10,10 @@ import {
 } from "@core/types/domain-primitives";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
-import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
+import {
+  seedPendingEventMutations,
+  toNormalizedEventQueryData,
+} from "@web/__tests__/utils/event-query-test-data";
 import { createMockConnection as makeConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type ApiRequestConfig } from "@web/api/api.types";
@@ -73,9 +76,25 @@ mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
       : actualUseConnectGoogle(...args),
 }));
 
+// The no-accounts-yet header (covered in CalendarListHeader.test.tsx) reads
+// the signed-in email, and takes the anonymous branch - which needs a router
+// for its sign-up modal - without one. Pinning an email keeps it on the
+// authenticated branch, which needs nothing these tests don't already have.
+// Deliberately not the account emails below, so "did the generic header
+// render?" stays a distinct question from "did an account section render?".
+const HEADER_EMAIL = "login@pequod.com";
+const actualUseUser = (await import("@web/auth/compass/user/hooks/useUser"))
+  .useUser;
+let isUserMocked = true;
+mock.module("@web/auth/compass/user/hooks/useUser", () => ({
+  useUser: (...args: Parameters<typeof actualUseUser>) =>
+    isUserMocked ? { email: HEADER_EMAIL } : actualUseUser(...args),
+}));
+
 afterAll(() => {
   isSessionMocked = false;
   isConnectGoogleMocked = false;
+  isUserMocked = false;
 });
 
 // CalendarList.tsx is already cached by the time this file runs -
@@ -93,11 +112,6 @@ const calendarListModuleUrl = new URL(
 const { CalendarList } = (await import(
   calendarListModuleUrl.href
 )) as typeof import("./CalendarList");
-
-// The real header renders the account email / temporary-account CTA via its
-// own auth+sync hooks (covered in CalendarListHeader.test.tsx); stub it
-// here so list tests don't need those hooks mocked.
-const StubHeader = () => <h2>Calendars</h2>;
 
 const makeCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
   id: CalendarIdSchema.parse(createObjectIdString()),
@@ -120,9 +134,11 @@ const renderCalendarList = (
   {
     authenticated = true,
     connections,
+    pendingEventIds = [],
   }: {
     authenticated?: boolean;
     connections?: GoogleSyncConnectionSummary[];
+    pendingEventIds?: string[];
   } = {},
 ) => {
   mockUseSession.mockReturnValue({
@@ -138,8 +154,9 @@ const renderCalendarList = (
 
   const { queryClient, wrapper } = createStoreWrapper();
   queryClient.setQueryData(calendarQueryKeys.all, calendars);
+  seedPendingEventMutations(queryClient, pendingEventIds);
 
-  const utils = render(<CalendarList Header={StubHeader} />, {
+  const utils = render(<CalendarList />, {
     wrapper,
   });
 
@@ -360,33 +377,32 @@ describe("CalendarList", () => {
     ).toBeInTheDocument();
   });
 
-  it("hides the generic single-account header once account sections take over", () => {
+  it("hides the generic header as soon as any account section exists", () => {
     // Found live on staging: the Compass login's own Google account (A7
     // adopts it as a connection at sign-up) is always one of the sections
-    // below, so a THIRD "Calendars" header on top just repeats one section's
-    // status under a heading with no account name attached - confusing, not
-    // merely redundant.
+    // below, so a generic header on top just repeats one section's status
+    // under a heading with no account name attached - confusing, not merely
+    // redundant. True with one account, not just several.
     const work = makeCalendar({
       name: "Work",
       accountEmail: "ahab@pequod.com",
     });
-    const personal = makeCalendar({
-      name: "Personal",
-      accountEmail: "ahab@gmail.com",
+
+    renderCalendarList([work], {
+      connections: [makeConnection("ahab@pequod.com")],
     });
 
-    renderCalendarList([work, personal], {
-      connections: [
-        makeConnection("ahab@pequod.com"),
-        makeConnection("ahab@gmail.com"),
-      ],
-    });
-
-    expect(screen.queryByText("Calendars")).not.toBeInTheDocument();
-    // The account sections' own headings are unaffected.
+    expect(screen.queryByText(HEADER_EMAIL)).not.toBeInTheDocument();
     expect(
       screen.getByRole("region", { name: "Calendars for ahab@pequod.com" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows the generic header while the user has no connected account", () => {
+    renderCalendarList([makeCalendar({ name: "Compass", provider: "local" })]);
+
+    expect(screen.getByText(HEADER_EMAIL)).toBeInTheDocument();
+    expect(screen.getByText("Compass")).toBeInTheDocument();
   });
 
   it("orders sections by connection order, not calendar order", () => {
@@ -409,7 +425,7 @@ describe("CalendarList", () => {
     });
 
     const headings = screen
-      .getAllByRole("heading", { level: 3 })
+      .getAllByRole("heading", { level: 2 })
       .map((heading) => heading.textContent);
     expect(headings).toEqual(["ahab@pequod.com", "ahab@gmail.com"]);
   });
@@ -450,9 +466,10 @@ describe("CalendarList", () => {
     );
   });
 
-  it("keeps the flat list with a single connected account", () => {
-    // The list heading already names the sole account, so a labelled section
-    // would just repeat it.
+  it("gives a lone account the same labelled section as several", () => {
+    // One account and five render the same shape. The single-account header
+    // that used to stand in here drifted from the section header it mirrored
+    // (it alone showed "Saving changes…"), so there is now just the one.
     const work = makeCalendar({
       name: "Work",
       accountEmail: "ahab@pequod.com",
@@ -462,10 +479,38 @@ describe("CalendarList", () => {
       connections: [makeConnection("ahab@pequod.com")],
     });
 
+    const section = screen.getByRole("region", {
+      name: "Calendars for ahab@pequod.com",
+    });
+    expect(within(section).getByText("Work")).toBeInTheDocument();
     expect(
-      screen.queryByRole("region", { name: /Calendars for/ }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByText("Work")).toBeInTheDocument();
+      within(section).getByRole("button", { name: "ahab@pequod.com" }),
+    ).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("announces a pending event save once for the list, whatever the account count", () => {
+    // Regression: this line lived only in the single-account header, so a
+    // user with two accounts connected never saw a save acknowledged at all.
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const personal = makeCalendar({
+      name: "Personal",
+      accountEmail: "ahab@gmail.com",
+    });
+
+    renderCalendarList([work, personal], {
+      connections: [
+        makeConnection("ahab@pequod.com"),
+        makeConnection("ahab@gmail.com"),
+      ],
+      pendingEventIds: ["event-1"],
+    });
+
+    // Not getByRole("status") - the list's own sr-only failure announcer is
+    // also a status region.
+    expect(screen.getByText("Saving changes…")).toBeInTheDocument();
   });
 
   it("leaves the local calendar outside the account sections", () => {
@@ -558,7 +603,7 @@ describe("CalendarList", () => {
     BaseApi.defaults.adapter = () => new Promise(() => {});
     const { wrapper } = createStoreWrapper();
 
-    render(<CalendarList Header={StubHeader} />, { wrapper });
+    render(<CalendarList />, { wrapper });
 
     expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
@@ -586,7 +631,7 @@ describe("CalendarList", () => {
       };
     };
     const { wrapper } = createStoreWrapper();
-    render(<CalendarList Header={StubHeader} />, { wrapper });
+    render(<CalendarList />, { wrapper });
 
     await waitFor(() => {
       expect(screen.getByText(/couldn.t load calendars/i)).toBeInTheDocument();

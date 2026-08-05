@@ -10,20 +10,12 @@ import {
 } from "./collapsed-accounts.storage";
 
 /**
- * Collapse key for the flat single-account calendar list. It's a display
- * preference ("I don't want to see subcalendars"), not tied to which
- * specific account happens to be connected, so a fixed sentinel is simpler
- * than threading the signed-in email down to CalendarList just for this.
- */
-export const SINGLE_ACCOUNT_COLLAPSE_KEY = "single-account";
-
-/**
  * Deterministic id shared between an account's heading (aria-controls) and
  * its calendar list (id) - the two are separate sibling components, so this
- * can't be a useId().
+ * can't be a useId(). Keys are account emails.
  */
-export function accountCalendarListId(key: string): string {
-  return `account-calendars-${key}`;
+export function accountCalendarListId(accountEmail: string): string {
+  return `account-calendars-${accountEmail}`;
 }
 
 const collapsedStore = createExternalStore<ReadonlySet<string>>(

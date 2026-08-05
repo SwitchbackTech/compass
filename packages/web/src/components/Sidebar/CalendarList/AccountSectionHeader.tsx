@@ -1,20 +1,27 @@
+import { CaretDownIcon } from "@phosphor-icons/react";
+import classNames from "classnames";
 import { type FC } from "react";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { getGoogleSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
-import { useCollapsedAccountKeys } from "@web/calendars/collapsed-accounts.store";
+import { getSidebarSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import {
+  accountCalendarListId,
+  toggleAccountCollapsed,
+  useCollapsedAccountKeys,
+} from "@web/calendars/collapsed-accounts.store";
 import { SyncStatusLine } from "@web/calendars/SyncStatusLine";
-import { AccountDisclosureHeading } from "./AccountDisclosureHeading";
 
 /**
  * Heading for one connected account's calendars: the account email (also the
  * collapse toggle for its calendar rows, see CalendarList.tsx), that
- * account's own sync status, and its own reconnect/refresh action. Rendered
- * only when more than one account is connected - with a single account the
- * calendar list heading already carries all of this. Adding/disconnecting
- * accounts lives in the command palette's "Add account" / "Show accounts"
- * items - not a permanent row or icon here, which stayed noisy for accounts
- * with many subcalendars.
+ * account's own sync status, and its own reconnect/refresh action. Every
+ * connected account gets one, a lone account included - one account and five
+ * accounts render the same shape, so the two can't drift apart the way a
+ * separate single-account header did.
+ *
+ * Adding/disconnecting accounts lives in the command palette's "Add account" /
+ * "Show accounts" items - not a permanent row or icon here, which stayed noisy
+ * for accounts with many subcalendars.
  */
 export const AccountSectionHeader: FC<{
   accountEmail: string;
@@ -22,33 +29,51 @@ export const AccountSectionHeader: FC<{
 }> = ({ accountEmail, connection }) => {
   const { commandAction, isAvailable, isConnecting, isRefreshing, state } =
     useConnectGoogle({ connection });
-  const syncStatus = getGoogleSyncStatus(state, connection);
-  const isSyncing = syncStatus?.variant === "syncing";
+  const syncStatus = getSidebarSyncStatus({ connection, isConnecting, state });
+  const isCollapsed = useCollapsedAccountKeys().has(accountEmail);
   const actionLabel =
     commandAction == null
       ? null
       : isConnecting
-        ? "Reconnecting…"
+        ? state === "RECONNECT_REQUIRED"
+          ? "Reconnecting…"
+          : "Connecting…"
         : isRefreshing
           ? "Refreshing…"
           : commandAction.label;
-  const collapsedKeys = useCollapsedAccountKeys();
-  const isCollapsed = collapsedKeys.has(accountEmail);
 
   return (
     <div className="mb-1.5">
-      <AccountDisclosureHeading
-        as="h3"
-        caretSize={10}
-        className="mb-0.5 text-xs"
-        collapseKey={accountEmail}
-        email={accountEmail}
-        isCollapsed={isCollapsed}
-        isSyncing={isSyncing}
-      />
-      <SyncStatusLine
-        status={syncStatus?.variant === "healthy" ? null : syncStatus}
-      />
+      <h2 className="mb-0.5 font-semibold text-sm leading-none">
+        <button
+          aria-controls={accountCalendarListId(accountEmail)}
+          aria-expanded={!isCollapsed}
+          className="c-focus-ring group flex w-full min-w-0 items-center gap-1 rounded-xs text-left"
+          onClick={() => toggleAccountCollapsed(accountEmail)}
+          type="button"
+        >
+          <CaretDownIcon
+            aria-hidden="true"
+            className={classNames(
+              "shrink-0 transition-transform",
+              isCollapsed && "-rotate-90",
+            )}
+            size={12}
+          />
+          <span
+            className={classNames(
+              "min-w-0 truncate",
+              syncStatus?.variant === "syncing"
+                ? "c-sync-text-wave"
+                : "text-text-muted group-hover:text-text",
+            )}
+            translate="no"
+          >
+            {accountEmail}
+          </span>
+        </button>
+      </h2>
+      <SyncStatusLine status={syncStatus} />
       {isAvailable && commandAction != null && actionLabel != null ? (
         <button
           aria-busy={isConnecting || isRefreshing || undefined}
