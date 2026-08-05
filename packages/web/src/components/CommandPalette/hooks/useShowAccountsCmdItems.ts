@@ -1,11 +1,10 @@
 import { UsersIcon } from "@phosphor-icons/react";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
-import { useManageAccounts } from "@web/components/ManageAccounts/hooks/useManageAccounts";
+import { settingsActions } from "@web/settings/settings.store";
 
-export const useManageAccountsCmdItems = (): CommandItem[] => {
+export const useShowAccountsCmdItems = (): CommandItem[] => {
   const { authenticated } = useSession();
-  const { openManageAccounts } = useManageAccounts();
 
   if (!authenticated) {
     return [];
@@ -13,10 +12,11 @@ export const useManageAccountsCmdItems = (): CommandItem[] => {
 
   return [
     {
-      id: "manage-accounts",
-      label: "Add/remove accounts",
+      id: "show-accounts",
+      label: "Show accounts",
       icon: UsersIcon,
-      onClick: openManageAccounts,
+      shortcut: ["Mod", ","],
+      onClick: settingsActions.openSettings,
     },
   ];
 };

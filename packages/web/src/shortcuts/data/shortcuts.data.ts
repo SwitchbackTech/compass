@@ -103,6 +103,7 @@ const getOtherShortcuts = (): Shortcut[] => [
   { keys: ["]"], label: "Toggle sidebar" },
   { keys: ["?"], label: "Toggle shortcuts" },
   { keys: ["Mod", "k"], label: "Command Palette" },
+  { keys: ["Mod", ","], label: "Settings" },
   { keys: ["Mod", "Z"], label: "Undo last change" },
   { keys: ["Mod", "Shift", "Z"], label: "Redo last change" },
 ];

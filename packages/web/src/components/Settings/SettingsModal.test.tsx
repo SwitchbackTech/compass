@@ -1,11 +1,16 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { type Calendar } from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
+import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
 import { AuthApi } from "@web/api/auth.api";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
-import { ManageAccountsDialog } from "./ManageAccountsDialog";
-import { describe, expect, it, mock, spyOn } from "bun:test";
+import { calendarQueryKeys } from "@web/calendars/calendar.query";
+import { getStoredDefaultCalendarId } from "@web/calendars/default-calendar.store";
+import { settingsActions } from "@web/settings/settings.store";
+import { SettingsModal } from "./SettingsModal";
+import { describe, expect, it, spyOn } from "bun:test";
 
 const connection = (
   overrides: Partial<GoogleSyncConnectionSummary> = {},
@@ -20,38 +25,44 @@ const connection = (
   ...overrides,
 });
 
-const renderDialog = (
-  connections: GoogleSyncConnectionSummary[] = [connection()],
-) => {
+const renderSettings = ({
+  connections = [connection()],
+  calendars = [],
+  open = true,
+}: {
+  connections?: GoogleSyncConnectionSummary[];
+  calendars?: Calendar[];
+  open?: boolean;
+} = {}) => {
   userMetadataActions.set({
     google: { connectionState: "HEALTHY", connections },
   });
-  const { wrapper } = createStoreWrapper();
-  return render(<ManageAccountsDialog isOpen onDismiss={mock()} />, {
-    wrapper,
-  });
+  const { queryClient, wrapper } = createStoreWrapper();
+  queryClient.setQueryData(calendarQueryKeys.all, calendars);
+  if (open) settingsActions.openSettings();
+
+  return { queryClient, ...render(<SettingsModal />, { wrapper }) };
 };
 
-describe("ManageAccountsDialog", () => {
+describe("SettingsModal", () => {
   it("renders nothing while closed", () => {
-    const { wrapper } = createStoreWrapper();
-    render(<ManageAccountsDialog isOpen={false} onDismiss={mock()} />, {
-      wrapper,
-    });
+    renderSettings({ open: false });
 
-    expect(screen.queryByText("Google accounts")).not.toBeInTheDocument();
+    expect(screen.queryByText("Settings")).not.toBeInTheDocument();
   });
 
   it("lists every connected account with its own status", () => {
-    renderDialog([
-      connection(),
-      connection({
-        id: "connection-2",
-        accountEmail: "ahab@gmail.com",
-        state: "disconnected",
-        connectionState: "RECONNECT_REQUIRED",
-      }),
-    ]);
+    renderSettings({
+      connections: [
+        connection(),
+        connection({
+          id: "connection-2",
+          accountEmail: "ahab@gmail.com",
+          state: "disconnected",
+          connectionState: "RECONNECT_REQUIRED",
+        }),
+      ],
+    });
 
     expect(screen.getByText("ahab@pequod.com")).toBeInTheDocument();
     expect(screen.getByText("ahab@gmail.com")).toBeInTheDocument();
@@ -66,7 +77,7 @@ describe("ManageAccountsDialog", () => {
     ).mockResolvedValue(undefined);
 
     const user = userEvent.setup({ delay: null });
-    renderDialog();
+    renderSettings();
 
     await user.click(
       screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
@@ -91,7 +102,7 @@ describe("ManageAccountsDialog", () => {
     ).mockResolvedValue(undefined);
 
     const user = userEvent.setup({ delay: null });
-    renderDialog([connection({ id: "connection-second" })]);
+    renderSettings({ connections: [connection({ id: "connection-second" })] });
 
     await user.click(
       screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
@@ -116,7 +127,7 @@ describe("ManageAccountsDialog", () => {
     ).mockResolvedValue(undefined);
 
     const user = userEvent.setup({ delay: null });
-    renderDialog();
+    renderSettings();
 
     await user.click(
       screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
@@ -138,7 +149,7 @@ describe("ManageAccountsDialog", () => {
     ).mockRejectedValue(new Error("nope"));
 
     const user = userEvent.setup({ delay: null });
-    renderDialog();
+    renderSettings();
 
     await user.click(
       screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
@@ -160,21 +171,82 @@ describe("ManageAccountsDialog", () => {
   });
 
   it("shows an empty state with no accounts connected", () => {
-    renderDialog([]);
+    renderSettings({ connections: [] });
 
     expect(screen.getByText("No accounts connected yet.")).toBeInTheDocument();
   });
 
-  it("dismisses via the Done button", async () => {
-    const onDismiss = mock();
-    userMetadataActions.set({
-      google: { connectionState: "HEALTHY", connections: [connection()] },
-    });
-    const { wrapper } = createStoreWrapper();
+  it("steps back out of an open confirm on Escape before closing the modal", async () => {
     const user = userEvent.setup({ delay: null });
-    render(<ManageAccountsDialog isOpen onDismiss={onDismiss} />, { wrapper });
+    renderSettings();
 
-    await user.click(screen.getByRole("button", { name: "Done" }));
-    expect(onDismiss).toHaveBeenCalledTimes(1);
+    await user.click(
+      screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
+    );
+    expect(
+      screen.getByRole("button", {
+        name: "Confirm disconnecting ahab@pequod.com",
+      }),
+    ).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    expect(
+      screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Settings")).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    expect(screen.queryByText("Settings")).not.toBeInTheDocument();
+  });
+
+  it("shows the derived default calendar in the picker when nothing is stored", () => {
+    const primary = createMockCalendar({ name: "Personal", isPrimary: true });
+    const side = createMockCalendar({ name: "Side project" });
+
+    renderSettings({ calendars: [primary, side] });
+
+    expect(
+      screen.getByRole("combobox", { name: "Default Calendar" }),
+    ).toHaveValue(primary.id);
+  });
+
+  it("persists a new default calendar pick", async () => {
+    const primary = createMockCalendar({ name: "Personal", isPrimary: true });
+    const side = createMockCalendar({ name: "Side project" });
+
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ calendars: [primary, side] });
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Default Calendar" }),
+      side.id,
+    );
+
+    expect(getStoredDefaultCalendarId()).toBe(side.id);
+  });
+
+  it("badges the account that owns the default calendar", () => {
+    const work = createMockCalendar({
+      name: "Work",
+      isPrimary: true,
+      accountEmail: "ahab@pequod.com",
+    });
+
+    renderSettings({
+      connections: [
+        connection(),
+        connection({ id: "connection-2", accountEmail: "ahab@gmail.com" }),
+      ],
+      calendars: [work],
+    });
+
+    const pequodRow = screen.getByText("ahab@pequod.com").closest("div");
+    expect(
+      pequodRow ? within(pequodRow).getByText("Default") : null,
+    ).toBeInTheDocument();
+    const gmailRow = screen.getByText("ahab@gmail.com").closest("div");
+    expect(
+      gmailRow ? within(gmailRow).queryByText("Default") : null,
+    ).not.toBeInTheDocument();
   });
 });

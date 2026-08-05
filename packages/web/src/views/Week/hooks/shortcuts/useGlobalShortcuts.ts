@@ -95,6 +95,18 @@ export function useNavigationShortcuts() {
       ignoreAppLock: true,
     },
   );
+
+  useAppShortcut(
+    "Mod+,",
+    () => {
+      settingsActions.toggleSettings();
+    },
+    {
+      ignoreInputs: false,
+      blurOnTrigger: true,
+      ignoreAppLock: true,
+    },
+  );
 }
 
 export function useCalendarShellShortcuts() {
