@@ -17,7 +17,7 @@ import { useDeleteAccountCmdItems } from "@web/components/CommandPalette/hooks/u
 import { useDemoEventsCmdItems } from "@web/components/CommandPalette/hooks/useDemoEventsCmdItems";
 import { useExportDataCmdItems } from "@web/components/CommandPalette/hooks/useExportDataCmdItems";
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
-import { useManageAccountsCmdItems } from "@web/components/CommandPalette/hooks/useManageAccountsCmdItems";
+import { useShowAccountsCmdItems } from "@web/components/CommandPalette/hooks/useShowAccountsCmdItems";
 import { useSubscribeCmdItems } from "@web/components/CommandPalette/hooks/useSubscribeCmdItems";
 import { useThemeCmdItems } from "@web/components/CommandPalette/hooks/useThemeCmdItems";
 import { getMoreCommandPaletteSections } from "@web/components/CommandPalette/more.cmd.constants";
@@ -241,7 +241,7 @@ export const CommandPalette = ({
   const exportDataCmdItems = useExportDataCmdItems();
   const demoEventsCmdItems = useDemoEventsCmdItems();
   const authCmdItems = useAuthCmdItems();
-  const manageAccountsCmdItems = useManageAccountsCmdItems();
+  const showAccountsCmdItems = useShowAccountsCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
   const deleteAccountCmdItems = useDeleteAccountCmdItems();
   const themeCmdItems = useThemeCmdItems();
@@ -290,7 +290,7 @@ export const CommandPalette = ({
         ...subscribeCmdItems,
         ...exportDataCmdItems,
         ...authCmdItems,
-        ...manageAccountsCmdItems,
+        ...showAccountsCmdItems,
         ...logoutCmdItems,
         ...deleteAccountCmdItems,
       ],

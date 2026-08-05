@@ -13,7 +13,7 @@ import { DeleteAccountConfirmationProvider } from "@web/components/DeleteAccount
 import { FeedbackDialogHost } from "@web/components/Feedback/FeedbackDialogHost";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
-import { ManageAccountsProvider } from "@web/components/ManageAccounts/ManageAccountsProvider";
+import { SettingsModal } from "@web/components/Settings/SettingsModal";
 import { RecurrenceScopeOpportunityHost } from "@web/events/recurrence/RecurrenceScopeOpportunityHost";
 import { selectTheme, useThemeStore } from "@web/settings/theme/theme.store";
 import { useUndoRedoShortcuts } from "@web/views/Week/hooks/shortcuts/useUndoRedoShortcuts";
@@ -65,7 +65,8 @@ export const CompassRequiredProviders = ({
           <IconProvider>
             <LogoutConfirmationProvider>
               <DeleteAccountConfirmationProvider>
-                <ManageAccountsProvider>{children}</ManageAccountsProvider>
+                {children}
+                <SettingsModal />
               </DeleteAccountConfirmationProvider>
               <ThemeAwareToastContainer />
             </LogoutConfirmationProvider>
