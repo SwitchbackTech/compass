@@ -1,4 +1,5 @@
 import { Logger } from "@core/logger/winston.logger";
+import { startOtelLogs, stopOtelLogs } from "@core/logger/otel-logs";
 import {
   SYNC_RECONCILE_SWEEP_EVENT,
   SyncReconcileSweepEventSchema,
@@ -168,6 +169,13 @@ function closeHttpServer(httpServer: Server): Promise<void> {
 async function start(): Promise<void> {
   const config = loadSyncConfig();
 
+  startOtelLogs({
+    serviceName: "compass-sync",
+    nodeEnv: config.NODE_ENV,
+    posthogKey: config.POSTHOG_KEY,
+    posthogHost: config.POSTHOG_HOST,
+  });
+
   // Build the mongo service before the app so the internal connection API can
   // read from it. It is not connected yet; the app binds its port first and the
   // routes access the db lazily, per request.
@@ -179,6 +187,7 @@ async function start(): Promise<void> {
   // depend on it. Readiness reflects storage state, so /health/ready stays 503
   // until Mongo is connected and its indexes are installed.
   service.shutdown.register("mongo", () => mongo.disconnect());
+  service.shutdown.register("otel-logs", () => stopOtelLogs());
   service.readiness.register("storage", async () => {
     if (!mongo.isConnected) return false;
     await mongo.db.command({ ping: 1 });

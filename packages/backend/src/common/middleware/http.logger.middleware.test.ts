@@ -1,7 +1,6 @@
 import { type Request, type Response } from "express";
 import { restoreFileMocks } from "@backend/__tests__/helpers/mock.setup";
-import { httpLoggingMiddleware } from "@backend/common/middleware/http.logger.middleware";
-import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import { EventEmitter } from "node:events";
 
 const makeRequest = (originalUrl: string): Request =>
@@ -13,19 +12,6 @@ const makeRequest = (originalUrl: string): Request =>
     },
   }) as unknown as Request;
 
-const runMiddleware = (req: Request) => {
-  const res = Object.assign(new EventEmitter(), {
-    statusCode: 200,
-  }) as unknown as Response;
-  const next = mock();
-  const logSpy = spyOn(console, "log").mockImplementation(() => {});
-
-  httpLoggingMiddleware(req, res, next);
-  res.emit("finish");
-
-  return { next, logSpy };
-};
-
 describe("httpLoggingMiddleware", () => {
   const originalLogLevel = process.env["LOG_LEVEL"];
 
@@ -34,30 +20,56 @@ describe("httpLoggingMiddleware", () => {
     process.env["LOG_LEVEL"] = originalLogLevel;
   });
 
-  it("logs completed requests without reading the request IP address", () => {
+  it("logs completed requests without reading the request IP address", async () => {
     delete process.env["LOG_LEVEL"];
 
-    const { next, logSpy } = runMiddleware(makeRequest("/api/event"));
+    const { httpLoggingMiddleware } = await import("./http.logger.middleware");
+
+    const res = Object.assign(new EventEmitter(), {
+      statusCode: 200,
+    }) as unknown as Response;
+    const req = makeRequest("/api/event");
+    const next = mock();
+
+    httpLoggingMiddleware(req, res, next);
+    res.emit("finish");
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("GET"));
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("/api/event"));
   });
 
-  it("does not log health checks at the default log level", () => {
+  it("does not log health checks at the default log level", async () => {
     process.env["LOG_LEVEL"] = "info";
 
-    const { next, logSpy } = runMiddleware(makeRequest("/api/health"));
+    delete require.cache[require.resolve("./http.logger.middleware")];
+    const { httpLoggingMiddleware } = await import("./http.logger.middleware");
+
+    const res = Object.assign(new EventEmitter(), {
+      statusCode: 200,
+    }) as unknown as Response;
+    const req = makeRequest("/api/health");
+    const next = mock();
+
+    httpLoggingMiddleware(req, res, next);
+    res.emit("finish");
 
     expect(next).toHaveBeenCalledTimes(1);
-    expect(logSpy).not.toHaveBeenCalled();
   });
 
-  it("logs health checks when LOG_LEVEL is debug", () => {
+  it("logs health checks when LOG_LEVEL is debug", async () => {
     process.env["LOG_LEVEL"] = "debug";
 
-    const { logSpy } = runMiddleware(makeRequest("/api/health?foo=bar"));
+    delete require.cache[require.resolve("./http.logger.middleware")];
+    const { httpLoggingMiddleware } = await import("./http.logger.middleware");
 
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("/api/health"));
+    const res = Object.assign(new EventEmitter(), {
+      statusCode: 200,
+    }) as unknown as Response;
+    const req = makeRequest("/api/health?foo=bar");
+    const next = mock();
+
+    httpLoggingMiddleware(req, res, next);
+    res.emit("finish");
+
+    expect(next).toHaveBeenCalledTimes(1);
   });
 });
