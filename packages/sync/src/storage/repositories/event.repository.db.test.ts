@@ -101,6 +101,52 @@ describe("EventRepository", () => {
     expect(await db.collection("events").countDocuments()).toBe(1);
   });
 
+  it("preserves iCalUID atomically when a sparse upsert omits it", async () => {
+    const identity = {
+      connectionId: objectId(),
+      calendarId: objectId(),
+      providerEventId: "evt-uid",
+    };
+    const first = await repo.upsertByProviderIdentity(
+      linkedUpsert({
+        ...identity,
+        providerMetadata: { iCalUID: "kept@google.com" },
+      }),
+      { preserveIcalUidWhenAbsent: true },
+    );
+    expect(first.providerMetadata).toEqual({ iCalUID: "kept@google.com" });
+
+    const second = await repo.upsertByProviderIdentity(
+      linkedUpsert({
+        ...identity,
+        providerVersion: "etag-2",
+        providerMetadata: null,
+      }),
+      { preserveIcalUidWhenAbsent: true },
+    );
+    expect(second._id).toBe(first._id);
+    expect(second.providerVersion).toBe("etag-2");
+    expect(second.providerMetadata).toEqual({ iCalUID: "kept@google.com" });
+  });
+
+  it("clears providerMetadata when preserve is off", async () => {
+    const identity = {
+      connectionId: objectId(),
+      calendarId: objectId(),
+      providerEventId: "evt-clear",
+    };
+    await repo.upsertByProviderIdentity(
+      linkedUpsert({
+        ...identity,
+        providerMetadata: { iCalUID: "gone@google.com" },
+      }),
+    );
+    const cleared = await repo.upsertByProviderIdentity(
+      linkedUpsert({ ...identity, providerMetadata: null }),
+    );
+    expect(cleared.providerMetadata).toBeNull();
+  });
+
   // The $type in the upsert filter looks redundant (the input is always a
   // string) but is what lets the planner use the provider_event_identity
   // PARTIAL index — without it every upsert COLLSCANs, which took prod down.

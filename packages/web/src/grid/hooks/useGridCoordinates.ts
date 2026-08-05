@@ -1,7 +1,5 @@
 import { type MutableRefObject } from "react";
-import { HOURS_AM_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
-import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { roundToPrev } from "@web/common/utils/round/round.util";
 import { GRID_MARGIN_LEFT, GRID_TIME_STEP } from "@web/grid/grid.constants";
 import {
@@ -63,9 +61,7 @@ export const useGridCoordinates = (
 
   const getYByDate = (date: string) => {
     const day = dayjs(date);
-    const startTime = ACCEPTED_TIMES.indexOf(day.format(HOURS_AM_FORMAT)) / 4;
-
-    return measurements.hourHeight * startTime;
+    return measurements.hourHeight * (day.hour() + day.minute() / 60);
   };
 
   return {

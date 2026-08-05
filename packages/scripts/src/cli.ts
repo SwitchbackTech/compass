@@ -1,6 +1,6 @@
 import { CliValidator } from "@scripts/cli.validator";
 import { runAuditConnectionIdentity } from "@scripts/commands/audit-connection-identity";
-import { runBackfillIcalUid } from "@scripts/commands/backfill-icaluid";
+import { runBackfillBootstrapState } from "@scripts/commands/backfill-bootstrap-state";
 import { runManageFailedJobs } from "@scripts/commands/manage-failed-jobs";
 import { runPurgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events";
 import { runPurgeUser } from "@scripts/commands/purge-user";
@@ -37,8 +37,8 @@ export default class CompassCLI {
       case cmd === "repair-recurring-series":
         await runRepairRecurringSeries();
         break;
-      case cmd === "backfill-icaluid":
-        await runBackfillIcalUid();
+      case cmd === "backfill-bootstrap-state":
+        await runBackfillBootstrapState();
         break;
       case cmd === "audit-connection-identity":
         await runAuditConnectionIdentity();
@@ -86,11 +86,11 @@ export default class CompassCLI {
       );
 
     program
-      .command("backfill-icaluid")
+      .command("backfill-bootstrap-state")
       .helpOption(false)
       .allowUnknownOption(true)
       .description(
-        "Copy Google's cross-copy correlation key onto events that predate it (--apply to write)",
+        "Stamp bootstrapState: ready onto sync_resources rows that predate the field (--apply to write, --limit <n> to cap a run)",
       );
 
     program

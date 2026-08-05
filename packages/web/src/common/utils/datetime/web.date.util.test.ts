@@ -9,6 +9,7 @@ import {
   getHourLabels,
   getTimesLabel,
   getWeekRangeLabel,
+  parseUserTime,
   toUTCOffset,
 } from "@web/common/utils/datetime/web.date.util";
 import {
@@ -410,5 +411,106 @@ describe("toUTCOffset", () => {
     const d = dayjs();
     const resultFromDayJsObj = toUTCOffset(d);
     validateResult(resultFromDayJsObj);
+  });
+});
+
+describe("parseUserTime", () => {
+  it("parses 'HH:MM' format to correct time", () => {
+    const result = parseUserTime("10:33");
+    expect(result?.value).toBe("10:33 AM");
+    expect(result?.label).toBe("10:33 AM");
+  });
+
+  it("parses 'HH:MM am/pm' format with explicit meridiem", () => {
+    const result = parseUserTime("10:33 pm");
+    expect(result?.value).toBe("10:33 PM");
+    expect(result?.label).toBe("10:33 PM");
+  });
+
+  it("parses glued meridiem format (e.g., '10:33pm')", () => {
+    const result = parseUserTime("10:33pm");
+    expect(result?.value).toBe("10:33 PM");
+    expect(result?.label).toBe("10:33 PM");
+  });
+
+  it("parses 24-hour format", () => {
+    const result = parseUserTime("22:33");
+    expect(result?.value).toBe("10:33 PM");
+    expect(result?.label).toBe("10:33 PM");
+  });
+
+  it("parses bare hour as AM:00", () => {
+    const result = parseUserTime("7");
+    expect(result?.value).toBe("7:00 AM");
+    expect(result?.label).toBe("7 AM");
+  });
+
+  it("parses digits-only input (HHMM format)", () => {
+    const result = parseUserTime("1033");
+    expect(result?.value).toBe("10:33 AM");
+    expect(result?.label).toBe("10:33 AM");
+  });
+
+  it("parses 12 o'clock times correctly", () => {
+    const result = parseUserTime("12:33");
+    expect(result?.value).toBe("12:33 PM");
+    expect(result?.label).toBe("12:33 PM");
+  });
+
+  it("inherits meridiem from currentValue when ambiguous", () => {
+    const result = parseUserTime("2:33", "2:15 PM");
+    expect(result?.value).toBe("2:33 PM");
+  });
+
+  it("inherits AM meridiem from currentValue", () => {
+    const result = parseUserTime("7:30", "7:00 AM");
+    expect(result?.value).toBe("7:30 AM");
+  });
+
+  it("explicit meridiem overrides currentValue meridiem", () => {
+    const result = parseUserTime("2:33 am", "2:15 PM");
+    expect(result?.value).toBe("2:33 AM");
+  });
+
+  it("24-hour format ignores currentValue meridiem", () => {
+    const result = parseUserTime("14:33", "2:15 AM");
+    expect(result?.value).toBe("2:33 PM");
+  });
+
+  it("rejects empty input", () => {
+    const result = parseUserTime("");
+    expect(result).toBeNull();
+  });
+
+  it("rejects invalid time strings", () => {
+    expect(parseUserTime("abc")).toBeNull();
+  });
+
+  it("rejects invalid hour (25:00)", () => {
+    expect(parseUserTime("25:00")).toBeNull();
+  });
+
+  it("rejects invalid minute (10:71)", () => {
+    expect(parseUserTime("10:71")).toBeNull();
+  });
+
+  it("rejects malformed input", () => {
+    expect(parseUserTime(":33")).toBeNull();
+    expect(parseUserTime("10:")).toBeNull();
+  });
+
+  it("handles case-insensitivity", () => {
+    const result = parseUserTime("10:33 PM");
+    expect(result?.value).toBe("10:33 PM");
+  });
+
+  it("handles extra whitespace", () => {
+    const result = parseUserTime("  10:33   pm  ");
+    expect(result?.value).toBe("10:33 PM");
+  });
+
+  it("correctly normalizes 10:00 to label '10 AM' (strips :00)", () => {
+    const result = parseUserTime("10:00");
+    expect(result?.label).toBe("10 AM");
   });
 });

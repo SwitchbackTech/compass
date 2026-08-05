@@ -196,6 +196,24 @@ describe("GoogleEventWriter", () => {
     });
   });
 
+  it("returns iCalUID from the Google write response when present", async () => {
+    const api = new FakeEventsApi({
+      insert: {
+        ...scriptedEvent("abc12deadbeef00000000000"),
+        iCalUID: "abc12deadbeef00000000000@google.com",
+      },
+    });
+    const { writer } = writerWith(api);
+
+    const result = await writer.createEvent(baseCreate);
+
+    expect(result).toEqual({
+      providerEventId: "abc12deadbeef00000000000",
+      providerVersion: '"v1"',
+      icalUid: "abc12deadbeef00000000000@google.com",
+    });
+  });
+
   it("treats a duplicate-id create as success by reading the event back", async () => {
     // 409 => a prior attempt already created it; the retry must not fail.
     const api = new FakeEventsApi({ insert: gError(409, "duplicate") });

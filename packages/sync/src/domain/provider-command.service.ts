@@ -218,7 +218,7 @@ function buildLinkedEventRecord(
     // The write result carries no provider update time; a later read sets it.
     providerUpdatedAt: null,
     deliveryState: "confirmed",
-    providerMetadata: null,
+    providerMetadata: result.icalUid ? { iCalUID: result.icalUid } : null,
     content: omitNullColor(input.content),
     schedule: input.schedule,
     recurrence:

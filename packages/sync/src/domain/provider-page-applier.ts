@@ -300,32 +300,38 @@ export class ProviderPageApplier {
     read: ProviderEvent,
     recurrence: SyncEventRecurrence,
   ): Promise<EventRecord> {
-    const record = await this.events.upsertByProviderIdentity({
-      tenantId: this.calendar.tenantId,
-      principalId: this.calendar.principalId,
-      origin: "provider",
-      calendarId: this.calendar._id,
-      clientEventId: null,
-      connectionId: this.calendar.connectionId,
-      providerEventId: read.providerEventId as NonNullable<
-        EventRecord["providerEventId"]
-      >,
-      providerVersion: read.providerVersion as NonNullable<
-        EventRecord["providerVersion"]
-      >,
-      providerUpdatedAt: read.providerUpdatedAt
-        ? new Date(read.providerUpdatedAt)
-        : null,
-      // Imported provider events carry no Compass delivery intent.
-      deliveryState: null,
-      providerMetadata: providerMetadataFor(read),
-      content: read.content,
-      schedule: read.schedule,
-      recurrence,
-      lifecycleState: "active",
-      generation: this.generation,
-      confirmedAt: this.now(),
-    });
+    const record = await this.events.upsertByProviderIdentity(
+      {
+        tenantId: this.calendar.tenantId,
+        principalId: this.calendar.principalId,
+        origin: "provider",
+        calendarId: this.calendar._id,
+        clientEventId: null,
+        connectionId: this.calendar.connectionId,
+        providerEventId: read.providerEventId as NonNullable<
+          EventRecord["providerEventId"]
+        >,
+        providerVersion: read.providerVersion as NonNullable<
+          EventRecord["providerVersion"]
+        >,
+        providerUpdatedAt: read.providerUpdatedAt
+          ? new Date(read.providerUpdatedAt)
+          : null,
+        // Imported provider events carry no Compass delivery intent.
+        deliveryState: null,
+        providerMetadata: providerMetadataFor(read),
+        content: read.content,
+        schedule: read.schedule,
+        recurrence,
+        lifecycleState: "active",
+        generation: this.generation,
+        confirmedAt: this.now(),
+      },
+      // Sparse Google reads (or deploy skew) must not wipe a backfilled /
+      // previously-synced iCalUID. Cancelled exceptions still clear the bag
+      // via the default (non-preserve) upsert path.
+      { preserveIcalUidWhenAbsent: true },
+    );
     this.#importedIds.add(record.providerEventId as string);
     return record;
   }

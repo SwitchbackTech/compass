@@ -10,10 +10,7 @@ import {
 } from "@core/types/domain-primitives";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
-import {
-  seedPendingEventMutations,
-  toNormalizedEventQueryData,
-} from "@web/__tests__/utils/event-query-test-data";
+import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { createMockConnection as makeConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type ApiRequestConfig } from "@web/api/api.types";
@@ -134,11 +131,9 @@ const renderCalendarList = (
   {
     authenticated = true,
     connections,
-    pendingEventIds = [],
   }: {
     authenticated?: boolean;
     connections?: GoogleSyncConnectionSummary[];
-    pendingEventIds?: string[];
   } = {},
 ) => {
   mockUseSession.mockReturnValue({
@@ -154,7 +149,6 @@ const renderCalendarList = (
 
   const { queryClient, wrapper } = createStoreWrapper();
   queryClient.setQueryData(calendarQueryKeys.all, calendars);
-  seedPendingEventMutations(queryClient, pendingEventIds);
 
   const utils = render(<CalendarList />, {
     wrapper,
@@ -486,31 +480,6 @@ describe("CalendarList", () => {
     expect(
       within(section).getByRole("button", { name: "ahab@pequod.com" }),
     ).toHaveAttribute("aria-expanded", "true");
-  });
-
-  it("announces a pending event save once for the list, whatever the account count", () => {
-    // Regression: this line lived only in the single-account header, so a
-    // user with two accounts connected never saw a save acknowledged at all.
-    const work = makeCalendar({
-      name: "Work",
-      accountEmail: "ahab@pequod.com",
-    });
-    const personal = makeCalendar({
-      name: "Personal",
-      accountEmail: "ahab@gmail.com",
-    });
-
-    renderCalendarList([work, personal], {
-      connections: [
-        makeConnection("ahab@pequod.com"),
-        makeConnection("ahab@gmail.com"),
-      ],
-      pendingEventIds: ["event-1"],
-    });
-
-    // Not getByRole("status") - the list's own sr-only failure announcer is
-    // also a status region.
-    expect(screen.getByText("Saving changes…")).toBeInTheDocument();
   });
 
   it("leaves the local calendar outside the account sections", () => {

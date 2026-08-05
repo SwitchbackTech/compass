@@ -35,8 +35,9 @@ Also watch:
 - [ ] Watch Sync health snapshot + Error Tracking side by side
 - [ ] If calendars look stuck: check SSE (`sse_connection_degraded`), then Sync
       diagnostic routes (see [Troubleshoot](../development/troubleshoot.md))
-- [ ] Backend Winston / PostHog Logs now include `method`, `path`, `status`,
-      and `userId` on Express errors — use those for triage
+- [ ] Both `compass-backend` and `compass-sync` logs are in PostHog Logs. Express
+      errors carry `method`, `path`, `status`, `userId`, and `stack` — filter by
+      service and status for triage
 
 ## After
 

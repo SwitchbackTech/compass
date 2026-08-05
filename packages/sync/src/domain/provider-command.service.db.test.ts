@@ -255,6 +255,7 @@ describe("executeProviderCreate", () => {
     expect(stored?.providerEventId).toBe("g-evt-1");
     expect(stored?.providerVersion).toBe("etag-1");
     expect(stored?.deliveryState).toBe("confirmed");
+    expect(stored?.providerMetadata).toBeNull();
 
     // The provider-linked event is projected into the read model.
     const occ = await mongo.db
@@ -264,6 +265,37 @@ describe("executeProviderCreate", () => {
     expect(occ.map((o) => (o["startAt"] as Date).toISOString())).toEqual([
       "2026-07-14T15:00:00.000Z",
     ]);
+  });
+
+  it("stores iCalUID from the write result on create", async () => {
+    const { tenantId, principalId, calendar, command } = await seed();
+    const writer = new FakeWriter();
+    writer.result = {
+      providerEventId: "g-evt-1",
+      providerVersion: "etag-1",
+      icalUid: "g-evt-1@google.com",
+    };
+
+    await executeProviderCreate(
+      {
+        commands,
+        events,
+        occurrences,
+        resources,
+        writer,
+        custody: tokenSource(),
+      },
+      command,
+      calendar,
+      now,
+    );
+
+    const stored = await events.findById(
+      tenantId,
+      principalId,
+      command.eventId,
+    );
+    expect(stored?.providerMetadata).toEqual({ iCalUID: "g-evt-1@google.com" });
   });
 
   it("passes the caller's invitation intent through to the writer", async () => {
