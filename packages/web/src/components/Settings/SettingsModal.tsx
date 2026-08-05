@@ -27,6 +27,11 @@ import {
   useConnectedAccountEmails,
   useDefaultTargetCalendar,
 } from "@web/calendars/useDefaultTargetCalendar";
+import { EXPORT_MY_DATA_TOAST_ID } from "@web/common/constants/toast.constants";
+import { runExportMyData } from "@web/common/storage/offline-data/export-user-data.util";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
+import { useDeleteAccountConfirmation } from "@web/components/DeleteAccountConfirmation/hooks/useDeleteAccountConfirmation";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
@@ -55,6 +60,7 @@ export const SettingsModal: FC = () => {
   const isOpen = useSettingsStore(selectIsSettingsOpen);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   useAppLockReason("settingsModal", isOpen);
+  const { openDeleteAccountConfirmation } = useDeleteAccountConfirmation();
 
   // The modal stays mounted (self-reads the store) so a stray close path
   // that skips handleDismiss (e.g. the Mod+, toggle) can't leave a
@@ -79,6 +85,24 @@ export const SettingsModal: FC = () => {
       return;
     }
     settingsActions.closeSettings();
+  };
+
+  const handleExport = () => {
+    runExportMyData()
+      .then(() => {
+        showStatusToast(EXPORT_MY_DATA_TOAST_ID, "Data exported");
+      })
+      .catch(() => {
+        showErrorToast("Couldn't export your data. Please try again.", {
+          toastId: EXPORT_MY_DATA_TOAST_ID,
+        });
+      });
+  };
+
+  // Closes Settings first rather than stacking two OverlayPanels at once.
+  const handleDeleteAccount = () => {
+    settingsActions.closeSettings();
+    openDeleteAccountConfirmation();
   };
 
   return (
@@ -111,6 +135,22 @@ export const SettingsModal: FC = () => {
             resolvedDefault={resolvedDefault}
             setConfirmingId={setConfirmingId}
           />
+          <div className="mt-2 border-border border-t pt-3">
+            <OverlayPanelActions align="start">
+              <OverlayPanelActionButton
+                onClick={handleExport}
+                variant="secondary"
+              >
+                Export data
+              </OverlayPanelActionButton>
+              <OverlayPanelActionButton
+                onClick={handleDeleteAccount}
+                variant="destructive"
+              >
+                Delete account
+              </OverlayPanelActionButton>
+            </OverlayPanelActions>
+          </div>
         </div>
       </div>
     </OverlayPanel>

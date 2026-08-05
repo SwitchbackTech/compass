@@ -3,10 +3,10 @@ import { act } from "react";
 import { createTasksRemovalNotice } from "./TasksRemovalNotice";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Matches useExportDataCmdItems.test.ts's convention: useSession is an auth
-// hook with no injection seam of its own, so it's mock.module'd; everything
-// else this component depends on is a plain function, injected via
-// createTasksRemovalNotice below — no mock.module, no cache-busting.
+// useSession is an auth hook with no injection seam of its own, so it's
+// mock.module'd; everything else this component depends on is a plain
+// function, injected via createTasksRemovalNotice below — no mock.module,
+// no cache-busting.
 const mockUseSession = mock();
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,

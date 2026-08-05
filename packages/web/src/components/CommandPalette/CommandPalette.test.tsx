@@ -46,17 +46,6 @@ afterAll(() => {
   isNavigateMocked = false;
 });
 
-// useExportDataCmdItems calls useUser(), which throws outside a
-// UserProvider — this render tree doesn't have one (see renderWithStore).
-// Mock useUser itself (not the hook module) so the real hook runs: it
-// naturally contributes no item since email is undefined here, matching
-// the "don't stub a hook with its own dedicated test file" rule above —
-// stubbing the hook module directly broke useExportDataCmdItems.test.ts's
-// cache-busted import of that same specifier when both ran in one process.
-mock.module("@web/auth/compass/user/hooks/useUser", () => ({
-  useUser: () => ({}),
-}));
-
 const { CommandPalette, LifeCommandPalette, getRowTextColorClassName } =
   await import("./CommandPalette");
 
@@ -115,14 +104,10 @@ describe("CommandPalette", () => {
 
     expect(screen.getByText("Navigation")).toBeInTheDocument();
     expect(screen.getByText("Common Actions")).toBeInTheDocument();
-    // Scoped to the heading's class (not a bare getByText) because the
-    // Settings section can also contain an item labeled "Settings" — see
-    // useShowAccountsCmdItems — when auth state makes it visible.
-    expect(
-      screen
-        .getAllByText("Settings")
-        .some((el) => el.className.includes("uppercase")),
-    ).toBe(true);
+    // Only the heading matches here: useShowAccountsCmdItems' "Manage
+    // Accounts" item is gated on auth, and this render is unauthenticated
+    // (no SessionContext.Provider — see session.context.ts's default).
+    expect(screen.getByText("Settings")).toBeInTheDocument();
     expect(screen.getByText("More")).toBeInTheDocument();
 
     // Navigation always lists Today first, then app views.

@@ -49,6 +49,28 @@ export const userMetadataActions = {
     useUserMetadataStore.setState(initialUserMetadataState, true, {
       type: "clear",
     }),
+  // Optimistically drops one connection right after a successful disconnect,
+  // so the Accounts panel doesn't wait on the next metadata fetch - which can
+  // still return the just-removed connection if it races backend cleanup.
+  removeConnection: (connectionId: string) =>
+    useUserMetadataStore.setState(
+      (state) => {
+        if (!state.current?.google) return state;
+        return {
+          current: {
+            ...state.current,
+            google: {
+              ...state.current.google,
+              connections: (state.current.google.connections ?? []).filter(
+                (connection) => connection.id !== connectionId,
+              ),
+            },
+          },
+        };
+      },
+      false,
+      { type: "removeConnection" },
+    ),
 };
 
 // Expose a semantic bridge for e2e tests (see e2e/utils/compass-window.ts).

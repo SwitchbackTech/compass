@@ -1,7 +1,9 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
+import { type Calendar } from "@core/types/calendar.contracts";
 import { AuthApi } from "@web/api/auth.api";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
+import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   ACCOUNT_DISCONNECTED_TOAST_ID,
@@ -36,6 +38,20 @@ export function useDisconnectGoogleAccount(): {
           showStatusToast(
             ACCOUNT_DISCONNECTED_TOAST_ID,
             `Disconnected ${accountEmail}`,
+          );
+
+          // Strip this account's connection and calendars from the local
+          // caches right away - the calendars refetch below can still race
+          // backend cleanup and return them for a beat, which was leaving the
+          // disconnected account visible in the Accounts panel and the
+          // Default Calendar picker.
+          userMetadataActions.removeConnection(connectionId);
+          queryClient.setQueryData<Calendar[]>(
+            calendarQueryKeys.all,
+            (calendars) =>
+              calendars?.filter(
+                (calendar) => calendar.accountEmail !== accountEmail,
+              ),
           );
 
           // The account's calendars and its events both disappear, and the

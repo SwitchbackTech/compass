@@ -38,7 +38,7 @@ describe("useShowAccountsCmdItems", () => {
   it("opens the settings modal from the command palette item", () => {
     const { result } = renderHook(() => useShowAccountsCmdItems());
 
-    expect(result.current[0].label).toBe("Settings");
+    expect(result.current[0].label).toBe("Manage Accounts");
     expect(result.current[0].keywords).toContain("accounts");
 
     act(() => {
