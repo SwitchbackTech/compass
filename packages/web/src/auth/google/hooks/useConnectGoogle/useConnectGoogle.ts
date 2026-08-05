@@ -7,7 +7,6 @@ import {
   refreshGoogleSync,
   useIsGoogleSyncRefreshInFlight,
 } from "@web/auth/google/state/google.sync.refresh";
-import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import {
   selectPrimaryGoogleSyncConnection,
   useUserMetadataStore,
@@ -73,19 +72,16 @@ export const useConnectGoogle = (
       return;
     }
 
-    // Show loading on the sidebar/command action immediately — local-event
-    // flush and beginGoogleConnection both run before the OAuth redirect.
+    // Show loading on the sidebar/command action immediately —
+    // beginGoogleConnection runs before the OAuth redirect. Any local events
+    // still in IndexedDB stay there across the redirect and flush once the
+    // callback lands and a Google calendar exists to target (see
+    // useCompleteAuthentication) — flushing here would have no Google
+    // calendar yet and land events on the local calendar instead.
     isConnectingRef.current = true;
     setIsConnecting(true);
 
     const start = async () => {
-      const didSyncLocalEvents = await syncPendingLocalEvents();
-
-      if (!didSyncLocalEvents) {
-        stopConnecting();
-        return;
-      }
-
       settingsActions.closeCmdPalette();
 
       // The sync service owns the OAuth round-trip, so the browser just
