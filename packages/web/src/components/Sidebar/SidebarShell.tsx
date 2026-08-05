@@ -13,6 +13,7 @@ import { useIsNarrowSidebarLayout } from "./hooks/useIsNarrowSidebarLayout";
 import { ShortcutsOverlay } from "./ShortcutsOverlay/ShortcutsOverlay";
 import { SidebarActions } from "./SidebarActions/SidebarActions";
 import { SidebarCloseButton } from "./SidebarCloseButton";
+import { SidebarStatusBar } from "./SidebarStatusBar";
 
 interface SidebarShellProps extends HTMLAttributes<HTMLElement> {
   children: ReactNode;
@@ -56,6 +57,7 @@ export function SidebarShell({
         </div>
       ) : null}
       {children}
+      <SidebarStatusBar />
       <SidebarActionsComponent
         isShortcutsOpen={isShortcutsOpen}
         onToggleShortcuts={onToggleShortcuts}

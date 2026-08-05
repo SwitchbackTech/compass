@@ -15,10 +15,8 @@ import {
   accountCalendarListId,
   useCollapsedAccountKeys,
 } from "@web/calendars/collapsed-accounts.store";
-import { SyncStatusLine } from "@web/calendars/SyncStatusLine";
 import { useCalendarVisibility } from "@web/calendars/useCalendarVisibility";
 import { useConnectedAccountEmails } from "@web/calendars/useDefaultTargetCalendar";
-import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 import { AccountSectionHeader } from "./AccountSectionHeader";
 import { CalendarListHeader } from "./CalendarListHeader";
 
@@ -31,7 +29,6 @@ export const CalendarList: FC = () => {
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
   const accountEmailOrder = useConnectedAccountEmails();
   const collapsedKeys = useCollapsedAccountKeys();
-  const hasPendingEventMutations = useHasPendingEventMutations();
 
   // Re-groups on every calendar-visibility/collapse toggle otherwise, since
   // those live in sibling external stores this component also subscribes to.
@@ -75,15 +72,6 @@ export const CalendarList: FC = () => {
           it alongside account sections duplicated one section's status under a
           second, unlabeled heading with no way to tell them apart. */}
       {groups.length === 0 && <CalendarListHeader />}
-
-      {/* Event saves aren't per-account, so this belongs to the list rather
-          than to any one account's heading. */}
-      {hasPendingEventMutations ? (
-        <SyncStatusLine
-          className="mb-1"
-          status={{ variant: "syncing", text: "Saving changes…" }}
-        />
-      ) : null}
 
       {isPending ? null : isError ? (
         <div className="flex items-center justify-between gap-2 text-xs">
