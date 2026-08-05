@@ -42,6 +42,7 @@ export const useSubscribeCmdItems = (open: boolean): CommandItem[] => {
       id: "subscribe-to-updates",
       label: "Opt in to email updates",
       icon: BellIcon,
+      keywords: ["newsletter", "email", "updates"],
       onClick: () => {
         UserApi.subscribeToEmailUpdates()
           .then((response) => {

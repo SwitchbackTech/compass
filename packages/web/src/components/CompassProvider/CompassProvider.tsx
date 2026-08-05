@@ -9,6 +9,7 @@ import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
 import { PostHogProvider } from "@web/auth/posthog/posthog-react";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { AboutModal } from "@web/components/About/AboutModal";
 import { DeleteAccountConfirmationProvider } from "@web/components/DeleteAccountConfirmation/DeleteAccountConfirmationProvider";
 import { FeedbackDialogHost } from "@web/components/Feedback/FeedbackDialogHost";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
@@ -67,6 +68,7 @@ export const CompassRequiredProviders = ({
               <DeleteAccountConfirmationProvider>
                 {children}
                 <SettingsModal />
+                <AboutModal />
               </DeleteAccountConfirmationProvider>
               <ThemeAwareToastContainer />
             </LogoutConfirmationProvider>

@@ -26,25 +26,34 @@ interface GetNavigationCommandItemsArgs {
 
 const commandPaletteViews: Record<
   CommandPaletteViewName,
-  { icon: Icon; label: string; route: string; shortcut?: string }
+  {
+    icon: Icon;
+    label: string;
+    route: string;
+    shortcut?: string;
+    keywords: string[];
+  }
 > = {
   day: {
     icon: CalendarDotsIcon,
     label: VIEW_SHORTCUTS.day.label,
     route: VIEW_SHORTCUTS.day.route,
     shortcut: VIEW_SHORTCUTS.day.key,
+    keywords: ["day view", "day page", "daily", "calendar"],
   },
   week: {
     icon: CalendarIcon,
     label: VIEW_SHORTCUTS.week.label,
     route: VIEW_SHORTCUTS.week.route,
     shortcut: VIEW_SHORTCUTS.week.key,
+    keywords: ["week view", "week page", "weekly", "calendar"],
   },
   life: {
     icon: HourglassSimpleIcon,
     label: LIFE_SHORTCUT.label,
     route: LIFE_SHORTCUT.route,
     shortcut: LIFE_SHORTCUT.key,
+    keywords: ["life view", "life page", "years", "map"],
   },
 };
 
@@ -68,6 +77,7 @@ export const getNavigationCommandItems = ({
       label: "Go to Today",
       icon: ArrowUDownLeftIcon,
       shortcut: "t",
+      keywords: ["now", "current", "jump"],
       onClick: onGoToToday,
     });
   }
@@ -82,6 +92,7 @@ export const getNavigationCommandItems = ({
           label: `Go to ${view.label}`,
           icon: view.icon,
           shortcut: view.shortcut,
+          keywords: view.keywords,
           onClick: () => onNavigateToView(viewName),
         };
       }),
@@ -93,6 +104,7 @@ export const getNavigationCommandItems = ({
       label: "Show keyboard shortcuts",
       icon: KeyboardIcon,
       shortcut: "?",
+      keywords: ["hotkeys", "keys", "help", "keybindings"],
       onClick: onShowShortcuts,
     });
   }
@@ -102,6 +114,7 @@ export const getNavigationCommandItems = ({
       id: "show-welcome-guide",
       label: "Show welcome guide",
       icon: CompassIcon,
+      keywords: ["onboarding", "tour", "intro", "help", "faq"],
       onClick: onShowWelcomeGuide,
     });
   }

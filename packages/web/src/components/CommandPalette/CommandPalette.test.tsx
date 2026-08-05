@@ -1,5 +1,4 @@
 import "@testing-library/jest-dom";
-import { PlusIcon } from "@phosphor-icons/react";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithStore } from "@web/__tests__/render-with-store";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
@@ -51,9 +50,7 @@ mock.module("@web/auth/compass/user/hooks/useUser", () => ({
   useUser: () => ({}),
 }));
 
-const { CommandPalette, LifeCommandPalette, filterSections } = await import(
-  "./CommandPalette"
-);
+const { CommandPalette, LifeCommandPalette } = await import("./CommandPalette");
 
 const onGoToToday = mock();
 const onShowShortcuts = mock();
@@ -98,7 +95,14 @@ describe("CommandPalette", () => {
 
     expect(screen.getByText("Navigation")).toBeInTheDocument();
     expect(screen.getByText("Common Actions")).toBeInTheDocument();
-    expect(screen.getByText("Settings")).toBeInTheDocument();
+    // Scoped to the heading's class (not a bare getByText) because the
+    // Settings section can also contain an item labeled "Settings" — see
+    // useShowAccountsCmdItems — when auth state makes it visible.
+    expect(
+      screen
+        .getAllByText("Settings")
+        .some((el) => el.className.includes("uppercase")),
+    ).toBe(true);
     expect(screen.getByText("More")).toBeInTheDocument();
 
     // Navigation always lists Today first, then app views.
@@ -130,13 +134,16 @@ describe("CommandPalette", () => {
     );
   });
 
-  it("filters case-insensitively, dropping empty sections, and shows a no-results row", () => {
-    renderPalette();
+  it("fuzzy-filters case-insensitively, dropping empty sections, and shows a no-results row", () => {
+    const { container } = renderPalette();
 
     fireEvent.change(getInput(), { target: { value: "create event" } });
 
+    // Both create items match ("event" is a word-prefix hit on each label);
+    // "Create event" ranks first (tie broken by authored order).
     expect(screen.getByText("Create event")).toBeInTheDocument();
-    expect(screen.queryByText("Create all-day event")).not.toBeInTheDocument();
+    expect(screen.getByText("Create all-day event")).toBeInTheDocument();
+    expect(activeRowText(container)).toBe("Create event");
     expect(screen.queryByText("Navigation")).not.toBeInTheDocument();
     expect(screen.queryByText("Settings")).not.toBeInTheDocument();
     expect(
@@ -145,6 +152,15 @@ describe("CommandPalette", () => {
 
     fireEvent.change(getInput(), { target: { value: "zzzzz" } });
     expect(screen.getByText(/No results for/)).toBeInTheDocument();
+  });
+
+  it("matches a synonym keyword that doesn't appear in the label", () => {
+    const { container } = renderPalette();
+
+    fireEvent.change(getInput(), { target: { value: "day page" } });
+
+    expect(screen.getByText("Go to Day")).toBeInTheDocument();
+    expect(activeRowText(container)).toBe("Go to Day");
   });
 
   it("moves the active option with arrows, wraps, and skips disabled items", () => {
@@ -156,10 +172,10 @@ describe("CommandPalette", () => {
       screen.getByText("Undo last change").closest("button"),
     ).toBeDisabled();
 
-    // First option active by default; ArrowUp wraps to the last (Version) row.
+    // First option active by default; ArrowUp wraps to the last (About) row.
     expect(activeRowText(container)).toBe("Go to Today");
     fireEvent.keyDown(input, { key: "ArrowUp" });
-    expect(activeRowText(container)).toMatch(/Version/);
+    expect(activeRowText(container)).toBe("About Compass");
     // ArrowDown from the last option wraps back to the first.
     fireEvent.keyDown(input, { key: "ArrowDown" });
     expect(activeRowText(container)).toBe("Go to Today");
@@ -182,7 +198,8 @@ describe("CommandPalette", () => {
     renderPalette();
     const input = getInput();
 
-    // Isolate "Create event" so it becomes the sole (active) option.
+    // Both create items score equally for this query; "Create event" ranks
+    // first (and active) as the tie-break keeps the authored order.
     fireEvent.change(input, { target: { value: "Create event" } });
     fireEvent.keyDown(input, { key: "Enter" });
 
@@ -326,47 +343,5 @@ describe("LifeCommandPalette", () => {
 
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.queryByText("Calendar up-to-date")).not.toBeInTheDocument();
-  });
-});
-
-describe("filterSections", () => {
-  const sections = [
-    {
-      id: "a",
-      heading: "A",
-      items: [
-        { id: "1", label: "Create Event", icon: PlusIcon },
-        { id: "2", label: "Report Bug", icon: PlusIcon },
-      ],
-    },
-    {
-      id: "b",
-      heading: "B",
-      items: [{ id: "3", label: "Share Feedback", icon: PlusIcon }],
-    },
-  ];
-
-  it("returns all sections when the query is empty or whitespace", () => {
-    expect(filterSections(sections, "")).toEqual(sections);
-    expect(filterSections(sections, "   ")).toEqual(sections);
-  });
-
-  it("matches labels case-insensitively as a substring", () => {
-    const result = filterSections(sections, "REPORT");
-    expect(result).toHaveLength(1);
-    expect(result[0].items).toHaveLength(1);
-    expect(result[0].items[0].label).toBe("Report Bug");
-  });
-
-  it("drops sections whose items all filter out", () => {
-    const result = filterSections(sections, "share");
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe("b");
-  });
-
-  it("trims the query before matching", () => {
-    const result = filterSections(sections, "  event  ");
-    expect(result).toHaveLength(1);
-    expect(result[0].items[0].label).toBe("Create Event");
   });
 });

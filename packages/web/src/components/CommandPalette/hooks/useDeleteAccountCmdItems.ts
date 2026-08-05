@@ -16,6 +16,7 @@ export const useDeleteAccountCmdItems = (): CommandItem[] => {
       id: "delete-account",
       label: "Delete account",
       icon: TrashIcon,
+      keywords: ["remove account"],
       onClick: openDeleteAccountConfirmation,
     },
   ];

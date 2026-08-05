@@ -5,11 +5,13 @@ import { IS_DEV } from "@web/common/constants/env.constants";
 interface SettingsState {
   isCmdPaletteOpen: boolean;
   isSettingsOpen: boolean;
+  isAboutOpen: boolean;
 }
 
 export const initialSettingsState: SettingsState = {
   isCmdPaletteOpen: false,
   isSettingsOpen: false,
+  isAboutOpen: false,
 };
 
 // Selectors passed to this hook must return primitives or stable references;
@@ -50,6 +52,14 @@ export const settingsActions = {
       false,
       { type: "toggleSettings" },
     ),
+  closeAbout: () =>
+    useSettingsStore.setState({ isAboutOpen: false }, false, {
+      type: "closeAbout",
+    }),
+  openAbout: () =>
+    useSettingsStore.setState({ isAboutOpen: true }, false, {
+      type: "openAbout",
+    }),
 };
 
 export const selectIsCmdPaletteOpen = (state: SettingsState) =>
@@ -57,3 +67,5 @@ export const selectIsCmdPaletteOpen = (state: SettingsState) =>
 
 export const selectIsSettingsOpen = (state: SettingsState) =>
   state.isSettingsOpen;
+
+export const selectIsAboutOpen = (state: SettingsState) => state.isAboutOpen;

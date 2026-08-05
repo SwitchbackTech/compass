@@ -1,8 +1,8 @@
 import { ChatsIcon, InfoIcon } from "@phosphor-icons/react";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
-import { APP_VERSION } from "@web/common/constants/version.constants";
 import { type CommandSection } from "@web/components/CommandPalette/command-palette.types";
 import { feedbackActions } from "@web/components/Feedback/feedback.store";
+import { settingsActions } from "@web/settings/settings.store";
 import { type ViewName } from "@web/shortcuts/shortcuts.constants";
 import { type CommandPaletteViewName } from "./navigation.cmd.constants";
 
@@ -35,6 +35,7 @@ export function getMoreCommandPaletteSections(
           id: "share-feedback",
           label: "Share Feedback",
           icon: ChatsIcon,
+          keywords: ["bug", "report", "issue", "problem", "suggest", "contact"],
           onClick: () => feedbackActions.open(currentView),
         },
       ]
@@ -47,12 +48,20 @@ export function getMoreCommandPaletteSections(
       items: [
         ...feedbackItems,
         {
-          id: "version",
-          label: `Version: ${APP_VERSION}`,
+          id: "about",
+          label: "About Compass",
           icon: InfoIcon,
-          onClick: () => {
-            void navigator.clipboard.writeText(APP_VERSION);
-          },
+          keywords: [
+            "version",
+            "info",
+            "social",
+            "twitter",
+            "x",
+            "linkedin",
+            "github",
+            "links",
+          ],
+          onClick: settingsActions.openAbout,
         },
       ],
     },

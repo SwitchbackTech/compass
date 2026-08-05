@@ -21,6 +21,7 @@ export const useAddAccountCmdItems = (): CommandItem[] => {
       id: "add-account",
       label: "Add account",
       icon: PlusIcon,
+      keywords: ["connect", "google", "google calendar"],
       disabled: isConnecting,
       onClick: connect,
     },

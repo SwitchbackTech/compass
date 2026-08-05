@@ -30,6 +30,7 @@ export function createUseExportDataCmdItems({
         id: "export-my-data",
         label: "Export my data",
         icon: DownloadIcon,
+        keywords: ["download", "backup", "save", "json"],
         onClick: () => {
           runExportMyData()
             .then(() => {
