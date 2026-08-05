@@ -6,26 +6,18 @@ import {
 } from "@web/auth/compass/state/auth.state.util";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
-import { getGoogleSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import { getSidebarSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import {
   selectGoogleSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
-import {
-  SINGLE_ACCOUNT_COLLAPSE_KEY,
-  useCollapsedAccountKeys,
-} from "@web/calendars/collapsed-accounts.store";
 import { SyncStatusLine } from "@web/calendars/SyncStatusLine";
-import { type SyncStatus } from "@web/calendars/sync-status.types";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@web/components/Tooltip";
-import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
-import { AccountDisclosureHeading } from "./AccountDisclosureHeading";
 
 const ANONYMOUS_SAVE_MESSAGE = "Sign up to save your changes across browsers";
 
@@ -41,44 +33,13 @@ const ANONYMOUS_ACCOUNT_TRIGGER_CLASSNAME =
 const CONNECT_GOOGLE_BUTTON_CLASSNAME =
   "c-focus-ring mb-2 w-full rounded-xs bg-accent px-2 py-1.5 text-left font-medium text-on-accent text-xs hover:brightness-110 disabled:pointer-events-none disabled:opacity-60";
 
-const getSidebarSyncStatus = ({
-  googleStatus,
-  hasPendingEventMutations,
-  isConnecting,
-  state,
-}: {
-  googleStatus: SyncStatus;
-  hasPendingEventMutations: boolean;
-  isConnecting: boolean;
-  state: GoogleUiState;
-}): SyncStatus => {
-  if (isConnecting) {
-    return {
-      variant: "syncing",
-      text:
-        state === "RECONNECT_REQUIRED"
-          ? "Reconnecting your calendar…"
-          : "Connecting your calendar…",
-    };
-  }
-
-  if (googleStatus && googleStatus.variant !== "healthy") {
-    return googleStatus;
-  }
-
-  if (hasPendingEventMutations) {
-    return { variant: "syncing", text: "Saving changes…" };
-  }
-
-  return googleStatus;
-};
-
 /**
- * The calendar list's heading is the account identity (email, or the
- * not-saved-yet label when anonymous) rather than a generic "Calendars"
- * title, and carries the syncing wave shimmer plus the sign-up-to-save CTA
- * for anonymous users. Google connection actions and status live here so
- * users have one reliable place to check their calendar.
+ * The heading shown before any account section exists: the not-saved-yet label
+ * with its sign-up CTA when anonymous, and the signed-in email with the
+ * connect-your-first-calendar CTA otherwise. Once calendars arrive each
+ * account gets its own AccountSectionHeader instead, which is why this one
+ * carries no collapse toggle - there is at most a lone local calendar under
+ * it.
  */
 export const CalendarListHeader: FC = () => {
   const { email } = useUser();
@@ -133,12 +94,12 @@ const AnonymousAccountHeader: FC = () => {
 };
 
 const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
-  // This header shows before per-account sections take over (single account,
-  // or the moment metadata loads for a multi-account user) - it must show
-  // THIS email's own status, not sync's precedence-winning "most actionable
-  // connection across everyone", or a second account's problem flashes under
-  // the first account's name for as long as that gap lasts (2026-08-04,
-  // caught disconnecting one of two live accounts).
+  // Metadata and the calendar list load a moment apart, so a connected user
+  // can briefly land here. Show THIS email's own status, not sync's
+  // precedence-winning "most actionable connection across everyone", or a
+  // second account's problem flashes under the first account's name for as
+  // long as that gap lasts (2026-08-04, caught disconnecting one of two live
+  // accounts).
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
   const ownConnection = useMemo(
     () => connections.find((c) => c.accountEmail === email) ?? null,
@@ -146,17 +107,12 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
   );
   const { commandAction, isAvailable, isConnecting, isRefreshing, state } =
     useConnectGoogle({ connection: ownConnection });
-  const hasPendingEventMutations = useHasPendingEventMutations();
   const syncStatus = getSidebarSyncStatus({
-    googleStatus: getGoogleSyncStatus(state, ownConnection),
-    hasPendingEventMutations,
+    connection: ownConnection,
     isConnecting,
     state,
   });
-  const isSyncing =
-    syncStatus?.variant === "syncing" || hasPendingEventMutations;
-  const showGoogleAction = isAvailable && commandAction != null;
-  const googleActionLabel =
+  const actionLabel =
     commandAction == null
       ? null
       : isConnecting
@@ -166,26 +122,24 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
         : isRefreshing
           ? "Refreshing…"
           : commandAction.label;
-  const collapsedKeys = useCollapsedAccountKeys();
-  const isCollapsed = collapsedKeys.has(SINGLE_ACCOUNT_COLLAPSE_KEY);
 
   return (
     <>
-      <AccountDisclosureHeading
-        as="h2"
-        className="mb-2 text-sm"
-        collapseKey={SINGLE_ACCOUNT_COLLAPSE_KEY}
-        email={email}
-        isCollapsed={isCollapsed}
-        isSyncing={isSyncing}
-      />
-      <SyncStatusLine
-        className="mb-1"
-        status={syncStatus?.variant === "healthy" ? null : syncStatus}
-      />
-      {showGoogleAction &&
-      commandAction != null &&
-      googleActionLabel != null ? (
+      <h2 className={classNames(HEADING_CLASSNAME, "mb-2")}>
+        <span
+          className={classNames(
+            "min-w-0 truncate",
+            syncStatus?.variant === "syncing"
+              ? "c-sync-text-wave"
+              : "text-text-muted",
+          )}
+          translate="no"
+        >
+          {email}
+        </span>
+      </h2>
+      <SyncStatusLine className="mb-1" status={syncStatus} />
+      {isAvailable && commandAction != null && actionLabel != null ? (
         <button
           aria-busy={isConnecting || isRefreshing || undefined}
           className={CONNECT_GOOGLE_BUTTON_CLASSNAME}
@@ -193,7 +147,7 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
           onClick={commandAction.onSelect}
           type="button"
         >
-          {googleActionLabel}
+          {actionLabel}
         </button>
       ) : null}
     </>

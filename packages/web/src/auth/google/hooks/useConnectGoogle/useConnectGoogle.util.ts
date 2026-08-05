@@ -147,3 +147,33 @@ export const getGoogleSyncStatus = (
       return null;
   }
 };
+
+/**
+ * The sidebar's take on one account's status. Two rules the sidebar applies
+ * that Settings doesn't: a connect/reconnect that has been clicked but hasn't
+ * round-tripped yet wins over the (still pre-click) connection summary, and a
+ * healthy account shows nothing at all - the sidebar stays quiet, full detail
+ * lives in Settings.
+ */
+export const getSidebarSyncStatus = ({
+  connection,
+  isConnecting,
+  state,
+}: {
+  connection?: GoogleSyncConnectionSummary | null;
+  isConnecting: boolean;
+  state: GoogleUiState;
+}): SyncStatus => {
+  if (isConnecting) {
+    return {
+      variant: "syncing",
+      text:
+        state === "RECONNECT_REQUIRED"
+          ? "Reconnecting your calendar…"
+          : "Connecting your calendar…",
+    };
+  }
+
+  const status = getGoogleSyncStatus(state, connection);
+  return status?.variant === "healthy" ? null : status;
+};

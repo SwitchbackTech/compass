@@ -2,7 +2,6 @@ import "@testing-library/jest-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -91,20 +90,12 @@ const { CalendarListHeader } = (await import(
   headerModuleUrl.href
 )) as typeof import("./CalendarListHeader");
 
-const renderHeader = ({
-  pendingEventIds = [],
-}: {
-  pendingEventIds?: string[];
-} = {}) => {
-  const queryClient = new QueryClient();
-  seedPendingEventMutations(queryClient, pendingEventIds);
-
-  return render(
-    <QueryClientProvider client={queryClient}>
+const renderHeader = () =>
+  render(
+    <QueryClientProvider client={new QueryClient()}>
       <CalendarListHeader />
     </QueryClientProvider>,
   );
-};
 
 describe("CalendarListHeader", () => {
   beforeEach(() => {
@@ -319,39 +310,6 @@ describe("CalendarListHeader", () => {
     expect(refreshButton).toHaveAttribute("aria-busy", "true");
   });
 
-  it("shows the shimmer and syncing status while an event mutation is pending", () => {
-    mockEmail = "ahab@pequod.com";
-    mockGoogleState = "HEALTHY";
-
-    renderHeader({ pendingEventIds: ["event-1"] });
-
-    const email = screen.getByText("ahab@pequod.com");
-    expect(email).toHaveClass("c-sync-text-wave");
-    expect(screen.getByRole("status")).toHaveTextContent("Saving changes…");
-  });
-
-  it("shows the shimmer for pending mutations even without Google", () => {
-    mockEmail = "ahab@pequod.com";
-    mockGoogleState = "NOT_CONNECTED";
-
-    renderHeader({ pendingEventIds: ["event-1"] });
-
-    expect(screen.getByText("ahab@pequod.com")).toHaveClass("c-sync-text-wave");
-    expect(screen.getByRole("status")).toHaveTextContent("Saving changes…");
-  });
-
-  it("shows the shimmer for pending mutations even when reconnect is required", () => {
-    mockEmail = "ahab@pequod.com";
-    mockGoogleState = "RECONNECT_REQUIRED";
-
-    renderHeader({ pendingEventIds: ["event-1"] });
-
-    expect(screen.getByText("ahab@pequod.com")).toHaveClass("c-sync-text-wave");
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Calendar needs reconnecting",
-    );
-  });
-
   it("keeps an established calendar calm during reconciliation", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "HEALTHY";
@@ -419,22 +377,5 @@ describe("CalendarListHeader", () => {
     expect(mockUseConnectGoogle).toHaveBeenCalledWith({
       connection: ownConnection,
     });
-  });
-
-  it("toggles the collapse state of the calendar list on heading click", async () => {
-    mockEmail = "ahab@pequod.com";
-    mockGoogleState = "HEALTHY";
-    const user = userEvent.setup({ delay: null });
-
-    renderHeader();
-
-    const toggle = screen.getByRole("button", { name: "ahab@pequod.com" });
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
-
-    await user.click(toggle);
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-
-    await user.click(toggle);
-    expect(toggle).toHaveAttribute("aria-expanded", "true");
   });
 });
