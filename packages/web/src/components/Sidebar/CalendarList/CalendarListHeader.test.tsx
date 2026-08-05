@@ -116,10 +116,10 @@ describe("CalendarListHeader", () => {
     renderHeader();
 
     expect(
-      screen.getByRole("heading", { name: "Saved on this device" }),
+      screen.getByRole("heading", { name: "This browser" }),
     ).toBeInTheDocument();
     const trigger = screen.getByRole("button", {
-      name: "Saved on this device",
+      name: "This browser",
     });
     expect(trigger).toHaveClass("text-text");
     expect(trigger).not.toHaveClass("c-sync-text-wave");
@@ -140,7 +140,7 @@ describe("CalendarListHeader", () => {
     renderHeader();
 
     const trigger = screen.getByRole("button", {
-      name: "Saved on this device",
+      name: "This browser",
     });
     expect(trigger).toHaveClass("c-sync-text-wave");
     expect(trigger).not.toHaveClass("text-text");
@@ -151,9 +151,7 @@ describe("CalendarListHeader", () => {
 
     renderHeader();
 
-    await user.click(
-      screen.getByRole("button", { name: "Saved on this device" }),
-    );
+    await user.click(screen.getByRole("button", { name: "This browser" }));
     expect(mockOpenModal).toHaveBeenCalledWith("signUp");
   });
 

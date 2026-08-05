@@ -133,14 +133,13 @@ const CalendarRow: FC<{
   calendar: Calendar;
   onToggle: (calendarId: Calendar["id"], isVisible: boolean) => void;
 }> = ({ calendar, onToggle }) => {
-  // The account heading above the row already names the account, so a primary
-  // calendar's row reads "primary" instead of repeating it. The local sentinel
-  // is also isPrimary, but a lone "primary" row under a "Temporary account"
-  // header reads wrong - keep its own name.
-  const displayName =
-    calendar.isPrimary && calendar.provider !== "local"
-      ? "primary"
-      : calendar.name;
+  // The heading above the row already names the account - the signed-in
+  // user's email, or CalendarListHeader's "This browser" for anonymous - so a
+  // primary calendar's row reads "primary" instead of repeating it. The local
+  // sentinel is also isPrimary and gets no exception: it only ever renders
+  // once connected accounts have none (LCV3), so CalendarListHeader is always
+  // the row's heading, never a per-account section.
+  const displayName = calendar.isPrimary ? "primary" : calendar.name;
 
   return (
     <li className="flex min-w-0 items-center gap-1">
