@@ -207,10 +207,12 @@ describe("CalendarList", () => {
     expect(screen.queryByText("ahab@pequod.com")).not.toBeInTheDocument();
   });
 
-  it("keeps the local sentinel's own name for anonymous sessions (still toggleable)", () => {
-    // The anonymous synthesized local calendar is isPrimary, but must not be
-    // relabeled "primary" - the header shows "Temporary account", not its name.
-    // Visibility is client-owned, so the toggle stays available offline.
+  it("relabels the local sentinel row as 'primary' for anonymous sessions (still toggleable)", () => {
+    // CalendarListHeader's own heading ("This browser") already names the
+    // account for this row, same as any other primary calendar's account
+    // section header - so the row abbreviates like every other primary
+    // calendar. Visibility is client-owned, so the toggle stays available
+    // offline.
     const local = makeCalendar({
       name: "Compass",
       provider: "local",
@@ -219,10 +221,10 @@ describe("CalendarList", () => {
 
     renderCalendarList([local], { authenticated: false });
 
-    expect(screen.getByText("Compass")).toBeInTheDocument();
-    expect(screen.queryByText("primary")).not.toBeInTheDocument();
+    expect(screen.getByText("primary")).toBeInTheDocument();
+    expect(screen.queryByText("Compass")).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Hide Compass calendar" }),
+      screen.getByRole("button", { name: "Hide primary calendar" }),
     ).toBeInTheDocument();
   });
 

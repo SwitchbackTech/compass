@@ -57,7 +57,7 @@ const AnonymousAccountHeader: FC = () => {
     shouldShowAnonymousCalendarChangeSignUpPrompt,
     shouldShowAnonymousCalendarChangeSignUpPrompt,
   );
-  const accountLabel = "Saved on this device";
+  const accountLabel = "This browser";
   const handleOpenSignUp = useCallback(() => {
     openModal("signUp");
   }, [openModal]);
