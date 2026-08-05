@@ -21,7 +21,7 @@ describe("showRecurrenceScopeToast", () => {
   const { port, mocks } = createTestToastPort();
 
   beforeEach(() => {
-    recurrenceScopeOpportunityActions.clear();
+    recurrenceScopeOpportunityActions.reset();
     mocks.toast.mockClear();
     mocks.update.mockClear();
     mocks.dismiss.mockClear();

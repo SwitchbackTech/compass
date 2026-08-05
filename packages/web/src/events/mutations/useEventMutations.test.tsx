@@ -164,7 +164,7 @@ const replacePayload = (
 
 describe("useEventMutations", () => {
   afterEach(() => {
-    recurrenceScopeOpportunityActions.clear();
+    recurrenceScopeOpportunityActions.reset();
   });
 
   test("promotes a deleted occurrence even after the narrow optimistic delete removes it from cache", async () => {

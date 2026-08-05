@@ -15,12 +15,12 @@ describe("RecurrenceScopeOpportunityHost", () => {
   beforeEach(() => {
     HotkeyManager.resetInstance();
     document.body.removeAttribute("data-app-locked");
-    recurrenceScopeOpportunityActions.clear();
+    recurrenceScopeOpportunityActions.reset();
   });
 
   afterEach(() => {
     cleanup();
-    recurrenceScopeOpportunityActions.clear();
+    recurrenceScopeOpportunityActions.reset();
   });
 
   it("promotes the live opportunity with 2", async () => {

@@ -42,7 +42,7 @@ const storeResets: StoreReset[] = [
   () => useUserMetadataStore.setState(initialUserMetadataState, true),
   () => useDraftStore.setState(initialDraftState, true),
   () => useUndoHistoryStore.setState(initialUndoHistoryState, true),
-  recurrenceScopeOpportunityActions.clear,
+  recurrenceScopeOpportunityActions.reset,
   // Order matters for this pair: the availability flag must be cleared
   // BEFORE the source store recomputes, or a test that tripped
   // markBackendUnavailable() leaves every later file's repository source
