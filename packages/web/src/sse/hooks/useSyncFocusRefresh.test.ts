@@ -10,6 +10,7 @@ const fakeConnectGoogle = (
   overrides: Partial<UseConnectGoogleResult> = {},
 ): UseConnectGoogleResult => ({
   commandAction: null,
+  connection: null,
   isAvailable: true,
   isConnecting: false,
   isRefreshing: false,
