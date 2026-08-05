@@ -4,11 +4,7 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
-import {
-  createTestToastPort,
-  registerToastPort,
-  resetToastPort,
-} from "@web/__tests__/helpers/web-test-seams";
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { AuthApi } from "@web/api/auth.api";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
@@ -18,6 +14,10 @@ import {
 } from "@web/common/constants/toast.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
+import {
+  registerToastPort,
+  resetToastPort,
+} from "@web/common/utils/toast/toast.port";
 import { settingsActions } from "@web/settings/settings.store";
 import { SettingsModal } from "./SettingsModal";
 import { describe, expect, it, spyOn } from "bun:test";
@@ -132,8 +132,8 @@ describe("SettingsModal", () => {
   });
 
   it("shows success toast and dismisses stale reconnect warning on disconnect", async () => {
-    const { mocks: toastMocks } = createTestToastPort();
-    registerToastPort({ toast: toastMocks.toast as any });
+    const { port: toastPort, mocks: toastMocks } = createTestToastPort();
+    registerToastPort(toastPort);
 
     const disconnect = spyOn(
       AuthApi,
