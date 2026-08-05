@@ -4,7 +4,7 @@ import {
   type ProviderCalendarSourceId,
 } from "@core/types/sync/identity.contracts";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
-import { BOOTSTRAP_OVERDUE_MS } from "@sync/domain/connection-state";
+import { BOOTSTRAP_STALLED_AFTER_MS } from "@sync/domain/connection-state";
 import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
 import { type JobEnqueue } from "@sync/storage/contracts/job.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
@@ -410,8 +410,11 @@ describe("refreshConnectionState", () => {
     const stillFresh = await refreshConnectionState(deps(), connection);
     expect(stillFresh.state).toBe("importing");
 
+    // Staleness is measured from the resource's updatedAt (the last
+    // advanceCursor call above), not its createdAt - a resource whose chain
+    // keeps advancing must never trip this just for having existed a while.
     const wellPastOverdue = () =>
-      new Date(eventsResource.createdAt.getTime() + BOOTSTRAP_OVERDUE_MS);
+      new Date(Date.now() + BOOTSTRAP_STALLED_AFTER_MS);
     const after = await refreshConnectionState(
       deps(),
       connection,
