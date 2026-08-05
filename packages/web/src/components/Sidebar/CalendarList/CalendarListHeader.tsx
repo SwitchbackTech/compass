@@ -7,10 +7,7 @@ import {
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
-import {
-  formatLastSyncedLabel,
-  getGoogleSyncStatus,
-} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import { getGoogleSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import {
   selectGoogleSyncConnections,
   useUserMetadataStore,
@@ -163,10 +160,6 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
   const isSyncing =
     syncStatus?.variant === "syncing" || hasPendingEventMutations;
   const showGoogleAction = isAvailable && commandAction != null;
-  const lastSyncedLabel =
-    syncStatus?.variant === "healthy"
-      ? formatLastSyncedLabel(ownConnection?.lastSyncedAt)
-      : null;
   const googleActionLabel =
     commandAction == null
       ? null
@@ -193,10 +186,10 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
         />
         <AddAccountButton />
       </div>
-      <SyncStatusLine className="mb-1" status={syncStatus} />
-      {lastSyncedLabel ? (
-        <p className="mb-2 text-text-muted text-xs">{lastSyncedLabel}</p>
-      ) : null}
+      <SyncStatusLine
+        className="mb-1"
+        status={syncStatus?.variant === "healthy" ? null : syncStatus}
+      />
       {showGoogleAction &&
       commandAction != null &&
       googleActionLabel != null ? (

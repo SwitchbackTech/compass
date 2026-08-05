@@ -1,10 +1,7 @@
 import { type FC } from "react";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import {
-  formatLastSyncedLabel,
-  getGoogleSyncStatus,
-} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import { getGoogleSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useCollapsedAccountKeys } from "@web/calendars/collapsed-accounts.store";
 import { SyncStatusLine } from "@web/calendars/SyncStatusLine";
 import { AccountDisclosureHeading } from "./AccountDisclosureHeading";
@@ -29,10 +26,6 @@ export const AccountSectionHeader: FC<{
     useConnectGoogle({ connection });
   const syncStatus = getGoogleSyncStatus(state, connection);
   const isSyncing = syncStatus?.variant === "syncing";
-  const lastSyncedLabel =
-    syncStatus?.variant === "healthy"
-      ? formatLastSyncedLabel(connection?.lastSyncedAt)
-      : null;
   const actionLabel =
     commandAction == null
       ? null
@@ -58,10 +51,9 @@ export const AccountSectionHeader: FC<{
         />
         <AddAccountButton />
       </div>
-      <SyncStatusLine status={syncStatus} />
-      {lastSyncedLabel ? (
-        <p className="text-text-muted text-xs">{lastSyncedLabel}</p>
-      ) : null}
+      <SyncStatusLine
+        status={syncStatus?.variant === "healthy" ? null : syncStatus}
+      />
       {isAvailable && commandAction != null && actionLabel != null ? (
         <button
           aria-busy={isConnecting || isRefreshing || undefined}
