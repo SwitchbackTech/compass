@@ -129,4 +129,51 @@ describe("resolveGoogleConnectionFromSync", () => {
       ["second@example.com", "RECONNECT_REQUIRED"],
     ]);
   });
+
+  it("filters disconnected connections, treating a sole disconnected account as NOT_CONNECTED", async () => {
+    const client = clientReturning({
+      ok: true,
+      value: { connections: [connection("disconnected", null)] },
+      correlationId: "corr-1",
+    });
+
+    const resolved = await resolveGoogleConnectionFromSync(client, principal);
+    expect(resolved.connectionState).toBe("NOT_CONNECTED");
+    expect(resolved.connections).toEqual([]);
+  });
+
+  it("filters disconnected connections, never letting one drag a healthy sibling to RECONNECT_REQUIRED", async () => {
+    const client = clientReturning({
+      ok: true,
+      value: {
+        connections: [
+          {
+            ...connection("disconnected", null),
+            id: "c-disconnected",
+            account: {
+              providerAccountId: "a-old",
+              email: "old@example.com",
+              displayName: null,
+            },
+          },
+          {
+            ...connection("healthy", null),
+            id: "c-healthy",
+            account: {
+              providerAccountId: "a-new",
+              email: "new@example.com",
+              displayName: null,
+            },
+          },
+        ],
+      },
+      correlationId: "corr-1",
+    });
+
+    const result = await resolveGoogleConnectionFromSync(client, principal);
+    expect(result.connectionState).toBe("HEALTHY");
+    expect(result.connections.map((s) => s.accountEmail)).toEqual([
+      "new@example.com",
+    ]);
+  });
 });

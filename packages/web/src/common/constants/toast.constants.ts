@@ -11,6 +11,7 @@ export const GOOGLE_REPAIR_FAILED_TOAST_ID: Id = "google-repair-failed";
 export const GOOGLE_CONNECT_FAILED_TOAST_ID: Id = "google-connect-failed";
 export const GOOGLE_REFRESH_FAILED_TOAST_ID: Id = "google-refresh-failed";
 export const GOOGLE_DELAYED_TOAST_ID: Id = "google-delayed";
+export const ACCOUNT_DISCONNECTED_TOAST_ID: Id = "account-disconnected";
 export const SUBSCRIBE_TO_UPDATES_TOAST_ID: Id = "subscribe-to-updates";
 export const EXPORT_MY_DATA_TOAST_ID: Id = "export-my-data";
 

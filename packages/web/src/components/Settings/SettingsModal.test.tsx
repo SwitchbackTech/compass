@@ -2,13 +2,22 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
 import { AuthApi } from "@web/api/auth.api";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import {
+  ACCOUNT_DISCONNECTED_TOAST_ID,
+  GOOGLE_REVOKED_TOAST_ID,
+} from "@web/common/constants/toast.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
+import {
+  registerToastPort,
+  resetToastPort,
+} from "@web/common/utils/toast/toast.port";
 import { settingsActions } from "@web/settings/settings.store";
 import { SettingsModal } from "./SettingsModal";
 import { describe, expect, it, spyOn } from "bun:test";
@@ -59,7 +68,8 @@ describe("SettingsModal", () => {
         connection({
           id: "connection-2",
           accountEmail: "ahab@gmail.com",
-          state: "disconnected",
+          state: "actionRequired",
+          stateReason: "authorizationRevoked",
           connectionState: "RECONNECT_REQUIRED",
         }),
       ],
@@ -119,6 +129,39 @@ describe("SettingsModal", () => {
     });
 
     disconnect.mockRestore();
+  });
+
+  it("shows success toast and dismisses stale reconnect warning on disconnect", async () => {
+    const { port: toastPort, mocks: toastMocks } = createTestToastPort();
+    registerToastPort(toastPort);
+
+    const disconnect = spyOn(
+      AuthApi,
+      "disconnectGoogleConnection",
+    ).mockResolvedValue(undefined);
+
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ connections: [connection({ id: "connection-third" })] });
+
+    await user.click(
+      screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: "Confirm disconnecting ahab@pequod.com",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(toastMocks.dismiss).toHaveBeenCalledWith(GOOGLE_REVOKED_TOAST_ID);
+      expect(toastMocks.toast).toHaveBeenCalledWith(
+        "Disconnected ahab@pequod.com",
+        expect.objectContaining({ toastId: ACCOUNT_DISCONNECTED_TOAST_ID }),
+      );
+    });
+
+    disconnect.mockRestore();
+    resetToastPort();
   });
 
   it("backs out of the confirm without disconnecting", async () => {

@@ -53,12 +53,6 @@ describe("toGoogleConnectionState", () => {
     ).toBe("ATTENTION");
   });
 
-  it("maps a disconnected connection to RECONNECT_REQUIRED, not NOT_CONNECTED", () => {
-    expect(toGoogleConnectionState([connection("disconnected")])).toBe(
-      "RECONNECT_REQUIRED",
-    );
-  });
-
   it("maps actionRequired with a re-auth reason to RECONNECT_REQUIRED", () => {
     for (const reason of [
       "authorizationRevoked",
