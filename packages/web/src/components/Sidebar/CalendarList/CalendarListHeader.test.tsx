@@ -183,7 +183,7 @@ describe("CalendarListHeader", () => {
     expect(mockConnectGoogle).toHaveBeenCalledTimes(1);
   });
 
-  it("shows a healthy status without a connect button when Google is healthy", async () => {
+  it("stays quiet (no status line) when Google is healthy, to cut sidebar noise", async () => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "HEALTHY";
@@ -194,39 +194,11 @@ describe("CalendarListHeader", () => {
     expect(email.tagName).toBe("SPAN");
     expect(email).toHaveClass("text-text");
     expect(email).not.toHaveClass("c-sync-text-wave");
-    expect(screen.getByRole("status")).toHaveTextContent("Calendar connected");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.queryByText(/Updated/)).toBeNull();
 
     await user.hover(email);
     expect(screen.queryByRole("tooltip")).toBeNull();
-  });
-
-  it("shows last-synced timing when Sync connection metadata includes lastSyncedAt", () => {
-    mockEmail = "ahab@pequod.com";
-    mockGoogleState = "HEALTHY";
-    const connection = {
-      id: "conn-1",
-      state: "healthy",
-      stateReason: null,
-      lastSyncedAt: new Date().toISOString(),
-      lastHealthyAt: new Date().toISOString(),
-      accountEmail: "ahab@pequod.com",
-    };
-    userMetadataActions.set({
-      google: {
-        connectionState: "HEALTHY",
-        connection,
-        connections: [connection],
-      },
-    });
-
-    renderHeader();
-
-    expect(screen.getByRole("status")).toHaveTextContent("Calendar connected");
-    expect(screen.getByText("Updated just now")).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /Google Calendar/ }),
-    ).toBeNull();
   });
 
   it("shows setup status only while the first calendar import is in progress", async () => {
@@ -401,9 +373,11 @@ describe("CalendarListHeader", () => {
 
     renderHeader();
 
-    expect(screen.getByRole("status")).toHaveTextContent("Calendar connected");
+    // Resolves to "healthy" (not "syncing"), so the sidebar shows nothing at
+    // all rather than either status text - full detail lives in Settings.
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.queryByText("Adding your calendar…")).toBeNull();
-    expect(screen.getByText("Updated just now")).toBeInTheDocument();
+    expect(screen.queryByText(/Updated/)).toBeNull();
   });
 
   it("scopes to the connection matching the signed-in user's own email, not sync's aggregate precedence winner across every connected account", () => {

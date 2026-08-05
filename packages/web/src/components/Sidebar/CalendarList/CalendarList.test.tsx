@@ -442,7 +442,9 @@ describe("CalendarList", () => {
     const broken = within(
       screen.getByRole("region", { name: "Calendars for ahab@gmail.com" }),
     );
-    expect(healthy.getByRole("status").textContent).toBe("Calendar connected");
+    // A healthy account stays quiet in the sidebar - full status lives in
+    // Settings - but a broken one still needs to surface here.
+    expect(healthy.queryByRole("status")).not.toBeInTheDocument();
     expect(broken.getByRole("status").textContent).toBe(
       "Calendar needs reconnecting",
     );
@@ -552,13 +554,14 @@ describe("CalendarList", () => {
     expect(screen.getByText("Compass")).toBeInTheDocument();
   });
 
-  it("shows a loading state while calendars are pending", () => {
+  it("renders no placeholder text while calendars are pending, to avoid a layout shift once they load", () => {
     BaseApi.defaults.adapter = () => new Promise(() => {});
     const { wrapper } = createStoreWrapper();
 
     render(<CalendarList Header={StubHeader} />, { wrapper });
 
-    expect(screen.getByText(/loading calendars/i)).toBeInTheDocument();
+    expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
   });
 
   it("shows an empty state when there are no calendars", () => {

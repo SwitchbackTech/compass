@@ -143,9 +143,7 @@ export const CalendarList: FC<Props> = ({ Header = CalendarListHeader }) => {
           this never hides the sign-up-prompt header they still need. */}
       {!showAccountSections && <Header />}
 
-      {isPending ? (
-        <p className="text-text-muted text-xs">Loading calendars…</p>
-      ) : isError ? (
+      {isPending ? null : isError ? (
         <div className="flex items-center justify-between gap-2 text-xs">
           <p className="text-error">Couldn't load calendars.</p>
           <button
@@ -210,7 +208,7 @@ const CalendarRow: FC<{
       <button
         aria-label={`${calendar.isVisible ? "Hide" : "Show"} ${displayName} calendar`}
         aria-pressed={calendar.isVisible}
-        className="c-focus-ring flex min-w-0 flex-1 items-center gap-2 rounded px-1 py-0.5 text-left text-text text-xs hover:bg-surface-panel"
+        className="c-focus-ring flex min-w-0 flex-1 items-center gap-2 rounded px-1 py-0.5 text-left text-text-muted text-xs hover:bg-surface-panel hover:text-text"
         onClick={() => onToggle(calendar.id, !calendar.isVisible)}
         type="button"
       >
