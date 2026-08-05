@@ -424,7 +424,7 @@ describe("CalendarList", () => {
     expect(headings).toEqual(["ahab@pequod.com", "ahab@gmail.com"]);
   });
 
-  it("gives each account its own status line", () => {
+  it("keeps each account's own section quiet - status text lives in the pinned SidebarStatusBar instead", () => {
     const work = makeCalendar({
       name: "Work",
       accountEmail: "ahab@pequod.com",
@@ -452,12 +452,12 @@ describe("CalendarList", () => {
     const broken = within(
       screen.getByRole("region", { name: "Calendars for ahab@gmail.com" }),
     );
-    // A healthy account stays quiet in the sidebar - full status lives in
-    // Settings - but a broken one still needs to surface here.
+    // Neither account's own section renders status text - it moved to the
+    // sidebar's pinned bottom bar (see SidebarStatusBar.test.tsx) so a
+    // status appearing/disappearing per account can never shift the
+    // calendar rows below it.
     expect(healthy.queryByRole("status")).not.toBeInTheDocument();
-    expect(broken.getByRole("status").textContent).toBe(
-      "Calendar needs reconnecting",
-    );
+    expect(broken.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("gives a lone account the same labelled section as several", () => {

@@ -107,7 +107,7 @@ describe("AccountSectionHeader", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows the account's own error status and a reconnect action scoped to it", async () => {
+  it("shows a reconnect action scoped to the account with an error", async () => {
     const user = userEvent.setup({ delay: null });
     googleState = "RECONNECT_REQUIRED";
 
@@ -117,10 +117,9 @@ describe("AccountSectionHeader", () => {
       connectionState: "RECONNECT_REQUIRED",
     });
 
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Calendar needs reconnecting",
-    );
-    expect(screen.getByRole("status")).toHaveClass("text-error");
+    // The status text itself now lives in the pinned SidebarStatusBar, not
+    // inline here - see SidebarStatusBar.test.tsx.
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
     // Named per account, so two broken accounts give a screen reader two
     // distinguishable buttons.
@@ -132,7 +131,7 @@ describe("AccountSectionHeader", () => {
     expect(onSelect).toHaveBeenCalledTimes(1);
   });
 
-  it("shows the setup status and shimmer while the account's first import runs", () => {
+  it("shows the shimmer on the email while the account's first import runs", () => {
     googleState = "IMPORTING";
 
     renderHeader({
@@ -141,9 +140,7 @@ describe("AccountSectionHeader", () => {
       connectionState: "IMPORTING",
     });
 
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Adding your calendar…",
-    );
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.getByText(EMAIL)).toHaveClass("c-sync-text-wave");
   });
 });

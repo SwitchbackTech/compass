@@ -192,7 +192,7 @@ describe("CalendarListHeader", () => {
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
-  it("shows setup status only while the first calendar import is in progress", async () => {
+  it("shows the wave shimmer on the email while the first calendar import is in progress", async () => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "IMPORTING";
@@ -201,9 +201,9 @@ describe("CalendarListHeader", () => {
 
     const email = screen.getByText("ahab@pequod.com");
     expect(email).toHaveClass("c-sync-text-wave");
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Adding your calendar…",
-    );
+    // The status text itself now lives in the pinned SidebarStatusBar, not
+    // inline here - see SidebarStatusBar.test.tsx.
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
     await user.hover(email);
     expect(screen.queryByRole("tooltip")).toBeNull();
@@ -220,10 +220,6 @@ describe("CalendarListHeader", () => {
     expect(email.tagName).toBe("SPAN");
     expect(email).toHaveClass("text-text-muted");
     expect(email).not.toHaveClass("text-warning");
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Calendar updates are taking longer than usual. We'll keep trying.",
-    );
-    expect(screen.getByRole("status")).toHaveClass("text-warning");
 
     const syncButton = screen.getByRole("button", {
       name: "Refresh calendar",
@@ -242,10 +238,6 @@ describe("CalendarListHeader", () => {
     const email = screen.getByText("ahab@pequod.com");
     expect(email).toHaveClass("text-text-muted");
     expect(email).not.toHaveClass("text-error");
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Calendar needs reconnecting",
-    );
-    expect(screen.getByRole("status")).toHaveClass("text-error");
 
     const reconnectButton = screen.getByRole("button", {
       name: "Reconnect Google Calendar",
@@ -266,9 +258,6 @@ describe("CalendarListHeader", () => {
     const reconnectButton = screen.getByRole("button", {
       name: "Reconnecting…",
     });
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Reconnecting your calendar…",
-    );
     expect(reconnectButton).toBeDisabled();
     expect(reconnectButton).toHaveAttribute("aria-busy", "true");
     expect(
@@ -286,9 +275,6 @@ describe("CalendarListHeader", () => {
     const connectButton = screen.getByRole("button", {
       name: "Connecting…",
     });
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Connecting your calendar…",
-    );
     expect(connectButton).toBeDisabled();
     expect(connectButton).toHaveAttribute("aria-busy", "true");
   });
@@ -303,9 +289,6 @@ describe("CalendarListHeader", () => {
     const refreshButton = screen.getByRole("button", {
       name: "Refreshing…",
     });
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Calendar updates are taking longer than usual. We'll keep trying.",
-    );
     expect(refreshButton).toBeDisabled();
     expect(refreshButton).toHaveAttribute("aria-busy", "true");
   });
@@ -333,7 +316,6 @@ describe("CalendarListHeader", () => {
 
     // Resolves to "healthy" (not "syncing"), so the sidebar shows nothing at
     // all rather than either status text - full detail lives in Settings.
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.queryByText("Adding your calendar…")).toBeNull();
     expect(screen.queryByText(/Updated/)).toBeNull();
   });
