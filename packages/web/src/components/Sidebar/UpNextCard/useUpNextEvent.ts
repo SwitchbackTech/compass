@@ -38,10 +38,7 @@ export function useUpNextEvent() {
         dayjs(event.startDate).isSameOrBefore(now) &&
         dayjs(event.endDate).isAfter(now),
     )
-    .sort(
-      (a, b) =>
-        dayjs(a.endDate).valueOf() - dayjs(b.endDate).valueOf(),
-    );
+    .sort((a, b) => dayjs(a.endDate).valueOf() - dayjs(b.endDate).valueOf());
 
   const upcomingEvents = allTimedEvents
     .filter((event) => dayjs(event.startDate).isAfter(now))

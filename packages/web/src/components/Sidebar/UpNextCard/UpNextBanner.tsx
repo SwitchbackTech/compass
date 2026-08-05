@@ -18,9 +18,7 @@ const DISMISS_ANIMATION_MS = 200;
 export const UpNextBanner: FC = () => {
   const { now, openEventDetails, upNext, conferenceUrl, isCurrentEvent } =
     useUpNextEvent();
-  const [dismissedId, setDismissedId] = useState<string | undefined>(
-    undefined,
-  );
+  const [dismissedId, setDismissedId] = useState<string | undefined>(undefined);
   const [isClosing, setIsClosing] = useState(false);
 
   const isWithinWindow =
