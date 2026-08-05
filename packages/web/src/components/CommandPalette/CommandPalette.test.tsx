@@ -1,5 +1,11 @@
 import "@testing-library/jest-dom";
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { renderWithStore } from "@web/__tests__/render-with-store";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
@@ -14,6 +20,7 @@ import {
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import { recordRecentCommand } from "./recent-commands.store";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockNavigate = mock();
@@ -50,7 +57,8 @@ mock.module("@web/auth/compass/user/hooks/useUser", () => ({
   useUser: () => ({}),
 }));
 
-const { CommandPalette, LifeCommandPalette } = await import("./CommandPalette");
+const { CommandPalette, LifeCommandPalette, getRowTextColorClassName } =
+  await import("./CommandPalette");
 
 const onGoToToday = mock();
 const onShowShortcuts = mock();
@@ -80,6 +88,18 @@ const getInput = () =>
 const activeRowText = (container: HTMLElement) =>
   container.ownerDocument.querySelector(".bg-surface-overlay > span")
     ?.textContent ?? null;
+
+// Match highlighting splits a matched label into text + <strong> nodes, so
+// testing-library's default getByText(string) (which only looks at an
+// element's own direct text-node children, not nested descendants) stops
+// matching the label span once part of it is highlighted. This checks full
+// recursive textContent instead, scoped to the label span specifically
+// (the row's `<button>` has the same full text and would otherwise also match).
+const rowLabel = (label: string) =>
+  screen.getByText(
+    (_content, element) =>
+      element?.tagName === "SPAN" && element?.textContent === label,
+  );
 
 const isOpen = () => selectIsCmdPaletteOpen(useSettingsStore.getState());
 
@@ -140,9 +160,11 @@ describe("CommandPalette", () => {
     fireEvent.change(getInput(), { target: { value: "create event" } });
 
     // Both create items match ("event" is a word-prefix hit on each label);
-    // "Create event" ranks first (tie broken by authored order).
-    expect(screen.getByText("Create event")).toBeInTheDocument();
-    expect(screen.getByText("Create all-day event")).toBeInTheDocument();
+    // "Create event" ranks first (tie broken by authored order). Matched
+    // text is now bolded, so query by full recursive textContent (rowLabel)
+    // rather than the default getByText, which only reads direct children.
+    expect(rowLabel("Create event")).toBeInTheDocument();
+    expect(rowLabel("Create all-day event")).toBeInTheDocument();
     expect(activeRowText(container)).toBe("Create event");
     expect(screen.queryByText("Navigation")).not.toBeInTheDocument();
     expect(screen.queryByText("Settings")).not.toBeInTheDocument();
@@ -151,7 +173,11 @@ describe("CommandPalette", () => {
     ).not.toBeInTheDocument();
 
     fireEvent.change(getInput(), { target: { value: "zzzzz" } });
-    expect(screen.getByText(/No results for/)).toBeInTheDocument();
+    // The sr-only live region echoes the same "No results for" copy, so
+    // scope to the visible div specifically to avoid an ambiguous match.
+    expect(
+      screen.getByText(/No results for/, { selector: "div" }),
+    ).toBeInTheDocument();
   });
 
   it("matches a synonym keyword that doesn't appear in the label", () => {
@@ -159,7 +185,7 @@ describe("CommandPalette", () => {
 
     fireEvent.change(getInput(), { target: { value: "day page" } });
 
-    expect(screen.getByText("Go to Day")).toBeInTheDocument();
+    expect(rowLabel("Go to Day")).toBeInTheDocument();
     expect(activeRowText(container)).toBe("Go to Day");
   });
 
@@ -234,7 +260,7 @@ describe("CommandPalette", () => {
 
     fireEvent.change(input, { target: { value: "ligh" } });
     expect(input).toHaveValue("ligh");
-    expect(screen.getByText("Switch to light theme")).toBeInTheDocument();
+    expect(rowLabel("Switch to light theme")).toBeInTheDocument();
     expect(screen.queryByText("Go to Today")).not.toBeInTheDocument();
 
     fireEvent.keyDown(input, { key: "Escape" });
@@ -331,6 +357,83 @@ describe("CommandPalette", () => {
     expect(
       screen.queryByText(/Google Calendar|calendar sync|calendar status/i),
     ).not.toBeInTheDocument();
+  });
+
+  it("activates a row on pointer move, without requiring a keypress", () => {
+    const { container } = renderPalette();
+    expect(activeRowText(container)).toBe("Go to Today");
+
+    const dayRow = screen.getByText("Go to Day").closest("button");
+    fireEvent.pointerMove(dayRow as HTMLButtonElement);
+
+    expect(activeRowText(container)).toBe("Go to Day");
+  });
+
+  it("announces the result count in a live region, matching the visible copy", () => {
+    renderPalette();
+    const liveRegion = () =>
+      document.querySelector('[aria-live="polite"]') as HTMLElement;
+
+    // Nothing announced yet for an untouched, empty query.
+    expect(liveRegion().textContent).toBe("");
+
+    fireEvent.change(getInput(), { target: { value: "create event" } });
+    expect(liveRegion().textContent).toBe("2 results");
+
+    fireEvent.change(getInput(), { target: { value: "zzzzz" } });
+    expect(liveRegion().textContent).toBe("No results for “zzzzz”");
+  });
+
+  it("renders keyboard hint footer chips", () => {
+    renderPalette();
+
+    expect(screen.getByText("Navigate")).toBeInTheDocument();
+    expect(screen.getByText("Select")).toBeInTheDocument();
+    expect(screen.getByText("Close")).toBeInTheDocument();
+  });
+
+  it("shows a Recent section with previously used commands, hidden while typing", () => {
+    recordRecentCommand("go-to-day");
+
+    renderPalette();
+
+    const recentHeading = screen.getByText("Recent");
+    const recentSection = recentHeading.closest("div.mb-1") as HTMLElement;
+    expect(within(recentSection).getByText("Go to Day")).toBeInTheDocument();
+
+    fireEvent.change(getInput(), { target: { value: "day" } });
+    expect(screen.queryByText("Recent")).not.toBeInTheDocument();
+  });
+
+  it("records a command as recent when it's selected", () => {
+    renderPalette();
+
+    fireEvent.click(screen.getByText("Show keyboard shortcuts"));
+    expect(isOpen()).toBe(false);
+
+    // Same reopen pattern as "clears the search query when reopened after
+    // close" — the store flip re-renders CommandPaletteContent in place.
+    act(() => {
+      settingsActions.openCmdPalette();
+    });
+
+    const recentHeading = screen.getByText("Recent");
+    const recentSection = recentHeading.closest("div.mb-1") as HTMLElement;
+    expect(
+      within(recentSection).getByText("Show keyboard shortcuts"),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("getRowTextColorClassName", () => {
+  it("returns the muted-red class for a destructive item", () => {
+    expect(getRowTextColorClassName({ variant: "destructive" })).toBe(
+      "text-error",
+    );
+  });
+
+  it("returns the neutral class for a regular item", () => {
+    expect(getRowTextColorClassName({})).toBe("text-text-muted");
   });
 });
 

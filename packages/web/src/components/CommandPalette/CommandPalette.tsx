@@ -9,9 +9,10 @@ import {
 } from "@floating-ui/react";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { eventCommandPaletteItems } from "@web/components/CommandPalette/event.cmd.constants";
+import { HighlightedLabel } from "@web/components/CommandPalette/HighlightedLabel";
 import { useAddAccountCmdItems } from "@web/components/CommandPalette/hooks/useAddAccountCmdItems";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
 import { useDeleteAccountCmdItems } from "@web/components/CommandPalette/hooks/useDeleteAccountCmdItems";
@@ -26,6 +27,10 @@ import {
   getNavigationCommandItems,
   getNavigationViewRoute,
 } from "@web/components/CommandPalette/navigation.cmd.constants";
+import {
+  recordRecentCommand,
+  useRecentCommandIds,
+} from "@web/components/CommandPalette/recent-commands.store";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { useUndoRedo } from "@web/events/mutations/useUndoRedo";
@@ -36,8 +41,18 @@ import {
 } from "@web/settings/settings.store";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { type ViewName } from "@web/shortcuts/shortcuts.constants";
-import { filterSections } from "./command-palette.search";
-import { type CommandSection } from "./command-palette.types";
+import { filterSections, getLabelMatchRanges } from "./command-palette.search";
+import { type CommandItem, type CommandSection } from "./command-palette.types";
+
+const RECENT_SECTION_ID = "recent";
+const MAX_RECENT_ITEMS = 3;
+
+/** Muted-red text for irreversible/data-loss items (e.g. delete account); neutral otherwise. */
+export function getRowTextColorClassName(
+  item: Pick<CommandItem, "variant">,
+): string {
+  return item.variant === "destructive" ? "text-error" : "text-text-muted";
+}
 
 interface CommandPaletteProps {
   currentView: ViewName;
@@ -62,6 +77,25 @@ const CommandPaletteContent = ({
   const [activeIndex, setActiveIndex] = useState<number | null>(0);
   const listRef = useRef<Array<HTMLElement | null>>([]);
 
+  // Entrance-only fade/scale — no exit animation. Close is driven by the
+  // external `isCmdPaletteOpen` store (shortcuts + tests flip it
+  // synchronously), and this component unmounts the instant it flips false;
+  // animating that would need a delayed-unmount state machine to handle
+  // "reopened while still closing." Not worth it for a UI pattern where an
+  // instant close is normal — dismissal isn't a decision the user watches,
+  // unlike a confirmation modal.
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const reduceMotion =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    if (reduceMotion) {
+      setVisible(true);
+      return;
+    }
+    const raf = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   // Focus the search input the moment it mounts (commit phase, like the
   // autoFocus attribute — but without tripping the a11y lint). Stable identity
   // keeps it from re-firing on every keystroke re-render.
@@ -78,12 +112,26 @@ const CommandPaletteContent = ({
     },
   });
 
-  const filteredSections = filterSections(sections, search);
+  const trimmedSearch = search.trim();
+  // The Recent section only makes sense as a landing state — once the user
+  // is typing, filterSections would keep a recent item alongside its normal
+  // section entry (same id, same label) whenever it happens to match,
+  // producing a visible duplicate row. Drop it before filtering instead.
+  const sectionsToFilter = trimmedSearch
+    ? sections.filter((section) => section.id !== RECENT_SECTION_ID)
+    : sections;
+  const filteredSections = filterSections(sectionsToFilter, search);
   const flatItems = filteredSections.flatMap((section) => section.items);
   const disabledIndices = flatItems.reduce<number[]>((acc, item, index) => {
     if (item.disabled) acc.push(index);
     return acc;
   }, []);
+  const resultCount = flatItems.length;
+  const liveRegionText = !trimmedSearch
+    ? ""
+    : resultCount === 0
+      ? `No results for “${search}”`
+      : `${resultCount} result${resultCount === 1 ? "" : "s"}`;
 
   const dismiss = useDismiss(context);
   const role = useRole(context, { role: "listbox" });
@@ -107,7 +155,9 @@ const CommandPaletteContent = ({
     <FloatingPortal>
       <FloatingOverlay
         lockScroll
-        className="flex justify-center bg-background/85 backdrop-blur-sm"
+        className={`flex justify-center bg-background/85 backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none ${
+          visible ? "opacity-100" : "opacity-0"
+        }`}
         style={{ zIndex: Z_INDEX_MODAL }}
       >
         {/* No FloatingFocusManager: virtual list navigation keeps real focus in
@@ -115,7 +165,9 @@ const CommandPaletteContent = ({
             input on open via the focusInputOnMount callback ref above. */}
         <div
           ref={refs.setFloating}
-          className="mt-[15vh] h-fit w-[640px] max-w-[90vw] overflow-hidden rounded-xl border border-border bg-surface shadow-[0_16px_48px_var(--color-shadow-default)]"
+          className={`mt-[15vh] h-fit w-[640px] max-w-[90vw] overflow-hidden rounded-xl border border-border bg-surface shadow-[0_16px_48px_var(--color-shadow-default)] transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
+            visible ? "scale-100 opacity-100" : "scale-95 opacity-0"
+          }`}
         >
           <input
             {...getReferenceProps({
@@ -138,6 +190,14 @@ const CommandPaletteContent = ({
             }}
           />
 
+          {/* Visually hidden — announces result count changes to screen
+              reader users, who otherwise get no feedback that typing
+              changed what's showing. Wording matches the visible
+              zero-results message below rather than diverging from it. */}
+          <span aria-live="polite" className="sr-only">
+            {liveRegionText}
+          </span>
+
           <div className="max-h-[50vh] overflow-y-auto p-2">
             {filteredSections.length === 0 ? (
               <div className="px-3 py-2 text-text">
@@ -153,7 +213,7 @@ const CommandPaletteContent = ({
                     itemIndex += 1;
                     const index = itemIndex;
                     const isActive = activeIndex === index;
-                    const rowClassName = `flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-text-muted ${
+                    const rowClassName = `flex w-full items-center gap-3 rounded-md px-3 py-2 text-left ${getRowTextColorClassName(item)} ${
                       isActive
                         ? "bg-surface-overlay ring-1 ring-accent ring-inset"
                         : ""
@@ -163,7 +223,14 @@ const CommandPaletteContent = ({
                       <>
                         <item.icon size={18} />
                         <span className="min-w-0 flex-1 truncate">
-                          {item.label}
+                          {trimmedSearch ? (
+                            <HighlightedLabel
+                              label={item.label}
+                              ranges={getLabelMatchRanges(item.label, search)}
+                            />
+                          ) : (
+                            item.label
+                          )}
                         </span>
                         {item.shortcut && (
                           <ShortcutKeys
@@ -181,8 +248,13 @@ const CommandPaletteContent = ({
                           ref(node: HTMLElement | null) {
                             listRef.current[index] = node;
                           },
+                          onPointerMove() {
+                            if (item.disabled || isActive) return;
+                            setActiveIndex(index);
+                          },
                           onClick() {
                             if (item.disabled) return;
+                            recordRecentCommand(item.id);
                             item.onClick?.();
                             if (!item.keepOpen) close();
                           },
@@ -200,6 +272,21 @@ const CommandPaletteContent = ({
                 </div>
               ))
             )}
+          </div>
+
+          <div className="flex items-center justify-end gap-4 border-border border-t px-4 py-1.5 text-text-muted text-xs">
+            <span className="inline-flex items-center gap-1.5">
+              <ShortcutKeys keys={["ArrowUp", "ArrowDown"]} />
+              Navigate
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <ShortcutKeys keys="Enter" />
+              Select
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <ShortcutKeys keys="Esc" />
+              Close
+            </span>
           </div>
         </div>
       </FloatingOverlay>
@@ -228,6 +315,7 @@ export const CommandPalette = ({
   const deleteAccountCmdItems = useDeleteAccountCmdItems();
   const themeCmdItems = useThemeCmdItems();
   const { undo, canUndo } = useUndoRedo(mutationDependencies);
+  const recentCommandIds = useRecentCommandIds();
 
   const sections: CommandSection[] = [
     {
@@ -282,10 +370,32 @@ export const CommandPalette = ({
     ...getMoreCommandPaletteSections(currentView),
   ];
 
+  // Resolved against the already-built items so a stale id (hidden by auth
+  // state, or an item that no longer exists) is skipped silently rather than
+  // rendering a broken row. Recent items still also appear in their normal
+  // section — this is a convenience shortcut, not a move.
+  const itemsById = new Map<string, CommandItem>(
+    sections.flatMap((section) => section.items.map((item) => [item.id, item])),
+  );
+  const recentItems = recentCommandIds
+    .map((id) => itemsById.get(id))
+    .filter((item): item is CommandItem => item !== undefined)
+    .slice(0, MAX_RECENT_ITEMS);
+  const sectionsWithRecent: CommandSection[] =
+    recentItems.length > 0
+      ? [
+          { id: RECENT_SECTION_ID, heading: "Recent", items: recentItems },
+          ...sections,
+        ]
+      : sections;
+
   if (!open) return null;
 
   return (
-    <CommandPaletteContent placeholder={placeholder} sections={sections} />
+    <CommandPaletteContent
+      placeholder={placeholder}
+      sections={sectionsWithRecent}
+    />
   );
 };
 

@@ -12,6 +12,7 @@ import {
 import { resetCalendarVisibilityStoreForTests } from "@web/calendars/calendar-visibility.store";
 import { resetCollapsedAccountsStoreForTests } from "@web/calendars/collapsed-accounts.store";
 import { resetDefaultCalendarStoreForTests } from "@web/calendars/default-calendar.store";
+import { resetRecentCommandsStoreForTests } from "@web/components/CommandPalette/recent-commands.store";
 import { useFeedbackStore } from "@web/components/Feedback/feedback.store";
 import { useReleaseNotesPromptStore } from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
 import { useWelcomeGuideStore } from "@web/components/WelcomeModal/welcome.guide.store";
@@ -54,6 +55,7 @@ const storeResets: StoreReset[] = [
   resetCalendarVisibilityStoreForTests,
   resetDefaultCalendarStoreForTests,
   resetCollapsedAccountsStoreForTests,
+  resetRecentCommandsStoreForTests,
   // Lives on window.__weekInteractionMotionActive, which survives across
   // test files (the preload reuses one jsdom window). A test that starts a
   // real drag and never completes it would otherwise leave every later

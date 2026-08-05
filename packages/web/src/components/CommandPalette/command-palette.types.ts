@@ -12,6 +12,8 @@ export interface CommandItem {
   shortcut?: string | string[];
   /** Extra search terms (synonyms) matched by the palette's fuzzy filter; never rendered. */
   keywords?: string[];
+  /** Visually flags an irreversible/data-loss action (e.g. delete account). */
+  variant?: "destructive";
 }
 
 export interface CommandSection {

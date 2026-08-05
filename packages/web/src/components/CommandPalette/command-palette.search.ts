@@ -76,6 +76,43 @@ export function scoreCommandItem(
 }
 
 /**
+ * Finds where each query token appears as a literal substring in `label`
+ * (case-insensitive) so the UI can bold the matched characters. Only covers
+ * the prefix/word-prefix/substring tiers — the visually satisfying majority
+ * of real matches. Tokens that only matched via subsequence or a keyword
+ * (not the label itself) are simply not highlighted; that's a deliberate
+ * scope cut, not a bug, since subsequence highlighting would be noisy and
+ * rarely hit in practice. Overlapping/adjacent ranges are merged.
+ */
+export function getLabelMatchRanges(
+  label: string,
+  query: string,
+): Array<[number, number]> {
+  const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return [];
+
+  const lowerLabel = label.toLowerCase();
+  const ranges: Array<[number, number]> = [];
+  for (const token of tokens) {
+    const index = lowerLabel.indexOf(token);
+    if (index !== -1) ranges.push([index, index + token.length]);
+  }
+  if (ranges.length === 0) return [];
+
+  ranges.sort((a, b) => a[0] - b[0]);
+  const merged: Array<[number, number]> = [ranges[0]];
+  for (const [start, end] of ranges.slice(1)) {
+    const last = merged[merged.length - 1];
+    if (start <= last[1]) {
+      last[1] = Math.max(last[1], end);
+    } else {
+      merged.push([start, end]);
+    }
+  }
+  return merged;
+}
+
+/**
  * Fuzzy-filters each section's items against `search`: label + keyword
  * synonyms, multi-word queries requiring every word to match, typo-tolerant
  * subsequence matching as a last resort. Items are ranked by score within
