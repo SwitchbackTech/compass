@@ -12,6 +12,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useRef, useState } from "react";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { eventCommandPaletteItems } from "@web/components/CommandPalette/event.cmd.constants";
+import { useAddAccountCmdItems } from "@web/components/CommandPalette/hooks/useAddAccountCmdItems";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
 import { useDeleteAccountCmdItems } from "@web/components/CommandPalette/hooks/useDeleteAccountCmdItems";
 import { useDemoEventsCmdItems } from "@web/components/CommandPalette/hooks/useDemoEventsCmdItems";
@@ -242,6 +243,7 @@ export const CommandPalette = ({
   const demoEventsCmdItems = useDemoEventsCmdItems();
   const authCmdItems = useAuthCmdItems();
   const showAccountsCmdItems = useShowAccountsCmdItems();
+  const addAccountCmdItems = useAddAccountCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
   const deleteAccountCmdItems = useDeleteAccountCmdItems();
   const themeCmdItems = useThemeCmdItems();
@@ -291,6 +293,7 @@ export const CommandPalette = ({
         ...exportDataCmdItems,
         ...authCmdItems,
         ...showAccountsCmdItems,
+        ...addAccountCmdItems,
         ...logoutCmdItems,
         ...deleteAccountCmdItems,
       ],
