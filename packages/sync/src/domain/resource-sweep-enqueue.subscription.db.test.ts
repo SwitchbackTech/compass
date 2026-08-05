@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
-import { maintainExpiringSubscriptions } from "@sync/domain/subscription-sweep.service";
+import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
@@ -11,7 +11,29 @@ const now = () => new Date("2026-07-10T00:00:00.000Z");
 // Subscriptions expiring before this instant are due for renewal.
 const renewBefore = new Date("2026-07-10T12:00:00.000Z");
 
-describe("maintainExpiringSubscriptions", () => {
+// app.ts's subscription sweep: enqueueForResources bound to
+// listExpiringSubscriptions / "subscriptionMaintain", the same shape it's
+// called with there.
+const maintainExpiringSubscriptions = (
+  deps: {
+    resources: SyncResourceRepository;
+    jobs: JobRepository;
+    onEnqueueError?: (error: unknown, resourceId: string) => void;
+  },
+  before: Date,
+  nowFn: () => Date,
+  limit?: number,
+) =>
+  enqueueForResources(
+    deps,
+    (b, l) => deps.resources.listExpiringSubscriptions(b, l),
+    "subscriptionMaintain",
+    before,
+    nowFn,
+    limit,
+  );
+
+describe("subscription-maintenance sweep (enqueueForResources + listExpiringSubscriptions)", () => {
   const storage = setupSyncStorage(import.meta.url);
   let resources: SyncResourceRepository;
   let jobs: JobRepository;

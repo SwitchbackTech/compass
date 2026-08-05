@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
-import { recoverStalledBootstraps } from "@sync/domain/bootstrap-recovery.service";
+import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
   type ResourceBootstrapState,
@@ -15,7 +15,29 @@ const now = () => new Date("2026-08-04T21:00:00.000Z");
 // Resources untouched since this instant are stalled.
 const stalledBefore = new Date("2026-08-04T20:45:00.000Z");
 
-describe("recoverStalledBootstraps", () => {
+// app.ts's bootstrap-recovery sweep: enqueueForResources bound to
+// listStalledBootstraps / "bootstrapCatchup", the same shape it's called
+// with there.
+const recoverStalledBootstraps = (
+  deps: {
+    resources: SyncResourceRepository;
+    jobs: JobRepository;
+    onEnqueueError?: (error: unknown, resourceId: string) => void;
+  },
+  before: Date,
+  nowFn: () => Date,
+  limit?: number,
+) =>
+  enqueueForResources(
+    deps,
+    (b, l) => deps.resources.listStalledBootstraps(b, l),
+    "bootstrapCatchup",
+    before,
+    nowFn,
+    limit,
+  );
+
+describe("bootstrap-recovery sweep (enqueueForResources + listStalledBootstraps)", () => {
   const storage = setupSyncStorage(import.meta.url);
   let resources: SyncResourceRepository;
   let jobs: JobRepository;

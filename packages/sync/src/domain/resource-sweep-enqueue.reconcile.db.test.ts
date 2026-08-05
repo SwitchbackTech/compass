@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
-import { reconcileStaleCalendars } from "@sync/domain/reconcile.service";
+import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
@@ -12,7 +12,28 @@ const now = () => new Date("2026-07-10T00:00:00.000Z");
 // Resources not synced since this instant are stale.
 const staleBefore = new Date("2026-07-09T00:00:00.000Z");
 
-describe("reconcileStaleCalendars", () => {
+// app.ts's reconcile sweep: enqueueForResources bound to listStaleEvents /
+// "incrementalPull", the same shape it's called with there.
+const reconcileStaleCalendars = (
+  deps: {
+    resources: SyncResourceRepository;
+    jobs: JobRepository;
+    onEnqueueError?: (error: unknown, resourceId: string) => void;
+  },
+  before: Date,
+  nowFn: () => Date,
+  limit?: number,
+) =>
+  enqueueForResources(
+    deps,
+    (b, l) => deps.resources.listStaleEvents(b, l),
+    "incrementalPull",
+    before,
+    nowFn,
+    limit,
+  );
+
+describe("reconcile sweep (enqueueForResources + listStaleEvents)", () => {
   const storage = setupSyncStorage(import.meta.url);
   let resources: SyncResourceRepository;
   let jobs: JobRepository;

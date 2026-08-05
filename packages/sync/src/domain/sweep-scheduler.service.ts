@@ -8,7 +8,7 @@ import { PollLoop } from "@sync/domain/poll-loop";
 
 export interface SweepSchedulerDeps {
   // Run one sweep for the cutoff instant `before`; returns how many it enqueued.
-  // Bound to a concrete sweep (reconcileStaleCalendars, maintainExpiringSubscriptions)
+  // Bound to a concrete sweep (enqueueForResources with a specific finder/kind)
   // + repositories by the caller.
   sweep: (before: Date) => Promise<number>;
 }
