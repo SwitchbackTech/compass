@@ -5,11 +5,13 @@ import {
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 
-// The shared shape behind reconcile.service.ts and subscription-sweep.service.ts:
-// find due resources with `finder`, enqueue one `kind` job per resource, and
-// return how many were enqueued. The only difference between the two sweeps is
-// which finder they call and which job kind they enqueue — everything else,
-// including the coalescing key template, is identical.
+// The shared shape behind every sweep app.ts wires up (reconcile, subscription
+// maintenance, bootstrap recovery): find due resources with `finder`, enqueue
+// one `kind` job per resource, and return how many were enqueued. The only
+// difference between sweeps is which finder they call and which job kind they
+// enqueue — everything else, including the coalescing key template, is
+// identical, so each sweep site calls this directly rather than through its
+// own wrapper.
 //
 // Each resource is enqueued independently: one that throws is reported and
 // skipped, never allowed to abandon the rest of the batch. The sweeps are the

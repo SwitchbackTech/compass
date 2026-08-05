@@ -9,7 +9,6 @@ import {
 } from "@sync/auth/internal-auth";
 import { loadSyncConfig, type SyncConfig } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
-import { recoverStalledBootstraps } from "@sync/domain/bootstrap-recovery.service";
 import {
   CONNECTION_CACHE_RETENTION_MS,
   purgeExpiredDisconnectedConnections,
@@ -18,9 +17,8 @@ import {
   FAILED_JOB_MAX_REQUEUES,
   requeueFailedJobs,
 } from "@sync/domain/failed-job-requeue.service";
-import { reconcileStaleCalendars } from "@sync/domain/reconcile.service";
+import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
 import { retryStaleCommands } from "@sync/domain/stale-command-retry.service";
-import { maintainExpiringSubscriptions } from "@sync/domain/subscription-sweep.service";
 import { SweepScheduler } from "@sync/domain/sweep-scheduler.service";
 import { SyncJobWorker } from "@sync/domain/sync-job-worker.service";
 import { SyncScheduler } from "@sync/domain/sync-scheduler.service";
@@ -428,9 +426,8 @@ function buildSchedulers(
   const reconcile = new SweepScheduler(
     {
       sweep: async (before) => {
-        const enqueued = await reconcileStaleCalendars(
+        const enqueued = await enqueueForResources(
           {
-            resources,
             jobs,
             onEnqueueError: (error, resourceId) =>
               logger.error(
@@ -438,6 +435,8 @@ function buildSchedulers(
                 error,
               ),
           },
+          (b, l) => resources.listStaleEvents(b, l),
+          "incrementalPull",
           before,
           () => new Date(),
         );
@@ -476,9 +475,8 @@ function buildSchedulers(
   const subscription = new SweepScheduler(
     {
       sweep: (before) =>
-        maintainExpiringSubscriptions(
+        enqueueForResources(
           {
-            resources,
             jobs,
             onEnqueueError: (error, resourceId) =>
               logger.error(
@@ -486,6 +484,8 @@ function buildSchedulers(
                 error,
               ),
           },
+          (b, l) => resources.listExpiringSubscriptions(b, l),
+          "subscriptionMaintain",
           before,
           () => new Date(),
         ),
@@ -501,9 +501,8 @@ function buildSchedulers(
   const bootstrapRecovery = new SweepScheduler(
     {
       sweep: async (before) => {
-        const enqueued = await recoverStalledBootstraps(
+        const enqueued = await enqueueForResources(
           {
-            resources,
             jobs,
             onEnqueueError: (error, resourceId) =>
               logger.error(
@@ -511,6 +510,8 @@ function buildSchedulers(
                 error,
               ),
           },
+          (b, l) => resources.listStalledBootstraps(b, l),
+          "bootstrapCatchup",
           before,
           () => new Date(),
         );
