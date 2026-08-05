@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
+import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createSidebar } from "./Sidebar";
 import { describe, expect, it, mock } from "bun:test";
 
@@ -23,7 +24,8 @@ const sidebarProps = {
 
 describe("Sidebar", () => {
   it("renders the core sidebar sections", () => {
-    render(<Sidebar {...sidebarProps} />);
+    const { wrapper } = createStoreWrapper();
+    render(<Sidebar {...sidebarProps} />, { wrapper });
 
     expect(screen.getByText("Calendar picker")).toBeTruthy();
     expect(screen.getByText("Calendar list")).toBeTruthy();
@@ -31,8 +33,10 @@ describe("Sidebar", () => {
   });
 
   it("shows event details only while the parent says they are open", () => {
+    const { wrapper } = createStoreWrapper();
     const { rerender } = render(
       <Sidebar {...sidebarProps} eventDetails={<div>Event details</div>} />,
+      { wrapper },
     );
 
     expect(screen.queryByText("Event details")).toBeNull();
