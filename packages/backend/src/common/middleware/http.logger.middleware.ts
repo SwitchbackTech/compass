@@ -1,6 +1,6 @@
 import { type RequestHandler } from "express";
-import { styleText } from "node:util";
 import { Logger } from "@core/logger/winston.logger";
+import { styleText } from "node:util";
 
 const logger = Logger("app:http");
 

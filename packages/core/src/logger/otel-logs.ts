@@ -20,7 +20,8 @@ let posthogClient: PostHog | undefined;
 
 export function startOtelLogs(options: OtelLogsOptions): PostHog | null {
   const isRemoteLoggingEnvironment =
-    options.nodeEnv === NodeEnv.Staging || options.nodeEnv === NodeEnv.Production;
+    options.nodeEnv === NodeEnv.Staging ||
+    options.nodeEnv === NodeEnv.Production;
 
   if (isRemoteLoggingEnvironment && options.posthogKey) {
     const host = options.posthogHost || "https://us.i.posthog.com";
