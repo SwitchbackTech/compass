@@ -13,6 +13,7 @@ import {
   CONNECTION_CACHE_RETENTION_MS,
   purgeExpiredDisconnectedConnections,
 } from "@sync/domain/connection-retention.service";
+import { BOOTSTRAP_STALLED_AFTER_MS } from "@sync/domain/connection-state";
 import {
   FAILED_JOB_MAX_REQUEUES,
   requeueFailedJobs,
@@ -274,11 +275,9 @@ async function start(): Promise<void> {
 const FAILED_JOB_REQUEUE_COOLDOWN_MS = 30 * 60_000;
 // A resource not synced within this window is swept for a reconcile pull.
 const RECONCILE_STALE_AFTER_MS = 15 * 60_000;
-// A resource whose bootstrap chain (importing -> watching -> catchingUp ->
-// ready) has not advanced within this window is swept for recovery. Matches
-// reconcile's window: both are "the fallback fires this long after normal
-// forward progress should have happened".
-const BOOTSTRAP_STALLED_AFTER_MS = 15 * 60_000;
+// The bootstrap-recovery sweep below and connection-state's own bootstrapOverdue
+// evidence share BOOTSTRAP_STALLED_AFTER_MS (imported from connection-state.ts)
+// so the UI and the self-heal sweep agree on which resources are stuck.
 // A cloud command left nonterminal past this long since its last update is
 // eligible for a retry - long enough that a transient provider blip has
 // almost certainly cleared, short enough that "deleting" doesn't sit visibly

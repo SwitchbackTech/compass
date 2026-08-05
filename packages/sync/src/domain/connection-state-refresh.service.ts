@@ -1,5 +1,5 @@
 import {
-  BOOTSTRAP_OVERDUE_MS,
+  BOOTSTRAP_STALLED_AFTER_MS,
   type ConnectionStateEvidence,
   type CredentialState,
   deriveConnectionState,
@@ -125,10 +125,16 @@ export async function gatherConnectionStateEvidence(
         resource?.syncCursor != null && resource.bootstrapState === "ready"
       );
     });
+  // Same basis as the bootstrap-recovery sweep's own staleness check
+  // (listStalledBootstraps): time since the resource last advanced, not since
+  // it was created, so a resource whose chain is genuinely alive never trips
+  // this just for taking a while.
   const bootstrapOverdue = activeCalendars.some((c) => {
     const resource = eventsByCalendar.get(c._id);
     if (!resource || resource.bootstrapState === "ready") return false;
-    return now.getTime() - resource.createdAt.getTime() >= BOOTSTRAP_OVERDUE_MS;
+    return (
+      now.getTime() - resource.updatedAt.getTime() >= BOOTSTRAP_STALLED_AFTER_MS
+    );
   });
 
   // "Last synced" must be as old as the least-recent active calendar. Taking

@@ -10,14 +10,19 @@ import {
 
 // Work overdue by at least this long stops a connection from looking healthy.
 export const DELAYED_THRESHOLD_MS = 2 * 60 * 1000;
-// An active calendar still bootstrapping after this long is delayed rather
-// than perpetually "importing", even with no retrying/overdue job to point to
-// (a chain that keeps settling every job "done" - e.g. the unsupported-watch
-// loop this guards against - never trips the oldestDueWorkAt check above,
-// since nothing is ever actually overdue). Generous relative to
-// DELAYED_THRESHOLD_MS: a large first import legitimately takes minutes, so
-// this should only fire once that explanation has been exhausted.
-export const BOOTSTRAP_OVERDUE_MS = 20 * 60 * 1000;
+// An active calendar still bootstrapping after this long since it last
+// advanced is delayed rather than perpetually "importing", even with no
+// retrying/overdue job to point to (a chain that keeps settling every job
+// "done" - e.g. the unsupported-watch loop this guards against - never trips
+// the oldestDueWorkAt check above, since nothing is ever actually overdue).
+// Same threshold and the same `updatedAt`-staleness basis as the
+// bootstrap-recovery sweep (app.ts) that re-enters a resource stuck here - a
+// resource whose chain is genuinely alive keeps advancing updatedAt, so this
+// and the sweep now agree on exactly which resources are stuck, instead of
+// each answering "is this stalled?" on a different clock (createdAt at 20m
+// here vs. updatedAt at 15m there could disagree on a resource the sweep had
+// already re-entered while this still called it merely importing).
+export const BOOTSTRAP_STALLED_AFTER_MS = 15 * 60 * 1000;
 
 export type CredentialState =
   | "valid"
@@ -41,8 +46,9 @@ export interface ConnectionStateEvidence {
   readonly accountIdentified: boolean;
   // The first import, watch setup, and post-watch catch-up have finished.
   readonly initialImportComplete: boolean;
-  // An active calendar has been mid-bootstrap longer than BOOTSTRAP_OVERDUE_MS.
-  // Only consulted when initialImportComplete is false.
+  // An active calendar has been mid-bootstrap and untouched (no advancing
+  // updatedAt) for longer than BOOTSTRAP_STALLED_AFTER_MS. Only consulted when
+  // initialImportComplete is false.
   readonly bootstrapOverdue: boolean;
   // A non-destructive repair or post-gap reconciliation is running while
   // existing data stays queryable.
