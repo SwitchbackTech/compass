@@ -1,7 +1,6 @@
 import { CliValidator } from "@scripts/cli.validator";
 import { runAuditConnectionIdentity } from "@scripts/commands/audit-connection-identity";
 import { runBackfillBootstrapState } from "@scripts/commands/backfill-bootstrap-state";
-import { runBackfillIcalUid } from "@scripts/commands/backfill-icaluid";
 import { runManageFailedJobs } from "@scripts/commands/manage-failed-jobs";
 import { runPurgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events";
 import { runPurgeUser } from "@scripts/commands/purge-user";
@@ -37,9 +36,6 @@ export default class CompassCLI {
         break;
       case cmd === "repair-recurring-series":
         await runRepairRecurringSeries();
-        break;
-      case cmd === "backfill-icaluid":
-        await runBackfillIcalUid();
         break;
       case cmd === "backfill-bootstrap-state":
         await runBackfillBootstrapState();
@@ -87,14 +83,6 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "Re-derive every provider connection's stored state from live evidence (--apply to write)",
-      );
-
-    program
-      .command("backfill-icaluid")
-      .helpOption(false)
-      .allowUnknownOption(true)
-      .description(
-        "Copy Google's cross-copy correlation key onto events that predate it (--apply to write)",
       );
 
     program
