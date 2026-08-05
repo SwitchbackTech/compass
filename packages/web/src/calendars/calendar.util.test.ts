@@ -4,6 +4,7 @@ import {
   compareCalendars,
   getDefaultTargetCalendar,
   getLocalCalendar,
+  getWritableCalendars,
   groupCalendarsByAccount,
   spansMultipleAccounts,
 } from "./calendar.util";
@@ -46,6 +47,39 @@ describe("getLocalCalendar", () => {
   it("returns undefined when there is no local calendar", () => {
     const google = makeCalendar({ provider: "google" });
     expect(getLocalCalendar([google])).toBeUndefined();
+  });
+});
+
+describe("getWritableCalendars", () => {
+  it("includes the local calendar when no account is connected", () => {
+    const local = makeCalendar({ provider: "local" });
+    expect(getWritableCalendars([local])).toEqual([local]);
+  });
+
+  it("excludes a non-writable or inactive calendar regardless of connection state", () => {
+    const readOnly = makeCalendar({
+      provider: "google",
+      capabilities: {
+        canReadAvailability: true,
+        canReadDetails: true,
+        canWrite: false,
+        canManage: false,
+        canWatchEvents: false,
+      },
+    });
+    const inactive = makeCalendar({ provider: "google", isActive: false });
+    expect(getWritableCalendars([readOnly, inactive])).toEqual([]);
+  });
+
+  it("drops the local calendar once an account is connected", () => {
+    const local = makeCalendar({ provider: "local" });
+    const google = makeCalendar({
+      provider: "google",
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+    expect(
+      getWritableCalendars([local, google], { hasConnectedAccount: true }),
+    ).toEqual([google]);
   });
 });
 
