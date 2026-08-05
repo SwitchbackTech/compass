@@ -339,11 +339,11 @@ describe("CalendarListHeader", () => {
   });
 
   it("scopes to the connection matching the signed-in user's own email, not sync's aggregate precedence winner across every connected account", () => {
-    // The 2026-08-04 bug: with two accounts connected, disconnecting the
-    // OTHER one made this header - which is keyed to the signed-in user's
-    // OWN email - flash "needs reconnecting" anyway, because it was reading
-    // the precedence-winning connection across ALL connections instead of
-    // specifically this user's own.
+    // The 2026-08-04 bug: with two accounts connected, a broken connection
+    // on the OTHER account made this header - which is keyed to the signed-in
+    // user's OWN email - flash "needs reconnecting" anyway, because it was
+    // reading the precedence-winning connection across ALL connections instead
+    // of specifically this user's own.
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "RECONNECT_REQUIRED";
     const ownConnection = {
@@ -357,8 +357,8 @@ describe("CalendarListHeader", () => {
     };
     const otherAccountsBrokenConnection = {
       id: "conn-other",
-      state: "disconnected",
-      stateReason: null,
+      state: "actionRequired",
+      stateReason: "authorizationRevoked",
       lastSyncedAt: null,
       lastHealthyAt: null,
       accountEmail: "starbuck@pequod.com",

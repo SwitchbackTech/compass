@@ -40,7 +40,13 @@ export async function resolveGoogleConnectionFromSync(
 ): Promise<GoogleConnectionFromSync> {
   const result = await client.listConnections(principal);
   if (result.ok) {
-    const { connections } = result.value;
+    // Filter out disconnected rows: they record deliberate self-serve disconnects
+    // (retained ~30 days for re-adoption) and should not be surfaced to the product.
+    // A sole disconnected account reads NOT_CONNECTED (neutral connect prompt) and
+    // a disconnected sibling never drags a healthy account to RECONNECT_REQUIRED.
+    const connections = result.value.connections.filter(
+      (connection) => connection.state !== "disconnected",
+    );
     return {
       connectionState: toGoogleConnectionState(connections),
       connections: connections.map(toGoogleSyncConnectionSummary),
