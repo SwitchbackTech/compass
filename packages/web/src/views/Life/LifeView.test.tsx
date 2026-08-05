@@ -83,6 +83,7 @@ afterAll(() => {
 });
 
 function mockViewport(isMobile: boolean) {
+  if (typeof window === "undefined") return;
   Object.defineProperty(window, "innerWidth", {
     configurable: true,
     value: isMobile ? 375 : 1024,
