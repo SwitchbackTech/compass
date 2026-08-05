@@ -1,8 +1,10 @@
 import type React from "react";
 import { useRef } from "react";
-import ReactSelect, { type Props as RSProps } from "react-select";
+import { type Props as RSProps } from "react-select";
+import CreatableSelect from "react-select/creatable";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type TimeOption } from "@web/common/types/util.types";
+import { parseUserTime } from "@web/common/utils/datetime/web.date.util";
 
 export interface Props extends Omit<RSProps, "onChange" | "value"> {
   isMenuOpen: boolean;
@@ -28,7 +30,7 @@ export const TimePicker = ({
 
   return (
     <div ref={containerRef} className="c-time-picker">
-      <ReactSelect
+      <CreatableSelect
         {...props}
         className={selectClassName}
         classNamePrefix={TIMEPICKER}
@@ -76,6 +78,22 @@ export const TimePicker = ({
         openMenuOnFocus={true}
         options={options}
         tabSelectsValue={false}
+        isValidNewOption={(inputValue) => {
+          const parsed = parseUserTime(inputValue, value?.value);
+          if (!parsed) return false;
+          // Don't show create row if the parsed time is already in options
+          if (options?.some((o) => (o as TimeOption).value === parsed.value)) {
+            return false;
+          }
+          return true;
+        }}
+        getNewOptionData={(inputValue) => {
+          return parseUserTime(inputValue, value?.value) as TimeOption;
+        }}
+        formatCreateLabel={(inputValue) => {
+          return parseUserTime(inputValue, value?.value)?.label ?? inputValue;
+        }}
+        createOptionPosition="first"
       />
     </div>
   );

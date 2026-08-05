@@ -88,6 +88,76 @@ export const getTimeOptions = (): TimeOption[] => {
   return options;
 };
 
+export const parseUserTime = (
+  input: string,
+  currentValue?: string,
+): TimeOption | null => {
+  if (!input || typeof input !== "string") return null;
+
+  // Normalize: trim, uppercase, collapse whitespace
+  let normalized = input.trim().toUpperCase().replace(/\s+/g, " ");
+
+  // Handle glued meridiem (e.g., "10:33pm" -> "10:33 PM")
+  normalized = normalized.replace(/^(\d{1,2}):?(\d{0,2})(AM|PM|A|P)$/i, "$1:$2 $3");
+  normalized = normalized.replace(/^(\d{1,2})(AM|PM|A|P)$/i, "$1 $2");
+
+  // Digits-only preprocessing
+  const digitsMatch = normalized.match(/^(\d{1,4})$/);
+  if (digitsMatch) {
+    const digits = digitsMatch[1];
+    if (digits.length === 3 || digits.length === 4) {
+      const hours = digits.slice(0, -2);
+      const minutes = digits.slice(-2);
+      normalized = `${hours}:${minutes}`;
+    } else if (digits.length === 1 || digits.length === 2) {
+      normalized = `${digits}:00`;
+    }
+  }
+
+  // Try parsing with various formats (meridiem formats first)
+  const formats = ["h:mm A", "h:mmA", "h A", "hA", "H:mm", "HH:mm"];
+  let parsed: Dayjs | null = null;
+
+  for (const fmt of formats) {
+    const candidate = dayjs(normalized, fmt, true);
+    if (candidate.isValid()) {
+      parsed = candidate;
+      break;
+    }
+  }
+
+  if (!parsed) return null;
+
+  // Validate hour and minute ranges
+  if (parsed.hour() < 0 || parsed.hour() > 23 || parsed.minute() < 0 || parsed.minute() > 59) {
+    return null;
+  }
+
+  // Meridiem inheritance: if input has no explicit AM/PM and hour is 1-12,
+  // inherit meridiem from currentValue. Hours 0, 13-23 are unambiguous.
+  if (
+    currentValue &&
+    normalized.toUpperCase().indexOf("A") === -1 &&
+    normalized.toUpperCase().indexOf("P") === -1 &&
+    parsed.hour() >= 1 &&
+    parsed.hour() <= 12
+  ) {
+    const current = getDayjsByTimeValue(currentValue);
+    const currentIsPM = current.hour() >= 12;
+
+    if (currentIsPM && parsed.hour() !== 12) {
+      // Current is PM (1-11 PM), so adjust parsed AM hour to PM
+      parsed = parsed.add(12, "hour");
+    } else if (!currentIsPM && parsed.hour() === 12) {
+      // Current is AM, parsed is 12 (12 AM/PM ambiguous), so 12 AM
+      parsed = parsed.subtract(12, "hour");
+    }
+  }
+
+  // Return via getTimeOptionByValue so it normalizes like list options
+  return getTimeOptionByValue(parsed);
+};
+
 export const getTimesLabel = (startDate: string, endDate: string) => {
   const start = _getTimeLabel(startDate);
   const end = _getTimeLabel(endDate);
