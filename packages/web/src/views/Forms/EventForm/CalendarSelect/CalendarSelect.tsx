@@ -13,6 +13,7 @@ import { type CalendarId } from "@core/types/domain-primitives";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
   compareCalendars,
+  getWritableCalendars,
   spansMultipleAccounts,
 } from "@web/calendars/calendar.util";
 import {
@@ -28,14 +29,6 @@ interface CalendarSelectProps {
   errorId?: string;
   id?: string;
 }
-
-// Only calendars the user can actually write to are offered as a create
-// target - a reader/freeBusy-only calendar would silently fail to accept a
-// new event.
-const getWritableCalendars = (calendars: Calendar[]): Calendar[] =>
-  calendars.filter(
-    (calendar) => calendar.isActive && calendar.capabilities.canWrite,
-  );
 
 const calendarOptionLabel = (calendar: Calendar): string =>
   calendar.isPrimary ? `${calendar.name} (primary)` : calendar.name;

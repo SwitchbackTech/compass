@@ -13,13 +13,20 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { groupCalendarsByAccount } from "@web/calendars/calendar.util";
+import {
+  compareCalendars,
+  getWritableCalendars,
+  groupCalendarsByAccount,
+} from "@web/calendars/calendar.util";
 import {
   setDefaultCalendarId,
   useDefaultCalendarId,
 } from "@web/calendars/default-calendar.store";
 import { SyncStatusLine } from "@web/calendars/SyncStatusLine";
-import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
+import {
+  useConnectedAccountEmails,
+  useDefaultTargetCalendar,
+} from "@web/calendars/useDefaultTargetCalendar";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
@@ -58,8 +65,9 @@ export const SettingsModal: FC = () => {
 
   const { data } = useCalendarsQuery();
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
-  const writableCalendars = (data ?? []).filter(
-    (calendar) => calendar.isActive && calendar.capabilities.canWrite,
+  const accountEmailOrder = useConnectedAccountEmails();
+  const writableCalendars = getWritableCalendars(data ?? []).sort(
+    compareCalendars(accountEmailOrder),
   );
   const resolvedDefault = useDefaultTargetCalendar(writableCalendars);
 

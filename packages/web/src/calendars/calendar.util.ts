@@ -6,6 +6,18 @@ export function getLocalCalendar(calendars: Calendar[]): Calendar | undefined {
 }
 
 /**
+ * Calendars offered as a create target: a reader/freeBusy-only calendar
+ * would silently fail to accept a new event. Shared by the event form's
+ * picker and the Settings default-calendar picker, which offer the same set
+ * for the same reason.
+ */
+export function getWritableCalendars(calendars: Calendar[]): Calendar[] {
+  return calendars.filter(
+    (calendar) => calendar.isActive && calendar.capabilities.canWrite,
+  );
+}
+
+/**
  * The one order every calendar surface shows: by account in connection order,
  * then that account's primary first, then alphabetically. A calendar with no
  * account (the local one) or an account that isn't connected sorts last.
