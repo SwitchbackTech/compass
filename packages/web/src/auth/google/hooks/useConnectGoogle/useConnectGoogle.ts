@@ -9,7 +9,7 @@ import {
 } from "@web/auth/google/state/google.sync.refresh";
 import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import {
-  selectGoogleSyncConnection,
+  selectPrimaryGoogleSyncConnection,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import {
@@ -38,11 +38,11 @@ export const useConnectGoogle = (
 ): UseConnectGoogleResult => {
   const isAvailable = useIsConnectGoogleAvailable();
   const aggregateState = useGoogleUiState();
-  const primaryConnection = useUserMetadataStore(selectGoogleSyncConnection);
+  const primaryConnection = useUserMetadataStore(
+    selectPrimaryGoogleSyncConnection,
+  );
   const scopedConnection = options?.connection;
   const syncConnection = scopedConnection ?? primaryConnection;
-  // A scoped connection reports its own product state; fall back to the
-  // aggregate when it predates that field.
   const state = scopedConnection?.connectionState ?? aggregateState;
   const queryClient = useQueryClient();
   const [isConnecting, setIsConnecting] = useState(false);

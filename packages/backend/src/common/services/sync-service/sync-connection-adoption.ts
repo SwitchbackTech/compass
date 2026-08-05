@@ -5,14 +5,15 @@ import {
   type ProviderAccountFacts,
   type ProviderConnection,
 } from "@core/types/sync/connection.contracts";
-import { AuthError } from "@backend/common/errors/auth/auth.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
 import {
   type SyncPrincipal,
   type SyncServiceClient,
 } from "./sync-service.client";
+import { unwrapSyncResult } from "./unwrap-sync-result";
 
 const logger = Logger("app:sync-connection-adoption");
+const logMessage = "Sync Google authorization adoption failed";
+const userMessage = "Failed to connect Google Calendar";
 
 // Make the one-click Google sign-in authorization durable in Sync. On failure
 // sign-in fails visibly rather than creating a session that looks connected but
@@ -27,22 +28,23 @@ export async function adoptGoogleAuthorization(
     refreshToken: string;
   },
 ): Promise<GoogleConnectionAdoptionResponse> {
-  const existing = await client.listConnections(principal);
-  if (!existing.ok) {
-    throwUnavailable(existing.error.kind, existing.error.correlationId);
-  }
+  const existing = unwrapSyncResult(await client.listConnections(principal), {
+    logger,
+    logMessage,
+    userMessage,
+  });
   if (
-    existing.value.connections.some((connection) =>
+    existing.connections.some((connection) =>
       isLiveSameAccount(connection, request.account),
     )
   ) {
     return {};
   }
 
-  const result = await client.adoptGoogleAuthorization(principal, request);
-  if (result.ok) return result.value;
-
-  throwUnavailable(result.error.kind, result.error.correlationId);
+  return unwrapSyncResult(
+    await client.adoptGoogleAuthorization(principal, request),
+    { logger, logMessage, userMessage },
+  );
 }
 
 function isLiveSameAccount(
@@ -52,16 +54,5 @@ function isLiveSameAccount(
   return (
     connection.account.providerAccountId === account.providerAccountId &&
     !["actionRequired", "disconnected"].includes(connection.state)
-  );
-}
-
-function throwUnavailable(kind: string, correlationId: string): never {
-  logger.warn(
-    `Sync Google authorization adoption failed (${kind}) ` +
-      `[correlationId=${correlationId}]`,
-  );
-  throw error(
-    AuthError.SyncConnectionUnavailable,
-    "Failed to connect Google Calendar",
   );
 }

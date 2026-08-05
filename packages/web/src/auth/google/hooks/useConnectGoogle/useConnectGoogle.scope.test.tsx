@@ -36,7 +36,6 @@ describe("useConnectGoogle account scoping", () => {
     userMetadataActions.set({
       google: {
         connectionState: "RECONNECT_REQUIRED",
-        connection: connection({}),
         connections: [
           connection({}),
           connection({

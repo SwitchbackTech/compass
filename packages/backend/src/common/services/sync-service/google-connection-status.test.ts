@@ -77,47 +77,7 @@ describe("resolveGoogleConnectionFromSync", () => {
     }
   });
 
-  it("includes the primary connection summary for the browser", async () => {
-    const client = clientReturning({
-      ok: true,
-      value: {
-        connections: [
-          {
-            ...connection("healthy"),
-            id: "healthy-1",
-            account: {
-              providerAccountId: "a1",
-              email: "ok@example.com",
-              displayName: null,
-            },
-            lastSyncedAt: "2026-07-24T12:00:00.000Z",
-            lastHealthyAt: "2026-07-24T12:00:00.000Z",
-          },
-          {
-            ...connection("actionRequired", "authorizationRevoked"),
-            id: "broken-1",
-            account: {
-              providerAccountId: "a2",
-              email: "bad@example.com",
-              displayName: null,
-            },
-          },
-        ],
-      },
-      correlationId: "corr-1",
-    });
-
-    const resolved = await resolveGoogleConnectionFromSync(client, principal);
-    expect(resolved.connectionState).toBe("RECONNECT_REQUIRED");
-    expect(resolved.connection).toMatchObject({
-      id: "broken-1",
-      state: "actionRequired",
-      stateReason: "authorizationRevoked",
-      accountEmail: "bad@example.com",
-    });
-  });
-
-  it("returns a null summary and no connections when Sync is unavailable", async () => {
+  it("returns no connections when Sync is unavailable", async () => {
     const client = clientReturning({
       ok: false,
       error: { kind: "unavailable", correlationId: "corr-1" },
@@ -126,7 +86,6 @@ describe("resolveGoogleConnectionFromSync", () => {
     expect(await resolveGoogleConnectionFromSync(client, principal)).toEqual({
       connectionState: "ATTENTION",
       connections: [],
-      connection: null,
     });
   });
 
@@ -169,8 +128,5 @@ describe("resolveGoogleConnectionFromSync", () => {
       ["first@example.com", "HEALTHY"],
       ["second@example.com", "RECONNECT_REQUIRED"],
     ]);
-    // The singular summary stays the precedence winner (the broken account),
-    // which is deliberately NOT the first connection here.
-    expect(result.connection?.id).toBe("c-second");
   });
 });

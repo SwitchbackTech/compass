@@ -77,12 +77,6 @@ export const selectGoogleConnectionState = (
 ): GoogleConnectionState =>
   state.current?.google?.connectionState ?? "NOT_CONNECTED";
 
-/** Sync-backed primary connection summary, or null when absent / legacy. */
-export const selectGoogleSyncConnection = (
-  state: UserMetadataState,
-): GoogleSyncConnectionSummary | null =>
-  state.current?.google?.connection ?? null;
-
 // Stable identity so the selector below never hands the store a fresh array
 // (which would re-render on every state change; see the note above the hook).
 const NO_CONNECTIONS: GoogleSyncConnectionSummary[] = [];
@@ -96,3 +90,43 @@ export const selectGoogleSyncConnections = (
   state: UserMetadataState,
 ): GoogleSyncConnectionSummary[] =>
   state.current?.google?.connections ?? NO_CONNECTIONS;
+
+/**
+ * The connection whose own state matches the aggregate `connectionState` -
+ * the account most responsible for it, so an unscoped reconnect targets the
+ * broken one, not a healthy sibling. Falls back to the first connection when
+ * none match (shouldn't happen: the aggregate is itself derived by the same
+ * precedence over these same connections - defensive only).
+ *
+ * Mirrors the sync service's own selectPrimaryGoogleConnection: the server
+ * used to compute this and send it as a second `google.connection` field,
+ * which was exactly this array's own connectionState re-derived - the browser
+ * has everything it needs to compute it locally instead.
+ */
+function findPrimaryGoogleSyncConnection(
+  google: UserMetadata["google"],
+): GoogleSyncConnectionSummary | null {
+  const connections = google?.connections ?? NO_CONNECTIONS;
+  if (connections.length === 0) return null;
+  return (
+    connections.find((c) => c.connectionState === google?.connectionState) ??
+    connections[0] ??
+    null
+  );
+}
+
+/** Store-selector form of {@link findPrimaryGoogleSyncConnection}. */
+export const selectPrimaryGoogleSyncConnection = (
+  state: UserMetadataState,
+): GoogleSyncConnectionSummary | null =>
+  findPrimaryGoogleSyncConnection(state.current?.google);
+
+/**
+ * Same selection, for a raw `UserMetadata` payload that hasn't gone through
+ * the store yet (an SSE `userMetadataChanged` message) - see
+ * useGcalSSE.factory.ts.
+ */
+export const findPrimaryGoogleSyncConnectionFromMetadata = (
+  metadata: UserMetadata,
+): GoogleSyncConnectionSummary | null =>
+  findPrimaryGoogleSyncConnection(metadata.google);
