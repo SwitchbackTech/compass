@@ -65,6 +65,7 @@ describe("getGoogleSyncStatus", () => {
         lastSyncedAt: "2026-07-24T12:00:00.000Z",
         lastHealthyAt: "2026-07-24T12:00:00.000Z",
         accountEmail: "a@example.com",
+        connectionState: "HEALTHY",
       }),
     ).toEqual({
       variant: "healthy",
@@ -81,6 +82,7 @@ describe("getGoogleSyncStatus", () => {
         lastSyncedAt: "2026-07-24T12:00:00.000Z",
         lastHealthyAt: "2026-07-24T12:00:00.000Z",
         accountEmail: "a@example.com",
+        connectionState: "IMPORTING",
       }),
     ).toEqual({
       variant: "healthy",
@@ -110,6 +112,7 @@ describe("getGoogleSyncStatus", () => {
         lastSyncedAt: null,
         lastHealthyAt: null,
         accountEmail: "a@example.com",
+        connectionState: "IMPORTING",
       }),
     ).toEqual({
       variant: "syncing",
@@ -126,6 +129,7 @@ describe("getGoogleSyncStatus", () => {
         lastSyncedAt: "2026-07-24T12:00:00.000Z",
         lastHealthyAt: null,
         accountEmail: null,
+        connectionState: "ATTENTION",
       }),
     ).toEqual({
       variant: "warning",
@@ -142,6 +146,7 @@ describe("getGoogleSyncStatus", () => {
         lastSyncedAt: "2026-07-24T12:00:00.000Z",
         lastHealthyAt: "2026-07-24T12:00:00.000Z",
         accountEmail: "a@example.com",
+        connectionState: "HEALTHY",
       }),
     ).toEqual({
       variant: "healthy",

@@ -120,7 +120,7 @@ class UserMetadataService {
       };
     }
 
-    const { connectionState, connections, connection } =
+    const { connectionState, connections } =
       await this.assessGoogleMetadata(userId);
 
     return {
@@ -128,7 +128,6 @@ class UserMetadataService {
       google: {
         connectionState,
         ...(connections !== undefined ? { connections } : {}),
-        ...(connection !== undefined ? { connection } : {}),
       },
     };
   };

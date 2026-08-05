@@ -96,20 +96,6 @@ export function toGoogleConnectionState(
   return "NOT_CONNECTED";
 }
 
-// The connection whose translated enum matches the product precedence winner.
-// Used so reconnect can target the broken account, not a healthy sibling.
-export function selectPrimaryGoogleConnection(
-  connections: readonly ProviderConnection[],
-): ProviderConnection | null {
-  if (connections.length === 0) return null;
-  const target = toGoogleConnectionState(connections);
-  const primary = connections.find(
-    (connection) =>
-      translateConnection(connection.state, connection.stateReason) === target,
-  );
-  return primary ?? connections[0] ?? null;
-}
-
 export function toGoogleSyncConnectionSummary(
   connection: ProviderConnection,
 ): GoogleSyncConnectionSummary {

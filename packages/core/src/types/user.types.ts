@@ -49,9 +49,8 @@ export type GoogleSyncConnectionSummary = {
   accountEmail: string | null;
   // This one connection's own product state, translated server-side from its
   // sync state/reason. The browser renders per-account status and reconnect
-  // from it directly, so sync's state vocabulary stays on the server. Optional
-  // so a summary cached by an older tab still parses.
-  connectionState?: GoogleConnectionState;
+  // from it directly, so sync's state vocabulary stays on the server.
+  connectionState: GoogleConnectionState;
 };
 
 // Intersection (not extends): SuperTokens JSONObject's string index signature
@@ -65,11 +64,11 @@ export type UserMetadata = SupertokensUserMetadata.JSONObject & {
   };
   google?: {
     connectionState?: GoogleConnectionState;
-    // Every connected provider account, in connection order. The singular
-    // `connection` below stays as the precedence-winning derivation of this
-    // list, for the top-level banner and for tabs holding older metadata.
+    // Every connected provider account, in connection order. The
+    // precedence-winning one (for the top-level banner / unscoped hooks) is
+    // derived client-side from this plus connectionState - see
+    // selectPrimaryGoogleSyncConnection.
     connections?: GoogleSyncConnectionSummary[];
-    connection?: GoogleSyncConnectionSummary | null;
   };
 };
 

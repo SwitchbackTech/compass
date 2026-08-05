@@ -320,11 +320,11 @@ describe("CalendarListHeader", () => {
       lastSyncedAt: new Date().toISOString(),
       lastHealthyAt: new Date().toISOString(),
       accountEmail: "ahab@pequod.com",
+      connectionState: "IMPORTING" as const,
     };
     userMetadataActions.set({
       google: {
         connectionState: "IMPORTING",
-        connection,
         connections: [connection],
       },
     });
@@ -341,9 +341,9 @@ describe("CalendarListHeader", () => {
   it("scopes to the connection matching the signed-in user's own email, not sync's aggregate precedence winner across every connected account", () => {
     // The 2026-08-04 bug: with two accounts connected, disconnecting the
     // OTHER one made this header - which is keyed to the signed-in user's
-    // OWN email - flash "needs reconnecting" anyway, because the singular
-    // `google.connection` field is sync's most-actionable-state-wins pick
-    // across ALL connections, not specifically this user's own connection.
+    // OWN email - flash "needs reconnecting" anyway, because it was reading
+    // the precedence-winning connection across ALL connections instead of
+    // specifically this user's own.
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "RECONNECT_REQUIRED";
     const ownConnection = {
@@ -367,7 +367,6 @@ describe("CalendarListHeader", () => {
     userMetadataActions.set({
       google: {
         connectionState: "RECONNECT_REQUIRED",
-        connection: otherAccountsBrokenConnection,
         connections: [otherAccountsBrokenConnection, ownConnection],
       },
     });

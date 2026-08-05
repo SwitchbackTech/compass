@@ -12,6 +12,7 @@ import {
   getGoogleSyncIndicatorOverride,
   setSyncingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
+import { findPrimaryGoogleSyncConnectionFromMetadata } from "@web/auth/state/user-metadata.store";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { type OnServerMessage } from "@web/sse/client/sse.client";
 
@@ -87,7 +88,8 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
 
         // Prefer Sync's in-progress states when present; otherwise the collapsed
         // product enum. Never clear syncing from local optimism alone (S41).
-        const syncState = metadata.google?.connection?.state;
+        const syncState =
+          findPrimaryGoogleSyncConnectionFromMetadata(metadata)?.state;
         const syncInProgress =
           syncState === "connecting" ||
           syncState === "importing" ||

@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { type SessionRequest } from "supertokens-node/framework/express";
+import { Logger } from "@core/logger/winston.logger";
 import {
   type ConnectionBeginRequest,
   ConnectionBeginRequestSchema,
@@ -9,16 +10,17 @@ import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import { beginSyncConnection } from "@backend/common/services/sync-service/sync-connection-begin";
-import { disconnectSyncConnection } from "@backend/common/services/sync-service/sync-connection-disconnect";
-import { refreshSyncConnection } from "@backend/common/services/sync-service/sync-connection-refresh";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
+import { unwrapSyncResult } from "@backend/common/services/sync-service/unwrap-sync-result";
 import {
   type ReqBody,
   type Res_Promise,
   type SReqBody,
 } from "@backend/common/types/express.types";
 import { toEventMutationError } from "@backend/event/event.error";
+
+const logger = Logger("app:auth.controller");
 
 const rejectIfMaintenance = (res: Res_Promise): boolean => {
   try {
@@ -92,11 +94,16 @@ class AuthController {
     const connectionId = ConnectionIdSchema.parse(req.params["connectionId"]);
 
     res.promise(
-      disconnectSyncConnection(
-        client,
-        toSyncPrincipal(userId),
-        connectionId,
-      ).then(() => ({ statusCode: 204 })),
+      client
+        .disconnectConnection(toSyncPrincipal(userId), connectionId)
+        .then((result) =>
+          unwrapSyncResult(result, {
+            logger,
+            logMessage: "Sync disconnect failed",
+            userMessage: "Failed to disconnect Google account",
+          }),
+        )
+        .then(() => ({ statusCode: 204 })),
     );
   };
 
@@ -107,7 +114,15 @@ class AuthController {
     const client = getSyncServiceClient();
     const userId = zObjectId.parse(req.session?.getUserId()).toString();
 
-    res.promise(refreshSyncConnection(client, toSyncPrincipal(userId)));
+    res.promise(
+      client.refreshConnection(toSyncPrincipal(userId)).then((result) =>
+        unwrapSyncResult(result, {
+          logger,
+          logMessage: "Sync refresh failed",
+          userMessage: "Failed to refresh Google Calendar",
+        }),
+      ),
+    );
   };
 }
 

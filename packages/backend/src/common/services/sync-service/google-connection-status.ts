@@ -4,7 +4,6 @@ import {
   type GoogleSyncConnectionSummary,
 } from "@core/types/user.types";
 import {
-  selectPrimaryGoogleConnection,
   toGoogleConnectionState,
   toGoogleSyncConnectionSummary,
 } from "./connection-state.translation";
@@ -19,10 +18,10 @@ export interface GoogleConnectionFromSync {
   connectionState: GoogleConnectionState;
   // Every connected account, in the order sync returned them (connection
   // order), so the browser can render one section per account. Empty on
-  // none / outage.
+  // none / outage. The browser derives the precedence-winning one from this
+  // plus connectionState (selectPrimaryGoogleSyncConnection) rather than
+  // receiving a second, redundant copy of it over the wire.
   connections: GoogleSyncConnectionSummary[];
-  // Primary Sync connection summary for the browser (null when none / outage).
-  connection: GoogleSyncConnectionSummary | null;
 }
 
 /**
@@ -42,11 +41,9 @@ export async function resolveGoogleConnectionFromSync(
   const result = await client.listConnections(principal);
   if (result.ok) {
     const { connections } = result.value;
-    const primary = selectPrimaryGoogleConnection(connections);
     return {
       connectionState: toGoogleConnectionState(connections),
       connections: connections.map(toGoogleSyncConnectionSummary),
-      connection: primary ? toGoogleSyncConnectionSummary(primary) : null,
     };
   }
 
@@ -54,5 +51,5 @@ export async function resolveGoogleConnectionFromSync(
     `Sync connection status unavailable (${result.error.kind}); reporting ATTENTION ` +
       `[correlationId=${result.error.correlationId}]`,
   );
-  return { connectionState: "ATTENTION", connections: [], connection: null };
+  return { connectionState: "ATTENTION", connections: [] };
 }

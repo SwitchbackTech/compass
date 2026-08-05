@@ -4,7 +4,6 @@ import {
   type ProviderConnection,
 } from "@core/types/sync/connection.contracts";
 import {
-  selectPrimaryGoogleConnection,
   toGoogleConnectionState,
   toGoogleSyncConnectionSummary,
 } from "./connection-state.translation";
@@ -118,21 +117,6 @@ describe("toGoogleConnectionState", () => {
         toGoogleConnectionState([connection("healthy"), connection("healthy")]),
       ).toBe("HEALTHY");
     });
-  });
-});
-
-describe("selectPrimaryGoogleConnection", () => {
-  it("returns null when there are no connections", () => {
-    expect(selectPrimaryGoogleConnection([])).toBeNull();
-  });
-
-  it("selects the precedence-winning connection for reconnect", () => {
-    const healthy = { ...connection("healthy"), id: "healthy" };
-    const broken = {
-      ...connection("actionRequired", "authorizationRevoked"),
-      id: "broken",
-    };
-    expect(selectPrimaryGoogleConnection([healthy, broken])?.id).toBe("broken");
   });
 });
 
