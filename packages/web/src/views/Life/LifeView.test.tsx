@@ -1,3 +1,4 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import {
   act,
   fireEvent,
@@ -7,6 +8,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ReactNode } from "react";
+import { createCompassQueryClient } from "@web/api/query-client";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { viewActions } from "@web/events/stores/view.store";
 import { LifeView } from "./LifeView";
@@ -24,8 +26,24 @@ const fixedToday = new Date(2026, 0, 1);
 const originalInnerWidth = window.innerWidth;
 const originalMatchMedia = window.matchMedia;
 
+// LifeView mounts the shared SidebarShell, whose SidebarStatusBar needs a
+// QueryClientProvider (useHasPendingEventMutations -> useMutationState).
 function renderLifeView() {
-  return render(<LifeView today={fixedToday} />);
+  const queryClient = createCompassQueryClient();
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <LifeView today={fixedToday} />
+    </QueryClientProvider>,
+  );
+}
+
+// SidebarStatusBar also renders a (usually empty) role="status" node, so a
+// bare getByRole("status") is ambiguous once the sidebar mounts for real —
+// disambiguate by the life-summary text it always contains.
+function getLifeSummaryStatus() {
+  return screen
+    .getAllByRole("status")
+    .find((el) => el.textContent?.includes("weeks lived")) as HTMLElement;
 }
 
 async function renderLifeViewWithSidebar() {
@@ -152,7 +170,7 @@ describe("LifeView", () => {
     expect(
       screen.queryByRole("heading", { name: "Share" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(
+    expect(getLifeSummaryStatus()).toHaveTextContent(
       "1,356 weeks lived - 26 years - 34%",
     );
     const region = screen.getByRole("region", {
@@ -200,7 +218,7 @@ describe("LifeView", () => {
       target: { value: "1990-06-15" },
     });
 
-    expect(screen.getByRole("status")).toHaveTextContent(
+    expect(getLifeSummaryStatus()).toHaveTextContent(
       "1,854 weeks lived - 35 years - 46%",
     );
     expect(
