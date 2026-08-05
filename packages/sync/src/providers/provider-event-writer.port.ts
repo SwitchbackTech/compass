@@ -69,6 +69,9 @@ export interface ProviderInstanceFetchInput {
 export interface ProviderWriteResult {
   readonly providerEventId: string;
   readonly providerVersion: string;
+  // Google's cross-copy correlation key when the write response includes it.
+  // Optional so non-Google writers and older fixtures stay valid.
+  readonly icalUid?: string;
 }
 
 // A provider-neutral event mutation port. Neutral inputs in, provider identity

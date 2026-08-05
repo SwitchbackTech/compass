@@ -1,5 +1,5 @@
-import { Logger } from "@core/logger/winston.logger";
 import { startOtelLogs, stopOtelLogs } from "@core/logger/otel-logs";
+import { Logger } from "@core/logger/winston.logger";
 import {
   SYNC_RECONCILE_SWEEP_EVENT,
   SyncReconcileSweepEventSchema,

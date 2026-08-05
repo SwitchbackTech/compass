@@ -22,6 +22,13 @@ export type ProviderEventUpsert = Omit<
   providerEventId: NonNullable<EventRecord["providerEventId"]>;
 };
 
+export type UpsertByProviderIdentityOptions = {
+  // When true, an incoming providerMetadata that omits iCalUID keeps any
+  // existing iCalUID on the row (aggregation-pipeline merge). Cancelled
+  // exceptions pass false so they can still clear the bag to null.
+  preserveIcalUidWhenAbsent?: boolean;
+};
+
 export interface EventListQuery {
   tenantId: TenantId;
   principalId: PrincipalId;
@@ -55,26 +62,120 @@ export class EventRepository {
   // that signal. The filter therefore excludes generation on purpose.
   async upsertByProviderIdentity(
     input: ProviderEventUpsert,
+    options?: UpsertByProviderIdentityOptions,
   ): Promise<EventRecord> {
     const now = new Date();
+    const filter = {
+      connectionId: input.connectionId,
+      calendarId: input.calendarId,
+      // $type is a semantic no-op but makes the provider_event_identity
+      // partial index provable to the planner — without it, COLLSCAN.
+      // See the PLANNER TRAP note in index-manifest.ts.
+      providerEventId: {
+        $eq: input.providerEventId,
+        $type: "string" as const,
+      },
+    };
+
+    if (!options?.preserveIcalUidWhenAbsent) {
+      const result = await this.collection.findOneAndUpdate(
+        filter,
+        {
+          // input already omits _id/createdAt/updatedAt (see ProviderEventUpsert).
+          $set: { ...input, updatedAt: now },
+          $setOnInsert: {
+            _id: new ObjectId().toHexString() as EventId,
+            createdAt: now,
+          },
+        },
+        { upsert: true, returnDocument: "after" },
+      );
+      if (!result) throw new Error("Upsert did not return an event record");
+      return EventRecordSchema.parse(result);
+    }
+
+    // Pipeline update so iCalUID preserve is atomic with the rest of the
+    // upsert (no find-then-write TOCTOU against a concurrent sparse pull).
+    // Strings in a pipeline $set are field refs, so every literal value goes
+    // through $literal. $setOnInsert is unavailable in pipeline mode.
+    // Use the array form of $cond ([if, then, else]) — the object form's
+    // `then` key trips Biome's noThenProperty rule.
+    const insertId = new ObjectId().toHexString() as EventId;
+    const { providerMetadata: incomingMetadata, ...fieldsWithoutMetadata } =
+      input;
+    const literalFields = Object.fromEntries(
+      Object.entries({ ...fieldsWithoutMetadata, updatedAt: now }).map(
+        ([key, value]) => [key, { $literal: value }],
+      ),
+    );
 
     const result = await this.collection.findOneAndUpdate(
-      {
-        connectionId: input.connectionId,
-        calendarId: input.calendarId,
-        // $type is a semantic no-op but makes the provider_event_identity
-        // partial index provable to the planner — without it, COLLSCAN.
-        // See the PLANNER TRAP note in index-manifest.ts.
-        providerEventId: { $eq: input.providerEventId, $type: "string" },
-      },
-      {
-        // input already omits _id/createdAt/updatedAt (see ProviderEventUpsert).
-        $set: { ...input, updatedAt: now },
-        $setOnInsert: {
-          _id: new ObjectId().toHexString() as EventId,
-          createdAt: now,
+      filter,
+      [
+        {
+          $set: {
+            ...literalFields,
+            _id: { $ifNull: ["$_id", { $literal: insertId }] },
+            createdAt: { $ifNull: ["$createdAt", { $literal: now }] },
+            // Same merge rules as mergeProviderMetadataPreservingIcalUid:
+            // incoming wins for transparency / present iCalUID; otherwise keep
+            // any existing iCalUID so a sparse re-read cannot wipe a backfill.
+            providerMetadata: {
+              $let: {
+                vars: {
+                  incoming: { $literal: incomingMetadata },
+                  existingUid: {
+                    $cond: [
+                      { $eq: [{ $type: "$providerMetadata" }, "object"] },
+                      { $ifNull: ["$providerMetadata.iCalUID", null] },
+                      null,
+                    ],
+                  },
+                },
+                in: {
+                  $cond: [
+                    { $eq: ["$$incoming", null] },
+                    {
+                      $cond: [
+                        { $ne: ["$$existingUid", null] },
+                        { iCalUID: "$$existingUid" },
+                        null,
+                      ],
+                    },
+                    {
+                      $let: {
+                        vars: {
+                          incomingUid: {
+                            $ifNull: ["$$incoming.iCalUID", null],
+                          },
+                        },
+                        in: {
+                          $cond: [
+                            { $ne: ["$$incomingUid", null] },
+                            "$$incoming",
+                            {
+                              $cond: [
+                                { $ne: ["$$existingUid", null] },
+                                {
+                                  $mergeObjects: [
+                                    "$$incoming",
+                                    { iCalUID: "$$existingUid" },
+                                  ],
+                                },
+                                "$$incoming",
+                              ],
+                            },
+                          ],
+                        },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          },
         },
-      },
+      ],
       { upsert: true, returnDocument: "after" },
     );
     if (!result) throw new Error("Upsert did not return an event record");

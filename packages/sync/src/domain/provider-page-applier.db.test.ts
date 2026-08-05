@@ -128,6 +128,95 @@ describe("ProviderPageApplier", () => {
     });
   });
 
+  it("preserves an existing iCalUID when a later sparse read omits it", async () => {
+    const calendar = await seedCalendar();
+    const byId = (providerEventId: string) =>
+      events.findByProviderIdentity(calendar.tenantId, calendar.principalId, {
+        connectionId: calendar.connectionId,
+        calendarId: calendar._id,
+        providerEventId,
+      });
+
+    await applier(calendar).applyPage([
+      { ...single("kept"), icalUid: "kept@google.com" },
+    ]);
+    expect((await byId("kept"))?.providerMetadata).toEqual({
+      iCalUID: "kept@google.com",
+    });
+
+    // Same provider identity, no icalUid on the read — must not wipe the key.
+    await applier(calendar).applyPage([single("kept")]);
+    expect((await byId("kept"))?.providerMetadata).toEqual({
+      iCalUID: "kept@google.com",
+    });
+  });
+
+  it("updates transparency from a sparse read without dropping iCalUID", async () => {
+    const calendar = await seedCalendar();
+    const byId = (providerEventId: string) =>
+      events.findByProviderIdentity(calendar.tenantId, calendar.principalId, {
+        connectionId: calendar.connectionId,
+        calendarId: calendar._id,
+        providerEventId,
+      });
+
+    await applier(calendar).applyPage([
+      { ...single("flex"), icalUid: "flex@google.com" },
+    ]);
+    await applier(calendar).applyPage([{ ...single("flex"), busy: false }]);
+
+    expect((await byId("flex"))?.providerMetadata).toEqual({
+      transparency: "transparent",
+      iCalUID: "flex@google.com",
+    });
+  });
+
+  it("lets an incoming iCalUID replace a previously stored one", async () => {
+    const calendar = await seedCalendar();
+    const byId = (providerEventId: string) =>
+      events.findByProviderIdentity(calendar.tenantId, calendar.principalId, {
+        connectionId: calendar.connectionId,
+        calendarId: calendar._id,
+        providerEventId,
+      });
+
+    await applier(calendar).applyPage([
+      { ...single("swap"), icalUid: "old@google.com" },
+    ]);
+    await applier(calendar).applyPage([
+      { ...single("swap"), icalUid: "new@google.com" },
+    ]);
+
+    expect((await byId("swap"))?.providerMetadata).toEqual({
+      iCalUID: "new@google.com",
+    });
+  });
+
+  it("still clears providerMetadata on a cancelled series exception", async () => {
+    const calendar = await seedCalendar();
+    const run = applier(calendar);
+
+    await run.applyPage([
+      { ...master("m"), icalUid: "series@google.com" },
+      seriesCancellation("m_c", "m", "2026-07-21T09:00:00-06:00"),
+    ]);
+
+    const cancelled = await events.findByProviderIdentity(
+      calendar.tenantId,
+      calendar.principalId,
+      {
+        connectionId: calendar.connectionId,
+        calendarId: calendar._id,
+        providerEventId: "m_c",
+      },
+    );
+    expect(cancelled?.providerMetadata).toBeNull();
+    expect(cancelled?.recurrence).toMatchObject({
+      kind: "exception",
+      cancelled: true,
+    });
+  });
+
   it("returns standalone cancellations unconsumed and writes nothing for them", async () => {
     const calendar = await seedCalendar();
     const run = applier(calendar);
