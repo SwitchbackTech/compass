@@ -3,16 +3,16 @@ import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useCon
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 
 /**
- * Connects another Google account - the palette's counterpart to the
- * sidebar's own Connect button, which only covers the FIRST account.
- * Offered once a first account is already healthy, same gating the sidebar's
- * old hover-revealed plus icon used before it moved here (too easy to miss
- * or misread as decorative).
+ * Connects a Google account. Gated only on Google being configured at all -
+ * matching Settings' "Add account" button, so the two can't disagree about
+ * when this is offered (previously this required a first account already
+ * healthy/importing, so a broken first account hid it here while Settings
+ * still showed it).
  */
 export const useAddAccountCmdItems = (): CommandItem[] => {
-  const { connect, isAvailable, isConnecting, state } = useConnectGoogle();
+  const { connect, isAvailable, isConnecting } = useConnectGoogle();
 
-  if (!isAvailable || (state !== "HEALTHY" && state !== "IMPORTING")) {
+  if (!isAvailable) {
     return [];
   }
 

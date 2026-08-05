@@ -37,7 +37,7 @@ describe("useAddAccountCmdItems", () => {
     expect(result.current).toEqual([]);
   });
 
-  it("returns no items before a first account is connected", () => {
+  it("offers the item before any account is connected - one way to discover Google in the palette", () => {
     mockUseConnectGoogle.mockReturnValue({
       connect: mock(),
       isAvailable: true,
@@ -47,7 +47,20 @@ describe("useAddAccountCmdItems", () => {
 
     const { result } = renderHook(() => useAddAccountCmdItems());
 
-    expect(result.current).toEqual([]);
+    expect(result.current[0].label).toBe("Add account");
+  });
+
+  it("still offers the item while an existing account needs reconnecting - matches Settings' gate, which doesn't hide Add account either", () => {
+    mockUseConnectGoogle.mockReturnValue({
+      connect: mock(),
+      isAvailable: true,
+      isConnecting: false,
+      state: "RECONNECT_REQUIRED",
+    });
+
+    const { result } = renderHook(() => useAddAccountCmdItems());
+
+    expect(result.current[0].label).toBe("Add account");
   });
 
   it("connects another account from the command palette item once one account is healthy", () => {
