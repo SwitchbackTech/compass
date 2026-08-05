@@ -3,7 +3,10 @@ import { useCallback, useState } from "react";
 import { AuthApi } from "@web/api/auth.api";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
-import { ACCOUNT_DISCONNECTED_TOAST_ID, GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
+import {
+  ACCOUNT_DISCONNECTED_TOAST_ID,
+  GOOGLE_REVOKED_TOAST_ID,
+} from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { getToast } from "@web/common/utils/toast/toast.port";
