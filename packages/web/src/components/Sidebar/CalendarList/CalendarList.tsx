@@ -30,14 +30,28 @@ export const CalendarList: FC = () => {
   const accountEmailOrder = useConnectedAccountEmails();
   const collapsedKeys = useCollapsedAccountKeys();
 
+  const hasConnectedAccount = accountEmailOrder.length > 0;
+
   // Re-groups on every calendar-visibility/collapse toggle otherwise, since
   // those live in sibling external stores this component also subscribes to.
   const calendars = useMemo(
     () =>
       (data ?? [])
-        .filter((calendar) => calendar.isActive)
+        .filter(
+          (calendar) =>
+            calendar.isActive &&
+            // Once any account is connected, the local calendar can no
+            // longer gain new events (LCV1/LCV2 close off both the ways it
+            // could) and no longer explains itself to the user the way an
+            // account-owned calendar does - drop its orphan row rather than
+            // show it. Gated on connection state, not on the calendar being
+            // empty: nothing can write to it anymore, and prod carries zero
+            // connected users with events already on it (see
+            // local-calendar-visibility LCV3).
+            (!hasConnectedAccount || calendar.provider !== "local"),
+        )
         .sort(compareCalendars(accountEmailOrder)),
-    [data, accountEmailOrder],
+    [data, accountEmailOrder, hasConnectedAccount],
   );
   const { groups, ungrouped } = useMemo(
     () => groupCalendarsByAccount(calendars, connections),
