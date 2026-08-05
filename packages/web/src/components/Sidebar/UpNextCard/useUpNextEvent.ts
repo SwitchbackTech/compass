@@ -33,12 +33,22 @@ export function useUpNextEvent() {
   const allTimedEvents = [...timedEvents, ...multiDayTimed];
 
   const nowEvents = allTimedEvents
-    .filter((event) => dayjs(event.startDate).isSameOrBefore(now) && dayjs(event.endDate).isAfter(now))
-    .sort((a, b) => dayjs(a.endDate).valueOf() - dayjs(b.endDate).valueOf());
+    .filter(
+      (event) =>
+        dayjs(event.startDate).isSameOrBefore(now) &&
+        dayjs(event.endDate).isAfter(now),
+    )
+    .sort(
+      (a, b) =>
+        dayjs(a.endDate).valueOf() - dayjs(b.endDate).valueOf(),
+    );
 
   const upcomingEvents = allTimedEvents
     .filter((event) => dayjs(event.startDate).isAfter(now))
-    .sort((a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf());
+    .sort(
+      (a, b) =>
+        dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
+    );
 
   const upNext = nowEvents[0] || upcomingEvents[0];
   const isCurrentEvent = !!nowEvents[0];

@@ -3,7 +3,7 @@ import dayjs from "@core/util/date/dayjs";
 import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
-import { formatStartsIn, formatEventStatus } from "./UpNextCard";
+import { formatEventStatus } from "./UpNextCard";
 import { useUpNextEvent } from "./useUpNextEvent";
 
 const MINUTES_BEFORE_START = 2;
@@ -16,13 +16,18 @@ const MINUTES_BEFORE_START = 2;
 const DISMISS_ANIMATION_MS = 200;
 
 export const UpNextBanner: FC = () => {
-  const { now, openEventDetails, upNext, conferenceUrl, isCurrentEvent } = useUpNextEvent();
-  const [dismissedId, setDismissedId] = useState<string | undefined>(undefined);
+  const { now, openEventDetails, upNext, conferenceUrl, isCurrentEvent } =
+    useUpNextEvent();
+  const [dismissedId, setDismissedId] = useState<string | undefined>(
+    undefined,
+  );
   const [isClosing, setIsClosing] = useState(false);
 
   const isWithinWindow =
     Boolean(upNext) &&
-    (isCurrentEvent || dayjs(upNext?.startDate).diff(now, "minute", true) <= MINUTES_BEFORE_START);
+    (isCurrentEvent ||
+      dayjs(upNext?.startDate).diff(now, "minute", true) <=
+        MINUTES_BEFORE_START);
   const isVisible = isWithinWindow && upNext?._id !== dismissedId;
 
   const openConference = () =>
