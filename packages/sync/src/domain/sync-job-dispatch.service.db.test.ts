@@ -687,13 +687,15 @@ describe("dispatchSyncJob", () => {
   it("bootstraps a legacy no-cursor resource through the post-watch pull", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, null);
-    // Simulate a deployment while an older version's initial import was in
-    // flight. Parsing a missing field intentionally yields ready for established
-    // rows, but its absent cursor must still make this row bootstrap.
+    // Simulate a row from before bootstrapState existed, now that
+    // backfill-bootstrap-state has stamped every such row "ready" (the
+    // schema no longer defaults a missing field - see
+    // ResourceBootstrapStateSchema). Its absent cursor must still make this
+    // row bootstrap.
     await storage
       .db()
       .collection(SYNC_COLLECTIONS.syncResources)
-      .updateOne({ _id: resource._id }, { $unset: { bootstrapState: "" } });
+      .updateOne({ _id: resource._id }, { $set: { bootstrapState: "ready" } });
     const legacyResource = await resources.findById(
       resource.tenantId,
       resource.principalId,

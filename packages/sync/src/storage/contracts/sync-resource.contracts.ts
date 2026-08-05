@@ -14,12 +14,13 @@ export type ResourceKind = z.infer<typeof ResourceKindSchema>;
 
 // A newly discovered calendar does not become ready merely because its first
 // import produced a cursor. It must also establish its watch (or prove watch is
-// unsupported) and complete one incremental pull after that boundary. Rows
-// created before this invariant existed default to ready so the rollout does
-// not regress established connections into an endless import state.
-export const ResourceBootstrapStateSchema = z
-  .enum(["importing", "watching", "catchingUp", "ready"])
-  .default("ready");
+// unsupported) and complete one incremental pull after that boundary.
+export const ResourceBootstrapStateSchema = z.enum([
+  "importing",
+  "watching",
+  "catchingUp",
+  "ready",
+]);
 export type ResourceBootstrapState = z.infer<
   typeof ResourceBootstrapStateSchema
 >;
@@ -66,7 +67,9 @@ export const SyncResourceRecordSchema = z.strictObject({
   // The redacted failure detail (HTTP status + provider reason) for triage.
   lastReadFailureDetail: z.string().min(1).nullable().default(null),
   // Fresh resources progress importing -> watching -> catchingUp -> ready.
-  // See ResourceBootstrapStateSchema for why absent legacy values are ready.
+  // Always explicit on every row (backfill-bootstrap-state stamped every row
+  // that predated the field) - no default here, so a row silently missing it
+  // fails to parse instead of quietly defaulting.
   bootstrapState: ResourceBootstrapStateSchema,
   // Push subscription: the provider channel id, its opaque resource id, the
   // per-channel secret the provider echoes back on callbacks, and when it
