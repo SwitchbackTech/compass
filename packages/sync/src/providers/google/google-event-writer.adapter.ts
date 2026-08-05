@@ -243,7 +243,11 @@ function toResult(event: gSchema$Event): ProviderWriteResult {
       "Google returned an event without an id or etag",
     );
   }
-  return { providerEventId: event.id, providerVersion: event.etag };
+  return {
+    providerEventId: event.id,
+    providerVersion: event.etag,
+    ...(event.iCalUID ? { icalUid: event.iCalUID } : {}),
+  };
 }
 
 // Map neutral content/schedule/recurrence to a Google event body. Because
