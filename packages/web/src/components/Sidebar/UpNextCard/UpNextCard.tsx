@@ -19,6 +19,24 @@ export function formatStartsIn(start: Dayjs, now: Dayjs): string {
   return `Starts in ${hours} hour${hours === 1 ? "" : "s"}`;
 }
 
+export function formatEventStatus(
+  start: Dayjs,
+  end: Dayjs,
+  now: Dayjs,
+  isCurrentEvent: boolean,
+): string {
+  if (isCurrentEvent) {
+    const minutesRemaining = Math.round(end.diff(now, "minute", true));
+    if (minutesRemaining <= 0) return "Ending now";
+    if (minutesRemaining < 60) {
+      return `Ends in ${minutesRemaining} minute${minutesRemaining === 1 ? "" : "s"}`;
+    }
+    const hours = Math.round(minutesRemaining / 60);
+    return `Ends in ${hours} hour${hours === 1 ? "" : "s"}`;
+  }
+  return formatStartsIn(start, now);
+}
+
 /**
  * The next timed event starting later today, with a live countdown. Clicking it
  * opens the event in the sidebar's details form. Renders nothing once today has
@@ -29,9 +47,14 @@ export function formatStartsIn(start: Dayjs, now: Dayjs): string {
  * for them.
  */
 export const UpNextCard: FC = () => {
-  const { now, openEventDetails, upNext } = useUpNextEvent();
+  const { now, openEventDetails, upNext, isCurrentEvent } = useUpNextEvent();
   const countdown = upNext
-    ? formatStartsIn(dayjs(upNext.startDate), now)
+    ? formatEventStatus(
+        dayjs(upNext.startDate),
+        dayjs(upNext.endDate),
+        now,
+        isCurrentEvent,
+      )
     : undefined;
 
   return (
@@ -43,12 +66,14 @@ export const UpNextCard: FC = () => {
               order (via relative + z-10), so it still receives its own
               clicks instead of the card intercepting them. */}
           <button
-            aria-label={`Up next: ${upNext.title}. ${countdown}.`}
+            aria-label={`${isCurrentEvent ? "Now" : "Up next"}: ${upNext.title}. ${countdown}.`}
             className="c-focus-ring absolute inset-0 w-full text-left"
             onClick={() => openEventDetails("gridClick")}
             type="button"
           />
-          <span className="pr-8 text-accent text-xs">{countdown}</span>
+          <span className="pr-8 text-accent text-xs">
+            {isCurrentEvent ? "Now" : countdown}
+          </span>
           {/* group-has-[:focus-visible], not group-focus-visible: the
               focusable element is this button's sibling (a descendant of
               .group), not .group itself, so a plain :focus-visible variant

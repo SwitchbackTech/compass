@@ -30,11 +30,19 @@ export function useUpNextEvent() {
       if (!source || source.schedule.kind !== "timed") return [];
       return [{ ...gridEvent, startDate: source.schedule.start }];
     });
-  const upNext = [...timedEvents, ...multiDayTimed]
+  const allTimedEvents = [...timedEvents, ...multiDayTimed];
+
+  const nowEvents = allTimedEvents
+    .filter((event) => dayjs(event.startDate).isSameOrBefore(now) && dayjs(event.endDate).isAfter(now))
+    .sort((a, b) => dayjs(a.endDate).valueOf() - dayjs(b.endDate).valueOf());
+
+  const upcomingEvents = allTimedEvents
     .filter((event) => dayjs(event.startDate).isAfter(now))
-    .sort(
-      (a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf(),
-    )[0];
+    .sort((a, b) => dayjs(a.startDate).valueOf() - dayjs(b.startDate).valueOf());
+
+  const upNext = nowEvents[0] || upcomingEvents[0];
+  const isCurrentEvent = !!nowEvents[0];
+
   const sourceEvent = upNext
     ? events.find((candidate) => candidate.id === upNext._id)
     : undefined;
@@ -57,5 +65,5 @@ export function useUpNextEvent() {
       ? sourceEvent.content.conference?.url
       : undefined;
 
-  return { now, openEventDetails, upNext, conferenceUrl };
+  return { now, openEventDetails, upNext, conferenceUrl, isCurrentEvent };
 }
