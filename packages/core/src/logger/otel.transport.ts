@@ -18,24 +18,16 @@ const severityNumbers: Record<string, SeverityNumber> = {
 
 export class OpenTelemetryTransport extends TransportStream {
   log(info: TransformableInfo, next: () => void): void {
-    const attributes: Record<string, string | number | boolean | undefined> = {};
-
-    for (const [key, value] of Object.entries(info)) {
-      if (
-        key === "level" ||
-        key === "message" ||
-        typeof key === "symbol" ||
-        key.startsWith("[")
-      ) {
-        continue;
-      }
-
-      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-        attributes[key] = value;
-      } else if (value !== undefined && value !== null) {
-        attributes[key] = JSON.stringify(value);
-      }
-    }
+    const attributes = Object.entries(info)
+      .filter(([key]) => key !== "level" && key !== "message" && !key.startsWith("[") && typeof key !== "symbol")
+      .reduce<Record<string, string | number | boolean | undefined>>((acc, [key, value]) => {
+        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+          acc[key] = value;
+        } else if (value != null) {
+          acc[key] = JSON.stringify(value);
+        }
+        return acc;
+      }, {});
 
     otelLogger.emit({
       severityText: info.level,

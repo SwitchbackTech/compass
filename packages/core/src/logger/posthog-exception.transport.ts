@@ -15,15 +15,15 @@ export class PostHogExceptionTransport extends TransportStream {
     }
 
     const message = String(info.message || "Error");
-    const stackValue = info["stack"] ? String(info["stack"]) : undefined;
-    const userIdValue = info["userId"] ? String(info["userId"]) : undefined;
+    const stack = info["stack"] ? String(info["stack"]) : undefined;
+    const userId = info["userId"] ? String(info["userId"]) : undefined;
 
     const err = new Error(message);
-    if (stackValue) {
-      err.stack = stackValue;
+    if (stack) {
+      err.stack = stack;
     }
 
-    const distinctId = userIdValue || "unknown";
+    const distinctId = userId || "unknown";
     const properties: Record<string | number, unknown> = {};
 
     for (const [key, value] of Object.entries(info)) {
