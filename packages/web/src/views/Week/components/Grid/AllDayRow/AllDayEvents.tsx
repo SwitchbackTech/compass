@@ -70,11 +70,7 @@ export const AllDayEvents = ({
     () =>
       visibleAllDayEvents.map((event) => ({
         event,
-        calendarIdentity: resolveCalendarCardIdentity(
-          calendarLookup,
-          event.calendarId,
-          event.otherAccount,
-        ),
+        calendarIdentity: resolveCalendarCardIdentity(calendarLookup, event),
         // Read-only (unwritable calendar or busy content) events never
         // attach interaction attributes/registration below, so the drag/
         // resize engine can't find them as a target - blocked before any
@@ -105,11 +101,7 @@ export const AllDayEvents = ({
             // from the draft store; everything else reuses the stable,
             // list-level resolved identity above.
             const identityForDisplay = isPlaceholder
-              ? resolveCalendarCardIdentity(
-                  calendarLookup,
-                  eventForDisplay.calendarId,
-                  eventForDisplay.otherAccount,
-                )
+              ? resolveCalendarCardIdentity(calendarLookup, eventForDisplay)
               : calendarIdentity;
 
             return (

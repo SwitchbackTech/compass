@@ -12,7 +12,9 @@ describe("resolveCalendarCardIdentity", () => {
     const solo = calendar();
     const lookup = buildCalendarLookup([solo]);
 
-    expect(resolveCalendarCardIdentity(lookup, solo.id)).toBeNull();
+    expect(
+      resolveCalendarCardIdentity(lookup, { calendarId: solo.id }),
+    ).toBeNull();
   });
 
   it("returns the calendar's name and color with two or more calendars", () => {
@@ -20,7 +22,9 @@ describe("resolveCalendarCardIdentity", () => {
     const personal = calendar({ name: "Personal" });
     const lookup = buildCalendarLookup([work, personal]);
 
-    expect(resolveCalendarCardIdentity(lookup, work.id)).toEqual({
+    expect(
+      resolveCalendarCardIdentity(lookup, { calendarId: work.id }),
+    ).toEqual({
       name: "Work",
       backgroundColor: "#3b82f6",
     });
@@ -35,7 +39,12 @@ describe("resolveCalendarCardIdentity", () => {
       backgroundColor: "#ef4444",
     };
 
-    expect(resolveCalendarCardIdentity(lookup, work.id, duplicate)).toEqual({
+    expect(
+      resolveCalendarCardIdentity(lookup, {
+        calendarId: work.id,
+        otherAccount: duplicate,
+      }),
+    ).toEqual({
       name: "Work",
       backgroundColor: work.backgroundColor,
       otherAccount: duplicate,
@@ -48,6 +57,8 @@ describe("resolveCalendarCardIdentity", () => {
     const lookup = buildCalendarLookup([work, personal]);
     const missing = CalendarIdSchema.parse(createObjectIdString());
 
-    expect(resolveCalendarCardIdentity(lookup, missing)).toBeNull();
+    expect(
+      resolveCalendarCardIdentity(lookup, { calendarId: missing }),
+    ).toBeNull();
   });
 });

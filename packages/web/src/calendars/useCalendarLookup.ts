@@ -77,15 +77,18 @@ export type CalendarCardIdentity = {
  * either the accent or a redundant name suffix, since every card would say
  * the same thing.
  *
- * `duplicate` is the event's own `otherAccount` (joined by the view model),
- * passed in by the caller since a card's merge status is a property of the
- * specific event instance, not of its calendar.
+ * Takes the event rather than a calendar id plus its `otherAccount`, which
+ * every call site was reading off the same object anyway - and matches
+ * {@link isGridEventInteractionReadOnly}, its neighbor at those call sites.
  */
 export function resolveCalendarCardIdentity(
   lookup: ReadonlyMap<CalendarId, Calendar>,
-  calendarId: CalendarId | null | undefined,
-  duplicate?: CrossAccountDuplicate,
+  event: {
+    calendarId?: CalendarId | null;
+    otherAccount?: CrossAccountDuplicate;
+  },
 ): CalendarCardIdentity | null {
+  const { calendarId, otherAccount } = event;
   if (!calendarId || lookup.size <= 1) return null;
 
   const calendar = lookup.get(calendarId);
@@ -94,7 +97,7 @@ export function resolveCalendarCardIdentity(
   return {
     name: calendar.name,
     backgroundColor: calendar.backgroundColor,
-    ...(duplicate ? { otherAccount: duplicate } : {}),
+    ...(otherAccount ? { otherAccount } : {}),
   };
 }
 

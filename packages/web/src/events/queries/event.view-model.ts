@@ -180,7 +180,7 @@ const rowCountFrom = (events: GridEvent[]) => {
   return rows.length === 0 ? 1 : Math.max(...rows);
 };
 
-type CalendarEventViewModel = {
+export type CalendarEventViewModel = {
   entities: NormalizedEventQueryData["entities"];
   events: Event[];
   timedEvents: GridEvent[];
@@ -188,6 +188,17 @@ type CalendarEventViewModel = {
   rowCount: number;
   demoEventIds?: readonly EventId[];
 };
+
+/**
+ * Assemble the grid arrays. Pure: useCalendarEventViewModel memoizes the whole
+ * pipeline this ends, so there is nothing to cache here - only the empty case
+ * keeps a shared constant, so a view with no data doesn't hand its consumers a
+ * fresh object every render.
+ */
+export const deriveCalendarEventViewModel = (
+  data?: NormalizedEventQueryData,
+): CalendarEventViewModel =>
+  data ? computeCalendarEventViewModel(data) : EMPTY_CALENDAR_VIEW_MODEL;
 
 const computeCalendarEventViewModel = (
   data?: NormalizedEventQueryData,
@@ -210,25 +221,4 @@ const computeCalendarEventViewModel = (
   };
 };
 
-// Module-level memo keyed on the `query.data` object reference. The Week view
-// model is consumed by many components; a per-hook `useMemo` recomputes the
-// filter + grid assembly independently in each. Caching on the data reference
-// (stable while the cache entry is unchanged) collapses that to a single
-// derivation shared by every consumer, and keeps the result referentially
-// stable across renders.
-const viewModelCache = new WeakMap<
-  NormalizedEventQueryData,
-  CalendarEventViewModel
->();
 const EMPTY_CALENDAR_VIEW_MODEL = computeCalendarEventViewModel(undefined);
-
-export const deriveCalendarEventViewModel = (
-  data?: NormalizedEventQueryData,
-): CalendarEventViewModel => {
-  if (!data) return EMPTY_CALENDAR_VIEW_MODEL;
-  const cached = viewModelCache.get(data);
-  if (cached) return cached;
-  const result = computeCalendarEventViewModel(data);
-  viewModelCache.set(data, result);
-  return result;
-};

@@ -4,18 +4,11 @@ import { type Event } from "@core/types/event.contracts";
 import { type CrossAccountDuplicate } from "@web/common/types/web.event.types";
 import { type NormalizedEventQueryData } from "./event.query.types";
 
-// Memo keyed on the (data, calendars) cache references, the same shape
-// filter-events-by-visible-calendars.ts uses, plus a last-value slot for the
-// default account email: every consumer in a render derives the same email
-// from the same store, so one remembered (key, result) pair hits as often as
-// a map would.
-const mergeCache = new WeakMap<
-  NormalizedEventQueryData,
-  WeakMap<
-    Calendar[],
-    { defaultAccountEmail: string; result: NormalizedEventQueryData }
-  >
->();
+interface Copy {
+  id: EventId;
+  event: Event;
+  accountEmail: string;
+}
 
 /**
  * Collapse copies of one meeting that live on two connected accounts into a
@@ -33,6 +26,9 @@ const mergeCache = new WeakMap<
  * unmerges on its own (the hidden copy is already gone by the time this sees
  * the data), and before the grid view model, so everything downstream - the
  * grid and the Up Next banner alike - sees one event per meeting.
+ *
+ * Pure: useCalendarEventViewModel memoizes the whole pipeline this belongs to,
+ * so there is nothing to cache here.
  */
 export function mergeCrossAccountDuplicates(
   data: NormalizedEventQueryData | undefined,
@@ -42,38 +38,12 @@ export function mergeCrossAccountDuplicates(
   if (!data || !calendars) return data;
 
   // Duplicates need two accounts; almost every user has one. Skip the
-  // per-event pass (and the cache write) entirely for them.
+  // per-event pass entirely for them.
   const accountEmails = new Set(
     calendars.map((c) => c.accountEmail).filter(Boolean),
   );
   if (accountEmails.size < 2) return data;
 
-  let byCalendars = mergeCache.get(data);
-  if (!byCalendars) {
-    byCalendars = new WeakMap();
-    mergeCache.set(data, byCalendars);
-  }
-  const cached = byCalendars.get(calendars);
-  if (cached && cached.defaultAccountEmail === defaultAccountEmail) {
-    return cached.result;
-  }
-
-  const result = computeMerge(data, calendars, defaultAccountEmail);
-  byCalendars.set(calendars, { defaultAccountEmail, result });
-  return result;
-}
-
-interface Copy {
-  id: EventId;
-  event: Event;
-  accountEmail: string;
-}
-
-function computeMerge(
-  data: NormalizedEventQueryData,
-  calendars: Calendar[],
-  defaultAccountEmail: string,
-): NormalizedEventQueryData {
   const calendarsById = new Map(calendars.map((c) => [c.id, c]));
 
   // Group only events that can possibly merge: they need a correlation key,

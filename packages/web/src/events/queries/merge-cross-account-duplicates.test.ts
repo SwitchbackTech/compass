@@ -164,18 +164,4 @@ describe("mergeCrossAccountDuplicates", () => {
 
     expect(mergeCrossAccountDuplicates(data, [work, personal])).toBe(data);
   });
-
-  it("reuses the cached result for the same data and calendars", () => {
-    const data = dataOf(copy(work), copy(personal));
-
-    const first = mergeCrossAccountDuplicates(data, [work, personal]);
-    const calendarsRef = [work, personal];
-    const second = mergeCrossAccountDuplicates(data, calendarsRef);
-    const third = mergeCrossAccountDuplicates(data, calendarsRef);
-
-    // Same (data, calendars) references must not re-derive; a fresh object
-    // each call would defeat the view model's own WeakMap downstream.
-    expect(third).toBe(second);
-    expect(first).not.toBe(second);
-  });
 });
