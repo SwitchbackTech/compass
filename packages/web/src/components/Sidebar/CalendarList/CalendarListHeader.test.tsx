@@ -192,7 +192,7 @@ describe("CalendarListHeader", () => {
 
     const email = screen.getByText("ahab@pequod.com");
     expect(email.tagName).toBe("SPAN");
-    expect(email).toHaveClass("text-text");
+    expect(email).toHaveClass("text-text-muted");
     expect(email).not.toHaveClass("c-sync-text-wave");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.queryByText(/Updated/)).toBeNull();
@@ -227,7 +227,7 @@ describe("CalendarListHeader", () => {
 
     const email = screen.getByText("ahab@pequod.com");
     expect(email.tagName).toBe("SPAN");
-    expect(email).toHaveClass("text-text");
+    expect(email).toHaveClass("text-text-muted");
     expect(email).not.toHaveClass("text-warning");
     expect(screen.getByRole("status")).toHaveTextContent(
       "Calendar updates are taking longer than usual. We'll keep trying.",
@@ -249,7 +249,7 @@ describe("CalendarListHeader", () => {
     renderHeader();
 
     const email = screen.getByText("ahab@pequod.com");
-    expect(email).toHaveClass("text-text");
+    expect(email).toHaveClass("text-text-muted");
     expect(email).not.toHaveClass("text-error");
     expect(screen.getByRole("status")).toHaveTextContent(
       "Calendar needs reconnecting",

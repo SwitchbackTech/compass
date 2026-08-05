@@ -46,7 +46,7 @@ export const AccountDisclosureHeading: FC<AccountDisclosureHeadingProps> = ({
     <button
       aria-controls={accountCalendarListId(collapseKey)}
       aria-expanded={!isCollapsed}
-      className="c-focus-ring flex w-full min-w-0 items-center gap-1 rounded-xs text-left"
+      className="c-focus-ring group flex w-full min-w-0 items-center gap-1 rounded-xs text-left"
       onClick={() => toggleAccountCollapsed(collapseKey)}
       type="button"
     >
@@ -61,7 +61,9 @@ export const AccountDisclosureHeading: FC<AccountDisclosureHeadingProps> = ({
       <span
         className={classNames(
           "min-w-0 truncate",
-          isSyncing ? "c-sync-text-wave" : "text-text",
+          isSyncing
+            ? "c-sync-text-wave"
+            : "text-text-muted group-hover:text-text",
         )}
         translate="no"
       >
