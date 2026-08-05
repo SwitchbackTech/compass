@@ -1,5 +1,5 @@
-import TransportStream from "winston-transport";
 import { type TransformableInfo } from "logform";
+import TransportStream from "winston-transport";
 import { getPostHogClient } from "./otel-logs";
 
 export class PostHogExceptionTransport extends TransportStream {
