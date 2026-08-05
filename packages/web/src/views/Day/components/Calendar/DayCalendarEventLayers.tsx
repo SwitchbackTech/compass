@@ -73,11 +73,7 @@ export const DayCalendarAllDayEventsLayer = ({
     >
       {renderedEvents.map((event) => (
         <DayAllDayCalendarEvent
-          calendarIdentity={resolveCalendarCardIdentity(
-            calendarLookup,
-            event.calendarId,
-            event.otherAccount,
-          )}
+          calendarIdentity={resolveCalendarCardIdentity(calendarLookup, event)}
           columnIndex={getCalendarColumnIndex(event)}
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
@@ -132,11 +128,7 @@ export const DayCalendarTimedEventsLayer = ({
     <div id={ID_GRID_EVENTS_TIMED}>
       {timedEventItems.map(({ deckLayout, event }) => (
         <DayTimedCalendarEvent
-          calendarIdentity={resolveCalendarCardIdentity(
-            calendarLookup,
-            event.calendarId,
-            event.otherAccount,
-          )}
+          calendarIdentity={resolveCalendarCardIdentity(calendarLookup, event)}
           columnIndex={getCalendarColumnIndex(event)}
           deckLayout={deckLayout}
           event={event}

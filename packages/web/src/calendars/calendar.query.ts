@@ -43,9 +43,9 @@ export function calendarsQueryOptions(authenticated: boolean) {
 // reference pair - both are stable across renders until the underlying
 // store/query data actually changes (see useHiddenCalendarIds and this
 // query's staleTime) - so every consumer on the same versions gets back the
-// exact same output array. That's also what lets
-// filter-events-by-visible-calendars.ts's WeakMap dedupe downstream instead
-// of re-filtering per consumer.
+// exact same output array. That stable reference is also what
+// useCalendarEventViewModel's memo keys on, so the event pipeline runs once
+// per (data, calendars) rather than once per consumer.
 const visibilityResultCache = new WeakMap<
   ReadonlySet<string>,
   WeakMap<Calendar[], Calendar[]>

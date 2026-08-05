@@ -62,10 +62,7 @@ const makeGridEvent = (overrides: Partial<GridEvent> = {}): GridEvent =>
 // passes it down as a prop - not new production code.
 function TimedCardWithResolvedIdentity({ event }: { event: GridEvent }) {
   const lookup = useCalendarLookup();
-  const calendarIdentity = resolveCalendarCardIdentity(
-    lookup,
-    event.calendarId,
-  );
+  const calendarIdentity = resolveCalendarCardIdentity(lookup, event);
 
   return (
     <TimedEventCard
@@ -80,10 +77,7 @@ function TimedCardWithResolvedIdentity({ event }: { event: GridEvent }) {
 
 function AllDayCardWithResolvedIdentity({ event }: { event: GridEvent }) {
   const lookup = useCalendarLookup();
-  const calendarIdentity = resolveCalendarCardIdentity(
-    lookup,
-    event.calendarId,
-  );
+  const calendarIdentity = resolveCalendarCardIdentity(lookup, event);
 
   return (
     <AllDayEventCard

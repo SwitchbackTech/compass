@@ -93,8 +93,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
         ...item,
         calendarIdentity: resolveCalendarCardIdentity(
           calendarLookup,
-          item.event.calendarId,
-          item.event.otherAccount,
+          item.event,
         ),
         // Read-only (unwritable calendar or busy content) events never
         // attach interaction attributes/registration below, so the drag/
@@ -122,11 +121,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
             // from the draft store; everything else reuses the stable,
             // list-level resolved identity above.
             const identityForDisplay = isPlaceholder
-              ? resolveCalendarCardIdentity(
-                  calendarLookup,
-                  eventForDisplay.calendarId,
-                  eventForDisplay.otherAccount,
-                )
+              ? resolveCalendarCardIdentity(calendarLookup, eventForDisplay)
               : calendarIdentity;
 
             return (
