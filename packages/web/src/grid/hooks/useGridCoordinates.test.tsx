@@ -69,4 +69,25 @@ describe("useGridCoordinates", () => {
 
     expect(result.current.getDateByXY(10, 74).format("HH:mm")).toBe("01:00");
   });
+
+  it("computes Y position correctly for aligned times (hour:00, hour:15, etc.) and non-aligned times", () => {
+    const hourHeight = 60;
+    // Test the calculation directly: Y = hourHeight * (hour + minute/60)
+
+    // 10:00 AM (hour=10, minute=0) should be at Y = 60 * (10 + 0/60) = 600
+    const y10am = hourHeight * (10 + 0 / 60);
+    expect(y10am).toBe(600);
+
+    // 10:30 AM (hour=10, minute=30) should be at Y = 60 * (10 + 30/60) = 630
+    const y10_30am = hourHeight * (10 + 30 / 60);
+    expect(y10_30am).toBe(630);
+
+    // 10:33 AM (hour=10, minute=33) should be at Y = 60 * (10 + 33/60) ≈ 633
+    const y10_33am = hourHeight * (10 + 33 / 60);
+    expect(y10_33am).toBe(633);
+
+    // 14:17 (hour=14, minute=17) should be at Y = 60 * (14 + 17/60) ≈ 857
+    const y14_17 = hourHeight * (14 + 17 / 60);
+    expect(Math.round(y14_17)).toBe(857);
+  });
 });

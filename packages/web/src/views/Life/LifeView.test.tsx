@@ -21,8 +21,13 @@ import {
 } from "bun:test";
 
 const fixedToday = new Date(2026, 0, 1);
-const originalInnerWidth = window.innerWidth;
-const originalMatchMedia = window.matchMedia;
+let originalInnerWidth: number;
+let originalMatchMedia: typeof window.matchMedia;
+
+if (typeof window !== "undefined") {
+  originalInnerWidth = window.innerWidth;
+  originalMatchMedia = window.matchMedia;
+}
 
 function renderLifeView() {
   return render(<LifeView today={fixedToday} />);
@@ -78,6 +83,7 @@ afterAll(() => {
 });
 
 function mockViewport(isMobile: boolean) {
+  if (typeof window === "undefined") return;
   Object.defineProperty(window, "innerWidth", {
     configurable: true,
     value: isMobile ? 375 : 1024,
@@ -113,12 +119,14 @@ beforeEach(() => {
 afterEach(() => {
   localStorage.removeItem(STORAGE_KEYS.LIFE_PREFERENCES);
   localStorage.removeItem(STORAGE_KEYS.SIDEBAR_OPEN);
-  Object.defineProperty(window, "innerWidth", {
-    configurable: true,
-    value: originalInnerWidth,
-    writable: true,
-  });
-  window.matchMedia = originalMatchMedia;
+  if (typeof window !== "undefined" && originalInnerWidth !== undefined) {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: originalInnerWidth,
+      writable: true,
+    });
+    window.matchMedia = originalMatchMedia;
+  }
 });
 
 describe("LifeView", () => {
