@@ -1,5 +1,12 @@
 import { type Calendar } from "@core/types/calendar.contracts";
-import { getDefaultTargetCalendar, getLocalCalendar } from "./calendar.util";
+import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
+import {
+  compareCalendars,
+  getDefaultTargetCalendar,
+  getLocalCalendar,
+  groupCalendarsByAccount,
+  spansMultipleAccounts,
+} from "./calendar.util";
 import { describe, expect, it } from "bun:test";
 
 function makeCalendar(overrides: Partial<Calendar>): Calendar {
@@ -197,5 +204,140 @@ describe("getDefaultTargetCalendar", () => {
         accountEmailOrder: ["old@example.com", "new@example.com"],
       }),
     ).toBe(primary);
+  });
+});
+
+describe("compareCalendars", () => {
+  it("orders by account (connection order), then primary first, then name", () => {
+    const work = makeCalendar({ name: "Work", accountEmail: "old@x.com" });
+    const personal = makeCalendar({
+      name: "Personal",
+      isPrimary: true,
+      accountEmail: "old@x.com",
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+    const side = makeCalendar({
+      name: "Side",
+      accountEmail: "new@x.com",
+      id: "507f1f77bcf86cd799439013" as Calendar["id"],
+    });
+    const local = makeCalendar({
+      name: "Compass",
+      provider: "local",
+      id: "507f1f77bcf86cd799439014" as Calendar["id"],
+    });
+
+    const ordered = [local, side, work, personal].sort(
+      compareCalendars(["old@x.com", "new@x.com"]),
+    );
+
+    expect(ordered.map((c) => c.name)).toEqual([
+      "Personal",
+      "Work",
+      "Side",
+      "Compass",
+    ]);
+  });
+
+  it("ranks an unlisted account the same as no account - both sort after known accounts, then alphabetically", () => {
+    const known = makeCalendar({ name: "Known", accountEmail: "old@x.com" });
+    const unknown = makeCalendar({
+      name: "Unknown",
+      accountEmail: "mystery@x.com",
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+    const local = makeCalendar({
+      name: "Compass",
+      provider: "local",
+      id: "507f1f77bcf86cd799439013" as Calendar["id"],
+    });
+
+    const ordered = [local, unknown, known].sort(
+      compareCalendars(["old@x.com"]),
+    );
+
+    expect(ordered.map((c) => c.name)).toEqual(["Known", "Compass", "Unknown"]);
+  });
+});
+
+describe("spansMultipleAccounts", () => {
+  it("is false for zero or one distinct account", () => {
+    expect(spansMultipleAccounts([])).toBe(false);
+    expect(
+      spansMultipleAccounts([
+        makeCalendar({ accountEmail: "a@x.com" }),
+        makeCalendar({
+          accountEmail: "a@x.com",
+          id: "507f1f77bcf86cd799439012" as Calendar["id"],
+        }),
+      ]),
+    ).toBe(false);
+  });
+
+  it("is true once a second distinct account appears", () => {
+    expect(
+      spansMultipleAccounts([
+        makeCalendar({ accountEmail: "a@x.com" }),
+        makeCalendar({
+          accountEmail: "b@x.com",
+          id: "507f1f77bcf86cd799439012" as Calendar["id"],
+        }),
+      ]),
+    ).toBe(true);
+  });
+});
+
+describe("groupCalendarsByAccount", () => {
+  const connection = (accountEmail: string): GoogleSyncConnectionSummary => ({
+    id: `conn-${accountEmail}`,
+    state: "healthy",
+    stateReason: null,
+    lastSyncedAt: null,
+    lastHealthyAt: null,
+    accountEmail,
+    connectionState: "HEALTHY",
+  });
+
+  it("buckets by account in connection order and leaves the local calendar ungrouped", () => {
+    const work = makeCalendar({ name: "Work", accountEmail: "old@x.com" });
+    const personal = makeCalendar({
+      name: "Personal",
+      accountEmail: "new@x.com",
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+    const local = makeCalendar({
+      name: "Compass",
+      provider: "local",
+      id: "507f1f77bcf86cd799439013" as Calendar["id"],
+    });
+
+    const { groups, ungrouped } = groupCalendarsByAccount(
+      [personal, work, local],
+      [connection("old@x.com"), connection("new@x.com")],
+    );
+
+    expect(groups.map((g) => g.accountEmail)).toEqual([
+      "old@x.com",
+      "new@x.com",
+    ]);
+    expect(ungrouped).toEqual([local]);
+  });
+
+  it("groups a lone connected account too - no two-account threshold", () => {
+    const work = makeCalendar({ name: "Work", accountEmail: "old@x.com" });
+
+    const { groups } = groupCalendarsByAccount(
+      [work],
+      [connection("old@x.com")],
+    );
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.calendars).toEqual([work]);
+  });
+
+  it("omits a connected account with no calendars yet", () => {
+    const { groups } = groupCalendarsByAccount([], [connection("old@x.com")]);
+
+    expect(groups).toHaveLength(0);
   });
 });

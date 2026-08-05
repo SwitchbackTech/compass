@@ -1,4 +1,5 @@
 import { type FC, useEffect, useRef, useState } from "react";
+import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
@@ -12,6 +13,7 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import { groupCalendarsByAccount } from "@web/calendars/calendar.util";
 import {
   setDefaultCalendarId,
   useDefaultCalendarId,
@@ -23,7 +25,6 @@ import {
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
-import { groupCalendarsByAccount } from "@web/components/Sidebar/CalendarList/CalendarList";
 import {
   selectIsSettingsOpen,
   settingsActions,
@@ -55,6 +56,13 @@ export const SettingsModal: FC = () => {
     if (!isOpen) setConfirmingId(null);
   }, [isOpen]);
 
+  const { data } = useCalendarsQuery();
+  const connections = useUserMetadataStore(selectGoogleSyncConnections);
+  const writableCalendars = (data ?? []).filter(
+    (calendar) => calendar.isActive && calendar.capabilities.canWrite,
+  );
+  const resolvedDefault = useDefaultTargetCalendar(writableCalendars);
+
   if (!isOpen) return null;
 
   const handleDismiss = () => {
@@ -84,9 +92,15 @@ export const SettingsModal: FC = () => {
           </button>
         </nav>
         <div className="flex min-w-0 flex-1 flex-col gap-4">
-          <DefaultCalendarPicker />
+          <DefaultCalendarPicker
+            calendars={writableCalendars}
+            connections={connections}
+            resolvedDefault={resolvedDefault}
+          />
           <AccountsSection
             confirmingId={confirmingId}
+            connections={connections}
+            resolvedDefault={resolvedDefault}
             setConfirmingId={setConfirmingId}
           />
         </div>
@@ -95,20 +109,23 @@ export const SettingsModal: FC = () => {
   );
 };
 
-const DefaultCalendarPicker: FC = () => {
-  const { data } = useCalendarsQuery();
-  const connections = useUserMetadataStore(selectGoogleSyncConnections);
-  const calendars = (data ?? []).filter(
-    (calendar) => calendar.isActive && calendar.capabilities.canWrite,
-  );
+interface DefaultCalendarPickerProps {
+  calendars: Calendar[];
+  connections: GoogleSyncConnectionSummary[];
+  resolvedDefault: Calendar | undefined;
+}
+
+const DefaultCalendarPicker: FC<DefaultCalendarPickerProps> = ({
+  calendars,
+  connections,
+  resolvedDefault,
+}) => {
   const storedId = useDefaultCalendarId();
-  const resolvedDefault = useDefaultTargetCalendar(calendars);
   const value = storedId ?? resolvedDefault?.id ?? "";
 
   if (calendars.length === 0) return null;
 
   const { groups, ungrouped } = groupCalendarsByAccount(calendars, connections);
-  const useAccountGroups = groups.length > 1;
 
   return (
     <div>
@@ -124,30 +141,20 @@ const DefaultCalendarPicker: FC = () => {
         onChange={(e) => setDefaultCalendarId(e.target.value as CalendarId)}
         value={value}
       >
-        {useAccountGroups ? (
-          <>
-            {ungrouped.map((calendar) => (
+        {groups.map((group) => (
+          <optgroup key={group.accountEmail} label={group.accountEmail}>
+            {group.calendars.map((calendar) => (
               <option key={calendar.id} value={calendar.id}>
                 {calendar.name}
               </option>
             ))}
-            {groups.map((group) => (
-              <optgroup key={group.accountEmail} label={group.accountEmail}>
-                {group.calendars.map((calendar) => (
-                  <option key={calendar.id} value={calendar.id}>
-                    {calendar.name}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </>
-        ) : (
-          calendars.map((calendar) => (
-            <option key={calendar.id} value={calendar.id}>
-              {calendar.name}
-            </option>
-          ))
-        )}
+          </optgroup>
+        ))}
+        {ungrouped.map((calendar) => (
+          <option key={calendar.id} value={calendar.id}>
+            {calendar.name}
+          </option>
+        ))}
       </select>
     </div>
   );
@@ -155,22 +162,19 @@ const DefaultCalendarPicker: FC = () => {
 
 interface AccountsSectionProps {
   confirmingId: string | null;
+  connections: GoogleSyncConnectionSummary[];
+  resolvedDefault: Calendar | undefined;
   setConfirmingId: (id: string | null) => void;
 }
 
 const AccountsSection: FC<AccountsSectionProps> = ({
   confirmingId,
+  connections,
+  resolvedDefault,
   setConfirmingId,
 }) => {
-  const connections = useUserMetadataStore(selectGoogleSyncConnections);
   const { connect, isAvailable, isConnecting } = useConnectGoogle();
   const { disconnect, disconnectingId } = useDisconnectGoogleAccount();
-  const { data } = useCalendarsQuery();
-  const resolvedDefault = useDefaultTargetCalendar(
-    (data ?? []).filter(
-      (calendar) => calendar.isActive && calendar.capabilities.canWrite,
-    ),
-  );
 
   return (
     <div className="flex flex-col gap-3">

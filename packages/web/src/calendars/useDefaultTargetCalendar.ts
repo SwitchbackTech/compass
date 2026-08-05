@@ -8,7 +8,7 @@ import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { useDefaultCalendarId } from "@web/calendars/default-calendar.store";
 
 /**
- * The calendar a new event should land on: the user's starred default when
+ * The calendar a new event should land on: the user's chosen default when
  * it is still usable, else the primary calendar of the oldest-connected
  * account, else the local calendar.
  *

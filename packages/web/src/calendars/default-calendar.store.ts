@@ -8,10 +8,10 @@ import {
 } from "@web/common/utils/external-store.util";
 
 /**
- * The calendar new events are created on, chosen by the user via the star on
- * a calendar row. Client-owned, mirroring the hidden-calendar-ids store: one
- * localStorage key is the source of truth, and this makes changes to it
- * observable.
+ * The calendar new events are created on, chosen by the user from the
+ * Default Calendar picker in Settings. Client-owned, mirroring the
+ * hidden-calendar-ids store: one localStorage key is the source of truth,
+ * and this makes changes to it observable.
  *
  * Wart, named: the preference lives on this device only, so it does not roam
  * across browsers. A server-side preference can supersede it later without a
@@ -66,16 +66,6 @@ function subscribe(onChange: () => void): () => void {
 
 export function useDefaultCalendarId(): string | null {
   return useSyncExternalStore(subscribe, defaultCalendarIdStore.get);
-}
-
-/**
- * Test-only observability today: no production code reads the preference
- * outside React (everything goes through useDefaultCalendarId /
- * useDefaultTargetCalendar). Kept exported for the store's and the calendar
- * list's tests; give it a real doc if a non-hook caller ever appears.
- */
-export function getStoredDefaultCalendarId(): string | null {
-  return defaultCalendarIdStore.get();
 }
 
 /** Test-only: resyncs the in-memory store from storage. */

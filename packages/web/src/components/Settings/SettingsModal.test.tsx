@@ -7,7 +7,8 @@ import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.fact
 import { AuthApi } from "@web/api/auth.api";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
-import { getStoredDefaultCalendarId } from "@web/calendars/default-calendar.store";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { settingsActions } from "@web/settings/settings.store";
 import { SettingsModal } from "./SettingsModal";
 import { describe, expect, it, spyOn } from "bun:test";
@@ -210,7 +211,7 @@ describe("SettingsModal", () => {
     ).toHaveValue(primary.id);
   });
 
-  it("persists a new default calendar pick", async () => {
+  it("persists a new default calendar pick to storage", async () => {
     const primary = createMockCalendar({ name: "Personal", isPrimary: true });
     const side = createMockCalendar({ name: "Side project" });
 
@@ -222,7 +223,45 @@ describe("SettingsModal", () => {
       side.id,
     );
 
-    expect(getStoredDefaultCalendarId()).toBe(side.id);
+    expect(
+      screen.getByRole("combobox", { name: "Default Calendar" }),
+    ).toHaveValue(side.id);
+    expect(persistentBrowserStore.get(STORAGE_KEYS.DEFAULT_CALENDAR_ID)).toBe(
+      side.id,
+    );
+  });
+
+  it("groups the picker by account even with a single account connected", () => {
+    // Matches the sidebar, which gives a lone account the same labelled
+    // section as several (no "only group past two accounts" threshold).
+    const work = createMockCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+
+    renderSettings({ calendars: [work] });
+
+    const combobox = screen.getByRole("combobox", { name: "Default Calendar" });
+    expect(
+      within(combobox).getByRole("group", { name: "ahab@pequod.com" }),
+    ).toBeInTheDocument();
+  });
+
+  it("lists the local calendar after the account groups, not before", () => {
+    // The sidebar renders account sections first and the local/ungrouped
+    // calendar last; this picker used to disagree.
+    const work = createMockCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const local = createMockCalendar({ name: "Compass", provider: "local" });
+
+    renderSettings({ calendars: [work, local] });
+
+    const options = screen
+      .getAllByRole("option")
+      .map((option) => option.textContent);
+    expect(options).toEqual(["Work", "Compass"]);
   });
 
   it("badges the account that owns the default calendar", () => {
