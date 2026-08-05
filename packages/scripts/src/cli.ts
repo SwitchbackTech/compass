@@ -102,7 +102,7 @@ export default class CompassCLI {
       .helpOption(false)
       .allowUnknownOption(true)
       .description(
-        "Stamp bootstrapState: ready onto sync_resources rows that predate the field (--apply to write)",
+        "Stamp bootstrapState: ready onto sync_resources rows that predate the field (--apply to write, --limit <n> to cap a run)",
       );
 
     program

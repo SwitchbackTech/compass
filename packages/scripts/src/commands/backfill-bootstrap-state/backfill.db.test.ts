@@ -97,4 +97,35 @@ describe("backfillBootstrapState", () => {
     expect(second.matched).toBe(0);
     expect(second.updated).toBe(0);
   });
+
+  it("caps a run to --limit rows, for a cautious first batch against a real database", async () => {
+    await seedLegacyResource();
+    await seedLegacyResource();
+    await seedLegacyResource();
+
+    const report = await backfillBootstrapState(storage.db(), {
+      dryRun: false,
+      limit: 2,
+    });
+
+    expect(report.matched).toBe(2);
+    expect(report.updated).toBe(2);
+    expect(
+      await collection().countDocuments({ bootstrapState: { $exists: false } }),
+    ).toBe(1);
+  });
+
+  it("does not write past --limit even when more rows would otherwise match", async () => {
+    // The limit must bound the query itself, not just the reported count -
+    // a limit that only trims the report while still writing every match
+    // would defeat the point of a cautious first batch.
+    await seedLegacyResource();
+    await seedLegacyResource();
+
+    await backfillBootstrapState(storage.db(), { dryRun: false, limit: 1 });
+
+    expect(await collection().countDocuments({ bootstrapState: "ready" })).toBe(
+      1,
+    );
+  });
 });

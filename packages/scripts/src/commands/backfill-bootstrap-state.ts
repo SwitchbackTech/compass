@@ -17,14 +17,29 @@ function syncMongoUri(): string {
   return uri;
 }
 
+function parseLimit(argv: string[]): number | undefined {
+  const flagIndex = argv.indexOf("--limit");
+  if (flagIndex === -1) return undefined;
+  const raw = argv[flagIndex + 1];
+  const limit = raw ? Number.parseInt(raw, 10) : Number.NaN;
+  if (!Number.isFinite(limit) || limit <= 0) {
+    throw new Error("--limit requires a positive integer");
+  }
+  return limit;
+}
+
 /**
  * Stamp bootstrapState: "ready" onto sync_resources rows written before the
- * field existed. Default dry-run; `--apply` writes. Safe to rerun.
+ * field existed. Default dry-run; `--apply` writes; `--limit <n>` caps how
+ * many rows one run touches, for a cautious first batch against a real
+ * database before trusting the full collection. Safe to rerun.
  *
- *   bun run cli backfill-bootstrap-state [--apply]
+ *   bun run cli backfill-bootstrap-state [--apply] [--limit <n>]
  */
 export async function runBackfillBootstrapState(): Promise<void> {
-  const apply = process.argv.slice(3).includes("--apply");
+  const argv = process.argv.slice(3);
+  const apply = argv.includes("--apply");
+  const limit = parseLimit(argv);
   const syncMongo = new SyncMongoService();
   try {
     await syncMongo.connect({
@@ -34,6 +49,7 @@ export async function runBackfillBootstrapState(): Promise<void> {
     });
     const report = await backfillBootstrapState(syncMongo.db, {
       dryRun: !apply,
+      ...(limit !== undefined ? { limit } : {}),
     });
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     logger.info(
