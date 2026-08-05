@@ -8,8 +8,11 @@ import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.fact
 import { AuthApi } from "@web/api/auth.api";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
-import { ACCOUNT_DISCONNECTED_TOAST_ID, GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import {
+  ACCOUNT_DISCONNECTED_TOAST_ID,
+  GOOGLE_REVOKED_TOAST_ID,
+} from "@web/common/constants/toast.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import {
   registerToastPort,
