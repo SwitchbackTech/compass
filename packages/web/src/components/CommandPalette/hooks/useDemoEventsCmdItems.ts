@@ -36,6 +36,7 @@ export function useDemoEventsCmdItems(): CommandItem[] {
       id: "clear-sample-events",
       label: "Clear sample events",
       icon: EraserIcon,
+      keywords: ["demo", "sample", "remove"],
       onClick: () => {
         void handleClearDemoEvents();
       },

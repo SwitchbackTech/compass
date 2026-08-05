@@ -13,9 +13,10 @@ export const useShowAccountsCmdItems = (): CommandItem[] => {
   return [
     {
       id: "show-accounts",
-      label: "Show accounts",
+      label: "Settings",
       icon: UsersIcon,
       shortcut: ["Mod", ","],
+      keywords: ["accounts", "account", "preferences", "options"],
       onClick: settingsActions.openSettings,
     },
   ];

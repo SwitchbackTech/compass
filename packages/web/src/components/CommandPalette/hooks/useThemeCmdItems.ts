@@ -19,6 +19,7 @@ export function useThemeCmdItems(): CommandItem[] {
       id: "toggle-theme",
       label: isDark ? "Switch to light theme" : "Switch to dark theme",
       icon: isDark ? SunIcon : MoonStarsIcon,
+      keywords: ["theme", "dark mode", "light mode", "appearance"],
       onClick: () =>
         themeActions.setTheme(isDark ? "light-beach" : "dark-abyss"),
     },

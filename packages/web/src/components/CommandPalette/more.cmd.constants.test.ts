@@ -7,16 +7,23 @@ import {
   selectFeedbackRequest,
   useFeedbackStore,
 } from "@web/components/Feedback/feedback.store";
+import {
+  selectIsAboutOpen,
+  useSettingsStore,
+} from "@web/settings/settings.store";
 import { beforeEach, describe, expect, it } from "bun:test";
 
 describe("getMoreCommandPaletteSections", () => {
-  beforeEach(feedbackActions.close);
+  beforeEach(() => {
+    feedbackActions.close();
+    useSettingsStore.setState({ isAboutOpen: false });
+  });
 
   it("omits feedback commands when PostHog is not enabled", () => {
     const [section] = getMoreCommandPaletteSections("week", false);
 
     expect(section.items).toHaveLength(1);
-    expect(section.items[0].label).toMatch(/^Version: /);
+    expect(section.items[0].label).toBe("About Compass");
     expect(getCommandPalettePlaceholder("day", false)).not.toContain("bug");
     expect(getCommandPalettePlaceholder("week", false)).not.toContain(
       "feedback",
@@ -51,5 +58,14 @@ describe("getMoreCommandPaletteSections", () => {
     expect(getCommandPalettePlaceholder("life", true)).toBe(
       "Try: 'day', 'week', or 'feedback'",
     );
+  });
+
+  it("opens the About modal from the about command", () => {
+    const [section] = getMoreCommandPaletteSections("week", false);
+    const about = section.items.find((item) => item.id === "about");
+
+    about?.onClick?.();
+
+    expect(selectIsAboutOpen(useSettingsStore.getState())).toBe(true);
   });
 });

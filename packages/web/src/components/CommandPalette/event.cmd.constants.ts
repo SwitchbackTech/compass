@@ -16,6 +16,7 @@ export const eventCommandPaletteItems: CommandItem[] = [
     label: "Create event",
     icon: PlusIcon,
     shortcut: "c",
+    keywords: ["new event", "add event", "schedule"],
     onClick: () => queueMicrotask(() => emitViewCommand("CREATE_TIMED_DRAFT")),
   },
   {
@@ -23,6 +24,7 @@ export const eventCommandPaletteItems: CommandItem[] = [
     label: "Create all-day event",
     icon: PlusIcon,
     shortcut: "a",
+    keywords: ["new event", "add event", "all day"],
     onClick: () => queueMicrotask(() => emitViewCommand("CREATE_ALLDAY_DRAFT")),
   },
 ];

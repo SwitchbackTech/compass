@@ -36,6 +36,7 @@ import {
 } from "@web/settings/settings.store";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { type ViewName } from "@web/shortcuts/shortcuts.constants";
+import { filterSections } from "./command-palette.search";
 import { type CommandSection } from "./command-palette.types";
 
 interface CommandPaletteProps {
@@ -50,27 +51,6 @@ interface CommandPaletteProps {
 interface CommandPaletteContentProps {
   placeholder: string;
   sections: CommandSection[];
-}
-
-/**
- * Case-insensitive substring filter on each item's label. Sections with no
- * surviving items are dropped so their heading disappears too.
- */
-export function filterSections(
-  sections: CommandSection[],
-  search: string,
-): CommandSection[] {
-  const query = search.trim().toLowerCase();
-  if (!query) return sections;
-
-  return sections
-    .map((section) => ({
-      ...section,
-      items: section.items.filter((item) =>
-        item.label.toLowerCase().includes(query),
-      ),
-    }))
-    .filter((section) => section.items.length > 0);
 }
 
 /** Mounted only while open so search/activeIndex reset on every reopen. */
@@ -273,6 +253,7 @@ export const CommandPalette = ({
           label: "Undo last change",
           icon: ArrowCounterClockwiseIcon,
           shortcut: ["Mod", "Z"],
+          keywords: ["revert", "back", "history"],
           disabled: !canUndo,
           // Defer so the palette unmounts before undo's refocusEventElement
           // starts hunting for the restored event element.

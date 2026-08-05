@@ -10,6 +10,8 @@ export interface CommandItem {
   keepOpen?: boolean;
   /** A single key (`"?"`) or one key per combo entry (`["Shift", "W"]`), rendered as keycap chips. */
   shortcut?: string | string[];
+  /** Extra search terms (synonyms) matched by the palette's fuzzy filter; never rendered. */
+  keywords?: string[];
 }
 
 export interface CommandSection {

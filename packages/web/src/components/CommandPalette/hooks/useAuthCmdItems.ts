@@ -20,12 +20,14 @@ export const useAuthCmdItems = (): CommandItem[] => {
       id: "sign-up",
       label: "Sign Up",
       icon: UserPlusIcon,
+      keywords: ["register", "create account"],
       onClick: () => openModal("signUp"),
     },
     {
       id: "log-in",
       label: "Log In",
       icon: SignInIcon,
+      keywords: ["login", "sign in"],
       onClick: () => openModal("login"),
     },
   ];

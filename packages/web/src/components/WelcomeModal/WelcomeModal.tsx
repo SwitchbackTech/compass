@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 import { SessionContext } from "@web/auth/compass/session/session.context";
+import { SOCIAL_LINKS } from "@web/common/constants/social.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
@@ -19,6 +20,12 @@ import { maybeShowCmdPaletteHint } from "./cmd-palette-hint.util";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
+
+const SOCIAL_ICONS = {
+  x: XLogoIcon,
+  linkedin: LinkedinLogoIcon,
+  github: GithubLogoIcon,
+} as const;
 
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
@@ -146,33 +153,21 @@ export function WelcomeModal() {
         {/* Footer: social + legal */}
         <div className="flex items-center justify-between border-border border-t pt-4">
           <div className="flex items-center gap-3">
-            <a
-              href="https://x.com/CompassCalendar"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="X (Twitter)"
-              className="c-focus-ring text-text-muted transition-colors hover:text-text"
-            >
-              <XLogoIcon size={18} weight="bold" />
-            </a>
-            <a
-              href="https://www.linkedin.com/company/compass-calendar"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="LinkedIn"
-              className="c-focus-ring text-text-muted transition-colors hover:text-text"
-            >
-              <LinkedinLogoIcon size={18} weight="bold" />
-            </a>
-            <a
-              href="https://www.github.com/SwitchbackTech/compass-calendar"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GitHub"
-              className="c-focus-ring text-text-muted transition-colors hover:text-text"
-            >
-              <GithubLogoIcon size={18} weight="bold" />
-            </a>
+            {SOCIAL_LINKS.map(({ id, label, href }) => {
+              const SocialIcon = SOCIAL_ICONS[id];
+              return (
+                <a
+                  key={id}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="c-focus-ring text-text-muted transition-colors hover:text-text"
+                >
+                  <SocialIcon size={18} weight="bold" />
+                </a>
+              );
+            })}
           </div>
           <div className="flex items-center gap-4 text-text-muted text-xs">
             <a
