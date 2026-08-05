@@ -26,15 +26,11 @@ import {
 } from "@web/components/Tooltip";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 import { AccountDisclosureHeading } from "./AccountDisclosureHeading";
-import { AddAccountButton } from "./AddAccountButton";
 
 const ANONYMOUS_SAVE_MESSAGE = "Sign up to save your changes across browsers";
 
 const TOOLTIP_ACTION_BUTTON_CLASSNAME =
   "c-focus-ring self-start rounded-xs bg-accent px-2 py-1 font-medium text-s text-on-accent hover:brightness-110";
-
-const HEADER_ROW_CLASSNAME =
-  "group/header mb-2 flex min-w-0 items-center justify-between gap-1";
 
 const HEADING_CLASSNAME =
   "flex min-w-0 flex-1 font-semibold text-sm leading-none";
@@ -175,17 +171,14 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
 
   return (
     <>
-      <div className={HEADER_ROW_CLASSNAME}>
-        <AccountDisclosureHeading
-          as="h2"
-          className="text-sm"
-          collapseKey={SINGLE_ACCOUNT_COLLAPSE_KEY}
-          email={email}
-          isCollapsed={isCollapsed}
-          isSyncing={isSyncing}
-        />
-        <AddAccountButton />
-      </div>
+      <AccountDisclosureHeading
+        as="h2"
+        className="mb-2 text-sm"
+        collapseKey={SINGLE_ACCOUNT_COLLAPSE_KEY}
+        email={email}
+        isCollapsed={isCollapsed}
+        isSyncing={isSyncing}
+      />
       <SyncStatusLine
         className="mb-1"
         status={syncStatus?.variant === "healthy" ? null : syncStatus}

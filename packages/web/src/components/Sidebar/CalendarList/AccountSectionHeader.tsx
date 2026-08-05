@@ -5,7 +5,6 @@ import { getGoogleSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/use
 import { useCollapsedAccountKeys } from "@web/calendars/collapsed-accounts.store";
 import { SyncStatusLine } from "@web/calendars/SyncStatusLine";
 import { AccountDisclosureHeading } from "./AccountDisclosureHeading";
-import { AddAccountButton } from "./AddAccountButton";
 
 /**
  * Heading for one connected account's calendars: the account email (also the
@@ -13,10 +12,9 @@ import { AddAccountButton } from "./AddAccountButton";
  * account's own sync status, and its own reconnect/refresh action. Rendered
  * only when more than one account is connected - with a single account the
  * calendar list heading already carries all of this. Adding/disconnecting
- * accounts lives in the command palette's "Add/remove accounts" (a full
- * account-management surface) and this heading's own hover-revealed plus
- * icon - not a permanent row here, which stayed noisy for accounts with many
- * subcalendars.
+ * accounts lives in the command palette's "Add account" / "Show accounts"
+ * items - not a permanent row or icon here, which stayed noisy for accounts
+ * with many subcalendars.
  */
 export const AccountSectionHeader: FC<{
   accountEmail: string;
@@ -39,18 +37,15 @@ export const AccountSectionHeader: FC<{
 
   return (
     <div className="mb-1.5">
-      <div className="group/header mb-0.5 flex min-w-0 items-center justify-between gap-1">
-        <AccountDisclosureHeading
-          as="h3"
-          caretSize={10}
-          className="text-xs"
-          collapseKey={accountEmail}
-          email={accountEmail}
-          isCollapsed={isCollapsed}
-          isSyncing={isSyncing}
-        />
-        <AddAccountButton />
-      </div>
+      <AccountDisclosureHeading
+        as="h3"
+        caretSize={10}
+        className="mb-0.5 text-xs"
+        collapseKey={accountEmail}
+        email={accountEmail}
+        isCollapsed={isCollapsed}
+        isSyncing={isSyncing}
+      />
       <SyncStatusLine
         status={syncStatus?.variant === "healthy" ? null : syncStatus}
       />
