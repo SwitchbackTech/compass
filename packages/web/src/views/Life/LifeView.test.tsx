@@ -1,12 +1,7 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ReactNode } from "react";
+import { renderWithStore } from "@web/__tests__/render-with-store";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { viewActions } from "@web/events/stores/view.store";
 import { LifeView } from "./LifeView";
@@ -21,11 +16,16 @@ import {
 } from "bun:test";
 
 const fixedToday = new Date(2026, 0, 1);
-const originalInnerWidth = window.innerWidth;
-const originalMatchMedia = window.matchMedia;
+let originalInnerWidth: number;
+let originalMatchMedia: typeof window.matchMedia;
+
+if (typeof window !== "undefined") {
+  originalInnerWidth = window.innerWidth;
+  originalMatchMedia = window.matchMedia;
+}
 
 function renderLifeView() {
-  return render(<LifeView today={fixedToday} />);
+  return renderWithStore(<LifeView today={fixedToday} />);
 }
 
 async function renderLifeViewWithSidebar() {
@@ -78,6 +78,7 @@ afterAll(() => {
 });
 
 function mockViewport(isMobile: boolean) {
+  if (typeof window === "undefined") return;
   Object.defineProperty(window, "innerWidth", {
     configurable: true,
     value: isMobile ? 375 : 1024,
@@ -113,12 +114,14 @@ beforeEach(() => {
 afterEach(() => {
   localStorage.removeItem(STORAGE_KEYS.LIFE_PREFERENCES);
   localStorage.removeItem(STORAGE_KEYS.SIDEBAR_OPEN);
-  Object.defineProperty(window, "innerWidth", {
-    configurable: true,
-    value: originalInnerWidth,
-    writable: true,
-  });
-  window.matchMedia = originalMatchMedia;
+  if (typeof window !== "undefined" && originalInnerWidth !== undefined) {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: originalInnerWidth,
+      writable: true,
+    });
+    window.matchMedia = originalMatchMedia;
+  }
 });
 
 describe("LifeView", () => {
@@ -152,9 +155,11 @@ describe("LifeView", () => {
     expect(
       screen.queryByRole("heading", { name: "Share" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "1,356 weeks lived - 26 years - 34%",
-    );
+    // The sidebar's saving-status live region also has role="status", so
+    // target the weeks-lived readout by its full text.
+    expect(
+      screen.getByText("1,356 weeks lived - 26 years - 34%"),
+    ).toBeInTheDocument();
     const region = screen.getByRole("region", {
       name: /life visualization/i,
     });
@@ -200,9 +205,9 @@ describe("LifeView", () => {
       target: { value: "1990-06-15" },
     });
 
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "1,854 weeks lived - 35 years - 46%",
-    );
+    expect(
+      screen.getByText("1,854 weeks lived - 35 years - 46%"),
+    ).toBeInTheDocument();
     expect(
       screen
         .getByRole("region", { name: /life visualization/i })
