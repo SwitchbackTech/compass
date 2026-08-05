@@ -98,7 +98,10 @@ export const parseUserTime = (
   let normalized = input.trim().toUpperCase().replace(/\s+/g, " ");
 
   // Handle glued meridiem (e.g., "10:33pm" -> "10:33 PM")
-  normalized = normalized.replace(/^(\d{1,2}):?(\d{0,2})(AM|PM|A|P)$/i, "$1:$2 $3");
+  normalized = normalized.replace(
+    /^(\d{1,2}):?(\d{0,2})(AM|PM|A|P)$/i,
+    "$1:$2 $3",
+  );
   normalized = normalized.replace(/^(\d{1,2})(AM|PM|A|P)$/i, "$1 $2");
 
   // Digits-only preprocessing
@@ -129,7 +132,12 @@ export const parseUserTime = (
   if (!parsed) return null;
 
   // Validate hour and minute ranges
-  if (parsed.hour() < 0 || parsed.hour() > 23 || parsed.minute() < 0 || parsed.minute() > 59) {
+  if (
+    parsed.hour() < 0 ||
+    parsed.hour() > 23 ||
+    parsed.minute() < 0 ||
+    parsed.minute() > 59
+  ) {
     return null;
   }
 

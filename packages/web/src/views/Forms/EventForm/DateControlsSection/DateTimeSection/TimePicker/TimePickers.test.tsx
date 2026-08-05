@@ -57,7 +57,7 @@ describe("TimePickers", () => {
 
     // Type custom time
     await user.click(startInput);
-    await user.type(startInput, "10:33", { delay: 50 });
+    await user.type(startInput, "10:33");
 
     // Verify the create option appears
     const createOption = await screen.findByText("10:33 AM");
@@ -86,7 +86,7 @@ describe("TimePickers", () => {
 
     // Type a time that exists in the list (2:00 PM is in ACCEPTED_TIMES)
     await user.click(startInput);
-    await user.type(startInput, "2:00 pm", { delay: 50 });
+    await user.type(startInput, "2:00 pm");
 
     // Should find the option but not a create row (no duplicate)
     const option = await screen.findByText("2 PM");
