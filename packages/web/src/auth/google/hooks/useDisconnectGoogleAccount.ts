@@ -30,7 +30,10 @@ export function useDisconnectGoogleAccount(): {
         .then(async () => {
           // Show success confirmation and dismiss any stale reconnect warning.
           getToast().dismiss(GOOGLE_REVOKED_TOAST_ID);
-          showStatusToast(ACCOUNT_DISCONNECTED_TOAST_ID, `Disconnected ${accountEmail}`);
+          showStatusToast(
+            ACCOUNT_DISCONNECTED_TOAST_ID,
+            `Disconnected ${accountEmail}`,
+          );
 
           // The account's calendars and its events both disappear, and the
           // remaining connections are what drive the sidebar's sections.
