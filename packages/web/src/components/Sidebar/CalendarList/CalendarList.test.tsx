@@ -482,7 +482,22 @@ describe("CalendarList", () => {
     ).toHaveAttribute("aria-expanded", "true");
   });
 
-  it("leaves the local calendar outside the account sections", () => {
+  it("leaves the local calendar outside the account sections when no account is connected", () => {
+    const local = makeCalendar({ name: "Compass", provider: "local" });
+
+    renderCalendarList([local], { connections: [] });
+
+    expect(screen.getByText("Compass")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: /^Calendars for/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides the local calendar entirely once any account is connected", () => {
+    // Once connected, the local calendar can no longer gain new events
+    // (LCV1/LCV2) and stops explaining itself the way an account-owned
+    // calendar does - drop the orphan row rather than render it alongside
+    // real accounts (local-calendar-visibility LCV3).
     const work = makeCalendar({
       name: "Work",
       accountEmail: "ahab@pequod.com",
@@ -500,7 +515,7 @@ describe("CalendarList", () => {
       ],
     });
 
-    expect(screen.getByText("Compass")).toBeInTheDocument();
+    expect(screen.queryByText("Compass")).not.toBeInTheDocument();
     for (const email of ["ahab@pequod.com", "ahab@gmail.com"]) {
       expect(
         within(
@@ -543,7 +558,7 @@ describe("CalendarList", () => {
     expect(screen.getByText("Work")).toBeInTheDocument();
   });
 
-  it("keeps the ungrouped local calendar visible regardless of account collapse state", async () => {
+  it("keeps the local calendar hidden regardless of account collapse state", async () => {
     const work = makeCalendar({
       name: "Work",
       accountEmail: "ahab@pequod.com",
@@ -565,7 +580,7 @@ describe("CalendarList", () => {
     await user.click(screen.getByRole("button", { name: "ahab@pequod.com" }));
     await user.click(screen.getByRole("button", { name: "ahab@gmail.com" }));
 
-    expect(screen.getByText("Compass")).toBeInTheDocument();
+    expect(screen.queryByText("Compass")).not.toBeInTheDocument();
   });
 
   it("renders no placeholder text while calendars are pending, to avoid a layout shift once they load", () => {
