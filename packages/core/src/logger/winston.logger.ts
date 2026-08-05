@@ -1,32 +1,8 @@
-import { logs, SeverityNumber } from "@opentelemetry/api-logs";
 import { type TransformableInfo } from "logform";
 import * as winston from "winston";
 import { MB_50 } from "@core/constants/core.constants";
-
-const otelLogger = logs.getLogger("compass");
-
-const severityNumbers: Record<string, SeverityNumber> = {
-  debug: SeverityNumber.DEBUG,
-  info: SeverityNumber.INFO,
-  warn: SeverityNumber.WARN,
-  error: SeverityNumber.ERROR,
-};
-
-const emitOpenTelemetryLog = (info: TransformableInfo) => {
-  otelLogger.emit({
-    severityText: info.level,
-    severityNumber: severityNumbers[info.level],
-    body: String(info.message),
-    attributes: {
-      namespace: String(info["namespace"] || ""),
-    },
-  });
-};
-
-const openTelemetryFormat = winston.format((info) => {
-  emitOpenTelemetryLog(info);
-  return info;
-});
+import { OpenTelemetryTransport } from "@core/logger/otel.transport";
+import { PostHogExceptionTransport } from "@core/logger/posthog-exception.transport";
 
 const consoleFormat = winston.format.combine(
   winston.format.splat(),
@@ -37,24 +13,30 @@ const consoleFormat = winston.format.combine(
     const _namespace = (namespace || "") as string;
     const _timestamp = (timestamp || "") as string;
     return `${_timestamp} [${level}] ${_namespace}: ${message} ${
-      Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ""
+      Object.keys(meta).length ? JSON.stringify(meta) : ""
     }`;
   }),
 );
 
+const createTransports = (): winston.transport[] => [
+  new winston.transports.File({
+    filename: "logs/app.log",
+    level: process.env["LOG_LEVEL"],
+    maxsize: MB_50,
+    maxFiles: 1,
+  }),
+  new winston.transports.Console({ format: consoleFormat }),
+  new OpenTelemetryTransport({
+    level: process.env["LOG_LEVEL"],
+  }),
+  new PostHogExceptionTransport(),
+];
+
 export const Logger = (namespace?: string) => {
   const logger = winston.createLogger({
     level: process.env["LOG_LEVEL"],
-    format: openTelemetryFormat(),
-    transports: [
-      new winston.transports.File({
-        filename: "logs/app.log",
-        level: process.env["LOG_LEVEL"],
-        maxsize: MB_50,
-        maxFiles: 1,
-      }),
-      new winston.transports.Console({ format: consoleFormat }),
-    ],
+    format: winston.format.splat(),
+    transports: createTransports(),
   });
 
   return namespace ? logger.child({ namespace }) : logger;

@@ -1,5 +1,8 @@
 import { type RequestHandler } from "express";
 import { styleText } from "node:util";
+import { Logger } from "@core/logger/winston.logger";
+
+const logger = Logger("app:http");
 
 type HttpLogColor = "cyanBright" | "yellow" | "red" | "magentaBright";
 
@@ -38,17 +41,22 @@ export const httpLoggingMiddleware: RequestHandler = (req, res, next) => {
     const url = req.originalUrl || req.url || "unknown";
 
     const isHealthCheck = url.split("?")[0] === HEALTH_CHECK_PATH;
-    if (isHealthCheck && process.env["LOG_LEVEL"] !== "debug") return;
+    const logLevel = isHealthCheck ? "debug" : "info";
 
-    console.log(
-      [
-        styleText(["bold", statusColor], status),
-        styleText(["bold", "whiteBright"], method),
-        styleText(["bold", "cyanBright"], url),
-        styleText(["bold", "blueBright"], `${elapsedMs.toFixed(3)}ms`),
-        styleText(["bold", "magentaBright"], new Date().toUTCString()),
-      ].join(" "),
-    );
+    const coloredMessage = [
+      styleText(["bold", statusColor], status),
+      styleText(["bold", "whiteBright"], method),
+      styleText(["bold", "cyanBright"], url),
+      styleText(["bold", "blueBright"], `${elapsedMs.toFixed(3)}ms`),
+      styleText(["bold", "magentaBright"], new Date().toUTCString()),
+    ].join(" ");
+
+    logger.log(logLevel, coloredMessage, {
+      method,
+      path: url,
+      status: res.statusCode,
+      durationMs: elapsedMs,
+    });
   });
 
   next();
