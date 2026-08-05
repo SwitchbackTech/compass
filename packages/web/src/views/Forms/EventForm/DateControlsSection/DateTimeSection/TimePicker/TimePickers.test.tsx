@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { getTimeOptionByValue } from "@web/common/utils/datetime/web.date.util";
@@ -46,5 +45,4 @@ describe("TimePickers", () => {
 
     expect(start).not.toBe(end);
   });
-
 });
