@@ -13,11 +13,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { eventCommandPaletteItems } from "@web/components/CommandPalette/event.cmd.constants";
 import { HighlightedLabel } from "@web/components/CommandPalette/HighlightedLabel";
-import { useAddAccountCmdItems } from "@web/components/CommandPalette/hooks/useAddAccountCmdItems";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
-import { useDeleteAccountCmdItems } from "@web/components/CommandPalette/hooks/useDeleteAccountCmdItems";
 import { useDemoEventsCmdItems } from "@web/components/CommandPalette/hooks/useDemoEventsCmdItems";
-import { useExportDataCmdItems } from "@web/components/CommandPalette/hooks/useExportDataCmdItems";
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
 import { useShowAccountsCmdItems } from "@web/components/CommandPalette/hooks/useShowAccountsCmdItems";
 import { useSubscribeCmdItems } from "@web/components/CommandPalette/hooks/useSubscribeCmdItems";
@@ -306,13 +303,10 @@ export const CommandPalette = ({
   useAppLockReason("commandPalette", open);
   const navigate = useNavigate();
   const subscribeCmdItems = useSubscribeCmdItems(open);
-  const exportDataCmdItems = useExportDataCmdItems();
   const demoEventsCmdItems = useDemoEventsCmdItems();
   const authCmdItems = useAuthCmdItems();
   const showAccountsCmdItems = useShowAccountsCmdItems();
-  const addAccountCmdItems = useAddAccountCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
-  const deleteAccountCmdItems = useDeleteAccountCmdItems();
   const themeCmdItems = useThemeCmdItems();
   const { undo, canUndo } = useUndoRedo(mutationDependencies);
   const recentCommandIds = useRecentCommandIds();
@@ -359,12 +353,9 @@ export const CommandPalette = ({
       heading: "Settings",
       items: [
         ...subscribeCmdItems,
-        ...exportDataCmdItems,
         ...authCmdItems,
         ...showAccountsCmdItems,
-        ...addAccountCmdItems,
         ...logoutCmdItems,
-        ...deleteAccountCmdItems,
       ],
     },
     ...getMoreCommandPaletteSections(currentView),

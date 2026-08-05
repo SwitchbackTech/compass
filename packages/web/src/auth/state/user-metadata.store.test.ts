@@ -60,6 +60,33 @@ describe("selectPrimaryGoogleSyncConnection", () => {
   });
 });
 
+describe("userMetadataActions.removeConnection", () => {
+  it("drops the given connection, leaving the others", () => {
+    const kept = connection({ id: "kept" });
+    const removed = connection({
+      id: "removed",
+      accountEmail: "starbuck@pequod.com",
+    });
+    userMetadataActions.set({
+      google: { connectionState: "HEALTHY", connections: [kept, removed] },
+    });
+
+    userMetadataActions.removeConnection("removed");
+
+    expect(
+      useUserMetadataStore.getState().current?.google?.connections,
+    ).toEqual([kept]);
+  });
+
+  it("is a no-op when metadata hasn't loaded yet", () => {
+    useUserMetadataStore.setState({ current: null, status: "idle" });
+
+    userMetadataActions.removeConnection("whatever");
+
+    expect(useUserMetadataStore.getState().current).toBeNull();
+  });
+});
+
 describe("findPrimaryGoogleSyncConnectionFromMetadata", () => {
   it("applies the same precedence to a raw payload, not just the store", () => {
     // useGcalSSE.factory.ts calls this directly on an SSE message's metadata,
