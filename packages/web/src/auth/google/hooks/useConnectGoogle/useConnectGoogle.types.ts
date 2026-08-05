@@ -1,5 +1,8 @@
 import { type Icon } from "@phosphor-icons/react";
-import { type GoogleConnectionState } from "@core/types/user.types";
+import {
+  type GoogleConnectionState,
+  type GoogleSyncConnectionSummary,
+} from "@core/types/user.types";
 
 export type GoogleUiState = "checking" | GoogleConnectionState;
 
@@ -14,6 +17,8 @@ export type GoogleUiConfig = {
 };
 
 export type UseConnectGoogleResult = GoogleUiConfig & {
+  /** The scoped connection when passed in, else the aggregate's primary. */
+  connection: GoogleSyncConnectionSummary | null;
   isAvailable: boolean;
   /** True while connect/reconnect OAuth is starting (before redirect). */
   isConnecting: boolean;

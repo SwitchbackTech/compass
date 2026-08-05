@@ -148,6 +148,7 @@ export const useConnectGoogle = (
       onRefreshGoogle,
     }),
     connect: onOpenGoogleAuth,
+    connection: syncConnection,
     refresh: onRefreshGoogle,
     isAvailable,
     isConnecting,

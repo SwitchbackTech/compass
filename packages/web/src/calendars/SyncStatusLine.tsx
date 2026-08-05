@@ -11,10 +11,11 @@ interface SyncStatusLineProps {
 }
 
 /**
- * One account's live sync status line - shared by the sidebar's single- and
- * per-account headers and the manage-accounts dialog, so the surfaces a user
- * directly compares cannot drift. Renders nothing when there's no status to
- * show (e.g. NOT_CONNECTED).
+ * One account's live sync status line - used by the Settings modal's account
+ * rows (the sidebar surfaces this same status text in the pinned
+ * SidebarStatusBar instead, so an account's status appearing/disappearing
+ * can never shift the calendar list below it). Renders nothing when there's
+ * no status to show (e.g. NOT_CONNECTED).
  */
 export const SyncStatusLine: FC<SyncStatusLineProps> = ({
   status,

@@ -6,7 +6,6 @@ import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
 import { AuthApi } from "@web/api/auth.api";
-import { SessionContext } from "@web/auth/compass/session/session.context";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
@@ -46,8 +45,25 @@ mock.module(
   }),
 );
 
+// Other test files (e.g. useLogoutCmdItems.test.ts) also mock.module this
+// same path without ever restoring it, so - regardless of load order - this
+// module can already be permanently swapped to a foreign mock by the time
+// this file runs. Mock it here too rather than relying on a real
+// SessionContext.Provider, which that foreign mock would bypass entirely.
+const actualUseSession = (await import("@web/auth/compass/session/useSession"))
+  .useSession;
+let isSessionMocked = true;
+let authenticated = false;
+mock.module("@web/auth/compass/session/useSession", () => ({
+  useSession: (...args: Parameters<typeof actualUseSession>) =>
+    isSessionMocked
+      ? { authenticated, setAuthenticated: mock() }
+      : actualUseSession(...args),
+}));
+
 afterAll(() => {
   isLogoutConfirmationMocked = false;
+  isSessionMocked = false;
 });
 
 const settingsModalUrl = new URL(
@@ -72,7 +88,7 @@ const connection = (
 });
 
 const renderSettings = ({
-  authenticated = false,
+  authenticated: isAuthenticated = false,
   connections = [connection()],
   calendars = [],
   open = true,
@@ -82,6 +98,7 @@ const renderSettings = ({
   calendars?: Calendar[];
   open?: boolean;
 } = {}) => {
+  authenticated = isAuthenticated;
   userMetadataActions.set({
     google: { connectionState: "HEALTHY", connections },
   });
@@ -89,17 +106,7 @@ const renderSettings = ({
   queryClient.setQueryData(calendarQueryKeys.all, calendars);
   if (open) settingsActions.openSettings();
 
-  return {
-    queryClient,
-    ...render(
-      <SessionContext.Provider
-        value={{ authenticated, setAuthenticated: () => {} }}
-      >
-        <SettingsModal />
-      </SessionContext.Provider>,
-      { wrapper },
-    ),
-  };
+  return { queryClient, ...render(<SettingsModal />, { wrapper }) };
 };
 
 describe("SettingsModal", () => {

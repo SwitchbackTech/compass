@@ -51,12 +51,14 @@ const OUTLINE_BUTTON_CLASSNAME =
 
 /**
  * The app's Settings menu (Mod+,): a nav shell (one item today - Accounts)
- * holding default-calendar choice and connected-account management, which
- * used to live scattered across the sidebar (the default-calendar star) and
- * a dedicated "manage accounts" dialog. ESC steps back a level - out of an
- * open disconnect confirmation first, then out of the modal - via
- * `handleDismiss`, since OverlayPanel already routes both ESC and a
- * backdrop click through `onDismiss`.
+ * holding default-calendar choice, connected-account management, and the
+ * signed-in user's own Log out action (which stays reachable from the
+ * Command Palette too - see useLogoutCmdItems). Default-calendar and
+ * account management used to live scattered across the sidebar (the
+ * default-calendar star) and a dedicated "manage accounts" dialog. ESC steps
+ * back a level - out of an open disconnect confirmation first, then out of
+ * the modal - via `handleDismiss`, since OverlayPanel already routes both
+ * ESC and a backdrop click through `onDismiss`.
  */
 export const SettingsModal: FC = () => {
   const isOpen = useSettingsStore(selectIsSettingsOpen);

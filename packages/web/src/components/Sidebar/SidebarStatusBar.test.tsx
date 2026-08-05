@@ -1,9 +1,9 @@
 import { render, screen } from "@testing-library/react";
+import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
 import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
-import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 // mock.module is process-wide and not reliably restorable, so - as in
@@ -15,12 +15,14 @@ const actualUseConnectGoogle = (
 let isConnectGoogleMocked = true;
 let googleState: GoogleUiState = "HEALTHY";
 let isConnecting = false;
+let connection: GoogleSyncConnectionSummary | null = null;
 mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
   useConnectGoogle: (...args: Parameters<typeof actualUseConnectGoogle>) =>
     isConnectGoogleMocked
       ? {
           commandAction: null,
           connect: mock(),
+          connection,
           refresh: mock(),
           isAvailable: true,
           isConnecting,
@@ -46,7 +48,7 @@ describe("SidebarStatusBar", () => {
   beforeEach(() => {
     googleState = "HEALTHY";
     isConnecting = false;
-    userMetadataActions.clear();
+    connection = null;
   });
 
   it("shows 'Saving changes…' when a mutation is pending", () => {
@@ -81,17 +83,10 @@ describe("SidebarStatusBar", () => {
 
   it("shows the aggregate Google sync status while a brand-new account's first import runs, so the calendar list below never shifts", () => {
     googleState = "IMPORTING";
-    userMetadataActions.set({
-      google: {
-        connectionState: "IMPORTING",
-        connections: [
-          createMockConnection("ahab@pequod.com", {
-            state: "importing",
-            lastHealthyAt: null,
-            connectionState: "IMPORTING",
-          }),
-        ],
-      },
+    connection = createMockConnection("ahab@pequod.com", {
+      state: "importing",
+      lastHealthyAt: null,
+      connectionState: "IMPORTING",
     });
     const { wrapper } = createStoreWrapper();
 
@@ -109,18 +104,11 @@ describe("SidebarStatusBar", () => {
     // bar would misreport a healthy account's reconciliation as "Adding your
     // calendar…" - exactly the noise getSidebarSyncStatus is meant to hide.
     googleState = "IMPORTING";
-    userMetadataActions.set({
-      google: {
-        connectionState: "IMPORTING",
-        connections: [
-          createMockConnection("ahab@pequod.com", {
-            state: "catchingUp",
-            lastSyncedAt: new Date().toISOString(),
-            lastHealthyAt: new Date().toISOString(),
-            connectionState: "IMPORTING",
-          }),
-        ],
-      },
+    connection = createMockConnection("ahab@pequod.com", {
+      state: "catchingUp",
+      lastSyncedAt: new Date().toISOString(),
+      lastHealthyAt: new Date().toISOString(),
+      connectionState: "IMPORTING",
     });
     const { wrapper } = createStoreWrapper();
 
@@ -132,17 +120,10 @@ describe("SidebarStatusBar", () => {
 
   it("prefers 'Saving changes…' over the Google sync status when both are true", () => {
     googleState = "IMPORTING";
-    userMetadataActions.set({
-      google: {
-        connectionState: "IMPORTING",
-        connections: [
-          createMockConnection("ahab@pequod.com", {
-            state: "importing",
-            lastHealthyAt: null,
-            connectionState: "IMPORTING",
-          }),
-        ],
-      },
+    connection = createMockConnection("ahab@pequod.com", {
+      state: "importing",
+      lastHealthyAt: null,
+      connectionState: "IMPORTING",
     });
     const { queryClient, wrapper } = createStoreWrapper();
     seedPendingEventMutations(queryClient, ["event-1"]);
