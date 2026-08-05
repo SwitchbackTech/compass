@@ -65,4 +65,12 @@ describe("useDeleteAccountCmdItems", () => {
 
     expect(mockOpenDeleteAccountConfirmation).toHaveBeenCalledTimes(1);
   });
+
+  it("flags itself as a destructive item for the palette's styling", () => {
+    const { result } = renderHook(() => useDeleteAccountCmdItems(), {
+      wrapper,
+    });
+
+    expect(result.current[0].variant).toBe("destructive");
+  });
 });

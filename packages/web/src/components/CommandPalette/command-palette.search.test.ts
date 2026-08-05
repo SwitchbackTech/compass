@@ -1,5 +1,9 @@
 import { PlusIcon } from "@phosphor-icons/react";
-import { filterSections, scoreCommandItem } from "./command-palette.search";
+import {
+  filterSections,
+  getLabelMatchRanges,
+  scoreCommandItem,
+} from "./command-palette.search";
 import { describe, expect, it } from "bun:test";
 
 describe("filterSections", () => {
@@ -185,5 +189,45 @@ describe("scoreCommandItem", () => {
     const exact = scoreCommandItem({ label: "day" }, "day");
     const substring = scoreCommandItem({ label: "Go to Day" }, "day");
     expect(exact).toBeGreaterThan(substring);
+  });
+});
+
+describe("getLabelMatchRanges", () => {
+  it("returns an empty array for an empty or whitespace query", () => {
+    expect(getLabelMatchRanges("Create event", "")).toEqual([]);
+    expect(getLabelMatchRanges("Create event", "   ")).toEqual([]);
+  });
+
+  it("returns an empty array when the token doesn't appear in the label", () => {
+    expect(getLabelMatchRanges("Create event", "zzzzz")).toEqual([]);
+  });
+
+  it("finds a single-token substring match, case-insensitively", () => {
+    expect(getLabelMatchRanges("Go to Day", "day")).toEqual([[6, 9]]);
+    expect(getLabelMatchRanges("Go to Day", "DAY")).toEqual([[6, 9]]);
+  });
+
+  it("does not highlight a token that only matched via a keyword, not the label", () => {
+    // getLabelMatchRanges only looks at the label itself — a token that
+    // scored via a keyword synonym simply produces no range for that token.
+    expect(getLabelMatchRanges("Go to Day", "page")).toEqual([]);
+  });
+
+  it("returns one range per matching token, sorted by position", () => {
+    expect(getLabelMatchRanges("Create all-day event", "event create")).toEqual(
+      [
+        [0, 6],
+        [15, 20],
+      ],
+    );
+  });
+
+  it("merges overlapping ranges from different tokens", () => {
+    // "lig" matches [10,13) and "ight" matches [11,15) within "light" (at
+    // index 10) — they overlap and should merge into a single [10,15) range
+    // covering the whole word.
+    expect(getLabelMatchRanges("Switch to light theme", "lig ight")).toEqual([
+      [10, 15],
+    ]);
   });
 });

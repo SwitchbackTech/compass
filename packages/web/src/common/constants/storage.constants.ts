@@ -17,7 +17,10 @@ type StorageKey =
   | "compass.calendars.default-id"
   // Which accounts' calendar rows are collapsed in the sidebar. Device-local;
   // an unknown or stale key falls back to expanded (default).
-  | "compass.calendars.collapsed-accounts";
+  | "compass.calendars.collapsed-accounts"
+  // Recently-used command palette item ids, most recent first. Device-local;
+  // an id that no longer resolves to a visible item is skipped, not an error.
+  | "compass.commands.recent";
 
 export const STORAGE_KEYS: Record<
   | "AUTH"
@@ -32,7 +35,8 @@ export const STORAGE_KEYS: Record<
   | "THEME"
   | "HIDDEN_CALENDAR_IDS"
   | "DEFAULT_CALENDAR_ID"
-  | "COLLAPSED_ACCOUNTS",
+  | "COLLAPSED_ACCOUNTS"
+  | "RECENT_COMMANDS",
   StorageKey
 > = {
   AUTH: "compass.auth",
@@ -51,4 +55,5 @@ export const STORAGE_KEYS: Record<
   HIDDEN_CALENDAR_IDS: "compass.calendars.hidden-ids",
   DEFAULT_CALENDAR_ID: "compass.calendars.default-id",
   COLLAPSED_ACCOUNTS: "compass.calendars.collapsed-accounts",
+  RECENT_COMMANDS: "compass.commands.recent",
 } as const;
