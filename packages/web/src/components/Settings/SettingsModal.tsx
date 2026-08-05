@@ -2,6 +2,7 @@ import { type FC, useEffect, useRef, useState } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
+import { useSession } from "@web/auth/compass/session/useSession";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
   formatLastSyncedLabel,
@@ -32,6 +33,7 @@ import { runExportMyData } from "@web/common/storage/offline-data/export-user-da
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { useDeleteAccountConfirmation } from "@web/components/DeleteAccountConfirmation/hooks/useDeleteAccountConfirmation";
+import { useLogoutConfirmation } from "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
@@ -61,6 +63,8 @@ export const SettingsModal: FC = () => {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   useAppLockReason("settingsModal", isOpen);
   const { openDeleteAccountConfirmation } = useDeleteAccountConfirmation();
+  const { authenticated } = useSession();
+  const { openLogoutConfirmation } = useLogoutConfirmation();
 
   // The modal stays mounted (self-reads the store) so a stray close path
   // that skips handleDismiss (e.g. the Mod+, toggle) can't leave a
@@ -149,6 +153,11 @@ export const SettingsModal: FC = () => {
               >
                 Delete account
               </OverlayPanelActionButton>
+              {authenticated ? (
+                <OverlayPanelActionButton onClick={openLogoutConfirmation}>
+                  Log out
+                </OverlayPanelActionButton>
+              ) : null}
             </OverlayPanelActions>
           </div>
         </div>

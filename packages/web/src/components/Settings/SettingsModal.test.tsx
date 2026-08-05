@@ -6,6 +6,7 @@ import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
 import { AuthApi } from "@web/api/auth.api";
+import { SessionContext } from "@web/auth/compass/session/session.context";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
@@ -19,8 +20,43 @@ import {
   resetToastPort,
 } from "@web/common/utils/toast/toast.port";
 import { settingsActions } from "@web/settings/settings.store";
-import { SettingsModal } from "./SettingsModal";
-import { describe, expect, it, spyOn } from "bun:test";
+import { afterAll, describe, expect, it, mock, spyOn } from "bun:test";
+
+// mock.module is process-wide and not reliably restorable, so - as elsewhere
+// in this suite of files - the real hook is captured up front and a flag
+// (flipped in afterAll) decides which one runs.
+const actualUseLogoutConfirmation = (
+  await import("@web/components/LogoutConfirmation/hooks/useLogoutConfirmation")
+).useLogoutConfirmation;
+let isLogoutConfirmationMocked = true;
+const mockOpenLogoutConfirmation = mock();
+mock.module(
+  "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation",
+  () => ({
+    useLogoutConfirmation: (
+      ...args: Parameters<typeof actualUseLogoutConfirmation>
+    ) =>
+      isLogoutConfirmationMocked
+        ? {
+            isOpen: false,
+            closeLogoutConfirmation: mock(),
+            openLogoutConfirmation: mockOpenLogoutConfirmation,
+          }
+        : actualUseLogoutConfirmation(...args),
+  }),
+);
+
+afterAll(() => {
+  isLogoutConfirmationMocked = false;
+});
+
+const settingsModalUrl = new URL(
+  `./SettingsModal.tsx?test=${Math.random().toString(36).slice(2)}`,
+  import.meta.url,
+);
+const { SettingsModal } = (await import(
+  settingsModalUrl.href
+)) as typeof import("./SettingsModal");
 
 const connection = (
   overrides: Partial<GoogleSyncConnectionSummary> = {},
@@ -36,10 +72,12 @@ const connection = (
 });
 
 const renderSettings = ({
+  authenticated = false,
   connections = [connection()],
   calendars = [],
   open = true,
 }: {
+  authenticated?: boolean;
   connections?: GoogleSyncConnectionSummary[];
   calendars?: Calendar[];
   open?: boolean;
@@ -51,7 +89,17 @@ const renderSettings = ({
   queryClient.setQueryData(calendarQueryKeys.all, calendars);
   if (open) settingsActions.openSettings();
 
-  return { queryClient, ...render(<SettingsModal />, { wrapper }) };
+  return {
+    queryClient,
+    ...render(
+      <SessionContext.Provider
+        value={{ authenticated, setAuthenticated: () => {} }}
+      >
+        <SettingsModal />
+      </SessionContext.Provider>,
+      { wrapper },
+    ),
+  };
 };
 
 describe("SettingsModal", () => {
@@ -330,5 +378,19 @@ describe("SettingsModal", () => {
     expect(
       gmailRow ? within(gmailRow).queryByText("Default") : null,
     ).not.toBeInTheDocument();
+  });
+
+  it("shows a Log out action for a signed-in user", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ authenticated: true });
+
+    await user.click(screen.getByRole("button", { name: "Log out" }));
+    expect(mockOpenLogoutConfirmation).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides the Log out action for a signed-out (local-only) session", () => {
+    renderSettings({ authenticated: false });
+
+    expect(screen.queryByRole("button", { name: "Log out" })).toBeNull();
   });
 });
