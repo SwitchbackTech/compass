@@ -9,8 +9,6 @@ import {
   toggleAccountCollapsed,
   useCollapsedAccountKeys,
 } from "@web/calendars/collapsed-accounts.store";
-import { SyncStatusLine } from "@web/calendars/SyncStatusLine";
-
 /**
  * Heading for one connected account's calendars: the account email (also the
  * collapse toggle for its calendar rows, see CalendarList.tsx), that
@@ -73,7 +71,6 @@ export const AccountSectionHeader: FC<{
           </span>
         </button>
       </h2>
-      <SyncStatusLine status={syncStatus} />
       {isAvailable && commandAction != null && actionLabel != null ? (
         <button
           aria-busy={isConnecting || isRefreshing || undefined}

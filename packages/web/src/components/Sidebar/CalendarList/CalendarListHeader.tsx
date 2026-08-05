@@ -11,7 +11,6 @@ import {
   selectGoogleSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
-import { SyncStatusLine } from "@web/calendars/SyncStatusLine";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
   Tooltip,
@@ -138,7 +137,6 @@ const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
           {email}
         </span>
       </h2>
-      <SyncStatusLine className="mb-1" status={syncStatus} />
       {isAvailable && commandAction != null && actionLabel != null ? (
         <button
           aria-busy={isConnecting || isRefreshing || undefined}

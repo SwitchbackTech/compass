@@ -19,8 +19,60 @@ import {
   resetToastPort,
 } from "@web/common/utils/toast/toast.port";
 import { settingsActions } from "@web/settings/settings.store";
-import { SettingsModal } from "./SettingsModal";
-import { describe, expect, it, spyOn } from "bun:test";
+import { afterAll, describe, expect, it, mock, spyOn } from "bun:test";
+
+// mock.module is process-wide and not reliably restorable, so - as elsewhere
+// in this suite of files - the real hook is captured up front and a flag
+// (flipped in afterAll) decides which one runs.
+const actualUseLogoutConfirmation = (
+  await import("@web/components/LogoutConfirmation/hooks/useLogoutConfirmation")
+).useLogoutConfirmation;
+let isLogoutConfirmationMocked = true;
+const mockOpenLogoutConfirmation = mock();
+mock.module(
+  "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation",
+  () => ({
+    useLogoutConfirmation: (
+      ...args: Parameters<typeof actualUseLogoutConfirmation>
+    ) =>
+      isLogoutConfirmationMocked
+        ? {
+            isOpen: false,
+            closeLogoutConfirmation: mock(),
+            openLogoutConfirmation: mockOpenLogoutConfirmation,
+          }
+        : actualUseLogoutConfirmation(...args),
+  }),
+);
+
+// Other test files (e.g. useLogoutCmdItems.test.ts) also mock.module this
+// same path without ever restoring it, so - regardless of load order - this
+// module can already be permanently swapped to a foreign mock by the time
+// this file runs. Mock it here too rather than relying on a real
+// SessionContext.Provider, which that foreign mock would bypass entirely.
+const actualUseSession = (await import("@web/auth/compass/session/useSession"))
+  .useSession;
+let isSessionMocked = true;
+let authenticated = false;
+mock.module("@web/auth/compass/session/useSession", () => ({
+  useSession: (...args: Parameters<typeof actualUseSession>) =>
+    isSessionMocked
+      ? { authenticated, setAuthenticated: mock() }
+      : actualUseSession(...args),
+}));
+
+afterAll(() => {
+  isLogoutConfirmationMocked = false;
+  isSessionMocked = false;
+});
+
+const settingsModalUrl = new URL(
+  `./SettingsModal.tsx?test=${Math.random().toString(36).slice(2)}`,
+  import.meta.url,
+);
+const { SettingsModal } = (await import(
+  settingsModalUrl.href
+)) as typeof import("./SettingsModal");
 
 const connection = (
   overrides: Partial<GoogleSyncConnectionSummary> = {},
@@ -36,14 +88,17 @@ const connection = (
 });
 
 const renderSettings = ({
+  authenticated: isAuthenticated = false,
   connections = [connection()],
   calendars = [],
   open = true,
 }: {
+  authenticated?: boolean;
   connections?: GoogleSyncConnectionSummary[];
   calendars?: Calendar[];
   open?: boolean;
 } = {}) => {
+  authenticated = isAuthenticated;
   userMetadataActions.set({
     google: { connectionState: "HEALTHY", connections },
   });
@@ -330,5 +385,19 @@ describe("SettingsModal", () => {
     expect(
       gmailRow ? within(gmailRow).queryByText("Default") : null,
     ).not.toBeInTheDocument();
+  });
+
+  it("shows a Log out action for a signed-in user", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ authenticated: true });
+
+    await user.click(screen.getByRole("button", { name: "Log out" }));
+    expect(mockOpenLogoutConfirmation).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides the Log out action for a signed-out (local-only) session", () => {
+    renderSettings({ authenticated: false });
+
+    expect(screen.queryByRole("button", { name: "Log out" })).toBeNull();
   });
 });

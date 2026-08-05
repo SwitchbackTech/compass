@@ -2,6 +2,7 @@ import { type FC, useEffect, useRef, useState } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
+import { useSession } from "@web/auth/compass/session/useSession";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
   formatLastSyncedLabel,
@@ -32,6 +33,7 @@ import { runExportMyData } from "@web/common/storage/offline-data/export-user-da
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { useDeleteAccountConfirmation } from "@web/components/DeleteAccountConfirmation/hooks/useDeleteAccountConfirmation";
+import { useLogoutConfirmation } from "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
@@ -49,18 +51,22 @@ const OUTLINE_BUTTON_CLASSNAME =
 
 /**
  * The app's Settings menu (Mod+,): a nav shell (one item today - Accounts)
- * holding default-calendar choice and connected-account management, which
- * used to live scattered across the sidebar (the default-calendar star) and
- * a dedicated "manage accounts" dialog. ESC steps back a level - out of an
- * open disconnect confirmation first, then out of the modal - via
- * `handleDismiss`, since OverlayPanel already routes both ESC and a
- * backdrop click through `onDismiss`.
+ * holding default-calendar choice, connected-account management, and the
+ * signed-in user's own Log out action (which stays reachable from the
+ * Command Palette too - see useLogoutCmdItems). Default-calendar and
+ * account management used to live scattered across the sidebar (the
+ * default-calendar star) and a dedicated "manage accounts" dialog. ESC steps
+ * back a level - out of an open disconnect confirmation first, then out of
+ * the modal - via `handleDismiss`, since OverlayPanel already routes both
+ * ESC and a backdrop click through `onDismiss`.
  */
 export const SettingsModal: FC = () => {
   const isOpen = useSettingsStore(selectIsSettingsOpen);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   useAppLockReason("settingsModal", isOpen);
   const { openDeleteAccountConfirmation } = useDeleteAccountConfirmation();
+  const { authenticated } = useSession();
+  const { openLogoutConfirmation } = useLogoutConfirmation();
 
   // The modal stays mounted (self-reads the store) so a stray close path
   // that skips handleDismiss (e.g. the Mod+, toggle) can't leave a
@@ -149,6 +155,11 @@ export const SettingsModal: FC = () => {
               >
                 Delete account
               </OverlayPanelActionButton>
+              {authenticated ? (
+                <OverlayPanelActionButton onClick={openLogoutConfirmation}>
+                  Log out
+                </OverlayPanelActionButton>
+              ) : null}
             </OverlayPanelActions>
           </div>
         </div>
