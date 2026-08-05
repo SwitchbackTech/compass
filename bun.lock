@@ -93,9 +93,7 @@
       "version": "1.0.0",
       "dependencies": {
         "@compass/core": "1.0.0",
-        "@googleapis/calendar": "^14.1.0",
         "commander": "^10.0.0",
-        "google-auth-library": "^10.6.2",
         "yaml": "^2.9.0",
       },
       "devDependencies": {
