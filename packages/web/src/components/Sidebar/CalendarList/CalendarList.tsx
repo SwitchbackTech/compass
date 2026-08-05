@@ -1,6 +1,5 @@
 import { type FC, useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
-import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
@@ -9,77 +8,19 @@ import {
 } from "@web/auth/state/user-metadata.store";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
+  compareCalendars,
+  groupCalendarsByAccount,
+} from "@web/calendars/calendar.util";
+import {
   accountCalendarListId,
   useCollapsedAccountKeys,
 } from "@web/calendars/collapsed-accounts.store";
 import { SyncStatusLine } from "@web/calendars/SyncStatusLine";
 import { useCalendarVisibility } from "@web/calendars/useCalendarVisibility";
+import { useConnectedAccountEmails } from "@web/calendars/useDefaultTargetCalendar";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 import { AccountSectionHeader } from "./AccountSectionHeader";
 import { CalendarListHeader } from "./CalendarListHeader";
-
-// Primary calendars first, then alphabetical by name; the local calendar
-// (offline/anonymous synthesized calendar, or the server's own local
-// calendar once signed in) always sorts last since it isn't a
-// provider-backed subscription like the others (packet 08 step 2).
-function sortCalendars(calendars: Calendar[]): Calendar[] {
-  return [...calendars].sort((a, b) => {
-    if (a.provider === "local" && b.provider !== "local") return 1;
-    if (b.provider === "local" && a.provider !== "local") return -1;
-    if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
-    return a.name.localeCompare(b.name);
-  });
-}
-
-interface AccountGroup {
-  accountEmail: string;
-  connection: GoogleSyncConnectionSummary | undefined;
-  calendars: Calendar[];
-}
-
-/**
- * Bucket calendars by the account they belong to, in connection order, with
- * anything lacking an account email (the local calendar) left ungrouped.
- */
-export function groupCalendarsByAccount(
-  calendars: Calendar[],
-  connections: GoogleSyncConnectionSummary[],
-): { groups: AccountGroup[]; ungrouped: Calendar[] } {
-  const groups: AccountGroup[] = [];
-  const byEmail = new Map<string, AccountGroup>();
-  const ungrouped: Calendar[] = [];
-
-  // Seed in connection order so accounts appear oldest-connected first,
-  // regardless of the order calendars came back in.
-  for (const connection of connections) {
-    const { accountEmail } = connection;
-    if (!accountEmail || byEmail.has(accountEmail)) continue;
-    const group: AccountGroup = { accountEmail, connection, calendars: [] };
-    byEmail.set(accountEmail, group);
-    groups.push(group);
-  }
-
-  for (const calendar of calendars) {
-    const { accountEmail } = calendar;
-    if (!accountEmail) {
-      ungrouped.push(calendar);
-      continue;
-    }
-    let group = byEmail.get(accountEmail);
-    if (!group) {
-      // A calendar whose account has no connection summary yet (metadata and
-      // the calendar list can load a moment apart). Still give it a section.
-      group = { accountEmail, connection: undefined, calendars: [] };
-      byEmail.set(accountEmail, group);
-      groups.push(group);
-    }
-    group.calendars.push(calendar);
-  }
-
-  // An account can be connected before its calendars have imported; an empty
-  // section would render a heading with nothing under it.
-  return { groups: groups.filter((g) => g.calendars.length > 0), ungrouped };
-}
 
 export const CalendarList: FC = () => {
   const { authenticated } = useSession();
@@ -88,14 +29,18 @@ export const CalendarList: FC = () => {
   const { toggleCalendarVisibility, failureAnnouncement } =
     useCalendarVisibility();
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
+  const accountEmailOrder = useConnectedAccountEmails();
   const collapsedKeys = useCollapsedAccountKeys();
   const hasPendingEventMutations = useHasPendingEventMutations();
 
   // Re-groups on every calendar-visibility/collapse toggle otherwise, since
   // those live in sibling external stores this component also subscribes to.
   const calendars = useMemo(
-    () => sortCalendars((data ?? []).filter((calendar) => calendar.isActive)),
-    [data],
+    () =>
+      (data ?? [])
+        .filter((calendar) => calendar.isActive)
+        .sort(compareCalendars(accountEmailOrder)),
+    [data, accountEmailOrder],
   );
   const { groups, ungrouped } = useMemo(
     () => groupCalendarsByAccount(calendars, connections),

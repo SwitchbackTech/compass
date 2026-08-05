@@ -12,6 +12,11 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import {
+  compareCalendars,
+  getWritableCalendars,
+  spansMultipleAccounts,
+} from "@web/calendars/calendar.util";
+import {
   useConnectedAccountEmails,
   useDefaultTargetCalendar,
 } from "@web/calendars/useDefaultTargetCalendar";
@@ -24,39 +29,6 @@ interface CalendarSelectProps {
   errorId?: string;
   id?: string;
 }
-
-// Only calendars the user can actually write to are offered as a create
-// target - a reader/freeBusy-only calendar would silently fail to accept a
-// new event.
-const getWritableCalendars = (calendars: Calendar[]): Calendar[] =>
-  calendars.filter(
-    (calendar) => calendar.isActive && calendar.capabilities.canWrite,
-  );
-
-// Primary first (it's the default target), then alphabetical - mirrors
-// CalendarList's sort so the same calendar lands in the same relative
-// position across the sidebar list and this picker. With several accounts
-// connected, calendars are additionally kept together by account, in
-// connection order, so the list reads as one block per account.
-const sortWritableCalendars = (
-  calendars: Calendar[],
-  accountEmailOrder: readonly string[],
-): Calendar[] => {
-  const accountRank = (calendar: Calendar): number => {
-    const index = calendar.accountEmail
-      ? accountEmailOrder.indexOf(calendar.accountEmail)
-      : -1;
-    // Unknown account or no account (the local calendar) sorts last.
-    return index === -1 ? accountEmailOrder.length : index;
-  };
-
-  return [...calendars].sort((a, b) => {
-    const rankDelta = accountRank(a) - accountRank(b);
-    if (rankDelta !== 0) return rankDelta;
-    if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
-    return a.name.localeCompare(b.name);
-  });
-};
 
 const calendarOptionLabel = (calendar: Calendar): string =>
   calendar.isPrimary ? `${calendar.name} (primary)` : calendar.name;
@@ -93,17 +65,11 @@ export const CalendarSelect = ({
 }: CalendarSelectProps) => {
   const { data } = useCalendarsQuery();
   const accountEmailOrder = useConnectedAccountEmails();
-  const writableCalendars = sortWritableCalendars(
-    getWritableCalendars(data ?? []),
-    accountEmailOrder,
+  const writableCalendars = getWritableCalendars(data ?? []).sort(
+    compareCalendars(accountEmailOrder),
   );
   // Only disambiguate by account when there is something to disambiguate.
-  const showAccount =
-    new Set(
-      writableCalendars
-        .map((calendar) => calendar.accountEmail)
-        .filter(Boolean),
-    ).size > 1;
+  const showAccount = spansMultipleAccounts(writableCalendars);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const listRef = useRef<Array<HTMLElement | null>>([]);
