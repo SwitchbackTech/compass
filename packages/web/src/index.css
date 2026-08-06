@@ -133,11 +133,6 @@
   --font-sans:
     Rubik, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-serif:
-    ui-serif, Georgia, Cambria, "Times New Roman", Times, serif, sans-serif;
-  --font-mono:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New";
 
   /* Font sizes */
   --font-size-xs: 0.563rem;
@@ -146,29 +141,14 @@
   --font-size-l: 1rem;
   --font-size-xl: 1.125rem;
   --font-size-xxl: 1.3rem;
-  --font-size-xxxl: 1.6rem;
   --font-size-4xl: 1.7rem;
-  --font-size-5xl: 2rem;
 
   /* Border radius */
   --radius-default: 4px;
 
   /* Animations */
-  --animate-progress-slide: progressSlide 2s ease-out infinite;
   --animate-sync-text-wave: syncTextWave 2.4s linear infinite;
   --animate-sync-icon-wave: syncIconWave 2.4s linear infinite;
-  --animate-loader-spin: loaderSpin 1.1s linear infinite;
-  --animate-login-progress: loginProgress 1.5s ease-in-out infinite;
-  --animate-login-message-in: loginMessageIn 0.8s ease-in-out;
-
-  @keyframes progressSlide {
-    0% {
-      width: 0%;
-    }
-    100% {
-      width: 600%;
-    }
-  }
 
   @keyframes syncTextWave {
     from {
@@ -185,36 +165,6 @@
     }
     to {
       mask-position: -50% 0;
-    }
-  }
-
-  @keyframes loaderSpin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes loginProgress {
-    0% {
-      right: 100%;
-      left: -35%;
-    }
-    60%,
-    100% {
-      right: -90%;
-      left: 100%;
-    }
-  }
-
-  @keyframes loginMessageIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
     }
   }
 }
