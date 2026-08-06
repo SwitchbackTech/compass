@@ -28,7 +28,7 @@ import { type CommandRecord } from "@sync/storage/contracts/command.contracts";
 // (see retryCloudMutation's docblock in cloud-command.service.ts). The
 // create idempotency key (`create:${eventId}`) is stable for that event id's
 // whole lifetime, so ANY later resubmission of the same create payload
-// collides with the original — not only the A25 undo. Content
+// collides with the original — not only the A25 undo.
 // packages/web/src/common/utils/sync/local-event-sync.util.ts's offline
 // promotion retries a create under the record's own stable id whenever the
 // client never observed the first attempt's success; if the user deletes
