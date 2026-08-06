@@ -974,6 +974,13 @@ describe("DayCalendarGrid", () => {
       expect(parseFloat(draft.style.top)).toBeGreaterThan(
         parseFloat(second.style.top),
       );
+      // Strip minHeight must count the draft row (3) or the chip overflows.
+      expect(
+        parseFloat(
+          screen.getByRole("region", { name: /all-day events/i }).style
+            .minHeight,
+        ),
+      ).toBeGreaterThanOrEqual(parseFloat(draft.style.top) + 20);
     });
   });
 

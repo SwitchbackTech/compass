@@ -10,6 +10,7 @@ import {
 } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
+import { GRID_MARGIN_LEFT } from "@web/grid/grid.constants";
 import { createTimedEventLayout } from "@web/grid/layout/timed-deck.layout";
 import {
   type GridMeasurements,
@@ -19,7 +20,6 @@ import {
   DayAllDayCalendarEvent,
   DayTimedCalendarEvent,
 } from "./DayCalendarEventCards";
-import { assignDayAllDayEventRows } from "./dayAllDayRows.util";
 import {
   addVisibleDraftEvent,
   getCalendarEventIdSet,
@@ -27,7 +27,17 @@ import {
   isDraftOnlyEvent,
 } from "./dayCalendarDraft.util";
 
-interface DayEventsProps {
+interface DayAllDayEventsProps {
+  getCalendarColumnIndex: (event: GridEvent) => number;
+  draft: GridEventDraft | null;
+  events: GridEvent[];
+  measurements: GridMeasurements;
+  onOpenEvent: (event: GridEvent) => void;
+  savedEventIds: Set<string>;
+  visibleDates: GridVisibleDate[];
+}
+
+interface DayTimedEventsProps {
   getCalendarColumnIndex: (event: GridEvent) => number;
   draft: GridEventDraft | null;
   events: GridEvent[];
@@ -42,33 +52,22 @@ export const DayCalendarAllDayEventsLayer = ({
   getCalendarColumnIndex,
   measurements,
   onOpenEvent,
+  savedEventIds,
   visibleDates,
-}: DayEventsProps) => {
+}: DayAllDayEventsProps) => {
   // One lookup build for the whole list (packet 08 step 5) - not per card.
   const calendarLookup = useCalendarLookup();
-  const savedEventIds = useMemo(
-    () => getCalendarEventIdSet(allDayEvents),
-    [allDayEvents],
-  );
-  const renderedEvents = useMemo(() => {
-    const withDraft = addVisibleDraftEvent({
-      draft,
-      events: allDayEvents,
-      isAllDay: true,
-      visibleDates,
-    });
-    // addVisibleDraftEvent re-stacks with week-style day overlap; restore
-    // per-calendar-column rows so chips in different columns can share a row.
-    return assignDayAllDayEventRows(withDraft, getCalendarColumnIndex)
-      .allDayEvents;
-  }, [allDayEvents, draft, getCalendarColumnIndex, visibleDates]);
 
   return (
     <div
-      className="relative ml-[50px] h-full w-full"
+      className="relative h-full"
       id={ID_GRID_EVENTS_ALLDAY}
+      style={{
+        marginLeft: GRID_MARGIN_LEFT,
+        width: `calc(100% - ${GRID_MARGIN_LEFT}px)`,
+      }}
     >
-      {renderedEvents.map((event) => (
+      {allDayEvents.map((event) => (
         <DayAllDayCalendarEvent
           calendarIdentity={resolveCalendarCardIdentity(calendarLookup, event)}
           columnIndex={getCalendarColumnIndex(event)}
@@ -93,7 +92,7 @@ export const DayCalendarTimedEventsLayer = ({
   measurements,
   onOpenEvent,
   visibleDates,
-}: DayEventsProps) => {
+}: DayTimedEventsProps) => {
   // One lookup build for the whole list (packet 08 step 5) - not per card.
   const calendarLookup = useCalendarLookup();
   const savedEventIds = useMemo(

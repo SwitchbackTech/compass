@@ -56,18 +56,19 @@ export const useDayCalendarColumns = ({
       calendarColumnIndexById.has(event.calendarId),
     [calendarColumnIndexById, calendarIds],
   );
-  const { allDayEvents: displayedAllDayEvents, rowsCount: allDayRowsCount } =
-    useMemo(() => {
-      const visibleEvents = allDayEvents.filter(isDisplayedEvent);
-      return assignDayAllDayEventRows(visibleEvents, getCalendarColumnIndex);
-    }, [allDayEvents, getCalendarColumnIndex, isDisplayedEvent]);
+  // Row assignment that includes an all-day draft lives in DayCalendarGrid so
+  // strip height and chips share one draft-aware stack.
+  const displayedAllDayEvents = useMemo(() => {
+    const visibleEvents = allDayEvents.filter(isDisplayedEvent);
+    return assignDayAllDayEventRows(visibleEvents, getCalendarColumnIndex)
+      .allDayEvents;
+  }, [allDayEvents, getCalendarColumnIndex, isDisplayedEvent]);
   const displayedTimedEvents = useMemo(
     () => timedEvents.filter(isDisplayedEvent),
     [isDisplayedEvent, timedEvents],
   );
 
   return {
-    allDayRowsCount,
     calendarColumnIndexById,
     displayedAllDayEvents,
     displayedCalendars,

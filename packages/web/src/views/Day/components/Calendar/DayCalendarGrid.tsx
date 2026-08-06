@@ -42,6 +42,11 @@ import {
   DayCalendarAllDayEventsLayer,
   DayCalendarTimedEventsLayer,
 } from "./DayCalendarEventLayers";
+import { assignDayAllDayEventRows } from "./dayAllDayRows.util";
+import {
+  addVisibleDraftEvent,
+  getCalendarEventIdSet,
+} from "./dayCalendarDraft.util";
 import { useDayCalendarColumns } from "./useDayCalendarColumns";
 import { useDayCalendarScrollToNow } from "./useDayCalendarScrollToNow";
 import { useDayTimedDraftCreation } from "./useDayTimedDraftCreation";
@@ -88,7 +93,6 @@ export function DayCalendarGrid() {
     dayEvents.length === 0 &&
     googleState === "IMPORTING";
   const {
-    allDayRowsCount,
     calendarColumnIndexById,
     displayedAllDayEvents,
     displayedCalendars,
@@ -111,6 +115,27 @@ export function DayCalendarGrid() {
     timedEvents: displayedTimedEvents,
   });
   const gridDraft = useDraftStore(selectGridDraft);
+  // Strip height must include the all-day draft: layer rendering used to
+  // re-stack with the draft while EventGrid still sized from saved events only.
+  const savedAllDayEventIds = useMemo(
+    () => getCalendarEventIdSet(displayedAllDayEvents),
+    [displayedAllDayEvents],
+  );
+  const { allDayEvents: renderedAllDayEvents, rowsCount: allDayRowsCount } =
+    useMemo(() => {
+      const withDraft = addVisibleDraftEvent({
+        draft: gridDraft,
+        events: displayedAllDayEvents,
+        isAllDay: true,
+        visibleDates,
+      });
+      return assignDayAllDayEventRows(withDraft, getCalendarColumnIndex);
+    }, [
+      displayedAllDayEvents,
+      getCalendarColumnIndex,
+      gridDraft,
+      visibleDates,
+    ]);
 
   const calendarColumnKeys = useMemo(
     () => displayedCalendars.map((calendar) => calendar.id),
@@ -283,20 +308,22 @@ export function DayCalendarGrid() {
   const allDayEventsLayer = useMemo(
     () => (
       <DayCalendarAllDayEventsLayer
-        events={displayedAllDayEvents}
+        events={renderedAllDayEvents}
         getCalendarColumnIndex={getCalendarColumnIndex}
         draft={gridDraft}
         measurements={measurements}
         onOpenEvent={openEventFormForEvent}
+        savedEventIds={savedAllDayEventIds}
         visibleDates={visibleDates}
       />
     ),
     [
-      displayedAllDayEvents,
-      gridDraft,
       getCalendarColumnIndex,
+      gridDraft,
       measurements,
       openEventFormForEvent,
+      renderedAllDayEvents,
+      savedAllDayEventIds,
       visibleDates,
     ],
   );
