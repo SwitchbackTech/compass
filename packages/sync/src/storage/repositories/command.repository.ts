@@ -70,6 +70,32 @@ export class CommandRepository {
     };
   }
 
+  // Reopen a terminal command back to pending, so submitCloudCommand's normal
+  // pending-apply path re-executes it. The `expectedState` filter is the
+  // concurrency guard: two simultaneous resubmits of the same stale terminal
+  // command cannot both reopen it — the loser's write matches nothing and
+  // gets null back, leaving the winner as the sole executor. `_id`,
+  // `idempotencyKey`, and `attemptCount` are untouched, so the one-row-per-key
+  // contract and the audit trail both survive the reopen.
+  async reopen(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: SyncCommandId,
+    expectedState: SyncCommandOutcome["state"],
+  ): Promise<CommandRecord | null> {
+    const result = await this.collection.findOneAndUpdate(
+      { _id: id, tenantId, principalId, "outcome.state": expectedState },
+      {
+        $set: {
+          outcome: { state: "pending" } as SyncCommandOutcome,
+          updatedAt: new Date(),
+        },
+      },
+      { returnDocument: "after" },
+    );
+    return result ? CommandRecordSchema.parse(result) : null;
+  }
+
   async findById(
     tenantId: TenantId,
     principalId: PrincipalId,

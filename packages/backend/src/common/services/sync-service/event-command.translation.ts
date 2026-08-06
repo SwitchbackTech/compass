@@ -218,6 +218,14 @@ export const toReplaceSubmitRequests = (
   return { requests, responseEvent };
 };
 
+// Deliberately identity-only (eventId/scope/recurrenceId, no nonce): a
+// timed-out delete must retry under the SAME key so it maps back to the
+// original command rather than double-submitting (see submitCommandOrThrow's
+// timeout handling in event.controller.ts). This does mean two calls with the
+// same target collide on one command record — including a delete, an undo
+// that recreates the event under the same id, and a second delete. Sync's
+// submitCloudCommand (terminalReplayIsStale) is what tells a genuine replay
+// apart from a stale one; don't "fix" a collision here with a nonce.
 export const toDeleteSubmitRequest = (
   id: string,
   input: DeleteEventInput,

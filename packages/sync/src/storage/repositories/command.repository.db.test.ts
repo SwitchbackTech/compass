@@ -118,6 +118,63 @@ describe("CommandRepository", () => {
     expect(result).toBeNull();
   });
 
+  it("reopens a terminal command to pending, preserving id/key/attemptCount", async () => {
+    const { record: command } = await repo.submit(submit());
+    const confirmed = await repo.updateOutcome(
+      command.tenantId,
+      command.principalId,
+      command._id,
+      { state: "confirmed", providerEventId: "evt-1", providerVersion: "e-1" },
+      2,
+    );
+    if (!confirmed) throw new Error("expected a confirmed command");
+
+    const reopened = await repo.reopen(
+      command.tenantId,
+      command.principalId,
+      command._id,
+      "confirmed",
+    );
+
+    expect(reopened?.outcome).toEqual({ state: "pending" });
+    expect(reopened?._id).toBe(command._id);
+    expect(reopened?.idempotencyKey).toBe(command.idempotencyKey);
+    expect(reopened?.attemptCount).toBe(2);
+    expect(await db.collection("commands").countDocuments()).toBe(1);
+  });
+
+  it("refuses to reopen when the outcome no longer matches the expected state (the concurrent-resubmit race)", async () => {
+    const { record: command } = await repo.submit(submit());
+    await repo.updateOutcome(
+      command.tenantId,
+      command.principalId,
+      command._id,
+      { state: "confirmed", providerEventId: null, providerVersion: null },
+      0,
+    );
+
+    // A concurrent resubmit already reopened (or re-terminated) it — this
+    // caller's stale expectedState no longer matches.
+    const result = await repo.reopen(
+      command.tenantId,
+      command.principalId,
+      command._id,
+      "failed",
+    );
+
+    expect(result).toBeNull();
+    const untouched = await repo.findById(
+      command.tenantId,
+      command.principalId,
+      command._id,
+    );
+    expect(untouched?.outcome).toEqual({
+      state: "confirmed",
+      providerEventId: null,
+      providerVersion: null,
+    });
+  });
+
   it("lists only nonterminal commands, oldest first", async () => {
     const tenantId = objectId();
     const principalId = objectId();

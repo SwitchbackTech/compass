@@ -1481,4 +1481,295 @@ describe("submitCloudCommand provider dispatch", () => {
     expect(await events.findById(tenantId, principalId, masterId)).toBeNull();
     expect(await occurrenceStartsFor(masterId)).toHaveLength(0);
   });
+
+  // Regression coverage for the prod incident: deleting an event, undoing the
+  // delete (which recreates the event under its ORIGINAL id — see the "A25"
+  // doc comment in useUndoRedo.ts), then deleting again reuses the exact same
+  // idempotency key as the first delete (hashedIdempotencyKey is identity-only
+  // — eventId/scope/recurrenceId, see event-command.translation.ts). Without
+  // the liveness guard, the second delete replays the first CONFIRMED command
+  // and the event becomes permanently undeletable: 204 to the caller, no
+  // provider call, no local removal, and no TTL on `commands` to ever clear
+  // it. These pin submitCloudCommand's terminalReplayIsStale guard, which
+  // reopens a terminal command back to pending and re-executes it whenever the
+  // world no longer matches what it once confirmed.
+  describe("terminal replay liveness", () => {
+    it("re-deletes a cloud single event recreated under the same id after an earlier confirmed delete", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const eventId = objectId() as EventId;
+      await seedEvent(tenantId, principalId, eventId);
+      const submit = deleteFor(tenantId, principalId, eventId);
+
+      const first = await submitCloudCommand(deps(), submit, now);
+      expect(first.command.outcome.state).toBe("confirmed");
+      expect(await events.findById(tenantId, principalId, eventId)).toBeNull();
+
+      // The A25 undo: recreate the SAME event id, later than the delete.
+      await seedEvent(tenantId, principalId, eventId, {
+        createdAt: new Date(now().getTime() + 1000),
+        updatedAt: new Date(now().getTime() + 1000),
+      });
+
+      // The exact same submit (same idempotencyKey) as the first delete.
+      const second = await submitCloudCommand(deps(), submit, now);
+
+      expect(second.changed).toBe(true);
+      expect(second.command.outcome.state).toBe("confirmed");
+      expect(await events.findById(tenantId, principalId, eventId)).toBeNull();
+      // Reopen updates the SAME row rather than minting a second command.
+      expect(
+        await mongo.db
+          .collection(SYNC_COLLECTIONS.commands)
+          .countDocuments({ idempotencyKey: submit.idempotencyKey }),
+      ).toBe(1);
+    });
+
+    it("calls the provider a second time when a provider-linked event is recreated under the same id and deleted again", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const calendar = await seedProviderCalendar(tenantId, principalId);
+      const eventId = objectId() as EventId;
+      await seedEvent(tenantId, principalId, eventId, {
+        calendarId: calendar._id,
+        connectionId: calendar.connectionId as never,
+        providerEventId: "g-evt-1" as never,
+        providerVersion: "etag-1" as never,
+        deliveryState: "confirmed",
+      });
+      const writer = new FakeWriter();
+      const activeDeps = {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        resources,
+        markers,
+        execution: "active" as const,
+        provider: provider(writer),
+      };
+      const submit = deleteFor(tenantId, principalId, eventId);
+
+      const first = await submitCloudCommand(activeDeps, submit, now);
+      expect(first.command.outcome.state).toBe("confirmed");
+      expect(writer.deleteCalls).toBe(1);
+
+      // Recreated under the same id (the undo path re-links it to the provider
+      // too, but a fresh provider-linked seed exercises the same collision).
+      await seedEvent(tenantId, principalId, eventId, {
+        calendarId: calendar._id,
+        connectionId: calendar.connectionId as never,
+        providerEventId: "g-evt-2" as never,
+        providerVersion: "etag-2" as never,
+        deliveryState: "confirmed",
+        createdAt: new Date(now().getTime() + 1000),
+        updatedAt: new Date(now().getTime() + 1000),
+      });
+
+      const second = await submitCloudCommand(activeDeps, submit, now);
+
+      expect(second.command.outcome.state).toBe("confirmed");
+      expect(writer.deleteCalls).toBe(2);
+      expect(await events.findById(tenantId, principalId, eventId)).toBeNull();
+    });
+
+    it("still short-circuits a genuine retry: resubmitting a confirmed delete of an event that stays gone makes no provider call", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const calendar = await seedProviderCalendar(tenantId, principalId);
+      const eventId = objectId() as EventId;
+      await seedEvent(tenantId, principalId, eventId, {
+        calendarId: calendar._id,
+        connectionId: calendar.connectionId as never,
+        providerEventId: "g-evt-1" as never,
+        providerVersion: "etag-1" as never,
+        deliveryState: "confirmed",
+      });
+      const writer = new FakeWriter();
+      const activeDeps = {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        resources,
+        markers,
+        execution: "active" as const,
+        provider: provider(writer),
+      };
+      const submit = deleteFor(tenantId, principalId, eventId);
+
+      await submitCloudCommand(activeDeps, submit, now);
+      expect(writer.deleteCalls).toBe(1);
+
+      const second = await submitCloudCommand(activeDeps, submit, now);
+
+      expect(second.changed).toBe(false);
+      expect(writer.deleteCalls).toBe(1);
+      expect(
+        await mongo.db
+          .collection(SYNC_COLLECTIONS.commands)
+          .countDocuments({ idempotencyKey: submit.idempotencyKey }),
+      ).toBe(1);
+    });
+
+    it("re-cancels a recurring occurrence whose tombstone was un-cancelled since the confirmed delete (scope this)", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const masterId = objectId() as EventId;
+      const master = await seriesMaster(tenantId, principalId, masterId);
+      await reprojectOccurrences(occurrences, master, now);
+      const submit = deleteFor(
+        tenantId,
+        principalId,
+        masterId,
+        "this",
+        EXCEPTED,
+      );
+
+      const first = await submitCloudCommand(deps(), submit, now);
+      expect(first.command.outcome.state).toBe("confirmed");
+
+      // Undo un-cancels the tombstone in place (replaySnapshot in
+      // useUndoRedo.ts), leaving the master's own createdAt untouched.
+      await events.upsertException(
+        master,
+        EXCEPTED as never,
+        {
+          content: master.content,
+          schedule: {
+            kind: "timed",
+            start: EXCEPTED,
+            end: EXCEPTED.replace(/T\d{2}:/, "T23:"),
+            timeZone: "America/Denver",
+          } as never,
+          cancelled: false,
+        },
+        new Date(now().getTime() + 1000),
+      );
+
+      const second = await submitCloudCommand(deps(), submit, now);
+
+      expect(second.changed).toBe(true);
+      expect(second.command.outcome.state).toBe("confirmed");
+      expect(await occurrenceStartsFor(masterId)).not.toContain(
+        "2026-07-21T15:00:00.000Z",
+      );
+    });
+
+    it("re-truncates a series whose thisAndFollowing split was undone since the confirmed delete", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const masterId = objectId() as EventId;
+      const master = await seriesMaster(tenantId, principalId, masterId);
+      await reprojectOccurrences(occurrences, master, now);
+      const submit = deleteFor(
+        tenantId,
+        principalId,
+        masterId,
+        "thisAndFollowing",
+        EXCEPTED,
+      );
+
+      const first = await submitCloudCommand(deps(), submit, now);
+      expect(first.command.outcome.state).toBe("confirmed");
+      const truncated = await events.findById(tenantId, principalId, masterId);
+      if (!truncated) throw new Error("expected the truncated master");
+
+      // Undo restores the original, untruncated rules.
+      await events.replaceExisting({
+        ...truncated,
+        recurrence: master.recurrence,
+        updatedAt: new Date(now().getTime() + 1000),
+      });
+
+      const second = await submitCloudCommand(deps(), submit, now);
+
+      expect(second.changed).toBe(true);
+      expect(second.command.outcome.state).toBe("confirmed");
+      expect(await occurrenceStartsFor(masterId)).toEqual([
+        "2026-07-14T15:00:00.000Z",
+      ]);
+    });
+
+    it("re-creates a cloud event whose confirmed create was undone (deleted) since", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const submit = submitFor(tenantId, principalId, objectId());
+
+      const first = await submitCloudCommand(deps(), submit, now);
+      expect(first.command.outcome.state).toBe("confirmed");
+
+      await events.deleteById(tenantId, principalId, submit.eventId);
+
+      const second = await submitCloudCommand(deps(), submit, now);
+
+      expect(second.changed).toBe(true);
+      expect(second.command.outcome.state).toBe("confirmed");
+      expect(
+        await events.findById(tenantId, principalId, submit.eventId),
+      ).not.toBeNull();
+    });
+
+    it("does not re-litigate an explicitly cancelled command", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const eventId = objectId() as EventId;
+      const submit = deleteFor(tenantId, principalId, eventId);
+      const { record: pending } = await commands.submit(submit);
+      await commands.updateOutcome(
+        tenantId,
+        principalId,
+        pending._id,
+        { state: "cancelled" },
+        pending.attemptCount,
+      );
+      await seedEvent(tenantId, principalId, eventId);
+
+      const result = await submitCloudCommand(deps(), submit, now);
+
+      expect(result.changed).toBe(false);
+      expect(result.command.outcome.state).toBe("cancelled");
+      expect(
+        await events.findById(tenantId, principalId, eventId),
+      ).not.toBeNull();
+    });
+
+    it("still short-circuits an identical update replay against a re-created event (no guard for update/move)", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const eventId = objectId() as EventId;
+      await seedEvent(tenantId, principalId, eventId);
+      const submit = updateAllFor(
+        tenantId,
+        principalId,
+        eventId,
+        "First title",
+      );
+
+      const first = await submitCloudCommand(deps(), submit, now);
+      expect(first.command.outcome.state).toBe("confirmed");
+
+      await events.deleteById(tenantId, principalId, eventId);
+      await seedEvent(tenantId, principalId, eventId, {
+        content: {
+          title: "Re-created title",
+          description: "",
+          location: null,
+          organizer: null,
+          attendees: [],
+          conference: null,
+        } as never,
+        createdAt: new Date(now().getTime() + 1000),
+        updatedAt: new Date(now().getTime() + 1000),
+      });
+
+      const second = await submitCloudCommand(deps(), submit, now);
+
+      expect(second.changed).toBe(false);
+      const stored = await events.findById(tenantId, principalId, eventId);
+      // The re-created event's own (seeded) title survives — the stale
+      // update command was NOT reapplied on top of it.
+      expect(stored?.content).not.toMatchObject({ title: "First title" });
+    });
+  });
 });
