@@ -260,4 +260,52 @@ describe("event position", () => {
 
     expect(position).toEqual({ height: 0, left: 0, top: 0, width: 0 });
   });
+
+  it("sizes day-view all-day events to the calendar column even when UTC midnight dates miss the local day span", () => {
+    const dayVisibleDates = [
+      { date: dayjs("2026-05-20T15:00:00.000"), key: "cal-a" },
+      { date: dayjs("2026-05-20T15:00:00.000"), key: "cal-b" },
+      { date: dayjs("2026-05-20T15:00:00.000"), key: "cal-c" },
+    ];
+    const dayMeasurements = {
+      ...measurements,
+      colWidths: [180, 180, 180],
+    };
+
+    // UTC midnights that fall on the previous local day in US timezones —
+    // week span clamping would zero-size this, but Day passes columnIndex.
+    const position = getAllDayEventPosition(
+      {
+        endDate: "2026-05-21T00:00:00.000Z",
+        isAllDay: true,
+        row: 1,
+        startDate: "2026-05-20T00:00:00.000Z",
+      } as never,
+      {
+        columnIndex: 2,
+        isDraft: false,
+        measurements: dayMeasurements,
+        visibleDates: dayVisibleDates,
+      },
+    );
+
+    expect(position.height).toBe(20);
+    expect(position.left).toBe(360);
+    expect(position.top).toBe(3);
+    expect(position.width).toBe(170);
+  });
+
+  it("places the first all-day row near the top with only a small gap", () => {
+    const position = getAllDayEventPosition(
+      {
+        endDate: "2026-05-21",
+        isAllDay: true,
+        row: 1,
+        startDate: "2026-05-20",
+      } as never,
+      { measurements, visibleDates, isDraft: false },
+    );
+
+    expect(position.top).toBe(3);
+  });
 });

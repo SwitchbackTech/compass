@@ -27,7 +27,17 @@ import {
   isDraftOnlyEvent,
 } from "./dayCalendarDraft.util";
 
-interface DayEventsProps {
+interface DayAllDayEventsProps {
+  getCalendarColumnIndex: (event: GridEvent) => number;
+  draft: GridEventDraft | null;
+  events: GridEvent[];
+  measurements: GridMeasurements;
+  onOpenEvent: (event: GridEvent) => void;
+  savedEventIds: Set<string>;
+  visibleDates: GridVisibleDate[];
+}
+
+interface DayTimedEventsProps {
   getCalendarColumnIndex: (event: GridEvent) => number;
   draft: GridEventDraft | null;
   events: GridEvent[];
@@ -42,36 +52,22 @@ export const DayCalendarAllDayEventsLayer = ({
   getCalendarColumnIndex,
   measurements,
   onOpenEvent,
+  savedEventIds,
   visibleDates,
-}: DayEventsProps) => {
+}: DayAllDayEventsProps) => {
   // One lookup build for the whole list (packet 08 step 5) - not per card.
   const calendarLookup = useCalendarLookup();
-  const savedEventIds = useMemo(
-    () => getCalendarEventIdSet(allDayEvents),
-    [allDayEvents],
-  );
-  const renderedEvents = useMemo(
-    () =>
-      addVisibleDraftEvent({
-        draft,
-        events: allDayEvents,
-        isAllDay: true,
-        visibleDates,
-      }),
-    [allDayEvents, draft, visibleDates],
-  );
 
   return (
     <div
+      className="relative h-full"
       id={ID_GRID_EVENTS_ALLDAY}
       style={{
-        height: "100%",
         marginLeft: GRID_MARGIN_LEFT,
-        position: "relative",
         width: `calc(100% - ${GRID_MARGIN_LEFT}px)`,
       }}
     >
-      {renderedEvents.map((event) => (
+      {allDayEvents.map((event) => (
         <DayAllDayCalendarEvent
           calendarIdentity={resolveCalendarCardIdentity(calendarLookup, event)}
           columnIndex={getCalendarColumnIndex(event)}
@@ -96,7 +92,7 @@ export const DayCalendarTimedEventsLayer = ({
   measurements,
   onOpenEvent,
   visibleDates,
-}: DayEventsProps) => {
+}: DayTimedEventsProps) => {
   // One lookup build for the whole list (packet 08 step 5) - not per card.
   const calendarLookup = useCalendarLookup();
   const savedEventIds = useMemo(

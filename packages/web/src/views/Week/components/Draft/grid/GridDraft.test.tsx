@@ -141,7 +141,7 @@ describe("GridDraft", () => {
     ).toHaveStyle({
       height: "20px",
       left: "200px",
-      top: "23px",
+      top: "3px",
       width: "90px",
     });
   });
@@ -168,7 +168,7 @@ describe("GridDraft", () => {
     expect(
       screen.getByRole("button", { name: /All-day event: Planning/ }),
     ).toHaveStyle({
-      top: "69px",
+      top: "49px",
     });
   });
 

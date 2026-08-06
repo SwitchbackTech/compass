@@ -55,6 +55,8 @@ export const useDayCalendarColumns = ({
       calendarColumnIndexById.has(event.calendarId),
     [calendarColumnIndexById, calendarIds],
   );
+  // Day all-day row stacking (including drafts) is owned by DayCalendarGrid so
+  // strip height and chips stay in sync.
   const displayedAllDayEvents = useMemo(
     () => allDayEvents.filter(isDisplayedEvent),
     [allDayEvents, isDisplayedEvent],

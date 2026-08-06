@@ -10,6 +10,8 @@ import {
 } from "@web/common/constants/web.constants";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import {
+  EVENT_ALLDAY_GAP,
+  EVENT_ALLDAY_ROW_HEIGHT,
   EVENT_WIDTH_MINIMUM,
   GRID_MARGIN_LEFT,
   GRID_PADDING_BOTTOM,
@@ -37,6 +39,13 @@ const getAllDayRowHeight = (gridOffsetTopPx: number) => {
   return `${gridRowHeight} / ${interval}`;
 };
 
+/** Fixed-pixel floor so chips at EVENT_ALLDAY_ROW_HEIGHT tops are never clipped. */
+const getAllDayRowMinHeightPx = (rowsCount: number) => {
+  const rows = Math.max(1, rowsCount);
+
+  return 2 * EVENT_ALLDAY_GAP + rows * EVENT_ALLDAY_ROW_HEIGHT;
+};
+
 export const AllDayGridRow: FC<AllDayRowProps> = ({
   allDayColumnsRef,
   allDayRowRef,
@@ -56,6 +65,7 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
     onMouseDown={onMouseDown}
     style={{
       height: `calc(${getAllDayRowHeight(gridOffsetTopPx)} * 2 + ${rowsCount * 2 || 1} * ${getAllDayRowHeight(gridOffsetTopPx)})`,
+      minHeight: `${getAllDayRowMinHeightPx(rowsCount)}px`,
     }}
   >
     <div
