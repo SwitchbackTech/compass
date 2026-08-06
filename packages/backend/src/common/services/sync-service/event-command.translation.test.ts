@@ -262,4 +262,20 @@ describe("toDeleteSubmitRequest", () => {
     expect(request.input.scope).toBe("this");
     expect(request.input.recurrenceId).toBe(recurrenceId);
   });
+
+  // Pins the retry contract: submitCommandOrThrow retries a timed-out delete
+  // under the SAME key so it maps back to the original command instead of
+  // double-submitting. This is deliberate, not an oversight — two identical
+  // deletes (including a delete, an undo that recreates the event under the
+  // same id, and a second delete) collide on one command record on purpose.
+  // Telling a genuine retry apart from a stale replay is Sync's job
+  // (submitCloudCommand's terminalReplayIsStale), not the key's. Don't add a
+  // nonce here.
+  it("produces the same idempotency key for two identical deletes", () => {
+    const eventId = objectId();
+    const first = toDeleteSubmitRequest(eventId, { scope: "all" });
+    const second = toDeleteSubmitRequest(eventId, { scope: "all" });
+
+    expect(second.idempotencyKey).toBe(first.idempotencyKey);
+  });
 });

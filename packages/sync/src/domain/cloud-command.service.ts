@@ -4,13 +4,14 @@ import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import { type ProviderCalendarId } from "@core/types/sync/identity.contracts";
 import { type SyncExecutionMode } from "@sync/config/sync.config";
 import { type CredentialCustody } from "@sync/credentials/credential-custody.service";
+import { terminalReplayIsStale } from "@sync/domain/command-replay";
 import {
   mergeUpdateContent,
   omitNullColor,
 } from "@sync/domain/merge-update-content";
 import {
+  isFollowingSplitAtSeriesStart,
   occurrenceScheduleAt,
-  scheduleStartAt,
   stripRuleBounds,
   truncateRulesBefore,
 } from "@sync/domain/occurrence-projection";
@@ -97,19 +98,42 @@ export interface CloudCommandDeps {
 // write. The provider execution path applies and confirms it. A non-create
 // command is likewise persisted as durable pending intent and returned
 // unchanged; applying update/move/delete locally lands in a later slice.
+//
+// A terminal DELETE replay is not automatically a no-op. Its idempotency key
+// is identity-only (eventId/scope/recurrenceId), so a delete, undo
+// (recreate under the SAME event id — see useUndoRedo.ts's "A25" doc
+// comment), and delete-again collide on the same key as the first delete.
+// terminalReplayIsStale checks whether the world still matches what that
+// terminal command once confirmed; if it doesn't, the command is reopened to
+// pending and re-executed below rather than replayed as a no-op. Without
+// this, a delete that once confirmed without truly deleting (or was undone
+// and redone) becomes permanently unreachable — `commands` has no TTL. See
+// command-replay.ts for why this guard is delete-only, not create too.
 export async function submitCloudCommand(
   deps: CloudCommandDeps,
   submit: CommandSubmit,
   now: () => Date,
 ): Promise<{ command: CommandRecord; changed: boolean }> {
-  const { record: command, inserted } = await deps.commands.submit(submit);
+  let { record: command, inserted } = await deps.commands.submit(submit);
 
-  // Only a freshly-persisted create is applied here. A command already past
-  // pending (a confirmed replay, or a kind we don't apply yet) is returned as
-  // it stands, so a repeated submit never re-applies or overwrites an outcome.
-  if (command.outcome.state !== "pending") {
-    return { command, changed: false };
+  if (!inserted && command.outcome.state !== "pending") {
+    if (!(await terminalReplayIsStale(deps, command))) {
+      return { command, changed: false };
+    }
+    const reopened = await deps.commands.reopen(
+      command.tenantId,
+      command.principalId,
+      command._id,
+      command.outcome.state,
+    );
+    // null means a concurrent submit already reopened (or re-terminated) this
+    // command between our read and this write; that request owns execution.
+    if (!reopened) return { command, changed: false };
+    command = reopened;
   }
+
+  // command.outcome.state is guaranteed "pending" here: freshly inserted,
+  // already pending, or just reopened above — every other path returns early.
   const initialOutcomeState = command.outcome.state;
   const finish = (
     final: CommandRecord,
@@ -585,7 +609,7 @@ async function deleteCloudSeriesFollowing(
   }
   if (master.recurrence.kind !== "seriesMaster") return command;
   const splitAt = new Date(command.input.recurrenceId);
-  if (splitAt.getTime() <= scheduleStartAt(master.schedule).getTime()) {
+  if (isFollowingSplitAtSeriesStart(master.schedule, splitAt)) {
     return deleteCloudSeries(deps, command, master);
   }
 
@@ -629,7 +653,7 @@ async function updateCloudSeriesFollowing(
   }
   if (master.recurrence.kind !== "seriesMaster") return command;
   const splitAt = new Date(command.input.recurrenceId);
-  if (splitAt.getTime() <= scheduleStartAt(master.schedule).getTime()) {
+  if (isFollowingSplitAtSeriesStart(master.schedule, splitAt)) {
     return updateCloudSeries(deps, command, master, now);
   }
 

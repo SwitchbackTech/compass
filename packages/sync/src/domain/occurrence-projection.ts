@@ -362,6 +362,20 @@ export function scheduleStartAt(schedule: EventSchedule): Date {
   return new Date(`${schedule.start}T00:00:00.000Z`);
 }
 
+// Whether a thisAndFollowing split at `splitAt` lands at or before the
+// series' own first occurrence — the threshold at which "delete/edit this
+// and following" is equivalent to "delete/edit the whole series" (there is
+// nothing left before the split to keep as a separate, un-truncated master).
+// Shared by the cloud command path's collapse-to-whole-series branches and
+// command-replay's staleness check for the same scope, so the threshold is
+// defined once.
+export function isFollowingSplitAtSeriesStart(
+  schedule: EventSchedule,
+  splitAt: Date,
+): boolean {
+  return splitAt.getTime() <= scheduleStartAt(schedule).getTime();
+}
+
 // The normalized EXCLUSIVE end instant, paired with scheduleStartAt to form a
 // half-open [startAt, endAt) interval on one coherent UTC axis — what a busy /
 // overlap query needs (a timed or all-day occurrence starting before a window
