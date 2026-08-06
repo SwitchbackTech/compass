@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   type Calendar,
@@ -525,6 +525,33 @@ describe("CalendarList", () => {
         ).queryByText("Compass"),
       ).not.toBeInTheDocument();
     }
+  });
+
+  it("un-hides the local calendar once the only connected account disconnects", () => {
+    // ensureLocalCalendar exists precisely so a disconnected user never loses
+    // every writable calendar - the row LCV3 hides must come back the moment
+    // its precondition (a connected account) stops holding, not stay stuck
+    // hidden with no calendar left to show instead. useDisconnectGoogleAccount
+    // calls userMetadataActions.removeConnection synchronously on success,
+    // before its network refetch even resolves - simulate exactly that,
+    // rather than the eventual refetch, since the row must not wait on it
+    // (local-calendar-visibility LCV5).
+    const work = makeCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const local = makeCalendar({ name: "Compass", provider: "local" });
+    const onlyConnection = makeConnection("ahab@pequod.com");
+
+    renderCalendarList([work, local], { connections: [onlyConnection] });
+
+    expect(screen.queryByText("Compass")).not.toBeInTheDocument();
+
+    act(() => {
+      userMetadataActions.removeConnection(onlyConnection.id);
+    });
+
+    expect(screen.getByText("Compass")).toBeInTheDocument();
   });
 
   it("collapses and re-expands an account's calendar rows on heading click", async () => {
