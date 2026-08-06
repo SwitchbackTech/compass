@@ -382,6 +382,47 @@ describe("SettingsModal", () => {
     expect(options).toEqual(["Work"]);
   });
 
+  it("restores the local calendar as a writable target once the only connected account is disconnected", async () => {
+    // ensureLocalCalendar exists precisely so a disconnected user never loses
+    // every writable calendar - LCV2's exclusion must lift the moment the
+    // account it depends on is gone, not stay stuck excluding a calendar
+    // nothing else can write to (local-calendar-visibility LCV5).
+    const disconnect = spyOn(
+      AuthApi,
+      "disconnectGoogleConnection",
+    ).mockResolvedValue(undefined);
+
+    const work = createMockCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const local = createMockCalendar({ name: "Compass", provider: "local" });
+
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ calendars: [work, local] });
+
+    expect(
+      screen.getAllByRole("option").map((option) => option.textContent),
+    ).toEqual(["Work"]);
+
+    await user.click(
+      screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: "Confirm disconnecting ahab@pequod.com",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByRole("option").map((option) => option.textContent),
+      ).toEqual(["Compass"]);
+    });
+
+    disconnect.mockRestore();
+  });
+
   it("badges the account that owns the default calendar", () => {
     const work = createMockCalendar({
       name: "Work",
