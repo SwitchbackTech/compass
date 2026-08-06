@@ -24,6 +24,6 @@ export function maybeShowCmdPaletteHint(): void {
   const modKey = getModifierKeyLabel();
   showStatusToast(
     CMD_PALETTE_HINT_TOAST_ID,
-    `Press ${modKey}+K for commands — create events, connect Google, switch views`,
+    `Press ${modKey}+K for commands — create events, switch views, manage accounts`,
   );
 }

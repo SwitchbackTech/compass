@@ -44,13 +44,6 @@ import { type CommandItem, type CommandSection } from "./command-palette.types";
 const RECENT_SECTION_ID = "recent";
 const MAX_RECENT_ITEMS = 3;
 
-/** Muted-red text for irreversible/data-loss items (e.g. delete account); neutral otherwise. */
-export function getRowTextColorClassName(
-  item: Pick<CommandItem, "variant">,
-): string {
-  return item.variant === "destructive" ? "text-error" : "text-text-muted";
-}
-
 interface CommandPaletteProps {
   currentView: ViewName;
   onGoToToday: () => void;
@@ -210,7 +203,7 @@ const CommandPaletteContent = ({
                     itemIndex += 1;
                     const index = itemIndex;
                     const isActive = activeIndex === index;
-                    const rowClassName = `flex w-full items-center gap-3 rounded-md px-3 py-2 text-left ${getRowTextColorClassName(item)} ${
+                    const rowClassName = `flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-text-muted ${
                       isActive
                         ? "bg-surface-overlay ring-1 ring-accent ring-inset"
                         : ""
@@ -253,7 +246,7 @@ const CommandPaletteContent = ({
                             if (item.disabled) return;
                             recordRecentCommand(item.id);
                             item.onClick?.();
-                            if (!item.keepOpen) close();
+                            close();
                           },
                         })}
                         type="button"

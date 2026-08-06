@@ -1,6 +1,6 @@
 import { type HTMLAttributes, type ReactNode } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
+import { type ShortcutOverlaySection } from "@web/shortcuts/shortcuts-overlay.types";
 import { CalendarList } from "./CalendarList/CalendarList";
 import { MonthPicker } from "./MonthPicker/MonthPicker";
 import { ShortcutsOverlay } from "./ShortcutsOverlay/ShortcutsOverlay";

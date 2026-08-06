@@ -1,4 +1,4 @@
-import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
+import { type ShortcutOverlaySection } from "@web/shortcuts/shortcuts-overlay.types";
 import { type Shortcut } from "@web/shortcuts/global.shortcut.types";
 import {
   LIFE_SHORTCUT,

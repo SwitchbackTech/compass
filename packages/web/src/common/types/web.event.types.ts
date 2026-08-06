@@ -27,7 +27,7 @@ export enum RecurringEventUpdateScope {
 // The other connected account a cross-account duplicate meeting also exists
 // on (see merge-cross-account-duplicates.ts). Display-only: the card paints a
 // two-color accent gradient from it and names the account in its label.
-export const CrossAccountDuplicateSchema = z.object({
+const CrossAccountDuplicateSchema = z.object({
   accountEmail: z.string(),
   backgroundColor: z.string(),
 });
@@ -44,7 +44,7 @@ const WebEventSchema = ValidatedCompassEventSchema.extend({
 });
 export type WebEvent = z.infer<typeof WebEventSchema>;
 
-export const GridEventSchema = WebEventSchema.extend({
+const GridEventSchema = WebEventSchema.extend({
   hasFlipped: z.boolean().optional(),
   isOpen: z.boolean().optional(),
   row: z.number().optional(),

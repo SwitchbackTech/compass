@@ -46,7 +46,7 @@ afterAll(() => {
   isNavigateMocked = false;
 });
 
-const { CommandPalette, LifeCommandPalette, getRowTextColorClassName } =
+const { CommandPalette, LifeCommandPalette } =
   await import("./CommandPalette");
 
 const onGoToToday = mock();
@@ -407,18 +407,6 @@ describe("CommandPalette", () => {
     expect(
       within(recentSection).getByText("Show keyboard shortcuts"),
     ).toBeInTheDocument();
-  });
-});
-
-describe("getRowTextColorClassName", () => {
-  it("returns the muted-red class for a destructive item", () => {
-    expect(getRowTextColorClassName({ variant: "destructive" })).toBe(
-      "text-error",
-    );
-  });
-
-  it("returns the neutral class for a regular item", () => {
-    expect(getRowTextColorClassName({})).toBe("text-text-muted");
   });
 });
 

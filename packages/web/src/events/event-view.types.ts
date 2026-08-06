@@ -58,33 +58,3 @@ export type SelectedDateRange = {
 };
 
 export type CalendarEventIndex = Record<CalendarId, EventId[]>;
-
-type EventPresentationBase = {
-  eventId: EventId;
-  calendarId: CalendarId;
-  content: EventContent;
-  recurrence: EventRecurrence;
-};
-
-type TimedSchedule = Extract<Event["schedule"], { kind: "timed" }>;
-type AllDaySchedule = Extract<Event["schedule"], { kind: "allDay" }>;
-
-export type TimedGridEventPresentation = EventPresentationBase & {
-  kind: "timed";
-  start: TimedSchedule["start"];
-  end: TimedSchedule["end"];
-  timeZone: TimedSchedule["timeZone"];
-};
-
-export type AllDayGridEventPresentation = EventPresentationBase & {
-  kind: "allDay";
-  start: AllDaySchedule["start"];
-  /** Exclusive end date, matching the persisted event contract. */
-  end: AllDaySchedule["end"];
-};
-
-export type GridEventPresentation =
-  | TimedGridEventPresentation
-  | AllDayGridEventPresentation;
-
-export type EventPresentation = GridEventPresentation;
