@@ -1,4 +1,4 @@
-import { type z } from "zod/v4";
+import { ZodError, type z } from "zod/v4";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import {
@@ -22,6 +22,7 @@ const STATUS_BY_CODE: Record<EventMutationErrorCode, Status> = {
   GOOGLE_REVOKED: Status.UNAUTHORIZED,
   MAINTENANCE: Status.SERVICE_UNAVAILABLE,
   MOVE_UNSUPPORTED: Status.BAD_REQUEST,
+  INVALID_INPUT: Status.BAD_REQUEST,
 };
 
 const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
@@ -36,6 +37,7 @@ const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
   GOOGLE_REVOKED: false,
   MAINTENANCE: true,
   MOVE_UNSUPPORTED: false,
+  INVALID_INPUT: false,
 };
 
 export class EventMutationException extends BaseError {
@@ -89,6 +91,24 @@ export const toEventMutationError = (
         },
       };
     }
+  }
+
+  // A contract violation (e.g. CreateEventInputSchema.parse rejecting an
+  // unrecognized key) is a client-side mistake, not a provider outage — map
+  // it to its own code/status rather than falling into the provider-failure
+  // catch-all below, which used to mislabel it as a retryable 500.
+  if (e instanceof ZodError) {
+    const message = e.issues
+      .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+      .join("; ");
+    return {
+      status: STATUS_BY_CODE.INVALID_INPUT,
+      body: {
+        code: "INVALID_INPUT",
+        message,
+        retryable: RETRYABLE_BY_CODE.INVALID_INPUT,
+      },
+    };
   }
 
   const message = e instanceof Error ? e.message : "Unexpected error";

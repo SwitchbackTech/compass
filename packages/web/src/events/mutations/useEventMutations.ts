@@ -24,6 +24,7 @@ import {
   dismissRecurrenceScopeToastFor,
   showRecurrenceScopeSuccessToast,
 } from "@web/common/utils/toast/recurrence-scope.toast";
+import { editableContent } from "@web/events/grid-event-draft.adapter";
 import {
   applyEventProjectionAcrossQueries,
   eventBelongsToEntry,
@@ -215,9 +216,17 @@ type DeleteVariables = {
   opportunityId?: number;
 };
 
+export type EventMutationCallbacks = {
+  onSuccess?: () => void;
+  onError?: () => void;
+};
+
 export type EventMutations = {
-  create: (input: CreateEventInput) => void;
-  replace: (payload: { id: EventId; input: ReplaceEventInput }) => void;
+  create: (input: CreateEventInput, callbacks?: EventMutationCallbacks) => void;
+  replace: (
+    payload: { id: EventId; input: ReplaceEventInput },
+    callbacks?: EventMutationCallbacks,
+  ) => void;
   delete: (payload: { id: EventId; scope: RecurrenceScope }) => void;
   promoteRecurring: (
     opportunity: RecurrenceScopeOpportunity,
@@ -424,7 +433,17 @@ export function useEventMutations(
           variables.writeKey,
           variables,
           precedingDeleteOk,
-          () => repository.create(variables.input),
+          // Wire boundary: strip to the editable subset here, not at the
+          // callers (useUndoRedo replays a full cached Event's content on
+          // purpose, to keep it for the optimistic insert above). This is
+          // the one place every create funnels through, so it's the only
+          // spot that needs to know the write schema is stricter than the
+          // read shape.
+          () =>
+            repository.create({
+              ...variables.input,
+              content: editableContent(variables.input.content),
+            }),
         );
       },
       ({ input }) => {
@@ -458,7 +477,12 @@ export function useEventMutations(
           variables.writeKey,
           variables,
           precedingCreateOk,
-          () => repository.replace(variables.id, variables.input),
+          // Same wire-boundary strip as create, see its comment above.
+          () =>
+            repository.replace(variables.id, {
+              ...variables.input,
+              content: editableContent(variables.input.content),
+            }),
           // A promotion replays the saved occurrence mutation at a broader
           // scope. It must reach the repository even if a later narrow edit
           // shares its occurrence write key.
@@ -587,15 +611,18 @@ export function useEventMutations(
   // they don't record themselves.
   return useMemo(
     () => ({
-      create: (input: CreateEventInput) => {
+      create: (input: CreateEventInput, callbacks?: EventMutationCallbacks) => {
         const id = input.id ?? (createObjectIdString() as EventId);
         const finalInput = { ...input, id };
         recordEventCreateHistory({
           event: optimisticEventFromCreate(finalInput),
         });
-        createMutation.mutate({ input: finalInput, writeKey: id });
+        createMutation.mutate({ input: finalInput, writeKey: id }, callbacks);
       },
-      replace: (payload: { id: EventId; input: ReplaceEventInput }) => {
+      replace: (
+        payload: { id: EventId; input: ReplaceEventInput },
+        callbacks?: EventMutationCallbacks,
+      ) => {
         const original = findEventInCache(queryClient, payload.id, source);
         if (isTargetReadOnly(original)) {
           console.warn(
@@ -631,7 +658,10 @@ export function useEventMutations(
             source,
           });
         }
-        replaceMutation.mutate({ ...payload, writeKey, opportunityId });
+        replaceMutation.mutate(
+          { ...payload, writeKey, opportunityId },
+          callbacks,
+        );
       },
       delete: (payload: { id: EventId; scope: RecurrenceScope }) => {
         if (

@@ -77,11 +77,19 @@ export class CommandRepository {
   // gets null back, leaving the winner as the sole executor. `_id`,
   // `idempotencyKey`, and `attemptCount` are untouched, so the one-row-per-key
   // contract and the audit trail both survive the reopen.
+  //
+  // `input`, when given, replaces the command's stored payload before it
+  // re-executes — needed for a restore reopen: `submit()` only ever sets
+  // `input` on first insert, so without this a reopened create would
+  // re-execute its ORIGINAL payload, not the (possibly since-edited) snapshot
+  // the client is restoring. The idempotency key still means "the create of
+  // event X" either way.
   async reopen(
     tenantId: TenantId,
     principalId: PrincipalId,
     id: SyncCommandId,
     expectedState: SyncCommandOutcome["state"],
+    input?: SyncCommandInput,
   ): Promise<CommandRecord | null> {
     const result = await this.collection.findOneAndUpdate(
       { _id: id, tenantId, principalId, "outcome.state": expectedState },
@@ -89,6 +97,7 @@ export class CommandRepository {
         $set: {
           outcome: { state: "pending" } as SyncCommandOutcome,
           updatedAt: new Date(),
+          ...(input ? { input } : {}),
         },
       },
       { returnDocument: "after" },

@@ -211,6 +211,12 @@ export const CommandSubmitRequestSchema = z
     eventId: EventIdSchema,
     input: SyncCommandInputSchema,
     expectedVersion: ProviderEventVersionSchema.nullable(),
+    // Per-submission undo/redo replay intent (never persisted on the command
+    // record itself) — see CreateEventInputSchema.restore in
+    // event-command.contracts.ts. Lets a resubmission that collides with a
+    // terminal command on the same idempotency key be reopened and
+    // re-executed instead of short-circuited as a no-op replay.
+    restore: z.literal(true).optional(),
   })
   .refine(
     (request) =>

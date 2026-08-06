@@ -55,6 +55,10 @@ export const CommandSubmitSchema = z
     eventId: EventIdSchema,
     input: SyncCommandInputSchema,
     expectedVersion: ProviderEventVersionSchema.nullable(),
+    // Per-submission undo/redo replay intent, not persisted on the command
+    // record (submit() only ever $setOnInsert's this object) — see
+    // CommandSubmitRequestSchema.restore.
+    restore: z.literal(true).optional(),
   })
   .refine(createHasNoExpectedVersion, createExpectedVersionIssue);
 export type CommandSubmit = z.infer<typeof CommandSubmitSchema>;

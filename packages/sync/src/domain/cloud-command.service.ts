@@ -99,16 +99,18 @@ export interface CloudCommandDeps {
 // command is likewise persisted as durable pending intent and returned
 // unchanged; applying update/move/delete locally lands in a later slice.
 //
-// A terminal DELETE replay is not automatically a no-op. Its idempotency key
-// is identity-only (eventId/scope/recurrenceId), so a delete, undo
-// (recreate under the SAME event id — see useUndoRedo.ts's "A25" doc
-// comment), and delete-again collide on the same key as the first delete.
-// terminalReplayIsStale checks whether the world still matches what that
-// terminal command once confirmed; if it doesn't, the command is reopened to
-// pending and re-executed below rather than replayed as a no-op. Without
-// this, a delete that once confirmed without truly deleting (or was undone
-// and redone) becomes permanently unreachable — `commands` has no TTL. See
-// command-replay.ts for why this guard is delete-only, not create too.
+// A terminal command replay is not automatically a no-op. A delete's
+// idempotency key is identity-only (eventId/scope/recurrenceId), and an
+// update's key hashes its full content, so a delete/undo/delete-again (or an
+// edit replayed by undo/redo) can collide with an earlier terminal command on
+// the same key. terminalReplayIsStale checks whether that collision is a
+// genuine no-op or a fresh intent (a delete is checked against world state;
+// a create/update only when the client marks the submission `restore: true`
+// — see its docblock in command-replay.ts for why they differ). When stale,
+// the command is reopened to pending and re-executed below rather than
+// replayed as a no-op. Without this, a delete that once confirmed without
+// truly deleting (or was undone and redone) becomes permanently unreachable —
+// `commands` has no TTL.
 export async function submitCloudCommand(
   deps: CloudCommandDeps,
   submit: CommandSubmit,
@@ -117,14 +119,21 @@ export async function submitCloudCommand(
   let { record: command, inserted } = await deps.commands.submit(submit);
 
   if (!inserted && command.outcome.state !== "pending") {
-    if (!(await terminalReplayIsStale(deps, command))) {
+    if (!(await terminalReplayIsStale(deps, command, submit))) {
       return { command, changed: false };
     }
+    // A restore reopen of a create refreshes the stored payload to the
+    // client's current snapshot — see CommandRepository.reopen's docblock.
+    const refreshedInput =
+      submit.restore && command.input.kind === "create"
+        ? submit.input
+        : undefined;
     const reopened = await deps.commands.reopen(
       command.tenantId,
       command.principalId,
       command._id,
       command.outcome.state,
+      refreshedInput,
     );
     // null means a concurrent submit already reopened (or re-terminated) this
     // command between our read and this write; that request owns execution.

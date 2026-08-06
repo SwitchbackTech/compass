@@ -113,6 +113,7 @@ export function registerCommandRoutes(
             eventId: request.eventId,
             input: request.input,
             expectedVersion: request.expectedVersion,
+            ...(request.restore ? { restore: true as const } : {}),
           },
           () => (deps.now ? new Date(deps.now()) : new Date()),
         );

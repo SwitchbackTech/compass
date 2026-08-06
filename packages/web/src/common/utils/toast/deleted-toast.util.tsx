@@ -38,3 +38,13 @@ export function showRestoredToast(): void {
     autoClose: getToastDefaultOptions().autoClose,
   });
 }
+
+/**
+ * The restore mutation failed server-side after the optimistic insert already
+ * rolled back. Unlike showRestoredToast, this uses showStatusToast's
+ * create-or-update so it still surfaces even if the "Deleted" toast already
+ * auto-dismissed by the time the failure comes back.
+ */
+export function showRestoreFailedToast(): void {
+  showStatusToast(EVENT_DELETED_TOAST_ID, "Couldn't restore the event");
+}

@@ -4,14 +4,15 @@ import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { UNDO_DECLINED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
-import { showRestoredToast } from "@web/common/utils/toast/deleted-toast.util";
 import {
-  dismissRecurrenceScopeToast,
-  dismissRecurrenceScopeToastFor,
-} from "@web/common/utils/toast/recurrence-scope.toast";
+  showRestoredToast,
+  showRestoreFailedToast,
+} from "@web/common/utils/toast/deleted-toast.util";
+import { dismissRecurrenceScopeToastFor } from "@web/common/utils/toast/recurrence-scope.toast";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { detailsLocation } from "@web/events/grid-event-draft.adapter";
 import {
+  type EventMutationCallbacks,
   type EventMutationDependencies,
   useEventMutations,
 } from "@web/events/mutations/useEventMutations";
@@ -132,27 +133,41 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
   // busy-provider event is never user-edited through our mutations), so a
   // snapshot's content is always safe to replay as-is.
   const replaySnapshot = useCallback(
-    (id: EventId, snapshot: Event) => {
+    (id: EventId, snapshot: Event, callbacks?: EventMutationCallbacks) => {
       if (snapshot.content.kind !== "details") return;
-      mutations.replace({
-        id,
-        input: {
-          // Restores the snapshot's calendar too, so undoing a cross-calendar
-          // move puts the event back on its original calendar.
-          calendarId: snapshot.calendarId,
-          content: {
-            ...snapshot.content,
-            location: detailsLocation(snapshot.content),
+      mutations.replace(
+        {
+          id,
+          input: {
+            // Restores the snapshot's calendar too, so undoing a cross-calendar
+            // move puts the event back on its original calendar.
+            calendarId: snapshot.calendarId,
+            // The wire boundary in useEventMutations strips this back to the
+            // editable subset before it reaches the server; kept full here so
+            // the optimistic merge above doesn't drop organizer/attendees/
+            // conference until the settle refetch.
+            content: {
+              ...snapshot.content,
+              location: detailsLocation(snapshot.content),
+            },
+            schedule: snapshot.schedule,
+            // "preserve" keeps whatever recurrence linkage the target already
+            // has (single, or one occurrence of a series) — scope "this"
+            // never changes that linkage server-side regardless of what's
+            // sent, so this is both correct and recurrence-agnostic.
+            recurrence: { kind: "preserve" },
+            scope: "this",
+            // Every replaySnapshot call is a replay (undo/redo of an edit, or
+            // un-cancelling an occurrence's delete tombstone below) — never a
+            // normal user edit, which goes through useSaveEventForm instead.
+            // See CreateEventInputSchema.restore's comment for why this
+            // matters: it's what lets a collision with an earlier terminal
+            // command on the same key be reopened instead of no-op'd.
+            restore: true,
           },
-          schedule: snapshot.schedule,
-          // "preserve" keeps whatever recurrence linkage the target already
-          // has (single, or one occurrence of a series) — scope "this"
-          // never changes that linkage server-side regardless of what's
-          // sent, so this is both correct and recurrence-agnostic.
-          recurrence: { kind: "preserve" },
-          scope: "this",
         },
-      });
+        callbacks,
+      );
     },
     [mutations],
   );
@@ -167,7 +182,7 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
   // (whose own optimistic merge then finds it and is a harmless no-op
   // overwrite) carries it to the server.
   const undoDelete = useCallback(
-    (event: Event) => {
+    (event: Event, callbacks?: EventMutationCallbacks) => {
       if (event.content.kind !== "details") return;
       if (event.recurrence.kind === "occurrence") {
         upsertEventAcrossQueries(
@@ -176,19 +191,26 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
           (entry) => eventBelongsToEntry(event, entry, source),
           { source },
         );
-        replaySnapshot(event.id as EventId, event);
+        replaySnapshot(event.id as EventId, event, callbacks);
         return;
       }
-      mutations.create({
-        id: event.id,
-        calendarId: event.calendarId,
-        content: { ...event.content, location: detailsLocation(event.content) },
-        schedule: event.schedule,
-        recurrence:
-          event.recurrence.kind === "series"
-            ? { kind: "series", rules: event.recurrence.rules }
-            : { kind: "single" },
-      });
+      mutations.create(
+        {
+          id: event.id,
+          calendarId: event.calendarId,
+          content: {
+            ...event.content,
+            location: detailsLocation(event.content),
+          },
+          schedule: event.schedule,
+          recurrence:
+            event.recurrence.kind === "series"
+              ? { kind: "series", rules: event.recurrence.rules }
+              : { kind: "single" },
+          restore: true,
+        },
+        callbacks,
+      );
     },
     [queryClient, source, mutations, replaySnapshot],
   );
@@ -237,16 +259,21 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
     undoHistoryActions.commitUndo();
     runHistoryRestore(() => {
       if (isDeleteEntry(entry)) {
-        undoDelete(entry.event);
+        // A delete surfaced a "Deleted" toast; flip it to "Restored" only
+        // once the recreate actually lands (or to a failure toast if it
+        // doesn't) — the mutation can still fail the strict write schema or
+        // no-op against a stale sync command, and the toast should never
+        // claim success before the server has said so.
+        undoDelete(entry.event, {
+          onSuccess: showRestoredToast,
+          onError: showRestoreFailedToast,
+        });
       } else if (isCreateEntry(entry)) {
         undoCreate(entry.event);
       } else {
         replaySnapshot(entry.id as EventId, entry.before);
       }
     });
-    // A delete surfaced a "Deleted" toast; if it's still up, flip it to
-    // "Restored" so it can't keep claiming the event is gone.
-    if (isDeleteEntry(entry)) showRestoredToast();
     if (!isCreateEntry(entry)) refocusAfterReplay(entryEventId(entry));
   }, [queryClient, source, undoDelete, undoCreate, replaySnapshot]);
 
@@ -282,6 +309,7 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
             event.recurrence.kind === "series"
               ? { kind: "series", rules: event.recurrence.rules }
               : { kind: "single" },
+          restore: true,
         });
       } else {
         replaySnapshot(entry.id as EventId, entry.after);

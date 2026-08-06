@@ -5,6 +5,7 @@ import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import {
   type CreateEventInput,
+  CreateEventInputSchema,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
@@ -77,7 +78,7 @@ const setup = () => {
     }),
     { wrapper },
   );
-  return { calls, hook, queryClient };
+  return { calls, hook, queryClient, repository };
 };
 
 describe("useUndoRedo", () => {
@@ -239,6 +240,113 @@ describe("useUndoRedo", () => {
     expect(
       context.calls.filter(({ method }) => method === "delete"),
     ).toHaveLength(2);
+  });
+
+  test("undo of a delete strips provider-sourced fields and recreates only after the server confirms", async () => {
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+    const context = setup();
+    const original = event({
+      content: {
+        kind: "details",
+        title: "Sync'd meeting",
+        description: "",
+        organizer: { email: "host@example.com", displayName: "Host" },
+        attendees: [
+          {
+            email: "guest@example.com",
+            displayName: "Guest",
+            responseStatus: "accepted",
+          },
+        ],
+        conference: { url: "https://meet.example.com/abc", label: "Meet" },
+      },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(original));
+
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: original.id,
+        scope: "this",
+      }),
+    );
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.ids,
+      ).toEqual([]);
+    });
+
+    act(() => context.hook.result.current.undoRedo.undo());
+
+    // The toast must not claim success before the recreate mutation settles.
+    expect(mocks.update).not.toHaveBeenCalledWith(
+      EVENT_DELETED_TOAST_ID,
+      expect.objectContaining({ render: "Restored" }),
+    );
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id],
+      ).toBeDefined();
+    });
+
+    const createCall = context.calls.find(({ method }) => method === "create");
+    const payload = createCall?.value as CreateEventInput;
+    // The repository never sees organizer/attendees/conference - only the
+    // editable subset the strict write schema accepts.
+    expect(CreateEventInputSchema.safeParse(payload).success).toBe(true);
+    expect(payload.content).not.toHaveProperty("organizer");
+    expect(payload.content).not.toHaveProperty("attendees");
+    expect(payload.content).not.toHaveProperty("conference");
+    // The replay marker that lets sync reopen a colliding terminal command
+    // instead of treating this as a no-op replay.
+    expect(payload.restore).toBe(true);
+
+    await waitFor(() => {
+      expect(mocks.update).toHaveBeenCalledWith(
+        EVENT_DELETED_TOAST_ID,
+        expect.objectContaining({ render: "Restored" }),
+      );
+    });
+  });
+
+  test("undo of a delete shows a failure toast when the recreate is rejected", async () => {
+    const { port, mocks } = createTestToastPort();
+    registerToastPort(port);
+    const context = setup();
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: original.id,
+        scope: "this",
+      }),
+    );
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.ids,
+      ).toEqual([]);
+    });
+
+    context.repository.create = async () => {
+      throw new Error("boom");
+    };
+
+    act(() => context.hook.result.current.undoRedo.undo());
+
+    await waitFor(() => {
+      expect(mocks.update).toHaveBeenCalledWith(
+        EVENT_DELETED_TOAST_ID,
+        expect.objectContaining({ render: "Couldn't restore the event" }),
+      );
+    });
+    expect(mocks.update).not.toHaveBeenCalledWith(
+      EVENT_DELETED_TOAST_ID,
+      expect.objectContaining({ render: "Restored" }),
+    );
   });
 
   test("undo and redo are no-ops with empty history", () => {
