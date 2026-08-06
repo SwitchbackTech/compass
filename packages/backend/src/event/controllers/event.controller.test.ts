@@ -210,6 +210,31 @@ describe("EventController", () => {
     expect(json).toHaveBeenCalled();
   });
 
+  it("rejects an unrecognized content key as 400 INVALID_INPUT, not a provider failure", async () => {
+    const { res, json } = jsonRes();
+    await eventController.create(
+      sessionReq(objectId(), {
+        body: {
+          ...sampleCreateBody(),
+          content: {
+            ...sampleCreateBody().content,
+            // Read-shaped fields a round-tripped event carries that the
+            // strict write schema never accepts - see EditableContentSchema.
+            organizer: { email: "host@example.com", displayName: null },
+            attendees: [],
+            conference: null,
+          },
+        },
+      }),
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(Status.BAD_REQUEST);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "INVALID_INPUT", retryable: false }),
+    );
+  });
+
   it("fails closed on a sync outage when replacing an event", async () => {
     const { res, json } = jsonRes();
     await eventController.replace(

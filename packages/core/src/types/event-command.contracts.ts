@@ -49,6 +49,12 @@ export const CreateEventInputSchema = z.strictObject({
   content: EditableContentSchema,
   schedule: EventScheduleSchema,
   recurrence: EditableRecurrenceSchema,
+  // Undo/redo replay marker: this submission is fresh user intent that may
+  // collide with a terminal command sharing its idempotency key (undo-of-
+  // delete recreating under the same event id). Sync reopens the collided
+  // command instead of treating the resubmission as a no-op replay. Never
+  // set by a normal create or by offline-promotion retries.
+  restore: z.literal(true).optional(),
 });
 export type CreateEventInput = z.infer<typeof CreateEventInputSchema>;
 
@@ -62,6 +68,10 @@ export const ReplaceEventInputSchema = z.strictObject({
   schedule: EventScheduleSchema,
   recurrence: RecurrenceEditSchema,
   scope: RecurrenceScopeSchema,
+  // Same undo/redo replay marker as CreateEventInputSchema.restore, for
+  // replayed edits and redo-of-edit (both hit the same colliding-key replay
+  // problem on the update side).
+  restore: z.literal(true).optional(),
 });
 export type ReplaceEventInput = z.infer<typeof ReplaceEventInputSchema>;
 
@@ -143,6 +153,9 @@ export const EventMutationErrorCodeSchema = z.enum([
   // Sync has no executor for a "move" command yet (unconditionally fails it),
   // so this is rejected before any command is submitted — never retryable.
   "MOVE_UNSUPPORTED",
+  // The request body failed contract validation (e.g. an unrecognized key on
+  // a strict schema). Always a client-side mistake, never retryable.
+  "INVALID_INPUT",
 ]);
 
 export const EventMutationErrorSchema = z.strictObject({

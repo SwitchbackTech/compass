@@ -181,6 +181,31 @@ describe("toCreateSubmitRequest", () => {
       clientEventId: null,
     });
   });
+
+  it("forwards restore:true from an undo-of-delete input", () => {
+    const { request } = toCreateSubmitRequest({
+      id: objectId(),
+      calendarId: objectId(),
+      content: { kind: "details", title: "X", description: "", location: "" },
+      schedule: timedSchedule,
+      recurrence: { kind: "single" },
+      restore: true,
+    });
+
+    expect(request.restore).toBe(true);
+    expect(() => CommandSubmitRequestSchema.parse(request)).not.toThrow();
+  });
+
+  it("omits restore when the input does not set it", () => {
+    const { request } = toCreateSubmitRequest({
+      calendarId: objectId(),
+      content: { kind: "details", title: "X", description: "", location: "" },
+      schedule: timedSchedule,
+      recurrence: { kind: "single" },
+    });
+
+    expect(request.restore).toBeUndefined();
+  });
 });
 
 describe("toReplaceSubmitRequests", () => {
@@ -229,6 +254,32 @@ describe("toReplaceSubmitRequests", () => {
     if (update?.input.kind !== "update") return;
     expect(update.input.scope).toBe("this");
     expect(update.input.recurrenceId).toBe(recurrenceId);
+  });
+
+  it("forwards restore:true without changing the update idempotency key", () => {
+    const eventId = objectId();
+    const input = {
+      content: {
+        kind: "details" as const,
+        title: "Renamed",
+        description: "",
+        location: "",
+      },
+      schedule: timedSchedule,
+      recurrence: { kind: "preserve" as const },
+      scope: "this" as const,
+    };
+    const { requests: plain } = toReplaceSubmitRequests(eventId, input);
+    const { requests: restored } = toReplaceSubmitRequests(eventId, {
+      ...input,
+      restore: true,
+    });
+
+    expect(plain[0]?.restore).toBeUndefined();
+    expect(restored[0]?.restore).toBe(true);
+    // The whole point: a replayed edit collides with the original update's
+    // command record, so the reopen guard in command-replay.ts can act on it.
+    expect(restored[0]?.idempotencyKey).toBe(plain[0]?.idempotencyKey);
   });
 
   it("appends a move command when calendarId is present", () => {

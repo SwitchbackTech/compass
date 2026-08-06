@@ -1719,6 +1719,130 @@ describe("submitCloudCommand provider dispatch", () => {
       ).toBeNull();
     });
 
+    // restore:true is the explicit client intent (undo-of-delete) that flips
+    // the above no-op into a genuine reopen — see terminalReplayIsStale's
+    // docblock in command-replay.ts. Only set by useUndoRedo's replays, never
+    // by an offline-promotion retry, so the resurrection risk above doesn't
+    // apply here.
+    it("reopens a restore-flagged create replay and re-executes it with the client's refreshed content", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const submit = submitFor(tenantId, principalId, objectId());
+
+      const first = await submitCloudCommand(deps(), submit, now);
+      expect(first.command.outcome.state).toBe("confirmed");
+
+      await events.deleteById(tenantId, principalId, submit.eventId);
+
+      const restoreSubmit: CommandSubmit = {
+        ...submit,
+        restore: true,
+        input: {
+          kind: "create",
+          calendarId: (submit.input as { calendarId: string }).calendarId,
+          invitation: "none",
+          content: {
+            title: "Edited before delete",
+            description: "",
+            location: null,
+            organizer: null,
+            attendees: [],
+            conference: null,
+          },
+          schedule: (submit.input as { schedule: unknown }).schedule,
+          recurrence: { kind: "single" },
+        } as unknown as SyncCommandInput,
+      };
+      const second = await submitCloudCommand(deps(), restoreSubmit, now);
+
+      expect(second.changed).toBe(true);
+      expect(second.command.outcome.state).toBe("confirmed");
+      const restored = await events.findById(
+        tenantId,
+        principalId,
+        submit.eventId,
+      );
+      expect(restored?.content).toMatchObject({
+        title: "Edited before delete",
+      });
+      // Reopen updates the SAME row rather than minting a second command.
+      expect(
+        await mongo.db
+          .collection(SYNC_COLLECTIONS.commands)
+          .countDocuments({ idempotencyKey: submit.idempotencyKey }),
+      ).toBe(1);
+    });
+
+    it("treats a restore-flagged create replay as a no-op when the event is still active", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const submit = submitFor(tenantId, principalId, objectId());
+
+      const first = await submitCloudCommand(deps(), submit, now);
+      expect(first.command.outcome.state).toBe("confirmed");
+
+      // No delete in between - a double-undo or a retry after the restore
+      // already landed.
+      const second = await submitCloudCommand(
+        deps(),
+        { ...submit, restore: true },
+        now,
+      );
+
+      expect(second.changed).toBe(false);
+    });
+
+    it("never reopens an explicitly cancelled create even when restore is set", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const submit = submitFor(tenantId, principalId, objectId());
+      const { record: pending } = await commands.submit(submit);
+      await commands.updateOutcome(
+        tenantId,
+        principalId,
+        pending._id,
+        { state: "cancelled" },
+        pending.attemptCount,
+      );
+
+      const result = await submitCloudCommand(
+        deps(),
+        { ...submit, restore: true },
+        now,
+      );
+
+      expect(result.changed).toBe(false);
+      expect(result.command.outcome.state).toBe("cancelled");
+    });
+
+    it("reopens a restore-flagged update replay even though its content is identical to the original", async () => {
+      const tenantId = objectId() as TenantId;
+      const principalId = objectId() as PrincipalId;
+      const eventId = objectId() as EventId;
+      await seedEvent(tenantId, principalId, eventId);
+      const submit = updateAllFor(
+        tenantId,
+        principalId,
+        eventId,
+        "Replayed title",
+      );
+
+      const first = await submitCloudCommand(deps(), submit, now);
+      expect(first.command.outcome.state).toBe("confirmed");
+
+      // Without restore, this exact resubmission is the existing no-op
+      // (pinned above). With it (redo-of-edit / undo replaying the same
+      // snapshot again), it must actually re-apply.
+      const second = await submitCloudCommand(
+        deps(),
+        { ...submit, restore: true },
+        now,
+      );
+
+      expect(second.changed).toBe(true);
+      expect(second.command.outcome.state).toBe("confirmed");
+    });
+
     it("does not re-litigate an explicitly cancelled command", async () => {
       const tenantId = objectId() as TenantId;
       const principalId = objectId() as PrincipalId;

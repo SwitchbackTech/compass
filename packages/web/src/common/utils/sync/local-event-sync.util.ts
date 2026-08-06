@@ -9,7 +9,7 @@ import {
   getOfflineDataStore,
 } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { EventApi } from "@web/events/event.api";
-import { detailsLocation } from "@web/events/grid-event-draft.adapter";
+import { editableContent } from "@web/events/grid-event-draft.adapter";
 import { type LocalEventRecord } from "@web/events/types/local-event.record";
 
 type LocalEventSyncStorage = Pick<
@@ -84,10 +84,7 @@ function toCreateInput(
             ],
           }
         : { kind: "single" },
-    content: {
-      ...content,
-      location: detailsLocation(content),
-    } as CreateEventInput["content"],
+    content: editableContent(content),
   };
 }
 

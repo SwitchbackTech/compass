@@ -493,6 +493,25 @@ export const detailsLocation = (
   content: Extract<Event["content"], { kind: "details" }>,
 ): string => content.location ?? "";
 
+// The write contracts (CreateEventInputSchema/ReplaceEventInputSchema) accept
+// only the editable subset via a strict content schema; a read-shaped
+// Event["content"] also carries provider-sourced organizer/attendees/
+// conference/colorHex (added for the read side by #2555). A spread bypasses
+// TypeScript's excess-property checks, so this runtime pick is the only thing
+// that keeps a replayed/round-tripped event from failing that strict schema.
+// Preserves color's absent-vs-null distinction: omitted leaves sync's color
+// alone, null clears it (see EditableContentSchema's comment) - a spread of
+// `color` would already do this correctly, this mirrors that.
+export const editableContent = (
+  content: Extract<Event["content"], { kind: "details" }>,
+) => ({
+  kind: "details" as const,
+  title: content.title,
+  description: content.description,
+  location: detailsLocation(content),
+  ...(content.color !== undefined ? { color: content.color } : {}),
+});
+
 const editableDetailsFromEvent = (
   event: Event,
 ): {

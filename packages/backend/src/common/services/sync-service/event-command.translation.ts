@@ -147,6 +147,7 @@ export const toCreateSubmitRequest = (
       schedule: input.schedule,
       recurrence: input.recurrence,
     },
+    ...(input.restore ? { restore: true as const } : {}),
   });
 
   const now = new Date().toISOString();
@@ -193,6 +194,10 @@ export const toReplaceSubmitRequests = (
       scope: target.scope,
       recurrenceId: target.recurrenceId,
     },
+    // Deliberately excluded from the hashed key above - colliding with the
+    // original update's key is the point (that's how a replayed edit reaches
+    // the same command for the reopen guard to act on).
+    ...(input.restore ? { restore: true as const } : {}),
   });
 
   const requests: CommandSubmitRequest[] = [updateRequest];
@@ -225,7 +230,11 @@ export const toReplaceSubmitRequests = (
 // same target collide on one command record — including a delete, an undo
 // that recreates the event under the same id, and a second delete. Sync's
 // submitCloudCommand (terminalReplayIsStale) is what tells a genuine replay
-// apart from a stale one; don't "fix" a collision here with a nonce.
+// apart from a stale one; don't "fix" a collision here with a nonce. The
+// undo-of-delete's own recreate is a create/update command carrying the
+// `restore` flag (see toCreateSubmitRequest/toReplaceSubmitRequests) - that
+// flag is what lets ITS collision (against the original create/update, not
+// this delete) get the same reopen treatment.
 export const toDeleteSubmitRequest = (
   id: string,
   input: DeleteEventInput,
