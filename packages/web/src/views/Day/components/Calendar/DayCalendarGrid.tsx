@@ -74,7 +74,6 @@ export function DayCalendarGrid() {
     isFetching,
     isPending,
     refetch,
-    rowCount: allDayRowsCount,
     timedEvents,
   } = useDayEventViewModel(dayEventQueryRange(dateInView));
   const isLoadingEvents = isEventGridLoading(
@@ -89,6 +88,7 @@ export function DayCalendarGrid() {
     dayEvents.length === 0 &&
     googleState === "IMPORTING";
   const {
+    allDayRowsCount,
     calendarColumnIndexById,
     displayedAllDayEvents,
     displayedCalendars,

@@ -118,10 +118,9 @@ describe("EventGrid", () => {
       />,
     );
 
-    expect(
-      getComputedStyle(screen.getByRole("region", { name: "All-day events" }))
-        .height,
-    ).toContain("6 *");
+    const allDayRow = screen.getByRole("region", { name: "All-day events" });
+    expect(getComputedStyle(allDayRow).height).toContain("6 *");
+    expect(getComputedStyle(allDayRow).minHeight).toBe("75px");
   });
 
   it("shows a couldn't-load state with retry when event fetch failed", async () => {

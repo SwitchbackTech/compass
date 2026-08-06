@@ -10,7 +10,6 @@ import {
 } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import { GRID_MARGIN_LEFT } from "@web/grid/grid.constants";
 import { createTimedEventLayout } from "@web/grid/layout/timed-deck.layout";
 import {
   type GridMeasurements,
@@ -20,6 +19,7 @@ import {
   DayAllDayCalendarEvent,
   DayTimedCalendarEvent,
 } from "./DayCalendarEventCards";
+import { assignDayAllDayEventRows } from "./dayAllDayRows.util";
 import {
   addVisibleDraftEvent,
   getCalendarEventIdSet,
@@ -50,26 +50,23 @@ export const DayCalendarAllDayEventsLayer = ({
     () => getCalendarEventIdSet(allDayEvents),
     [allDayEvents],
   );
-  const renderedEvents = useMemo(
-    () =>
-      addVisibleDraftEvent({
-        draft,
-        events: allDayEvents,
-        isAllDay: true,
-        visibleDates,
-      }),
-    [allDayEvents, draft, visibleDates],
-  );
+  const renderedEvents = useMemo(() => {
+    const withDraft = addVisibleDraftEvent({
+      draft,
+      events: allDayEvents,
+      isAllDay: true,
+      visibleDates,
+    });
+    // addVisibleDraftEvent re-stacks with week-style day overlap; restore
+    // per-calendar-column rows so chips in different columns can share a row.
+    return assignDayAllDayEventRows(withDraft, getCalendarColumnIndex)
+      .allDayEvents;
+  }, [allDayEvents, draft, getCalendarColumnIndex, visibleDates]);
 
   return (
     <div
+      className="relative ml-[50px] h-full w-full"
       id={ID_GRID_EVENTS_ALLDAY}
-      style={{
-        height: "100%",
-        marginLeft: GRID_MARGIN_LEFT,
-        position: "relative",
-        width: `calc(100% - ${GRID_MARGIN_LEFT}px)`,
-      }}
     >
       {renderedEvents.map((event) => (
         <DayAllDayCalendarEvent

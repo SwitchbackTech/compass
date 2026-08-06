@@ -904,6 +904,36 @@ describe("DayCalendarGrid", () => {
     );
   });
 
+  it("renders a saved all-day event at full calendar-column width", async () => {
+    const primary = makeCalendar("Primary", { isPrimary: true });
+    const projects = makeCalendar("Projects");
+    seededEvents = [
+      createMockEvent({
+        calendarId: projects.id,
+        content: {
+          kind: "details",
+          title: "Column width all-day",
+          description: "",
+        },
+        schedule: EventScheduleSchema.parse({
+          kind: "allDay",
+          start: "2026-05-20",
+          end: "2026-05-21",
+        }),
+      }),
+    ];
+    renderDayCalendarGrid([primary, projects]);
+
+    const eventButton = await screen.findByRole("button", {
+      name: /all-day event: column width all-day/i,
+    });
+
+    expect(parseFloat(eventButton.style.width)).toBe(170);
+    expect(parseFloat(eventButton.style.height)).toBe(20);
+    expect(parseFloat(eventButton.style.left)).toBe(180);
+    expect(parseFloat(eventButton.style.top)).toBe(3);
+  });
+
   it("places a new all-day draft below existing all-day events", async () => {
     setDayEvents([
       createAllDayEvent({

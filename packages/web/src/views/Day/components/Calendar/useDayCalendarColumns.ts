@@ -3,6 +3,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import { assignDayAllDayEventRows } from "./dayAllDayRows.util";
 import { getDayViewCalendars } from "./dayCalendarColumns.util";
 
 export const useDayCalendarColumns = ({
@@ -55,16 +56,18 @@ export const useDayCalendarColumns = ({
       calendarColumnIndexById.has(event.calendarId),
     [calendarColumnIndexById, calendarIds],
   );
-  const displayedAllDayEvents = useMemo(
-    () => allDayEvents.filter(isDisplayedEvent),
-    [allDayEvents, isDisplayedEvent],
-  );
+  const { allDayEvents: displayedAllDayEvents, rowsCount: allDayRowsCount } =
+    useMemo(() => {
+      const visibleEvents = allDayEvents.filter(isDisplayedEvent);
+      return assignDayAllDayEventRows(visibleEvents, getCalendarColumnIndex);
+    }, [allDayEvents, getCalendarColumnIndex, isDisplayedEvent]);
   const displayedTimedEvents = useMemo(
     () => timedEvents.filter(isDisplayedEvent),
     [isDisplayedEvent, timedEvents],
   );
 
   return {
+    allDayRowsCount,
     calendarColumnIndexById,
     displayedAllDayEvents,
     displayedCalendars,
