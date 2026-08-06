@@ -21,6 +21,7 @@ import { handleError } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   dismissRecurrenceScopeToast,
+  dismissRecurrenceScopeToastFor,
   showRecurrenceScopeSuccessToast,
 } from "@web/common/utils/toast/recurrence-scope.toast";
 import {
@@ -48,8 +49,10 @@ import {
   projectSeriesRulesChange,
 } from "@web/events/recurrence/projectRecurringEdit";
 import {
+  isRecurrenceScopeEditAskDeclined,
   type RecurrenceScopeOpportunity,
   recurrenceScopeOpportunityActions,
+  useRecurrenceScopeOpportunityStore,
 } from "@web/events/recurrence/recurrence-scope-opportunity.store";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
@@ -337,8 +340,16 @@ export function useEventMutations(
       const opportunityId = (variables as { opportunityId?: number })
         .opportunityId;
       if (opportunityId) {
-        dismissRecurrenceScopeToast(opportunityId);
+        // Complete before dismissing to prevent a synchronous onClose from
+        // recording a decline on a failed save (which is not user intent).
+        const opportunity =
+          useRecurrenceScopeOpportunityStore.getState().opportunity;
         recurrenceScopeOpportunityActions.complete(opportunityId);
+        if (opportunity?.id === opportunityId) {
+          dismissRecurrenceScopeToastFor(opportunity);
+        } else {
+          dismissRecurrenceScopeToast(opportunityId);
+        }
       }
       if (!context) return;
       // TanStack still counts *this* mutation as pending while onError runs
@@ -602,7 +613,8 @@ export function useEventMutations(
           original.recurrence.kind === "occurrence" &&
           payload.input.scope === "this" &&
           payload.input.recurrence.kind === "preserve" &&
-          !isRestoringHistory()
+          !isRestoringHistory() &&
+          !isRecurrenceScopeEditAskDeclined(original.id)
             ? recurrenceScopeOpportunityActions.begin({
                 kind: "replace",
                 original,

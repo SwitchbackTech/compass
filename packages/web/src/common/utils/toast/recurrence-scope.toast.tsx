@@ -146,6 +146,12 @@ export function showRecurrenceScopeSuccessToast(
   show(<span>{message}</span>, toastIdFor(opportunity));
 }
 
+export function dismissRecurrenceScopeToastFor(
+  opportunity: RecurrenceScopeOpportunity,
+): void {
+  getToast().dismiss(toastIdFor(opportunity));
+}
+
 export function dismissRecurrenceScopeToast(opportunityId?: number): void {
   const opportunity = useRecurrenceScopeOpportunityStore.getState().opportunity;
   if (
@@ -155,5 +161,5 @@ export function dismissRecurrenceScopeToast(opportunityId?: number): void {
     return;
   }
 
-  getToast().dismiss(toastIdFor(opportunity));
+  dismissRecurrenceScopeToastFor(opportunity);
 }

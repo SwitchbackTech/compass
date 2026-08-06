@@ -5,7 +5,10 @@ import { type Event } from "@core/types/event.contracts";
 import { UNDO_DECLINED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { showRestoredToast } from "@web/common/utils/toast/deleted-toast.util";
-import { dismissRecurrenceScopeToast } from "@web/common/utils/toast/recurrence-scope.toast";
+import {
+  dismissRecurrenceScopeToast,
+  dismissRecurrenceScopeToastFor,
+} from "@web/common/utils/toast/recurrence-scope.toast";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import { detailsLocation } from "@web/events/grid-event-draft.adapter";
 import {
@@ -215,8 +218,8 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
       opportunity?.source === source &&
       opportunity.original.id === entryEventId(entry)
     ) {
-      dismissRecurrenceScopeToast(opportunity.id);
       recurrenceScopeOpportunityActions.clear();
+      dismissRecurrenceScopeToastFor(opportunity);
     }
 
     if (entry.kind === "edit") {
