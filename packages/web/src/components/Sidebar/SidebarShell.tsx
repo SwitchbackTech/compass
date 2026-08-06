@@ -1,6 +1,6 @@
 import { type HTMLAttributes, type ReactNode } from "react";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
-import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
+import { type ShortcutOverlaySection } from "@web/shortcuts/shortcuts-overlay.types";
 import {
   selectIsEventFormOpen,
   useDraftStore,

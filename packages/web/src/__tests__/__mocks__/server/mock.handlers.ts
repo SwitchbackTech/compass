@@ -66,7 +66,7 @@ export const globalHandlers = [
     );
   }),
   rest.get(`${ENV_WEB.API_BASEURL}/user/metadata`, (_req, res, ctx) => {
-    return res(ctx.status(Status.OK), ctx.json({ skipOnboarding: false }));
+    return res(ctx.status(Status.OK), ctx.json({}));
   }),
   rest.post(`${ENV_WEB.API_BASEURL}/user/metadata`, (req, res, ctx) => {
     return res(ctx.status(Status.OK), ctx.json(req.json()));

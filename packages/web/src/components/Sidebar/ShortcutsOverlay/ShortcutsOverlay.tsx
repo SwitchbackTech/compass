@@ -2,7 +2,7 @@ import { XIcon } from "@phosphor-icons/react";
 import classNames from "classnames";
 import { useEffect } from "react";
 import { ShortcutSection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutSection";
-import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
+import { type ShortcutOverlaySection } from "@web/shortcuts/shortcuts-overlay.types";
 
 interface Props {
   isOpen: boolean;

@@ -57,7 +57,6 @@ export type GoogleSyncConnectionSummary = {
 // rejects a nested `google.connection` object on an interface extends clause,
 // even though every field is JSON-safe.
 export type UserMetadata = SupertokensUserMetadata.JSONObject & {
-  skipOnboarding?: boolean;
   sync?: {
     importGCal?: SyncStatus;
     incrementalGCalSync?: SyncStatus;

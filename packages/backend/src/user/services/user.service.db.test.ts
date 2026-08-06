@@ -630,7 +630,7 @@ describe("UserService", () => {
         SupertokensUserMetadata,
         "getUserMetadata",
       ).mockResolvedValue({
-        metadata: { skipOnboarding: true },
+        metadata: {},
         status: "OK",
       });
       const clearUserMetadataSpy = spyOn(
@@ -712,7 +712,7 @@ describe("UserService", () => {
         SupertokensUserMetadata,
         "getUserMetadata",
       ).mockResolvedValue({
-        metadata: { skipOnboarding: true },
+        metadata: {},
         status: "OK",
       });
       const clearUserMetadataSpy = spyOn(

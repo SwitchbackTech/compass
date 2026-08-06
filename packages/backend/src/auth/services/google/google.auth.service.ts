@@ -155,7 +155,6 @@ async function googleSignup(
     await userMetadataService.updateUserMetadata({
       userId: cUser.user.userId,
       data: {
-        skipOnboarding: false,
         sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
       },
     });
