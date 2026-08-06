@@ -23,12 +23,21 @@ export function useUpNextEvent() {
     startDate,
     endDate,
   });
+  // Restore the real timed bounds: the all-day-row projection rewrites both
+  // dates to whole calendar days, and a date-only endDate would keep a
+  // finished event looking like it is still running until midnight.
   const multiDayTimed = allDayEvents
     .filter((event) => event.isTimedMultiDayDisplay)
     .flatMap((gridEvent) => {
       const source = events.find((event) => event.id === gridEvent._id);
       if (!source || source.schedule.kind !== "timed") return [];
-      return [{ ...gridEvent, startDate: source.schedule.start }];
+      return [
+        {
+          ...gridEvent,
+          startDate: source.schedule.start,
+          endDate: source.schedule.end,
+        },
+      ];
     });
   const allTimedEvents = [...timedEvents, ...multiDayTimed];
 
