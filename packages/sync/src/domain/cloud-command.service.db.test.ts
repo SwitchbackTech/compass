@@ -1691,7 +1691,17 @@ describe("submitCloudCommand provider dispatch", () => {
       ]);
     });
 
-    it("re-creates a cloud event whose confirmed create was undone (deleted) since", async () => {
+    // Deliberately NOT guarded, unlike delete — see the docblock above
+    // terminalReplayIsStale in command-replay.ts. Unlike a delete's key, a
+    // create's key (`create:${eventId}`) is stable for that event id's whole
+    // lifetime, so a later, UNRELATED resubmit of the same create payload
+    // (e.g. an offline promotion retry — see
+    // local-event-sync.util.ts's syncLocalEventsToCloud) collides with it
+    // too, not only an A25 undo. Nothing in the command history can tell
+    // those two apart, so guarding here would risk silently resurrecting an
+    // event the user deliberately deleted afterward. Pin the no-op replay so
+    // a future change doesn't "fix" this the same way delete was fixed.
+    it("still short-circuits a confirmed create replay for an event since deleted (no guard for create — resurrection risk)", async () => {
       const tenantId = objectId() as TenantId;
       const principalId = objectId() as PrincipalId;
       const submit = submitFor(tenantId, principalId, objectId());
@@ -1703,11 +1713,10 @@ describe("submitCloudCommand provider dispatch", () => {
 
       const second = await submitCloudCommand(deps(), submit, now);
 
-      expect(second.changed).toBe(true);
-      expect(second.command.outcome.state).toBe("confirmed");
+      expect(second.changed).toBe(false);
       expect(
         await events.findById(tenantId, principalId, submit.eventId),
-      ).not.toBeNull();
+      ).toBeNull();
     });
 
     it("does not re-litigate an explicitly cancelled command", async () => {

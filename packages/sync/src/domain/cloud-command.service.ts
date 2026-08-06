@@ -99,16 +99,16 @@ export interface CloudCommandDeps {
 // command is likewise persisted as durable pending intent and returned
 // unchanged; applying update/move/delete locally lands in a later slice.
 //
-// A terminal replay is not automatically a no-op. The idempotency key is
-// identity-only (eventId/scope/recurrenceId), so a create, delete, and
-// re-create-under-the-same-id (undo of a delete recreates the original event
-// id — see useUndoRedo.ts's "A25" doc comment) can all collide on the same
-// key as an earlier, unrelated command. terminalReplayIsStale checks whether
-// the world still matches what the terminal command once confirmed; if it
-// doesn't, the command is reopened to pending and re-executed below rather
-// than replayed as a no-op. Without this, a delete that once confirmed
-// without truly deleting (or was undone and redone) becomes permanently
-// unreachable — `commands` has no TTL.
+// A terminal DELETE replay is not automatically a no-op. Its idempotency key
+// is identity-only (eventId/scope/recurrenceId), so a delete, undo
+// (recreate under the SAME event id — see useUndoRedo.ts's "A25" doc
+// comment), and delete-again collide on the same key as the first delete.
+// terminalReplayIsStale checks whether the world still matches what that
+// terminal command once confirmed; if it doesn't, the command is reopened to
+// pending and re-executed below rather than replayed as a no-op. Without
+// this, a delete that once confirmed without truly deleting (or was undone
+// and redone) becomes permanently unreachable — `commands` has no TTL. See
+// command-replay.ts for why this guard is delete-only, not create too.
 export async function submitCloudCommand(
   deps: CloudCommandDeps,
   submit: CommandSubmit,
