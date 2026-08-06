@@ -40,10 +40,10 @@ const getAllDayRowHeight = (gridOffsetTopPx: number) => {
 };
 
 /** Fixed-pixel floor so chips at EVENT_ALLDAY_ROW_HEIGHT tops are never clipped. */
-export const getAllDayRowMinHeightPx = (rowsCount: number) => {
+const getAllDayRowMinHeightPx = (rowsCount: number) => {
   const rows = Math.max(1, rowsCount);
 
-  return EVENT_ALLDAY_GAP + rows * EVENT_ALLDAY_ROW_HEIGHT + EVENT_ALLDAY_GAP;
+  return 2 * EVENT_ALLDAY_GAP + rows * EVENT_ALLDAY_ROW_HEIGHT;
 };
 
 export const AllDayGridRow: FC<AllDayRowProps> = ({

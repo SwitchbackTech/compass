@@ -18,6 +18,13 @@ const allDay = (
   }) as GridEvent;
 
 describe("assignDayAllDayEventRows", () => {
+  it("returns one row when there are no all-day events", () => {
+    expect(assignDayAllDayEventRows([], () => 0)).toEqual({
+      allDayEvents: [],
+      rowsCount: 1,
+    });
+  });
+
   it("lets all-day events on different calendars share row 1", () => {
     const events = [
       allDay("a", "cal-a"),

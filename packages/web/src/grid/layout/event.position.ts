@@ -102,33 +102,34 @@ export const getAllDayEventPosition = (
   event: GridEvent,
   input: EventPositionInput,
 ): EventPosition => {
+  let left: number;
+  let width: number;
+
   // Day view passes columnIndex: columns are calendars on one day, so the
   // caller already decided this event belongs on-screen. Skip the week-style
   // date-span clamp (which can zero-size a card when start/end are UTC
   // midnights that fall on the previous local day) and size to that column.
   if (input.columnIndex !== undefined) {
-    return allDayPositionInColumn(
-      event,
-      input.measurements.colWidths,
-      input.columnIndex,
+    const columnWidth = input.measurements.colWidths[input.columnIndex] ?? 0;
+    left = sumWidthsBefore(input.measurements.colWidths, input.columnIndex);
+    width = widthMinusPadding(columnWidth);
+  } else {
+    const span = getVisibleAllDaySpan(event, input.visibleDates);
+    if (!span) {
+      return zeroPosition();
+    }
+
+    const startIndex = getVisibleDateIndex(span.start, input.visibleDates);
+    const endIndex = getVisibleDateIndex(span.end, input.visibleDates);
+    if (startIndex === null || endIndex === null) {
+      return zeroPosition();
+    }
+
+    left = sumWidthsBefore(input.measurements.colWidths, startIndex);
+    width = widthMinusPadding(
+      sumWidthsBetween(input.measurements.colWidths, startIndex, endIndex),
     );
   }
-
-  const span = getVisibleAllDaySpan(event, input.visibleDates);
-  if (!span) {
-    return zeroPosition();
-  }
-
-  const startIndex = getVisibleDateIndex(span.start, input.visibleDates);
-  const endIndex = getVisibleDateIndex(span.end, input.visibleDates);
-  if (startIndex === null || endIndex === null) {
-    return zeroPosition();
-  }
-
-  const left = sumWidthsBefore(input.measurements.colWidths, startIndex);
-  const width = widthMinusPadding(
-    sumWidthsBetween(input.measurements.colWidths, startIndex, endIndex),
-  );
 
   return {
     height: EVENT_ALLDAY_HEIGHT,
@@ -138,24 +139,9 @@ export const getAllDayEventPosition = (
   };
 };
 
-const allDayPositionInColumn = (
-  event: GridEvent,
-  colWidths: number[],
-  columnIndex: number,
-): EventPosition => {
-  const columnWidth = colWidths[columnIndex] ?? 0;
-
-  return {
-    height: EVENT_ALLDAY_HEIGHT,
-    left: sumWidthsBefore(colWidths, columnIndex),
-    top: allDayEventTop(event.row),
-    width: widthMinusPadding(columnWidth),
-  };
-};
-
 /** Rows are 1-based; top is 0-based with a small gap above the first chip. */
 const allDayEventTop = (row: number | undefined) =>
-  EVENT_ALLDAY_GAP + EVENT_ALLDAY_ROW_HEIGHT * (Math.max(1, row || 1) - 1);
+  EVENT_ALLDAY_GAP + EVENT_ALLDAY_ROW_HEIGHT * ((row || 1) - 1);
 
 const getVisibleAllDaySpan = (
   event: GridEvent,
