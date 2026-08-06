@@ -65,9 +65,9 @@ export const CalendarSelect = ({
 }: CalendarSelectProps) => {
   const { data } = useCalendarsQuery();
   const accountEmailOrder = useConnectedAccountEmails();
-  const writableCalendars = getWritableCalendars(data ?? []).sort(
-    compareCalendars(accountEmailOrder),
-  );
+  const writableCalendars = getWritableCalendars(data ?? [], {
+    hasConnectedAccount: accountEmailOrder.length > 0,
+  }).sort(compareCalendars(accountEmailOrder));
   // Only disambiguate by account when there is something to disambiguate.
   const showAccount = spansMultipleAccounts(writableCalendars);
   const [isOpen, setIsOpen] = useState(false);

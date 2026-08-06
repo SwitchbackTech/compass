@@ -2,7 +2,7 @@ import { type CreateEventInput } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { looksLikeOccurrenceId } from "@core/util/occurrence-id";
 import { CalendarApi } from "@web/api/calendar.api";
-import { getLocalCalendar } from "@web/calendars/calendar.util";
+import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { type OfflineDataStore } from "@web/common/storage/offline-data/offline-data.store";
 import {
   ensureOfflineDataStoreReady,
@@ -48,11 +48,11 @@ function exdateLines(
 }
 
 // Maps a locally-stored record (calendarId = the client-generated sentinel)
-// onto the server's own local calendar id, preserving the client-generated
-// event id.
+// onto the resolved target calendar id, preserving the client-generated event
+// id.
 function toCreateInput(
   record: LocalEventRecord,
-  serverLocalCalendarId: string,
+  targetCalendarId: string,
 ): CreateEventInput {
   const recurrence = record.event.recurrence;
   const allDay = record.event.schedule.kind === "allDay";
@@ -72,7 +72,7 @@ function toCreateInput(
     // series expansion) aren't valid server ids - let the backend generate
     // one instead of rejecting the POST.
     id: looksLikeOccurrenceId(record.event.id) ? undefined : record.event.id,
-    calendarId: serverLocalCalendarId as CreateEventInput["calendarId"],
+    calendarId: targetCalendarId as CreateEventInput["calendarId"],
     schedule: record.event.schedule,
     recurrence:
       recurrence.kind === "series"
@@ -110,20 +110,25 @@ export function createSyncLocalEventsToCloud({
 
     if (recordsToSync.length > 0) {
       const calendars = await listCalendars();
-      const serverLocalCalendar = getLocalCalendar(calendars);
+      // A connected Google account's primary calendar wins over the local
+      // calendar so promoted events land on the provider the user actually
+      // connected, not on the calendar the sidebar is trying to stop showing.
+      // Falls back to local for anonymous/password-only sign-in, where it's
+      // still the only writable calendar there is.
+      const targetCalendar = getDefaultTargetCalendar(calendars);
 
       // Never fall back to the client-generated sentinel calendar id: the
       // backend can't resolve it and rejects the POST with CALENDAR_NOT_FOUND
-      // (a 404 that used to sign the just-signed-up user out). When the
-      // server-side local calendar isn't available yet, keep the records
-      // on-device - untouched, so a later sync can push them onto the real
-      // calendar - rather than losing them to a rejected request.
-      if (!serverLocalCalendar) {
+      // (a 404 that used to sign the just-signed-up user out). When no
+      // writable calendar is available yet, keep the records on-device -
+      // untouched, so a later sync can push them onto the real calendar -
+      // rather than losing them to a rejected request.
+      if (!targetCalendar) {
         return 0;
       }
 
       for (const record of recordsToSync) {
-        await createEvent(toCreateInput(record, serverLocalCalendar.id));
+        await createEvent(toCreateInput(record, targetCalendar.id));
         // Drop each promoted row immediately so a mid-batch interrupt does not
         // re-POST already-cloud events on the next resume.
         await store.deleteEvent(record.id);

@@ -23,7 +23,14 @@ import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { setCalendarVisibility } from "@web/calendars/calendar-visibility.store";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { formatStartsIn, UpNextCard } from "./UpNextCard";
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  setSystemTime,
+} from "bun:test";
 import "@testing-library/jest-dom";
 
 const SOON_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
@@ -228,5 +235,46 @@ describe("UpNextCard", () => {
     });
 
     expect(screen.queryByRole("link", { name: "Join" })).toBeNull();
+  });
+});
+
+// A timed event that crosses midnight is projected into the all-day row with
+// whole-calendar-day dates, so its endDate no longer says when it actually
+// ends. The card has to read the real end off the source schedule, or every
+// such event looks like it is still running until midnight. The clock is
+// pinned because that projection only kicks in while "now" and "30 minutes
+// ago" fall on different calendar days.
+describe("UpNextCard across midnight", () => {
+  const JUST_AFTER_MIDNIGHT = new Date("2026-08-06T00:13:00.000Z");
+
+  afterEach(() => {
+    setSystemTime();
+  });
+
+  it("stays all-clear for a midnight-spanning event that already ended", () => {
+    setSystemTime(JUST_AFTER_MIDNIGHT);
+
+    // 23:35 -> 00:05, so it crossed midnight and ended 8 minutes ago.
+    render(<UpNextCard />, {
+      events: [timedEvent(SOON_EVENT_ID, "Ended Event", -38)],
+    });
+
+    expect(screen.getByText("All clear")).toBeInTheDocument();
+    expect(screen.queryByText("Ended Event")).toBeNull();
+  });
+
+  it("shows a midnight-spanning event that is still underway as Now", () => {
+    setSystemTime(JUST_AFTER_MIDNIGHT);
+
+    // 23:45 -> 00:15, so it crossed midnight and has 2 minutes left.
+    render(<UpNextCard />, {
+      events: [timedEvent(SOON_EVENT_ID, "Running Event", -28)],
+    });
+
+    expect(
+      screen.getByRole("button", { name: /now: running event/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Running Event")).toBeInTheDocument();
+    expect(screen.getByText("Now")).toBeInTheDocument();
   });
 });

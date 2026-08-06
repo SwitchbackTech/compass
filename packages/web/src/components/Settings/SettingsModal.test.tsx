@@ -345,9 +345,29 @@ describe("SettingsModal", () => {
     ).toBeInTheDocument();
   });
 
-  it("lists the local calendar after the account groups, not before", () => {
+  it("lists the local calendar after the account groups when no account is connected", () => {
     // The sidebar renders account sections first and the local/ungrouped
-    // calendar last; this picker used to disagree.
+    // calendar last; this picker used to disagree. With no account connected
+    // the local calendar is still a legitimate writable target (see the next
+    // test for the connected case).
+    const work = createMockCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const local = createMockCalendar({ name: "Compass", provider: "local" });
+
+    renderSettings({ connections: [], calendars: [work, local] });
+
+    const options = screen
+      .getAllByRole("option")
+      .map((option) => option.textContent);
+    expect(options).toEqual(["Work", "Compass"]);
+  });
+
+  it("excludes the local calendar once an account is connected", () => {
+    // Once any account is connected, new events belong on a provider
+    // calendar - the local calendar drops out of the writable set entirely
+    // rather than sorting last (local-calendar-visibility LCV2).
     const work = createMockCalendar({
       name: "Work",
       accountEmail: "ahab@pequod.com",
@@ -359,7 +379,48 @@ describe("SettingsModal", () => {
     const options = screen
       .getAllByRole("option")
       .map((option) => option.textContent);
-    expect(options).toEqual(["Work", "Compass"]);
+    expect(options).toEqual(["Work"]);
+  });
+
+  it("restores the local calendar as a writable target once the only connected account is disconnected", async () => {
+    // ensureLocalCalendar exists precisely so a disconnected user never loses
+    // every writable calendar - LCV2's exclusion must lift the moment the
+    // account it depends on is gone, not stay stuck excluding a calendar
+    // nothing else can write to (local-calendar-visibility LCV5).
+    const disconnect = spyOn(
+      AuthApi,
+      "disconnectGoogleConnection",
+    ).mockResolvedValue(undefined);
+
+    const work = createMockCalendar({
+      name: "Work",
+      accountEmail: "ahab@pequod.com",
+    });
+    const local = createMockCalendar({ name: "Compass", provider: "local" });
+
+    const user = userEvent.setup({ delay: null });
+    renderSettings({ calendars: [work, local] });
+
+    expect(
+      screen.getAllByRole("option").map((option) => option.textContent),
+    ).toEqual(["Work"]);
+
+    await user.click(
+      screen.getByRole("button", { name: "Disconnect ahab@pequod.com" }),
+    );
+    await user.click(
+      screen.getByRole("button", {
+        name: "Confirm disconnecting ahab@pequod.com",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByRole("option").map((option) => option.textContent),
+      ).toEqual(["Compass"]);
+    });
+
+    disconnect.mockRestore();
   });
 
   it("badges the account that owns the default calendar", () => {

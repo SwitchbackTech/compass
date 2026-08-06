@@ -21,6 +21,36 @@ const syncLocalEventsToCloud = createSyncLocalEventsToCloud({
 });
 
 const SERVER_LOCAL_CALENDAR_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
+const GOOGLE_PRIMARY_CALENDAR_ID = "bbbbbbbbbbbbbbbbbbbbbbbb";
+
+const localCalendar = {
+  id: SERVER_LOCAL_CALENDAR_ID,
+  name: "Local",
+  description: "",
+  timeZone: null,
+  foregroundColor: "#000000",
+  backgroundColor: "#ffffff",
+  provider: "local",
+  access: "owner",
+  capabilities: {
+    canReadAvailability: true,
+    canReadDetails: true,
+    canWrite: true,
+    canManage: false,
+    canWatchEvents: false,
+  },
+  isPrimary: true,
+  isVisible: true,
+  isActive: true,
+} as const;
+
+const googlePrimaryCalendar = {
+  ...localCalendar,
+  id: GOOGLE_PRIMARY_CALENDAR_ID,
+  name: "person@example.com",
+  provider: "google",
+  accountEmail: "person@example.com",
+} as const;
 
 describe("syncLocalEventsToCloud", () => {
   beforeEach(() => {
@@ -30,28 +60,7 @@ describe("syncLocalEventsToCloud", () => {
     deleteEvent.mockClear();
     createEvent.mockClear();
     listCalendars.mockClear();
-    listCalendars.mockResolvedValue([
-      {
-        id: SERVER_LOCAL_CALENDAR_ID,
-        name: "Local",
-        description: "",
-        timeZone: null,
-        foregroundColor: "#000000",
-        backgroundColor: "#ffffff",
-        provider: "local",
-        access: "owner",
-        capabilities: {
-          canReadAvailability: true,
-          canReadDetails: true,
-          canWrite: true,
-          canManage: false,
-          canWatchEvents: false,
-        },
-        isPrimary: true,
-        isVisible: true,
-        isActive: true,
-      },
-    ]);
+    listCalendars.mockResolvedValue([localCalendar]);
   });
 
   it("syncs user-created events and skips demo events, mapping onto the server local calendar", async () => {
@@ -70,6 +79,20 @@ describe("syncLocalEventsToCloud", () => {
     );
     expect(deleteEvent).toHaveBeenCalledWith(userRecord.id);
     expect(clearAllEvents).toHaveBeenCalledTimes(1);
+  });
+
+  it("maps onto the connected Google calendar instead of the local one, when one exists", async () => {
+    listCalendars.mockResolvedValue([localCalendar, googlePrimaryCalendar]);
+    const userRecord = createMockLocalEventRecord({}, false);
+    getAllEvents.mockResolvedValue([userRecord]);
+
+    await expect(syncLocalEventsToCloud()).resolves.toBe(1);
+
+    expect(createEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        calendarId: GOOGLE_PRIMARY_CALENDAR_ID,
+      }),
+    );
   });
 
   it("defaults location to an empty string for a record that predates the field", async () => {
