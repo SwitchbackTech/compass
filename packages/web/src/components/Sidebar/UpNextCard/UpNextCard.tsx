@@ -60,7 +60,7 @@ export const UpNextCard: FC = () => {
   return (
     <section aria-label="Up next">
       {upNext ? (
-        <div className="group relative flex min-h-14 w-full min-w-0 flex-col gap-0.5 rounded border border-border bg-surface px-2 py-1.5 hover:brightness-110">
+        <div className="group relative flex min-h-14 w-full min-w-0 flex-col gap-0.5 rounded bg-surface px-2 py-1.5 hover:brightness-110">
           {/* Covers the whole card so clicking anywhere opens the event -
               the Join link below sits in normal flow above this in paint
               order (via relative + z-10), so it still receives its own
@@ -97,7 +97,7 @@ export const UpNextCard: FC = () => {
           )}
         </div>
       ) : (
-        <p className="flex min-h-14 items-center rounded border border-border bg-surface px-2 py-1.5 font-medium text-sm text-text-muted">
+        <p className="flex min-h-14 items-center rounded bg-surface px-2 py-1.5 font-medium text-sm text-text-muted">
           All clear
         </p>
       )}
