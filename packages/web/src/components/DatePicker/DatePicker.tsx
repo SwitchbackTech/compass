@@ -3,7 +3,6 @@ import type React from "react";
 import * as ReactDatePickerModule from "react-datepicker";
 import { type ReactDatePickerProps } from "react-datepicker";
 import dayjs from "@core/util/date/dayjs";
-import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import { darken, isDark } from "@web/common/styles/color.utils";
 import { colors, lightColors } from "@web/common/styles/colors";
 import { type CSSVariables } from "@web/common/styles/css.types";
@@ -81,9 +80,12 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
         ? "var(--text)"
         : "var(--on-accent)";
 
+  // react-datepicker paints z-index via popperClassName on the positioned
+  // node (popperProps.style is ignored by react-popper). "!z-22" equals
+  // Z_INDEX_FLOATING_MENU; keep the literal static so Tailwind can see it.
   return (
     <ReactDatePicker
-      popperProps={{ style: { zIndex: Z_INDEX_FLOATING_MENU } }}
+      popperClassName="!z-22"
       calendarClassName={classNames("calendar", calendarClassName, {
         "calendar--open": isOpen,
         "calendar--animation": animationOnToggle,
