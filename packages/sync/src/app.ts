@@ -251,19 +251,11 @@ async function start(): Promise<void> {
         // Stop every drain; each releases only its own owner's held jobs.
         await Promise.all(schedulers.drains.map((drain) => drain.stop()));
       });
-      const sweeps = [
-        ["reconcile", schedulers.reconcile],
-        ["subscription", schedulers.subscription],
-        ["bootstrapRecovery", schedulers.bootstrapRecovery],
-        ["failedJobRequeue", schedulers.failedJobRequeue],
-        ["staleCommandRetry", schedulers.staleCommandRetry],
-        ["calendarListRediscovery", schedulers.calendarListRediscovery],
-      ] as const;
-      for (const [name, sweep] of sweeps) {
+      for (const [name, sweep] of schedulers.sweeps) {
         service.shutdown.register(name, () => sweep.stop());
       }
       for (const drain of schedulers.drains) drain.start();
-      for (const [, sweep] of sweeps) sweep.start();
+      for (const [, sweep] of schedulers.sweeps) sweep.start();
       logger.info(
         "Sync scheduler draining, reconciling, renewing channels, retaining, retrying stale commands, and reporting health",
       );
@@ -387,12 +379,7 @@ function buildSchedulers(
   posthog: PostHogCaptureClient | null,
 ): {
   drains: SyncScheduler[];
-  reconcile: SweepScheduler;
-  subscription: SweepScheduler;
-  bootstrapRecovery: SweepScheduler;
-  failedJobRequeue: SweepScheduler;
-  staleCommandRetry: SweepScheduler;
-  calendarListRediscovery: SweepScheduler;
+  sweeps: ReadonlyArray<readonly [name: string, sweep: SweepScheduler]>;
 } | null {
   if (config.EXECUTION !== "active") return null;
   const authAdapter = buildAuthAdapter(config);
@@ -448,20 +435,33 @@ function buildSchedulers(
     );
   };
   const drains = Array.from({ length: config.MAX_CONCURRENCY }, buildDrain);
-  // The reconcile fallback looks BACK: enqueue a pull for any events resource not
-  // synced within the stale window (negative offset from now).
-  const reconcile = new SweepScheduler(
+
+  // Shared per-resource enqueue-failure logging for the resource sweeps below.
+  const onEnqueueError =
+    (sweep: string) => (error: unknown, resourceId: string) =>
+      logger.error(
+        `Sync ${sweep} sweep could not enqueue resource ${resourceId}; skipping it and continuing`,
+        error,
+      );
+
+  // One row per background sweep: `run` is the sweep's whole distinctive body
+  // (finder, job kind, and its own logging/telemetry — they genuinely differ,
+  // which is why #2588 stopped short of a fully shared implementation).
+  // Everything repeated — scheduler construction, failure logging, shutdown
+  // and start wiring — lives in the loop after the rows.
+  const sweepRows: ReadonlyArray<{
+    name: string;
+    windowMs: number;
+    run: (before: Date) => Promise<number>;
+  }> = [
     {
-      sweep: async (before) => {
+      // The reconcile fallback looks BACK: enqueue a pull for any events
+      // resource not synced within the stale window (negative offset from now).
+      name: "reconcile",
+      windowMs: -RECONCILE_STALE_AFTER_MS,
+      run: async (before) => {
         const enqueued = await enqueueForResources(
-          {
-            jobs,
-            onEnqueueError: (error, resourceId) =>
-              logger.error(
-                `Sync reconcile sweep could not enqueue resource ${resourceId}; skipping it and continuing`,
-                error,
-              ),
-          },
+          { jobs, onEnqueueError: onEnqueueError("reconcile") },
           (b, l) => resources.listStaleEvents(b, l),
           "incrementalPull",
           before,
@@ -492,25 +492,15 @@ function buildSchedulers(
       },
     },
     {
-      windowMs: -RECONCILE_STALE_AFTER_MS,
-      onError: (error) => logger.error("Sync reconcile sweep failed", error),
-    },
-  );
-  // Subscription maintenance looks AHEAD: enqueue a renewal for any push channel
-  // expiring within the renew window (positive offset from now), so a channel is
-  // replaced before it lapses. Aligns with maintainSubscription's renew guard.
-  const subscription = new SweepScheduler(
-    {
-      sweep: (before) =>
+      // Subscription maintenance looks AHEAD: enqueue a renewal for any push
+      // channel expiring within the renew window (positive offset from now),
+      // so a channel is replaced before it lapses. Aligns with
+      // maintainSubscription's renew guard.
+      name: "subscription",
+      windowMs: SUBSCRIPTION_RENEW_BEFORE_MS,
+      run: (before) =>
         enqueueForResources(
-          {
-            jobs,
-            onEnqueueError: (error, resourceId) =>
-              logger.error(
-                `Sync subscription sweep could not enqueue resource ${resourceId}; skipping it and continuing`,
-                error,
-              ),
-          },
+          { jobs, onEnqueueError: onEnqueueError("subscription") },
           (b, l) => resources.listExpiringSubscriptions(b, l),
           "subscriptionMaintain",
           before,
@@ -518,25 +508,14 @@ function buildSchedulers(
         ),
     },
     {
-      windowMs: SUBSCRIPTION_RENEW_BEFORE_MS,
-      onError: (error) =>
-        logger.error("Sync subscription maintenance sweep failed", error),
-    },
-  );
-  // Bootstrap-recovery looks BACK, like reconcile: enqueue a bootstrapCatchup
-  // for any events resource whose bootstrap chain has gone quiet before ready.
-  const bootstrapRecovery = new SweepScheduler(
-    {
-      sweep: async (before) => {
+      // Bootstrap-recovery looks BACK, like reconcile: enqueue a
+      // bootstrapCatchup for any events resource whose bootstrap chain has
+      // gone quiet before ready.
+      name: "bootstrapRecovery",
+      windowMs: -BOOTSTRAP_STALLED_AFTER_MS,
+      run: async (before) => {
         const enqueued = await enqueueForResources(
-          {
-            jobs,
-            onEnqueueError: (error, resourceId) =>
-              logger.error(
-                `Sync bootstrap-recovery sweep could not enqueue resource ${resourceId}; skipping it and continuing`,
-                error,
-              ),
-          },
+          { jobs, onEnqueueError: onEnqueueError("bootstrap-recovery") },
           (b, l) => resources.listStalledBootstraps(b, l),
           "bootstrapCatchup",
           before,
@@ -551,18 +530,13 @@ function buildSchedulers(
       },
     },
     {
-      windowMs: -BOOTSTRAP_STALLED_AFTER_MS,
-      onError: (error) =>
-        logger.error("Sync bootstrap-recovery sweep failed", error),
-    },
-  );
-  // Self-heal sweep: give jobs stuck in state:"failed" a fresh retry ladder
-  // once they have cooled down, and loudly log any that keep re-failing past
-  // the requeue cap. Looks BACK, like reconcile — a job is eligible once it
-  // has been failed since before the cooldown window.
-  const failedJobRequeue = new SweepScheduler(
-    {
-      sweep: async (before) => {
+      // Self-heal sweep: give jobs stuck in state:"failed" a fresh retry
+      // ladder once they have cooled down, and loudly log any that keep
+      // re-failing past the requeue cap. Looks BACK, like reconcile — a job
+      // is eligible once it has been failed since before the cooldown window.
+      name: "failedJobRequeue",
+      windowMs: -FAILED_JOB_REQUEUE_COOLDOWN_MS,
+      run: async (before) => {
         const result = await requeueFailedJobs(
           { jobs },
           before,
@@ -593,18 +567,15 @@ function buildSchedulers(
       },
     },
     {
-      windowMs: -FAILED_JOB_REQUEUE_COOLDOWN_MS,
-      onError: (error) => logger.error("Sync self-heal sweep failed", error),
-    },
-  );
-  // Self-heal sweep for the OTHER kind of stuck work: a cloud-targeted
-  // update/delete command that hit a transient provider failure mid-execute.
-  // Those run inline from the HTTP request (not as a job), and nothing else
-  // ever revisits a command left nonterminal that way - see
-  // stale-command-retry.service.ts. Looks BACK, like reconcile/failedJobRequeue.
-  const staleCommandRetry = new SweepScheduler(
-    {
-      sweep: async (before) => {
+      // Self-heal sweep for the OTHER kind of stuck work: a cloud-targeted
+      // update/delete command that hit a transient provider failure
+      // mid-execute. Those run inline from the HTTP request (not as a job),
+      // and nothing else ever revisits a command left nonterminal that way -
+      // see stale-command-retry.service.ts. Looks BACK, like
+      // reconcile/failedJobRequeue.
+      name: "staleCommandRetry",
+      windowMs: -STALE_COMMAND_RETRY_AFTER_MS,
+      run: async (before) => {
         const result = await retryStaleCommands(
           {
             commands: repos.commands,
@@ -631,28 +602,20 @@ function buildSchedulers(
       },
     },
     {
-      windowMs: -STALE_COMMAND_RETRY_AFTER_MS,
-      onError: (error) =>
-        logger.error("Sync stale-command retry sweep failed", error),
-    },
-  );
-  // Calendar-list rediscovery looks BACK, like reconcile: force a FULL
-  // discovery pass for any connection whose calendar list has not been
-  // re-listed within the staleness window, so a calendar the provider no
-  // longer lists eventually gets retired (deactivateAbsent only fires on a
-  // full pass, and only this sweep forces one after the initial connect).
-  const calendarListRediscovery = new SweepScheduler(
-    {
-      sweep: async (before) => {
+      // Calendar-list rediscovery looks BACK, like reconcile: force a FULL
+      // discovery pass for any connection whose calendar list has not been
+      // re-listed within the staleness window, so a calendar the provider no
+      // longer lists eventually gets retired (deactivateAbsent only fires on
+      // a full pass, and only this sweep forces one after the initial
+      // connect).
+      name: "calendarListRediscovery",
+      windowMs: -CALENDAR_LIST_STALE_AFTER_MS,
+      run: async (before) => {
         const enqueued = await rediscoverStaleCalendarLists(
           {
             resources,
             jobs,
-            onError: (error, resourceId) =>
-              logger.error(
-                `Sync calendar-list rediscovery sweep could not re-list resource ${resourceId}; skipping it and continuing`,
-                error,
-              ),
+            onError: onEnqueueError("calendar-list rediscovery"),
           },
           before,
           () => new Date(),
@@ -665,21 +628,23 @@ function buildSchedulers(
         return enqueued;
       },
     },
-    {
-      windowMs: -CALENDAR_LIST_STALE_AFTER_MS,
-      onError: (error) =>
-        logger.error("Sync calendar-list rediscovery sweep failed", error),
-    },
+  ];
+
+  const sweeps = sweepRows.map(
+    ({ name, windowMs, run }) =>
+      [
+        name,
+        new SweepScheduler(
+          { sweep: run },
+          {
+            windowMs,
+            onError: (error) =>
+              logger.error(`Sync ${name} sweep failed`, error),
+          },
+        ),
+      ] as const,
   );
-  return {
-    drains,
-    reconcile,
-    subscription,
-    bootstrapRecovery,
-    failedJobRequeue,
-    staleCommandRetry,
-    calendarListRediscovery,
-  };
+  return { drains, sweeps };
 }
 
 function registerSignalHandlers(
