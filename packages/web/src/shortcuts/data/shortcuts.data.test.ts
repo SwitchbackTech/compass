@@ -104,7 +104,10 @@ describe("shortcuts.data", () => {
         isViewingCurrentPeriod,
       });
 
-      expect(stripMetadata(navigate.shortcuts)).toContainEqual({ keys: ["t"], label });
+      expect(stripMetadata(navigate.shortcuts)).toContainEqual({
+        keys: ["t"],
+        label,
+      });
     });
 
     it("includes the all-day event shortcut in both views' Create section", () => {
@@ -117,10 +120,12 @@ describe("shortcuts.data", () => {
         keys: ["a"],
         label: "Create all-day event",
       });
-      expect(stripMetadata(findCreate("week")?.shortcuts ?? [])).toContainEqual({
-        keys: ["a"],
-        label: "Create all-day event",
-      });
+      expect(stripMetadata(findCreate("week")?.shortcuts ?? [])).toContainEqual(
+        {
+          keys: ["a"],
+          label: "Create all-day event",
+        },
+      );
     });
 
     it("lists u/i focus shortcuts per view", () => {

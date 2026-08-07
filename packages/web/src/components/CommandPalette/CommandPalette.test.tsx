@@ -46,8 +46,7 @@ afterAll(() => {
   isNavigateMocked = false;
 });
 
-const { CommandPalette, LifeCommandPalette } =
-  await import("./CommandPalette");
+const { CommandPalette, LifeCommandPalette } = await import("./CommandPalette");
 
 const onGoToToday = mock();
 const onShowShortcuts = mock();

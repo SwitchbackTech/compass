@@ -7,7 +7,12 @@ const sections = [
   {
     title: "Day",
     shortcuts: [
-      { id: "nav-prev", keys: ["j"], label: "Previous day", section: "navigate" },
+      {
+        id: "nav-prev",
+        keys: ["j"],
+        label: "Previous day",
+        section: "navigate",
+      },
       { id: "nav-next", keys: ["k"], label: "Next day", section: "navigate" },
     ],
   },

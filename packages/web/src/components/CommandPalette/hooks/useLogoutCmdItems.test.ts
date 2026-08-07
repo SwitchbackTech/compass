@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenLogoutConfirmation = mock();
 const mockUseLogoutConfirmation = mock();
@@ -10,12 +10,32 @@ mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
 }));
 
+// mock.module is process-wide, so the factory must keep the module's other
+// exports (LogoutConfirmationContext, useLogoutConfirmationState - the
+// provider's own tests need the real ones) and only override the hook while
+// this file runs, checked on every call instead of frozen in at registration.
+const actualUseLogoutConfirmation = {
+  ...(await import(
+    "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation"
+  )),
+};
+let isLogoutConfirmationMocked = true;
+
 mock.module(
   "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation",
   () => ({
-    useLogoutConfirmation: mockUseLogoutConfirmation,
+    ...actualUseLogoutConfirmation,
+    useLogoutConfirmation: (...args: unknown[]) =>
+      isLogoutConfirmationMocked
+        ? mockUseLogoutConfirmation(...args)
+        : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag only flips once, in afterAll, after this file's components have unmounted.
+          actualUseLogoutConfirmation.useLogoutConfirmation(),
   }),
 );
+
+afterAll(() => {
+  isLogoutConfirmationMocked = false;
+});
 
 const { useLogoutCmdItems } = await import("./useLogoutCmdItems");
 

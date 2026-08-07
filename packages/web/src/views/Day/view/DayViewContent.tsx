@@ -78,18 +78,15 @@ export const DayViewContent = memo(() => {
       onToggleSidebar: toggleSidebar,
     });
 
-  const shortcutSections = useMemo(
-    () => {
-      const focusedEvent = getFocusedDayGridEventTarget();
-      return getShortcutMenuSections({
-        view: "day",
-        isViewingCurrentPeriod: isViewingToday,
-        eventFocused: focusedEvent !== null,
-        isFormOpen: isEventDetailsOpen,
-      });
-    },
-    [isViewingToday, isEventDetailsOpen],
-  );
+  const shortcutSections = useMemo(() => {
+    const focusedEvent = getFocusedDayGridEventTarget();
+    return getShortcutMenuSections({
+      view: "day",
+      isViewingCurrentPeriod: isViewingToday,
+      eventFocused: focusedEvent !== null,
+      isFormOpen: isEventDetailsOpen,
+    });
+  }, [isViewingToday, isEventDetailsOpen]);
 
   const handleGoToToday = useCallback(() => {
     // Compare dates in the same timezone to avoid timezone issues

@@ -630,7 +630,8 @@ describe("UserService", () => {
         SupertokensUserMetadata,
         "getUserMetadata",
       ).mockResolvedValue({
-        metadata: {},
+        // cleanup only clears non-empty metadata, so the mock must carry a key
+        metadata: { someUserSetting: true },
         status: "OK",
       });
       const clearUserMetadataSpy = spyOn(
@@ -712,7 +713,8 @@ describe("UserService", () => {
         SupertokensUserMetadata,
         "getUserMetadata",
       ).mockResolvedValue({
-        metadata: {},
+        // cleanup only clears non-empty metadata, so the mock must carry a key
+        metadata: { someUserSetting: true },
         status: "OK",
       });
       const clearUserMetadataSpy = spyOn(

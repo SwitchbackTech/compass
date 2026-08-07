@@ -149,6 +149,16 @@
   /* Animations */
   --animate-sync-text-wave: syncTextWave 2.4s linear infinite;
   --animate-sync-icon-wave: syncIconWave 2.4s linear infinite;
+  --animate-loader-spin: loaderSpin 1.1s linear infinite;
+
+  @keyframes loaderSpin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
 
   @keyframes syncTextWave {
     from {
@@ -334,15 +344,6 @@
 @utility c-loader-spinner {
   @apply relative my-15 h-[10em] w-[10em] animate-loader-spin rounded-full border-[1.1em] border-text/20 border-l-text text-[4px] -indent-[9999em];
   transform: translateZ(0);
-}
-
-@utility c-login-progress {
-  @apply relative h-0.75 w-full overflow-hidden rounded-[3px] bg-border;
-
-  &::after {
-    @apply absolute top-0 h-full w-[45%] animate-login-progress content-[""];
-    background: linear-gradient(90deg, var(--accent), var(--accent-strong));
-  }
 }
 
 /* Both wrappers (week + day) portal this out of their grid and pass in

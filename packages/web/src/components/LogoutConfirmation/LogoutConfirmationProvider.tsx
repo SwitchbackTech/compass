@@ -1,16 +1,16 @@
 import { type PropsWithChildren, useCallback, useState } from "react";
 import { useLogout } from "@web/auth/compass/hooks/useLogout";
+import { clearAccountScopedQueryCache } from "@web/auth/compass/session/logout.teardown";
+import { LOGGED_OUT_TOAST_ID } from "@web/common/constants/toast.constants";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 import {
   LogoutConfirmationContext,
   useLogoutConfirmationState,
 } from "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation";
 import { LogoutConfirmationDialog } from "@web/components/LogoutConfirmation/LogoutConfirmationDialog";
-import { clearAccountScopedQueryCache } from "@web/auth/compass/session/logout.teardown";
-import { settingsActions } from "@web/settings/settings.store";
-import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
-import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
-import { LOGGED_OUT_TOAST_ID } from "@web/common/constants/toast.constants";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
+import { settingsActions } from "@web/settings/settings.store";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 
 const LOGGING_OUT_MIN_MS = 400;
@@ -57,7 +57,11 @@ export function LogoutConfirmationProvider({ children }: PropsWithChildren) {
         onConfirm={handleConfirm}
       />
       {isLoggingOut && (
-        <OverlayPanel role="status" variant="status" message="Logging you out…" />
+        <OverlayPanel
+          role="status"
+          variant="status"
+          message="Logging you out…"
+        />
       )}
     </LogoutConfirmationContext.Provider>
   );
