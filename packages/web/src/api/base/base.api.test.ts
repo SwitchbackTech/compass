@@ -84,8 +84,8 @@ describe("BaseApi backend availability", () => {
           config,
           data: { code: "GOOGLE_REVOKED" },
           headers: new Headers(),
-          status: 401,
-          statusText: "Unauthorized",
+          status: 410,
+          statusText: "Gone",
         },
       });
     };
