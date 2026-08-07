@@ -1,11 +1,7 @@
 import { CliValidator } from "@scripts/cli.validator";
 import { runAuditConnectionIdentity } from "@scripts/commands/audit-connection-identity";
-import { runBackfillBootstrapState } from "@scripts/commands/backfill-bootstrap-state";
 import { runManageFailedJobs } from "@scripts/commands/manage-failed-jobs";
-import { runPurgeCorruptSyncEvents } from "@scripts/commands/purge-corrupt-sync-events";
 import { runPurgeUser } from "@scripts/commands/purge-user";
-import { runRefreshConnectionStates } from "@scripts/commands/refresh-connection-states";
-import { runRepairRecurringSeries } from "@scripts/commands/repair-recurring-series";
 import { Command } from "commander";
 
 export default class CompassCLI {
@@ -22,23 +18,11 @@ export default class CompassCLI {
     const cmd = this.program.args[0];
 
     switch (true) {
-      case cmd === "purge-corrupt-sync-events":
-        await runPurgeCorruptSyncEvents();
-        break;
-      case cmd === "refresh-connection-states":
-        await runRefreshConnectionStates();
-        break;
       case cmd === "manage-failed-jobs":
         await runManageFailedJobs();
         break;
       case cmd === "purge-user":
         await runPurgeUser();
-        break;
-      case cmd === "repair-recurring-series":
-        await runRepairRecurringSeries();
-        break;
-      case cmd === "backfill-bootstrap-state":
-        await runBackfillBootstrapState();
         break;
       case cmd === "audit-connection-identity":
         await runAuditConnectionIdentity();
@@ -59,38 +43,6 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "delete every Compass row for one email, across the API db, Sync db, and SuperTokens (--apply to write)",
-      );
-
-    program
-      .command("purge-corrupt-sync-events")
-      .helpOption(false)
-      .allowUnknownOption(true)
-      .description(
-        "Delete Sync events that fail EventRecordSchema (poison from aborted migrate)",
-      );
-
-    program
-      .command("repair-recurring-series")
-      .helpOption(false)
-      .allowUnknownOption(true)
-      .description(
-        "Reproject EXDATE/RDATE series and remove orphaned delete tombstones (--apply to write)",
-      );
-
-    program
-      .command("refresh-connection-states")
-      .helpOption(false)
-      .allowUnknownOption(true)
-      .description(
-        "Re-derive every provider connection's stored state from live evidence (--apply to write)",
-      );
-
-    program
-      .command("backfill-bootstrap-state")
-      .helpOption(false)
-      .allowUnknownOption(true)
-      .description(
-        "Stamp bootstrapState: ready onto sync_resources rows that predate the field (--apply to write, --limit <n> to cap a run)",
       );
 
     program
