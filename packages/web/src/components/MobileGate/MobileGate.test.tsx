@@ -90,4 +90,12 @@ describe("MobileGate", () => {
       expect(heading).toHaveTextContent("Open Compass on a computer");
     });
   });
+
+  it("locks app shortcuts while mounted", () => {
+    const { unmount } = render(<MobileGate />);
+
+    expect(document.body.dataset.appLocked).toBe("true");
+    unmount();
+    expect(document.body.dataset.appLocked).toBeUndefined();
+  });
 });

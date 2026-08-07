@@ -7,6 +7,7 @@ import {
   useRef,
 } from "react";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
+import { useAppLockReason } from "@web/shortcuts/app-lock";
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -50,8 +51,11 @@ export const OverlayPanel = ({
   widthClassName = "w-[400px]",
 }: Props) => {
   const panelRef = useRef<HTMLDivElement>(null);
-  const titleId = useId();
-  const messageId = useId();
+  const baseId = useId();
+  const titleId = `${baseId}-title`;
+  const messageId = `${baseId}-message`;
+  // Unique per instance: app-lock reasons are a Set, not refcounted.
+  useAppLockReason(`overlayPanel:${baseId}`, true);
 
   useEffect(() => {
     if (role !== "dialog") return;
