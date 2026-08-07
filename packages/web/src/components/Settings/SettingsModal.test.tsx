@@ -456,6 +456,18 @@ describe("SettingsModal", () => {
     expect(mockOpenLogoutConfirmation).toHaveBeenCalledTimes(1);
   });
 
+  it("closes Settings and opens logout confirmation on Log out", async () => {
+    const user = userEvent.setup({ delay: null });
+    const closeSettingsSpy = spyOn(settingsActions, "closeSettings");
+    renderSettings({ authenticated: true });
+
+    await user.click(screen.getByRole("button", { name: "Log out" }));
+    expect(closeSettingsSpy).toHaveBeenCalled();
+    expect(mockOpenLogoutConfirmation).toHaveBeenCalledTimes(1);
+
+    closeSettingsSpy.mockRestore();
+  });
+
   it("hides the Log out action for a signed-out (local-only) session", () => {
     renderSettings({ authenticated: false });
 
