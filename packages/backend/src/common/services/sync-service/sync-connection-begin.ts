@@ -16,9 +16,10 @@ const logger = Logger("app:sync-connection-begin");
  * consent URL the browser should be sent to.
  *
  * Any client failure surfaces as the standard opaque 503 via
- * unwrapSyncResult. The distinctions the sync service makes (409 passive
- * mode, 404 reconnect-not-found) are not yet actionable by the browser; when
- * the reconnect UI is wired, this can grow more specific mappings.
+ * unwrapSyncResult. The client now reports conflict (409 passive mode) and
+ * notFound (404 reconnect-not-found) kinds — visible in the server-side log
+ * line — but the browser response stays the single opaque 503 until the
+ * reconnect UI can act on the distinction.
  */
 export async function beginSyncConnection(
   client: Pick<SyncServiceClient, "beginConnection">,
