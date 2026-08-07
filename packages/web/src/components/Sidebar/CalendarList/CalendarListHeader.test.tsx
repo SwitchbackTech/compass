@@ -240,7 +240,7 @@ describe("CalendarListHeader", () => {
     renderHeader();
 
     const refreshButton = screen.getByRole("button", {
-      name: "Refreshing…",
+      name: "Catching up…",
     });
     expect(refreshButton).toBeDisabled();
     expect(refreshButton).toHaveAttribute("aria-busy", "true");

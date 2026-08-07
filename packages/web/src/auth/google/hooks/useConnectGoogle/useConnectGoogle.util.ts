@@ -13,10 +13,13 @@ const CONNECTED_STATUS: SyncStatus = {
   variant: "healthy",
   text: "Calendar connected",
 };
-const DELAYED_STATUS: SyncStatus = {
-  variant: "warning",
-  text: "Calendar updates are taking longer than usual. We'll keep trying.",
-};
+
+// Plain backlog under this age stays silent in the sidebar and reads as
+// connected in Settings. Matches the short provider-error delay band so a
+// freshly clicked Refresh does not invent its own warning.
+export const CATCHING_UP_NOTICE_AFTER_MS = 2 * 60 * 1000;
+
+const SUPPORT_MAILTO = "mailto:tyler@switchback.tech";
 
 /** Short relative label for Sync connection `lastSyncedAt` (ISO). */
 export const formatLastSyncedLabel = (
@@ -61,23 +64,57 @@ export const formatLastSyncedLabel = (
   return `Updated ${new Date(syncedMs).toLocaleDateString()}`;
 };
 
+/** Mid-sentence form of formatLastSyncedLabel ("Last updated …"). */
+export const formatLastUpdatedClause = (
+  lastSyncedAt: string | null | undefined,
+  nowMs: number = Date.now(),
+): string | null => {
+  const label = formatLastSyncedLabel(lastSyncedAt, nowMs);
+  if (!label) return null;
+  return label.replace(/^Updated /, "Last updated ");
+};
+
+const syncedAgeMs = (
+  lastSyncedAt: string | null | undefined,
+  nowMs: number,
+): number | null => {
+  if (!lastSyncedAt) return null;
+  const syncedMs = Date.parse(lastSyncedAt);
+  if (Number.isNaN(syncedMs)) return null;
+  return Math.max(0, nowMs - syncedMs);
+};
+
 export type GoogleConnectionHandlers = {
   onConnectGoogle: () => void;
   onRefreshGoogle: () => void;
 };
 
+export type GoogleConnectionConfigOptions = {
+  // Refresh was requested and the degraded state did not improve — stop
+  // offering the same Refresh button; offer reconnect + support instead.
+  refreshGaveUp?: boolean;
+};
+
 export const getGoogleConnectionConfig = (
   state: GoogleUiState,
   handlers: GoogleConnectionHandlers,
+  options: GoogleConnectionConfigOptions = {},
 ): GoogleUiConfig => {
   switch (state) {
     case "checking":
     case "IMPORTING":
     case "HEALTHY":
       return { commandAction: null };
-    // Soft Sync failures still get a Refresh CTA — even permanent conflicts
-    // benefit from a catch-up attempt plus clearer copy than a dead-end.
     case "ATTENTION":
+      if (options.refreshGaveUp) {
+        return {
+          commandAction: {
+            label: "Reconnect Google Calendar",
+            icon: CONNECT_ICON,
+            onSelect: handlers.onConnectGoogle,
+          },
+        };
+      }
       return {
         commandAction: {
           label: "Refresh calendar",
@@ -104,27 +141,76 @@ export const getGoogleConnectionConfig = (
   }
 };
 
+const delayedSettingsStatus = (
+  connection: GoogleSyncConnectionSummary,
+  nowMs: number,
+): SyncStatus => {
+  const last = formatLastUpdatedClause(connection.lastSyncedAt, nowMs);
+  const lastBit = last ? ` ${last}.` : "";
+  if (connection.stateReason === "providerErrors") {
+    return {
+      variant: "warning",
+      text: `Sync hit an error.${lastBit} Refresh your calendars, or reconnect if this continues.`,
+    };
+  }
+  return {
+    variant: "warning",
+    text: `Sync is stuck.${lastBit} Refresh your calendars, or reconnect if this continues.`,
+  };
+};
+
+const catchingUpSettingsStatus = (
+  connection: GoogleSyncConnectionSummary,
+  nowMs: number,
+): SyncStatus => {
+  if (!connection.lastHealthyAt) {
+    return { variant: "syncing", text: "Adding your calendar…" };
+  }
+  const ageMs = syncedAgeMs(connection.lastSyncedAt, nowMs);
+  if (ageMs === null || ageMs < CATCHING_UP_NOTICE_AFTER_MS) {
+    return CONNECTED_STATUS;
+  }
+  const last = formatLastUpdatedClause(connection.lastSyncedAt, nowMs);
+  const lastBit = last ? ` ${last}.` : "";
+  return {
+    variant: "syncing",
+    text: `Sync is catching up.${lastBit} This usually clears on its own.`,
+  };
+};
+
 // Prefer Sync vocabulary when a connection summary is present; fall back to the
 // collapsed product enum for legacy deployments.
 export const getGoogleSyncStatus = (
   state: GoogleUiState,
   connection?: GoogleSyncConnectionSummary | null,
+  nowMs: number = Date.now(),
+  options: { refreshGaveUp?: boolean } = {},
 ): SyncStatus => {
   // A connection summary describes durable provider work. Local metadata
   // loading and a routine incremental pull must not replace a calm, usable
   // calendar with transient "checking" or "syncing" copy.
   if (connection) {
+    if (options.refreshGaveUp && connection.state === "delayed") {
+      const last = formatLastUpdatedClause(connection.lastSyncedAt, nowMs);
+      const lastBit = last ? ` ${last}.` : "";
+      return {
+        variant: "error",
+        text: `Sync is stuck.${lastBit} Reconnect your calendar, or email tyler@switchback.tech for help.`,
+      };
+    }
+
     switch (connection.state) {
       case "healthy":
         return CONNECTED_STATUS;
       case "connecting":
       case "importing":
-      case "catchingUp":
         return connection.lastHealthyAt
           ? CONNECTED_STATUS
           : { variant: "syncing", text: "Adding your calendar…" };
+      case "catchingUp":
+        return catchingUpSettingsStatus(connection, nowMs);
       case "delayed":
-        return DELAYED_STATUS;
+        return delayedSettingsStatus(connection, nowMs);
       case "actionRequired":
       case "disconnected":
         // Product enum already distinguishes reconnect vs soft attention.
@@ -140,7 +226,16 @@ export const getGoogleSyncStatus = (
     case "HEALTHY":
       return CONNECTED_STATUS;
     case "ATTENTION":
-      return DELAYED_STATUS;
+      if (options.refreshGaveUp) {
+        return {
+          variant: "error",
+          text: "Sync is stuck. Reconnect your calendar, or email tyler@switchback.tech for help.",
+        };
+      }
+      return {
+        variant: "warning",
+        text: "Sync is stuck. Refresh your calendars, or reconnect if this continues.",
+      };
     case "RECONNECT_REQUIRED":
       return { variant: "error", text: "Calendar needs reconnecting" };
     case "NOT_CONNECTED":
@@ -159,10 +254,14 @@ export const getSidebarSyncStatus = ({
   connection,
   isConnecting,
   state,
+  nowMs = Date.now(),
+  refreshGaveUp = false,
 }: {
   connection?: GoogleSyncConnectionSummary | null;
   isConnecting: boolean;
   state: GoogleUiState;
+  nowMs?: number;
+  refreshGaveUp?: boolean;
 }): SyncStatus => {
   if (isConnecting) {
     return {
@@ -174,6 +273,50 @@ export const getSidebarSyncStatus = ({
     };
   }
 
-  const status = getGoogleSyncStatus(state, connection);
+  if (
+    refreshGaveUp &&
+    (state === "ATTENTION" || connection?.state === "delayed")
+  ) {
+    return { variant: "error", text: "Sync is stuck" };
+  }
+
+  if (connection) {
+    switch (connection.state) {
+      case "catchingUp": {
+        if (!connection.lastHealthyAt) {
+          return { variant: "syncing", text: "Adding your calendar…" };
+        }
+        const ageMs = syncedAgeMs(connection.lastSyncedAt, nowMs);
+        if (ageMs !== null && ageMs >= CATCHING_UP_NOTICE_AFTER_MS) {
+          return { variant: "syncing", text: "Sync is catching up" };
+        }
+        return null;
+      }
+      case "delayed":
+        return {
+          variant: "warning",
+          text:
+            connection.stateReason === "providerErrors"
+              ? "Sync hit an error"
+              : "Sync is stuck",
+        };
+      case "actionRequired":
+      case "disconnected":
+        return { variant: "error", text: "Calendar needs reconnecting" };
+      case "connecting":
+      case "importing":
+        return connection.lastHealthyAt
+          ? null
+          : { variant: "syncing", text: "Adding your calendar…" };
+      case "healthy":
+        return null;
+    }
+  }
+
+  const status = getGoogleSyncStatus(state, connection, nowMs, {
+    refreshGaveUp,
+  });
   return status?.variant === "healthy" ? null : status;
 };
+
+export const googleSyncSupportMailto = SUPPORT_MAILTO;

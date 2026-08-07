@@ -57,7 +57,7 @@ const CalendarListHeaderContent: FC<{ email: string }> = ({ email }) => {
           ? "Reconnecting…"
           : "Connecting…"
         : isRefreshing
-          ? "Refreshing…"
+          ? "Catching up…"
           : commandAction.label;
 
   return (
