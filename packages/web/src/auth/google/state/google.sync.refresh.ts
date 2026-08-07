@@ -32,11 +32,11 @@ export type GoogleSyncRefreshCoordinatorOptions = {
 // tab still fires.
 export const GOOGLE_SYNC_REFRESH_CATCHUP_MS = 3 * 60_000;
 
-const idleSnapshot = (): GoogleSyncRefreshSnapshot => ({
+const IDLE_SNAPSHOT: GoogleSyncRefreshSnapshot = {
   isRefreshing: false,
   refreshRequestedAt: null,
   gaveUp: false,
-});
+};
 
 // One browser-wide refresh owns the enqueue request and metadata recheck. This
 // prevents the sidebar, delayed toast, and focus hook from racing each other
@@ -52,7 +52,7 @@ export const createGoogleSyncRefreshCoordinator = (
 
   const listeners = new Set<Listener>();
   let inFlight: Promise<ConnectionRefreshResponse> | null = null;
-  let snapshot = idleSnapshot();
+  let snapshot = IDLE_SNAPSHOT;
   let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
   const emit = () => {
@@ -101,14 +101,14 @@ export const createGoogleSyncRefreshCoordinator = (
         if (inFlight !== request) return;
         inFlight = null;
         // Stay in isRefreshing until metadata improves or the timeout fires.
+        // Snapshot already reflects that wait — no extra emit needed.
         armCatchupTimeout(requestedAt);
-        emit();
       },
       () => {
         if (inFlight !== request) return;
         inFlight = null;
         clearTimeoutHandle();
-        setSnapshot(idleSnapshot());
+        setSnapshot(IDLE_SNAPSHOT);
       },
     );
     return request;
@@ -120,14 +120,13 @@ export const createGoogleSyncRefreshCoordinator = (
     if (!snapshot.refreshRequestedAt && !snapshot.gaveUp) return;
     clearTimeoutHandle();
     inFlight = null;
-    setSnapshot(idleSnapshot());
+    setSnapshot(IDLE_SNAPSHOT);
   };
 
   return {
     refresh,
     noteConnectionImproved,
     getSnapshot: (): GoogleSyncRefreshSnapshot => snapshot,
-    getIsRefreshing: () => snapshot.isRefreshing,
     subscribe: (listener: Listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
@@ -152,6 +151,3 @@ export const useGoogleSyncRefreshSnapshot = () =>
     coordinator.getSnapshot,
     coordinator.getSnapshot,
   );
-
-export const useIsGoogleSyncRefreshInFlight = () =>
-  useGoogleSyncRefreshSnapshot().isRefreshing;

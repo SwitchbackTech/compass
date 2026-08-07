@@ -287,6 +287,29 @@ describe("getSidebarSyncStatus", () => {
     });
   });
 
+  it("shows Sync is catching up while a Refresh is in flight on delayed", () => {
+    expect(
+      getSidebarSyncStatus({
+        connection: {
+          id: "c1",
+          state: "delayed",
+          stateReason: "workOverdue",
+          lastSyncedAt: "2026-07-24T11:45:00.000Z",
+          lastHealthyAt: null,
+          accountEmail: null,
+          connectionState: "ATTENTION",
+        },
+        isConnecting: false,
+        state: "ATTENTION",
+        nowMs,
+        refreshInFlight: true,
+      }),
+    ).toEqual({
+      variant: "syncing",
+      text: "Sync is catching up",
+    });
+  });
+
   it("shows Sync hit an error for delayed providerErrors", () => {
     expect(
       getSidebarSyncStatus({

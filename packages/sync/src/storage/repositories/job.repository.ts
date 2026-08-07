@@ -99,6 +99,17 @@ export class JobRepository {
     const fields = JobEnqueueSchema.parse(input);
     const now = fields.runAfter;
 
+    const requireByKey = async (
+      outcome: EnqueueUrgentOutcome,
+      missing: string,
+    ) => {
+      const job = await this.collection.findOne({
+        coalescingKey: fields.coalescingKey,
+      });
+      if (!job) throw new Error(missing);
+      return { job: JobRecordSchema.parse(job), outcome };
+    };
+
     const boostPending = () =>
       this.collection.updateOne(
         { coalescingKey: fields.coalescingKey, state: "pending" },
@@ -114,11 +125,7 @@ export class JobRepository {
     // retry backoff, but attempt is untouched so the ladder still terminates.
     const boosted = await boostPending();
     if (boosted.matchedCount === 1) {
-      const job = await this.collection.findOne({
-        coalescingKey: fields.coalescingKey,
-      });
-      if (!job) throw new Error("Boosted job disappeared after update");
-      return { job: JobRecordSchema.parse(job), outcome: "boosted" };
+      return requireByKey("boosted", "Boosted job disappeared after update");
     }
 
     // failed → revive. Frees the coalescing key that durable failures hold
@@ -141,11 +148,10 @@ export class JobRepository {
       },
     );
     if (revived.matchedCount === 1) {
-      const job = await this.collection.findOne({
-        coalescingKey: fields.coalescingKey,
-      });
-      if (!job) throw new Error("Revived job disappeared after update");
-      return { job: JobRecordSchema.parse(job), outcome: "requeuedFailed" };
+      return requireByKey(
+        "requeuedFailed",
+        "Revived job disappeared after update",
+      );
     }
 
     // claimed → inFlight. Touch nothing: releaseOwned/complete/scheduleRetry
@@ -171,11 +177,7 @@ export class JobRepository {
         created.runAfter.getTime() > now.getTime())
     ) {
       await boostPending();
-      const job = await this.collection.findOne({
-        coalescingKey: fields.coalescingKey,
-      });
-      if (!job) throw new Error("Job disappeared after late boost");
-      return { job: JobRecordSchema.parse(job), outcome: "boosted" };
+      return requireByKey("boosted", "Job disappeared after late boost");
     }
 
     if (created.state === "claimed") {
