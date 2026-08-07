@@ -1,13 +1,38 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { act, type PropsWithChildren } from "react";
-import { DateOnlySchema, type EventId } from "@core/types/domain-primitives";
+import {
+  DateOnlySchema,
+  DateTimeSchema,
+  type EventId,
+} from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import {
   type CreateEventInput,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
+
+const track = mock();
+
+// bun's mock.module is global and leaks into every other test file in the
+// run. Spread the real module so unrelated suites still see its full
+// surface, and only override track while this file runs - the flag flips
+// back to the real implementation in afterAll.
+const actualTrack = { ...(await import("@web/auth/posthog/track")) };
+let isTrackMocked = true;
+
+mock.module("@web/auth/posthog/track", () => ({
+  ...actualTrack,
+  track: (...args: Parameters<typeof actualTrack.track>) =>
+    isTrackMocked ? track(...args) : actualTrack.track(...args),
+}));
+
+afterAll(() => {
+  isTrackMocked = false;
+});
+
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { EVENT_DELETED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { RECURRENCE_SCOPE_TOAST_ID } from "@web/common/utils/toast/recurrence-scope.toast";
@@ -165,6 +190,7 @@ const replacePayload = (
 describe("useEventMutations", () => {
   afterEach(() => {
     recurrenceScopeOpportunityActions.reset();
+    track.mockClear();
   });
 
   test("promotes a deleted occurrence even after the narrow optimistic delete removes it from cache", async () => {
@@ -383,13 +409,13 @@ describe("useEventMutations", () => {
         )!;
       expect(week.entities[first.id].schedule).toEqual({
         kind: "allDay",
-        start: "2026-07-02",
-        end: "2026-07-03",
+        start: DateOnlySchema.parse("2026-07-02"),
+        end: DateOnlySchema.parse("2026-07-03"),
       });
       expect(week.entities[second.id].schedule).toEqual({
         kind: "allDay",
-        start: "2026-07-03",
-        end: "2026-07-04",
+        start: DateOnlySchema.parse("2026-07-03"),
+        end: DateOnlySchema.parse("2026-07-04"),
       });
     });
 
@@ -430,9 +456,15 @@ describe("useEventMutations", () => {
         const schedule = cached.entities[id].schedule;
         return schedule.kind === "timed" ? schedule.start : null;
       };
-      expect(scheduleOf(instances[0].id)).toBe("2026-07-01T16:00:00.000Z");
-      expect(scheduleOf(instances[1].id)).toBe("2026-07-02T18:00:00+00:00");
-      expect(scheduleOf(instances[2].id)).toBe("2026-07-03T18:00:00+00:00");
+      expect(scheduleOf(instances[0].id)).toBe(
+        DateTimeSchema.parse("2026-07-01T16:00:00.000Z"),
+      );
+      expect(scheduleOf(instances[1].id)).toBe(
+        DateTimeSchema.parse("2026-07-02T18:00:00+00:00"),
+      );
+      expect(scheduleOf(instances[2].id)).toBe(
+        DateTimeSchema.parse("2026-07-03T18:00:00+00:00"),
+      );
     });
 
     context.pending.resolve();
@@ -1537,6 +1569,61 @@ describe("undo history recording", () => {
     });
 
     expect(useUndoHistoryStore.getState().past).toHaveLength(0);
+    context.pending.resolve();
+  });
+
+  test("tracks event_created for a genuine create", () => {
+    track.mockClear();
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized());
+
+    act(() =>
+      context.hook.result.current.mutations.create({
+        calendarId: event().calendarId,
+        content: {
+          kind: "details",
+          title: "New",
+          description: "",
+          location: "",
+        },
+        schedule: timedSchedule(
+          "2026-07-02T16:00:00.000Z",
+          "2026-07-02T17:00:00.000Z",
+        ),
+        recurrence: { kind: "single" },
+      }),
+    );
+
+    expect(track).toHaveBeenCalledWith("event_created", {
+      event_source: "local",
+      recurrence: "single",
+    });
+    context.pending.resolve();
+  });
+
+  test("does not track event_created for an undo/redo replay create", () => {
+    track.mockClear();
+    const context = setup();
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
+
+    act(() =>
+      context.hook.result.current.mutations.create({
+        id: original.id,
+        calendarId: original.calendarId,
+        content: original.content as {
+          kind: "details";
+          title: string;
+          description: string;
+          location: string;
+        },
+        schedule: original.schedule as never,
+        recurrence: { kind: "single" },
+        restore: true,
+      }),
+    );
+
+    expect(track).not.toHaveBeenCalled();
     context.pending.resolve();
   });
 

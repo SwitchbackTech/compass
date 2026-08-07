@@ -16,7 +16,7 @@ export function useIdentifyUser(
       posthog &&
       typeof posthog.identify === "function"
     ) {
-      posthog.identify(profileEmail, { email: profileEmail, userId });
+      posthog.identify(userId, { email: profileEmail, user_id: userId });
     }
   }, [profileEmail, posthog, userId]);
 }

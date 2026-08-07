@@ -8,14 +8,15 @@ ARG GOOGLE_CLIENT_ID=
 ARG POSTHOG_KEY=
 ARG POSTHOG_HOST=
 ARG COMPASS_BUILD_REF=self-host
+ARG NODE_ENV=production
 
 ENV COMPASS_BUILD_REF=${COMPASS_BUILD_REF}
-ENV NODE_ENV=production
+ENV NODE_ENV=${NODE_ENV}
 ENV WEB_PORT=9080
 
 RUN printf '%s\n' \
   'runtime:' \
-  '  nodeEnv: production' \
+  "  nodeEnv: ${NODE_ENV}" \
   '  timezone: Etc/UTC' \
   'web:' \
   '  url: http://localhost:9080' \

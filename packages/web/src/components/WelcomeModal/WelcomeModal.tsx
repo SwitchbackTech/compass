@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 import { SessionContext } from "@web/auth/compass/session/session.context";
+import { track } from "@web/auth/posthog/track";
 import { SOCIAL_LINKS } from "@web/common/constants/social.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
@@ -42,9 +43,14 @@ export function WelcomeModal() {
   const visible = isOpen && !isAuthModalOpen && !authenticated;
   useAppLockReason("welcomeModal", visible);
 
+  const shownRef = useRef(false);
   useEffect(() => {
     if (visible) {
       backdropRef.current?.focus();
+      if (!shownRef.current) {
+        shownRef.current = true;
+        track("welcome_modal_shown");
+      }
     }
   }, [visible]);
 
@@ -52,10 +58,11 @@ export function WelcomeModal() {
 
   // Fade the backdrop and gently scale the panel before unmounting, so the
   // first reveal of the sidebar underneath feels smooth rather than abrupt.
-  const dismiss = () => {
+  const dismiss = (cta: "start_now" | "dismissed" = "dismissed") => {
     if (closing) return;
     markWelcomeSeen();
     maybeShowCmdPaletteHint();
+    track("welcome_modal_dismissed", { cta });
     setClosing(true);
     const reduceMotion =
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
@@ -65,12 +72,15 @@ export function WelcomeModal() {
   const handleLogIn = () => {
     markWelcomeSeen();
     maybeShowCmdPaletteHint();
+    track("welcome_modal_dismissed", { cta: "log_in" });
     openModal("login");
   };
 
   const handleSignUp = () => {
     markWelcomeSeen();
     maybeShowCmdPaletteHint();
+    track("welcome_modal_dismissed", { cta: "sign_up" });
+    track("signup_started", { source: "welcome_modal" });
     openModal("signUp");
   };
 
@@ -143,7 +153,7 @@ export function WelcomeModal() {
         <div className="flex justify-center">
           <button
             type="button"
-            onClick={dismiss}
+            onClick={() => dismiss("start_now")}
             className="c-button c-button-primary c-button-elevated rounded-full px-10"
           >
             Start Now

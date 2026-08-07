@@ -12,6 +12,7 @@ import {
   type RecurrenceScope,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
+import { track } from "@web/auth/posthog/track";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   buildCalendarLookup,
@@ -631,6 +632,15 @@ export function useEventMutations(
         recordEventCreateHistory({
           event: optimisticEventFromCreate(finalInput),
         });
+        // `restore: true` marks an undo-of-delete or redo-of-create replay,
+        // not a genuine user action - only count real creates.
+        if (!finalInput.restore) {
+          track("event_created", {
+            event_source: source,
+            recurrence:
+              finalInput.recurrence.kind === "series" ? "series" : "single",
+          });
+        }
         // callbacks rides along in two places: inside the variables so
         // onMutate can run onOptimisticApplied in the same task as the cache
         // write, and as mutate options so onSuccess/onError still fire per
