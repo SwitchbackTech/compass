@@ -42,25 +42,12 @@ mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
       : actualUseConnectGoogle(...args),
 }));
 
-const actualRefreshModule = await import(
-  "@web/auth/google/state/google.sync.refresh"
-);
-let isRefreshSnapshotMocked = true;
-mock.module("@web/auth/google/state/google.sync.refresh", () => ({
-  ...actualRefreshModule,
-  useGoogleSyncRefreshSnapshot: () =>
-    isRefreshSnapshotMocked
-      ? {
-          isRefreshing: false,
-          refreshRequestedAt: null,
-          gaveUp: false,
-        }
-      : actualRefreshModule.useGoogleSyncRefreshSnapshot(),
-}));
+// Do not mock.module google.sync.refresh here: process-wide mocks poison
+// later/parallel suites (LifeView hung under CI). The real coordinator
+// starts idle, which is what these cases need.
 
 afterAll(() => {
   isConnectGoogleMocked = false;
-  isRefreshSnapshotMocked = false;
 });
 
 const statusBarModuleUrl = new URL(
