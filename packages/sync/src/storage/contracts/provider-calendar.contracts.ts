@@ -2,7 +2,7 @@ import { z } from "zod/v4";
 import { HexColorSchema } from "@core/types/domain-primitives";
 import {
   CalendarAccessRoleSchema,
-  CalendarCapabilitiesSchema,
+  SyncCalendarCapabilitiesSchema,
 } from "@core/types/sync/connection.contracts";
 import {
   ConnectionIdSchema,
@@ -36,7 +36,7 @@ export const ProviderCalendarRecordSchema = z.strictObject({
   active: z.boolean(),
   primary: z.boolean(),
   accessRole: CalendarAccessRoleSchema,
-  capabilities: CalendarCapabilitiesSchema,
+  capabilities: SyncCalendarCapabilitiesSchema,
   createdAt: z.date(),
   updatedAt: z.date(),
 });

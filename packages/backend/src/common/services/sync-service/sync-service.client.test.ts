@@ -263,14 +263,14 @@ describe("SyncServiceClient", () => {
     expect(verdict.context.principalId).toBe(who.principalId);
   });
 
-  it("lists active-only calendars with ?activeOnly=true, unlike listCalendars", async () => {
+  it("lists active-only calendars with ?activeOnly=true when the option is set", async () => {
     const who = principal();
     const { fn, calls } = fakeFetch(async () => ({
       status: 200,
       json: async () => ({ calendars: [] }),
     }));
 
-    const result = await client(fn).listActiveCalendars(who);
+    const result = await client(fn).listCalendars(who, { activeOnly: true });
 
     if (!result.ok) throw new Error(`expected ok, got ${result.error.kind}`);
     expect(result.value.calendars).toEqual([]);
@@ -279,8 +279,8 @@ describe("SyncServiceClient", () => {
     expect(sent?.url).toBe(`${BASE_URL}${CALENDARS_PATH}?activeOnly=true`);
     expect(sent?.method).toBe("GET");
 
-    // listCalendars, called through the same client, still sends no params —
-    // the two methods must not share state or leak a query onto each other.
+    // The default call, through the same client, still sends no params —
+    // one call's option must not leak a query onto the next.
     await client(fn).listCalendars(who);
     expect(calls[1]?.url).toBe(`${BASE_URL}${CALENDARS_PATH}`);
 

@@ -18,8 +18,6 @@ import {
   CommandSubmitResponseSchema,
 } from "@core/types/sync/command.contracts";
 import {
-  type CalendarListResponse,
-  CalendarListResponseSchema,
   type ConnectionBeginRequest,
   type ConnectionBeginResponse,
   ConnectionBeginResponseSchema,
@@ -30,6 +28,8 @@ import {
   type GoogleConnectionAdoptionRequest,
   type GoogleConnectionAdoptionResponse,
   GoogleConnectionAdoptionResponseSchema,
+  type SyncCalendarListResponse,
+  SyncCalendarListResponseSchema,
 } from "@core/types/sync/connection.contracts";
 import {
   type EventInstanceListQuery,
@@ -188,44 +188,29 @@ export class SyncServiceClient {
 
   // The caller's provider calendars, scoped to the signed principal. A read;
   // served in passive mode too. Backs the browser calendar list under sync
-  // delegation. Includes calendars the provider no longer lists (active:
+  // delegation.
+  //
+  // By default this includes calendars the provider no longer lists (active:
   // false) — the browser's own list surface needs those for name/color lookup
-  // on events that still reference them, so it deliberately does not scope
-  // this call to active-only. Event-ownership resolution wants the opposite;
-  // use listActiveCalendars there.
+  // on events that still reference them. Pass { activeOnly: true } for
+  // anything that resolves which calendars a request may act on (e.g.
+  // event-range ownership) — a retired calendar should never be treated as an
+  // owned id again.
   listCalendars(
     principal: SyncPrincipal,
-    correlationId?: string,
-  ): Promise<SyncClientResult<CalendarListResponse>> {
-    return this.#listCalendars(principal, correlationId);
-  }
-
-  // Same as listCalendars, scoped to calendars the provider still lists. A
-  // separate method (rather than an option on listCalendars) keeps that
-  // method's positional correlationId signature intact and makes each call
-  // site's intent greppable. Use this for anything that resolves which
-  // calendars a request may act on (e.g. event-range ownership) — a retired
-  // calendar should never be treated as an owned id again.
-  listActiveCalendars(
-    principal: SyncPrincipal,
-    correlationId?: string,
-  ): Promise<SyncClientResult<CalendarListResponse>> {
-    const query = new URLSearchParams();
-    query.set("activeOnly", "true");
-    return this.#listCalendars(principal, correlationId, query);
-  }
-
-  #listCalendars(
-    principal: SyncPrincipal,
-    correlationId?: string,
-    query?: URLSearchParams,
-  ): Promise<SyncClientResult<CalendarListResponse>> {
+    options: { activeOnly?: boolean; correlationId?: string } = {},
+  ): Promise<SyncClientResult<SyncCalendarListResponse>> {
+    let query: URLSearchParams | undefined;
+    if (options.activeOnly) {
+      query = new URLSearchParams();
+      query.set("activeOnly", "true");
+    }
     return this.#request({
       method: "GET",
       path: CALENDARS_PATH,
       principal,
-      schema: CalendarListResponseSchema,
-      correlationId,
+      schema: SyncCalendarListResponseSchema,
+      correlationId: options.correlationId,
       query,
     });
   }
