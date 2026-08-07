@@ -16,6 +16,21 @@ describe("useDismissTransition", () => {
   let clearTimeoutSpy: ReturnType<typeof spyOn>;
   const originalMatchMedia = window.matchMedia;
 
+  const installMatchMediaMock = (
+    matches: boolean | ((query: string) => boolean) = false,
+  ) => {
+    window.matchMedia = mock((query: string) => ({
+      matches: typeof matches === "function" ? matches(query) : matches,
+      media: query,
+      onchange: null,
+      addListener: mock(),
+      removeListener: mock(),
+      addEventListener: mock(),
+      removeEventListener: mock(),
+      dispatchEvent: mock(() => false),
+    })) as typeof window.matchMedia;
+  };
+
   beforeEach(() => {
     timeoutCallback = undefined;
     setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
@@ -29,16 +44,7 @@ describe("useDismissTransition", () => {
     clearTimeoutSpy = spyOn(globalThis, "clearTimeout").mockImplementation(
       () => {},
     );
-    window.matchMedia = mock((query: string) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: mock(),
-      removeListener: mock(),
-      addEventListener: mock(),
-      removeEventListener: mock(),
-      dispatchEvent: mock(() => false),
-    })) as typeof window.matchMedia;
+    installMatchMediaMock();
   });
 
   afterEach(() => {
@@ -70,16 +76,7 @@ describe("useDismissTransition", () => {
   });
 
   it("skips the delay when reduced motion is preferred", () => {
-    window.matchMedia = mock((query: string) => ({
-      matches: query.includes("prefers-reduced-motion"),
-      media: query,
-      onchange: null,
-      addListener: mock(),
-      removeListener: mock(),
-      addEventListener: mock(),
-      removeEventListener: mock(),
-      dispatchEvent: mock(() => false),
-    })) as typeof window.matchMedia;
+    installMatchMediaMock((query) => query.includes("prefers-reduced-motion"));
 
     const onComplete = mock(() => {});
     const { result } = renderHook(() => useDismissTransition(400));

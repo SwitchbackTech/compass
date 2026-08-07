@@ -1,6 +1,6 @@
 import { useLayoutEffect } from "react";
 import { useMediaQuery } from "@web/common/hooks/useMediaQuery";
-import { SIDEBAR_AUTO_COLLAPSE_BREAKPOINT } from "@web/components/AuthenticatedLayout/responsive.constants";
+import { SIDEBAR_MIN_WIDTH_MEDIA_QUERY } from "@web/components/AuthenticatedLayout/responsive.constants";
 import {
   selectSidebarPreference,
   useViewStore,
@@ -16,9 +16,7 @@ import {
  * (AuthenticatedLayout) so overrides survive view switches.
  */
 export function useResponsiveLayout() {
-  const isWideEnough = useMediaQuery(
-    `(min-width: ${SIDEBAR_AUTO_COLLAPSE_BREAKPOINT}px)`,
-  );
+  const isWideEnough = useMediaQuery(SIDEBAR_MIN_WIDTH_MEDIA_QUERY);
 
   useLayoutEffect(() => {
     viewActions.syncSidebarOpen(
