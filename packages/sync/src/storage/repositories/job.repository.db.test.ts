@@ -248,6 +248,34 @@ describe("JobRepository", () => {
       expect(job.priority).toBe(claimed!.priority);
     });
 
+    it("enqueueUrgent boosts a pending job left by scheduleRetry", async () => {
+      const coalescingKey = "urgent:after-retry";
+      await repo.enqueue(
+        enqueue({
+          coalescingKey,
+          priority: JOB_PRIORITY.background,
+          runAfter: past(1000),
+        }),
+      );
+      const claimed = await repo.claimDueJob("owner", NOW, LEASE_MS);
+      expect(claimed).not.toBeNull();
+      expect(
+        await repo.scheduleRetry(claimed!._id, "owner", future(60_000)),
+      ).toBe(true);
+
+      const { job, outcome } = await repo.enqueueUrgent(
+        enqueue({
+          coalescingKey,
+          priority: JOB_PRIORITY.user,
+          runAfter: NOW,
+        }),
+      );
+      expect(outcome).toBe("boosted");
+      expect(job.state).toBe("pending");
+      expect(job.priority).toBe(JOB_PRIORITY.user);
+      expect(job.runAfter).toEqual(NOW);
+    });
+
     it("enqueueUrgent creates when the coalescing key is free", async () => {
       const { job, outcome } = await repo.enqueueUrgent(
         enqueue({
