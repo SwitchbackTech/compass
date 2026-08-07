@@ -312,6 +312,29 @@ describe("dispatchSyncJob", () => {
     expect(outcome.followup.resourceId).toBe(resource._id);
   });
 
+  it("skips the channel bootstrap when the provider has terminally refused a watch", async () => {
+    // Once maintainSubscription persists watchUnsupportedAt, re-attempting a
+    // watch on every pull is pure waste; the daily calendar-list full pass
+    // clears the marker for one fresh attempt.
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    await resources.markWatchUnsupported(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      now(),
+    );
+    const reader = new FakeReader([page([single("new-1")], "cursor-1")]);
+
+    const outcome = await dispatchSyncJob(
+      deps(reader),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+  });
+
   it("hands off an expired-cursor pull to a repair followup", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "stale-cursor");

@@ -127,6 +127,16 @@ export async function syncCalendarList(
   // hiccup that returned empty instead of throwing) rather than "all removed" —
   // retiring every calendar on an empty blip would be user-visible damage.
   if (fullList && discovery.calendars.length > 0) {
+    // A full pass is the retry cadence for unwatchable calendars: clear the
+    // persisted watchUnsupportedAt verdicts so each gets one fresh watch
+    // attempt (the pull path re-marks any the provider still refuses). Runs
+    // daily via the rediscovery sweep — the pre-marker behavior was one
+    // futile watch attempt per pull, forever.
+    await deps.resources.clearWatchUnsupportedByConnection(
+      tenantId,
+      principalId,
+      connectionId,
+    );
     const retiredIds = await deps.calendars.deactivateAbsent(
       tenantId,
       principalId,
