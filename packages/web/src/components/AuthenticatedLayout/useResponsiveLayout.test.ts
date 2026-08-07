@@ -9,10 +9,13 @@ import { useResponsiveLayout } from "./useResponsiveLayout";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 // Helper to create a mock matchMedia list for a single query
-const createMediaQueryMock = (matches: boolean) => {
+const createMediaQueryMock = (initialMatches: boolean) => {
   const listeners: Array<(e: MediaQueryListEvent) => void> = [];
+  let matches = initialMatches;
   return {
-    matches,
+    get matches() {
+      return matches;
+    },
     media: "",
     onchange: null,
     addListener: mock(),
@@ -30,6 +33,7 @@ const createMediaQueryMock = (matches: boolean) => {
     ),
     dispatchEvent: mock(),
     _triggerChange: (newMatches: boolean) => {
+      matches = newMatches;
       listeners.forEach((listener) => {
         listener({ matches: newMatches } as MediaQueryListEvent);
       });

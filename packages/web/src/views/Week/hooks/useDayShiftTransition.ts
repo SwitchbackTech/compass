@@ -1,5 +1,6 @@
 import { type RefObject, useLayoutEffect, useRef } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { prefersReducedMotion } from "@web/common/hooks/prefersReducedMotion";
 import { type WeekNavigationSource } from "@web/views/Week/hooks/useWeek";
 
 const TRANSITION_DURATION_MS = 180;
@@ -20,7 +21,7 @@ export const useDayShiftTransition = (
       !track ||
       navigationSource !== "day-shift" ||
       previousStart.isSame(startOfView, "day") ||
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      prefersReducedMotion()
     ) {
       return;
     }

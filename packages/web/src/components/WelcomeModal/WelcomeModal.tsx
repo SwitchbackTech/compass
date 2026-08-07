@@ -13,8 +13,10 @@ import {
 } from "react";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { track } from "@web/auth/posthog/track";
+import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { SOCIAL_LINKS } from "@web/common/constants/social.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
+import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { maybeShowCmdPaletteHint } from "./cmd-palette-hint.util";
@@ -34,7 +36,7 @@ export function WelcomeModal() {
   const [isOpen, setIsOpen] = useState(
     () => !authenticated && !hasSeenWelcome(),
   );
-  const [closing, setClosing] = useState(false);
+  const { closing, beginDismiss } = useDismissTransition(MODAL_DISMISS_MS);
   const backdropRef = useRef<HTMLDivElement>(null);
 
   // The auth modal's openness lives in the URL (?auth=), so the welcome
@@ -63,10 +65,7 @@ export function WelcomeModal() {
     markWelcomeSeen();
     maybeShowCmdPaletteHint();
     track("welcome_modal_dismissed", { cta });
-    setClosing(true);
-    const reduceMotion =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    window.setTimeout(() => setIsOpen(false), reduceMotion ? 0 : 400);
+    beginDismiss(() => setIsOpen(false));
   };
 
   const handleLogIn = () => {
