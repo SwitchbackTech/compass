@@ -12,8 +12,8 @@ import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { draftActions } from "@web/events/stores/draft.store";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { refreshEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
-import { sse } from "@web/events/sse/sse.client";
-import { clearGoogleSyncIndicatorOverride } from "@web/auth/google/util/google.auth.util";
+import { closeStream } from "@web/sse/client/sse.client";
+import { clearGoogleSyncIndicatorOverride } from "@web/auth/google/state/google.sync.state";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 
 /**
@@ -33,7 +33,7 @@ export function clearAccountScopedClientState(): void {
   clearGoogleSyncIndicatorOverride();
 
   // Close the SSE stream (idempotent).
-  sse.closeStream();
+  closeStream();
 
   // Discard any open event form for a remote event.
   draftActions.discard();

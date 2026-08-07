@@ -19,14 +19,12 @@ mock.module("@web/auth/state/user-metadata.store", () => ({
   },
 }));
 
-mock.module("@web/auth/google/util/google.auth.util", () => ({
+mock.module("@web/auth/google/state/google.sync.state", () => ({
   clearGoogleSyncIndicatorOverride: mockClearGoogleSyncIndicatorOverride,
 }));
 
-mock.module("@web/events/sse/sse.client", () => ({
-  sse: {
-    closeStream: mockSseCloseStream,
-  },
+mock.module("@web/sse/client/sse.client", () => ({
+  closeStream: mockSseCloseStream,
 }));
 
 mock.module("@web/events/stores/draft.store", () => ({
@@ -62,7 +60,7 @@ describe("logout.teardown", () => {
         callOrder.push("clearGoogleSyncIndicatorOverride");
       });
       mockSseCloseStream.mockImplementation(() => {
-        callOrder.push("sse.closeStream");
+        callOrder.push("closeStream");
       });
       mockDraftActionsDiscard.mockImplementation(() => {
         callOrder.push("draftActions.discard");
@@ -74,7 +72,7 @@ describe("logout.teardown", () => {
         "refreshEventRepositorySource",
         "userMetadataActions.clear",
         "clearGoogleSyncIndicatorOverride",
-        "sse.closeStream",
+        "closeStream",
         "draftActions.discard",
       ]);
     });
