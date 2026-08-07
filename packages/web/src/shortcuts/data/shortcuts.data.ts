@@ -1,8 +1,8 @@
-import { type ShortcutOverlaySection } from "@web/shortcuts/shortcuts-overlay.types";
 import {
   filterShortcutsByContext,
   getShortcutsBySection,
 } from "@web/shortcuts/shortcuts.registry";
+import { type ShortcutOverlaySection } from "@web/shortcuts/shortcuts-overlay.types";
 
 export type ShortcutMenuView = "day" | "week" | "life";
 

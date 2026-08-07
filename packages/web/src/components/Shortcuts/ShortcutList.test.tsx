@@ -16,8 +16,18 @@ describe("ShortcutList", () => {
       render(
         <ShortcutList
           shortcuts={[
-            { id: "move-next", keys: ["Shift", "ArrowRight"], label: "Move event to next day", section: "edit" },
-            { id: "move-sidebar", keys: ["Shift", "ArrowRight"], label: "Move event to sidebar", section: "edit" },
+            {
+              id: "move-next",
+              keys: ["Shift", "ArrowRight"],
+              label: "Move event to next day",
+              section: "edit",
+            },
+            {
+              id: "move-sidebar",
+              keys: ["Shift", "ArrowRight"],
+              label: "Move event to sidebar",
+              section: "edit",
+            },
           ]}
         />,
       );
@@ -37,7 +47,14 @@ describe("ShortcutList", () => {
   it("renders each key of a combo as its own keycap chip", () => {
     render(
       <ShortcutList
-        shortcuts={[{ id: "create-allday", keys: ["Shift", "w"], label: "Create all-day event", section: "create" }]}
+        shortcuts={[
+          {
+            id: "create-allday",
+            keys: ["Shift", "w"],
+            label: "Create all-day event",
+            section: "create",
+          },
+        ]}
       />,
     );
 

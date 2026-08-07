@@ -39,8 +39,8 @@ import { useDayShiftTransition } from "@web/views/Week/hooks/useDayShiftTransiti
 import { useSidebarCalendarDate } from "@web/views/Week/hooks/useSidebarCalendarDate";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
-import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 import { getFocusedWeekGridEventTarget } from "@web/views/Week/interaction/targeting/week-event.targeting";
+import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 
 export const WeekView = () => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
@@ -112,18 +112,15 @@ export const WeekView = () => {
     util.goToToday();
   }, [scrollUtil, util]);
 
-  const shortcutSections = useMemo(
-    () => {
-      const focusedEvent = getFocusedWeekGridEventTarget();
-      return getShortcutMenuSections({
-        view: "week",
-        isViewingCurrentPeriod: isCurrentWeek,
-        eventFocused: focusedEvent !== null,
-        isFormOpen: isEventDetailsOpen,
-      });
-    },
-    [isCurrentWeek, isEventDetailsOpen],
-  );
+  const shortcutSections = useMemo(() => {
+    const focusedEvent = getFocusedWeekGridEventTarget();
+    return getShortcutMenuSections({
+      view: "week",
+      isViewingCurrentPeriod: isCurrentWeek,
+      eventFocused: focusedEvent !== null,
+      isFormOpen: isEventDetailsOpen,
+    });
+  }, [isCurrentWeek, isEventDetailsOpen]);
 
   const { calendarDate, goToDateFromSidebar } = useSidebarCalendarDate({
     goToDate: weekProps.state.goToDate,

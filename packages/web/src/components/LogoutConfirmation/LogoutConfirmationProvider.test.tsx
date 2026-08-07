@@ -1,11 +1,19 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 import "@testing-library/jest-dom";
 import { session } from "@web/auth/compass/session/Session";
 import * as authState from "@web/auth/compass/state/auth.state.util";
-import * as toast from "@web/common/utils/toast/status-toast.util";
 import * as errorToast from "@web/common/utils/toast/error-toast.util";
+import * as toast from "@web/common/utils/toast/status-toast.util";
 import * as settingsStore from "@web/settings/settings.store";
 
 const clearAuthenticationState = spyOn(authState, "clearAuthenticationState");
@@ -21,10 +29,44 @@ const signOut = spyOn(session, "signOut").mockResolvedValue(undefined);
 const mockClearAccountScopedClientState = mock();
 const mockClearAccountScopedQueryCache = mock();
 
+// mock.module is process-wide, so intercept the teardown functions only while
+// this file runs (flag flipped in afterAll) - logout.teardown's own tests run
+// against the real ones later in the suite.
+const actualLogoutTeardown = {
+  ...(await import("@web/auth/compass/session/logout.teardown")),
+};
+let isTeardownMocked = true;
+
 mock.module("@web/auth/compass/session/logout.teardown", () => ({
-  clearAccountScopedClientState: mockClearAccountScopedClientState,
-  clearAccountScopedQueryCache: mockClearAccountScopedQueryCache,
+  ...actualLogoutTeardown,
+  clearAccountScopedClientState: (...args: unknown[]) =>
+    isTeardownMocked
+      ? mockClearAccountScopedClientState(...args)
+      : actualLogoutTeardown.clearAccountScopedClientState(),
+  clearAccountScopedQueryCache: (...args: unknown[]) =>
+    isTeardownMocked
+      ? mockClearAccountScopedQueryCache(...args)
+      : actualLogoutTeardown.clearAccountScopedQueryCache(),
 }));
+
+// Other files (e.g. useLogoutCmdItems.test.ts, useLogout.test.ts) permanently
+// swap useSession for a bare mock that returns undefined once their own tests
+// finish, and useLogout destructures its result. Mock it here too - as
+// elsewhere in this suite of files - so this file passes regardless of order.
+const actualUseSession = (await import("@web/auth/compass/session/useSession"))
+  .useSession;
+let isSessionMocked = true;
+mock.module("@web/auth/compass/session/useSession", () => ({
+  useSession: (...args: Parameters<typeof actualUseSession>) =>
+    isSessionMocked
+      ? { authenticated: true, setAuthenticated: mock() }
+      : actualUseSession(...args),
+}));
+
+afterAll(() => {
+  isTeardownMocked = false;
+  isSessionMocked = false;
+});
 
 const { LogoutConfirmationProvider } =
   require("./LogoutConfirmationProvider") as typeof import("./LogoutConfirmationProvider");
@@ -80,29 +122,19 @@ describe("LogoutConfirmationProvider", () => {
     expect(overlay).not.toHaveAttribute("aria-busy");
     expect(showStatusToast).not.toHaveBeenCalled();
 
-    // Resolve the one production timer immediately.
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(
-      ((callback: TimerHandler) => {
-        if (typeof callback === "function") callback();
-        return 0;
-      }) as typeof setTimeout,
-    );
-    try {
-      finishLogout();
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+    // The provider holds the overlay for a 400ms minimum, well inside
+    // waitFor's default 1s budget. Do not stub global setTimeout here:
+    // waitFor schedules its own timers on it, and a synchronous stub fires
+    // them before waitFor has initialized them.
+    finishLogout();
 
-      await waitFor(() => {
-        expect(screen.queryByRole("status")).not.toBeInTheDocument();
-      });
-      expect(showStatusToast).toHaveBeenCalledWith(
-        "logged-out",
-        "You're logged out",
-      );
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+    expect(showStatusToast).toHaveBeenCalledWith(
+      "logged-out",
+      "You're logged out",
+    );
   });
 
   it("closes Settings and the command palette on confirm", async () => {
@@ -116,53 +148,28 @@ describe("LogoutConfirmationProvider", () => {
   });
 
   it("fires the success toast after the overlay unmounts", async () => {
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(
-      ((callback: TimerHandler) => {
-        if (typeof callback === "function") callback();
-        return 0;
-      }) as typeof setTimeout,
+    await confirmLogout();
+
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+    expect(showStatusToast).toHaveBeenCalledWith(
+      "logged-out",
+      "You're logged out",
     );
-
-    try {
-      await confirmLogout();
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-
-      expect(showStatusToast).toHaveBeenCalledWith(
-        "logged-out",
-        "You're logged out",
-      );
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
   });
 
   it("shows error toast and takes down overlay when signedOutRemotely is false", async () => {
     signOut.mockRejectedValueOnce(new Error("offline"));
 
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(
-      ((callback: TimerHandler) => {
-        if (typeof callback === "function") callback();
-        return 0;
-      }) as typeof setTimeout,
+    await confirmLogout();
+
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+    expect(showErrorToast).toHaveBeenCalledWith(
+      "Logged out on this device. We couldn't reach the server to end the session everywhere.",
     );
-
-    try {
-      await confirmLogout();
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-
-      await waitFor(() => {
-        expect(screen.queryByRole("status")).not.toBeInTheDocument();
-      });
-      expect(showErrorToast).toHaveBeenCalledWith(
-        "Logged out on this device. We couldn't reach the server to end the session everywhere.",
-      );
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
   });
 
   it("raises no overlay on cancel", async () => {
