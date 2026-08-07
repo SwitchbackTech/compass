@@ -1,5 +1,8 @@
 import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
 
+const stripMetadata = (shortcuts: any[]) =>
+  shortcuts.map(({ keys, label }) => ({ keys, label }));
+
 describe("shortcuts.data", () => {
   describe("getShortcutMenuSections", () => {
     it("returns the same action-based sections for both views", () => {
@@ -22,19 +25,19 @@ describe("shortcuts.data", () => {
         isViewingCurrentPeriod: false,
       });
 
-      expect(navigate.shortcuts).toContainEqual({
+      expect(stripMetadata(navigate.shortcuts)).toContainEqual({
         keys: ["j"],
         label: "Previous week",
       });
-      expect(navigate.shortcuts).toContainEqual({
+      expect(stripMetadata(navigate.shortcuts)).toContainEqual({
         keys: ["k"],
         label: "Next week",
       });
-      expect(navigate.shortcuts).toContainEqual({
+      expect(stripMetadata(navigate.shortcuts)).toContainEqual({
         keys: ["d"],
         label: "Go to Day view",
       });
-      expect(navigate.shortcuts).not.toContainEqual({
+      expect(stripMetadata(navigate.shortcuts)).not.toContainEqual({
         keys: ["w"],
         label: "Go to Week view",
       });
@@ -43,11 +46,11 @@ describe("shortcuts.data", () => {
         view: "day",
         isViewingCurrentPeriod: false,
       });
-      expect(dayNavigate.shortcuts).not.toContainEqual({
+      expect(stripMetadata(dayNavigate.shortcuts)).not.toContainEqual({
         keys: ["d"],
         label: "Go to Day view",
       });
-      expect(dayNavigate.shortcuts).toContainEqual({
+      expect(stripMetadata(dayNavigate.shortcuts)).toContainEqual({
         keys: ["w"],
         label: "Go to Week view",
       });
@@ -63,7 +66,7 @@ describe("shortcuts.data", () => {
         "navigate",
         "other",
       ]);
-      expect(sections[0]?.shortcuts).toEqual([
+      expect(stripMetadata(sections[0]?.shortcuts ?? [])).toEqual([
         { keys: ["j"], label: "Previous life variation" },
         { keys: ["k"], label: "Next life variation" },
         { keys: ["t"], label: "Focus current week" },
@@ -79,11 +82,11 @@ describe("shortcuts.data", () => {
           isViewingCurrentPeriod: true,
         });
 
-        expect(navigate.shortcuts).toContainEqual({
+        expect(stripMetadata(navigate.shortcuts)).toContainEqual({
           keys: ["n"],
           label: "Open Up Next event",
         });
-        expect(navigate.shortcuts).toContainEqual({
+        expect(stripMetadata(navigate.shortcuts)).toContainEqual({
           keys: ["v"],
           label: "Join Up Next meeting",
         });
@@ -101,7 +104,7 @@ describe("shortcuts.data", () => {
         isViewingCurrentPeriod,
       });
 
-      expect(navigate.shortcuts).toContainEqual({ keys: ["t"], label });
+      expect(stripMetadata(navigate.shortcuts)).toContainEqual({ keys: ["t"], label });
     });
 
     it("includes the all-day event shortcut in both views' Create section", () => {
@@ -110,11 +113,11 @@ describe("shortcuts.data", () => {
           (section) => section.id === "create",
         );
 
-      expect(findCreate("day")?.shortcuts).toContainEqual({
+      expect(stripMetadata(findCreate("day")?.shortcuts ?? [])).toContainEqual({
         keys: ["a"],
         label: "Create all-day event",
       });
-      expect(findCreate("week")?.shortcuts).toContainEqual({
+      expect(stripMetadata(findCreate("week")?.shortcuts ?? [])).toContainEqual({
         keys: ["a"],
         label: "Create all-day event",
       });
@@ -126,11 +129,11 @@ describe("shortcuts.data", () => {
           (section) => section.id === "focus",
         );
 
-      expect(findFocus("day")?.shortcuts).toEqual([
+      expect(stripMetadata(findFocus("day")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
       ]);
-      expect(findFocus("week")?.shortcuts).toEqual([
+      expect(stripMetadata(findFocus("week")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
       ]);
@@ -143,23 +146,23 @@ describe("shortcuts.data", () => {
           isViewingCurrentPeriod: true,
         }).find((section) => section.id === "edit");
 
-        expect(edit?.shortcuts).toContainEqual({
+        expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["Delete"],
           label: "Delete focused event",
         });
-        expect(edit?.shortcuts).toContainEqual({
+        expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["Mod", "D"],
           label: "Duplicate focused event",
         });
-        expect(edit?.shortcuts).toContainEqual({
+        expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["ArrowUp"],
           label: "Focus previous event",
         });
-        expect(edit?.shortcuts).toContainEqual({
+        expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["ArrowDown"],
           label: "Focus next event",
         });
-        expect(edit?.shortcuts).toContainEqual({
+        expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["Enter"],
           label: "Open focused event",
         });
@@ -174,15 +177,15 @@ describe("shortcuts.data", () => {
       const navigate = sections.find((section) => section.id === "navigate");
       const other = sections.find((section) => section.id === "other");
 
-      expect(navigate?.shortcuts).toContainEqual({
+      expect(stripMetadata(navigate?.shortcuts ?? [])).toContainEqual({
         keys: ["l"],
         label: "Go to Life view",
       });
-      expect(other?.shortcuts).toContainEqual({
+      expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
         keys: ["Mod", "Z"],
         label: "Undo last change",
       });
-      expect(other?.shortcuts).toContainEqual({
+      expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
         keys: ["Mod", "Shift", "Z"],
         label: "Redo last change",
       });
@@ -195,19 +198,19 @@ describe("shortcuts.data", () => {
           isViewingCurrentPeriod: true,
         }).find((section) => section.id === "edit");
 
-        expect(edit?.shortcuts).toContainEqual({
+        expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["Shift", "ArrowLeft"],
           label: "Move event to previous day",
         });
-        expect(edit?.shortcuts).toContainEqual({
+        expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["Shift", "ArrowRight"],
           label: "Move event to next day",
         });
-        expect(edit?.shortcuts).toContainEqual({
+        expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["Shift", "ArrowUp"],
           label: "Move event 15 min earlier",
         });
-        expect(edit?.shortcuts).toContainEqual({
+        expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["Arrow keys"],
           label: "Move draft event",
         });
@@ -221,7 +224,7 @@ describe("shortcuts.data", () => {
       }).find((section) => section.id === "other");
 
       expect(other?.title).toBe("Other");
-      expect(other?.shortcuts).toContainEqual({
+      expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
         keys: ["]"],
         label: "Toggle sidebar",
       });

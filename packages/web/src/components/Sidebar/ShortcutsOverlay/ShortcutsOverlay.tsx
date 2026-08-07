@@ -1,6 +1,6 @@
 import { XIcon } from "@phosphor-icons/react";
 import classNames from "classnames";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ShortcutSection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutSection";
 import { type ShortcutOverlaySection } from "@web/shortcuts/shortcuts-overlay.types";
 
@@ -11,33 +11,74 @@ interface Props {
   viewLabel?: string;
 }
 
+const normalizeSearch = (text: string): string => text.toLowerCase().trim();
+
+const matchesSearch = (searchTerm: string, text: string): boolean => {
+  const normalized = normalizeSearch(text);
+  const query = normalizeSearch(searchTerm);
+  return normalized.includes(query);
+};
+
 export function ShortcutsOverlay({
   isOpen,
   onClose,
   sections,
   viewLabel,
 }: Props) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setSearchQuery("");
+      return;
+    }
+
+    // Auto-focus search input when overlay opens
+    setTimeout(() => searchInputRef.current?.focus(), 0);
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        onClose();
+        if (searchQuery) {
+          setSearchQuery("");
+        } else {
+          onClose();
+        }
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, searchQuery]);
 
-  const visibleSections = sections.filter(
-    (section) => section.shortcuts.length > 0,
-  );
+  const filteredSections = sections
+    .map((section) => {
+      if (!searchQuery) {
+        return section;
+      }
+
+      const filteredShortcuts = section.shortcuts.filter(
+        (shortcut) =>
+          matchesSearch(searchQuery, shortcut.label) ||
+          shortcut.keys.some((key) => matchesSearch(searchQuery, key)),
+      );
+
+      return { ...section, shortcuts: filteredShortcuts };
+    })
+    .filter((section) => section.shortcuts.length > 0);
+
+  const visibleSections =
+    searchQuery.length > 0 ? filteredSections : sections.filter(
+      (section) => section.shortcuts.length > 0,
+    );
+
   const subtitle = viewLabel
     ? `Keyboard shortcuts for ${viewLabel} view`
     : "Keyboard shortcuts";
 
-  if (!visibleSections.length) return null;
+  const hasResults = visibleSections.length > 0;
+
+  if (!sections.filter((s) => s.shortcuts.length > 0).length) return null;
 
   return (
     <div
@@ -57,7 +98,7 @@ export function ShortcutsOverlay({
         )}
       >
         <div className="mb-5 flex items-center justify-between">
-          <div>
+          <div className="flex-1">
             <div className="font-medium text-text text-xl">Shortcuts</div>
             <div className="mt-1 text-text-muted text-xs">{subtitle}</div>
           </div>
@@ -73,16 +114,34 @@ export function ShortcutsOverlay({
           </button>
         </div>
 
-        <div className="overflow-y-auto">
-          {visibleSections.map((section, index) => (
-            <ShortcutSection
-              key={section.id ?? section.title}
-              isFirst={index === 0}
-              title={section.title}
-              shortcuts={section.shortcuts}
-            />
-          ))}
-        </div>
+        <input
+          ref={searchInputRef}
+          type="text"
+          placeholder="Search shortcuts..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="mb-4 rounded-default bg-surface-panel px-3 py-2 text-text text-sm placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+          tabIndex={isOpen ? 0 : -1}
+        />
+
+        {hasResults ? (
+          <div className="overflow-y-auto">
+            {visibleSections.map((section, index) => (
+              <ShortcutSection
+                key={section.id ?? section.title}
+                isFirst={index === 0}
+                title={section.title}
+                shortcuts={section.shortcuts}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-1 items-center justify-center">
+            <div className="text-center text-text-muted text-sm">
+              No shortcuts found
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
