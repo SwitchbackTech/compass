@@ -76,6 +76,12 @@ export type SyncClientErrorKind =
   | "unauthorized"
   // The Sync service rejected the request shape (400) — a client/contract bug.
   | "badRequest"
+  // The target does not exist for this principal (404) — e.g. disconnecting a
+  // foreign or already-gone connection, or reconnecting an unknown one.
+  | "notFound"
+  // The Sync service refused the operation in its current mode (409) — e.g. a
+  // provider-touching request against a passive deployment.
+  | "conflict"
   // The service is unreachable or not ready (network failure or 503).
   | "unavailable"
   // The request exceeded the deadline.
@@ -219,7 +225,7 @@ export class SyncServiceClient {
   // browser should be sent to. Pass a connectionId to reconnect an existing
   // connection; omit it for a fresh one. The Sync service only mints the URL
   // here (and requires active execution mode, else it returns a 409 mapped to
-  // `unexpectedStatus`); the connection is created when the provider calls back.
+  // `conflict`); the connection is created when the provider calls back.
   beginConnection(
     principal: SyncPrincipal,
     request: ConnectionBeginRequest = {},
@@ -551,6 +557,8 @@ export class SyncServiceClient {
 function statusToKind(status: number): SyncClientErrorKind {
   if (status === 401) return "unauthorized";
   if (status === 400) return "badRequest";
+  if (status === 404) return "notFound";
+  if (status === 409) return "conflict";
   // 429 is sync's own internal rate limiter (internal-http.ts), tripped
   // easily under normal-ish load (a shared 300/min bucket for the whole
   // backend). Treated the same as 503: a retryable service-busy state, not

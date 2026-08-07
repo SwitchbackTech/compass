@@ -222,7 +222,7 @@ describe("SyncServiceClient", () => {
     expect(verdict.context.principalId).toBe(who.principalId);
   });
 
-  it("reports a disconnect of an unknown connection as a failure", async () => {
+  it("reports a disconnect of an unknown connection as notFound", async () => {
     const { fn } = fakeFetch(async () => ({
       status: 404,
       json: async () => ({ error: "not_found" }),
@@ -234,6 +234,21 @@ describe("SyncServiceClient", () => {
     );
 
     expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("unreachable");
+    expect(result.error.kind).toBe("notFound");
+  });
+
+  it("maps a 409 (passive-mode refusal) to conflict", async () => {
+    const { fn } = fakeFetch(async () => ({
+      status: 409,
+      json: async () => ({ error: "passive_mode" }),
+    }));
+
+    const result = await client(fn).beginConnection(principal());
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("unreachable");
+    expect(result.error.kind).toBe("conflict");
   });
 
   it("lists calendars with a signed GET the real Sync verifier accepts", async () => {
