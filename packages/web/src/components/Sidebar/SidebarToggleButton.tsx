@@ -7,6 +7,11 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
+import {
+  focusSidebarControl,
+  SIDEBAR_DISMISS_CONTROL,
+  SIDEBAR_TOGGLE_CONTROL,
+} from "./util/sidebarControlFocus.util";
 
 /**
  * Shared open/close control for the right sidebar. Lives in the calendar
@@ -25,17 +30,14 @@ export const SidebarToggleButton: FC = () => {
         if (!willOpen) return;
         // On narrow layouts the header control can be clipped once the panel
         // opens; move focus to the in-sidebar dismiss control when present.
-        window.setTimeout(() => {
-          document
-            .querySelector<HTMLButtonElement>('[aria-label="Dismiss sidebar"]')
-            ?.focus();
-        }, 0);
+        focusSidebarControl(SIDEBAR_DISMISS_CONTROL);
       }}
       shortcut="]"
     >
       <button
         type="button"
         aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+        data-sidebar-control={SIDEBAR_TOGGLE_CONTROL}
         className="c-focus-ring flex h-6 w-6 cursor-pointer items-center justify-center"
       >
         <SidebarIcon color={colors.textMuted} size={21} />
