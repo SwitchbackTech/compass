@@ -13,9 +13,15 @@ interface ViewState {
     end: string;
   };
   sidebar: {
+    // What's rendered right now - can differ from `preference` while a
+    // narrow-viewport breakpoint auto-collapses the sidebar.
     isOpen: boolean;
+    // The user's last explicit choice; the only field this store persists.
+    preference: boolean;
   };
 }
+
+const persistedSidebarPreference = readSidebarOpen();
 
 export const initialViewState: ViewState = {
   dates: {
@@ -24,7 +30,10 @@ export const initialViewState: ViewState = {
   },
   // Seed from the persisted preference so a collapsed sidebar never mounts
   // (and animates closed) on the first render after a refresh.
-  sidebar: { isOpen: readSidebarOpen() },
+  sidebar: {
+    isOpen: persistedSidebarPreference,
+    preference: persistedSidebarPreference,
+  },
 };
 
 // Selectors passed to this hook must return primitives or stable references;
@@ -36,17 +45,34 @@ export const useViewStore = create<ViewState>()(
   }),
 );
 
+// Single writer: `preference` is the only field ever persisted, and this is
+// the only place that calls writeSidebarOpen. `syncSidebarOpen` (used by
+// useResponsiveLayout for breakpoint crossings) never touches `preference`,
+// so it never reaches this subscriber.
+useViewStore.subscribe((state, prevState) => {
+  if (state.sidebar.preference !== prevState.sidebar.preference) {
+    writeSidebarOpen(state.sidebar.preference);
+  }
+});
+
 export const viewActions = {
+  /** An explicit user choice (toggle button, close button, `i` shortcut): renders and persists. */
   setSidebarOpen: (isOpen: boolean) =>
-    useViewStore.setState({ sidebar: { isOpen } }, false, {
+    useViewStore.setState({ sidebar: { isOpen, preference: isOpen } }, false, {
       type: "setSidebarOpen",
     }),
+  /** A breakpoint crossing auto-collapsing/-restoring the sidebar: renders only, leaves the saved preference untouched. */
+  syncSidebarOpen: (isOpen: boolean) =>
+    useViewStore.setState(
+      (state) => ({ sidebar: { ...state.sidebar, isOpen } }),
+      false,
+      { type: "syncSidebarOpen" },
+    ),
   toggleSidebar: () =>
     useViewStore.setState(
       (state) => {
         const isOpen = !state.sidebar.isOpen;
-        writeSidebarOpen(isOpen);
-        return { sidebar: { isOpen } };
+        return { sidebar: { isOpen, preference: isOpen } };
       },
       false,
       { type: "toggleSidebar" },
@@ -55,3 +81,5 @@ export const viewActions = {
     useViewStore.setState({ dates }, false, { type: "updateDates" }),
 };
 export const selectIsSidebarOpen = (state: ViewState) => state.sidebar.isOpen;
+export const selectSidebarPreference = (state: ViewState) =>
+  state.sidebar.preference;

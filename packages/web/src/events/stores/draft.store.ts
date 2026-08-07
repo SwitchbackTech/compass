@@ -156,5 +156,9 @@ export const selectDraftStatus = (state: State_DraftEvent) => state.status;
 export const selectIsEventFormOpen = (state: State_DraftEvent) =>
   Boolean(state.status?.isFormOpen) && state.gridDraft !== null;
 
+/** Imperative read for keyboard/pointer handlers outside React's render cycle. */
+export const isEventFormOpen = () =>
+  selectIsEventFormOpen(useDraftStore.getState());
+
 export const selectIsDrafting = (state: State_DraftEvent) =>
   state.status?.isDrafting;

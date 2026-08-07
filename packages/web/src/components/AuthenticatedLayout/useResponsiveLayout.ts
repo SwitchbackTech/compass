@@ -1,15 +1,18 @@
 import { useLayoutEffect } from "react";
-import { readSidebarOpen } from "@web/common/storage/sidebar-open.storage";
 import { SIDEBAR_AUTO_COLLAPSE_BREAKPOINT } from "@web/components/AuthenticatedLayout/responsive.constants";
-import { viewActions } from "@web/events/stores/view.store";
+import {
+  selectSidebarPreference,
+  useViewStore,
+  viewActions,
+} from "@web/events/stores/view.store";
 
 /**
  * Syncs sidebar visibility in the view store with the window size. The sidebar
  * auto-collapses below its breakpoint regardless of any saved preference, but
  * reopening above it restores the user's last manual choice (persisted via
- * toggleSidebar), so a breakpoint crossing never overrides a preference a
- * refresh would otherwise honor. Mount once per app (AuthenticatedLayout) so
- * overrides survive view switches.
+ * setSidebarOpen/toggleSidebar), so a breakpoint crossing never overrides a
+ * preference a refresh would otherwise honor. Mount once per app
+ * (AuthenticatedLayout) so overrides survive view switches.
  */
 export function useResponsiveLayout() {
   useLayoutEffect(() => {
@@ -19,7 +22,9 @@ export function useResponsiveLayout() {
           `(min-width: ${SIDEBAR_AUTO_COLLAPSE_BREAKPOINT}px)`,
         ),
         setOpen: (matches: boolean) =>
-          viewActions.setSidebarOpen(matches && readSidebarOpen()),
+          viewActions.syncSidebarOpen(
+            matches && selectSidebarPreference(useViewStore.getState()),
+          ),
       },
     ];
 

@@ -2,15 +2,17 @@ import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { renderHook } from "@testing-library/react";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
-import {
-  ID_CONTEXT_MENU_ITEMS,
-  ID_EVENT_FORM,
-} from "@web/common/constants/web.constants";
+import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
 import {
   registerToastPort,
   resetToastPort,
 } from "@web/common/utils/toast/toast.port";
 import { useEscapeToDismissToast } from "@web/common/utils/toast/useEscapeToDismissToast";
+import {
+  createGridEventDraft,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
+import { draftActions } from "@web/events/stores/draft.store";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 describe("useEscapeToDismissToast", () => {
@@ -28,6 +30,7 @@ describe("useEscapeToDismissToast", () => {
   afterEach(() => {
     resetToastPort();
     document.body.innerHTML = "";
+    draftActions.discard();
   });
 
   it("dismisses the visible toast on Escape", () => {
@@ -51,9 +54,16 @@ describe("useEscapeToDismissToast", () => {
   });
 
   it("does not dismiss while the event form is open", () => {
-    const form = document.createElement("form");
-    form.setAttribute("name", ID_EVENT_FORM);
-    document.body.appendChild(form);
+    draftActions.startGridDraft({
+      activity: "gridClick",
+      draft: createGridEventDraft(
+        timedGridSchedule(
+          new Date("2026-05-20T09:00:00.000Z"),
+          new Date("2026-05-20T10:00:00.000Z"),
+        ),
+      ),
+    });
+    draftActions.setFormOpen(true);
 
     renderHook(() => useEscapeToDismissToast());
     pressKey("Escape");
