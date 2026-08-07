@@ -9,7 +9,9 @@ import {
   dayEventRegistry,
 } from "@web/views/Day/interaction/registry/day-event.registry";
 
-export type DayGridEventTarget = SharedGridEventTarget<DayInteractionEventType>;
+export type DayGridEventTargetType = DayInteractionEventType;
+
+export type DayGridEventTarget = SharedGridEventTarget<DayGridEventTargetType>;
 
 const TARGET_SELECTOR = `[${DAY_INTERACTION_EVENT_ID_ATTRIBUTE}][${DAY_INTERACTION_EVENT_TYPE_ATTRIBUTE}]`;
 
@@ -28,6 +30,9 @@ export const clearHoveredDayGridEventTarget =
 
 export const getFocusedDayGridEventTarget =
   dayGridEventTargeting.getFocusedGridEventTarget;
+
+export const getHoveredDayGridEventTarget =
+  dayGridEventTargeting.getHoveredGridEventTarget;
 
 export const getFirstVisibleDayGridEventTarget =
   dayGridEventTargeting.getFirstVisibleGridEventTarget;
