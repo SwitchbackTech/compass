@@ -1,4 +1,5 @@
 import { useLayoutEffect } from "react";
+import { useMediaQuery } from "@web/common/hooks/useMediaQuery";
 import { SIDEBAR_AUTO_COLLAPSE_BREAKPOINT } from "@web/components/AuthenticatedLayout/responsive.constants";
 import {
   selectSidebarPreference,
@@ -15,26 +16,13 @@ import {
  * (AuthenticatedLayout) so overrides survive view switches.
  */
 export function useResponsiveLayout() {
+  const isWideEnough = useMediaQuery(
+    `(min-width: ${SIDEBAR_AUTO_COLLAPSE_BREAKPOINT}px)`,
+  );
+
   useLayoutEffect(() => {
-    const panelQueries = [
-      {
-        query: window.matchMedia(
-          `(min-width: ${SIDEBAR_AUTO_COLLAPSE_BREAKPOINT}px)`,
-        ),
-        setOpen: (matches: boolean) =>
-          viewActions.syncSidebarOpen(
-            matches && selectSidebarPreference(useViewStore.getState()),
-          ),
-      },
-    ];
-
-    const cleanups = panelQueries.map(({ query, setOpen }) => {
-      setOpen(query.matches);
-      const onChange = (e: MediaQueryListEvent) => setOpen(e.matches);
-      query.addEventListener("change", onChange);
-      return () => query.removeEventListener("change", onChange);
-    });
-
-    return () => cleanups.forEach((cleanup) => cleanup());
-  }, []);
+    viewActions.syncSidebarOpen(
+      isWideEnough && selectSidebarPreference(useViewStore.getState()),
+    );
+  }, [isWideEnough]);
 }

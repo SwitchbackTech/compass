@@ -1,17 +1,14 @@
-import {
-  type KeyboardEvent,
-  type MouseEvent,
-  useCallback,
-  useState,
-} from "react";
+import { type KeyboardEvent, type MouseEvent, useCallback } from "react";
+import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
+import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { welcomeGuideActions } from "./welcome.guide.store";
 
 export function WelcomeGuideModal() {
-  const [closing, setClosing] = useState(false);
+  const { closing, beginDismiss } = useDismissTransition(MODAL_DISMISS_MS);
   useAppLockReason("welcomeGuide", true);
 
   const focusOnMount = useCallback((node: HTMLDivElement | null) => {
@@ -19,14 +16,7 @@ export function WelcomeGuideModal() {
   }, []);
 
   const dismiss = () => {
-    if (closing) return;
-    setClosing(true);
-    const reduceMotion =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    window.setTimeout(
-      () => welcomeGuideActions.close(),
-      reduceMotion ? 0 : 400,
-    );
+    beginDismiss(() => welcomeGuideActions.close());
   };
 
   const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {

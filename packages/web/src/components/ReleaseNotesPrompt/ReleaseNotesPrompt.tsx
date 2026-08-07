@@ -5,7 +5,9 @@ import {
   useState,
 } from "react";
 import { UserApi } from "@web/api/user.api";
+import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
+import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { releaseNotesPromptActions } from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
 import { PixelPirate } from "@web/components/WelcomeModal/PixelPirate";
@@ -20,7 +22,7 @@ type PromptState =
 
 export function ReleaseNotesPrompt() {
   const [state, setState] = useState<PromptState>("asking");
-  const [closing, setClosing] = useState(false);
+  const { closing, beginDismiss } = useDismissTransition(MODAL_DISMISS_MS);
   useAppLockReason("releaseNotes", true);
 
   // RootShell mounts this only while the store flag is open, so each open is a
@@ -31,14 +33,7 @@ export function ReleaseNotesPrompt() {
   }, []);
 
   const dismiss = () => {
-    if (closing) return;
-    setClosing(true);
-    const reducedMotion =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    window.setTimeout(
-      () => releaseNotesPromptActions.close(),
-      reducedMotion ? 0 : 400,
-    );
+    beginDismiss(() => releaseNotesPromptActions.close());
   };
 
   const decline = () => {

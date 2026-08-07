@@ -11,6 +11,7 @@ import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
+import { usePrefersReducedMotion } from "@web/common/hooks/prefersReducedMotion";
 import { eventCommandPaletteItems } from "@web/components/CommandPalette/event.cmd.constants";
 import { HighlightedLabel } from "@web/components/CommandPalette/HighlightedLabel";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
@@ -75,16 +76,15 @@ const CommandPaletteContent = ({
   // instant close is normal — dismissal isn't a decision the user watches,
   // unlike a confirmation modal.
   const [visible, setVisible] = useState(false);
+  const reduceMotion = usePrefersReducedMotion();
   useEffect(() => {
-    const reduceMotion =
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
     if (reduceMotion) {
       setVisible(true);
       return;
     }
     const raf = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [reduceMotion]);
 
   // Focus the search input the moment it mounts (commit phase, like the
   // autoFocus attribute — but without tripping the a11y lint). Stable identity

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from "react";
+import { useMediaQuery } from "@web/common/hooks/useMediaQuery";
 import { SIDEBAR_AUTO_COLLAPSE_BREAKPOINT } from "@web/components/AuthenticatedLayout/responsive.constants";
 
 /**
@@ -8,21 +8,8 @@ import { SIDEBAR_AUTO_COLLAPSE_BREAKPOINT } from "@web/components/AuthenticatedL
  * control.
  */
 export function useIsNarrowSidebarLayout() {
-  const [isNarrow, setIsNarrow] = useState(
-    () =>
-      !window.matchMedia(`(min-width: ${SIDEBAR_AUTO_COLLAPSE_BREAKPOINT}px)`)
-        .matches,
+  const isWideEnough = useMediaQuery(
+    `(min-width: ${SIDEBAR_AUTO_COLLAPSE_BREAKPOINT}px)`,
   );
-
-  useLayoutEffect(() => {
-    const query = window.matchMedia(
-      `(min-width: ${SIDEBAR_AUTO_COLLAPSE_BREAKPOINT}px)`,
-    );
-    const onChange = () => setIsNarrow(!query.matches);
-    onChange();
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
-  }, []);
-
-  return isNarrow;
+  return !isWideEnough;
 }
