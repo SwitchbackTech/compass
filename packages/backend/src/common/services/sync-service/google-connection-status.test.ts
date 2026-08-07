@@ -1,4 +1,5 @@
 import { type ConnectionListResponse } from "@core/types/sync/connection.contracts";
+import { providerConnection } from "@backend/__tests__/factories/provider-connection.factory";
 import { resolveGoogleConnectionFromSync } from "./google-connection-status";
 import {
   type SyncClientResult,
@@ -20,20 +21,14 @@ const connection = (
   state: string,
   stateReason: string | null = null,
 ): ConnectionListResponse["connections"][number] =>
-  ({
-    id: "c1",
-    tenantId: principal.tenantId,
-    principalId: principal.principalId,
-    provider: "google",
-    account: { providerAccountId: "a1", email: null, displayName: null },
-    capabilities: [],
-    state,
-    stateReason,
-    lastSyncedAt: null,
-    lastHealthyAt: null,
-    createdAt: "2026-07-14T00:00:00.000Z",
-    updatedAt: "2026-07-14T00:00:00.000Z",
-  }) as unknown as ConnectionListResponse["connections"][number];
+  providerConnection(
+    state as Parameters<typeof providerConnection>[0],
+    stateReason as Parameters<typeof providerConnection>[1],
+    {
+      tenantId: principal.tenantId,
+      principalId: principal.principalId,
+    } as never,
+  );
 
 describe("resolveGoogleConnectionFromSync", () => {
   it("translates a healthy connection to HEALTHY", async () => {

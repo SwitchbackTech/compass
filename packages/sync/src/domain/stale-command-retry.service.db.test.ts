@@ -6,6 +6,7 @@ import {
   type PrincipalId,
   type TenantId,
 } from "@core/types/sync/identity.contracts";
+import { seedProviderCalendar } from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { submitCloudCommand } from "@sync/domain/cloud-command.service";
 import { retryStaleCommands } from "@sync/domain/stale-command-retry.service";
@@ -83,22 +84,10 @@ describe("retryStaleCommands", () => {
     const tenantId = objectId() as TenantId;
     const principalId = objectId() as PrincipalId;
     const connectionId = objectId() as ConnectionId;
-    const calendar = await calendars.upsertByProviderCalendar({
+    const calendar = await seedProviderCalendar(calendars, {
       tenantId,
       principalId,
       connectionId,
-      providerCalendarId: "primary@google.com",
-      displayName: "Google",
-      color: null,
-      active: true,
-      primary: true,
-      accessRole: "owner",
-      capabilities: {
-        canReadEvents: true,
-        canWriteEvents: true,
-        canReadBusy: true,
-        canInviteAttendees: true,
-      },
     });
     const eventId = objectId() as EventId;
     await events.put({

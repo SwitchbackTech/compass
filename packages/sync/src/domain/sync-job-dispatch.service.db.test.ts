@@ -1,4 +1,8 @@
 import { faker } from "@faker-js/faker";
+import {
+  ensureEventsResource,
+  seedProviderCalendar,
+} from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import {
   dispatchSyncJob,
@@ -185,57 +189,13 @@ describe("dispatchSyncJob", () => {
   });
 
   const seedCalendar = (): Promise<ProviderCalendarRecord> =>
-    calendars.upsertByProviderCalendar({
-      tenantId: objectId() as ProviderCalendarRecord["tenantId"],
-      principalId: objectId() as ProviderCalendarRecord["principalId"],
-      connectionId: objectId() as ProviderCalendarRecord["connectionId"],
-      providerCalendarId: "primary@google.com",
-      displayName: "Google",
-      color: null,
-      active: true,
-      primary: true,
-      accessRole: "owner",
-      capabilities: {
-        canReadEvents: true,
-        canWriteEvents: true,
-        canReadBusy: true,
-        canInviteAttendees: true,
-      },
-    });
+    seedProviderCalendar(calendars);
 
-  // Ensure the calendar's events resource, optionally already imported (holding
-  // a cursor), as a prior import/pull would have left it.
-  const seedResource = async (
+  const seedResource = (
     calendar: ProviderCalendarRecord,
     cursor: string | null,
-  ): Promise<SyncResourceRecord> => {
-    const resource = await resources.ensure({
-      tenantId: calendar.tenantId,
-      principalId: calendar.principalId,
-      connectionId: calendar.connectionId,
-      resourceKind: "events",
-      calendarId: calendar._id,
-    });
-    if (cursor) {
-      await resources.advanceCursor(
-        calendar.tenantId,
-        calendar.principalId,
-        resource._id,
-        cursor,
-        now(),
-      );
-      // A seeded cursor represents an established calendar from before this
-      // test's job begins; new connections exercise the bootstrap lifecycle
-      // explicitly below.
-      await resources.setBootstrapState(
-        calendar.tenantId,
-        calendar.principalId,
-        resource._id,
-        "ready",
-      );
-    }
-    return resource;
-  };
+  ): Promise<SyncResourceRecord> =>
+    ensureEventsResource(resources, calendar, { cursor, now });
 
   const jobFor = (
     resource: SyncResourceRecord,

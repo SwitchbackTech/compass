@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { seedProviderCalendar } from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import {
   SyncJobWorker,
@@ -172,23 +173,7 @@ describe("SyncJobWorker", () => {
   const seedCalendar = (
     overrides: Partial<{ active: boolean }> = {},
   ): Promise<ProviderCalendarRecord> =>
-    calendars.upsertByProviderCalendar({
-      tenantId: objectId() as ProviderCalendarRecord["tenantId"],
-      principalId: objectId() as ProviderCalendarRecord["principalId"],
-      connectionId: objectId() as ProviderCalendarRecord["connectionId"],
-      providerCalendarId: "primary@google.com",
-      displayName: "Google",
-      color: null,
-      active: overrides.active ?? true,
-      primary: true,
-      accessRole: "owner",
-      capabilities: {
-        canReadEvents: true,
-        canWriteEvents: true,
-        canReadBusy: true,
-        canInviteAttendees: true,
-      },
-    });
+    seedProviderCalendar(calendars, overrides);
 
   const seedResource = async (
     calendar: ProviderCalendarRecord,

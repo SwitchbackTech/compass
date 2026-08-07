@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { type SyncCommandInput } from "@core/types/sync/command.contracts";
+import { seedProviderCalendar } from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import {
   type CalendarPullDeps,
@@ -127,24 +128,7 @@ describe("pullCalendarChanges", () => {
   const seedCalendar = (
     eventLabels: ProviderCalendarRecord["eventLabels"] = [],
   ): Promise<ProviderCalendarRecord> =>
-    calendars.upsertByProviderCalendar({
-      tenantId: objectId() as ProviderCalendarRecord["tenantId"],
-      principalId: objectId() as ProviderCalendarRecord["principalId"],
-      connectionId: objectId() as ProviderCalendarRecord["connectionId"],
-      providerCalendarId: "primary@google.com",
-      displayName: "Google",
-      color: null,
-      eventLabels,
-      active: true,
-      primary: true,
-      accessRole: "owner",
-      capabilities: {
-        canReadEvents: true,
-        canWriteEvents: true,
-        canReadBusy: true,
-        canInviteAttendees: true,
-      },
-    });
+    seedProviderCalendar(calendars, { eventLabels });
 
   // Put the calendar's events resource into the imported state at a cursor.
   const seedImported = async (
