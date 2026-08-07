@@ -7,7 +7,7 @@ import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 export interface EndsOnDateProps {
   minDate?: string;
   until?: Date | null;
-  setUntil: React.Dispatch<React.SetStateAction<Date | null>>;
+  setUntil: (date: Date | null) => void;
 }
 
 export const EndsOnDate = ({
