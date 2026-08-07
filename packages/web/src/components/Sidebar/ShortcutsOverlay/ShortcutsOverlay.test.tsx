@@ -1,10 +1,14 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { type PropsWithChildren } from "react";
+import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import {
   selectIsShortcutsOpen,
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
-import { describe, expect, it } from "bun:test";
+import { beforeEach, describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 import { ShortcutsOverlay } from "./ShortcutsOverlay";
 
@@ -27,12 +31,24 @@ const sections = [
   },
 ];
 
+function wrapper({ children }: PropsWithChildren) {
+  return <HotkeysProvider>{children}</HotkeysProvider>;
+}
+
 describe("ShortcutsOverlay", () => {
+  beforeEach(() => {
+    HotkeyManager.resetInstance();
+    document.body.removeAttribute("data-app-locked");
+    viewActions.setSidebarOpen(false);
+  });
+
   it("renders shortcut sections over the sidebar", () => {
     viewActions.setSidebarOpen(true);
     viewActions.toggleShortcuts();
 
-    render(<ShortcutsOverlay sections={sections} viewLabel="Day" />);
+    render(<ShortcutsOverlay sections={sections} viewLabel="Day" />, {
+      wrapper,
+    });
 
     const overlay = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
 
@@ -46,30 +62,78 @@ describe("ShortcutsOverlay", () => {
     expect(screen.queryByText("Empty")).not.toBeInTheDocument();
   });
 
-  it("closes when closed with Escape", () => {
+  it("closes when Escape is pressed", async () => {
     viewActions.setSidebarOpen(true);
     viewActions.toggleShortcuts();
 
-    render(<ShortcutsOverlay sections={sections} />);
+    render(<ShortcutsOverlay sections={sections} />, { wrapper });
 
-    fireEvent.keyDown(document, { key: "Escape" });
+    act(() => {
+      pressKey("Escape");
+    });
 
-    expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(false);
+    await waitFor(() => {
+      expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(false);
+    });
+  });
+
+  it("clears the search query before closing on Escape", async () => {
+    const user = userEvent.setup();
+    viewActions.setSidebarOpen(true);
+    viewActions.toggleShortcuts();
+
+    render(<ShortcutsOverlay sections={sections} />, { wrapper });
+
+    await user.type(
+      screen.getByPlaceholderText("Search shortcuts..."),
+      "previous",
+    );
+    expect(screen.getByText("Previous day")).toBeInTheDocument();
+    expect(screen.queryByText("Next day")).not.toBeInTheDocument();
+
+    act(() => {
+      pressKey("Escape");
+    });
+
+    await waitFor(() => {
+      expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(true);
+      expect(screen.getByPlaceholderText("Search shortcuts...")).toHaveValue(
+        "",
+      );
+      expect(screen.getByText("Next day")).toBeInTheDocument();
+    });
+
+    act(() => {
+      pressKey("Escape");
+    });
+
+    await waitFor(() => {
+      expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(false);
+    });
+  });
+
+  it("dismisses with Escape while the app is locked", async () => {
+    document.body.dataset.appLocked = "true";
+    viewActions.setSidebarOpen(true);
+    viewActions.toggleShortcuts();
+
+    render(<ShortcutsOverlay sections={sections} />, { wrapper });
+
+    act(() => {
+      pressKey("Escape");
+    });
+
+    await waitFor(() => {
+      expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(false);
+    });
   });
 
   it("does not render when closed", () => {
-    render(<ShortcutsOverlay sections={sections} />);
+    render(<ShortcutsOverlay sections={sections} />, { wrapper });
 
     expect(
       screen.queryByRole("dialog", { name: "Keyboard shortcuts" }),
     ).toBeNull();
-    const overlay = screen.getByLabelText("Keyboard shortcuts", {
-      selector: "div",
-    });
-    expect(overlay.className).toContain("pointer-events-none");
-    expect(overlay.firstElementChild?.className).toContain("-translate-x-full");
-    expect(
-      screen.getByRole("button", { hidden: true, name: "Close shortcuts" }),
-    ).toHaveProperty("tabIndex", -1);
+    expect(screen.queryByText("Shortcuts")).not.toBeInTheDocument();
   });
 });

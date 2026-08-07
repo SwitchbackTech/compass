@@ -1,5 +1,4 @@
 import { XIcon } from "@phosphor-icons/react";
-import classNames from "classnames";
 import { useEffect, useRef, useState } from "react";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { ShortcutSection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutSection";
@@ -9,6 +8,7 @@ import {
   viewActions,
 } from "@web/events/stores/view.store";
 import { type ShortcutOverlaySection } from "@web/shortcuts/shortcuts-overlay.types";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 interface Props {
   sections: ShortcutOverlaySection[];
@@ -28,6 +28,25 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // App-lock is held by useSidebarShortcuts; ignoreAppLock keeps Escape able
+  // to clear search / dismiss while that lock is active. ignoreInputs: false
+  // so Escape still works while the search field is focused.
+  useAppShortcut(
+    "Escape",
+    () => {
+      if (searchQuery) {
+        setSearchQuery("");
+      } else {
+        viewActions.closeShortcuts();
+      }
+    },
+    {
+      enabled: isOpen,
+      ignoreInputs: false,
+      ignoreAppLock: true,
+    },
+  );
+
   useEffect(() => {
     if (!isOpen) {
       setSearchQuery("");
@@ -36,20 +55,7 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
 
     // Auto-focus search input when overlay opens
     setTimeout(() => searchInputRef.current?.focus(), 0);
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        if (searchQuery) {
-          setSearchQuery("");
-        } else {
-          viewActions.closeShortcuts();
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, searchQuery]);
+  }, [isOpen]);
 
   const filteredSections = sections
     .map((section) => {
@@ -77,27 +83,18 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
     : "Keyboard shortcuts";
 
   const hasResults = visibleSections.length > 0;
+  const hasSections = sections.some((section) => section.shortcuts.length > 0);
 
-  if (!sections.filter((s) => s.shortcuts.length > 0).length) return null;
+  if (!hasSections || !isOpen) return null;
 
   return (
     <div
-      aria-hidden={!isOpen}
       aria-label="Keyboard shortcuts"
-      className={classNames(
-        "absolute inset-0 overflow-hidden",
-        isOpen ? "" : "pointer-events-none",
-      )}
+      className="absolute inset-0 overflow-hidden"
       role="dialog"
       style={{ zIndex: ZIndex.MAX }}
     >
-      <div
-        className={classNames(
-          "flex h-full flex-col bg-surface/95 px-4 pt-8 pb-5 text-text-muted shadow-2xl backdrop-blur-md",
-          "transition-transform duration-200 ease-out motion-reduce:transition-none",
-          isOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
+      <div className="flex h-full translate-x-0 flex-col bg-surface/95 px-4 pt-8 pb-5 text-text-muted shadow-2xl backdrop-blur-md transition-transform duration-200 ease-out starting:-translate-x-full motion-reduce:transition-none">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex-1">
             <div className="font-medium text-text text-xl">Shortcuts</div>
@@ -108,7 +105,6 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
             aria-label="Close shortcuts"
             className="flex size-7 items-center justify-center rounded-default text-text-muted transition-colors hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             onClick={viewActions.closeShortcuts}
-            tabIndex={isOpen ? 0 : -1}
             type="button"
           >
             <XIcon aria-hidden="true" size={15} />
@@ -122,7 +118,6 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="mb-4 rounded-default bg-surface-panel px-3 py-2 text-text text-sm placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-          tabIndex={isOpen ? 0 : -1}
         />
 
         {hasResults ? (
