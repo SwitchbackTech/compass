@@ -33,12 +33,10 @@ export const EventOccurrenceRecordSchema = z.strictObject({
   startAt: z.date(),
   // Normalized EXCLUSIVE end instant, paired with startAt as a half-open
   // [startAt, endAt) interval so a busy/overlap query can find an occurrence
-  // that starts before a window but ends inside it. Optional ONLY during the
-  // rollout: the projection always sets it now, and existing occurrences pick it
-  // up on their next reprojection (every import/pull/repair rewrites them), so no
-  // read breaks on a doc that predates the field. Tighten to required once every
-  // occurrence carries it.
-  endAt: z.date().optional(),
+  // that starts before a window but ends inside it. Required: the #2303
+  // rollout gap is closed — steady-state reprojection rewrote every pre-field
+  // doc (prod and staging verified at zero missing on 2026-08-07).
+  endAt: z.date(),
   busy: z.boolean(),
   title: z.string(),
   cancelled: z.boolean(),

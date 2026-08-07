@@ -67,6 +67,7 @@ const makeOccurrence = (
     calendarId: objectId(),
     schedule: timed("2026-07-14T09:00:00-06:00", "2026-07-14T09:15:00-06:00"),
     startAt,
+    endAt: overrides.endAt ?? new Date(startAt.getTime() + 15 * 60_000),
     busy: true,
     title: "Standup",
     cancelled: false,

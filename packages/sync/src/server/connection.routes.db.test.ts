@@ -1213,6 +1213,7 @@ describe("GET /internal/events/full", () => {
       calendarId: objectId(),
       schedule: timed,
       startAt: start,
+      endAt: new Date(start.getTime() + 60 * 60_000),
       busy: true,
       title: "Standup",
       cancelled: false,

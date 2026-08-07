@@ -175,6 +175,7 @@ describe("purgeExpiredDisconnectedConnections", () => {
         timeZone: "America/Denver",
       },
       startAt: NOW,
+      endAt: new Date(NOW.getTime() + 60 * 60_000),
       busy: true,
       title: "Cached meeting",
       cancelled: false,
