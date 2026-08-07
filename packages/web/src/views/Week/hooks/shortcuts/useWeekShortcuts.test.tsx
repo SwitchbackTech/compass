@@ -678,6 +678,33 @@ describe("useWeekShortcuts sidebar focus", () => {
   });
 });
 
+// D6: "C"/"A" used to call the create functions directly *and* subscribe to
+// the view command bus (two paths to the same result). They now only emit
+// on the bus, matching Day's convention - these presses exercise that path.
+describe("useWeekShortcuts create shortcuts", () => {
+  it("starts a timed createShortcut draft when C is pressed", async () => {
+    renderShortcuts();
+    pressKey("C");
+
+    await waitFor(() => {
+      const { gridDraft, status } = useDraftStore.getState();
+      expect(status?.activity).toBe("createShortcut");
+      expect(gridDraft?.values.calendarId).toBe(writableCalendar.id);
+    });
+  });
+
+  it("starts an all-day createShortcut draft when A is pressed", async () => {
+    renderShortcuts();
+    pressKey("A");
+
+    await waitFor(() => {
+      const { gridDraft, status } = useDraftStore.getState();
+      expect(status?.activity).toBe("createShortcut");
+      expect(gridDraft?.values.calendarId).toBe(writableCalendar.id);
+    });
+  });
+});
+
 // The command palette's "Create event"/"Create all-day event" rows emit
 // these same view commands (event.cmd.constants.ts) instead of calling Week
 // code directly - this is what lets one shared list serve every view.

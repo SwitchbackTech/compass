@@ -48,6 +48,13 @@ export const getCurrentPercentOfDay = () => {
   return (getCurrentMinute() / 1440) * 100;
 };
 
+// Scrolls the current time to just below the viewport top, not flush with
+// it, so the now-line isn't hidden behind the header.
+const SCROLL_TO_NOW_BUFFER_PX = 150;
+
+export const getScrollToNowTop = (clientHeight: number) =>
+  getCurrentMinute() * getMinuteHeight(clientHeight) - SCROLL_TO_NOW_BUFFER_PX;
+
 // #mainGrid/#allDayRow are <section> elements, not <div>s, so an
 // HTMLDivElement-only check made every lookup on them return null and
 // silently no-op event listeners (drag never started). Widened to accept
