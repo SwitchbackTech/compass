@@ -1,7 +1,9 @@
 import {
   formatLastSyncedLabel,
+  formatLastUpdatedClause,
   getGoogleConnectionConfig,
   getGoogleSyncStatus,
+  getSidebarSyncStatus,
 } from "./useConnectGoogle.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -31,9 +33,17 @@ describe("formatLastSyncedLabel", () => {
       "Updated 2 days ago",
     );
   });
+
+  it("formats the mid-sentence Last updated clause", () => {
+    expect(formatLastUpdatedClause("2026-07-24T11:45:00.000Z", nowMs)).toBe(
+      "Last updated 15 minutes ago",
+    );
+  });
 });
 
 describe("getGoogleSyncStatus", () => {
+  const nowMs = Date.parse("2026-07-24T12:00:00.000Z");
+
   it("returns no sync status when Google is not connected", () => {
     expect(getGoogleSyncStatus("NOT_CONNECTED")).toBeNull();
   });
@@ -73,34 +83,60 @@ describe("getGoogleSyncStatus", () => {
     });
   });
 
-  it("keeps a cached healthy connection calm during a routine refresh", () => {
+  it("keeps recent catchingUp calm in Settings", () => {
     expect(
-      getGoogleSyncStatus("IMPORTING", {
-        id: "c1",
-        state: "healthy",
-        stateReason: null,
-        lastSyncedAt: "2026-07-24T12:00:00.000Z",
-        lastHealthyAt: "2026-07-24T12:00:00.000Z",
-        accountEmail: "a@example.com",
-        connectionState: "IMPORTING",
-      }),
+      getGoogleSyncStatus(
+        "IMPORTING",
+        {
+          id: "c1",
+          state: "catchingUp",
+          stateReason: null,
+          lastSyncedAt: "2026-07-24T11:59:00.000Z",
+          lastHealthyAt: "2026-07-24T11:59:00.000Z",
+          accountEmail: "a@example.com",
+          connectionState: "IMPORTING",
+        },
+        nowMs,
+      ),
     ).toEqual({
       variant: "healthy",
       text: "Calendar connected",
     });
   });
 
-  it("returns warning copy for ATTENTION, without using the word 'repair'", () => {
-    const status = getGoogleSyncStatus("ATTENTION");
+  it("explains catchingUp that is more than two minutes behind", () => {
+    expect(
+      getGoogleSyncStatus(
+        "IMPORTING",
+        {
+          id: "c1",
+          state: "catchingUp",
+          stateReason: null,
+          lastSyncedAt: "2026-07-24T11:45:00.000Z",
+          lastHealthyAt: "2026-07-24T11:45:00.000Z",
+          accountEmail: "a@example.com",
+          connectionState: "IMPORTING",
+        },
+        nowMs,
+      ),
+    ).toEqual({
+      variant: "syncing",
+      text: "Sync is catching up. Last updated 15 minutes ago. This usually clears on its own.",
+    });
+  });
 
-    expect(status?.variant).toBe("warning");
-    expect(status?.text).toBe(
-      "Calendar updates are taking longer than usual. We'll keep trying.",
-    );
+  it("returns warning copy for ATTENTION without a connection summary", () => {
+    expect(getGoogleSyncStatus("ATTENTION")).toEqual({
+      variant: "warning",
+      text: "Sync is stuck. Refresh your calendars, or reconnect if this continues.",
+    });
   });
 
   it("returns error copy for RECONNECT_REQUIRED", () => {
-    expect(getGoogleSyncStatus("RECONNECT_REQUIRED")?.variant).toBe("error");
+    expect(getGoogleSyncStatus("RECONNECT_REQUIRED")).toEqual({
+      variant: "error",
+      text: "Calendar needs reconnecting",
+    });
   });
 
   it("shows setup copy for a connection that has never been healthy", () => {
@@ -120,37 +156,201 @@ describe("getGoogleSyncStatus", () => {
     });
   });
 
-  it("uses Sync delayed copy when a connection summary is present", () => {
+  it("uses stuck copy for delayed workOverdue", () => {
     expect(
-      getGoogleSyncStatus("ATTENTION", {
-        id: "c1",
-        state: "delayed",
-        stateReason: "workOverdue",
-        lastSyncedAt: "2026-07-24T12:00:00.000Z",
-        lastHealthyAt: null,
-        accountEmail: null,
-        connectionState: "ATTENTION",
-      }),
+      getGoogleSyncStatus(
+        "ATTENTION",
+        {
+          id: "c1",
+          state: "delayed",
+          stateReason: "workOverdue",
+          lastSyncedAt: "2026-07-24T11:45:00.000Z",
+          lastHealthyAt: null,
+          accountEmail: null,
+          connectionState: "ATTENTION",
+        },
+        nowMs,
+      ),
     ).toEqual({
       variant: "warning",
-      text: "Calendar updates are taking longer than usual. We'll keep trying.",
+      text: "Sync is stuck. Last updated 15 minutes ago. Refresh your calendars, or reconnect if this continues.",
     });
   });
 
-  it("uses Sync healthy copy from the connection summary", () => {
+  it("uses error copy for delayed providerErrors", () => {
     expect(
-      getGoogleSyncStatus("HEALTHY", {
-        id: "c1",
-        state: "healthy",
-        stateReason: null,
-        lastSyncedAt: "2026-07-24T12:00:00.000Z",
-        lastHealthyAt: "2026-07-24T12:00:00.000Z",
-        accountEmail: "a@example.com",
-        connectionState: "HEALTHY",
+      getGoogleSyncStatus(
+        "ATTENTION",
+        {
+          id: "c1",
+          state: "delayed",
+          stateReason: "providerErrors",
+          lastSyncedAt: "2026-07-24T11:45:00.000Z",
+          lastHealthyAt: null,
+          accountEmail: null,
+          connectionState: "ATTENTION",
+        },
+        nowMs,
+      ),
+    ).toEqual({
+      variant: "warning",
+      text: "Sync hit an error. Last updated 15 minutes ago. Refresh your calendars, or reconnect if this continues.",
+    });
+  });
+
+  it("admits stuck after a refresh gave up", () => {
+    expect(
+      getGoogleSyncStatus(
+        "ATTENTION",
+        {
+          id: "c1",
+          state: "delayed",
+          stateReason: "workOverdue",
+          lastSyncedAt: "2026-07-24T11:45:00.000Z",
+          lastHealthyAt: null,
+          accountEmail: null,
+          connectionState: "ATTENTION",
+        },
+        nowMs,
+        { refreshGaveUp: true },
+      ),
+    ).toEqual({
+      variant: "error",
+      text: "Sync is stuck. Last updated 15 minutes ago. Reconnect your calendar, or email tyler@switchback.tech for help.",
+    });
+  });
+});
+
+describe("getSidebarSyncStatus", () => {
+  const nowMs = Date.parse("2026-07-24T12:00:00.000Z");
+
+  it("stays silent for recent catchingUp", () => {
+    expect(
+      getSidebarSyncStatus({
+        connection: {
+          id: "c1",
+          state: "catchingUp",
+          stateReason: null,
+          lastSyncedAt: "2026-07-24T11:59:00.000Z",
+          lastHealthyAt: "2026-07-24T11:59:00.000Z",
+          accountEmail: "a@example.com",
+          connectionState: "IMPORTING",
+        },
+        isConnecting: false,
+        state: "IMPORTING",
+        nowMs,
+      }),
+    ).toBeNull();
+  });
+
+  it("shows short catching-up copy when behind more than two minutes", () => {
+    expect(
+      getSidebarSyncStatus({
+        connection: {
+          id: "c1",
+          state: "catchingUp",
+          stateReason: null,
+          lastSyncedAt: "2026-07-24T11:45:00.000Z",
+          lastHealthyAt: "2026-07-24T11:45:00.000Z",
+          accountEmail: "a@example.com",
+          connectionState: "IMPORTING",
+        },
+        isConnecting: false,
+        state: "IMPORTING",
+        nowMs,
       }),
     ).toEqual({
-      variant: "healthy",
-      text: "Calendar connected",
+      variant: "syncing",
+      text: "Sync is catching up",
+    });
+  });
+
+  it("shows Sync is stuck for delayed workOverdue", () => {
+    expect(
+      getSidebarSyncStatus({
+        connection: {
+          id: "c1",
+          state: "delayed",
+          stateReason: "workOverdue",
+          lastSyncedAt: "2026-07-24T11:45:00.000Z",
+          lastHealthyAt: null,
+          accountEmail: null,
+          connectionState: "ATTENTION",
+        },
+        isConnecting: false,
+        state: "ATTENTION",
+        nowMs,
+      }),
+    ).toEqual({
+      variant: "warning",
+      text: "Sync is stuck",
+    });
+  });
+
+  it("shows Sync is catching up while a Refresh is in flight on delayed", () => {
+    expect(
+      getSidebarSyncStatus({
+        connection: {
+          id: "c1",
+          state: "delayed",
+          stateReason: "workOverdue",
+          lastSyncedAt: "2026-07-24T11:45:00.000Z",
+          lastHealthyAt: null,
+          accountEmail: null,
+          connectionState: "ATTENTION",
+        },
+        isConnecting: false,
+        state: "ATTENTION",
+        nowMs,
+        refreshInFlight: true,
+      }),
+    ).toEqual({
+      variant: "syncing",
+      text: "Sync is catching up",
+    });
+  });
+
+  it("shows Sync hit an error for delayed providerErrors", () => {
+    expect(
+      getSidebarSyncStatus({
+        connection: {
+          id: "c1",
+          state: "delayed",
+          stateReason: "providerErrors",
+          lastSyncedAt: "2026-07-24T11:45:00.000Z",
+          lastHealthyAt: null,
+          accountEmail: null,
+          connectionState: "ATTENTION",
+        },
+        isConnecting: false,
+        state: "ATTENTION",
+        nowMs,
+      }),
+    ).toEqual({
+      variant: "warning",
+      text: "Sync hit an error",
+    });
+  });
+
+  it("shows Calendar needs reconnecting for actionRequired", () => {
+    expect(
+      getSidebarSyncStatus({
+        connection: {
+          id: "c1",
+          state: "actionRequired",
+          stateReason: "authorizationRevoked",
+          lastSyncedAt: null,
+          lastHealthyAt: null,
+          accountEmail: "a@example.com",
+          connectionState: "RECONNECT_REQUIRED",
+        },
+        isConnecting: false,
+        state: "RECONNECT_REQUIRED",
+        nowMs,
+      }),
+    ).toEqual({
+      variant: "error",
+      text: "Calendar needs reconnecting",
     });
   });
 });
@@ -182,6 +382,17 @@ describe("getGoogleConnectionConfig", () => {
     config.commandAction?.onSelect?.();
     expect(onRefreshGoogle).toHaveBeenCalledTimes(1);
     expect(onConnectGoogle).not.toHaveBeenCalled();
+  });
+
+  it("replaces Refresh with Reconnect after a refresh gave up", () => {
+    const config = getGoogleConnectionConfig("ATTENTION", handlers, {
+      refreshGaveUp: true,
+    });
+
+    expect(config.commandAction?.label).toBe("Reconnect Google Calendar");
+    config.commandAction?.onSelect?.();
+    expect(onConnectGoogle).toHaveBeenCalledTimes(1);
+    expect(onRefreshGoogle).not.toHaveBeenCalled();
   });
 
   it("wires NOT_CONNECTED to onConnectGoogle", () => {

@@ -1,10 +1,20 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
 import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { settingsActions } from "@web/settings/settings.store";
+import {
+  afterAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 // mock.module is process-wide and not reliably restorable, so - as in
 // AccountSectionHeader.test.tsx - the real hook is captured up front and a
@@ -31,6 +41,10 @@ mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
         }
       : actualUseConnectGoogle(...args),
 }));
+
+// Do not mock.module google.sync.refresh here: process-wide mocks poison
+// later/parallel suites (LifeView hung under CI). The real coordinator
+// starts idle, which is what these cases need.
 
 afterAll(() => {
   isConnectGoogleMocked = false;
@@ -98,11 +112,6 @@ describe("SidebarStatusBar", () => {
   });
 
   it("stays quiet while an already-established account runs routine catch-up, not just on first import", () => {
-    // The 2026-08-05 bug this guards against: the aggregate connectionState
-    // collapses first-import and routine incremental catch-up to the same
-    // "IMPORTING" value, so without the connection's own lastHealthyAt the
-    // bar would misreport a healthy account's reconciliation as "Adding your
-    // calendar…" - exactly the noise getSidebarSyncStatus is meant to hide.
     googleState = "IMPORTING";
     connection = createMockConnection("ahab@pequod.com", {
       state: "catchingUp",
@@ -116,6 +125,63 @@ describe("SidebarStatusBar", () => {
 
     expect(screen.getByRole("status").textContent).toBe("");
     expect(screen.queryByText("Adding your calendar…")).toBeNull();
+  });
+
+  it("shows Sync is catching up when catch-up is more than two minutes behind", () => {
+    googleState = "IMPORTING";
+    connection = createMockConnection("ahab@pequod.com", {
+      state: "catchingUp",
+      lastSyncedAt: new Date(Date.now() - 15 * 60_000).toISOString(),
+      lastHealthyAt: new Date(Date.now() - 15 * 60_000).toISOString(),
+      connectionState: "IMPORTING",
+    });
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Sync is catching up");
+    expect(screen.getByRole("button")).toHaveAttribute(
+      "title",
+      "Sync is catching up",
+    );
+  });
+
+  it("shows Sync is stuck for delayed workOverdue", () => {
+    googleState = "ATTENTION";
+    connection = createMockConnection("ahab@pequod.com", {
+      state: "delayed",
+      stateReason: "workOverdue",
+      lastSyncedAt: new Date(Date.now() - 20 * 60_000).toISOString(),
+      lastHealthyAt: null,
+      connectionState: "ATTENTION",
+    });
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Sync is stuck");
+  });
+
+  it("opens Settings when the status bar is activated", async () => {
+    const user = userEvent.setup();
+    const openSettings = spyOn(settingsActions, "openSettings");
+    googleState = "ATTENTION";
+    connection = createMockConnection("ahab@pequod.com", {
+      state: "delayed",
+      stateReason: "workOverdue",
+      connectionState: "ATTENTION",
+    });
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+    await user.click(
+      screen.getByRole("button", {
+        name: "Sync is stuck. Open account settings",
+      }),
+    );
+
+    expect(openSettings).toHaveBeenCalledTimes(1);
+    openSettings.mockRestore();
   });
 
   it("prefers 'Saving changes…' over the Google sync status when both are true", () => {

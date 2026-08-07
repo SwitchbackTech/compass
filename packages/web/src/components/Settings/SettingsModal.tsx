@@ -7,8 +7,10 @@ import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useCon
 import {
   formatLastSyncedLabel,
   getGoogleSyncStatus,
+  googleSyncSupportMailto,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useDisconnectGoogleAccount } from "@web/auth/google/hooks/useDisconnectGoogleAccount";
+import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
 import {
   selectGoogleSyncConnections,
   useUserMetadataStore,
@@ -305,14 +307,17 @@ const AccountRow: FC<AccountRowProps> = ({
   setConfirming,
 }) => {
   const accountEmail = connection.accountEmail ?? "Unknown account";
+  const refreshSnapshot = useGoogleSyncRefreshSnapshot();
   const status = getGoogleSyncStatus(
     connection.connectionState ?? "NOT_CONNECTED",
     connection,
+    Date.now(),
+    {
+      refreshGaveUp: refreshSnapshot.gaveUp,
+      refreshInFlight: refreshSnapshot.isRefreshing,
+    },
   );
-  const lastSyncedLabel =
-    status?.variant === "healthy"
-      ? formatLastSyncedLabel(connection.lastSyncedAt)
-      : null;
+  const lastSyncedLabel = formatLastSyncedLabel(connection.lastSyncedAt);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const disconnectButtonRef = useRef<HTMLButtonElement>(null);
   const wasConfirmingRef = useRef(isConfirming);
@@ -343,6 +348,16 @@ const AccountRow: FC<AccountRowProps> = ({
         <SyncStatusLine status={status} />
         {lastSyncedLabel ? (
           <p className="text-text-muted text-xs">{lastSyncedLabel}</p>
+        ) : null}
+        {refreshSnapshot.gaveUp && connection.state === "delayed" ? (
+          <p className="text-text-muted text-xs">
+            <a
+              className="underline hover:text-text"
+              href={googleSyncSupportMailto}
+            >
+              Email support
+            </a>
+          </p>
         ) : null}
       </div>
       {isConfirming ? (
