@@ -154,7 +154,6 @@ export async function gatherConnectionStateEvidence(
   return {
     disconnectedAt: connection.disconnectedAt,
     credential: credentialState(credential),
-    permanentConflict: false,
     // Only ACTIVE calendars count: a deactivated calendar's stale marker is not
     // a problem the user can act on, and its jobs are dropped anyway.
     durableReadFailure: activeCalendars.some(

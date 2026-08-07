@@ -34,8 +34,6 @@ export interface ConnectionStateEvidence {
   // The user ended this connection; nothing else matters.
   readonly disconnectedAt: Date | null;
   readonly credential: CredentialState;
-  // A permanent conflict the user must resolve (e.g. an unsafe version clash).
-  readonly permanentConflict: boolean;
   // At least one ACTIVE calendar's reads are durably rejected by the provider
   // (see the readFailed settlement in sync-job-dispatch). Its job was settled
   // rather than left retrying, so no overdue-work signal remains to notice —
@@ -90,10 +88,6 @@ export function deriveConnectionState(
       state: "actionRequired",
       reason: CREDENTIAL_REASON[evidence.credential],
     };
-  }
-
-  if (evidence.permanentConflict) {
-    return { state: "actionRequired", reason: "permanentConflict" };
   }
 
   // Ranked above connecting/importing deliberately: a calendar the provider

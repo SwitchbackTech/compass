@@ -1,6 +1,5 @@
 import { type Collection, type Db, ObjectId } from "mongodb";
 import { type DateTime, type EventId } from "@core/types/domain-primitives";
-import { type SyncEventCalendarId } from "@core/types/sync/event.contracts";
 import {
   type PrincipalId,
   type TenantId,
@@ -28,18 +27,6 @@ export type UpsertByProviderIdentityOptions = {
   // exceptions pass false so they can still clear the bag to null.
   preserveIcalUidWhenAbsent?: boolean;
 };
-
-export interface EventListQuery {
-  tenantId: TenantId;
-  principalId: PrincipalId;
-  calendarId: SyncEventCalendarId;
-  generation: number;
-  limit: number;
-  // Exclusive lower-bound _id for keyset pagination. Canonical events are
-  // listed by id, not time — the time-ordered display projection is the
-  // occurrence query. Uses the principal_calendar index.
-  afterId?: EventId;
-}
 
 export class EventRepository {
   private readonly collection: Collection<EventRecord>;
@@ -117,9 +104,11 @@ export class EventRepository {
             ...literalFields,
             _id: { $ifNull: ["$_id", { $literal: insertId }] },
             createdAt: { $ifNull: ["$createdAt", { $literal: now }] },
-            // Same merge rules as mergeProviderMetadataPreservingIcalUid:
-            // incoming wins for transparency / present iCalUID; otherwise keep
-            // any existing iCalUID so a sparse re-read cannot wipe a backfill.
+            // Merge rules for the provider-fact bag: incoming wins for
+            // transparency and for a present iCalUID; if incoming omits
+            // iCalUID but the existing row has one, keep it so a sparse
+            // re-read cannot wipe a backfill or a prior full read; incoming
+            // null with no existing iCalUID stays null (busy default).
             providerMetadata: {
               $let: {
                 vars: {
@@ -254,37 +243,6 @@ export class EventRepository {
       providerEventId: { $eq: identity.providerEventId, $type: "string" },
     });
     return record ? EventRecordSchema.parse(record) : null;
-  }
-
-  // Like findByProviderIdentity, but a document that fails EventRecordSchema
-  // (e.g. written then rejected mid-migrate) is deleted and treated as missing
-  // so a poison row cannot abort an entire preseed/import job.
-  async findByProviderIdentitySafe(
-    tenantId: TenantId,
-    principalId: PrincipalId,
-    identity: {
-      connectionId: NonNullable<EventRecord["connectionId"]>;
-      calendarId: EventRecord["calendarId"];
-      providerEventId: NonNullable<EventRecord["providerEventId"]>;
-    },
-    options?: { deleteCorrupt?: boolean },
-  ): Promise<{ record: EventRecord | null; corruptDeletedId: string | null }> {
-    const record = await this.collection.findOne({
-      tenantId,
-      principalId,
-      connectionId: identity.connectionId,
-      calendarId: identity.calendarId,
-      // $type: see the PLANNER TRAP note in index-manifest.ts.
-      providerEventId: { $eq: identity.providerEventId, $type: "string" },
-    });
-    if (!record) return { record: null, corruptDeletedId: null };
-    const parsed = EventRecordSchema.safeParse(record);
-    if (parsed.success) return { record: parsed.data, corruptDeletedId: null };
-    const id = String(record._id);
-    if (options?.deleteCorrupt !== false) {
-      await this.collection.deleteOne({ _id: record._id });
-    }
-    return { record: null, corruptDeletedId: id };
   }
 
   // Remove one event by id, scoped to its owner so a caller can only delete its
@@ -469,24 +427,5 @@ export class EventRepository {
   ): Promise<number> {
     const result = await this.collection.deleteMany({ tenantId, principalId });
     return result.deletedCount;
-  }
-
-  // Bounded, keyset-paginated canonical events for one calendar/generation,
-  // ordered by _id so a cursor never skips or repeats a row.
-  async listByCalendar(query: EventListQuery): Promise<EventRecord[]> {
-    const filter = {
-      tenantId: query.tenantId,
-      principalId: query.principalId,
-      calendarId: query.calendarId,
-      generation: query.generation,
-      ...(query.afterId ? { _id: { $gt: query.afterId } } : {}),
-    };
-
-    const records = await this.collection
-      .find(filter)
-      .sort({ _id: 1 })
-      .limit(query.limit)
-      .toArray();
-    return records.map((r) => EventRecordSchema.parse(r));
   }
 }

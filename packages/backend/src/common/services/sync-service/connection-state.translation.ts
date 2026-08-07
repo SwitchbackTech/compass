@@ -51,10 +51,7 @@ function translateConnection(
     case "disconnected":
       return "RECONNECT_REQUIRED";
     // actionRequired always needs the user to act. Re-auth reasons map to
-    // RECONNECT_REQUIRED; other reasons (today only permanentConflict) fall to
-    // the softer ATTENTION. NOTE: ATTENTION's browser affordance is a resync,
-    // which won't resolve a permanent conflict — revisit the remediation when
-    // the status route is wired.
+    // RECONNECT_REQUIRED; any other reason falls to the softer ATTENTION.
     case "actionRequired":
       return reason && REAUTH_REASONS.has(reason)
         ? "RECONNECT_REQUIRED"

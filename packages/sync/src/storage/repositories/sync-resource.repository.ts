@@ -154,8 +154,6 @@ export class SyncResourceRepository {
 
   // Advance first-connection readiness only after the caller has completed a
   // durable boundary (initial import, watch setup, or the post-watch pull).
-  // Existing rows default to ready at read time; this method only writes the
-  // stricter lifecycle for calendars created after the invariant was added.
   async setBootstrapState(
     tenantId: TenantId,
     principalId: PrincipalId,

@@ -12,8 +12,6 @@ export const JobKindSchema = z.enum([
   "initialImport",
   "bootstrapCatchup",
   "incrementalPull",
-  "commandApply",
-  "reconcile",
   "subscriptionMaintain",
   "repair",
 ]);
@@ -24,10 +22,11 @@ export type JobKind = z.infer<typeof JobKindSchema>;
 export const JobStateSchema = z.enum(["pending", "claimed", "failed"]);
 export type JobState = z.infer<typeof JobStateSchema>;
 
-export const JobFailureClassSchema = z.enum([
-  "retryableTransient",
-  "permanent",
-]);
+// The only failure class any code path produces. Durable failures never
+// persist a class at all — they settle as drops so the coalescing key stays
+// free for a re-enqueue (see sync-job-dispatch.service.ts). Kept as a
+// persisted field because existing job docs carry it.
+export const JobFailureClassSchema = z.literal("retryableTransient");
 export type JobFailureClass = z.infer<typeof JobFailureClassSchema>;
 
 // Persistence record for `jobs` — a small internal work item pointing at a

@@ -35,7 +35,6 @@ export const ConnectionStateReasonSchema = z.enum([
   "authorizationRevoked",
   "authorizationExpired",
   "insufficientScopes",
-  "permanentConflict",
   "workOverdue",
   "providerErrors",
 ]);

@@ -334,13 +334,10 @@ describe("executeProviderCreate", () => {
     await executeProviderCreate(deps, command, calendar, now);
     await executeProviderCreate(deps, command, calendar, now);
 
-    const owned = await events.listByCalendar({
-      tenantId,
-      principalId,
-      calendarId: calendar._id,
-      generation: 0,
-      limit: 10,
-    });
+    const owned = await mongo.db
+      .collection(SYNC_COLLECTIONS.events)
+      .find({ tenantId, principalId, calendarId: calendar._id })
+      .toArray();
     expect(owned).toHaveLength(1);
   });
 
@@ -376,15 +373,12 @@ describe("executeProviderCreate", () => {
     );
 
     // Visible to a read at the generation the calendar actually serves.
-    const atActive = await events.listByCalendar({
-      tenantId,
-      principalId,
-      calendarId: calendar._id,
-      generation: 1,
-      limit: 10,
-    });
+    const atActive = await mongo.db
+      .collection(SYNC_COLLECTIONS.events)
+      .find({ tenantId, principalId, calendarId: calendar._id, generation: 1 })
+      .toArray();
     expect(atActive).toHaveLength(1);
-    expect(atActive[0]?._id).toBe(command.eventId);
+    expect(atActive[0]?.["_id"]).toBe(command.eventId);
   });
 
   it("leaves the command pending on a transient write failure", async () => {
@@ -1934,13 +1928,10 @@ describe("executeProviderSeriesUpdate", () => {
     expect(second.outcome.state).toBe("confirmed");
     // Only the first attempt wrote; the retry recognized the replay.
     expect(writer.patchCalls).toHaveLength(1);
-    const owned = await events.listByCalendar({
-      tenantId,
-      principalId,
-      calendarId: calendar._id,
-      generation: 0,
-      limit: 10,
-    });
+    const owned = await mongo.db
+      .collection(SYNC_COLLECTIONS.events)
+      .find({ tenantId, principalId, calendarId: calendar._id })
+      .toArray();
     expect(owned).toHaveLength(1);
     expect(await masterOccurrences(master._id)).toHaveLength(2);
   });

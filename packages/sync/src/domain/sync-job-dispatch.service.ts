@@ -13,7 +13,6 @@ import {
 import { type ProviderNotificationAdapter } from "@sync/providers/provider-notifications.port";
 import {
   type JobEnqueue,
-  type JobFailureClass,
   type JobRecord,
 } from "@sync/storage/contracts/job.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
@@ -64,17 +63,10 @@ export type SyncJobOutcome =
   // new job to enqueue (coalesced) — e.g. an expired pull hands off to a repair.
   | { readonly result: "done"; readonly followup?: JobEnqueue }
   // A transient, self-correcting condition; return the job to pending to retry.
-  | {
-      readonly result: "retry";
-      readonly failureClass: JobFailureClass;
-      readonly reason: string;
-    }
+  | { readonly result: "retry"; readonly reason: string }
   // Nothing to act on — the job's target vanished (resource/calendar deleted) or
   // the job is malformed for its kind. Settle complete; retrying can't help.
-  | { readonly result: "drop"; readonly reason: string }
-  // This kind is not a provider-calendar sync job (commandApply, reconcile).
-  // Dispatch here does not own it; the loop routes it.
-  | { readonly result: "unsupported"; readonly kind: JobRecord["kind"] };
+  | { readonly result: "drop"; readonly reason: string };
 
 // Run one claimed sync job (calendarListSync / initialImport / incrementalPull /
 // repair / subscriptionMaintain) and report how to settle it. calendarListSync
@@ -171,16 +163,6 @@ async function runSyncJob(
     }
     await syncCalendarList(deps, connection, now);
     return { result: "done" };
-  }
-
-  if (
-    job.kind !== "initialImport" &&
-    job.kind !== "bootstrapCatchup" &&
-    job.kind !== "incrementalPull" &&
-    job.kind !== "repair" &&
-    job.kind !== "subscriptionMaintain"
-  ) {
-    return { result: "unsupported", kind: job.kind };
   }
 
   if (!job.resourceId) {
@@ -322,11 +304,7 @@ async function runSyncJob(
         }
         return { result: "done" };
       }
-      return {
-        result: "retry",
-        failureClass: "retryableTransient",
-        reason: "repair did not complete",
-      };
+      return { result: "retry", reason: "repair did not complete" };
     }
     case "subscriptionMaintain": {
       // Open or renew the push channel. Every terminal outcome (watched /
@@ -432,12 +410,8 @@ function bootstrapCatchupFollowup(
   };
 }
 
-// Rows written before bootstrapState existed parse as ready so an established
-// calendar does not restart its onboarding after deploy. A missing cursor is
-// the important exception: it proves the old row was still mid-import and
-// must complete the watch + post-watch pull boundary before becoming healthy.
 function needsBootstrapCompletion(resource: SyncResourceRecord): boolean {
-  return resource.bootstrapState !== "ready" || resource.syncCursor == null;
+  return resource.bootstrapState !== "ready";
 }
 
 async function appendCalendarInvalidation(

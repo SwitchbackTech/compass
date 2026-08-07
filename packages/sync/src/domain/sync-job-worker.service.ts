@@ -190,7 +190,7 @@ export class SyncJobWorker {
         ),
         job,
       );
-      await this.#settleFailure(job, "retryableTransient");
+      await this.#settleFailure(job);
       return;
     }
 
@@ -211,38 +211,26 @@ export class SyncJobWorker {
         await this.#deps.jobs.complete(job._id, this.#owner);
         return;
       case "retry":
-        await this.#settleFailure(job, outcome.failureClass);
-        return;
-      case "unsupported":
-        // No handler for this kind in this build (commandApply/reconcile arrive
-        // later). Hold it via a backed-off retry rather than hot-loop or drop
-        // unfinished work; the cap eventually fails a job that no build claims.
-        // No producer enqueues these kinds yet, so this is defensive.
-        await this.#settleFailure(job, "retryableTransient");
+        await this.#settleFailure(job);
         return;
     }
   }
 
-  // Reschedule a failed job for a backed-off retry, OR mark it a terminal failure
-  // once retries are exhausted or the failure is permanent. A failed job keeps
-  // its coalescing key, so enqueue will not create a replacement until an
-  // operator clears it — deliberate backpressure: a persistently-broken resource
-  // stops and asks for attention rather than looping (or resurrecting on every
-  // sweep, which would be unlimited retries by another name).
-  async #settleFailure(
-    job: JobRecord,
-    failureClass: JobRecord["failureClass"],
-  ): Promise<void> {
-    const exhausted = job.attempt >= this.#maxAttempts;
-    if (failureClass === "permanent" || exhausted) {
-      await this.#deps.jobs.fail(job._id, this.#owner, failureClass);
+  // Reschedule a failed job for a backed-off retry, OR mark it a terminal
+  // failure once retries are exhausted. A failed job keeps its coalescing key,
+  // so enqueue will not create a replacement until an operator clears it —
+  // deliberate backpressure: a persistently-broken resource stops and asks for
+  // attention rather than looping (or resurrecting on every sweep, which would
+  // be unlimited retries by another name).
+  async #settleFailure(job: JobRecord): Promise<void> {
+    if (job.attempt >= this.#maxAttempts) {
+      await this.#deps.jobs.fail(job._id, this.#owner);
       return;
     }
     await this.#deps.jobs.scheduleRetry(
       job._id,
       this.#owner,
       this.#backoff(job.attempt, this.#now()),
-      failureClass,
     );
   }
 }

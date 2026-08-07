@@ -28,7 +28,6 @@ export type ExhaustedFailedJob = {
 function exhaustedFailedFilter(maxRequeues: number) {
   return {
     state: "failed" as const,
-    failureClass: { $ne: "permanent" as const },
     requeuedCount: { $gte: maxRequeues },
   };
 }
@@ -94,9 +93,9 @@ export class JobRepository {
     return record ? JobRecordSchema.parse(record) : null;
   }
 
-  // Remove a completed job. Deleting by _id AND coalescingKey guarantees we
-  // only remove the job we finished, never a fresh one another worker may have
-  // enqueued under the same key after ours completed.
+  // Remove a job by id (operator tooling: manage-failed-jobs clear). Deleting
+  // by _id AND coalescingKey guarantees we only remove the intended job, never
+  // a fresh one another worker may have enqueued under the same key.
   async remove(id: SyncJobId, coalescingKey: string): Promise<boolean> {
     const result = await this.collection.deleteOne({ _id: id, coalescingKey });
     return result.deletedCount === 1;
@@ -177,7 +176,6 @@ export class JobRepository {
     id: SyncJobId,
     owner: string,
     runAfter: Date,
-    failureClass: JobRecord["failureClass"],
   ): Promise<boolean> {
     const result = await this.collection.updateOne(
       { _id: id, leaseOwner: owner },
@@ -187,7 +185,7 @@ export class JobRepository {
           runAfter,
           leaseOwner: null,
           leaseExpiresAt: null,
-          failureClass,
+          failureClass: "retryableTransient" as const,
         },
         $currentDate: { updatedAt: true },
       },
@@ -195,12 +193,9 @@ export class JobRepository {
     return result.modifiedCount === 1;
   }
 
-  // Mark a job the worker owns as a permanent failure needing attention.
-  async fail(
-    id: SyncJobId,
-    owner: string,
-    failureClass: JobRecord["failureClass"],
-  ): Promise<boolean> {
+  // Mark a job the worker owns as a terminal failure needing attention
+  // (retries exhausted).
+  async fail(id: SyncJobId, owner: string): Promise<boolean> {
     const result = await this.collection.updateOne(
       { _id: id, leaseOwner: owner },
       {
@@ -208,7 +203,7 @@ export class JobRepository {
           state: "failed",
           leaseOwner: null,
           leaseExpiresAt: null,
-          failureClass,
+          failureClass: "retryableTransient" as const,
         },
         $currentDate: { updatedAt: true },
       },
@@ -238,9 +233,8 @@ export class JobRepository {
 
   // Failed jobs the self-heal sweep should give a fresh retry ladder: still
   // failed (a concurrent operator/reconnect action may have moved it on),
-  // last due before the sweep's cooldown cutoff (`before`), not a permanently
-  // classed failure (retrying that can never help), and under the requeue
-  // cap. Gated on `runAfter` rather than `updatedAt` — the latter is set via
+  // last due before the sweep's cooldown cutoff (`before`), and under the
+  // requeue cap. Gated on `runAfter` rather than `updatedAt` — the latter is set via
   // $currentDate (real wall-clock, not the injected `now` used everywhere
   // else) and is pure audit metadata, never a field business logic reads.
   // Oldest-due-first so a long-wedged job is healed before a recently-failed
@@ -253,7 +247,6 @@ export class JobRepository {
     const rows = await this.collection
       .find({
         state: "failed",
-        failureClass: { $ne: "permanent" },
         // A job predating the requeuedCount field has been requeued zero
         // times, not too many. Mongo's {$lt: n} does not match a missing
         // field, so the absence has to be spelled out — otherwise the very
