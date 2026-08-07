@@ -11,6 +11,25 @@ export const isContextMenuOpen = () => {
   return !!contextMenuItems;
 };
 
+// A nested floating layer (actions menu, time picker, recurrence selects,
+// confirmation dialogs) handles its own Escape; another Escape consumer
+// acting at the same time would fight it. Two carve-outs for layers that are
+// always present rather than transiently floating: overlays that stay
+// mounted while hidden (the keyboard-shortcuts dialog — display:none in
+// Day's tree, aria-hidden in Week's), and the sidebar's inline month picker,
+// whose react-datepicker month grid is a permanently-visible role="listbox".
+export const isFloatingLayerOpen = () =>
+  Array.from(
+    document.querySelectorAll(
+      '[role="menu"], [role="listbox"], [role="dialog"]',
+    ),
+  ).some(
+    (element) =>
+      element.getAttribute("aria-hidden") !== "true" &&
+      element.getClientRects().length > 0 &&
+      !element.closest('[data-testid="Month picker"]'),
+  );
+
 const EVENT_FORM_SELECTOR = `form[name="${ID_EVENT_FORM}"]`;
 
 // The grid draft card and the sidebar-docked form live in separate component
