@@ -65,7 +65,10 @@ const parseListQuery = (query: Request["query"]): EventListQuery => {
 // `calendarIds`, intersect with owned ids so hidden calendars are never
 // drained (and unowned ids cannot be probed). Empty means the user has
 // nothing to read yet; return [] rather than calling sync with an invalid
-// empty calendarIds.
+// empty calendarIds. Scoped to ACTIVE calendars only: a calendar the provider
+// no longer lists must never be read from (nor silently included when the
+// client sends no calendarIds at all, which happens while the browser's own
+// calendar list is still loading).
 const resolveSyncCalendarIds = async (
   client: SyncServiceClient,
   userId: string,
@@ -73,7 +76,7 @@ const resolveSyncCalendarIds = async (
 ): Promise<SyncEventCalendarId[]> => {
   const principal = toSyncPrincipal(userId);
   const [calendarsResult, localCalendar] = await Promise.all([
-    client.listCalendars(principal),
+    client.listActiveCalendars(principal),
     calendarService.getLocalCalendar(userId),
   ]);
 

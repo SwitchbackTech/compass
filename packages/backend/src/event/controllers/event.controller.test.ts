@@ -103,7 +103,7 @@ describe("EventController", () => {
   it("fails closed on a sync outage when listing events", async () => {
     spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
     spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
-      listCalendars: mock(() =>
+      listActiveCalendars: mock(() =>
         Promise.resolve({
           ok: false as const,
           error: {
@@ -133,6 +133,57 @@ describe("EventController", () => {
       message: "Failed to list calendars from sync (unavailable)",
       retryable: true,
     });
+  });
+
+  it("resolves owned calendars for a read via listActiveCalendars, never listCalendars", async () => {
+    // resolveSyncCalendarIds intersects the request's calendarIds against
+    // "owned" ids — but while the browser's own calendar list is still
+    // loading, it sends NO calendarIds at all (undefined), and the backend
+    // answers with every owned id verbatim. That call must already be scoped
+    // to active calendars, or a retired calendar's events get read on every
+    // page load that races the calendars query. Modeling this with a client
+    // stub that implements ONLY listActiveCalendars (no listCalendars) means
+    // the controller calling the wrong method throws here instead of quietly
+    // reading everything.
+    const activeCalendarId = objectId();
+    spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
+    const listFullEvents = mock(() =>
+      Promise.resolve({
+        ok: true as const,
+        value: { instances: [], nextCursor: null },
+      }),
+    );
+    spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
+      listActiveCalendars: mock(() =>
+        Promise.resolve({
+          ok: true as const,
+          value: { calendars: [{ id: activeCalendarId }] },
+        }),
+      ),
+      listFullEvents,
+    } as never);
+
+    const { res, json } = jsonRes();
+    await eventController.readAll(
+      sessionReq(objectId(), {
+        query: {
+          start: "2026-07-14T00:00:00.000Z",
+          end: "2026-07-21T00:00:00.000Z",
+        },
+      }),
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(Status.OK);
+    expect(json).toHaveBeenCalledWith({ events: [] });
+    expect(listFullEvents).toHaveBeenCalledTimes(1);
+    const pageQuery = (
+      listFullEvents.mock.calls[0] as never as [
+        unknown,
+        { calendarIds: string[] },
+      ]
+    )[1];
+    expect(pageQuery.calendarIds).toEqual([activeCalendarId]);
   });
 
   it("rejects a calendar move before submitting anything to sync", async () => {

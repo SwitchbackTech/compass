@@ -195,6 +195,116 @@ describe("syncCalendarList", () => {
     expect(primary?.active).toBe(true);
   });
 
+  it("stamps lastAttemptAt on the calendarList resource before it can fail", async () => {
+    // Without this, the rediscovery sweep's rotation sort (lastAttemptAt) ties
+    // at null forever for a permanently-failing connection, and it re-wins the
+    // front of every sweep cycle (calendar-list-rediscovery.db.test.ts covers
+    // the sweep side; this covers that syncCalendarList is what stamps it).
+    const conn = connection();
+    const discovery = new FakeDiscovery([
+      { calendars: [discovered("primary")], cursor: "c" },
+    ]);
+
+    await syncCalendarList(deps(discovery), conn, now);
+
+    expect((await calendarListResource(conn))?.lastAttemptAt).toEqual(now());
+  });
+
+  it("clears the local push channel of a retired calendar's events resource", async () => {
+    const conn = connection();
+    // First full pass discovers "gone" and bootstraps its events resource.
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          {
+            calendars: [discovered("primary"), discovered("gone")],
+            cursor: null,
+          },
+        ]),
+      ),
+      conn,
+      now,
+    );
+    const goneCalendar = (await calendarDocs(conn)).find(
+      (d) => d.providerCalendarId === "gone",
+    );
+    const goneEventsResourceId = (
+      await storage.db().collection(SYNC_COLLECTIONS.syncResources).findOne({
+        connectionId: conn._id,
+        resourceKind: "events",
+        calendarId: goneCalendar?._id,
+      })
+    )?._id as string;
+    // Simulate an established push channel, as a calendar with prior sync
+    // history would hold.
+    await resources.updateSubscription(
+      conn.tenantId,
+      conn.principalId,
+      goneEventsResourceId,
+      {
+        subscriptionId: "channel-1",
+        subscriptionResourceId: "resource-1",
+        subscriptionToken: "token-1",
+        subscriptionExpiresAt: new Date("2026-08-01T00:00:00.000Z"),
+      },
+    );
+
+    // Second full pass omits "gone", retiring it.
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          { calendars: [discovered("primary")], cursor: null },
+        ]),
+      ),
+      conn,
+      now,
+    );
+
+    const goneEventsResource = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne({ _id: goneEventsResourceId });
+    expect(goneEventsResource?.subscriptionId).toBeNull();
+    expect(goneEventsResource?.subscriptionExpiresAt).toBeNull();
+  });
+
+  it("logs a warning naming the calendars a full pass retired", async () => {
+    const conn = connection();
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          {
+            calendars: [discovered("primary"), discovered("gone")],
+            cursor: null,
+          },
+        ]),
+      ),
+      conn,
+      now,
+    );
+    const goneCalendar = (await calendarDocs(conn)).find(
+      (d) => d.providerCalendarId === "gone",
+    );
+    const warnings: string[] = [];
+
+    await syncCalendarList(
+      {
+        ...deps(
+          new FakeDiscovery([
+            { calendars: [discovered("primary")], cursor: null },
+          ]),
+        ),
+        log: { warn: (message) => warnings.push(message) },
+      },
+      conn,
+      now,
+    );
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain(goneCalendar?._id as string);
+    expect(warnings[0]).toContain(conn._id);
+  });
+
   it("does not retire everything when a full list comes back empty", async () => {
     const conn = connection();
     // First full pass discovers a calendar (cursor null keeps the next pass full).

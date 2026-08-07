@@ -467,6 +467,64 @@ export class SyncResourceRepository {
     return records.map((r) => SyncResourceRecordSchema.parse(r));
   }
 
+  // calendarList resources whose last successful discovery is older than
+  // `before` (or which never succeeded), rotated oldest-attempt-first, bounded.
+  // This is the calendar-list rediscovery sweep's input — the periodic re-run
+  // that catches a calendar deleted or unshared at the provider, since
+  // calendarListSync otherwise only ever runs once, at connect. Same GLOBAL
+  // scan + credential-exclusion shape as listStaleEvents, for the same reason
+  // (2026-07-29 dead-credential tie-break bias) - uses the resource_last_success
+  // / resource_last_attempt indexes, which already lead with resourceKind so no
+  // new index is needed for this kind.
+  async listStaleCalendarLists(
+    before: Date,
+    limit: number,
+  ): Promise<SyncResourceRecord[]> {
+    const records = await this.collection
+      .aggregate<SyncResourceRecord>([
+        {
+          $match: {
+            resourceKind: "calendarList",
+            $or: [{ lastSuccessAt: { $lt: before } }, { lastSuccessAt: null }],
+          },
+        },
+        {
+          $lookup: {
+            from: SYNC_COLLECTIONS.credentials,
+            localField: "connectionId",
+            foreignField: "_id",
+            as: "_credential",
+          },
+        },
+        { $match: { "_credential.0": { $exists: true } } },
+        { $project: { _credential: 0 } },
+        { $sort: { lastAttemptAt: 1, lastSuccessAt: 1 } },
+        { $limit: limit },
+      ])
+      .toArray();
+    return records.map((r) => SyncResourceRecordSchema.parse(r));
+  }
+
+  // Clear the calendarList resource's incremental cursor so the next
+  // calendarListSync pass — whichever job runs it, sweep-enqueued or otherwise
+  // — goes full rather than incremental (syncCalendarList treats a null cursor
+  // as `fullList`). Deliberately leaves lastSuccessAt untouched: that field is
+  // the staleness key the rediscovery sweep sorts on, and touching it here
+  // would let a resource that hasn't actually re-synced yet win the front of
+  // every subsequent sweep cycle.
+  async clearSyncCursor(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+  ): Promise<void> {
+    await this.collection.updateOne(
+      { _id: id, tenantId, principalId },
+      {
+        $set: { syncCursor: null, pageCursor: null, updatedAt: new Date() },
+      },
+    );
+  }
+
   // Hard-delete every sync resource for one connection (post-disconnect retention).
   async deleteByConnection(
     tenantId: TenantId,
