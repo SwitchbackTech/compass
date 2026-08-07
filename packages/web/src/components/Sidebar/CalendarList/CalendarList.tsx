@@ -1,6 +1,7 @@
 import { type FC, useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { useSession } from "@web/auth/compass/session/useSession";
+import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
   selectGoogleSyncConnections,
@@ -18,10 +19,12 @@ import {
 import { useCalendarVisibility } from "@web/calendars/useCalendarVisibility";
 import { useConnectedAccountEmails } from "@web/calendars/useDefaultTargetCalendar";
 import { AccountSectionHeader } from "./AccountSectionHeader";
+import { AnonymousCalendarRow } from "./AnonymousCalendarRow";
 import { CalendarListHeader } from "./CalendarListHeader";
 
 export const CalendarList: FC = () => {
   const { authenticated } = useSession();
+  const { email } = useUser();
   const { isAvailable, state } = useConnectGoogle();
   const { data, isPending, isError, refetch } = useCalendarsQuery();
   const { toggleCalendarVisibility, failureAnnouncement } =
@@ -31,6 +34,7 @@ export const CalendarList: FC = () => {
   const collapsedKeys = useCollapsedAccountKeys();
 
   const hasConnectedAccount = accountEmailOrder.length > 0;
+  const isAnonymous = !email;
 
   // Re-groups on every calendar-visibility/collapse toggle otherwise, since
   // those live in sibling external stores this component also subscribes to.
@@ -81,11 +85,11 @@ export const CalendarList: FC = () => {
   return (
     <section aria-label="Calendars">
       {/* Every connected account carries its own heading below, so the generic
-          banner is only for users who have none yet: anonymous (sign-up
-          prompt) or signed in before connecting Google (connect CTA). Showing
-          it alongside account sections duplicated one section's status under a
-          second, unlabeled heading with no way to tell them apart. */}
-      {groups.length === 0 && <CalendarListHeader />}
+          banner is only for users who have none yet and are signed in. Anonymous
+          users get a single calendar row instead. Showing it alongside account
+          sections would duplicate one section's status under a second, unlabeled
+          heading with no way to tell them apart. */}
+      {groups.length === 0 && !isAnonymous && <CalendarListHeader />}
 
       {isPending ? null : isError ? (
         <div className="flex items-center justify-between gap-2 text-xs">
@@ -118,7 +122,24 @@ export const CalendarList: FC = () => {
               {renderCollapsible(group.accountEmail, group.calendars)}
             </section>
           ))}
-          {ungrouped.length > 0 ? renderRows(ungrouped) : null}
+          {ungrouped.length > 0 ? (
+            <ul className="flex flex-col gap-1.5">
+              {ungrouped.map((calendar) =>
+                isAnonymous ? (
+                  <AnonymousCalendarRow calendar={calendar} key={calendar.id} />
+                ) : (
+                  <CalendarRow
+                    calendar={calendar}
+                    key={calendar.id}
+                    label={
+                      calendar.provider === "local" ? calendar.name : undefined
+                    }
+                    onToggle={toggleCalendarVisibility}
+                  />
+                ),
+              )}
+            </ul>
+          ) : null}
         </div>
       )}
 
@@ -131,15 +152,13 @@ export const CalendarList: FC = () => {
 
 const CalendarRow: FC<{
   calendar: Calendar;
+  label?: string;
   onToggle: (calendarId: Calendar["id"], isVisible: boolean) => void;
-}> = ({ calendar, onToggle }) => {
-  // The heading above the row already names the account - the signed-in
-  // user's email, or CalendarListHeader's "This browser" for anonymous - so a
-  // primary calendar's row reads "primary" instead of repeating it. The local
-  // sentinel is also isPrimary and gets no exception: it only ever renders
-  // once connected accounts have none (LCV3), so CalendarListHeader is always
-  // the row's heading, never a per-account section.
-  const displayName = calendar.isPrimary ? "primary" : calendar.name;
+}> = ({ calendar, label, onToggle }) => {
+  // If an explicit label is provided, use it (for ungrouped rows that have no
+  // account heading). Otherwise, a primary calendar's row reads "primary"
+  // instead of repeating the account name already in the section heading.
+  const displayName = label ?? (calendar.isPrimary ? "primary" : calendar.name);
 
   return (
     <li className="flex min-w-0 items-center gap-1">
