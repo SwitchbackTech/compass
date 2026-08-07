@@ -244,11 +244,14 @@ async function runSyncJob(
         // (2026-08-01). Pulls already run for every stale calendar, so
         // piggybacking here needs no new sweep and heals the whole fleet.
         //
-        // Wart: a calendar the provider refuses to watch reports "unsupported"
-        // and is not recorded as such, so it re-attempts one watch per pull
-        // (~1/100min at current sweep cadence). Cheap, bounded, and self-
-        // limiting in practice since unwatchable calendars are rare.
-        if (pull.resource.subscriptionId === null) {
+        // watchUnsupportedAt gates the followup: once the provider has
+        // terminally refused a watch, re-attempting one per pull is pure
+        // waste. The daily calendar-list full pass clears the marker for one
+        // fresh attempt.
+        if (
+          pull.resource.subscriptionId === null &&
+          pull.resource.watchUnsupportedAt === null
+        ) {
           return {
             result: "done",
             followup: subscriptionFollowup(pull.resource, now),

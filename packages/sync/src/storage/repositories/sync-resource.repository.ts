@@ -87,6 +87,7 @@ export class SyncResourceRepository {
           lastSuccessAt: null,
           lastReadFailureAt: null,
           lastReadFailureDetail: null,
+          watchUnsupportedAt: null,
           bootstrapState:
             fields.resourceKind === "events" ? "importing" : "ready",
           subscriptionId: null,
@@ -203,7 +204,53 @@ export class SyncResourceRepository {
   ): Promise<void> {
     await this.collection.updateOne(
       { _id: id, tenantId, principalId },
-      { $set: { ...subscription, updatedAt: new Date() } },
+      {
+        $set: {
+          ...subscription,
+          // A watch just succeeded, so any earlier unsupported verdict is
+          // stale by definition.
+          watchUnsupportedAt: null,
+          updatedAt: new Date(),
+        },
+      },
+    );
+  }
+
+  // Record the provider's terminal refusal to open a push channel for this
+  // resource (maintainSubscription's "unsupported" outcome). While set, the
+  // pull path stops re-attempting a watch every cycle; cleared by the daily
+  // calendar-list full pass (clearWatchUnsupportedByConnection) or by a
+  // successful watch (updateSubscription).
+  async markWatchUnsupported(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    id: string,
+    at: Date,
+  ): Promise<void> {
+    await this.collection.updateOne(
+      { _id: id, tenantId, principalId },
+      { $set: { watchUnsupportedAt: at, updatedAt: new Date() } },
+    );
+  }
+
+  // Give every unwatchable-marked resource on a connection one fresh watch
+  // attempt. Called from the calendar-list FULL discovery pass, which the
+  // rediscovery sweep forces daily — so a calendar the provider starts
+  // supporting is retried at that cadence rather than never (or on every
+  // pull, which was the pre-marker wart).
+  async clearWatchUnsupportedByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+  ): Promise<void> {
+    await this.collection.updateMany(
+      {
+        tenantId,
+        principalId,
+        connectionId,
+        watchUnsupportedAt: { $ne: null },
+      },
+      { $set: { watchUnsupportedAt: null, updatedAt: new Date() } },
     );
   }
 

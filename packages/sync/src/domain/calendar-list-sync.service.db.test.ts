@@ -162,6 +162,48 @@ describe("syncCalendarList", () => {
     expect(job?.coalescingKey).toBe(`initialImport:${eventsResources[0]?._id}`);
   });
 
+  it("clears persisted unwatchable verdicts on a full pass so each gets one retry", async () => {
+    const conn = connection();
+    // First full pass discovers the calendar and bootstraps its events resource.
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          { calendars: [discovered("primary")], cursor: null },
+        ]),
+      ),
+      conn,
+      now,
+    );
+    const eventsResource = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne({ connectionId: conn._id, resourceKind: "events" });
+    await resources.markWatchUnsupported(
+      conn.tenantId,
+      conn.principalId,
+      String(eventsResource?.["_id"]),
+      now(),
+    );
+
+    // Next pass is full again (no cursor stored) - the verdict is cleared for
+    // one fresh watch attempt.
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          { calendars: [discovered("primary")], cursor: null },
+        ]),
+      ),
+      conn,
+      now,
+    );
+
+    const after = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.syncResources)
+      .findOne({ connectionId: conn._id, resourceKind: "events" });
+    expect(after?.["watchUnsupportedAt"]).toBeNull();
+  });
+
   it("retires a calendar no longer present on a full list", async () => {
     const conn = connection();
     // First full pass discovers two calendars.
