@@ -2,7 +2,10 @@ import { faker } from "@faker-js/faker";
 import { type Db } from "mongodb";
 import { type SyncJobId } from "@core/types/sync/identity.contracts";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
-import { type JobEnqueue } from "@sync/storage/contracts/job.contracts";
+import {
+  JOB_PRIORITY,
+  type JobEnqueue,
+} from "@sync/storage/contracts/job.contracts";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 
 const objectId = () => faker.database.mongodbObjectId();
@@ -126,15 +129,136 @@ describe("JobRepository", () => {
       expect(claimed).toHaveLength(1);
     });
 
-    it("claims jobs in priority then age order", async () => {
+    it("claims user-priority work ahead of background work, oldest first within a tier", async () => {
       await repo.enqueue(
-        enqueue({ coalescingKey: "low", priority: 1, runAfter: past(2000) }),
+        enqueue({
+          coalescingKey: "bg-older",
+          priority: JOB_PRIORITY.background,
+          runAfter: past(3000),
+        }),
       );
       await repo.enqueue(
-        enqueue({ coalescingKey: "high", priority: 9, runAfter: past(1000) }),
+        enqueue({
+          coalescingKey: "user-newer",
+          priority: JOB_PRIORITY.user,
+          runAfter: past(1000),
+        }),
+      );
+      await repo.enqueue(
+        enqueue({
+          coalescingKey: "user-older",
+          priority: JOB_PRIORITY.user,
+          runAfter: past(2000),
+        }),
       );
       const first = await repo.claimDueJob("w", NOW, LEASE_MS);
-      expect(first?.coalescingKey).toBe("high");
+      expect(first?.coalescingKey).toBe("user-older");
+      const second = await repo.claimDueJob("w", NOW, LEASE_MS);
+      expect(second?.coalescingKey).toBe("user-newer");
+      const third = await repo.claimDueJob("w", NOW, LEASE_MS);
+      expect(third?.coalescingKey).toBe("bg-older");
+    });
+
+    it("enqueueUrgent boosts a pending job without pushing back an earlier runAfter", async () => {
+      const coalescingKey = "urgent:pending";
+      const earlier = past(5000);
+      await repo.enqueue(
+        enqueue({
+          coalescingKey,
+          priority: JOB_PRIORITY.background,
+          runAfter: earlier,
+        }),
+      );
+      const { job, outcome } = await repo.enqueueUrgent(
+        enqueue({
+          coalescingKey,
+          priority: JOB_PRIORITY.user,
+          runAfter: past(1000),
+        }),
+      );
+      expect(outcome).toBe("boosted");
+      expect(job.priority).toBe(JOB_PRIORITY.user);
+      expect(job.runAfter).toEqual(earlier);
+    });
+
+    it("enqueueUrgent pulls a future runAfter forward on boost", async () => {
+      const coalescingKey = "urgent:future";
+      await repo.enqueue(
+        enqueue({
+          coalescingKey,
+          priority: JOB_PRIORITY.background,
+          runAfter: future(60_000),
+        }),
+      );
+      const { job, outcome } = await repo.enqueueUrgent(
+        enqueue({
+          coalescingKey,
+          priority: JOB_PRIORITY.user,
+          runAfter: NOW,
+        }),
+      );
+      expect(outcome).toBe("boosted");
+      expect(job.runAfter).toEqual(NOW);
+      expect(job.priority).toBe(JOB_PRIORITY.user);
+    });
+
+    it("enqueueUrgent revives a failed job without spending requeuedCount", async () => {
+      const coalescingKey = "urgent:failed";
+      const created = await repo.enqueue(
+        enqueue({ coalescingKey, runAfter: past(1000) }),
+      );
+      const claimed = await repo.claimDueJob("owner", NOW, LEASE_MS);
+      expect(claimed?._id).toBe(created._id);
+      expect(await repo.fail(created._id, "owner")).toBe(true);
+      await db
+        .collection("jobs")
+        .updateOne({ _id: created._id }, { $set: { requeuedCount: 3 } });
+
+      const { job, outcome } = await repo.enqueueUrgent(
+        enqueue({
+          coalescingKey,
+          priority: JOB_PRIORITY.user,
+          runAfter: NOW,
+        }),
+      );
+      expect(outcome).toBe("requeuedFailed");
+      expect(job.state).toBe("pending");
+      expect(job.attempt).toBe(0);
+      expect(job.requeuedCount).toBe(3);
+      expect(job.priority).toBe(JOB_PRIORITY.user);
+    });
+
+    it("enqueueUrgent leaves a claimed row's lease untouched", async () => {
+      const coalescingKey = "urgent:claimed";
+      await repo.enqueue(enqueue({ coalescingKey, runAfter: past(1000) }));
+      const claimed = await repo.claimDueJob("owner", NOW, LEASE_MS);
+      expect(claimed).not.toBeNull();
+
+      const { job, outcome } = await repo.enqueueUrgent(
+        enqueue({
+          coalescingKey,
+          priority: JOB_PRIORITY.user,
+          runAfter: NOW,
+        }),
+      );
+      expect(outcome).toBe("inFlight");
+      expect(job.state).toBe("claimed");
+      expect(job.leaseOwner).toBe("owner");
+      expect(job.leaseExpiresAt).toEqual(claimed!.leaseExpiresAt);
+      expect(job.priority).toBe(claimed!.priority);
+    });
+
+    it("enqueueUrgent creates when the coalescing key is free", async () => {
+      const { job, outcome } = await repo.enqueueUrgent(
+        enqueue({
+          coalescingKey: "urgent:new",
+          priority: JOB_PRIORITY.user,
+          runAfter: NOW,
+        }),
+      );
+      expect(outcome).toBe("created");
+      expect(job.state).toBe("pending");
+      expect(job.priority).toBe(JOB_PRIORITY.user);
     });
 
     it("reclaims a job whose lease has expired (previous owner crashed)", async () => {
@@ -454,7 +578,7 @@ describe("JobRepository", () => {
       const plan = await db
         .collection("jobs")
         .find({ state: "pending", runAfter: { $lte: NOW } })
-        .sort({ priority: -1, runAfter: 1 })
+        .sort({ runAfter: 1 })
         .explain("executionStats");
       const winning = JSON.stringify(plan);
       expect(winning).toContain("state_runafter_priority");

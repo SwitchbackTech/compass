@@ -8,8 +8,14 @@ import {
 // (or any state) directly. Health is earned: valid authority, no overdue
 // required work, and a recently verified path.
 
-// Work overdue by at least this long stops a connection from looking healthy.
+// Work overdue by at least this long stops a connection from looking healthy
+// when recent provider errors are the cause — surface breakage quickly.
 export const DELAYED_THRESHOLD_MS = 2 * 60 * 1000;
+// Plain backlog (no recent provider errors) uses a longer band so a normally
+// draining restart queue reports catchingUp rather than delayed, and a user
+// Refresh click does not trip its own warning two minutes later. Matches
+// BOOTSTRAP_STALLED_AFTER_MS. See the 2026-08-07 Refresh starvation incident.
+export const BACKLOG_DELAYED_THRESHOLD_MS = 15 * 60 * 1000;
 // An active calendar still bootstrapping after this long since it last
 // advanced is delayed rather than perpetually "importing", even with no
 // retrying/overdue job to point to (a chain that keeps settling every job
@@ -104,10 +110,18 @@ export function deriveConnectionState(
   }
 
   // Do not let a failed or overdue bootstrap hide behind a perpetual
-  // "importing"/"syncing" message. The normal threshold preserves a calm
-  // progress state for active work, while terminal jobs are immediately
-  // overdue (their original runAfter is in the past).
-  if (isOverdue(evidence.oldestDueWorkAt, now)) {
+  // "importing"/"syncing" message. Provider-error backlog alarms quickly;
+  // plain backlog waits longer so a draining restart queue stays catchingUp.
+  // Terminal failed jobs are immediately overdue (runAfter is in the past).
+  if (
+    isOverdue(
+      evidence.oldestDueWorkAt,
+      now,
+      evidence.recentProviderErrors
+        ? DELAYED_THRESHOLD_MS
+        : BACKLOG_DELAYED_THRESHOLD_MS,
+    )
+  ) {
     return {
       state: "delayed",
       reason: evidence.recentProviderErrors ? "providerErrors" : "workOverdue",
@@ -132,7 +146,11 @@ export function deriveConnectionState(
   return { state: "healthy", reason: null };
 }
 
-function isOverdue(oldestDueWorkAt: Date | null, now: Date): boolean {
+function isOverdue(
+  oldestDueWorkAt: Date | null,
+  now: Date,
+  thresholdMs: number,
+): boolean {
   if (!oldestDueWorkAt) return false;
-  return now.getTime() - oldestDueWorkAt.getTime() >= DELAYED_THRESHOLD_MS;
+  return now.getTime() - oldestDueWorkAt.getTime() >= thresholdMs;
 }

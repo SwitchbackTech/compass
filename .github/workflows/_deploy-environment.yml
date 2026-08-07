@@ -196,7 +196,8 @@ jobs:
               "  internalAuthToken: \"${SYNC_INTERNAL_AUTH_TOKEN}\"" \
               "  callbackBaseUrl: \"${FRONTEND_URL}\"" \
               '  serviceUrl: "http://sync:3010"' \
-              "  enforceLeastPrivilege: ${SYNC_ENFORCE_LEAST_PRIVILEGE}"
+              "  enforceLeastPrivilege: ${SYNC_ENFORCE_LEAST_PRIVILEGE}" \
+              '  maxConcurrency: 12'
             # Optional per-environment execution/mutation-mode knobs (GitHub
             # Environment vars). Empty → schema defaults (enabled / passive).
             if [ -n "$SYNC_CLOUD_MUTATION_MODE" ]; then

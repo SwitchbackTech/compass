@@ -7,6 +7,7 @@ import {
 } from "@core/types/sync/identity.contracts";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
+  JOB_PRIORITY,
   type JobEnqueue,
   JobEnqueueSchema,
   type JobRecord,
@@ -21,6 +22,12 @@ export type ExhaustedFailedJob = {
   requeuedCount: number;
   updatedAt: Date;
 };
+
+export type EnqueueUrgentOutcome =
+  | "created"
+  | "boosted"
+  | "requeuedFailed"
+  | "inFlight";
 
 // The exact complement of listFailedForRequeue's eligibility filter: {$gte}
 // does not match a missing requeuedCount, so a legacy job counts as eligible
@@ -80,6 +87,78 @@ export class JobRepository {
     return JobRecordSchema.parse(result);
   }
 
+  // User-initiated enqueue that must do something even when a coalescing key
+  // already exists. Three ordered, state-guarded writes (no transaction): the
+  // unique coalescingKey index makes each path idempotent. A state flip
+  // between the three writes can only mislabel the outcome, never corrupt a
+  // row — each update is scoped to the state it expects.
+  async enqueueUrgent(
+    input: JobEnqueue,
+  ): Promise<{ job: JobRecord; outcome: EnqueueUrgentOutcome }> {
+    const fields = JobEnqueueSchema.parse(input);
+    const now = fields.runAfter;
+
+    // pending → boost. $min pulls a future runAfter back without robbing an
+    // older job of its place; $max can never demote. Wart: this short-circuits
+    // retry backoff, but attempt is untouched so the ladder still terminates.
+    const boosted = await this.collection.updateOne(
+      { coalescingKey: fields.coalescingKey, state: "pending" },
+      {
+        $min: { runAfter: now },
+        $max: { priority: fields.priority },
+        $currentDate: { updatedAt: true },
+      },
+    );
+    if (boosted.matchedCount === 1) {
+      const job = await this.collection.findOne({
+        coalescingKey: fields.coalescingKey,
+      });
+      if (!job) throw new Error("Boosted job disappeared after update");
+      return { job: JobRecordSchema.parse(job), outcome: "boosted" };
+    }
+
+    // failed → revive. Frees the coalescing key that durable failures hold
+    // (see sync-job-dispatch.service.ts). Leaves requeuedCount alone: that is
+    // the sweep's budget, and a human should neither spend it nor be blocked
+    // by an exhausted one.
+    const revived = await this.collection.updateOne(
+      { coalescingKey: fields.coalescingKey, state: "failed" },
+      {
+        $set: {
+          state: "pending",
+          runAfter: now,
+          attempt: 0,
+          leaseOwner: null,
+          leaseExpiresAt: null,
+          failureClass: null,
+        },
+        $max: { priority: fields.priority },
+        $currentDate: { updatedAt: true },
+      },
+    );
+    if (revived.matchedCount === 1) {
+      const job = await this.collection.findOne({
+        coalescingKey: fields.coalescingKey,
+      });
+      if (!job) throw new Error("Revived job disappeared after update");
+      return { job: JobRecordSchema.parse(job), outcome: "requeuedFailed" };
+    }
+
+    // claimed → inFlight. Touch nothing: releaseOwned/complete/scheduleRetry
+    // are owner-scoped and racing them is how a finished job gets flipped
+    // back to pending.
+    const inFlight = await this.collection.findOne({
+      coalescingKey: fields.coalescingKey,
+      state: "claimed",
+    });
+    if (inFlight) {
+      return { job: JobRecordSchema.parse(inFlight), outcome: "inFlight" };
+    }
+
+    const job = await this.enqueue(fields);
+    return { job, outcome: "created" };
+  }
+
   async findById(
     tenantId: TenantId,
     principalId: PrincipalId,
@@ -101,15 +180,24 @@ export class JobRepository {
     return result.deletedCount === 1;
   }
 
-  // Atomically claim the highest-priority due job for one worker. A job is due
-  // when it's pending and its runAfter has passed, OR it's claimed but its
-  // lease has expired (the previous owner crashed). The two arms are claimed
-  // separately so each can use its own index (state_runafter_priority /
-  // lease_expiry) — a single $or + sort forced the planner to walk every
-  // pending-not-due backoff job on every idle poll. Expired-lease reclaim
-  // runs FIRST so a sustained pending backlog cannot starve crash recovery
-  // (a coalesced resource stuck in claimed-with-expired-lease would otherwise
-  // never get a fresh pending row). Within each arm, priority then age wins.
+  // Atomically claim the next due job for one worker. A job is due when it's
+  // pending and its runAfter has passed, OR it's claimed but its lease has
+  // expired (the previous owner crashed).
+  //
+  // Arms, in order (arm order IS the priority ladder):
+  //   1. expired lease reclaim — must run first so a sustained pending backlog
+  //      cannot starve crash recovery (a coalesced resource stuck in
+  //      claimed-with-expired-lease would otherwise never get a fresh pending
+  //      row).
+  //   2. user-priority pending (priority > background) — Refresh / post-OAuth.
+  //   3. any remaining due pending (background sweeps, webhooks, followups).
+  //
+  // Priority is a residual FILTER inside the pending arms, not a sort key.
+  // The index `state_runafter_priority` is `{state, runAfter, priority:-1}`
+  // and serves `state` equality + `runAfter` range in index order; sorting by
+  // `{priority:-1, runAfter:1}` cannot use that index and forced an in-memory
+  // sort over every due job on every idle poll (440 docs after the 2026-08-07
+  // restart burst). Sort is `{runAfter:1}` so oldest-due wins within a rung.
   // findOneAndUpdate stays atomic per arm, so two workers still never both
   // win the same job. Returns null when no job is due.
   async claimDueJob(
@@ -124,12 +212,17 @@ export class JobRepository {
       $currentDate: { updatedAt: true as const },
     };
     const claimOpts = {
-      sort: { priority: -1 as const, runAfter: 1 as const },
+      sort: { runAfter: 1 as const },
       returnDocument: "after" as const,
     };
 
     for (const filter of [
       { state: "claimed" as const, leaseExpiresAt: { $lt: now } },
+      {
+        state: "pending" as const,
+        runAfter: { $lte: now },
+        priority: { $gt: JOB_PRIORITY.background },
+      },
       { state: "pending" as const, runAfter: { $lte: now } },
     ]) {
       const claimed = await this.collection.findOneAndUpdate(

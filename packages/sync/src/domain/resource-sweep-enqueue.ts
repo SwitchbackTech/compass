@@ -1,4 +1,5 @@
 import {
+  JOB_PRIORITY,
   type JobEnqueue,
   type JobKind,
 } from "@sync/storage/contracts/job.contracts";
@@ -57,7 +58,7 @@ export async function enqueueForResources(
             resourceId: resource._id,
             commandId: null,
             kind,
-            priority: 0,
+            priority: JOB_PRIORITY.background,
             runAfter: now(),
             coalescingKey: `${kind}:${resource._id}`,
           };

@@ -7,6 +7,7 @@ import { verifyNotification } from "@sync/notifications/notification-verificatio
 import { GoogleNotificationAdapter } from "@sync/providers/google/google-notifications.adapter";
 import { type NotificationSubscription } from "@sync/providers/provider-notifications.port";
 import { redactedCause } from "@sync/safety/redact-error";
+import { JOB_PRIORITY } from "@sync/storage/contracts/job.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
@@ -83,7 +84,10 @@ export function registerNotificationRoutes(
           resourceId: resource._id,
           commandId: null,
           kind: "incrementalPull",
-          priority: 0,
+          // Background on purpose: webhooks are provider-paced. Promoting them
+          // to user priority would make the entire steady state urgent and
+          // defeat the tier that protects Refresh / post-OAuth work.
+          priority: JOB_PRIORITY.background,
           runAfter: now,
           coalescingKey: `incrementalPull:${resource._id}`,
         });

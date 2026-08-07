@@ -303,6 +303,11 @@ const RETENTION_SWEEP_INTERVAL_MS = 60 * 60_000;
 const CALENDAR_LIST_STALE_AFTER_MS = 24 * 60 * 60_000;
 // Architecture: one sync_health_snapshot every five minutes.
 const HEALTH_SNAPSHOT_INTERVAL_MS = 5 * 60_000;
+// Cap on how long each background sweep waits before its first tick after
+// process start. Spreads the boot burst across the fleet of sweeps so they do
+// not all enqueue at t=0; it does not shrink total work. User-priority claim
+// arms are what protect Refresh clicks during the drain.
+const STARTUP_SWEEP_JITTER_MS = 60_000;
 
 function buildPostHogClient(config: SyncConfig): PostHogCaptureClient | null {
   if (!config.POSTHOG_KEY) return null;
@@ -638,6 +643,7 @@ function buildSchedulers(
           { sweep: run },
           {
             windowMs,
+            startupJitterMs: STARTUP_SWEEP_JITTER_MS,
             onError: (error) =>
               logger.error(`Sync ${name} sweep failed`, error),
           },

@@ -54,6 +54,7 @@ import {
   respondInternalError,
 } from "@sync/server/internal-http";
 import { type EventOccurrenceRecord } from "@sync/storage/contracts/event-occurrence.contracts";
+import { JOB_PRIORITY } from "@sync/storage/contracts/job.contracts";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
@@ -582,15 +583,26 @@ export function registerConnectionRoutes(
 
       try {
         const repos = syncRepositories(deps.mongo);
-        const enqueued = await refreshPrincipalCalendars(
+        const tally = await refreshPrincipalCalendars(
           { resources: repos.syncResources, jobs: repos.jobs },
           auth.tenantId,
           auth.principalId,
           () => new Date((deps.now ?? Date.now)()),
         );
-        res
-          .status(Status.OK)
-          .json(ConnectionRefreshResponseSchema.parse({ enqueued }));
+        const enqueued = tally.created + tally.boosted + tally.requeuedFailed;
+        logger.info(
+          `Refresh calendars for ${auth.tenantId}/${auth.principalId}: ` +
+            `resources=${tally.resources} created=${tally.created} ` +
+            `boosted=${tally.boosted} requeuedFailed=${tally.requeuedFailed} ` +
+            `inFlight=${tally.inFlight}`,
+        );
+        res.status(Status.OK).json(
+          ConnectionRefreshResponseSchema.parse({
+            enqueued,
+            inFlight: tally.inFlight,
+            resources: tally.resources,
+          }),
+        );
       } catch (error) {
         logger.error(
           `Failed to refresh calendars for ${auth.tenantId}/${auth.principalId}`,
@@ -830,7 +842,7 @@ async function linkConnection(
     resourceId: null,
     commandId: null,
     kind: "calendarListSync",
-    priority: 0,
+    priority: JOB_PRIORITY.user,
     runAfter: new Date(),
     coalescingKey: `calendarListSync:${connection._id}`,
   });
