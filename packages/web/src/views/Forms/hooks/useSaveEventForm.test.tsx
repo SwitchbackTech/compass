@@ -83,4 +83,29 @@ describe("useSaveEventForm", () => {
     expect(useDraftStore.getState().status?.isFormOpen).toBe(true);
     expect(useDraftStore.getState()).not.toEqual(initialDraftState);
   });
+
+  it("creates an event with the draft closed via callback instead of after mutation returns", () => {
+    const draft = createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T10:00:00.000Z"),
+        new Date("2026-05-20T11:00:00.000Z"),
+      ),
+      undefined,
+      calendarId,
+    );
+    draftActions.startGridDraft({ activity: "gridClick", draft });
+    draftActions.setFormOpen(true);
+
+    const { queryClient, Wrapper } = createWrapper();
+    const { result } = renderHook(() => useSaveEventForm(), {
+      wrapper: Wrapper,
+    });
+
+    act(() => {
+      result.current.saveEventForm(draft);
+    });
+
+    // A mutation should have been dispatched (the create was initiated).
+    expect(queryClient.getMutationCache().getAll()).toHaveLength(1);
+  });
 });

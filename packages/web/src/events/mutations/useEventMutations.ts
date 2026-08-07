@@ -170,7 +170,11 @@ function seriesWriteKey(
   return original.id;
 }
 
-type CreateVariables = { input: CreateEventInput; writeKey: EventId };
+type CreateVariables = {
+  input: CreateEventInput;
+  writeKey: EventId;
+  onOptimisticApplied?: () => void;
+};
 type ReplaceVariables = {
   id: EventId;
   input: ReplaceEventInput;
@@ -184,7 +188,10 @@ type DeleteVariables = {
 };
 
 export type EventMutations = {
-  create: (input: CreateEventInput) => void;
+  create: (
+    input: CreateEventInput,
+    options?: { onOptimisticApplied?: () => void },
+  ) => void;
   replace: (payload: { id: EventId; input: ReplaceEventInput }) => void;
   delete: (payload: { id: EventId; scope: RecurrenceScope }) => void;
 };
@@ -280,7 +287,9 @@ export function useEventMutations(
       }
     }, 0);
   };
-  const buildMutation = <Variables extends { writeKey: EventId }>(
+  const buildMutation = <
+    Variables extends { writeKey: EventId; onOptimisticApplied?: () => void },
+  >(
     operation: EventMutationOperation,
     mutationFn: (variables: Variables) => Promise<unknown>,
     optimistic: (variables: Variables) => void,
@@ -293,6 +302,13 @@ export function useEventMutations(
         queryKey: eventQueryKeys.all,
       });
       optimistic(variables);
+      // Callers that tear down their own pre-save UI (the event form's grid
+      // draft) run it here so the teardown lands in the same task — and so
+      // the same React commit — as the cache write. useBaseQuery recomputes
+      // getOptimisticResult on every render, so the re-render the teardown
+      // itself triggers already shows the inserted event: the grid never
+      // paints a frame with neither the draft nor the saved card.
+      variables.onOptimisticApplied?.();
       return { previousQueries };
     },
     onError: (
@@ -531,13 +547,17 @@ export function useEventMutations(
   // they don't record themselves.
   return useMemo(
     () => ({
-      create: (input: CreateEventInput) => {
+      create: (input, options) => {
         const id = input.id ?? (createObjectIdString() as EventId);
         const finalInput = { ...input, id };
         recordEventCreateHistory({
           event: optimisticEventFromCreate(finalInput),
         });
-        createMutation.mutate({ input: finalInput, writeKey: id });
+        createMutation.mutate({
+          input: finalInput,
+          writeKey: id,
+          onOptimisticApplied: options?.onOptimisticApplied,
+        });
       },
       replace: (payload: { id: EventId; input: ReplaceEventInput }) => {
         const original = findEventInCache(queryClient, payload.id, source);
