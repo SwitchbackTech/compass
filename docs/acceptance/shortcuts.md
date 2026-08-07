@@ -2,6 +2,10 @@
 
 This runbook covers keyboard shortcut parity in Compass. The principle: anything a user can do with a mouse should also be doable with the keyboard.
 
+## Source of Truth
+
+All shortcuts are defined in a single registry: `packages/web/src/shortcuts/shortcuts.registry.ts`. This registry is the authoritative source for all keyboard shortcuts in the app. When adding a new shortcut, update the registry and it will automatically appear in the legend overlay (opened with `?`). The legend is searchable and context-aware, showing only relevant shortcuts based on the current view and app state.
+
 ## Scope
 
 Use this guide to validate:
