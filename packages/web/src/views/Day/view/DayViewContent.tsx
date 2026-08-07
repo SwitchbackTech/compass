@@ -9,8 +9,8 @@ import { DemoEventsBannerGate } from "@web/components/DemoEventsBanner/DemoEvent
 import { SidebarEventDetails } from "@web/components/Sidebar/EventDetails/SidebarEventDetails";
 import { ResizableSidebarPanel } from "@web/components/Sidebar/ResizableSidebarPanel";
 import { Sidebar } from "@web/components/Sidebar/Sidebar";
+import { useFocusSidebarShortcut } from "@web/components/Sidebar/useFocusSidebarShortcut";
 import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts";
-import { focusFirstSidebarItem } from "@web/components/Sidebar/util/sidebarFocus.util";
 import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
 import { toDemoEventsRange } from "@web/events/demo-events.util";
 import {
@@ -57,17 +57,7 @@ export const DayViewContent = memo(() => {
   });
   useDayEvents(dateInView);
 
-  // "i" implies the user wants the sidebar; open it first and defer focus a
-  // frame so the sidebar exists in the DOM before we target it.
-  const handleFocusSidebar = useCallback(() => {
-    if (selectIsSidebarOpen(useViewStore.getState())) {
-      focusFirstSidebarItem();
-      return;
-    }
-    viewActions.setSidebarOpen(true);
-    requestAnimationFrame(() => focusFirstSidebarItem());
-  }, []);
-
+  useFocusSidebarShortcut();
   useSidebarShortcuts();
 
   const shortcutSections = useMemo(() => {
@@ -104,7 +94,6 @@ export const DayViewContent = memo(() => {
   useDayViewShortcuts({
     onCreateTimedEvent: handleCreateTimedEvent,
     onCreateAllDayEvent: handleCreateAllDayEvent,
-    onFocusSidebar: handleFocusSidebar,
     onFocusCalendar: focusFirstDayCalendarEvent,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,

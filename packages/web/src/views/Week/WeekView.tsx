@@ -12,8 +12,6 @@ import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts
 import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.store";
 import { toDemoEventsRange } from "@web/events/demo-events.util";
 import {
-  draftActions,
-  isEventFormOpen,
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
@@ -35,6 +33,7 @@ import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
 import { useScroll } from "@web/views/Week/hooks/grid/useScroll";
 import { useVisibleDayCount } from "@web/views/Week/hooks/grid/useVisibleDayCount";
+import { goToTodayInWeek } from "@web/views/Week/hooks/shortcuts/weekShortcuts.util";
 import { useDayShiftTransition } from "@web/views/Week/hooks/useDayShiftTransition";
 import { useSidebarCalendarDate } from "@web/views/Week/hooks/useSidebarCalendarDate";
 import { useToday } from "@web/views/Week/hooks/useToday";
@@ -100,9 +99,10 @@ export const WeekView = () => {
   };
 
   const goToTodayViaCmd = useCallback(() => {
-    scrollUtil.scrollToNow();
-    if (isEventFormOpen()) draftActions.discard();
-    util.goToToday();
+    goToTodayInWeek({
+      scrollToNow: scrollUtil.scrollToNow,
+      goToToday: util.goToToday,
+    });
   }, [scrollUtil, util]);
 
   const shortcutSections = useMemo(() => {

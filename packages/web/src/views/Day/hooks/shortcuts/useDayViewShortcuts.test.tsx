@@ -58,16 +58,3 @@ describe("useDayViewShortcuts create", () => {
     expect(onCreateAllDayEvent).not.toHaveBeenCalled();
   });
 });
-
-describe("useDayViewShortcuts focus", () => {
-  it("focuses the sidebar with I", async () => {
-    const onFocusSidebar = mock();
-
-    renderHook(() => useDayViewShortcuts({ onFocusSidebar }), { wrapper });
-    pressKey("I");
-
-    await waitFor(() => {
-      expect(onFocusSidebar).toHaveBeenCalled();
-    });
-  });
-});

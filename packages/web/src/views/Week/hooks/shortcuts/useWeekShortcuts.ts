@@ -7,18 +7,14 @@ import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
-import { focusFirstSidebarItem } from "@web/components/Sidebar/util/sidebarFocus.util";
+import { useFocusSidebarShortcut } from "@web/components/Sidebar/useFocusSidebarShortcut";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
-import {
-  selectIsSidebarOpen,
-  useViewStore,
-  viewActions,
-} from "@web/events/stores/view.store";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
+import { goToTodayInWeek } from "@web/views/Week/hooks/shortcuts/weekShortcuts.util";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
   focusWeekGridEventTarget,
@@ -56,7 +52,6 @@ export const useWeekShortcuts = ({
     actions: { repositionDraftByKeyboard },
   } = useDraftContext();
 
-  const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const { allDayEvents, timedEvents } = useWeekEventViewModel({
     startOfView: queryStartOfView,
     endOfView: queryEndOfView,
@@ -76,10 +71,8 @@ export const useWeekShortcuts = ({
   }, [decrementWeek, _discardDraft]);
 
   const toToday = useCallback(() => {
-    scrollToNow();
-    _discardDraft();
-    goToToday();
-  }, [scrollToNow, _discardDraft, goToToday]);
+    goToTodayInWeek({ scrollToNow, goToToday });
+  }, [scrollToNow, goToToday]);
 
   const goToNextWeek = useCallback(() => {
     _discardDraft();
@@ -144,16 +137,7 @@ export const useWeekShortcuts = ({
     };
   }, [createAllDayDraftEvent, createTimedDraftEvent]);
 
-  const focusSidebar = useCallback(() => {
-    if (!isSidebarOpen) {
-      viewActions.toggleSidebar();
-      // The sidebar renders conditionally; focus after the open commits
-      requestAnimationFrame(() => focusFirstSidebarItem());
-      return;
-    }
-
-    focusFirstSidebarItem();
-  }, [isSidebarOpen]);
+  useFocusSidebarShortcut();
 
   const focusFirstCalendarEvent = useCallback(() => {
     const target = getFirstVisibleWeekGridEventTarget();
@@ -181,6 +165,5 @@ export const useWeekShortcuts = ({
   useAppShortcutUp("T", toToday);
   useAppShortcutUp("A", createAllDayDraftEvent);
   useAppShortcutUp("C", createTimedDraftEvent);
-  useAppShortcutUp("I", focusSidebar);
   useAppShortcutUp("U", focusFirstCalendarEvent);
 };

@@ -15,7 +15,7 @@ import {
 import {
   useCalendarShellShortcuts,
   useNavigationShortcuts,
-} from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
+} from "@web/shortcuts/useGlobalShortcuts";
 
 /**
  * The auth modal is driven by the router's `?auth=` search param, so its
