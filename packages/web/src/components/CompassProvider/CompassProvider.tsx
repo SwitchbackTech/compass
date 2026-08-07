@@ -9,6 +9,7 @@ import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
 import { PostHogProvider } from "@web/auth/posthog/posthog-react";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { useEscapeToDismissToast } from "@web/common/utils/toast/useEscapeToDismissToast";
 import { AboutModal } from "@web/components/About/AboutModal";
 import { DeleteAccountConfirmationProvider } from "@web/components/DeleteAccountConfirmation/DeleteAccountConfirmationProvider";
 import { FeedbackDialogHost } from "@web/components/Feedback/FeedbackDialogHost";
@@ -30,6 +31,7 @@ export function GlobalShortcutsHost() {
 
 function ThemeAwareToastContainer() {
   const theme = useThemeStore(selectTheme);
+  useEscapeToDismissToast();
 
   return (
     <ToastContainer

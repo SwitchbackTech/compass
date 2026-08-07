@@ -1,11 +1,20 @@
+import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { useQueryClient } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { rest } from "msw";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
+import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
+import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import { CompassRequiredProviders } from "./CompassProvider";
-import { expect, test } from "bun:test";
+import { beforeEach, expect, test } from "bun:test";
+
+beforeEach(() => {
+  HotkeyManager.resetInstance();
+  document.body.removeAttribute("data-app-locked");
+});
 
 test("provides the injected query client", () => {
   server.use(
@@ -31,4 +40,19 @@ test("provides the injected query client", () => {
   );
 
   expect(screen.getByLabelText("query client match")).toHaveTextContent("true");
+});
+
+test("Escape dismisses the toast (proves the hook is actually mounted)", () => {
+  server.use(
+    rest.get(`${ENV_WEB.API_BASEURL}/config`, (_req, res, ctx) =>
+      res(ctx.json({ google: { isConfigured: false } })),
+    ),
+  );
+  const { port, mocks } = createTestToastPort();
+  registerToastPort(port);
+
+  render(<CompassRequiredProviders>{null}</CompassRequiredProviders>);
+  pressKey("Escape");
+
+  expect(mocks.dismiss).toHaveBeenCalledTimes(1);
 });
