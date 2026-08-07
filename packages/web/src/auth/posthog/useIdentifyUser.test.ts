@@ -1,10 +1,32 @@
 import { renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const identify = mock();
 const usePostHog = mock(() => ({ identify }));
 
-mock.module("@web/auth/posthog/posthog-react", () => ({ usePostHog }));
+// bun's mock.module is global and leaks into every other test file in the
+// run. Spread the real module so unrelated suites (e.g. anything rendering
+// PostHogProvider) still see its full surface, and only override usePostHog
+// while this file runs - the flag flips back to the real implementation in
+// afterAll.
+const actualPosthogReact = {
+  ...(await import("@web/auth/posthog/posthog-react")),
+};
+let isUsePostHogMocked = true;
+
+mock.module("@web/auth/posthog/posthog-react", () => ({
+  ...actualPosthogReact,
+  usePostHog: () => {
+    const impl = isUsePostHogMocked
+      ? usePostHog
+      : actualPosthogReact.usePostHog;
+    return impl();
+  },
+}));
+
+afterAll(() => {
+  isUsePostHogMocked = false;
+});
 
 const { useIdentifyUser } = await import("./useIdentifyUser");
 

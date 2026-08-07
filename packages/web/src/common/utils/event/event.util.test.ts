@@ -24,8 +24,15 @@ import {
 
 const mockCaptureException = mock();
 
+// `capture` is a no-op here (not a mock) so a `track()` call elsewhere in the
+// same test run - the module registration is process-global - doesn't crash
+// on a stubbed client shaped only for captureException.
 mock.module("@web/auth/posthog/posthog.bootstrap", () => ({
-  getPosthogClient: () => ({ captureException: mockCaptureException }),
+  getPosthogClient: () => ({
+    captureException: mockCaptureException,
+    capture: () => undefined,
+    reset: () => undefined,
+  }),
 }));
 
 const { handleError } = await import("@web/common/utils/event/event.util");

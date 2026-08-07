@@ -16,8 +16,15 @@ const mockReload = mock();
 
 // The boundary reports through the PostHog singleton (no hook), so stub the
 // bootstrap accessor to observe the report without initializing PostHog.
+// `capture` is a no-op here (not a mock) so a `track()` call elsewhere in the
+// same test run - the module registration is process-global - doesn't crash
+// on a stubbed client shaped only for captureException.
 mock.module("@web/auth/posthog/posthog.bootstrap", () => ({
-  getPosthogClient: () => ({ captureException: mockCaptureException }),
+  getPosthogClient: () => ({
+    captureException: mockCaptureException,
+    capture: () => undefined,
+    reset: () => undefined,
+  }),
 }));
 
 mock.module("@web/common/utils/browser/browser-navigation.util", () => ({

@@ -1,11 +1,26 @@
-import { describe, expect, it, mock } from "bun:test";
+import { afterAll, describe, expect, it, mock } from "bun:test";
 
 const capture = mock();
 let client: { capture: typeof capture } | undefined = { capture };
 
+// bun's mock.module is global and leaks into every other test file in the
+// run. Spread the real module so unrelated suites still see its full
+// surface, and only override getPosthogClient while this file runs - the
+// flag flips back to the real implementation in afterAll.
+const actualPosthogBootstrap = {
+  ...(await import("@web/auth/posthog/posthog.bootstrap")),
+};
+let isClientMocked = true;
+
 mock.module("@web/auth/posthog/posthog.bootstrap", () => ({
-  getPosthogClient: () => client,
+  ...actualPosthogBootstrap,
+  getPosthogClient: () =>
+    isClientMocked ? client : actualPosthogBootstrap.getPosthogClient(),
 }));
+
+afterAll(() => {
+  isClientMocked = false;
+});
 
 const { track } = await import("./track");
 
