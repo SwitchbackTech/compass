@@ -12,6 +12,6 @@ export const FAQ_ITEMS = [
   {
     question: "How is Compass different?",
     answer:
-      "We're simpler, faster, open-source...er. We also donate 10% of our revenue to support mental health.",
+      "We're simpler, faster, and open-source.",
   },
 ];
