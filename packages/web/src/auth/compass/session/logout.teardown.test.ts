@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { queryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 const mockRefreshEventRepositorySource = mock();
 const mockUserMetadataActionsClear = mock();
@@ -17,7 +17,9 @@ const actualRepositorySource = await import(
 );
 const actualUserMetadata = await import("@web/auth/state/user-metadata.store");
 const actualSseClient = await import("@web/sse/client/sse.client");
-const actualSyncState = await import("@web/auth/google/state/google.sync.state");
+const actualSyncState = await import(
+  "@web/auth/google/state/google.sync.state"
+);
 const actualDraftStore = await import("@web/events/stores/draft.store");
 
 mock.module("@web/events/repositories/event.repository.source.store", () => ({
@@ -51,10 +53,8 @@ mock.module("@web/events/stores/draft.store", () => ({
   },
 }));
 
-const {
-  clearAccountScopedClientState,
-  clearAccountScopedQueryCache,
-} = await import("./logout.teardown");
+const { clearAccountScopedClientState, clearAccountScopedQueryCache } =
+  await import("./logout.teardown");
 
 describe("logout.teardown", () => {
   beforeEach(() => {

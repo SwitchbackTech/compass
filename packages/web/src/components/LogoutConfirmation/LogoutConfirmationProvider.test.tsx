@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import "@testing-library/jest-dom";
 import { session } from "@web/auth/compass/session/Session";
 import * as authState from "@web/auth/compass/state/auth.state.util";
-import * as toast from "@web/common/utils/toast/status-toast.util";
 import * as errorToast from "@web/common/utils/toast/error-toast.util";
+import * as toast from "@web/common/utils/toast/status-toast.util";
 import * as settingsStore from "@web/settings/settings.store";
 
 const clearAuthenticationState = spyOn(authState, "clearAuthenticationState");

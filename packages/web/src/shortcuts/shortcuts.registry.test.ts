@@ -1,4 +1,7 @@
-import { filterShortcutsByContext, getShortcutsBySection } from "@web/shortcuts/shortcuts.registry";
+import {
+  filterShortcutsByContext,
+  getShortcutsBySection,
+} from "@web/shortcuts/shortcuts.registry";
 
 describe("shortcuts.registry", () => {
   describe("filterShortcutsByContext", () => {

@@ -65,7 +65,6 @@ describe("AnonymousCalendarRow", () => {
     expect(mockOpenModal).toHaveBeenCalledWith("signUp");
   });
 
-
   it("is keyboard accessible - opens sign-up on Enter", async () => {
     const user = userEvent.setup();
     render(<AnonymousCalendarRow calendar={mockCalendar} />);

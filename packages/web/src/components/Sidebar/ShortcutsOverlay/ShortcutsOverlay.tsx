@@ -68,9 +68,9 @@ export function ShortcutsOverlay({
     .filter((section) => section.shortcuts.length > 0);
 
   const visibleSections =
-    searchQuery.length > 0 ? filteredSections : sections.filter(
-      (section) => section.shortcuts.length > 0,
-    );
+    searchQuery.length > 0
+      ? filteredSections
+      : sections.filter((section) => section.shortcuts.length > 0);
 
   const subtitle = viewLabel
     ? `Keyboard shortcuts for ${viewLabel} view`
