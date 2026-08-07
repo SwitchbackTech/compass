@@ -1,0 +1,78 @@
+import { createViewInteractionRegistry } from "./view-event-registry";
+import { afterEach, describe, expect, it } from "bun:test";
+
+afterEach(() => {
+  document.body.innerHTML = "";
+});
+
+describe("createViewInteractionRegistry", () => {
+  it("namespaces the id/type attributes by view name", () => {
+    const day = createViewInteractionRegistry("day");
+    const week = createViewInteractionRegistry("week");
+
+    expect(day.idAttribute).toBe("data-day-interaction-event-id");
+    expect(day.typeAttribute).toBe("data-day-interaction-event-type");
+    expect(week.idAttribute).toBe("data-week-interaction-event-id");
+    expect(week.typeAttribute).toBe("data-week-interaction-event-type");
+  });
+
+  it("keeps each view's registry from resolving the other view's elements", () => {
+    const day = createViewInteractionRegistry("day");
+    const week = createViewInteractionRegistry("week");
+
+    const dayEl = document.body.appendChild(document.createElement("div"));
+    const weekEl = document.body.appendChild(document.createElement("div"));
+
+    day.registry.register({
+      element: dayEl,
+      eventId: "shared-id",
+      eventType: "timed",
+    });
+    week.registry.register({
+      element: weekEl,
+      eventId: "shared-id",
+      eventType: "timed",
+    });
+
+    expect(day.registry.resolve("shared-id", "timed")).toBe(dayEl);
+    expect(week.registry.resolve("shared-id", "timed")).toBe(weekEl);
+    expect(dayEl.hasAttribute(week.idAttribute)).toBe(false);
+    expect(weekEl.hasAttribute(day.idAttribute)).toBe(false);
+  });
+
+  it("getInteractionTargetAttributes returns nothing for an undefined eventId", () => {
+    const day = createViewInteractionRegistry("day");
+
+    expect(
+      day.getInteractionTargetAttributes({
+        eventId: undefined,
+        eventType: "timed",
+      }),
+    ).toEqual({});
+  });
+
+  it("getInteractionTargetAttributes stamps both attributes for a defined eventId", () => {
+    const day = createViewInteractionRegistry("day");
+
+    expect(
+      day.getInteractionTargetAttributes({
+        eventId: "event-1",
+        eventType: "all-day",
+      }),
+    ).toEqual({
+      "data-day-interaction-event-id": "event-1",
+      "data-day-interaction-event-type": "all-day",
+    });
+  });
+
+  it("createRegistry produces a fresh, independent registry each call", () => {
+    const day = createViewInteractionRegistry("day");
+    const isolated = day.createRegistry();
+
+    const el = document.body.appendChild(document.createElement("div"));
+    isolated.register({ element: el, eventId: "isolated", eventType: "timed" });
+
+    expect(isolated.resolve("isolated", "timed")).toBe(el);
+    expect(day.registry.resolve("isolated", "timed")).toBeNull();
+  });
+});

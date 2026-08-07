@@ -391,6 +391,8 @@ describe("createDraftEventMount", () => {
     source.className = "event-class transition-[background-color]";
     source.setAttribute("tabindex", "0");
     source.setAttribute("aria-describedby", "description-id");
+    source.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, "event-1");
+    source.setAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE, "timed");
     source.style.width = "100px";
     source.getBoundingClientRect = () =>
       ({
@@ -401,6 +403,7 @@ describe("createDraftEventMount", () => {
       }) as DOMRect;
     child.id = "child-id";
     child.setAttribute("aria-controls", "menu-id");
+    child.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, "event-1");
     child.style.transition = "opacity 150ms ease";
     source.append(child);
 
@@ -422,10 +425,19 @@ describe("createDraftEventMount", () => {
     expect(mount.clone.id).toBe("");
     expect(mount.clone.getAttribute("tabindex")).toBeNull();
     expect(mount.clone.getAttribute("aria-describedby")).toBeNull();
+    expect(
+      mount.clone.getAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE),
+    ).toBeNull();
+    expect(
+      mount.clone.getAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE),
+    ).toBeNull();
     expect(mount.clone).toHaveAttribute("aria-hidden", "true");
     expect(mount.clone.style.transition).toBe("none");
     expect(clonedChild?.id).toBe("");
     expect(clonedChild?.getAttribute("aria-controls")).toBeNull();
+    expect(
+      clonedChild?.getAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE),
+    ).toBeNull();
     expect(clonedChild?.style.transition).toBe("none");
     expect(draftEvent.getNode()?.style.width).toBe("140px");
     expect(draftEvent.getNode()?.style.height).toBe("44px");

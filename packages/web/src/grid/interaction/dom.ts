@@ -4,8 +4,17 @@ import {
   GRID_EVENT_TIME_LABEL_FONT_SIZE,
   GRID_EVENT_TIME_LABEL_OPACITY,
 } from "@web/grid/grid.constants";
+import { viewInteractionAttributeNames } from "@web/grid/interaction/view-event-registry";
 import { createDraftEventClone } from "@web/interaction/dom/draft-event.clone";
 import { type FloatingDraftEventMount } from "@web/interaction/interaction.adapter.types";
+
+// A new grid view (beyond Day/Week) that adopts createViewInteractionRegistry
+// needs its name added here too, or its interaction attributes will leak
+// into the draft-event clone.
+const DRAFT_CLONE_STRIPPED_ATTRIBUTES = [
+  viewInteractionAttributeNames("day"),
+  viewInteractionAttributeNames("week"),
+].flatMap(({ idAttribute, typeAttribute }) => [idAttribute, typeAttribute]);
 
 export const EVENT_CONTENT_ATTRIBUTE = "data-calendar-event-content";
 export const EVENT_CONTENT_SELECTOR = `[${EVENT_CONTENT_ATTRIBUTE}='true']`;
@@ -69,10 +78,9 @@ export const createDraftEventMount = ({
   const clone = createDraftEventClone(source);
 
   for (const element of [clone, ...clone.querySelectorAll<HTMLElement>("*")]) {
-    element.removeAttribute("data-day-interaction-event-id");
-    element.removeAttribute("data-day-interaction-event-type");
-    element.removeAttribute("data-week-interaction-event-id");
-    element.removeAttribute("data-week-interaction-event-type");
+    for (const attribute of DRAFT_CLONE_STRIPPED_ATTRIBUTES) {
+      element.removeAttribute(attribute);
+    }
     element.style.animation = "none";
     element.style.transition = "none";
   }
