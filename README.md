@@ -20,10 +20,6 @@ A simple calendar that helps you manage your time.
 - **We're bootstrapped.** While VC-backed teams think in terms of months and funding rounds, we think in terms of decades and profit. We don't need to make $1B in 5 years or sell your data to an acquirer. As long as we keep users like you happy, we'll be fine.
 - **We have a plan.** Our long-term [vision](https://alpaca-ty.notion.site/about-us) will keep us busy for generations. Our practical roadmap and focus on profitability will keep our feet on the ground along the way.
 
-### It'll help others
-
-We donate 10% of revenue to support mental health programs in our home city of Bozeman, Montana. Your support helps us support others in need.
-
 ## Features
 
 Cool things you can do with in Compass
