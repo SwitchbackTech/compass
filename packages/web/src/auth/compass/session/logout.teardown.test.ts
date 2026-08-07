@@ -9,26 +9,44 @@ const mockClearGoogleSyncIndicatorOverride = mock();
 const mockSseCloseStream = mock();
 const mockDraftActionsDiscard = mock();
 
+// bun's mock.module is global and leaks into every other test file in the
+// run. Spread the real module so unrelated suites still see its full surface;
+// override only what this file asserts on.
+const actualRepositorySource = await import(
+  "@web/events/repositories/event.repository.source.store"
+);
+const actualUserMetadata = await import("@web/auth/state/user-metadata.store");
+const actualSseClient = await import("@web/sse/client/sse.client");
+const actualSyncState = await import("@web/auth/google/state/google.sync.state");
+const actualDraftStore = await import("@web/events/stores/draft.store");
+
 mock.module("@web/events/repositories/event.repository.source.store", () => ({
+  ...actualRepositorySource,
   refreshEventRepositorySource: mockRefreshEventRepositorySource,
 }));
 
 mock.module("@web/auth/state/user-metadata.store", () => ({
+  ...actualUserMetadata,
   userMetadataActions: {
+    ...actualUserMetadata.userMetadataActions,
     clear: mockUserMetadataActionsClear,
   },
 }));
 
 mock.module("@web/auth/google/state/google.sync.state", () => ({
+  ...actualSyncState,
   clearGoogleSyncIndicatorOverride: mockClearGoogleSyncIndicatorOverride,
 }));
 
 mock.module("@web/sse/client/sse.client", () => ({
+  ...actualSseClient,
   closeStream: mockSseCloseStream,
 }));
 
 mock.module("@web/events/stores/draft.store", () => ({
+  ...actualDraftStore,
   draftActions: {
+    ...actualDraftStore.draftActions,
     discard: mockDraftActionsDiscard,
   },
 }));

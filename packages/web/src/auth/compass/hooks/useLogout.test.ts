@@ -17,15 +17,27 @@ const mockUseSession = mock();
 const clearAccountScopedClientState = mock();
 let signOut = spyOn(session, "signOut");
 
+// bun's mock.module is global and leaks into every other test file in the
+// run. Spread the real module so unrelated suites still see its full surface;
+// override only what this file asserts on.
+const actualAuthStateUtil = await import(
+  "@web/auth/compass/state/auth.state.util"
+);
+const actualLogoutTeardown = await import(
+  "@web/auth/compass/session/logout.teardown"
+);
+
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
 }));
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
+  ...actualAuthStateUtil,
   clearAuthenticationState,
 }));
 
 mock.module("@web/auth/compass/session/logout.teardown", () => ({
+  ...actualLogoutTeardown,
   clearAccountScopedClientState,
 }));
 
