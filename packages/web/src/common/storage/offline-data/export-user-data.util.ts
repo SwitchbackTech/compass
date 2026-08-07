@@ -6,13 +6,21 @@ import {
   getOfflineDataStore,
 } from "@web/common/storage/offline-data/offline-data.store.registry";
 
-const SOMEDAY_EVENTS_NOTICE =
-  "Someday events aren't included in this file. If you signed up before July 15, 2026 and want your Someday events, email tyler@switchback.tech. If you signed up after that date, you never had Someday events, so no action is needed.";
+const EXPORT_ABOUT = {
+  whatThisIs:
+    "Snapshot of data Compass stores in this browser (IndexedDB). It is not a full account or Google Calendar dump.",
+  events:
+    "Only calendar events still stored locally in this browser. If you connected Google Calendar, those events live in Google Calendar (and on Compass's servers when signed in), so they will not appear here.",
+  tasks:
+    "Legacy to-do items from a Tasks feature we removed. Any still retained in this browser are listed below; they are cleared after a successful export.",
+  someday:
+    "Someday was a former Compass feature for undated events. It was removed July 15, 2026, and those events are not in this file. If you signed up before that date and want them, email tyler@switchback.tech. If you signed up after, you never had Someday events.",
+} as const;
 
 interface CompassDataExport {
   exportedAt: string;
-  version: 1;
-  message: string;
+  version: 2;
+  about: typeof EXPORT_ABOUT;
   tasks: unknown[];
   events: unknown[];
 }
@@ -47,8 +55,8 @@ export function createCollectExportData({
 
     return {
       exportedAt: new Date().toISOString(),
-      version: 1,
-      message: SOMEDAY_EVENTS_NOTICE,
+      version: 2,
+      about: EXPORT_ABOUT,
       tasks,
       events: events.filter((record) => !record.isDemo),
     };

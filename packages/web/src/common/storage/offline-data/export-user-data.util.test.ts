@@ -43,18 +43,28 @@ describe("collectExportData", () => {
     const result = await collectExportData();
 
     expect(ensureOfflineDataStoreReady).toHaveBeenCalledTimes(1);
-    expect(result.version).toBe(1);
+    expect(result.version).toBe(2);
     expect(result.tasks).toEqual([task]);
     expect(result.events).toEqual([userRecord]);
     expect(typeof result.exportedAt).toBe("string");
   });
 
-  it("includes a message inviting pre-cutoff signups to email for their someday events", async () => {
+  it("explains what the export contains and why Google-synced events are absent", async () => {
     const result = await collectExportData();
 
-    expect(result.message).toContain("tyler@switchback.tech");
-    expect(result.message).toContain("July 15, 2026");
-    expect(result.message.toLowerCase()).toContain("someday");
+    expect(result.about.whatThisIs.toLowerCase()).toContain("indexeddb");
+    expect(result.about.whatThisIs.toLowerCase()).toContain("google calendar");
+    expect(result.about.events.toLowerCase()).toContain("locally");
+    expect(result.about.events.toLowerCase()).toContain("google calendar");
+    expect(result.about.tasks.toLowerCase()).toContain("tasks");
+  });
+
+  it("explains someday and invites pre-cutoff signups to email for recovery", async () => {
+    const result = await collectExportData();
+
+    expect(result.about.someday.toLowerCase()).toContain("undated");
+    expect(result.about.someday).toContain("tyler@switchback.tech");
+    expect(result.about.someday).toContain("July 15, 2026");
   });
 
   it("omits _migrations entirely (only tasks/events are read)", async () => {
@@ -112,7 +122,13 @@ describe("runExportMyData", () => {
 
     mockCollectExportData.mockResolvedValue({
       exportedAt: "2026-07-15T00:00:00.000Z",
-      version: 1,
+      version: 2,
+      about: {
+        whatThisIs: "snapshot",
+        events: "local events",
+        tasks: "legacy tasks",
+        someday: "someday notice",
+      },
       tasks: [],
       events: [],
     });
@@ -124,7 +140,7 @@ describe("runExportMyData", () => {
     await runExportMyData();
 
     expect(mockDownloadAsJsonFile).toHaveBeenCalledWith(
-      expect.objectContaining({ version: 1 }),
+      expect.objectContaining({ version: 2 }),
       "compass-export-2026-07-15.json",
     );
     expect(mockClearExportedTasks).toHaveBeenCalledTimes(1);
