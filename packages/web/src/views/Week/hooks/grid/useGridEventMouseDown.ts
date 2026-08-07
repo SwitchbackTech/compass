@@ -2,9 +2,11 @@ import { type MouseEvent as ReactMouseEvent, useRef } from "react";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEventFormOpen } from "@web/events/stores/draft.store";
-
-export const GRID_EVENT_MOUSE_HOLD_DELAY = 750; // ms
-export const GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD = 25; // pixels
+import {
+  INTERACTION_HOLD_DELAY_MS,
+  INTERACTION_MOVE_THRESHOLD_PX,
+} from "@web/interaction/interaction.constants";
+import { hasExceededInteractionMoveThreshold } from "@web/interaction/interaction.pointer";
 
 type HandleDragHandlers = {
   onMouseMove: (e: MouseEvent) => void;
@@ -24,25 +26,11 @@ type HandleDragHandlers = {
 export const useGridEventMouseDown = (
   onClick: (event: GridEvent) => void,
   onDrag: (event: GridEvent, moveEvent: PartialMouseEvent) => void,
-  delay: number = GRID_EVENT_MOUSE_HOLD_DELAY,
+  delay: number = INTERACTION_HOLD_DELAY_MS,
 ) => {
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
   const mouseMoved = useRef<boolean>(false);
   const targetRef = useRef<EventTarget | null>(null);
-
-  const hasExceededMoveThreshold = (
-    currentX: number,
-    currentY: number,
-    initialX: number,
-    initialY: number,
-  ) => {
-    const deltaX = Math.abs(currentX - initialX);
-    const deltaY = Math.abs(currentY - initialY);
-    return (
-      deltaX > GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD ||
-      deltaY > GRID_EVENT_MOUSE_HOLD_MOVE_THRESHOLD
-    );
-  };
 
   const cleanup = (
     onMouseMove: (e: MouseEvent) => void,
@@ -86,11 +74,10 @@ export const useGridEventMouseDown = (
 
     const onMouseMove = (moveEvent: MouseEvent) => {
       if (
-        hasExceededMoveThreshold(
-          moveEvent.clientX,
-          moveEvent.clientY,
-          initialX,
-          initialY,
+        hasExceededInteractionMoveThreshold(
+          { x: moveEvent.clientX, y: moveEvent.clientY },
+          { x: initialX, y: initialY },
+          INTERACTION_MOVE_THRESHOLD_PX,
         )
       ) {
         mouseMoved.current = true;

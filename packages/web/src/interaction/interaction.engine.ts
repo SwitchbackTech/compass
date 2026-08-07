@@ -9,6 +9,11 @@ import {
   type InteractionAdapter,
 } from "./interaction.adapter.types";
 import {
+  INTERACTION_COMMIT_TEARDOWN_DEADLINE_MS,
+  INTERACTION_HOLD_DELAY_MS,
+  INTERACTION_MOVE_THRESHOLD_PX,
+} from "./interaction.constants";
+import {
   createInteractionMetrics,
   type InteractionMetrics,
 } from "./interaction.metrics";
@@ -67,11 +72,11 @@ const defaultOptions = {
   clearTimer: (timer: unknown) => {
     clearTimeout(timer as ReturnType<typeof setTimeout>);
   },
-  commitTeardownDeadlineMs: 250,
+  commitTeardownDeadlineMs: INTERACTION_COMMIT_TEARDOWN_DEADLINE_MS,
   createMetrics: createInteractionMetrics,
   createDraftEvent: () => new FloatingDraftEvent(),
-  holdDelayMs: 750,
-  moveThresholdPx: 25,
+  holdDelayMs: INTERACTION_HOLD_DELAY_MS,
+  moveThresholdPx: INTERACTION_MOVE_THRESHOLD_PX,
   now: () => performance.now(),
   requestFrame: (callback: FrameRequestCallback) =>
     requestAnimationFrame(callback),

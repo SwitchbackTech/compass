@@ -80,6 +80,9 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
         ? "var(--text)"
         : "var(--on-accent)";
 
+  // react-datepicker paints z-index via popperClassName on the positioned
+  // node (popperProps.style is ignored by react-popper). "!z-22" equals
+  // Z_INDEX_FLOATING_MENU; keep the literal static so Tailwind can see it.
   return (
     <ReactDatePicker
       popperClassName="!z-22"

@@ -1,6 +1,7 @@
 import { XIcon } from "@phosphor-icons/react";
 import classNames from "classnames";
 import { useEffect, useRef, useState } from "react";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { ShortcutSection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutSection";
 import {
   selectIsShortcutsOpen,
@@ -84,10 +85,11 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
       aria-hidden={!isOpen}
       aria-label="Keyboard shortcuts"
       className={classNames(
-        "absolute inset-0 z-20 overflow-hidden",
+        "absolute inset-0 overflow-hidden",
         isOpen ? "" : "pointer-events-none",
       )}
       role="dialog"
+      style={{ zIndex: ZIndex.MAX }}
     >
       <div
         className={classNames(
