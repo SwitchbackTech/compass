@@ -133,13 +133,15 @@ export const CalendarAccessRoleSchema = z.enum([
 ]);
 export type CalendarAccessRole = z.infer<typeof CalendarAccessRoleSchema>;
 
-export const CalendarCapabilitiesSchema = z.strictObject({
+export const SyncCalendarCapabilitiesSchema = z.strictObject({
   canReadEvents: z.boolean(),
   canWriteEvents: z.boolean(),
   canReadBusy: z.boolean(),
   canInviteAttendees: z.boolean(),
 });
-export type CalendarCapabilities = z.infer<typeof CalendarCapabilitiesSchema>;
+export type SyncCalendarCapabilities = z.infer<
+  typeof SyncCalendarCapabilitiesSchema
+>;
 
 export const ProviderCalendarSchema = z.strictObject({
   id: ProviderCalendarIdSchema,
@@ -154,7 +156,7 @@ export const ProviderCalendarSchema = z.strictObject({
   active: z.boolean(),
   primary: z.boolean(),
   accessRole: CalendarAccessRoleSchema,
-  capabilities: CalendarCapabilitiesSchema,
+  capabilities: SyncCalendarCapabilitiesSchema,
   createdAt: DateTimeSchema,
   updatedAt: DateTimeSchema,
 });
@@ -205,7 +207,9 @@ export const CalendarListQuerySchema = z.strictObject({
 });
 export type CalendarListQuery = z.infer<typeof CalendarListQuerySchema>;
 
-export const CalendarListResponseSchema = z.strictObject({
+export const SyncCalendarListResponseSchema = z.strictObject({
   calendars: z.array(ProviderCalendarSchema).readonly(),
 });
-export type CalendarListResponse = z.infer<typeof CalendarListResponseSchema>;
+export type SyncCalendarListResponse = z.infer<
+  typeof SyncCalendarListResponseSchema
+>;

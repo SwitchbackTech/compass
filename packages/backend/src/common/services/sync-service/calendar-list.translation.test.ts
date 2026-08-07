@@ -3,8 +3,9 @@ import { getCalendarCapabilities } from "@core/types/calendar.contracts";
 import {
   type ProviderCalendar,
   ProviderCalendarSchema,
+  type ProviderConnection,
 } from "@core/types/sync/connection.contracts";
-import { syncCalendarToBrowser } from "./calendar-list.translation";
+import { syncCalendarsToBrowser } from "./calendar-list.translation";
 import { describe, expect, it } from "bun:test";
 
 const objectId = () => faker.database.mongodbObjectId();
@@ -33,6 +34,22 @@ const providerCalendar = (
     updatedAt: "2026-07-02T00:00:00.000Z",
     ...overrides,
   });
+
+// The suite exercises the per-calendar translation through the public list
+// entry point: one calendar, joined (when the case needs an email) to a
+// minimal connection stub carrying only the fields the join reads.
+const syncCalendarToBrowser = (calendar: ProviderCalendar, email?: string) =>
+  syncCalendarsToBrowser(
+    [calendar],
+    email !== undefined
+      ? [
+          {
+            id: calendar.connectionId,
+            account: { email },
+          } as unknown as ProviderConnection,
+        ]
+      : [],
+  )[0]!;
 
 describe("syncCalendarToBrowser", () => {
   it("uses the sync calendar id directly as the browser calendar id", () => {

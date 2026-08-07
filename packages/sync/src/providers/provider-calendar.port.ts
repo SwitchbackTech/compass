@@ -1,6 +1,6 @@
 import {
   type CalendarAccessRole,
-  type CalendarCapabilities,
+  type SyncCalendarCapabilities,
 } from "@core/types/sync/connection.contracts";
 import { type ProviderKind } from "@core/types/sync/identity.contracts";
 import { ProviderError } from "@sync/providers/provider-error";
@@ -27,7 +27,7 @@ export interface DiscoveredCalendar {
   // hidden calendar is reported inactive so preferences survive its return.
   readonly active: boolean;
   readonly accessRole: CalendarAccessRole;
-  readonly capabilities: CalendarCapabilities;
+  readonly capabilities: SyncCalendarCapabilities;
 }
 
 // The result of one discovery pass: the full set of calendars the provider

@@ -8,7 +8,6 @@ import {
   BusyAvailabilityResponseSchema,
 } from "@core/types/sync/availability.contracts";
 import {
-  type CalendarListResponse,
   type ConnectionListResponse,
   ConnectionRefreshResponseSchema,
   GoogleConnectionAdoptionRequestSchema,
@@ -16,6 +15,7 @@ import {
   ProviderCalendarSchema,
   type ProviderConnection,
   ProviderConnectionSchema,
+  type SyncCalendarListResponse,
 } from "@core/types/sync/connection.contracts";
 import {
   EventInstanceListQuerySchema,
@@ -202,7 +202,7 @@ export function registerConnectionRoutes(
           auth.principalId,
           { connectionId, activeOnly: req.query["activeOnly"] === "true" },
         );
-        const response: CalendarListResponse = {
+        const response: SyncCalendarListResponse = {
           calendars: records.map(toProviderCalendar),
         };
         res.status(Status.OK).json(response);

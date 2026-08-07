@@ -76,7 +76,7 @@ const resolveSyncCalendarIds = async (
 ): Promise<SyncEventCalendarId[]> => {
   const principal = toSyncPrincipal(userId);
   const [calendarsResult, localCalendar] = await Promise.all([
-    client.listActiveCalendars(principal),
+    client.listCalendars(principal, { activeOnly: true }),
     calendarService.getLocalCalendar(userId),
   ]);
 

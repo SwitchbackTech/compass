@@ -103,7 +103,7 @@ describe("EventController", () => {
   it("fails closed on a sync outage when listing events", async () => {
     spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
     spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
-      listActiveCalendars: mock(() =>
+      listCalendars: mock(() =>
         Promise.resolve({
           ok: false as const,
           error: {
@@ -135,16 +135,14 @@ describe("EventController", () => {
     });
   });
 
-  it("resolves owned calendars for a read via listActiveCalendars, never listCalendars", async () => {
+  it("resolves owned calendars for a read with activeOnly, never the full list", async () => {
     // resolveSyncCalendarIds intersects the request's calendarIds against
     // "owned" ids — but while the browser's own calendar list is still
     // loading, it sends NO calendarIds at all (undefined), and the backend
     // answers with every owned id verbatim. That call must already be scoped
     // to active calendars, or a retired calendar's events get read on every
-    // page load that races the calendars query. Modeling this with a client
-    // stub that implements ONLY listActiveCalendars (no listCalendars) means
-    // the controller calling the wrong method throws here instead of quietly
-    // reading everything.
+    // page load that races the calendars query. The listCalendars stub
+    // asserts the activeOnly option below.
     const activeCalendarId = objectId();
     spyOn(calendarService, "getLocalCalendar").mockResolvedValue(null);
     const listFullEvents = mock(() =>
@@ -153,13 +151,14 @@ describe("EventController", () => {
         value: { instances: [], nextCursor: null },
       }),
     );
+    const listCalendars = mock(() =>
+      Promise.resolve({
+        ok: true as const,
+        value: { calendars: [{ id: activeCalendarId }] },
+      }),
+    );
     spyOn(syncServiceFactory, "getSyncServiceClient").mockReturnValue({
-      listActiveCalendars: mock(() =>
-        Promise.resolve({
-          ok: true as const,
-          value: { calendars: [{ id: activeCalendarId }] },
-        }),
-      ),
+      listCalendars,
       listFullEvents,
     } as never);
 
@@ -177,6 +176,8 @@ describe("EventController", () => {
     expect(res.status).toHaveBeenCalledWith(Status.OK);
     expect(json).toHaveBeenCalledWith({ events: [] });
     expect(listFullEvents).toHaveBeenCalledTimes(1);
+    // The ownership read must be scoped to active calendars.
+    expect(listCalendars.mock.calls[0]?.[1]).toEqual({ activeOnly: true });
     const pageQuery = (
       listFullEvents.mock.calls[0] as never as [
         unknown,

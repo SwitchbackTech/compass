@@ -5,7 +5,10 @@ import {
   getCalendarCapabilities,
 } from "@core/types/calendar.contracts";
 import { HexColorSchema } from "@core/types/domain-primitives";
-import { type ProviderCalendar } from "@core/types/sync/connection.contracts";
+import {
+  type ProviderCalendar,
+  type ProviderConnection,
+} from "@core/types/sync/connection.contracts";
 
 // Legacy's default calendar colours (map.calendar.ts), reused so a sync-served
 // calendar looks identical to a legacy one when the provider omits a colour.
@@ -42,10 +45,11 @@ const mapCalendarAccessRole = (
 // visibility is owned client-side now, so the server reports every calendar
 // visible and the web applies its own hidden set.
 //
-// `accountEmail` is the owning connection's account email, joined by the
-// caller from the principal's connection list (sync's ProviderCalendar only
-// carries connectionId). Omitted when the connection reported no email.
-export const syncCalendarToBrowser = (
+// `accountEmail` is the owning connection's account email, joined from the
+// principal's connection list by syncCalendarsToBrowser below (sync's
+// ProviderCalendar only carries connectionId). Omitted when the connection
+// reported no email.
+const syncCalendarToBrowser = (
   calendar: ProviderCalendar,
   accountEmail?: string,
 ): Calendar => {
@@ -72,4 +76,24 @@ export const syncCalendarToBrowser = (
     isActive: calendar.active,
     ...(accountEmail ? { accountEmail } : {}),
   });
+};
+
+// Translate a principal's sync calendars to the browser contract, joining each
+// calendar to its owning connection's account email by connectionId.
+export const syncCalendarsToBrowser = (
+  calendars: readonly ProviderCalendar[],
+  connections: readonly ProviderConnection[],
+): Calendar[] => {
+  const emailByConnectionId = new Map(
+    connections.map((connection) => [
+      connection.id,
+      connection.account.email ?? undefined,
+    ]),
+  );
+  return calendars.map((calendar) =>
+    syncCalendarToBrowser(
+      calendar,
+      emailByConnectionId.get(calendar.connectionId),
+    ),
+  );
 };
