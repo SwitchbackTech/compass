@@ -72,7 +72,8 @@ export interface ProviderNotificationAdapter {
 // Why a mutation of a channel could not complete.
 export type ProviderNotificationErrorReason =
   | "watchUnsupported" // the resource cannot be watched; the caller must poll
-  | "watchFailed" // the provider refused to open the channel
+  | "watchFailed" // durable refusal; settle and fall back to polling
+  | "transient" // retryable (429 / 5xx / network); the worker backs off
   | "authorizationRevoked"; // the credential is no longer valid
 
 export class ProviderNotificationError extends ProviderError<ProviderNotificationErrorReason> {}

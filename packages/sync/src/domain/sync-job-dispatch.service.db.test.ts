@@ -684,6 +684,54 @@ describe("dispatchSyncJob", () => {
     expect(feed.length).toBeGreaterThanOrEqual(2);
   });
 
+  it("completes bootstrap on durable watchFailed instead of burning retries", async () => {
+    // 2026-08-07 prod: ProviderNotificationError watchFailed ("Google refused
+    // to open the channel") was rethrown from maintainSubscription, hit the
+    // worker's generic catch as retryableTransient, and spent all 20 attempts
+    // — 78 PostHog exceptions for one job, bootstrap never reached ready.
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, null);
+    const refusing = {
+      ...notifications,
+      watchEvents: async () => {
+        throw new ProviderNotificationError(
+          "watchFailed",
+          "Google refused to open the channel (HTTP 403, reason forbidden)",
+        );
+      },
+    };
+
+    const importOutcome = await dispatchSyncJob(
+      deps(
+        new FakeReader([
+          page([single("imported")]),
+          page([single("imported")], "cursor-1"),
+        ]),
+      ),
+      jobFor(resource, "initialImport"),
+      now,
+    );
+    expect(importOutcome).toMatchObject({
+      result: "done",
+      followup: { kind: "subscriptionMaintain" },
+    });
+
+    const subscriptionOutcome = await dispatchSyncJob(
+      deps(new FakeReader([]), tokenSource, refusing),
+      jobFor(resource, "subscriptionMaintain"),
+      now,
+    );
+    expect(subscriptionOutcome).toEqual({ result: "done" });
+
+    const saved = await resources.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(saved?.bootstrapState).toBe("ready");
+    expect(saved?.subscriptionId).toBeNull();
+  });
+
   it("bootstraps a legacy no-cursor resource through the post-watch pull", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, null);

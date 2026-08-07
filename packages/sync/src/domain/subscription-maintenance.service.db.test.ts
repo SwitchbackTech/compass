@@ -296,7 +296,7 @@ describe("maintainSubscription", () => {
     const cal = calendar(objectId());
     const resource = await seedResource(cal);
     const notifications = new FakeNotifications({
-      watchError: new ProviderNotificationError("watchFailed", "try later"),
+      watchError: new ProviderNotificationError("transient", "try later"),
     });
 
     await expect(
@@ -307,6 +307,34 @@ describe("maintainSubscription", () => {
         now,
       ),
     ).rejects.toThrow("try later");
+  });
+
+  it("settles a durable watchFailed as unsupported so polling covers it", async () => {
+    // 2026-08-07 prod: watchFailed was rethrown as retryableTransient and
+    // burned all 20 attempts (78 PostHog exceptions for one job). A durable
+    // refusal must free the coalescing key and fall back to reconcile pulls.
+    const cal = calendar(objectId());
+    const resource = await seedResource(cal, {
+      expiresAt: new Date("2026-07-10T01:00:00.000Z"),
+    });
+    const notifications = new FakeNotifications({
+      watchError: new ProviderNotificationError(
+        "watchFailed",
+        "Google refused to open the channel (HTTP 403, reason forbidden)",
+      ),
+    });
+
+    const outcome = await maintainSubscription(
+      { resources, notifications, custody, callbackUrl: "https://sync/cb" },
+      cal,
+      resource,
+      now,
+    );
+
+    expect(outcome).toEqual({ status: "unsupported" });
+    const saved = await reload(resource);
+    expect(saved?.subscriptionId).toBeNull();
+    expect(saved?.subscriptionExpiresAt).toBeNull();
   });
 
   it("persists the new channel even when stopping the old one fails", async () => {
