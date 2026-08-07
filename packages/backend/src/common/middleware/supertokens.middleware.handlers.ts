@@ -4,7 +4,6 @@ import { type SessionContainerInterface } from "supertokens-node/recipe/session/
 import { type RecipeInterface as ThirdPartyRecipeInterface } from "supertokens-node/recipe/thirdparty/types";
 import { NodeEnv } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
-import { zObjectId } from "@core/types/type.utils";
 import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
 import { type GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
 import { CONFIG } from "@backend/common/constants/config.constants";
@@ -20,7 +19,6 @@ import {
   type CreateGoogleSignInResponse,
   type CreateGoogleUserFn,
   type CreateNewRecipeUserFn,
-  type SessionSignOutPOSTFn,
   type SignInPOSTFn,
   type SignUpPOSTFn,
   type ThirdPartySignInUpInput,
@@ -215,21 +213,4 @@ export async function handleEmailPasswordSignIn(
   }
 
   return response;
-}
-
-export async function handleSessionSignOut(
-  input: Parameters<SessionSignOutPOSTFn>[0],
-  originalSignOutPOST: SessionSignOutPOSTFn,
-): Promise<Awaited<ReturnType<SessionSignOutPOSTFn>>> {
-  const userId = zObjectId.parse(input.session.getUserId());
-
-  const res = await originalSignOutPOST(input);
-
-  try {
-    await userService.handleLogoutCleanup(userId.toString());
-  } catch (error) {
-    logger.error(`Failed logout cleanup for user: ${userId.toString()}`, error);
-  }
-
-  return res;
 }

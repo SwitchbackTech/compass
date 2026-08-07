@@ -6,7 +6,6 @@ import mongoService from "@backend/common/services/mongo.service";
 import userService from "../../user/services/user.service";
 
 interface CreateUserOptions {
-  withGoogleRefreshToken?: boolean;
   /** When false, creates a user with no Google data (never connected). */
   withGoogle?: boolean;
 }
@@ -40,14 +39,10 @@ export class UserDriver {
   static async createUser(
     options: CreateUserOptions = {},
   ): Promise<WithId<Schema_User>> {
-    const { withGoogleRefreshToken = true, withGoogle = true } = options;
+    const { withGoogle = true } = options;
     const gUser = UserDriver.generateGoogleUser();
-    const gRefreshToken = faker.internet.jwt();
 
-    const { userId, ...user } = await userService.createUser(
-      gUser,
-      gRefreshToken,
-    );
+    const { userId, ...user } = await userService.createUser(gUser);
 
     const _id = new ObjectId(userId);
 
@@ -57,20 +52,6 @@ export class UserDriver {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars -- intentionally omit google from returned user
       const { google: _google, ...rest } = user;
       return { ...rest, _id };
-    }
-
-    // Remove refresh token if requested (simulates revoked token scenario)
-    if (!withGoogleRefreshToken) {
-      await mongoService.user.updateOne(
-        { _id },
-        { $unset: { "google.gRefreshToken": "" } },
-      );
-      // Return user without the refresh token
-      const updatedUser = { ...user };
-      if (updatedUser.google) {
-        delete (updatedUser.google as { gRefreshToken?: string }).gRefreshToken;
-      }
-      return { ...updatedUser, _id };
     }
 
     return { ...user, _id };

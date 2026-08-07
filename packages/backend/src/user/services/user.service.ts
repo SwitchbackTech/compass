@@ -5,7 +5,6 @@ import { mapUserToCompass } from "@core/mappers/map.user";
 import { zObjectId } from "@core/types/type.utils";
 import { type Schema_User, type UserProfile } from "@core/types/user.types";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
-import { revokeGoogleGrant } from "@backend/auth/services/google/google.revoke.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
@@ -16,7 +15,6 @@ import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-prin
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import eventService from "@backend/event/services/event.service";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
-import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
 
 const logger = Logger("app:user.service");
@@ -35,11 +33,10 @@ class UserService {
 
   createUser = async (
     gUser: TokenPayload,
-    gRefreshToken: string,
     userId: string = new ObjectId().toString(),
     session?: ClientSession,
   ): Promise<Schema_User & { userId: string }> => {
-    const _compassUser = mapUserToCompass(gUser, gRefreshToken);
+    const _compassUser = mapUserToCompass(gUser);
     const _id = zObjectId.parse(userId, { error: () => "Invalid user ID" });
     const compassUser = { ..._compassUser, _id, signedUpAt: new Date() };
 
@@ -214,25 +211,15 @@ class UserService {
   };
 
   /**
-   * Deletes everything Compass knows about a user and revokes their Google
-   * grant. Their Google Calendar data itself is never touched.
-   *
-   * Order matters: the refresh token has to be read before the delete
-   * transaction removes the user doc, since deleting is what would erase it.
+   * Deletes everything Compass knows about a user. Their Google Calendar data
+   * itself is never touched. Provider grant revocation happens inside Sync's
+   * principal purge, which revokes EVERY connection's credential - the legacy
+   * single-slot revoke here could only ever cover the last-written account.
    * Sync principal purge is fail-open: a Sync outage must not strand an
    * undeleted Compass account.
    */
   deleteAccount = async (userId: string): Promise<Summary_Delete> => {
-    const user = await mongoService.user.findOne({
-      _id: zObjectId.parse(userId),
-    });
-    const gRefreshToken = user?.google?.gRefreshToken;
-
     const summary = await this.deleteCompassDataForUser(userId);
-
-    if (gRefreshToken) {
-      await revokeGoogleGrant(gRefreshToken);
-    }
 
     await this.#purgeSyncPrincipal(userId);
 
@@ -249,65 +236,30 @@ class UserService {
     }
   };
 
-  handleLogoutCleanup = async (userId: string): Promise<void> => {
-    const _id = zObjectId.parse(userId);
-    const user = await mongoService.user.findOne({ _id });
-
-    if (!user) {
-      logger.warn(`User(${userId}) not found during logout cleanup`);
-      return;
-    }
-
-    const hasGoogleConnection = Boolean(
-      user.google?.googleId || user.google?.gRefreshToken,
-    );
-
-    if (hasGoogleConnection) {
-      await userMetadataService.updateUserMetadata({
-        userId,
-        data: { sync: { incrementalGCalSync: "RESTART" } },
-      });
-    }
-  };
-
-  private updateGoogleConnection = async (
+  // Update the user's Google profile facts (identity id, picture) and stamp
+  // the sign-in. Credentials are deliberately NOT stored here - Sync's
+  // credential store is the single authority (see adoptConnection).
+  refreshGoogleProfile = async (
     cUserId: string,
     gUser: TokenPayload,
-    refreshToken?: string,
   ): Promise<WithId<Schema_User>> => {
-    const googleUpdate: Record<string, unknown> = {
-      "google.googleId": gUser.sub ?? "",
-      "google.picture": gUser.picture ?? "",
-      lastLoggedInAt: new Date(),
-    };
-
-    if (refreshToken !== undefined) {
-      googleUpdate["google.gRefreshToken"] = refreshToken;
-    }
-
     const user = await mongoService.user.findOneAndUpdate(
       { _id: zObjectId.parse(cUserId) },
-      { $set: googleUpdate },
+      {
+        $set: {
+          "google.googleId": gUser.sub ?? "",
+          "google.picture": gUser.picture ?? "",
+          lastLoggedInAt: new Date(),
+        },
+        // The legacy single-slot credential; nothing reads it anymore, and
+        // leaving a stale token behind is worse than clearing it.
+        $unset: { "google.gRefreshToken": "" },
+      },
       { returnDocument: "after" },
     );
 
     zObjectId.parse(user?._id, { error: () => "Invalid credentials" });
     return user as WithId<Schema_User>;
-  };
-
-  reconnectGoogleCredentials = async (
-    cUserId: string,
-    gUser: TokenPayload,
-    refreshToken: string,
-  ): Promise<WithId<Schema_User>> => {
-    return this.updateGoogleConnection(cUserId, gUser, refreshToken);
-  };
-
-  refreshGoogleProfile = async (
-    cUserId: string,
-    gUser: TokenPayload,
-  ): Promise<WithId<Schema_User>> => {
-    return this.updateGoogleConnection(cUserId, gUser);
   };
 
   /**

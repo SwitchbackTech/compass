@@ -58,7 +58,6 @@ describe("supertokens.middleware", () => {
     spyOn(UserMetadata, "init");
     spyOn(googleAuthService, "handleGoogleAuth").mockResolvedValue(undefined);
     spyOn(userService, "getCanonicalCompassUserId").mockResolvedValue(null);
-    spyOn(userService, "handleLogoutCleanup").mockResolvedValue(undefined);
     spyOn(userService, "upsertUserFromAuth").mockResolvedValue({
       user: { userId: "compass-user-id" },
       isNewUser: false,
@@ -91,7 +90,6 @@ describe("supertokens.middleware", () => {
     (UserMetadata.init as Mock).mockClear();
     (googleAuthService.handleGoogleAuth as Mock).mockClear();
     (userService.getCanonicalCompassUserId as Mock).mockClear();
-    (userService.handleLogoutCleanup as Mock).mockClear();
     (userService.upsertUserFromAuth as Mock).mockClear();
     (supertokensMiddlewareUtil.buildResetPasswordLink as Mock).mockClear();
     (supertokensMiddlewareUtil.createGoogleSignInSuccess as Mock).mockClear();
@@ -695,78 +693,6 @@ describe("supertokens.middleware", () => {
       expect(googleAuthService.handleGoogleAuth).not.toHaveBeenCalled();
     });
 
-    it("delegates logout cleanup in signOutPOST", async () => {
-      const userId = new ObjectId().toString();
-
-      const originalImplementation = {
-        marker: "ok" as const,
-        signOutPOST: mock(function (this: { marker: string }) {
-          return Promise.resolve({ res: this.marker });
-        }),
-      };
-
-      (userService.handleLogoutCleanup as Mock).mockResolvedValue(undefined);
-
-      initSupertokens();
-
-      const sessionConfig = getFirstCallArg<{
-        override: {
-          apis: (original: typeof originalImplementation) => {
-            signOutPOST: (input: unknown) => Promise<unknown>;
-          };
-        };
-      }>(Session.init);
-
-      const overridden = sessionConfig.override.apis(originalImplementation);
-
-      const result = await overridden.signOutPOST({
-        session: {
-          getUserId: () => userId,
-        },
-      });
-
-      const signOutInput = getFirstCallArg<{
-        session: { getUserId: () => string };
-      }>(originalImplementation.signOutPOST);
-      expect(signOutInput.session.getUserId()).toBe(userId);
-      expect(userService.handleLogoutCleanup).toHaveBeenCalledWith(userId);
-      expect(result).toEqual({ res: "ok" });
-    });
-
-    it("returns the sign-out response when logout cleanup fails", async () => {
-      const userId = new ObjectId().toString();
-
-      const originalImplementation = {
-        signOutPOST: mock().mockResolvedValue({ res: "ok" }),
-      };
-
-      (userService.handleLogoutCleanup as Mock).mockImplementation(() =>
-        Promise.reject(new Error("cleanup failed")),
-      );
-
-      initSupertokens();
-
-      const sessionConfig = getFirstCallArg<{
-        override: {
-          apis: (original: typeof originalImplementation) => {
-            signOutPOST: (input: unknown) => Promise<unknown>;
-          };
-        };
-      }>(Session.init);
-
-      const overridden = sessionConfig.override.apis(originalImplementation);
-
-      await expect(
-        overridden.signOutPOST({
-          session: {
-            getUserId: () => userId,
-          },
-        }),
-      ).resolves.toEqual({ res: "ok" });
-    });
-  });
-
-  describe("supertokensCors", () => {
     it("creates a cors middleware using SuperTokens CORS headers", () => {
       const corsReturn = mock();
       corsLib.default.mockReturnValue(corsReturn);

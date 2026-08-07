@@ -10,7 +10,11 @@ export interface Schema_User {
   google?: {
     googleId: string;
     picture: string;
-    gRefreshToken: string;
+    // Legacy pre-Sync credential slot. Sync's credential store is the only
+    // authority now: nothing writes this anymore, and account deletion
+    // revokes via Sync's principal purge. Optional because rows written
+    // before the cutover still carry it.
+    gRefreshToken?: string;
   };
   signedUpAt?: Date;
   lastLoggedInAt?: Date;
@@ -19,8 +23,6 @@ export interface Schema_User {
    *  Used to tell an active user apart from an abandoned account (A40). */
   lastSeenAt?: Date;
 }
-
-type SyncStatus = "IMPORTING" | "ERRORED" | "COMPLETED" | "RESTART" | null;
 
 /**
  * Unified Google connection state computed by the server.
@@ -57,10 +59,6 @@ export type GoogleSyncConnectionSummary = {
 // rejects a nested `google.connection` object on an interface extends clause,
 // even though every field is JSON-safe.
 export type UserMetadata = SupertokensUserMetadata.JSONObject & {
-  sync?: {
-    importGCal?: SyncStatus;
-    incrementalGCalSync?: SyncStatus;
-  };
   google?: {
     connectionState?: GoogleConnectionState;
     // Every connected provider account, in connection order. The
