@@ -7,7 +7,7 @@ import {
 } from "@core/types/gcal";
 import {
   type CalendarAccessRole,
-  type CalendarCapabilities,
+  type SyncCalendarCapabilities,
 } from "@core/types/sync/connection.contracts";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
 import {
@@ -173,7 +173,10 @@ const ACCESS_ROLE_BY_GOOGLE: Record<string, CalendarAccessRole> = {
 
 // Operational capabilities implied by each role. Invite ability follows write
 // access — Google exposes no separate per-calendar attendee-invite flag.
-const CAPABILITIES_BY_ROLE: Record<CalendarAccessRole, CalendarCapabilities> = {
+const CAPABILITIES_BY_ROLE: Record<
+  CalendarAccessRole,
+  SyncCalendarCapabilities
+> = {
   owner: {
     canReadEvents: true,
     canWriteEvents: true,

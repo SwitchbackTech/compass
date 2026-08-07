@@ -16,8 +16,8 @@ import {
 } from "@backend/common/middleware/supertokens.middleware";
 import { ConfigRoutes } from "@backend/config/config.routes.config";
 import { EventRoutes } from "@backend/event/event.routes.config";
-import { EventsRoutes } from "@backend/events/events.routes.config";
 import { HealthRoutes } from "@backend/health/health.routes.config";
+import { EventsRoutes } from "@backend/servers/sse/events-stream.routes.config";
 import { UserRoutes } from "@backend/user/user.routes.config";
 
 export const initExpressServer = () => {

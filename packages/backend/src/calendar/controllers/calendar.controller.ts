@@ -13,7 +13,7 @@ import calendarService from "@backend/calendar/services/calendar.service";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { syncCalendarToBrowser } from "@backend/common/services/sync-service/calendar-list.translation";
+import { syncCalendarsToBrowser } from "@backend/common/services/sync-service/calendar-list.translation";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import { type Res_Promise } from "@backend/common/types/express.types";
@@ -88,19 +88,10 @@ const listCalendarsFromSync = async (
     );
   }
 
-  const emailByConnectionId = new Map(
-    connectionsResult.value.connections.map((connection) => [
-      connection.id,
-      connection.account.email,
-    ]),
-  );
-
   return {
-    calendars: calendarsResult.value.calendars.map((calendar) =>
-      syncCalendarToBrowser(
-        calendar,
-        emailByConnectionId.get(calendar.connectionId) ?? undefined,
-      ),
+    calendars: syncCalendarsToBrowser(
+      calendarsResult.value.calendars,
+      connectionsResult.value.connections,
     ),
   };
 };

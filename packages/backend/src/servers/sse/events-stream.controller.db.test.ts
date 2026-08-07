@@ -5,7 +5,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
-import eventsController from "@backend/events/controllers/events.controller";
+import eventsController from "@backend/servers/sse/events-stream.controller";
 import userService from "@backend/user/services/user.service";
 import {
   afterAll,

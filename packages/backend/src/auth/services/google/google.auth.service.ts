@@ -28,7 +28,12 @@ import {
 } from "./google.auth.types";
 import { createHmac } from "node:crypto";
 
-const getLogger = () => LoggerFactory("app:auth.google.service");
+// Resolved lazily (not at module scope) so the test logger factory registered
+// after import still wins, then memoized: the production factory builds a
+// fresh winston logger — including a new file-transport handle — on every
+// call, and this ran twice per Google sign-in.
+let logger: ReturnType<typeof LoggerFactory> | undefined;
+const getLogger = () => (logger ??= LoggerFactory("app:auth.google.service"));
 const AUTH_TRACE_ID_LENGTH = 16;
 
 // Keep auth traces searchable without putting raw user identifiers in production logs.

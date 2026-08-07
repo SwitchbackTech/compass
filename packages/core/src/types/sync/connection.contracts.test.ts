@@ -2,13 +2,13 @@ import { faker } from "@faker-js/faker";
 import {
   CalendarAccessRoleSchema,
   CalendarListQuerySchema,
-  CalendarListResponseSchema,
   ConnectionListResponseSchema,
   ConnectionStateSchema,
   GoogleConnectionAdoptionRequestSchema,
   ProviderAccountFactsSchema,
   ProviderCalendarSchema,
   ProviderConnectionSchema,
+  SyncCalendarListResponseSchema,
 } from "@core/types/sync/connection.contracts";
 
 const objectId = () => faker.database.mongodbObjectId();
@@ -294,7 +294,7 @@ describe("Sync connection contracts", () => {
 
     it("accepts an empty calendar list", () => {
       expect(
-        CalendarListResponseSchema.safeParse({ calendars: [] }).success,
+        SyncCalendarListResponseSchema.safeParse({ calendars: [] }).success,
       ).toBe(true);
     });
 
