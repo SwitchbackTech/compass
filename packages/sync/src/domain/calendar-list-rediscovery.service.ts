@@ -1,12 +1,14 @@
+import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 export interface CalendarListRediscoveryDeps {
   resources: SyncResourceRepository;
   jobs: JobRepository;
-  // Called once per connection whose cursor could not be cleared or job could
-  // not be enqueued. The sweep keeps going; the caller decides how loud to be.
-  onError?: (error: unknown, connectionId: string) => void;
+  // Called once per calendarList resource whose cursor could not be cleared or
+  // job could not be enqueued. The sweep keeps going; the caller decides how
+  // loud to be.
+  onError?: (error: unknown, resourceId: string) => void;
 }
 
 // Force a FULL calendar-list re-discovery for every connection whose last
@@ -15,41 +17,42 @@ export interface CalendarListRediscoveryDeps {
 // ever runs once, at connect (connection.routes.ts's registerConnection is the
 // only other enqueue site).
 //
-// This is NOT a thin wrapper around enqueueForResources: that helper always
-// enqueues resourceId: resource._id and coalescingKey: `${kind}:${resource._id}`,
-// but calendarListSync is connection-scoped (resourceId: null) and MUST reuse
-// the connect path's exact coalescing key (`calendarListSync:${connectionId}`).
-// Minting a different key would let a sweep-enqueued discovery and a
-// connect-enqueued discovery run concurrently on one connection — two passes
-// racing over one cursor is how an incremental pass's advanceCursor clobbers a
-// full pass this cycle just cleared.
+// Shares enqueueForResources's per-resource try/catch loop (2026-07-31: one
+// unparseable job doc froze calendar sync fleet-wide for 23h — the same hazard
+// every sweep guards against) via its buildEnqueue override, since
+// calendarListSync needs a shape the helper's default doesn't produce:
+// connection-scoped (resourceId: null), keyed on the connect path's own
+// coalescing key (`calendarListSync:${connectionId}`, not the helper's default
+// `${kind}:${resource._id}`) so a sweep-enqueued and a connect-enqueued
+// discovery for one connection always collapse into the same job, plus the
+// cursor-clear side effect that must land inside the same try/catch as the
+// enqueue.
 //
 // syncCalendarList decides full-vs-incremental purely from whether the stored
 // cursor is null (`fullList = resource.syncCursor === null`), so clearing the
 // cursor here is what forces the eventual pass to go full — it does not matter
 // whether that pass is this sweep's own enqueue or one that coalesced onto an
 // already-pending job; either reads the cleared cursor and full-lists.
-//
-// Each connection is handled independently: one that throws is reported and
-// skipped, never allowed to abandon the rest of the batch (2026-07-31: one
-// unparseable job doc froze calendar sync fleet-wide for 23h — same hazard
-// class enqueueForResources guards against).
-export async function rediscoverStaleCalendarLists(
+export function rediscoverStaleCalendarLists(
   deps: CalendarListRediscoveryDeps,
   before: Date,
   now: () => Date,
   limit = 100,
 ): Promise<number> {
-  const due = await deps.resources.listStaleCalendarLists(before, limit);
-  let enqueued = 0;
-  for (const resource of due) {
-    try {
+  return enqueueForResources(
+    { jobs: deps.jobs, onEnqueueError: deps.onError },
+    (b, l) => deps.resources.listStaleCalendarLists(b, l),
+    "calendarListSync",
+    before,
+    now,
+    limit,
+    async (resource, nowFn) => {
       await deps.resources.clearSyncCursor(
         resource.tenantId,
         resource.principalId,
         resource._id,
       );
-      await deps.jobs.enqueue({
+      return {
         tenantId: resource.tenantId,
         principalId: resource.principalId,
         connectionId: resource.connectionId,
@@ -57,13 +60,9 @@ export async function rediscoverStaleCalendarLists(
         commandId: null,
         kind: "calendarListSync",
         priority: 0,
-        runAfter: now(),
+        runAfter: nowFn(),
         coalescingKey: `calendarListSync:${resource.connectionId}`,
-      });
-      enqueued += 1;
-    } catch (error) {
-      deps.onError?.(error, resource.connectionId);
-    }
-  }
-  return enqueued;
+      };
+    },
+  );
 }

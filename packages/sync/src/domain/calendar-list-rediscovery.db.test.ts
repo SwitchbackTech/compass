@@ -249,7 +249,7 @@ describe("calendar-list rediscovery sweep (rediscoverStaleCalendarLists)", () =>
       {
         resources,
         jobs,
-        onError: (_e, connectionId) => failures.push(connectionId),
+        onError: (_e, resourceId) => failures.push(resourceId),
       },
       staleBefore,
       now,
@@ -259,6 +259,8 @@ describe("calendar-list rediscovery sweep (rediscoverStaleCalendarLists)", () =>
     expect(
       await jobByKey(`calendarListSync:${healthy.connectionId}`),
     ).not.toBeNull();
-    expect(failures).toEqual([poisoned.connectionId]);
+    // enqueueForResources reports the resourceId it failed on (the shared
+    // helper's contract), not the connectionId — poisoned's own resource id.
+    expect(failures).toEqual([poisoned._id]);
   });
 });

@@ -648,9 +648,9 @@ function buildSchedulers(
           {
             resources,
             jobs,
-            onError: (error, connectionId) =>
+            onError: (error, resourceId) =>
               logger.error(
-                `Sync calendar-list rediscovery sweep could not re-list connection ${connectionId}; skipping it and continuing`,
+                `Sync calendar-list rediscovery sweep could not re-list resource ${resourceId}; skipping it and continuing`,
                 error,
               ),
           },

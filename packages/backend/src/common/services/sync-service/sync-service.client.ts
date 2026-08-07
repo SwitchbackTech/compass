@@ -197,13 +197,7 @@ export class SyncServiceClient {
     principal: SyncPrincipal,
     correlationId?: string,
   ): Promise<SyncClientResult<CalendarListResponse>> {
-    return this.#request({
-      method: "GET",
-      path: CALENDARS_PATH,
-      principal,
-      schema: CalendarListResponseSchema,
-      correlationId,
-    });
+    return this.#listCalendars(principal, correlationId);
   }
 
   // Same as listCalendars, scoped to calendars the provider still lists. A
@@ -218,6 +212,14 @@ export class SyncServiceClient {
   ): Promise<SyncClientResult<CalendarListResponse>> {
     const query = new URLSearchParams();
     query.set("activeOnly", "true");
+    return this.#listCalendars(principal, correlationId, query);
+  }
+
+  #listCalendars(
+    principal: SyncPrincipal,
+    correlationId?: string,
+    query?: URLSearchParams,
+  ): Promise<SyncClientResult<CalendarListResponse>> {
     return this.#request({
       method: "GET",
       path: CALENDARS_PATH,

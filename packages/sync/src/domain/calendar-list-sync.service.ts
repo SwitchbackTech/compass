@@ -155,19 +155,19 @@ export async function syncCalendarList(
         principalId,
         connectionId,
       );
-      for (const eventsResource of resources) {
-        if (
-          eventsResource.calendarId &&
-          retiredIdSet.has(eventsResource.calendarId) &&
-          eventsResource.subscriptionId !== null
-        ) {
-          await deps.resources.clearSubscription(
-            tenantId,
-            principalId,
-            eventsResource._id,
-          );
-        }
-      }
+      const subscribedRetired = resources.filter(
+        (r) =>
+          r.calendarId &&
+          retiredIdSet.has(r.calendarId) &&
+          r.subscriptionId !== null,
+      );
+      // Independent writes to distinct resources: clear them concurrently
+      // rather than one round trip per retired calendar.
+      await Promise.all(
+        subscribedRetired.map((r) =>
+          deps.resources.clearSubscription(tenantId, principalId, r._id),
+        ),
+      );
     }
   }
 
