@@ -10,7 +10,6 @@ import { getTestLoggerInfoCalls } from "@backend/__tests__/helpers/mock.setup";
 import * as googleAuthUtil from "@backend/auth/services/google/util/google.auth.util";
 import mongoService from "@backend/common/services/mongo.service";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
-import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { GOOGLE_AUTH_SCOPES } from "./google.auth.scopes";
 import {
@@ -264,7 +263,11 @@ describe("googleAuthService", () => {
         refresh_token: faker.string.uuid(),
       };
 
-      await userService.pruneGoogleData(compassUserId);
+      // Simulate a revoked/lost Google connection before the repair.
+      await mongoService.user.updateOne(
+        { _id: user._id },
+        { $set: { "google.gRefreshToken": "" } },
+      );
 
       const result: { cUserId: string; refreshToken: string } =
         await googleAuthService.repairGoogleConnection(

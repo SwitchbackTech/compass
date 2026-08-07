@@ -1,15 +1,9 @@
 import { type TokenPayload } from "google-auth-library";
 import { type ClientSession, ObjectId, type WithId } from "mongodb";
-import { type JSONObject } from "supertokens-node/recipe/usermetadata";
 import { Logger } from "@core/logger/winston.logger";
 import { mapUserToCompass } from "@core/mappers/map.user";
 import { zObjectId } from "@core/types/type.utils";
-import {
-  type Schema_User,
-  type UserMetadata,
-  type UserProfile,
-} from "@core/types/user.types";
-import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
+import { type Schema_User, type UserProfile } from "@core/types/user.types";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import { revokeGoogleGrant } from "@backend/auth/services/google/google.revoke.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
@@ -23,10 +17,7 @@ import { getSyncServiceClient } from "@backend/common/services/sync-service/sync
 import eventService from "@backend/event/services/event.service";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
-import {
-  type GetUserMetadataResponse,
-  type Summary_Delete,
-} from "@backend/user/types/user.types";
+import { type Summary_Delete } from "@backend/user/types/user.types";
 
 const logger = Logger("app:user.service");
 
@@ -258,17 +249,6 @@ class UserService {
     }
   };
 
-  initUserData = async (
-    gUser: TokenPayload,
-    gRefreshToken: string,
-    userId?: string,
-    session?: ClientSession,
-  ) => {
-    const cUser = await this.createUser(gUser, gRefreshToken, userId, session);
-
-    return cUser;
-  };
-
   handleLogoutCleanup = async (userId: string): Promise<void> => {
     const _id = zObjectId.parse(userId);
     const user = await mongoService.user.findOne({ _id });
@@ -331,35 +311,6 @@ class UserService {
   };
 
   /**
-   * Prunes Google data for a user after revoked/missing access (B9/A16):
-   * deletes events owned by Google-provider calendars, archives those
-   * calendars (`isActive: false`, never deletes the rows so reactivation
-   * reuses the same Compass id and visibility preference), drops watches
-   * and Google sync records, and clears the stored refresh token.
-   * Local-calendar events are untouched.
-   */
-  pruneGoogleData = async (userId: string): Promise<void> => {
-    const _id = zObjectId.parse(userId);
-
-    await eventService.deleteByIntegration("google", userId);
-    await mongoService.calendar.updateMany(
-      { userId: _id, "source.provider": "google" },
-      { $set: { isActive: false, updatedAt: new Date() } },
-    );
-
-    await mongoService.user.updateOne(
-      { _id },
-      { $set: { "google.gRefreshToken": "" } },
-    );
-    await userMetadataService.updateUserMetadata({
-      userId,
-      data: {
-        sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
-      },
-    });
-  };
-
-  /**
    * Records that `userId`'s client is actively connected right now (called
    * on every SSE (re)connect). This is what the watch-maintenance activity
    * gate (A40) reads to tell an active user apart from an abandoned account,
@@ -371,19 +322,6 @@ class UserService {
       { _id: zObjectId.parse(userId) },
       { $set: { lastSeenAt: new Date() } },
     );
-  };
-
-  fetchUserMetadata = async (
-    userId: string,
-    _userContext?: Record<string, JSONObject>,
-  ): Promise<UserMetadata> => {
-    const { status, metadata } = (await getUserMetadataStore().getUserMetadata(
-      userId,
-    )) as GetUserMetadataResponse;
-
-    if (status !== "OK") throw new Error("Failed to fetch user metadata");
-
-    return metadata;
   };
 }
 

@@ -1,8 +1,5 @@
 import { type SessionRequest } from "supertokens-node/framework/express";
-import {
-  type CalendarListResponse,
-  SetCalendarVisibilityInputSchema,
-} from "@core/types/calendar.contracts";
+import { type CalendarListResponse } from "@core/types/calendar.contracts";
 import { BusyPeriodSchema } from "@core/types/event.contracts";
 import {
   type AvailabilityQuery,
@@ -19,10 +16,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { syncCalendarToBrowser } from "@backend/common/services/sync-service/calendar-list.translation";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
-import {
-  type Res_Promise,
-  type SReqBody,
-} from "@backend/common/types/express.types";
+import { type Res_Promise } from "@backend/common/types/express.types";
 
 // Availability is display-only decoration here (inert busy blocks on the
 // grid, not a booking decision), so a generous freshness tolerance avoids
@@ -174,21 +168,6 @@ class CalendarController {
           ? [...syncResponse.calendars, mapCalendarRecord(localCalendar)]
           : syncResponse.calendars,
       });
-    } catch (e) {
-      res.promise(Promise.reject(e));
-    }
-  };
-
-  setVisibility = async (req: SReqBody<unknown>, res: Res_Promise) => {
-    try {
-      const userId = zObjectId.parse(req.session?.getUserId(), {
-        error: () => error(AuthError.InadequatePermissions, "Selection Failed"),
-      });
-
-      const items = SetCalendarVisibilityInputSchema.parse(req.body);
-      await calendarService.setVisibility(userId, items);
-
-      res.promise({ statusCode: 204 });
     } catch (e) {
       res.promise(Promise.reject(e));
     }
