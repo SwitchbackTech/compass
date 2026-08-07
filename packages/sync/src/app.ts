@@ -415,7 +415,15 @@ function buildSchedulers(
       },
       owner,
       {
-        onError: (error) => logger.error("Sync job engine failed", error),
+        onError: (error, job) =>
+          logger.error(
+            // resourceId is null for connection-wide kinds (calendarListSync);
+            // say so rather than logging the literal string "null".
+            `Sync job engine failed for resource ${
+              job.resourceId ?? "none (connection-wide)"
+            } on connection ${job.connectionId}`,
+            error,
+          ),
         onDrop: (job, reason) =>
           logger.warn(`Sync job ${job.kind} (${job._id}) dropped: ${reason}`),
       },

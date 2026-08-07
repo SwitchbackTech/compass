@@ -151,6 +151,19 @@ describe("SyncJobWorker", () => {
     return { worker: w, drops };
   };
 
+  // A worker that records every engine-throw error (with its job), so a test
+  // can assert on the wrapper message and that the original cause is attached.
+  const workerRecordingErrors = (reader: FakeReader) => {
+    const errors: { error: Error; job: JobRecord }[] = [];
+    const w = new SyncJobWorker(deps(reader), OWNER, {
+      now,
+      onError: (error, job) => {
+        if (error instanceof Error) errors.push({ error, job });
+      },
+    });
+    return { worker: w, errors };
+  };
+
   const workerWith = (
     reader: FakeReader,
     options: { maxAttempts?: number; random?: () => number },
@@ -297,6 +310,23 @@ describe("SyncJobWorker", () => {
     );
     expect(after?.state).toBe("pending");
     expect(after!.runAfter.getTime()).toBeGreaterThan(now().getTime());
+  });
+
+  it("reports the failing job and preserves the cause when the engine throws", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const job = await enqueue(resource, "incrementalPull");
+    const cause = new ProviderEventReadError("transient", "flaky");
+
+    const { worker, errors } = workerRecordingErrors(new FakeReader([], cause));
+    await worker.runOnce();
+
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.error.message).toContain(job.kind);
+    expect(errors[0]?.error.message).toContain(String(job._id));
+    expect(errors[0]?.error.cause).toBe(cause);
+    expect(errors[0]?.job.resourceId).toBe(job.resourceId);
+    expect(errors[0]?.job.connectionId).toEqual(job.connectionId);
   });
 
   it("fails a transient job once its retries are exhausted", async () => {

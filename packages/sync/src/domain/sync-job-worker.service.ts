@@ -38,8 +38,10 @@ export interface SyncJobWorkerOptions {
   now?: () => Date;
   // Called when a job engine throws (before the worker schedules a retry). The
   // scheduler's drain onError only sees claim/settle failures; per-job engine
-  // throws were previously swallowed, which left staging imports opaque.
-  onError?: (error: unknown) => void;
+  // throws were previously swallowed, which left staging imports opaque. Takes
+  // the job (mirroring onDrop below) so a caller can log identifiers without
+  // parsing them back out of the error message.
+  onError?: (error: unknown, job: JobRecord) => void;
   // Called when dispatch drops a job (settled complete without doing its work:
   // vanished target, unusable credential). Drops are correct behavior, but an
   // invisible drop path made a mass credential problem look like a dead sweep
@@ -99,7 +101,7 @@ export class SyncJobWorker {
   readonly #maxAttempts: number;
   readonly #backoff: (attempt: number, now: Date) => Date;
   readonly #now: () => Date;
-  readonly #onError: (error: unknown) => void;
+  readonly #onError: (error: unknown, job: JobRecord) => void;
   readonly #onDrop: (job: JobRecord, reason: string) => void;
 
   constructor(
@@ -186,6 +188,7 @@ export class SyncJobWorker {
           `Sync job ${job.kind} (${job._id}) attempt ${job.attempt} failed`,
           { cause: error instanceof Error ? error : undefined },
         ),
+        job,
       );
       await this.#settleFailure(job, "retryableTransient");
       return;
