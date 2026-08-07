@@ -48,14 +48,7 @@ export const WeekView = () => {
   // even when the user keeps it collapsed; their persisted preference is
   // untouched and the panel collapses again when the form closes.
   const isEventDetailsOpen = useDraftStore(selectIsEventFormOpen);
-  const toggleSidebar = useCallback(() => {
-    viewActions.toggleSidebar();
-  }, []);
-  const { closeShortcuts, isShortcutsOpen, toggleShortcuts } =
-    useSidebarShortcuts({
-      isSidebarOpen,
-      onToggleSidebar: toggleSidebar,
-    });
+  useSidebarShortcuts();
 
   const { today } = useToday();
 
@@ -156,7 +149,7 @@ export const WeekView = () => {
       <CommandPalette
         currentView="week"
         onGoToToday={goToTodayViaCmd}
-        onShowShortcuts={toggleShortcuts}
+        onShowShortcuts={viewActions.toggleShortcuts}
         onShowWelcomeGuide={openWelcomeGuide}
         placeholder={getCommandPalettePlaceholder("week")}
       />
@@ -209,10 +202,6 @@ export const WeekView = () => {
                 eventDetails={
                   <SidebarEventDetails confirmAllRecurringEdits={false} />
                 }
-                isEventDetailsOpen={isEventDetailsOpen}
-                isShortcutsOpen={isShortcutsOpen}
-                onCloseShortcuts={closeShortcuts}
-                onToggleShortcuts={toggleShortcuts}
                 onSelectDate={goToDateFromSidebar}
                 shortcutSections={shortcutSections}
                 shortcutsViewLabel="Week"

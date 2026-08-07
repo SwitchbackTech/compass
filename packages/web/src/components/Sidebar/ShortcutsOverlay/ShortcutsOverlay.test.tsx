@@ -1,5 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, mock } from "bun:test";
+import {
+  selectIsShortcutsOpen,
+  useViewStore,
+  viewActions,
+} from "@web/events/stores/view.store";
+import { describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 import { ShortcutsOverlay } from "./ShortcutsOverlay";
 
@@ -24,14 +29,10 @@ const sections = [
 
 describe("ShortcutsOverlay", () => {
   it("renders shortcut sections over the sidebar", () => {
-    render(
-      <ShortcutsOverlay
-        isOpen={true}
-        onClose={mock()}
-        sections={sections}
-        viewLabel="Day"
-      />,
-    );
+    viewActions.setSidebarOpen(true);
+    viewActions.toggleShortcuts();
+
+    render(<ShortcutsOverlay sections={sections} viewLabel="Day" />);
 
     const overlay = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
 
@@ -45,22 +46,19 @@ describe("ShortcutsOverlay", () => {
     expect(screen.queryByText("Empty")).not.toBeInTheDocument();
   });
 
-  it("calls onClose when closed with Escape", () => {
-    const onClose = mock();
+  it("closes when closed with Escape", () => {
+    viewActions.setSidebarOpen(true);
+    viewActions.toggleShortcuts();
 
-    render(
-      <ShortcutsOverlay isOpen={true} onClose={onClose} sections={sections} />,
-    );
+    render(<ShortcutsOverlay sections={sections} />);
 
     fireEvent.keyDown(document, { key: "Escape" });
 
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(false);
   });
 
   it("does not render when closed", () => {
-    render(
-      <ShortcutsOverlay isOpen={false} onClose={mock()} sections={sections} />,
-    );
+    render(<ShortcutsOverlay sections={sections} />);
 
     expect(
       screen.queryByRole("dialog", { name: "Keyboard shortcuts" }),

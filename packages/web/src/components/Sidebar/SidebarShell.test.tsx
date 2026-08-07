@@ -36,14 +36,7 @@ function mockViewport(isNarrow: boolean) {
 function renderShell() {
   const { wrapper } = createStoreWrapper();
   return render(
-    <SidebarShell
-      isShortcutsOpen={false}
-      onCloseShortcuts={mock()}
-      onToggleShortcuts={mock()}
-      shortcutSections={[]}
-      SidebarActionsComponent={() => <></>}
-      ShortcutsOverlayComponent={() => <></>}
-    >
+    <SidebarShell shortcutSections={[]}>
       <div>Sidebar body</div>
     </SidebarShell>,
     { wrapper },

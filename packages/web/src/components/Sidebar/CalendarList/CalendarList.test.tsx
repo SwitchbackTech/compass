@@ -95,10 +95,9 @@ afterAll(() => {
 });
 
 // CalendarList.tsx is already cached by the time this file runs -
-// Sidebar.test.tsx imports createSidebar from "./Sidebar",
-// and merely loading that file (regardless of the DI stubs it renders with)
-// runs Sidebar.tsx's own top-level `import { CalendarList }`,
-// binding its useSession import to whatever was active at that earlier point.
+// Sidebar.test.tsx imports Sidebar from "./Sidebar", and merely loading that
+// file runs Sidebar.tsx's own top-level `import { CalendarList }`, binding
+// its useSession import to whatever was active at that earlier point.
 // A plain require here would return that stale instance. A cache-busted URL
 // forces a fresh evaluation that re-resolves useSession against the mock
 // above (same technique as useVersionCheck.test.ts).

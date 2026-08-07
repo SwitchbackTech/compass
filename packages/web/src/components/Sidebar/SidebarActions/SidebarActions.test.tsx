@@ -4,6 +4,7 @@ import {
   resetGoogleSyncUIStateForTests,
   setSyncingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
+import { viewActions } from "@web/events/stores/view.store";
 import { afterAll, afterEach, describe, expect, it, mock } from "bun:test";
 
 // mock.module is process-wide and not reliably restorable, so the real hook
@@ -39,10 +40,7 @@ describe("SidebarActions", () => {
     const { wrapper } = createStoreWrapper();
     setSyncingSyncIndicatorOverride();
 
-    render(
-      <SidebarActions isShortcutsOpen={false} onToggleShortcuts={mock()} />,
-      { wrapper },
-    );
+    render(<SidebarActions />, { wrapper });
 
     expect(
       screen.getByRole("button", {
@@ -54,10 +52,7 @@ describe("SidebarActions", () => {
   it("does not render the background import spinner in the sidebar", () => {
     const { wrapper } = createStoreWrapper();
 
-    render(
-      <SidebarActions isShortcutsOpen={false} onToggleShortcuts={mock()} />,
-      { wrapper },
-    );
+    render(<SidebarActions />, { wrapper });
 
     expect(
       screen.queryByRole("button", {
@@ -71,11 +66,10 @@ describe("SidebarActions", () => {
 
   it("labels the shortcuts button as a close action when shortcuts are open", () => {
     const { wrapper } = createStoreWrapper();
+    viewActions.setSidebarOpen(true);
+    act(() => viewActions.toggleShortcuts());
 
-    render(
-      <SidebarActions isShortcutsOpen={true} onToggleShortcuts={mock()} />,
-      { wrapper },
-    );
+    render(<SidebarActions />, { wrapper });
 
     expect(
       screen.getByRole("button", { name: "Close shortcuts" }),

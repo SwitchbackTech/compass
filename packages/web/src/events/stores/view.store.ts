@@ -19,6 +19,9 @@ interface ViewState {
     // The user's last explicit choice; the only field this store persists.
     preference: boolean;
   };
+  shortcuts: {
+    isOpen: boolean;
+  };
 }
 
 const persistedSidebarPreference = readSidebarOpen();
@@ -34,6 +37,7 @@ export const initialViewState: ViewState = {
     isOpen: persistedSidebarPreference,
     preference: persistedSidebarPreference,
   },
+  shortcuts: { isOpen: false },
 };
 
 // Selectors passed to this hook must return primitives or stable references;
@@ -45,13 +49,20 @@ export const useViewStore = create<ViewState>()(
   }),
 );
 
-// Single writer: `preference` is the only field ever persisted, and this is
-// the only place that calls writeSidebarOpen. `syncSidebarOpen` (used by
-// useResponsiveLayout for breakpoint crossings) never touches `preference`,
-// so it never reaches this subscriber.
+// Two self-correcting invariants, checked after every update so no future
+// write path can violate them by forgetting a special case:
+// - `preference` is the only field ever persisted (`syncSidebarOpen`, used
+//   for breakpoint crossings, never touches it, so it never reaches here).
+// - The shortcuts overlay lives inside the sidebar, so it can't stay open
+//   once the sidebar closes.
 useViewStore.subscribe((state, prevState) => {
   if (state.sidebar.preference !== prevState.sidebar.preference) {
     writeSidebarOpen(state.sidebar.preference);
+  }
+  if (!state.sidebar.isOpen && state.shortcuts.isOpen) {
+    useViewStore.setState({ shortcuts: { isOpen: false } }, false, {
+      type: "autoCloseShortcuts",
+    });
   }
 });
 
@@ -77,9 +88,28 @@ export const viewActions = {
       false,
       { type: "toggleSidebar" },
     ),
+  /** `?` / `/`: opens the sidebar first if it's closed, otherwise toggles the overlay. */
+  toggleShortcuts: () => {
+    const wasSidebarOpen = useViewStore.getState().sidebar.isOpen;
+    if (!wasSidebarOpen) viewActions.setSidebarOpen(true);
+
+    useViewStore.setState(
+      (state) => ({
+        shortcuts: { isOpen: wasSidebarOpen ? !state.shortcuts.isOpen : true },
+      }),
+      false,
+      { type: "toggleShortcuts" },
+    );
+  },
+  closeShortcuts: () =>
+    useViewStore.setState({ shortcuts: { isOpen: false } }, false, {
+      type: "closeShortcuts",
+    }),
   updateDates: (dates: ViewState["dates"]) =>
     useViewStore.setState({ dates }, false, { type: "updateDates" }),
 };
 export const selectIsSidebarOpen = (state: ViewState) => state.sidebar.isOpen;
 export const selectSidebarPreference = (state: ViewState) =>
   state.sidebar.preference;
+export const selectIsShortcutsOpen = (state: ViewState) =>
+  state.shortcuts.isOpen;

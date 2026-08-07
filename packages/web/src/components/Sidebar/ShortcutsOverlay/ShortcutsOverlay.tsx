@@ -2,11 +2,14 @@ import { XIcon } from "@phosphor-icons/react";
 import classNames from "classnames";
 import { useEffect, useRef, useState } from "react";
 import { ShortcutSection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutSection";
+import {
+  selectIsShortcutsOpen,
+  useViewStore,
+  viewActions,
+} from "@web/events/stores/view.store";
 import { type ShortcutOverlaySection } from "@web/shortcuts/shortcuts-overlay.types";
 
 interface Props {
-  isOpen: boolean;
-  onClose: () => void;
   sections: ShortcutOverlaySection[];
   viewLabel?: string;
 }
@@ -19,12 +22,8 @@ const matchesSearch = (searchTerm: string, text: string): boolean => {
   return normalized.includes(query);
 };
 
-export function ShortcutsOverlay({
-  isOpen,
-  onClose,
-  sections,
-  viewLabel,
-}: Props) {
+export function ShortcutsOverlay({ sections, viewLabel }: Props) {
+  const isOpen = useViewStore(selectIsShortcutsOpen);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,14 +41,14 @@ export function ShortcutsOverlay({
         if (searchQuery) {
           setSearchQuery("");
         } else {
-          onClose();
+          viewActions.closeShortcuts();
         }
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose, searchQuery]);
+  }, [isOpen, searchQuery]);
 
   const filteredSections = sections
     .map((section) => {
@@ -106,7 +105,7 @@ export function ShortcutsOverlay({
           <button
             aria-label="Close shortcuts"
             className="flex size-7 items-center justify-center rounded-default text-text-muted transition-colors hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            onClick={onClose}
+            onClick={viewActions.closeShortcuts}
             tabIndex={isOpen ? 0 : -1}
             type="button"
           >
