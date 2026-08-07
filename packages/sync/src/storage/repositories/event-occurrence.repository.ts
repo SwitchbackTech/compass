@@ -225,9 +225,7 @@ export class EventOccurrenceRepository {
   // The busy occurrences overlapping [start, end) for the given calendars, each
   // read at its active generation, projected to just the interval. Overlap (not
   // start-in-range) so an occurrence that began before the window but ends inside
-  // it is included. Cancelled occurrences are not busy and are excluded; one with
-  // no endAt (predating the field and not yet reprojected) is excluded until it
-  // reprojects — the `endAt > start` filter never matches a missing field.
+  // it is included. Cancelled occurrences are not busy and are excluded.
   //
   // `startAt` is also lower-bounded by (windowStart - BUSY_MAX_LOOKBACK_MS): an
   // unbounded `startAt < end` walks the entire historical calendar_gen_start

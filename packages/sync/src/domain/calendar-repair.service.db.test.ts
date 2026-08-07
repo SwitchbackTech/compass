@@ -185,6 +185,7 @@ describe("repairCalendar", () => {
         calendarId: calendar._id,
         schedule,
         startAt: new Date("2026-07-14T15:00:00.000Z"),
+        endAt: new Date("2026-07-14T16:00:00.000Z"),
         busy: true,
         title: providerEventId ?? "local",
         cancelled: false,

@@ -26,6 +26,7 @@ const occurrence = (
       timeZone: "America/Denver",
     },
     startAt: new Date("2026-07-14T09:00:00-06:00"),
+    endAt: new Date("2026-07-14T10:00:00-06:00"),
     busy: true,
     title: "Standup",
     cancelled: false,
