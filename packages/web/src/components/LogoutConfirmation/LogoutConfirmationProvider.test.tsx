@@ -80,29 +80,19 @@ describe("LogoutConfirmationProvider", () => {
     expect(overlay).not.toHaveAttribute("aria-busy");
     expect(showStatusToast).not.toHaveBeenCalled();
 
-    // Resolve the one production timer immediately.
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(
-      ((callback: TimerHandler) => {
-        if (typeof callback === "function") callback();
-        return 0;
-      }) as typeof setTimeout,
-    );
-    try {
-      finishLogout();
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
+    // The provider holds the overlay for a 400ms minimum, well inside
+    // waitFor's default 1s budget. Do not stub global setTimeout here:
+    // waitFor schedules its own timers on it, and a synchronous stub fires
+    // them before waitFor has initialized them.
+    finishLogout();
 
-      await waitFor(() => {
-        expect(screen.queryByRole("status")).not.toBeInTheDocument();
-      });
-      expect(showStatusToast).toHaveBeenCalledWith(
-        "logged-out",
-        "You're logged out",
-      );
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+    expect(showStatusToast).toHaveBeenCalledWith(
+      "logged-out",
+      "You're logged out",
+    );
   });
 
   it("closes Settings and the command palette on confirm", async () => {
@@ -116,53 +106,28 @@ describe("LogoutConfirmationProvider", () => {
   });
 
   it("fires the success toast after the overlay unmounts", async () => {
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(
-      ((callback: TimerHandler) => {
-        if (typeof callback === "function") callback();
-        return 0;
-      }) as typeof setTimeout,
+    await confirmLogout();
+
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+    expect(showStatusToast).toHaveBeenCalledWith(
+      "logged-out",
+      "You're logged out",
     );
-
-    try {
-      await confirmLogout();
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-
-      expect(showStatusToast).toHaveBeenCalledWith(
-        "logged-out",
-        "You're logged out",
-      );
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
   });
 
   it("shows error toast and takes down overlay when signedOutRemotely is false", async () => {
     signOut.mockRejectedValueOnce(new Error("offline"));
 
-    const setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(
-      ((callback: TimerHandler) => {
-        if (typeof callback === "function") callback();
-        return 0;
-      }) as typeof setTimeout,
+    await confirmLogout();
+
+    await waitFor(() => {
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    });
+    expect(showErrorToast).toHaveBeenCalledWith(
+      "Logged out on this device. We couldn't reach the server to end the session everywhere.",
     );
-
-    try {
-      await confirmLogout();
-      await Promise.resolve();
-      await Promise.resolve();
-      await Promise.resolve();
-
-      await waitFor(() => {
-        expect(screen.queryByRole("status")).not.toBeInTheDocument();
-      });
-      expect(showErrorToast).toHaveBeenCalledWith(
-        "Logged out on this device. We couldn't reach the server to end the session everywhere.",
-      );
-    } finally {
-      setTimeoutSpy.mockRestore();
-    }
   });
 
   it("raises no overlay on cancel", async () => {
