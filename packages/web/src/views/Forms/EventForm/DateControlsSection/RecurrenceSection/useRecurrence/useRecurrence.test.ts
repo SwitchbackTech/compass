@@ -94,11 +94,11 @@ describe("useRecurrence hook", () => {
     expect(result.current.weekDays).toEqual(["monday", "friday"]);
   });
 
-  it("can set until date", () => {
+  it("can set until date and normalizes to end-of-day", () => {
     const draft = baseDraft();
     const setDraft = mock();
     const { result } = renderHook(() => useRecurrence(draft, { setDraft }));
-    const date = new Date();
+    const date = new Date("2026-08-13T00:00:00Z");
 
     act(() => {
       result.current.toggleRecurrence();
@@ -106,7 +106,22 @@ describe("useRecurrence hook", () => {
     });
 
     expect(setDraft).toHaveBeenCalled();
-    expect(result.current.until).toEqual(date);
+    // setUntil normalizes to end-of-day (23:59:59), not the raw midnight
+    expect(result.current.until?.toISOString()).toMatch(/23:59:59/);
+  });
+
+  it("can clear until date", () => {
+    const draft = baseDraft();
+    const setDraft = mock();
+    const { result } = renderHook(() => useRecurrence(draft, { setDraft }));
+
+    act(() => {
+      result.current.toggleRecurrence();
+      result.current.setUntil(new Date());
+      result.current.setUntil(null);
+    });
+
+    expect(result.current.until).toBeNull();
   });
 
   it("initializes with recurrence", () => {

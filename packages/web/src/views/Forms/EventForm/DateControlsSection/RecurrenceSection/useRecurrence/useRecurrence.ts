@@ -146,7 +146,7 @@ export const useRecurrence = (
   // never pass).
   const [freq, setFreq] = useState<Frequency>(options.freq);
   const [interval, setInterval] = useState<number>(options.interval);
-  const [until, setUntil] = useState<Date | null>(() => parsed.until);
+  const [until, setUntilState] = useState<Date | null>(() => parsed.until);
   const [count, setCount] = useState<number | null>(options.count);
   const [wkst, setWkst] = useState<Weekday | null>(defaultWkst);
   const [weekDays, setWeekDays] = useState<typeof WEEKDAYS>(defaultWeekDay);
@@ -158,11 +158,23 @@ export const useRecurrence = (
     setSyncedRuleSeedKey(ruleSeedKey);
     setFreq(options.freq);
     setInterval(options.interval);
-    setUntil(parsed.until);
+    setUntilState(parsed.until);
     setCount(options.count);
     setWkst(defaultWkst);
     setWeekDays(defaultWeekDay);
   }
+
+  // The "Ends on" picker yields local midnight of the clicked day, but RRULE
+  // UNTIL is an instant: a 7:30am occurrence on the chosen day falls *after*
+  // midnight and never expands, so the series visibly ends a day early. Pin it
+  // to the end of the chosen day so the picked date is inclusive, matching how
+  // occurrence-projection.ts already reads a date-only UNTIL (T235959) and how
+  // Google presents "ends on".
+  const setUntil = useCallback(
+    (date: Date | null) =>
+      setUntilState(date ? dayjs(date).endOf("day").toDate() : null),
+    [],
+  );
 
   const byweekday = useMemo(
     () => weekDays.map((day) => WEEKDAY_RRULE_MAP[day].weekday),
