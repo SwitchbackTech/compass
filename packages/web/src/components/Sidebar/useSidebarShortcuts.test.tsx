@@ -2,29 +2,29 @@ import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
+import {
+  selectIsShortcutsOpen,
+  selectIsSidebarOpen,
+  useViewStore,
+  viewActions,
+} from "@web/events/stores/view.store";
 import { useSidebarShortcuts } from "./useSidebarShortcuts";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 function wrapper({ children }: PropsWithChildren) {
   return <HotkeysProvider>{children}</HotkeysProvider>;
 }
 
+const isShortcutsOpen = () => selectIsShortcutsOpen(useViewStore.getState());
+
 describe("useSidebarShortcuts", () => {
   beforeEach(() => {
     HotkeyManager.resetInstance();
+    viewActions.setSidebarOpen(false);
   });
 
   it("opens the sidebar before opening shortcuts with ?", async () => {
-    const onToggleSidebar = mock();
-
-    const { result } = renderHook(
-      () =>
-        useSidebarShortcuts({
-          isSidebarOpen: false,
-          onToggleSidebar,
-        }),
-      { wrapper },
-    );
+    renderHook(() => useSidebarShortcuts(), { wrapper });
 
     act(() => {
       pressKey("?", {
@@ -34,22 +34,14 @@ describe("useSidebarShortcuts", () => {
     });
 
     await waitFor(() => {
-      expect(onToggleSidebar).toHaveBeenCalledTimes(1);
-      expect(result.current.isShortcutsOpen).toBe(true);
+      expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
+      expect(isShortcutsOpen()).toBe(true);
     });
   });
 
   it("toggles shortcuts closed with ? when they are already open", async () => {
-    const onToggleSidebar = mock();
-
-    const { result } = renderHook(
-      () =>
-        useSidebarShortcuts({
-          isSidebarOpen: true,
-          onToggleSidebar,
-        }),
-      { wrapper },
-    );
+    viewActions.setSidebarOpen(true);
+    renderHook(() => useSidebarShortcuts(), { wrapper });
 
     act(() => {
       pressKey("?", {
@@ -59,7 +51,7 @@ describe("useSidebarShortcuts", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.isShortcutsOpen).toBe(true);
+      expect(isShortcutsOpen()).toBe(true);
     });
 
     act(() => {
@@ -70,22 +62,13 @@ describe("useSidebarShortcuts", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.isShortcutsOpen).toBe(false);
-      expect(onToggleSidebar).not.toHaveBeenCalled();
+      expect(isShortcutsOpen()).toBe(false);
     });
   });
 
   it("opens shortcuts from the shifted slash key event", async () => {
-    const onToggleSidebar = mock();
-
-    const { result } = renderHook(
-      () =>
-        useSidebarShortcuts({
-          isSidebarOpen: true,
-          onToggleSidebar,
-        }),
-      { wrapper },
-    );
+    viewActions.setSidebarOpen(true);
+    renderHook(() => useSidebarShortcuts(), { wrapper });
 
     act(() => {
       pressKey("/", {
@@ -95,52 +78,34 @@ describe("useSidebarShortcuts", () => {
     });
 
     await waitFor(() => {
-      expect(result.current.isShortcutsOpen).toBe(true);
-      expect(onToggleSidebar).not.toHaveBeenCalled();
+      expect(isShortcutsOpen()).toBe(true);
     });
   });
 
   it("closes shortcuts when the sidebar closes", async () => {
-    const onToggleSidebar = mock();
-
-    const { rerender, result } = renderHook(
-      ({ isSidebarOpen }) =>
-        useSidebarShortcuts({
-          isSidebarOpen,
-          onToggleSidebar,
-        }),
-      {
-        initialProps: { isSidebarOpen: true },
-        wrapper,
-      },
-    );
+    viewActions.setSidebarOpen(true);
+    renderHook(() => useSidebarShortcuts(), { wrapper });
 
     act(() => {
-      result.current.toggleShortcuts();
+      viewActions.toggleShortcuts();
     });
 
     await waitFor(() => {
-      expect(result.current.isShortcutsOpen).toBe(true);
+      expect(isShortcutsOpen()).toBe(true);
     });
 
-    rerender({ isSidebarOpen: false });
+    act(() => {
+      viewActions.setSidebarOpen(false);
+    });
 
     await waitFor(() => {
-      expect(result.current.isShortcutsOpen).toBe(false);
+      expect(isShortcutsOpen()).toBe(false);
     });
   });
 
   it("does not toggle shortcuts with ]", async () => {
-    const onToggleSidebar = mock();
-
-    const { result } = renderHook(
-      () =>
-        useSidebarShortcuts({
-          isSidebarOpen: true,
-          onToggleSidebar,
-        }),
-      { wrapper },
-    );
+    viewActions.setSidebarOpen(true);
+    renderHook(() => useSidebarShortcuts(), { wrapper });
 
     act(() => {
       pressKey("]");
@@ -148,7 +113,6 @@ describe("useSidebarShortcuts", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(result.current.isShortcutsOpen).toBe(false);
-    expect(onToggleSidebar).not.toHaveBeenCalled();
+    expect(isShortcutsOpen()).toBe(false);
   });
 });

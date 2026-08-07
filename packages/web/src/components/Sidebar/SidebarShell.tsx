@@ -17,24 +17,14 @@ import { SidebarStatusBar } from "./SidebarStatusBar";
 
 interface SidebarShellProps extends HTMLAttributes<HTMLElement> {
   children: ReactNode;
-  isShortcutsOpen: boolean;
-  onCloseShortcuts: () => void;
-  onToggleShortcuts: () => void;
   shortcutSections: ShortcutOverlaySection[];
   shortcutsViewLabel?: string;
-  SidebarActionsComponent?: typeof SidebarActions;
-  ShortcutsOverlayComponent?: typeof ShortcutsOverlay;
 }
 
 export function SidebarShell({
   children,
-  isShortcutsOpen,
-  onCloseShortcuts,
-  onToggleShortcuts,
   shortcutSections,
   shortcutsViewLabel,
-  SidebarActionsComponent = SidebarActions,
-  ShortcutsOverlayComponent = ShortcutsOverlay,
   ...props
 }: SidebarShellProps) {
   const isNarrowLayout = useIsNarrowSidebarLayout();
@@ -58,13 +48,8 @@ export function SidebarShell({
       ) : null}
       {children}
       <SidebarStatusBar />
-      <SidebarActionsComponent
-        isShortcutsOpen={isShortcutsOpen}
-        onToggleShortcuts={onToggleShortcuts}
-      />
-      <ShortcutsOverlayComponent
-        isOpen={isShortcutsOpen}
-        onClose={onCloseShortcuts}
+      <SidebarActions />
+      <ShortcutsOverlay
         sections={shortcutSections}
         viewLabel={shortcutsViewLabel}
       />

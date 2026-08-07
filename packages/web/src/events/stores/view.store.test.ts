@@ -1,6 +1,7 @@
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
   initialViewState,
+  selectIsShortcutsOpen,
   selectIsSidebarOpen,
   selectSidebarPreference,
   useViewStore,
@@ -58,5 +59,52 @@ describe("view.store sidebar persistence", () => {
     expect(selectIsSidebarOpen(useViewStore.getState())).toBe(false);
     expect(selectSidebarPreference(useViewStore.getState())).toBe(false);
     expect(localStorage.getItem(STORAGE_KEYS.SIDEBAR_OPEN)).toBe("false");
+  });
+});
+
+describe("view.store shortcuts overlay", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    useViewStore.setState(initialViewState, true);
+  });
+
+  it("toggleShortcuts opens the sidebar first when it's closed", () => {
+    viewActions.setSidebarOpen(false);
+
+    viewActions.toggleShortcuts();
+
+    expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
+    expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(true);
+  });
+
+  it("toggleShortcuts just toggles the overlay when the sidebar is already open", () => {
+    viewActions.setSidebarOpen(true);
+
+    viewActions.toggleShortcuts();
+    expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(true);
+
+    viewActions.toggleShortcuts();
+    expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(false);
+  });
+
+  it("closing the sidebar through any action also closes the overlay", () => {
+    viewActions.setSidebarOpen(true);
+    viewActions.toggleShortcuts();
+    expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(true);
+
+    viewActions.toggleSidebar();
+
+    expect(selectIsSidebarOpen(useViewStore.getState())).toBe(false);
+    expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(false);
+  });
+
+  it("a breakpoint auto-collapse also closes the overlay", () => {
+    viewActions.setSidebarOpen(true);
+    viewActions.toggleShortcuts();
+    expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(true);
+
+    viewActions.syncSidebarOpen(false);
+
+    expect(selectIsShortcutsOpen(useViewStore.getState())).toBe(false);
   });
 });

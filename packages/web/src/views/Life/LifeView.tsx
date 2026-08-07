@@ -12,7 +12,6 @@ import { useSidebarShortcuts } from "@web/components/Sidebar/useSidebarShortcuts
 import {
   selectIsSidebarOpen,
   useViewStore,
-  viewActions,
 } from "@web/events/stores/view.store";
 import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
@@ -97,14 +96,7 @@ export function LifeView({ today }: LifeViewProps) {
     });
   }, [navigate, preferences.lifespan, preferences.variation]);
 
-  const toggleSidebar = useCallback(() => {
-    viewActions.toggleSidebar();
-  }, []);
-  const { closeShortcuts, isShortcutsOpen, toggleShortcuts } =
-    useSidebarShortcuts({
-      isSidebarOpen,
-      onToggleSidebar: toggleSidebar,
-    });
+  useSidebarShortcuts();
   const shortcutSections = useMemo(
     () =>
       getShortcutMenuSections({ view: "life", isViewingCurrentPeriod: true }),
@@ -185,9 +177,6 @@ export function LifeView({ today }: LifeViewProps) {
 
       <ResizableSidebarPanel isOpen={isSidebarOpen}>
         <SidebarShell
-          isShortcutsOpen={isShortcutsOpen}
-          onCloseShortcuts={closeShortcuts}
-          onToggleShortcuts={toggleShortcuts}
           shortcutSections={shortcutSections}
           shortcutsViewLabel="Life"
         >

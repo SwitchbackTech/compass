@@ -57,10 +57,6 @@ export const DayViewContent = memo(() => {
   });
   useDayEvents(dateInView);
 
-  const toggleSidebar = useCallback(() => {
-    viewActions.toggleSidebar();
-  }, []);
-
   // "i" implies the user wants the sidebar; open it first and defer focus a
   // frame so the sidebar exists in the DOM before we target it.
   const handleFocusSidebar = useCallback(() => {
@@ -72,11 +68,7 @@ export const DayViewContent = memo(() => {
     requestAnimationFrame(() => focusFirstSidebarItem());
   }, []);
 
-  const { closeShortcuts, isShortcutsOpen, toggleShortcuts } =
-    useSidebarShortcuts({
-      isSidebarOpen,
-      onToggleSidebar: toggleSidebar,
-    });
+  useSidebarShortcuts();
 
   const shortcutSections = useMemo(() => {
     const focusedEvent = getFocusedDayGridEventTarget();
@@ -133,7 +125,7 @@ export const DayViewContent = memo(() => {
       <CommandPalette
         currentView="day"
         onGoToToday={handleGoToToday}
-        onShowShortcuts={toggleShortcuts}
+        onShowShortcuts={viewActions.toggleShortcuts}
         onShowWelcomeGuide={openWelcomeGuide}
         placeholder={getCommandPalettePlaceholder("day")}
       />
@@ -156,10 +148,6 @@ export const DayViewContent = memo(() => {
         <Sidebar
           calendarDate={dateInView}
           eventDetails={<SidebarEventDetails />}
-          isEventDetailsOpen={isEventDetailsOpen}
-          isShortcutsOpen={isShortcutsOpen}
-          onCloseShortcuts={closeShortcuts}
-          onToggleShortcuts={toggleShortcuts}
           onSelectDate={navigateToDate}
           shortcutSections={shortcutSections}
           shortcutsViewLabel="Day"

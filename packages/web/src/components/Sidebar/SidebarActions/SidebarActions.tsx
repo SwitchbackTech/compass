@@ -2,20 +2,18 @@ import { CommandIcon, KeyboardIcon } from "@phosphor-icons/react";
 import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import {
+  selectIsShortcutsOpen,
+  useViewStore,
+  viewActions,
+} from "@web/events/stores/view.store";
+import {
   selectIsCmdPaletteOpen,
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
 
-interface Props {
-  isShortcutsOpen: boolean;
-  onToggleShortcuts: () => void;
-}
-
-export const SidebarActions = ({
-  isShortcutsOpen,
-  onToggleShortcuts,
-}: Props) => {
+export const SidebarActions = () => {
+  const isShortcutsOpen = useViewStore(selectIsShortcutsOpen);
   const isCmdPaletteOpen = useSettingsStore(selectIsCmdPaletteOpen);
   const googleState = useGoogleUiState();
   const isCalendarSyncing = googleState === "IMPORTING";
@@ -38,7 +36,7 @@ export const SidebarActions = ({
         <TooltipWrapper
           description={shortcutsActionLabel}
           shortcut="?"
-          onClick={onToggleShortcuts}
+          onClick={viewActions.toggleShortcuts}
         >
           <button
             aria-label={shortcutsActionLabel}
