@@ -14,12 +14,11 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { DRAFT_DURATION_MIN, GRID_TIME_STEP } from "@web/grid/grid.constants";
+import { TIMED_DRAFT_CREATE_MOVE_THRESHOLD_PX } from "@web/interaction/interaction.constants";
 import {
   hasExceededInteractionMoveThreshold,
   isEligibleInteractionPointerDown,
 } from "@web/interaction/interaction.pointer";
-
-const TIMED_DRAFT_CREATE_MOVE_THRESHOLD_PX = 4;
 
 interface TimedDraftCreationGesture {
   cancel(): void;

@@ -11,6 +11,7 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import classNames from "classnames";
 import { useRef, useState } from "react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
   LIFE_SHORTCUT,
@@ -173,8 +174,9 @@ export const SelectView = ({ label, onToday }: SelectViewProps) => {
           })}
           id={dropdownId}
           data-testid="view-select-dropdown"
-          className="absolute inset-inline-start-0 top-full z-50 mt-1 min-w-[180px] rounded border border-border bg-surface py-1 shadow-lg"
+          className="absolute inset-inline-start-0 top-full mt-1 min-w-[180px] rounded border border-border bg-surface py-1 shadow-lg"
           role="listbox"
+          style={{ zIndex: Z_INDEX_FLOATING_MENU }}
         >
           {options.map((option, index) => {
             const isSelected =

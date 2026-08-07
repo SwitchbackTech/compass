@@ -4,6 +4,7 @@ import {
   type ReactNode,
 } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader/AbsoluteOverflowLoader";
 import {
   type GridRefs,
@@ -81,17 +82,19 @@ export const EventGrid: FC<EventGridProps> = ({
         aria-label="Loading events"
         className={
           isErrorEvents
-            ? "z-20 bg-background [&>div]:my-0"
+            ? "bg-background [&>div]:my-0"
             : "pointer-events-none bg-background [&>div]:my-0"
         }
         role="status"
+        style={{ zIndex: ZIndex.MAX }}
       />
     )}
     {isImportingEmpty && !isLoadingEvents && !isErrorEvents && (
       <div
         aria-live="polite"
-        className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-4"
+        className="pointer-events-none absolute inset-0 flex items-center justify-center px-4"
         role="status"
+        style={{ zIndex: ZIndex.MAX }}
       >
         <p className="max-w-sm text-center text-sm text-text-muted">
           Importing from Google — events usually appear within a minute.
@@ -99,7 +102,10 @@ export const EventGrid: FC<EventGridProps> = ({
       </div>
     )}
     {isErrorEvents && !isLoadingEvents && (
-      <div className="absolute inset-0 z-20 flex items-center justify-center bg-background px-4">
+      <div
+        className="absolute inset-0 flex items-center justify-center bg-background px-4"
+        style={{ zIndex: ZIndex.MAX }}
+      >
         <div className="flex max-w-sm flex-col items-center gap-3 rounded-md border border-border-strong bg-surface-raised px-5 py-4 text-center shadow-[0_8px_24px_var(--color-shadow-default)]">
           <p className="text-sm text-text" role="alert">
             Couldn&apos;t load events.

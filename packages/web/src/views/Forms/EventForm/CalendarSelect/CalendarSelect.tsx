@@ -20,6 +20,7 @@ import {
   useConnectedAccountEmails,
   useDefaultTargetCalendar,
 } from "@web/calendars/useDefaultTargetCalendar";
+import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 
 interface CalendarSelectProps {
   value: CalendarId | null;
@@ -208,8 +209,9 @@ export const CalendarSelect = ({
           })}
           id={dropdownId}
           aria-label="Calendar"
-          className="absolute top-full left-0 z-50 mt-1 min-w-[200px] rounded border border-border bg-surface py-1 shadow-lg"
+          className="absolute top-full left-0 mt-1 min-w-[200px] rounded border border-border bg-surface py-1 shadow-lg"
           role="listbox"
+          style={{ zIndex: Z_INDEX_FLOATING_MENU }}
         >
           {writableCalendars.map((calendar, index) => {
             const isSelected = calendar.id === displayedCalendar?.id;

@@ -3,6 +3,7 @@ import type React from "react";
 import * as ReactDatePickerModule from "react-datepicker";
 import { type ReactDatePickerProps } from "react-datepicker";
 import dayjs from "@core/util/date/dayjs";
+import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import { darken, isDark } from "@web/common/styles/color.utils";
 import { colors, lightColors } from "@web/common/styles/colors";
 import { type CSSVariables } from "@web/common/styles/css.types";
@@ -82,7 +83,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
 
   return (
     <ReactDatePicker
-      popperClassName="!z-22"
+      popperProps={{ style: { zIndex: Z_INDEX_FLOATING_MENU } }}
       calendarClassName={classNames("calendar", calendarClassName, {
         "calendar--open": isOpen,
         "calendar--animation": animationOnToggle,

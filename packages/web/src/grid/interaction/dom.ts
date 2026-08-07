@@ -1,3 +1,4 @@
+import { ZIndex } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import {
@@ -111,7 +112,7 @@ const getOrCreateDraftEventTimeLabel = (node: HTMLElement) => {
   label.style.opacity = GRID_EVENT_TIME_LABEL_OPACITY;
   label.style.whiteSpace = "nowrap";
   label.style.position = "relative";
-  label.style.zIndex = "3";
+  label.style.zIndex = `${ZIndex.LAYER_3}`;
 
   const parent = getDraftEventTimeLabelParent(node);
   const resizeHandle = getFirstDirectResizeHandle(parent);
