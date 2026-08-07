@@ -6,10 +6,7 @@ import {
   JOB_PRIORITY,
   type JobEnqueue,
 } from "@sync/storage/contracts/job.contracts";
-import {
-  type EnqueueUrgentOutcome,
-  type JobRepository,
-} from "@sync/storage/repositories/job.repository";
+import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 export interface ConnectionRefreshDeps {
@@ -24,21 +21,6 @@ export type ConnectionRefreshTally = {
   requeuedFailed: number;
   inFlight: number;
 };
-
-const emptyTally = (): ConnectionRefreshTally => ({
-  resources: 0,
-  created: 0,
-  boosted: 0,
-  requeuedFailed: 0,
-  inFlight: 0,
-});
-
-function countOutcome(
-  tally: ConnectionRefreshTally,
-  outcome: EnqueueUrgentOutcome,
-): void {
-  tally[outcome === "requeuedFailed" ? "requeuedFailed" : outcome] += 1;
-}
 
 /**
  * Enqueue (or boost) an incremental pull for every events resource owned by
@@ -59,8 +41,13 @@ export async function refreshPrincipalCalendars(
     principalId,
   );
   const runAfter = now();
-  const tally = emptyTally();
-  tally.resources = resources.length;
+  const tally: ConnectionRefreshTally = {
+    resources: resources.length,
+    created: 0,
+    boosted: 0,
+    requeuedFailed: 0,
+    inFlight: 0,
+  };
 
   const outcomes = await Promise.all(
     resources.map(async (resource) => {
@@ -79,6 +66,8 @@ export async function refreshPrincipalCalendars(
       return outcome;
     }),
   );
-  for (const outcome of outcomes) countOutcome(tally, outcome);
+  for (const outcome of outcomes) {
+    tally[outcome] += 1;
+  }
   return tally;
 }
