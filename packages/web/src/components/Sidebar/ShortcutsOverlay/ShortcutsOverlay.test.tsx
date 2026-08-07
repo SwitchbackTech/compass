@@ -50,9 +50,9 @@ describe("ShortcutsOverlay", () => {
       wrapper,
     });
 
-    const overlay = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
-
-    expect(overlay.firstElementChild?.className).toContain("translate-x-0");
+    expect(
+      screen.getByRole("dialog", { name: "Keyboard shortcuts" }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Shortcuts")).toBeInTheDocument();
     expect(
       screen.getByText("Keyboard shortcuts for Day view"),

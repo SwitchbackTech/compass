@@ -1,5 +1,5 @@
 import { XIcon } from "@phosphor-icons/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { ShortcutSection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutSection";
 import {
@@ -17,16 +17,12 @@ interface Props {
 
 const normalizeSearch = (text: string): string => text.toLowerCase().trim();
 
-const matchesSearch = (searchTerm: string, text: string): boolean => {
-  const normalized = normalizeSearch(text);
-  const query = normalizeSearch(searchTerm);
-  return normalized.includes(query);
-};
+const matchesSearch = (normalizedQuery: string, text: string): boolean =>
+  normalizeSearch(text).includes(normalizedQuery);
 
 export function ShortcutsOverlay({ sections, viewLabel }: Props) {
   const isOpen = useViewStore(selectIsShortcutsOpen);
   const [searchQuery, setSearchQuery] = useState("");
-  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // App-lock is held by useSidebarShortcuts; ignoreAppLock keeps Escape able
   // to clear search / dismiss while that lock is active. ignoreInputs: false
@@ -47,45 +43,41 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
     },
   );
 
+  // toggleShortcuts / sidebar actions can close without this component's
+  // handlers, so reset search whenever the overlay leaves the open state.
   useEffect(() => {
     if (!isOpen) {
       setSearchQuery("");
-      return;
     }
-
-    // Auto-focus search input when overlay opens
-    setTimeout(() => searchInputRef.current?.focus(), 0);
   }, [isOpen]);
 
-  const filteredSections = sections
-    .map((section) => {
-      if (!searchQuery) {
-        return section;
-      }
+  // Focus on mount (commit phase). Prefer a stable callback ref over autoFocus
+  // (biome noAutofocus) or useEffect focus (unreliable in jsdom).
+  const focusInputOnMount = useCallback((node: HTMLInputElement | null) => {
+    node?.focus();
+  }, []);
 
-      const filteredShortcuts = section.shortcuts.filter(
+  const hasSections = sections.some((section) => section.shortcuts.length > 0);
+  if (!hasSections || !isOpen) return null;
+
+  const normalizedQuery = normalizeSearch(searchQuery);
+  const visibleSections = sections
+    .map((section) => {
+      if (!normalizedQuery) return section;
+
+      const shortcuts = section.shortcuts.filter(
         (shortcut) =>
-          matchesSearch(searchQuery, shortcut.label) ||
-          shortcut.keys.some((key) => matchesSearch(searchQuery, key)),
+          matchesSearch(normalizedQuery, shortcut.label) ||
+          shortcut.keys.some((key) => matchesSearch(normalizedQuery, key)),
       );
 
-      return { ...section, shortcuts: filteredShortcuts };
+      return { ...section, shortcuts };
     })
     .filter((section) => section.shortcuts.length > 0);
-
-  const visibleSections =
-    searchQuery.length > 0
-      ? filteredSections
-      : sections.filter((section) => section.shortcuts.length > 0);
 
   const subtitle = viewLabel
     ? `Keyboard shortcuts for ${viewLabel} view`
     : "Keyboard shortcuts";
-
-  const hasResults = visibleSections.length > 0;
-  const hasSections = sections.some((section) => section.shortcuts.length > 0);
-
-  if (!hasSections || !isOpen) return null;
 
   return (
     <div
@@ -94,7 +86,7 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
       role="dialog"
       style={{ zIndex: ZIndex.MAX }}
     >
-      <div className="flex h-full translate-x-0 flex-col bg-surface/95 px-4 pt-8 pb-5 text-text-muted shadow-2xl backdrop-blur-md transition-transform duration-200 ease-out starting:-translate-x-full motion-reduce:transition-none">
+      <div className="flex h-full starting:-translate-x-full flex-col bg-surface/95 px-4 pt-8 pb-5 text-text-muted shadow-2xl backdrop-blur-md transition-transform duration-200 ease-out motion-reduce:transition-none">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex-1">
             <div className="font-medium text-text text-xl">Shortcuts</div>
@@ -112,15 +104,15 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
         </div>
 
         <input
-          ref={searchInputRef}
+          ref={focusInputOnMount}
           type="text"
           placeholder="Search shortcuts..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="mb-4 rounded-default bg-surface-panel px-3 py-2 text-text text-sm placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+          className="mb-4 rounded-default bg-surface-panel px-3 py-2 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
         />
 
-        {hasResults ? (
+        {visibleSections.length > 0 ? (
           <div className="overflow-y-auto">
             {visibleSections.map((section, index) => (
               <ShortcutSection
@@ -133,7 +125,7 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
           </div>
         ) : (
           <div className="flex flex-1 items-center justify-center">
-            <div className="text-center text-text-muted text-sm">
+            <div className="text-center text-sm text-text-muted">
               No shortcuts found
             </div>
           </div>
