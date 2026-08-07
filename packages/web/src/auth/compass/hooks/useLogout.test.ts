@@ -2,6 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { session } from "@web/auth/compass/session/Session";
 import {
+  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -18,14 +19,17 @@ const clearAccountScopedClientState = mock();
 let signOut = spyOn(session, "signOut");
 
 // bun's mock.module is global and leaks into every other test file in the
-// run. Spread the real module so unrelated suites still see its full surface;
-// override only what this file asserts on.
-const actualAuthStateUtil = await import(
-  "@web/auth/compass/state/auth.state.util"
-);
-const actualLogoutTeardown = await import(
-  "@web/auth/compass/session/logout.teardown"
-);
+// run. Spread the real module so unrelated suites still see its full surface,
+// and only override what this file asserts on while it runs - the flag flips
+// back to the real implementations in afterAll (logout.teardown's own tests
+// run later in the suite and need the real functions).
+const actualAuthStateUtil = {
+  ...(await import("@web/auth/compass/state/auth.state.util")),
+};
+const actualLogoutTeardown = {
+  ...(await import("@web/auth/compass/session/logout.teardown")),
+};
+let isLogoutMocked = true;
 
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
@@ -33,13 +37,23 @@ mock.module("@web/auth/compass/session/useSession", () => ({
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
   ...actualAuthStateUtil,
-  clearAuthenticationState,
+  clearAuthenticationState: (...args: unknown[]) =>
+    isLogoutMocked
+      ? clearAuthenticationState(...args)
+      : actualAuthStateUtil.clearAuthenticationState(),
 }));
 
 mock.module("@web/auth/compass/session/logout.teardown", () => ({
   ...actualLogoutTeardown,
-  clearAccountScopedClientState,
+  clearAccountScopedClientState: (...args: unknown[]) =>
+    isLogoutMocked
+      ? clearAccountScopedClientState(...args)
+      : actualLogoutTeardown.clearAccountScopedClientState(),
 }));
+
+afterAll(() => {
+  isLogoutMocked = false;
+});
 
 const { useLogout } = await import("./useLogout");
 

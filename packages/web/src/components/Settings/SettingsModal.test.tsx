@@ -19,21 +19,36 @@ import {
   resetToastPort,
 } from "@web/common/utils/toast/toast.port";
 import { settingsActions } from "@web/settings/settings.store";
-import { afterAll, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 // mock.module is process-wide and not reliably restorable, so - as elsewhere
 // in this suite of files - the real hook is captured up front and a flag
 // (flipped in afterAll) decides which one runs.
-const actualUseLogoutConfirmation = (
-  await import("@web/components/LogoutConfirmation/hooks/useLogoutConfirmation")
-).useLogoutConfirmation;
+const actualUseLogoutConfirmationModule = {
+  ...(await import(
+    "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation"
+  )),
+};
 let isLogoutConfirmationMocked = true;
 const mockOpenLogoutConfirmation = mock();
 mock.module(
   "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation",
   () => ({
+    // Spread so the module's other exports (LogoutConfirmationContext,
+    // useLogoutConfirmationState) stay real for the provider's own tests.
+    ...actualUseLogoutConfirmationModule,
     useLogoutConfirmation: (
-      ...args: Parameters<typeof actualUseLogoutConfirmation>
+      ...args: Parameters<
+        typeof actualUseLogoutConfirmationModule.useLogoutConfirmation
+      >
     ) =>
       isLogoutConfirmationMocked
         ? {
@@ -41,7 +56,8 @@ mock.module(
             closeLogoutConfirmation: mock(),
             openLogoutConfirmation: mockOpenLogoutConfirmation,
           }
-        : actualUseLogoutConfirmation(...args),
+        : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag only flips once, in afterAll, after this file's components have unmounted.
+          actualUseLogoutConfirmationModule.useLogoutConfirmation(...args),
   }),
 );
 
@@ -64,6 +80,10 @@ mock.module("@web/auth/compass/session/useSession", () => ({
 afterAll(() => {
   isLogoutConfirmationMocked = false;
   isSessionMocked = false;
+});
+
+afterEach(() => {
+  mockOpenLogoutConfirmation.mockClear();
 });
 
 const settingsModalUrl = new URL(

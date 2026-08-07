@@ -1,7 +1,15 @@
 import { queryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const mockRefreshEventRepositorySource = mock();
 const mockUserMetadataActionsClear = mock();
@@ -10,48 +18,80 @@ const mockSseCloseStream = mock();
 const mockDraftActionsDiscard = mock();
 
 // bun's mock.module is global and leaks into every other test file in the
-// run. Spread the real module so unrelated suites still see its full surface;
-// override only what this file asserts on.
-const actualRepositorySource = await import(
-  "@web/events/repositories/event.repository.source.store"
-);
-const actualUserMetadata = await import("@web/auth/state/user-metadata.store");
-const actualSseClient = await import("@web/sse/client/sse.client");
-const actualSyncState = await import(
-  "@web/auth/google/state/google.sync.state"
-);
-const actualDraftStore = await import("@web/events/stores/draft.store");
+// run. Spread the real module so unrelated suites still see its full surface,
+// and only intercept what this file asserts on while it runs - the flag flips
+// back to the real implementations in afterAll, because many later suites
+// exercise these functions for real (draftActions.discard closes event forms,
+// clearGoogleSyncIndicatorOverride drives useGcalSSE, and the source store's
+// own tests call refreshEventRepositorySource).
+const actualRepositorySource = {
+  ...(await import("@web/events/repositories/event.repository.source.store")),
+};
+const actualUserMetadata = {
+  ...(await import("@web/auth/state/user-metadata.store")),
+};
+const actualSseClient = { ...(await import("@web/sse/client/sse.client")) };
+const actualSyncState = {
+  ...(await import("@web/auth/google/state/google.sync.state")),
+};
+const actualDraftStore = {
+  ...(await import("@web/events/stores/draft.store")),
+};
+let isTeardownMocked = true;
 
 mock.module("@web/events/repositories/event.repository.source.store", () => ({
   ...actualRepositorySource,
-  refreshEventRepositorySource: mockRefreshEventRepositorySource,
+  refreshEventRepositorySource: (...args: unknown[]) =>
+    isTeardownMocked
+      ? mockRefreshEventRepositorySource(...args)
+      : actualRepositorySource.refreshEventRepositorySource(
+          ...(args as Parameters<
+            typeof actualRepositorySource.refreshEventRepositorySource
+          >),
+        ),
 }));
 
 mock.module("@web/auth/state/user-metadata.store", () => ({
   ...actualUserMetadata,
   userMetadataActions: {
     ...actualUserMetadata.userMetadataActions,
-    clear: mockUserMetadataActionsClear,
+    clear: (...args: unknown[]) =>
+      isTeardownMocked
+        ? mockUserMetadataActionsClear(...args)
+        : actualUserMetadata.userMetadataActions.clear(),
   },
 }));
 
 mock.module("@web/auth/google/state/google.sync.state", () => ({
   ...actualSyncState,
-  clearGoogleSyncIndicatorOverride: mockClearGoogleSyncIndicatorOverride,
+  clearGoogleSyncIndicatorOverride: (...args: unknown[]) =>
+    isTeardownMocked
+      ? mockClearGoogleSyncIndicatorOverride(...args)
+      : actualSyncState.clearGoogleSyncIndicatorOverride(),
 }));
 
 mock.module("@web/sse/client/sse.client", () => ({
   ...actualSseClient,
-  closeStream: mockSseCloseStream,
+  closeStream: (...args: unknown[]) =>
+    isTeardownMocked
+      ? mockSseCloseStream(...args)
+      : actualSseClient.closeStream(),
 }));
 
 mock.module("@web/events/stores/draft.store", () => ({
   ...actualDraftStore,
   draftActions: {
     ...actualDraftStore.draftActions,
-    discard: mockDraftActionsDiscard,
+    discard: (...args: unknown[]) =>
+      isTeardownMocked
+        ? mockDraftActionsDiscard(...args)
+        : actualDraftStore.draftActions.discard(),
   },
 }));
+
+afterAll(() => {
+  isTeardownMocked = false;
+});
 
 const { clearAccountScopedClientState, clearAccountScopedQueryCache } =
   await import("./logout.teardown");

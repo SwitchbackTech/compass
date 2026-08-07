@@ -1,6 +1,14 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 import "@testing-library/jest-dom";
 import { session } from "@web/auth/compass/session/Session";
 import * as authState from "@web/auth/compass/state/auth.state.util";
@@ -21,10 +29,44 @@ const signOut = spyOn(session, "signOut").mockResolvedValue(undefined);
 const mockClearAccountScopedClientState = mock();
 const mockClearAccountScopedQueryCache = mock();
 
+// mock.module is process-wide, so intercept the teardown functions only while
+// this file runs (flag flipped in afterAll) - logout.teardown's own tests run
+// against the real ones later in the suite.
+const actualLogoutTeardown = {
+  ...(await import("@web/auth/compass/session/logout.teardown")),
+};
+let isTeardownMocked = true;
+
 mock.module("@web/auth/compass/session/logout.teardown", () => ({
-  clearAccountScopedClientState: mockClearAccountScopedClientState,
-  clearAccountScopedQueryCache: mockClearAccountScopedQueryCache,
+  ...actualLogoutTeardown,
+  clearAccountScopedClientState: (...args: unknown[]) =>
+    isTeardownMocked
+      ? mockClearAccountScopedClientState(...args)
+      : actualLogoutTeardown.clearAccountScopedClientState(),
+  clearAccountScopedQueryCache: (...args: unknown[]) =>
+    isTeardownMocked
+      ? mockClearAccountScopedQueryCache(...args)
+      : actualLogoutTeardown.clearAccountScopedQueryCache(),
 }));
+
+// Other files (e.g. useLogoutCmdItems.test.ts, useLogout.test.ts) permanently
+// swap useSession for a bare mock that returns undefined once their own tests
+// finish, and useLogout destructures its result. Mock it here too - as
+// elsewhere in this suite of files - so this file passes regardless of order.
+const actualUseSession = (await import("@web/auth/compass/session/useSession"))
+  .useSession;
+let isSessionMocked = true;
+mock.module("@web/auth/compass/session/useSession", () => ({
+  useSession: (...args: Parameters<typeof actualUseSession>) =>
+    isSessionMocked
+      ? { authenticated: true, setAuthenticated: mock() }
+      : actualUseSession(...args),
+}));
+
+afterAll(() => {
+  isTeardownMocked = false;
+  isSessionMocked = false;
+});
 
 const { LogoutConfirmationProvider } =
   require("./LogoutConfirmationProvider") as typeof import("./LogoutConfirmationProvider");
