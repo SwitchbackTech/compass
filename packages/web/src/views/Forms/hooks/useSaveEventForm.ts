@@ -51,8 +51,10 @@ export function useSaveEventForm() {
 
         if (parsed.mode === "create") {
           clearFieldErrors();
-          create(parsed.input);
-          closeEventForm();
+          // Closing via the callback (not after `create` returns) keeps the draft
+          // card mounted until the optimistic insert exists, so the saved card
+          // replaces it in one commit instead of flashing empty.
+          create(parsed.input, { onOptimisticApplied: closeEventForm });
         }
         return;
       }

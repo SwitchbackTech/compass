@@ -199,7 +199,11 @@ function seriesWriteKey(
   return original.id;
 }
 
-type CreateVariables = { input: CreateEventInput; writeKey: EventId };
+type CreateVariables = {
+  input: CreateEventInput;
+  writeKey: EventId;
+  callbacks?: EventMutationCallbacks;
+};
 type ReplaceVariables = {
   id: EventId;
   input: ReplaceEventInput;
@@ -219,6 +223,7 @@ type DeleteVariables = {
 export type EventMutationCallbacks = {
   onSuccess?: () => void;
   onError?: () => void;
+  onOptimisticApplied?: () => void;
 };
 
 export type EventMutations = {
@@ -338,6 +343,15 @@ export function useEventMutations(
         queryKey: eventQueryKeys.all,
       });
       optimistic(variables);
+      // Callers that tear down their own pre-save UI (the event form's grid
+      // draft) run it here so the teardown lands in the same task — and so
+      // the same React commit — as the cache write. useBaseQuery recomputes
+      // getOptimisticResult on every render, so the re-render the teardown
+      // itself triggers already shows the inserted event: the grid never
+      // paints a frame with neither the draft nor the saved card.
+      const callbacks = (variables as { callbacks?: EventMutationCallbacks })
+        .callbacks;
+      callbacks?.onOptimisticApplied?.();
       return { previousQueries };
     },
     onError: (
@@ -617,7 +631,11 @@ export function useEventMutations(
         recordEventCreateHistory({
           event: optimisticEventFromCreate(finalInput),
         });
-        createMutation.mutate({ input: finalInput, writeKey: id }, callbacks);
+        createMutation.mutate({
+          input: finalInput,
+          writeKey: id,
+          callbacks,
+        });
       },
       replace: (
         payload: { id: EventId; input: ReplaceEventInput },
