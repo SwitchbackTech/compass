@@ -330,8 +330,9 @@ async function runSyncJob(
     }
     case "subscriptionMaintain": {
       // Open or renew the push channel. Every terminal outcome (watched /
-      // renewed / current / unsupported / authRevoked) settles the job; a
-      // transient watch failure throws and the worker retries with backoff.
+      // renewed / current / unsupported / authRevoked) settles the job —
+      // including durable watchFailed, which maintainSubscription folds into
+      // unsupported. A transient watch failure throws and the worker retries.
       const subscription = await maintainSubscription(
         deps,
         calendar,

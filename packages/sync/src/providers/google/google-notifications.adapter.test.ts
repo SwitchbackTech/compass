@@ -161,10 +161,66 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     expect(error.reason).toBe("watchUnsupported");
   });
 
-  it("keeps a 403 rate-limit reason transient, not unwatchable", async () => {
+  it("classifies pushNotSupported when googleapis puts errors on the error object", async () => {
+    // googleapis sometimes copies errors onto the Error itself rather than
+    // only nesting them under response.data.error.errors.
     const api = new FakeChannelsApi({
-      watch: gError(403, "rateLimitExceeded"),
+      watch: Object.assign(new Error("push not supported"), {
+        code: 400,
+        errors: [{ reason: "pushNotSupportedForRequestedResource" }],
+        config: { headers: { Authorization: "Bearer super-secret-token" } },
+      }),
     });
+    const { adapter } = adapterWith(api);
+
+    const error = (await adapter
+      .watchEvents(watchInput)
+      .catch((e) => e)) as ProviderNotificationError;
+
+    expect(error.reason).toBe("watchUnsupported");
+    expect(JSON.stringify(error.cause ?? {})).not.toContain(
+      "super-secret-token",
+    );
+  });
+
+  // Google returns rate-limit and quota rejections as 403, not 429, so these
+  // must stay retryable even though every other 403 is now durable.
+  it.each([
+    "rateLimitExceeded",
+    "userRateLimitExceeded",
+    "quotaExceeded",
+  ])("keeps a 403 %s transient, not durable", async (reason) => {
+    const api = new FakeChannelsApi({ watch: gError(403, reason) });
+    const { adapter } = adapterWith(api);
+
+    const error = (await adapter
+      .watchEvents(watchInput)
+      .catch((e) => e)) as ProviderNotificationError;
+
+    expect(error.reason).toBe("transient");
+  });
+
+  it("classifies a durable 403 as watchFailed and keeps status/reason for triage", async () => {
+    const api = new FakeChannelsApi({ watch: gError(403, "forbidden") });
+    const { adapter } = adapterWith(api);
+
+    const error = (await adapter
+      .watchEvents(watchInput)
+      .catch((e) => e)) as ProviderNotificationError;
+
+    expect(error.reason).toBe("watchFailed");
+    expect(error.message).toContain("HTTP 403");
+    expect(error.message).toContain("reason forbidden");
+    expect((error.cause as Error)?.message).toContain("HTTP 403");
+    expect(JSON.stringify(error.cause ?? {})).not.toContain(
+      "super-secret-token",
+    );
+  });
+
+  // A bare 403 carries no reason to prove it is temporary, so it settles to
+  // polling rather than burning the retry ladder on a likely-permanent refusal.
+  it("classifies a bare 403 (no reason) as a durable watchFailed", async () => {
+    const api = new FakeChannelsApi({ watch: gError(403) });
     const { adapter } = adapterWith(api);
 
     const error = (await adapter
@@ -174,15 +230,36 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     expect(error.reason).toBe("watchFailed");
   });
 
-  it("keeps a bare 403 (no reason) transient", async () => {
-    const api = new FakeChannelsApi({ watch: gError(403) });
+  it("classifies 429 and 5xx as transient so the worker can retry", async () => {
+    for (const status of [429, 500, 503]) {
+      const api = new FakeChannelsApi({ watch: gError(status) });
+      const { adapter } = adapterWith(api);
+
+      const error = (await adapter
+        .watchEvents(watchInput)
+        .catch((e) => e)) as ProviderNotificationError;
+
+      expect(error.reason).toBe("transient");
+      expect(error.message).toContain(`HTTP ${status}`);
+    }
+  });
+
+  it("classifies a network failure with no HTTP status as transient", async () => {
+    const api = new FakeChannelsApi({
+      watch: Object.assign(new Error("socket hang up"), {
+        config: { headers: { Authorization: "Bearer super-secret-token" } },
+      }),
+    });
     const { adapter } = adapterWith(api);
 
     const error = (await adapter
       .watchEvents(watchInput)
       .catch((e) => e)) as ProviderNotificationError;
 
-    expect(error.reason).toBe("watchFailed");
+    expect(error.reason).toBe("transient");
+    expect(JSON.stringify(error.cause ?? {})).not.toContain(
+      "super-secret-token",
+    );
   });
 
   it("classifies a revoked credential and never leaks the bearer token", async () => {
@@ -230,7 +307,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     }
   });
 
-  it("surfaces an unexpected stop failure", async () => {
+  it("surfaces an unexpected stop failure as transient", async () => {
     const api = new FakeChannelsApi({ stop: gError(500) });
     const { adapter } = adapterWith(api);
 
@@ -243,7 +320,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
       .catch((e) => e)) as ProviderNotificationError;
 
     expect(error).toBeInstanceOf(ProviderNotificationError);
-    expect(error.reason).toBe("watchFailed");
+    expect(error.reason).toBe("transient");
   });
 });
 

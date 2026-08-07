@@ -52,10 +52,12 @@ const DEFAULT_RENEW_BEFORE_MS = 24 * 60 * 60 * 1000;
 // life reports "current" and touches nothing, so a redundant maintain job (a
 // racing sweep, a re-run after a crash) does not churn the channel.
 //
-// A transient watch failure throws so the worker retries with backoff. Only the
-// terminal provider verdicts are folded into an outcome: an unwatchable resource
-// ("unsupported") falls back to polling, and a revoked credential ("authRevoked")
-// waits for a reconnect. Both settle the job rather than retry forever.
+// A transient watch failure throws so the worker retries with backoff. Terminal
+// provider verdicts are folded into an outcome: an unwatchable or durably
+// refused resource ("unsupported") falls back to polling, and a revoked
+// credential ("authRevoked") waits for a reconnect. Both settle the job rather
+// than burn the retry ladder (2026-08-07: one watchFailed job logged 78
+// PostHog exceptions across 20 attempts before failing).
 export async function maintainSubscription(
   deps: SubscriptionMaintenanceDeps,
   calendar: ProviderCalendarRecord,
@@ -96,10 +98,16 @@ export async function maintainSubscription(
     });
   } catch (error) {
     if (error instanceof ProviderNotificationError) {
-      if (error.reason === "watchUnsupported") {
-        // This calendar can never be watched; drop any stale channel so a
-        // lingering subscription id does not misroute a future callback, and let
-        // polling cover it.
+      if (
+        error.reason === "watchUnsupported" ||
+        error.reason === "watchFailed"
+      ) {
+        // The provider will not open a channel for this calendar (unwatchable
+        // resource, durable 4xx, or incomplete watch response). Drop any stale
+        // channel so a lingering subscription id does not misroute a future
+        // callback, and let the reconcile sweep's polling cover it. Treating
+        // watchFailed as terminal matches the port comment ("refused") and
+        // mirrors how durable readFailed settles instead of retrying (#2481).
         if (resource.subscriptionId) {
           await deps.resources.clearSubscription(
             resource.tenantId,
@@ -114,7 +122,7 @@ export async function maintainSubscription(
         return { status: "authRevoked" };
       }
     }
-    // watchFailed or anything unexpected: transient, let the worker retry.
+    // transient or anything unexpected: let the worker retry with backoff.
     throw error;
   }
 

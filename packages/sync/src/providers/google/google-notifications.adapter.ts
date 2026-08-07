@@ -171,49 +171,117 @@ function parseExpiration(
 
 function classifyWatchError(error: unknown): ProviderNotificationError {
   if (error instanceof ProviderNotificationError) return error;
-  const cause = redactedCause(error);
-  if (googleStatus(error) === 401) {
+  // Keep HTTP status + Google's machine-readable reason on the cause/message
+  // so PostHog triage is not guesswork — redactedCause alone drops both, and
+  // shallow logger/exception serialization only keeps one Error.cause level
+  // (2026-08-07: 78 subscriptionMaintain exceptions with no status/reason).
+  const cause = watchFailureCause(error);
+  const status = googleStatus(error);
+  const detail = cause?.message;
+
+  if (status === 401) {
     return new ProviderNotificationError(
       "authorizationRevoked",
-      "Google rejected the credential",
+      detail ?? "Google rejected the credential",
       { cause },
     );
   }
   if (isWatchUnsupported(error)) {
     return new ProviderNotificationError(
       "watchUnsupported",
-      "Google does not support watching this resource",
+      detail ?? "Google does not support watching this resource",
+      { cause },
+    );
+  }
+  // 429 / 5xx / no HTTP response, plus Google's 403-shaped rate-limit and
+  // quota reasons, are the only cases worth burning retries on. Everything
+  // else is a durable refusal (403/404/other 4xx): settle and poll.
+  if (isWatchTransient(error, status)) {
+    return new ProviderNotificationError(
+      "transient",
+      detail
+        ? `Google watch temporarily unavailable (${detail})`
+        : "Google watch temporarily unavailable",
       { cause },
     );
   }
   return new ProviderNotificationError(
     "watchFailed",
-    "Google refused to open the channel",
+    detail
+      ? `Google refused to open the channel (${detail})`
+      : "Google refused to open the channel",
     { cause },
   );
 }
 
 // A 400 (or, per observed Google behavior, 403) whose reason is
 // pushNotSupportedForRequestedResource means the resource can never be
-// watched, so the caller should poll instead of retrying. 403 is also used for
-// rateLimitExceeded/userRateLimitExceeded/quotaExceeded, which ARE transient —
-// this stays gated on the specific reason string, not on status alone.
+// watched, so the caller should poll instead of retrying. googleapis may put
+// the errors array on the response body OR on the error object itself — check
+// both, same as the event-reader path.
 function isWatchUnsupported(error: unknown): boolean {
   const status = googleStatus(error);
   if (status !== 400 && status !== 403) return false;
-  const errors = (
-    error as {
-      response?: { data?: { error?: { errors?: Array<{ reason?: string }> } } };
-    }
-  )?.response?.data?.error?.errors;
-  return Boolean(
-    errors?.some((e) => e.reason === "pushNotSupportedForRequestedResource"),
+  return googleErrorReasons(error).includes(
+    "pushNotSupportedForRequestedResource",
   );
 }
 
-function googleStatus(error: unknown): number | undefined {
-  return (
-    (error as { response?: { status?: number } })?.response?.status ??
-    (error as { code?: number })?.code
+// Google's rate-limit and quota rejections arrive as 403, not 429, so status
+// alone cannot separate them from a durable 403 refusal. Without this, a
+// momentary quota blip would settle the job to polling and leave the channel
+// unopened until the next bootstrap.
+const TRANSIENT_REASONS = [
+  "rateLimitExceeded",
+  "userRateLimitExceeded",
+  "quotaExceeded",
+  "backendError",
+  "internalError",
+];
+
+function isWatchTransient(error: unknown, status: number | undefined): boolean {
+  if (status === undefined || status === 429 || status >= 500) return true;
+  return googleErrorReasons(error).some((reason) =>
+    TRANSIENT_REASONS.includes(reason),
   );
+}
+
+// Like redactedCause: drop request-derived fields (bearer token on config), but
+// keep the two response facts triage needs — numeric HTTP status and Google's
+// machine-readable reason. Mirrors readFailureCause on the event-reader path.
+function watchFailureCause(error: unknown): Error | undefined {
+  const status = googleStatus(error);
+  const reason = googleErrorReasons(error)[0];
+  const facts = [
+    ...(status === undefined ? [] : [`HTTP ${status}`]),
+    ...(reason === undefined ? [] : [`reason ${reason}`]),
+  ];
+  if (facts.length === 0) return redactedCause(error);
+  const message = error instanceof Error ? error.message : null;
+  return new Error(
+    message ? `${message} (${facts.join(", ")})` : facts.join(", "),
+  );
+}
+
+function googleErrorReasons(error: unknown): string[] {
+  const fromBody = (
+    error as {
+      response?: {
+        data?: { error?: { errors?: Array<{ reason?: unknown }> } };
+      };
+    }
+  )?.response?.data?.error?.errors;
+  const fromError = (error as { errors?: Array<{ reason?: unknown }> })?.errors;
+  const reasons: string[] = [];
+  for (const entry of [...(fromBody ?? []), ...(fromError ?? [])]) {
+    if (typeof entry?.reason === "string") reasons.push(entry.reason);
+  }
+  return reasons;
+}
+
+function googleStatus(error: unknown): number | undefined {
+  const status =
+    (error as { response?: { status?: number } })?.response?.status ??
+    (error as { code?: number })?.code;
+  return typeof status === "number" ? status : undefined;
 }
