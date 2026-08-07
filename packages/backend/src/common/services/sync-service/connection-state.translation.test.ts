@@ -66,11 +66,7 @@ describe("toGoogleConnectionState", () => {
   });
 
   it("maps actionRequired with a non-re-auth reason to ATTENTION", () => {
-    for (const reason of [
-      "permanentConflict",
-      "providerErrors",
-      "workOverdue",
-    ] as const) {
+    for (const reason of ["providerErrors", "workOverdue"] as const) {
       expect(
         toGoogleConnectionState([connection("actionRequired", reason)]),
       ).toBe("ATTENTION");

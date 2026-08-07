@@ -418,7 +418,6 @@ describe("dispatchSyncJob", () => {
     );
     expect(outcome).toEqual({
       result: "retry",
-      failureClass: "retryableTransient",
       reason: "repair did not complete",
     });
   });
@@ -515,19 +514,6 @@ describe("dispatchSyncJob", () => {
       result: "drop",
       reason: "resource no longer exists",
     });
-  });
-
-  it("does not own a non-sync job kind", async () => {
-    const calendar = await seedCalendar();
-    const resource = await seedResource(calendar, "cursor-0");
-    const reader = new FakeReader([]);
-
-    const outcome = await dispatchSyncJob(
-      deps(reader),
-      jobFor(resource, "reconcile"),
-      now,
-    );
-    expect(outcome).toEqual({ result: "unsupported", kind: "reconcile" });
   });
 
   it("settles a subscriptionMaintain job as done, opening a channel", async () => {
@@ -730,51 +716,6 @@ describe("dispatchSyncJob", () => {
     );
     expect(saved?.bootstrapState).toBe("ready");
     expect(saved?.subscriptionId).toBeNull();
-  });
-
-  it("bootstraps a legacy no-cursor resource through the post-watch pull", async () => {
-    const calendar = await seedCalendar();
-    const resource = await seedResource(calendar, null);
-    // Simulate a row from before bootstrapState existed, now that
-    // backfill-bootstrap-state has stamped every such row "ready" (the
-    // schema no longer defaults a missing field - see
-    // ResourceBootstrapStateSchema). Its absent cursor must still make this
-    // row bootstrap.
-    await storage
-      .db()
-      .collection(SYNC_COLLECTIONS.syncResources)
-      .updateOne({ _id: resource._id }, { $set: { bootstrapState: "ready" } });
-    const legacyResource = await resources.findById(
-      resource.tenantId,
-      resource.principalId,
-      resource._id,
-    );
-    expect(legacyResource?.bootstrapState).toBe("ready");
-
-    const outcome = await dispatchSyncJob(
-      deps(
-        new FakeReader([
-          page([single("imported")]),
-          page([single("imported")], "cursor-1"),
-        ]),
-      ),
-      jobFor(legacyResource!, "initialImport"),
-      now,
-    );
-
-    expect(outcome).toMatchObject({
-      result: "done",
-      followup: { kind: "subscriptionMaintain" },
-    });
-    expect(
-      (
-        await resources.findById(
-          resource.tenantId,
-          resource.principalId,
-          resource._id,
-        )
-      )?.bootstrapState,
-    ).toBe("watching");
   });
 
   const calendarListJob = (

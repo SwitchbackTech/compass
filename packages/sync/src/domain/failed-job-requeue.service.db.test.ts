@@ -38,7 +38,7 @@ describe("requeueFailedJobs", () => {
       ...overrides,
     } as JobEnqueue);
     const claimed = await jobs.claimDueJob("worker", NOW, 60_000);
-    await jobs.fail(claimed!._id, "worker", "retryableTransient");
+    await jobs.fail(claimed!._id, "worker");
     return job._id;
   };
 
@@ -79,7 +79,7 @@ describe("requeueFailedJobs", () => {
         new Date("2026-07-20T10:00:00.000Z"),
         60_000,
       );
-      await jobs.fail(reclaimed!._id, "worker", "retryableTransient");
+      await jobs.fail(reclaimed!._id, "worker");
     }
 
     const result = await requeueFailedJobs(deps(), cooldownBefore, now, 2);

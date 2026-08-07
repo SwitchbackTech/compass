@@ -181,15 +181,10 @@ describe("JobRepository", () => {
 
       expect(await repo.heartbeat(id, "intruder", NOW, LEASE_MS)).toBe(false);
       expect(await repo.complete(id, "intruder")).toBe(false);
-      expect(
-        await repo.scheduleRetry(
-          id,
-          "intruder",
-          future(5000),
-          "retryableTransient",
-        ),
-      ).toBe(false);
-      expect(await repo.fail(id, "intruder", "permanent")).toBe(false);
+      expect(await repo.scheduleRetry(id, "intruder", future(5000))).toBe(
+        false,
+      );
+      expect(await repo.fail(id, "intruder")).toBe(false);
       // The real owner still can.
       expect(await repo.heartbeat(id, "owner", NOW, LEASE_MS)).toBe(true);
     });
@@ -199,9 +194,7 @@ describe("JobRepository", () => {
       const job = await repo.claimDueJob("owner", NOW, LEASE_MS);
       const id = job?._id as NonNullable<typeof job>["_id"];
       const retryAt = future(30_000);
-      expect(
-        await repo.scheduleRetry(id, "owner", retryAt, "retryableTransient"),
-      ).toBe(true);
+      expect(await repo.scheduleRetry(id, "owner", retryAt)).toBe(true);
 
       const after = await repo.findById(job!.tenantId, job!.principalId, id);
       expect(after?.state).toBe("pending");
@@ -270,7 +263,7 @@ describe("JobRepository", () => {
         enqueue({ runAfter: past(1000), ...overrides }),
       );
       const claimed = await repo.claimDueJob("worker", NOW, 60_000);
-      await repo.fail(claimed!._id, "worker", "retryableTransient");
+      await repo.fail(claimed!._id, "worker");
       return job._id;
     };
 
@@ -300,7 +293,7 @@ describe("JobRepository", () => {
       for (let cycle = 0; cycle < 2; cycle += 1) {
         await repo.requeue(id, past(50 * 60_000));
         const reclaimed = await repo.claimDueJob("worker", NOW, 60_000);
-        await repo.fail(reclaimed!._id, "worker", "retryableTransient");
+        await repo.fail(reclaimed!._id, "worker");
       }
 
       const underCap = await repo.listFailedForRequeue(
@@ -333,7 +326,7 @@ describe("JobRepository", () => {
       for (let cycle = 0; cycle < 2; cycle += 1) {
         await repo.requeue(id, past(50 * 60_000));
         const reclaimed = await repo.claimDueJob("worker", NOW, 60_000);
-        await repo.fail(reclaimed!._id, "worker", "retryableTransient");
+        await repo.fail(reclaimed!._id, "worker");
       }
       // A second failed job under the same connection, still under the cap.
       await seedFailed({
@@ -360,17 +353,6 @@ describe("JobRepository", () => {
         state: "failed",
         requeuedCount: 2,
       });
-    });
-
-    it("excludes a permanently classed failure from requeue and exhaustion", async () => {
-      await repo.enqueue(enqueue({ runAfter: past(60 * 60_000) }));
-      const claimed = await repo.claimDueJob("worker", NOW, 60_000);
-      await repo.fail(claimed!._id, "worker", "permanent");
-
-      expect(
-        await repo.listFailedForRequeue(past(30 * 60_000), 3, 100),
-      ).toHaveLength(0);
-      expect(await repo.countExhaustedFailed(0)).toBe(0);
     });
 
     it("requeue resets a failed job to pending with a fresh attempt budget", async () => {
@@ -405,7 +387,7 @@ describe("JobRepository", () => {
         }),
       );
       const claimed = await repo.claimDueJob("worker", NOW, 60_000);
-      await repo.fail(claimed!._id, "worker", "retryableTransient");
+      await repo.fail(claimed!._id, "worker");
       // A pending job on the same connection, due more recently — the failed
       // job is still older and should win.
       await repo.enqueue(

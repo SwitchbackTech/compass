@@ -248,7 +248,7 @@ describe("refreshConnectionState", () => {
       new Date("2026-01-01T00:00:00.000Z"),
       60_000,
     );
-    await jobs.fail(claimed!._id, "worker", "retryableTransient");
+    await jobs.fail(claimed!._id, "worker");
 
     const after = await refreshConnectionState(deps(), connection);
     expect(after.state).toBe("delayed");

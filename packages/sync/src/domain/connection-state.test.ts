@@ -13,7 +13,6 @@ const healthy = (
 ): ConnectionStateEvidence => ({
   disconnectedAt: null,
   credential: "valid",
-  permanentConflict: false,
   durableReadFailure: false,
   accountIdentified: true,
   initialImportComplete: true,
@@ -45,13 +44,6 @@ describe("deriveConnectionState", () => {
     ["insufficientScopes", "insufficientScopes"],
   ] as const)("is actionRequired for a %s credential", (credential, reason) => {
     expect(derive({ credential })).toEqual({ state: "actionRequired", reason });
-  });
-
-  it("is actionRequired for a permanent conflict", () => {
-    expect(derive({ permanentConflict: true })).toEqual({
-      state: "actionRequired",
-      reason: "permanentConflict",
-    });
   });
 
   it("is delayed with providerErrors when a calendar's reads are durably rejected", () => {
@@ -158,12 +150,6 @@ describe("deriveConnectionState", () => {
           catchingUp: true,
         }).state,
       ).toBe("actionRequired");
-    });
-
-    it("credential is checked before a permanent conflict", () => {
-      expect(
-        derive({ credential: "expired", permanentConflict: true }).reason,
-      ).toBe("authorizationExpired");
     });
 
     it("a durable read failure dominates importing", () => {
