@@ -7,11 +7,21 @@ import { type ProviderEventRead } from "@sync/providers/provider-event.port";
 // Whether the provider should notify attendees of a mutation.
 export type InvitationIntent = "all" | "externalOnly" | "none";
 
-// Recurrence to write: a standalone or single occurrence, or a series carrying
-// its rules. "this and following" is not a primitive — the caller composes it
-// from a series truncation plus a new create — so it is deliberately absent.
+// Recurrence to write: a standalone single event, one materialized occurrence
+// override, or a series carrying its rules. "this and following" is not a
+// primitive — the caller composes it from a series truncation plus a new
+// create — so it is deliberately absent.
+//
+// "single" and "instance" both address a non-recurring provider event, but
+// only "single" may clear an existing series (writing an explicit null
+// `recurrence` key, which converts a series master to a standalone event).
+// An "instance" addresses an occurrence Google already resolved off a series
+// master (fetchInstanceAt); Google rejects a `recurrence` key on that kind of
+// event at all, so the adapter must omit the key entirely rather than send
+// null.
 export type ProviderWriteRecurrence =
   | { readonly kind: "single" }
+  | { readonly kind: "instance" }
   | { readonly kind: "series"; readonly rules: readonly string[] };
 
 interface ProviderWriteBody {
@@ -62,8 +72,15 @@ export interface ProviderInstanceFetchInput {
   // The instance's original scheduled start (its recurrence identity) — the
   // same instant a this/thisAndFollowing scope's recurrenceId names. An
   // instance that was itself rescheduled keeps this original identity, so it
-  // still resolves correctly even after being moved.
+  // still resolves correctly even after being moved. Always full ISO datetime
+  // form (Compass mints every recurrenceId via Date#toISOString(), timed or
+  // all-day alike) — the adapter reshapes it to match how the provider itself
+  // reports that instant, per `scheduleKind`.
   readonly originalStartAt: string;
+  // The series master's schedule kind. Google reports an all-day instance's
+  // original start as a bare date, not a dateTime — the adapter needs this to
+  // send a matching lookup key, or the instance resolves to nothing.
+  readonly scheduleKind: "timed" | "allDay";
 }
 
 export interface ProviderWriteResult {
