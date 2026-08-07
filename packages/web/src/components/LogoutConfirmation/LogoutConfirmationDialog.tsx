@@ -20,7 +20,7 @@ export function LogoutConfirmationDialog({
   return (
     <OverlayPanel
       title="Log out?"
-      message="You'll lose access to your calendar data."
+      message="Your synced events will be hidden until you log back in."
       onDismiss={onCancel}
       align="start"
       variant="modal"
