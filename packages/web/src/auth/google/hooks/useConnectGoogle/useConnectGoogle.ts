@@ -4,8 +4,9 @@ import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { AuthApi } from "@web/api/auth.api";
 import {
+  noteGoogleSyncRefreshImproved,
   refreshGoogleSync,
-  useIsGoogleSyncRefreshInFlight,
+  useGoogleSyncRefreshSnapshot,
 } from "@web/auth/google/state/google.sync.refresh";
 import {
   selectPrimaryGoogleSyncConnection,
@@ -13,9 +14,11 @@ import {
 } from "@web/auth/state/user-metadata.store";
 import {
   GOOGLE_CONNECT_FAILED_TOAST_ID,
+  GOOGLE_REFRESH_ALREADY_IN_FLIGHT_TOAST_ID,
   GOOGLE_REFRESH_FAILED_TOAST_ID,
 } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import { getToast } from "@web/common/utils/toast/toast.port";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { settingsActions } from "@web/settings/settings.store";
 import { useIsConnectGoogleAvailable } from "../useIsGoogleAvailable/useIsGoogleAvailable";
@@ -48,7 +51,8 @@ export const useConnectGoogle = (
   // Sync guard so rapid re-clicks before React re-renders cannot start a
   // second OAuth attempt; isConnecting alone would still be false in-handler.
   const isConnectingRef = useRef(false);
-  const isRefreshing = useIsGoogleSyncRefreshInFlight();
+  const refreshSnapshot = useGoogleSyncRefreshSnapshot();
+  const isRefreshing = refreshSnapshot.isRefreshing;
   const stopConnecting = useCallback(() => {
     isConnectingRef.current = false;
     setIsConnecting(false);
@@ -66,6 +70,27 @@ export const useConnectGoogle = (
     window.addEventListener("pageshow", onPageShow);
     return () => window.removeEventListener("pageshow", onPageShow);
   }, [stopConnecting]);
+
+  // Clear the Refresh catch-up wait once Sync leaves the delayed band that
+  // showed the CTA (SSE syncStatusChanged already refetches metadata).
+  useEffect(() => {
+    if (!refreshSnapshot.refreshRequestedAt && !refreshSnapshot.gaveUp) {
+      return;
+    }
+    const connectionState = syncConnection?.state;
+    if (
+      connectionState &&
+      connectionState !== "delayed" &&
+      state !== "ATTENTION"
+    ) {
+      noteGoogleSyncRefreshImproved();
+    }
+  }, [
+    refreshSnapshot.gaveUp,
+    refreshSnapshot.refreshRequestedAt,
+    state,
+    syncConnection?.state,
+  ]);
 
   const onOpenGoogleAuth = useCallback(() => {
     if (isConnectingRef.current) {
@@ -111,7 +136,7 @@ export const useConnectGoogle = (
 
   const onRefreshGoogle = useCallback(
     (options?: { silent?: boolean }) => {
-      if (isConnectingRef.current) {
+      if (isConnectingRef.current || refreshSnapshot.isRefreshing) {
         return;
       }
 
@@ -120,8 +145,17 @@ export const useConnectGoogle = (
       }
 
       void refreshGoogleSync()
-        .then(() => {
+        .then((result) => {
           void queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
+          if (
+            !options?.silent &&
+            result.inFlight > 0 &&
+            result.enqueued === 0
+          ) {
+            getToast().info("Already refreshing your calendars", {
+              toastId: GOOGLE_REFRESH_ALREADY_IN_FLIGHT_TOAST_ID,
+            });
+          }
         })
         .catch(() => {
           // A background-triggered refresh (tab focus) failing transiently
@@ -135,14 +169,20 @@ export const useConnectGoogle = (
           }
         });
     },
-    [queryClient],
+    [queryClient, refreshSnapshot.isRefreshing],
   );
 
   return {
-    ...getGoogleConnectionConfig(state, {
-      onConnectGoogle: onOpenGoogleAuth,
-      onRefreshGoogle,
-    }),
+    ...getGoogleConnectionConfig(
+      state,
+      {
+        onConnectGoogle: onOpenGoogleAuth,
+        onRefreshGoogle,
+      },
+      {
+        refreshGaveUp: refreshSnapshot.gaveUp,
+      },
+    ),
     connect: onOpenGoogleAuth,
     connection: syncConnection,
     refresh: onRefreshGoogle,

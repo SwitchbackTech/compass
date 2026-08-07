@@ -37,7 +37,7 @@ export const AccountSectionHeader: FC<{
           ? "Reconnecting…"
           : "Connecting…"
         : isRefreshing
-          ? "Refreshing…"
+          ? "Catching up…"
           : commandAction.label;
 
   return (
