@@ -1,5 +1,6 @@
 import { SignInIcon, UserPlusIcon } from "@phosphor-icons/react";
 import { useSession } from "@web/auth/compass/session/useSession";
+import { track } from "@web/auth/posthog/track";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 
@@ -21,7 +22,10 @@ export const useAuthCmdItems = (): CommandItem[] => {
       label: "Sign Up",
       icon: UserPlusIcon,
       keywords: ["register", "create account"],
-      onClick: () => openModal("signUp"),
+      onClick: () => {
+        track("signup_started", { source: "command_palette" });
+        openModal("signUp");
+      },
     },
     {
       id: "log-in",

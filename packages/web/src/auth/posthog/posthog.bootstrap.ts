@@ -42,6 +42,11 @@ export function initPosthog(): PostHog | undefined {
     opt_in_site_apps: true,
     person_profiles: "always",
   });
+  // Staging and production share this PostHog project with the same key, so
+  // without this, staging traffic is indistinguishable from production in
+  // every insight (env.constants.ts NODE_ENV mirrors sync/backend's
+  // `environment` property for the same reason).
+  posthog.register({ environment: ENV_WEB.NODE_ENV });
 
   client = posthog;
   return client;

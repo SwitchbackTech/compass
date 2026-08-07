@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { AuthApi } from "@web/api/auth.api";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import { completeGoogleAuthorization } from "@web/auth/google/authorization/complete-google-authorization";
+import { track } from "@web/auth/posthog/track";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { releaseNotesPromptActions } from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
@@ -29,7 +30,10 @@ export async function completeGoogleAuthCallback({
   if (result.status === "failed") {
     showErrorToast(result.message);
   } else if (result.isNewUser) {
+    track("signup_completed", { method: "google" });
     releaseNotesPromptActions.scheduleOpen();
+  } else {
+    track("login_completed", { method: "google" });
   }
 
   navigate(result.returnPath, { replace: true });

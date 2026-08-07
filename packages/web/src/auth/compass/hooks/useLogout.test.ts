@@ -16,6 +16,7 @@ const clearAuthenticationState = mock();
 const setAuthenticated = mock();
 const mockUseSession = mock();
 const clearAccountScopedClientState = mock();
+const posthogReset = mock();
 let signOut = spyOn(session, "signOut");
 
 // bun's mock.module is global and leaks into every other test file in the
@@ -28,6 +29,9 @@ const actualAuthStateUtil = {
 };
 const actualLogoutTeardown = {
   ...(await import("@web/auth/compass/session/logout.teardown")),
+};
+const actualPosthogBootstrap = {
+  ...(await import("@web/auth/posthog/posthog.bootstrap")),
 };
 let isLogoutMocked = true;
 
@@ -51,6 +55,14 @@ mock.module("@web/auth/compass/session/logout.teardown", () => ({
       : actualLogoutTeardown.clearAccountScopedClientState(),
 }));
 
+mock.module("@web/auth/posthog/posthog.bootstrap", () => ({
+  ...actualPosthogBootstrap,
+  getPosthogClient: () =>
+    isLogoutMocked
+      ? { reset: posthogReset }
+      : actualPosthogBootstrap.getPosthogClient(),
+}));
+
 afterAll(() => {
   isLogoutMocked = false;
 });
@@ -62,6 +74,7 @@ describe("useLogout", () => {
     signOut = spyOn(session, "signOut").mockResolvedValue(undefined);
     clearAuthenticationState.mockClear();
     clearAccountScopedClientState.mockClear();
+    posthogReset.mockClear();
     setAuthenticated.mockClear();
     mockUseSession.mockReset();
     mockUseSession.mockReturnValue({
@@ -86,6 +99,7 @@ describe("useLogout", () => {
     expect(signOut).toHaveBeenCalledTimes(1);
     expect(clearAuthenticationState).toHaveBeenCalledTimes(1);
     expect(clearAccountScopedClientState).toHaveBeenCalledTimes(1);
+    expect(posthogReset).toHaveBeenCalledTimes(1);
     expect(setAuthenticated).toHaveBeenCalledWith(false);
   });
 

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "react-toastify/dist/ReactToastify.css";
 import { sessionInit } from "@web/auth/compass/session/SessionProvider";
 import { configureGoogleRevocationApiHandler } from "@web/auth/google/util/google-revocation-api.config";
+import { track } from "@web/auth/posthog/track";
 import {
   initializeDatabaseWithErrorHandling,
   showDbInitErrorToast,
@@ -12,6 +13,16 @@ import "./index.css";
 
 export async function bootstrapApp(): Promise<void> {
   configureGoogleRevocationApiHandler();
+
+  // Read before the router mounts: validateAuthSearch strips unrecognized
+  // query params (like these) on the first navigation.
+  const connectParams = new URLSearchParams(window.location.search);
+  if (
+    connectParams.get("provider") === "google" &&
+    connectParams.get("status") === "connected"
+  ) {
+    track("calendar_connected");
+  }
 
   const container = document.getElementById("root");
   if (!container) {

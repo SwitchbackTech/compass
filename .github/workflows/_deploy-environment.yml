@@ -59,6 +59,7 @@ jobs:
             POSTHOG_KEY=${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_KEY || '' }}
             POSTHOG_HOST=${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_HOST || '' }}
             COMPASS_BUILD_REF=${{ steps.version.outputs.image_version }}
+            NODE_ENV=${{ inputs.environment == 'production' && 'production' || 'staging' }}
           tags: switchbacktech/compass-web:${{ inputs.environment }}-${{ steps.version.outputs.image_version }}
 
       - name: Deploy release to ${{ inputs.environment }}

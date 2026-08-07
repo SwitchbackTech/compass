@@ -12,6 +12,7 @@ import {
   type RecurrenceScope,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
+import { track } from "@web/auth/posthog/track";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   buildCalendarLookup,
@@ -630,6 +631,11 @@ export function useEventMutations(
         const finalInput = { ...input, id };
         recordEventCreateHistory({
           event: optimisticEventFromCreate(finalInput),
+        });
+        track("event_created", {
+          event_source: source,
+          recurrence:
+            finalInput.recurrence.kind === "series" ? "series" : "single",
         });
         // callbacks rides along in two places: inside the variables so
         // onMutate can run onOptimisticApplied in the same task as the cache

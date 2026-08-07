@@ -8,6 +8,7 @@ import {
   type ResetPasswordFormData,
   type SignUpFormData,
 } from "@web/auth/compass/schemas/auth.schemas";
+import { track } from "@web/auth/posthog/track";
 import { releaseNotesPromptActions } from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
 import { getAuthSubmitErrorMessage } from "./useAuthFormHandlers.util";
 import { type AuthView } from "./useAuthModal";
@@ -73,6 +74,7 @@ export function useAuthFormHandlers({
             await completeAuthentication({
               email: response.user.emails[0] ?? data.email,
             });
+            track("signup_completed", { method: "email" });
             closeModal();
             releaseNotesPromptActions.scheduleOpen();
             return;
@@ -112,6 +114,7 @@ export function useAuthFormHandlers({
               email: response.user.emails[0] ?? data.email,
               onComplete: closeModal,
             });
+            track("login_completed", { method: "email" });
             return;
           case "WRONG_CREDENTIALS_ERROR":
             setSubmitError("Incorrect email or password.");
