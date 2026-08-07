@@ -250,7 +250,7 @@ describe("googleAuthService", () => {
         typeof googleAuthUtil.determineGoogleAuthMode
       >;
 
-    it("relinks Google to the Compass user and schedules a full reimport", async () => {
+    it("relinks Google profile facts and reports the fresh refresh token", async () => {
       const user = await UserDriver.createUser();
       const compassUserId = user._id.toString();
       const gUser = UserDriver.generateGoogleUser({
@@ -269,7 +269,7 @@ describe("googleAuthService", () => {
         { $set: { "google.gRefreshToken": "" } },
       );
 
-      const result: { cUserId: string; refreshToken: string } =
+      const result: { cUserId: string; refreshToken: string | null } =
         await googleAuthService.repairGoogleConnection(
           compassUserId,
           gUser,
@@ -287,17 +287,19 @@ describe("googleAuthService", () => {
       expect(updatedUser?._id.toString()).toBe(compassUserId);
       expect(updatedUser?.google?.googleId).toBe(gUser.sub);
       expect(updatedUser?.google?.picture).toBe(gUser.picture);
-      expect(updatedUser?.google?.gRefreshToken).toBe(
-        oAuthTokens.refresh_token,
-      );
-      expect(metadata.sync?.importGCal).toBe("RESTART");
-      expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
+      // The credential itself lives only in Sync now; the legacy slot stays
+      // clear even on a repair that received a fresh token.
+      expect(updatedUser?.google?.gRefreshToken).toBeUndefined();
+      // metadata untouched: the legacy sync restart flags were retired.
+      expect(metadata.sync).toBeUndefined();
     });
 
-    it("repairs sync with the stored refresh token when Google sign-in does not return a new one", async () => {
+    it("signs a returning user in without adopting when Google returns no refresh token", async () => {
+      // Sync either already holds a live connection for the account (adoption
+      // would no-op) or the user must run the reconnect flow for a fresh
+      // token; sign-in itself proceeds and profile facts still refresh.
       const user = await UserDriver.createUser();
       const compassUserId = user._id.toString();
-      const storedRefreshToken = user.google?.gRefreshToken;
       const providerUser = UserDriver.generateGoogleUser({
         email: user.email,
         sub: user.google?.googleId,
@@ -324,13 +326,7 @@ describe("googleAuthService", () => {
       ).resolves.toBeUndefined();
 
       const updatedUser = await mongoService.user.findOne({ _id: user._id });
-      const metadata =
-        await userMetadataService.fetchUserMetadata(compassUserId);
-
-      expect(updatedUser?.google?.gRefreshToken).toBe(storedRefreshToken);
       expect(updatedUser?.google?.picture).toBe(providerUser.picture);
-      expect(metadata.sync?.importGCal).toBe("RESTART");
-      expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
     });
   });
 
@@ -368,7 +364,8 @@ describe("googleAuthService", () => {
       expect(storedUsers).toHaveLength(1);
       expect(storedUsers[0]?._id).toEqual(existingUser._id);
       expect(storedUsers[0]?.google?.googleId).toBe(providerUser.sub);
-      expect(storedUsers[0]?.google?.gRefreshToken).toBe(refreshToken);
+      // The credential lives only in Sync now.
+      expect(storedUsers[0]?.google?.gRefreshToken).toBeUndefined();
     });
   });
 });

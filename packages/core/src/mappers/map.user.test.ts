@@ -15,7 +15,7 @@ describe("Map to Compass", () => {
       iat: 1675219731,
       exp: 1675223331,
     };
-    const cUser = mapUserToCompass(gUser, "refreshToken123");
+    const cUser = mapUserToCompass(gUser);
     expect(cUser.name).toEqual("Mystery Person");
     expect(cUser.firstName).toEqual("Mystery");
     expect(cUser.lastName).toEqual("Person");
@@ -23,12 +23,7 @@ describe("Map to Compass", () => {
   });
   it("throws error if missing email", () => {
     expect(() => {
-      mapUserToCompass({}, "refeshToken");
-    }).toThrow(BaseError);
-  });
-  it("throws error if missing refresh token", () => {
-    expect(() => {
-      mapUserToCompass({ email: "foobar@gmail.com" }, null);
+      mapUserToCompass({});
     }).toThrow(BaseError);
   });
 });

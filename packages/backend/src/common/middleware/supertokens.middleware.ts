@@ -21,7 +21,6 @@ import {
   handleEmailPasswordSignIn,
   handleEmailPasswordSignUp,
   handleGoogleSignInUp,
-  handleSessionSignOut,
   sendPasswordResetEmail,
 } from "@backend/common/middleware/supertokens.middleware.handlers";
 
@@ -204,32 +203,9 @@ export const initSupertokens = () => {
         },
       }),
       Dashboard.init(),
-      Session.init({
-        override: {
-          apis(originalImplementation) {
-            return {
-              ...originalImplementation,
-              async signOutPOST(input) {
-                const signOutPOST = originalImplementation.signOutPOST;
-
-                if (!signOutPOST) {
-                  throw new BaseError(
-                    "signOutPOST not implemented",
-                    "signOutPOST not implemented",
-                    Status.BAD_REQUEST,
-                    true,
-                  );
-                }
-
-                const invokeSignOutPOST: typeof signOutPOST = (signOutInput) =>
-                  signOutPOST.call(originalImplementation, signOutInput);
-
-                return handleSessionSignOut(input, invokeSignOutPOST);
-              },
-            };
-          },
-        },
-      }),
+      // No Session override: signout needs no Compass-side cleanup since the
+      // legacy sync-metadata restart flags were retired with user.google.
+      Session.init(),
       UserMetadata.init(),
     ],
   });

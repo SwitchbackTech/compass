@@ -13,7 +13,6 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
-import * as googleRevokeService from "@backend/auth/services/google/google.revoke.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { UserError } from "@backend/common/errors/user/user.errors";
@@ -66,7 +65,6 @@ describe("UserService", () => {
   });
   beforeEach(cleanupCollections);
   beforeEach(() => {
-    spyOn(googleRevokeService, "revokeGoogleGrant").mockResolvedValue(true);
     spyOn(compassAuthService, "revokeSessionsByUser").mockResolvedValue({
       sessionsRevoked: 0,
     });
@@ -76,15 +74,16 @@ describe("UserService", () => {
   describe("createUser", () => {
     it("persists a new compass user with Google data", async () => {
       const gUser = UserDriver.generateGoogleUser();
-      const refreshToken = faker.string.uuid();
 
-      const { userId } = await userService.createUser(gUser, refreshToken);
+      const { userId } = await userService.createUser(gUser);
       const storedUser = await mongoService.user.findOne({
         _id: mongoService.objectId(userId),
       });
 
       expect(storedUser?.email).toBe(gUser.email as string);
-      expect(storedUser?.google?.gRefreshToken).toBe(refreshToken);
+      expect(storedUser?.google?.googleId).toBe(gUser.sub);
+      // The credential lives only in Sync now.
+      expect(storedUser?.google?.gRefreshToken).toBeUndefined();
     });
   });
 
@@ -314,7 +313,6 @@ describe("UserService", () => {
     beforeEach(() => {
       deleteAccountSpies.length = 0;
       deleteAccountSpies.push(
-        spyOn(googleRevokeService, "revokeGoogleGrant").mockResolvedValue(true),
         spyOn(
           supertokensUserCleanupService,
           "resolveByExternalUserId",
@@ -337,35 +335,12 @@ describe("UserService", () => {
       for (const spy of deleteAccountSpies) spy.mockRestore();
     });
 
-    it("deletes the user and revokes their stored Google grant", async () => {
+    it("deletes the user; grant revocation is Sync's purge, not a local call", async () => {
       const user = await UserDriver.createUser();
 
       const summary = await userService.deleteAccount(user._id.toString());
 
       expect(summary).toEqual(expect.objectContaining({ user: 1 }));
-      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
-      expect(googleRevokeService.revokeGoogleGrant).toHaveBeenCalledWith(
-        user.google?.gRefreshToken,
-      );
-    });
-
-    it("skips the revoke when the user has no stored Google grant", async () => {
-      const user = await UserDriver.createUser({ withGoogle: false });
-
-      await userService.deleteAccount(user._id.toString());
-
-      expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
-      expect(googleRevokeService.revokeGoogleGrant).not.toHaveBeenCalled();
-    });
-
-    it("still deletes the account when revoking the Google grant fails", async () => {
-      spyOn(googleRevokeService, "revokeGoogleGrant").mockResolvedValueOnce(
-        false,
-      );
-      const user = await UserDriver.createUser();
-
-      await userService.deleteAccount(user._id.toString());
-
       expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
     });
 
@@ -757,54 +732,24 @@ describe("UserService", () => {
     });
   });
 
-  describe("handleLogoutCleanup", () => {
-    it("skips Google metadata updates for email/password-only users", async () => {
-      const user = await UserDriver.createUser({ withGoogle: false });
-      const updateMetadataSpy = spyOn(
-        userMetadataService,
-        "updateUserMetadata",
-      );
-
-      await userService.handleLogoutCleanup(user._id.toString());
-
-      expect(updateMetadataSpy).not.toHaveBeenCalled();
-
-      updateMetadataSpy.mockRestore();
-    });
-
-    it("updates Google metadata and stops watches for last active Google sessions", async () => {
-      const user = await UserDriver.createUser();
-      const updateMetadataSpy = spyOn(
-        userMetadataService,
-        "updateUserMetadata",
-      ).mockResolvedValue({} as never);
-
-      await userService.handleLogoutCleanup(user._id.toString());
-
-      expect(updateMetadataSpy).toHaveBeenCalledWith({
-        userId: user._id.toString(),
-        data: { sync: { incrementalGCalSync: "RESTART" } },
-      });
-
-      updateMetadataSpy.mockRestore();
-    });
-  });
-
-  describe("reconnectGoogleCredentials", () => {
-    it("updates the user's Google credentials and lastLoggedInAt", async () => {
+  describe("refreshGoogleProfile", () => {
+    it("updates Google profile facts, stamps sign-in, and clears the legacy credential slot", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
+      // Simulate a legacy row that still carries the retired credential slot.
+      await mongoService.user.updateOne(
+        { _id: user._id },
+        { $set: { "google.gRefreshToken": "legacy-token" } },
+      );
 
       const newGUser = UserDriver.generateGoogleUser({
         sub: faker.string.uuid(),
         picture: faker.image.urlPicsumPhotos(),
       });
-      const newRefreshToken = faker.internet.jwt();
 
-      const updatedUser = await userService.reconnectGoogleCredentials(
+      const updatedUser = await userService.refreshGoogleProfile(
         userId,
         newGUser,
-        newRefreshToken,
       );
 
       expect(updatedUser._id.toString()).toBe(userId);
@@ -813,7 +758,7 @@ describe("UserService", () => {
 
       expect(storedUser?.google?.googleId).toBe(newGUser.sub);
       expect(storedUser?.google?.picture).toBe(newGUser.picture ?? "");
-      expect(storedUser?.google?.gRefreshToken).toBe(newRefreshToken);
+      expect(storedUser?.google?.gRefreshToken).toBeUndefined();
       expect(storedUser?.lastLoggedInAt).toBeDefined();
     });
   });
@@ -825,14 +770,14 @@ describe("UserService", () => {
 
       const metadata = await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "RESTART" } },
+        data: { theme: "dark" },
       });
 
-      expect(metadata.sync?.importGCal).toBe("RESTART");
+      expect(metadata["theme"]).toBe("dark");
 
       const persisted = await userMetadataService.fetchUserMetadata(userId);
 
-      expect(persisted.sync?.importGCal).toBe("RESTART");
+      expect(persisted["theme"]).toBe("dark");
     });
   });
 
@@ -843,12 +788,12 @@ describe("UserService", () => {
 
       await userMetadataService.updateUserMetadata({
         userId,
-        data: { sync: { importGCal: "RESTART" } },
+        data: { theme: "dark" },
       });
 
       const metadata = await userMetadataService.fetchUserMetadata(userId);
 
-      expect(metadata.sync?.importGCal).toBe("RESTART");
+      expect(metadata["theme"]).toBe("dark");
     });
   });
 });

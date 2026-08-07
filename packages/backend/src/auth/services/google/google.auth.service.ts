@@ -12,15 +12,12 @@ import {
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { UserError } from "@backend/common/errors/user/user.errors";
 import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import { adoptGoogleAuthorization } from "@backend/common/services/sync-service/sync-connection-adoption";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import * as syncServiceFactory from "@backend/common/services/sync-service/sync-service.factory";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
-import userMetadataService from "@backend/user/services/user-metadata.service";
 import { GOOGLE_AUTH_SCOPES } from "./google.auth.scopes";
 import {
   type AuthDecision,
@@ -88,18 +85,12 @@ async function persistGoogleConnection(
   gUser: TokenPayload,
   refreshToken: string,
 ) {
-  await userService.reconnectGoogleCredentials(
-    compassUserId,
-    gUser,
-    refreshToken,
-  );
-
-  await userMetadataService.updateUserMetadata({
-    userId: compassUserId,
-    data: {
-      sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
-    },
-  });
+  // Profile facts only (googleId, picture, lastLoggedInAt). The refresh token
+  // itself goes to Sync via adoptConnection - Sync's credential store is the
+  // single authority; the legacy user.google.gRefreshToken slot is dead (it
+  // could hold only ONE account's token, so under multi-account it silently
+  // dropped every other account's).
+  await userService.refreshGoogleProfile(compassUserId, gUser);
 
   return { cUserId: compassUserId, refreshToken };
 }
@@ -113,25 +104,15 @@ async function persistStoredGoogleConnection(
     error: () => "Invalid Google user ID",
   });
 
-  const existingUser = await findCompassUserBy("_id", cUserId);
-
-  if (!existingUser?.google?.gRefreshToken) {
-    throw error(
-      UserError.MissingGoogleRefreshToken,
-      "User has not connected Google Calendar",
-    );
-  }
-
   await userService.refreshGoogleProfile(cUserId, gUser);
 
-  await userMetadataService.updateUserMetadata({
-    userId: cUserId,
-    data: {
-      sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
-    },
-  });
-
-  return { cUserId, refreshToken: existingUser.google.gRefreshToken };
+  // Google returned no refresh token on this returning sign-in, and the
+  // legacy Mongo copy is retired. There is nothing to adopt: either Sync
+  // already holds a live connection for this account (the common case -
+  // adoption would be a no-op anyway), or the user's connection is genuinely
+  // dead and the reconnect flow (which forces consent and yields a fresh
+  // token) is the only real fix. Sign-in itself proceeds.
+  return { cUserId, refreshToken: null };
 }
 
 async function googleSignup(
@@ -151,18 +132,10 @@ async function googleSignup(
         google: {
           googleId: gUser.sub ?? "",
           picture: gUser.picture || "not provided",
-          gRefreshToken: refreshToken,
         },
       },
       transactionSession,
     );
-
-    await userMetadataService.updateUserMetadata({
-      userId: cUser.user.userId,
-      data: {
-        sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
-      },
-    });
 
     return { cUserId: cUser.user.userId, refreshToken };
   });
@@ -294,10 +267,9 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
     }
 
     case "SIGNIN": {
-      // Returning user - repairGoogleConnection covers both the healthy
-      // refresh case and the missing/stale-token case (it falls back to
-      // persistStoredGoogleConnection when Google doesn't return a new
-      // refresh token).
+      // Returning user - repairGoogleConnection refreshes profile facts and
+      // reports the fresh refresh token when Google returned one (adopted
+      // into Sync below), or null when it did not.
       const compassUserId = decision.compassUserId;
       if (!compassUserId) {
         throw new Error("Compass user ID expected for Google sign-in");
@@ -308,12 +280,17 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
         providerUser,
         oAuthTokens,
       );
-      await adoptConnection(
-        persisted.cUserId,
-        providerUser,
-        persisted.refreshToken,
-        scopes,
-      );
+      // No refresh token on a returning sign-in means nothing to adopt: Sync
+      // either already holds a live connection for this account, or the user
+      // must run the reconnect flow (which forces consent) to mint one.
+      if (persisted.refreshToken !== null) {
+        await adoptConnection(
+          persisted.cUserId,
+          providerUser,
+          persisted.refreshToken,
+          scopes,
+        );
+      }
       return;
     }
   }

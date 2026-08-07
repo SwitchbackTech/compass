@@ -4,16 +4,10 @@ import { Status } from "@core/errors/status.codes";
 import { type Schema_User } from "@core/types/user.types";
 
 // Map  user object given by google signin to our schema //
-export const mapUserToCompass = (
-  gUser: TokenPayload,
-  gRefreshToken: string,
-): Schema_User => {
-  if (!gUser.email || !gRefreshToken) {
+export const mapUserToCompass = (gUser: TokenPayload): Schema_User => {
+  if (!gUser.email) {
     throw new BaseError(
-      `Failed to Map Google User to Compass. \ngUser: ${JSON.stringify({
-        ...gUser,
-        gRefreshToken,
-      })}`,
+      `Failed to Map Google User to Compass. \ngUser: ${JSON.stringify(gUser)}`,
       "Missing Required GUser Field",
       Status.NOT_FOUND,
       true,
@@ -29,7 +23,6 @@ export const mapUserToCompass = (
     google: {
       googleId: gUser.sub,
       picture: gUser.picture || "not provided",
-      gRefreshToken,
     },
   };
 };
