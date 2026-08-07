@@ -25,7 +25,7 @@ export const SidebarStatusBar: FC = () => {
     : getSidebarSyncStatus({ connection, isConnecting, state });
 
   return (
-    <div className="flex h-6 shrink-0 items-center border-border border-t px-4">
+    <div className="flex h-6 shrink-0 items-center px-4">
       <p
         aria-live="polite"
         className={`truncate text-xs ${status ? SYNC_STATUS_VARIANT_CLASSNAME[status.variant] : ""}`}
