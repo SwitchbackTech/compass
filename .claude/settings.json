@@ -54,5 +54,33 @@
       "Edit(**/.env.*)"
     ],
     "ask": []
+  },
+  "worktree": {
+    "baseRef": "fresh"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{ git fetch origin main -q 2>/dev/null; branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ \"$branch\" = \"main\" ] || [ \"$branch\" = \"master\" ]; then jq -n --arg b \"$branch\" '{systemMessage:(\"⚠️ This worktree is checked out on \" + $b + \", not a feature branch — do not commit here. Run: git fetch origin \" + $b + \" -q && git checkout -b <name> origin/\" + $b + \" before making any commits.\")}'; else behind=$(git rev-list --count \"HEAD..origin/main\" 2>/dev/null); if [ -n \"$behind\" ] && [ \"$behind\" -gt 0 ] 2>/dev/null; then jq -n --arg b \"$branch\" --arg n \"$behind\" '{systemMessage:(\"Branch \" + $b + \" is \" + $n + \" commit(s) behind origin/main.\")}'; fi; fi; } 2>/dev/null || true",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // empty' | { read -r cmd; case \"$cmd\" in *\"git commit\"*) branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null); if [ \"$branch\" = \"main\" ] || [ \"$branch\" = \"master\" ]; then jq -n --arg b \"$branch\" '{hookSpecificOutput:{hookEventName:\"PreToolUse\",permissionDecision:\"deny\",permissionDecisionReason:(\"Refusing git commit on branch \" + $b + \" — this worktree may be stale or reused, not necessarily the branch you think you are on. Run: git fetch origin \" + $b + \" -q && git checkout -b <descriptive-name> origin/\" + $b + \" (carries uncommitted changes forward automatically), then commit on that branch instead.\")}}'; fi ;; esac; }",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
   }
 }
