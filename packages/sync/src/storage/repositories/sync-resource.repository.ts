@@ -407,13 +407,16 @@ export class SyncResourceRepository {
   }
 
   // Events resources owned by the signed principal — input for a user-
-  // triggered refresh (enqueue one incrementalPull per resource).
+  // triggered refresh (enqueue one incrementalPull per resource). Bounded so a
+  // pathological principal cannot enqueue an unbounded refresh burst.
   async listEventsByPrincipal(
     tenantId: TenantId,
     principalId: PrincipalId,
+    limit = 200,
   ): Promise<SyncResourceRecord[]> {
     const records = await this.collection
       .find({ tenantId, principalId, resourceKind: "events" })
+      .limit(limit)
       .toArray();
     return records.map((r) => SyncResourceRecordSchema.parse(r));
   }

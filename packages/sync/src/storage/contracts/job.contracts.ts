@@ -29,6 +29,15 @@ export type JobState = z.infer<typeof JobStateSchema>;
 export const JobFailureClassSchema = z.literal("retryableTransient");
 export type JobFailureClass = z.infer<typeof JobFailureClassSchema>;
 
+// Claim order is arm order in claimDueJob, not a Mongo sort on this field.
+// Keep this to two rungs — each additional rung needs its own claim arm.
+// See the 2026-08-07 restart-burst / Refresh starvation incident.
+export const JOB_PRIORITY = {
+  background: 0,
+  user: 10,
+} as const;
+export type JobPriority = (typeof JOB_PRIORITY)[keyof typeof JOB_PRIORITY];
+
 // Persistence record for `jobs` — a small internal work item pointing at a
 // connection and (optionally) a resource or command. A unique coalescing key
 // collapses a storm of equivalent notifications into one job. Jobs hold no
@@ -42,6 +51,10 @@ export const JobRecordSchema = z.strictObject({
   resourceId: z.string().trim().min(1).nullable(),
   commandId: SyncCommandIdSchema.nullable(),
   kind: JobKindSchema,
+  // Two-rung ladder only. Adding a third rung costs another claim arm in
+  // claimDueJob (priority is a filter, not a sort key — see job.repository.ts).
+  // Introduced after the 2026-08-07 restart burst left user Refresh clicks
+  // queued behind ~440 background jobs for 15+ minutes.
   priority: z.number().int(),
   state: JobStateSchema,
   runAfter: z.date(),

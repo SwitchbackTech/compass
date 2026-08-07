@@ -220,12 +220,15 @@ export const SYNC_INDEX_MANIFEST: IndexManifest = {
       options: { unique: true },
     },
     {
-      // Due-job claim filters `{ state, runAfter: { $lte: now } }`. Leading with
-      // runAfter (not priority) means pending-but-not-due backoff jobs are NOT
-      // examined — the previous `{ state, priority, runAfter }` ordering walked
-      // every pending row on every idle claim, which is what kept Atlas Query
-      // Targeting above 1000 after the events COLLSCAN fix (#2473). Due matches
-      // are usually few, so an in-memory priority sort of that small set is fine.
+      // Due-job claim filters `{ state, runAfter: { $lte: now } }` (+ optional
+      // priority residual). Leading with runAfter (not priority) means
+      // pending-but-not-due backoff jobs are NOT examined — the previous
+      // `{ state, priority, runAfter }` ordering walked every pending row on
+      // every idle claim, which is what kept Atlas Query Targeting above 1000
+      // after the events COLLSCAN fix (#2473). Priority is a claim-arm FILTER
+      // (user rung before background), not a sort key; within a rung
+      // oldest-due wins via `{ runAfter: 1 }` sort, which this index serves
+      // directly (no SORT stage).
       name: "state_runafter_priority",
       key: { state: 1, runAfter: 1, priority: -1 },
     },

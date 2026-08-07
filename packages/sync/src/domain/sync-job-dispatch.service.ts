@@ -12,6 +12,7 @@ import {
 } from "@sync/providers/provider-event-reader.port";
 import { type ProviderNotificationAdapter } from "@sync/providers/provider-notifications.port";
 import {
+  JOB_PRIORITY,
   type JobEnqueue,
   type JobRecord,
 } from "@sync/storage/contracts/job.contracts";
@@ -373,7 +374,7 @@ function repairFollowup(
     resourceId: resource._id,
     commandId: null,
     kind: "repair",
-    priority: 0,
+    priority: JOB_PRIORITY.background,
     runAfter: now(),
     coalescingKey: `repair:${resource._id}`,
   };
@@ -390,7 +391,7 @@ function importFollowup(
     resourceId: resource._id,
     commandId: null,
     kind: "initialImport",
-    priority: 0,
+    priority: JOB_PRIORITY.background,
     runAfter: now(),
     coalescingKey: `initialImport:${resource._id}`,
   };
@@ -407,7 +408,7 @@ function bootstrapCatchupFollowup(
     resourceId: resource._id,
     commandId: null,
     kind: "bootstrapCatchup",
-    priority: 0,
+    priority: JOB_PRIORITY.background,
     runAfter: now(),
     coalescingKey: `bootstrapCatchup:${resource._id}`,
   };
@@ -445,7 +446,7 @@ function subscriptionFollowup(
     resourceId: resource._id,
     commandId: null,
     kind: "subscriptionMaintain",
-    priority: 0,
+    priority: JOB_PRIORITY.background,
     runAfter: now(),
     // The same key the expiry sweep uses, so a bootstrap watch and a renewal
     // never double up into two channels.

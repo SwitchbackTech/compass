@@ -4,6 +4,7 @@ import {
   type ProviderCalendarAdapter,
   ProviderCalendarError,
 } from "@sync/providers/provider-calendar.port";
+import { JOB_PRIORITY } from "@sync/storage/contracts/job.contracts";
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
@@ -201,7 +202,7 @@ export async function syncCalendarList(
       resourceId: eventsResource._id,
       commandId: null,
       kind: "initialImport",
-      priority: 0,
+      priority: JOB_PRIORITY.background,
       runAfter: now(),
       coalescingKey: `initialImport:${eventsResource._id}`,
     });

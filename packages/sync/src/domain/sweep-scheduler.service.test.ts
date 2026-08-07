@@ -100,4 +100,43 @@ describe("SweepScheduler", () => {
     expect(errors).toHaveLength(1);
     expect(sweeper.calls.length).toBeGreaterThanOrEqual(2);
   });
+
+  it("delays the first sweep by startupJitterMs * random", async () => {
+    const sweeper = new FakeSweeper();
+    const scheduler = new SweepScheduler(
+      { sweep: sweeper.sweep },
+      {
+        intervalMs: 10_000,
+        jitterRatio: 0,
+        startupJitterMs: 40,
+        random: () => 0.5,
+        now,
+      },
+    );
+
+    const firstSweep = sweeper.nextSweep();
+    scheduler.start();
+    expect(sweeper.calls).toHaveLength(0);
+    await firstSweep;
+    await scheduler.stop();
+    expect(sweeper.calls).toHaveLength(1);
+  });
+
+  it("stop during the initial delay sweeps zero times", async () => {
+    const sweeper = new FakeSweeper();
+    const scheduler = new SweepScheduler(
+      { sweep: sweeper.sweep },
+      {
+        intervalMs: 10_000,
+        jitterRatio: 0,
+        startupJitterMs: 60_000,
+        random: () => 1,
+        now,
+      },
+    );
+
+    scheduler.start();
+    await scheduler.stop();
+    expect(sweeper.calls).toHaveLength(0);
+  });
 });

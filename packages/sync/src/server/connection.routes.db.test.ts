@@ -7,6 +7,10 @@ import {
   type TenantId,
 } from "@core/types/sync/identity.contracts";
 import dayjs from "@core/util/date/dayjs";
+import {
+  ensureEventsResource,
+  seedProviderCalendar,
+} from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { createSyncService, type SyncService } from "@sync/app";
 import { signInternalRequest } from "@sync/auth/internal-auth";
@@ -29,6 +33,7 @@ import {
   CONNECTIONS_PATH,
   EVENTS_FULL_PATH,
   OAUTH_CALLBACK_PATH,
+  REFRESH_PATH,
 } from "@sync/server/connection.routes";
 import { SYNC_COLLECTIONS } from "@sync/storage/collections";
 import {
@@ -39,7 +44,9 @@ import {
   type EventOccurrenceRecord,
   EventOccurrenceRecordSchema,
 } from "@sync/storage/contracts/event-occurrence.contracts";
+import { JOB_PRIORITY } from "@sync/storage/contracts/job.contracts";
 import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
+import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
 import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
@@ -1470,5 +1477,125 @@ describe("GET /internal/events/full", () => {
         (i) => i.eventId === eventId && i.recurrence.kind === "series",
       ),
     ).toBe(true);
+  });
+});
+
+describe("POST /internal/connections/refresh", () => {
+  let mongo: SyncMongoService;
+  let connections: ProviderConnectionRepository;
+  let resources: SyncResourceRepository;
+  let jobs: JobRepository;
+  let service: SyncService;
+  let base: string;
+
+  const startService = async () => {
+    service = createSyncService(testConfig({ EXECUTION: "active" }), { mongo });
+    await new Promise<void>((resolve) => service.httpServer.listen(0, resolve));
+    const { port } = service.httpServer.address() as AddressInfo;
+    base = `http://127.0.0.1:${port}`;
+  };
+
+  beforeEach(() => {
+    mongo = storage.mongo();
+    connections = new ProviderConnectionRepository(mongo.db);
+    resources = new SyncResourceRepository(mongo.db);
+    jobs = new JobRepository(mongo.db);
+  });
+
+  afterEach(async () => {
+    await service?.stop();
+  });
+
+  const seedEventsResource = async (tenantId: string, principalId: string) => {
+    const connection = await seedConnection(
+      connections,
+      tenantId,
+      principalId,
+      "me@example.com",
+    );
+    const calendar = await seedProviderCalendar(
+      new ProviderCalendarRepository(mongo.db),
+      {
+        tenantId: connection.tenantId,
+        principalId: connection.principalId,
+        connectionId: connection._id,
+      },
+    );
+    const resource = await ensureEventsResource(resources, calendar);
+    return { connection, resource };
+  };
+
+  it("second POST over a pending job returns enqueued: 1 (boosted, not silent 0)", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    await seedEventsResource(tenantId, principalId);
+    await startService();
+
+    const first = await fetch(`${base}${REFRESH_PATH}`, {
+      method: "POST",
+      headers: signedHeaders(tenantId, principalId),
+    });
+    expect(first.status).toBe(200);
+    expect(await first.json()).toEqual({
+      enqueued: 1,
+      inFlight: 0,
+      resources: 1,
+    });
+
+    const second = await fetch(`${base}${REFRESH_PATH}`, {
+      method: "POST",
+      headers: signedHeaders(tenantId, principalId),
+    });
+    expect(second.status).toBe(200);
+    expect(await second.json()).toEqual({
+      enqueued: 1,
+      inFlight: 0,
+      resources: 1,
+    });
+
+    const pending = await mongo.db.collection("jobs").findOne({
+      kind: "incrementalPull",
+      state: "pending",
+    });
+    expect(pending?.["priority"]).toBe(JOB_PRIORITY.user);
+  });
+
+  it("returns inFlight: 1 when the job is already claimed", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const { resource } = await seedEventsResource(tenantId, principalId);
+    await jobs.enqueue({
+      tenantId: resource.tenantId,
+      principalId: resource.principalId,
+      connectionId: resource.connectionId,
+      resourceId: resource._id,
+      commandId: null,
+      kind: "incrementalPull",
+      priority: JOB_PRIORITY.background,
+      runAfter: new Date(Date.now() - 1000),
+      coalescingKey: `incrementalPull:${resource._id}`,
+    });
+    const claimed = await jobs.claimDueJob("worker-1", new Date(), 60_000);
+    expect(claimed?.state).toBe("claimed");
+
+    await startService();
+    const res = await fetch(`${base}${REFRESH_PATH}`, {
+      method: "POST",
+      headers: signedHeaders(tenantId, principalId),
+    });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      enqueued: 0,
+      inFlight: 1,
+      resources: 1,
+    });
+
+    const still = await jobs.findById(
+      resource.tenantId,
+      resource.principalId,
+      claimed!._id,
+    );
+    expect(still?.leaseOwner).toBe("worker-1");
+    expect(still?.state).toBe("claimed");
   });
 });

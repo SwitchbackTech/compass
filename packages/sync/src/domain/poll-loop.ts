@@ -12,6 +12,10 @@ export interface PollLoopOptions {
   tick: () => Promise<boolean>;
   // How long to wait before the next tick, given whether the last one did work.
   nextDelayMs: (didWork: boolean) => number;
+  // Awaited once before the first tick. Placing the delay here (rather than
+  // in SweepScheduler.start) means stop() during the wait tears down cleanly
+  // via the existing #idle/#wake path.
+  initialDelayMs?: number;
   // A tick failure must never kill the loop; surfaced here and the loop
   // continues to the next tick.
   onError?: (error: unknown) => void;
@@ -23,6 +27,7 @@ export interface PollLoopOptions {
 export class PollLoop {
   readonly #tick: () => Promise<boolean>;
   readonly #nextDelayMs: (didWork: boolean) => number;
+  readonly #initialDelayMs: number;
   readonly #onError: (error: unknown) => void;
   readonly #onStop: (() => Promise<void>) | undefined;
 
@@ -34,6 +39,7 @@ export class PollLoop {
   constructor(options: PollLoopOptions) {
     this.#tick = options.tick;
     this.#nextDelayMs = options.nextDelayMs;
+    this.#initialDelayMs = options.initialDelayMs ?? 0;
     this.#onError = options.onError ?? (() => {});
     this.#onStop = options.onStop;
   }
@@ -65,6 +71,10 @@ export class PollLoop {
   }
 
   async #run(): Promise<void> {
+    if (this.#initialDelayMs > 0) {
+      await this.#idle(this.#initialDelayMs);
+      if (!this.#running) return;
+    }
     while (this.#running) {
       let didWork = false;
       try {

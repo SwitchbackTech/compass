@@ -1,4 +1,5 @@
 import {
+  BACKLOG_DELAYED_THRESHOLD_MS,
   type ConnectionStateEvidence,
   DELAYED_THRESHOLD_MS,
   deriveConnectionState,
@@ -101,11 +102,22 @@ describe("deriveConnectionState", () => {
     });
   });
 
-  it("is delayed when work is overdue by the threshold (workOverdue)", () => {
-    expect(derive({ oldestDueWorkAt: agoMs(DELAYED_THRESHOLD_MS) })).toEqual({
+  it("is delayed when work is overdue by the backlog threshold (workOverdue)", () => {
+    expect(
+      derive({ oldestDueWorkAt: agoMs(BACKLOG_DELAYED_THRESHOLD_MS) }),
+    ).toEqual({
       state: "delayed",
       reason: "workOverdue",
     });
+  });
+
+  it("stays catchingUp for plain backlog under the backlog threshold", () => {
+    expect(
+      derive({
+        catchingUp: true,
+        oldestDueWorkAt: agoMs(DELAYED_THRESHOLD_MS),
+      }),
+    ).toEqual({ state: "catchingUp", reason: null });
   });
 
   it("is delayed with providerErrors when recent provider errors caused the backlog", () => {
@@ -117,21 +129,37 @@ describe("deriveConnectionState", () => {
     ).toEqual({ state: "delayed", reason: "providerErrors" });
   });
 
-  it("stays healthy when overdue work is under the threshold", () => {
+  it("stays healthy when overdue work is under the backlog threshold", () => {
     expect(
-      derive({ oldestDueWorkAt: agoMs(DELAYED_THRESHOLD_MS - 1) }),
+      derive({ oldestDueWorkAt: agoMs(BACKLOG_DELAYED_THRESHOLD_MS - 1) }),
     ).toEqual({ state: "healthy", reason: null });
   });
 
-  it("becomes delayed exactly at the threshold boundary", () => {
+  it("becomes delayed exactly at the backlog threshold boundary", () => {
     const justUnder = derive({
-      oldestDueWorkAt: agoMs(DELAYED_THRESHOLD_MS - 1),
+      oldestDueWorkAt: agoMs(BACKLOG_DELAYED_THRESHOLD_MS - 1),
     });
     const atThreshold = derive({
-      oldestDueWorkAt: agoMs(DELAYED_THRESHOLD_MS),
+      oldestDueWorkAt: agoMs(BACKLOG_DELAYED_THRESHOLD_MS),
     });
     expect(justUnder.state).toBe("healthy");
     expect(atThreshold.state).toBe("delayed");
+  });
+
+  it("alarms at the short threshold when recent provider errors are present", () => {
+    const justUnder = derive({
+      oldestDueWorkAt: agoMs(DELAYED_THRESHOLD_MS - 1),
+      recentProviderErrors: true,
+    });
+    const atThreshold = derive({
+      oldestDueWorkAt: agoMs(DELAYED_THRESHOLD_MS),
+      recentProviderErrors: true,
+    });
+    expect(justUnder.state).toBe("healthy");
+    expect(atThreshold).toEqual({
+      state: "delayed",
+      reason: "providerErrors",
+    });
   });
 
   describe("priority ordering", () => {
@@ -182,7 +210,7 @@ describe("deriveConnectionState", () => {
       expect(
         derive({
           initialImportComplete: false,
-          oldestDueWorkAt: agoMs(DELAYED_THRESHOLD_MS + 1000),
+          oldestDueWorkAt: agoMs(BACKLOG_DELAYED_THRESHOLD_MS + 1000),
         }).state,
       ).toBe("delayed");
     });
@@ -191,7 +219,7 @@ describe("deriveConnectionState", () => {
       expect(
         derive({
           catchingUp: true,
-          oldestDueWorkAt: agoMs(DELAYED_THRESHOLD_MS + 1000),
+          oldestDueWorkAt: agoMs(BACKLOG_DELAYED_THRESHOLD_MS + 1000),
         }).state,
       ).toBe("delayed");
     });

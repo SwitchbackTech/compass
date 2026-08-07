@@ -1,4 +1,5 @@
 import { enqueueForResources } from "@sync/domain/resource-sweep-enqueue";
+import { JOB_PRIORITY } from "@sync/storage/contracts/job.contracts";
 import { type JobRepository } from "@sync/storage/repositories/job.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
@@ -59,7 +60,7 @@ export function rediscoverStaleCalendarLists(
         resourceId: null,
         commandId: null,
         kind: "calendarListSync",
-        priority: 0,
+        priority: JOB_PRIORITY.background,
         runAfter: nowFn(),
         coalescingKey: `calendarListSync:${resource.connectionId}`,
       };

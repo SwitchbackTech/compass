@@ -189,11 +189,19 @@ export type ConnectionBeginResponse = z.infer<
   typeof ConnectionBeginResponseSchema
 >;
 
-// User-triggered catch-up: enqueue an incremental pull for each events
-// resource owned by the signed principal. `enqueued` is how many jobs were
-// accepted (coalesced duplicates still count as one acceptance each).
+// User-triggered catch-up: enqueue (or boost) an incremental pull for each
+// events resource owned by the signed principal.
+// - `enqueued`: jobs that will actually run (created + boosted + revived failed)
+// - `inFlight`: already claimed; Refresh left the lease alone
+// - `resources`: events resources considered (may exceed enqueued+inFlight when
+//   a coalesced key races between the three writes — outcome is then mislabeled,
+//   never corrupted)
 export const ConnectionRefreshResponseSchema = z.strictObject({
   enqueued: z.number().int().nonnegative(),
+  // Defaults so a web/backend build that lands before sync still accepts the
+  // old `{ enqueued }` body instead of failing Refresh closed.
+  inFlight: z.number().int().nonnegative().default(0),
+  resources: z.number().int().nonnegative().default(0),
 });
 export type ConnectionRefreshResponse = z.infer<
   typeof ConnectionRefreshResponseSchema

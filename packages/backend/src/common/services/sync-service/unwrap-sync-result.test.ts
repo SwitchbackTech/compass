@@ -14,13 +14,21 @@ const deps = {
 
 describe("unwrapSyncResult", () => {
   it("returns the value on success", () => {
-    const result: SyncClientResult<{ enqueued: number }> = {
+    const result: SyncClientResult<{
+      enqueued: number;
+      inFlight: number;
+      resources: number;
+    }> = {
       ok: true,
-      value: { enqueued: 3 },
+      value: { enqueued: 3, inFlight: 0, resources: 3 },
       correlationId: "corr-1",
     };
 
-    expect(unwrapSyncResult(result, deps)).toEqual({ enqueued: 3 });
+    expect(unwrapSyncResult(result, deps)).toEqual({
+      enqueued: 3,
+      inFlight: 0,
+      resources: 3,
+    });
   });
 
   it("throws a 503 that hides the sync-internal error kind and status", () => {

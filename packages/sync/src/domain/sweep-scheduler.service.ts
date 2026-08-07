@@ -23,6 +23,10 @@ export interface SweepSchedulerOptions {
   // NEGATIVE looks BACK (reconcile: resources not synced since now - 15m).
   // POSITIVE looks AHEAD (subscription: channels expiring before now + 24h).
   windowMs?: number;
+  // Cap on the first-tick delay after start. Default 0 preserves the historical
+  // "sweep immediately on start" behavior for callers and tests. Spreads a
+  // multi-sweep boot burst; it does not shrink the total work enqueued.
+  startupJitterMs?: number;
   now?: () => Date;
   // Injectable [0,1) source so a test can pin the jitter; defaults to Math.random.
   random?: () => number;
@@ -41,6 +45,7 @@ export class SweepScheduler {
     const intervalMs = options.intervalMs ?? DEFAULT_INTERVAL_MS;
     const jitterRatio = options.jitterRatio ?? DEFAULT_JITTER_RATIO;
     const windowMs = options.windowMs ?? 0;
+    const startupJitterMs = options.startupJitterMs ?? 0;
     const now = options.now ?? (() => new Date());
     const random = options.random ?? Math.random;
 
@@ -51,6 +56,8 @@ export class SweepScheduler {
     };
 
     this.#loop = new PollLoop({
+      initialDelayMs:
+        startupJitterMs > 0 ? Math.floor(random() * startupJitterMs) : 0,
       tick: async () => {
         const before = new Date(now().getTime() + windowMs);
         await deps.sweep(before);
@@ -63,14 +70,15 @@ export class SweepScheduler {
     });
   }
 
-  // Begin sweeping. Runs a sweep immediately (so a restart promptly catches
-  // anything missed while down), then on jittered intervals. Idempotent.
+  // Begin sweeping. With the default startupJitterMs of 0, runs a sweep
+  // immediately (so a restart promptly catches anything missed while down),
+  // then on jittered intervals. Idempotent.
   start(): void {
     this.#loop.start();
   }
 
-  // Stop sweeping. Waits for an in-flight sweep to finish so nothing is torn
-  // down mid-enqueue. Idempotent and safe when never started.
+  // Stop sweeping. Waits for an in-flight sweep (or initial delay) to finish
+  // so nothing is torn down mid-enqueue. Idempotent and safe when never started.
   async stop(): Promise<void> {
     await this.#loop.stop();
   }
