@@ -9,7 +9,6 @@ interface KeyboardShortcutsConfig {
   onCreateAllDayEvent?: () => void;
 
   // Focus
-  onFocusSidebar?: () => void;
   onFocusCalendar?: () => void;
 
   // Day navigation
@@ -22,13 +21,13 @@ interface KeyboardShortcutsConfig {
  * Hook to handle keyboard shortcuts for the Day view.
  *
  * Mirrors the Week view's create/focus semantics: "c" creates a timed event,
- * "a" an all-day event, "i" focuses the sidebar, "u" the calendar.
+ * "a" an all-day event, "u" the calendar. "i" (focus sidebar) is registered
+ * separately via useFocusSidebarShortcut, shared with Week.
  */
 export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   const {
     onCreateTimedEvent,
     onCreateAllDayEvent,
-    onFocusSidebar,
     onFocusCalendar,
     onNextDay,
     onPrevDay,
@@ -64,10 +63,5 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   useAppShortcut("Escape", () => {}, {
     ignoreInputs: false,
     blurOnTrigger: true,
-  });
-
-  // Sidebar shortcuts
-  useAppShortcutUp("I", () => {
-    onFocusSidebar?.();
   });
 }
