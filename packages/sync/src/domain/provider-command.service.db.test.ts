@@ -2063,7 +2063,15 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
     content: content(title),
     schedule: instanceSchedule,
     busy: true,
-    recurrence: { kind: "single" },
+    // Matches what the real normalizer reports for an event resolved off a
+    // series via fetchInstanceAt — NOT "single". A prior version of this
+    // fixture used "single", which papered over a bug where the replay
+    // short-circuit could never match a real instance read.
+    recurrence: {
+      kind: "instance",
+      seriesProviderId: "g-series-1",
+      recurrenceId: SECOND_START,
+    },
   });
   const providerSeries = (
     title: string,
@@ -2271,9 +2279,13 @@ describe("provider-linked recurring scopes (this / thisAndFollowing)", () => {
       expect(writer.fetchInstanceCalls[0]).toMatchObject({
         seriesProviderEventId: "g-series-1",
         originalStartAt: SECOND_START,
+        scheduleKind: "timed",
       });
       // Patched the INSTANCE's own resolved id, never the master's.
       expect(writer.patchCalls[0]?.providerEventId).toBe("g-inst-1");
+      // "instance", not "single" — Google rejects a recurrence key at all on
+      // an event resolved off a series via fetchInstanceAt.
+      expect(writer.patchCalls[0]?.recurrence).toEqual({ kind: "instance" });
 
       const exceptions = await events.findSeriesExceptions(
         tenantId,

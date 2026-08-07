@@ -728,6 +728,7 @@ export async function executeProviderOccurrenceUpdate(
       calendarId: calendar.providerCalendarId,
       seriesProviderEventId,
       originalStartAt: recurrenceId,
+      scheduleKind: master.schedule.kind,
     });
     instance = read?.kind === "event" ? read : null;
   } catch (error) {
@@ -751,10 +752,14 @@ export async function executeProviderOccurrenceUpdate(
     providerEventId,
   };
 
-  // An occurrence override is always a standalone provider event, never
-  // itself carrying recurrence rules.
+  // An occurrence override is always a standalone provider event, resolved
+  // off the series by fetchInstanceAt — "instance", not "single": Google
+  // rejects a `recurrence` key at all on that kind of event (see
+  // ProviderWriteRecurrence).
   if (
-    matchesIntendedEdit(instance, content, input.schedule, { kind: "single" })
+    matchesIntendedEdit(instance, content, input.schedule, {
+      kind: "instance",
+    })
   ) {
     return commitProviderOccurrenceUpdate(
       deps,
@@ -775,7 +780,7 @@ export async function executeProviderOccurrenceUpdate(
       expectedVersion: command.expectedVersion,
       content,
       schedule: input.schedule,
-      recurrence: { kind: "single" },
+      recurrence: { kind: "instance" },
       invitation: input.invitation,
     });
   } catch (error) {
@@ -900,6 +905,7 @@ export async function executeProviderOccurrenceDelete(
       calendarId: calendar.providerCalendarId,
       seriesProviderEventId,
       originalStartAt: recurrenceId,
+      scheduleKind: master.schedule.kind,
     });
     instance = read?.kind === "event" ? read : null;
   } catch (error) {
@@ -1403,7 +1409,9 @@ function recurrenceMatches(
   current: ProviderEvent["recurrence"],
   intended: ProviderWriteRecurrence,
 ): boolean {
-  if (intended.kind === "single") return current.kind === "single";
+  // "single" and "instance" both address a non-recurring event; only "series"
+  // carries rules to compare, so anything else is a bare kind match.
+  if (intended.kind !== "series") return current.kind === intended.kind;
   if (current.kind !== "seriesMaster") return false;
   if (current.rules.length !== intended.rules.length) return false;
   const currentCanonical = current.rules.map(canonicalRule).sort();

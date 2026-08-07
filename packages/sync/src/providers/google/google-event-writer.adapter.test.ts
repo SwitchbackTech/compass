@@ -403,6 +403,18 @@ describe("GoogleEventWriter", () => {
     expect(api.calls.patch[0].requestBody.recurrence).toBeNull();
   });
 
+  it("omits the recurrence key entirely when patching a resolved instance", async () => {
+    // Google rejects a `recurrence` key on an event resolved off a series via
+    // fetchInstanceAt — unlike a single edit, this must OMIT the key, not
+    // clear it with null.
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    await writer.patchEvent({ ...basePatch, recurrence: { kind: "instance" } });
+
+    expect(api.calls.patch[0].requestBody).not.toHaveProperty("recurrence");
+  });
+
   it("nulls the unused schedule keys so Google never sees both a date and a dateTime", async () => {
     const api = new FakeEventsApi();
     const { writer } = writerWith(api);
@@ -492,6 +504,7 @@ describe("GoogleEventWriter", () => {
       calendarId: "cal",
       seriesProviderEventId: "series-1",
       originalStartAt: "2025-01-15T09:00:00-05:00",
+      scheduleKind: "timed",
     });
 
     expect(api.calls.instances[0]).toMatchObject({
@@ -501,6 +514,45 @@ describe("GoogleEventWriter", () => {
     });
     expect(read?.kind).toBe("event");
     expect(read?.providerEventId).toBe("series-1_instance");
+  });
+
+  it("truncates an all-day instance's originalStart to a bare date, matching how Google reports it", async () => {
+    const api = new FakeEventsApi({
+      instances: {
+        kind: "calendar#events",
+        items: [
+          {
+            kind: "calendar#event",
+            id: "series-1_instance",
+            etag: '"v1"',
+            status: "confirmed",
+            summary: "T",
+            recurringEventId: "series-1",
+            originalStartTime: { date: "2026-08-08" },
+            start: { date: "2026-08-08" },
+            end: { date: "2026-08-09" },
+          },
+        ],
+      },
+    });
+    const { writer } = writerWith(api);
+
+    await writer.fetchInstanceAt({
+      accessToken: "at",
+      calendarId: "cal",
+      seriesProviderEventId: "series-1",
+      // Compass mints every recurrenceId as a full ISO datetime, all-day
+      // instants included (UTC midnight) — the adapter must still send the
+      // date-only form Google's originalStartTime.date reports.
+      originalStartAt: "2026-08-08T00:00:00.000Z",
+      scheduleKind: "allDay",
+    });
+
+    expect(api.calls.instances[0]).toMatchObject({
+      calendarId: "cal",
+      eventId: "series-1",
+      originalStart: "2026-08-08",
+    });
   });
 
   it("returns null when no instance exists at that instant", async () => {
@@ -514,6 +566,7 @@ describe("GoogleEventWriter", () => {
       calendarId: "cal",
       seriesProviderEventId: "series-1",
       originalStartAt: "2025-01-15T09:00:00-05:00",
+      scheduleKind: "timed",
     });
 
     expect(read).toBeNull();
@@ -528,6 +581,7 @@ describe("GoogleEventWriter", () => {
       calendarId: "cal",
       seriesProviderEventId: "gone",
       originalStartAt: "2025-01-15T09:00:00-05:00",
+      scheduleKind: "timed",
     });
 
     expect(read).toBeNull();
@@ -556,6 +610,7 @@ describe("GoogleEventWriter", () => {
       calendarId: "cal",
       seriesProviderEventId: "series-1",
       originalStartAt: "2025-01-15T09:00:00-05:00",
+      scheduleKind: "timed",
     });
 
     expect(read?.kind).toBe("cancellation");

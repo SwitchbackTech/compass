@@ -7,6 +7,7 @@ import {
   type gSchema$Events,
 } from "@core/types/gcal";
 import { type SyncEventContent } from "@core/types/sync/event.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { googleColorIdFields } from "@sync/providers/google/google-color.map";
 import { normalizeGoogleEvent } from "@sync/providers/google/google-event.normalizer";
 import { GOOGLE_REQUEST_TIMEOUT_MS } from "@sync/providers/google/google-http.constants";
@@ -218,7 +219,10 @@ export class GoogleEventWriter implements ProviderEventWriter {
       const page = await api.instances({
         calendarId: input.calendarId,
         eventId: input.seriesProviderEventId,
-        originalStart: input.originalStartAt,
+        originalStart: toOriginalStartFilter(
+          input.originalStartAt,
+          input.scheduleKind,
+        ),
       });
       const item = page.items?.[0];
       // No instance at that instant: never materialized (a rule that never
@@ -274,8 +278,21 @@ function toGoogleBody(
     location: content.location,
     ...googleColorIdFields(content.color),
     ...scheduleFields(schedule),
-    recurrence: recurrence.kind === "series" ? [...recurrence.rules] : null,
+    ...recurrenceField(recurrence),
   };
+}
+
+// "series" writes rules; "single" clears them with an explicit null (patch
+// merges by key, so an omitted key would leave a prior series' rules on a
+// converted event); "instance" omits the key — Google rejects a `recurrence`
+// key at all on an event resolved off a series via fetchInstanceAt.
+function recurrenceField(
+  recurrence: ProviderWriteRecurrence,
+): Partial<Pick<calendar_v3.Schema$Event, "recurrence">> {
+  if (recurrence.kind === "series")
+    return { recurrence: [...recurrence.rules] };
+  if (recurrence.kind === "single") return { recurrence: null };
+  return {};
 }
 
 function scheduleFields(
@@ -295,6 +312,23 @@ function scheduleFields(
     start: { date: schedule.start, dateTime: null, timeZone: null },
     end: { date: schedule.end, dateTime: null, timeZone: null },
   };
+}
+
+// Google reports an all-day instance's original start as a bare date
+// (`originalStartTime: { date: "2026-08-08" }`), never a dateTime — so the
+// `originalStart` filter on events.instances must be sent in that same date
+// form, or it matches nothing and the occurrence resolves to null. Compass's
+// recurrenceId is always a full ISO datetime (`2026-08-08T00:00:00.000Z` for
+// an all-day instant), so an all-day lookup truncates to its date component;
+// a timed lookup is sent through unchanged.
+function toOriginalStartFilter(
+  originalStartAt: string,
+  scheduleKind: "timed" | "allDay",
+): string {
+  if (scheduleKind === "timed") return originalStartAt;
+  return dayjs
+    .utc(originalStartAt)
+    .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
 }
 
 // Google's sendUpdates values are exactly the neutral invitation intents.
