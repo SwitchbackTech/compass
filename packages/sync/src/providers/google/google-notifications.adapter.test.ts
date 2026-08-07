@@ -148,6 +148,43 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     expect(error.reason).toBe("watchUnsupported");
   });
 
+  it("classifies a 403 pushNotSupportedForRequestedResource as unwatchable too", async () => {
+    const api = new FakeChannelsApi({
+      watch: gError(403, "pushNotSupportedForRequestedResource"),
+    });
+    const { adapter } = adapterWith(api);
+
+    const error = (await adapter
+      .watchEvents(watchInput)
+      .catch((e) => e)) as ProviderNotificationError;
+
+    expect(error.reason).toBe("watchUnsupported");
+  });
+
+  it("keeps a 403 rate-limit reason transient, not unwatchable", async () => {
+    const api = new FakeChannelsApi({
+      watch: gError(403, "rateLimitExceeded"),
+    });
+    const { adapter } = adapterWith(api);
+
+    const error = (await adapter
+      .watchEvents(watchInput)
+      .catch((e) => e)) as ProviderNotificationError;
+
+    expect(error.reason).toBe("watchFailed");
+  });
+
+  it("keeps a bare 403 (no reason) transient", async () => {
+    const api = new FakeChannelsApi({ watch: gError(403) });
+    const { adapter } = adapterWith(api);
+
+    const error = (await adapter
+      .watchEvents(watchInput)
+      .catch((e) => e)) as ProviderNotificationError;
+
+    expect(error.reason).toBe("watchFailed");
+  });
+
   it("classifies a revoked credential and never leaks the bearer token", async () => {
     const api = new FakeChannelsApi({ watch: gError(401) });
     const { adapter } = adapterWith(api);

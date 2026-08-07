@@ -193,10 +193,14 @@ function classifyWatchError(error: unknown): ProviderNotificationError {
   );
 }
 
-// A 400 whose reason is pushNotSupportedForRequestedResource means the resource
-// can never be watched, so the caller should poll instead of retrying.
+// A 400 (or, per observed Google behavior, 403) whose reason is
+// pushNotSupportedForRequestedResource means the resource can never be
+// watched, so the caller should poll instead of retrying. 403 is also used for
+// rateLimitExceeded/userRateLimitExceeded/quotaExceeded, which ARE transient —
+// this stays gated on the specific reason string, not on status alone.
 function isWatchUnsupported(error: unknown): boolean {
-  if (googleStatus(error) !== 400) return false;
+  const status = googleStatus(error);
+  if (status !== 400 && status !== 403) return false;
   const errors = (
     error as {
       response?: { data?: { error?: { errors?: Array<{ reason?: string }> } } };

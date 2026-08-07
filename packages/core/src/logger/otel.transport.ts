@@ -1,6 +1,12 @@
 import { logs, SeverityNumber } from "@opentelemetry/api-logs";
 import { type TransformableInfo } from "logform";
 import TransportStream from "winston-transport";
+import {
+  describeErrorChain,
+  formatErrorChain,
+  isUnsafeMetaKey,
+  rootCauseMessage,
+} from "@core/logger/log-serialization";
 
 const otelLogger = logs.getLogger("compass");
 
@@ -16,37 +22,61 @@ const severityNumbers: Record<string, SeverityNumber> = {
   silly: SeverityNumber.TRACE,
 };
 
+export type OtelAttributes = Record<
+  string,
+  string | number | boolean | undefined
+>;
+
+// Pure, so the leak-prevention behavior (never emit a raw non-Error cause,
+// never emit any other Error's enumerable own properties) is directly
+// testable without an OTel logger provider wired up.
+export function buildOtelAttributes(
+  info: Record<string, unknown>,
+): OtelAttributes {
+  return Object.entries(info)
+    .filter(
+      ([key]) =>
+        key !== "level" &&
+        key !== "message" &&
+        !key.startsWith("[") &&
+        typeof key !== "symbol" &&
+        !isUnsafeMetaKey(key),
+    )
+    .reduce<OtelAttributes>((acc, [key, value]) => {
+      if (key === "cause") {
+        // A non-Error cause could be any shape — including an unvetted
+        // object carrying the same secrets describeErrorChain guards
+        // against — so it is dropped rather than stringified.
+        if (value instanceof Error) {
+          const chain = describeErrorChain(value);
+          acc[key] = formatErrorChain(chain);
+          const rootCause = rootCauseMessage(chain);
+          if (rootCause !== undefined) acc["root_cause"] = rootCause;
+        }
+        return acc;
+      }
+      if (
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean"
+      ) {
+        acc[key] = value;
+      } else if (value instanceof Error) {
+        acc[key] = formatErrorChain(describeErrorChain(value));
+      } else if (value != null) {
+        acc[key] = JSON.stringify(value);
+      }
+      return acc;
+    }, {});
+}
+
 export class OpenTelemetryTransport extends TransportStream {
   log(info: TransformableInfo, next: () => void): void {
-    const attributes = Object.entries(info)
-      .filter(
-        ([key]) =>
-          key !== "level" &&
-          key !== "message" &&
-          !key.startsWith("[") &&
-          typeof key !== "symbol",
-      )
-      .reduce<Record<string, string | number | boolean | undefined>>(
-        (acc, [key, value]) => {
-          if (
-            typeof value === "string" ||
-            typeof value === "number" ||
-            typeof value === "boolean"
-          ) {
-            acc[key] = value;
-          } else if (value != null) {
-            acc[key] = JSON.stringify(value);
-          }
-          return acc;
-        },
-        {},
-      );
-
     otelLogger.emit({
       severityText: info.level,
       severityNumber: severityNumbers[info.level] ?? SeverityNumber.INFO,
       body: String(info.message),
-      attributes,
+      attributes: buildOtelAttributes(info),
     });
 
     next();
