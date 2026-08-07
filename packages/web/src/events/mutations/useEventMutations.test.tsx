@@ -12,10 +12,26 @@ import {
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
 
 const track = mock();
-mock.module("@web/auth/posthog/track", () => ({ track }));
+
+// bun's mock.module is global and leaks into every other test file in the
+// run. Spread the real module so unrelated suites still see its full
+// surface, and only override track while this file runs - the flag flips
+// back to the real implementation in afterAll.
+const actualTrack = { ...(await import("@web/auth/posthog/track")) };
+let isTrackMocked = true;
+
+mock.module("@web/auth/posthog/track", () => ({
+  ...actualTrack,
+  track: (...args: Parameters<typeof actualTrack.track>) =>
+    isTrackMocked ? track(...args) : actualTrack.track(...args),
+}));
+
+afterAll(() => {
+  isTrackMocked = false;
+});
 
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { EVENT_DELETED_TOAST_ID } from "@web/common/constants/toast.constants";
