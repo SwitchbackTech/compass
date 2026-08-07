@@ -75,17 +75,17 @@ mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
 
 // The no-accounts-yet header (covered in CalendarListHeader.test.tsx) reads
 // the signed-in email, and takes the anonymous branch - which needs a router
-// for its sign-up modal - without one. Pinning an email keeps it on the
-// authenticated branch, which needs nothing these tests don't already have.
-// Deliberately not the account emails below, so "did the generic header
-// render?" stays a distinct question from "did an account section render?".
+// for its sign-up modal. Tests can set mockUserEmail to undefined to test the
+// anonymous path. Deliberately not the account emails below, so "did the generic
+// header render?" stays a distinct question from "did an account section render?".
 const HEADER_EMAIL = "login@pequod.com";
+let mockUserEmail: string | undefined = HEADER_EMAIL;
 const actualUseUser = (await import("@web/auth/compass/user/hooks/useUser"))
   .useUser;
 let isUserMocked = true;
 mock.module("@web/auth/compass/user/hooks/useUser", () => ({
   useUser: (...args: Parameters<typeof actualUseUser>) =>
-    isUserMocked ? { email: HEADER_EMAIL } : actualUseUser(...args),
+    isUserMocked ? { email: mockUserEmail } : actualUseUser(...args),
 }));
 
 afterAll(() => {
@@ -164,6 +164,7 @@ describe("CalendarList", () => {
       authenticated: true,
       setAuthenticated: () => {},
     });
+    mockUserEmail = HEADER_EMAIL;
   });
 
   afterEach(() => {
@@ -207,24 +208,46 @@ describe("CalendarList", () => {
     expect(screen.queryByText("ahab@pequod.com")).not.toBeInTheDocument();
   });
 
-  it("relabels the local sentinel row as 'primary' for anonymous sessions (still toggleable)", () => {
-    // CalendarListHeader's own heading ("This browser") already names the
-    // account for this row, same as any other primary calendar's account
-    // section header - so the row abbreviates like every other primary
-    // calendar. Visibility is client-owned, so the toggle stays available
-    // offline.
+  it("shows a single row labeled 'This browser' for anonymous users, without repeating a heading", () => {
+    // Anonymous users get the local calendar rendered as AnonymousCalendarRow,
+    // which combines the account label ("This browser") and sign-up affordance
+    // into a single row, without a separate heading. No visibility toggle.
     const local = makeCalendar({
       name: "Compass",
       provider: "local",
       isPrimary: true,
     });
 
+    mockUserEmail = undefined;
     renderCalendarList([local], { authenticated: false });
 
-    expect(screen.getByText("primary")).toBeInTheDocument();
+    expect(screen.getByText("This browser")).toBeInTheDocument();
+    expect(screen.queryByText("primary")).not.toBeInTheDocument();
     expect(screen.queryByText("Compass")).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Hide primary calendar" }),
+      screen.queryByRole("heading", { name: "This browser" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Sign up to save this calendar" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the Compass calendar's real name when signed in but not connected", () => {
+    // Signed-in users who haven't connected Google yet see an email heading
+    // with a single local Compass row. The row shows the calendar's real name
+    // ("Compass"), not "primary", since there's no account heading to disambiguate.
+    const local = makeCalendar({
+      name: "Compass",
+      provider: "local",
+      isPrimary: true,
+    });
+
+    renderCalendarList([local], { authenticated: true });
+
+    expect(screen.getByText("Compass")).toBeInTheDocument();
+    expect(screen.queryByText("primary")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Hide Compass calendar" }),
     ).toBeInTheDocument();
   });
 

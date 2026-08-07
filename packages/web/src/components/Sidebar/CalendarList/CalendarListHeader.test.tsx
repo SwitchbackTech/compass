@@ -110,51 +110,6 @@ describe("CalendarListHeader", () => {
     userMetadataActions.clear();
   });
 
-  it("shows a local-storage heading with a sign-up tooltip before any changes are made", async () => {
-    const user = userEvent.setup();
-
-    renderHeader();
-
-    expect(
-      screen.getByRole("heading", { name: "This browser" }),
-    ).toBeInTheDocument();
-    const trigger = screen.getByRole("button", {
-      name: "This browser",
-    });
-    expect(trigger).toHaveClass("text-text");
-    expect(trigger).not.toHaveClass("c-sync-text-wave");
-    expect(screen.queryByText("Sign up")).toBeNull();
-
-    await user.hover(trigger);
-    await screen.findByText("Sign up to save your changes across browsers");
-    const signUpButton = await screen.findByRole("button", { name: "Sign up" });
-
-    await user.click(signUpButton);
-    expect(mockOpenModal).toHaveBeenCalledWith("signUp");
-    expect(mockUseConnectGoogle).not.toHaveBeenCalled();
-  });
-
-  it("shows the wave shimmer on the local-storage label once the anonymous user makes a change", () => {
-    mockIsAnonymousDirty = true;
-
-    renderHeader();
-
-    const trigger = screen.getByRole("button", {
-      name: "This browser",
-    });
-    expect(trigger).toHaveClass("c-sync-text-wave");
-    expect(trigger).not.toHaveClass("text-text");
-  });
-
-  it("also opens sign up by clicking the local-storage label directly (keyboard path)", async () => {
-    const user = userEvent.setup();
-
-    renderHeader();
-
-    await user.click(screen.getByRole("button", { name: "This browser" }));
-    expect(mockOpenModal).toHaveBeenCalledWith("signUp");
-  });
-
   it("shows a connect Google button when authenticated and Google is not connected", async () => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
