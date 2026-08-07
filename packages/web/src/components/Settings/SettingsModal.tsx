@@ -111,6 +111,12 @@ export const SettingsModal: FC = () => {
     openDeleteAccountConfirmation();
   };
 
+  // Closes Settings first rather than stacking two OverlayPanels at once.
+  const handleLogout = () => {
+    settingsActions.closeSettings();
+    openLogoutConfirmation();
+  };
+
   return (
     <OverlayPanel
       align="start"
@@ -156,7 +162,7 @@ export const SettingsModal: FC = () => {
                 Delete account
               </OverlayPanelActionButton>
               {authenticated ? (
-                <OverlayPanelActionButton onClick={openLogoutConfirmation}>
+                <OverlayPanelActionButton onClick={handleLogout}>
                   Log out
                 </OverlayPanelActionButton>
               ) : null}
