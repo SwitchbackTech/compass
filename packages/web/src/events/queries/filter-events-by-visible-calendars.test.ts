@@ -49,4 +49,24 @@ describe("filterEventsByVisibleCalendars", () => {
     expect(filtered?.entities[dropped.id]).toBeUndefined();
     expect(filtered?.entities[kept.id]).toBeDefined();
   });
+
+  it("drops events on a retired (inactive) calendar even when it is still visible", () => {
+    // A calendar the provider no longer lists is deactivated, not deleted, and
+    // client-side visibility (isVisible) is separate browser-local state that
+    // nothing clears on retirement. Without checking isActive here, a
+    // deleted-at-Google calendar's events would keep rendering in the grid.
+    const active = calendar({ isActive: true, isVisible: true });
+    const retired = calendar({ isActive: false, isVisible: true });
+    const kept = createMockEvent({ calendarId: active.id });
+    const dropped = createMockEvent({ calendarId: retired.id });
+    const data = {
+      ids: [kept.id, dropped.id],
+      entities: { [kept.id]: kept, [dropped.id]: dropped },
+    };
+
+    const filtered = filterEventsByVisibleCalendars(data, [active, retired]);
+    expect(filtered?.ids).toEqual([kept.id]);
+    expect(filtered?.entities[dropped.id]).toBeUndefined();
+    expect(filtered?.entities[kept.id]).toBeDefined();
+  });
 });

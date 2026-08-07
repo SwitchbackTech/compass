@@ -69,28 +69,37 @@ export class ProviderCalendarRepository {
   }
 
   // Mark inactive every calendar of a connection whose provider id is NOT in
-  // `presentProviderCalendarIds`, and return how many were changed. Used after a
-  // FULL discovery pass to retire calendars the account no longer lists (an
-  // incremental pass must not call this — absence there means "unchanged", not
-  // "removed"). Marking inactive rather than deleting keeps a calendar's Sync _id
-  // (and any downstream preferences) if it later returns. Owner-scoped.
+  // `presentProviderCalendarIds`, and return the retired calendars' ids. Used
+  // after a FULL discovery pass to retire calendars the account no longer lists
+  // (an incremental pass must not call this — absence there means "unchanged",
+  // not "removed"). Marking inactive rather than deleting keeps a calendar's
+  // Sync _id (and any downstream preferences) if it later returns. Owner-scoped.
+  // Ids are returned (not just a count) so the caller can log which calendars
+  // were retired and clear their local push-channel state — once this runs on a
+  // recurring sweep rather than only at connect, a silent retirement is no
+  // longer auditable enough.
   async deactivateAbsent(
     tenantId: TenantId,
     principalId: PrincipalId,
     connectionId: ConnectionId,
     presentProviderCalendarIds: readonly ProviderCalendarSourceId[],
-  ): Promise<number> {
-    const result = await this.collection.updateMany(
-      {
-        tenantId,
-        principalId,
-        connectionId,
-        active: true,
-        providerCalendarId: { $nin: [...presentProviderCalendarIds] },
-      },
-      { $set: { active: false, updatedAt: new Date() } },
-    );
-    return result.modifiedCount;
+  ): Promise<ProviderCalendarId[]> {
+    const filter: Filter<ProviderCalendarRecord> = {
+      tenantId,
+      principalId,
+      connectionId,
+      active: true,
+      providerCalendarId: { $nin: [...presentProviderCalendarIds] },
+    };
+    const retired = await this.collection
+      .find(filter)
+      .project<{ _id: ProviderCalendarId }>({ _id: 1 })
+      .toArray();
+    if (retired.length === 0) return [];
+    await this.collection.updateMany(filter, {
+      $set: { active: false, updatedAt: new Date() },
+    });
+    return retired.map((r) => r._id);
   }
 
   async listByConnection(

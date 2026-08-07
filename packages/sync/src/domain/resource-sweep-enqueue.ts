@@ -31,22 +31,36 @@ export async function enqueueForResources(
   before: Date,
   now: () => Date,
   limit = 100,
+  // Override the default resource-scoped enqueue shape. Only calendar-list
+  // rediscovery needs this: calendarListSync is connection-scoped
+  // (resourceId: null) and must reuse the connect path's own coalescing key
+  // (`calendarListSync:${connectionId}`) rather than this helper's default
+  // `${kind}:${resource._id}` template, and it has a side effect (clearing
+  // the stored discovery cursor) that must happen inside the same per-resource
+  // try/catch as the enqueue, not before the loop starts. Every other sweep
+  // omits this and gets the default shape below.
+  buildEnqueue?: (
+    resource: SyncResourceRecord,
+    now: () => Date,
+  ) => JobEnqueue | Promise<JobEnqueue>,
 ): Promise<number> {
   const due = await finder(before, limit);
   let enqueued = 0;
   for (const resource of due) {
-    const enqueue: JobEnqueue = {
-      tenantId: resource.tenantId,
-      principalId: resource.principalId,
-      connectionId: resource.connectionId,
-      resourceId: resource._id,
-      commandId: null,
-      kind,
-      priority: 0,
-      runAfter: now(),
-      coalescingKey: `${kind}:${resource._id}`,
-    };
     try {
+      const enqueue: JobEnqueue = buildEnqueue
+        ? await buildEnqueue(resource, now)
+        : {
+            tenantId: resource.tenantId,
+            principalId: resource.principalId,
+            connectionId: resource.connectionId,
+            resourceId: resource._id,
+            commandId: null,
+            kind,
+            priority: 0,
+            runAfter: now(),
+            coalescingKey: `${kind}:${resource._id}`,
+          };
       await deps.jobs.enqueue(enqueue);
       enqueued += 1;
     } catch (error) {

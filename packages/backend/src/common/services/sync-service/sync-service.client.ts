@@ -188,10 +188,37 @@ export class SyncServiceClient {
 
   // The caller's provider calendars, scoped to the signed principal. A read;
   // served in passive mode too. Backs the browser calendar list under sync
-  // delegation.
+  // delegation. Includes calendars the provider no longer lists (active:
+  // false) — the browser's own list surface needs those for name/color lookup
+  // on events that still reference them, so it deliberately does not scope
+  // this call to active-only. Event-ownership resolution wants the opposite;
+  // use listActiveCalendars there.
   listCalendars(
     principal: SyncPrincipal,
     correlationId?: string,
+  ): Promise<SyncClientResult<CalendarListResponse>> {
+    return this.#listCalendars(principal, correlationId);
+  }
+
+  // Same as listCalendars, scoped to calendars the provider still lists. A
+  // separate method (rather than an option on listCalendars) keeps that
+  // method's positional correlationId signature intact and makes each call
+  // site's intent greppable. Use this for anything that resolves which
+  // calendars a request may act on (e.g. event-range ownership) — a retired
+  // calendar should never be treated as an owned id again.
+  listActiveCalendars(
+    principal: SyncPrincipal,
+    correlationId?: string,
+  ): Promise<SyncClientResult<CalendarListResponse>> {
+    const query = new URLSearchParams();
+    query.set("activeOnly", "true");
+    return this.#listCalendars(principal, correlationId, query);
+  }
+
+  #listCalendars(
+    principal: SyncPrincipal,
+    correlationId?: string,
+    query?: URLSearchParams,
   ): Promise<SyncClientResult<CalendarListResponse>> {
     return this.#request({
       method: "GET",
@@ -199,6 +226,7 @@ export class SyncServiceClient {
       principal,
       schema: CalendarListResponseSchema,
       correlationId,
+      query,
     });
   }
 

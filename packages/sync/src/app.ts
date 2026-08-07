@@ -10,6 +10,7 @@ import {
 } from "@sync/auth/internal-auth";
 import { loadSyncConfig, type SyncConfig } from "@sync/config/sync.config";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
+import { rediscoverStaleCalendarLists } from "@sync/domain/calendar-list-rediscovery.service";
 import {
   CONNECTION_CACHE_RETENTION_MS,
   purgeExpiredDisconnectedConnections,
@@ -256,6 +257,7 @@ async function start(): Promise<void> {
         ["bootstrapRecovery", schedulers.bootstrapRecovery],
         ["failedJobRequeue", schedulers.failedJobRequeue],
         ["staleCommandRetry", schedulers.staleCommandRetry],
+        ["calendarListRediscovery", schedulers.calendarListRediscovery],
       ] as const;
       for (const [name, sweep] of sweeps) {
         service.shutdown.register(name, () => sweep.stop());
@@ -299,6 +301,14 @@ const SUBSCRIPTION_RENEW_BEFORE_MS = 24 * 60 * 60_000;
 // How often to look for soft-disconnected connections past the 30-day cache
 // window. Daily is enough for the retention SLA; hourly keeps catch-up snappy.
 const RETENTION_SWEEP_INTERVAL_MS = 60 * 60_000;
+// A connection whose calendar list has not been fully re-discovered within
+// this window is swept: a calendar deleted or unshared at the provider is
+// otherwise never retired, because calendarListSync only ever runs once, at
+// connect. Runs on the sweep's default ~10min interval (like reconcile and
+// bootstrapRecovery below, neither of which overrides it either) — cheap to
+// poll for, and the limit-bounded finder means the eligible population still
+// self-spreads across cycles rather than sweeping the whole fleet at once.
+const CALENDAR_LIST_STALE_AFTER_MS = 24 * 60 * 60_000;
 // Architecture: one sync_health_snapshot every five minutes.
 const HEALTH_SNAPSHOT_INTERVAL_MS = 5 * 60_000;
 
@@ -382,6 +392,7 @@ function buildSchedulers(
   bootstrapRecovery: SweepScheduler;
   failedJobRequeue: SweepScheduler;
   staleCommandRetry: SweepScheduler;
+  calendarListRediscovery: SweepScheduler;
 } | null {
   if (config.EXECUTION !== "active") return null;
   const authAdapter = buildAuthAdapter(config);
@@ -625,6 +636,41 @@ function buildSchedulers(
         logger.error("Sync stale-command retry sweep failed", error),
     },
   );
+  // Calendar-list rediscovery looks BACK, like reconcile: force a FULL
+  // discovery pass for any connection whose calendar list has not been
+  // re-listed within the staleness window, so a calendar the provider no
+  // longer lists eventually gets retired (deactivateAbsent only fires on a
+  // full pass, and only this sweep forces one after the initial connect).
+  const calendarListRediscovery = new SweepScheduler(
+    {
+      sweep: async (before) => {
+        const enqueued = await rediscoverStaleCalendarLists(
+          {
+            resources,
+            jobs,
+            onError: (error, resourceId) =>
+              logger.error(
+                `Sync calendar-list rediscovery sweep could not re-list resource ${resourceId}; skipping it and continuing`,
+                error,
+              ),
+          },
+          before,
+          () => new Date(),
+        );
+        if (enqueued > 0) {
+          logger.info(
+            `Sync calendar-list rediscovery sweep enqueued ${enqueued} full re-discovery(ies)`,
+          );
+        }
+        return enqueued;
+      },
+    },
+    {
+      windowMs: -CALENDAR_LIST_STALE_AFTER_MS,
+      onError: (error) =>
+        logger.error("Sync calendar-list rediscovery sweep failed", error),
+    },
+  );
   return {
     drains,
     reconcile,
@@ -632,6 +678,7 @@ function buildSchedulers(
     bootstrapRecovery,
     failedJobRequeue,
     staleCommandRetry,
+    calendarListRediscovery,
   };
 }
 

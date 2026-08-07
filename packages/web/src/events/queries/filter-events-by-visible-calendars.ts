@@ -2,8 +2,9 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { type NormalizedEventQueryData } from "./event.query.types";
 
 /**
- * Drop events whose calendar is hidden. When calendars have not loaded yet,
- * pass the data through unchanged so the grid does not flash empty.
+ * Drop events whose calendar is hidden or retired (no longer active at the
+ * provider). When calendars have not loaded yet, pass the data through
+ * unchanged so the grid does not flash empty.
  *
  * Pure: useCalendarEventViewModel memoizes the whole pipeline this belongs to,
  * so there is nothing to cache here.
@@ -15,7 +16,9 @@ export function filterEventsByVisibleCalendars(
   if (!data || !calendars) return data;
 
   const visibleIds = new Set(
-    calendars.filter((calendar) => calendar.isVisible).map((c) => c.id),
+    calendars
+      .filter((calendar) => calendar.isActive && calendar.isVisible)
+      .map((c) => c.id),
   );
 
   const ids = data.ids.filter((id) => {

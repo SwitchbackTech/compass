@@ -15,6 +15,11 @@ export interface CalendarListSyncDeps {
   jobs: JobRepository;
   discovery: ProviderCalendarAdapter;
   custody: AccessTokenSource;
+  // Optional: a retirement is otherwise invisible (deactivateAbsent's result
+  // was previously discarded entirely). Once discovery runs on a recurring
+  // sweep rather than only at connect, retirements happen unattended and need
+  // an audit trail. Defaults to a no-op so tests stay dependency-free.
+  log?: { warn: (message: string) => void };
 }
 
 export interface CalendarListSyncResult {
@@ -53,6 +58,14 @@ export async function syncCalendarList(
     resourceKind: "calendarList",
     calendarId: null,
   });
+
+  // Stamp the attempt before the token fetch can fail, mirroring the events
+  // pull's rotation invariant: the rediscovery sweep sorts calendarList
+  // resources by lastAttemptAt, and without this every such resource ties at
+  // null forever, letting a permanently-failing connection re-win the front of
+  // every sweep cycle (the 2026-07-29 dead-credential tie-break pathology,
+  // here for calendarList instead of events).
+  await deps.resources.markAttempt(tenantId, principalId, resource._id, now());
 
   const accessToken = await deps.custody.getValidAccessToken(connectionId);
 
@@ -114,7 +127,7 @@ export async function syncCalendarList(
   // hiccup that returned empty instead of throwing) rather than "all removed" —
   // retiring every calendar on an empty blip would be user-visible damage.
   if (fullList && discovery.calendars.length > 0) {
-    await deps.calendars.deactivateAbsent(
+    const retiredIds = await deps.calendars.deactivateAbsent(
       tenantId,
       principalId,
       connectionId,
@@ -122,6 +135,40 @@ export async function syncCalendarList(
         (c) => c.providerCalendarId as ProviderCalendarSourceId,
       ),
     );
+    if (retiredIds.length > 0) {
+      deps.log?.warn(
+        `Sync retired ${retiredIds.length} calendar(s) absent from a full list on connection ${connectionId}: ${retiredIds.join(", ")}`,
+      );
+      // The calendar is gone at the provider, so its push channel (if any) can
+      // never be renewed there. Dispatch already drops subscriptionMaintain for
+      // an inactive calendar, which means its subscriptionExpiresAt never
+      // advances — left alone, the row would squat at the head of every
+      // renewal sweep forever (listExpiringSubscriptions sorts soonest-expiry
+      // first with no other exclusion). Clearing the local fields here, rather
+      // than calling the provider to stop the channel, is deliberate: the
+      // calendar already 404s, and Google's channels lapse on their own within
+      // 30 days regardless, so the remote channel is a harmless, self-healing
+      // wart, not something worth a provider call and a new adapter dependency.
+      const retiredIdSet = new Set<string>(retiredIds);
+      const resources = await deps.resources.listByConnection(
+        tenantId,
+        principalId,
+        connectionId,
+      );
+      const subscribedRetired = resources.filter(
+        (r) =>
+          r.calendarId &&
+          retiredIdSet.has(r.calendarId) &&
+          r.subscriptionId !== null,
+      );
+      // Independent writes to distinct resources: clear them concurrently
+      // rather than one round trip per retired calendar.
+      await Promise.all(
+        subscribedRetired.map((r) =>
+          deps.resources.clearSubscription(tenantId, principalId, r._id),
+        ),
+      );
+    }
   }
 
   // Bootstrap events sync for each active calendar: ensure its events resource
