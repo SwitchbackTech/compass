@@ -13,7 +13,6 @@ import {
   isDeleteTextEditingTarget,
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
-  isEventFormOpen,
 } from "@web/common/utils/form/form.util";
 import { duplicateGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import {
@@ -22,7 +21,7 @@ import {
 } from "@web/events/mutations/useEventMutations";
 import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
-import { draftActions } from "@web/events/stores/draft.store";
+import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
 import {
   type FocusableGridEventTarget,
   type GridEventShortcutTarget,

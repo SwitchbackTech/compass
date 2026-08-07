@@ -1,5 +1,4 @@
 import { act, renderHook } from "@testing-library/react";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { SIDEBAR_AUTO_COLLAPSE_BREAKPOINT } from "@web/components/AuthenticatedLayout/responsive.constants";
 import {
   selectIsSidebarOpen,
@@ -138,7 +137,7 @@ describe("useResponsiveLayout sidebar", () => {
   });
 
   it("should respect a saved closed preference on mount when screen is wide", () => {
-    localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, "false");
+    viewActions.setSidebarOpen(false);
     setupMatchMedia({ sidebarMatches: true });
 
     renderHook(() => useResponsiveLayout());
@@ -147,7 +146,7 @@ describe("useResponsiveLayout sidebar", () => {
   });
 
   it("should ignore a saved open preference on mount when screen is narrow", () => {
-    localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, "true");
+    viewActions.setSidebarOpen(true);
     setupMatchMedia({ sidebarMatches: false });
 
     renderHook(() => useResponsiveLayout());
@@ -156,7 +155,7 @@ describe("useResponsiveLayout sidebar", () => {
   });
 
   it("should restore a saved closed preference when crossing back to wide", () => {
-    localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, "false");
+    viewActions.setSidebarOpen(false);
     const { sidebarQuery } = setupMatchMedia({
       sidebarMatches: false,
     });

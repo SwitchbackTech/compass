@@ -7,7 +7,6 @@ import {
   isContextMenuOpen,
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
-  isEventFormOpen,
   shouldDeferEnterToTarget,
 } from "./form.util";
 import {
@@ -20,71 +19,20 @@ import {
   spyOn,
 } from "bun:test";
 
-const mockGetElementsByName = mock();
 const mockGetElementById = mock();
 
 describe("form.util", () => {
   let getElementByIdSpy: ReturnType<typeof spyOn>;
-  let getElementsByNameSpy: ReturnType<typeof spyOn>;
 
   beforeEach(() => {
     mockGetElementById.mockClear();
-    mockGetElementsByName.mockClear();
     getElementByIdSpy = spyOn(document, "getElementById").mockImplementation(
       mockGetElementById as typeof document.getElementById,
-    );
-    getElementsByNameSpy = spyOn(
-      document,
-      "getElementsByName",
-    ).mockImplementation(
-      mockGetElementsByName as typeof document.getElementsByName,
     );
   });
 
   afterEach(() => {
     getElementByIdSpy.mockRestore();
-    getElementsByNameSpy.mockRestore();
-  });
-
-  describe("isEventFormOpen", () => {
-    it("should return true when event form is open", () => {
-      // Mock getElementsByName to return a single element for ID_EVENT_FORM
-      mockGetElementsByName.mockImplementation((name) => {
-        if (name === ID_EVENT_FORM) {
-          return [{ name: ID_EVENT_FORM }]; // Mock HTMLCollection with one element
-        }
-        return []; // Empty HTMLCollection for other names
-      });
-
-      const result = isEventFormOpen();
-
-      expect(result).toBe(true);
-      expect(mockGetElementsByName).toHaveBeenCalledWith(ID_EVENT_FORM);
-    });
-
-    it("should return false when no forms are open", () => {
-      // Mock getElementsByName to return empty HTMLCollection for all names
-      mockGetElementsByName.mockReturnValue([]);
-
-      const result = isEventFormOpen();
-
-      expect(result).toBe(false);
-      expect(mockGetElementsByName).toHaveBeenCalledWith(ID_EVENT_FORM);
-    });
-
-    it("should return false when forms exist but length is not 1", () => {
-      // Mock getElementsByName to return multiple elements (length !== 1)
-      mockGetElementsByName.mockImplementation((name) => {
-        if (name === ID_EVENT_FORM) {
-          return [{ name: ID_EVENT_FORM }, { name: ID_EVENT_FORM }]; // 2 elements
-        }
-        return []; // Empty HTMLCollection for other names
-      });
-
-      const result = isEventFormOpen();
-
-      expect(result).toBe(false);
-    });
   });
 
   describe("isContextMenuOpen", () => {

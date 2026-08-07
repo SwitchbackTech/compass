@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useRef } from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
-import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { getCommandPalettePlaceholder } from "@web/components/CommandPalette/more.cmd.constants";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
@@ -14,6 +13,7 @@ import { welcomeGuideActions } from "@web/components/WelcomeModal/welcome.guide.
 import { toDemoEventsRange } from "@web/events/demo-events.util";
 import {
   draftActions,
+  isEventFormOpen,
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";

@@ -7,10 +7,9 @@ import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
-import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { focusFirstSidebarItem } from "@web/components/Sidebar/util/sidebarFocus.util";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
-import { draftActions } from "@web/events/stores/draft.store";
+import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
 import {
   selectIsSidebarOpen,
   useViewStore,

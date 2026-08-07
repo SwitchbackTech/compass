@@ -1,9 +1,9 @@
 import {
   isContextMenuOpen,
-  isEventFormOpen,
   isFloatingLayerOpen,
 } from "@web/common/utils/form/form.util";
 import { getToast } from "@web/common/utils/toast/toast.port";
+import { isEventFormOpen } from "@web/events/stores/draft.store";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 /**
