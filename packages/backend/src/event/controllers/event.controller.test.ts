@@ -333,12 +333,12 @@ describe("EventController", () => {
     expect(json).toHaveBeenCalled();
   });
 
-  it("maps authorizationRevoked to 401 GOOGLE_REVOKED (not retryable)", async () => {
+  it("maps authorizationRevoked to 410 GOOGLE_REVOKED (not retryable)", async () => {
     mockSyncCommandFailure("authorizationRevoked");
     const { res, json } = await createViaSync();
 
     expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
-      Status.UNAUTHORIZED,
+      Status.GONE,
     );
     expect(json).toHaveBeenCalledWith({
       code: "GOOGLE_REVOKED",

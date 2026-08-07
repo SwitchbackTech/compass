@@ -142,6 +142,8 @@ export const handleErrorResponse = async (
   }
 
   if (
+    // Prefer 410 Gone (backend). Keep accepting 401 for older deployments;
+    // SuperTokens may already have exhausted session refresh on those.
     (status === Status.GONE || status === Status.UNAUTHORIZED) &&
     // "GOOGLE_REVOKED" here is the HTTP error envelope code the backend sends
     // on this response (independent of the syncStatusChanged SSE code of the
