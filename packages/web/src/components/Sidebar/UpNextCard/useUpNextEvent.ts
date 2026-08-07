@@ -1,20 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
-import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { useCallback } from "react";
+import dayjs from "@core/util/date/dayjs";
+import { useMinuteTick } from "@web/common/hooks/useMinuteTick";
 import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
-
-function useMinuteTick(): Dayjs {
-  const [now, setNow] = useState(() => dayjs());
-
-  useEffect(() => {
-    const interval = setInterval(() => setNow(dayjs()), 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return now;
-}
 
 export function useUpNextEvent() {
   const now = useMinuteTick();

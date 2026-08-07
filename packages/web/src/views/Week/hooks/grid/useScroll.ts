@@ -1,26 +1,16 @@
 import { type MutableRefObject, useCallback, useEffect } from "react";
-import {
-  getCurrentMinute,
-  getMinuteHeight,
-} from "@web/common/utils/grid/grid.util";
+import { getScrollToNowTop } from "@web/common/utils/grid/grid.util";
 
 export const useScroll = (
   timedGridRef: MutableRefObject<HTMLElement | null>,
 ) => {
   const scrollToNow = useCallback(() => {
-    const minuteHeight = getMinuteHeight(
-      timedGridRef.current?.clientHeight || 0,
-    );
+    if (!timedGridRef.current) return;
 
-    const buffer = 150;
-    const top = getCurrentMinute() * minuteHeight - buffer;
-
-    if (timedGridRef.current) {
-      timedGridRef.current.scroll({
-        top,
-        behavior: "smooth",
-      });
-    }
+    timedGridRef.current.scroll({
+      top: getScrollToNowTop(timedGridRef.current.clientHeight),
+      behavior: "smooth",
+    });
   }, [timedGridRef]);
 
   // Optional: scroll to now on mount. "t" (today) owns scroll-to-now while

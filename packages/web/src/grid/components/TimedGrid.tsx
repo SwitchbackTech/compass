@@ -3,17 +3,16 @@ import {
   type MouseEventHandler,
   type ReactNode,
   type RefCallback,
-  useEffect,
   useMemo,
-  useState,
 } from "react";
-import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { type Dayjs } from "@core/util/date/dayjs";
 import {
   DATA_TIMED_GRID_ROW,
   ID_GRID_COLUMNS_TIMED,
   ID_GRID_MAIN,
   ZIndex,
 } from "@web/common/constants/web.constants";
+import { useMinuteTick } from "@web/common/hooks/useMinuteTick";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { accentGradient } from "@web/common/styles/theme.util";
 import {
@@ -128,21 +127,9 @@ export const TimedGrid: FC<TimedGridProps> = ({
 };
 
 const CalendarTimeColumn = () => {
-  const [currentHour, setCurrentHour] = useState(() => dayjs().hour());
+  const currentHour = useMinuteTick().hour();
   const colors = useMemo(() => getColorsByHour(currentHour), [currentHour]);
   const hourLabels = useMemo(() => getHourLabels(), []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const hour = dayjs().hour();
-
-      if (hour !== currentHour) {
-        setCurrentHour(hour);
-      }
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [currentHour]);
 
   return (
     <div
@@ -173,17 +160,8 @@ const CalendarNowLine = ({
   columnCount: number;
   columnIndex: number;
 }) => {
-  const [percentOfDay, setPercentOfDay] = useState(() =>
-    getCurrentPercentOfDay(),
-  );
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPercentOfDay(getCurrentPercentOfDay());
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, []);
+  useMinuteTick();
+  const percentOfDay = getCurrentPercentOfDay();
 
   return (
     <div

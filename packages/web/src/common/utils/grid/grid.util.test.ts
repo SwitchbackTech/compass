@@ -5,7 +5,32 @@ import {
   FLEX_TMRW,
   FLEX_TODAY,
 } from "@web/views/Week/layout.constants";
-import { getFlexBasis, getLineClamp, getPrevDayWidth } from "./grid.util";
+import {
+  getFlexBasis,
+  getLineClamp,
+  getMinuteHeight,
+  getPrevDayWidth,
+  getScrollToNowTop,
+} from "./grid.util";
+import { afterEach, describe, expect, it, setSystemTime, test } from "bun:test";
+
+describe("getScrollToNowTop", () => {
+  afterEach(() => {
+    setSystemTime();
+  });
+
+  it("positions the current time 150px below the viewport top", () => {
+    setSystemTime(new Date("2026-02-05T12:00:00.000Z"));
+
+    const clientHeight = 1440;
+    const minuteHeight = getMinuteHeight(clientHeight);
+    const currentMinute = 12 * 60;
+
+    expect(getScrollToNowTop(clientHeight)).toBe(
+      currentMinute * minuteHeight - 150,
+    );
+  });
+});
 
 describe("getLineClamp", () => {
   it("uses a minimum value of 1", () => {

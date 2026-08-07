@@ -1,0 +1,61 @@
+import { renderHook } from "@testing-library/react";
+import { act } from "react";
+import { useToday } from "@web/views/Week/hooks/useToday";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  setSystemTime,
+  spyOn,
+} from "bun:test";
+
+describe("useToday", () => {
+  let intervalCallback: (() => void) | undefined;
+  let setIntervalSpy: ReturnType<typeof spyOn>;
+
+  beforeEach(() => {
+    setSystemTime(new Date("2026-02-05T23:59:00.000Z"));
+    intervalCallback = undefined;
+    setIntervalSpy = spyOn(globalThis, "setInterval").mockImplementation(((
+      callback: TimerHandler,
+    ) => {
+      if (typeof callback === "function") {
+        intervalCallback = () => callback();
+      }
+
+      return 1 as unknown as ReturnType<typeof setInterval>;
+    }) as unknown as typeof setInterval);
+    spyOn(globalThis, "clearInterval").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    setSystemTime();
+    setIntervalSpy.mockRestore();
+  });
+
+  it("keeps the same `today` reference across a tick within the same day", () => {
+    const { result } = renderHook(() => useToday());
+    const initialToday = result.current.today;
+
+    setSystemTime(new Date("2026-02-05T23:59:30.000Z"));
+    act(() => {
+      intervalCallback?.();
+    });
+
+    expect(result.current.today).toBe(initialToday);
+  });
+
+  it("swaps `today` once the day rolls over on a tick", () => {
+    const { result } = renderHook(() => useToday());
+
+    setSystemTime(new Date("2026-02-06T00:01:00.000Z"));
+    act(() => {
+      intervalCallback?.();
+    });
+
+    expect(result.current.today.isSame("2026-02-06", "day")).toBe(true);
+    expect(result.current.todayIndex).toBe(result.current.today.get("day"));
+  });
+});

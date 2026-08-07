@@ -2,7 +2,10 @@ import { useCallback, useEffect } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
-import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
+import {
+  emitViewCommand,
+  onViewCommand,
+} from "@web/common/utils/dom/view-command-bus";
 import {
   createAlldayDraft,
   createTimedDraft,
@@ -117,8 +120,18 @@ export const useWeekShortcuts = ({
     );
   }, [defaultTargetCalendarId, isCalendarsPending, isCurrentWeek, startOfView]);
 
-  // The command palette's create-event rows emit these same commands
-  // (event.cmd.constants.ts) so the "C"/"A" keys and the palette rows run
+  const emitCreateAllDayDraft = useCallback(
+    () => emitViewCommand("CREATE_ALLDAY_DRAFT"),
+    [],
+  );
+  const emitCreateTimedDraft = useCallback(
+    () => emitViewCommand("CREATE_TIMED_DRAFT"),
+    [],
+  );
+
+  // The "C"/"A" keys and the command palette's create-event rows
+  // (event.cmd.constants.ts) both just emit these commands; this effect is
+  // the one place that turns them into a draft, so every trigger runs
   // identical code. Resubscribes when the create handlers change (week in
   // view or default target calendar).
   useEffect(() => {
@@ -163,7 +176,7 @@ export const useWeekShortcuts = ({
   useAppShortcutUp("Shift+J", shiftViewBackward);
   useAppShortcutUp("Shift+K", shiftViewForward);
   useAppShortcutUp("T", toToday);
-  useAppShortcutUp("A", createAllDayDraftEvent);
-  useAppShortcutUp("C", createTimedDraftEvent);
+  useAppShortcutUp("A", emitCreateAllDayDraft);
+  useAppShortcutUp("C", emitCreateTimedDraft);
   useAppShortcutUp("U", focusFirstCalendarEvent);
 };
