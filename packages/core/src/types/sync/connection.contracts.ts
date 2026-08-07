@@ -198,8 +198,10 @@ export type ConnectionBeginResponse = z.infer<
 //   never corrupted)
 export const ConnectionRefreshResponseSchema = z.strictObject({
   enqueued: z.number().int().nonnegative(),
-  inFlight: z.number().int().nonnegative(),
-  resources: z.number().int().nonnegative(),
+  // Defaults so a web/backend build that lands before sync still accepts the
+  // old `{ enqueued }` body instead of failing Refresh closed.
+  inFlight: z.number().int().nonnegative().default(0),
+  resources: z.number().int().nonnegative().default(0),
 });
 export type ConnectionRefreshResponse = z.infer<
   typeof ConnectionRefreshResponseSchema

@@ -89,26 +89,30 @@ export class JobRepository {
 
   // User-initiated enqueue that must do something even when a coalescing key
   // already exists. Three ordered, state-guarded writes (no transaction): the
-  // unique coalescingKey index makes each path idempotent. A state flip
-  // between the three writes can only mislabel the outcome, never corrupt a
-  // row — each update is scoped to the state it expects.
+  // unique coalescingKey index makes each path idempotent. A state flip can
+  // mislabel the outcome; the late boost after enqueue closes the
+  // claimed→pending race that would otherwise leave background priority
+  // untouched (see scheduleRetry).
   async enqueueUrgent(
     input: JobEnqueue,
   ): Promise<{ job: JobRecord; outcome: EnqueueUrgentOutcome }> {
     const fields = JobEnqueueSchema.parse(input);
     const now = fields.runAfter;
 
+    const boostPending = () =>
+      this.collection.updateOne(
+        { coalescingKey: fields.coalescingKey, state: "pending" },
+        {
+          $min: { runAfter: now },
+          $max: { priority: fields.priority },
+          $currentDate: { updatedAt: true },
+        },
+      );
+
     // pending → boost. $min pulls a future runAfter back without robbing an
     // older job of its place; $max can never demote. Wart: this short-circuits
     // retry backoff, but attempt is untouched so the ladder still terminates.
-    const boosted = await this.collection.updateOne(
-      { coalescingKey: fields.coalescingKey, state: "pending" },
-      {
-        $min: { runAfter: now },
-        $max: { priority: fields.priority },
-        $currentDate: { updatedAt: true },
-      },
-    );
+    const boosted = await boostPending();
     if (boosted.matchedCount === 1) {
       const job = await this.collection.findOne({
         coalescingKey: fields.coalescingKey,
@@ -155,8 +159,30 @@ export class JobRepository {
       return { job: JobRecordSchema.parse(inFlight), outcome: "inFlight" };
     }
 
-    const job = await this.enqueue(fields);
-    return { job, outcome: "created" };
+    const created = await this.enqueue(fields);
+
+    // claimed→pending (scheduleRetry) or a concurrent insert may have landed
+    // a background-priority / future-runAfter row that enqueue's $setOnInsert
+    // left untouched. Only boost when the returned row still needs it —
+    // $currentDate would make modifiedCount unreliable as the signal.
+    if (
+      created.state === "pending" &&
+      (created.priority < fields.priority ||
+        created.runAfter.getTime() > now.getTime())
+    ) {
+      await boostPending();
+      const job = await this.collection.findOne({
+        coalescingKey: fields.coalescingKey,
+      });
+      if (!job) throw new Error("Job disappeared after late boost");
+      return { job: JobRecordSchema.parse(job), outcome: "boosted" };
+    }
+
+    if (created.state === "claimed") {
+      return { job: created, outcome: "inFlight" };
+    }
+
+    return { job: created, outcome: "created" };
   }
 
   async findById(
