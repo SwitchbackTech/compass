@@ -242,7 +242,9 @@ interface FilterOptions {
  * Filter shortcuts based on context. Returns a new list of shortcuts that should
  * be visible given the current app state, with view-appropriate labels.
  */
-export const filterShortcutsByContext = (options: FilterOptions): Shortcut[] => {
+export const filterShortcutsByContext = (
+  options: FilterOptions,
+): Shortcut[] => {
   const { view, isViewingCurrentPeriod, eventFocused, isFormOpen } = options;
 
   return SHORTCUTS_REGISTRY.map((shortcut) => {
@@ -268,14 +270,20 @@ export const filterShortcutsByContext = (options: FilterOptions): Shortcut[] => 
     // Filter by view
     if (view === "life") {
       // Life view shows only life-specific navigate + other shortcuts
-      if (shortcut.section === "create" || shortcut.section === "focus" || shortcut.section === "edit") {
+      if (
+        shortcut.section === "create" ||
+        shortcut.section === "focus" ||
+        shortcut.section === "edit"
+      ) {
         return false;
       }
       // Include navigate shortcuts only if life-specific or view switchers
       if (shortcut.section === "navigate") {
-        return shortcut.when?.lifeView === true ||
-               shortcut.id === "nav-day-view" ||
-               shortcut.id === "nav-week-view";
+        return (
+          shortcut.when?.lifeView === true ||
+          shortcut.id === "nav-day-view" ||
+          shortcut.id === "nav-week-view"
+        );
       }
     } else {
       // Day/week view excludes life-specific shortcuts
@@ -283,12 +291,17 @@ export const filterShortcutsByContext = (options: FilterOptions): Shortcut[] => 
         return false;
       }
       // Exclude current view switcher (show only alternate view)
-      if ((view === "day" && shortcut.id === "nav-day-view") ||
-          (view === "week" && shortcut.id === "nav-week-view")) {
+      if (
+        (view === "day" && shortcut.id === "nav-day-view") ||
+        (view === "week" && shortcut.id === "nav-week-view")
+      ) {
         return false;
       }
       // Week view includes shift shortcuts, day view should filter them
-      if (view === "day" && (shortcut.id === "nav-shift-left" || shortcut.id === "nav-shift-right")) {
+      if (
+        view === "day" &&
+        (shortcut.id === "nav-shift-left" || shortcut.id === "nav-shift-right")
+      ) {
         return false;
       }
     }
