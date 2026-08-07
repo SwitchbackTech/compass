@@ -1,11 +1,13 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { useAppLockReason } from "@web/shortcuts/app-lock";
 
 const WAITLIST_URL = "https://tylerdane.kit.com/compass-mobile";
 
 export const MobileGate: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const copiedResetTimeoutRef = useRef<number | null>(null);
+  useAppLockReason("mobileGate", true);
 
   useEffect(() => {
     return () => {
