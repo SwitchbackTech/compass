@@ -631,11 +631,18 @@ export function useEventMutations(
         recordEventCreateHistory({
           event: optimisticEventFromCreate(finalInput),
         });
-        createMutation.mutate({
-          input: finalInput,
-          writeKey: id,
+        // callbacks rides along in two places: inside the variables so
+        // onMutate can run onOptimisticApplied in the same task as the cache
+        // write, and as mutate options so onSuccess/onError still fire per
+        // call (undo's restore toast depends on them).
+        createMutation.mutate(
+          {
+            input: finalInput,
+            writeKey: id,
+            callbacks,
+          },
           callbacks,
-        });
+        );
       },
       replace: (
         payload: { id: EventId; input: ReplaceEventInput },
