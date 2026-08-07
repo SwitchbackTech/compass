@@ -40,7 +40,7 @@ export const UpNextCard: FC = () => {
     <section aria-label="Up next">
       <button
         aria-label={`Up next: ${upNext.title}. ${countdown}.`}
-        className="c-focus-ring group relative flex w-full min-w-0 flex-col gap-0.5 rounded border border-border bg-surface px-2 py-1.5 text-left hover:brightness-110"
+        className="c-focus-ring group relative flex w-full min-w-0 flex-col gap-0.5 rounded bg-surface px-2 py-1.5 text-left hover:brightness-110"
         onClick={() => openEventDetails("gridClick")}
         type="button"
       >
