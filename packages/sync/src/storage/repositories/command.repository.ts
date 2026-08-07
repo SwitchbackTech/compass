@@ -23,6 +23,10 @@ import {
 // (tenant, principal, idempotencyKey): a retried submission returns the
 // existing command rather than creating a duplicate, so an interrupted or
 // replayed submit is safe. Queries are scoped to the owning tenant/principal.
+// A command still owed provider work: not yet applied, failed, or cancelled.
+// One definition so the four nonterminal queries below can never drift.
+const NONTERMINAL_COMMAND_STATES = ["pending", "applying", "reconciling"];
+
 export class CommandRepository {
   private readonly collection: Collection<CommandRecord>;
 
@@ -132,7 +136,7 @@ export class CommandRepository {
         tenantId,
         principalId,
         eventId,
-        "outcome.state": { $in: ["pending", "applying", "reconciling"] },
+        "outcome.state": { $in: NONTERMINAL_COMMAND_STATES },
       },
       { projection: { _id: 1 } },
     );
@@ -193,7 +197,7 @@ export class CommandRepository {
       .find({
         tenantId,
         principalId,
-        "outcome.state": { $in: ["pending", "applying", "reconciling"] },
+        "outcome.state": { $in: NONTERMINAL_COMMAND_STATES },
       })
       .sort({ createdAt: 1 })
       .limit(limit)
@@ -226,7 +230,7 @@ export class CommandRepository {
           $match: {
             tenantId,
             principalId,
-            "outcome.state": { $in: ["pending", "applying", "reconciling"] },
+            "outcome.state": { $in: NONTERMINAL_COMMAND_STATES },
           },
         },
         {
@@ -261,7 +265,7 @@ export class CommandRepository {
   ): Promise<CommandRecord[]> {
     const records = await this.collection
       .find({
-        "outcome.state": { $in: ["pending", "applying", "reconciling"] },
+        "outcome.state": { $in: NONTERMINAL_COMMAND_STATES },
         "input.kind": { $in: kinds },
         updatedAt: { $lt: before },
       })

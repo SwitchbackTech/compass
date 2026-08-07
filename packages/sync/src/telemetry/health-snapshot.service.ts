@@ -70,6 +70,11 @@ export async function emitHealthSnapshot(input: {
   return snapshot;
 }
 
+// The counters below read collections directly instead of going through the
+// repositories, on purpose: a fleet gauge must keep reporting even when a doc
+// fails contract parsing (schema drift is exactly the kind of problem the
+// snapshot should surface, not crash on), and $group counts never need
+// hydrated records.
 async function countConnectionsByState(
   db: Db,
 ): Promise<SyncHealthSnapshot["connections"]> {

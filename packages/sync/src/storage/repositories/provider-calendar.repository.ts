@@ -107,10 +107,7 @@ export class ProviderCalendarRepository {
     principalId: PrincipalId,
     connectionId: ConnectionId,
   ): Promise<ProviderCalendarRecord[]> {
-    const records = await this.collection
-      .find({ tenantId, principalId, connectionId })
-      .toArray();
-    return records.map((r) => ProviderCalendarRecordSchema.parse(r));
+    return this.listByPrincipal(tenantId, principalId, { connectionId });
   }
 
   async findById(

@@ -14,6 +14,35 @@ import {
   SyncResourceUpsertSchema,
 } from "@sync/storage/contracts/sync-resource.contracts";
 
+// Shared tail for the global sweep finders below: drop resources whose
+// connection has no stored credential. Such a resource can never succeed no
+// matter how many sweeps retry it — reconnect is what resumes it
+// (registerConnection's own calendarListSync enqueue), not a sweep. Excluding
+// at the query level, rather than relying on the lastAttemptAt rotation,
+// matters because the rotation only helps AFTER a resource's first attempt:
+// the whole never-attempted population (dead-credential resources alongside
+// genuinely healthy new ones) ties at lastAttemptAt: null, and Mongo's
+// tie-break across that tie is not random — it reproducibly favored the
+// dead-credential cohort (2026-07-29: an isolated post-rotation-fix sweep
+// batch still selected 100 resources with only 1 holding a credential).
+//
+// listExpiringSubscriptions deliberately does NOT use this: it only selects
+// resources that already hold a live channel, which a credential-less
+// connection cannot renew into existence in the first place, and a renewal
+// attempt on one settles as a credential drop rather than burning a ladder.
+const EXCLUDE_CREDENTIALLESS_STAGES = [
+  {
+    $lookup: {
+      from: SYNC_COLLECTIONS.credentials,
+      localField: "connectionId",
+      foreignField: "_id",
+      as: "_credential",
+    },
+  },
+  { $match: { "_credential.0": { $exists: true } } },
+  { $project: { _credential: 0 } },
+];
+
 interface SubscriptionInput {
   subscriptionId: string;
   subscriptionResourceId: string;
@@ -247,19 +276,14 @@ export class SyncResourceRepository {
     principalId: PrincipalId,
     calendarIds: readonly SyncEventCalendarId[],
   ): Promise<Map<SyncEventCalendarId, number>> {
-    const records = await this.collection
-      .find({
-        tenantId,
-        principalId,
-        resourceKind: "events",
-        calendarId: { $in: [...calendarIds] },
-      })
-      .project<{ calendarId: SyncEventCalendarId; activeGeneration: number }>({
-        calendarId: 1,
-        activeGeneration: 1,
-      })
-      .toArray();
-    return new Map(records.map((r) => [r.calendarId, r.activeGeneration]));
+    const freshness = await this.listEventResourceFreshnessByCalendar(
+      tenantId,
+      principalId,
+      calendarIds,
+    );
+    return new Map(
+      [...freshness].map(([calendarId, r]) => [calendarId, r.activeGeneration]),
+    );
   }
 
   // The events resources backing the given calendars, projected to what a busy /
@@ -367,27 +391,7 @@ export class SyncResourceRepository {
             $or: [{ lastSuccessAt: { $lt: before } }, { lastSuccessAt: null }],
           },
         },
-        // A resource whose connection has no stored credential can never
-        // succeed here no matter how many sweeps retry it — reconnect is what
-        // resumes it (registerConnection's own calendarListSync enqueue), not
-        // reconcile. Excluding it at the query level, rather than relying on
-        // the lastAttemptAt rotation below, matters because the rotation only
-        // helps AFTER a resource's first attempt: the whole never-attempted
-        // population (dead-credential resources alongside genuinely healthy
-        // new ones) ties at lastAttemptAt: null, and Mongo's tie-break across
-        // that tie is not random — it reproducibly favored the dead-credential
-        // cohort (2026-07-29: an isolated post-rotation-fix sweep batch still
-        // selected 100 resources with only 1 holding a credential).
-        {
-          $lookup: {
-            from: SYNC_COLLECTIONS.credentials,
-            localField: "connectionId",
-            foreignField: "_id",
-            as: "_credential",
-          },
-        },
-        { $match: { "_credential.0": { $exists: true } } },
-        { $project: { _credential: 0 } },
+        ...EXCLUDE_CREDENTIALLESS_STAGES,
         // Round-robin by ATTEMPT, not success: never-attempted first (null
         // sorts lowest), then least-recently-attempted, so a resource that
         // fails without succeeding still rotates to the back after each try
@@ -424,16 +428,7 @@ export class SyncResourceRepository {
             updatedAt: { $lt: before },
           },
         },
-        {
-          $lookup: {
-            from: SYNC_COLLECTIONS.credentials,
-            localField: "connectionId",
-            foreignField: "_id",
-            as: "_credential",
-          },
-        },
-        { $match: { "_credential.0": { $exists: true } } },
-        { $project: { _credential: 0 } },
+        ...EXCLUDE_CREDENTIALLESS_STAGES,
         { $sort: { updatedAt: 1 } },
         { $limit: limit },
       ])
@@ -486,16 +481,7 @@ export class SyncResourceRepository {
             $or: [{ lastSuccessAt: { $lt: before } }, { lastSuccessAt: null }],
           },
         },
-        {
-          $lookup: {
-            from: SYNC_COLLECTIONS.credentials,
-            localField: "connectionId",
-            foreignField: "_id",
-            as: "_credential",
-          },
-        },
-        { $match: { "_credential.0": { $exists: true } } },
-        { $project: { _credential: 0 } },
+        ...EXCLUDE_CREDENTIALLESS_STAGES,
         { $sort: { lastAttemptAt: 1, lastSuccessAt: 1 } },
         { $limit: limit },
       ])
