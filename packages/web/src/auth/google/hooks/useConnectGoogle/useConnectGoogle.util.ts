@@ -19,7 +19,8 @@ const CONNECTED_STATUS: SyncStatus = {
 // freshly clicked Refresh does not invent its own warning.
 export const CATCHING_UP_NOTICE_AFTER_MS = 2 * 60 * 1000;
 
-const SUPPORT_MAILTO = "mailto:tyler@switchback.tech";
+const SUPPORT_EMAIL = "tyler@switchback.tech";
+export const googleSyncSupportMailto = `mailto:${SUPPORT_EMAIL}`;
 
 /** Short relative label for Sync connection `lastSyncedAt` (ISO). */
 export const formatLastSyncedLabel = (
@@ -84,6 +85,25 @@ const syncedAgeMs = (
   return Math.max(0, nowMs - syncedMs);
 };
 
+/** ` Last updated ….` suffix, or empty when unknown. */
+const lastUpdatedSuffix = (
+  lastSyncedAt: string | null | undefined,
+  nowMs: number,
+): string => {
+  const last = formatLastUpdatedClause(lastSyncedAt, nowMs);
+  return last ? ` ${last}.` : "";
+};
+
+const stuckReconnectStatus = (lastBit: string): SyncStatus => ({
+  variant: "error",
+  text: `Sync is stuck.${lastBit} Reconnect your calendar, or email ${SUPPORT_EMAIL} for help.`,
+});
+
+const catchingUpDetailStatus = (lastBit: string): SyncStatus => ({
+  variant: "syncing",
+  text: `Sync is catching up.${lastBit} This usually clears on its own.`,
+});
+
 export type GoogleConnectionHandlers = {
   onConnectGoogle: () => void;
   onRefreshGoogle: () => void;
@@ -145,8 +165,7 @@ const delayedSettingsStatus = (
   connection: GoogleSyncConnectionSummary,
   nowMs: number,
 ): SyncStatus => {
-  const last = formatLastUpdatedClause(connection.lastSyncedAt, nowMs);
-  const lastBit = last ? ` ${last}.` : "";
+  const lastBit = lastUpdatedSuffix(connection.lastSyncedAt, nowMs);
   if (connection.stateReason === "providerErrors") {
     return {
       variant: "warning",
@@ -170,12 +189,14 @@ const catchingUpSettingsStatus = (
   if (ageMs === null || ageMs < CATCHING_UP_NOTICE_AFTER_MS) {
     return CONNECTED_STATUS;
   }
-  const last = formatLastUpdatedClause(connection.lastSyncedAt, nowMs);
-  const lastBit = last ? ` ${last}.` : "";
-  return {
-    variant: "syncing",
-    text: `Sync is catching up.${lastBit} This usually clears on its own.`,
-  };
+  return catchingUpDetailStatus(
+    lastUpdatedSuffix(connection.lastSyncedAt, nowMs),
+  );
+};
+
+export type GoogleSyncStatusOptions = {
+  refreshGaveUp?: boolean;
+  refreshInFlight?: boolean;
 };
 
 // Prefer Sync vocabulary when a connection summary is present; fall back to the
@@ -184,19 +205,22 @@ export const getGoogleSyncStatus = (
   state: GoogleUiState,
   connection?: GoogleSyncConnectionSummary | null,
   nowMs: number = Date.now(),
-  options: { refreshGaveUp?: boolean } = {},
+  options: GoogleSyncStatusOptions = {},
 ): SyncStatus => {
   // A connection summary describes durable provider work. Local metadata
   // loading and a routine incremental pull must not replace a calm, usable
   // calendar with transient "checking" or "syncing" copy.
   if (connection) {
     if (options.refreshGaveUp && connection.state === "delayed") {
-      const last = formatLastUpdatedClause(connection.lastSyncedAt, nowMs);
-      const lastBit = last ? ` ${last}.` : "";
-      return {
-        variant: "error",
-        text: `Sync is stuck.${lastBit} Reconnect your calendar, or email tyler@switchback.tech for help.`,
-      };
+      return stuckReconnectStatus(
+        lastUpdatedSuffix(connection.lastSyncedAt, nowMs),
+      );
+    }
+
+    if (options.refreshInFlight && connection.state === "delayed") {
+      return catchingUpDetailStatus(
+        lastUpdatedSuffix(connection.lastSyncedAt, nowMs),
+      );
     }
 
     switch (connection.state) {
@@ -227,10 +251,7 @@ export const getGoogleSyncStatus = (
       return CONNECTED_STATUS;
     case "ATTENTION":
       if (options.refreshGaveUp) {
-        return {
-          variant: "error",
-          text: "Sync is stuck. Reconnect your calendar, or email tyler@switchback.tech for help.",
-        };
+        return stuckReconnectStatus("");
       }
       return {
         variant: "warning",
@@ -256,12 +277,14 @@ export const getSidebarSyncStatus = ({
   state,
   nowMs = Date.now(),
   refreshGaveUp = false,
+  refreshInFlight = false,
 }: {
   connection?: GoogleSyncConnectionSummary | null;
   isConnecting: boolean;
   state: GoogleUiState;
   nowMs?: number;
   refreshGaveUp?: boolean;
+  refreshInFlight?: boolean;
 }): SyncStatus => {
   if (isConnecting) {
     return {
@@ -278,6 +301,15 @@ export const getSidebarSyncStatus = ({
     (state === "ATTENTION" || connection?.state === "delayed")
   ) {
     return { variant: "error", text: "Sync is stuck" };
+  }
+
+  // Align with the Catching up… CTA while we wait for delayed to clear —
+  // otherwise the bar keeps saying "Sync is stuck" beside a hopeful button.
+  if (
+    refreshInFlight &&
+    (state === "ATTENTION" || connection?.state === "delayed")
+  ) {
+    return { variant: "syncing", text: "Sync is catching up" };
   }
 
   if (connection) {
@@ -318,5 +350,3 @@ export const getSidebarSyncStatus = ({
   });
   return status?.variant === "healthy" ? null : status;
 };
-
-export const googleSyncSupportMailto = SUPPORT_MAILTO;

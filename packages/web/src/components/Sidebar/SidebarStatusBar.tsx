@@ -34,10 +34,10 @@ export const SidebarStatusBar: FC = () => {
         isConnecting,
         state,
         refreshGaveUp: refreshSnapshot.gaveUp,
+        refreshInFlight: refreshSnapshot.isRefreshing,
       });
 
   const text = status?.text ?? "";
-  const openSettings = () => settingsActions.openSettings();
 
   return (
     <div className="flex h-6 shrink-0 items-center px-4">
@@ -46,7 +46,7 @@ export const SidebarStatusBar: FC = () => {
           text ? `${text}. Open account settings` : "Open account settings"
         }
         className="c-focus-ring flex h-full min-w-0 flex-1 items-center rounded-xs text-left"
-        onClick={openSettings}
+        onClick={settingsActions.openSettings}
         title={text || undefined}
         type="button"
       >

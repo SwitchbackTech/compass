@@ -29,12 +29,12 @@ describe("createGoogleSyncRefreshCoordinator", () => {
 
     expect(second).toBe(first);
     expect(request).toHaveBeenCalledTimes(1);
-    expect(coordinator.getIsRefreshing()).toBe(true);
+    expect(coordinator.getSnapshot().isRefreshing).toBe(true);
 
     resolveRequest?.({ enqueued: 1, inFlight: 0, resources: 1 });
     await first;
 
-    expect(coordinator.getIsRefreshing()).toBe(true);
+    expect(coordinator.getSnapshot().isRefreshing).toBe(true);
     expect(coordinator.getSnapshot().refreshRequestedAt).not.toBeNull();
   });
 
@@ -58,7 +58,7 @@ describe("createGoogleSyncRefreshCoordinator", () => {
     });
 
     await coordinator.refresh();
-    expect(coordinator.getIsRefreshing()).toBe(true);
+    expect(coordinator.getSnapshot().isRefreshing).toBe(true);
     expect(timers).toHaveLength(1);
     expect(timers[0]?.ms).toBe(50);
 
@@ -88,7 +88,7 @@ describe("createGoogleSyncRefreshCoordinator", () => {
     });
 
     await coordinator.refresh();
-    expect(coordinator.getIsRefreshing()).toBe(true);
+    expect(coordinator.getSnapshot().isRefreshing).toBe(true);
     timers[0]?.cb();
     expect(coordinator.getSnapshot()).toEqual({
       isRefreshing: false,

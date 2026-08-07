@@ -312,7 +312,10 @@ const AccountRow: FC<AccountRowProps> = ({
     connection.connectionState ?? "NOT_CONNECTED",
     connection,
     Date.now(),
-    { refreshGaveUp: refreshSnapshot.gaveUp },
+    {
+      refreshGaveUp: refreshSnapshot.gaveUp,
+      refreshInFlight: refreshSnapshot.isRefreshing,
+    },
   );
   const lastSyncedLabel = formatLastSyncedLabel(connection.lastSyncedAt);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
