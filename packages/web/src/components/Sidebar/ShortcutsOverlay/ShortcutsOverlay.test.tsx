@@ -50,9 +50,10 @@ describe("ShortcutsOverlay", () => {
       wrapper,
     });
 
-    expect(
-      screen.getByRole("dialog", { name: "Keyboard shortcuts" }),
-    ).toBeInTheDocument();
+    const overlay = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
+
+    expect(overlay.firstElementChild?.className).toContain("translate-x-0");
+    expect(overlay.inert).toBe(false);
     expect(screen.getByText("Shortcuts")).toBeInTheDocument();
     expect(
       screen.getByText("Keyboard shortcuts for Day view"),
@@ -128,12 +129,16 @@ describe("ShortcutsOverlay", () => {
     });
   });
 
-  it("does not render when closed", () => {
+  it("is inert and off-screen when closed", () => {
     render(<ShortcutsOverlay sections={sections} />, { wrapper });
 
-    expect(
-      screen.queryByRole("dialog", { name: "Keyboard shortcuts" }),
-    ).toBeNull();
-    expect(screen.queryByText("Shortcuts")).not.toBeInTheDocument();
+    // jsdom still exposes inert dialogs to role queries; assert the inert
+    // flag and off-screen transform that browsers use to hide it.
+    const overlay = screen.getByRole("dialog", {
+      hidden: true,
+      name: "Keyboard shortcuts",
+    });
+    expect(overlay.inert).toBe(true);
+    expect(overlay.firstElementChild?.className).toContain("-translate-x-full");
   });
 });

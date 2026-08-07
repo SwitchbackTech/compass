@@ -1,5 +1,6 @@
 import { XIcon } from "@phosphor-icons/react";
-import { useCallback, useEffect, useState } from "react";
+import classNames from "classnames";
+import { useEffect, useRef, useState } from "react";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { ShortcutSection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutSection";
 import {
@@ -23,6 +24,8 @@ const matchesSearch = (normalizedQuery: string, text: string): boolean =>
 export function ShortcutsOverlay({ sections, viewLabel }: Props) {
   const isOpen = useViewStore(selectIsShortcutsOpen);
   const [searchQuery, setSearchQuery] = useState("");
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // App-lock is held by useSidebarShortcuts; ignoreAppLock keeps Escape able
   // to clear search / dismiss while that lock is active. ignoreInputs: false
@@ -43,22 +46,29 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
     },
   );
 
-  // toggleShortcuts / sidebar actions can close without this component's
-  // handlers, so reset search whenever the overlay leaves the open state.
+  // Prefer `inert` over permanently mounting an `aria-hidden` dialog: inert
+  // removes the subtree from the a11y tree and blocks interaction while
+  // keeping the slide animation. (Conditional unmount is the other F3
+  // option, but it exposed unrelated sidebar contrast debt to axe that
+  // the old covering dialog had been papering over — tracked separately.)
   useEffect(() => {
-    if (!isOpen) {
-      setSearchQuery("");
+    const overlay = overlayRef.current;
+    if (overlay) {
+      overlay.inert = !isOpen;
     }
   }, [isOpen]);
 
-  // Focus on mount (commit phase). Prefer a stable callback ref over autoFocus
-  // (biome noAutofocus) or useEffect focus (unreliable in jsdom).
-  const focusInputOnMount = useCallback((node: HTMLInputElement | null) => {
-    node?.focus();
-  }, []);
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchQuery("");
+      return;
+    }
+
+    setTimeout(() => searchInputRef.current?.focus(), 0);
+  }, [isOpen]);
 
   const hasSections = sections.some((section) => section.shortcuts.length > 0);
-  if (!hasSections || !isOpen) return null;
+  if (!hasSections) return null;
 
   const normalizedQuery = normalizeSearch(searchQuery);
   const visibleSections = sections
@@ -81,12 +91,22 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
 
   return (
     <div
+      ref={overlayRef}
       aria-label="Keyboard shortcuts"
-      className="absolute inset-0 overflow-hidden"
+      className={classNames(
+        "absolute inset-0 overflow-hidden",
+        !isOpen && "pointer-events-none",
+      )}
       role="dialog"
       style={{ zIndex: ZIndex.MAX }}
     >
-      <div className="flex h-full starting:-translate-x-full flex-col bg-surface/95 px-4 pt-8 pb-5 text-text-muted shadow-2xl backdrop-blur-md transition-transform duration-200 ease-out motion-reduce:transition-none">
+      <div
+        className={classNames(
+          "flex h-full flex-col bg-surface/95 px-4 pt-8 pb-5 text-text-muted shadow-2xl backdrop-blur-md",
+          "transition-transform duration-200 ease-out motion-reduce:transition-none",
+          isOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
         <div className="mb-5 flex items-center justify-between">
           <div className="flex-1">
             <div className="font-medium text-text text-xl">Shortcuts</div>
@@ -104,7 +124,7 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
         </div>
 
         <input
-          ref={focusInputOnMount}
+          ref={searchInputRef}
           type="text"
           placeholder="Search shortcuts..."
           value={searchQuery}

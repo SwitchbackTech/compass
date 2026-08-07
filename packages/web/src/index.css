@@ -592,12 +592,9 @@
     background-color: transparent;
   }
 
+  /* text-muted clears 4.5:1 on surface-panel; avoid opacity here — it was
+     blending muted text below the WCAG AA floor (axe 3.66:1). */
   & .react-datepicker__day--outside-month {
-    color: var(--text-subtle);
-    opacity: 0.8;
-  }
-
-  &[data-dark="true"] .react-datepicker__day--outside-month {
     color: var(--text-muted);
   }
 
