@@ -383,7 +383,8 @@ export function isFollowingSplitAtSeriesStart(
 // exclusive, so midnight UTC of it is the exclusive end. A zero-duration timed
 // schedule (start == end, e.g. a reminder) yields startAt === endAt: it never
 // satisfies an overlap query, which is correct — it occupies no busy time —
-// but it still surfaces via the startAt-only range query used by grid reads.
+// but grid reads still surface it via the start-in-range branch of
+// listByCalendarRange.
 export function scheduleEndAt(schedule: EventSchedule): Date {
   if (schedule.kind === "timed") return new Date(schedule.end);
   return new Date(`${schedule.end}T00:00:00.000Z`);

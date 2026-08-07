@@ -13,8 +13,9 @@ import {
 
 export type OccurrenceInput = Omit<EventOccurrenceRecord, "_id">;
 
-// Longest occurrence start we still consider when answering a busy window.
-// Keeps calendar_gen_start range-bounded; see listBusyOverlapping.
+// Longest occurrence start we still consider when answering a busy or grid
+// overlap window. Keeps calendar_gen_start range-bounded; see
+// listBusyOverlapping and listByCalendarRange.
 export const BUSY_MAX_LOOKBACK_MS = 366 * 24 * 60 * 60 * 1000;
 
 export interface OccurrenceRangeCursor {
@@ -34,7 +35,9 @@ export interface OccurrenceRangeQuery {
   tenantId: TenantId;
   principalId: PrincipalId;
   calendars: readonly CalendarGeneration[];
-  // Half-open [start, end) over the normalized start instant.
+  // Half-open display window [start, end). An occurrence matches when it
+  // starts inside the window, or when it started earlier (within lookback)
+  // and its [startAt, endAt) interval still overlaps the window.
   start: Date;
   end: Date;
   limit: number;
@@ -182,6 +185,12 @@ export class EventOccurrenceRepository {
     return result.deletedCount;
   }
 
+  // Grid/display occurrences for [start, end). Matches start-in-range rows
+  // (including zero-duration timed reminders) and earlier-starting rows whose
+  // [startAt, endAt) still overlaps the window — so all-day events whose
+  // startAt is UTC midnight still appear for west-of-UTC local-midnight
+  // queries. startAt is lower-bounded by (windowStart - BUSY_MAX_LOOKBACK_MS)
+  // so the calendar_gen_start index stays range-bounded, same as busy reads.
   async listByCalendarRange(
     query: OccurrenceRangeQuery,
   ): Promise<EventOccurrenceRecord[]> {
@@ -196,7 +205,16 @@ export class EventOccurrenceRepository {
         generation: c.generation,
       })),
     };
-    const inRange = { startAt: { $gte: query.start, $lt: query.end } };
+    const startAtFloor = new Date(query.start.getTime() - BUSY_MAX_LOOKBACK_MS);
+    const inRange = {
+      $or: [
+        { startAt: { $gte: query.start, $lt: query.end } },
+        {
+          startAt: { $gte: startAtFloor, $lt: query.start },
+          endAt: { $gt: query.start },
+        },
+      ],
+    };
 
     // Composite keyset over the (startAt, _id) sort: a later instant, or the
     // same instant with a greater _id. startAt is a top-level Date and _id a
