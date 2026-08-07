@@ -244,4 +244,18 @@ describe("useWeek", () => {
       queryEndAtSeven,
     );
   });
+
+  it("uses exclusive next local midnight as the fetch window end", () => {
+    mockParams.dateString = "2026-08-06";
+    const today = dayjs("2026-08-07", DATE_FORMAT);
+    const { result } = renderHook(() => useWeek(today));
+
+    expect(result.current.query.startOfView.format(DATE_FORMAT)).toBe(
+      "2026-08-06",
+    );
+    // WEEK_DAY_COUNT days from the anchor → exclusive end is the following midnight.
+    expect(result.current.query.endOfView.format()).toBe(
+      dayjs("2026-08-13", DATE_FORMAT).startOf("day").format(),
+    );
+  });
 });

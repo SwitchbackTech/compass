@@ -359,6 +359,120 @@ describe("EventOccurrenceRepository", () => {
       expect(repaired).toHaveLength(1);
       expect(repaired[0]?.occurrenceKey).toBe(`${cal}:repair`);
     });
+
+    it("includes all-day UTC-midnight starts for America/Denver local-midnight windows", async () => {
+      // All-day startAt is UTC midnight of the civil date. A Denver day view
+      // sends local midnight (06:00Z), so startAt-only misses the row while a
+      // same-day timed event still matches.
+      const tenant = objectId() as OccurrenceInput["tenantId"];
+      const principal = objectId() as OccurrenceInput["principalId"];
+      const cal = objectId() as OccurrenceInput["calendarId"];
+      const allDayEventId = objectId() as OccurrenceInput["eventId"];
+      const timedEventId = objectId() as OccurrenceInput["eventId"];
+      const zeroDurationEventId = objectId() as OccurrenceInput["eventId"];
+      const priorAllDayEventId = objectId() as OccurrenceInput["eventId"];
+
+      await repo.replaceForEvents([
+        {
+          eventId: allDayEventId,
+          generation: 0,
+          occurrences: [
+            occurrence({
+              tenantId: tenant,
+              principalId: principal,
+              eventId: allDayEventId,
+              occurrenceKey: `${cal}:allday`,
+              calendarId: cal,
+              title: "from gcal",
+              schedule: {
+                kind: "allDay",
+                start: "2026-08-06",
+                end: "2026-08-07",
+              },
+              startAt: new Date("2026-08-06T00:00:00.000Z"),
+              endAt: new Date("2026-08-07T00:00:00.000Z"),
+            }),
+          ],
+        },
+        {
+          eventId: timedEventId,
+          generation: 0,
+          occurrences: [
+            occurrence({
+              tenantId: tenant,
+              principalId: principal,
+              eventId: timedEventId,
+              occurrenceKey: `${cal}:timed`,
+              calendarId: cal,
+              title: "live sync???",
+              schedule: {
+                kind: "timed",
+                start: "2026-08-06T11:30:00-06:00",
+                end: "2026-08-06T13:00:00-06:00",
+                timeZone: "America/Denver",
+              },
+              startAt: new Date("2026-08-06T11:30:00-06:00"),
+              endAt: new Date("2026-08-06T13:00:00-06:00"),
+            }),
+          ],
+        },
+        {
+          eventId: zeroDurationEventId,
+          generation: 0,
+          occurrences: [
+            occurrence({
+              tenantId: tenant,
+              principalId: principal,
+              eventId: zeroDurationEventId,
+              occurrenceKey: `${cal}:zero`,
+              calendarId: cal,
+              title: "reminder",
+              busy: false,
+              schedule: {
+                kind: "timed",
+                start: "2026-08-06T15:00:00-06:00",
+                end: "2026-08-06T15:00:00-06:00",
+                timeZone: "America/Denver",
+              },
+              startAt: new Date("2026-08-06T15:00:00-06:00"),
+              endAt: new Date("2026-08-06T15:00:00-06:00"),
+            }),
+          ],
+        },
+        {
+          eventId: priorAllDayEventId,
+          generation: 0,
+          occurrences: [
+            occurrence({
+              tenantId: tenant,
+              principalId: principal,
+              eventId: priorAllDayEventId,
+              occurrenceKey: `${cal}:prior`,
+              calendarId: cal,
+              title: "yesterday",
+              schedule: {
+                kind: "allDay",
+                start: "2026-08-05",
+                end: "2026-08-06",
+              },
+              startAt: new Date("2026-08-05T00:00:00.000Z"),
+              endAt: new Date("2026-08-06T00:00:00.000Z"),
+            }),
+          ],
+        },
+      ]);
+
+      const page = await repo.listByCalendarRange({
+        tenantId: tenant,
+        principalId: principal,
+        calendars: [{ calendarId: cal, generation: 0 }],
+        start: new Date("2026-08-06T00:00:00-06:00"),
+        end: new Date("2026-08-07T00:00:00-06:00"),
+        limit: 100,
+      });
+      const keys = page.map((o) => o.occurrenceKey).sort();
+      expect(keys).toEqual([`${cal}:allday`, `${cal}:timed`, `${cal}:zero`]);
+    });
   });
 
   describe("listBusyOverlapping", () => {

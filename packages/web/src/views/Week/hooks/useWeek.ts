@@ -54,8 +54,10 @@ export const useWeek = (
   );
   // Fetch window is always WEEK_DAY_COUNT days from the anchor so resize-driven
   // column changes reuse the same cache entry; display still clips to weekDays.
+  // Exclusive next local midnight (not endOf("day")) so all-day membership via
+  // eventMatchesRange's date-slice exclusive end includes the last fetched day.
   const queryEnd = useMemo(
-    () => start.add(WEEK_DAY_COUNT - 1, "day").endOf("day"),
+    () => start.add(WEEK_DAY_COUNT, "day").startOf("day"),
     [start],
   );
 
@@ -92,15 +94,13 @@ export const useWeek = (
     {
       startDate: toUTCOffset(previousStart),
       endDate: toUTCOffset(
-        previousStart.add(WEEK_DAY_COUNT - 1, "day").endOf("day"),
+        previousStart.add(WEEK_DAY_COUNT, "day").startOf("day"),
       ),
       calendarIds: weekQuery.calendarIds,
     },
     {
       startDate: toUTCOffset(nextStart),
-      endDate: toUTCOffset(
-        nextStart.add(WEEK_DAY_COUNT - 1, "day").endOf("day"),
-      ),
+      endDate: toUTCOffset(nextStart.add(WEEK_DAY_COUNT, "day").startOf("day")),
       calendarIds: weekQuery.calendarIds,
     },
     weekQuery.isSuccess,
