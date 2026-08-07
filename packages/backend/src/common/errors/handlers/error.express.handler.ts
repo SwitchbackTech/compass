@@ -1,5 +1,4 @@
 import { type Request } from "express";
-import { type GaxiosError } from "gaxios";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
@@ -10,12 +9,6 @@ import {
   toClientErrorPayload,
 } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import {
-  isGoogleError,
-  isInvalidGoogleToken,
-  isInvalidValue,
-} from "@backend/common/services/gcal/gcal.utils";
-import { pruneGoogleDataAndNotifyRevoked } from "@backend/common/services/gcal/google-revoked.util";
 import {
   type CompassError,
   type Info_Error,
@@ -97,57 +90,11 @@ export const handleExpressError = async (
       return;
     }
 
-    if (isGoogleError(e)) {
-      await handleGoogleError(req, res, userId, e as GaxiosError);
-    } else {
-      const errInfo = assembleErrorInfo(e);
-      res.status(e.status || Status.INTERNAL_SERVER).send(errInfo);
-    }
+    const errInfo = assembleErrorInfo(e);
+    res.status(e.status || Status.INTERNAL_SERVER).send(errInfo);
   }
 
   if (!errorHandler.isOperational(e)) {
     errorHandler.exitAfterProgrammerError();
   }
-};
-
-const handleGoogleError = async (
-  _req: Request | SessionRequest,
-  res: SessionResponse,
-  userId: string,
-  e: GaxiosError,
-) => {
-  if (isInvalidGoogleToken(e)) {
-    await pruneGoogleDataAndNotifyRevoked(userId, "invalid google token");
-
-    res.status(Status.UNAUTHORIZED).send({
-      code: "GOOGLE_REVOKED",
-      message:
-        "Google Calendar access expired or was revoked. Reconnect Google Calendar in Compass to resume syncing.",
-    });
-    return;
-  }
-
-  if (isInvalidValue(e)) {
-    logger.error(
-      `${userId} (user) has an invalid value. Check params:\n`,
-      e.config.params,
-    );
-
-    res.status(Status.BAD_REQUEST).send({ error: UserError.InvalidValue });
-    return;
-  }
-
-  // Neither branch above matched: without a fallback the request hangs
-  // until the caller's own timeout, since the caller (handleExpressError)
-  // awaits this and sends nothing itself for the Google-error path. Log
-  // message/stack only, never `e` itself: a GaxiosError's `config`/`response`
-  // (request headers, bearer token) are own enumerable properties the logger
-  // would otherwise serialize straight into the log output.
-  logger.error(`${userId} (user) hit an unhandled Google API error`, {
-    message: e.message,
-    stack: e.stack,
-  });
-  res.status(Status.INTERNAL_SERVER).send({
-    error: "Unexpected error communicating with Google Calendar",
-  });
 };

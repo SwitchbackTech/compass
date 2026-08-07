@@ -757,23 +757,6 @@ describe("UserService", () => {
     });
   });
 
-  describe("initUserData", () => {
-    it("creates the compass user", async () => {
-      const gUser = UserDriver.generateGoogleUser();
-
-      const { userId } = await userService.initUserData(
-        gUser,
-        faker.internet.jwt(),
-      );
-
-      const storedUser = await mongoService.user.findOne({
-        _id: mongoService.objectId(userId),
-      });
-
-      expect(storedUser).toBeTruthy();
-    });
-  });
-
   describe("handleLogoutCleanup", () => {
     it("skips Google metadata updates for email/password-only users", async () => {
       const user = await UserDriver.createUser({ withGoogle: false });
@@ -832,60 +815,6 @@ describe("UserService", () => {
       expect(storedUser?.google?.picture).toBe(newGUser.picture ?? "");
       expect(storedUser?.google?.gRefreshToken).toBe(newRefreshToken);
       expect(storedUser?.lastLoggedInAt).toBeDefined();
-    });
-  });
-
-  describe("pruneGoogleData", () => {
-    it("stops sync, clears the Google refresh token, and resets sync metadata", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-
-      expect(user.google).toBeDefined();
-
-      await seedGoogleCalendarsWithEvents(user._id, 2);
-
-      const calendarsBefore = await calendarService.list(userId);
-      const googleCalendarIdsBefore = calendarsBefore
-        .filter((c) => c.source.provider === "google")
-        .map((c) => c._id.toHexString());
-      expect(googleCalendarIdsBefore.length).toBeGreaterThan(0);
-
-      const eventCountBefore = await mongoService.event.countDocuments({});
-      expect(eventCountBefore).toBeGreaterThan(0);
-
-      await userMetadataService.updateUserMetadata({
-        userId,
-        data: {
-          sync: { importGCal: "COMPLETED", incrementalGCalSync: "COMPLETED" },
-        },
-      });
-
-      await userService.pruneGoogleData(userId);
-
-      const storedUser = await mongoService.user.findOne({ _id: user._id });
-      expect(storedUser?.google?.googleId).toBe(user.google?.googleId);
-      expect(storedUser?.google?.picture).toBe(user.google?.picture);
-      expect(storedUser?.google?.gRefreshToken).toBe("");
-
-      // Events owned by Google-provider calendars are gone (B9).
-      expect(await mongoService.event.countDocuments({})).toBe(0);
-
-      // Google calendars are archived, never deleted (A16).
-      const calendarsAfter = await calendarService.list(userId);
-      expect(calendarsAfter.length).toBe(calendarsBefore.length);
-      const stillGoogleIds = calendarsAfter
-        .filter((c) => c.source.provider === "google")
-        .map((c) => c._id.toHexString());
-      expect(stillGoogleIds.sort()).toEqual(googleCalendarIdsBefore.sort());
-      expect(
-        calendarsAfter
-          .filter((c) => c.source.provider === "google")
-          .every((c) => c.isActive === false),
-      ).toBe(true);
-
-      const metadata = await userMetadataService.fetchUserMetadata(userId);
-      expect(metadata.sync?.importGCal).toBe("RESTART");
-      expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
     });
   });
 

@@ -52,18 +52,6 @@ export const CalendarListResponseSchema = z.strictObject({
 });
 export type CalendarListResponse = z.infer<typeof CalendarListResponseSchema>;
 
-export const SetCalendarVisibilityInputSchema = z
-  .array(
-    z.strictObject({
-      calendarId: CalendarIdSchema,
-      isVisible: z.boolean(),
-    }),
-  )
-  .nonempty();
-export type SetCalendarVisibilityInput = z.infer<
-  typeof SetCalendarVisibilityInputSchema
->;
-
 export const CAPABILITIES_BY_ACCESS = {
   owner: {
     canReadAvailability: true,

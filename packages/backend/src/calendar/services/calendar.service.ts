@@ -1,13 +1,6 @@
-import {
-  type AnyBulkWriteOperation,
-  type ClientSession,
-  ObjectId,
-} from "mongodb";
+import { type ClientSession, ObjectId } from "mongodb";
 import { zObjectId } from "@core/types/type.utils";
-import {
-  type CalendarRecord,
-  CalendarRecordSchema,
-} from "@backend/calendar/calendar.record";
+import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import mongoService from "@backend/common/services/mongo.service";
 
 class CalendarService {
@@ -21,30 +14,6 @@ class CalendarService {
     return mongoService.calendar
       .find({ userId: zObjectId.parse(userId) }, { session })
       .toArray();
-  };
-
-  /**
-   * Bulk-write visibility for a set of the user's calendars (B11).
-   */
-  setVisibility = async (
-    userId: ObjectId | string,
-    items: Array<{ calendarId: string; isVisible: boolean }>,
-  ) => {
-    const userObjectId = zObjectId.parse(userId);
-    const operations: AnyBulkWriteOperation<CalendarRecord>[] = items.map(
-      ({ calendarId, isVisible }) => ({
-        updateOne: {
-          filter: { _id: zObjectId.parse(calendarId), userId: userObjectId },
-          update: { $set: { isVisible, updatedAt: new Date() } },
-        },
-      }),
-    );
-
-    const result = await mongoService.calendar.bulkWrite(operations, {
-      ordered: false,
-    });
-
-    return result.ok === 1;
   };
 
   /**

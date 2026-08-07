@@ -16,27 +16,6 @@ class EventService {
     const calendarIds = calendars.map((calendar) => calendar._id);
     return eventRepository.deleteByCalendarIds(calendarIds, session);
   };
-
-  /**
-   * Deletes a user's events sourced from a provider's calendars (B9: Google
-   * revoke prunes events whose owning calendar has source.provider ===
-   * "google"; local events are untouched). The rest of the revoke
-   * flow (archiving the calendars with isActive: false, dropping watches,
-   * clearing tokens) lives in userService.pruneGoogleData; this method only
-   * covers the event rows.
-   */
-  deleteByIntegration = async (
-    integration: "google",
-    userId: string,
-    session?: ClientSession,
-  ) => {
-    const calendars = await calendarService.list(userId);
-    const providerCalendarIds = calendars
-      .filter((c) => c.source.provider === integration)
-      .map((c) => c._id);
-
-    return eventRepository.deleteByCalendarIds(providerCalendarIds, session);
-  };
 }
 
 const eventService = new EventService();

@@ -4,7 +4,6 @@ import {
   CalendarListResponseSchema,
   CalendarSchema,
   getCalendarCapabilities,
-  SetCalendarVisibilityInputSchema,
 } from "@core/types/calendar.contracts";
 
 const validCalendar = {
@@ -118,38 +117,6 @@ describe("Calendar Contracts", () => {
       });
 
       expect(result.success).toBe(false);
-    });
-  });
-
-  describe("SetCalendarVisibilityInputSchema", () => {
-    it("accepts a single-element array", () => {
-      const input = [
-        { calendarId: faker.database.mongodbObjectId(), isVisible: true },
-      ];
-
-      expect(SetCalendarVisibilityInputSchema.safeParse(input).success).toBe(
-        true,
-      );
-    });
-
-    it("rejects an empty array", () => {
-      expect(SetCalendarVisibilityInputSchema.safeParse([]).success).toBe(
-        false,
-      );
-    });
-
-    it("rejects unknown keys on an item", () => {
-      const input = [
-        {
-          calendarId: faker.database.mongodbObjectId(),
-          isVisible: true,
-          extra: 1,
-        },
-      ];
-
-      expect(SetCalendarVisibilityInputSchema.safeParse(input).success).toBe(
-        false,
-      );
     });
   });
 });

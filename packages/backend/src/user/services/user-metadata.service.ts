@@ -1,8 +1,5 @@
 import mergeWith from "lodash/mergeWith";
-import {
-  type GoogleConnectionState,
-  type UserMetadata,
-} from "@core/types/user.types";
+import { type UserMetadata } from "@core/types/user.types";
 import { getUserMetadataStore } from "@backend/auth/ports/supertokens.registry";
 import {
   type GoogleConnectionFromSync,
@@ -10,7 +7,6 @@ import {
 } from "@backend/common/services/sync-service/google-connection-status";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import { type GetUserMetadataResponse } from "@backend/user/types/user.types";
 
 const legacyEmailUpdatesKey = "subscribeToUpdates";
@@ -93,7 +89,6 @@ class UserMetadataService {
   fetchUserMetadata = async (
     userId: string,
     userContext?: Record<string, unknown>,
-    options?: { skipAssessment?: boolean },
   ): Promise<UserMetadata> => {
     const storedMetadata = await this.getStoredUserMetadata(
       userId,
@@ -102,23 +97,6 @@ class UserMetadataService {
     const metadata = hasLegacyEmailUpdatesMetadata(storedMetadata)
       ? removeLegacyEmailUpdatesMetadata(storedMetadata)
       : storedMetadata;
-
-    if (options?.skipAssessment) {
-      const user = await findCompassUserBy("_id", userId);
-      const googleId = user?.google?.googleId;
-      const hasRefreshToken = Boolean(user?.google?.gRefreshToken);
-
-      const connectionState: GoogleConnectionState = !googleId
-        ? "NOT_CONNECTED"
-        : !hasRefreshToken
-          ? "RECONNECT_REQUIRED"
-          : (metadata.google?.connectionState ?? "ATTENTION");
-
-      return {
-        ...metadata,
-        google: { connectionState },
-      };
-    }
 
     const { connectionState, connections } =
       await this.assessGoogleMetadata(userId);
