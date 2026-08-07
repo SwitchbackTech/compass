@@ -1,36 +1,11 @@
-import {
-  type ConnectionState,
-  type ConnectionStateReason,
-  type ProviderConnection,
-} from "@core/types/sync/connection.contracts";
+import { providerConnection } from "@backend/__tests__/factories/provider-connection.factory";
 import {
   toGoogleConnectionState,
   toGoogleSyncConnectionSummary,
 } from "./connection-state.translation";
 import { describe, expect, it } from "bun:test";
 
-// A ProviderConnection is a rich record, but the translation reads only state +
-// stateReason; the rest is filled with valid-enough placeholders. Built as the
-// plain type (not schema-parsed) so a test can pose any state/reason pair,
-// including combinations the schema's refinements would reject.
-const connection = (
-  state: ConnectionState,
-  stateReason: ConnectionStateReason | null = null,
-): ProviderConnection =>
-  ({
-    id: "c1",
-    tenantId: "t1",
-    principalId: "p1",
-    provider: "google",
-    account: { providerAccountId: "a1", email: null, displayName: null },
-    capabilities: [],
-    state,
-    stateReason,
-    lastSyncedAt: null,
-    lastHealthyAt: null,
-    createdAt: "2026-07-14T00:00:00.000Z",
-    updatedAt: "2026-07-14T00:00:00.000Z",
-  }) as unknown as ProviderConnection;
+const connection = providerConnection;
 
 describe("toGoogleConnectionState", () => {
   it("reports NOT_CONNECTED when there are no connections", () => {

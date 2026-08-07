@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { seedProviderCalendar } from "@sync/__tests__/helpers/fixtures";
 import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
 import {
@@ -78,23 +79,7 @@ describe("ProviderPageApplier", () => {
   });
 
   const seedCalendar = (): Promise<ProviderCalendarRecord> =>
-    calendars.upsertByProviderCalendar({
-      tenantId: objectId() as ProviderCalendarRecord["tenantId"],
-      principalId: objectId() as ProviderCalendarRecord["principalId"],
-      connectionId: objectId() as ProviderCalendarRecord["connectionId"],
-      providerCalendarId: "primary@google.com",
-      displayName: "Google",
-      color: null,
-      active: true,
-      primary: true,
-      accessRole: "owner",
-      capabilities: {
-        canReadEvents: true,
-        canWriteEvents: true,
-        canReadBusy: true,
-        canInviteAttendees: true,
-      },
-    });
+    seedProviderCalendar(calendars);
 
   const applier = (calendar: ProviderCalendarRecord) =>
     new ProviderPageApplier(events, occurrences, calendar, 0, now);
