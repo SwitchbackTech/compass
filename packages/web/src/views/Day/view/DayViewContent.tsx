@@ -30,6 +30,7 @@ import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
 import { focusFirstDayCalendarEvent } from "@web/views/Day/interaction/day-event.focus";
+import { getFocusedDayGridEventTarget } from "@web/views/Day/interaction/targeting/day-event.targeting";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 
 export const DayViewContent = memo(() => {
@@ -78,12 +79,16 @@ export const DayViewContent = memo(() => {
     });
 
   const shortcutSections = useMemo(
-    () =>
-      getShortcutMenuSections({
+    () => {
+      const focusedEvent = getFocusedDayGridEventTarget();
+      return getShortcutMenuSections({
         view: "day",
         isViewingCurrentPeriod: isViewingToday,
-      }),
-    [isViewingToday],
+        eventFocused: focusedEvent !== null,
+        isFormOpen: isEventDetailsOpen,
+      });
+    },
+    [isViewingToday, isEventDetailsOpen],
   );
 
   const handleGoToToday = useCallback(() => {
