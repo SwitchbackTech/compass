@@ -71,6 +71,15 @@ export const SyncResourceRecordSchema = z.strictObject({
   // that predated the field) - no default here, so a row silently missing it
   // fails to parse instead of quietly defaulting.
   bootstrapState: ResourceBootstrapStateSchema,
+  // Set when the provider terminally refused to open a push channel for this
+  // calendar (watch unsupported/durably rejected — see maintainSubscription's
+  // "unsupported" outcome). While set, the incremental-pull path stops
+  // re-attempting a watch on every cycle; the daily calendar-list full pass
+  // clears it so a provider-side change is eventually retried. A successful
+  // watch also clears it. Defaults tolerate rows written before the field —
+  // REQUIRED for any new field here: enqueue/sweeps re-parse whatever row
+  // exists, and a required field froze the fleet for 23h (2026-07-31).
+  watchUnsupportedAt: z.date().nullable().default(null),
   // Push subscription: the provider channel id, its opaque resource id, the
   // per-channel secret the provider echoes back on callbacks, and when it
   // expires. All null when no subscription is active.

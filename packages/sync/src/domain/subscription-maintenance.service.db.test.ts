@@ -248,6 +248,42 @@ describe("maintainSubscription", () => {
     const saved = await reload(resource);
     expect(saved?.subscriptionId).toBeNull();
     expect(saved?.subscriptionExpiresAt).toBeNull();
+    // The verdict is persisted so the pull path stops re-attempting a watch
+    // every cycle.
+    expect(saved?.watchUnsupportedAt).toEqual(now());
+  });
+
+  it("clears a persisted unsupported verdict when a later watch succeeds", async () => {
+    const cal = calendar(objectId());
+    const resource = await seedResource(cal);
+    await resources.markWatchUnsupported(
+      cal.tenantId,
+      cal.principalId,
+      resource._id,
+      now(),
+    );
+
+    const outcome = await maintainSubscription(
+      {
+        resources,
+        notifications: new FakeNotifications({
+          channel: {
+            channelId: "",
+            resourceId: "res-retry",
+            expiresAt: new Date("2026-07-17T00:00:00.000Z"),
+          },
+        }),
+        custody,
+        callbackUrl: "https://sync/cb",
+      },
+      cal,
+      resource,
+      now,
+    );
+
+    expect(outcome).toEqual({ status: "watched" });
+    const saved = await reload(resource);
+    expect(saved?.watchUnsupportedAt).toBeNull();
   });
 
   it("reports authRevoked, discards the credential, and leaves the subscription", async () => {

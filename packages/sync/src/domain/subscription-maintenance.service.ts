@@ -115,6 +115,15 @@ export async function maintainSubscription(
             resource._id,
           );
         }
+        // Persist the verdict so the pull path stops re-attempting a watch on
+        // every cycle; the daily calendar-list full pass clears it for one
+        // fresh attempt.
+        await deps.resources.markWatchUnsupported(
+          resource.tenantId,
+          resource.principalId,
+          resource._id,
+          now(),
+        );
         return { status: "unsupported" };
       }
       if (error.reason === "authorizationRevoked") {
