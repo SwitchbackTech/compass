@@ -1,0 +1,81 @@
+import { EventScheduleSchema } from "@core/types/event.contracts";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
+import { type EventRepository } from "@web/events/repositories/event.repository.types";
+import { fetchDayEvents } from "./day.event.query";
+import { describe, expect, it, mock } from "bun:test";
+
+/** Same shape as dayEventQueryRange, without importing the hook module. */
+const dayRange = (date: Dayjs) => ({
+  startDate: toUTCOffset(date.startOf("day")),
+  endDate: toUTCOffset(date.add(1, "day").startOf("day")),
+});
+
+const mondayAllDay = createMockEvent({
+  content: { kind: "details", title: "AW-0-#", description: "" },
+  schedule: EventScheduleSchema.parse({
+    kind: "allDay",
+    start: "2026-08-10",
+    end: "2026-08-11",
+  }),
+});
+
+describe("fetchDayEvents remote Sync startAt skew", () => {
+  it("pads the Sync request and keeps Monday all-day only on Monday (Denver)", async () => {
+    const list = mock(async () => [mondayAllDay]);
+    const repository = { list } as unknown as EventRepository;
+
+    const sunday = dayjs.tz("2026-08-09 12:00", "America/Denver");
+    const monday = dayjs.tz("2026-08-10 12:00", "America/Denver");
+    const sundayRange = dayRange(sunday);
+    const mondayRange = dayRange(monday);
+
+    const sundayResult = await fetchDayEvents(
+      sundayRange,
+      repository,
+      "remote",
+    );
+    expect(list).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "range",
+        start: toUTCOffset(dayjs(sundayRange.startDate).subtract(1, "day")),
+        end: toUTCOffset(dayjs(sundayRange.endDate).add(1, "day")),
+      }),
+    );
+    expect(sundayResult.ids).toEqual([]);
+
+    list.mockClear();
+    const mondayResult = await fetchDayEvents(
+      mondayRange,
+      repository,
+      "remote",
+    );
+    expect(list).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "range",
+        start: toUTCOffset(dayjs(mondayRange.startDate).subtract(1, "day")),
+        end: toUTCOffset(dayjs(mondayRange.endDate).add(1, "day")),
+      }),
+    );
+    expect(mondayResult.ids).toEqual([mondayAllDay.id]);
+    expect(mondayResult.entities[mondayAllDay.id]?.content).toMatchObject({
+      title: "AW-0-#",
+    });
+  });
+
+  it("does not pad or call the repository for an empty calendarIds list", async () => {
+    const list = mock(async () => [mondayAllDay]);
+    const repository = { list } as unknown as EventRepository;
+    const monday = dayjs.tz("2026-08-10 12:00", "America/Denver");
+
+    const result = await fetchDayEvents(
+      { ...dayRange(monday), calendarIds: [] },
+      repository,
+      "remote",
+    );
+
+    expect(list).not.toHaveBeenCalled();
+    expect(result.ids).toEqual([]);
+  });
+});

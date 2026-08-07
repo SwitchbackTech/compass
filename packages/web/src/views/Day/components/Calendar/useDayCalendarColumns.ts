@@ -3,6 +3,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import { isAllDayEventOnDay } from "./dayAllDayRows.util";
 import { getDayViewCalendars } from "./dayCalendarColumns.util";
 
 export const useDayCalendarColumns = ({
@@ -56,10 +57,16 @@ export const useDayCalendarColumns = ({
     [calendarColumnIndexById, calendarIds],
   );
   // Day all-day row stacking (including drafts) is owned by DayCalendarGrid so
-  // strip height and chips stay in sync.
+  // strip height and chips stay in sync. Also drop chips whose date span
+  // does not cover dateInView (week has the same second pass) so a Sync
+  // startAt skew cannot paint tomorrow's all-day event on today.
   const displayedAllDayEvents = useMemo(
-    () => allDayEvents.filter(isDisplayedEvent),
-    [allDayEvents, isDisplayedEvent],
+    () =>
+      allDayEvents.filter(
+        (event) =>
+          isDisplayedEvent(event) && isAllDayEventOnDay(event, dateInView),
+      ),
+    [allDayEvents, dateInView, isDisplayedEvent],
   );
   const displayedTimedEvents = useMemo(
     () => timedEvents.filter(isDisplayedEvent),
