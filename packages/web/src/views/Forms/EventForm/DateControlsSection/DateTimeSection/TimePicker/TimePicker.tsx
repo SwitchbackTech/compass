@@ -1,6 +1,6 @@
 import type React from "react";
 import { useRef } from "react";
-import { type Props as RSProps } from "react-select";
+import { type CSSObjectWithLabel, type Props as RSProps } from "react-select";
 import CreatableSelect from "react-select/creatable";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type TimeOption } from "@web/common/types/util.types";
@@ -14,6 +14,23 @@ export interface Props extends Omit<RSProps, "onChange" | "value"> {
   setIsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
   value: SelectOption<string>;
 }
+
+// react-select's default neutral80 is hsl(0,0%,20%) / #333. Class-based CSS
+// in .c-time-picker loses to emotion style objects for these roles — same
+// recipe as FreqSelect.
+const themeColor =
+  (cssVar: string) =>
+  (base: CSSObjectWithLabel): CSSObjectWithLabel => ({
+    ...base,
+    color: cssVar,
+  });
+
+const timePickerTextStyles = {
+  singleValue: themeColor("var(--text)"),
+  input: themeColor("var(--text)"),
+  option: themeColor("var(--text)"),
+  placeholder: themeColor("var(--text-muted)"),
+};
 
 export const TimePicker = ({
   isMenuOpen,
@@ -34,6 +51,7 @@ export const TimePicker = ({
         {...props}
         className={selectClassName}
         classNamePrefix={TIMEPICKER}
+        styles={timePickerTextStyles}
         value={value}
         maxMenuHeight={4 * 41}
         blurInputOnSelect

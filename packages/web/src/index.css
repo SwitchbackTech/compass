@@ -24,10 +24,11 @@
   --border-strong: #4e6374;
 
   /* Text — cool tinted. text-muted must clear 4.5:1 against --background,
-     --surface, and --surface-raised (menu items sit on the latter) — the
-     lightest of the three is the binding case. */
+     --surface, --surface-raised (menu items), and the FormCard composite
+     (7% --surface-overlay on sidebar --surface-panel, ~#232a32) — that
+     overlay blend is the binding case. */
   --text: #c6d0d9;
-  --text-muted: #7e8a95;
+  --text-muted: #88939d;
   --text-subtle: #4e5a66;
 
   /* Accents — muted, close in weight */

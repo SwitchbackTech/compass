@@ -14,7 +14,7 @@ export const colors = {
   borderStrong: "#4E6374",
 
   text: "#C6D0D9",
-  textMuted: "#7E8A95",
+  textMuted: "#88939D",
   textSubtle: "#4E5A66",
 
   accent: "#7CC6E4",
