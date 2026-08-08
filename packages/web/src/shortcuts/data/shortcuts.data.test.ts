@@ -273,6 +273,10 @@ describe("shortcuts.data", () => {
         label: "Undo last change",
       });
       expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
+        keys: ["Shift", "Shift"],
+        label: "Enter keyboard-only mode",
+      });
+      expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
         keys: ["Mod", "Shift", "Z"],
         label: "Redo last change",
       });

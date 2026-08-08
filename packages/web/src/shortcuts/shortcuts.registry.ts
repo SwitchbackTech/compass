@@ -296,6 +296,12 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Redo last change",
     section: "other",
   },
+  {
+    id: "other-keyboard-only",
+    keys: ["Shift", "Shift"],
+    label: "Enter keyboard-only mode",
+    section: "other",
+  },
 ];
 
 interface FilterOptions {

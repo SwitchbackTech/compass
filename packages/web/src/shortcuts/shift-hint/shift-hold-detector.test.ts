@@ -2,6 +2,7 @@ import {
   createShiftHoldState,
   isShiftDoubleTapCandidate,
   reduceShiftHold,
+  SHIFT_DOUBLE_TAP_MAX_GAP_MS,
   SHIFT_HOLD_HINT_THRESHOLD_MS,
 } from "@web/shortcuts/shift-hint/shift-hold-detector";
 import { describe, expect, it } from "bun:test";
@@ -86,7 +87,7 @@ describe("hold vs double-tap coordination", () => {
       isShiftDoubleTapCandidate({
         lastShiftReleaseAt: state.lastShiftReleaseAt,
         now: 1050 + 100,
-        maxGapMs: 300,
+        maxGapMs: SHIFT_DOUBLE_TAP_MAX_GAP_MS,
       }),
     ).toBe(true);
 
@@ -108,7 +109,7 @@ describe("hold vs double-tap coordination", () => {
       isShiftDoubleTapCandidate({
         lastShiftReleaseAt: 1000,
         now: 1000 + 1000,
-        maxGapMs: 300,
+        maxGapMs: SHIFT_DOUBLE_TAP_MAX_GAP_MS,
       }),
     ).toBe(false);
   });
