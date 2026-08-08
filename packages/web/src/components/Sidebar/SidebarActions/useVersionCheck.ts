@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { z } from "zod";
+import { z } from "zod/v4";
 import * as envConstants from "@web/common/constants/env.constants";
 import { APP_VERSION } from "@web/common/constants/version.constants";
 import { useVisibleAfterHidden } from "@web/common/hooks/useVisibleAfterHidden";
