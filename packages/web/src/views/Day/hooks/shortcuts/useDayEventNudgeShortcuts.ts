@@ -5,6 +5,10 @@ import { type EventMutationDependencies } from "@web/events/mutations/useEventMu
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
+import {
+  type ActiveShiftHint,
+  useShiftHoldEventHints,
+} from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
 import { requestFocusFirstDayCalendarEvent } from "@web/views/Day/interaction/day-event.focus";
 import {
   focusDayGridEventTarget,
@@ -35,7 +39,7 @@ export function useDayEventNudgeShortcuts({
   navigateToNextDay?: () => void;
   navigateToPreviousDay?: () => void;
   timedEvents: GridEvent[];
-}) {
+}): { shiftHints: ActiveShiftHint[] } {
   const targeting = {
     focus: focusDayGridEventTarget,
     getFocused: getFocusedDayGridEventTarget,
@@ -87,4 +91,13 @@ export function useDayEventNudgeShortcuts({
     targeting,
     timedEvents,
   });
+
+  const shiftHints = useShiftHoldEventHints({
+    allDayEvents,
+    focus: focusDayGridEventTarget,
+    listVisible: listVisibleDayGridEventTargets,
+    timedEvents,
+  });
+
+  return { shiftHints };
 }

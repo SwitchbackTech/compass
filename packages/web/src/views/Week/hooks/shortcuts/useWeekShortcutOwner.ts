@@ -18,6 +18,10 @@ import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
 import { getFirstEventOnWeekdayColumn } from "@web/grid/shortcuts/focus-adjacent-grid-event";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
+import {
+  type ActiveShiftHint,
+  useShiftHoldEventHints,
+} from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { useWeekViewShortcuts } from "@web/views/Week/hooks/shortcuts/useWeekViewShortcuts";
@@ -54,7 +58,7 @@ export const useWeekShortcutOwner = ({
   weekDays,
   util,
   scrollUtil,
-}: ShortcutProps) => {
+}: ShortcutProps): { shiftHints: ActiveShiftHint[] } => {
   const { data: calendars = [], isPending: isCalendarsPending } =
     useCalendarsQuery();
   const defaultTargetCalendarId =
@@ -225,4 +229,13 @@ export const useWeekShortcutOwner = ({
     onFocusCalendar: focusFirstCalendarEvent,
     onFocusWeekdayColumn: focusWeekdayColumn,
   });
+
+  const shiftHints = useShiftHoldEventHints({
+    allDayEvents,
+    focus: focusWeekGridEventTarget,
+    listVisible: listVisibleWeekGridEventTargets,
+    timedEvents,
+  });
+
+  return { shiftHints };
 };
