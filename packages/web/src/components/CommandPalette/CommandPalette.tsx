@@ -28,6 +28,7 @@ import {
   recordRecentCommand,
   useRecentCommandIds,
 } from "@web/components/CommandPalette/recent-commands.store";
+import { onboardingTourActions } from "@web/components/OnboardingTour/onboarding.tour.store";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { useUndoRedo } from "@web/events/mutations/useUndoRedo";
@@ -134,7 +135,7 @@ const CommandPaletteContent = ({
     <FloatingPortal>
       <FloatingOverlay
         lockScroll
-        className="flex justify-center bg-background/85 backdrop-blur-sm opacity-100 starting:opacity-0 transition-opacity duration-200 ease-out motion-reduce:transition-none"
+        className="flex justify-center bg-background/85 opacity-100 starting:opacity-0 backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none"
         style={{ zIndex: Z_INDEX_MODAL }}
       >
         {/* No FloatingFocusManager: virtual list navigation keeps real focus in
@@ -142,7 +143,7 @@ const CommandPaletteContent = ({
             input on open via the focusInputOnMount callback ref above. */}
         <div
           ref={refs.setFloating}
-          className="mt-[15vh] h-fit w-[640px] max-w-[90vw] overflow-hidden rounded-xl border border-border bg-surface shadow-[0_16px_48px_var(--color-shadow-default)] scale-100 opacity-100 starting:scale-95 starting:opacity-0 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none"
+          className="mt-[15vh] h-fit w-[640px] max-w-[90vw] scale-100 starting:scale-95 overflow-hidden rounded-xl border border-border bg-surface opacity-100 starting:opacity-0 shadow-[0_16px_48px_var(--color-shadow-default)] transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none"
         >
           <input
             {...getReferenceProps({
@@ -299,6 +300,7 @@ export const CommandPalette = ({
         onNavigateToView: (viewName) =>
           navigate({ to: getNavigationViewRoute(viewName) }),
         onShowShortcuts,
+        onShowOnboardingTour: () => onboardingTourActions.restart(),
         onShowWelcomeGuide,
       }),
     },

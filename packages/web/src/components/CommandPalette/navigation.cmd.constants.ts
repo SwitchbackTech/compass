@@ -21,6 +21,7 @@ interface GetNavigationCommandItemsArgs {
   onGoToToday?: () => void;
   onNavigateToView: (viewName: CommandPaletteViewName) => void;
   onShowShortcuts?: () => void;
+  onShowOnboardingTour?: () => void;
   onShowWelcomeGuide?: () => void;
 }
 
@@ -67,6 +68,7 @@ export const getNavigationCommandItems = ({
   onGoToToday,
   onNavigateToView,
   onShowShortcuts,
+  onShowOnboardingTour,
   onShowWelcomeGuide,
 }: GetNavigationCommandItemsArgs): CommandItem[] => {
   const calendarItems: CommandItem[] = [];
@@ -106,6 +108,16 @@ export const getNavigationCommandItems = ({
       shortcut: "?",
       keywords: ["hotkeys", "keys", "help", "keybindings"],
       onClick: onShowShortcuts,
+    });
+  }
+
+  if (onShowOnboardingTour) {
+    calendarItems.push({
+      id: "show-onboarding-tour",
+      label: "Restart onboarding tour",
+      icon: CompassIcon,
+      keywords: ["onboarding", "tour", "intro", "help", "tutorial", "coach"],
+      onClick: onShowOnboardingTour,
     });
   }
 

@@ -24,6 +24,20 @@ describe("getNavigationCommandItems", () => {
     ]);
   });
 
+  it("lists the onboarding tour restart next to the welcome guide", () => {
+    const labels = getNavigationCommandItems({
+      ...noopHandlers,
+      onShowOnboardingTour: () => {},
+      onShowWelcomeGuide: () => {},
+    }).map((item) => item.label);
+
+    expect(labels).toContain("Restart onboarding tour");
+    expect(labels).toContain("Show welcome guide");
+    expect(labels.indexOf("Restart onboarding tour")).toBeLessThan(
+      labels.indexOf("Show welcome guide"),
+    );
+  });
+
   it("can list only view navigation for non-calendar surfaces", () => {
     const labels = getNavigationCommandItems({
       onNavigateToView: () => {},
