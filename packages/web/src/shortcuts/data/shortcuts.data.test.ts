@@ -129,16 +129,30 @@ describe("shortcuts.data", () => {
     });
 
     it("lists u/i focus shortcuts per view", () => {
-      const findFocus = (view: "day" | "week") =>
-        getShortcutMenuSections({ view, isViewingCurrentPeriod: true }).find(
-          (section) => section.id === "focus",
-        );
+      const findFocus = (view: "day" | "week", eventFocused = false) =>
+        getShortcutMenuSections({
+          view,
+          isViewingCurrentPeriod: true,
+          eventFocused,
+        }).find((section) => section.id === "focus");
 
       expect(stripMetadata(findFocus("day")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
       ]);
       expect(stripMetadata(findFocus("week")?.shortcuts ?? [])).toEqual([
+        { keys: ["i"], label: "Focus sidebar" },
+        { keys: ["u"], label: "Focus calendar event" },
+      ]);
+      expect(stripMetadata(findFocus("week", true)?.shortcuts ?? [])).toEqual([
+        { keys: ["i"], label: "Focus sidebar" },
+        { keys: ["u"], label: "Focus calendar event" },
+        {
+          keys: ["1-7"],
+          label: "Focus first event on weekday column",
+        },
+      ]);
+      expect(stripMetadata(findFocus("day", true)?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
       ]);

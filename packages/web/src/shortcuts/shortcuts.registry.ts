@@ -122,6 +122,13 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Focus calendar event",
     section: "focus",
   },
+  {
+    id: "focus-weekday-column",
+    keys: ["1-7"],
+    label: "Focus first event on weekday column",
+    section: "focus",
+    when: { eventFocused: true },
+  },
 
   // Edit
   {
@@ -373,6 +380,10 @@ export const filterShortcutsByContext = (
         view === "day" &&
         (shortcut.id === "nav-shift-left" || shortcut.id === "nav-shift-right")
       ) {
+        return false;
+      }
+      // Digit weekday columns only apply in week view
+      if (view === "day" && shortcut.id === "focus-weekday-column") {
         return false;
       }
     }
