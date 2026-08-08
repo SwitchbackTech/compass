@@ -1,8 +1,8 @@
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
+import { INTERACTION_EDGE_THRESHOLD_PX } from "@web/interaction/interaction.constants";
 import { useDraftDragMotion } from "@web/views/Week/components/Draft/context/useDraftDragMotion";
 
 const SCROLL_SPEED = 10;
-const EDGE_THRESHOLD = 50;
 
 export const useDragEventSmartScroll = (
   mainGridRef: MutableRefObject<HTMLElement | null>,
@@ -48,9 +48,9 @@ export const useDragEventSmartScroll = (
       const isAtBottom =
         container.scrollTop + container.clientHeight >= container.scrollHeight;
 
-      if (y < top + EDGE_THRESHOLD && !isAtTop) {
+      if (y < top + INTERACTION_EDGE_THRESHOLD_PX && !isAtTop) {
         scrollAmount = -SCROLL_SPEED;
-      } else if (y > bottom - EDGE_THRESHOLD && !isAtBottom) {
+      } else if (y > bottom - INTERACTION_EDGE_THRESHOLD_PX && !isAtBottom) {
         scrollAmount = SCROLL_SPEED;
       }
 
