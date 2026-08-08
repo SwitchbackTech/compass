@@ -19,32 +19,39 @@ describe("app-init.util", () => {
   const mockInitializeStorage = mock();
   const { port, mocks } = createTestToastPort();
 
-  const timeoutId = {} as ReturnType<typeof setTimeout>;
-  let setTimeoutSpy: ReturnType<typeof spyOn>;
-  let timeoutCallback: (() => void) | undefined;
+  let rafCallbacks: FrameRequestCallback[];
+  let rafSpy: ReturnType<typeof spyOn>;
 
   beforeEach(() => {
     mockInitializeStorage.mockClear();
     mocks.error.mockClear();
     mocks.toast.mockClear();
     registerToastPort(port);
-    timeoutCallback = undefined;
-    setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
-      callback: TimerHandler,
+    rafCallbacks = [];
+    rafSpy = spyOn(globalThis, "requestAnimationFrame").mockImplementation(((
+      callback: FrameRequestCallback,
     ) => {
-      if (typeof callback === "function") {
-        timeoutCallback = () => callback();
-      }
-      return timeoutId;
-    }) as unknown as typeof setTimeout);
+      rafCallbacks.push(callback);
+      return rafCallbacks.length;
+    }) as typeof requestAnimationFrame);
   });
 
   afterEach(() => {
-    setTimeoutSpy.mockRestore();
+    rafSpy.mockRestore();
   });
 
-  const runToastTimeout = () => {
-    timeoutCallback?.();
+  /** Flush both rAF frames used by `showDbInitErrorToast`. */
+  const runToastAfterPaint = () => {
+    const first = [...rafCallbacks];
+    rafCallbacks = [];
+    for (const callback of first) {
+      callback(0);
+    }
+    const second = [...rafCallbacks];
+    rafCallbacks = [];
+    for (const callback of second) {
+      callback(0);
+    }
   };
 
   describe("initializeDatabaseWithErrorHandling", () => {
@@ -95,14 +102,14 @@ describe("app-init.util", () => {
   });
 
   describe("showDbInitErrorToast", () => {
-    it("should show error toast with correct message after timeout", () => {
+    it("should show error toast with correct message after paint", () => {
       const dbError = new DatabaseInitError("Storage quota exceeded");
 
       showDbInitErrorToast(dbError);
 
       expect(mocks.error).not.toHaveBeenCalled();
 
-      runToastTimeout();
+      runToastAfterPaint();
 
       expect(mocks.error).toHaveBeenCalledWith(
         "Compass can't use offline storage right now: Storage quota exceeded. Your changes won't be saved on this device.",
@@ -117,7 +124,7 @@ describe("app-init.util", () => {
       const dbError = new DatabaseInitError("Database version mismatch");
 
       showDbInitErrorToast(dbError);
-      runToastTimeout();
+      runToastAfterPaint();
 
       expect(mocks.error).toHaveBeenCalledWith(
         expect.stringContaining("Database version mismatch"),
@@ -129,7 +136,7 @@ describe("app-init.util", () => {
       const dbError = new DatabaseInitError("Test error");
 
       showDbInitErrorToast(dbError);
-      runToastTimeout();
+      runToastAfterPaint();
 
       expect(mocks.error).toHaveBeenCalledWith(
         expect.any(String),
@@ -153,7 +160,7 @@ describe("app-init.util", () => {
 
       if (dbInitError) {
         showDbInitErrorToast(dbInitError);
-        runToastTimeout();
+        runToastAfterPaint();
 
         expect(mocks.error).toHaveBeenCalledWith(
           "Compass can't use offline storage right now: Failed to initialize IndexedDB after 3 attempts. Your changes won't be saved on this device.",
@@ -174,7 +181,7 @@ describe("app-init.util", () => {
 
       expect(dbInitError).toBeNull();
 
-      runToastTimeout();
+      runToastAfterPaint();
       expect(mocks.error).not.toHaveBeenCalled();
     });
   });
