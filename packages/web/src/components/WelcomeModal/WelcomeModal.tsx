@@ -10,8 +10,8 @@ import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { SOCIAL_LINKS } from "@web/common/constants/social.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
+import { onboardingTourActions } from "@web/components/OnboardingTour/onboarding.tour.store";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
-import { maybeShowCmdPaletteHint } from "./cmd-palette-hint.util";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
@@ -56,7 +56,12 @@ export function WelcomeModal() {
   const dismiss = (cta: "start_now" | "dismissed" = "dismissed") => {
     if (closing) return;
     markWelcomeSeen();
-    maybeShowCmdPaletteHint();
+    if (cta === "start_now") {
+      onboardingTourActions.start();
+    } else {
+      // Backdrop / Escape: never trap; mark the tour skipped.
+      onboardingTourActions.markSkippedWithoutStarting();
+    }
     track("welcome_modal_dismissed", { cta });
     beginDismiss(() => setIsOpen(false));
   };
@@ -64,7 +69,7 @@ export function WelcomeModal() {
   const handOffToAuth = (cta: "log_in" | "sign_up") => {
     skipFocusRestoreRef.current = true;
     markWelcomeSeen();
-    maybeShowCmdPaletteHint();
+    onboardingTourActions.markSkippedWithoutStarting();
     track("welcome_modal_dismissed", { cta });
     if (cta === "sign_up") {
       track("signup_started", { source: "welcome_modal" });
