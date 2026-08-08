@@ -125,8 +125,8 @@ const shiftKey = {
 let pendingEventIds: string[] = [];
 let repositionDraftByKeyboard = mock();
 
-const { useWeekShortcuts } =
-  require("./useWeekShortcuts") as typeof import("./useWeekShortcuts");
+const { useWeekShortcutOwner } =
+  require("./useWeekShortcutOwner") as typeof import("./useWeekShortcutOwner");
 
 const offsetString = (date: dayjs.Dayjs) =>
   dayjs.tz(date.toDate(), getBrowserTimeZone()).format();
@@ -227,7 +227,7 @@ const renderShortcuts = (options?: {
 
   renderHook(
     () =>
-      useWeekShortcuts({
+      useWeekShortcutOwner({
         endOfView: dayjs("2026-05-24T00:00:00.000"),
         isCurrentWeek: true,
         queryEndOfView: dayjs("2026-05-24T23:59:59.999"),
@@ -251,7 +251,7 @@ const renderShortcuts = (options?: {
   return { queryClient, shiftViewByDay };
 };
 
-describe("useWeekShortcuts day shifting", () => {
+describe("useWeekShortcutOwner day shifting", () => {
   it("shifts the view backward with Shift+J", () => {
     const { shiftViewByDay } = renderShortcuts();
 
@@ -269,7 +269,7 @@ describe("useWeekShortcuts day shifting", () => {
   });
 });
 
-describe("useWeekShortcuts calendar event targeting", () => {
+describe("useWeekShortcutOwner calendar event targeting", () => {
   it("focuses the first visible calendar event with U", async () => {
     const button = addCalendarTarget();
 
@@ -506,7 +506,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
   });
 });
 
-describe("useWeekShortcuts shift+arrow event moves", () => {
+describe("useWeekShortcutOwner shift+arrow event moves", () => {
   it("moves the focused timed event to the next day with Shift+ArrowRight", async () => {
     const button = addCalendarTarget();
     button.focus();
@@ -649,7 +649,7 @@ const addSidebarFixture = (options?: { includeItem?: boolean }) => {
   return { addButton, sidebar, weekItem };
 };
 
-describe("useWeekShortcuts sidebar focus", () => {
+describe("useWeekShortcutOwner sidebar focus", () => {
   it("focuses the first interactive sidebar item with I", async () => {
     const { weekItem } = addSidebarFixture({ includeItem: true });
 
@@ -681,7 +681,7 @@ describe("useWeekShortcuts sidebar focus", () => {
 // D6: "C"/"A" used to call the create functions directly *and* subscribe to
 // the view command bus (two paths to the same result). They now only emit
 // on the bus, matching Day's convention - these presses exercise that path.
-describe("useWeekShortcuts create shortcuts", () => {
+describe("useWeekShortcutOwner create shortcuts", () => {
   it("starts a timed createShortcut draft when C is pressed", async () => {
     renderShortcuts();
     pressKey("C");
@@ -708,7 +708,7 @@ describe("useWeekShortcuts create shortcuts", () => {
 // The command palette's "Create event"/"Create all-day event" rows emit
 // these same view commands (event.cmd.constants.ts) instead of calling Week
 // code directly - this is what lets one shared list serve every view.
-describe("useWeekShortcuts view command bus", () => {
+describe("useWeekShortcutOwner view command bus", () => {
   it("starts a timed createShortcut draft when CREATE_TIMED_DRAFT is emitted", async () => {
     renderShortcuts();
 

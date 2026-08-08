@@ -1,7 +1,7 @@
 import {
   type ShortcutProps,
-  useWeekShortcuts,
-} from "@web/views/Week/hooks/shortcuts/useWeekShortcuts";
+  useWeekShortcutOwner,
+} from "@web/views/Week/hooks/shortcuts/useWeekShortcutOwner";
 
 export function Shortcuts({
   children,
@@ -10,7 +10,7 @@ export function Shortcuts({
   children: React.ReactNode;
   shortcutsProps: ShortcutProps;
 }) {
-  useWeekShortcuts(shortcutsProps);
+  useWeekShortcutOwner(shortcutsProps);
 
   return children;
 }
