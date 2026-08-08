@@ -62,6 +62,24 @@ describe("shortcuts.registry", () => {
       expect(ids).toContain("edit-save");
     });
 
+    it("lists hold-Shift event jump keys in day and week focus sections", () => {
+      for (const view of ["day", "week"] as const) {
+        const shortcuts = filterShortcutsByContext({
+          view,
+          isViewingCurrentPeriod: true,
+        });
+        expect(shortcuts.map((shortcut) => shortcut.id)).toContain(
+          "focus-shift-hold",
+        );
+      }
+
+      const life = filterShortcutsByContext({
+        view: "life",
+        isViewingCurrentPeriod: true,
+      }).map((shortcut) => shortcut.id);
+      expect(life).not.toContain("focus-shift-hold");
+    });
+
     it("hides event-focused edit sequences until an event is focused", () => {
       const idle = filterShortcutsByContext({
         view: "day",

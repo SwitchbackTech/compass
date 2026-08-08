@@ -32,6 +32,7 @@ export function ShiftHintOverlay({ hints }: { hints: ActiveShiftHint[] }) {
     <div
       aria-hidden
       className="pointer-events-none fixed inset-0"
+      data-shift-event-hints=""
       style={{ zIndex: Z_INDEX_TOOLTIP }}
     >
       {hints.map((hint) => {

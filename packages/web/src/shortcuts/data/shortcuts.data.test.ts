@@ -139,10 +139,12 @@ describe("shortcuts.data", () => {
       expect(stripMetadata(findFocus("day")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
+        { keys: ["Hold", "Shift"], label: "Show event jump keys" },
       ]);
       expect(stripMetadata(findFocus("week")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
+        { keys: ["Hold", "Shift"], label: "Show event jump keys" },
       ]);
       expect(stripMetadata(findFocus("week", true)?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
@@ -151,10 +153,12 @@ describe("shortcuts.data", () => {
           keys: ["1-7"],
           label: "Focus first event on weekday column",
         },
+        { keys: ["Hold", "Shift"], label: "Show event jump keys" },
       ]);
       expect(stripMetadata(findFocus("day", true)?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
+        { keys: ["Hold", "Shift"], label: "Show event jump keys" },
       ]);
     });
 
