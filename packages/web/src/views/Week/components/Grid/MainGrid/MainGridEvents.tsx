@@ -167,12 +167,13 @@ const MainGridEventItem = ({
   onOpenReadOnlyDetails,
   weekProps,
 }: MainGridEventItemProps) => {
-  // Stamp view-registry id attrs for any saved card (including read-only) so
-  // context menus / focus restore can resolve an id. Drag/resize stays gated
-  // separately via registry registration. A placeholder is already mid-drag
-  // by its own (necessarily writable) owner, so it stays unstamped.
-  const hasEventIdentity = Boolean(event._id) && !isPlaceholder;
-  const isRegisteredForDragResize = hasEventIdentity && !isReadOnly;
+  // Stamp view-registry id attrs whenever the card has an id (saved, draft
+  // placeholder, or read-only) so context menus / focus restore can resolve
+  // it. Drag/resize stays gated via registry registration on saved writable
+  // cards only.
+  const hasEventIdentity = Boolean(event._id);
+  const isRegisteredForDragResize =
+    hasEventIdentity && !isPlaceholder && !isReadOnly;
   const registrationRef = useWeekEventRegistrationRef({
     eventId: event._id,
     eventType: "timed",

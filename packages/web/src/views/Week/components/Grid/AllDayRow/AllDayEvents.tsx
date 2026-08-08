@@ -147,8 +147,9 @@ const AllDayEventItem = ({
   // Stamp view-registry id attrs for any saved card (including read-only) so
   // context menus / focus restore can resolve an id. Drag/resize stays gated
   // separately via registry registration.
-  const hasEventIdentity = Boolean(event._id) && !isPlaceholder;
-  const isRegisteredForDragResize = hasEventIdentity && !isReadOnly;
+  const hasEventIdentity = Boolean(event._id);
+  const isRegisteredForDragResize =
+    hasEventIdentity && !isPlaceholder && !isReadOnly;
   const registrationRef = useWeekEventRegistrationRef({
     eventId: event._id,
     eventType: "all-day",

@@ -22,6 +22,7 @@ import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDa
 import { useGridEventMouseDown } from "@web/views/Week/hooks/grid/useGridEventMouseDown";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import { getWeekInteractionTargetAttributes } from "@web/views/Week/interaction/registry/week-event.registry";
 
 interface Props {
   activeAllDayDraftEvent?: GridEventEntity | null;
@@ -93,6 +94,14 @@ export const GridDraft: FC<Props> = ({
     ? (activeAllDayDraftEvent ?? draftToAllDayRowGridEvent(draft))
     : draftAsGridEvent;
 
+  const draftEventType = rendersInAllDayRow ? "all-day" : "timed";
+  const draftInteractionAttributes = draftAsGridEvent._id
+    ? getWeekInteractionTargetAttributes({
+        eventId: draftAsGridEvent._id,
+        eventType: draftEventType,
+      })
+    : undefined;
+
   return (
     <>
       {/* Read-only previews of the other recurrence occurrences in view. They
@@ -102,6 +111,14 @@ export const GridDraft: FC<Props> = ({
         <GridEvent
           displayMode="draft"
           event={preview}
+          interactionAttributes={
+            preview._id
+              ? getWeekInteractionTargetAttributes({
+                  eventId: preview._id,
+                  eventType: "timed",
+                })
+              : undefined
+          }
           key={`draft-preview-${preview.startDate}`}
           measurements={measurements}
           weekProps={weekProps}
@@ -111,6 +128,7 @@ export const GridDraft: FC<Props> = ({
       {rendersInAllDayRow ? (
         <AllDayEventMemo
           event={allDayDraftEvent}
+          interactionAttributes={draftInteractionAttributes}
           isPlaceholder={false}
           key={`draft-${draftAsGridEvent._id}`}
           measurements={measurements}
@@ -133,6 +151,7 @@ export const GridDraft: FC<Props> = ({
           deckLayout={deckLayout}
           displayMode="draft"
           event={draftAsGridEvent}
+          interactionAttributes={draftInteractionAttributes}
           key={`draft-${draftAsGridEvent._id}`}
           measurements={measurements}
           motionMode={motionMode}

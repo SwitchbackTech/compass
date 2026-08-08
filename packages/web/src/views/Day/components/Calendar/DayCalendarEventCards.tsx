@@ -52,11 +52,13 @@ export const DayAllDayCalendarEvent = ({
   onOpenEvent,
   visibleDates,
 }: DayEventCardProps) => {
-  // Stamp view-registry id attrs for any saved card (including read-only) so
-  // context menus / focus restore can resolve an id. Drag/resize stays gated
-  // separately: registry registration + hover targeting require !isReadOnly.
-  const hasEventIdentity = Boolean(event._id) && !isPlaceholder;
-  const isRegisteredForDragResize = hasEventIdentity && !isReadOnly;
+  // Stamp view-registry id attrs whenever the card has an id (saved, draft,
+  // or read-only) so context menus / focus restore can resolve it.
+  // Drag/resize stays gated: registry registration + hover require a saved,
+  // non-read-only card.
+  const hasEventIdentity = Boolean(event._id);
+  const isRegisteredForDragResize =
+    hasEventIdentity && !isPlaceholder && !isReadOnly;
   const registrationRef = useDayEventRegistrationRef({
     eventId: event._id,
     eventType: "all-day",
@@ -128,11 +130,13 @@ export const DayTimedCalendarEvent = ({
   onOpenEvent,
   visibleDates,
 }: DayTimedEventCardProps) => {
-  // Stamp view-registry id attrs for any saved card (including read-only) so
-  // context menus / focus restore can resolve an id. Drag/resize stays gated
-  // separately: registry registration + hover targeting require !isReadOnly.
-  const hasEventIdentity = Boolean(event._id) && !isPlaceholder;
-  const isRegisteredForDragResize = hasEventIdentity && !isReadOnly;
+  // Stamp view-registry id attrs whenever the card has an id (saved, draft,
+  // or read-only) so context menus / focus restore can resolve it.
+  // Drag/resize stays gated: registry registration + hover require a saved,
+  // non-read-only card.
+  const hasEventIdentity = Boolean(event._id);
+  const isRegisteredForDragResize =
+    hasEventIdentity && !isPlaceholder && !isReadOnly;
   const isDeck = Boolean(deckLayout);
   const [isFocused, setIsFocused] = useState(false);
   const registrationRef = useDayEventRegistrationRef({
