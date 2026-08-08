@@ -2,6 +2,7 @@ import { FloatingDraftEvent } from "./dom/draft-event";
 import {
   type PreparedSourceElement,
   prepareSourceElementForInteraction,
+  reapplyPreparedSourceStyles,
   restoreSourceElement,
 } from "./dom/source-element.visibility";
 import {
@@ -63,6 +64,12 @@ export interface InteractionEngine<TTarget, TVisual, TResult> {
     event: PointerEvent,
   ): InteractionPointerUpResult<TTarget, TResult>;
   ownsPointer(event: Pick<PointerEvent, "pointerId">): boolean;
+  /**
+   * After edge-nav remounts the grid, the original source node is gone and
+   * its dim/hide styles die with it. Rebind the prepared source to the
+   * event's new DOM node so placeholder styling survives multi-week drags.
+   */
+  rebindPreparedSource(nextElement: HTMLElement): void;
 }
 
 const defaultOptions = {
@@ -535,6 +542,29 @@ export const createInteractionEngine = <TTarget, TVisual, TResult>(
     metrics.phase = phase;
   }
 
+  function rebindPreparedSource(nextElement: HTMLElement) {
+    if (!preparedSource) return;
+
+    if (preparedSource.element === nextElement && nextElement.isConnected) {
+      // React may have cleared inline styles on reconcile; re-apply without
+      // overwriting the stored pre-interaction values used on restore.
+      reapplyPreparedSourceStyles(preparedSource);
+      return;
+    }
+
+    const mode = preparedSource.draftEventMode;
+
+    if (preparedSource.element.isConnected) {
+      restoreSourceElement(preparedSource);
+    }
+
+    preparedSource = prepareSourceElementForInteraction(nextElement, mode);
+
+    if (session.phase === "pending" || session.phase === "motion") {
+      session = { ...session, sourceElement: nextElement };
+    }
+  }
+
   return {
     cancel,
     connectCancellationEvents,
@@ -545,6 +575,7 @@ export const createInteractionEngine = <TTarget, TVisual, TResult>(
     handlePointerMove,
     handlePointerUp,
     ownsPointer,
+    rebindPreparedSource,
   };
 };
 

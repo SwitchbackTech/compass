@@ -316,6 +316,39 @@ describe("InteractionEngine", () => {
     expect(source).not.toHaveAttribute(SOURCE_ELEMENT_INTERACTION_ATTRIBUTE);
   });
 
+  it("rebinds dimmed placeholder styles onto a remounted source element", () => {
+    const { engine, fireCommitTeardownDeadline, flushFrame, source } =
+      createHarness({
+        sourceDraftEventMode: "dim-source",
+      });
+
+    engine.handlePointerDown(makePointerEvent("pointerdown", { x: 10, y: 10 }));
+    engine.handlePointerMove(makePointerEvent("pointermove", { x: 36, y: 10 }));
+
+    // Simulate edge-nav remount: old node disconnects, a fresh card mounts.
+    source.remove();
+    const remounted = document.createElement("div");
+    document.body.append(remounted);
+
+    engine.rebindPreparedSource(remounted);
+
+    expect(remounted.style.opacity).toBe("0.5");
+    expect(remounted.style.pointerEvents).toBe("none");
+    expect(remounted).toHaveAttribute(SOURCE_ELEMENT_INTERACTION_ATTRIBUTE);
+    expect(engine.getSession()).toMatchObject({
+      phase: "motion",
+      sourceElement: remounted,
+    });
+
+    flushFrame();
+    engine.handlePointerUp(makePointerEvent("pointerup"));
+    fireCommitTeardownDeadline();
+
+    expect(remounted.style.opacity).toBe("");
+    expect(remounted.style.pointerEvents).toBe("");
+    remounted.remove();
+  });
+
   it("restores only the styles changed by the source draft event mode", () => {
     const { engine, fireCommitTeardownDeadline, flushFrame, source } =
       createHarness();

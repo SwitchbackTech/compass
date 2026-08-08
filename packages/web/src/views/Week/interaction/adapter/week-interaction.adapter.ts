@@ -19,6 +19,7 @@ import {
   type VisualPoint,
   type VisualRect,
 } from "@web/grid/interaction/types/timed-drag.types";
+import { calendarEventIdValueSelector } from "@web/grid/interaction/view-event-registry";
 import { type InteractionAdapter } from "@web/interaction/interaction.adapter.types";
 import {
   createInteractionEngine,
@@ -137,6 +138,20 @@ export const createWeekInteractionAdapter = ({
     }
 
     rebuildLayoutIfNeeded(session.target);
+
+    // Edge-nav remounts event cards; re-dim/hide the source on the new node
+    // so the placeholder style survives dragging across weeks.
+    if (session.phase === "pending" || session.phase === "motion") {
+      const { eventId, eventType } = session.target.registered;
+      const nextElement =
+        weekEventRegistry.resolve(eventId, eventType) ??
+        document.querySelector<HTMLElement>(
+          calendarEventIdValueSelector(eventId),
+        );
+      if (nextElement) {
+        engine.rebindPreparedSource(nextElement);
+      }
+    }
   }
 
   function handlePointerDown(
