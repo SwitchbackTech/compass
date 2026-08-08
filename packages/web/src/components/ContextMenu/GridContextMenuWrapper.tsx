@@ -49,10 +49,10 @@ export const ContextMenuWrapper = ({
   });
 
   const getDraftForEvent = (eventId: string): GridEventDraft | null => {
-    // The id comes from the DOM (`data-event-id`), which can legitimately
-    // disagree with the react-query cache: an in-progress grid draft renders
-    // with `draft.clientId`/its edited source id (never cached), so match it
-    // directly rather than looking it up.
+    // The id comes from the DOM (view-registry interaction id attrs), which
+    // can legitimately disagree with the react-query cache: an in-progress
+    // grid draft renders with `draft.clientId`/its edited source id (never
+    // cached), so match it directly rather than looking it up.
     if (gridDraft && getGridDraftId(gridDraft) === eventId) {
       return gridDraft;
     }

@@ -10,10 +10,7 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import { isRecurringEvent } from "@core/util/event/event.util";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
-import {
-  DATA_EVENT_ELEMENT_ID,
-  ZIndex,
-} from "@web/common/constants/web.constants";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { brighten, darken, isDark } from "@web/common/styles/color.utils";
 import { theme } from "@web/common/styles/theme";
 import { useEventPalette } from "@web/common/styles/theme.util";
@@ -248,7 +245,6 @@ const TimedEventCardBase = (
   return (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
     <div
-      {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
       {...interactionAttributes}
       aria-label={accessibleLabel}
       ref={ref}

@@ -33,15 +33,11 @@ import { MainGridEvents } from "./MainGridEvents";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 // packet 08 step 8: an event on a read-only (unwritable) calendar, or with
-// busy content, must never attach interaction attributes / registry
-// registration - that's the concrete mechanism that stops the drag/resize
-// engine from ever treating it as a target, blocked before any optimistic
-// state change. The resize-handle/interaction-attribute DOM is unlabeled
-// (aria-hidden), so this asserts the "props seam" at the list-component
-// level instead: the interaction-registry id attribute the engine keys off
-// of (WEEK_INTERACTION_EVENT_ID_ATTRIBUTE), mirroring how MainGrid.test.tsx
-// already asserts the writable case ("keeps pending saved events fully
-// interactive").
+// busy content, must never enter the drag/resize registry - that's the
+// concrete mechanism that stops the engine from treating it as a target,
+// blocked before any optimistic state change. Id-bearing view-registry
+// attributes still stamp so context menus / focus restore can resolve the
+// card; registration (`weekEventRegistry.resolve`) is the gate.
 
 let seededEvents: Event[] = [];
 let seededCalendars: Calendar[] = [];
@@ -202,15 +198,17 @@ const renderAllDayEvents = () =>
   );
 
 describe("Week grid read-only interaction gate", () => {
-  it("does not register a read-only-calendar timed event as an interaction target", () => {
+  it("stamps id attrs on a read-only timed event without registering it for drag/resize", () => {
     const readOnlyCalendar = makeCalendar();
     seededCalendars = [readOnlyCalendar];
-    seededEvents = [createTimedEvent(readOnlyCalendar.id)];
+    const event = createTimedEvent(readOnlyCalendar.id);
+    seededEvents = [event];
 
     renderMainGridEvents();
 
     const card = screen.getByRole("button", { name: /shared meeting/i });
-    expect(card).not.toHaveAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE);
+    expect(card).toHaveAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, event.id);
+    expect(weekEventRegistry.resolve(event.id, "timed")).toBeNull();
   });
 
   it("keeps registering a writable-calendar timed event as an interaction target", () => {
@@ -228,19 +226,22 @@ describe("Week grid read-only interaction gate", () => {
 
     const card = screen.getByRole("button", { name: /my focus block/i });
     expect(card).toHaveAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, event.id);
+    expect(weekEventRegistry.resolve(event.id, "timed")).toBe(card);
   });
 
-  it("does not register a read-only-calendar all-day event as an interaction target", () => {
+  it("stamps id attrs on a read-only all-day event without registering it for drag/resize", () => {
     const readOnlyCalendar = makeCalendar();
     seededCalendars = [readOnlyCalendar];
-    seededEvents = [createAllDayEvent(readOnlyCalendar.id)];
+    const event = createAllDayEvent(readOnlyCalendar.id);
+    seededEvents = [event];
 
     renderAllDayEvents();
 
     const card = screen.getByRole("button", {
       name: /all-day event: team holiday/i,
     });
-    expect(card).not.toHaveAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE);
+    expect(card).toHaveAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, event.id);
+    expect(weekEventRegistry.resolve(event.id, "all-day")).toBeNull();
   });
 
   it("still opens a read-only all-day event for inspection on click", () => {
@@ -354,13 +355,15 @@ describe("Week grid read-only interaction gate", () => {
       capabilities: getCalendarCapabilities("owner"),
     });
     seededCalendars = [writableCalendar];
-    seededEvents = [
-      createTimedEvent(writableCalendar.id, { content: { kind: "busy" } }),
-    ];
+    const event = createTimedEvent(writableCalendar.id, {
+      content: { kind: "busy" },
+    });
+    seededEvents = [event];
 
     renderMainGridEvents();
 
     const card = screen.getByRole("button", { name: /timed event: busy/i });
-    expect(card).not.toHaveAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE);
+    expect(card).toHaveAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, event.id);
+    expect(weekEventRegistry.resolve(event.id, "timed")).toBeNull();
   });
 });

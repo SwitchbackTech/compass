@@ -35,7 +35,7 @@ test("aligns the mid-drag visual and drops on the hovered day at a reduced day c
   expect(dayDates).toHaveLength(columns.length);
 
   const savedEvent = page
-    .locator('#timedEvents [role="button"][data-event-id]')
+    .locator('#timedEvents [role="button"][data-week-interaction-event-id]')
     .filter({ hasText: title });
   const eventBox = await savedEvent.boundingBox();
   if (!eventBox) {

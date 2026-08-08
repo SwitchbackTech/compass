@@ -446,14 +446,19 @@ test("a read-only event blocks a drag attempt", async ({ page }) => {
   await card.scrollIntoViewIfNeeded();
 
   // isEventReadOnly (useCalendarLookup.ts) fails OPEN as writable until the
-  // authenticated calendars query resolves, so the card can briefly render
-  // interactive right after setupCalendarExperiencePage returns (its own
-  // wait only confirms the sidebar reflects the refetch, not this card's
-  // next render). Wait for the read-only gate's actual DOM signal - the
-  // absence of the interaction-registry id attribute
-  // (WEEK_INTERACTION_EVENT_ID_ATTRIBUTE in weekEventRegistry.ts) - before
-  // dragging, so the drag itself isn't racing that same settling window.
-  await expect(card).not.toHaveAttribute("data-week-interaction-event-id");
+  // authenticated calendars query resolves, so the card can briefly register
+  // for drag/resize right after setupCalendarExperiencePage returns (its
+  // own wait only confirms the sidebar reflects the refetch, not this
+  // card's next render). Id attrs now stamp even for read-only cards; wait
+  // for the calendar-name accessible suffix instead - that only appears
+  // once the multi-calendar lookup that drives isReadOnly has settled.
+  await expect(card).toHaveAttribute(
+    "data-week-interaction-event-id",
+    EVENT_B_ID,
+  );
+  await expect(card).toHaveAccessibleName(
+    new RegExp(`${EVENT_B_TITLE}.*${CALENDAR_B_NAME} calendar`),
+  );
 
   const box = await card.boundingBox();
   if (!box) {
@@ -462,7 +467,7 @@ test("a read-only event blocks a drag attempt", async ({ page }) => {
   const cx = box.x + box.width / 2;
   const cy = box.y + box.height / 2;
 
-  // A read-only card has no interaction-registry entry (packet 08 step 8),
+  // A read-only card has no drag/resize registry entry (packet 08 step 8),
   // so this never becomes a real move - no mutation fires and the card
   // stays exactly where it was.
   await page.mouse.move(cx, cy);

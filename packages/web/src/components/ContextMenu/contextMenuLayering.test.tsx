@@ -8,16 +8,15 @@ import {
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
-import {
-  DATA_EVENT_ELEMENT_ID,
-  Z_INDEX_FLOATING_MENU,
-} from "@web/common/constants/web.constants";
+import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { draftActions } from "@web/events/stores/draft.store";
 import { useDayCalendarContextMenu } from "@web/views/Day/components/Calendar/DayCalendarContextMenu";
+import { DAY_INTERACTION_EVENT_ID_ATTRIBUTE } from "@web/views/Day/interaction/registry/day-event.registry";
+import { WEEK_INTERACTION_EVENT_ID_ATTRIBUTE } from "@web/views/Week/interaction/registry/week-event.registry";
 import { afterEach, describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 
@@ -82,7 +81,9 @@ describe("context menu layering", () => {
       <ContextMenuWrapper id={WRAPPER_ID}>
         {/* Stands in for an event card: the wrapper reads the id off the
             right-clicked element. */}
-        <div {...{ [DATA_EVENT_ELEMENT_ID]: event.id }}>Stacked event</div>
+        <div {...{ [WEEK_INTERACTION_EVENT_ID_ATTRIBUTE]: event.id }}>
+          Stacked event
+        </div>
       </ContextMenuWrapper>,
       { queryClient: seedCacheEntry() },
     );
@@ -99,7 +100,9 @@ describe("context menu layering", () => {
   it("ignores a right-click on an event that isn't in the cache", () => {
     render(
       <ContextMenuWrapper id={WRAPPER_ID}>
-        <div {...{ [DATA_EVENT_ELEMENT_ID]: "not-in-cache" }}>Orphan event</div>
+        <div {...{ [WEEK_INTERACTION_EVENT_ID_ATTRIBUTE]: "not-in-cache" }}>
+          Orphan event
+        </div>
       </ContextMenuWrapper>,
       { queryClient: createCompassQueryClient() },
     );
@@ -124,7 +127,9 @@ describe("context menu layering", () => {
       return (
         // biome-ignore lint/a11y/noStaticElementInteractions: stands in for the day grid, which forwards right-clicks from its cards.
         <div id={WRAPPER_ID} onContextMenu={handleContextMenu}>
-          <div {...{ [DATA_EVENT_ELEMENT_ID]: event.id }}>Stacked event</div>
+          <div {...{ [DAY_INTERACTION_EVENT_ID_ATTRIBUTE]: event.id }}>
+            Stacked event
+          </div>
           {contextMenu}
         </div>
       );

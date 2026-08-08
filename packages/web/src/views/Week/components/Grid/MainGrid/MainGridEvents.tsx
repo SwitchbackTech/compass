@@ -167,31 +167,31 @@ const MainGridEventItem = ({
   onOpenReadOnlyDetails,
   weekProps,
 }: MainGridEventItemProps) => {
-  // Read-only events never register as an interaction target below, so the
-  // drag/resize engine can't find them - blocked before any optimistic
-  // state change reaches the store (packet 08 step 8). A placeholder is
-  // already mid-drag by its own (necessarily writable) owner, so it's
-  // exempted the same way it always was.
-  const isRegisteredForWeekInteraction =
-    Boolean(event._id) && !isPlaceholder && !isReadOnly;
+  // Stamp view-registry id attrs whenever the card has an id (saved, draft
+  // placeholder, or read-only) so context menus / focus restore can resolve
+  // it. Drag/resize stays gated via registry registration on saved writable
+  // cards only.
+  const hasEventIdentity = Boolean(event._id);
+  const isRegisteredForDragResize =
+    hasEventIdentity && !isPlaceholder && !isReadOnly;
   const registrationRef = useWeekEventRegistrationRef({
     eventId: event._id,
     eventType: "timed",
-    isEnabled: isRegisteredForWeekInteraction,
+    isEnabled: isRegisteredForDragResize,
   });
   const interactionAttributes = useMemo(
     () =>
-      isRegisteredForWeekInteraction
+      hasEventIdentity
         ? getWeekInteractionTargetAttributes({
             eventId: event._id,
             eventType: "timed",
           })
         : undefined,
-    [event._id, isRegisteredForWeekInteraction],
+    [event._id, hasEventIdentity],
   );
-  // Being unregistered above also means the interaction engine's own click
-  // resolution never fires, so a read-only card would otherwise stop being
-  // clickable - events must stay inspectable even when they can't be
+  // Unregistered for drag/resize also means the interaction engine's own
+  // click resolution never fires, so a read-only card would otherwise stop
+  // being clickable - events must stay inspectable even when they can't be
   // mutated. Wiring the click straight to an "open" action bypasses the
   // engine entirely for this card, so it never becomes a drag/resize target
   // no matter how the pointer moves.
