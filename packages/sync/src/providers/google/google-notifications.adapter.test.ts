@@ -189,6 +189,7 @@ describe("GoogleNotificationAdapter watch/stop", () => {
     "rateLimitExceeded",
     "userRateLimitExceeded",
     "quotaExceeded",
+    "dailyLimitExceeded",
   ])("keeps a 403 %s transient, not durable", async (reason) => {
     const api = new FakeChannelsApi({ watch: gError(403, reason) });
     const { adapter } = adapterWith(api);

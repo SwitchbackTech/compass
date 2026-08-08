@@ -253,6 +253,7 @@ const TRANSIENT_REASONS = [
   "rateLimitExceeded",
   "userRateLimitExceeded",
   "quotaExceeded",
+  "dailyLimitExceeded",
   "backendError",
   "internalError",
 ];

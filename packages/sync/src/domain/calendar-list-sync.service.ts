@@ -211,18 +211,17 @@ export async function syncCalendarList(
     imported += 1;
   }
 
-  // Record the new discovery cursor so the next pass lists incrementally. Google
-  // always returns a nextSyncToken on the final page; if a provider ever returns
-  // none, we simply full-list again next pass rather than store a null cursor.
-  if (discovery.cursor) {
-    await deps.resources.advanceCursor(
-      tenantId,
-      principalId,
-      resource._id,
-      discovery.cursor,
-      now(),
-    );
-  }
+  // Stamp success (and clear any prior durable discovery failure) even when the
+  // provider returns no next sync token. Google normally returns a nextSyncToken
+  // on the final page; a null cursor means leave the stored token alone and
+  // full-list again next pass rather than writing null.
+  await deps.resources.advanceCursor(
+    tenantId,
+    principalId,
+    resource._id,
+    discovery.cursor,
+    now(),
+  );
 
   return { discovered: discovery.calendars.length, imported };
 }

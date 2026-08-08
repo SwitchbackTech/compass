@@ -61,7 +61,8 @@ export const SyncResourceRecordSchema = z.strictObject({
   // Set when the provider durably rejects reads for this resource (a
   // non-transient 4xx retries cannot fix — see the readFailed settlement for
   // events resources and the discoveryFailed settlement for calendarList in
-  // sync-job-dispatch). Cleared by the next successful pass (advanceCursor).
+  // sync-job-dispatch). Cleared by the next successful pass (advanceCursor),
+  // including when that pass advances with a null cursor.
   // Connection health surfaces a non-null marker on an active events calendar
   // or on the connection's calendarList resource as delayed/providerErrors.
   // Defaults tolerate rows written before the field.

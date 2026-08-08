@@ -248,6 +248,42 @@ describe("SyncResourceRepository", () => {
     expect(after?.lastReadFailureDetail).toBeNull();
   });
 
+  it("clears the read-failure marker on success even when syncCursor is null", async () => {
+    const resource = await repo.ensure(upsert());
+    await repo.advanceCursor(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      "kept-cursor",
+      new Date("2026-07-20T12:00:00.000Z"),
+    );
+    await repo.markReadFailure(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      new Date("2026-07-21T12:00:00.000Z"),
+      "The user must be signed up for Google Calendar. (HTTP 403, reason notACalendarUser)",
+    );
+    const succeededAt = new Date("2026-07-24T12:00:00.000Z");
+    await repo.advanceCursor(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+      null,
+      succeededAt,
+    );
+
+    const after = await repo.findById(
+      resource.tenantId,
+      resource.principalId,
+      resource._id,
+    );
+    expect(after?.syncCursor).toBe("kept-cursor");
+    expect(after?.lastSuccessAt).toEqual(succeededAt);
+    expect(after?.lastReadFailureAt).toBeNull();
+    expect(after?.lastReadFailureDetail).toBeNull();
+  });
+
   it("updates and clears the push subscription", async () => {
     const resource = await repo.ensure(upsert());
     await repo.updateSubscription(

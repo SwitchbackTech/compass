@@ -439,12 +439,17 @@ describe("GoogleCalendarAdapter", () => {
     expect(error.reason).toBe("transient");
   });
 
-  it("maps a quota 403 to transient rather than discoveryFailed", async () => {
+  it.each([
+    "rateLimitExceeded",
+    "userRateLimitExceeded",
+    "quotaExceeded",
+    "dailyLimitExceeded",
+  ])("maps a 403 %s to transient rather than discoveryFailed", async (reason) => {
     const quota = Object.assign(new Error("Request failed with status 403"), {
       response: {
         status: 403,
         data: {
-          error: { errors: [{ reason: "rateLimitExceeded" }] },
+          error: { errors: [{ reason }] },
         },
       },
     });
