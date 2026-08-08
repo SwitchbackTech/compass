@@ -184,7 +184,7 @@ describe("EventGrid", () => {
     expect(loader).not.toHaveClass("pointer-events-none");
   });
 
-  it("keeps first-load loader click-through for drag-create", () => {
+  it("keeps first-load loader click-through and leaves grid chrome visible", () => {
     render(
       <EventGrid
         allDayEventsLayer={<div />}
@@ -203,9 +203,17 @@ describe("EventGrid", () => {
       />,
     );
 
-    expect(screen.getByRole("status", { name: "Loading events" })).toHaveClass(
-      "pointer-events-none",
-    );
+    const loader = screen.getByRole("status", { name: "Loading events" });
+    expect(loader).toHaveClass("pointer-events-none");
+    expect(loader).toHaveClass("backdrop-blur-none");
+    expect(loader).not.toHaveClass("bg-background");
+    // Chrome is already mounted under the non-blocking indicator.
+    expect(
+      screen.getByRole("region", { name: "Timed events grid" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: "All-day events" }),
+    ).toBeInTheDocument();
   });
 
   it("shows the loader for first load and for retry after error", () => {
