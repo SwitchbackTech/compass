@@ -1,6 +1,10 @@
 import { useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import {
+  getGoogleReconnectRequiredAccountEmails,
+  useGoogleReconnectRequiredVersion,
+} from "@web/auth/google/state/google.reconnect.state";
+import {
   selectGoogleSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
@@ -21,10 +25,13 @@ export function useDefaultTargetCalendar(
 ): Calendar | undefined {
   const preferredCalendarId = useDefaultCalendarId();
   const accountEmailOrder = useConnectedAccountEmails();
+  useGoogleReconnectRequiredVersion();
+  const reconnectRequiredEmails = getGoogleReconnectRequiredAccountEmails();
 
   return getDefaultTargetCalendar(calendars, {
     preferredCalendarId,
     accountEmailOrder,
+    reconnectRequiredEmails,
   });
 }
 

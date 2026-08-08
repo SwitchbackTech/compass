@@ -1,5 +1,6 @@
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
+import { isCalendarReconnectRequired } from "@web/auth/google/state/google.reconnect.calendar";
 
 export function getLocalCalendar(calendars: Calendar[]): Calendar | undefined {
   return calendars.find((calendar) => calendar.provider === "local");
@@ -17,7 +18,36 @@ export interface GetWritableCalendarsOptions {
    * a retention window after the connection itself is gone.
    */
   hasConnectedAccount?: boolean;
+  /**
+   * Account emails that currently need Google reconnect. Their calendars stay
+   * visible on the grid as read-only but must not be offered as create targets.
+   * Defaults to the session reconnect-required set.
+   */
+  reconnectRequiredEmails?: ReadonlySet<string> | readonly string[];
 }
+
+const toEmailSet = (
+  emails: ReadonlySet<string> | readonly string[] | undefined,
+): ReadonlySet<string> | null => {
+  if (!emails) return null;
+  return new Set(
+    [...emails].map((email) => email.trim().toLowerCase()).filter(Boolean),
+  );
+};
+
+const calendarNeedsReconnect = (
+  calendar: Calendar,
+  reconnectRequiredEmails: ReadonlySet<string> | null,
+): boolean => {
+  if (!calendar.accountEmail) return false;
+  if (reconnectRequiredEmails) {
+    return (
+      reconnectRequiredEmails.has(calendar.accountEmail.toLowerCase()) ||
+      isCalendarReconnectRequired(calendar)
+    );
+  }
+  return isCalendarReconnectRequired(calendar);
+};
 
 /**
  * Calendars offered as a create target: a reader/freeBusy-only calendar
@@ -30,11 +60,13 @@ export function getWritableCalendars(
   options: GetWritableCalendarsOptions = {},
 ): Calendar[] {
   const { hasConnectedAccount = false } = options;
+  const reconnectRequiredEmails = toEmailSet(options.reconnectRequiredEmails);
 
   return calendars.filter(
     (calendar) =>
       calendar.isActive &&
       calendar.capabilities.canWrite &&
+      !calendarNeedsReconnect(calendar, reconnectRequiredEmails) &&
       (!hasConnectedAccount || calendar.provider !== "local"),
   );
 }
@@ -144,10 +176,21 @@ export interface DefaultTargetCalendarOptions {
    * happened to sort first; this makes the oldest-connected account win.
    */
   accountEmailOrder?: readonly string[];
+  /**
+   * Account emails that currently need Google reconnect. Preferred/default
+   * calendars on those accounts are skipped so creates land on a healthy
+   * account instead. Defaults to the session reconnect-required set.
+   */
+  reconnectRequiredEmails?: ReadonlySet<string> | readonly string[];
 }
 
-const isWritableGoogleCalendar = (calendar: Calendar): boolean =>
-  calendar.provider === "google" && calendar.capabilities.canWrite;
+const isWritableGoogleCalendar = (
+  calendar: Calendar,
+  reconnectRequiredEmails: ReadonlySet<string> | null,
+): boolean =>
+  calendar.provider === "google" &&
+  calendar.capabilities.canWrite &&
+  !calendarNeedsReconnect(calendar, reconnectRequiredEmails);
 
 /**
  * Where a new event lands: the user's chosen default if it is still usable,
@@ -160,18 +203,24 @@ export function getDefaultTargetCalendar(
   options: DefaultTargetCalendarOptions = {},
 ): Calendar | undefined {
   const { preferredCalendarId, accountEmailOrder = [] } = options;
+  const reconnectRequiredEmails = toEmailSet(options.reconnectRequiredEmails);
 
   const preferred = preferredCalendarId
     ? calendars.find((calendar) => calendar.id === preferredCalendarId)
     : undefined;
   // The local calendar is a valid explicit choice even though it is not a
   // writable *Google* calendar.
-  if (preferred?.capabilities.canWrite) {
+  if (
+    preferred?.capabilities.canWrite &&
+    !calendarNeedsReconnect(preferred, reconnectRequiredEmails)
+  ) {
     return preferred;
   }
 
   const primaries = calendars.filter(
-    (calendar) => calendar.isPrimary && isWritableGoogleCalendar(calendar),
+    (calendar) =>
+      calendar.isPrimary &&
+      isWritableGoogleCalendar(calendar, reconnectRequiredEmails),
   );
   const byConnectionOrder = accountEmailOrder
     .map((email) =>

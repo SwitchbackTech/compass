@@ -80,6 +80,8 @@ export const SettingsModal: FC = () => {
   const { data } = useCalendarsQuery();
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
   const accountEmailOrder = useConnectedAccountEmails();
+  // useDefaultTargetCalendar subscribes to session reconnect overrides, so
+  // writableCalendars recomputes when a 410 lands before Sync metadata catches up.
   const writableCalendars = getWritableCalendars(data ?? [], {
     hasConnectedAccount: accountEmailOrder.length > 0,
   }).sort(compareCalendars(accountEmailOrder));

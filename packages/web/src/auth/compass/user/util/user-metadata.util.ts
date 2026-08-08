@@ -1,12 +1,73 @@
 import { Status } from "@core/errors/status.codes";
+import { type UserMetadata } from "@core/types/user.types";
 import { UserApi } from "@web/api/user.api";
-import { userMetadataActions } from "@web/auth/state/user-metadata.store";
+import {
+  getGoogleReconnectRequiredAccountEmails,
+  hasGoogleReconnectRequired,
+  syncReconnectRequiredFromConnections,
+} from "@web/auth/google/state/google.reconnect.state";
+import {
+  findPrimaryGoogleSyncConnectionFromMetadata,
+  userMetadataActions,
+} from "@web/auth/state/user-metadata.store";
 import { showGoogleDelayedToast } from "@web/common/utils/toast/google-delayed.toast";
-import { showGoogleReconnectToast } from "@web/common/utils/toast/google-reconnect.toast";
+import {
+  clearGoogleReconnectToastGate,
+  dismissGoogleReconnectToast,
+  hasShownGoogleReconnectToastThisLoad,
+  showGoogleReconnectToast,
+} from "@web/common/utils/toast/google-reconnect.toast";
 
 let refreshUserMetadataRequest: Promise<void> | null = null;
-let hasShownReconnectToastThisLoad = false;
 let hasShownDelayedToastThisLoad = false;
+
+/**
+ * Keep session reconnect overrides and sticky toasts congruent with the latest
+ * metadata payload, whether it arrived from REST refresh or SSE.
+ */
+export const applyUserMetadataSideEffects = (metadata: UserMetadata): void => {
+  const connections = metadata.google?.connections ?? [];
+  syncReconnectRequiredFromConnections(connections);
+
+  const needsReconnect =
+    metadata.google?.connectionState === "RECONNECT_REQUIRED" ||
+    hasGoogleReconnectRequired();
+
+  if (needsReconnect) {
+    const stickyEmails = getGoogleReconnectRequiredAccountEmails();
+    const broken =
+      connections.find(
+        (connection) => connection.connectionState === "RECONNECT_REQUIRED",
+      ) ??
+      connections.find((connection) => {
+        const email = connection.accountEmail?.toLowerCase();
+        return Boolean(email && stickyEmails.has(email));
+      }) ??
+      // Only fall back to primary when Sync itself says reconnect is required —
+      // never invent a target from sticky alone pointing at a healthy primary.
+      (metadata.google?.connectionState === "RECONNECT_REQUIRED"
+        ? findPrimaryGoogleSyncConnectionFromMetadata(metadata)
+        : null);
+
+    if (!hasShownGoogleReconnectToastThisLoad()) {
+      showGoogleReconnectToast({
+        connectionId: broken?.id,
+        accountEmail: broken?.accountEmail,
+      });
+    }
+  } else {
+    dismissGoogleReconnectToast();
+    clearGoogleReconnectToastGate();
+  }
+
+  if (
+    metadata.google?.connectionState === "ATTENTION" &&
+    !hasShownDelayedToastThisLoad
+  ) {
+    hasShownDelayedToastThisLoad = true;
+    showGoogleDelayedToast();
+  }
+};
 
 export const refreshUserMetadata = async (options?: {
   force?: boolean;
@@ -27,24 +88,7 @@ export const refreshUserMetadata = async (options?: {
   refreshUserMetadataRequest = UserApi.getMetadata()
     .then((metadata) => {
       userMetadataActions.set(metadata);
-
-      // Catches returning users whose Google grant died while they were away:
-      // they get the actionable reconnect toast in addition to the sidebar
-      // action. At most once per page load, so a dismissal isn't nagged by
-      // later refreshes.
-      if (
-        metadata.google?.connectionState === "RECONNECT_REQUIRED" &&
-        !hasShownReconnectToastThisLoad
-      ) {
-        hasShownReconnectToastThisLoad = true;
-        showGoogleReconnectToast();
-      } else if (
-        metadata.google?.connectionState === "ATTENTION" &&
-        !hasShownDelayedToastThisLoad
-      ) {
-        hasShownDelayedToastThisLoad = true;
-        showGoogleDelayedToast();
-      }
+      applyUserMetadataSideEffects(metadata);
     })
     .catch((error) => {
       const status = (error as { response?: { status?: number } })?.response

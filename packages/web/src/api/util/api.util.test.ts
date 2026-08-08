@@ -196,16 +196,19 @@ describe("handleErrorResponse", () => {
     Status.GONE,
   ])("delegates Google revocation for status %s and rethrows the API error", async (status) => {
     const onGoogleRevoked = mock();
-    const error = createApiError({
-      data: { code: "GOOGLE_REVOKED" },
-      status,
-    });
+    const error = createApiError(
+      {
+        data: { code: "GOOGLE_REVOKED" },
+        status,
+      },
+      { body: { calendarId: "cal-123" } },
+    );
 
     await expect(handleErrorResponse(error, { onGoogleRevoked })).rejects.toBe(
       error,
     );
 
-    expect(onGoogleRevoked).toHaveBeenCalledTimes(1);
+    expect(onGoogleRevoked).toHaveBeenCalledWith({ calendarId: "cal-123" });
   });
 
   it("does not delegate unrelated API errors", async () => {

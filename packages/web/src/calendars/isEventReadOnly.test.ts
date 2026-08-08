@@ -4,12 +4,16 @@ import {
 } from "@core/types/calendar.contracts";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
 import {
+  markAccountReconnectRequired,
+  resetGoogleReconnectRequiredForTests,
+} from "@web/auth/google/state/google.reconnect.state";
+import {
   buildCalendarLookup,
   isEventReadOnly,
   isGridEventInteractionReadOnly,
 } from "@web/calendars/useCalendarLookup";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 
 // Pure unit coverage for the shared read-only rule - the
 // component-level tests (grid cards, shortcuts, context menu, form) each
@@ -34,11 +38,29 @@ const makeCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
 });
 
 describe("isEventReadOnly", () => {
+  afterEach(() => {
+    resetGoogleReconnectRequiredForTests();
+  });
+
   it("is writable for an event on an owner calendar", () => {
     const calendar = makeCalendar({ access: "owner" });
     const lookup = buildCalendarLookup([calendar]);
 
     expect(isEventReadOnly(lookup, calendar.id, false)).toBe(false);
+  });
+
+  it("is read-only when the calendar's Google account needs reconnect", () => {
+    const calendar = makeCalendar({
+      access: "owner",
+      accountEmail: "lance@example.com",
+    });
+    markAccountReconnectRequired({
+      connectionId: "conn-1",
+      accountEmail: "lance@example.com",
+    });
+    const lookup = buildCalendarLookup([calendar]);
+
+    expect(isEventReadOnly(lookup, calendar.id, false)).toBe(true);
   });
 
   it("is writable for an event on a writer calendar", () => {

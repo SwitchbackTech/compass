@@ -35,6 +35,28 @@ describe("useGoogleUiState", () => {
     expect(result.current).toBe("IMPORTING");
   });
 
+  it("does not let a syncing indicator override reconnect-required", () => {
+    expect(
+      resolveGoogleUiState({
+        connectionState: "RECONNECT_REQUIRED",
+        hasAuthenticated: true,
+        hasReconnectRequired: false,
+        syncIndicator: "syncing",
+        userMetadataStatus: "loaded",
+      }),
+    ).toBe("RECONNECT_REQUIRED");
+
+    expect(
+      resolveGoogleUiState({
+        connectionState: "HEALTHY",
+        hasAuthenticated: true,
+        hasReconnectRequired: true,
+        syncIndicator: "syncing",
+        userMetadataStatus: "loaded",
+      }),
+    ).toBe("RECONNECT_REQUIRED");
+  });
+
   it("reports checking while a returning user's metadata loads", () => {
     expect(
       resolveGoogleUiState({

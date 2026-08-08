@@ -10,6 +10,7 @@ export interface ApiError extends Error {
 }
 
 export interface ApiRequestConfig {
+  body?: unknown;
   headers?: HeadersInit;
   method?: string;
   skipSessionRecovery?: boolean;

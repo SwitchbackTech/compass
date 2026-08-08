@@ -81,6 +81,25 @@ describe("getWritableCalendars", () => {
       getWritableCalendars([local, google], { hasConnectedAccount: true }),
     ).toEqual([google]);
   });
+
+  it("excludes calendars whose Google account needs reconnect", () => {
+    const broken = makeCalendar({
+      provider: "google",
+      accountEmail: "broken@example.com",
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+    const healthy = makeCalendar({
+      provider: "google",
+      accountEmail: "ok@example.com",
+      id: "507f1f77bcf86cd799439013" as Calendar["id"],
+    });
+    expect(
+      getWritableCalendars([broken, healthy], {
+        hasConnectedAccount: true,
+        reconnectRequiredEmails: ["broken@example.com"],
+      }),
+    ).toEqual([healthy]);
+  });
 });
 
 describe("getDefaultTargetCalendar", () => {
@@ -94,6 +113,27 @@ describe("getDefaultTargetCalendar", () => {
     expect(getDefaultTargetCalendar([local, primaryGoogle])).toBe(
       primaryGoogle,
     );
+  });
+
+  it("skips a reconnect-required account when choosing the default target", () => {
+    const brokenPrimary = makeCalendar({
+      provider: "google",
+      isPrimary: true,
+      accountEmail: "broken@example.com",
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+    const healthyPrimary = makeCalendar({
+      provider: "google",
+      isPrimary: true,
+      accountEmail: "ok@example.com",
+      id: "507f1f77bcf86cd799439013" as Calendar["id"],
+    });
+    expect(
+      getDefaultTargetCalendar([brokenPrimary, healthyPrimary], {
+        accountEmailOrder: ["broken@example.com", "ok@example.com"],
+        reconnectRequiredEmails: ["broken@example.com"],
+      }),
+    ).toBe(healthyPrimary);
   });
 
   it("ignores a non-primary or read-only google calendar", () => {

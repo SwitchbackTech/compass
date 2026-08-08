@@ -2,6 +2,10 @@ import { useSyncExternalStore } from "react";
 import { type GoogleConnectionState } from "@core/types/user.types";
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import {
+  hasGoogleReconnectRequired,
+  useGoogleReconnectRequiredVersion,
+} from "@web/auth/google/state/google.reconnect.state";
+import {
   getGoogleSyncIndicatorOverride,
   subscribeToGoogleSyncUIState,
 } from "@web/auth/google/state/google.sync.state";
@@ -18,14 +22,22 @@ type SyncIndicator = ReturnType<typeof getGoogleSyncIndicatorOverride>;
 export function resolveGoogleUiState({
   connectionState,
   hasAuthenticated,
+  hasReconnectRequired = false,
   syncIndicator,
   userMetadataStatus,
 }: {
   connectionState: GoogleConnectionState;
   hasAuthenticated: boolean;
+  hasReconnectRequired?: boolean;
   syncIndicator: SyncIndicator;
   userMetadataStatus: UserMetadataStatus;
 }): GoogleUiState {
+  // Terminal reconnect-required must not be overwritten by a transient
+  // "syncing" indicator or a lagging healthy metadata snapshot.
+  if (connectionState === "RECONNECT_REQUIRED" || hasReconnectRequired) {
+    return "RECONNECT_REQUIRED";
+  }
+
   if (syncIndicator === "syncing") return "IMPORTING";
 
   if (hasAuthenticated && userMetadataStatus !== "loaded") {
@@ -45,12 +57,14 @@ export function useGoogleUiState(): GoogleUiState {
     getGoogleSyncIndicatorOverride,
     getGoogleSyncIndicatorOverride,
   );
+  useGoogleReconnectRequiredVersion();
 
   // Returning users should not briefly look disconnected while their server
   // metadata is still loading.
   return resolveGoogleUiState({
     connectionState,
     hasAuthenticated: hasUserEverAuthenticated(),
+    hasReconnectRequired: hasGoogleReconnectRequired(),
     syncIndicator,
     userMetadataStatus,
   });
