@@ -67,4 +67,26 @@ describe("shouldConfirmDiscardUnsavedChanges", () => {
 
     expect(shouldConfirmDiscardUnsavedChanges(draft)).toBe(true);
   });
+
+  it("returns true when only the event color changed", () => {
+    const existingEvent = createMockEvent({
+      id: EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa"),
+      content: {
+        kind: "details",
+        title: "Existing Event",
+        description: "",
+      },
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-05-20T14:00:00.000Z",
+        end: "2026-05-20T15:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
+    const draft = editGridEventDraft(existingEvent);
+    if (!draft) throw new Error("expected an edit draft");
+    draft.values.color = "coral";
+
+    expect(shouldConfirmDiscardUnsavedChanges(draft)).toBe(true);
+  });
 });
