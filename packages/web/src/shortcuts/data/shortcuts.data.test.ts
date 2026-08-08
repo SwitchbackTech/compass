@@ -274,7 +274,7 @@ describe("shortcuts.data", () => {
       });
       expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
         keys: ["Shift", "Shift"],
-        label: "Enter keyboard-only mode",
+        label: "Toggle keyboard-only mode",
       });
       expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
         keys: ["Mod", "Shift", "Z"],

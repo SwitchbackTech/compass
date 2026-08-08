@@ -8,7 +8,10 @@ import {
   KeyboardIcon,
 } from "@phosphor-icons/react";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
-import { keyboardOnlyActions } from "@web/shortcuts/keyboard-only/keyboard-only.store";
+import {
+  keyboardOnlyActions,
+  useKeyboardOnlyStore,
+} from "@web/shortcuts/keyboard-only/keyboard-only.store";
 import {
   LIFE_SHORTCUT,
   VIEW_SHORTCUTS,
@@ -107,19 +110,33 @@ export const getNavigationCommandItems = ({
       label: "Show shortcuts",
       icon: KeyboardIcon,
       shortcut: "?",
-      keywords: ["hotkeys", "keys", "help", "keybindings"],
+      keywords: [
+        "keyboard",
+        "keyboard shortcuts",
+        "hotkeys",
+        "keys",
+        "help",
+        "keybindings",
+      ],
       onClick: onShowShortcuts,
     });
   }
 
   calendarItems.push({
     id: "enter-keyboard-only",
-    label: "Enter keyboard-only mode",
+    label: "Toggle keyboard-only mode",
     icon: KeyboardIcon,
     shortcut: ["Shift", "Shift"],
     keywords: ["keyboard", "clicks", "pointer", "mouseless", "hotkeys"],
     // Defer so the palette closes before click-blocking installs.
-    onClick: () => queueMicrotask(() => keyboardOnlyActions.enter()),
+    onClick: () =>
+      queueMicrotask(() => {
+        if (useKeyboardOnlyStore.getState().isActive) {
+          keyboardOnlyActions.exit();
+        } else {
+          keyboardOnlyActions.enter();
+        }
+      }),
   });
 
   if (onShowOnboardingTour) {

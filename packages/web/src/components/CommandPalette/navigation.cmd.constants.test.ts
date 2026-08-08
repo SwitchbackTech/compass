@@ -25,7 +25,7 @@ describe("getNavigationCommandItems", () => {
       "Go to Week",
       "Go to Life",
       "Show shortcuts",
-      "Enter keyboard-only mode",
+      "Toggle keyboard-only mode",
     ]);
   });
 
@@ -52,7 +52,7 @@ describe("getNavigationCommandItems", () => {
       "Go to Day",
       "Go to Week",
       "Go to Life",
-      "Enter keyboard-only mode",
+      "Toggle keyboard-only mode",
     ]);
   });
 
@@ -80,7 +80,7 @@ describe("getNavigationCommandItems", () => {
     expect(labels).toEqual([
       "Go to Day",
       "Go to Week",
-      "Enter keyboard-only mode",
+      "Toggle keyboard-only mode",
     ]);
   });
 
@@ -116,15 +116,20 @@ describe("getNavigationCommandItems", () => {
       useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
     });
 
-    it("enters keyboard-only mode on the next microtask", async () => {
+    it("toggles keyboard-only mode on the next microtask", async () => {
       const items = getNavigationCommandItems({
         onNavigateToView: () => {},
       });
-      items.find((item) => item.id === "enter-keyboard-only")?.onClick?.();
+      const toggle = items.find((item) => item.id === "enter-keyboard-only");
 
+      toggle?.onClick?.();
       expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
       await Promise.resolve();
       expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+
+      toggle?.onClick?.();
+      await Promise.resolve();
+      expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
     });
 
     it("advertises Shift Shift as the shortcut", () => {
@@ -132,6 +137,7 @@ describe("getNavigationCommandItems", () => {
         onNavigateToView: () => {},
       }).find((entry) => entry.id === "enter-keyboard-only");
 
+      expect(item?.label).toBe("Toggle keyboard-only mode");
       expect(item?.shortcut).toEqual(["Shift", "Shift"]);
     });
   });
