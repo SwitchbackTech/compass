@@ -12,6 +12,9 @@
  */
 export const INTERACTION_HOLD_DELAY_MS = 750;
 export const INTERACTION_MOVE_THRESHOLD_PX = 25;
-export const INTERACTION_COMMIT_TEARDOWN_DEADLINE_MS = 250;
+// Safety net while rAF waits for committed geometry. 500ms covers dense-week /
+// series-projection commits that used to flash when the old 250ms deadline
+// won the race; no-op commits may linger this long before the clone drops.
+export const INTERACTION_COMMIT_TEARDOWN_DEADLINE_MS = 500;
 export const INTERACTION_EDGE_THRESHOLD_PX = 50;
 export const TIMED_DRAFT_CREATE_MOVE_THRESHOLD_PX = 4;
