@@ -1,7 +1,11 @@
 import { Origin } from "@core/constants/core.constants";
+import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { getChronologicallyAdjacentTarget } from "@web/grid/shortcuts/focus-adjacent-grid-event";
+import {
+  getChronologicallyAdjacentTarget,
+  getSpatiallyAdjacentTarget,
+} from "@web/grid/shortcuts/focus-adjacent-grid-event";
 import { describe, expect, it } from "bun:test";
 
 const event = (id: string, startDate: string, isAllDay = false): GridEvent => ({
@@ -20,6 +24,10 @@ const target = (
   eventType: "all-day" | "timed",
   element = document.createElement("button"),
 ) => ({ element, eventId, eventType });
+
+const weekDays = Array.from({ length: 7 }, (_, index) =>
+  dayjs("2026-05-18").add(index, "day"),
+);
 
 describe("getChronologicallyAdjacentTarget", () => {
   it("returns the next later event", () => {
@@ -81,5 +89,99 @@ describe("getChronologicallyAdjacentTarget", () => {
         visible: [only],
       }),
     ).toBeNull();
+  });
+});
+
+describe("getSpatiallyAdjacentTarget", () => {
+  const mondayMorning = target("mon-am", "timed");
+  const mondayAfternoon = target("mon-pm", "timed");
+  const mondayEvening = target("mon-eve", "timed");
+  const wednesdayNoon = target("wed-noon", "timed");
+  const wednesdayLater = target("wed-later", "timed");
+  const fridayMorning = target("fri-am", "timed");
+
+  const timedEvents = [
+    event("mon-am", "2026-05-18T09:00:00.000"),
+    event("mon-pm", "2026-05-18T14:00:00.000"),
+    event("mon-eve", "2026-05-18T17:00:00.000"),
+    event("wed-noon", "2026-05-20T12:00:00.000"),
+    event("wed-later", "2026-05-20T15:00:00.000"),
+    event("fri-am", "2026-05-22T09:00:00.000"),
+  ];
+
+  const visible = [
+    mondayMorning,
+    mondayAfternoon,
+    mondayEvening,
+    wednesdayNoon,
+    wednesdayLater,
+    fridayMorning,
+  ];
+
+  it("keeps ArrowDown on the same day", () => {
+    const next = getSpatiallyAdjacentTarget({
+      allDayEvents: [],
+      direction: "down",
+      focused: mondayMorning,
+      timedEvents,
+      visible,
+      weekDays,
+    });
+
+    expect(next?.eventId).toBe("mon-pm");
+  });
+
+  it("does not leave the day at the bottom", () => {
+    expect(
+      getSpatiallyAdjacentTarget({
+        allDayEvents: [],
+        direction: "down",
+        focused: mondayEvening,
+        timedEvents,
+        visible,
+        weekDays,
+      }),
+    ).toBeNull();
+  });
+
+  it("skips empty days and picks the time-nearest event", () => {
+    // Monday 5pm -> skip Tuesday -> Wednesday, nearest to 17:00 is 15:00.
+    const next = getSpatiallyAdjacentTarget({
+      allDayEvents: [],
+      direction: "right",
+      focused: mondayEvening,
+      timedEvents,
+      visible,
+      weekDays,
+    });
+
+    expect(next?.eventId).toBe("wed-later");
+  });
+
+  it("moves left to the nearest event on the previous non-empty day", () => {
+    const previous = getSpatiallyAdjacentTarget({
+      allDayEvents: [],
+      direction: "left",
+      focused: fridayMorning,
+      timedEvents,
+      visible,
+      weekDays,
+    });
+
+    expect(previous?.eventId).toBe("wed-noon");
+  });
+
+  it("treats all-day as the first event on its day for Up/Down", () => {
+    const allDay = target("wed-all", "all-day");
+    const next = getSpatiallyAdjacentTarget({
+      allDayEvents: [event("wed-all", "2026-05-20", true)],
+      direction: "down",
+      focused: allDay,
+      timedEvents: [event("wed-noon", "2026-05-20T12:00:00.000")],
+      visible: [wednesdayNoon, allDay],
+      weekDays,
+    });
+
+    expect(next?.eventId).toBe("wed-noon");
   });
 });

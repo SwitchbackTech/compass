@@ -26,6 +26,7 @@ import {
   type FocusableGridEventTarget,
   type GridEventShortcutTarget,
   getChronologicallyAdjacentTarget,
+  getSpatiallyAdjacentTarget,
 } from "@web/grid/shortcuts/focus-adjacent-grid-event";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
@@ -36,11 +37,24 @@ const DRAFT_MOVEMENT_HOTKEY_OPTIONS = {
   stopPropagation: false,
 } as const;
 
+const isArrowKey = (
+  key: string,
+): key is "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight" =>
+  key === "ArrowUp" ||
+  key === "ArrowDown" ||
+  key === "ArrowLeft" ||
+  key === "ArrowRight";
+
 export type GridEventEditDayBoundary =
   | {
       kind: "follow";
       /** Day view: navigate so a day-crossing nudge stays on screen. */
       onCrossed: (date: Dayjs) => void;
+      /**
+       * Day view: ArrowLeft/Right page the visible day and focus that day's
+       * first event after the route settles (when provided).
+       */
+      onFocusPageDay?: (direction: "previous" | "next") => void;
     }
   | {
       kind: "clamp";
@@ -205,16 +219,67 @@ export function useGridEventEditShortcuts({
     }
 
     if (isEventFormOpen()) return;
-    if (keyboardEvent.key !== "ArrowUp" && keyboardEvent.key !== "ArrowDown") {
+    if (!isArrowKey(keyboardEvent.key)) return;
+
+    // Day view: Left/Right page the calendar day, then focus its first event.
+    // Require a focused grid event (same as Up/Down) so sidebar focus and
+    // idle grid don't steal the day under the user.
+    if (
+      dayBoundary.kind === "follow" &&
+      (keyboardEvent.key === "ArrowLeft" ||
+        keyboardEvent.key === "ArrowRight") &&
+      dayBoundary.onFocusPageDay
+    ) {
+      if (isFocusInSidebar() || !targeting.getFocused()) return;
+
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
+      dayBoundary.onFocusPageDay(
+        keyboardEvent.key === "ArrowLeft" ? "previous" : "next",
+      );
       return;
     }
 
-    const adjacent = getChronologicallyAdjacentTarget({
+    if (dayBoundary.kind === "follow") {
+      if (
+        keyboardEvent.key !== "ArrowUp" &&
+        keyboardEvent.key !== "ArrowDown"
+      ) {
+        return;
+      }
+
+      const adjacent = getChronologicallyAdjacentTarget({
+        allDayEvents,
+        direction: keyboardEvent.key === "ArrowUp" ? "previous" : "next",
+        focused: targeting.getFocused(),
+        timedEvents,
+        visible: targeting.listVisible(),
+      });
+      if (!adjacent) return;
+
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
+      adjacent.element.scrollIntoView({ block: "nearest" });
+      targeting.focus(adjacent);
+      return;
+    }
+
+    const spatialDirection =
+      keyboardEvent.key === "ArrowUp"
+        ? "up"
+        : keyboardEvent.key === "ArrowDown"
+          ? "down"
+          : keyboardEvent.key === "ArrowLeft"
+            ? "left"
+            : "right";
+
+    const adjacent = getSpatiallyAdjacentTarget({
       allDayEvents,
-      direction: keyboardEvent.key === "ArrowUp" ? "previous" : "next",
+      direction: spatialDirection,
       focused: targeting.getFocused(),
       timedEvents,
       visible: targeting.listVisible(),
+      weekDays: dayBoundary.weekDays,
     });
     if (!adjacent) return;
 
