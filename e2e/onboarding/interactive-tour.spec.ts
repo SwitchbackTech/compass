@@ -28,7 +28,9 @@ test("Start Now runs the interactive tour happy path", async ({ page }) => {
   await fillTitleAndSaveEventForm(page, title);
   await expect(card).toContainText("Open the command palette");
 
-  await page.keyboard.press("Meta+k");
+  // Linux CI uses Ctrl; macOS local runs use Meta. Press both modifiers' chord
+  // via ControlOrMeta through Playwright's platform-aware ControlOrMeta token.
+  await page.keyboard.press("ControlOrMeta+k");
   await expect(card).toContainText("Browse every shortcut");
   await page.keyboard.press("Escape");
 
