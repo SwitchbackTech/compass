@@ -33,9 +33,12 @@ export async function initializeDatabaseWithErrorHandling(
   return { dbInitError };
 }
 
-/** Defer toast until after render so the toast container is mounted. */
+/**
+ * Defer toast until after the next paint so ToastContainer from `root.render`
+ * has mounted. Double rAF waits for commit + paint without an arbitrary delay.
+ */
 export function showDbInitErrorToast(dbInitError: DatabaseInitError): void {
-  setTimeout(() => {
+  const show = () => {
     getToast().error(
       `Compass can't use offline storage right now: ${dbInitError.message}. Your changes won't be saved on this device.`,
       {
@@ -43,5 +46,9 @@ export function showDbInitErrorToast(dbInitError: DatabaseInitError): void {
         position: "bottom-right",
       },
     );
-  }, 100);
+  };
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(show);
+  });
 }
