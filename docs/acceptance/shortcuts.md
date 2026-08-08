@@ -54,6 +54,7 @@ Helpful notes:
 | `T`                         | Day view  | Go to today                       |
 | `I`                         | Day view  | Focus sidebar                     |
 | `U`                         | Day view  | Focus first calendar event        |
+| Hold `Shift`                | Day view  | Show event jump keys on visible events |
 | `C`                         | Day view  | Create timed event                |
 | `A`                         | Day view  | Create all-day event              |
 | `Delete`                    | Day view  | Delete focused event              |
@@ -77,6 +78,7 @@ Helpful notes:
 | `A`                         | Week view | Create all-day event              |
 | `I`                         | Week view | Focus sidebar                     |
 | `U`                         | Week view | Focus first calendar event        |
+| Hold `Shift`                | Week view | Show event jump keys on visible events |
 | `Delete`                    | Week view | Delete focused event              |
 | `ArrowUp` / `ArrowDown`     | Week view | Focus previous/next event         |
 | `Arrow keys`                | Week view | Move open draft event             |
@@ -325,7 +327,30 @@ After deleting or moving an event, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux
 
 ---
 
-## Scenario 12: Shortcuts Do Not Fire While Typing In Inputs
+## Scenario 12: Hold Shift To Jump Focus To A Visible Event
+
+### UX
+
+Holding `Shift` for a short beat (~200ms) assigns home-row jump keys to viewport-visible Week/Day events and paints a keycap chip on each. Pressing an assigned key focuses that event and clears the chips. Releasing `Shift` clears them. Quick chords such as Shift+J or Shift+Arrow do not flash hints. `j`/`k` are never assigned as jump keys.
+
+### Steps
+
+1. Navigate to `/week` with at least three timed events visible on the same day.
+2. Hold `Shift` for about a quarter second (do not tap quickly).
+3. Press the key shown on the middle event's chip (commonly `S` for the second event in chronological order).
+4. Repeat with a fast Shift+J chord and confirm no chips appear.
+
+### Expected Results
+
+- Distinct chips appear on the visible events while Shift is held past the threshold.
+- The assigned key focuses that event; chips disappear.
+- Releasing Shift without pressing a jump key also clears chips.
+- Fast Shift+J / Shift+Arrow do not flash chips.
+- While a modal holds the app lock, or focus is in an editable field, holding Shift does nothing.
+
+---
+
+## Scenario 13: Shortcuts Do Not Fire While Typing In Inputs
 
 ### UX
 
@@ -365,3 +390,4 @@ If time is limited, run these checks before shipping shortcut-related changes:
 12. With a focused event and no draft open, ArrowUp/ArrowDown move focus to the previous/next event chronologically.
 13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.
 14. With a focused event, `E` then `T` opens the form with the title focused; bare `E` alone does nothing.
+15. Holding Shift shows event jump chips; an assigned key focuses that event; fast Shift+J does not flash chips.

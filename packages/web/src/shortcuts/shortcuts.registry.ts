@@ -129,6 +129,12 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     section: "focus",
     when: { eventFocused: true },
   },
+  {
+    id: "focus-shift-hold",
+    keys: ["Hold", "Shift"],
+    label: "Show event jump keys",
+    section: "focus",
+  },
 
   // Edit
   {
