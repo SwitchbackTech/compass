@@ -120,8 +120,8 @@ export function eventBelongsToEntry(
 }
 
 /**
- * Builds placeholder read data for a requested week range by merging events
- * from any cached week entries whose stored range overlaps it. Returns
+ * Builds placeholder read data for a requested day or week range by merging
+ * events from any cached week entries whose stored range overlaps it. Returns
  * `undefined` when nothing usable is cached so true first loads still show
  * the loading state.
  */
@@ -156,7 +156,11 @@ export function deriveOverlappingEventQueryData(
     for (const id of entry.data.ids) {
       if (seenIds.has(id)) continue;
       const event = entry.data.entities[id];
-      if (!event || !eventMatchesRange(event, startDate, endDate)) continue;
+      // Skip incomplete cache rows (tests / corrupt entries) so placeholder
+      // derivation never throws while reading a neighboring range.
+      if (!event?.schedule || !eventMatchesRange(event, startDate, endDate)) {
+        continue;
+      }
       seenIds.add(id);
       ids.push(id);
       entities[id] = event;

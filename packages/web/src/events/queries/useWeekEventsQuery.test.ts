@@ -1,5 +1,4 @@
 import { waitFor } from "@testing-library/react";
-import { type EventId } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
@@ -8,17 +7,16 @@ import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { normalizeEventList } from "@web/events/queries/event.query.normalize";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-const fetchWeekEvents = mock(async () => ({
-  ids: ["week-1"],
-  entities: {
-    "week-1": {
-      _id: "week-1",
-      title: "Sprint",
-      startDate: "2025-11-10T09:00:00",
-      endDate: "2025-11-10T10:00:00",
-    },
-  },
-}));
+const weekEvent = createMockEvent({
+  schedule: EventScheduleSchema.parse({
+    kind: "timed",
+    start: "2025-11-10T09:00:00.000Z",
+    end: "2025-11-10T10:00:00.000Z",
+    timeZone: "UTC",
+  }),
+});
+
+const fetchWeekEvents = mock(async () => normalizeEventList([weekEvent]));
 
 mock.module("@web/events/queries/week.event.query", () => ({
   fetchWeekEvents,
@@ -49,9 +47,7 @@ describe("useWeekEventsQuery", () => {
     });
 
     await waitFor(() => {
-      expect(result.result.current.data?.ids).toEqual([
-        "week-1",
-      ] as unknown as EventId[]);
+      expect(result.result.current.data?.ids).toEqual([weekEvent.id]);
     });
   });
 
@@ -72,15 +68,15 @@ describe("useWeekEventsQuery", () => {
       queryClient,
     });
     await waitFor(() => {
-      expect(second.result.current.data?.ids).toEqual([
-        "week-1",
-      ] as unknown as EventId[]);
+      expect(second.result.current.data?.ids).toEqual([weekEvent.id]);
     });
     expect(fetchWeekEvents.mock.calls.length).toBe(callsAfterFirst);
   });
 
   it("returns query error when the fetch rejects", async () => {
-    fetchWeekEvents.mockImplementationOnce(async () => {
+    // Stay rejected for the whole test — Strict Mode remounts would
+    // otherwise consume a one-shot mock and leave a successful retry.
+    fetchWeekEvents.mockImplementation(async () => {
       throw new Error("boom");
     });
     const queryClient = createCompassQueryClient();
@@ -92,6 +88,10 @@ describe("useWeekEventsQuery", () => {
     await waitFor(() => {
       expect(result.result.current.error?.message).toBe("boom");
     });
+
+    fetchWeekEvents.mockImplementation(async () =>
+      normalizeEventList([weekEvent]),
+    );
   });
 
   it("serves overlapping placeholder data from cache while fetching a shifted range", async () => {

@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { deriveOverlappingEventQueryData } from "@web/events/queries/event.query.cache";
 import { dayEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { useCalendarEventViewModel } from "./useCalendarEventViewModel";
@@ -10,11 +11,18 @@ type DayEventsQueryArgs = {
 };
 
 export function useDayEventsQuery({ startDate, endDate }: DayEventsQueryArgs) {
+  const queryClient = useQueryClient();
   const source = useEventRepositorySource();
   const calendarIds = useEventListCalendarIds();
-  const query = useQuery(
-    dayEventsQueryOptions({ source, startDate, endDate, calendarIds }),
-  );
+  const query = useQuery({
+    ...dayEventsQueryOptions({ source, startDate, endDate, calendarIds }),
+    placeholderData: () =>
+      deriveOverlappingEventQueryData(queryClient, {
+        source,
+        startDate,
+        endDate,
+      }),
+  });
   return { ...query, calendarIds };
 }
 
