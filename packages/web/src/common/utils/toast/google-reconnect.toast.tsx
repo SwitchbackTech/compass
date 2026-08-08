@@ -14,6 +14,16 @@ import {
 } from "@web/common/utils/toast/error-toast.util";
 import { getToast } from "@web/common/utils/toast/toast.port";
 
+let hasShownReconnectToastThisLoad = false;
+
+/** True after any path has already raised the reconnect toast this page load. */
+export const hasShownGoogleReconnectToastThisLoad = (): boolean =>
+  hasShownReconnectToastThisLoad;
+
+export const clearGoogleReconnectToastGate = (): void => {
+  hasShownReconnectToastThisLoad = false;
+};
+
 interface GoogleReconnectToastProps {
   toastId: Id;
   accountEmail?: string | null;
@@ -91,6 +101,7 @@ export const GoogleReconnectToast = ({
 export function showGoogleReconnectToast(
   target: GoogleReconnectTarget = {},
 ): Id {
+  hasShownReconnectToastThisLoad = true;
   return showErrorToast(
     createElement(GoogleReconnectToast, {
       toastId: GOOGLE_REVOKED_TOAST_ID,
