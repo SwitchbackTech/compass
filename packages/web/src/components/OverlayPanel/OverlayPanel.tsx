@@ -2,6 +2,7 @@ import clsx from "clsx";
 import {
   type ButtonHTMLAttributes,
   type ReactNode,
+  type RefObject,
   useEffect,
   useId,
   useRef,
@@ -32,6 +33,11 @@ interface Props {
   onDismiss?: () => void;
   /** Overrides the element that receives focus when the dialog closes. */
   restoreFocus?: () => void;
+  /**
+   * When `.current` is true at unmount, skip focus restore — for dialog-to-dialog
+   * handoffs where the next dialog will seat focus itself.
+   */
+  skipFocusRestoreRef?: RefObject<boolean>;
   /** ARIA role for the panel (default: "dialog") */
   role?: "dialog" | "status" | "alert";
   /** Cross-axis alignment of the title/message/children (default: "center") */
@@ -55,6 +61,7 @@ export const OverlayPanel = ({
   children,
   onDismiss,
   restoreFocus,
+  skipFocusRestoreRef,
   role = "dialog",
   align = "center",
   variant = "modal",
@@ -77,11 +84,13 @@ export const OverlayPanel = ({
     const [firstFocusable] = getFocusableElements(panel);
     (firstFocusable ?? panel).focus();
     return () => {
+      // Read at unmount so callers can suppress restore for dialog handoffs.
+      if (skipFocusRestoreRef?.current) return;
       // Let the Escape key's global handlers finish before restoring focus.
       if (restoreFocus) setTimeout(restoreFocus);
       else previouslyFocused?.focus?.();
     };
-  }, [restoreFocus, role]);
+  }, [restoreFocus, role, skipFocusRestoreRef]);
 
   const backdropClasses = clsx(
     "fixed inset-0 flex items-center justify-center bg-background/85 backdrop-blur-sm",

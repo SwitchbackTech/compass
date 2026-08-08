@@ -80,4 +80,29 @@ describe("OverlayPanel", () => {
     await user.tab({ shift: true });
     expect(last).toHaveFocus();
   });
+
+  it("skips focus restore when skipFocusRestoreRef is set", () => {
+    const skipFocusRestoreRef = { current: false };
+    const { rerender } = render(<button type="button">Outside</button>);
+    const outside = screen.getByRole("button", { name: "Outside" });
+    outside.focus();
+
+    rerender(
+      <>
+        <button type="button">Outside</button>
+        <OverlayPanel
+          title="Confirm"
+          onDismiss={() => {}}
+          skipFocusRestoreRef={skipFocusRestoreRef}
+        >
+          <button type="button">Inside</button>
+        </OverlayPanel>
+      </>,
+    );
+    expect(screen.getByRole("button", { name: "Inside" })).toHaveFocus();
+
+    skipFocusRestoreRef.current = true;
+    rerender(<button type="button">Outside</button>);
+    expect(outside).not.toHaveFocus();
+  });
 });

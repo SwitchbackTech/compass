@@ -29,6 +29,9 @@ export function WelcomeModal() {
     () => !authenticated && !hasSeenWelcome(),
   );
   const { closing, beginDismiss } = useDismissTransition(MODAL_DISMISS_MS);
+  // Suppress OverlayPanel's unmount restore when handing off to Auth — Auth
+  // seats its own focus; restoring the underlay first causes a focus flash.
+  const skipFocusRestoreRef = useRef(false);
 
   // The auth modal's openness lives in the URL (?auth=), so the welcome
   // screen simply hides while it is open and reappears when the browser
@@ -37,9 +40,12 @@ export function WelcomeModal() {
 
   const shownRef = useRef(false);
   useEffect(() => {
-    if (visible && !shownRef.current) {
-      shownRef.current = true;
-      track("welcome_modal_shown");
+    if (visible) {
+      skipFocusRestoreRef.current = false;
+      if (!shownRef.current) {
+        shownRef.current = true;
+        track("welcome_modal_shown");
+      }
     }
   }, [visible]);
 
@@ -55,19 +61,15 @@ export function WelcomeModal() {
     beginDismiss(() => setIsOpen(false));
   };
 
-  const handleLogIn = () => {
+  const handOffToAuth = (cta: "log_in" | "sign_up") => {
+    skipFocusRestoreRef.current = true;
     markWelcomeSeen();
     maybeShowCmdPaletteHint();
-    track("welcome_modal_dismissed", { cta: "log_in" });
-    openModal("login");
-  };
-
-  const handleSignUp = () => {
-    markWelcomeSeen();
-    maybeShowCmdPaletteHint();
-    track("welcome_modal_dismissed", { cta: "sign_up" });
-    track("signup_started", { source: "welcome_modal" });
-    openModal("signUp");
+    track("welcome_modal_dismissed", { cta });
+    if (cta === "sign_up") {
+      track("signup_started", { source: "welcome_modal" });
+    }
+    openModal(cta === "log_in" ? "login" : "signUp");
   };
 
   return (
@@ -77,6 +79,7 @@ export function WelcomeModal() {
       backdropClassName="overflow-y-auto py-8"
       closing={closing}
       onDismiss={dismiss}
+      skipFocusRestoreRef={skipFocusRestoreRef}
       widthClassName="w-120"
     >
       <div className="flex w-full flex-col gap-6">
@@ -97,14 +100,14 @@ export function WelcomeModal() {
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              onClick={handleSignUp}
+              onClick={() => handOffToAuth("sign_up")}
               className="rounded-3xl bg-accent px-4 py-1.5 text-on-accent text-xs transition-all hover:brightness-110"
             >
               Sign up
             </button>
             <button
               type="button"
-              onClick={handleLogIn}
+              onClick={() => handOffToAuth("log_in")}
               className="rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
             >
               Log in
