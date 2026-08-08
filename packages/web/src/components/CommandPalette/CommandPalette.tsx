@@ -116,6 +116,15 @@ const CommandPaletteContent = ({
       ? `No results for “${search}”`
       : `${resultCount} result${resultCount === 1 ? "" : "s"}`;
 
+  // Invoke the item action directly — not via HTMLElement.click() — so
+  // keyboard-only mode's capture-phase click blocker cannot swallow Enter.
+  const activateItem = (item: CommandItem) => {
+    if (item.disabled) return;
+    recordRecentCommand(item.id);
+    item.onClick?.();
+    close();
+  };
+
   const dismiss = useDismiss(context);
   const role = useRole(context, { role: "listbox" });
   const listNav = useListNavigation(context, {
@@ -153,7 +162,8 @@ const CommandPaletteContent = ({
               onKeyDown(event) {
                 if (event.key === "Enter" && activeIndex != null) {
                   event.preventDefault();
-                  listRef.current[activeIndex]?.click();
+                  const item = flatItems[activeIndex];
+                  if (item) activateItem(item);
                 }
               },
             })}
@@ -232,10 +242,7 @@ const CommandPaletteContent = ({
                             setActiveIndex(index);
                           },
                           onClick() {
-                            if (item.disabled) return;
-                            recordRecentCommand(item.id);
-                            item.onClick?.();
-                            close();
+                            activateItem(item);
                           },
                         })}
                         type="button"

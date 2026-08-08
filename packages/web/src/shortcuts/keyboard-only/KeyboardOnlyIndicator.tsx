@@ -26,11 +26,11 @@ export const KeyboardOnlyIndicator: FC = () => {
   return (
     <span
       aria-live="polite"
-      className={`truncate text-text text-xs ${isPulsing ? "font-semibold opacity-100" : "opacity-80"}`}
+      className={`c-sync-text-wave truncate text-xs ${isPulsing ? "font-semibold opacity-100" : "opacity-80"}`}
       data-keyboard-only-indicator=""
       role="status"
     >
-      Keyboard only · ESC to exit
+      Keyboard only · Esc or Shift Shift
     </span>
   );
 };

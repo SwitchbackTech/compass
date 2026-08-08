@@ -33,4 +33,14 @@ describe("onboarding tour steps", () => {
     expect(shortcuts?.body).toMatch(/from the calendar/i);
     expect(shortcuts?.shortcutHint).toBe("?");
   });
+
+  it("points the finale at keyboard-only practice", () => {
+    const done = getOnboardingTourSteps().find((step) => step.id === "done");
+
+    expect(done?.body).toMatch(/anything with the keyboard/i);
+    expect(done?.body).toMatch(/Shift Shift/i);
+    expect(done?.body).toMatch(/clicks/i);
+    expect(done?.body).toMatch(/command palette/i);
+    expect(done?.shortcutHint).toBe("Shift Shift");
+  });
 });

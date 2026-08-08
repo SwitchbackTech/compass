@@ -2,6 +2,7 @@ import "@testing-library/jest-dom";
 import {
   act,
   fireEvent,
+  renderHook,
   screen,
   waitFor,
   within,
@@ -20,6 +21,12 @@ import {
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import {
+  initialKeyboardOnlyState,
+  keyboardOnlyActions,
+  useKeyboardOnlyStore,
+} from "@web/shortcuts/keyboard-only/keyboard-only.store";
+import { useKeyboardOnlyMode } from "@web/shortcuts/keyboard-only/useKeyboardOnlyMode";
 import { recordRecentCommand } from "./recent-commands.store";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -96,6 +103,7 @@ describe("CommandPalette", () => {
     mockNavigate.mockClear();
     onGoToToday.mockClear();
     onShowShortcuts.mockClear();
+    useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
   });
 
   it("renders all sections with items and focuses the input on mount", () => {
@@ -194,7 +202,8 @@ describe("CommandPalette", () => {
     // disabled Undo row and lands on the Appearance section's theme toggle.
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Day
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Life
-    fireEvent.keyDown(input, { key: "ArrowDown" }); // Show Shortcuts
+    fireEvent.keyDown(input, { key: "ArrowDown" }); // Show shortcuts
+    fireEvent.keyDown(input, { key: "ArrowDown" }); // Toggle keyboard-only mode
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Restart onboarding tour
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create event
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Create all-day event
@@ -220,6 +229,26 @@ describe("CommandPalette", () => {
     });
     expect(isOpen()).toBe(false);
     unsubscribe();
+  });
+
+  it("runs Enter selection while keyboard-only mode blocks clicks", () => {
+    // Mount the same capture-phase click blocker RootShell uses in production.
+    const { unmount: unmountMode } = renderHook(() => useKeyboardOnlyMode());
+
+    act(() => {
+      keyboardOnlyActions.enter();
+    });
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+
+    renderPalette();
+    const input = getInput();
+    fireEvent.change(input, { target: { value: "Show shortcuts" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    expect(onShowShortcuts).toHaveBeenCalledTimes(1);
+    expect(isOpen()).toBe(false);
+
+    unmountMode();
   });
 
   it("resets the active option to the first after typing", () => {
@@ -377,7 +406,7 @@ describe("CommandPalette", () => {
     // `[aria-hidden='true']` (not `.c-keycap`) because SelectView.test.tsx
     // mocks ShortcutHint process-wide (bun's mock.module leaks across
     // files); its stub keeps aria-hidden but drops the real class.
-    const row = screen.getByText("Show keyboard shortcuts").closest("button");
+    const row = screen.getByText("Show shortcuts").closest("button");
     expect(row?.querySelector("[aria-hidden='true']")?.textContent).toBe("?");
 
     fireEvent.click(row as HTMLButtonElement);
@@ -443,7 +472,7 @@ describe("CommandPalette", () => {
   it("records a command as recent when it's selected", () => {
     renderPalette();
 
-    fireEvent.click(screen.getByText("Show keyboard shortcuts"));
+    fireEvent.click(screen.getByText("Show shortcuts"));
     expect(isOpen()).toBe(false);
 
     // Same reopen pattern as "clears the search query when reopened after
@@ -455,7 +484,7 @@ describe("CommandPalette", () => {
     const recentHeading = screen.getByText("Recent");
     const recentSection = recentHeading.closest("div.mb-1") as HTMLElement;
     expect(
-      within(recentSection).getByText("Show keyboard shortcuts"),
+      within(recentSection).getByText("Show shortcuts"),
     ).toBeInTheDocument();
   });
 });

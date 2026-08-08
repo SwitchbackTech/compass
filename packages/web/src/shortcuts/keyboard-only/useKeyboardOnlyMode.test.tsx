@@ -88,6 +88,22 @@ describe("useKeyboardOnlyMode", () => {
     expect(clicked).toBe(true);
   });
 
+  it("exits on a second SHIFT-SHIFT", () => {
+    renderHook(() => useKeyboardOnlyMode());
+
+    act(() => {
+      tapShift();
+      tapShift();
+    });
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+
+    act(() => {
+      tapShift();
+      tapShift();
+    });
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
+  });
+
   it("does not enter while app-locked", () => {
     setAppLockReason("commandPalette", true);
     renderHook(() => useKeyboardOnlyMode());

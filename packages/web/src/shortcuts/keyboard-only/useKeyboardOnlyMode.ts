@@ -15,8 +15,8 @@ import { isShiftKey } from "@web/shortcuts/shift-hint/shift-hold-detector";
 const isAppLocked = () => document.body.dataset.appLocked === "true";
 
 /**
- * SHIFT-SHIFT (two quick taps) enters keyboard-only mode. Clicks are inert;
- * ESC / refresh exits. Mode is not persisted.
+ * SHIFT-SHIFT (two quick taps) toggles keyboard-only mode. Clicks are inert;
+ * ESC, SHIFT-SHIFT again, or refresh exits. Mode is not persisted.
  *
  * ESC stands down while app lock, floating layers, or the event form own Escape
  * so those dismiss first; a later ESC exits this mode.
@@ -56,12 +56,18 @@ export function useKeyboardOnlyMode() {
       // Keep counting a hold if the other Shift key is still down.
       if (event.shiftKey) return;
 
-      const result = reduceKeyboardOnlyDetector(stateRef.current, {
-        type: "shiftUp",
-        now: Date.now(),
-      });
-      stateRef.current = result.state;
-      if (result.entered && !useKeyboardOnlyStore.getState().isActive) {
+      const { state, entered: doubleTapped } = reduceKeyboardOnlyDetector(
+        stateRef.current,
+        {
+          type: "shiftUp",
+          now: Date.now(),
+        },
+      );
+      stateRef.current = state;
+      if (!doubleTapped) return;
+      if (useKeyboardOnlyStore.getState().isActive) {
+        keyboardOnlyActions.exit();
+      } else {
         keyboardOnlyActions.enter();
       }
     };
