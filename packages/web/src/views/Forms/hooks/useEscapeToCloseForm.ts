@@ -1,16 +1,14 @@
 import { useState } from "react";
-import {
-  isContextMenuOpen,
-  isFloatingLayerOpen,
-} from "@web/common/utils/form/form.util";
 import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
+import { isFloatingLayerOpen } from "@web/shortcuts/floating-layer";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { shouldConfirmDiscardUnsavedChanges } from "@web/views/Forms/hooks/shouldConfirmDiscardUnsavedChanges";
 
 /**
  * Escape closes the event-details form. Dirty edits of a persisted event
  * confirm first; create drafts and unchanged edits discard immediately.
- * Nested floating layers (menus, dialogs) win Escape via isFloatingLayerOpen.
+ * Nested floating layers (menus, listboxes, date pickers) register via
+ * `useFloatingLayer` so Escape closes them first.
  */
 export const useEscapeToCloseForm = (onClose: () => void) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -18,7 +16,6 @@ export const useEscapeToCloseForm = (onClose: () => void) => {
   useAppShortcut(
     "Escape",
     (keyboardEvent) => {
-      if (isContextMenuOpen()) return;
       if (isFloatingLayerOpen()) return;
 
       keyboardEvent.preventDefault();

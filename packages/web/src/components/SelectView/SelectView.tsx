@@ -13,6 +13,7 @@ import { useRef, useState } from "react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 import {
   LIFE_SHORTCUT,
   VIEW_SHORTCUTS,
@@ -30,6 +31,7 @@ export const SelectView = ({ label, onToday }: SelectViewProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const listRef = useRef<Array<HTMLElement | null>>([]);
+  useFloatingLayer("viewSelect", isOpen);
 
   const getCurrentView = (): "Day" | "Week" | "Life" => {
     const pathname = location.pathname;

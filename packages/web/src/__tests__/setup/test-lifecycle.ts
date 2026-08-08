@@ -26,6 +26,9 @@ const { cleanup, configure } = await import("@testing-library/react");
 const { resetAllStores } = await import("../utils/state/reset-stores");
 const { BaseApi } = await import("@web/api/base/base.api");
 const { clearAppLockReasons } = await import("@web/shortcuts/app-lock");
+const { clearFloatingLayerReasons } = await import(
+  "@web/shortcuts/floating-layer"
+);
 
 configure({ asyncUtilTimeout: 5000 });
 
@@ -35,6 +38,7 @@ function resetDocument() {
   document.body.removeAttribute("class");
   document.body.removeAttribute("data-app-locked");
   clearAppLockReasons();
+  clearFloatingLayerReasons();
   document.documentElement.removeAttribute("style");
   for (const style of document.head.querySelectorAll("style")) {
     if (

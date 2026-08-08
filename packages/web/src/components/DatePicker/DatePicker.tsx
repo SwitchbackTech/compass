@@ -1,5 +1,6 @@
 import classNames from "classnames";
 import type React from "react";
+import { useId } from "react";
 import * as ReactDatePickerModule from "react-datepicker";
 import { type ReactDatePickerProps } from "react-datepicker";
 import dayjs from "@core/util/date/dayjs";
@@ -11,6 +12,7 @@ import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/components/Icons/ChevronRightIcon";
 import { selectTheme, useThemeStore } from "@web/settings/theme/theme.store";
+import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 import { Focusable, INPUT_RESET_CLASSNAME } from "../Focusable/Focusable";
 import { CircleIcon } from "../Icons/CircleIcon";
 import { TooltipWrapper } from "../Tooltip/TooltipWrapper";
@@ -59,6 +61,10 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     withTodayButton = true,
     ...props
   } = datePickerProps;
+  const layerId = useId();
+  // Sidebar month grid stays mounted and visible; only transient grid popovers
+  // own Escape (same carve-out the old DOM probe encoded via Month picker).
+  useFloatingLayer(`datePicker:${layerId}`, view === "grid" && isOpen);
   const isDarkTheme = useThemeStore(selectTheme) === "dark-abyss";
   const resolvedBgColor =
     bgColor ?? (isDarkTheme ? colors.background : lightColors.background);

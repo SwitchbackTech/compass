@@ -1,104 +1,13 @@
-import {
-  ID_CONTEXT_MENU_ITEMS,
-  ID_EVENT_FORM,
-} from "../../constants/web.constants";
+import { ID_EVENT_FORM } from "../../constants/web.constants";
 import {
   isComboboxInteraction,
-  isContextMenuOpen,
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
-  isFloatingLayerOpen,
   shouldDeferEnterToTarget,
 } from "./form.util";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
-
-const mockGetElementById = mock();
+import { describe, expect, it } from "bun:test";
 
 describe("form.util", () => {
-  let getElementByIdSpy: ReturnType<typeof spyOn>;
-
-  beforeEach(() => {
-    mockGetElementById.mockClear();
-    getElementByIdSpy = spyOn(document, "getElementById").mockImplementation(
-      mockGetElementById as typeof document.getElementById,
-    );
-  });
-
-  afterEach(() => {
-    getElementByIdSpy.mockRestore();
-  });
-
-  describe("isContextMenuOpen", () => {
-    it("should return true when context menu is open", () => {
-      // Mock getElementById to return an element
-      const mockElement = { id: ID_CONTEXT_MENU_ITEMS };
-      mockGetElementById.mockReturnValue(mockElement);
-
-      const result = isContextMenuOpen();
-
-      expect(result).toBe(true);
-      expect(mockGetElementById).toHaveBeenCalledWith(ID_CONTEXT_MENU_ITEMS);
-    });
-
-    it("should return false when context menu is not open", () => {
-      // Mock getElementById to return null
-      mockGetElementById.mockReturnValue(null);
-
-      const result = isContextMenuOpen();
-
-      expect(result).toBe(false);
-      expect(mockGetElementById).toHaveBeenCalledWith(ID_CONTEXT_MENU_ITEMS);
-    });
-
-    it("should return false when context menu element is undefined", () => {
-      // Mock getElementById to return undefined
-      mockGetElementById.mockReturnValue(undefined);
-
-      const result = isContextMenuOpen();
-
-      expect(result).toBe(false);
-      expect(mockGetElementById).toHaveBeenCalledWith(ID_CONTEXT_MENU_ITEMS);
-    });
-
-    it("should return false when context menu element is empty string", () => {
-      // Mock getElementById to return empty string (falsy value)
-      mockGetElementById.mockReturnValue("");
-
-      const result = isContextMenuOpen();
-
-      expect(result).toBe(false);
-      expect(mockGetElementById).toHaveBeenCalledWith(ID_CONTEXT_MENU_ITEMS);
-    });
-
-    it("should return false when context menu element is 0", () => {
-      // Mock getElementById to return 0 (falsy value)
-      mockGetElementById.mockReturnValue(0);
-
-      const result = isContextMenuOpen();
-
-      expect(result).toBe(false);
-      expect(mockGetElementById).toHaveBeenCalledWith(ID_CONTEXT_MENU_ITEMS);
-    });
-
-    it("should return true for any truthy element", () => {
-      // Mock getElementById to return a truthy value
-      mockGetElementById.mockReturnValue("truthy-string");
-
-      const result = isContextMenuOpen();
-
-      expect(result).toBe(true);
-      expect(mockGetElementById).toHaveBeenCalledWith(ID_CONTEXT_MENU_ITEMS);
-    });
-  });
-
   describe("isComboboxInteraction", () => {
     const createEvent = (element: HTMLElement | null) =>
       ({ target: element }) as unknown as KeyboardEvent;
@@ -223,35 +132,6 @@ describe("form.util", () => {
       document.body.appendChild(button);
 
       expect(isEventFormKeyboardTarget(createEvent(button))).toBe(false);
-    });
-  });
-
-  describe("isFloatingLayerOpen", () => {
-    afterEach(() => {
-      document.body.replaceChildren();
-    });
-
-    it("ignores inert dialogs that stay mounted while closed", () => {
-      const dialog = document.createElement("div");
-      dialog.setAttribute("role", "dialog");
-      dialog.inert = true;
-      Object.defineProperty(dialog, "getClientRects", {
-        value: () => [new DOMRect(0, 0, 100, 100)],
-      });
-      document.body.appendChild(dialog);
-
-      expect(isFloatingLayerOpen()).toBe(false);
-    });
-
-    it("treats a visible non-inert dialog as open", () => {
-      const dialog = document.createElement("div");
-      dialog.setAttribute("role", "dialog");
-      Object.defineProperty(dialog, "getClientRects", {
-        value: () => [new DOMRect(0, 0, 100, 100)],
-      });
-      document.body.appendChild(dialog);
-
-      expect(isFloatingLayerOpen()).toBe(true);
     });
   });
 });

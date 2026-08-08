@@ -1,15 +1,12 @@
-import {
-  isContextMenuOpen,
-  isFloatingLayerOpen,
-} from "@web/common/utils/form/form.util";
 import { getToast } from "@web/common/utils/toast/toast.port";
 import { isEventFormOpen } from "@web/events/stores/draft.store";
+import { isFloatingLayerOpen } from "@web/shortcuts/floating-layer";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 /**
  * Escape clears the visible toast so a notice never has to be waited out.
  * Lowest-priority Escape consumer by design: modals are excluded for free by
- * the app lock (no `ignoreAppLock` here), and the probes below stand this
+ * the app lock (no `ignoreAppLock` here), and the checks below stand this
  * handler down while the form or a floating layer owns Escape.
  *
  * Wart: `dismiss()` clears what is on screen but not react-toastify's waiting
@@ -20,7 +17,6 @@ export const useEscapeToDismissToast = () => {
   useAppShortcut(
     "Escape",
     () => {
-      if (isContextMenuOpen()) return;
       if (isEventFormOpen()) return;
       if (isFloatingLayerOpen()) return;
 

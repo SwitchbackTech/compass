@@ -1,10 +1,11 @@
 import type React from "react";
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import { type CSSObjectWithLabel, type Props as RSProps } from "react-select";
 import CreatableSelect from "react-select/creatable";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type TimeOption } from "@web/common/types/util.types";
 import { parseUserTime } from "@web/common/utils/datetime/web.date.util";
+import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 
 export interface Props extends Omit<RSProps, "onChange" | "value"> {
   isMenuOpen: boolean;
@@ -43,6 +44,8 @@ export const TimePicker = ({
 }: Props) => {
   const TIMEPICKER = "timepicker";
   const containerRef = useRef<HTMLDivElement>(null);
+  const layerId = useId();
+  useFloatingLayer(`timePicker:${layerId}`, isMenuOpen);
   let scrollTimer: number;
 
   return (
