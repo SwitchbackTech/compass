@@ -5,6 +5,11 @@ import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync
 import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 import { settingsActions } from "@web/settings/settings.store";
+import { KeyboardOnlyIndicator } from "@web/shortcuts/keyboard-only/KeyboardOnlyIndicator";
+import {
+  selectKeyboardOnlyActive,
+  useKeyboardOnlyStore,
+} from "@web/shortcuts/keyboard-only/keyboard-only.store";
 
 /**
  * Pinned status bar at the bottom of the sidebar, just above the actions bar.
@@ -18,6 +23,7 @@ import { settingsActions } from "@web/settings/settings.store";
  * the meaning; `title` is the safety net if anything still overflows.
  */
 export const SidebarStatusBar: FC = () => {
+  const isKeyboardOnly = useKeyboardOnlyStore(selectKeyboardOnlyActive);
   const isSaving = useHasPendingEventMutations();
   // The unscoped hook's `connection` is the primary connection (the one
   // whose own state matches the aggregate) - without it, an account's
@@ -41,23 +47,29 @@ export const SidebarStatusBar: FC = () => {
 
   return (
     <div className="flex h-6 shrink-0 items-center px-4">
-      <button
-        aria-label={
-          text ? `${text}. Open account settings` : "Open account settings"
-        }
-        className="c-focus-ring flex h-full min-w-0 flex-1 items-center rounded-xs text-left"
-        onClick={settingsActions.openSettings}
-        title={text || undefined}
-        type="button"
-      >
-        <span
-          aria-live="polite"
-          className={`truncate text-xs ${status ? SYNC_STATUS_VARIANT_CLASSNAME[status.variant] : ""}`}
-          role="status"
+      {isKeyboardOnly ? (
+        <div className="flex h-full min-w-0 flex-1 items-center">
+          <KeyboardOnlyIndicator />
+        </div>
+      ) : (
+        <button
+          aria-label={
+            text ? `${text}. Open account settings` : "Open account settings"
+          }
+          className="c-focus-ring flex h-full min-w-0 flex-1 items-center rounded-xs text-left"
+          onClick={settingsActions.openSettings}
+          title={text || undefined}
+          type="button"
         >
-          {text}
-        </span>
-      </button>
+          <span
+            aria-live="polite"
+            className={`truncate text-xs ${status ? SYNC_STATUS_VARIANT_CLASSNAME[status.variant] : ""}`}
+            role="status"
+          >
+            {text}
+          </span>
+        </button>
+      )}
     </div>
   );
 };

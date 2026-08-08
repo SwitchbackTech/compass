@@ -12,6 +12,7 @@ import {
   selectWelcomeGuideOpen,
   useWelcomeGuideStore,
 } from "@web/components/WelcomeModal/welcome.guide.store";
+import { useKeyboardOnlyMode } from "@web/shortcuts/keyboard-only/useKeyboardOnlyMode";
 import {
   useCalendarShellShortcuts,
   useNavigationShortcuts,
@@ -30,6 +31,7 @@ export function RootShell() {
   const isWelcomeGuideOpen = useWelcomeGuideStore(selectWelcomeGuideOpen);
   useNavigationShortcuts();
   useCalendarShellShortcuts();
+  useKeyboardOnlyMode();
 
   return (
     <AuthModalProvider>
