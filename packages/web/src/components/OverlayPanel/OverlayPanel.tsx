@@ -86,8 +86,10 @@ export const OverlayPanel = ({
     return () => {
       // Read at unmount so callers can suppress restore for dialog handoffs.
       if (skipFocusRestoreRef?.current) return;
-      // Let the Escape key's global handlers finish before restoring focus.
-      if (restoreFocus) setTimeout(restoreFocus);
+      // Sync restore is safe: app-lock is still held during this cleanup
+      // (registered before this effect), so document Escape consumers that
+      // respect the lock stand down. OverlayPanel also stopPropagates Escape.
+      if (restoreFocus) restoreFocus();
       else previouslyFocused?.focus?.();
     };
   }, [restoreFocus, role, skipFocusRestoreRef]);

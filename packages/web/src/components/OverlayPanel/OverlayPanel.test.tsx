@@ -105,4 +105,27 @@ describe("OverlayPanel", () => {
     rerender(<button type="button">Outside</button>);
     expect(outside).not.toHaveFocus();
   });
+
+  it("restores focus synchronously via restoreFocus on unmount", () => {
+    const outside = document.createElement("button");
+    outside.type = "button";
+    outside.textContent = "Outside";
+    document.body.appendChild(outside);
+    outside.focus();
+
+    const { unmount } = render(
+      <OverlayPanel
+        title="Confirm"
+        onDismiss={() => {}}
+        restoreFocus={() => outside.focus()}
+      >
+        <button type="button">Inside</button>
+      </OverlayPanel>,
+    );
+    expect(screen.getByRole("button", { name: "Inside" })).toHaveFocus();
+
+    unmount();
+    expect(outside).toHaveFocus();
+    outside.remove();
+  });
 });
