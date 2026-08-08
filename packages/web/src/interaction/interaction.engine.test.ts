@@ -46,9 +46,11 @@ const makePointerEvent = (
 const SOURCE_ELEMENT_INTERACTION_ATTRIBUTE = "data-calendar-interaction-source";
 
 const createHarness = ({
+  commitTeardownDeadlineMs,
   scrollableAncestor,
   sourceDraftEventMode,
 }: {
+  commitTeardownDeadlineMs?: number;
   scrollableAncestor?: { clientHeight: number; scrollHeight: number };
   sourceDraftEventMode?: SourceElementDraftEventMode;
 } = {}) => {
@@ -142,6 +144,9 @@ const createHarness = ({
     adapter,
     cancelFrame: (frame) => frameCallbacks.delete(frame),
     clearTimer: (timer) => timerCallbacks.delete(timer),
+    ...(commitTeardownDeadlineMs === undefined
+      ? {}
+      : { commitTeardownDeadlineMs }),
     now: () => now,
     requestFrame: (callback) => {
       const id = nextFrameId;
@@ -422,6 +427,42 @@ describe("InteractionEngine", () => {
       document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeNull();
     expect(frameCallbacks.size).toBe(0);
+  });
+
+  it("keeps the draft mounted through a slow commit until the source reflows", () => {
+    // Regression for the old 250ms deadline: dense-week / series commits can
+    // take longer. Reflow after many frames must still win before the timer.
+    const { engine, flushFrame, frameCallbacks, source, timerCallbacks } =
+      createHarness({ commitTeardownDeadlineMs: 500 });
+    const rect = { height: 0, left: 0, top: 0, width: 0 };
+
+    source.getBoundingClientRect = () => ({ ...rect }) as DOMRect;
+
+    engine.handlePointerDown(makePointerEvent("pointerdown", { x: 5, y: 5 }));
+    engine.handlePointerMove(makePointerEvent("pointermove", { x: 35, y: 45 }));
+    flushFrame(16);
+    engine.handlePointerUp(makePointerEvent("pointerup", { x: 35, y: 45 }));
+
+    // More frame polls than a 250ms window at ~16ms/frame would allow.
+    for (let i = 0; i < 20; i += 1) {
+      flushFrame(32 + i * 16);
+      expect(source.style.visibility).toBe("hidden");
+      expect(
+        document.body.querySelector("[data-calendar-draft-event]"),
+      ).toBeTruthy();
+    }
+
+    expect(timerCallbacks.size).toBe(1);
+
+    rect.top = 50;
+    flushFrame(400);
+
+    expect(source.style.visibility).toBe("visible");
+    expect(
+      document.body.querySelector("[data-calendar-draft-event]"),
+    ).toBeNull();
+    expect(frameCallbacks.size).toBe(0);
+    expect(timerCallbacks.size).toBe(0);
   });
 
   it("tears down a held commit when the source element leaves the DOM", () => {
