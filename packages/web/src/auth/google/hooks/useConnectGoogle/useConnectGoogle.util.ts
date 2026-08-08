@@ -96,12 +96,12 @@ const lastUpdatedSuffix = (
 
 const stuckReconnectStatus = (lastBit: string): SyncStatus => ({
   variant: "error",
-  text: `Sync is stuck.${lastBit} Reconnect your calendar, or email ${SUPPORT_EMAIL} for help.`,
+  text: `We couldn't update your calendar.${lastBit} Reconnect, or email ${SUPPORT_EMAIL} for help.`,
 });
 
 const catchingUpDetailStatus = (lastBit: string): SyncStatus => ({
   variant: "syncing",
-  text: `Sync is catching up.${lastBit} This usually clears on its own.`,
+  text: `Syncing in the background…${lastBit} This usually finishes on its own.`,
 });
 
 export type GoogleConnectionHandlers = {
@@ -169,12 +169,12 @@ const delayedSettingsStatus = (
   if (connection.stateReason === "providerErrors") {
     return {
       variant: "warning",
-      text: `Sync hit an error.${lastBit} Refresh your calendars, or reconnect if this continues.`,
+      text: `Couldn't update your calendar.${lastBit} Try Refresh, or reconnect if this continues.`,
     };
   }
   return {
     variant: "warning",
-    text: `Sync is stuck.${lastBit} Refresh your calendars, or reconnect if this continues.`,
+    text: `Calendar updates are taking longer than usual.${lastBit} Try Refresh, or reconnect if this continues.`,
   };
 };
 
@@ -255,7 +255,7 @@ export const getGoogleSyncStatus = (
       }
       return {
         variant: "warning",
-        text: "Sync is stuck. Refresh your calendars, or reconnect if this continues.",
+        text: "Calendar updates are taking longer than usual. Try Refresh, or reconnect if this continues.",
       };
     case "RECONNECT_REQUIRED":
       return { variant: "error", text: "Calendar needs reconnecting" };
@@ -300,16 +300,16 @@ export const getSidebarSyncStatus = ({
     refreshGaveUp &&
     (state === "ATTENTION" || connection?.state === "delayed")
   ) {
-    return { variant: "error", text: "Sync is stuck" };
+    return { variant: "error", text: "Calendar updates are delayed" };
   }
 
-  // Align with the Catching up… CTA while we wait for delayed to clear —
-  // otherwise the bar keeps saying "Sync is stuck" beside a hopeful button.
+  // Align with the Syncing… status while we wait for delayed to clear —
+  // otherwise the bar keeps saying updates are delayed beside a hopeful button.
   if (
     refreshInFlight &&
     (state === "ATTENTION" || connection?.state === "delayed")
   ) {
-    return { variant: "syncing", text: "Sync is catching up" };
+    return { variant: "syncing", text: "Syncing in the background…" };
   }
 
   if (connection) {
@@ -320,7 +320,7 @@ export const getSidebarSyncStatus = ({
         }
         const ageMs = syncedAgeMs(connection.lastSyncedAt, nowMs);
         if (ageMs !== null && ageMs >= CATCHING_UP_NOTICE_AFTER_MS) {
-          return { variant: "syncing", text: "Sync is catching up" };
+          return { variant: "syncing", text: "Syncing in the background…" };
         }
         return null;
       }
@@ -329,8 +329,8 @@ export const getSidebarSyncStatus = ({
           variant: "warning",
           text:
             connection.stateReason === "providerErrors"
-              ? "Sync hit an error"
-              : "Sync is stuck",
+              ? "Couldn't update your calendar"
+              : "Calendar updates are delayed",
         };
       case "actionRequired":
       case "disconnected":

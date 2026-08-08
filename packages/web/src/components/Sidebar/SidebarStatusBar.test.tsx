@@ -127,7 +127,7 @@ describe("SidebarStatusBar", () => {
     expect(screen.queryByText("Adding your calendar…")).toBeNull();
   });
 
-  it("shows Sync is catching up when catch-up is more than two minutes behind", () => {
+  it("shows Syncing in the background when catch-up is more than two minutes behind", () => {
     googleState = "IMPORTING";
     connection = createMockConnection("ahab@pequod.com", {
       state: "catchingUp",
@@ -139,14 +139,16 @@ describe("SidebarStatusBar", () => {
 
     render(<SidebarStatusBar />, { wrapper });
 
-    expect(screen.getByRole("status")).toHaveTextContent("Sync is catching up");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Syncing in the background…",
+    );
     expect(screen.getByRole("button")).toHaveAttribute(
       "title",
-      "Sync is catching up",
+      "Syncing in the background…",
     );
   });
 
-  it("shows Sync is stuck for delayed workOverdue", () => {
+  it("shows Calendar updates are delayed for delayed workOverdue", () => {
     googleState = "ATTENTION";
     connection = createMockConnection("ahab@pequod.com", {
       state: "delayed",
@@ -159,7 +161,9 @@ describe("SidebarStatusBar", () => {
 
     render(<SidebarStatusBar />, { wrapper });
 
-    expect(screen.getByRole("status")).toHaveTextContent("Sync is stuck");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Calendar updates are delayed",
+    );
   });
 
   it("opens Settings when the status bar is activated", async () => {
@@ -176,7 +180,7 @@ describe("SidebarStatusBar", () => {
     render(<SidebarStatusBar />, { wrapper });
     await user.click(
       screen.getByRole("button", {
-        name: "Sync is stuck. Open account settings",
+        name: "Calendar updates are delayed. Open account settings",
       }),
     );
 

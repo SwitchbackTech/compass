@@ -73,7 +73,7 @@ describe("FeedbackDialog", () => {
         <>
           <button
             type="button"
-            aria-label="Open command palette, calendar syncing"
+            aria-label="Open command palette, syncing in the background"
           />
           {open ? (
             <FeedbackDialog
@@ -98,7 +98,7 @@ describe("FeedbackDialog", () => {
     await waitFor(() =>
       expect(
         screen.getByRole("button", {
-          name: "Open command palette, calendar syncing",
+          name: "Open command palette, syncing in the background",
         }),
       ).toHaveFocus(),
     );

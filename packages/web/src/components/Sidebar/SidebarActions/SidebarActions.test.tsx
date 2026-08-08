@@ -44,7 +44,7 @@ describe("SidebarActions", () => {
 
     expect(
       screen.getByRole("button", {
-        name: "Open command palette, calendar syncing",
+        name: "Open command palette, syncing in the background",
       }),
     ).toBeInTheDocument();
   });

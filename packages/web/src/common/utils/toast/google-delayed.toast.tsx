@@ -25,10 +25,12 @@ export const GoogleDelayedToast = ({ toastId }: GoogleDelayedToastProps) => {
 
   return (
     <div className="flex w-full flex-col gap-2">
-      <p className="font-medium text-sm text-text">Calendar sync is delayed</p>
+      <p className="font-medium text-sm text-text">
+        Calendar updates are delayed
+      </p>
       <p className="text-sm text-text">
-        Calendar sync is taking longer than expected. Refresh to try again, or
-        reconnect if this continues.
+        Updates are taking longer than expected. Try Refresh, or reconnect if
+        this continues.
       </p>
       <button
         className="w-full rounded bg-accent-secondary px-3 py-2 font-medium text-on-accent text-sm transition-colors hover:bg-accent-secondary-hover"
