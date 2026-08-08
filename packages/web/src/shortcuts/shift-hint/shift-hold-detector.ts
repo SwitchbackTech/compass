@@ -11,6 +11,11 @@ export const SHIFT_HOLD_HINT_THRESHOLD_MS = 200;
 /** Max gap between two quick Shift taps to enter keyboard-only mode. */
 export const SHIFT_DOUBLE_TAP_MAX_GAP_MS = 400;
 
+export const isShiftKey = (event: Pick<KeyboardEvent, "key" | "code">) =>
+  event.key === "Shift" ||
+  event.code === "ShiftLeft" ||
+  event.code === "ShiftRight";
+
 export type ShiftHoldPhase = "idle" | "pending" | "active";
 
 export type ShiftHoldState = {

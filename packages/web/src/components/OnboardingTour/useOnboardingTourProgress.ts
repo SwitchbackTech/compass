@@ -7,7 +7,6 @@ import {
 } from "@web/components/OnboardingTour/onboarding.tour.store";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 import {
-  isEventFormOpen,
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
@@ -19,7 +18,7 @@ import {
   selectIsCmdPaletteOpen,
   useSettingsStore,
 } from "@web/settings/settings.store";
-import { isFloatingLayerOpen } from "@web/shortcuts/floating-layer";
+import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 
 /**
  * Advances tour steps when the user performs the prompted action.
@@ -66,9 +65,7 @@ export function useOnboardingTourProgress() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       if (event.defaultPrevented) return;
-      if (document.body.dataset.appLocked === "true") return;
-      if (isFloatingLayerOpen()) return;
-      if (isEventFormOpen()) return;
+      if (isHigherEscapeOwner()) return;
 
       event.preventDefault();
       event.stopPropagation();

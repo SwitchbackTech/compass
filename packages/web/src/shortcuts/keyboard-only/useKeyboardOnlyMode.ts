@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
-import { isEventFormOpen } from "@web/events/stores/draft.store";
-import { isFloatingLayerOpen } from "@web/shortcuts/floating-layer";
+import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import {
   keyboardOnlyActions,
   useKeyboardOnlyStore,
@@ -11,13 +10,9 @@ import {
   type KeyboardOnlyDetectorState,
   reduceKeyboardOnlyDetector,
 } from "@web/shortcuts/keyboard-only/keyboard-only-detector";
+import { isShiftKey } from "@web/shortcuts/shift-hint/shift-hold-detector";
 
 const isAppLocked = () => document.body.dataset.appLocked === "true";
-
-const isShiftKey = (event: KeyboardEvent) =>
-  event.key === "Shift" ||
-  event.code === "ShiftLeft" ||
-  event.code === "ShiftRight";
 
 /**
  * SHIFT-SHIFT (two quick taps) enters keyboard-only mode. Clicks are inert;
@@ -98,7 +93,10 @@ export function useKeyboardOnlyMode() {
     const blockPointer = (event: Event) => {
       event.preventDefault();
       event.stopPropagation();
-      keyboardOnlyActions.pulseBlockedClick();
+      // Pulse once per gesture (pointerdown), not again on click/mousedown.
+      if (event.type === "pointerdown") {
+        keyboardOnlyActions.pulseBlockedClick();
+      }
     };
 
     window.addEventListener("pointerdown", blockPointer, true);
@@ -121,9 +119,7 @@ export function useKeyboardOnlyMode() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       if (event.defaultPrevented) return;
-      if (isAppLocked()) return;
-      if (isFloatingLayerOpen()) return;
-      if (isEventFormOpen()) return;
+      if (isHigherEscapeOwner()) return;
 
       event.preventDefault();
       event.stopPropagation();

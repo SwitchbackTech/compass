@@ -63,14 +63,15 @@ describe("useKeyboardOnlyMode", () => {
 
     act(() => {
       window.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, cancelable: true }),
+      );
+      window.dispatchEvent(
         new MouseEvent("click", { bubbles: true, cancelable: true }),
       );
     });
 
     expect(clicked).toBe(false);
-    expect(useKeyboardOnlyStore.getState().blockedClickPulse).toBeGreaterThan(
-      0,
-    );
+    expect(useKeyboardOnlyStore.getState().blockedClickPulse).toBe(1);
 
     act(() => {
       dispatchKey("keydown", "Escape");
