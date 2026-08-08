@@ -1,4 +1,4 @@
-import { type MouseEvent as ReactMouseEvent, useRef } from "react";
+import { type MouseEvent as ReactMouseEvent, useEffect, useRef } from "react";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEventFormOpen } from "@web/events/stores/draft.store";
@@ -11,6 +11,10 @@ import { hasExceededInteractionMoveThreshold } from "@web/interaction/interactio
 type HandleDragHandlers = {
   onMouseMove: (e: MouseEvent) => void;
   onMouseUp: () => void;
+};
+
+type ActivePress = {
+  cleanup: () => void;
 };
 
 /**
@@ -31,6 +35,14 @@ export const useGridEventMouseDown = (
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
   const mouseMoved = useRef<boolean>(false);
   const targetRef = useRef<EventTarget | null>(null);
+  const activePressRef = useRef<ActivePress | null>(null);
+
+  useEffect(() => {
+    return () => {
+      activePressRef.current?.cleanup();
+      activePressRef.current = null;
+    };
+  }, []);
 
   const cleanup = (
     onMouseMove: (e: MouseEvent) => void,
@@ -38,9 +50,11 @@ export const useGridEventMouseDown = (
   ) => {
     if (timeoutId.current) {
       clearTimeout(timeoutId.current);
+      timeoutId.current = null;
     }
     document.removeEventListener("mousemove", onMouseMove);
     document.removeEventListener("mouseup", onMouseUp);
+    activePressRef.current = null;
   };
 
   const handleDrag = (
@@ -67,6 +81,8 @@ export const useGridEventMouseDown = (
 
   const onMouseDown = (e: ReactMouseEvent, event: GridEvent) => {
     e.stopPropagation();
+    activePressRef.current?.cleanup();
+
     targetRef.current = e.currentTarget;
     const initialX = e.clientX;
     const initialY = e.clientY;
@@ -83,6 +99,7 @@ export const useGridEventMouseDown = (
         mouseMoved.current = true;
         if (timeoutId.current) {
           clearTimeout(timeoutId.current);
+          timeoutId.current = null;
         }
         onDrag(event, {
           clientX: moveEvent.clientX,
@@ -96,6 +113,7 @@ export const useGridEventMouseDown = (
     const onMouseUp = () => {
       if (!mouseMoved.current && timeoutId.current) {
         clearTimeout(timeoutId.current);
+        timeoutId.current = null;
         onClick(event);
       }
       cleanup(onMouseMove, onMouseUp);
@@ -116,6 +134,9 @@ export const useGridEventMouseDown = (
 
     document.addEventListener("mousemove", onMouseMove);
     document.addEventListener("mouseup", onMouseUp);
+    activePressRef.current = {
+      cleanup: () => cleanup(onMouseMove, onMouseUp),
+    };
   };
 
   return { onMouseDown };
