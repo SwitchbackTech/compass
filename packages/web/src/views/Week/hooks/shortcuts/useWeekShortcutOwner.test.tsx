@@ -377,26 +377,59 @@ describe("useWeekShortcutOwner calendar event targeting", () => {
     expect(state.gridDraft?.values.title).toBe("Editable event");
   });
 
-  it("focuses the chronologically next event with ArrowDown", () => {
-    const earlier = addCalendarTarget(leftmostEvent.id);
-    const later = addCalendarTarget(editableEvent.id);
+  it("keeps ArrowDown on the same day when a later event exists that day", () => {
+    const sameDayLaterId = EventIdSchema.parse("dddddddddddddddddddddddd");
+    const sameDayLater = createMockEvent({
+      id: sameDayLaterId,
+      content: { kind: "details", title: "Same day later", description: "" },
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-05-20T14:00:00.000Z",
+        end: "2026-05-20T15:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
+    const earlier = addCalendarTarget(editableEvent.id);
+    const later = addCalendarTarget(sameDayLaterId);
     earlier.focus();
-    renderShortcuts({ includeLeftmostEvent: true });
+    renderShortcuts({ extraEvents: [sameDayLater] });
 
     pressKey("ArrowDown");
 
     expect(document.activeElement).toBe(later);
   });
 
-  it("focuses the chronologically previous event with ArrowUp", () => {
+  it("does not leave the day with ArrowDown when no later same-day event exists", () => {
     const earlier = addCalendarTarget(leftmostEvent.id);
-    const later = addCalendarTarget(editableEvent.id);
-    later.focus();
+    addCalendarTarget(editableEvent.id);
+    earlier.focus();
     renderShortcuts({ includeLeftmostEvent: true });
 
-    pressKey("ArrowUp");
+    pressKey("ArrowDown");
 
     expect(document.activeElement).toBe(earlier);
+  });
+
+  it("focuses the time-nearest event on the next non-empty day with ArrowRight", () => {
+    const monday = addCalendarTarget(leftmostEvent.id);
+    const wednesday = addCalendarTarget(editableEvent.id);
+    monday.focus();
+    renderShortcuts({ includeLeftmostEvent: true });
+
+    pressKey("ArrowRight");
+
+    expect(document.activeElement).toBe(wednesday);
+  });
+
+  it("focuses the time-nearest event on the previous non-empty day with ArrowLeft", () => {
+    const monday = addCalendarTarget(leftmostEvent.id);
+    const wednesday = addCalendarTarget(editableEvent.id);
+    wednesday.focus();
+    renderShortcuts({ includeLeftmostEvent: true });
+
+    pressKey("ArrowLeft");
+
+    expect(document.activeElement).toBe(monday);
   });
 
   it("deletes pending calendar events with Delete", () => {

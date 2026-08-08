@@ -204,6 +204,18 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     section: "edit",
   },
   {
+    id: "edit-focus-left",
+    keys: ["ArrowLeft"],
+    label: "Focus event on previous day",
+    section: "edit",
+  },
+  {
+    id: "edit-focus-right",
+    keys: ["ArrowRight"],
+    label: "Focus event on next day",
+    section: "edit",
+  },
+  {
     id: "edit-move",
     keys: ["Arrow keys"],
     label: "Move draft event",
@@ -305,6 +317,23 @@ export const filterShortcutsByContext = (
       } else {
         label = "Go to today";
       }
+    } else if (shortcut.id === "edit-focus-prev") {
+      label =
+        view === "week"
+          ? "Focus previous event on day"
+          : "Focus previous event";
+    } else if (shortcut.id === "edit-focus-next") {
+      label = view === "week" ? "Focus next event on day" : "Focus next event";
+    } else if (shortcut.id === "edit-focus-left") {
+      label =
+        view === "day"
+          ? "Previous day and focus first event"
+          : "Focus event on previous day";
+    } else if (shortcut.id === "edit-focus-right") {
+      label =
+        view === "day"
+          ? "Next day and focus first event"
+          : "Focus event on next day";
     }
 
     return { ...shortcut, label };

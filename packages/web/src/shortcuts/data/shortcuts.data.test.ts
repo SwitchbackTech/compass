@@ -161,11 +161,29 @@ describe("shortcuts.data", () => {
         });
         expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["ArrowUp"],
-          label: "Focus previous event",
+          label:
+            view === "week"
+              ? "Focus previous event on day"
+              : "Focus previous event",
         });
         expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["ArrowDown"],
-          label: "Focus next event",
+          label:
+            view === "week" ? "Focus next event on day" : "Focus next event",
+        });
+        expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
+          keys: ["ArrowLeft"],
+          label:
+            view === "day"
+              ? "Previous day and focus first event"
+              : "Focus event on previous day",
+        });
+        expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
+          keys: ["ArrowRight"],
+          label:
+            view === "day"
+              ? "Next day and focus first event"
+              : "Focus event on next day",
         });
         expect(stripMetadata(edit?.shortcuts ?? [])).toContainEqual({
           keys: ["Enter"],

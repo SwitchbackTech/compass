@@ -5,6 +5,7 @@ import { type EventMutationDependencies } from "@web/events/mutations/useEventMu
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
+import { requestFocusFirstDayCalendarEvent } from "@web/views/Day/interaction/day-event.focus";
 import {
   focusDayGridEventTarget,
   getFocusedDayGridEventTarget,
@@ -14,7 +15,8 @@ import {
 /**
  * Day-view edit shortcuts: Delete, Mod+D, Shift+arrows (nudge / day-move),
  * Arrow keys to reposition an open draft or focus the neighboring event,
- * and `e`+field sequences to open/focus form fields.
+ * ArrowLeft/Right to page the day and focus its first event, and `e`+field
+ * sequences to open/focus form fields.
  * Shift+ArrowLeft/Right move a focused event by one day and follow that day
  * in the Day view.
  */
@@ -22,12 +24,16 @@ export function useDayEventNudgeShortcuts({
   allDayEvents = [],
   dependencies = {},
   navigateToDate,
+  navigateToNextDay,
+  navigateToPreviousDay,
   timedEvents,
 }: {
   allDayEvents?: GridEvent[];
   dependencies?: EventMutationDependencies;
   /** Follow draft Left/Right moves so the draft stays on screen. */
   navigateToDate?: (date: Dayjs) => void;
+  navigateToNextDay?: () => void;
+  navigateToPreviousDay?: () => void;
   timedEvents: GridEvent[];
 }) {
   const targeting = {
@@ -43,6 +49,14 @@ export function useDayEventNudgeShortcuts({
     dayBoundary: {
       kind: "follow",
       onCrossed: (date) => navigateToDate?.(date),
+      onFocusPageDay: (direction) => {
+        if (direction === "previous") {
+          navigateToPreviousDay?.();
+        } else {
+          navigateToNextDay?.();
+        }
+        requestFocusFirstDayCalendarEvent();
+      },
     },
     targeting,
     repositionDraftByKey: (key) => {
