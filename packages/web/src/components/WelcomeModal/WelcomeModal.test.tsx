@@ -147,4 +147,36 @@ describe("WelcomeModal", () => {
     expect(answer).toHaveAttribute("aria-hidden", "true");
     expect(answer).toHaveAttribute("data-state", "closed");
   });
+
+  it("focuses the first control and keeps Tab inside the dialog", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <>
+        <button type="button">Outside calendar</button>
+        <WelcomeModal />
+      </>,
+    );
+
+    const dialog = screen.getByRole("dialog", {
+      name: "Welcome to Compass Calendar",
+    });
+    const signUp = screen.getByRole("button", { name: "Sign up" });
+    expect(signUp).toHaveFocus();
+
+    const focusables = Array.from(
+      dialog.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    );
+    const last = focusables[focusables.length - 1];
+    last.focus();
+    expect(last).toHaveFocus();
+
+    await user.tab();
+    expect(signUp).toHaveFocus();
+    expect(
+      screen.getByRole("button", { name: "Outside calendar" }),
+    ).not.toHaveFocus();
+  });
 });

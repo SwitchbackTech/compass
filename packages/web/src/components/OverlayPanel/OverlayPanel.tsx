@@ -17,6 +17,8 @@ interface Props {
   icon?: ReactNode;
   /** Main title text */
   title?: string;
+  /** Accessible name when the panel has no visible title */
+  ariaLabel?: string;
   /** Optional content rendered on the same row as the title (e.g. a switch link) */
   titleAction?: ReactNode;
   /** Description/message text */
@@ -35,11 +37,16 @@ interface Props {
   variant?: "modal" | "status";
   /** Tailwind width class for the modal variant (default: "w-[400px]") */
   widthClassName?: string;
+  /** Extra classes for the backdrop (e.g. overflow for tall dialogs) */
+  backdropClassName?: string;
+  /** When true, applies dismiss-transition `data-closing` styles before unmount */
+  closing?: boolean;
 }
 
 export const OverlayPanel = ({
   icon,
   title,
+  ariaLabel,
   titleAction,
   message,
   children,
@@ -49,6 +56,8 @@ export const OverlayPanel = ({
   align = "center",
   variant = "modal",
   widthClassName = "w-[400px]",
+  backdropClassName,
+  closing = false,
 }: Props) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const baseId = useId();
@@ -73,6 +82,9 @@ export const OverlayPanel = ({
 
   const backdropClasses = clsx(
     "fixed inset-0 flex items-center justify-center bg-background/85 backdrop-blur-sm",
+    variant === "modal" &&
+      "transition-opacity duration-400 ease-out data-closing:opacity-0 motion-reduce:transition-none",
+    backdropClassName,
   );
 
   const panelClasses = clsx(
@@ -81,6 +93,7 @@ export const OverlayPanel = ({
     variant === "modal" && [
       widthClassName,
       "max-w-[90vw] gap-6 rounded-xl bg-surface-panel p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]",
+      "transition-transform duration-400 ease-out data-closing:scale-105 motion-reduce:transition-none",
     ],
     variant === "status" &&
       "max-w-sm gap-3 rounded-lg border border-border bg-surface/90 px-6 py-5 shadow-lg",
@@ -126,6 +139,7 @@ export const OverlayPanel = ({
     // biome-ignore lint/a11y/noStaticElementInteractions: The backdrop catches outside clicks and Escape to dismiss the panel.
     <div
       className={backdropClasses}
+      data-closing={closing || undefined}
       onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
       role="presentation"
@@ -136,9 +150,11 @@ export const OverlayPanel = ({
       <div
         ref={panelRef}
         className={panelClasses}
+        data-closing={closing || undefined}
         role={role}
         tabIndex={role === "dialog" ? -1 : undefined}
         aria-modal={role === "dialog" ? true : undefined}
+        aria-label={!title ? ariaLabel : undefined}
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={message ? messageId : undefined}
         aria-live={role === "status" ? "polite" : undefined}
