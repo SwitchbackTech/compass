@@ -545,18 +545,21 @@ export async function executeProviderSeriesUpdate(
 // from the reprojected master so a deleted occurrence is not resurrected. A
 // conversion to a single event drops every exception.
 //
-// Overrides are cancelled at the provider, then deleted locally BEFORE the
-// master is replaced — the same crash-safety ordering the cloud path uses.
-// Google does not drop instance overrides when the master is patched, so a
-// later pull would otherwise resurrect them. Cancel-before-local-delete keeps
-// retries idempotent (provider delete is 404-OK). A convert-to-single edit
-// changes the master's recurrence kind, and a retry that read the converted
-// single master would take the single-event path, which never cleans
-// exceptions; clearing first closes that hole. Gating the kept/discarded
-// split on the command's immutable recurrence intent keeps a retry
-// classifying identically. A false from replaceExisting means the master
-// vanished mid-flight, so leave the command pending rather than confirm a
-// gone series.
+// Content/time overrides are aligned at the provider (patched to the edited
+// series), then deleted locally BEFORE the master is replaced — the same
+// crash-safety ordering the cloud path uses. Google does not drop instance
+// overrides when the master is patched, so a later pull would otherwise
+// resurrect stale override fields. Patching (not deleting) keeps the
+// occurrence confirmed: Google's events.delete on an instance cancels that
+// date, and a later pull would tombstone it out of the series. A
+// convert-to-single edit still deletes discarded exceptions at the provider
+// (they are no longer series members). Clearing locals first also closes the
+// convert-to-single retry hole: a retry that read the converted single master
+// would take the single-event path, which never cleans exceptions. Gating the
+// kept/discarded split on the command's immutable recurrence intent keeps a
+// retry classifying identically. A false from replaceExisting means the
+// master vanished mid-flight, so leave the command pending rather than
+// confirm a gone series.
 async function commitProviderSeriesUpdate(
   deps: ProviderMutationDeps,
   command: CommandRecord,
@@ -585,18 +588,36 @@ async function commitProviderSeriesUpdate(
     ? exceptions
     : exceptions.filter((exception) => !isCancelledException(exception));
 
-  // Cancel discarded overrides at Google first, then clear local copies.
-  // Kept cancelled tombstones are not touched at the provider.
+  // Align or remove discarded overrides at Google first, then clear local
+  // copies. Kept cancelled tombstones are not touched at the provider.
   for (const exception of discarded) {
     if (exception.providerEventId) {
       try {
-        await deps.writer.deleteEvent({
-          accessToken: provider.accessToken,
-          calendarId: provider.calendarId,
-          providerEventId: exception.providerEventId,
-          expectedVersion: null,
-          invitation: input.invitation,
-        });
+        if (convertsToSingle) {
+          await deps.writer.deleteEvent({
+            accessToken: provider.accessToken,
+            calendarId: provider.calendarId,
+            providerEventId: exception.providerEventId,
+            expectedVersion: null,
+            invitation: input.invitation,
+          });
+        } else {
+          // Revert the override into the edited series without cancelling the
+          // occurrence. Delete would mark the instance cancelled at Google.
+          await deps.writer.patchEvent({
+            accessToken: provider.accessToken,
+            calendarId: provider.calendarId,
+            providerEventId: exception.providerEventId,
+            expectedVersion: null,
+            content,
+            schedule: occurrenceScheduleAt(
+              input.schedule,
+              exceptionInstant(exception),
+            ),
+            recurrence: { kind: "instance" },
+            invitation: input.invitation,
+          });
+        }
       } catch (error) {
         if (error instanceof ProviderWriteError) {
           if (error.reason === "transient") return command;
@@ -670,13 +691,12 @@ async function commitProviderSeriesUpdate(
 // use (series-exception.ts), so a provider-linked and a cloud-only
 // series converge to the same on-disk shape.
 //
-// Known deferred gap, matching the documented one in
-// commitProviderSeriesUpdate above: un-cancelling a provider instance (a
-// scope-"this" edit of an instance the provider already reports as
-// cancelled) is not implemented — it fails with permanentProviderError
-// rather than silently no-op'ing. Restoring a cancelled Google instance to
-// "confirmed" is a distinct provider operation this slice does not need for
-// the common edit/delete-a-live-instance path.
+// Known deferred gap: un-cancelling a provider instance (a scope-"this" edit
+// of an instance the provider already reports as cancelled) is not
+// implemented — it fails with permanentProviderError rather than silently
+// no-op'ing. Restoring a cancelled Google instance to "confirmed" is a
+// distinct provider operation this slice does not need for the common
+// edit/delete-a-live-instance path.
 // ---------------------------------------------------------------------------
 
 // Apply a Compass-initiated scope-"this" edit to one occurrence of a

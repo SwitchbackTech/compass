@@ -504,6 +504,8 @@ class FakeUpdateWriter implements ProviderEventWriter {
     providerVersion: "etag-2",
   };
   patchError?: unknown;
+  // Fail only instance patches (edit-all override align), not the master patch.
+  instancePatchError?: unknown;
   deleteError?: unknown;
   fetchCalls: ProviderFetchInput[] = [];
   patchCalls: ProviderPatchInput[] = [];
@@ -513,6 +515,9 @@ class FakeUpdateWriter implements ProviderEventWriter {
   }
   async patchEvent(input: ProviderPatchInput): Promise<ProviderWriteResult> {
     this.patchCalls.push(input);
+    if (input.recurrence.kind === "instance" && this.instancePatchError) {
+      throw this.instancePatchError;
+    }
     if (this.patchError) throw this.patchError;
     return this.patchResult;
   }
@@ -524,6 +529,9 @@ class FakeUpdateWriter implements ProviderEventWriter {
     this.fetchCalls.push(input);
     if (this.fetchError) throw this.fetchError;
     return this.fetched;
+  }
+  fetchInstanceAt(): Promise<ProviderEvent | null> {
+    throw new Error("unused");
   }
 }
 
@@ -1790,13 +1798,25 @@ describe("executeProviderSeriesUpdate", () => {
     );
 
     expect(result.outcome.state).toBe("confirmed");
-    // Provider cancel only for the content override — not the kept tombstone.
-    expect(writer.deleteCalls).toHaveLength(1);
-    expect(writer.deleteCalls[0]).toMatchObject({
+    // Align the content override at the provider (do not cancel it); leave the
+    // kept tombstone untouched.
+    expect(writer.deleteCalls).toHaveLength(0);
+    const overridePatch = writer.patchCalls.find(
+      (call) => call.providerEventId === "g-inst-override",
+    );
+    expect(overridePatch).toMatchObject({
       providerEventId: "g-inst-override",
       expectedVersion: null,
       invitation: "all",
       calendarId: calendar.providerCalendarId,
+      recurrence: { kind: "instance" },
+      content: expect.objectContaining({ title: "New" }),
+      schedule: {
+        kind: "timed",
+        start: "2026-07-21T09:00:00-06:00",
+        end: "2026-07-21T10:00:00-06:00",
+        timeZone: "America/Denver",
+      },
     });
     // The override is gone; the cancelled tombstone survives the edit.
     expect(
@@ -1823,7 +1843,7 @@ describe("executeProviderSeriesUpdate", () => {
     ]);
   });
 
-  it("leaves the override local when provider cancel is transient", async () => {
+  it("leaves the override local when provider override align is transient", async () => {
     const { tenantId, principalId, calendar, master } = await seedMaster();
     const override = await putException(master, {
       providerEventId: "g-inst-override",
@@ -1837,7 +1857,10 @@ describe("executeProviderSeriesUpdate", () => {
     });
     const writer = new FakeUpdateWriter();
     writer.fetched = providerSeries("Old", "etag-1", weekly4);
-    writer.deleteError = new ProviderWriteError("transient", "rate limited");
+    writer.instancePatchError = new ProviderWriteError(
+      "transient",
+      "rate limited",
+    );
 
     const result = await executeProviderSeriesUpdate(
       deps(writer),
@@ -1848,7 +1871,12 @@ describe("executeProviderSeriesUpdate", () => {
     );
 
     expect(result.outcome.state).toBe("pending");
-    expect(writer.deleteCalls).toHaveLength(1);
+    expect(writer.deleteCalls).toHaveLength(0);
+    expect(
+      writer.patchCalls.some(
+        (call) => call.providerEventId === "g-inst-override",
+      ),
+    ).toBe(true);
     expect(
       await events.findById(tenantId, principalId, override._id),
     ).not.toBeNull();
