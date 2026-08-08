@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
   onboardingTourActions,
   selectOnboardingTourActive,
@@ -20,6 +20,19 @@ import {
 } from "@web/settings/settings.store";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 
+/** Palette step completes after open→close, or if shortcuts open from inside it. */
+export function shouldAdvancePaletteStep({
+  paletteOpened,
+  isPaletteOpen,
+  isShortcutsOpen,
+}: {
+  paletteOpened: boolean;
+  isPaletteOpen: boolean;
+  isShortcutsOpen: boolean;
+}): boolean {
+  return (paletteOpened && !isPaletteOpen) || isShortcutsOpen;
+}
+
 /**
  * Advances tour steps when the user performs the prompted action.
  * Does not take the app lock; coachmarks stay out of the modal Escape stack
@@ -32,6 +45,29 @@ export function useOnboardingTourProgress() {
   const isSaving = useHasPendingEventMutations();
   const isPaletteOpen = useSettingsStore(selectIsCmdPaletteOpen);
   const isShortcutsOpen = useViewStore(selectIsShortcutsOpen);
+  const paletteOpenedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isActive || stepId !== "palette") {
+      paletteOpenedRef.current = false;
+      return;
+    }
+
+    if (isPaletteOpen) {
+      paletteOpenedRef.current = true;
+    }
+
+    if (
+      shouldAdvancePaletteStep({
+        paletteOpened: paletteOpenedRef.current,
+        isPaletteOpen,
+        isShortcutsOpen,
+      })
+    ) {
+      paletteOpenedRef.current = false;
+      onboardingTourActions.advance();
+    }
+  }, [isActive, stepId, isPaletteOpen, isShortcutsOpen]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -47,15 +83,10 @@ export function useOnboardingTourProgress() {
       return;
     }
 
-    if (stepId === "palette" && isPaletteOpen) {
-      onboardingTourActions.advance();
-      return;
-    }
-
     if (stepId === "shortcuts" && isShortcutsOpen) {
       onboardingTourActions.advance();
     }
-  }, [isActive, stepId, isFormOpen, isSaving, isPaletteOpen, isShortcutsOpen]);
+  }, [isActive, stepId, isFormOpen, isSaving, isShortcutsOpen]);
 
   // ESC skips the tour when nothing higher owns Escape. Capture + stand down
   // for app lock / form / floating layers so we never trap the user.

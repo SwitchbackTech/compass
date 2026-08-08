@@ -22,4 +22,15 @@ describe("onboarding tour steps", () => {
     expect(getNextOnboardingStepId("shortcuts")).toBe("done");
     expect(getNextOnboardingStepId("done")).toBeNull();
   });
+
+  it("keeps palette and shortcuts lessons non-contradictory", () => {
+    const steps = getOnboardingTourSteps();
+    const palette = steps.find((step) => step.id === "palette");
+    const shortcuts = steps.find((step) => step.id === "shortcuts");
+
+    expect(palette?.body).toMatch(/close with Escape/i);
+    expect(palette?.body).not.toMatch(/Show keyboard shortcuts/i);
+    expect(shortcuts?.body).toMatch(/from the calendar/i);
+    expect(shortcuts?.shortcutHint).toBe("?");
+  });
 });
