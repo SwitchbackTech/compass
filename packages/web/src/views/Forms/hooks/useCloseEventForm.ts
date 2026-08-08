@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { focusCalendarEventElement } from "@web/common/utils/event/event.util";
+import { focusCalendarEventElementAfterDiscard } from "@web/common/utils/event/event.util";
 import {
   draftActions,
   selectDraftId,
@@ -11,7 +11,7 @@ export function useCloseEventForm() {
     const eventId = selectDraftId(useDraftStore.getState());
     draftActions.discard();
     if (eventId) {
-      focusCalendarEventElement(eventId);
+      focusCalendarEventElementAfterDiscard(eventId);
     }
   }, []);
 }

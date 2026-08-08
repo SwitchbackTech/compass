@@ -95,11 +95,16 @@ export const GridDraft: FC<Props> = ({
     : draftAsGridEvent;
 
   const draftEventType = rendersInAllDayRow ? "all-day" : "timed";
+  // `data-grid-event-surface` lets post-close focus restore skip this portal
+  // node — it shares the saved event's interaction id but unmounts on discard.
   const draftInteractionAttributes = draftAsGridEvent._id
-    ? getWeekInteractionTargetAttributes({
-        eventId: draftAsGridEvent._id,
-        eventType: draftEventType,
-      })
+    ? {
+        ...getWeekInteractionTargetAttributes({
+          eventId: draftAsGridEvent._id,
+          eventType: draftEventType,
+        }),
+        "data-grid-event-surface": "draft",
+      }
     : undefined;
 
   return (

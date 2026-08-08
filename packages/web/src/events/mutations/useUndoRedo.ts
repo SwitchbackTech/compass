@@ -51,7 +51,6 @@ const entryEventId = (entry: UndoHistoryEntry): string =>
 // Edit replays keep the same React key (in-place update); delete-undo may
 // need a frame or two for the card to remount. `focusCalendarEventElement`
 // covers both — unlike `refocusEventElement`, which waits for a replaced node.
-const refocusAfterReplay = focusCalendarEventElement;
 
 const showUndoDeclinedToast = () =>
   showStatusToast(UNDO_DECLINED_TOAST_ID, "Can't undo — event changed since");
@@ -258,7 +257,7 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
         replaySnapshot(entry.id as EventId, entry.before);
       }
     });
-    if (!isCreateEntry(entry)) refocusAfterReplay(entryEventId(entry));
+    if (!isCreateEntry(entry)) focusCalendarEventElement(entryEventId(entry));
   }, [queryClient, source, undoDelete, undoCreate, replaySnapshot]);
 
   const redo = useCallback(() => {
@@ -300,9 +299,9 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
       }
     });
     if (isCreateEntry(entry)) {
-      refocusAfterReplay(entry.event.id);
+      focusCalendarEventElement(entry.event.id);
     } else if (!isDeleteEntry(entry)) {
-      refocusAfterReplay(entry.id);
+      focusCalendarEventElement(entry.id);
     }
   }, [queryClient, source, mutations, replaySnapshot]);
 

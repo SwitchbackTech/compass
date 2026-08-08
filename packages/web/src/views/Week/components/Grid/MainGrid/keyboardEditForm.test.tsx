@@ -13,6 +13,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
 import { seedEventQueries } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
@@ -207,6 +208,8 @@ describe("Enter on a focused grid event", () => {
     });
 
     expect(screen.queryByDisplayValue("Quarterly review")).toBeNull();
-    expect(document.activeElement).toBe(card);
+    await waitFor(() => {
+      expect(document.activeElement).toBe(card);
+    });
   });
 });

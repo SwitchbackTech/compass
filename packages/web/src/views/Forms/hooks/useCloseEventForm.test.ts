@@ -1,6 +1,5 @@
 import { renderHook } from "@testing-library/react";
 import { EventIdSchema } from "@core/types/domain-primitives";
-import { EventScheduleSchema } from "@core/types/event.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import {
   createGridEventDraft,
@@ -14,11 +13,27 @@ import {
 } from "@web/events/stores/draft.store";
 import { WEEK_INTERACTION_EVENT_ID_ATTRIBUTE } from "@web/views/Week/interaction/registry/week-event.registry";
 import { useCloseEventForm } from "./useCloseEventForm";
-import { afterEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 const EXISTING_EVENT_ID = "507f1f77bcf86cd799439011";
 
+let pendingFrames: FrameRequestCallback[];
+let originalRequestAnimationFrame: typeof requestAnimationFrame;
+
+const flushFrame = () => {
+  const frames = pendingFrames.splice(0);
+  frames.forEach((frame) => frame(performance.now()));
+};
+
+beforeEach(() => {
+  pendingFrames = [];
+  originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+  globalThis.requestAnimationFrame = ((frame: FrameRequestCallback) =>
+    pendingFrames.push(frame)) as typeof requestAnimationFrame;
+});
+
 afterEach(() => {
+  globalThis.requestAnimationFrame = originalRequestAnimationFrame;
   draftActions.discard();
   document.body.innerHTML = "";
 });
@@ -44,21 +59,9 @@ describe("useCloseEventForm", () => {
   });
 
   it("restores focus to the grid event for the closed draft", () => {
-    const existingEvent = createMockEvent({
-      id: EventIdSchema.parse(EXISTING_EVENT_ID),
-      content: {
-        kind: "details",
-        title: "Focus me",
-        description: "",
-      },
-      schedule: EventScheduleSchema.parse({
-        kind: "timed",
-        start: "2026-05-20T14:00:00.000Z",
-        end: "2026-05-20T15:00:00.000Z",
-        timeZone: "UTC",
-      }),
-    });
-    const draft = editGridEventDraft(existingEvent);
+    const draft = editGridEventDraft(
+      createMockEvent({ id: EventIdSchema.parse(EXISTING_EVENT_ID) }),
+    );
     if (!draft) throw new Error("expected an edit draft");
 
     const card = document.createElement("button");
@@ -71,8 +74,45 @@ describe("useCloseEventForm", () => {
 
     const { result } = renderHook(() => useCloseEventForm());
     result.current();
+    flushFrame();
 
     expect(useDraftStore.getState()).toEqual(initialDraftState);
     expect(document.activeElement).toBe(card);
+  });
+
+  it("does not leave focus on a draft portal that unmounts after discard", () => {
+    const draft = editGridEventDraft(
+      createMockEvent({ id: EventIdSchema.parse(EXISTING_EVENT_ID) }),
+    );
+    if (!draft) throw new Error("expected an edit draft");
+
+    const draftPortal = document.createElement("button");
+    draftPortal.setAttribute(
+      WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
+      EXISTING_EVENT_ID,
+    );
+    draftPortal.setAttribute("data-grid-event-surface", "draft");
+    draftPortal.tabIndex = 0;
+    document.body.appendChild(draftPortal);
+
+    draftActions.startGridDraft({ activity: "keyboardEdit", draft });
+    draftActions.setFormOpen(true);
+
+    const { result } = renderHook(() => useCloseEventForm());
+    result.current();
+
+    // Simulate React committing: draft portal gone, saved card remounted.
+    draftPortal.remove();
+    const savedCard = document.createElement("button");
+    savedCard.setAttribute(
+      WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
+      EXISTING_EVENT_ID,
+    );
+    savedCard.tabIndex = 0;
+    document.body.appendChild(savedCard);
+
+    flushFrame();
+
+    expect(document.activeElement).toBe(savedCard);
   });
 });
