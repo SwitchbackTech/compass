@@ -345,13 +345,15 @@ control. The command palette deliberately does not show Google status or actions
 CTA (prefer Sync connection vocabulary when a summary is present):
 
 - `HEALTHY` / connection `healthy` → “Calendar connected” (no CTA)
-- `ATTENTION` / connection `delayed` → “Calendar updates are taking longer than usual. We'll keep trying.” and **Refresh calendar**
+- connection `catchingUp` (after a short quiet window) → “Syncing in the background…”
+- `ATTENTION` / connection `delayed` → “Calendar updates are taking longer than usual…” / “Calendar updates are delayed” and **Refresh calendar**
 - `IMPORTING` / early connection work → “Adding your calendar…” (no CTA)
 - `RECONNECT_REQUIRED` → “Calendar needs reconnecting” and **Reconnect Google Calendar**
 - `NOT_CONNECTED` → **Connect Google Calendar**
 - `checking` → no status line
 
-User-facing copy avoids internal terms such as “repair” and “catching up.”
+User-facing copy talks about the calendar and updates, not the Sync service or
+internal states such as “repair” and “catching up.”
 
 Important constraint:
 

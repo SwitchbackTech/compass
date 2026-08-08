@@ -121,14 +121,14 @@ describe("getGoogleSyncStatus", () => {
       ),
     ).toEqual({
       variant: "syncing",
-      text: "Sync is catching up. Last updated 15 minutes ago. This usually clears on its own.",
+      text: "Syncing in the background… Last updated 15 minutes ago. This usually finishes on its own.",
     });
   });
 
   it("returns warning copy for ATTENTION without a connection summary", () => {
     expect(getGoogleSyncStatus("ATTENTION")).toEqual({
       variant: "warning",
-      text: "Sync is stuck. Refresh your calendars, or reconnect if this continues.",
+      text: "Calendar updates are taking longer than usual. Try Refresh, or reconnect if this continues.",
     });
   });
 
@@ -173,7 +173,7 @@ describe("getGoogleSyncStatus", () => {
       ),
     ).toEqual({
       variant: "warning",
-      text: "Sync is stuck. Last updated 15 minutes ago. Refresh your calendars, or reconnect if this continues.",
+      text: "Calendar updates are taking longer than usual. Last updated 15 minutes ago. Try Refresh, or reconnect if this continues.",
     });
   });
 
@@ -194,7 +194,7 @@ describe("getGoogleSyncStatus", () => {
       ),
     ).toEqual({
       variant: "warning",
-      text: "Sync hit an error. Last updated 15 minutes ago. Refresh your calendars, or reconnect if this continues.",
+      text: "Couldn't update your calendar. Last updated 15 minutes ago. Try Refresh, or reconnect if this continues.",
     });
   });
 
@@ -216,7 +216,7 @@ describe("getGoogleSyncStatus", () => {
       ),
     ).toEqual({
       variant: "error",
-      text: "Sync is stuck. Last updated 15 minutes ago. Reconnect your calendar, or email tyler@switchback.tech for help.",
+      text: "We couldn't update your calendar. Last updated 15 minutes ago. Reconnect, or email tyler@switchback.tech for help.",
     });
   });
 });
@@ -261,11 +261,11 @@ describe("getSidebarSyncStatus", () => {
       }),
     ).toEqual({
       variant: "syncing",
-      text: "Sync is catching up",
+      text: "Syncing in the background…",
     });
   });
 
-  it("shows Sync is stuck for delayed workOverdue", () => {
+  it("shows Calendar updates are delayed for delayed workOverdue", () => {
     expect(
       getSidebarSyncStatus({
         connection: {
@@ -283,11 +283,11 @@ describe("getSidebarSyncStatus", () => {
       }),
     ).toEqual({
       variant: "warning",
-      text: "Sync is stuck",
+      text: "Calendar updates are delayed",
     });
   });
 
-  it("shows Sync is catching up while a Refresh is in flight on delayed", () => {
+  it("shows Syncing in the background while a Refresh is in flight on delayed", () => {
     expect(
       getSidebarSyncStatus({
         connection: {
@@ -306,11 +306,11 @@ describe("getSidebarSyncStatus", () => {
       }),
     ).toEqual({
       variant: "syncing",
-      text: "Sync is catching up",
+      text: "Syncing in the background…",
     });
   });
 
-  it("shows Sync hit an error for delayed providerErrors", () => {
+  it("shows Couldn't update your calendar for delayed providerErrors", () => {
     expect(
       getSidebarSyncStatus({
         connection: {
@@ -328,7 +328,7 @@ describe("getSidebarSyncStatus", () => {
       }),
     ).toEqual({
       variant: "warning",
-      text: "Sync hit an error",
+      text: "Couldn't update your calendar",
     });
   });
 

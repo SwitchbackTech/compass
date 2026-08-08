@@ -61,7 +61,7 @@ export const SidebarActions = () => {
           <button
             aria-label={
               isCalendarSyncing
-                ? "Open command palette, calendar syncing"
+                ? "Open command palette, syncing in the background"
                 : "Open command palette"
             }
             className="flex size-9 items-center justify-center rounded-default text-text-muted transition hover:bg-surface-panel hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
