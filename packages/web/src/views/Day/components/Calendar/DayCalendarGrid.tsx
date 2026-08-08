@@ -30,6 +30,7 @@ import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
 import { useAllDayDraftCreation } from "@web/grid/hooks/useAllDayDraftCreation";
 import { useGridCoordinates } from "@web/grid/hooks/useGridCoordinates";
 import { useGridMeasurements } from "@web/grid/hooks/useGridMeasurements";
+import { ShiftHintOverlay } from "@web/shortcuts/shift-hint/ShiftHintOverlay";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
@@ -111,7 +112,7 @@ export function DayCalendarGrid() {
     gridRefs.mainGridRef,
     visibleDates,
   );
-  useDayEventNudgeShortcuts({
+  const { shiftHints } = useDayEventNudgeShortcuts({
     allDayEvents: displayedAllDayEvents,
     navigateToDate,
     navigateToNextDay,
@@ -408,6 +409,7 @@ export function DayCalendarGrid() {
         />
       </DayInteractionCoordinator>
       {contextMenu}
+      <ShiftHintOverlay hints={shiftHints} />
     </section>
   );
 }

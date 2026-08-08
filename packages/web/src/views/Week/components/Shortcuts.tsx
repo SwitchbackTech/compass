@@ -1,3 +1,4 @@
+import { ShiftHintOverlay } from "@web/shortcuts/shift-hint/ShiftHintOverlay";
 import {
   type ShortcutProps,
   useWeekShortcutOwner,
@@ -10,7 +11,12 @@ export function Shortcuts({
   children: React.ReactNode;
   shortcutsProps: ShortcutProps;
 }) {
-  useWeekShortcutOwner(shortcutsProps);
+  const { shiftHints } = useWeekShortcutOwner(shortcutsProps);
 
-  return children;
+  return (
+    <>
+      {children}
+      <ShiftHintOverlay hints={shiftHints} />
+    </>
+  );
 }
