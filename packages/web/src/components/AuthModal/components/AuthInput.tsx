@@ -1,4 +1,4 @@
-import clsx from "clsx";
+import classNames from "classnames";
 import { forwardRef, type InputHTMLAttributes, useId } from "react";
 
 interface AuthInputProps
@@ -40,7 +40,7 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
         <input
           ref={ref}
           id={inputId}
-          className={clsx(
+          className={classNames(
             "border-border border-b bg-transparent py-2 text-base transition-colors",
             "text-text placeholder:text-text-subtle",
             "focus:border-accent focus:outline-none",
