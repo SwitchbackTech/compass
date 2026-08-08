@@ -51,8 +51,8 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
   // keeping the slide animation. (Conditional unmount is the other F3
   // option, but it exposed unrelated sidebar contrast debt to axe that
   // the old covering dialog had been papering over — tracked separately.)
-  // isFloatingLayerOpen ignores inert dialogs so Escape can still close the
-  // event form while this overlay stays mounted closed.
+  // App-lock is held only while open, so a closed-but-mounted overlay does
+  // not block form/toast Escape.
   useEffect(() => {
     const overlay = overlayRef.current;
     if (overlay) {
