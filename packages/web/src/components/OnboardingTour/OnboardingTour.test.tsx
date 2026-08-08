@@ -34,8 +34,8 @@ describe("OnboardingTour", () => {
     const card = screen.getByRole("region", { name: "Onboarding tour" })
       .firstElementChild as HTMLElement;
 
-    expect(card).toHaveClass("bg-surface/90");
-    expect(card).toHaveClass("backdrop-blur-xl");
+    expect(card).toHaveClass("bg-surface/95");
+    expect(card).toHaveClass("backdrop-blur-2xl");
     expect(card).toHaveClass("backdrop-saturate-150");
     expect(card).not.toHaveClass("bg-surface-overlay");
   });
