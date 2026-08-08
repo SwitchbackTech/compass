@@ -10,6 +10,7 @@ import {
 } from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
 import {
   createShiftHoldState,
+  isShiftKey,
   reduceShiftHold,
   SHIFT_HOLD_HINT_THRESHOLD_MS,
   type ShiftHoldState,
@@ -26,11 +27,6 @@ export type ActiveShiftHint = ShiftHintAssignment & {
 };
 
 const isAppLocked = () => document.body.dataset.appLocked === "true";
-
-const isShiftKey = (event: KeyboardEvent) =>
-  event.key === "Shift" ||
-  event.code === "ShiftLeft" ||
-  event.code === "ShiftRight";
 
 const scheduleStartMs = (event: GridEvent): number => {
   if (!event.startDate) return 0;
