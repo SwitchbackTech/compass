@@ -22,6 +22,7 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
+import { useIsGridEventFocused } from "@web/grid/shortcuts/useIsGridEventFocused";
 import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
 import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
 import { Header } from "@web/views/Day/components/Header/Header";
@@ -60,15 +61,17 @@ export const DayViewContent = memo(() => {
   useFocusSidebarShortcut();
   useSidebarShortcuts();
 
-  const shortcutSections = useMemo(() => {
-    const focusedEvent = getFocusedDayGridEventTarget();
-    return getShortcutMenuSections({
-      view: "day",
-      isViewingCurrentPeriod: isViewingToday,
-      eventFocused: focusedEvent !== null,
-      isFormOpen: isEventDetailsOpen,
-    });
-  }, [isViewingToday, isEventDetailsOpen]);
+  const eventFocused = useIsGridEventFocused(getFocusedDayGridEventTarget);
+  const shortcutSections = useMemo(
+    () =>
+      getShortcutMenuSections({
+        view: "day",
+        isViewingCurrentPeriod: isViewingToday,
+        eventFocused,
+        isFormOpen: isEventDetailsOpen,
+      }),
+    [eventFocused, isEventDetailsOpen, isViewingToday],
+  );
 
   const handleGoToToday = useCallback(() => {
     // Compare dates in the same timezone to avoid timezone issues
