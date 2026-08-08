@@ -37,7 +37,7 @@ export const OnboardingTour: FC = () => {
       data-onboarding-tour=""
       style={{ zIndex: Z_INDEX_TOOLTIP }}
     >
-      <div className="pointer-events-auto w-full max-w-md rounded-xl border border-border bg-surface-overlay px-5 py-4 text-text shadow-lg">
+      <div className="pointer-events-auto w-full max-w-md rounded-xl border border-border bg-surface/90 px-5 py-4 text-text shadow-xl backdrop-blur-xl backdrop-saturate-150">
         <div className="mb-1 flex items-center justify-between gap-3">
           <p className="font-medium text-sm">{step.title}</p>
           <p className="shrink-0 text-text-muted text-xs">
