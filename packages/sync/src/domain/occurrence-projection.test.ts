@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import { type EventSchedule } from "@core/types/event.contracts";
 import { type SyncEventRecurrence } from "@core/types/sync/event.contracts";
 import {
+  occurrenceScheduleAfterSeriesEdit,
   type ProjectionHorizon,
   projectOccurrences,
   truncateRulesBefore,
@@ -501,6 +502,44 @@ describe("projectOccurrences", () => {
         "2026-07-06T15:00:00.000Z",
         "2026-07-13T15:00:00.000Z",
       ]);
+    });
+  });
+
+  describe("occurrenceScheduleAfterSeriesEdit", () => {
+    it("keeps the recurrence instant when the master time is unchanged", () => {
+      const master = timed(
+        "2026-07-14T09:00:00-06:00",
+        "2026-07-14T10:00:00-06:00",
+      );
+      expect(
+        occurrenceScheduleAfterSeriesEdit(
+          master,
+          master,
+          "2026-07-21T09:00:00-06:00" as never,
+        ),
+      ).toEqual(
+        timed("2026-07-21T09:00:00-06:00", "2026-07-21T10:00:00-06:00"),
+      );
+    });
+
+    it("applies the master start delta to the recurrence instant", () => {
+      const previous = timed(
+        "2026-07-14T09:00:00-06:00",
+        "2026-07-14T10:00:00-06:00",
+      );
+      const next = timed(
+        "2026-07-14T10:00:00-06:00",
+        "2026-07-14T11:00:00-06:00",
+      );
+      expect(
+        occurrenceScheduleAfterSeriesEdit(
+          previous,
+          next,
+          "2026-07-21T09:00:00-06:00" as never,
+        ),
+      ).toEqual(
+        timed("2026-07-21T10:00:00-06:00", "2026-07-21T11:00:00-06:00"),
+      );
     });
   });
 });

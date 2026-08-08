@@ -304,6 +304,22 @@ export function occurrenceScheduleAt(
   return shiftSchedule(masterSchedule, new Date(recurrenceId));
 }
 
+// Schedule for a former override after an edit-all. Applies the master's start
+// delta so a series time change moves every instance, then materializes at that
+// aligned instant with the new master's duration/zone. A content-only edit
+// (delta zero) matches occurrenceScheduleAt(next, recurrenceId).
+export function occurrenceScheduleAfterSeriesEdit(
+  previousMasterSchedule: EventSchedule,
+  nextMasterSchedule: EventSchedule,
+  recurrenceId: DateTime,
+): EventSchedule {
+  const deltaMs =
+    scheduleStartAt(nextMasterSchedule).getTime() -
+    scheduleStartAt(previousMasterSchedule).getTime();
+  const alignedStart = new Date(new Date(recurrenceId).getTime() + deltaMs);
+  return shiftSchedule(nextMasterSchedule, alignedStart);
+}
+
 // Builds one occurrence's schedule from the master's, at the given original
 // start instant, preserving duration and (for timed) the zone.
 function shiftSchedule(

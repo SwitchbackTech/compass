@@ -528,7 +528,15 @@ class FakeUpdateWriter implements ProviderEventWriter {
   async fetchEvent(input: ProviderFetchInput): Promise<ProviderEvent | null> {
     this.fetchCalls.push(input);
     if (this.fetchError) throw this.fetchError;
-    return this.fetched;
+    // Master replay uses `fetched`; unknown ids (e.g. discarded overrides)
+    // resolve as absent so align can exercise delete's 404-OK path.
+    if (
+      this.fetched &&
+      input.providerEventId === this.fetched.providerEventId
+    ) {
+      return this.fetched;
+    }
+    return null;
   }
   fetchInstanceAt(): Promise<ProviderEvent | null> {
     throw new Error("unused");
@@ -1516,7 +1524,11 @@ describe("executeProviderSeriesUpdate", () => {
   // An edit-all update command for the seeded master.
   const editAllCommand = async (
     master: EventRecord,
-    edit: { title: string; recurrence: RecurrenceEdit },
+    edit: {
+      title: string;
+      recurrence: RecurrenceEdit;
+      schedule?: typeof schedule;
+    },
   ) =>
     (
       await commands.submit({
@@ -1528,7 +1540,7 @@ describe("executeProviderSeriesUpdate", () => {
           kind: "update",
           invitation: "all",
           content: content(edit.title),
-          schedule,
+          schedule: edit.schedule ?? schedule,
           recurrence: edit.recurrence,
           scope: "all",
           recurrenceId: null,
@@ -1880,6 +1892,90 @@ describe("executeProviderSeriesUpdate", () => {
     expect(
       await events.findById(tenantId, principalId, override._id),
     ).not.toBeNull();
+  });
+
+  it("aligns discarded overrides to a series time change", async () => {
+    const { calendar, master } = await seedMaster();
+    await putException(master, {
+      providerEventId: "g-inst-override",
+      recurrenceId: "2026-07-21T09:00:00-06:00",
+      cancelled: false,
+      title: "Moved",
+    });
+    const movedSchedule = {
+      kind: "timed" as const,
+      start: "2026-07-14T10:00:00-06:00",
+      end: "2026-07-14T11:00:00-06:00",
+      timeZone: "America/Denver",
+    };
+    const command = await editAllCommand(master, {
+      title: "New",
+      recurrence: { kind: "preserve" },
+      schedule: movedSchedule,
+    });
+    const writer = new FakeUpdateWriter();
+    writer.fetched = providerSeries("Old", "etag-1", weekly4);
+
+    const result = await executeProviderSeriesUpdate(
+      deps(writer),
+      command,
+      master,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("confirmed");
+    const overridePatch = writer.patchCalls.find(
+      (call) => call.providerEventId === "g-inst-override",
+    );
+    expect(overridePatch?.schedule).toEqual({
+      kind: "timed",
+      start: "2026-07-21T10:00:00-06:00",
+      end: "2026-07-21T11:00:00-06:00",
+      timeZone: "America/Denver",
+    });
+  });
+
+  it("continues edit-all when the override is already gone at the provider", async () => {
+    const { tenantId, principalId, calendar, master } = await seedMaster();
+    const override = await putException(master, {
+      providerEventId: "g-inst-override",
+      recurrenceId: "2026-07-21T09:00:00-06:00",
+      cancelled: false,
+      title: "Moved",
+    });
+    const command = await editAllCommand(master, {
+      title: "New",
+      recurrence: { kind: "preserve" },
+    });
+    const writer = new FakeUpdateWriter();
+    writer.fetched = providerSeries("Old", "etag-1", weekly4);
+    writer.instancePatchError = new ProviderWriteError(
+      "permanentProviderError",
+      "Google rejected the write",
+    );
+
+    const result = await executeProviderSeriesUpdate(
+      deps(writer),
+      command,
+      master,
+      calendar,
+      now,
+    );
+
+    expect(result.outcome.state).toBe("confirmed");
+    expect(
+      writer.fetchCalls.some(
+        (call) => call.providerEventId === "g-inst-override",
+      ),
+    ).toBe(true);
+    expect(
+      await events.findById(tenantId, principalId, override._id),
+    ).toBeNull();
+    const starts = (await masterOccurrences(master._id)).map((o) =>
+      (o["startAt"] as Date).toISOString(),
+    );
+    expect(starts).toContain("2026-07-21T15:00:00.000Z");
   });
 
   it("converts a series to a single event, dropping every exception", async () => {

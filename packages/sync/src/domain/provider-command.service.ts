@@ -19,6 +19,7 @@ import {
   omitNullColor,
 } from "@sync/domain/merge-update-content";
 import {
+  occurrenceScheduleAfterSeriesEdit,
   occurrenceScheduleAt,
   scheduleStartAt,
   stripRuleBounds,
@@ -188,6 +189,54 @@ async function failCommand(
     await deps.custody.discardRevoked(connectionId);
   }
   return failed ?? command;
+}
+
+// After a failed override-align patch, continue when the instance is already
+// gone (matching deleteEvent's 404-OK). Return a command to stop on; null means
+// local cleanup may proceed. The master write may already have landed, so a
+// hard fail on a missing override would leave Google mutated and Compass not.
+async function resolveFailedOverrideAlign(
+  deps: ProviderMutationDeps,
+  command: CommandRecord,
+  provider: {
+    accessToken: string;
+    calendarId: string;
+    connectionId: ConnectionId;
+  },
+  providerEventId: string,
+  patchError: ProviderWriteError,
+): Promise<CommandRecord | null> {
+  if (patchError.reason === "transient") return command;
+  if (patchError.reason !== "permanentProviderError") {
+    return failCommand(deps, command, patchError.reason, provider.connectionId);
+  }
+  try {
+    const read = await deps.writer.fetchEvent({
+      accessToken: provider.accessToken,
+      calendarId: provider.calendarId,
+      providerEventId: providerEventId as ProviderEventId,
+    });
+    if (read?.kind === "event") {
+      return failCommand(
+        deps,
+        command,
+        patchError.reason,
+        provider.connectionId,
+      );
+    }
+    return null;
+  } catch (fetchError) {
+    if (fetchError instanceof ProviderWriteError) {
+      if (fetchError.reason === "transient") return command;
+      return failCommand(
+        deps,
+        command,
+        fetchError.reason,
+        provider.connectionId,
+      );
+    }
+    throw fetchError;
+  }
 }
 
 // Build the canonical event for a provider-linked create: same shape as a cloud
@@ -610,7 +659,8 @@ async function commitProviderSeriesUpdate(
             providerEventId: exception.providerEventId,
             expectedVersion: null,
             content,
-            schedule: occurrenceScheduleAt(
+            schedule: occurrenceScheduleAfterSeriesEdit(
+              master.schedule,
               input.schedule,
               exceptionInstant(exception),
             ),
@@ -619,7 +669,8 @@ async function commitProviderSeriesUpdate(
           });
         }
       } catch (error) {
-        if (error instanceof ProviderWriteError) {
+        if (!(error instanceof ProviderWriteError)) throw error;
+        if (convertsToSingle) {
           if (error.reason === "transient") return command;
           return failCommand(
             deps,
@@ -628,7 +679,14 @@ async function commitProviderSeriesUpdate(
             provider.connectionId,
           );
         }
-        throw error;
+        const stop = await resolveFailedOverrideAlign(
+          deps,
+          command,
+          provider,
+          exception.providerEventId,
+          error,
+        );
+        if (stop) return stop;
       }
     }
 
