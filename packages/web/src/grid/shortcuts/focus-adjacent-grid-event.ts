@@ -180,3 +180,34 @@ export function getSpatiallyAdjacentTarget({
   }
   return nearest;
 }
+
+/**
+ * Week-view digit targeting: `1`–`7` map to leftmost→rightmost visible columns.
+ * Returns the chronologically first event on that day (all-day before timed),
+ * or null when the column has no visible events.
+ */
+export function getFirstEventOnWeekdayColumn({
+  allDayEvents,
+  columnIndex,
+  timedEvents,
+  visible,
+  weekDays,
+}: {
+  allDayEvents: GridEvent[];
+  /** 0-based index into `weekDays` (digit `1` → 0). */
+  columnIndex: number;
+  timedEvents: GridEvent[];
+  visible: FocusableGridEventTarget[];
+  weekDays: Dayjs[];
+}): FocusableGridEventTarget | null {
+  if (columnIndex < 0 || columnIndex >= weekDays.length) return null;
+
+  const dayKey = weekDays[columnIndex]!.format("YYYY-MM-DD");
+  const scheduleById = buildScheduleById(allDayEvents, timedEvents);
+  const dayTargets = visible.filter(
+    (target) => scheduleById.get(target.eventId)?.dayKey === dayKey,
+  );
+  if (dayTargets.length === 0) return null;
+
+  return sortVisibleChronologically(dayTargets, scheduleById)[0] ?? null;
+}
