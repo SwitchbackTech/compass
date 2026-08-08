@@ -129,24 +129,24 @@ export class SyncResourceRepository {
     );
   }
 
-  // Advance the incremental cursor after a batch fully commits, clearing the
-  // mid-batch checkpoint and recording success. A successful pass also clears
-  // any durable read-failure marker: the provider is answering again, so the
-  // connection must stop reporting delayed/providerErrors without an operator
-  // having to clear anything by hand.
+  // Record a successful read pass. When `syncCursor` is a string, store it and
+  // clear the mid-batch page checkpoint; when null, leave the stored cursor
+  // alone (calendarList rediscovery may succeed without a next sync token and
+  // intentionally full-list next pass). Either way clears any durable
+  // read-failure marker so connection health stops reporting
+  // delayed/providerErrors without an operator clearing anything by hand.
   async advanceCursor(
     tenantId: TenantId,
     principalId: PrincipalId,
     id: string,
-    syncCursor: string,
+    syncCursor: string | null,
     succeededAt: Date,
   ): Promise<void> {
     await this.collection.updateOne(
       { _id: id, tenantId, principalId },
       {
         $set: {
-          syncCursor,
-          pageCursor: null,
+          ...(syncCursor === null ? {} : { syncCursor, pageCursor: null }),
           lastSuccessAt: succeededAt,
           lastReadFailureAt: null,
           lastReadFailureDetail: null,

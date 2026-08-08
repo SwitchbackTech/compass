@@ -237,6 +237,41 @@ describe("syncCalendarList", () => {
     expect(primary?.active).toBe(true);
   });
 
+  it("clears a prior discovery failure even when rediscovery returns no cursor", async () => {
+    const conn = connection();
+    const list = await resources.ensure({
+      tenantId: conn.tenantId,
+      principalId: conn.principalId,
+      connectionId: conn._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.markReadFailure(
+      conn.tenantId,
+      conn.principalId,
+      list._id,
+      new Date("2026-07-01T00:00:00.000Z"),
+      "The user must be signed up for Google Calendar. (HTTP 403, reason notACalendarUser)",
+    );
+
+    await syncCalendarList(
+      deps(
+        new FakeDiscovery([
+          { calendars: [discovered("primary")], cursor: null },
+        ]),
+      ),
+      conn,
+      now,
+    );
+
+    const after = await calendarListResource(conn);
+    expect(after?.lastReadFailureAt).toBeNull();
+    expect(after?.lastReadFailureDetail).toBeNull();
+    expect(after?.lastSuccessAt).toEqual(now());
+    // Null discovery cursor must not wipe/store a cursor — next pass full-lists.
+    expect(after?.syncCursor).toBeNull();
+  });
+
   it("stamps lastAttemptAt on the calendarList resource before it can fail", async () => {
     // Without this, the rediscovery sweep's rotation sort (lastAttemptAt) ties
     // at null forever for a permanently-failing connection, and it re-wins the

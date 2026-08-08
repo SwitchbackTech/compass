@@ -5,6 +5,7 @@ import {
   SyncJobWorker,
   type SyncJobWorkerDeps,
 } from "@sync/domain/sync-job-worker.service";
+import { ProviderCalendarError } from "@sync/providers/provider-calendar.port";
 import {
   type ProviderEvent,
   type ProviderEventRead,
@@ -112,16 +113,21 @@ describe("SyncJobWorker", () => {
     invalidations = new InvalidationRepository(storage.db());
   });
 
-  const deps = (reader: FakeReader): SyncJobWorkerDeps => ({
+  const defaultDiscovery: SyncJobWorkerDeps["discovery"] = {
+    provider: "google",
+    discoverCalendars: async () => ({ calendars: [], cursor: null }),
+  };
+
+  const deps = (
+    reader: FakeReader,
+    discoveryOverride: SyncJobWorkerDeps["discovery"] = defaultDiscovery,
+  ): SyncJobWorkerDeps => ({
     events,
     occurrences,
     resources,
     calendars,
     connections,
-    discovery: {
-      provider: "google",
-      discoverCalendars: async () => ({ calendars: [], cursor: null }),
-    },
+    discovery: discoveryOverride,
     commands,
     jobs,
     reader,
@@ -143,9 +149,12 @@ describe("SyncJobWorker", () => {
 
   // A worker that records every drop reason, so a test can assert the drop path
   // was taken (and why) rather than only that the job row vanished.
-  const workerRecordingDrops = (reader: FakeReader) => {
+  const workerRecordingDrops = (
+    reader: FakeReader,
+    discoveryOverride: SyncJobWorkerDeps["discovery"] = defaultDiscovery,
+  ) => {
     const drops: string[] = [];
-    const w = new SyncJobWorker(deps(reader), OWNER, {
+    const w = new SyncJobWorker(deps(reader, discoveryOverride), OWNER, {
       now,
       onDrop: (_job, reason) => drops.push(reason),
     });
@@ -516,6 +525,84 @@ describe("SyncJobWorker", () => {
       capabilities: calendar.capabilities,
     });
     const requeued = await enqueue(resource, "initialImport");
+    expect(requeued.state).toBe("pending");
+  });
+
+  it("settles a durable calendarList discovery failure instead of burning the retry ladder", async () => {
+    const connection = await connections.upsertByProviderAccount({
+      tenantId: objectId(),
+      principalId: objectId(),
+      provider: "google",
+      account: {
+        providerAccountId: "acct-not-cal",
+        email: "nocal@example.com",
+        displayName: "No Cal",
+      },
+      capabilities: ["readEvents", "readBusy", "writeEvents"],
+      state: "importing",
+      stateReason: null,
+      lastSyncedAt: null,
+      lastHealthyAt: null,
+    });
+    const job = await jobs.enqueue({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceId: null,
+      commandId: null,
+      kind: "calendarListSync",
+      priority: 0,
+      runAfter: now(),
+      coalescingKey: `calendarListSync:${connection._id}`,
+    });
+    const failingDiscovery: SyncJobWorkerDeps["discovery"] = {
+      provider: "google",
+      discoverCalendars: async () => {
+        throw new ProviderCalendarError(
+          "discoveryFailed",
+          "Google rejected the calendar list read",
+          {
+            cause: new Error(
+              "The user must be signed up for Google Calendar. (HTTP 403, reason notACalendarUser)",
+            ),
+          },
+        );
+      },
+    };
+
+    const { worker: w, drops } = workerRecordingDrops(
+      new FakeReader([]),
+      failingDiscovery,
+    );
+    await w.runOnce();
+
+    expect(
+      await jobs.findById(connection.tenantId, connection.principalId, job._id),
+    ).toBeNull();
+    expect(drops).toHaveLength(1);
+    expect(drops[0]).toContain("notACalendarUser");
+
+    const listResource = (
+      await resources.listByConnection(
+        connection.tenantId,
+        connection.principalId,
+        connection._id,
+      )
+    ).find((resource) => resource.resourceKind === "calendarList");
+    expect(listResource?.lastReadFailureAt).toEqual(now());
+
+    // Drop frees the coalescing key so rediscovery/reconnect can re-enqueue.
+    const requeued = await jobs.enqueue({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceId: null,
+      commandId: null,
+      kind: "calendarListSync",
+      priority: 0,
+      runAfter: now(),
+      coalescingKey: `calendarListSync:${connection._id}`,
+    });
     expect(requeued.state).toBe("pending");
   });
 

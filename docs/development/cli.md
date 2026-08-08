@@ -17,6 +17,33 @@ Primary file:
 | `bun run cli purge-user --email <address> [--apply] [--out report.json]` | `packages/scripts/src/commands/purge-user.ts` | Deletes one user's API, Sync, and SuperTokens data. Defaults to dry-run. |
 | `bun run cli purge-corrupt-sync-events [--apply]` | `packages/scripts/src/commands/purge-corrupt-sync-events.ts` | Deletes invalid Sync event documents. Defaults to dry-run. |
 | `bun run cli refresh-connection-states [--apply]` | `packages/scripts/src/commands/refresh-connection-states.ts` | Re-derives Sync connection state. Defaults to dry-run. |
+| `bun run cli manage-failed-jobs <list\|clear\|requeue> …` | `packages/scripts/src/commands/manage-failed-jobs.ts` | Operator tooling for Sync jobs that exhausted the self-heal requeue budget. Defaults to dry-run; pass `--apply` to persist. |
+
+### Manage exhausted Sync jobs
+
+Requires `SYNC_MONGO_URI` or `sync.mongoUri` in `compass.yaml` pointed at the
+isolated Sync Mongo database.
+
+```bash
+export SYNC_MONGO_URI='…'
+
+# Inventory exhausted jobs (JSON to stdout)
+bun run cli manage-failed-jobs list
+
+# Clear a stuck failed job so a new enqueue can take its coalescing key
+bun run cli manage-failed-jobs clear \
+  --id <SyncJobId> \
+  --coalescing-key <key> \
+  --apply
+
+# Or force another full retry ladder on the same job id
+bun run cli manage-failed-jobs requeue --id <SyncJobId> --apply
+```
+
+Prefer dry-run (omit `--apply`) before writing. Clear is the usual unblock when
+the underlying condition is durable (for example Google `notACalendarUser`);
+also fix or disconnect the Google account so daily calendar-list rediscovery
+does not recreate the same ladder.
 
 ## Sync Database Backup / Restore
 

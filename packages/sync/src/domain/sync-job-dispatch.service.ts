@@ -5,7 +5,10 @@ import { repairCalendar } from "@sync/domain/calendar-repair.service";
 import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
-import { type ProviderCalendarAdapter } from "@sync/providers/provider-calendar.port";
+import {
+  type ProviderCalendarAdapter,
+  ProviderCalendarError,
+} from "@sync/providers/provider-calendar.port";
 import {
   ProviderEventReadError,
   type ProviderEventReader,
@@ -140,6 +143,38 @@ export async function dispatchSyncJob(
       return {
         result: "drop",
         reason: `provider durably rejected reads for resource ${job.resourceId} (${detail}); sync resumes once the calendar is readable again`,
+      };
+    }
+
+    // Durable calendar-list discovery refusal (e.g. notACalendarUser). Same
+    // drop-not-fail rationale as readFailed above. calendarListSync jobs carry
+    // resourceId: null, so resolve the connection's calendarList resource for
+    // the health marker — syncCalendarList ensured it before discovery threw.
+    if (
+      error instanceof ProviderCalendarError &&
+      error.reason === "discoveryFailed"
+    ) {
+      const detail =
+        error.cause instanceof Error ? error.cause.message : error.message;
+      const calendarList = (
+        await deps.resources.listByConnection(
+          job.tenantId,
+          job.principalId,
+          job.connectionId,
+        )
+      ).find((resource) => resource.resourceKind === "calendarList");
+      if (calendarList) {
+        await deps.resources.markReadFailure(
+          job.tenantId,
+          job.principalId,
+          calendarList._id,
+          now(),
+          detail,
+        );
+      }
+      return {
+        result: "drop",
+        reason: `provider durably rejected calendar-list discovery for connection ${job.connectionId} (${detail}); sync resumes once the account can list calendars again`,
       };
     }
     throw error;

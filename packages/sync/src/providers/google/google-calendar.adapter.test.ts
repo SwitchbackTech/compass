@@ -381,15 +381,23 @@ describe("GoogleCalendarAdapter", () => {
     expect(error.reason).toBe("cursorExpired");
   });
 
-  it("maps any other provider error to discoveryFailed and redacts the cause", async () => {
+  it("maps a durable 403 (notACalendarUser) to discoveryFailed with triage facts", async () => {
     // A gaxios-shaped error whose config carries the bearer token must never
-    // survive onto the ProviderCalendarError cause chain.
-    const leaky = Object.assign(new Error("Request failed with status 403"), {
-      config: {
-        headers: { Authorization: "Bearer super-secret-access-token" },
+    // survive onto the ProviderCalendarError cause chain; status/reason must.
+    const leaky = Object.assign(
+      new Error("The user must be signed up for Google Calendar."),
+      {
+        config: {
+          headers: { Authorization: "Bearer super-secret-access-token" },
+        },
+        response: {
+          status: 403,
+          data: {
+            error: { errors: [{ reason: "notACalendarUser" }] },
+          },
+        },
       },
-      response: { status: 403 },
-    });
+    );
     const api = new FakeCalendarListApi([], leaky);
     const { adapter } = adapterWith(api);
 
@@ -399,9 +407,59 @@ describe("GoogleCalendarAdapter", () => {
 
     expect(error.reason).toBe("discoveryFailed");
     expect(error.cause).toBeInstanceOf(Error);
+    expect((error.cause as Error).message).toContain("HTTP 403");
+    expect((error.cause as Error).message).toContain("reason notACalendarUser");
     expect((error.cause as { config?: unknown }).config).toBeUndefined();
     expect(JSON.stringify(error.cause)).not.toContain(
       "super-secret-access-token",
     );
+  });
+
+  it("maps a network failure to transient", async () => {
+    const api = new FakeCalendarListApi([], new Error("socket hang up"));
+    const { adapter } = adapterWith(api);
+
+    const error = (await adapter
+      .discoverCalendars({ accessToken: "at" })
+      .catch((e) => e)) as ProviderCalendarError;
+
+    expect(error.reason).toBe("transient");
+  });
+
+  it("maps a 5xx provider error to transient", async () => {
+    const api = new FakeCalendarListApi([], {
+      response: { status: 503 },
+    });
+    const { adapter } = adapterWith(api);
+
+    const error = (await adapter
+      .discoverCalendars({ accessToken: "at" })
+      .catch((e) => e)) as ProviderCalendarError;
+
+    expect(error.reason).toBe("transient");
+  });
+
+  it.each([
+    "rateLimitExceeded",
+    "userRateLimitExceeded",
+    "quotaExceeded",
+    "dailyLimitExceeded",
+  ])("maps a 403 %s to transient rather than discoveryFailed", async (reason) => {
+    const quota = Object.assign(new Error("Request failed with status 403"), {
+      response: {
+        status: 403,
+        data: {
+          error: { errors: [{ reason }] },
+        },
+      },
+    });
+    const api = new FakeCalendarListApi([], quota);
+    const { adapter } = adapterWith(api);
+
+    const error = (await adapter
+      .discoverCalendars({ accessToken: "at" })
+      .catch((e) => e)) as ProviderCalendarError;
+
+    expect(error.reason).toBe("transient");
   });
 });
