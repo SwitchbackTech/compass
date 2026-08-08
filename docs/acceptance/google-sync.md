@@ -106,7 +106,10 @@ Do not use this guide to validate:
 
 Helpful notes:
 
-- There is no user-facing "Disconnect Google" button. Revocation only happens when the user removes access in Google's own account settings.
+- Users can disconnect a Google account from Settings → Accounts. Access can
+  also become unusable when the user removes Compass in Google's account
+  settings (`myaccount.google.com/permissions`) or when Google reports
+  expired/revoked credentials.
 - All eligible Google calendars import by default — there's no UI to opt a
   calendar out of import. The sidebar's "Calendars" list controls per-calendar
   *visibility* in Compass instead (Scenario 9); a hidden calendar keeps
