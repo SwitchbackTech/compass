@@ -83,4 +83,34 @@ describe("useDayEventsQuery", () => {
     expect(result.result.current.isPlaceholderData).toBe(true);
     expect(result.result.current.isPending).toBe(false);
   });
+
+  it("serves an empty placeholder for a day with no events inside a cached week", async () => {
+    const queryClient = createCompassQueryClient();
+    const weekStart = dayjs.utc("2025-11-10T00:00:00Z");
+    const weekEnd = weekStart.add(6, "day").endOf("day");
+    const event = createMockEvent({
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2025-11-11T09:00:00.000Z",
+        end: "2025-11-11T10:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
+    queryClient.setQueryData(
+      eventQueryKeys.week({
+        source: "local",
+        start: toUTCOffset(weekStart),
+        end: toUTCOffset(weekEnd),
+      }),
+      normalizeEventList([event]),
+    );
+
+    const result = renderHook(() => useDayEventsQuery(dayRange("2025-11-14")), {
+      queryClient,
+    });
+
+    expect(result.result.current.data).toEqual({ ids: [], entities: {} });
+    expect(result.result.current.isPlaceholderData).toBe(true);
+    expect(result.result.current.isPending).toBe(false);
+  });
 });
