@@ -18,6 +18,8 @@ export type ExhaustedFailedJob = {
   id: SyncJobId;
   coalescingKey: string;
   connectionId: ConnectionId;
+  tenantId: TenantId;
+  principalId: PrincipalId;
   failureClass: Exclude<JobRecord["failureClass"], null>;
   requeuedCount: number;
   updatedAt: Date;
@@ -433,6 +435,8 @@ export class JobRepository {
         _id: 1,
         coalescingKey: 1,
         connectionId: 1,
+        tenantId: 1,
+        principalId: 1,
         failureClass: 1,
         requeuedCount: 1,
         updatedAt: 1,
@@ -443,6 +447,8 @@ export class JobRepository {
       id: row["_id"] as SyncJobId,
       coalescingKey: String(row["coalescingKey"]),
       connectionId: row["connectionId"] as ConnectionId,
+      tenantId: row["tenantId"] as TenantId,
+      principalId: row["principalId"] as PrincipalId,
       failureClass: (row["failureClass"] ?? "retryableTransient") as Exclude<
         JobRecord["failureClass"],
         null

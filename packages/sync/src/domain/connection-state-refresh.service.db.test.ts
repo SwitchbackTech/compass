@@ -555,6 +555,60 @@ describe("refreshConnectionState", () => {
     expect(after.stateReason).toBe("providerErrors");
   });
 
+  it("reports delayed/providerErrors when calendarList discovery durably fails", async () => {
+    const connection = await seedImportingConnection();
+    const listResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    // No active calendars and no events marker — connection-wide discovery
+    // refusal used to leave the connection stuck on "importing" forever.
+    await resources.markReadFailure(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      new Date(),
+      "The user must be signed up for Google Calendar. (HTTP 403, reason notACalendarUser)",
+    );
+
+    const after = await refreshConnectionState(deps(), connection);
+    expect(after.state).toBe("delayed");
+    expect(after.stateReason).toBe("providerErrors");
+  });
+
+  it("clears calendarList discovery failure once rediscovery succeeds", async () => {
+    const connection = await seedImportingConnection();
+    const listResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.markReadFailure(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      new Date(),
+      "The user must be signed up for Google Calendar. (HTTP 403, reason notACalendarUser)",
+    );
+    // Successful rediscovery advances the cursor and clears the marker.
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      "list-cursor",
+      new Date(),
+    );
+
+    const after = await refreshConnectionState(deps(), connection);
+    expect(after.state).toBe("healthy");
+    expect(after.stateReason).toBeNull();
+  });
+
   it("ignores a read-failure marker on a calendar that is no longer active", async () => {
     const connection = await seedImportingConnection();
     const calendar = await calendars.upsertByProviderCalendar({

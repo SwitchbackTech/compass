@@ -56,9 +56,13 @@ export interface ProviderCalendarAdapter {
 
 // Why a discovery attempt could not complete. `cursorExpired` is distinct so the
 // caller can drop the stale cursor and re-list in full instead of retrying with
-// a token the provider will keep rejecting.
+// a token the provider will keep rejecting. `transient` is a retryable
+// network/quota/server failure; `discoveryFailed` is a durable provider refusal
+// (e.g. notACalendarUser) that dispatch must drop rather than burn the retry
+// ladder on.
 export type ProviderCalendarErrorReason =
-  | "discoveryFailed" // the provider rejected or failed the calendar-list read
+  | "discoveryFailed" // durable: the provider rejected the calendar-list read
+  | "transient" // retryable: network, rate limit, quota, or server error
   | "cursorExpired"; // the incremental cursor is too old; a full re-list is required
 
 export class ProviderCalendarError extends ProviderError<ProviderCalendarErrorReason> {}

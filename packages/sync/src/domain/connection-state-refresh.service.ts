@@ -154,11 +154,14 @@ export async function gatherConnectionStateEvidence(
   return {
     disconnectedAt: connection.disconnectedAt,
     credential: credentialState(credential),
-    // Only ACTIVE calendars count: a deactivated calendar's stale marker is not
-    // a problem the user can act on, and its jobs are dropped anyway.
-    durableReadFailure: activeCalendars.some(
-      (c) => eventsByCalendar.get(c._id)?.lastReadFailureAt != null,
-    ),
+    // Connection-wide calendarList discovery failure OR an ACTIVE calendar's
+    // event-read failure. A deactivated calendar's stale marker is not a
+    // problem the user can act on, and its jobs are dropped anyway.
+    durableReadFailure:
+      calendarList?.lastReadFailureAt != null ||
+      activeCalendars.some(
+        (c) => eventsByCalendar.get(c._id)?.lastReadFailureAt != null,
+      ),
     accountIdentified: Boolean(connection.account.providerAccountId),
     // Discovery must have finished, and every currently-active calendar must
     // have a cursor plus a successful post-watch catch-up pull. A cursor alone

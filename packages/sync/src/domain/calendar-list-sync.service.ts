@@ -90,7 +90,9 @@ export async function syncCalendarList(
       fullList = true;
       discovery = await deps.discovery.discoverCalendars({ accessToken });
     } else {
-      // discoveryFailed or unexpected: transient, let the worker retry.
+      // transient / discoveryFailed / unexpected: rethrow. Durable discovery
+      // refusals (discoveryFailed) are settled as drops in dispatchSyncJob;
+      // transient failures stay on the worker retry ladder.
       throw error;
     }
   }

@@ -561,6 +561,8 @@ function buildSchedulers(
                 id: job.id,
                 coalescingKey: job.coalescingKey,
                 connectionId: job.connectionId,
+                tenantId: job.tenantId,
+                principalId: job.principalId,
                 failureClass: job.failureClass,
                 requeuedCount: job.requeuedCount,
                 updatedAt: job.updatedAt.toISOString(),

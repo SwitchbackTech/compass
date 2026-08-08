@@ -40,11 +40,13 @@ export interface ConnectionStateEvidence {
   // The user ended this connection; nothing else matters.
   readonly disconnectedAt: Date | null;
   readonly credential: CredentialState;
-  // At least one ACTIVE calendar's reads are durably rejected by the provider
-  // (see the readFailed settlement in sync-job-dispatch). Its job was settled
-  // rather than left retrying, so no overdue-work signal remains to notice —
-  // without this, a connection whose primary calendar had been dead for days
-  // still reported healthy, every other signal green (2026-07-30).
+  // At least one ACTIVE calendar's event reads are durably rejected, OR the
+  // connection's calendarList discovery was durably rejected (see the
+  // readFailed / discoveryFailed settlements in sync-job-dispatch). Those jobs
+  // are settled as drops rather than left retrying, so no overdue-work signal
+  // remains to notice — without this, a connection whose primary calendar or
+  // account-level discovery had been dead for days still reported healthy,
+  // every other signal green (2026-07-30 / 2026-08-08).
   readonly durableReadFailure: boolean;
   // The provider account identity has been resolved.
   readonly accountIdentified: boolean;
