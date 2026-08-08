@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { describe, expect, it } from "bun:test";
 
@@ -40,5 +41,68 @@ describe("OverlayPanel", () => {
     expect(document.body.dataset.appLocked).toBe("true");
     unmount();
     expect(document.body.dataset.appLocked).toBeUndefined();
+  });
+
+  it("names untitled dialogs via ariaLabel", () => {
+    render(
+      <OverlayPanel ariaLabel="Welcome guide" onDismiss={() => {}}>
+        <button type="button">Close</button>
+      </OverlayPanel>,
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: "Welcome guide" }),
+    ).toBeInTheDocument();
+  });
+
+  it("traps Tab within the dialog", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <button type="button">Outside</button>
+        <OverlayPanel title="Confirm" onDismiss={() => {}}>
+          <button type="button">First</button>
+          <button type="button">Last</button>
+        </OverlayPanel>
+      </>,
+    );
+
+    const first = screen.getByRole("button", { name: "First" });
+    const last = screen.getByRole("button", { name: "Last" });
+    expect(first).toHaveFocus();
+
+    await user.tab();
+    expect(last).toHaveFocus();
+
+    await user.tab();
+    expect(first).toHaveFocus();
+
+    await user.tab({ shift: true });
+    expect(last).toHaveFocus();
+  });
+
+  it("skips focus restore when skipFocusRestoreRef is set", () => {
+    const skipFocusRestoreRef = { current: false };
+    const { rerender } = render(<button type="button">Outside</button>);
+    const outside = screen.getByRole("button", { name: "Outside" });
+    outside.focus();
+
+    rerender(
+      <>
+        <button type="button">Outside</button>
+        <OverlayPanel
+          title="Confirm"
+          onDismiss={() => {}}
+          skipFocusRestoreRef={skipFocusRestoreRef}
+        >
+          <button type="button">Inside</button>
+        </OverlayPanel>
+      </>,
+    );
+    expect(screen.getByRole("button", { name: "Inside" })).toHaveFocus();
+
+    skipFocusRestoreRef.current = true;
+    rerender(<button type="button">Outside</button>);
+    expect(outside).not.toHaveFocus();
   });
 });

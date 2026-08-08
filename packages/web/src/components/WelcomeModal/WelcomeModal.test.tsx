@@ -96,6 +96,38 @@ describe("WelcomeModal", () => {
     ).toBeNull();
   });
 
+  it("does not restore underlay focus when handing off to auth", async () => {
+    const user = userEvent.setup();
+
+    const { rerender } = render(
+      <button type="button">Outside calendar</button>,
+    );
+    const outside = screen.getByRole("button", { name: "Outside calendar" });
+    outside.focus();
+
+    rerender(
+      <>
+        <button type="button">Outside calendar</button>
+        <WelcomeModal />
+      </>,
+    );
+    expect(screen.getByRole("button", { name: "Sign up" })).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "Log in" }));
+    authModalState.isOpen = true;
+    rerender(
+      <>
+        <button type="button">Outside calendar</button>
+        <WelcomeModal />
+      </>,
+    );
+
+    expect(
+      screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
+    ).toBeNull();
+    expect(outside).not.toHaveFocus();
+  });
+
   it("reappears when the auth modal closes (e.g. via the browser back button)", async () => {
     const user = userEvent.setup();
 
@@ -146,5 +178,29 @@ describe("WelcomeModal", () => {
     expect(questionButton).toHaveAttribute("aria-expanded", "false");
     expect(answer).toHaveAttribute("aria-hidden", "true");
     expect(answer).toHaveAttribute("data-state", "closed");
+  });
+
+  it("focuses the first control and keeps Tab inside the dialog", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <>
+        <button type="button">Outside calendar</button>
+        <WelcomeModal />
+      </>,
+    );
+
+    const signUp = screen.getByRole("button", { name: "Sign up" });
+    expect(signUp).toHaveFocus();
+
+    const terms = screen.getByRole("link", { name: "Terms" });
+    terms.focus();
+    expect(terms).toHaveFocus();
+
+    await user.tab();
+    expect(signUp).toHaveFocus();
+    expect(
+      screen.getByRole("button", { name: "Outside calendar" }),
+    ).not.toHaveFocus();
   });
 });

@@ -3,22 +3,14 @@ import {
   LinkedinLogoIcon,
   XLogoIcon,
 } from "@phosphor-icons/react";
-import {
-  type KeyboardEvent,
-  type MouseEvent,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { track } from "@web/auth/posthog/track";
 import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { SOCIAL_LINKS } from "@web/common/constants/social.constants";
-import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
-import { useAppLockReason } from "@web/shortcuts/app-lock";
+import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { maybeShowCmdPaletteHint } from "./cmd-palette-hint.util";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
@@ -37,18 +29,19 @@ export function WelcomeModal() {
     () => !authenticated && !hasSeenWelcome(),
   );
   const { closing, beginDismiss } = useDismissTransition(MODAL_DISMISS_MS);
-  const backdropRef = useRef<HTMLDivElement>(null);
+  // Suppress OverlayPanel's unmount restore when handing off to Auth — Auth
+  // seats its own focus; restoring the underlay first causes a focus flash.
+  const skipFocusRestoreRef = useRef(false);
 
   // The auth modal's openness lives in the URL (?auth=), so the welcome
   // screen simply hides while it is open and reappears when the browser
   // back button (or Escape) removes the param again.
   const visible = isOpen && !isAuthModalOpen && !authenticated;
-  useAppLockReason("welcomeModal", visible);
 
   const shownRef = useRef(false);
   useEffect(() => {
     if (visible) {
-      backdropRef.current?.focus();
+      skipFocusRestoreRef.current = false;
       if (!shownRef.current) {
         shownRef.current = true;
         track("welcome_modal_shown");
@@ -68,52 +61,28 @@ export function WelcomeModal() {
     beginDismiss(() => setIsOpen(false));
   };
 
-  const handleLogIn = () => {
+  const handOffToAuth = (cta: "log_in" | "sign_up") => {
+    skipFocusRestoreRef.current = true;
     markWelcomeSeen();
     maybeShowCmdPaletteHint();
-    track("welcome_modal_dismissed", { cta: "log_in" });
-    openModal("login");
-  };
-
-  const handleSignUp = () => {
-    markWelcomeSeen();
-    maybeShowCmdPaletteHint();
-    track("welcome_modal_dismissed", { cta: "sign_up" });
-    track("signup_started", { source: "welcome_modal" });
-    openModal("signUp");
-  };
-
-  const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) {
-      dismiss();
+    track("welcome_modal_dismissed", { cta });
+    if (cta === "sign_up") {
+      track("signup_started", { source: "welcome_modal" });
     }
-  };
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Escape") {
-      dismiss();
-    }
+    openModal(cta === "log_in" ? "login" : "signUp");
   };
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: The backdrop catches outside clicks and Escape to dismiss the welcome modal.
-    <div
-      className="fixed inset-0 flex items-center justify-center overflow-y-auto bg-background/85 py-8 backdrop-blur-sm transition-opacity duration-400 ease-out data-closing:opacity-0 motion-reduce:transition-none"
-      data-closing={closing || undefined}
-      onClick={handleBackdropClick}
-      onKeyDown={handleKeyDown}
-      ref={backdropRef}
-      role="presentation"
-      style={{ zIndex: Z_INDEX_MODAL }}
-      tabIndex={-1}
+    <OverlayPanel
+      align="start"
+      ariaLabel="Welcome to Compass Calendar"
+      backdropClassName="overflow-y-auto py-8"
+      closing={closing}
+      onDismiss={dismiss}
+      skipFocusRestoreRef={skipFocusRestoreRef}
+      widthClassName="w-120"
     >
-      <div
-        role="dialog"
-        aria-modal
-        aria-label="Welcome to Compass Calendar"
-        data-closing={closing || undefined}
-        className="flex w-120 max-w-[90vw] flex-col gap-6 rounded-xl bg-surface-panel p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-transform duration-400 ease-out data-closing:scale-105 motion-reduce:transition-none"
-      >
+      <div className="flex w-full flex-col gap-6">
         {/* Top row: pirate top-left, auth pills top-right */}
         <div className="flex items-center justify-between">
           <div className="group relative flex items-center">
@@ -131,14 +100,14 @@ export function WelcomeModal() {
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              onClick={handleSignUp}
+              onClick={() => handOffToAuth("sign_up")}
               className="rounded-3xl bg-accent px-4 py-1.5 text-on-accent text-xs transition-all hover:brightness-110"
             >
               Sign up
             </button>
             <button
               type="button"
-              onClick={handleLogIn}
+              onClick={() => handOffToAuth("log_in")}
               className="rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
             >
               Log in
@@ -198,6 +167,6 @@ export function WelcomeModal() {
           </div>
         </div>
       </div>
-    </div>
+    </OverlayPanel>
   );
 }

@@ -2,6 +2,7 @@ import clsx from "clsx";
 import {
   type ButtonHTMLAttributes,
   type ReactNode,
+  type RefObject,
   useEffect,
   useId,
   useRef,
@@ -12,11 +13,16 @@ import { useAppLockReason } from "@web/shortcuts/app-lock";
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+const getFocusableElements = (root: HTMLElement) =>
+  Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+
 interface Props {
   /** Icon or element displayed at the top of the panel */
   icon?: ReactNode;
   /** Main title text */
   title?: string;
+  /** Accessible name when the panel has no visible title */
+  ariaLabel?: string;
   /** Optional content rendered on the same row as the title (e.g. a switch link) */
   titleAction?: ReactNode;
   /** Description/message text */
@@ -27,6 +33,11 @@ interface Props {
   onDismiss?: () => void;
   /** Overrides the element that receives focus when the dialog closes. */
   restoreFocus?: () => void;
+  /**
+   * When `.current` is true at unmount, skip focus restore — for dialog-to-dialog
+   * handoffs where the next dialog will seat focus itself.
+   */
+  skipFocusRestoreRef?: RefObject<boolean>;
   /** ARIA role for the panel (default: "dialog") */
   role?: "dialog" | "status" | "alert";
   /** Cross-axis alignment of the title/message/children (default: "center") */
@@ -35,20 +46,28 @@ interface Props {
   variant?: "modal" | "status";
   /** Tailwind width class for the modal variant (default: "w-[400px]") */
   widthClassName?: string;
+  /** Extra classes for the backdrop (e.g. overflow for tall dialogs) */
+  backdropClassName?: string;
+  /** When true, applies dismiss-transition `data-closing` styles before unmount */
+  closing?: boolean;
 }
 
 export const OverlayPanel = ({
   icon,
   title,
+  ariaLabel,
   titleAction,
   message,
   children,
   onDismiss,
   restoreFocus,
+  skipFocusRestoreRef,
   role = "dialog",
   align = "center",
   variant = "modal",
   widthClassName = "w-[400px]",
+  backdropClassName,
+  closing = false,
 }: Props) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const baseId = useId();
@@ -62,17 +81,22 @@ export const OverlayPanel = ({
     const panel = panelRef.current;
     if (!panel) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
-    const firstFocusable = panel.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+    const [firstFocusable] = getFocusableElements(panel);
     (firstFocusable ?? panel).focus();
     return () => {
+      // Read at unmount so callers can suppress restore for dialog handoffs.
+      if (skipFocusRestoreRef?.current) return;
       // Let the Escape key's global handlers finish before restoring focus.
       if (restoreFocus) setTimeout(restoreFocus);
       else previouslyFocused?.focus?.();
     };
-  }, [restoreFocus, role]);
+  }, [restoreFocus, role, skipFocusRestoreRef]);
 
   const backdropClasses = clsx(
     "fixed inset-0 flex items-center justify-center bg-background/85 backdrop-blur-sm",
+    variant === "modal" &&
+      "transition-opacity duration-400 ease-out data-closing:opacity-0 motion-reduce:transition-none",
+    backdropClassName,
   );
 
   const panelClasses = clsx(
@@ -81,6 +105,7 @@ export const OverlayPanel = ({
     variant === "modal" && [
       widthClassName,
       "max-w-[90vw] gap-6 rounded-xl bg-surface-panel p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]",
+      "transition-transform duration-400 ease-out data-closing:scale-105 motion-reduce:transition-none",
     ],
     variant === "status" &&
       "max-w-sm gap-3 rounded-lg border border-border bg-surface/90 px-6 py-5 shadow-lg",
@@ -105,20 +130,17 @@ export const OverlayPanel = ({
       onDismiss();
       return;
     }
-    if (e.key === "Tab" && panelRef.current) {
-      const focusables = Array.from(
-        panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-      );
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
+    if (e.key !== "Tab" || !panelRef.current) return;
+    const focusables = getFocusableElements(panelRef.current);
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
     }
   };
 
@@ -126,6 +148,7 @@ export const OverlayPanel = ({
     // biome-ignore lint/a11y/noStaticElementInteractions: The backdrop catches outside clicks and Escape to dismiss the panel.
     <div
       className={backdropClasses}
+      data-closing={closing || undefined}
       onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
       role="presentation"
@@ -136,9 +159,11 @@ export const OverlayPanel = ({
       <div
         ref={panelRef}
         className={panelClasses}
+        data-closing={closing || undefined}
         role={role}
         tabIndex={role === "dialog" ? -1 : undefined}
         aria-modal={role === "dialog" ? true : undefined}
+        aria-label={!title ? ariaLabel : undefined}
         aria-labelledby={title ? titleId : undefined}
         aria-describedby={message ? messageId : undefined}
         aria-live={role === "status" ? "polite" : undefined}
