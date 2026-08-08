@@ -267,14 +267,19 @@ describe("CommandPalette", () => {
     expect(isOpen()).toBe(false);
   });
 
-  it("renders a disabled Undo row with keycaps when there is no history", () => {
+  it("renders disabled Undo and Redo rows with keycaps when there is no history", () => {
     renderPalette();
 
-    const row = screen.getByText("Undo last change").closest("button");
-    expect(row).toBeDisabled();
+    const undoRow = screen.getByText("Undo last change").closest("button");
+    expect(undoRow).toBeDisabled();
     // Two keycap chips: the platform modifier and Z (see the aria-hidden
     // note in the Show Shortcuts test below).
-    expect(row?.querySelectorAll("[aria-hidden='true']")).toHaveLength(2);
+    expect(undoRow?.querySelectorAll("[aria-hidden='true']")).toHaveLength(2);
+
+    const redoRow = screen.getByText("Redo last change").closest("button");
+    expect(redoRow).toBeDisabled();
+    // Mod + Shift + Z → three keycap chips.
+    expect(redoRow?.querySelectorAll("[aria-hidden='true']")).toHaveLength(3);
   });
 
   it("undoes the last change and closes when the Undo row is clicked", async () => {
@@ -317,6 +322,51 @@ describe("CommandPalette", () => {
     await waitFor(() => {
       expect(useUndoHistoryStore.getState().past).toHaveLength(0);
       expect(useUndoHistoryStore.getState().future).toHaveLength(1);
+    });
+    expect(isOpen()).toBe(false);
+  });
+
+  it("redoes the last change and closes when the Redo row is clicked", async () => {
+    const before = createMockEvent({
+      content: { kind: "details", title: "Before", description: "" },
+    });
+    undoHistoryActions.record({
+      kind: "edit",
+      id: before.id,
+      before,
+      after: {
+        ...before,
+        content: { kind: "details", title: "After", description: "" },
+      },
+    });
+    // Move the edit into the future stack so Redo is enabled.
+    undoHistoryActions.commitUndo();
+    const repository: EventRepository = {
+      list: async () => [],
+      create: async () => before,
+      replace: async (id, input) => ({
+        ...before,
+        id,
+        content: input.content,
+        schedule: input.schedule,
+      }),
+      delete: async () => {},
+    };
+    renderPalette({
+      source: "local",
+      repository,
+      markWrite: async () => {},
+      reportError: () => {},
+    });
+
+    const row = screen.getByText("Redo last change").closest("button");
+    expect(row).not.toBeDisabled();
+
+    fireEvent.click(row as HTMLButtonElement);
+
+    await waitFor(() => {
+      expect(useUndoHistoryStore.getState().past).toHaveLength(1);
+      expect(useUndoHistoryStore.getState().future).toHaveLength(0);
     });
     expect(isOpen()).toBe(false);
   });

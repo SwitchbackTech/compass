@@ -7,7 +7,10 @@ import {
   useListNavigation,
   useRole,
 } from "@floating-ui/react";
-import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
+import {
+  ArrowClockwiseIcon,
+  ArrowCounterClockwiseIcon,
+} from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useRef, useState } from "react";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
@@ -287,7 +290,7 @@ export const CommandPalette = ({
   const showAccountsCmdItems = useShowAccountsCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
   const themeCmdItems = useThemeCmdItems();
-  const { undo, canUndo } = useUndoRedo(mutationDependencies);
+  const { undo, redo, canUndo, canRedo } = useUndoRedo(mutationDependencies);
   const recentCommandIds = useRecentCommandIds();
 
   const sections: CommandSection[] = [
@@ -320,6 +323,15 @@ export const CommandPalette = ({
           // Defer so the palette unmounts before undo's refocusEventElement
           // starts hunting for the restored event element.
           onClick: () => queueMicrotask(undo),
+        },
+        {
+          id: "redo-last-change",
+          label: "Redo last change",
+          icon: ArrowClockwiseIcon,
+          shortcut: ["Mod", "Shift", "Z"],
+          keywords: ["forward", "history", "repeat"],
+          disabled: !canRedo,
+          onClick: () => queueMicrotask(redo),
         },
       ],
     },
