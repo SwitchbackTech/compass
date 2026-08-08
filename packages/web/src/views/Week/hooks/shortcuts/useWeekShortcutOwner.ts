@@ -14,9 +14,9 @@ import { useFocusSidebarShortcut } from "@web/components/Sidebar/useFocusSidebar
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
-import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
+import { useWeekViewShortcuts } from "@web/views/Week/hooks/shortcuts/useWeekViewShortcuts";
 import { goToTodayInWeek } from "@web/views/Week/hooks/shortcuts/weekShortcuts.util";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
@@ -37,7 +37,11 @@ export interface ShortcutProps {
   scrollUtil: Util_Scroll;
 }
 
-export const useWeekShortcuts = ({
+/**
+ * Week shortcut owner: draft create/nav/focus behavior + bus subscription,
+ * then thin key registration via `useWeekViewShortcuts`.
+ */
+export const useWeekShortcutOwner = ({
   isCurrentWeek,
   queryEndOfView,
   queryStartOfView,
@@ -62,35 +66,35 @@ export const useWeekShortcuts = ({
   const { decrementWeek, incrementWeek, goToToday, shiftViewByDay } = util;
   const { scrollToNow } = scrollUtil;
 
-  const _discardDraft = useCallback(() => {
+  const discardDraft = useCallback(() => {
     if (isEventFormOpen()) {
       draftActions.discard();
     }
   }, []);
 
   const goToPreviousWeek = useCallback(() => {
-    _discardDraft();
+    discardDraft();
     decrementWeek();
-  }, [decrementWeek, _discardDraft]);
+  }, [decrementWeek, discardDraft]);
 
   const toToday = useCallback(() => {
     goToTodayInWeek({ scrollToNow, goToToday });
   }, [scrollToNow, goToToday]);
 
   const goToNextWeek = useCallback(() => {
-    _discardDraft();
+    discardDraft();
     incrementWeek();
-  }, [incrementWeek, _discardDraft]);
+  }, [incrementWeek, discardDraft]);
 
   const shiftViewBackward = useCallback(() => {
-    _discardDraft();
+    discardDraft();
     shiftViewByDay(-1);
-  }, [_discardDraft, shiftViewByDay]);
+  }, [discardDraft, shiftViewByDay]);
 
   const shiftViewForward = useCallback(() => {
-    _discardDraft();
+    discardDraft();
     shiftViewByDay(1);
-  }, [_discardDraft, shiftViewByDay]);
+  }, [discardDraft, shiftViewByDay]);
 
   const createAllDayDraftEvent = useCallback(() => {
     // Same guard as DayCalendarGrid.openShortcutDraft: do not seed a sticky
@@ -171,12 +175,14 @@ export const useWeekShortcuts = ({
     repositionDraftByKey: repositionDraftByKeyboard,
   });
 
-  useAppShortcutUp("J", goToPreviousWeek);
-  useAppShortcutUp("K", goToNextWeek);
-  useAppShortcutUp("Shift+J", shiftViewBackward);
-  useAppShortcutUp("Shift+K", shiftViewForward);
-  useAppShortcutUp("T", toToday);
-  useAppShortcutUp("A", emitCreateAllDayDraft);
-  useAppShortcutUp("C", emitCreateTimedDraft);
-  useAppShortcutUp("U", focusFirstCalendarEvent);
+  useWeekViewShortcuts({
+    onPreviousWeek: goToPreviousWeek,
+    onNextWeek: goToNextWeek,
+    onShiftViewBackward: shiftViewBackward,
+    onShiftViewForward: shiftViewForward,
+    onGoToToday: toToday,
+    onCreateAllDayDraft: emitCreateAllDayDraft,
+    onCreateTimedDraft: emitCreateTimedDraft,
+    onFocusCalendar: focusFirstCalendarEvent,
+  });
 };
