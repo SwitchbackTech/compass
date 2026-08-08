@@ -61,6 +61,30 @@ describe("shortcuts.registry", () => {
       const ids = shortcuts.map((s) => s.id);
       expect(ids).toContain("edit-save");
     });
+
+    it("hides event-focused edit sequences until an event is focused", () => {
+      const idle = filterShortcutsByContext({
+        view: "day",
+        isViewingCurrentPeriod: true,
+        eventFocused: false,
+      }).map((shortcut) => shortcut.id);
+
+      expect(idle).not.toContain("edit-focus-title");
+      expect(idle).not.toContain("edit-focus-description");
+
+      const focused = filterShortcutsByContext({
+        view: "day",
+        isViewingCurrentPeriod: true,
+        eventFocused: true,
+      }).map((shortcut) => shortcut.id);
+
+      expect(focused).toContain("edit-focus-title");
+      expect(focused).toContain("edit-focus-description");
+      expect(focused).toContain("edit-focus-start");
+      expect(focused).toContain("edit-focus-end");
+      expect(focused).toContain("edit-focus-recurrence");
+      expect(focused).toContain("edit-focus-calendar");
+    });
   });
 
   describe("getShortcutsBySection", () => {

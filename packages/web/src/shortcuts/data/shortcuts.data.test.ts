@@ -174,6 +174,52 @@ describe("shortcuts.data", () => {
       }
     });
 
+    it("lists e-then-field edit sequences only when an event is focused", () => {
+      for (const view of ["day", "week"] as const) {
+        const idleEdit = getShortcutMenuSections({
+          view,
+          isViewingCurrentPeriod: true,
+          eventFocused: false,
+        }).find((section) => section.id === "edit");
+        expect(stripMetadata(idleEdit?.shortcuts ?? [])).not.toContainEqual({
+          keys: ["e", "t"],
+          label: "Edit title",
+        });
+
+        const focusedEdit = getShortcutMenuSections({
+          view,
+          isViewingCurrentPeriod: true,
+          eventFocused: true,
+        }).find((section) => section.id === "edit");
+        const shortcuts = stripMetadata(focusedEdit?.shortcuts ?? []);
+
+        expect(shortcuts).toContainEqual({
+          keys: ["e", "t"],
+          label: "Edit title",
+        });
+        expect(shortcuts).toContainEqual({
+          keys: ["e", "d"],
+          label: "Edit description",
+        });
+        expect(shortcuts).toContainEqual({
+          keys: ["e", "s"],
+          label: "Edit start time",
+        });
+        expect(shortcuts).toContainEqual({
+          keys: ["e", "e"],
+          label: "Edit end time",
+        });
+        expect(shortcuts).toContainEqual({
+          keys: ["e", "r"],
+          label: "Edit recurrence",
+        });
+        expect(shortcuts).toContainEqual({
+          keys: ["e", "c"],
+          label: "Edit calendar",
+        });
+      }
+    });
+
     it("lists Life and undo/redo in day/week navigate and other sections", () => {
       const sections = getShortcutMenuSections({
         view: "day",

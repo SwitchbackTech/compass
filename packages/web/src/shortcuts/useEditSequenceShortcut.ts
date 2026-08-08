@@ -1,0 +1,129 @@
+import { useEffect, useRef } from "react";
+import {
+  type EventFormFocusField,
+  isEditableKeyboardTarget,
+} from "@web/common/utils/form/form.util";
+
+/** Leader → field map for the `e` edit sequences. */
+export const EDIT_SEQUENCE_FIELDS = {
+  t: "title",
+  d: "description",
+  s: "start",
+  e: "end",
+  r: "recurrence",
+  c: "calendar",
+} as const satisfies Record<string, EventFormFocusField>;
+
+export type EditSequenceSecondKey = keyof typeof EDIT_SEQUENCE_FIELDS;
+
+const ARM_WINDOW_MS = 600;
+const LEADER_KEY = "e";
+
+const hasModifier = (event: KeyboardEvent) =>
+  event.metaKey || event.ctrlKey || event.altKey || event.shiftKey;
+
+const isAppLocked = () => document.body.dataset.appLocked === "true";
+
+/**
+ * Arms on bare `e`, then fires a mapped second key within a short window.
+ * Capture-phase listeners suppress the follow key's keyup so existing keyup
+ * shortcuts (e.g. `t` → today, `d` → day view) do not also run.
+ */
+export function useEditSequenceShortcut({
+  enabled = true,
+  onSequence,
+}: {
+  enabled?: boolean;
+  onSequence: (field: EventFormFocusField) => void;
+}) {
+  const onSequenceRef = useRef(onSequence);
+  onSequenceRef.current = onSequence;
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    let armedUntil = 0;
+    let armTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    const suppressKeyUp = new Set<string>();
+
+    const disarm = () => {
+      armedUntil = 0;
+      if (armTimeoutId !== null) {
+        clearTimeout(armTimeoutId);
+        armTimeoutId = null;
+      }
+    };
+
+    const arm = () => {
+      disarm();
+      armedUntil = Date.now() + ARM_WINDOW_MS;
+      armTimeoutId = setTimeout(() => {
+        armedUntil = 0;
+        armTimeoutId = null;
+      }, ARM_WINDOW_MS);
+    };
+
+    const isArmed = () => armedUntil > Date.now();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if (isAppLocked()) {
+        disarm();
+        return;
+      }
+      if (isEditableKeyboardTarget(event)) {
+        disarm();
+        return;
+      }
+      if (hasModifier(event)) {
+        disarm();
+        return;
+      }
+
+      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+
+      if (isArmed()) {
+        const field =
+          key in EDIT_SEQUENCE_FIELDS
+            ? EDIT_SEQUENCE_FIELDS[key as EditSequenceSecondKey]
+            : null;
+
+        if (field) {
+          event.preventDefault();
+          event.stopPropagation();
+          suppressKeyUp.add(key);
+          disarm();
+          onSequenceRef.current(field);
+          return;
+        }
+
+        // Unknown second key: disarm silently and let the key through.
+        disarm();
+        return;
+      }
+
+      if (key === LEADER_KEY) {
+        arm();
+      }
+    };
+
+    const onKeyUp = (event: KeyboardEvent) => {
+      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      if (!suppressKeyUp.has(key)) return;
+
+      suppressKeyUp.delete(key);
+      event.preventDefault();
+      event.stopPropagation();
+    };
+
+    document.addEventListener("keydown", onKeyDown, true);
+    document.addEventListener("keyup", onKeyUp, true);
+
+    return () => {
+      disarm();
+      suppressKeyUp.clear();
+      document.removeEventListener("keydown", onKeyDown, true);
+      document.removeEventListener("keyup", onKeyUp, true);
+    };
+  }, [enabled]);
+}

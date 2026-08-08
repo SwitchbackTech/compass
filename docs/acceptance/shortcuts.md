@@ -60,6 +60,12 @@ Helpful notes:
 | `ArrowUp` / `ArrowDown`     | Day view  | Focus previous/next event         |
 | `Arrow keys`                | Day view  | Move open draft event             |
 | `Enter`                     | Day view  | Open focused event                |
+| `E` then `T`                | Day view  | Edit focused event title          |
+| `E` then `D`                | Day view  | Edit focused event description    |
+| `E` then `S`                | Day view  | Edit focused event start time     |
+| `E` then `E`                | Day view  | Edit focused event end time       |
+| `E` then `R`                | Day view  | Edit focused event recurrence     |
+| `E` then `C`                | Day view  | Edit focused event calendar       |
 | `Cmd+D` / `Ctrl+D`          | Day view  | Duplicate focused event           |
 | `Shift+ArrowLeft`           | Day view  | Move focused event to previous day |
 | `Shift+ArrowRight`          | Day view  | Move focused event to next day    |
@@ -75,6 +81,12 @@ Helpful notes:
 | `ArrowUp` / `ArrowDown`     | Week view | Focus previous/next event         |
 | `Arrow keys`                | Week view | Move open draft event             |
 | `Enter`                     | Week view | Open focused event                |
+| `E` then `T`                | Week view | Edit focused event title          |
+| `E` then `D`                | Week view | Edit focused event description    |
+| `E` then `S`                | Week view | Edit focused event start time     |
+| `E` then `E`                | Week view | Edit focused event end time       |
+| `E` then `R`                | Week view | Edit focused event recurrence     |
+| `E` then `C`                | Week view | Edit focused event calendar       |
 | `Cmd+D` / `Ctrl+D`          | Week view | Duplicate focused event           |
 | `Shift+ArrowLeft`           | Week view | Move focused event to previous day |
 | `Shift+ArrowRight`          | Week view | Move focused event to next day    |
@@ -271,7 +283,30 @@ Pressing Delete while an event is focused in the Day or Week grid deletes it —
 
 ---
 
-## Scenario 10: Undo With The Keyboard (Cmd+Z / Ctrl+Z)
+## Scenario 10: Edit A Focused Event Field With A Sequence (E then T)
+
+### UX
+
+With a grid event focused and no form field being typed in, pressing `E` then `T` within a short window opens that event's form (if needed) and places the caret in the title. The same `E`-prefix pattern targets description (`D`), start (`S`), end (`E`), recurrence (`R`), and calendar (`C`).
+
+### Steps
+
+1. Navigate to `/week`.
+2. Create a timed event and save it.
+3. Focus the event card (click it once is enough if the form closes first, or press `U` then arrows).
+4. Press `E` then `T` quickly.
+5. Repeat on `/day` with a focused event.
+
+### Expected Results
+
+- The event form opens with the title input focused and the caret ready to type.
+- Bare `E` alone, or `E` followed by an unmapped key, does nothing visible and does not block the next unrelated shortcut.
+- While typing in any input, or while a modal holds the app lock, the sequences do nothing.
+- With no event focused, the sequences do nothing.
+
+---
+
+## Scenario 11: Undo With The Keyboard (Cmd+Z / Ctrl+Z)
 
 ### UX
 
@@ -290,7 +325,7 @@ After deleting or moving an event, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux
 
 ---
 
-## Scenario 11: Shortcuts Do Not Fire While Typing In Inputs
+## Scenario 12: Shortcuts Do Not Fire While Typing In Inputs
 
 ### UX
 
@@ -329,3 +364,4 @@ If time is limited, run these checks before shipping shortcut-related changes:
 11. Arrow keys reposition an open draft in both Day and Week view.
 12. With a focused event and no draft open, ArrowUp/ArrowDown move focus to the previous/next event chronologically.
 13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.
+14. With a focused event, `E` then `T` opens the form with the title focused; bare `E` alone does nothing.

@@ -415,4 +415,49 @@ describe("useDayEventNudgeShortcuts", () => {
       dayjs(useDraftStore.getState().gridDraft?.values.schedule.start).format(),
     ).toBe(dayjs("2026-05-20T09:00:00.000").format());
   });
+
+  it("opens the focused event form and focuses the title on e then t", async () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    renderEditShortcuts();
+
+    const form = document.createElement("form");
+    form.setAttribute("name", ID_EVENT_FORM);
+    const title = document.createElement("input");
+    title.name = "Event Title";
+    form.appendChild(title);
+    document.body.appendChild(form);
+
+    act(() => {
+      pressKey("e");
+      pressKey("t");
+    });
+
+    await waitFor(() => {
+      expect(useDraftStore.getState().status?.isFormOpen).toBe(true);
+    });
+    expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
+    expect(useDraftStore.getState().gridDraft?.kind).toBe("edit");
+
+    await act(async () => {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      });
+    });
+
+    expect(document.activeElement).toBe(title);
+  });
+
+  it("does nothing on e then t when no event is focused", () => {
+    renderEditShortcuts();
+
+    act(() => {
+      pressKey("e");
+      pressKey("t");
+    });
+
+    expect(useDraftStore.getState().status?.isFormOpen).toBeFalsy();
+    expect(useDraftStore.getState().gridDraft).toBeNull();
+  });
 });
