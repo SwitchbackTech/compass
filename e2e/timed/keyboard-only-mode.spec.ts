@@ -38,7 +38,7 @@ test("SHIFT-SHIFT enters keyboard-only mode; clicks are inert until Escape", asy
   await tapShift(page);
 
   await expect(keyboardOnlyIndicator(page)).toContainText("Keyboard only");
-  await expect(keyboardOnlyIndicator(page)).toContainText("ESC to exit");
+  await expect(keyboardOnlyIndicator(page)).toContainText("Esc or Shift Shift");
 
   // Shortcuts overlay stays mounted with role=dialog even when closed, so
   // assert the event form did not open rather than dialog count.
@@ -48,6 +48,36 @@ test("SHIFT-SHIFT enters keyboard-only mode; clicks are inert until Escape", asy
   await expect(eventButton).not.toBeFocused();
 
   await page.keyboard.press("Escape");
+  await expect(keyboardOnlyIndicator(page)).toHaveCount(0);
+
+  await eventButton.click();
+  await expect(page.getByLabel("Title")).toBeVisible();
+});
+
+test("SHIFT-SHIFT exits keyboard-only mode and restores clicks", async ({
+  page,
+}) => {
+  await prepareCalendarPage(page);
+
+  const title = createEventTitle("Keyboard Only Toggle Exit");
+  const { x, y } = await getMainGridPoint(page, {
+    xRatio: 0.42,
+    yRatio: 0.35,
+  });
+  await page.mouse.click(x, y);
+  await fillTitleAndSaveEventForm(page, title);
+  await expectTimedEventVisible(page, title);
+
+  const eventButton = page
+    .locator("#mainGrid")
+    .getByRole("button", { name: title });
+
+  await tapShift(page);
+  await tapShift(page);
+  await expect(keyboardOnlyIndicator(page)).toBeVisible();
+
+  await tapShift(page);
+  await tapShift(page);
   await expect(keyboardOnlyIndicator(page)).toHaveCount(0);
 
   await eventButton.click();

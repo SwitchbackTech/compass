@@ -2,7 +2,11 @@ import {
   type CommandPaletteViewName,
   getNavigationCommandItems,
 } from "@web/components/CommandPalette/navigation.cmd.constants";
-import { describe, expect, it } from "bun:test";
+import {
+  initialKeyboardOnlyState,
+  useKeyboardOnlyStore,
+} from "@web/shortcuts/keyboard-only/keyboard-only.store";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 describe("getNavigationCommandItems", () => {
   const noopHandlers = {
@@ -11,7 +15,7 @@ describe("getNavigationCommandItems", () => {
     onShowShortcuts: () => {},
   };
 
-  it("lists Today first, then Day, Week, Life, then shortcuts", () => {
+  it("lists Today first, then Day, Week, Life, then shortcuts and keyboard-only", () => {
     const labels = getNavigationCommandItems(noopHandlers).map(
       (item) => item.label,
     );
@@ -20,7 +24,8 @@ describe("getNavigationCommandItems", () => {
       "Go to Day",
       "Go to Week",
       "Go to Life",
-      "Show keyboard shortcuts",
+      "Show shortcuts",
+      "Enter keyboard-only mode",
     ]);
   });
 
@@ -43,7 +48,12 @@ describe("getNavigationCommandItems", () => {
       onNavigateToView: () => {},
     }).map((item) => item.label);
 
-    expect(labels).toEqual(["Go to Day", "Go to Week", "Go to Life"]);
+    expect(labels).toEqual([
+      "Go to Day",
+      "Go to Week",
+      "Go to Life",
+      "Enter keyboard-only mode",
+    ]);
   });
 
   it("advertises every view shortcut in the command palette", () => {
@@ -67,7 +77,11 @@ describe("getNavigationCommandItems", () => {
       onNavigateToView: () => {},
     }).map((item) => item.label);
 
-    expect(labels).toEqual(["Go to Day", "Go to Week"]);
+    expect(labels).toEqual([
+      "Go to Day",
+      "Go to Week",
+      "Enter keyboard-only mode",
+    ]);
   });
 
   it("runs the matching navigation callbacks", () => {
@@ -95,5 +109,34 @@ describe("getNavigationCommandItems", () => {
     expect(navigatedViews).toEqual(["day", "week", "life"]);
     expect(didGoToToday).toBe(true);
     expect(didShowShortcuts).toBe(true);
+  });
+
+  describe("enter-keyboard-only", () => {
+    beforeEach(() => {
+      useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
+    });
+
+    afterEach(() => {
+      useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
+    });
+
+    it("enters keyboard-only mode on the next microtask", async () => {
+      const items = getNavigationCommandItems({
+        onNavigateToView: () => {},
+      });
+      items.find((item) => item.id === "enter-keyboard-only")?.onClick?.();
+
+      expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
+      await Promise.resolve();
+      expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+    });
+
+    it("advertises Shift Shift as the shortcut", () => {
+      const item = getNavigationCommandItems({
+        onNavigateToView: () => {},
+      }).find((entry) => entry.id === "enter-keyboard-only");
+
+      expect(item?.shortcut).toEqual(["Shift", "Shift"]);
+    });
   });
 });

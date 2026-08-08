@@ -53,7 +53,8 @@ export function getOnboardingTourSteps(): OnboardingTourStep[] {
     {
       id: "done",
       title: "You are ready",
-      body: "Sample events are already on your calendar. Reopen this tour from the command palette anytime.",
+      body: "You can do anything with the keyboard. Try Shift Shift to practice; clicks stay off until you exit. Sample events are already on your calendar. Reopen this tour from the command palette anytime.",
+      shortcutHint: "Shift Shift",
     },
   ];
 }
