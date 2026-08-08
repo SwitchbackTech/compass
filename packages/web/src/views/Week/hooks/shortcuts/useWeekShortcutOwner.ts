@@ -14,6 +14,7 @@ import { useFocusSidebarShortcut } from "@web/components/Sidebar/useFocusSidebar
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
+import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { useWeekViewShortcuts } from "@web/views/Week/hooks/shortcuts/useWeekViewShortcuts";
@@ -163,16 +164,24 @@ export const useWeekShortcutOwner = ({
     focusWeekGridEventTarget(target);
   }, []);
 
+  const targeting = {
+    focus: focusWeekGridEventTarget,
+    getFocused: getFocusedWeekGridEventTarget,
+    listVisible: listVisibleWeekGridEventTargets,
+  };
+
   useGridEventEditShortcuts({
     allDayEvents,
     timedEvents,
     dayBoundary: { kind: "clamp", weekDays },
-    targeting: {
-      focus: focusWeekGridEventTarget,
-      getFocused: getFocusedWeekGridEventTarget,
-      listVisible: listVisibleWeekGridEventTargets,
-    },
+    targeting,
     repositionDraftByKey: repositionDraftByKeyboard,
+  });
+
+  useGridEventFormFieldSequences({
+    allDayEvents,
+    targeting,
+    timedEvents,
   });
 
   useWeekViewShortcuts({

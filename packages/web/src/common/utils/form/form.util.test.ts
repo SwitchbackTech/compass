@@ -1,11 +1,13 @@
 import { ID_EVENT_FORM } from "../../constants/web.constants";
 import {
+  focusEventFormField,
+  focusEventFormTitle,
   isComboboxInteraction,
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
   shouldDeferEnterToTarget,
 } from "./form.util";
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 
 describe("form.util", () => {
   describe("isComboboxInteraction", () => {
@@ -132,6 +134,81 @@ describe("form.util", () => {
       document.body.appendChild(button);
 
       expect(isEventFormKeyboardTarget(createEvent(button))).toBe(false);
+    });
+  });
+
+  describe("focusEventFormField", () => {
+    afterEach(() => {
+      document.body.innerHTML = "";
+    });
+
+    const mountForm = () => {
+      const form = document.createElement("form");
+      form.setAttribute("name", ID_EVENT_FORM);
+      const title = document.createElement("input");
+      title.name = "Event Title";
+      const description = document.createElement("div");
+      description.id = "event-form-description";
+      description.setAttribute("contenteditable", "true");
+      description.tabIndex = 0;
+      const start = document.createElement("input");
+      start.id = "startTimePicker";
+      const end = document.createElement("input");
+      end.id = "endTimePicker";
+      const recurrence = document.createElement("div");
+      recurrence.id = "event-form-recurrence";
+      const repeat = document.createElement("button");
+      repeat.setAttribute("aria-label", "Edit recurrence");
+      recurrence.appendChild(repeat);
+      const calendar = document.createElement("button");
+      calendar.id = "event-form-calendar";
+      form.append(title, description, start, end, recurrence, calendar);
+      document.body.appendChild(form);
+      return { title, description, start, end, repeat, calendar };
+    };
+
+    it("focuses each shipped form field", () => {
+      const fields = mountForm();
+
+      expect(focusEventFormField("title")).toBe(true);
+      expect(document.activeElement).toBe(fields.title);
+
+      expect(focusEventFormField("description")).toBe(true);
+      expect(document.activeElement).toBe(fields.description);
+
+      expect(focusEventFormField("start")).toBe(true);
+      expect(document.activeElement).toBe(fields.start);
+
+      expect(focusEventFormField("end")).toBe(true);
+      expect(document.activeElement).toBe(fields.end);
+
+      expect(focusEventFormField("recurrence")).toBe(true);
+      expect(document.activeElement).toBe(fields.repeat);
+
+      expect(focusEventFormField("calendar")).toBe(true);
+      expect(document.activeElement).toBe(fields.calendar);
+    });
+
+    it("falls back to start/end date inputs when time pickers are absent", () => {
+      const form = document.createElement("form");
+      form.setAttribute("name", ID_EVENT_FORM);
+      const start = document.createElement("input");
+      start.title = "Pick Start Date";
+      const end = document.createElement("input");
+      end.title = "Pick End Date";
+      form.append(start, end);
+      document.body.appendChild(form);
+
+      expect(focusEventFormField("start")).toBe(true);
+      expect(document.activeElement).toBe(start);
+      expect(focusEventFormField("end")).toBe(true);
+      expect(document.activeElement).toBe(end);
+    });
+
+    it("keeps focusEventFormTitle as a title helper", () => {
+      const { title } = mountForm();
+      focusEventFormTitle();
+      expect(document.activeElement).toBe(title);
     });
   });
 });

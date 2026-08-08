@@ -4,6 +4,7 @@ import { repositionDraftByKeyboard } from "@web/common/utils/draft/reposition-dr
 import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
+import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
 import {
   focusDayGridEventTarget,
   getFocusedDayGridEventTarget,
@@ -12,7 +13,8 @@ import {
 
 /**
  * Day-view edit shortcuts: Delete, Mod+D, Shift+arrows (nudge / day-move),
- * Arrow keys to reposition an open draft or focus the neighboring event.
+ * Arrow keys to reposition an open draft or focus the neighboring event,
+ * and `e`+field sequences to open/focus form fields.
  * Shift+ArrowLeft/Right move a focused event by one day and follow that day
  * in the Day view.
  */
@@ -28,6 +30,12 @@ export function useDayEventNudgeShortcuts({
   navigateToDate?: (date: Dayjs) => void;
   timedEvents: GridEvent[];
 }) {
+  const targeting = {
+    focus: focusDayGridEventTarget,
+    getFocused: getFocusedDayGridEventTarget,
+    listVisible: listVisibleDayGridEventTargets,
+  };
+
   useGridEventEditShortcuts({
     allDayEvents,
     dependencies,
@@ -36,11 +44,7 @@ export function useDayEventNudgeShortcuts({
       kind: "follow",
       onCrossed: (date) => navigateToDate?.(date),
     },
-    targeting: {
-      focus: focusDayGridEventTarget,
-      getFocused: getFocusedDayGridEventTarget,
-      listVisible: listVisibleDayGridEventTargets,
-    },
+    targeting,
     repositionDraftByKey: (key) => {
       const { gridDraft, status } = useDraftStore.getState();
       const previousStart = gridDraft
@@ -62,5 +66,11 @@ export function useDayEventNudgeShortcuts({
       }
       return true;
     },
+  });
+
+  useGridEventFormFieldSequences({
+    allDayEvents,
+    targeting,
+    timedEvents,
   });
 }

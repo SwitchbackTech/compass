@@ -2,15 +2,66 @@ import { ID_EVENT_FORM } from "../../constants/web.constants";
 
 const EVENT_FORM_SELECTOR = `form[name="${ID_EVENT_FORM}"]`;
 
+export type EventFormFocusField =
+  | "title"
+  | "description"
+  | "start"
+  | "end"
+  | "recurrence"
+  | "calendar";
+
+const queryEventFormElement = <T extends Element>(selector: string): T | null =>
+  document.querySelector<T>(selector);
+
+const focusFirstMatch = (selectors: string[]) => {
+  for (const selector of selectors) {
+    const element = queryEventFormElement<HTMLElement>(selector);
+    if (element) {
+      element.focus();
+      return true;
+    }
+  }
+  return false;
+};
+
+/**
+ * Focus a field inside the docked event form. The grid card and sidebar form
+ * live in separate trees, so sequence shortcuts hop via the DOM.
+ */
+export const focusEventFormField = (field: EventFormFocusField): boolean => {
+  switch (field) {
+    case "title":
+      return focusFirstMatch([
+        `${EVENT_FORM_SELECTOR} input[name="Event Title"]`,
+      ]);
+    case "description":
+      return focusFirstMatch([`#event-form-description`]);
+    case "start":
+      // Timed events expose a start-time combobox; all-day uses the date input.
+      return focusFirstMatch([
+        `${EVENT_FORM_SELECTOR} #startTimePicker`,
+        `${EVENT_FORM_SELECTOR} input[title="Pick Start Date"]`,
+      ]);
+    case "end":
+      return focusFirstMatch([
+        `${EVENT_FORM_SELECTOR} #endTimePicker`,
+        `${EVENT_FORM_SELECTOR} input[title="Pick End Date"]`,
+      ]);
+    case "recurrence":
+      return focusFirstMatch([
+        `${EVENT_FORM_SELECTOR} #event-form-recurrence button[aria-label="Edit recurrence"]`,
+        `${EVENT_FORM_SELECTOR} #event-form-recurrence button[aria-label="Repeat"]`,
+      ]);
+    case "calendar":
+      return focusFirstMatch([`#event-form-calendar`]);
+  }
+};
+
 // The grid draft card and the sidebar-docked form live in separate component
 // trees, so "typing on the focused card focuses the form's title" hops via
 // the DOM instead of a shared ref.
 export const focusEventFormTitle = () => {
-  document
-    .querySelector<HTMLInputElement>(
-      `form[name="${ID_EVENT_FORM}"] input[name="Event Title"]`,
-    )
-    ?.focus();
+  focusEventFormField("title");
 };
 
 const getKeyboardTarget = (
