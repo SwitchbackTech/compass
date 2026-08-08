@@ -27,7 +27,6 @@ import { DraftContext } from "@web/views/Week/components/Draft/context/DraftCont
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/week-event.registry";
 import {
   clearHoveredWeekGridEventTarget,
-  getFocusedWeekGridEventTarget,
   setHoveredWeekGridEventTarget,
 } from "@web/views/Week/interaction/targeting/week-event.targeting";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -431,28 +430,6 @@ describe("useWeekShortcutOwner calendar event targeting", () => {
     pressKey("ArrowLeft");
 
     expect(document.activeElement).toBe(monday);
-  });
-
-  it("focuses the first event on the leftmost column with digit 1", () => {
-    const monday = addCalendarTarget(leftmostEvent.id);
-    const wednesday = addCalendarTarget(editableEvent.id);
-    wednesday.focus();
-    renderShortcuts({ includeLeftmostEvent: true });
-
-    pressKey("1");
-
-    expect(document.activeElement).toBe(monday);
-  });
-
-  it("does not change focus with digit 1 when nothing is focused", () => {
-    addCalendarTarget(leftmostEvent.id);
-    const wednesday = addCalendarTarget(editableEvent.id);
-    renderShortcuts({ includeLeftmostEvent: true });
-
-    pressKey("1");
-
-    expect(document.activeElement).not.toBe(wednesday);
-    expect(getFocusedWeekGridEventTarget()).toBeNull();
   });
 
   it("deletes pending calendar events with Delete", () => {

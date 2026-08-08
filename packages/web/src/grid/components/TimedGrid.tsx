@@ -5,6 +5,7 @@ import {
   type RefCallback,
   useMemo,
 } from "react";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import {
   DATA_TIMED_GRID_ROW,
@@ -27,6 +28,10 @@ import {
   TIMED_VISIBLE_HOURS,
 } from "@web/grid/grid.constants";
 import { type GridVisibleDate } from "@web/grid/types/grid.types";
+import {
+  selectEventJumpActiveDayKeys,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 
 interface TimedGridProps {
   columnsId?: string;
@@ -49,6 +54,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
   today,
   visibleDates,
 }) => {
+  const activeDayKeys = useEventJumpStore(selectEventJumpActiveDayKeys);
   const todayColumnIndexes = visibleDates.flatMap(({ date }, index) =>
     date.isSame(today, "day") ? [index] : [],
   );
@@ -87,15 +93,22 @@ export const TimedGrid: FC<TimedGridProps> = ({
         <table className="contents">
           <thead className="contents">
             <tr className="contents">
-              {visibleDates.map(({ date, key, surfaceLabel }) => (
-                <th
-                  className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l data-[past=true]:bg-surface"
-                  data-past={date.isBefore(today, "day")}
-                  aria-label={surfaceLabel ?? date.format("dddd, MMMM D, YYYY")}
-                  key={key}
-                  scope="col"
-                />
-              ))}
+              {visibleDates.map(({ date, key, surfaceLabel }) => {
+                const dayKey = date.format(YEAR_MONTH_DAY_FORMAT);
+                const isJumpDay = activeDayKeys.includes(dayKey);
+                return (
+                  <th
+                    className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l transition-colors duration-150 data-[past=true]:data-[jump-day=true]:bg-accent/10 data-[jump-day=true]:bg-accent/10 data-[past=true]:bg-surface motion-reduce:transition-none"
+                    data-jump-day={isJumpDay ? "true" : undefined}
+                    data-past={date.isBefore(today, "day")}
+                    aria-label={
+                      surfaceLabel ?? date.format("dddd, MMMM D, YYYY")
+                    }
+                    key={key}
+                    scope="col"
+                  />
+                );
+              })}
             </tr>
           </thead>
         </table>

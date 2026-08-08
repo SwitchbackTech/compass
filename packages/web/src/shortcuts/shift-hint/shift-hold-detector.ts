@@ -1,9 +1,10 @@
 /**
- * Pure SHIFT-hold state for event flash hints.
+ * Pure Shift gesture state for event-jump mode.
  *
- * Hold (≥ threshold) → active. Quick tap → idle (records release time for a
- * future SHIFT-SHIFT detector). A chord key while pending cancels before
- * hints appear, so Shift+J / Shift+Arrow never flash.
+ * Quick Shift tap → toggle (hook applies). Chord while armed cancels so
+ * Shift+J / Shift+Arrow never toggle. Long press (≥ threshold) is not a tap.
+ * A second quick tap within {@link SHIFT_DOUBLE_TAP_MAX_GAP_MS} is a
+ * Shift-Shift candidate: force jump mode off so keyboard-only can win.
  */
 
 export const SHIFT_HOLD_HINT_THRESHOLD_MS = 200;
@@ -16,112 +17,149 @@ export const isShiftKey = (event: Pick<KeyboardEvent, "key" | "code">) =>
   event.code === "ShiftLeft" ||
   event.code === "ShiftRight";
 
-export type ShiftHoldPhase = "idle" | "pending" | "active";
+export type ShiftJumpGesturePhase = "idle" | "armed";
 
-export type ShiftHoldState = {
-  phase: ShiftHoldPhase;
-  pendingStartedAt: number | null;
+export type ShiftJumpGestureState = {
+  phase: ShiftJumpGesturePhase;
+  armedAt: number | null;
   /**
-   * Timestamp of the last completed Shift keyup. Keyboard-only mode (double
-   * Shift) can read this without sharing the hold timer.
+   * Timestamp of the last completed quick Shift tap. Used to detect the
+   * second tap of Shift-Shift (force jump off; keyboard-only owns that).
    */
   lastShiftReleaseAt: number | null;
-  hintPrefix: string;
 };
 
-export const createShiftHoldState = (): ShiftHoldState => ({
+export const createShiftJumpGestureState = (): ShiftJumpGestureState => ({
   phase: "idle",
-  pendingStartedAt: null,
+  armedAt: null,
   lastShiftReleaseAt: null,
-  hintPrefix: "",
 });
 
-export type ShiftHoldEvent =
+/** @deprecated Use {@link createShiftJumpGestureState}. */
+export const createShiftHoldState = createShiftJumpGestureState;
+
+export type ShiftJumpGestureEvent =
   | { type: "shiftDown"; now: number; blocked: boolean }
   | { type: "shiftUp"; now: number }
-  | { type: "thresholdReached" }
   | { type: "chordKeyDown" }
-  | { type: "setPrefix"; prefix: string }
-  | { type: "dismiss" };
+  | { type: "reset" };
 
-export function reduceShiftHold(
-  state: ShiftHoldState,
-  event: ShiftHoldEvent,
-): ShiftHoldState {
+export type ShiftJumpGestureResult = {
+  state: ShiftJumpGestureState;
+  /** Quick tap that should toggle jump mode (not a Shift-Shift second tap). */
+  toggle: boolean;
+  /** Second quick tap: force jump mode off for keyboard-only coexistence. */
+  forceOff: boolean;
+};
+
+export function reduceShiftJumpGesture(
+  state: ShiftJumpGestureState,
+  event: ShiftJumpGestureEvent,
+): ShiftJumpGestureResult {
   switch (event.type) {
     case "shiftDown": {
       if (event.blocked) {
         return {
-          ...state,
-          phase: "idle",
-          pendingStartedAt: null,
-          hintPrefix: "",
+          state: {
+            phase: "idle",
+            armedAt: null,
+            lastShiftReleaseAt: state.lastShiftReleaseAt,
+          },
+          toggle: false,
+          forceOff: false,
         };
       }
-      if (state.phase === "active") {
-        return state;
+      if (state.phase === "armed") {
+        return { state, toggle: false, forceOff: false };
       }
       return {
-        ...state,
-        phase: "pending",
-        pendingStartedAt: event.now,
-        hintPrefix: "",
+        state: {
+          ...state,
+          phase: "armed",
+          armedAt: event.now,
+        },
+        toggle: false,
+        forceOff: false,
       };
     }
     case "shiftUp": {
-      // Only short taps (pending → idle without activating) stamp
-      // lastShiftReleaseAt for a future SHIFT-SHIFT detector. Completed holds
-      // and idle/blocked ups must not look like double-tap candidates.
-      if (state.phase === "pending") {
+      if (state.phase !== "armed" || state.armedAt === null) {
+        return { state, toggle: false, forceOff: false };
+      }
+
+      const heldMs = event.now - state.armedAt;
+      // Long press: not a tap (also keeps Shift-Shift keyboard-only clean).
+      if (heldMs >= SHIFT_HOLD_HINT_THRESHOLD_MS) {
         return {
-          ...state,
-          phase: "idle",
-          pendingStartedAt: null,
-          lastShiftReleaseAt: event.now,
-          hintPrefix: "",
+          state: {
+            phase: "idle",
+            armedAt: null,
+            lastShiftReleaseAt: null,
+          },
+          toggle: false,
+          forceOff: false,
         };
       }
-      if (state.phase === "active") {
+
+      const isDoubleTap = isShiftDoubleTapCandidate({
+        lastShiftReleaseAt: state.lastShiftReleaseAt,
+        now: event.now,
+        maxGapMs: SHIFT_DOUBLE_TAP_MAX_GAP_MS,
+      });
+
+      if (isDoubleTap) {
         return {
-          ...state,
-          phase: "idle",
-          pendingStartedAt: null,
-          hintPrefix: "",
+          state: {
+            phase: "idle",
+            armedAt: null,
+            lastShiftReleaseAt: null,
+          },
+          toggle: false,
+          forceOff: true,
         };
       }
-      return state;
-    }
-    case "thresholdReached": {
-      if (state.phase !== "pending") return state;
+
       return {
-        ...state,
-        phase: "active",
-        pendingStartedAt: null,
-        hintPrefix: "",
+        state: {
+          phase: "idle",
+          armedAt: null,
+          lastShiftReleaseAt: event.now,
+        },
+        toggle: true,
+        forceOff: false,
       };
     }
     case "chordKeyDown": {
-      if (state.phase !== "pending") return state;
+      if (state.phase !== "armed") {
+        return { state, toggle: false, forceOff: false };
+      }
       return {
-        ...state,
-        phase: "idle",
-        pendingStartedAt: null,
-        hintPrefix: "",
+        state: {
+          phase: "idle",
+          armedAt: null,
+          // Chord cancels the tap; do not seed a double-tap gap.
+          lastShiftReleaseAt: null,
+        },
+        toggle: false,
+        forceOff: false,
       };
     }
-    case "setPrefix": {
-      if (state.phase !== "active") return state;
-      return { ...state, hintPrefix: event.prefix };
-    }
-    case "dismiss": {
+    case "reset": {
       return {
-        ...state,
-        phase: "idle",
-        pendingStartedAt: null,
-        hintPrefix: "",
+        state: createShiftJumpGestureState(),
+        toggle: false,
+        forceOff: false,
       };
     }
   }
+}
+
+/** @deprecated Use {@link reduceShiftJumpGesture}. */
+export function reduceShiftHold(
+  state: ShiftJumpGestureState,
+  event: ShiftJumpGestureEvent,
+): ShiftJumpGestureState {
+  return reduceShiftJumpGesture(state, event).state;
 }
 
 /** True when a second Shift tap would count as double-tap, not a hold. */

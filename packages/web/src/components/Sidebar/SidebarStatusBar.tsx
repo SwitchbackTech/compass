@@ -10,6 +10,11 @@ import {
   selectKeyboardOnlyActive,
   useKeyboardOnlyStore,
 } from "@web/shortcuts/keyboard-only/keyboard-only.store";
+import { EventJumpIndicator } from "@web/shortcuts/shift-hint/EventJumpIndicator";
+import {
+  selectEventJumpActive,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 
 /**
  * Pinned status bar at the bottom of the sidebar, just above the actions bar.
@@ -24,6 +29,7 @@ import {
  */
 export const SidebarStatusBar: FC = () => {
   const isKeyboardOnly = useKeyboardOnlyStore(selectKeyboardOnlyActive);
+  const isEventJump = useEventJumpStore(selectEventJumpActive);
   const isSaving = useHasPendingEventMutations();
   // The unscoped hook's `connection` is the primary connection (the one
   // whose own state matches the aggregate) - without it, an account's
@@ -50,6 +56,10 @@ export const SidebarStatusBar: FC = () => {
       {isKeyboardOnly ? (
         <div className="flex h-full min-w-0 flex-1 items-center">
           <KeyboardOnlyIndicator />
+        </div>
+      ) : isEventJump ? (
+        <div className="flex h-full min-w-0 flex-1 items-center">
+          <EventJumpIndicator />
         </div>
       ) : (
         <button

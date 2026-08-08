@@ -1,19 +1,23 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import {
-  assignShiftHintKeys,
+  assignDayJumpKeys,
+  type DayJumpAssignment,
+  type DayJumpLabelMode,
   filterHintsByPrefix,
-  matchShiftHintKeystroke,
-  type ShiftHintAssignment,
+  matchDayJumpKeystroke,
 } from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
 import {
-  createShiftHoldState,
+  eventJumpActions,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
+import {
+  createShiftJumpGestureState,
   isShiftKey,
-  reduceShiftHold,
-  SHIFT_HOLD_HINT_THRESHOLD_MS,
-  type ShiftHoldState,
+  reduceShiftJumpGesture,
+  type ShiftJumpGestureState,
 } from "@web/shortcuts/shift-hint/shift-hold-detector";
 
 export type ShiftHintFocusTarget = {
@@ -22,77 +26,95 @@ export type ShiftHintFocusTarget = {
   element: HTMLElement;
 };
 
-export type ActiveShiftHint = ShiftHintAssignment & {
+export type ActiveShiftHint = DayJumpAssignment & {
   element: HTMLElement;
+};
+
+export type EventJumpHintsResult = {
+  hints: ActiveShiftHint[];
+  isActive: boolean;
+  activeDayKeys: string[];
 };
 
 const isAppLocked = () => document.body.dataset.appLocked === "true";
 
-const scheduleStartMs = (event: GridEvent): number => {
-  if (!event.startDate) return 0;
-  return dayjs(event.startDate).valueOf();
+const DAY_NAME_BY_PREFIX: Record<string, string> = {
+  su: "Sunday",
+  m: "Monday",
+  t: "Tuesday",
+  w: "Wednesday",
+  r: "Thursday",
+  f: "Friday",
+  sa: "Saturday",
 };
 
-/** True when any part of the element intersects the viewport. */
-const isInViewport = (element: HTMLElement): boolean => {
-  const rect = element.getBoundingClientRect();
-  if (rect.width === 0 && rect.height === 0) return false;
-  return (
-    rect.bottom > 0 &&
-    rect.right > 0 &&
-    rect.top < window.innerHeight &&
-    rect.left < window.innerWidth
-  );
+const scheduleMeta = (event: GridEvent) => {
+  if (!event.startDate) {
+    return { startMs: 0, dayKey: "1970-01-01", weekday: 0 };
+  }
+  const start = dayjs(event.startDate);
+  return {
+    startMs: start.valueOf(),
+    dayKey: start.format("YYYY-MM-DD"),
+    weekday: start.day(),
+  };
 };
 
 /**
- * Hold SHIFT (≥ threshold) to flash home-row hint chips on visible grid events.
- * Assigned key focuses the event and dismisses. Release clears. Quick chords
- * (Shift+J, Shift+Arrow) cancel before hints appear.
+ * Tap Shift to toggle day-prefix jump labels on grid events. Esc or another
+ * Shift tap exits. Day letters (and digits after a day) win over global
+ * shortcuts while active. Shift+chords never toggle; Shift-Shift forces off
+ * so keyboard-only mode can enter.
  */
 export function useShiftHoldEventHints({
   allDayEvents = [],
   enabled = true,
   focus,
   listVisible,
+  mode = "week",
   timedEvents,
 }: {
   allDayEvents?: GridEvent[];
   enabled?: boolean;
   focus: (target: ShiftHintFocusTarget) => void;
   listVisible: () => ShiftHintFocusTarget[];
+  mode?: DayJumpLabelMode;
   timedEvents: GridEvent[];
-}): ActiveShiftHint[] {
+}): EventJumpHintsResult {
   const [hints, setHints] = useState<ActiveShiftHint[]>([]);
-  const stateRef = useRef<ShiftHoldState>(createShiftHoldState());
-  const assignmentsRef = useRef<ShiftHintAssignment[]>([]);
+  const isActive = useEventJumpStore((state) => state.isActive);
+  const activeDayKeys = useEventJumpStore((state) => state.activeDayKeys);
+
+  const gestureRef = useRef<ShiftJumpGestureState>(
+    createShiftJumpGestureState(),
+  );
+  const isActiveRef = useRef(false);
+  const bufferRef = useRef("");
+  const assignmentsRef = useRef<DayJumpAssignment[]>([]);
   const visibleByIdRef = useRef<Map<string, ShiftHintFocusTarget>>(new Map());
-  const thresholdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressKeyUpRef = useRef(new Set<string>());
   const focusRef = useRef(focus);
   const listVisibleRef = useRef(listVisible);
   const allDayEventsRef = useRef(allDayEvents);
   const timedEventsRef = useRef(timedEvents);
+  const modeRef = useRef(mode);
 
   focusRef.current = focus;
   listVisibleRef.current = listVisible;
   allDayEventsRef.current = allDayEvents;
   timedEventsRef.current = timedEvents;
+  modeRef.current = mode;
+  isActiveRef.current = isActive;
 
   useEffect(() => {
     if (!enabled) {
-      stateRef.current = createShiftHoldState();
+      gestureRef.current = createShiftJumpGestureState();
+      bufferRef.current = "";
       assignmentsRef.current = [];
       setHints([]);
+      eventJumpActions.reset();
       return;
     }
-
-    const clearThresholdTimer = () => {
-      if (thresholdTimerRef.current !== null) {
-        clearTimeout(thresholdTimerRef.current);
-        thresholdTimerRef.current = null;
-      }
-    };
 
     const publishHints = (next: ActiveShiftHint[]) => {
       setHints(next);
@@ -101,31 +123,42 @@ export function useShiftHoldEventHints({
     const clearHints = () => {
       assignmentsRef.current = [];
       visibleByIdRef.current = new Map();
+      bufferRef.current = "";
       publishHints([]);
     };
 
     const buildAssignments = () => {
-      // Targeting adapters include laid-out-but-scrolled-off cards; flash
-      // hints only for events intersecting the viewport.
-      const visible = listVisibleRef
-        .current()
-        .filter((target) => isInViewport(target.element));
-      const scheduleById = new Map<string, number>();
+      // Label every registered event in the view (not only viewport cards) so
+      // day indices stay stable while scrolling.
+      const visible = listVisibleRef.current();
+      const scheduleById = new Map<
+        string,
+        { startMs: number; dayKey: string; weekday: number }
+      >();
       for (const event of [
         ...allDayEventsRef.current,
         ...timedEventsRef.current,
       ]) {
         if (!event._id) continue;
-        scheduleById.set(event._id, scheduleStartMs(event));
+        scheduleById.set(event._id, scheduleMeta(event));
       }
 
-      const targets = visible.map((target) => ({
-        eventId: target.eventId,
-        eventType: target.eventType,
-        startMs: scheduleById.get(target.eventId) ?? 0,
-      }));
+      const targets = visible.map((target) => {
+        const meta = scheduleById.get(target.eventId) ?? {
+          startMs: 0,
+          dayKey: "1970-01-01",
+          weekday: 0,
+        };
+        return {
+          eventId: target.eventId,
+          eventType: target.eventType,
+          startMs: meta.startMs,
+          dayKey: meta.dayKey,
+          weekday: meta.weekday,
+        };
+      });
 
-      const assignments = assignShiftHintKeys(targets);
+      const assignments = assignDayJumpKeys(targets, modeRef.current);
       assignmentsRef.current = assignments;
       visibleByIdRef.current = new Map(
         visible.map((target) => [target.eventId, target]),
@@ -138,18 +171,43 @@ export function useShiftHoldEventHints({
       });
     };
 
+    const publishFiltered = (buffer: string) => {
+      const source = buffer
+        ? filterHintsByPrefix(assignmentsRef.current, buffer)
+        : assignmentsRef.current;
+      publishHints(
+        source.flatMap((assignment) => {
+          const target = visibleByIdRef.current.get(assignment.eventId);
+          if (!target) return [];
+          return [{ ...assignment, element: target.element }];
+        }),
+      );
+    };
+
     const activate = () => {
-      stateRef.current = reduceShiftHold(stateRef.current, {
-        type: "thresholdReached",
-      });
-      if (stateRef.current.phase !== "active") return;
+      isActiveRef.current = true;
+      bufferRef.current = "";
+      eventJumpActions.setActive(true);
+      eventJumpActions.setActiveDayKeys([]);
       publishHints(buildAssignments());
     };
 
-    const dismiss = () => {
-      clearThresholdTimer();
-      stateRef.current = reduceShiftHold(stateRef.current, { type: "dismiss" });
+    const deactivate = (announceOff = true) => {
+      isActiveRef.current = false;
+      bufferRef.current = "";
       clearHints();
+      if (announceOff) {
+        eventJumpActions.setActive(false);
+      } else {
+        eventJumpActions.silenceOff();
+      }
+    };
+
+    const focusEvent = (eventId: string) => {
+      const target = visibleByIdRef.current.get(eventId);
+      if (!target) return;
+      target.element.scrollIntoView({ block: "nearest" });
+      focusRef.current(target);
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -158,64 +216,58 @@ export function useShiftHoldEventHints({
       if (isShiftKey(event)) {
         if (event.repeat) return;
         const blocked = isAppLocked() || isEditableKeyboardTarget(event);
-        stateRef.current = reduceShiftHold(stateRef.current, {
+        const result = reduceShiftJumpGesture(gestureRef.current, {
           type: "shiftDown",
           now: Date.now(),
           blocked,
         });
-        clearThresholdTimer();
-        if (stateRef.current.phase !== "pending") return;
-
-        thresholdTimerRef.current = setTimeout(() => {
-          thresholdTimerRef.current = null;
-          if (stateRef.current.phase !== "pending") return;
-          if (isAppLocked()) {
-            dismiss();
-            return;
-          }
-          activate();
-        }, SHIFT_HOLD_HINT_THRESHOLD_MS);
+        gestureRef.current = result.state;
         return;
       }
 
-      if (stateRef.current.phase === "pending") {
-        // Any other key while pending is a chord (Shift+J, Shift+Arrow, …).
-        clearThresholdTimer();
-        stateRef.current = reduceShiftHold(stateRef.current, {
+      if (gestureRef.current.phase === "armed") {
+        // Chord while Shift is down (Shift+J, Shift+Arrow, …): never toggle.
+        const result = reduceShiftJumpGesture(gestureRef.current, {
           type: "chordKeyDown",
         });
+        gestureRef.current = result.state;
         return;
       }
 
-      if (stateRef.current.phase !== "active") return;
+      if (!isActiveRef.current) return;
       if (isAppLocked() || isEditableKeyboardTarget(event)) {
-        dismiss();
+        deactivate();
         return;
       }
 
-      // Escape / arrows dismiss and let existing handlers run.
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        deactivate();
+        return;
+      }
+
+      // Arrows / j / k keep mode on so letter-then-arrows works.
       if (
-        event.key === "Escape" ||
         event.key.startsWith("Arrow") ||
         event.key === "j" ||
         event.key === "J" ||
         event.key === "k" ||
         event.key === "K"
       ) {
-        dismiss();
         return;
       }
 
       if (event.metaKey || event.ctrlKey || event.altKey) {
-        dismiss();
         return;
       }
 
       const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-      const match = matchShiftHintKeystroke({
+      const match = matchDayJumpKeystroke({
         assignments: assignmentsRef.current,
         key,
-        prefix: stateRef.current.hintPrefix,
+        buffer: bufferRef.current,
+        mode: modeRef.current,
       });
 
       if (!match) return;
@@ -225,44 +277,68 @@ export function useShiftHoldEventHints({
       suppressKeyUpRef.current.add(key);
 
       if (match.kind === "prefix") {
-        stateRef.current = reduceShiftHold(stateRef.current, {
-          type: "setPrefix",
-          prefix: match.prefix,
-        });
-        const narrowed = filterHintsByPrefix(
-          assignmentsRef.current,
-          match.prefix,
+        bufferRef.current = match.buffer;
+        eventJumpActions.setActiveDayKeys(
+          match.dayKeys,
+          match.buffer === "s" ? "Sunday or Saturday" : undefined,
         );
-        publishHints(
-          narrowed.flatMap((assignment) => {
-            const target = visibleByIdRef.current.get(assignment.eventId);
-            if (!target) return [];
-            return [{ ...assignment, element: target.element }];
-          }),
-        );
+        publishFiltered(match.buffer);
         return;
       }
 
-      const target = visibleByIdRef.current.get(match.eventId);
-      dismiss();
-      if (!target) return;
-      target.element.scrollIntoView({ block: "nearest" });
-      focusRef.current(target);
+      if (match.kind === "selectDay") {
+        bufferRef.current = match.buffer;
+        const dayName = DAY_NAME_BY_PREFIX[match.dayPrefix] ?? match.dayPrefix;
+        eventJumpActions.setActiveDayKeys(
+          [match.dayKey],
+          `${dayName} selected`,
+        );
+        // Keep chips for the selected day so a following digit can refine.
+        publishFiltered(match.dayPrefix);
+        focusEvent(match.firstEventId);
+        return;
+      }
+
+      // focus
+      bufferRef.current = match.buffer;
+      eventJumpActions.setActiveDayKeys([match.dayKey]);
+      publishFiltered(match.buffer.replace(/\d+$/, "") || match.buffer);
+      focusEvent(match.eventId);
+      // Reset digit buffer to the day prefix so another index can be typed,
+      // or clear fully in day mode.
+      const dayPrefix = match.buffer.replace(/\d+$/, "");
+      bufferRef.current = dayPrefix;
+      if (modeRef.current === "day") {
+        bufferRef.current = "";
+        publishFiltered("");
+      }
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
       if (isShiftKey(event)) {
-        // Keep holding if the other Shift key is still down.
         if (event.shiftKey) return;
 
-        const wasActive = stateRef.current.phase === "active";
-        clearThresholdTimer();
-        stateRef.current = reduceShiftHold(stateRef.current, {
-          type: "shiftUp",
-          now: Date.now(),
-        });
-        if (wasActive || assignmentsRef.current.length > 0) {
-          clearHints();
+        const { state, toggle, forceOff } = reduceShiftJumpGesture(
+          gestureRef.current,
+          {
+            type: "shiftUp",
+            now: Date.now(),
+          },
+        );
+        gestureRef.current = state;
+
+        if (forceOff) {
+          if (isActiveRef.current) deactivate(false);
+          return;
+        }
+
+        if (!toggle) return;
+        if (isAppLocked() || isEditableKeyboardTarget(event)) return;
+
+        if (isActiveRef.current) {
+          deactivate();
+        } else {
+          activate();
         }
         return;
       }
@@ -275,7 +351,8 @@ export function useShiftHoldEventHints({
     };
 
     const onBlur = () => {
-      dismiss();
+      gestureRef.current = createShiftJumpGestureState();
+      if (isActiveRef.current) deactivate();
     };
 
     document.addEventListener("keydown", onKeyDown, true);
@@ -283,13 +360,73 @@ export function useShiftHoldEventHints({
     window.addEventListener("blur", onBlur);
 
     return () => {
-      clearThresholdTimer();
       suppressKeyUpRef.current.clear();
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keyup", onKeyUp, true);
       window.removeEventListener("blur", onBlur);
+      if (isActiveRef.current) {
+        eventJumpActions.reset();
+      }
     };
   }, [enabled]);
 
-  return hints;
+  const eventIdsKey = useMemo(
+    () =>
+      [...allDayEvents, ...timedEvents]
+        .map((event) => event._id ?? "")
+        .join(","),
+    [allDayEvents, timedEvents],
+  );
+
+  // Rebuild chips when the event set changes while mode is on. Uses refs for
+  // listVisible so an inline callback identity does not loop setState.
+  useEffect(() => {
+    if (!enabled || !isActive) return;
+    // Read eventIdsKey so the effect re-runs when the visible event id set changes.
+    void eventIdsKey;
+
+    const visible = listVisibleRef.current();
+    const scheduleById = new Map<
+      string,
+      { startMs: number; dayKey: string; weekday: number }
+    >();
+    for (const event of [
+      ...allDayEventsRef.current,
+      ...timedEventsRef.current,
+    ]) {
+      if (!event._id) continue;
+      scheduleById.set(event._id, scheduleMeta(event));
+    }
+    const targets = visible.map((target) => {
+      const meta = scheduleById.get(target.eventId) ?? {
+        startMs: 0,
+        dayKey: "1970-01-01",
+        weekday: 0,
+      };
+      return {
+        eventId: target.eventId,
+        eventType: target.eventType,
+        startMs: meta.startMs,
+        dayKey: meta.dayKey,
+        weekday: meta.weekday,
+      };
+    });
+    const assignments = assignDayJumpKeys(targets, modeRef.current);
+    assignmentsRef.current = assignments;
+    visibleByIdRef.current = new Map(
+      visible.map((target) => [target.eventId, target]),
+    );
+    const source = bufferRef.current
+      ? filterHintsByPrefix(assignments, bufferRef.current)
+      : assignments;
+    setHints(
+      source.flatMap((assignment) => {
+        const target = visibleByIdRef.current.get(assignment.eventId);
+        if (!target) return [];
+        return [{ ...assignment, element: target.element }];
+      }),
+    );
+  }, [enabled, eventIdsKey, isActive]);
+
+  return { hints, isActive, activeDayKeys };
 }

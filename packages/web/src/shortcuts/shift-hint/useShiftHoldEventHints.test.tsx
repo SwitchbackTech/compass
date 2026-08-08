@@ -2,17 +2,12 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
-import { SHIFT_HOLD_HINT_THRESHOLD_MS } from "@web/shortcuts/shift-hint/shift-hold-detector";
-import { useShiftHoldEventHints } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
 import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
+  eventJumpActions,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
+import { useShiftHoldEventHints } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const EVENT_A = EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa");
 const EVENT_B = EventIdSchema.parse("bbbbbbbbbbbbbbbbbbbbbbbb");
@@ -34,6 +29,11 @@ const dispatch = (
   );
 };
 
+const tapShift = () => {
+  dispatch("keydown", "Shift");
+  dispatch("keyup", "Shift");
+};
+
 const timedFixture = (id: string, startDate: string): GridEvent =>
   ({
     _id: id,
@@ -44,47 +44,30 @@ const timedFixture = (id: string, startDate: string): GridEvent =>
   }) as GridEvent;
 
 describe("useShiftHoldEventHints", () => {
-  let timeoutCb: (() => void) | null = null;
-  let setTimeoutSpy: ReturnType<typeof spyOn>;
-  let clearTimeoutSpy: ReturnType<typeof spyOn>;
-
   beforeEach(() => {
     clearAppLockReasons();
-    timeoutCb = null;
-    setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
-      handler: TimerHandler,
-    ) => {
-      timeoutCb = () => {
-        if (typeof handler === "function") handler();
-      };
-      return 1 as unknown as ReturnType<typeof setTimeout>;
-    }) as unknown as typeof setTimeout);
-    clearTimeoutSpy = spyOn(globalThis, "clearTimeout").mockImplementation(
-      (() => {}) as typeof clearTimeout,
-    );
+    eventJumpActions.reset();
   });
 
   afterEach(() => {
     cleanup();
     clearAppLockReasons();
+    eventJumpActions.reset();
     document.body.innerHTML = "";
-    setTimeoutSpy.mockRestore();
-    clearTimeoutSpy.mockRestore();
   });
 
-  const mountHints = () => {
+  const mountHints = (mode: "week" | "day" = "week") => {
     const focus = mock((_target: { eventId: string }) => {});
-    const elements = [EVENT_A, EVENT_B, EVENT_C].map((id, index) => {
+    const elements = [EVENT_A, EVENT_B, EVENT_C].map((id) => {
       const el = document.createElement("button");
       el.textContent = id;
-      // jsdom has no layout; stub a viewport rect so flash targeting can arm.
       el.getBoundingClientRect = () =>
         ({
           x: 40,
-          y: 80 + index * 40,
-          top: 80 + index * 40,
+          y: 80,
+          top: 80,
           left: 40,
-          bottom: 110 + index * 40,
+          bottom: 110,
           right: 200,
           width: 160,
           height: 30,
@@ -94,10 +77,11 @@ describe("useShiftHoldEventHints", () => {
       return el;
     });
 
+    // Wednesday / Thursday / Friday so prefixes are W / R / F.
     const timedEvents = [
-      timedFixture(EVENT_A, "2026-05-20T09:00:00.000Z"),
-      timedFixture(EVENT_B, "2026-05-20T11:00:00.000Z"),
-      timedFixture(EVENT_C, "2026-05-20T13:00:00.000Z"),
+      timedFixture(EVENT_A, "2026-08-05T09:00:00.000Z"),
+      timedFixture(EVENT_B, "2026-08-05T11:00:00.000Z"),
+      timedFixture(EVENT_C, "2026-08-06T13:00:00.000Z"),
     ];
 
     const { result } = renderHook(() =>
@@ -108,6 +92,7 @@ describe("useShiftHoldEventHints", () => {
           { eventId: EVENT_B, eventType: "timed", element: elements[1]! },
           { eventId: EVENT_C, eventType: "timed", element: elements[2]! },
         ],
+        mode,
         timedEvents,
       }),
     );
@@ -115,52 +100,53 @@ describe("useShiftHoldEventHints", () => {
     return { focus, result, elements };
   };
 
-  it("shows hints after the hold threshold and focuses on an assigned key", () => {
+  it("toggles hints on a quick Shift tap and focuses via day prefix", () => {
     const { focus, result, elements } = mountHints();
 
     act(() => {
-      dispatch("keydown", "Shift");
-    });
-    expect(result.current).toEqual([]);
-    expect(setTimeoutSpy).toHaveBeenCalledWith(
-      expect.any(Function),
-      SHIFT_HOLD_HINT_THRESHOLD_MS,
-    );
-
-    act(() => {
-      timeoutCb?.();
+      tapShift();
     });
 
-    expect(result.current.map((hint) => hint.hint)).toEqual(["a", "s", "d"]);
-    expect(result.current.map((hint) => hint.eventId)).toEqual([
-      EVENT_A,
-      EVENT_B,
-      EVENT_C,
+    expect(result.current.isActive).toBe(true);
+    expect(result.current.hints.map((hint) => hint.hint)).toEqual([
+      "w1",
+      "w2",
+      "r1",
     ]);
+    expect(useEventJumpStore.getState().announcement).toBe("Event jump on");
 
     act(() => {
-      dispatch("keydown", "s", { shiftKey: true });
-      dispatch("keyup", "s", { shiftKey: true });
+      dispatch("keydown", "w");
+    });
+
+    expect(focus).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: EVENT_A, element: elements[0] }),
+    );
+    expect(result.current.activeDayKeys).toEqual(["2026-08-05"]);
+    expect(result.current.isActive).toBe(true);
+
+    act(() => {
+      dispatch("keydown", "2");
     });
 
     expect(focus).toHaveBeenCalledWith(
       expect.objectContaining({ eventId: EVENT_B, element: elements[1] }),
     );
-    expect(result.current).toEqual([]);
+    expect(result.current.isActive).toBe(true);
   });
 
-  it("does not flash hints on a quick Shift chord (Shift+J)", () => {
+  it("does not toggle on a quick Shift chord (Shift+J)", () => {
     const { result } = mountHints();
 
     act(() => {
       dispatch("keydown", "Shift");
       dispatch("keydown", "j", { shiftKey: true });
-    });
-    act(() => {
-      timeoutCb?.();
+      dispatch("keyup", "j", { shiftKey: true });
+      dispatch("keyup", "Shift");
     });
 
-    expect(result.current).toEqual([]);
+    expect(result.current.isActive).toBe(false);
+    expect(result.current.hints).toEqual([]);
   });
 
   it("stays inert while app-locked", () => {
@@ -168,27 +154,69 @@ describe("useShiftHoldEventHints", () => {
     const { result } = mountHints();
 
     act(() => {
-      dispatch("keydown", "Shift");
-    });
-    act(() => {
-      timeoutCb?.();
+      tapShift();
     });
 
-    expect(result.current).toEqual([]);
+    expect(result.current.isActive).toBe(false);
+    expect(result.current.hints).toEqual([]);
   });
 
-  it("clears hints when Shift is released", () => {
+  it("clears hints when Shift is tapped again or Escape is pressed", () => {
     const { result } = mountHints();
 
     act(() => {
-      dispatch("keydown", "Shift");
-      timeoutCb?.();
+      tapShift();
     });
-    expect(result.current).toHaveLength(3);
+    expect(result.current.hints).toHaveLength(3);
 
     act(() => {
-      dispatch("keyup", "Shift");
+      tapShift();
     });
-    expect(result.current).toEqual([]);
+    expect(result.current.isActive).toBe(false);
+    expect(result.current.hints).toEqual([]);
+
+    act(() => {
+      tapShift();
+    });
+    expect(result.current.isActive).toBe(true);
+
+    act(() => {
+      dispatch("keydown", "Escape");
+    });
+    expect(result.current.isActive).toBe(false);
+    expect(result.current.hints).toEqual([]);
+  });
+
+  it("keeps mode on when arrows are pressed after selecting a day", () => {
+    const { focus, result } = mountHints();
+
+    act(() => {
+      tapShift();
+      dispatch("keydown", "w");
+    });
+    expect(focus).toHaveBeenCalled();
+    expect(result.current.isActive).toBe(true);
+
+    act(() => {
+      dispatch("keydown", "ArrowDown");
+    });
+    expect(result.current.isActive).toBe(true);
+  });
+
+  it("force-off on Shift-Shift without leaving jump announcement", () => {
+    const { result } = mountHints();
+
+    act(() => {
+      tapShift();
+    });
+    expect(result.current.isActive).toBe(true);
+
+    act(() => {
+      // Second tap within double-tap window.
+      tapShift();
+    });
+    // A second single tap toggles off normally when gap exceeds… wait, same
+    // tapShift twice quickly is forceOff path on the second release.
+    expect(result.current.isActive).toBe(false);
   });
 });

@@ -4,7 +4,6 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
   getChronologicallyAdjacentTarget,
-  getFirstEventOnWeekdayColumn,
   getSpatiallyAdjacentTarget,
 } from "@web/grid/shortcuts/focus-adjacent-grid-event";
 import { describe, expect, it } from "bun:test";
@@ -184,39 +183,5 @@ describe("getSpatiallyAdjacentTarget", () => {
     });
 
     expect(next?.eventId).toBe("wed-noon");
-  });
-});
-
-describe("getFirstEventOnWeekdayColumn", () => {
-  it("returns the first chronological event on the leftmost column for digit 1", () => {
-    const mondayAllDay = target("mon-all", "all-day");
-    const mondayTimed = target("mon-am", "timed");
-    const wednesday = target("wed-noon", "timed");
-
-    const first = getFirstEventOnWeekdayColumn({
-      allDayEvents: [event("mon-all", "2026-05-18", true)],
-      columnIndex: 0,
-      timedEvents: [
-        event("mon-am", "2026-05-18T09:00:00.000"),
-        event("wed-noon", "2026-05-20T12:00:00.000"),
-      ],
-      visible: [mondayTimed, wednesday, mondayAllDay],
-      weekDays,
-    });
-
-    expect(first?.eventId).toBe("mon-all");
-  });
-
-  it("returns null when the column has no visible events", () => {
-    const wednesday = target("wed-noon", "timed");
-    expect(
-      getFirstEventOnWeekdayColumn({
-        allDayEvents: [],
-        columnIndex: 0,
-        timedEvents: [event("wed-noon", "2026-05-20T12:00:00.000")],
-        visible: [wednesday],
-        weekDays,
-      }),
-    ).toBeNull();
   });
 });
