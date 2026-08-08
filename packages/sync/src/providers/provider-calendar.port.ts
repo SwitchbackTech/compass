@@ -56,9 +56,15 @@ export interface ProviderCalendarAdapter {
 
 // Why a discovery attempt could not complete. `cursorExpired` is distinct so the
 // caller can drop the stale cursor and re-list in full instead of retrying with
-// a token the provider will keep rejecting.
+// a token the provider will keep rejecting. `transient` is a retryable network/
+// rate-limit/5xx blip; `discoveryFailed` is a durable 4xx refusal (e.g. the
+// Google account is not signed up for Calendar) that retrying cannot fix —
+// dispatch settles those as a drop rather than burning the retry ladder
+// (2026-08-08: one calendarListSync job logged ~80 exceptions + self-heal
+// alarms on "The user must be signed up for Google Calendar.").
 export type ProviderCalendarErrorReason =
-  | "discoveryFailed" // the provider rejected or failed the calendar-list read
+  | "discoveryFailed" // durable provider rejection; settle and wait for rediscovery
+  | "transient" // retryable network / rate-limit / 5xx failure
   | "cursorExpired"; // the incremental cursor is too old; a full re-list is required
 
 export class ProviderCalendarError extends ProviderError<ProviderCalendarErrorReason> {}

@@ -5,7 +5,10 @@ import { repairCalendar } from "@sync/domain/calendar-repair.service";
 import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
-import { type ProviderCalendarAdapter } from "@sync/providers/provider-calendar.port";
+import {
+  type ProviderCalendarAdapter,
+  ProviderCalendarError,
+} from "@sync/providers/provider-calendar.port";
 import {
   ProviderEventReadError,
   type ProviderEventReader,
@@ -140,6 +143,41 @@ export async function dispatchSyncJob(
       return {
         result: "drop",
         reason: `provider durably rejected reads for resource ${job.resourceId} (${detail}); sync resumes once the calendar is readable again`,
+      };
+    }
+
+    // Same shape for calendar-list discovery: a durable 4xx (account not a
+    // Calendar user, forbidden list, etc.) used to fall through as
+    // retryableTransient and burn all 20 attempts, then trip the self-heal
+    // requeue budget (2026-08-08: job 6a76454e… / connection 6a653974…).
+    // Dropping frees the coalescing key so a later rediscovery or reconnect
+    // can try again; stamp the calendarList resource so triage still has a
+    // durable trace after the job row is gone.
+    if (
+      error instanceof ProviderCalendarError &&
+      error.reason === "discoveryFailed"
+    ) {
+      const detail =
+        error.cause instanceof Error ? error.cause.message : error.message;
+      const calendarList = (
+        await deps.resources.listByConnection(
+          job.tenantId,
+          job.principalId,
+          job.connectionId,
+        )
+      ).find((resource) => resource.resourceKind === "calendarList");
+      if (calendarList) {
+        await deps.resources.markReadFailure(
+          job.tenantId,
+          job.principalId,
+          calendarList._id,
+          now(),
+          detail,
+        );
+      }
+      return {
+        result: "drop",
+        reason: `provider durably rejected calendar discovery for connection ${job.connectionId} (${detail}); sync resumes once the account can list calendars again`,
       };
     }
     throw error;

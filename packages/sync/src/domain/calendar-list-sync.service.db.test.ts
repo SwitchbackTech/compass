@@ -432,18 +432,26 @@ describe("syncCalendarList", () => {
     expect(stale?.active).toBe(false);
   });
 
-  it("throws on a non-cursor discovery failure so the worker retries", async () => {
+  it("rethrows non-cursor discovery failures for dispatch/worker settlement", async () => {
+    // syncCalendarList does not settle these itself: durable discoveryFailed
+    // is dropped by dispatch, and transient is retried by the worker.
     const conn = connection();
-    const discovery = {
-      provider: "google" as const,
-      discoverCalendars: async () => {
-        throw new ProviderCalendarError("discoveryFailed", "boom");
-      },
-    };
+    for (const reason of ["discoveryFailed", "transient"] as const) {
+      const discovery = {
+        provider: "google" as const,
+        discoverCalendars: async () => {
+          throw new ProviderCalendarError(reason, `${reason}-boom`);
+        },
+      };
 
-    await expect(
-      syncCalendarList(deps(discovery as unknown as FakeDiscovery), conn, now),
-    ).rejects.toThrow("boom");
+      await expect(
+        syncCalendarList(
+          deps(discovery as unknown as FakeDiscovery),
+          conn,
+          now,
+        ),
+      ).rejects.toThrow(`${reason}-boom`);
+    }
   });
 
   it("is idempotent: a repeated pass coalesces into one import per calendar", async () => {

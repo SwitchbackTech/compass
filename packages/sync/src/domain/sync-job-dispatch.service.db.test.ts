@@ -9,6 +9,7 @@ import {
   type SyncJobDispatchDeps,
 } from "@sync/domain/sync-job-dispatch.service";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
+import { ProviderCalendarError } from "@sync/providers/provider-calendar.port";
 import {
   type ProviderEvent,
   type ProviderEventRead,
@@ -172,13 +173,14 @@ describe("dispatchSyncJob", () => {
     reader: FakeReader,
     custody: SyncJobDispatchDeps["custody"] = tokenSource,
     notificationsOverride: SyncJobDispatchDeps["notifications"] = notifications,
+    discoveryOverride: SyncJobDispatchDeps["discovery"] = discovery,
   ): SyncJobDispatchDeps => ({
     events,
     occurrences,
     resources,
     calendars,
     connections,
-    discovery,
+    discovery: discoveryOverride,
     jobs,
     commands,
     reader,
@@ -805,5 +807,82 @@ describe("dispatchSyncJob", () => {
       expect(outcome.reason).toContain("authorizationRevoked");
     }
     expect(discarded).toEqual([connectionId]);
+  });
+
+  it("drops a durable calendarListSync discovery failure instead of burning retries", async () => {
+    // 2026-08-08 prod: "The user must be signed up for Google Calendar." was
+    // classified as discoveryFailed and retried as retryableTransient for all
+    // 20 attempts, then self-heal-requeued until the requeue budget exhausted.
+    const tenantId = objectId();
+    const principalId = objectId();
+    const connectionId = objectId();
+    stubbedConnection = {
+      _id: connectionId,
+      tenantId,
+      principalId,
+    } as ProviderConnectionRecord;
+    const refusing: SyncJobDispatchDeps["discovery"] = {
+      provider: "google",
+      discoverCalendars: async () => {
+        throw new ProviderCalendarError(
+          "discoveryFailed",
+          "Google rejected the calendar list read",
+          {
+            cause: new Error(
+              "The user must be signed up for Google Calendar. (HTTP 403, reason notACalendarUser)",
+            ),
+          },
+        );
+      },
+    };
+
+    const outcome = await dispatchSyncJob(
+      deps(new FakeReader([]), tokenSource, notifications, refusing),
+      calendarListJob(connectionId, tenantId, principalId),
+      now,
+    );
+
+    expect(outcome.result).toBe("drop");
+    if (outcome.result === "drop") {
+      expect(outcome.reason).toContain("notACalendarUser");
+      expect(outcome.reason).toContain(connectionId);
+    }
+    const calendarList = (
+      await resources.listByConnection(
+        tenantId as SyncResourceRecord["tenantId"],
+        principalId as SyncResourceRecord["principalId"],
+        connectionId as SyncResourceRecord["connectionId"],
+      )
+    ).find((resource) => resource.resourceKind === "calendarList");
+    expect(calendarList?.lastReadFailureAt).toEqual(now());
+    expect(calendarList?.lastReadFailureDetail).toContain("notACalendarUser");
+  });
+
+  it("rethrows a transient calendarListSync discovery failure for the worker to retry", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    const connectionId = objectId();
+    stubbedConnection = {
+      _id: connectionId,
+      tenantId,
+      principalId,
+    } as ProviderConnectionRecord;
+    const flaky: SyncJobDispatchDeps["discovery"] = {
+      provider: "google",
+      discoverCalendars: async () => {
+        throw new ProviderCalendarError(
+          "transient",
+          "Google calendar list temporarily unavailable",
+        );
+      },
+    };
+
+    await expect(
+      dispatchSyncJob(
+        deps(new FakeReader([]), tokenSource, notifications, flaky),
+        calendarListJob(connectionId, tenantId, principalId),
+        now,
+      ),
+    ).rejects.toMatchObject({ reason: "transient" });
   });
 });

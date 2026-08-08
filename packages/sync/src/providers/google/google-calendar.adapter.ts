@@ -150,13 +150,17 @@ export class GoogleCalendarAdapter implements ProviderCalendarAdapter {
     try {
       return await api.listPage(params);
     } catch (error) {
-      // An expired syncToken (410 Gone) is not retryable with the same token:
-      // the caller must drop it and re-list in full. Everything else is a
-      // generic discovery failure.
+      // Classify before wrapping so durable account/calendar refusals do not
+      // burn retries the way a 5xx or rate-limit blip should. Keep HTTP status
+      // + Google's machine-readable reason on the cause for triage — nested
+      // Error.cause is only serialized one level deep in PostHog/logs.
+      const reason = classifyDiscoveryError(error);
       throw new ProviderCalendarError(
-        isCursorExpired(error) ? "cursorExpired" : "discoveryFailed",
-        "Google rejected the calendar list read",
-        { cause: redactedCause(error) },
+        reason,
+        reason === "transient"
+          ? "Google calendar list temporarily unavailable"
+          : "Google rejected the calendar list read",
+        { cause: discoveryFailureCause(error) },
       );
     }
   }
@@ -234,11 +238,75 @@ function mapAccessRole(
   return (googleRole && ACCESS_ROLE_BY_GOOGLE[googleRole]) || "busyOnly";
 }
 
-// Google signals an expired calendar-list syncToken with HTTP 410 Gone. The
-// status lives on the response, so reading it does not touch the request.
-function isCursorExpired(error: unknown): boolean {
+// Map a Google calendarList.list failure to a discovery-error reason. An
+// expired syncToken (410 Gone) forces a full re-list; a rate limit, server, or
+// network error is retryable; anything else is an unrecoverable discovery
+// failure (account not a Calendar user, authz, etc.).
+function classifyDiscoveryError(
+  error: unknown,
+): "cursorExpired" | "transient" | "discoveryFailed" {
+  const status = httpStatus(error);
+  if (status === 410) return "cursorExpired";
+  if (status === 429 || status === undefined || status >= 500) {
+    return "transient";
+  }
+  // Google's rate-limit / quota rejections often arrive as 403, not 429.
+  if (
+    googleErrorReasons(error).some((reason) =>
+      TRANSIENT_DISCOVERY_REASONS.includes(reason),
+    )
+  ) {
+    return "transient";
+  }
+  return "discoveryFailed";
+}
+
+const TRANSIENT_DISCOVERY_REASONS = [
+  "rateLimitExceeded",
+  "userRateLimitExceeded",
+  "quotaExceeded",
+  "backendError",
+  "internalError",
+];
+
+// Like redactedCause: drop request-derived fields (bearer token on config),
+// but keep the two response facts triage needs — numeric HTTP status and
+// Google's machine-readable reason.
+function discoveryFailureCause(error: unknown): Error | undefined {
+  const status = httpStatus(error);
+  const reason = googleErrorReasons(error)[0];
+  const facts = [
+    ...(status === undefined ? [] : [`HTTP ${status}`]),
+    ...(reason === undefined ? [] : [`reason ${reason}`]),
+  ];
+  if (facts.length === 0) return redactedCause(error);
+  const message = error instanceof Error ? error.message : null;
+  return new Error(
+    message ? `${message} (${facts.join(", ")})` : facts.join(", "),
+  );
+}
+
+function googleErrorReasons(error: unknown): string[] {
+  const fromBody = (
+    error as {
+      response?: {
+        data?: { error?: { errors?: { reason?: unknown }[] } };
+      };
+    }
+  )?.response?.data?.error?.errors;
+  const fromError = (error as { errors?: { reason?: unknown }[] })?.errors;
+  const reasons = [...(fromBody ?? []), ...(fromError ?? [])]
+    .map((entry) => entry?.reason)
+    .filter((reason): reason is string => typeof reason === "string");
+  return reasons;
+}
+
+// The HTTP status of a googleapis/gaxios error, from the response or the error
+// code. Reading it does not touch the request. Undefined means no HTTP response
+// reached us (a network failure), which classifies as transient.
+function httpStatus(error: unknown): number | undefined {
   const status =
     (error as { response?: { status?: number } })?.response?.status ??
     (error as { code?: number })?.code;
-  return status === 410;
+  return typeof status === "number" ? status : undefined;
 }
