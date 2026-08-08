@@ -75,15 +75,15 @@ export const EventGrid: FC<EventGridProps> = ({
       data-testid="grid-focus-indicator"
     />
     {isLoadingEvents && (
-      // First load keeps pointer-events-none so drag-create still works under
-      // the spinner. Retry after error must block the grid — the overlay is
-      // opaque and should not click through.
+      // First load: keep grid chrome (hour lines, columns) visible under a
+      // small non-blocking spinner — no opaque fill or blur. Retry after
+      // error stays opaque and blocks the grid so Retry cannot click through.
       <AbsoluteOverflowLoader
         aria-label="Loading events"
         className={
           isErrorEvents
             ? "bg-background [&>div]:my-0"
-            : "pointer-events-none bg-background [&>div]:my-0"
+            : "pointer-events-none backdrop-blur-none [&>div]:my-0 [&>div]:h-10 [&>div]:w-10 [&>div]:border-2"
         }
         role="status"
         style={{ zIndex: ZIndex.MAX }}
