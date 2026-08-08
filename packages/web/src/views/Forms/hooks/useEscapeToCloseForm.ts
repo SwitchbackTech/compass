@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import {
   isContextMenuOpen,
   isFloatingLayerOpen,
@@ -7,30 +7,13 @@ import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { shouldConfirmDiscardUnsavedChanges } from "@web/views/Forms/hooks/shouldConfirmDiscardUnsavedChanges";
 
-export type EscapeToCloseFormConfirm = {
-  isConfirmOpen: boolean;
-  onCancelConfirm: () => void;
-  onDiscardConfirm: () => void;
-};
-
 /**
  * Escape closes the event-details form. Dirty edits of a persisted event
  * confirm first; create drafts and unchanged edits discard immediately.
  * Nested floating layers (menus, dialogs) win Escape via isFloatingLayerOpen.
  */
-export const useEscapeToCloseForm = (
-  onClose: () => void,
-): EscapeToCloseFormConfirm => {
+export const useEscapeToCloseForm = (onClose: () => void) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-
-  const onCancelConfirm = useCallback(() => {
-    setIsConfirmOpen(false);
-  }, []);
-
-  const onDiscardConfirm = useCallback(() => {
-    setIsConfirmOpen(false);
-    onClose();
-  }, [onClose]);
 
   useAppShortcut(
     "Escape",
@@ -51,5 +34,12 @@ export const useEscapeToCloseForm = (
     { ignoreInputs: false },
   );
 
-  return { isConfirmOpen, onCancelConfirm, onDiscardConfirm };
+  return {
+    isConfirmOpen,
+    onCancelConfirm: () => setIsConfirmOpen(false),
+    onDiscardConfirm: () => {
+      setIsConfirmOpen(false);
+      onClose();
+    },
+  };
 };

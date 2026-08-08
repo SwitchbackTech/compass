@@ -659,11 +659,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
-    const {
-      isConfirmOpen: isDiscardConfirmOpen,
-      onCancelConfirm: onCancelDiscardConfirm,
-      onDiscardConfirm,
-    } = useEscapeToCloseForm(onClose);
+    const { isConfirmOpen, onCancelConfirm, onDiscardConfirm } =
+      useEscapeToCloseForm(onClose);
 
     const titleErrorField = fieldErrors?.["content.title"]
       ? "content.title"
@@ -903,8 +900,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
           )}
         </EventFormShell>
         <DiscardUnsavedChangesDialog
-          isOpen={isDiscardConfirmOpen}
-          onCancel={onCancelDiscardConfirm}
+          isOpen={isConfirmOpen}
+          onCancel={onCancelConfirm}
           onDiscard={onDiscardConfirm}
         />
       </>
