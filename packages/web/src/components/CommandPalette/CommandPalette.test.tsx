@@ -28,15 +28,7 @@ import {
 } from "@web/shortcuts/keyboard-only/keyboard-only.store";
 import { useKeyboardOnlyMode } from "@web/shortcuts/keyboard-only/useKeyboardOnlyMode";
 import { recordRecentCommand } from "./recent-commands.store";
-import {
-  afterAll,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-} from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockNavigate = mock();
 // Bun's mock.module is process-wide, so mock the router's useNavigate directly
@@ -111,10 +103,6 @@ describe("CommandPalette", () => {
     mockNavigate.mockClear();
     onGoToToday.mockClear();
     onShowShortcuts.mockClear();
-    useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
-  });
-
-  afterEach(() => {
     useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
   });
 

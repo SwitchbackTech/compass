@@ -56,17 +56,19 @@ export function useKeyboardOnlyMode() {
       // Keep counting a hold if the other Shift key is still down.
       if (event.shiftKey) return;
 
-      const result = reduceKeyboardOnlyDetector(stateRef.current, {
-        type: "shiftUp",
-        now: Date.now(),
-      });
-      stateRef.current = result.state;
-      if (result.entered) {
-        if (useKeyboardOnlyStore.getState().isActive) {
-          keyboardOnlyActions.exit();
-        } else {
-          keyboardOnlyActions.enter();
-        }
+      const { state, entered: doubleTapped } = reduceKeyboardOnlyDetector(
+        stateRef.current,
+        {
+          type: "shiftUp",
+          now: Date.now(),
+        },
+      );
+      stateRef.current = state;
+      if (!doubleTapped) return;
+      if (useKeyboardOnlyStore.getState().isActive) {
+        keyboardOnlyActions.exit();
+      } else {
+        keyboardOnlyActions.enter();
       }
     };
 

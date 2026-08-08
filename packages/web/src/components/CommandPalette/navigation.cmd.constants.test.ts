@@ -6,7 +6,7 @@ import {
   initialKeyboardOnlyState,
   useKeyboardOnlyStore,
 } from "@web/shortcuts/keyboard-only/keyboard-only.store";
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 describe("getNavigationCommandItems", () => {
   const noopHandlers = {
@@ -113,10 +113,6 @@ describe("getNavigationCommandItems", () => {
 
   describe("enter-keyboard-only", () => {
     beforeEach(() => {
-      useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
-    });
-
-    afterEach(() => {
       useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
     });
 
