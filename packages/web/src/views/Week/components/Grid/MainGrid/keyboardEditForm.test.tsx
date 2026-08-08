@@ -13,6 +13,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
 import { seedEventQueries } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
@@ -167,5 +168,48 @@ describe("Enter on a focused grid event", () => {
     });
 
     expect(await screen.findByDisplayValue("Quarterly review")).toBeVisible();
+  });
+
+  it("returns focus to the grid event after the form closes", async () => {
+    seededEvents = [
+      createMockEvent({
+        calendarId: writableCalendar.id,
+        content: {
+          kind: "details",
+          title: "Quarterly review",
+          description: "",
+        },
+        schedule: EventScheduleSchema.parse({
+          kind: "timed",
+          start: "2024-01-15T09:00:00.000Z",
+          end: "2024-01-15T10:00:00.000Z",
+          timeZone: "UTC",
+        }),
+      }),
+    ];
+
+    render(
+      <Harness>
+        <GridWithSidebar />
+      </Harness>,
+    );
+
+    const card = screen.getByRole("button", { name: /quarterly review/i });
+    await act(async () => {
+      card.focus();
+      fireEvent.keyDown(card, { key: "Enter" });
+    });
+
+    const titleField = await screen.findByDisplayValue("Quarterly review");
+    expect(titleField).toHaveFocus();
+
+    await act(async () => {
+      fireEvent.keyDown(titleField, { key: "Escape" });
+    });
+
+    expect(screen.queryByDisplayValue("Quarterly review")).toBeNull();
+    await waitFor(() => {
+      expect(document.activeElement).toBe(card);
+    });
   });
 });

@@ -7,6 +7,8 @@ import { GENERIC_ERROR_TOAST_ID } from "@web/common/constants/toast.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   addId,
+  focusCalendarEventElement,
+  focusCalendarEventElementAfterDiscard,
   isEventInRange,
   refocusEventElement,
 } from "@web/common/utils/event/event.util";
@@ -203,6 +205,116 @@ describe("addId", () => {
     expect(result._id).toBeDefined();
     expect(ObjectId.isValid(result._id)).toBe(true);
     expect(result._id).toMatch(/^[a-f0-9]{24}$/);
+  });
+});
+
+describe("focusCalendarEventElement", () => {
+  const EVENT_ID = "507f1f77bcf86cd799439011";
+  let pendingFrames: FrameRequestCallback[];
+  let originalRequestAnimationFrame: typeof requestAnimationFrame;
+
+  const addEventElement = () => {
+    const element = document.createElement("div");
+    element.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, EVENT_ID);
+    element.tabIndex = 0;
+    document.body.appendChild(element);
+    return element;
+  };
+
+  const flushFrame = () => {
+    const frames = pendingFrames.splice(0);
+    frames.forEach((frame) => frame(performance.now()));
+  };
+
+  beforeEach(() => {
+    pendingFrames = [];
+    originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = ((frame: FrameRequestCallback) =>
+      pendingFrames.push(frame)) as typeof requestAnimationFrame;
+  });
+
+  afterEach(() => {
+    globalThis.requestAnimationFrame = originalRequestAnimationFrame;
+    document.body.innerHTML = "";
+  });
+
+  it("focuses the event element when it already exists", () => {
+    const element = addEventElement();
+
+    focusCalendarEventElement(EVENT_ID);
+
+    expect(document.activeElement).toBe(element);
+    expect(pendingFrames).toHaveLength(0);
+  });
+
+  it("retries until the event element appears", () => {
+    focusCalendarEventElement(EVENT_ID);
+    flushFrame();
+
+    expect(document.activeElement).not.toBeInstanceOf(HTMLDivElement);
+
+    const element = addEventElement();
+    flushFrame();
+
+    expect(document.activeElement).toBe(element);
+  });
+});
+
+describe("focusCalendarEventElementAfterDiscard", () => {
+  const EVENT_ID = "507f1f77bcf86cd799439011";
+  let pendingFrames: FrameRequestCallback[];
+  let originalRequestAnimationFrame: typeof requestAnimationFrame;
+
+  const addEventElement = () => {
+    const element = document.createElement("div");
+    element.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, EVENT_ID);
+    element.tabIndex = 0;
+    document.body.appendChild(element);
+    return element;
+  };
+
+  const flushFrame = () => {
+    const frames = pendingFrames.splice(0);
+    frames.forEach((frame) => frame(performance.now()));
+  };
+
+  beforeEach(() => {
+    pendingFrames = [];
+    originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = ((frame: FrameRequestCallback) =>
+      pendingFrames.push(frame)) as typeof requestAnimationFrame;
+  });
+
+  afterEach(() => {
+    globalThis.requestAnimationFrame = originalRequestAnimationFrame;
+    document.body.innerHTML = "";
+  });
+
+  it("skips a draft portal and focuses the saved card", () => {
+    const draftPortal = addEventElement();
+    draftPortal.setAttribute("data-grid-event-surface", "draft");
+    const savedCard = addEventElement();
+
+    focusCalendarEventElementAfterDiscard(EVENT_ID);
+    flushFrame();
+
+    expect(document.activeElement).toBe(savedCard);
+  });
+
+  it("waits for a remounted card when only a draft portal is present", () => {
+    const draftPortal = addEventElement();
+    draftPortal.setAttribute("data-grid-event-surface", "draft");
+
+    focusCalendarEventElementAfterDiscard(EVENT_ID);
+    flushFrame();
+
+    expect(document.activeElement).not.toBe(draftPortal);
+
+    draftPortal.remove();
+    const savedCard = addEventElement();
+    flushFrame();
+
+    expect(document.activeElement).toBe(savedCard);
   });
 });
 

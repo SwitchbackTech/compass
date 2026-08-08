@@ -124,6 +124,55 @@ export const getCalendarEventIdFromElement = (element: HTMLElement) =>
   readCalendarEventIdFromElement(element);
 
 /**
+ * Focuses a calendar event's DOM node as soon as it exists. Retries across
+ * animation frames when the card is not mounted yet (e.g. after form close or
+ * undo restore). Unlike `refocusEventElement`, this focuses an in-place node
+ * and does not wait for React to replace it.
+ */
+export const focusCalendarEventElement = (eventId: string) => {
+  const selector = calendarEventIdValueSelector(eventId);
+  let attempts = 0;
+
+  const tryFocus = () => {
+    const element = document.querySelector<HTMLElement>(selector);
+    if (element) {
+      element.focus();
+      return;
+    }
+    if (++attempts < 30) requestAnimationFrame(tryFocus);
+  };
+
+  tryFocus();
+};
+
+const isGridDraftEventSurface = (element: HTMLElement) =>
+  element.getAttribute("data-grid-event-surface") === "draft";
+
+/**
+ * Focuses the grid event after the form draft is discarded. Skips `GridDraft`
+ * portal nodes (same interaction id, unmounts on the next commit) and retries
+ * across animation frames until a saved/placeholder card is available.
+ */
+export const focusCalendarEventElementAfterDiscard = (eventId: string) => {
+  const selector = calendarEventIdValueSelector(eventId);
+  let attempts = 0;
+
+  const tryFocus = () => {
+    attempts += 1;
+    const element = [...document.querySelectorAll<HTMLElement>(selector)].find(
+      (candidate) => !isGridDraftEventSurface(candidate),
+    );
+    if (element) {
+      element.focus();
+      return;
+    }
+    if (attempts < 30) requestAnimationFrame(tryFocus);
+  };
+
+  requestAnimationFrame(tryFocus);
+};
+
+/**
  * Refocuses an event's element after React replaces it. Retries across
  * animation frames until the new element appears, then focuses it.
  */
