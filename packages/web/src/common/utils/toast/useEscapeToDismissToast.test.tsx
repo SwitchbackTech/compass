@@ -2,7 +2,6 @@ import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { renderHook } from "@testing-library/react";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
-import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
 import {
   registerToastPort,
   resetToastPort,
@@ -13,7 +12,11 @@ import {
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
-import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import {
+  clearFloatingLayerReasons,
+  setFloatingLayerReason,
+} from "@web/shortcuts/floating-layer";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 describe("useEscapeToDismissToast", () => {
   let mocks: ReturnType<typeof createTestToastPort>["mocks"];
@@ -21,6 +24,7 @@ describe("useEscapeToDismissToast", () => {
   beforeEach(() => {
     HotkeyManager.resetInstance();
     document.body.removeAttribute("data-app-locked");
+    clearFloatingLayerReasons();
 
     const testPort = createTestToastPort();
     mocks = testPort.mocks;
@@ -31,6 +35,7 @@ describe("useEscapeToDismissToast", () => {
     resetToastPort();
     document.body.innerHTML = "";
     draftActions.discard();
+    clearFloatingLayerReasons();
   });
 
   it("dismisses the visible toast on Escape", () => {
@@ -40,17 +45,6 @@ describe("useEscapeToDismissToast", () => {
 
     expect(mocks.dismiss).toHaveBeenCalledTimes(1);
     expect(mocks.dismiss).toHaveBeenCalledWith();
-  });
-
-  it("does not dismiss while a context menu is open", () => {
-    const contextMenu = document.createElement("div");
-    contextMenu.id = ID_CONTEXT_MENU_ITEMS;
-    document.body.appendChild(contextMenu);
-
-    renderHook(() => useEscapeToDismissToast());
-    pressKey("Escape");
-
-    expect(mocks.dismiss).not.toHaveBeenCalled();
   });
 
   it("does not dismiss while the event form is open", () => {
@@ -71,21 +65,24 @@ describe("useEscapeToDismissToast", () => {
     expect(mocks.dismiss).not.toHaveBeenCalled();
   });
 
-  it("does not dismiss while a floating layer (dialog) is open", () => {
-    const dialog = document.createElement("div");
-    dialog.setAttribute("role", "dialog");
-    document.body.appendChild(dialog);
-    // jsdom has no layout engine, so a plain element always reports zero
-    // client rects; stub it to look on-screen, matching a real dialog.
-    const rectsSpy = spyOn(dialog, "getClientRects").mockReturnValue([
-      {} as DOMRect,
-    ] as unknown as DOMRectList);
+  it("does not dismiss while a floating layer is open", () => {
+    setFloatingLayerReason("test-layer", true);
 
     renderHook(() => useEscapeToDismissToast());
     pressKey("Escape");
 
     expect(mocks.dismiss).not.toHaveBeenCalled();
-    rectsSpy.mockRestore();
+  });
+
+  it("does not dismiss while the context-menu floating layer is registered", () => {
+    // Mirrors ContextMenu's useFloatingLayer("contextMenu", …) reason so a
+    // broken/missing wire-up would fail this stand-down check.
+    setFloatingLayerReason("contextMenu", true);
+
+    renderHook(() => useEscapeToDismissToast());
+    pressKey("Escape");
+
+    expect(mocks.dismiss).not.toHaveBeenCalled();
   });
 
   it("does not dismiss while the app is locked (a modal is open)", () => {

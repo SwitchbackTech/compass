@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useId, useMemo, useState } from "react";
 import ReactSelect from "react-select";
 import { colors } from "@web/common/styles/colors";
 import { theme } from "@web/common/styles/theme";
+import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 import {
   FREQUENCY_MAP,
   FREQUENCY_OPTIONS,
@@ -21,6 +22,9 @@ export const FreqSelect = ({
 }: FreqSelectProps) => {
   const options = useMemo(() => FREQUENCY_OPTIONS(plural ? "s" : ""), [plural]);
   const fontSize = theme.text.size.m;
+  const layerId = useId();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  useFloatingLayer(`freqSelect:${layerId}`, isMenuOpen);
 
   const label = useMemo(
     () => `${FREQUENCY_MAP[value]}${plural ? "s" : ""}`,
@@ -32,6 +36,8 @@ export const FreqSelect = ({
       options={options}
       classNamePrefix="freq-select"
       value={{ label, value }}
+      onMenuOpen={() => setIsMenuOpen(true)}
+      onMenuClose={() => setIsMenuOpen(false)}
       onChange={(option) =>
         option && option.value !== undefined && onFreqSelect(option.value)
       }

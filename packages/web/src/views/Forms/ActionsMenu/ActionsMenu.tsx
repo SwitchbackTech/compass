@@ -26,6 +26,7 @@ import {
   Z_INDEX_FLOATING_MENU,
 } from "@web/common/constants/web.constants";
 import IconButton from "@web/components/IconButton/IconButton";
+import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 
 interface MenuContextValue {
   getItemProps: (
@@ -55,6 +56,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({ children, id }) => {
 
   const menuId = id || ID_EVENT_FORM_ACTION_MENU;
   const triggerId = `${menuId}-trigger`;
+  useFloatingLayer(`actionsMenu:${menuId}`, open);
 
   const { refs, context } = useFloating({
     open,

@@ -7,7 +7,7 @@ import {
   useRole,
 } from "@floating-ui/react";
 import classNames from "classnames";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
@@ -21,6 +21,7 @@ import {
   useDefaultTargetCalendar,
 } from "@web/calendars/useDefaultTargetCalendar";
 import { Z_INDEX_FLOATING_MENU } from "@web/common/constants/web.constants";
+import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 
 interface CalendarSelectProps {
   value: CalendarId | null;
@@ -74,6 +75,8 @@ export const CalendarSelect = ({
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const listRef = useRef<Array<HTMLElement | null>>([]);
+  const layerId = useId();
+  useFloatingLayer(`calendarSelect:${layerId}`, isOpen);
 
   const selectedCalendar =
     writableCalendars.find((calendar) => calendar.id === value) ?? null;

@@ -7,6 +7,7 @@ import {
 } from "@floating-ui/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import { useFloatingLayer } from "@web/shortcuts/floating-layer";
 import {
   ContextMenuItems,
   type ContextMenuItemsActions,
@@ -54,6 +55,7 @@ export const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
     // the pending timeout before it ever fired. `hasEvent` only flips when the
     // menu opens or closes.
     const hasEvent = !!event;
+    useFloatingLayer("contextMenu", hasEvent);
     useEffect(() => {
       if (!hasEvent) return;
       // Seat focus on the first item, deferred and retried for a short window.

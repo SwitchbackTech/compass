@@ -112,7 +112,8 @@ export function ContextMenuItemsView({
 
   return (
     // role="none" keeps the menu -> menuitem ownership valid across this
-    // container (the id is also how isContextMenuOpen() detects the menu).
+    // container. Escape ownership is registered via useFloatingLayer on
+    // ContextMenu; the id remains a stable test/DOM anchor.
     <div id={ID_CONTEXT_MENU_ITEMS} role="none">
       {menuActions.map((item, index) => {
         const select = () => {
