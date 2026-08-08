@@ -20,6 +20,7 @@ import {
   getHourLabels,
 } from "@web/common/utils/datetime/web.date.util";
 import { getCurrentPercentOfDay } from "@web/common/utils/grid/grid.util";
+import { ScrollableRegion } from "@web/components/ScrollableRegion/ScrollableRegion";
 import {
   EVENT_WIDTH_MINIMUM,
   GRID_MARGIN_LEFT,
@@ -53,7 +54,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
   );
 
   return (
-    <section
+    <ScrollableRegion
       aria-label="Timed events grid"
       // EventGrid renders the visible focus ring as a sibling overlay so it
       // wraps the all-day row and timed grid together and is not clipped by
@@ -61,8 +62,6 @@ export const TimedGrid: FC<TimedGridProps> = ({
       className="peer c-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px] focus-visible:outline-none"
       id={timedGridId}
       ref={timedGridRef}
-      // biome-ignore lint/a11y/noNoninteractiveTabindex: WCAG 2.1.1 requires a scrollable region to be keyboard-focusable (axe's scrollable-region-focusable rule); tabIndex={-1} previously made a mouse click the only way in.
-      tabIndex={0}
     >
       <CalendarTimeColumn />
       <div
@@ -122,7 +121,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
       </div>
 
       {eventsLayer}
-    </section>
+    </ScrollableRegion>
   );
 };
 
