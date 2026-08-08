@@ -14,15 +14,13 @@ import {
   type GridLayoutCache,
   type GridLayoutCacheSources,
 } from "@web/grid/interaction/layout.cache";
+import { INTERACTION_EDGE_THRESHOLD_PX } from "@web/interaction/interaction.constants";
 import {
   type DayAllDayDragTarget,
   type DayAllDayResizeTarget,
   type DayInteractionTarget,
   type DayTimedDragTarget,
 } from "../day-interaction.adapter.types";
-
-/** Day timed smart-scroll edge threshold (Week uses edge-nav threshold instead). */
-const DAY_SMART_SCROLL_EDGE_THRESHOLD_PX = 50;
 
 export type DayLayoutCache = GridLayoutCache;
 export type DayLayoutCacheSources = GridLayoutCacheSources;
@@ -33,7 +31,7 @@ export const buildDayTimedLayoutCache = (
 ) =>
   buildTimedGridLayoutCache({
     ...sources,
-    edgeThresholdPx: DAY_SMART_SCROLL_EDGE_THRESHOLD_PX,
+    edgeThresholdPx: INTERACTION_EDGE_THRESHOLD_PX,
     mainGridElementId: ID_GRID_MAIN,
     smartScroll: {
       bottomInsetPx: SMART_SCROLL_BOTTOM_INSET_PX,

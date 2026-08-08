@@ -9,9 +9,8 @@ import {
 } from "@floating-ui/react";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
-import { usePrefersReducedMotion } from "@web/common/hooks/prefersReducedMotion";
 import { eventCommandPaletteItems } from "@web/components/CommandPalette/event.cmd.constants";
 import { HighlightedLabel } from "@web/components/CommandPalette/HighlightedLabel";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
@@ -68,23 +67,13 @@ const CommandPaletteContent = ({
   const [activeIndex, setActiveIndex] = useState<number | null>(0);
   const listRef = useRef<Array<HTMLElement | null>>([]);
 
-  // Entrance-only fade/scale — no exit animation. Close is driven by the
-  // external `isCmdPaletteOpen` store (shortcuts + tests flip it
-  // synchronously), and this component unmounts the instant it flips false;
-  // animating that would need a delayed-unmount state machine to handle
-  // "reopened while still closing." Not worth it for a UI pattern where an
-  // instant close is normal — dismissal isn't a decision the user watches,
-  // unlike a confirmation modal.
-  const [visible, setVisible] = useState(false);
-  const reduceMotion = usePrefersReducedMotion();
-  useEffect(() => {
-    if (reduceMotion) {
-      setVisible(true);
-      return;
-    }
-    const raf = requestAnimationFrame(() => setVisible(true));
-    return () => cancelAnimationFrame(raf);
-  }, [reduceMotion]);
+  // Entrance-only fade/scale via `@starting-style` / `starting:` — no exit
+  // animation. Close is driven by the external `isCmdPaletteOpen` store
+  // (shortcuts + tests flip it synchronously), and this component unmounts
+  // the instant it flips false; animating that would need a delayed-unmount
+  // state machine to handle "reopened while still closing." Not worth it for
+  // a UI pattern where an instant close is normal — dismissal isn't a
+  // decision the user watches, unlike a confirmation modal.
 
   // Focus the search input the moment it mounts (commit phase, like the
   // autoFocus attribute — but without tripping the a11y lint). Stable identity
@@ -145,9 +134,7 @@ const CommandPaletteContent = ({
     <FloatingPortal>
       <FloatingOverlay
         lockScroll
-        className={`flex justify-center bg-background/85 backdrop-blur-sm transition-opacity duration-200 ease-out motion-reduce:transition-none ${
-          visible ? "opacity-100" : "opacity-0"
-        }`}
+        className="flex justify-center bg-background/85 backdrop-blur-sm opacity-100 starting:opacity-0 transition-opacity duration-200 ease-out motion-reduce:transition-none"
         style={{ zIndex: Z_INDEX_MODAL }}
       >
         {/* No FloatingFocusManager: virtual list navigation keeps real focus in
@@ -155,9 +142,7 @@ const CommandPaletteContent = ({
             input on open via the focusInputOnMount callback ref above. */}
         <div
           ref={refs.setFloating}
-          className={`mt-[15vh] h-fit w-[640px] max-w-[90vw] overflow-hidden rounded-xl border border-border bg-surface shadow-[0_16px_48px_var(--color-shadow-default)] transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
-            visible ? "scale-100 opacity-100" : "scale-95 opacity-0"
-          }`}
+          className="mt-[15vh] h-fit w-[640px] max-w-[90vw] overflow-hidden rounded-xl border border-border bg-surface shadow-[0_16px_48px_var(--color-shadow-default)] scale-100 opacity-100 starting:scale-95 starting:opacity-0 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none"
         >
           <input
             {...getReferenceProps({

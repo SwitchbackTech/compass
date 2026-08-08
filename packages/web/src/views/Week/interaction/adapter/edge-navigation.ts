@@ -1,3 +1,4 @@
+import { INTERACTION_EDGE_THRESHOLD_PX } from "@web/interaction/interaction.constants";
 import { type WeekInteractionEdgeNavigationState } from "../state/edge-navigation.state";
 
 export type WeekEdgeNavigationSide = "next" | "prev";
@@ -31,7 +32,7 @@ export interface WeekEdgeNavigationController {
 }
 
 export const WEEK_EDGE_NAVIGATION_DWELL_MS = 500;
-export const WEEK_EDGE_NAVIGATION_THRESHOLD_PX = 50;
+export const WEEK_EDGE_NAVIGATION_THRESHOLD_PX = INTERACTION_EDGE_THRESHOLD_PX;
 
 const idleDraggingState: WeekInteractionEdgeNavigationState = {
   currentEdge: null,
