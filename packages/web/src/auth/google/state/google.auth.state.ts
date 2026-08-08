@@ -3,40 +3,39 @@
  * Tracks revocation state that doesn't need to persist across page refreshes.
  */
 
+import { clearAllGoogleReconnectRequired } from "./google.reconnect.state";
+
 /**
- * In-memory flag for Google revocation state.
- * This is intentionally NOT persisted to localStorage because:
- * 1. After page refresh, the app will "self-correct" by detecting the 400 error
- * 2. Keeps localStorage cleaner (only persistent auth state)
- * 3. Simpler implementation with acceptable UX trade-off
+ * Legacy in-memory flag for a global Google-revoked session. New reconnect UX
+ * uses per-account overrides in {@link google.reconnect.state}; this flag remains
+ * only for a few anonymous-write helpers and is no longer used to force the
+ * whole app onto LocalEventRepository.
  */
 let isGoogleRevokedInSession = false;
 
 /**
- * Marks that Google access has been revoked.
- * When set, the app will use LocalEventRepository instead of RemoteEventRepository
- * to prevent API errors until user re-authenticates.
+ * Marks that Google access has been revoked in this session.
  *
- * Note: This is stored in-memory only. After page refresh, the app will
- * "self-correct" by detecting a 400 error on the first API call.
+ * Prefer {@link markAccountReconnectRequired} for multi-account reconnect UX.
+ * This global flag must not demote healthy accounts to local storage.
  */
 export function markGoogleAsRevoked(): void {
   isGoogleRevokedInSession = true;
 }
 
 /**
- * Clears the Google revoked state.
+ * Clears the Google revoked state and per-account reconnect overrides.
  * Called when user successfully re-authenticates with Google.
  */
 export function clearGoogleRevokedState(): void {
   isGoogleRevokedInSession = false;
+  clearAllGoogleReconnectRequired();
 }
 
 /**
  * Checks if Google access has been revoked in this session.
- * When true, the app should use LocalEventRepository instead of RemoteEventRepository.
  *
- * @returns true if Google access was revoked in this session
+ * @returns true if the legacy global revoked flag is set
  */
 export function isGoogleRevoked(): boolean {
   return isGoogleRevokedInSession;

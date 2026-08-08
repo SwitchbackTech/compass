@@ -12,7 +12,12 @@ import {
   type RecurrenceScope,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
+import { isAccountReconnectRequired } from "@web/auth/google/state/google.reconnect.state";
 import { track } from "@web/auth/posthog/track";
+import {
+  selectGoogleSyncConnections,
+  useUserMetadataStore,
+} from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   buildCalendarLookup,
@@ -20,6 +25,7 @@ import {
 } from "@web/calendars/useCalendarLookup";
 import { handleError } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { showGoogleReconnectToast } from "@web/common/utils/toast/google-reconnect.toast";
 import {
   dismissRecurrenceScopeToast,
   dismissRecurrenceScopeToastFor,
@@ -298,6 +304,30 @@ export function useEventMutations(
         event.calendarId,
         event.content.kind === "busy",
       );
+    },
+    [queryClient],
+  );
+
+  const blockReconnectRequiredCalendar = useCallback(
+    (calendarId: Event["calendarId"] | null | undefined): boolean => {
+      if (!calendarId) return false;
+      const calendars =
+        queryClient.getQueryData<Calendar[]>(calendarQueryKeys.all) ?? [];
+      const calendar = calendars.find((entry) => entry.id === calendarId);
+      if (!calendar?.accountEmail) return false;
+      if (!isAccountReconnectRequired(calendar.accountEmail)) return false;
+
+      const connection = selectGoogleSyncConnections(
+        useUserMetadataStore.getState(),
+      ).find((entry) => entry.accountEmail === calendar.accountEmail);
+      showGoogleReconnectToast({
+        connectionId: connection?.id,
+        accountEmail: calendar.accountEmail,
+      });
+      console.warn(
+        `[useEventMutations] blocked write on reconnect-required calendar ${calendarId}`,
+      );
+      return true;
     },
     [queryClient],
   );
@@ -627,6 +657,9 @@ export function useEventMutations(
   return useMemo(
     () => ({
       create: (input: CreateEventInput, callbacks?: EventMutationCallbacks) => {
+        if (blockReconnectRequiredCalendar(input.calendarId)) {
+          return;
+        }
         const id = input.id ?? (createObjectIdString() as EventId);
         const finalInput = { ...input, id };
         recordEventCreateHistory({
@@ -665,6 +698,13 @@ export function useEventMutations(
           );
           return;
         }
+        if (
+          blockReconnectRequiredCalendar(
+            payload.input.calendarId ?? original?.calendarId,
+          )
+        ) {
+          return;
+        }
         const writeKey = seriesWriteKey(
           original,
           payload.input.scope,
@@ -699,16 +739,19 @@ export function useEventMutations(
         );
       },
       delete: (payload: { id: EventId; scope: RecurrenceScope }) => {
-        if (
-          !isRestoringHistory() &&
-          isTargetReadOnly(findEventInCache(queryClient, payload.id, source))
-        ) {
+        const original = findEventInCache(queryClient, payload.id, source);
+        if (!isRestoringHistory() && isTargetReadOnly(original)) {
           console.warn(
             `[useEventMutations] blocked delete on read-only event ${payload.id}`,
           );
           return;
         }
-        const original = findEventInCache(queryClient, payload.id, source);
+        if (
+          !isRestoringHistory() &&
+          blockReconnectRequiredCalendar(original?.calendarId)
+        ) {
+          return;
+        }
         const opportunityId =
           original &&
           original.recurrence.kind === "occurrence" &&
@@ -786,6 +829,7 @@ export function useEventMutations(
       queryClient,
       source,
       isTargetReadOnly,
+      blockReconnectRequiredCalendar,
       createMutation.mutate,
       deleteMutation.mutate,
       replaceMutation.mutate,

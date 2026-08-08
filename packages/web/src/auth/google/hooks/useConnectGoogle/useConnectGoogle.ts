@@ -4,6 +4,10 @@ import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { AuthApi } from "@web/api/auth.api";
 import {
+  isAccountReconnectRequired,
+  isConnectionReconnectRequired,
+} from "@web/auth/google/state/google.reconnect.state";
+import {
   noteGoogleSyncRefreshImproved,
   refreshGoogleSync,
   useGoogleSyncRefreshSnapshot,
@@ -45,7 +49,14 @@ export const useConnectGoogle = (
   );
   const scopedConnection = options?.connection;
   const syncConnection = scopedConnection ?? primaryConnection;
-  const state = scopedConnection?.connectionState ?? aggregateState;
+  const scopedNeedsReconnect =
+    scopedConnection != null &&
+    (scopedConnection.connectionState === "RECONNECT_REQUIRED" ||
+      isConnectionReconnectRequired(scopedConnection.id) ||
+      isAccountReconnectRequired(scopedConnection.accountEmail));
+  const state = scopedNeedsReconnect
+    ? "RECONNECT_REQUIRED"
+    : (scopedConnection?.connectionState ?? aggregateState);
   const queryClient = useQueryClient();
   const [isConnecting, setIsConnecting] = useState(false);
   // Sync guard so rapid re-clicks before React re-renders cannot start a

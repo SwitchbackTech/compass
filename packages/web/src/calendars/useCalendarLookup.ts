@@ -1,5 +1,11 @@
+import { useSyncExternalStore } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
+import {
+  getGoogleReconnectRequiredVersion,
+  isAccountReconnectRequired,
+  subscribeToGoogleReconnectRequired,
+} from "@web/auth/google/state/google.reconnect.state";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { type CrossAccountDuplicate } from "@web/common/types/web.event.types";
 
@@ -52,6 +58,13 @@ function getCalendarLookup(
  */
 export function useCalendarLookup(): ReadonlyMap<CalendarId, Calendar> {
   const { data } = useCalendarsQuery();
+  // Re-render grid/form consumers when a session reconnect override flips so
+  // isEventReadOnly starts treating that account's events as read-only.
+  useSyncExternalStore(
+    subscribeToGoogleReconnectRequired,
+    getGoogleReconnectRequiredVersion,
+    getGoogleReconnectRequiredVersion,
+  );
 
   return getCalendarLookup(data);
 }
@@ -118,6 +131,7 @@ export const isGridEventContentReadOnly = (event: {
  *   reader calendar whose real fields the server never sends, so there is
  *   nothing that could round-trip through an edit; forced read-only
  *   regardless of calendar capability, or
+ * - its calendar belongs to a Google account that needs reconnect, or
  * - its calendar resolves in the lookup and that calendar's
  *   capabilities.canWrite is false.
  *
@@ -137,6 +151,10 @@ export function isEventReadOnly(
 
   const calendar = lookup.get(calendarId);
   if (!calendar) return false;
+
+  if (isAccountReconnectRequired(calendar.accountEmail)) {
+    return true;
+  }
 
   return !calendar.capabilities.canWrite;
 }

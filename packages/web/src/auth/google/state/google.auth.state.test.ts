@@ -3,14 +3,22 @@ import {
   isGoogleRevoked,
   markGoogleAsRevoked,
 } from "./google.auth.state";
+import {
+  hasGoogleReconnectRequired,
+  markAccountReconnectRequired,
+  resetGoogleReconnectRequiredForTests,
+} from "./google.reconnect.state";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 describe("google-auth-state.util", () => {
   beforeEach(() => {
     clearGoogleRevokedState();
+    resetGoogleReconnectRequiredForTests();
   });
 
   afterEach(() => {
     clearGoogleRevokedState();
+    resetGoogleReconnectRequiredForTests();
   });
 
   describe("markGoogleAsRevoked", () => {
@@ -22,13 +30,19 @@ describe("google-auth-state.util", () => {
   });
 
   describe("clearGoogleRevokedState", () => {
-    it("should clear the in-memory revoked flag", () => {
+    it("should clear the in-memory revoked flag and reconnect overrides", () => {
       markGoogleAsRevoked();
+      markAccountReconnectRequired({
+        connectionId: "conn-1",
+        accountEmail: "a@example.com",
+      });
       expect(isGoogleRevoked()).toBe(true);
+      expect(hasGoogleReconnectRequired()).toBe(true);
 
       clearGoogleRevokedState();
 
       expect(isGoogleRevoked()).toBe(false);
+      expect(hasGoogleReconnectRequired()).toBe(false);
     });
   });
 

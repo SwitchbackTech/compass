@@ -82,7 +82,7 @@ Use this guide to validate:
 - Google-side calendar add/rename/recolor/hide/delete reconciling into Compass
 - watch repair self-healing after an expired/deleted watch
 - freeBusyReader calendars showing availability without event details
-- revoked access pruning Google data while Compass-local data survives
+- revoked access keeping last-known events read-only while other accounts stay usable
 - status surfaces staying congruent through recovery and action-required paths
 
 Do not use this guide to validate:
@@ -326,8 +326,9 @@ save an event.
 
 ### Expected Results
 
-- As soon as revocation is known, a reconnect toast appears (current copy:
-  “Google Calendar disconnected”, with **Reconnect Google Calendar**).
+- As soon as revocation is known, a reconnect toast appears that **names the
+  affected account** (for example “Google Calendar disconnected
+  (`lance.essert@gmail.com`)”) with **Reconnect Google Calendar**.
 - Sidebar status for the affected account shows reconnect-required copy and a
   **Reconnect Google Calendar** action — not “Calendar connected”, not
   “Syncing in the background…”, and not a calm/healthy state.
@@ -337,8 +338,11 @@ save an event.
 - The user does not need a failed create/edit (`410` / `GOOGLE_REVOKED`) to
   learn that reconnect is required; that failure path is a last resort, not
   the primary signal.
-- Google-origin events are removed from the Compass calendar once revocation
-  is applied; Compass-originated local events remain visible.
+- Last-known Google events for the affected account remain visible as
+  **read-only** (inspectable, not editable/deletable/draggable). Creates
+  cannot target that account’s calendars.
+- If another Google account is still healthy, its events stay writable and
+  syncing continues for that account.
 - The UI does not later flip into a false healthy or “syncing in the
   background” state while the underlying Google access remains revoked.
 
@@ -369,13 +373,15 @@ leave a stale “everything is fine” or stale “please reconnect” message b
 
 - Throughout the wait, toast / sidebar / Settings never contradict each other
   for more than a brief transition: reconnect-required and healthy/syncing
-  must not be shown as simultaneous truths.
+  must not be shown as simultaneous truths for the affected account.
 - A reconnect toast does not linger after the account is healthy again.
 - After a successful reconnect, sidebar and Settings both settle to “Calendar
   connected” (optional “Updated …” timestamp), with no reconnect CTA and no
   disconnected toast.
-- The user is never encouraged to believe CRUD will succeed while Compass
-  still needs OAuth help.
+- Attempting create/edit/delete on the affected account is hard-blocked and
+  steers the user back to reconnect rather than sending a doomed `410`.
+- UpNext / “All clear” is unrelated to sync health and is not required to
+  change for this scenario.
 
 ---
 
@@ -545,14 +551,14 @@ blocks on the grid, with no event content and no way to interact with them.
 
 ---
 
-## Scenario 13: Revoked Access Prunes Google Data While Compass-Local Data Survives
+## Scenario 13: Revoked Access Keeps Read-Only Google Data And Protects Other Accounts
 
 ### UX
 
-Revoking Compass's Google access removes every Google-sourced calendar and
-its events — not just the primary one — while the Compass-local calendar
-and anything created without Google (password-only events)
-is never touched.
+When Google access for an account becomes unusable, Compass keeps that
+account’s last-known events visible as read-only and requires reconnect.
+Compass-local data and any still-healthy Google accounts are never demoted
+or wiped by the broken account’s failure.
 
 ### Steps
 
@@ -561,24 +567,24 @@ is never touched.
    Compass-local calendar.
 2. Connect Google Calendar (see Scenario 1) with multiple calendars
    available — at least one writable calendar and, if possible, a reader or
-   `freeBusyReader` calendar too. Let import complete.
+   `freeBusyReader` calendar too. Let import complete. Prefer a second
+   healthy Google account when available.
 3. Confirm events/availability from every Google calendar are visible,
    alongside your original Compass-local events.
-4. Revoke Compass's access at `myaccount.google.com/permissions` (see
-   Scenario 7).
+4. Revoke Compass's access for one account at
+   `myaccount.google.com/permissions` (see Scenario 7).
 5. Return to Compass and wait for the revocation to be detected.
 
 ### Expected Results
 
-- Every Google-sourced calendar disappears from the sidebar, not just the
-  primary one.
-- All events and availability blocks from every Google calendar are
-  removed.
-- The Compass-local calendar, and the scheduled events you
-  created on it before ever connecting Google, remain exactly as they
-  were — nothing about the account or local data is deleted.
+- The affected account’s calendars remain listed; their events stay visible
+  but are read-only until reconnect.
+- Writes targeting the affected account are hard-blocked with a reconnect
+  path; a healthy sibling account (if present) still accepts CRUD and sync.
+- Compass-local events created before Google was connected remain exactly as
+  they were.
 - The toast and reconnect-prompt behavior matches Scenario 7 (early,
-  congruent, action-required — not discovered first via a failed event write).
+  congruent, named account — not discovered first via a failed event write).
 
 ---
 
@@ -595,18 +601,21 @@ If time is limited, run these checks before shipping Google sync changes:
 7. An ATTENTION state shows warning status copy and a **Refresh calendar** button.
 8. After the refresh completes, status returns to HEALTHY.
 9. Returning to a HEALTHY/ATTENTION tab after 30+ seconds hidden triggers a silent refresh with no failure toast.
-10. Revoking access shows reconnect-required UX early (toast + account status)
-    before any failed event create/edit, and removes Google-origin events.
-11. While reconnect is required, toast / sidebar / Settings tell one story —
-    never “disconnected” beside “Calendar connected” or “Syncing in the
-    background…”.
-12. Re-connecting after revocation triggers a fresh import, repopulates Google
-    events, and clears every reconnect warning together.
+10. Revoking access shows reconnect-required UX early (named-account toast +
+    account status) before any failed event create/edit; last-known events
+    stay visible read-only and writes to that account are hard-blocked.
+11. While reconnect is required, toast / sidebar / Settings tell one story for
+    the affected account — never “disconnected” beside “Calendar connected”
+    or “Syncing in the background…”. A healthy sibling account keeps working.
+12. Re-connecting after revocation triggers a fresh import, restores writes,
+    and clears every reconnect warning together.
 13. Hiding/showing a calendar in the sidebar persists across reload, and the server excludes hidden-calendar events from event reads.
 14. A Google-side calendar add/rename/recolor/hide/delete reconciles into the sidebar without a full reset.
 15. Reopening the app after a watch expires or is deleted repairs it automatically, with no manual action.
 16. A freeBusyReader calendar's busy blocks show no title, details, or event actions.
-17. Revoking access prunes only Google-sourced calendars/events; the Compass-local calendar and its events survive.
+17. Revoking one account keeps its last-known events read-only, hard-blocks
+    its writes, and leaves Compass-local data plus any healthy sibling
+    Google account usable.
 18. A known terminal reconnect-required state does not later flicker into a
     false healthy or background-syncing state while Google access remains
     revoked.

@@ -1,4 +1,10 @@
-import { type FC, useEffect, useRef, useState } from "react";
+import {
+  type FC,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
@@ -10,6 +16,10 @@ import {
   googleSyncSupportMailto,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useDisconnectGoogleAccount } from "@web/auth/google/hooks/useDisconnectGoogleAccount";
+import {
+  getGoogleReconnectRequiredVersion,
+  subscribeToGoogleReconnectRequired,
+} from "@web/auth/google/state/google.reconnect.state";
 import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
 import {
   selectGoogleSyncConnections,
@@ -80,6 +90,13 @@ export const SettingsModal: FC = () => {
   const { data } = useCalendarsQuery();
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
   const accountEmailOrder = useConnectedAccountEmails();
+  // Session reconnect overrides must refresh Accounts status + writable set
+  // even before Sync metadata catches up to actionRequired.
+  useSyncExternalStore(
+    subscribeToGoogleReconnectRequired,
+    getGoogleReconnectRequiredVersion,
+    getGoogleReconnectRequiredVersion,
+  );
   const writableCalendars = getWritableCalendars(data ?? [], {
     hasConnectedAccount: accountEmailOrder.length > 0,
   }).sort(compareCalendars(accountEmailOrder));

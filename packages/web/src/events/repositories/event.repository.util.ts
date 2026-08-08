@@ -1,7 +1,9 @@
 /**
  * Repository selection entry point.
  * This factory decides whether event reads/writes go to local IndexedDB or the remote API.
- * Google connection state, remembered auth state, and current session state decide the target.
+ * Remembered auth state, backend availability, and current session state decide the target.
+ * Per-account Google reconnect-required is handled by write gates / read-only UI, not by
+ * flipping the whole app onto IndexedDB.
  * Reads flow through TanStack Query (see event.query.options.ts + the useXEventsQuery
  * hooks, which resolve the source via event.repository.source.store); mutations flow
  * through the event operations/listeners. The reactive source store must be refreshed at
@@ -12,7 +14,6 @@
 
 import { isBackendUnavailable } from "@web/api/util/backend-unavailable-error.util";
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
-import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
 import {
   createGetEventRepositoryBySource,
   createGetEventRepositorySource,
@@ -26,25 +27,22 @@ import { RemoteEventRepository } from "./remote.event.repository";
 export const getEventRepositorySource = createGetEventRepositorySource({
   hasUserEverAuthenticated,
   isBackendUnavailable,
-  isGoogleRevoked,
 });
 
 /**
  * Factory function to get the appropriate event repository based on session and authentication state.
  *
  * Repository selection logic:
- * 1. If Google disconnected Compass: Use LocalEventRepository
- *    - Graceful degradation until user re-authenticates
- *    - Prevents API errors from failed Google token refresh
- * 2. If the backend is unavailable: Use LocalEventRepository
+ * 1. If the backend is unavailable: Use LocalEventRepository
  *    - Keeps frontend-only development and self-hosted UI-only deployments usable
  *    - Events remain saved in IndexedDB instead of failing remote requests
- * 3. If user has EVER authenticated: Use RemoteEventRepository
+ * 2. If user has EVER authenticated: Use RemoteEventRepository
  *    - Prevents remote account events from disappearing when the session is temporarily missing
  *    - Remote requests can surface the auth problem instead of silently saving locally
- * 4. If a session exists: Use RemoteEventRepository
+ *    - A single Google account needing reconnect does not demote healthy accounts
+ * 3. If a session exists: Use RemoteEventRepository
  *    - Newly authenticated users persist through the backend even before remembered auth state updates
- * 5. If user has NEVER authenticated: Use LocalEventRepository (IndexedDB)
+ * 4. If user has NEVER authenticated: Use LocalEventRepository (IndexedDB)
  *    - Events stored locally until user decides to sign in
  *
  * @param sessionExists - Whether a session currently exists (from session.doesSessionExist())

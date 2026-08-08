@@ -25,16 +25,36 @@ describe("GoogleReconnectToast", () => {
 
   beforeEach(() => {
     mockConnect.mockClear();
+    mockUseConnectGoogle.mockClear();
     mocks.error.mockClear();
     mocks.dismiss.mockClear();
     mocks.isActive.mockReturnValue(false);
     registerToastPort(port);
   });
 
-  const renderToast = () =>
-    render(<GoogleReconnectToast toastId="google-revoked-api" />);
+  const renderToast = (accountEmail?: string) =>
+    render(
+      <GoogleReconnectToast
+        accountEmail={accountEmail}
+        connectionId="conn-1"
+        toastId="google-revoked-api"
+      />,
+    );
 
-  it("explains the disconnect without blaming the user or implying data loss", () => {
+  it("names the affected account when provided", () => {
+    renderToast("lance@example.com");
+
+    expect(
+      screen.getByText("Google Calendar disconnected (lance@example.com)"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Access for lance@example.com expired or was revoked. Your events are still safe in Google. Reconnect and Compass will re-import them.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("falls back to generic copy when no account email is known", () => {
     renderToast();
 
     expect(
@@ -48,7 +68,7 @@ describe("GoogleReconnectToast", () => {
   });
 
   it("dismisses itself and starts connect() on click", () => {
-    renderToast();
+    renderToast("lance@example.com");
 
     fireEvent.click(
       screen.getByRole("button", { name: "Reconnect Google Calendar" }),
@@ -71,8 +91,17 @@ describe("showGoogleReconnectToast", () => {
   it("does not stack a second toast while one is already visible", () => {
     mocks.isActive.mockReturnValue(true);
 
-    showGoogleReconnectToast();
+    showGoogleReconnectToast({ accountEmail: "lance@example.com" });
 
     expect(mocks.error).not.toHaveBeenCalled();
+  });
+
+  it("passes the affected account into the toast content", () => {
+    showGoogleReconnectToast({
+      accountEmail: "lance@example.com",
+      connectionId: "conn-1",
+    });
+
+    expect(mocks.error).toHaveBeenCalledTimes(1);
   });
 });

@@ -9,18 +9,15 @@ import { beforeEach, describe, expect, it } from "bun:test";
 describe("getEventRepositorySource", () => {
   let hasUserEverAuthenticated = false;
   let isBackendUnavailable = false;
-  let isGoogleRevoked = false;
 
   const getEventRepositorySource = createGetEventRepositorySource({
     hasUserEverAuthenticated: () => hasUserEverAuthenticated,
     isBackendUnavailable: () => isBackendUnavailable,
-    isGoogleRevoked: () => isGoogleRevoked,
   });
 
   beforeEach(() => {
     hasUserEverAuthenticated = false;
     isBackendUnavailable = false;
-    isGoogleRevoked = false;
   });
 
   it("returns 'remote' when a session exists", () => {
@@ -37,17 +34,10 @@ describe("getEventRepositorySource", () => {
     expect(getEventRepositorySource(false)).toBe("remote");
   });
 
-  it("returns 'local' when Google disconnected Compass", () => {
-    isGoogleRevoked = true;
-
-    expect(getEventRepositorySource(true)).toBe("local");
-  });
-
-  it("returns 'local' when Google disconnected Compass for a returning user", () => {
+  it("keeps remote for authenticated sessions so a reconnect-required sibling cannot demote healthy accounts", () => {
     hasUserEverAuthenticated = true;
-    isGoogleRevoked = true;
 
-    expect(getEventRepositorySource(false)).toBe("local");
+    expect(getEventRepositorySource(true)).toBe("remote");
   });
 
   it("returns 'local' for a returning user when the backend is unavailable", () => {
@@ -67,20 +57,17 @@ describe("getEventRepositorySource", () => {
 describe("getEventRepository", () => {
   let hasUserEverAuthenticated = false;
   let isBackendUnavailable = false;
-  let isGoogleRevoked = false;
 
   const getEventRepository = createGetEventRepository({
     createLocalEventRepository: () => new LocalEventRepository(),
     createRemoteEventRepository: () => new RemoteEventRepository(),
     hasUserEverAuthenticated: () => hasUserEverAuthenticated,
     isBackendUnavailable: () => isBackendUnavailable,
-    isGoogleRevoked: () => isGoogleRevoked,
   });
 
   beforeEach(() => {
     hasUserEverAuthenticated = false;
     isBackendUnavailable = false;
-    isGoogleRevoked = false;
   });
 
   it("uses remote storage when a session exists", () => {
@@ -95,19 +82,6 @@ describe("getEventRepository", () => {
     hasUserEverAuthenticated = true;
 
     expect(getEventRepository(false)).toBeInstanceOf(RemoteEventRepository);
-  });
-
-  it("uses local storage when Google disconnected Compass", () => {
-    isGoogleRevoked = true;
-
-    expect(getEventRepository(true)).toBeInstanceOf(LocalEventRepository);
-  });
-
-  it("uses local storage when Google disconnected Compass for a returning user", () => {
-    hasUserEverAuthenticated = true;
-    isGoogleRevoked = true;
-
-    expect(getEventRepository(false)).toBeInstanceOf(LocalEventRepository);
   });
 
   it("uses local storage for a returning user when the backend is unavailable", () => {

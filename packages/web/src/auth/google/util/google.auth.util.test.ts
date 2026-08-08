@@ -1,8 +1,10 @@
 import {
-  clearGoogleRevokedState,
-  isGoogleRevoked,
-  markGoogleAsRevoked,
-} from "@web/auth/google/state/google.auth.state";
+  clearAllGoogleReconnectRequired,
+  hasGoogleReconnectRequired,
+  isAccountReconnectRequired,
+  markAccountReconnectRequired,
+  resetGoogleReconnectRequiredForTests,
+} from "@web/auth/google/state/google.reconnect.state";
 import {
   createGoogleAuthUtil,
   LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
@@ -24,18 +26,20 @@ const mockShowReconnectToast = mock();
 const mockRefreshUserMetadata = mock();
 const mockCloseStream = mock();
 const mockOpenStream = mock();
-const mockRefreshEventRepositorySource = mock();
-const mockRemoveEventsByGoogleCalendars = mock();
-const mockRemoveEventQueries = mock();
+const mockMarkAccountReconnectRequired = mock((target) =>
+  markAccountReconnectRequired(target),
+);
+const mockResolveRevokedAccount = mock(() => ({
+  connectionId: "conn-1",
+  accountEmail: "lance@example.com",
+}));
 
 const googleAuthUtil = createGoogleAuthUtil({
   closeStream: mockCloseStream,
-  markGoogleAsRevoked,
   openStream: mockOpenStream,
-  refreshEventRepositorySource: mockRefreshEventRepositorySource,
   refreshUserMetadata: mockRefreshUserMetadata,
-  removeEventsByGoogleCalendars: mockRemoveEventsByGoogleCalendars,
-  removeEventQueries: mockRemoveEventQueries,
+  resolveRevokedAccount: mockResolveRevokedAccount,
+  markAccountReconnectRequired: mockMarkAccountReconnectRequired,
   showReconnectToast: mockShowReconnectToast,
   syncLocalEventsToCloud: mockSyncLocalEventsToCloud,
   toastError: mockToastError,
@@ -52,15 +56,13 @@ describe("google-auth.util", () => {
     mockRefreshUserMetadata.mockClear();
     mockCloseStream.mockClear();
     mockOpenStream.mockClear();
-    mockRefreshEventRepositorySource.mockClear();
-    mockRemoveEventsByGoogleCalendars.mockClear();
-    mockRemoveEventQueries.mockClear();
-
-    clearGoogleRevokedState();
+    mockMarkAccountReconnectRequired.mockClear();
+    mockResolveRevokedAccount.mockClear();
+    resetGoogleReconnectRequiredForTests();
   });
 
   afterEach(() => {
-    clearGoogleRevokedState();
+    clearAllGoogleReconnectRequired();
   });
 
   describe("syncLocalEvents", () => {
@@ -147,24 +149,33 @@ describe("google-auth.util", () => {
   });
 
   describe("handleGoogleRevoked", () => {
-    it("shows the actionable reconnect toast", () => {
-      handleGoogleRevoked();
+    it("marks the affected account, shows a named reconnect toast, and refreshes metadata", () => {
+      handleGoogleRevoked({ calendarId: "cal-1" });
 
-      expect(mockShowReconnectToast).toHaveBeenCalledTimes(1);
-    });
-
-    it("refreshes user metadata (not clears) so the UI lands in RECONNECT_REQUIRED, and drops Google-origin events", () => {
-      handleGoogleRevoked();
-
+      expect(mockResolveRevokedAccount).toHaveBeenCalledWith({
+        calendarId: "cal-1",
+      });
+      expect(mockMarkAccountReconnectRequired).toHaveBeenCalledWith({
+        connectionId: "conn-1",
+        accountEmail: "lance@example.com",
+      });
+      expect(mockShowReconnectToast).toHaveBeenCalledWith({
+        connectionId: "conn-1",
+        accountEmail: "lance@example.com",
+      });
       expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
-      expect(mockRemoveEventsByGoogleCalendars).toHaveBeenCalledTimes(1);
+      expect(isAccountReconnectRequired("lance@example.com")).toBe(true);
+      expect(hasGoogleReconnectRequired()).toBe(true);
     });
 
-    it("re-keys queries to local and removes stale remote cache entries", () => {
+    it("does not prune Google events or flip the app onto local storage", () => {
       handleGoogleRevoked();
 
-      expect(mockRefreshEventRepositorySource).toHaveBeenCalledTimes(1);
-      expect(mockRemoveEventQueries).toHaveBeenCalledTimes(1);
+      // Former side effects were removeEventsByGoogleCalendars /
+      // refreshEventRepositorySource / removeEventQueries / markGoogleAsRevoked.
+      // They are intentionally absent from the factory dependencies now.
+      expect(mockShowReconnectToast).toHaveBeenCalledTimes(1);
+      expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
     });
 
     it("reconnects SSE stream so the client gets a fresh session after revocation", () => {
@@ -172,12 +183,6 @@ describe("google-auth.util", () => {
 
       expect(mockCloseStream).toHaveBeenCalledTimes(1);
       expect(mockOpenStream).toHaveBeenCalledTimes(1);
-    });
-
-    it("marks Google as revoked in session state", () => {
-      handleGoogleRevoked();
-
-      expect(isGoogleRevoked()).toBe(true);
     });
   });
 });

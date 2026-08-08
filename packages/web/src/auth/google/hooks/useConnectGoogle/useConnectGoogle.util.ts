@@ -1,11 +1,31 @@
 import { ArrowsClockwiseIcon, CloudArrowUpIcon } from "@phosphor-icons/react";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
+import {
+  isAccountReconnectRequired,
+  isConnectionReconnectRequired,
+} from "@web/auth/google/state/google.reconnect.state";
 import { type SyncStatus } from "@web/calendars/sync-status.types";
 import {
   type CommandActionIcon,
   type GoogleUiConfig,
   type GoogleUiState,
 } from "./useConnectGoogle.types";
+
+const RECONNECT_STATUS: SyncStatus = {
+  variant: "error",
+  text: "Calendar needs reconnecting",
+};
+
+/** Product enum, Sync disconnected, or session override after a live 410. */
+export const connectionNeedsReconnect = (
+  state: GoogleUiState,
+  connection?: GoogleSyncConnectionSummary | null,
+): boolean =>
+  state === "RECONNECT_REQUIRED" ||
+  connection?.connectionState === "RECONNECT_REQUIRED" ||
+  connection?.state === "disconnected" ||
+  isConnectionReconnectRequired(connection?.id) ||
+  isAccountReconnectRequired(connection?.accountEmail);
 
 const CONNECT_ICON: CommandActionIcon = CloudArrowUpIcon;
 const REFRESH_ICON: CommandActionIcon = ArrowsClockwiseIcon;
@@ -200,13 +220,18 @@ export type GoogleSyncStatusOptions = {
 };
 
 // Prefer Sync vocabulary when a connection summary is present; fall back to the
-// collapsed product enum for legacy deployments.
+// collapsed product enum for legacy deployments. Reconnect-required always wins
+// over healthy/catchingUp so a stale Sync summary cannot contradict a toast.
 export const getGoogleSyncStatus = (
   state: GoogleUiState,
   connection?: GoogleSyncConnectionSummary | null,
   nowMs: number = Date.now(),
   options: GoogleSyncStatusOptions = {},
 ): SyncStatus => {
+  if (connectionNeedsReconnect(state, connection)) {
+    return RECONNECT_STATUS;
+  }
+
   // A connection summary describes durable provider work. Local metadata
   // loading and a routine incremental pull must not replace a calm, usable
   // calendar with transient "checking" or "syncing" copy.
@@ -258,7 +283,7 @@ export const getGoogleSyncStatus = (
         text: "Calendar updates are taking longer than usual. Try Refresh, or reconnect if this continues.",
       };
     case "RECONNECT_REQUIRED":
-      return { variant: "error", text: "Calendar needs reconnecting" };
+      return RECONNECT_STATUS;
     case "NOT_CONNECTED":
       return null;
   }
@@ -289,11 +314,14 @@ export const getSidebarSyncStatus = ({
   if (isConnecting) {
     return {
       variant: "syncing",
-      text:
-        state === "RECONNECT_REQUIRED"
-          ? "Reconnecting your calendar…"
-          : "Connecting your calendar…",
+      text: connectionNeedsReconnect(state, connection)
+        ? "Reconnecting your calendar…"
+        : "Connecting your calendar…",
     };
+  }
+
+  if (connectionNeedsReconnect(state, connection)) {
+    return RECONNECT_STATUS;
   }
 
   if (
@@ -334,7 +362,7 @@ export const getSidebarSyncStatus = ({
         };
       case "actionRequired":
       case "disconnected":
-        return { variant: "error", text: "Calendar needs reconnecting" };
+        return RECONNECT_STATUS;
       case "connecting":
       case "importing":
         return connection.lastHealthyAt

@@ -1,7 +1,9 @@
 import { type toast } from "react-toastify";
 import { Status } from "@core/errors/status.codes";
 import { type ApiError } from "@web/api/api.types";
+import { type GoogleReconnectTarget } from "@web/auth/google/state/google.reconnect.state";
 import { getToastDefaultOptions } from "@web/common/constants/toast.constants";
+
 export interface SyncLocalEventsResult {
   syncedCount: number;
   success: boolean;
@@ -13,17 +15,21 @@ export const LOCAL_EVENTS_SYNC_ERROR_MESSAGE =
 export const LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE =
   "You were signed out before Compass could save your events to the cloud. Sign in again to finish. Your changes are still safe on this device.";
 
+export type GoogleRevokedContext = {
+  calendarId?: string | null;
+  connectionId?: string | null;
+  accountEmail?: string | null;
+};
+
 type GoogleAuthUtilDependencies = {
   closeStream: () => void;
-  markGoogleAsRevoked: () => void;
   openStream: () => void;
-  refreshEventRepositorySource: (sessionExists?: boolean) => void;
   refreshUserMetadata: () => void;
-  // B14: drops cached events belonging to a google-provider calendar (by id),
-  // replacing the legacy origin-based prune.
-  removeEventsByGoogleCalendars: () => void;
-  removeEventQueries: () => void;
-  showReconnectToast: () => void;
+  resolveRevokedAccount: (
+    context?: GoogleRevokedContext,
+  ) => GoogleReconnectTarget;
+  markAccountReconnectRequired: (target: GoogleReconnectTarget) => void;
+  showReconnectToast: (target: GoogleReconnectTarget) => void;
   syncLocalEventsToCloud: () => Promise<number>;
   toastError: typeof toast.error;
 };
@@ -33,30 +39,23 @@ const getApiErrorStatus = (error: Error | undefined): number | undefined =>
 
 export function createGoogleAuthUtil({
   closeStream,
-  markGoogleAsRevoked,
   openStream,
-  refreshEventRepositorySource,
   refreshUserMetadata,
-  removeEventsByGoogleCalendars,
-  removeEventQueries,
+  resolveRevokedAccount,
+  markAccountReconnectRequired,
   showReconnectToast,
   syncLocalEventsToCloud,
   toastError,
 }: GoogleAuthUtilDependencies) {
-  const handleGoogleRevoked = () => {
-    showReconnectToast();
+  const handleGoogleRevoked = (context?: GoogleRevokedContext) => {
+    const target = resolveRevokedAccount(context);
+    markAccountReconnectRequired(target);
+    showReconnectToast(target);
 
-    markGoogleAsRevoked();
-    // Source now resolves to "local"; re-key active queries so their next fetch
-    // hits IndexedDB, then drop the stale remote cache entries.
-    refreshEventRepositorySource();
-
-    // The server prunes before notifying, so this refetch lands in
-    // RECONNECT_REQUIRED and the sidebar offers "Reconnect" right away.
+    // Refresh metadata so Sync's actionRequired row can confirm the account,
+    // but keep last-known events and the remote repository so healthy sibling
+    // accounts continue CRUD.
     refreshUserMetadata();
-
-    removeEventsByGoogleCalendars();
-    removeEventQueries();
 
     closeStream();
     openStream();

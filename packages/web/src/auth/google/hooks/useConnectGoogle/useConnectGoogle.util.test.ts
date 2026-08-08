@@ -139,6 +139,42 @@ describe("getGoogleSyncStatus", () => {
     });
   });
 
+  it("keeps reconnect-required over a lagging Sync catchingUp/healthy summary", () => {
+    expect(
+      getGoogleSyncStatus(
+        "RECONNECT_REQUIRED",
+        {
+          id: "c1",
+          state: "catchingUp",
+          stateReason: null,
+          lastSyncedAt: "2026-07-24T11:45:00.000Z",
+          lastHealthyAt: "2026-07-24T11:45:00.000Z",
+          accountEmail: "a@example.com",
+          connectionState: "IMPORTING",
+        },
+        nowMs,
+      ),
+    ).toEqual({
+      variant: "error",
+      text: "Calendar needs reconnecting",
+    });
+
+    expect(
+      getGoogleSyncStatus("HEALTHY", {
+        id: "c1",
+        state: "healthy",
+        stateReason: null,
+        lastSyncedAt: "2026-07-24T12:00:00.000Z",
+        lastHealthyAt: "2026-07-24T12:00:00.000Z",
+        accountEmail: "a@example.com",
+        connectionState: "RECONNECT_REQUIRED",
+      }),
+    ).toEqual({
+      variant: "error",
+      text: "Calendar needs reconnecting",
+    });
+  });
+
   it("shows setup copy for a connection that has never been healthy", () => {
     expect(
       getGoogleSyncStatus("IMPORTING", {

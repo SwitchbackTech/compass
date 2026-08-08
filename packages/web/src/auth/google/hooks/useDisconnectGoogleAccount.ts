@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { AuthApi } from "@web/api/auth.api";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
+import { clearAccountReconnectRequired } from "@web/auth/google/state/google.reconnect.state";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
@@ -34,6 +35,7 @@ export function useDisconnectGoogleAccount(): {
       return AuthApi.disconnectGoogleConnection(connectionId)
         .then(async () => {
           // Show success confirmation and dismiss any stale reconnect warning.
+          clearAccountReconnectRequired({ connectionId, accountEmail });
           getToast().dismiss(GOOGLE_REVOKED_TOAST_ID);
           showStatusToast(
             ACCOUNT_DISCONNECTED_TOAST_ID,

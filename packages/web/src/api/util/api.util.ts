@@ -125,8 +125,17 @@ export const getResponseData = async (response: Response): Promise<unknown> => {
 };
 
 interface ApiErrorResponseDependencies {
-  onGoogleRevoked?: () => void;
+  onGoogleRevoked?: (context?: { calendarId?: string | null }) => void;
 }
+
+const getRequestCalendarId = (body: unknown): string | null | undefined => {
+  if (!body || typeof body !== "object") return undefined;
+  if (!("calendarId" in body)) return undefined;
+  const calendarId = (body as { calendarId?: unknown }).calendarId;
+  return typeof calendarId === "string" || calendarId === null
+    ? calendarId
+    : undefined;
+};
 
 export const handleErrorResponse = async (
   error: ApiError,
@@ -154,7 +163,9 @@ export const handleErrorResponse = async (
       throw new Error("Google revocation handler is not configured");
     }
 
-    onGoogleRevoked();
+    onGoogleRevoked({
+      calendarId: getRequestCalendarId(error.config?.body),
+    });
     throw error;
   }
 

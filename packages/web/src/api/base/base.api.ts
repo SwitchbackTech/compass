@@ -28,6 +28,7 @@ const request = async <T>(
   config: ApiMethodConfig = {},
 ): Promise<ApiResponse<T>> => {
   const requestConfig = {
+    body,
     headers: config.headers,
     method,
     skipSessionRecovery: config.skipSessionRecovery,
@@ -86,7 +87,9 @@ const request = async <T>(
 export const BaseApi = {
   defaults: {
     adapter: undefined as ApiAdapter | undefined,
-    onGoogleRevoked: undefined as (() => void) | undefined,
+    onGoogleRevoked: undefined as
+      | ((context?: { calendarId?: string | null }) => void)
+      | undefined,
     withCredentials: true,
   },
   delete<T>(url: string, config?: ApiMethodConfig) {

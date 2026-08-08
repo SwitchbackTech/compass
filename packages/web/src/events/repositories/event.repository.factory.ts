@@ -7,13 +7,11 @@ type EventRepositoryDependencies = {
   createRemoteEventRepository: () => EventRepository;
   hasUserEverAuthenticated: () => boolean;
   isBackendUnavailable: () => boolean;
-  isGoogleRevoked: () => boolean;
 };
 
 export function createGetEventRepositorySource({
   hasUserEverAuthenticated,
   isBackendUnavailable,
-  isGoogleRevoked,
 }: Omit<
   EventRepositoryDependencies,
   "createLocalEventRepository" | "createRemoteEventRepository"
@@ -21,10 +19,8 @@ export function createGetEventRepositorySource({
   return function getEventRepositorySource(
     sessionExists: boolean,
   ): EventRepositorySource {
-    if (isGoogleRevoked()) {
-      return "local";
-    }
-
+    // Per-account reconnect-required must not demote healthy Google accounts
+    // to IndexedDB. Write gates block the broken account; remote stays active.
     if (isBackendUnavailable()) {
       return "local";
     }
@@ -62,12 +58,10 @@ export function createGetEventRepository({
   createRemoteEventRepository,
   hasUserEverAuthenticated,
   isBackendUnavailable,
-  isGoogleRevoked,
 }: EventRepositoryDependencies) {
   const getEventRepositorySource = createGetEventRepositorySource({
     hasUserEverAuthenticated,
     isBackendUnavailable,
-    isGoogleRevoked,
   });
   const getEventRepositoryBySource = createGetEventRepositoryBySource({
     createLocalEventRepository,
