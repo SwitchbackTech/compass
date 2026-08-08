@@ -76,7 +76,7 @@ export function WelcomeModal() {
       ariaLabel="Welcome to Compass Calendar"
       backdropClassName="overflow-y-auto py-8"
       closing={closing}
-      onDismiss={() => dismiss()}
+      onDismiss={dismiss}
       widthClassName="w-120"
     >
       <div className="flex w-full flex-col gap-6">

@@ -158,20 +158,12 @@ describe("WelcomeModal", () => {
       </>,
     );
 
-    const dialog = screen.getByRole("dialog", {
-      name: "Welcome to Compass Calendar",
-    });
     const signUp = screen.getByRole("button", { name: "Sign up" });
     expect(signUp).toHaveFocus();
 
-    const focusables = Array.from(
-      dialog.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-      ),
-    );
-    const last = focusables[focusables.length - 1];
-    last.focus();
-    expect(last).toHaveFocus();
+    const terms = screen.getByRole("link", { name: "Terms" });
+    terms.focus();
+    expect(terms).toHaveFocus();
 
     await user.tab();
     expect(signUp).toHaveFocus();

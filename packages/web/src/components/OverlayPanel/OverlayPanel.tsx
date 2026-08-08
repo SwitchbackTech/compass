@@ -12,6 +12,9 @@ import { useAppLockReason } from "@web/shortcuts/app-lock";
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+const getFocusableElements = (root: HTMLElement) =>
+  Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+
 interface Props {
   /** Icon or element displayed at the top of the panel */
   icon?: ReactNode;
@@ -71,7 +74,7 @@ export const OverlayPanel = ({
     const panel = panelRef.current;
     if (!panel) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
-    const firstFocusable = panel.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+    const [firstFocusable] = getFocusableElements(panel);
     (firstFocusable ?? panel).focus();
     return () => {
       // Let the Escape key's global handlers finish before restoring focus.
@@ -118,20 +121,17 @@ export const OverlayPanel = ({
       onDismiss();
       return;
     }
-    if (e.key === "Tab" && panelRef.current) {
-      const focusables = Array.from(
-        panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-      );
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
+    if (e.key !== "Tab" || !panelRef.current) return;
+    const focusables = getFocusableElements(panelRef.current);
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
     }
   };
 
