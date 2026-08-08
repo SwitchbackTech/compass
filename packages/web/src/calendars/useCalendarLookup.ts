@@ -1,11 +1,7 @@
-import { useSyncExternalStore } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
-import {
-  getGoogleReconnectRequiredVersion,
-  isAccountReconnectRequired,
-  subscribeToGoogleReconnectRequired,
-} from "@web/auth/google/state/google.reconnect.state";
+import { isCalendarReconnectRequired } from "@web/auth/google/state/google.reconnect.calendar";
+import { useGoogleReconnectRequiredVersion } from "@web/auth/google/state/google.reconnect.state";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { type CrossAccountDuplicate } from "@web/common/types/web.event.types";
 
@@ -60,11 +56,7 @@ export function useCalendarLookup(): ReadonlyMap<CalendarId, Calendar> {
   const { data } = useCalendarsQuery();
   // Re-render grid/form consumers when a session reconnect override flips so
   // isEventReadOnly starts treating that account's events as read-only.
-  useSyncExternalStore(
-    subscribeToGoogleReconnectRequired,
-    getGoogleReconnectRequiredVersion,
-    getGoogleReconnectRequiredVersion,
-  );
+  useGoogleReconnectRequiredVersion();
 
   return getCalendarLookup(data);
 }
@@ -152,7 +144,7 @@ export function isEventReadOnly(
   const calendar = lookup.get(calendarId);
   if (!calendar) return false;
 
-  if (isAccountReconnectRequired(calendar.accountEmail)) {
+  if (isCalendarReconnectRequired(calendar)) {
     return true;
   }
 

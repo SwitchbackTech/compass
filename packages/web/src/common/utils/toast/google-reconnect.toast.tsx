@@ -1,5 +1,6 @@
 import { createElement } from "react";
 import { type Id } from "react-toastify";
+import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { type GoogleReconnectTarget } from "@web/auth/google/state/google.reconnect.state";
 import {
@@ -19,6 +20,19 @@ interface GoogleReconnectToastProps {
   connectionId?: string | null;
 }
 
+const toastScopedConnection = (
+  connectionId: string | null | undefined,
+  accountEmail: string | null | undefined,
+): GoogleSyncConnectionSummary => ({
+  id: connectionId?.trim() || "reconnect-target",
+  state: "actionRequired",
+  stateReason: "authorizationRevoked",
+  lastSyncedAt: null,
+  lastHealthyAt: null,
+  accountEmail: accountEmail ?? null,
+  connectionState: "RECONNECT_REQUIRED",
+});
+
 // Shown when Google reports invalid_grant, which covers both "access expired"
 // and "user revoked access" with no way to tell them apart, so the copy must
 // stay accurate for either cause. Hooks are fine here: ToastContainer renders
@@ -33,10 +47,15 @@ export const GoogleReconnectToast = ({
   connectionId,
 }: GoogleReconnectToastProps) => {
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
-  const connection =
+  const connectionFromStore =
     connections.find((entry) => entry.id === connectionId) ??
     connections.find((entry) => entry.accountEmail === accountEmail) ??
     null;
+  // Props keep the target even while metadata is refetching, so Reconnect
+  // still binds OAuth to the broken connectionId instead of adding a new one.
+  const connection =
+    connectionFromStore ??
+    (connectionId ? toastScopedConnection(connectionId, accountEmail) : null);
   const { connect } = useConnectGoogle(connection ? { connection } : undefined);
 
   const handleReconnect = () => {

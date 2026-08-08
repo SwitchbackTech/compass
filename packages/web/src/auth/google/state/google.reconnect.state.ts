@@ -7,6 +7,8 @@
  * congruent until metadata catches up or the user reconnects.
  */
 
+import { useSyncExternalStore } from "react";
+
 export type GoogleReconnectTarget = {
   connectionId?: string | null;
   accountEmail?: string | null;
@@ -30,6 +32,13 @@ const normalizeEmail = (email: string | null | undefined): string | null => {
   return trimmed.length > 0 ? trimmed : null;
 };
 
+const normalizeTarget = (
+  target: GoogleReconnectTarget,
+): { connectionId: string | null; accountEmail: string | null } => ({
+  connectionId: target.connectionId?.trim() || null,
+  accountEmail: normalizeEmail(target.accountEmail),
+});
+
 export function subscribeToGoogleReconnectRequired(
   listener: () => void,
 ): () => void {
@@ -44,11 +53,23 @@ export function getGoogleReconnectRequiredVersion(): number {
   return version;
 }
 
+/**
+ * Subscribe so the caller re-renders when session reconnect overrides change.
+ * Pair with the imperative getters (`hasGoogleReconnectRequired`,
+ * `isAccountReconnectRequired`, …) read during render.
+ */
+export function useGoogleReconnectRequiredVersion(): number {
+  return useSyncExternalStore(
+    subscribeToGoogleReconnectRequired,
+    getGoogleReconnectRequiredVersion,
+    getGoogleReconnectRequiredVersion,
+  );
+}
+
 export function markAccountReconnectRequired(
   target: GoogleReconnectTarget,
 ): void {
-  const connectionId = target.connectionId?.trim() || null;
-  const accountEmail = normalizeEmail(target.accountEmail);
+  const { connectionId, accountEmail } = normalizeTarget(target);
   if (!connectionId && !accountEmail) return;
 
   let changed = false;
@@ -66,8 +87,7 @@ export function markAccountReconnectRequired(
 export function clearAccountReconnectRequired(
   target: GoogleReconnectTarget,
 ): void {
-  const connectionId = target.connectionId?.trim() || null;
-  const accountEmail = normalizeEmail(target.accountEmail);
+  const { connectionId, accountEmail } = normalizeTarget(target);
   let changed = false;
   if (connectionId && reconnectRequiredConnectionIds.delete(connectionId)) {
     changed = true;
@@ -169,10 +189,6 @@ export function hasGoogleReconnectRequired(): boolean {
 
 export function getGoogleReconnectRequiredAccountEmails(): ReadonlySet<string> {
   return reconnectRequiredAccountEmails;
-}
-
-export function getGoogleReconnectRequiredConnectionIds(): ReadonlySet<string> {
-  return reconnectRequiredConnectionIds;
 }
 
 /** Test-only reset. */

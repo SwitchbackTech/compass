@@ -16,16 +16,21 @@ const RECONNECT_STATUS: SyncStatus = {
   text: "Calendar needs reconnecting",
 };
 
-/** Product enum, Sync disconnected, or session override after a live 410. */
-export const connectionNeedsReconnect = (
-  state: GoogleUiState,
+/** Sync disconnected / product reconnect / session override after a live 410. */
+export const connectionHasReconnectRequired = (
   connection?: GoogleSyncConnectionSummary | null,
 ): boolean =>
-  state === "RECONNECT_REQUIRED" ||
   connection?.connectionState === "RECONNECT_REQUIRED" ||
   connection?.state === "disconnected" ||
   isConnectionReconnectRequired(connection?.id) ||
   isAccountReconnectRequired(connection?.accountEmail);
+
+/** Aggregate UI state or a specific connection needs reconnect. */
+export const connectionNeedsReconnect = (
+  state: GoogleUiState,
+  connection?: GoogleSyncConnectionSummary | null,
+): boolean =>
+  state === "RECONNECT_REQUIRED" || connectionHasReconnectRequired(connection);
 
 const CONNECT_ICON: CommandActionIcon = CloudArrowUpIcon;
 const REFRESH_ICON: CommandActionIcon = ArrowsClockwiseIcon;

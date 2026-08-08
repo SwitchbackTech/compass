@@ -2,9 +2,8 @@ import { useSyncExternalStore } from "react";
 import { type GoogleConnectionState } from "@core/types/user.types";
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import {
-  getGoogleReconnectRequiredVersion,
   hasGoogleReconnectRequired,
-  subscribeToGoogleReconnectRequired,
+  useGoogleReconnectRequiredVersion,
 } from "@web/auth/google/state/google.reconnect.state";
 import {
   getGoogleSyncIndicatorOverride,
@@ -58,11 +57,7 @@ export function useGoogleUiState(): GoogleUiState {
     getGoogleSyncIndicatorOverride,
     getGoogleSyncIndicatorOverride,
   );
-  useSyncExternalStore(
-    subscribeToGoogleReconnectRequired,
-    getGoogleReconnectRequiredVersion,
-    getGoogleReconnectRequiredVersion,
-  );
+  useGoogleReconnectRequiredVersion();
 
   // Returning users should not briefly look disconnected while their server
   // metadata is still loading.

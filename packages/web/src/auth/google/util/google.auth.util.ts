@@ -6,9 +6,7 @@ import {
   markAccountReconnectRequired,
 } from "@web/auth/google/state/google.reconnect.state";
 import {
-  findPrimaryGoogleSyncConnectionFromMetadata,
   selectGoogleSyncConnections,
-  userMetadataActions,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
@@ -21,9 +19,14 @@ import {
   type GoogleRevokedContext,
 } from "./google.auth.util.factory";
 
+/**
+ * Resolve which account a revoke signal belongs to. Returns null when the
+ * signal is ambiguous across multiple accounts — callers must not invent a
+ * sticky override for a healthy sibling.
+ */
 const resolveRevokedAccount = (
   context?: GoogleRevokedContext,
-): GoogleReconnectTarget => {
+): GoogleReconnectTarget | null => {
   if (context?.connectionId || context?.accountEmail) {
     return {
       connectionId: context.connectionId,
@@ -31,7 +34,6 @@ const resolveRevokedAccount = (
     };
   }
 
-  const metadata = useUserMetadataStore.getState().current;
   const connections = selectGoogleSyncConnections(
     useUserMetadataStore.getState(),
   );
@@ -68,22 +70,16 @@ const resolveRevokedAccount = (
     };
   }
 
-  const primary = metadata
-    ? findPrimaryGoogleSyncConnectionFromMetadata(metadata)
-    : null;
-  return {
-    connectionId: primary?.id ?? null,
-    accountEmail: primary?.accountEmail ?? null,
-  };
+  // Multi-account with no identity: wait for metadata Sync actionRequired.
+  return null;
 };
 
 const googleAuthUtil = createGoogleAuthUtil({
   closeStream,
   openStream,
-  // Wipe first (a concurrent in-flight metadata request may predate Sync
-  // flipping to actionRequired), then force a fresh fetch.
+  // Force a fresh fetch without wiping the store first — clearing would drop
+  // the toast's live connection lookup mid-click and start an unscoped OAuth.
   refreshUserMetadata: () => {
-    userMetadataActions.clear();
     void refreshUserMetadata({ force: true });
   },
   resolveRevokedAccount,

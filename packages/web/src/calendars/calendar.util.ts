@@ -1,6 +1,6 @@
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
-import { isAccountReconnectRequired } from "@web/auth/google/state/google.reconnect.state";
+import { isCalendarReconnectRequired } from "@web/auth/google/state/google.reconnect.calendar";
 
 export function getLocalCalendar(calendars: Calendar[]): Calendar | undefined {
   return calendars.find((calendar) => calendar.provider === "local");
@@ -30,9 +30,8 @@ const toEmailSet = (
   emails: ReadonlySet<string> | readonly string[] | undefined,
 ): ReadonlySet<string> | null => {
   if (!emails) return null;
-  if (emails instanceof Set) return emails;
   return new Set(
-    emails.map((email) => email.trim().toLowerCase()).filter(Boolean),
+    [...emails].map((email) => email.trim().toLowerCase()).filter(Boolean),
   );
 };
 
@@ -42,9 +41,12 @@ const calendarNeedsReconnect = (
 ): boolean => {
   if (!calendar.accountEmail) return false;
   if (reconnectRequiredEmails) {
-    return reconnectRequiredEmails.has(calendar.accountEmail.toLowerCase());
+    return (
+      reconnectRequiredEmails.has(calendar.accountEmail.toLowerCase()) ||
+      isCalendarReconnectRequired(calendar)
+    );
   }
-  return isAccountReconnectRequired(calendar.accountEmail);
+  return isCalendarReconnectRequired(calendar);
 };
 
 /**

@@ -29,10 +29,15 @@ const mockOpenStream = mock();
 const mockMarkAccountReconnectRequired = mock((target) =>
   markAccountReconnectRequired(target),
 );
-const mockResolveRevokedAccount = mock(() => ({
-  connectionId: "conn-1",
-  accountEmail: "lance@example.com",
-}));
+const mockResolveRevokedAccount = mock(
+  (): {
+    connectionId: string;
+    accountEmail: string;
+  } | null => ({
+    connectionId: "conn-1",
+    accountEmail: "lance@example.com",
+  }),
+);
 
 const googleAuthUtil = createGoogleAuthUtil({
   closeStream: mockCloseStream,
@@ -169,7 +174,7 @@ describe("google-auth.util", () => {
     });
 
     it("does not prune Google events or flip the app onto local storage", () => {
-      handleGoogleRevoked();
+      handleGoogleRevoked({ calendarId: "cal-1" });
 
       // Former side effects were removeEventsByGoogleCalendars /
       // refreshEventRepositorySource / removeEventQueries / markGoogleAsRevoked.
@@ -178,8 +183,20 @@ describe("google-auth.util", () => {
       expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
     });
 
-    it("reconnects SSE stream so the client gets a fresh session after revocation", () => {
+    it("refreshes metadata without sticky-marking when the revoked account is ambiguous", () => {
+      mockResolveRevokedAccount.mockReturnValueOnce(null);
+
       handleGoogleRevoked();
+
+      expect(mockMarkAccountReconnectRequired).not.toHaveBeenCalled();
+      expect(mockShowReconnectToast).not.toHaveBeenCalled();
+      expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
+      expect(mockCloseStream).toHaveBeenCalledTimes(1);
+      expect(mockOpenStream).toHaveBeenCalledTimes(1);
+    });
+
+    it("reconnects SSE stream so the client gets a fresh session after revocation", () => {
+      handleGoogleRevoked({ calendarId: "cal-1" });
 
       expect(mockCloseStream).toHaveBeenCalledTimes(1);
       expect(mockOpenStream).toHaveBeenCalledTimes(1);

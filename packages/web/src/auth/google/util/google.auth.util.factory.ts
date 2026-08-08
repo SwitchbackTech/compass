@@ -27,9 +27,9 @@ type GoogleAuthUtilDependencies = {
   refreshUserMetadata: () => void;
   resolveRevokedAccount: (
     context?: GoogleRevokedContext,
-  ) => GoogleReconnectTarget;
+  ) => GoogleReconnectTarget | null;
   markAccountReconnectRequired: (target: GoogleReconnectTarget) => void;
-  showReconnectToast: (target: GoogleReconnectTarget) => void;
+  showReconnectToast: (target?: GoogleReconnectTarget) => void;
   syncLocalEventsToCloud: () => Promise<number>;
   toastError: typeof toast.error;
 };
@@ -49,12 +49,17 @@ export function createGoogleAuthUtil({
 }: GoogleAuthUtilDependencies) {
   const handleGoogleRevoked = (context?: GoogleRevokedContext) => {
     const target = resolveRevokedAccount(context);
-    markAccountReconnectRequired(target);
-    showReconnectToast(target);
+    if (target) {
+      // Only sticky-mark when we know which account died — inventing a
+      // primary override on multi-account can brick a healthy sibling.
+      markAccountReconnectRequired(target);
+      showReconnectToast(target);
+    }
 
     // Refresh metadata so Sync's actionRequired row can confirm the account,
     // but keep last-known events and the remote repository so healthy sibling
-    // accounts continue CRUD.
+    // accounts continue CRUD. Named toast also lands from metadata side
+    // effects once Sync identifies the broken connection.
     refreshUserMetadata();
 
     closeStream();

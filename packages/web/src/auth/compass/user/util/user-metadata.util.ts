@@ -32,18 +32,16 @@ export const applyUserMetadataSideEffects = (metadata: UserMetadata): void => {
     hasGoogleReconnectRequired();
 
   if (needsReconnect) {
-    const primary =
-      findPrimaryGoogleSyncConnectionFromMetadata(metadata) ??
+    const broken =
       connections.find(
         (connection) => connection.connectionState === "RECONNECT_REQUIRED",
-      ) ??
-      connections[0];
+      ) ?? findPrimaryGoogleSyncConnectionFromMetadata(metadata);
 
     if (!hasShownReconnectToastThisLoad) {
       hasShownReconnectToastThisLoad = true;
       showGoogleReconnectToast({
-        connectionId: primary?.id,
-        accountEmail: primary?.accountEmail,
+        connectionId: broken?.id,
+        accountEmail: broken?.accountEmail,
       });
     }
   } else {

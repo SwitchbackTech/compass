@@ -4,10 +4,6 @@ import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import { AuthApi } from "@web/api/auth.api";
 import {
-  isAccountReconnectRequired,
-  isConnectionReconnectRequired,
-} from "@web/auth/google/state/google.reconnect.state";
-import {
   noteGoogleSyncRefreshImproved,
   refreshGoogleSync,
   useGoogleSyncRefreshSnapshot,
@@ -27,7 +23,10 @@ import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { settingsActions } from "@web/settings/settings.store";
 import { useIsConnectGoogleAvailable } from "../useIsGoogleAvailable/useIsGoogleAvailable";
 import { type UseConnectGoogleResult } from "./useConnectGoogle.types";
-import { getGoogleConnectionConfig } from "./useConnectGoogle.util";
+import {
+  connectionHasReconnectRequired,
+  getGoogleConnectionConfig,
+} from "./useConnectGoogle.util";
 import { useGoogleUiState } from "./useGoogleUiState";
 
 export interface UseConnectGoogleOptions {
@@ -49,14 +48,12 @@ export const useConnectGoogle = (
   );
   const scopedConnection = options?.connection;
   const syncConnection = scopedConnection ?? primaryConnection;
-  const scopedNeedsReconnect =
-    scopedConnection != null &&
-    (scopedConnection.connectionState === "RECONNECT_REQUIRED" ||
-      isConnectionReconnectRequired(scopedConnection.id) ||
-      isAccountReconnectRequired(scopedConnection.accountEmail));
-  const state = scopedNeedsReconnect
-    ? "RECONNECT_REQUIRED"
-    : (scopedConnection?.connectionState ?? aggregateState);
+  // Scope to this connection only — do not inherit a sibling account's
+  // aggregate RECONNECT_REQUIRED into a still-healthy account.
+  const state =
+    scopedConnection != null && connectionHasReconnectRequired(scopedConnection)
+      ? "RECONNECT_REQUIRED"
+      : (scopedConnection?.connectionState ?? aggregateState);
   const queryClient = useQueryClient();
   const [isConnecting, setIsConnecting] = useState(false);
   // Sync guard so rapid re-clicks before React re-renders cannot start a

@@ -12,7 +12,7 @@ import {
   type RecurrenceScope,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
-import { isAccountReconnectRequired } from "@web/auth/google/state/google.reconnect.state";
+import { isCalendarReconnectRequired } from "@web/auth/google/state/google.reconnect.calendar";
 import { track } from "@web/auth/posthog/track";
 import {
   selectGoogleSyncConnections,
@@ -314,8 +314,7 @@ export function useEventMutations(
       const calendars =
         queryClient.getQueryData<Calendar[]>(calendarQueryKeys.all) ?? [];
       const calendar = calendars.find((entry) => entry.id === calendarId);
-      if (!calendar?.accountEmail) return false;
-      if (!isAccountReconnectRequired(calendar.accountEmail)) return false;
+      if (!calendar || !isCalendarReconnectRequired(calendar)) return false;
 
       const connection = selectGoogleSyncConnections(
         useUserMetadataStore.getState(),
