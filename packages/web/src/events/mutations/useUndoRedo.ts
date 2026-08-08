@@ -3,6 +3,7 @@ import { useCallback } from "react";
 import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { UNDO_DECLINED_TOAST_ID } from "@web/common/constants/toast.constants";
+import { focusCalendarEventElement } from "@web/common/utils/event/event.util";
 import {
   showRestoredToast,
   showRestoreFailedToast,
@@ -33,7 +34,6 @@ import {
   undoHistoryActions,
   useUndoHistoryStore,
 } from "@web/events/stores/undo.store";
-import { calendarEventIdValueSelector } from "@web/grid/interaction/view-event-registry";
 
 const isCreateEntry = (
   entry: UndoHistoryEntry,
@@ -48,26 +48,10 @@ const isDeleteEntry = (
 const entryEventId = (entry: UndoHistoryEntry): string =>
   isDeleteEntry(entry) || isCreateEntry(entry) ? entry.event.id : entry.id;
 
-// Not `refocusEventElement`: that helper waits for the DOM node to be
-// *replaced*, but an edit replay updates the node in place (same React key),
-// so it would never fire. Here we just focus the event's element as soon as
-// it exists — synchronously for edit replays (the node survives the
-// re-render), with a short rAF retry loop for delete-undo, where the element
-// reappears a frame or two after the optimistic insert.
-const refocusAfterReplay = (eventId: string) => {
-  let attempts = 0;
-  const tryFocus = () => {
-    const element = document.querySelector<HTMLElement>(
-      calendarEventIdValueSelector(eventId),
-    );
-    if (element) {
-      element.focus();
-      return;
-    }
-    if (++attempts < 30) requestAnimationFrame(tryFocus);
-  };
-  tryFocus();
-};
+// Edit replays keep the same React key (in-place update); delete-undo may
+// need a frame or two for the card to remount. `focusCalendarEventElement`
+// covers both — unlike `refocusEventElement`, which waits for a replaced node.
+const refocusAfterReplay = focusCalendarEventElement;
 
 const showUndoDeclinedToast = () =>
   showStatusToast(UNDO_DECLINED_TOAST_ID, "Can't undo — event changed since");
