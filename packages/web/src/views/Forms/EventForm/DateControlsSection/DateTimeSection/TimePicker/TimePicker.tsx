@@ -1,5 +1,5 @@
 import type React from "react";
-import { useId, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { type CSSObjectWithLabel, type Props as RSProps } from "react-select";
 import CreatableSelect from "react-select/creatable";
 import { type SelectOption } from "@web/common/types/component.types";
@@ -44,9 +44,39 @@ export const TimePicker = ({
 }: Props) => {
   const TIMEPICKER = "timepicker";
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRafRef = useRef<number | null>(null);
   const layerId = useId();
   useFloatingLayer(`timePicker:${layerId}`, isMenuOpen);
-  let scrollTimer: number;
+
+  const cancelScrollToSelected = () => {
+    if (scrollRafRef.current !== null) {
+      cancelAnimationFrame(scrollRafRef.current);
+      scrollRafRef.current = null;
+    }
+  };
+
+  /** Menu options mount after open; wait for paint instead of a magic delay. */
+  const scheduleScrollToSelected = () => {
+    cancelScrollToSelected();
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = requestAnimationFrame(() => {
+        scrollRafRef.current = null;
+        const defaultOpt = containerRef.current?.getElementsByClassName(
+          `${TIMEPICKER}__option--is-selected`,
+        )[0];
+        defaultOpt?.scrollIntoView();
+      });
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (scrollRafRef.current !== null) {
+        cancelAnimationFrame(scrollRafRef.current);
+        scrollRafRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <div ref={containerRef} className="c-time-picker">
@@ -82,18 +112,11 @@ export const TimePicker = ({
           }
         }}
         onMenuOpen={() => {
-          scrollTimer = window.setTimeout(() => {
-            const defaultOpt = containerRef.current?.getElementsByClassName(
-              `${TIMEPICKER}__option--is-selected`,
-            )[0];
-            if (defaultOpt) {
-              defaultOpt.scrollIntoView();
-            }
-          }, 15);
           setIsMenuOpen(true);
+          scheduleScrollToSelected();
         }}
         onMenuClose={() => {
-          clearTimeout(scrollTimer);
+          cancelScrollToSelected();
           setIsMenuOpen(false);
         }}
         openMenuOnFocus={true}
