@@ -60,3 +60,16 @@ export const restoreSourceElement = (source: PreparedSourceElement) => {
 
   source.element.style.visibility = source.visibility;
 };
+
+/** Re-apply dim/hide without rewriting the stored pre-interaction styles. */
+export const reapplyPreparedSourceStyles = (source: PreparedSourceElement) => {
+  source.element.setAttribute(SOURCE_ELEMENT_INTERACTION_ATTRIBUTE, "true");
+
+  if (source.draftEventMode === "dim-source") {
+    source.element.style.opacity = "0.5";
+    source.element.style.pointerEvents = "none";
+    return;
+  }
+
+  source.element.style.visibility = "hidden";
+};
