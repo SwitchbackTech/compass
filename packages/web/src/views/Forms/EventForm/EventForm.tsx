@@ -52,6 +52,7 @@ import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/Calend
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
+import { DiscardUnsavedChangesDialog } from "@web/views/Forms/EventForm/DiscardUnsavedChangesDialog";
 import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
 import { EventColorPicker } from "@web/views/Forms/EventForm/EventColorPicker/EventColorPicker";
 import { EventDetailsSection } from "@web/views/Forms/EventForm/EventDetailsSection";
@@ -658,7 +659,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
-    useEscapeToCloseForm(onClose);
+    const { isConfirmOpen, onCancelConfirm, onDiscardConfirm } =
+      useEscapeToCloseForm(onClose);
 
     const titleErrorField = fieldErrors?.["content.title"]
       ? "content.title"
@@ -705,194 +707,204 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     }, [fieldErrors]);
 
     return (
-      <EventFormShell
-        {...props}
-        name={ID_EVENT_FORM}
-        onMouseUp={() => {
-          if (isStartDatePickerOpen) {
-            setIsStartDatePickerOpen(false);
-          }
-
-          if (isEndDatePickerOpen) {
-            setIsEndDatePickerOpen(false);
-          }
-        }}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-        }}
-      >
-        {/* Scrollable body; the save footer below stays pinned. */}
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 [scrollbar-gutter:stable]">
-          <TitleActionsRow
-            title={
-              <Focusable
-                id={EVENT_FORM_TITLE_ID}
-                Component="input"
-                className={classNames(
-                  INPUT_RESET_CLASSNAME,
-                  // w-full: an input's intrinsic size-attribute width would
-                  // overflow the sidebar-width form and force horizontal scroll
-                  "w-full bg-transparent font-semibold text-xl",
-                )}
-                autoFocus
-                disabled={isReadOnly}
-                onChange={onChangeTitle}
-                onKeyDown={handleTitleKeyDown}
-                placeholder="Title"
-                aria-label="Title"
-                name="Event Title"
-                aria-invalid={titleError ? true : undefined}
-                aria-describedby={titleErrorDescribedBy}
-                underlineColor={eventColor}
-                value={displayTitle}
-                withUnderline
-              />
+      <>
+        <EventFormShell
+          {...props}
+          name={ID_EVENT_FORM}
+          onMouseUp={() => {
+            if (isStartDatePickerOpen) {
+              setIsStartDatePickerOpen(false);
             }
-            actions={
-              <EventActionMenu
-                isExistingEvent={isExistingEvent}
-                isReadOnly={isReadOnly}
-                onDuplicate={onDuplicateEvent}
-                onDelete={onDeleteEvent}
-              />
+
+            if (isEndDatePickerOpen) {
+              setIsEndDatePickerOpen(false);
             }
-          />
-
-          {/* Same fieldset mechanism as the title above, covering
-              date/recurrence/calendar/description in one wrapper. Its
-              display: contents keeps the cards direct flex items of the
-              gap-3 body. */}
-          <fieldset className="contents" disabled={isReadOnly}>
-            <FormCard>
-              <fieldset
-                id={EVENT_FORM_SCHEDULE_ID}
-                aria-label="Event schedule"
-                aria-invalid={scheduleError ? true : undefined}
-                aria-describedby={scheduleErrorDescribedBy}
-                tabIndex={scheduleError ? -1 : undefined}
-                className={classNames(
-                  "min-w-0 rounded-xs border-0 p-0",
-                  scheduleError && "ring-1 ring-error",
-                )}
-              >
-                <DateControlsSection
-                  dateTimeSectionProps={dateTimeSectionProps}
-                  eventCategory={category}
-                  onToggleAllDay={onToggleAllDay}
-                />
-              </fieldset>
-
-              <fieldset
-                id={EVENT_FORM_RECURRENCE_ID}
-                aria-label="Recurrence"
-                aria-invalid={recurrenceError ? true : undefined}
-                aria-describedby={recurrenceErrorDescribedBy}
-                tabIndex={recurrenceError ? -1 : undefined}
-                className={classNames(
-                  "min-w-0 rounded-xs border-0 p-0",
-                  recurrenceError && "ring-1 ring-error",
-                )}
-              >
-                <RecurrenceSection {...recurrenceSectionProps} />
-              </fieldset>
-            </FormCard>
-
-            <FormCard>
-              {draft.kind === "create" ? (
-                <CalendarSelect
-                  id={EVENT_FORM_CALENDAR_ID}
-                  onChange={onSelectCalendar}
-                  value={draft.values.calendarId}
-                  error={calendarError ?? undefined}
-                  errorId={calendarErrorDescribedBy}
-                />
-              ) : (
-                <p className="text-text-muted text-xs">
-                  Calendar: {originalCalendarName}
-                </p>
-              )}
-              <EventColorPicker
-                value={color}
-                onChange={(next) => patchDraftFields({ color: next })}
-              />
-            </FormCard>
-
-            <FormCard>
-              <div className="flex items-center gap-2">
-                {location ? (
-                  <a
-                    href={mapsUrlForLocation(location)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Open in Google Maps"
-                    className="shrink-0 text-text-muted hover:text-text"
-                  >
-                    <MapPinIcon size={16} />
-                  </a>
-                ) : (
-                  <MapPinIcon size={16} className="shrink-0 text-text-muted" />
-                )}
+          }}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+          }}
+        >
+          {/* Scrollable body; the save footer below stays pinned. */}
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-4 [scrollbar-gutter:stable]">
+            <TitleActionsRow
+              title={
                 <Focusable
+                  id={EVENT_FORM_TITLE_ID}
                   Component="input"
                   className={classNames(
                     INPUT_RESET_CLASSNAME,
-                    "w-full bg-transparent text-sm",
+                    // w-full: an input's intrinsic size-attribute width would
+                    // overflow the sidebar-width form and force horizontal scroll
+                    "w-full bg-transparent font-semibold text-xl",
                   )}
+                  autoFocus
                   disabled={isReadOnly}
-                  onChange={onChangeLocation}
-                  onKeyDown={handleIgnoredKeys}
-                  placeholder="Location"
-                  aria-label="Location"
-                  name="Event Location"
-                  value={location}
+                  onChange={onChangeTitle}
+                  onKeyDown={handleTitleKeyDown}
+                  placeholder="Title"
+                  aria-label="Title"
+                  name="Event Title"
+                  aria-invalid={titleError ? true : undefined}
+                  aria-describedby={titleErrorDescribedBy}
+                  underlineColor={eventColor}
+                  value={displayTitle}
+                  withUnderline
                 />
-              </div>
-            </FormCard>
+              }
+              actions={
+                <EventActionMenu
+                  isExistingEvent={isExistingEvent}
+                  isReadOnly={isReadOnly}
+                  onDuplicate={onDuplicateEvent}
+                  onDelete={onDeleteEvent}
+                />
+              }
+            />
 
-            <FormCard>
-              <DescriptionEditor
-                id={EVENT_FORM_DESCRIPTION_ID}
-                resetKey={draft.kind === "edit" ? draft.source.id : "create"}
-                value={description}
-                onChange={(html) => patchDraftFields({ description: html })}
-                editable={!isReadOnly}
-                underlineColor={eventColor}
-                onKeyDown={handleIgnoredKeys}
-              />
-            </FormCard>
-          </fieldset>
+            {/* Same fieldset mechanism as the title above, covering
+              date/recurrence/calendar/description in one wrapper. Its
+              display: contents keeps the cards direct flex items of the
+              gap-3 body. */}
+            <fieldset className="contents" disabled={isReadOnly}>
+              <FormCard>
+                <fieldset
+                  id={EVENT_FORM_SCHEDULE_ID}
+                  aria-label="Event schedule"
+                  aria-invalid={scheduleError ? true : undefined}
+                  aria-describedby={scheduleErrorDescribedBy}
+                  tabIndex={scheduleError ? -1 : undefined}
+                  className={classNames(
+                    "min-w-0 rounded-xs border-0 p-0",
+                    scheduleError && "ring-1 ring-error",
+                  )}
+                >
+                  <DateControlsSection
+                    dateTimeSectionProps={dateTimeSectionProps}
+                    eventCategory={category}
+                    onToggleAllDay={onToggleAllDay}
+                  />
+                </fieldset>
 
-          {/* Outside the fieldset: read-only display, not an editable
+                <fieldset
+                  id={EVENT_FORM_RECURRENCE_ID}
+                  aria-label="Recurrence"
+                  aria-invalid={recurrenceError ? true : undefined}
+                  aria-describedby={recurrenceErrorDescribedBy}
+                  tabIndex={recurrenceError ? -1 : undefined}
+                  className={classNames(
+                    "min-w-0 rounded-xs border-0 p-0",
+                    recurrenceError && "ring-1 ring-error",
+                  )}
+                >
+                  <RecurrenceSection {...recurrenceSectionProps} />
+                </fieldset>
+              </FormCard>
+
+              <FormCard>
+                {draft.kind === "create" ? (
+                  <CalendarSelect
+                    id={EVENT_FORM_CALENDAR_ID}
+                    onChange={onSelectCalendar}
+                    value={draft.values.calendarId}
+                    error={calendarError ?? undefined}
+                    errorId={calendarErrorDescribedBy}
+                  />
+                ) : (
+                  <p className="text-text-muted text-xs">
+                    Calendar: {originalCalendarName}
+                  </p>
+                )}
+                <EventColorPicker
+                  value={color}
+                  onChange={(next) => patchDraftFields({ color: next })}
+                />
+              </FormCard>
+
+              <FormCard>
+                <div className="flex items-center gap-2">
+                  {location ? (
+                    <a
+                      href={mapsUrlForLocation(location)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Open in Google Maps"
+                      className="shrink-0 text-text-muted hover:text-text"
+                    >
+                      <MapPinIcon size={16} />
+                    </a>
+                  ) : (
+                    <MapPinIcon
+                      size={16}
+                      className="shrink-0 text-text-muted"
+                    />
+                  )}
+                  <Focusable
+                    Component="input"
+                    className={classNames(
+                      INPUT_RESET_CLASSNAME,
+                      "w-full bg-transparent text-sm",
+                    )}
+                    disabled={isReadOnly}
+                    onChange={onChangeLocation}
+                    onKeyDown={handleIgnoredKeys}
+                    placeholder="Location"
+                    aria-label="Location"
+                    name="Event Location"
+                    value={location}
+                  />
+                </div>
+              </FormCard>
+
+              <FormCard>
+                <DescriptionEditor
+                  id={EVENT_FORM_DESCRIPTION_ID}
+                  resetKey={draft.kind === "edit" ? draft.source.id : "create"}
+                  value={description}
+                  onChange={(html) => patchDraftFields({ description: html })}
+                  editable={!isReadOnly}
+                  underlineColor={eventColor}
+                  onKeyDown={handleIgnoredKeys}
+                />
+              </FormCard>
+            </fieldset>
+
+            {/* Outside the fieldset: read-only display, not an editable
               control, so it stays interactive (the "+N more" toggle) even
               when the event itself is read-only. Renders its own card
               styling and returns null when the event has none of this data. */}
-          {sourceDetails && <EventDetailsSection details={sourceDetails} />}
+            {sourceDetails && <EventDetailsSection details={sourceDetails} />}
 
-          {isReadOnly && (
-            <p role="note" className="text-text-muted text-xs">
-              Read-only — you don't have permission to edit this event.
-            </p>
+            {isReadOnly && (
+              <p role="note" className="text-text-muted text-xs">
+                Read-only — you don't have permission to edit this event.
+              </p>
+            )}
+          </div>
+
+          {!isReadOnly && (
+            <>
+              {fieldErrors && Object.keys(fieldErrors).length > 0 ? (
+                <ul
+                  className="flex list-none flex-col gap-1 border-border border-t px-4 pt-3 text-error text-xs"
+                  role="alert"
+                >
+                  {Object.entries(fieldErrors).map(([field, message]) => (
+                    <li key={field} id={eventFormErrorId(field)}>
+                      {message}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <SaveSection onSubmit={onSubmitForm} />
+            </>
           )}
-        </div>
-
-        {!isReadOnly && (
-          <>
-            {fieldErrors && Object.keys(fieldErrors).length > 0 ? (
-              <ul
-                className="flex list-none flex-col gap-1 border-border border-t px-4 pt-3 text-error text-xs"
-                role="alert"
-              >
-                {Object.entries(fieldErrors).map(([field, message]) => (
-                  <li key={field} id={eventFormErrorId(field)}>
-                    {message}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            <SaveSection onSubmit={onSubmitForm} />
-          </>
-        )}
-      </EventFormShell>
+        </EventFormShell>
+        <DiscardUnsavedChangesDialog
+          isOpen={isConfirmOpen}
+          onCancel={onCancelConfirm}
+          onDiscard={onDiscardConfirm}
+        />
+      </>
     );
   },
   fastDeepEqual,

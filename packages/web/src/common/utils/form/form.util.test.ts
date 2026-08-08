@@ -7,6 +7,7 @@ import {
   isContextMenuOpen,
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
+  isFloatingLayerOpen,
   shouldDeferEnterToTarget,
 } from "./form.util";
 import {
@@ -222,6 +223,35 @@ describe("form.util", () => {
       document.body.appendChild(button);
 
       expect(isEventFormKeyboardTarget(createEvent(button))).toBe(false);
+    });
+  });
+
+  describe("isFloatingLayerOpen", () => {
+    afterEach(() => {
+      document.body.replaceChildren();
+    });
+
+    it("ignores inert dialogs that stay mounted while closed", () => {
+      const dialog = document.createElement("div");
+      dialog.setAttribute("role", "dialog");
+      dialog.inert = true;
+      Object.defineProperty(dialog, "getClientRects", {
+        value: () => [new DOMRect(0, 0, 100, 100)],
+      });
+      document.body.appendChild(dialog);
+
+      expect(isFloatingLayerOpen()).toBe(false);
+    });
+
+    it("treats a visible non-inert dialog as open", () => {
+      const dialog = document.createElement("div");
+      dialog.setAttribute("role", "dialog");
+      Object.defineProperty(dialog, "getClientRects", {
+        value: () => [new DOMRect(0, 0, 100, 100)],
+      });
+      document.body.appendChild(dialog);
+
+      expect(isFloatingLayerOpen()).toBe(true);
     });
   });
 });
