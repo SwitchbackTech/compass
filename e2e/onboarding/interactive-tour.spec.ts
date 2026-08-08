@@ -31,10 +31,12 @@ test("Start Now runs the interactive tour happy path", async ({ page }) => {
   // Linux CI uses Ctrl; macOS local runs use Meta. Press both modifiers' chord
   // via ControlOrMeta through Playwright's platform-aware ControlOrMeta token.
   await page.keyboard.press("ControlOrMeta+k");
-  await expect(card).toContainText("Browse every shortcut");
+  // Palette stays open with search focused; the tour must not advance to "?" yet.
+  await expect(card).toContainText("Open the command palette");
   await page.keyboard.press("Escape");
+  await expect(card).toContainText("Browse every shortcut");
 
-  // Shift+/ opens the legend (same as ? on US keyboards).
+  // Shift+/ opens the legend (same as ? on US keyboards) once the calendar has focus.
   await page.keyboard.press("Shift+/");
   await expect(card).toContainText("You are ready");
 

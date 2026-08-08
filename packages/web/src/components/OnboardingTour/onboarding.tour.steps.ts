@@ -41,13 +41,13 @@ export function getOnboardingTourSteps(): OnboardingTourStep[] {
     {
       id: "palette",
       title: "Open the command palette",
-      body: `Press ${mod}+K for commands. Try "Show keyboard shortcuts", then close with Escape.`,
+      body: `Press ${mod}+K for commands. Browse or search, then close with Escape.`,
       shortcutHint: `${mod}+K`,
     },
     {
       id: "shortcuts",
       title: "Browse every shortcut",
-      body: "Press ? to open the shortcut legend. Search it anytime you forget a key.",
+      body: "Press ? from the calendar to open the shortcut legend. Search it anytime you forget a key.",
       shortcutHint: "?",
     },
     {
