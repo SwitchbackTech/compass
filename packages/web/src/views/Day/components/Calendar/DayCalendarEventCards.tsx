@@ -52,28 +52,29 @@ export const DayAllDayCalendarEvent = ({
   onOpenEvent,
   visibleDates,
 }: DayEventCardProps) => {
-  // Read-only events never register as an interaction target below, so the
-  // drag/resize engine can't find them - blocked before any optimistic
-  // state change reaches the store (packet 08 step 8).
-  const isRegistered = Boolean(event._id) && !isPlaceholder && !isReadOnly;
+  // Stamp view-registry id attrs for any saved card (including read-only) so
+  // context menus / focus restore can resolve an id. Drag/resize stays gated
+  // separately: registry registration + hover targeting require !isReadOnly.
+  const hasEventIdentity = Boolean(event._id) && !isPlaceholder;
+  const isRegisteredForDragResize = hasEventIdentity && !isReadOnly;
   const registrationRef = useDayEventRegistrationRef({
     eventId: event._id,
     eventType: "all-day",
-    isEnabled: isRegistered,
+    isEnabled: isRegisteredForDragResize,
   });
   const interactionAttributes = useMemo(
     () =>
-      isRegistered
+      hasEventIdentity
         ? getDayInteractionTargetAttributes({
             eventId: event._id,
             eventType: "all-day",
           })
         : undefined,
-    [event._id, isRegistered],
+    [event._id, hasEventIdentity],
   );
-  // Being unregistered above also means the interaction engine's own click
-  // resolution never fires, so a read-only card would otherwise stop being
-  // clickable - events must stay inspectable even when they can't be
+  // Unregistered for drag/resize also means the interaction engine's own
+  // click resolution never fires, so a read-only card would otherwise stop
+  // being clickable - events must stay inspectable even when they can't be
   // mutated. Wiring the click straight to the same "open" action the
   // keyboard path uses bypasses the engine entirely for this card.
   const onEventMouseDown = isReadOnly
@@ -97,7 +98,7 @@ export const DayAllDayCalendarEvent = ({
       onEventKeyDown={onOpenEvent}
       onEventMouseDown={onEventMouseDown}
       onMouseEnter={(mouseEvent) => {
-        if (!isRegistered) return;
+        if (!isRegisteredForDragResize) return;
 
         setHoveredDayGridEventTarget(mouseEvent.currentTarget);
       }}
@@ -127,30 +128,31 @@ export const DayTimedCalendarEvent = ({
   onOpenEvent,
   visibleDates,
 }: DayTimedEventCardProps) => {
-  // Read-only events never register as an interaction target below, so the
-  // drag/resize engine can't find them - blocked before any optimistic
-  // state change reaches the store (packet 08 step 8).
-  const isRegistered = Boolean(event._id) && !isPlaceholder && !isReadOnly;
+  // Stamp view-registry id attrs for any saved card (including read-only) so
+  // context menus / focus restore can resolve an id. Drag/resize stays gated
+  // separately: registry registration + hover targeting require !isReadOnly.
+  const hasEventIdentity = Boolean(event._id) && !isPlaceholder;
+  const isRegisteredForDragResize = hasEventIdentity && !isReadOnly;
   const isDeck = Boolean(deckLayout);
   const [isFocused, setIsFocused] = useState(false);
   const registrationRef = useDayEventRegistrationRef({
     eventId: event._id,
     eventType: "timed",
-    isEnabled: isRegistered,
+    isEnabled: isRegisteredForDragResize,
   });
   const interactionAttributes = useMemo(
     () =>
-      isRegistered
+      hasEventIdentity
         ? getDayInteractionTargetAttributes({
             eventId: event._id,
             eventType: "timed",
           })
         : undefined,
-    [event._id, isRegistered],
+    [event._id, hasEventIdentity],
   );
-  // Being unregistered above also means the interaction engine's own click
-  // resolution never fires, so a read-only card would otherwise stop being
-  // clickable - events must stay inspectable even when they can't be
+  // Unregistered for drag/resize also means the interaction engine's own
+  // click resolution never fires, so a read-only card would otherwise stop
+  // being clickable - events must stay inspectable even when they can't be
   // mutated. Wiring the click straight to the same "open" action the
   // keyboard path uses bypasses the engine entirely for this card.
   const onEventMouseDown = isReadOnly
@@ -192,7 +194,7 @@ export const DayTimedCalendarEvent = ({
       onEventMouseDown={onEventMouseDown}
       onFocus={isDeck ? () => setIsFocused(true) : undefined}
       onMouseEnter={(mouseEvent) => {
-        if (!isRegistered) return;
+        if (!isRegisteredForDragResize) return;
 
         setHoveredDayGridEventTarget(mouseEvent.currentTarget);
       }}

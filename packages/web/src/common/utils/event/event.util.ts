@@ -13,7 +13,6 @@ import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-err
 import { getUserId } from "@web/auth/compass/session/session.util";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
 import { GENERIC_ERROR_TOAST_ID } from "@web/common/constants/toast.constants";
-import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Categories_Event,
@@ -22,6 +21,10 @@ import {
 } from "@web/common/types/web.event.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import {
+  calendarEventIdValueSelector,
+  readCalendarEventIdFromElement,
+} from "@web/grid/interaction/view-event-registry";
 
 export const gridEventDefaultPosition: GridEvent["position"] = {
   isOverlapping: false,
@@ -117,17 +120,15 @@ export const getEventDragOffset = (
   };
 };
 
-export const getCalendarEventIdFromElement = (element: HTMLElement) => {
-  const eventElement = element.closest(`[${DATA_EVENT_ELEMENT_ID}]`);
-  return eventElement ? eventElement.getAttribute(DATA_EVENT_ELEMENT_ID) : null;
-};
+export const getCalendarEventIdFromElement = (element: HTMLElement) =>
+  readCalendarEventIdFromElement(element);
 
 /**
  * Refocuses an event's element after React replaces it. Retries across
  * animation frames until the new element appears, then focuses it.
  */
 export const refocusEventElement = (eventId: string) => {
-  const selector = `[${DATA_EVENT_ELEMENT_ID}="${eventId}"]`;
+  const selector = calendarEventIdValueSelector(eventId);
   const staleElement = document.querySelector(selector);
   let attemptsLeft = 30;
 

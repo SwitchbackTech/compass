@@ -3,7 +3,6 @@ import { useCallback } from "react";
 import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { UNDO_DECLINED_TOAST_ID } from "@web/common/constants/toast.constants";
-import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import {
   showRestoredToast,
   showRestoreFailedToast,
@@ -34,6 +33,7 @@ import {
   undoHistoryActions,
   useUndoHistoryStore,
 } from "@web/events/stores/undo.store";
+import { calendarEventIdValueSelector } from "@web/grid/interaction/view-event-registry";
 
 const isCreateEntry = (
   entry: UndoHistoryEntry,
@@ -58,7 +58,7 @@ const refocusAfterReplay = (eventId: string) => {
   let attempts = 0;
   const tryFocus = () => {
     const element = document.querySelector<HTMLElement>(
-      `[${DATA_EVENT_ELEMENT_ID}="${eventId}"]`,
+      calendarEventIdValueSelector(eventId),
     );
     if (element) {
       element.focus();

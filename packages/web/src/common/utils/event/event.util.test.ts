@@ -4,7 +4,6 @@ import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { type ApiError, type ApiResponse } from "@web/api/api.types";
 import { GENERIC_ERROR_TOAST_ID } from "@web/common/constants/toast.constants";
-import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   addId,
@@ -12,6 +11,7 @@ import {
   refocusEventElement,
 } from "@web/common/utils/event/event.util";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
+import { WEEK_INTERACTION_EVENT_ID_ATTRIBUTE } from "@web/views/Week/interaction/registry/week-event.registry";
 import {
   afterEach,
   beforeEach,
@@ -213,7 +213,7 @@ describe("refocusEventElement", () => {
 
   const addEventElement = () => {
     const element = document.createElement("div");
-    element.setAttribute(DATA_EVENT_ELEMENT_ID, EVENT_ID);
+    element.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, EVENT_ID);
     element.tabIndex = 0;
     document.body.appendChild(element);
     return element;

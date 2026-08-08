@@ -1,8 +1,31 @@
-import { createViewInteractionRegistry } from "./view-event-registry";
+import {
+  calendarEventIdElementSelector,
+  calendarEventIdValueSelector,
+  createViewInteractionRegistry,
+  readCalendarEventIdFromElement,
+} from "./view-event-registry";
 import { afterEach, describe, expect, it } from "bun:test";
 
 afterEach(() => {
   document.body.innerHTML = "";
+});
+
+describe("calendar event id DOM helpers", () => {
+  it("reads a day or week interaction id from an element or its ancestor", () => {
+    const weekCard = document.createElement("div");
+    weekCard.setAttribute("data-week-interaction-event-id", "week-event");
+    const child = document.createElement("span");
+    weekCard.append(child);
+    document.body.append(weekCard);
+
+    expect(readCalendarEventIdFromElement(child)).toBe("week-event");
+    expect(calendarEventIdElementSelector()).toContain(
+      "data-day-interaction-event-id",
+    );
+    expect(calendarEventIdValueSelector("week-event")).toContain(
+      '[data-week-interaction-event-id="week-event"]',
+    );
+  });
 });
 
 describe("createViewInteractionRegistry", () => {

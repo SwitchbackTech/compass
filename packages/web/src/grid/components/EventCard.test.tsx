@@ -66,7 +66,6 @@ describe("EventCard", () => {
       name: "Timed event: Planning block, 9 - 10 AM",
     });
     expect(card).not.toHaveAttribute("aria-disabled");
-    expect(card).toHaveAttribute("data-event-id", "event-1");
     expect(card).toHaveAttribute("data-week-interaction-event-id", "event-1");
     expect(screen.getByText("Planning block")).toBeInTheDocument();
 
@@ -359,7 +358,7 @@ describe("EventCard", () => {
       name: "All-day event: Conference",
     });
     expect(card).not.toHaveAttribute("aria-disabled");
-    expect(card).toHaveAttribute("data-event-id", "event-1");
+    expect(card).toHaveAttribute("data-week-interaction-event-id", "event-2");
     expect(card).toHaveAttribute("data-week-interaction-event-type", "all-day");
     expect(screen.getByText("Conference")).toBeInTheDocument();
 

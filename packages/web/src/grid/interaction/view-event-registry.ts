@@ -30,6 +30,43 @@ export const viewInteractionAttributeNames = (viewName: string) => ({
 });
 
 /**
+ * Day and Week are sibling routes and never co-mounted, so a DOM query can
+ * safely accept either view's id attribute. Used by context menus, undo
+ * focus-restore, and other callers that need an event id without knowing
+ * which view rendered the card.
+ */
+export const CALENDAR_VIEW_INTERACTION_ID_ATTRIBUTES = [
+  viewInteractionAttributeNames("day").idAttribute,
+  viewInteractionAttributeNames("week").idAttribute,
+] as const;
+
+export const calendarEventIdElementSelector = () =>
+  CALENDAR_VIEW_INTERACTION_ID_ATTRIBUTES.map((attr) => `[${attr}]`).join(", ");
+
+export const calendarEventIdValueSelector = (eventId: string) =>
+  CALENDAR_VIEW_INTERACTION_ID_ATTRIBUTES.map(
+    (attr) => `[${attr}="${eventId}"]`,
+  ).join(", ");
+
+export const readCalendarEventIdFromElement = (
+  element: HTMLElement,
+): string | null => {
+  const eventElement = element.closest(calendarEventIdElementSelector());
+  if (!eventElement) {
+    return null;
+  }
+
+  for (const attr of CALENDAR_VIEW_INTERACTION_ID_ATTRIBUTES) {
+    const eventId = eventElement.getAttribute(attr);
+    if (eventId) {
+      return eventId;
+    }
+  }
+
+  return null;
+};
+
+/**
  * One interaction registry per calendar view (Day, Week), namespaced by
  * `data-${viewName}-interaction-event-*` attributes so a view only ever
  * resolves its own DOM nodes. Day and Week previously hand-rolled identical
