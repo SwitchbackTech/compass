@@ -1,4 +1,4 @@
-import { type ZodType } from "zod";
+import { type ZodType } from "zod/v4";
 import { Status } from "@core/errors/status.codes";
 import {
   type GoogleConnectErrorResponse,

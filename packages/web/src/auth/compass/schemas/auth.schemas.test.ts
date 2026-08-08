@@ -37,7 +37,7 @@ describe("auth.schemas", () => {
       const result = EmailSchema.safeParse("");
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0].message).toBe("Email is required");
+        expect(result.error.issues[0].message).toBe("Email is required");
       }
     });
 
@@ -45,7 +45,7 @@ describe("auth.schemas", () => {
       const result = EmailSchema.safeParse("not-an-email");
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0].message).toBe(
+        expect(result.error.issues[0].message).toBe(
           "Please enter a valid email address",
         );
       }
@@ -72,7 +72,7 @@ describe("auth.schemas", () => {
       const result = PasswordSchema.safeParse("");
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0].message).toBe("Password is required");
+        expect(result.error.issues[0].message).toBe("Password is required");
       }
     });
 
@@ -80,7 +80,7 @@ describe("auth.schemas", () => {
       const result = PasswordSchema.safeParse("1234567");
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0].message).toBe(
+        expect(result.error.issues[0].message).toBe(
           "Password must be at least 8 characters",
         );
       }
@@ -108,7 +108,7 @@ describe("auth.schemas", () => {
       const result = NameSchema.safeParse("");
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0].message).toBe("Name is required");
+        expect(result.error.issues[0].message).toBe("Name is required");
       }
     });
 

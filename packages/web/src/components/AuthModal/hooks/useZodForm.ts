@@ -5,7 +5,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { type z } from "zod";
+import { type z } from "zod/v4";
 
 /**
  * Extracts field errors from a ZodError as Record<field, firstMessage>
@@ -22,7 +22,7 @@ function getFieldErrors(error: z.ZodError): Record<string, string> {
 
 export interface UseZodFormConfig<TValues extends Record<string, string>> {
   /** Zod schema - output type must match TValues */
-  schema: z.ZodType<TValues, z.ZodTypeDef, unknown>;
+  schema: z.ZodType<TValues, unknown>;
   initialValues: TValues;
   onSubmit: (data: TValues) => void | Promise<void>;
 }

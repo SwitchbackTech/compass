@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 import { sessionBrowserStore } from "@web/common/storage/browser-key-value.store";
 import {
   GOOGLE_AUTH_INTENT_MAX_AGE_MS,
