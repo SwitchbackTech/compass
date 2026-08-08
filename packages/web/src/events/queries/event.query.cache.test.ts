@@ -147,4 +147,25 @@ describe("event query cache", () => {
       }),
     ).toBeUndefined();
   });
+
+  test("returns empty placeholder when an overlapping week has no events in range", () => {
+    const client = new QueryClient();
+    const event = createMockEvent({
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-07-03T09:00:00.000Z",
+        end: "2026-07-03T10:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
+    client.setQueryData(keys.localWeek, normalizeEventList([event]));
+
+    expect(
+      deriveOverlappingEventQueryData(client, {
+        source: "local",
+        startDate: "2026-07-05T00:00:00.000Z",
+        endDate: "2026-07-06T00:00:00.000Z",
+      }),
+    ).toEqual({ ids: [], entities: {} });
+  });
 });
