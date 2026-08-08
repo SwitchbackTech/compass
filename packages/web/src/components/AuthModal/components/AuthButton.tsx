@@ -1,4 +1,4 @@
-import clsx from "clsx";
+import classNames from "classnames";
 import { type ButtonHTMLAttributes, type FC } from "react";
 
 interface AuthButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -30,7 +30,7 @@ export const AuthButton: FC<AuthButtonProps> = ({
   return (
     <button
       disabled={isDisabled}
-      className={clsx(
+      className={classNames(
         "rounded-3xl text-sm transition-all duration-150",
         "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent",
         isDisabled ? "cursor-not-allowed" : "cursor-pointer",

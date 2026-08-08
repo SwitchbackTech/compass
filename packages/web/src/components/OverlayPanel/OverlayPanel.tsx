@@ -1,4 +1,4 @@
-import clsx from "clsx";
+import classNames from "classnames";
 import {
   type ButtonHTMLAttributes,
   type ReactNode,
@@ -94,14 +94,14 @@ export const OverlayPanel = ({
     };
   }, [restoreFocus, role, skipFocusRestoreRef]);
 
-  const backdropClasses = clsx(
+  const backdropClasses = classNames(
     "fixed inset-0 flex items-center justify-center bg-background/85 backdrop-blur-sm",
     variant === "modal" &&
       "transition-opacity duration-400 ease-out data-closing:opacity-0 motion-reduce:transition-none",
     backdropClassName,
   );
 
-  const panelClasses = clsx(
+  const panelClasses = classNames(
     "flex flex-col",
     align === "start" ? "items-start" : "items-center",
     variant === "modal" && [
@@ -113,11 +113,13 @@ export const OverlayPanel = ({
       "max-w-sm gap-3 rounded-lg border border-border bg-surface/90 px-6 py-5 shadow-lg",
   );
 
-  const titleClasses = clsx(
+  const titleClasses = classNames(
     "m-0 line-clamp-2 w-full min-w-0 font-semibold text-lg text-text",
   );
 
-  const messageClasses = clsx("m-0 whitespace-pre-line text-base text-text");
+  const messageClasses = classNames(
+    "m-0 whitespace-pre-line text-base text-text",
+  );
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (onDismiss && e.target === e.currentTarget) {
@@ -207,7 +209,7 @@ export const OverlayPanelActions = ({
   align = "end",
 }: OverlayPanelActionsProps) => (
   <div
-    className={clsx(
+    className={classNames(
       "flex w-full gap-3",
       align === "start" ? "justify-start" : "justify-end",
     )}
@@ -229,7 +231,7 @@ export const OverlayPanelActionButton = ({
   ...buttonProps
 }: OverlayPanelActionButtonProps) => (
   <button
-    className={clsx(
+    className={classNames(
       "h-11 rounded px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel disabled:pointer-events-none disabled:opacity-50",
       variant === "primary" &&
         "bg-accent text-on-accent transition hover:brightness-110",
