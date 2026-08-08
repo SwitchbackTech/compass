@@ -30,7 +30,9 @@ export function shouldAdvancePaletteStep({
   isPaletteOpen: boolean;
   isShortcutsOpen: boolean;
 }): boolean {
-  return (paletteOpened && !isPaletteOpen) || isShortcutsOpen;
+  // Require the palette to have opened first so a bare "?" / sidebar toggle
+  // cannot skip the Mod+K lesson.
+  return paletteOpened && (!isPaletteOpen || isShortcutsOpen);
 }
 
 /**

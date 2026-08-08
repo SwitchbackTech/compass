@@ -63,6 +63,16 @@ describe("shouldAdvancePaletteStep", () => {
       }),
     ).toBe(true);
   });
+
+  it("does not advance on shortcuts alone before the palette opened", () => {
+    expect(
+      shouldAdvancePaletteStep({
+        paletteOpened: false,
+        isPaletteOpen: false,
+        isShortcutsOpen: true,
+      }),
+    ).toBe(false);
+  });
 });
 
 describe("useOnboardingTourProgress palette step", () => {
@@ -120,5 +130,18 @@ describe("useOnboardingTourProgress palette step", () => {
       // Palette advance + shortcuts already-open cascade lands on done.
       expect(useOnboardingTourStore.getState().stepId).toBe("done");
     });
+  });
+
+  it("does not skip the palette lesson when shortcuts open alone", async () => {
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    act(() => {
+      viewActions.toggleShortcuts();
+    });
+
+    await waitFor(() => {
+      expect(useViewStore.getState().shortcuts.isOpen).toBe(true);
+    });
+    expect(useOnboardingTourStore.getState().stepId).toBe("palette");
   });
 });
