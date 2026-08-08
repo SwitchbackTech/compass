@@ -406,9 +406,9 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     };
 
     const onClose = useCallback(() => {
-      setTimeout(() => {
-        _onClose();
-      }, 1);
+      // Defer past the current event turn so menu/Escape handlers finish
+      // before the form unmounts — without an arbitrary delay.
+      queueMicrotask(_onClose);
     }, [_onClose]);
 
     const onDeleteEvent = useCallback(() => {
