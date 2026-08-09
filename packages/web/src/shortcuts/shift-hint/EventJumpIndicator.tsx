@@ -28,6 +28,12 @@ export const EventJumpIndicator: FC = () => {
 
   if (!isActive && !announcement) return null;
 
+  const statusText = !isActive
+    ? announcement
+    : announcement && announcement !== "Event jump on"
+      ? `Jump · ${announcement} · Esc`
+      : "Event jump · Esc or Shift";
+
   return (
     <span
       aria-live="polite"
@@ -35,11 +41,7 @@ export const EventJumpIndicator: FC = () => {
       data-event-jump-indicator=""
       role="status"
     >
-      {isActive
-        ? announcement && announcement !== "Event jump on"
-          ? `Jump · ${announcement} · Esc`
-          : "Event jump · Esc or Shift"
-        : announcement}
+      {statusText}
     </span>
   );
 };

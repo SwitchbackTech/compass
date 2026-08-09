@@ -53,12 +53,6 @@ const compareTargets = (a: DayJumpTarget, b: DayJumpTarget) => {
   return a.eventId.localeCompare(b.eventId);
 };
 
-export function dayPrefixForWeekday(weekday: number): string {
-  const prefix =
-    DAY_JUMP_PREFIX_BY_WEEKDAY[weekday as DayJumpWeekday] ?? undefined;
-  return prefix ?? "";
-}
-
 /**
  * Assign day-prefix (week) or numeric (day) hints. Same targets → same keys.
  */
@@ -87,12 +81,11 @@ export function assignDayJumpKeys(
   }
 
   const assignments: DayJumpAssignment[] = [];
-  const dayKeys = [...byDay.keys()].sort();
-  for (const dayKey of dayKeys) {
-    const dayTargets = byDay.get(dayKey);
-    if (!dayTargets) continue;
+  const days = [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b));
+  for (const [dayKey, dayTargets] of days) {
     const sorted = [...dayTargets].sort(compareTargets);
-    const dayPrefix = dayPrefixForWeekday(sorted[0]?.weekday ?? 0);
+    const weekday = (sorted[0]?.weekday ?? 0) as DayJumpWeekday;
+    const dayPrefix = DAY_JUMP_PREFIX_BY_WEEKDAY[weekday] ?? "";
     sorted.forEach((target, index) => {
       const n = index + 1;
       assignments.push({

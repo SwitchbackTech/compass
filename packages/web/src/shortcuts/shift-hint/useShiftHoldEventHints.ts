@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
@@ -50,15 +51,67 @@ const DAY_NAME_BY_PREFIX: Record<string, string> = {
   sa: "Saturday",
 };
 
-const scheduleMeta = (event: GridEvent) => {
-  if (!event.startDate) {
-    return { startMs: 0, dayKey: "1970-01-01", weekday: 0 };
-  }
+const FALLBACK_SCHEDULE = {
+  startMs: 0,
+  dayKey: "1970-01-01",
+  weekday: 0,
+} as const;
+
+type ScheduleMeta = {
+  startMs: number;
+  dayKey: string;
+  weekday: number;
+};
+
+const scheduleMeta = (event: GridEvent): ScheduleMeta => {
+  if (!event.startDate) return FALLBACK_SCHEDULE;
   const start = dayjs(event.startDate);
   return {
     startMs: start.valueOf(),
-    dayKey: start.format("YYYY-MM-DD"),
+    dayKey: start.format(YEAR_MONTH_DAY_FORMAT),
     weekday: start.day(),
+  };
+};
+
+const toActiveHints = (
+  assignments: DayJumpAssignment[],
+  visibleById: Map<string, ShiftHintFocusTarget>,
+): ActiveShiftHint[] =>
+  assignments.flatMap((assignment) => {
+    const target = visibleById.get(assignment.eventId);
+    if (!target) return [];
+    return [{ ...assignment, element: target.element }];
+  });
+
+/** Assign day-jump keys for the currently registered grid targets. */
+const buildDayJumpAssignments = (
+  visible: ShiftHintFocusTarget[],
+  events: GridEvent[],
+  mode: DayJumpLabelMode,
+): {
+  assignments: DayJumpAssignment[];
+  visibleById: Map<string, ShiftHintFocusTarget>;
+} => {
+  const scheduleById = new Map<string, ScheduleMeta>();
+  for (const event of events) {
+    if (!event._id) continue;
+    scheduleById.set(event._id, scheduleMeta(event));
+  }
+
+  const targets = visible.map((target) => {
+    const meta = scheduleById.get(target.eventId) ?? FALLBACK_SCHEDULE;
+    return {
+      eventId: target.eventId,
+      eventType: target.eventType,
+      startMs: meta.startMs,
+      dayKey: meta.dayKey,
+      weekday: meta.weekday,
+    };
+  });
+
+  return {
+    assignments: assignDayJumpKeys(targets, mode),
+    visibleById: new Map(visible.map((target) => [target.eventId, target])),
   };
 };
 
@@ -128,73 +181,32 @@ export function useShiftHoldEventHints({
       }
     };
 
-    const publishHints = (next: ActiveShiftHint[]) => {
-      setHints(next);
-    };
-
     const clearHints = () => {
       clearAmbiguousCommitTimer();
       assignmentsRef.current = [];
       visibleByIdRef.current = new Map();
       bufferRef.current = "";
-      publishHints([]);
+      setHints([]);
     };
 
-    const buildAssignments = () => {
+    const rebuildAssignments = () => {
       // Label every registered event in the view (not only viewport cards) so
       // day indices stay stable while scrolling.
-      const visible = listVisibleRef.current();
-      const scheduleById = new Map<
-        string,
-        { startMs: number; dayKey: string; weekday: number }
-      >();
-      for (const event of [
-        ...allDayEventsRef.current,
-        ...timedEventsRef.current,
-      ]) {
-        if (!event._id) continue;
-        scheduleById.set(event._id, scheduleMeta(event));
-      }
-
-      const targets = visible.map((target) => {
-        const meta = scheduleById.get(target.eventId) ?? {
-          startMs: 0,
-          dayKey: "1970-01-01",
-          weekday: 0,
-        };
-        return {
-          eventId: target.eventId,
-          eventType: target.eventType,
-          startMs: meta.startMs,
-          dayKey: meta.dayKey,
-          weekday: meta.weekday,
-        };
-      });
-
-      const assignments = assignDayJumpKeys(targets, modeRef.current);
-      assignmentsRef.current = assignments;
-      visibleByIdRef.current = new Map(
-        visible.map((target) => [target.eventId, target]),
+      const { assignments, visibleById } = buildDayJumpAssignments(
+        listVisibleRef.current(),
+        [...allDayEventsRef.current, ...timedEventsRef.current],
+        modeRef.current,
       );
-
-      return assignments.flatMap((assignment) => {
-        const target = visibleByIdRef.current.get(assignment.eventId);
-        if (!target) return [];
-        return [{ ...assignment, element: target.element }];
-      });
+      assignmentsRef.current = assignments;
+      visibleByIdRef.current = visibleById;
+      return assignments;
     };
 
     const publishFiltered = (buffer: string) => {
       const source = buffer
         ? filterHintsByPrefix(assignmentsRef.current, buffer)
         : assignmentsRef.current;
-      publishHints(
-        source.flatMap((assignment) => {
-          const target = visibleByIdRef.current.get(assignment.eventId);
-          if (!target) return [];
-          return [{ ...assignment, element: target.element }];
-        }),
-      );
+      setHints(toActiveHints(source, visibleByIdRef.current));
     };
 
     const activate = () => {
@@ -202,7 +214,7 @@ export function useShiftHoldEventHints({
       bufferRef.current = "";
       eventJumpActions.setActive(true);
       eventJumpActions.setActiveDayKeys([]);
-      publishHints(buildAssignments());
+      setHints(toActiveHints(rebuildAssignments(), visibleByIdRef.current));
     };
 
     const deactivate = (announceOff = true) => {
@@ -226,16 +238,16 @@ export function useShiftHoldEventHints({
     const commitFocus = (eventId: string, dayKey: string, buffer: string) => {
       clearAmbiguousCommitTimer();
       eventJumpActions.setActiveDayKeys([dayKey]);
-      publishFiltered(buffer.replace(/\d+$/, "") || buffer);
       focusEvent(eventId);
-      // Reset digit buffer to the day prefix so another index can be typed,
-      // or clear fully in day mode.
-      const dayPrefix = buffer.replace(/\d+$/, "");
-      bufferRef.current = dayPrefix;
+      // Day view clears the buffer; week keeps the day prefix for the next index.
       if (modeRef.current === "day") {
         bufferRef.current = "";
         publishFiltered("");
+        return;
       }
+      const dayPrefix = buffer.replace(/\d+$/, "") || buffer;
+      bufferRef.current = dayPrefix;
+      publishFiltered(dayPrefix);
     };
 
     const scheduleAmbiguousCommit = (
@@ -414,62 +426,28 @@ export function useShiftHoldEventHints({
     };
   }, [enabled]);
 
-  const eventIdsKey = useMemo(
-    () =>
-      [...allDayEvents, ...timedEvents]
-        .map((event) => event._id ?? "")
-        .join(","),
-    [allDayEvents, timedEvents],
-  );
-
   // Rebuild chips when the event set changes while mode is on. Uses refs for
   // listVisible so an inline callback identity does not loop setState.
+  const eventIdsKey = [...allDayEvents, ...timedEvents]
+    .map((event) => event._id ?? "")
+    .join(",");
+
   useEffect(() => {
     if (!enabled || !isActive) return;
     // Read eventIdsKey so the effect re-runs when the visible event id set changes.
     void eventIdsKey;
 
-    const visible = listVisibleRef.current();
-    const scheduleById = new Map<
-      string,
-      { startMs: number; dayKey: string; weekday: number }
-    >();
-    for (const event of [
-      ...allDayEventsRef.current,
-      ...timedEventsRef.current,
-    ]) {
-      if (!event._id) continue;
-      scheduleById.set(event._id, scheduleMeta(event));
-    }
-    const targets = visible.map((target) => {
-      const meta = scheduleById.get(target.eventId) ?? {
-        startMs: 0,
-        dayKey: "1970-01-01",
-        weekday: 0,
-      };
-      return {
-        eventId: target.eventId,
-        eventType: target.eventType,
-        startMs: meta.startMs,
-        dayKey: meta.dayKey,
-        weekday: meta.weekday,
-      };
-    });
-    const assignments = assignDayJumpKeys(targets, modeRef.current);
-    assignmentsRef.current = assignments;
-    visibleByIdRef.current = new Map(
-      visible.map((target) => [target.eventId, target]),
+    const { assignments, visibleById } = buildDayJumpAssignments(
+      listVisibleRef.current(),
+      [...allDayEventsRef.current, ...timedEventsRef.current],
+      modeRef.current,
     );
+    assignmentsRef.current = assignments;
+    visibleByIdRef.current = visibleById;
     const source = bufferRef.current
       ? filterHintsByPrefix(assignments, bufferRef.current)
       : assignments;
-    setHints(
-      source.flatMap((assignment) => {
-        const target = visibleByIdRef.current.get(assignment.eventId);
-        if (!target) return [];
-        return [{ ...assignment, element: target.element }];
-      }),
-    );
+    setHints(toActiveHints(source, visibleById));
   }, [enabled, eventIdsKey, isActive]);
 
   return { hints, isActive, activeDayKeys };
