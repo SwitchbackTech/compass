@@ -5,6 +5,10 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import {
+  selectKeyboardOnlyActive,
+  useKeyboardOnlyStore,
+} from "@web/shortcuts/keyboard-only/keyboard-only.store";
+import {
   assignDayJumpKeys,
   type DayJumpAssignment,
   type DayJumpLabelMode,
@@ -20,6 +24,7 @@ import {
   createShiftJumpGestureState,
   isShiftKey,
   reduceShiftJumpGesture,
+  SHIFT_DOUBLE_TAP_MAX_GAP_MS,
   type ShiftJumpGestureState,
 } from "@web/shortcuts/shift-hint/shift-hold-detector";
 
@@ -151,6 +156,9 @@ export function useShiftHoldEventHints({
   const ambiguousCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const pendingActivateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const focusRef = useRef(focus);
   const listVisibleRef = useRef(listVisible);
   const allDayEventsRef = useRef(allDayEvents);
@@ -166,6 +174,14 @@ export function useShiftHoldEventHints({
 
   useEffect(() => {
     if (!enabled) {
+      if (pendingActivateTimerRef.current !== null) {
+        clearTimeout(pendingActivateTimerRef.current);
+        pendingActivateTimerRef.current = null;
+      }
+      if (ambiguousCommitTimerRef.current !== null) {
+        clearTimeout(ambiguousCommitTimerRef.current);
+        ambiguousCommitTimerRef.current = null;
+      }
       gestureRef.current = createShiftJumpGestureState();
       bufferRef.current = "";
       assignmentsRef.current = [];
@@ -178,6 +194,13 @@ export function useShiftHoldEventHints({
       if (ambiguousCommitTimerRef.current !== null) {
         clearTimeout(ambiguousCommitTimerRef.current);
         ambiguousCommitTimerRef.current = null;
+      }
+    };
+
+    const clearPendingActivateTimer = () => {
+      if (pendingActivateTimerRef.current !== null) {
+        clearTimeout(pendingActivateTimerRef.current);
+        pendingActivateTimerRef.current = null;
       }
     };
 
@@ -209,15 +232,41 @@ export function useShiftHoldEventHints({
       setHints(toActiveHints(source, visibleByIdRef.current));
     };
 
+    /** Drop trailing digits so the next index starts from the day prefix. */
+    const stripDigitBuffer = () => {
+      const dayPrefix = bufferRef.current.replace(/\d+$/, "");
+      if (dayPrefix === bufferRef.current) return;
+      bufferRef.current = dayPrefix;
+      publishFiltered(dayPrefix);
+    };
+
     const activate = () => {
+      if (selectKeyboardOnlyActive(useKeyboardOnlyStore.getState())) return;
+      const assignments = rebuildAssignments();
+      if (assignments.length === 0) return;
       isActiveRef.current = true;
       bufferRef.current = "";
       eventJumpActions.setActive(true);
       eventJumpActions.setActiveDayKeys([]);
-      setHints(toActiveHints(rebuildAssignments(), visibleByIdRef.current));
+      setHints(toActiveHints(assignments, visibleByIdRef.current));
+    };
+
+    const scheduleActivate = () => {
+      clearPendingActivateTimer();
+      // Defer past the Shift-Shift window so keyboard-only can win without a
+      // jump-mode flash on the first tap.
+      // Wait just past the double-tap window so a second Shift is forceOff
+      // (keyboard-only) rather than racing this activate.
+      pendingActivateTimerRef.current = setTimeout(() => {
+        pendingActivateTimerRef.current = null;
+        if (isActiveRef.current) return;
+        if (isAppLocked()) return;
+        activate();
+      }, SHIFT_DOUBLE_TAP_MAX_GAP_MS + 1);
     };
 
     const deactivate = (announceOff = true) => {
+      clearPendingActivateTimer();
       isActiveRef.current = false;
       bufferRef.current = "";
       clearHints();
@@ -305,6 +354,7 @@ export function useShiftHoldEventHints({
       // Arrows keep mode on so letter-then-arrows can move focus.
       if (event.key.startsWith("Arrow")) {
         clearAmbiguousCommitTimer();
+        stripDigitBuffer();
         return;
       }
 
@@ -329,6 +379,7 @@ export function useShiftHoldEventHints({
 
       if (!match) {
         clearAmbiguousCommitTimer();
+        stripDigitBuffer();
         return;
       }
 
@@ -383,6 +434,8 @@ export function useShiftHoldEventHints({
         gestureRef.current = state;
 
         if (forceOff) {
+          // Cancel a deferred first-tap activate; silence if jump already on.
+          clearPendingActivateTimer();
           if (isActiveRef.current) deactivate(false);
           return;
         }
@@ -392,8 +445,12 @@ export function useShiftHoldEventHints({
 
         if (isActiveRef.current) {
           deactivate();
+        } else if (pendingActivateTimerRef.current !== null) {
+          // Second intentional tap after deferral window started but before
+          // activate fired: treat as cancel (also covers slow double intent).
+          clearPendingActivateTimer();
         } else {
-          activate();
+          scheduleActivate();
         }
         return;
       }
@@ -407,6 +464,7 @@ export function useShiftHoldEventHints({
 
     const onBlur = () => {
       gestureRef.current = createShiftJumpGestureState();
+      clearPendingActivateTimer();
       if (isActiveRef.current) deactivate();
     };
 
@@ -416,6 +474,7 @@ export function useShiftHoldEventHints({
 
     return () => {
       clearAmbiguousCommitTimer();
+      clearPendingActivateTimer();
       suppressKeyUpRef.current.clear();
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keyup", onKeyUp, true);

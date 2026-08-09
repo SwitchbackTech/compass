@@ -331,7 +331,7 @@ After deleting or moving an event, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux
 
 ### UX
 
-Tapping `Shift` toggles event-jump mode. Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event; a following digit focuses that index. `Esc` or another Shift tap exits. Quick chords such as Shift+J or Shift+Arrow do not toggle the mode. Shift-Shift still enters keyboard-only mode.
+Tapping `Shift` toggles event-jump mode (activation waits briefly so Shift-Shift can still enter keyboard-only without a jump flash). Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event; a following digit focuses that index. `Esc` or another Shift tap exits. Quick chords such as Shift+J or Shift+Arrow do not toggle the mode.
 
 ### Steps
 
