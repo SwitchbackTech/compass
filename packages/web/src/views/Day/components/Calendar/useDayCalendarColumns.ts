@@ -81,6 +81,7 @@ export const useDayCalendarColumns = ({
     displayedCalendars,
     displayedTimedEvents,
     getCalendarColumnIndex,
+    isDisplayedEvent,
     visibleDates,
   };
 };

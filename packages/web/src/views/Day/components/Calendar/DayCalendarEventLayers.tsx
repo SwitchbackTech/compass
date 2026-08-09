@@ -39,6 +39,7 @@ interface DayAllDayEventsProps {
 
 interface DayTimedEventsProps {
   getCalendarColumnIndex: (event: GridEvent) => number;
+  isDisplayedEvent: (event: GridEvent) => boolean;
   draft: GridEventDraft | null;
   events: GridEvent[];
   measurements: GridMeasurements;
@@ -89,6 +90,7 @@ export const DayCalendarTimedEventsLayer = ({
   draft,
   events: timedEvents,
   getCalendarColumnIndex,
+  isDisplayedEvent,
   measurements,
   onOpenEvent,
   visibleDates,
@@ -106,8 +108,8 @@ export const DayCalendarTimedEventsLayer = ({
         events: timedEvents,
         isAllDay: false,
         visibleDates,
-      }),
-    [draft, timedEvents, visibleDates],
+      }).filter(isDisplayedEvent),
+    [draft, isDisplayedEvent, timedEvents, visibleDates],
   );
   const timedEventItems = useMemo(() => {
     const eventsByColumn = new Map<number, GridEvent[]>();

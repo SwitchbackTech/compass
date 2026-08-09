@@ -188,7 +188,7 @@ describe("getDefaultTargetCalendar", () => {
     ).toBe(starred);
   });
 
-  it("lets the local calendar be starred explicitly", () => {
+  it("lets the local calendar be starred explicitly while disconnected", () => {
     const local = makeCalendar({ provider: "local" });
     const primaryGoogle = makeCalendar({
       provider: "google",
@@ -201,6 +201,46 @@ describe("getDefaultTargetCalendar", () => {
         preferredCalendarId: local.id,
       }),
     ).toBe(local);
+  });
+
+  it("ignores a starred local calendar once an account is connected", () => {
+    const local = makeCalendar({ provider: "local" });
+    const primaryGoogle = makeCalendar({
+      provider: "google",
+      isPrimary: true,
+      accountEmail: "user@example.com",
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+    });
+
+    expect(
+      getDefaultTargetCalendar([local, primaryGoogle], {
+        preferredCalendarId: local.id,
+        accountEmailOrder: ["user@example.com"],
+      }),
+    ).toBe(primaryGoogle);
+  });
+
+  it("does not fall back to local once an account is connected", () => {
+    const local = makeCalendar({ provider: "local" });
+    const readOnlyPrimary = makeCalendar({
+      provider: "google",
+      isPrimary: true,
+      accountEmail: "user@example.com",
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+      capabilities: {
+        canReadAvailability: true,
+        canReadDetails: true,
+        canWrite: false,
+        canManage: false,
+        canWatchEvents: true,
+      },
+    });
+
+    expect(
+      getDefaultTargetCalendar([local, readOnlyPrimary], {
+        accountEmailOrder: ["user@example.com"],
+      }),
+    ).toBeUndefined();
   });
 
   it("falls back to the derived default when the starred calendar is gone", () => {
