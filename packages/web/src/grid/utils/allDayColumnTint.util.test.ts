@@ -213,6 +213,24 @@ describe("withAllDayColumnTints (calendar / day)", () => {
     expect(tinted[1]?.allDayTintColor).toBeUndefined();
   });
 
+  it("falls unknown calendarIds back to the first column", () => {
+    const tinted = withAllDayColumnTints(
+      calendarColumns(),
+      [
+        event({
+          startDate: "2026-08-10",
+          endDate: "2026-08-11",
+          calendarId: calendarId("cal-missing"),
+          color: "red",
+        }),
+      ],
+      "calendar",
+    );
+
+    expect(tinted[0]?.allDayTintColor).toBe(EVENT_COLOR_SLOT_HEX.red);
+    expect(tinted[1]?.allDayTintColor).toBeUndefined();
+  });
+
   it("picks the topmost chip within a calendar column", () => {
     const tinted = withAllDayColumnTints(
       calendarColumns(),

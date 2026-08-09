@@ -3,7 +3,9 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
+import { positionAllDayDraftEvent } from "@web/grid/layout/all-day-draft.position";
 import { withAllDayColumnTints } from "@web/grid/utils/allDayColumnTint.util";
 import { AllDayRow } from "@web/views/Week/components/Grid/AllDayRow/AllDayRow";
 import { EdgeNavigationIndicators } from "@web/views/Week/components/Grid/MainGrid/EdgeNavigationIndicators/EdgeNavigationIndicators";
@@ -59,6 +61,15 @@ export const Grid: FC<Props> = ({
 
   useDragEdgeNavigation(mainGridRef, weekProps);
 
+  const gridDraft = useDraftStore(selectGridDraft);
+  // Include the live all-day draft so create/edit chips tint columns before save.
+  const allDayEventsForTint = useMemo(
+    () =>
+      positionAllDayDraftEvent({ draft: gridDraft, events: allDayEvents })
+        .events,
+    [allDayEvents, gridDraft],
+  );
+
   const weekDays = weekProps.component.weekDays;
   const visibleDates = useMemo(
     () =>
@@ -67,10 +78,10 @@ export const Grid: FC<Props> = ({
           date,
           key: date.format(YEAR_MONTH_DAY_FORMAT),
         })),
-        allDayEvents,
+        allDayEventsForTint,
         "date",
       ),
-    [allDayEvents, weekDays],
+    [allDayEventsForTint, weekDays],
   );
 
   return (

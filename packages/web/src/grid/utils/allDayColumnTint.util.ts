@@ -3,7 +3,7 @@ import { type CSSVariables } from "@web/common/styles/css.types";
 import { getEventPalette } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { type GridVisibleDate } from "@web/grid/types/grid.types";
-import { isAllDayEventOnDay } from "@web/views/Day/components/Calendar/dayAllDayRows.util";
+import { isAllDayEventOnDay } from "@web/grid/utils/allDayEventOnDay.util";
 
 /** Opacity of the all-day event color wash on day columns (Vimcal-like). */
 export const ALL_DAY_COLUMN_TINT_PERCENT = 8;
@@ -42,17 +42,19 @@ export const allDayColumnTintStyle = (
 const resolveTintHex = (color?: EventColorSlot, colorHex?: string): string =>
   getEventPalette(color, colorHex).base;
 
-const eventBelongsToCalendarColumn = (
+const resolveCalendarColumnKey = (
   event: AllDayColumnTintEvent,
-  column: GridVisibleDate,
-  columnIndex: number,
-  fallbackKey: string | undefined,
-): boolean => {
-  if (event.calendarId !== undefined) {
-    return event.calendarId === column.key;
+  visibleDates: GridVisibleDate[],
+): string | undefined => {
+  // Match Day view's getCalendarColumnIndex: known calendar → that column,
+  // otherwise fall back to column 0 (missing/unknown calendarId).
+  if (
+    event.calendarId !== undefined &&
+    visibleDates.some((column) => column.key === event.calendarId)
+  ) {
+    return event.calendarId;
   }
-  // Untitled / local drafts without a calendar land in the first column.
-  return columnIndex === 0 && column.key === fallbackKey;
+  return visibleDates[0]?.key;
 };
 
 const considerWinner = (
@@ -88,25 +90,21 @@ export const withAllDayColumnTints = (
   }
 
   const winners = new Map<string, AllDayColumnTintEvent>();
-  const fallbackCalendarKey = visibleDates[0]?.key;
 
-  for (const [columnIndex, column] of visibleDates.entries()) {
+  for (const column of visibleDates) {
     for (const event of allDayEvents) {
       if (mode === "date") {
         if (!isAllDayEventOnDay(event, column.date)) {
           continue;
         }
-      } else if (
-        !eventBelongsToCalendarColumn(
-          event,
-          column,
-          columnIndex,
-          fallbackCalendarKey,
-        )
-      ) {
+        considerWinner(winners, column.key, event);
         continue;
       }
 
+      const eventColumnKey = resolveCalendarColumnKey(event, visibleDates);
+      if (eventColumnKey !== column.key) {
+        continue;
+      }
       considerWinner(winners, column.key, event);
     }
   }
