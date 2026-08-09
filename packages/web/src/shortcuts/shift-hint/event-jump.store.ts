@@ -43,6 +43,11 @@ export const eventJumpActions = {
       false,
       { type: "silenceOff" },
     ),
+  /** Clear a lingering exit announcement after the live region has spoken. */
+  clearAnnouncement: () =>
+    useEventJumpStore.setState({ announcement: "" }, false, {
+      type: "clearAnnouncement",
+    }),
   setActiveDayKeys: (activeDayKeys: string[], announcement?: string) =>
     useEventJumpStore.setState(
       {

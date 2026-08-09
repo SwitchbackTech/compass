@@ -314,6 +314,7 @@ describe("matchDayJumpKeystroke", () => {
       kind: "prefix",
       buffer: "f1",
       dayKeys: ["2026-08-07"],
+      pendingExactEventId: "fri-1",
     });
 
     expect(
@@ -327,6 +328,22 @@ describe("matchDayJumpKeystroke", () => {
       eventId: "fri-10",
       dayKey: "2026-08-07",
       buffer: "f10",
+    });
+  });
+
+  it("abandons an unresolved weekend S when another day letter is typed", () => {
+    expect(
+      matchDayJumpKeystroke({
+        assignments: weekAssignments,
+        key: "w",
+        buffer: "s",
+      }),
+    ).toEqual({
+      kind: "selectDay",
+      dayPrefix: "w",
+      dayKey: "2026-08-05",
+      firstEventId: "wed-1",
+      buffer: "w",
     });
   });
 

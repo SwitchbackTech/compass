@@ -21,7 +21,12 @@ const createTimedEventAt = async (
 const shiftHintOverlay = (page: Parameters<typeof prepareCalendarPage>[0]) =>
   page.locator("[data-shift-event-hints]");
 
-test("hold Shift shows jump keys and focuses the assigned event", async ({
+const tapShift = async (page: Parameters<typeof prepareCalendarPage>[0]) => {
+  await page.keyboard.down("Shift");
+  await page.keyboard.up("Shift");
+};
+
+test("tap Shift shows day-prefix jump keys and focuses the assigned event", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
@@ -30,7 +35,7 @@ test("hold Shift shows jump keys and focuses the assigned event", async ({
   const middleTitle = createEventTitle("Middle Flash");
   const lateTitle = createEventTitle("Late Flash");
 
-  // Same weekday column; earlier y ≈ earlier start for chronological hints.
+  // Wednesday column at xRatio 0.42; earlier y ≈ earlier start for indices.
   await createTimedEventAt(page, earlyTitle, { xRatio: 0.42, yRatio: 0.25 });
   await createTimedEventAt(page, middleTitle, { xRatio: 0.42, yRatio: 0.4 });
   await createTimedEventAt(page, lateTitle, { xRatio: 0.42, yRatio: 0.55 });
@@ -39,24 +44,28 @@ test("hold Shift shows jump keys and focuses the assigned event", async ({
     .locator("#mainGrid")
     .getByRole("button", { name: middleTitle });
 
-  await page.keyboard.down("Shift");
-  await page.waitForTimeout(250);
+  await tapShift(page);
 
   const overlay = shiftHintOverlay(page);
-  await expect(overlay.getByText("A", { exact: true })).toHaveCount(1);
-  await expect(overlay.getByText("S", { exact: true })).toHaveCount(1);
-  await expect(overlay.getByText("D", { exact: true })).toHaveCount(1);
+  await expect(overlay.getByText("W1", { exact: true })).toHaveCount(1);
+  await expect(overlay.getByText("W2", { exact: true })).toHaveCount(1);
+  await expect(overlay.getByText("W3", { exact: true })).toHaveCount(1);
 
-  await page.keyboard.down("s");
-  await page.keyboard.up("s");
+  await page.keyboard.down("w");
+  await page.keyboard.up("w");
+  await page.keyboard.down("2");
+  await page.keyboard.up("2");
 
   await expect(middleButton).toBeFocused();
-  await expect(shiftHintOverlay(page)).toHaveCount(0);
+  // Mode stays on after a digit focus so another index can be typed.
+  await expect(shiftHintOverlay(page)).toHaveCount(1);
 
-  await page.keyboard.up("Shift");
+  await page.keyboard.down("Escape");
+  await page.keyboard.up("Escape");
+  await expect(shiftHintOverlay(page)).toHaveCount(0);
 });
 
-test("fast Shift+J does not flash event jump keys", async ({ page }) => {
+test("fast Shift+J does not toggle event jump keys", async ({ page }) => {
   await prepareCalendarPage(page);
 
   const title = createEventTitle("Chord Quiet");

@@ -35,9 +35,6 @@ export const createShiftJumpGestureState = (): ShiftJumpGestureState => ({
   lastShiftReleaseAt: null,
 });
 
-/** @deprecated Use {@link createShiftJumpGestureState}. */
-export const createShiftHoldState = createShiftJumpGestureState;
-
 export type ShiftJumpGestureEvent =
   | { type: "shiftDown"; now: number; blocked: boolean }
   | { type: "shiftUp"; now: number }
@@ -152,14 +149,6 @@ export function reduceShiftJumpGesture(
       };
     }
   }
-}
-
-/** @deprecated Use {@link reduceShiftJumpGesture}. */
-export function reduceShiftHold(
-  state: ShiftJumpGestureState,
-  event: ShiftJumpGestureEvent,
-): ShiftJumpGestureState {
-  return reduceShiftJumpGesture(state, event).state;
 }
 
 /** True when a second Shift tap would count as double-tap, not a hold. */

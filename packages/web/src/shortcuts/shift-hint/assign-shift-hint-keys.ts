@@ -39,10 +39,10 @@ export type DayJumpAssignment = {
   index: number;
 };
 
-/** @deprecated Prefer {@link DayJumpAssignment}. */
-export type ShiftHintAssignment = DayJumpAssignment;
-
 export type DayJumpLabelMode = "week" | "day";
+
+/** Wait before committing a digit that could still grow (F1 vs F10). */
+export const DIGIT_AMBIGUOUS_COMMIT_MS = 400;
 
 const compareTargets = (a: DayJumpTarget, b: DayJumpTarget) => {
   if (a.dayKey !== b.dayKey) return a.dayKey.localeCompare(b.dayKey);
@@ -108,28 +108,6 @@ export function assignDayJumpKeys(
   return assignments;
 }
 
-/** @deprecated Use {@link assignDayJumpKeys}. */
-export function assignShiftHintKeys(
-  targets: Array<{
-    eventId: string;
-    startMs: number;
-    eventType: "all-day" | "timed";
-    dayKey?: string;
-    weekday?: number;
-  }>,
-): DayJumpAssignment[] {
-  return assignDayJumpKeys(
-    targets.map((target) => ({
-      eventId: target.eventId,
-      startMs: target.startMs,
-      eventType: target.eventType,
-      dayKey: target.dayKey ?? "1970-01-01",
-      weekday: target.weekday ?? 0,
-    })),
-    "week",
-  );
-}
-
 /** Narrow assignments whose hint starts with `prefix`. */
 export function filterHintsByPrefix(
   assignments: DayJumpAssignment[],
@@ -147,7 +125,13 @@ export type DayJumpMatchResult =
       firstEventId: string;
       buffer: string;
     }
-  | { kind: "prefix"; buffer: string; dayKeys: string[] }
+  | {
+      kind: "prefix";
+      buffer: string;
+      dayKeys: string[];
+      /** Exact hint match that is still ambiguous with a longer sibling. */
+      pendingExactEventId?: string;
+    }
   | { kind: "focus"; eventId: string; dayKey: string; buffer: string }
   | null;
 
@@ -204,7 +188,8 @@ export function matchDayJumpKeystroke({
       return selectDayPrefix(assignments, dayPrefix);
     }
 
-    if (buffer === "" && UNIQUE_DAY_LETTERS.has(lower)) {
+    // Abandon an unresolved weekend "s" when another day letter is typed.
+    if (UNIQUE_DAY_LETTERS.has(lower)) {
       return selectDayPrefix(assignments, lower);
     }
 
@@ -222,35 +207,6 @@ export function matchDayJumpKeystroke({
   }
 
   return null;
-}
-
-/** @deprecated Use {@link matchDayJumpKeystroke}. */
-export function matchShiftHintKeystroke({
-  assignments,
-  key,
-  prefix,
-}: {
-  assignments: DayJumpAssignment[];
-  key: string;
-  prefix: string;
-}):
-  | { kind: "focus"; eventId: string }
-  | { kind: "prefix"; prefix: string }
-  | null {
-  const match = matchDayJumpKeystroke({
-    assignments,
-    key,
-    buffer: prefix,
-    mode: "week",
-  });
-  if (!match) return null;
-  if (match.kind === "focus") {
-    return { kind: "focus", eventId: match.eventId };
-  }
-  if (match.kind === "selectDay") {
-    return { kind: "prefix", prefix: match.dayPrefix };
-  }
-  return { kind: "prefix", prefix: match.buffer };
 }
 
 function selectDayPrefix(
@@ -298,6 +254,7 @@ function matchDigitBuffer(
     kind: "prefix",
     buffer: next,
     dayKeys: uniqueDayKeys(narrowed),
+    ...(exact ? { pendingExactEventId: exact.eventId } : {}),
   };
 }
 

@@ -2,10 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
+import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import {
   assignDayJumpKeys,
   type DayJumpAssignment,
   type DayJumpLabelMode,
+  DIGIT_AMBIGUOUS_COMMIT_MS,
   filterHintsByPrefix,
   matchDayJumpKeystroke,
 } from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
@@ -93,6 +95,9 @@ export function useShiftHoldEventHints({
   const assignmentsRef = useRef<DayJumpAssignment[]>([]);
   const visibleByIdRef = useRef<Map<string, ShiftHintFocusTarget>>(new Map());
   const suppressKeyUpRef = useRef(new Set<string>());
+  const ambiguousCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const focusRef = useRef(focus);
   const listVisibleRef = useRef(listVisible);
   const allDayEventsRef = useRef(allDayEvents);
@@ -116,11 +121,19 @@ export function useShiftHoldEventHints({
       return;
     }
 
+    const clearAmbiguousCommitTimer = () => {
+      if (ambiguousCommitTimerRef.current !== null) {
+        clearTimeout(ambiguousCommitTimerRef.current);
+        ambiguousCommitTimerRef.current = null;
+      }
+    };
+
     const publishHints = (next: ActiveShiftHint[]) => {
       setHints(next);
     };
 
     const clearHints = () => {
+      clearAmbiguousCommitTimer();
       assignmentsRef.current = [];
       visibleByIdRef.current = new Map();
       bufferRef.current = "";
@@ -210,6 +223,35 @@ export function useShiftHoldEventHints({
       focusRef.current(target);
     };
 
+    const commitFocus = (eventId: string, dayKey: string, buffer: string) => {
+      clearAmbiguousCommitTimer();
+      eventJumpActions.setActiveDayKeys([dayKey]);
+      publishFiltered(buffer.replace(/\d+$/, "") || buffer);
+      focusEvent(eventId);
+      // Reset digit buffer to the day prefix so another index can be typed,
+      // or clear fully in day mode.
+      const dayPrefix = buffer.replace(/\d+$/, "");
+      bufferRef.current = dayPrefix;
+      if (modeRef.current === "day") {
+        bufferRef.current = "";
+        publishFiltered("");
+      }
+    };
+
+    const scheduleAmbiguousCommit = (
+      eventId: string,
+      dayKey: string,
+      buffer: string,
+    ) => {
+      clearAmbiguousCommitTimer();
+      ambiguousCommitTimerRef.current = setTimeout(() => {
+        ambiguousCommitTimerRef.current = null;
+        if (!isActiveRef.current) return;
+        if (bufferRef.current !== buffer) return;
+        commitFocus(eventId, dayKey, buffer);
+      }, DIGIT_AMBIGUOUS_COMMIT_MS);
+    };
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
 
@@ -241,20 +283,16 @@ export function useShiftHoldEventHints({
       }
 
       if (event.key === "Escape") {
+        if (isHigherEscapeOwner()) return;
         event.preventDefault();
         event.stopPropagation();
         deactivate();
         return;
       }
 
-      // Arrows / j / k keep mode on so letter-then-arrows works.
-      if (
-        event.key.startsWith("Arrow") ||
-        event.key === "j" ||
-        event.key === "J" ||
-        event.key === "k" ||
-        event.key === "K"
-      ) {
+      // Arrows keep mode on so letter-then-arrows can move focus.
+      if (event.key.startsWith("Arrow")) {
+        clearAmbiguousCommitTimer();
         return;
       }
 
@@ -263,6 +301,9 @@ export function useShiftHoldEventHints({
       }
 
       const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      if (key.length !== 1) return;
+
+      // Swallow j/k and other unmatched printable shortcuts while jump is on.
       const match = matchDayJumpKeystroke({
         assignments: assignmentsRef.current,
         key,
@@ -270,11 +311,14 @@ export function useShiftHoldEventHints({
         mode: modeRef.current,
       });
 
-      if (!match) return;
-
       event.preventDefault();
       event.stopPropagation();
       suppressKeyUpRef.current.add(key);
+
+      if (!match) {
+        clearAmbiguousCommitTimer();
+        return;
+      }
 
       if (match.kind === "prefix") {
         bufferRef.current = match.buffer;
@@ -283,10 +327,21 @@ export function useShiftHoldEventHints({
           match.buffer === "s" ? "Sunday or Saturday" : undefined,
         );
         publishFiltered(match.buffer);
+        if (match.pendingExactEventId) {
+          const exact = assignmentsRef.current.find(
+            (assignment) => assignment.eventId === match.pendingExactEventId,
+          );
+          if (exact) {
+            scheduleAmbiguousCommit(exact.eventId, exact.dayKey, match.buffer);
+          }
+        } else {
+          clearAmbiguousCommitTimer();
+        }
         return;
       }
 
       if (match.kind === "selectDay") {
+        clearAmbiguousCommitTimer();
         bufferRef.current = match.buffer;
         const dayName = DAY_NAME_BY_PREFIX[match.dayPrefix] ?? match.dayPrefix;
         eventJumpActions.setActiveDayKeys(
@@ -299,19 +354,7 @@ export function useShiftHoldEventHints({
         return;
       }
 
-      // focus
-      bufferRef.current = match.buffer;
-      eventJumpActions.setActiveDayKeys([match.dayKey]);
-      publishFiltered(match.buffer.replace(/\d+$/, "") || match.buffer);
-      focusEvent(match.eventId);
-      // Reset digit buffer to the day prefix so another index can be typed,
-      // or clear fully in day mode.
-      const dayPrefix = match.buffer.replace(/\d+$/, "");
-      bufferRef.current = dayPrefix;
-      if (modeRef.current === "day") {
-        bufferRef.current = "";
-        publishFiltered("");
-      }
+      commitFocus(match.eventId, match.dayKey, match.buffer);
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
@@ -360,6 +403,7 @@ export function useShiftHoldEventHints({
     window.addEventListener("blur", onBlur);
 
     return () => {
+      clearAmbiguousCommitTimer();
       suppressKeyUpRef.current.clear();
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keyup", onKeyUp, true);

@@ -79,7 +79,7 @@ test("SHIFT-SHIFT exits keyboard-only mode and restores clicks", async ({
   await expect(page.getByLabel("Title")).toBeVisible();
 });
 
-test("hold Shift still flashes jump keys and does not enter keyboard-only mode", async ({
+test("hold Shift does not enter keyboard-only or event jump", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
@@ -87,7 +87,7 @@ test("hold Shift still flashes jump keys and does not enter keyboard-only mode",
 
   await page.keyboard.down("Shift");
   await page.waitForTimeout(250);
-  await expect(page.locator("[data-shift-event-hints]")).toHaveCount(1);
+  await expect(page.locator("[data-shift-event-hints]")).toHaveCount(0);
   await expect(keyboardOnlyIndicator(page)).toHaveCount(0);
   await page.keyboard.up("Shift");
   await expect(page.locator("[data-shift-event-hints]")).toHaveCount(0);
