@@ -1,111 +1,391 @@
 import {
-  assignShiftHintKeys,
+  assignDayJumpKeys,
+  DAY_JUMP_PREFIX_BY_WEEKDAY,
   filterHintsByPrefix,
-  generateHintKeys,
-  matchShiftHintKeystroke,
-  SHIFT_HINT_ALPHABET,
+  matchDayJumpKeystroke,
 } from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
 import { describe, expect, it } from "bun:test";
 
-describe("assignShiftHintKeys", () => {
-  it("assigns home-row singles in chronological order", () => {
-    const assignments = assignShiftHintKeys([
-      { eventId: "c", startMs: 300, eventType: "timed" },
-      { eventId: "a", startMs: 100, eventType: "timed" },
-      { eventId: "b", startMs: 200, eventType: "timed" },
-    ]);
+describe("assignDayJumpKeys", () => {
+  it("assigns weekday prefixes and per-day indices chronologically", () => {
+    const assignments = assignDayJumpKeys(
+      [
+        {
+          eventId: "wed-2",
+          startMs: 200,
+          eventType: "timed",
+          dayKey: "2026-08-05",
+          weekday: 3,
+        },
+        {
+          eventId: "wed-1",
+          startMs: 100,
+          eventType: "timed",
+          dayKey: "2026-08-05",
+          weekday: 3,
+        },
+        {
+          eventId: "mon-1",
+          startMs: 50,
+          eventType: "timed",
+          dayKey: "2026-08-03",
+          weekday: 1,
+        },
+      ],
+      "week",
+    );
 
     expect(assignments).toEqual([
-      { eventId: "a", hint: "a" },
-      { eventId: "b", hint: "s" },
-      { eventId: "c", hint: "d" },
+      {
+        eventId: "mon-1",
+        hint: "m1",
+        dayKey: "2026-08-03",
+        dayPrefix: "m",
+        index: 1,
+      },
+      {
+        eventId: "wed-1",
+        hint: "w1",
+        dayKey: "2026-08-05",
+        dayPrefix: "w",
+        index: 1,
+      },
+      {
+        eventId: "wed-2",
+        hint: "w2",
+        dayKey: "2026-08-05",
+        dayPrefix: "w",
+        index: 2,
+      },
     ]);
   });
 
-  it("excludes j and k from the alphabet", () => {
-    expect(SHIFT_HINT_ALPHABET).not.toContain("j");
-    expect(SHIFT_HINT_ALPHABET).not.toContain("k");
-    expect(generateHintKeys(SHIFT_HINT_ALPHABET.length)).toEqual([
-      ...SHIFT_HINT_ALPHABET,
-    ]);
-  });
+  it("uses SU / SA / R / F prefixes from the weekday map", () => {
+    expect(DAY_JUMP_PREFIX_BY_WEEKDAY[0]).toBe("su");
+    expect(DAY_JUMP_PREFIX_BY_WEEKDAY[4]).toBe("r");
+    expect(DAY_JUMP_PREFIX_BY_WEEKDAY[5]).toBe("f");
+    expect(DAY_JUMP_PREFIX_BY_WEEKDAY[6]).toBe("sa");
 
-  it("switches to two-letter-only keys once singles cannot cover the set", () => {
-    const count = SHIFT_HINT_ALPHABET.length + 3;
-    const keys = generateHintKeys(count);
-    expect(keys.every((key) => key.length === 2)).toBe(true);
-    expect(keys.slice(0, 3)).toEqual(["aa", "as", "ad"]);
-  });
-
-  it("caps assignments when the alphabet cannot cover every target", () => {
-    const overflow =
-      SHIFT_HINT_ALPHABET.length * SHIFT_HINT_ALPHABET.length + 5;
-    const targets = Array.from({ length: overflow }, (_, index) => ({
-      eventId: `e${index}`,
-      startMs: index,
-      eventType: "timed" as const,
-    }));
-    const assignments = assignShiftHintKeys(targets);
-    expect(assignments).toHaveLength(
-      SHIFT_HINT_ALPHABET.length * SHIFT_HINT_ALPHABET.length,
+    const assignments = assignDayJumpKeys(
+      [
+        {
+          eventId: "sun",
+          startMs: 1,
+          eventType: "timed",
+          dayKey: "2026-08-02",
+          weekday: 0,
+        },
+        {
+          eventId: "sat",
+          startMs: 1,
+          eventType: "timed",
+          dayKey: "2026-08-08",
+          weekday: 6,
+        },
+        {
+          eventId: "fri-10",
+          startMs: 10,
+          eventType: "timed",
+          dayKey: "2026-08-07",
+          weekday: 5,
+        },
+      ],
+      "week",
     );
-    expect(assignments.every((item) => item.hint.length > 0)).toBe(true);
+
+    expect(assignments.map((item) => item.hint)).toEqual(["su1", "f1", "sa1"]);
   });
 
-  it("prefers all-day before timed on equal start", () => {
-    const assignments = assignShiftHintKeys([
-      { eventId: "timed", startMs: 100, eventType: "timed" },
-      { eventId: "allday", startMs: 100, eventType: "all-day" },
-    ]);
+  it("prefers all-day before timed on equal start within a day", () => {
+    const assignments = assignDayJumpKeys(
+      [
+        {
+          eventId: "timed",
+          startMs: 100,
+          eventType: "timed",
+          dayKey: "2026-08-03",
+          weekday: 1,
+        },
+        {
+          eventId: "allday",
+          startMs: 100,
+          eventType: "all-day",
+          dayKey: "2026-08-03",
+          weekday: 1,
+        },
+      ],
+      "week",
+    );
+    expect(assignments.map((item) => item.hint)).toEqual(["m1", "m2"]);
     expect(assignments.map((item) => item.eventId)).toEqual([
       "allday",
       "timed",
     ]);
   });
 
-  it("is stable for the same visible set", () => {
-    const targets = [
-      { eventId: "2", startMs: 2, eventType: "timed" as const },
-      { eventId: "1", startMs: 1, eventType: "timed" as const },
-    ];
-    expect(assignShiftHintKeys(targets)).toEqual(assignShiftHintKeys(targets));
-  });
-});
-
-describe("matchShiftHintKeystroke", () => {
-  const assignments = [
-    { eventId: "1", hint: "a" },
-    { eventId: "2", hint: "s" },
-    { eventId: "3", hint: "aa" },
-  ];
-
-  it("focuses an exact single-key match", () => {
-    expect(
-      matchShiftHintKeystroke({ assignments, key: "s", prefix: "" }),
-    ).toEqual({ kind: "focus", eventId: "2" });
-  });
-
-  it("narrows on the first letter of a two-letter combo", () => {
-    const many = [
-      { eventId: "1", hint: "aa" },
-      { eventId: "2", hint: "as" },
-      { eventId: "3", hint: "s" },
-    ];
-    expect(
-      matchShiftHintKeystroke({ assignments: many, key: "a", prefix: "" }),
-    ).toEqual({ kind: "prefix", prefix: "a" });
-    expect(filterHintsByPrefix(many, "a")).toEqual([
-      { eventId: "1", hint: "aa" },
-      { eventId: "2", hint: "as" },
+  it("uses bare numeric hints in day mode", () => {
+    const assignments = assignDayJumpKeys(
+      [
+        {
+          eventId: "b",
+          startMs: 200,
+          eventType: "timed",
+          dayKey: "2026-08-05",
+          weekday: 3,
+        },
+        {
+          eventId: "a",
+          startMs: 100,
+          eventType: "timed",
+          dayKey: "2026-08-05",
+          weekday: 3,
+        },
+      ],
+      "day",
+    );
+    expect(assignments).toEqual([
+      {
+        eventId: "a",
+        hint: "1",
+        dayKey: "2026-08-05",
+        dayPrefix: "",
+        index: 1,
+      },
+      {
+        eventId: "b",
+        hint: "2",
+        dayKey: "2026-08-05",
+        dayPrefix: "",
+        index: 2,
+      },
     ]);
   });
 
-  it("ignores j and k", () => {
+  it("supports double-digit indices", () => {
+    const targets = Array.from({ length: 10 }, (_, index) => ({
+      eventId: `e${index}`,
+      startMs: index,
+      eventType: "timed" as const,
+      dayKey: "2026-08-07",
+      weekday: 5,
+    }));
+    const assignments = assignDayJumpKeys(targets, "week");
+    expect(assignments[9]?.hint).toBe("f10");
+  });
+});
+
+describe("matchDayJumpKeystroke", () => {
+  const weekAssignments = assignDayJumpKeys(
+    [
+      {
+        eventId: "sun-event",
+        startMs: 1,
+        eventType: "timed",
+        dayKey: "2026-08-02",
+        weekday: 0,
+      },
+      {
+        eventId: "wed-1",
+        startMs: 1,
+        eventType: "timed",
+        dayKey: "2026-08-05",
+        weekday: 3,
+      },
+      {
+        eventId: "wed-2",
+        startMs: 2,
+        eventType: "timed",
+        dayKey: "2026-08-05",
+        weekday: 3,
+      },
+      {
+        eventId: "wed-3",
+        startMs: 3,
+        eventType: "timed",
+        dayKey: "2026-08-05",
+        weekday: 3,
+      },
+      {
+        eventId: "wed-4",
+        startMs: 4,
+        eventType: "timed",
+        dayKey: "2026-08-05",
+        weekday: 3,
+      },
+      {
+        eventId: "sat-event",
+        startMs: 1,
+        eventType: "timed",
+        dayKey: "2026-08-08",
+        weekday: 6,
+      },
+      ...Array.from({ length: 10 }, (_, index) => ({
+        eventId: `fri-${index + 1}`,
+        startMs: index + 1,
+        eventType: "timed" as const,
+        dayKey: "2026-08-07",
+        weekday: 5,
+      })),
+    ],
+    "week",
+  );
+
+  it("selects a unique day and focuses its first event", () => {
     expect(
-      matchShiftHintKeystroke({ assignments, key: "j", prefix: "" }),
-    ).toBeNull();
+      matchDayJumpKeystroke({
+        assignments: weekAssignments,
+        key: "w",
+        buffer: "",
+      }),
+    ).toEqual({
+      kind: "selectDay",
+      dayPrefix: "w",
+      dayKey: "2026-08-05",
+      firstEventId: "wed-1",
+      buffer: "w",
+    });
+  });
+
+  it("narrows weekend on S then resolves SU / SA", () => {
     expect(
-      matchShiftHintKeystroke({ assignments, key: "k", prefix: "" }),
-    ).toBeNull();
+      matchDayJumpKeystroke({
+        assignments: weekAssignments,
+        key: "s",
+        buffer: "",
+      }),
+    ).toEqual({
+      kind: "prefix",
+      buffer: "s",
+      dayKeys: ["2026-08-02", "2026-08-08"],
+    });
+
+    expect(
+      matchDayJumpKeystroke({
+        assignments: weekAssignments,
+        key: "u",
+        buffer: "s",
+      }),
+    ).toEqual({
+      kind: "selectDay",
+      dayPrefix: "su",
+      dayKey: "2026-08-02",
+      firstEventId: "sun-event",
+      buffer: "su",
+    });
+
+    expect(
+      matchDayJumpKeystroke({
+        assignments: weekAssignments,
+        key: "a",
+        buffer: "s",
+      }),
+    ).toEqual({
+      kind: "selectDay",
+      dayPrefix: "sa",
+      dayKey: "2026-08-08",
+      firstEventId: "sat-event",
+      buffer: "sa",
+    });
+  });
+
+  it("focuses W4 after day selection", () => {
+    expect(
+      matchDayJumpKeystroke({
+        assignments: weekAssignments,
+        key: "4",
+        buffer: "w",
+      }),
+    ).toEqual({
+      kind: "focus",
+      eventId: "wed-4",
+      dayKey: "2026-08-05",
+      buffer: "w4",
+    });
+  });
+
+  it("waits on F1 when F10 also exists, then focuses F10", () => {
+    expect(
+      matchDayJumpKeystroke({
+        assignments: weekAssignments,
+        key: "1",
+        buffer: "f",
+      }),
+    ).toEqual({
+      kind: "prefix",
+      buffer: "f1",
+      dayKeys: ["2026-08-07"],
+      pendingExactEventId: "fri-1",
+    });
+
+    expect(
+      matchDayJumpKeystroke({
+        assignments: weekAssignments,
+        key: "0",
+        buffer: "f1",
+      }),
+    ).toEqual({
+      kind: "focus",
+      eventId: "fri-10",
+      dayKey: "2026-08-07",
+      buffer: "f10",
+    });
+  });
+
+  it("abandons an unresolved weekend S when another day letter is typed", () => {
+    expect(
+      matchDayJumpKeystroke({
+        assignments: weekAssignments,
+        key: "w",
+        buffer: "s",
+      }),
+    ).toEqual({
+      kind: "selectDay",
+      dayPrefix: "w",
+      dayKey: "2026-08-05",
+      firstEventId: "wed-1",
+      buffer: "w",
+    });
+  });
+
+  it("filters chips by prefix", () => {
+    expect(
+      filterHintsByPrefix(weekAssignments, "w").map((a) => a.hint),
+    ).toEqual(["w1", "w2", "w3", "w4"]);
+  });
+
+  it("matches day-mode digits", () => {
+    const dayAssignments = assignDayJumpKeys(
+      [
+        {
+          eventId: "a",
+          startMs: 1,
+          eventType: "timed",
+          dayKey: "2026-08-05",
+          weekday: 3,
+        },
+        {
+          eventId: "b",
+          startMs: 2,
+          eventType: "timed",
+          dayKey: "2026-08-05",
+          weekday: 3,
+        },
+      ],
+      "day",
+    );
+
+    expect(
+      matchDayJumpKeystroke({
+        assignments: dayAssignments,
+        key: "2",
+        buffer: "",
+        mode: "day",
+      }),
+    ).toEqual({
+      kind: "focus",
+      eventId: "b",
+      dayKey: "2026-08-05",
+      buffer: "2",
+    });
   });
 });

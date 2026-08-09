@@ -1,88 +1,116 @@
 import {
-  createShiftHoldState,
+  createShiftJumpGestureState,
   isShiftDoubleTapCandidate,
-  reduceShiftHold,
+  reduceShiftJumpGesture,
   SHIFT_DOUBLE_TAP_MAX_GAP_MS,
   SHIFT_HOLD_HINT_THRESHOLD_MS,
 } from "@web/shortcuts/shift-hint/shift-hold-detector";
 import { describe, expect, it } from "bun:test";
 
-describe("reduceShiftHold", () => {
-  it("activates only after the hold threshold", () => {
-    let state = createShiftHoldState();
-    state = reduceShiftHold(state, {
+describe("reduceShiftJumpGesture", () => {
+  it("emits toggle on a quick Shift tap", () => {
+    const state = createShiftJumpGestureState();
+    let result = reduceShiftJumpGesture(state, {
       type: "shiftDown",
       now: 1000,
       blocked: false,
     });
-    expect(state.phase).toBe("pending");
-    expect(state.pendingStartedAt).toBe(1000);
+    expect(result.state.phase).toBe("armed");
+    expect(result.toggle).toBe(false);
 
-    state = reduceShiftHold(state, { type: "thresholdReached" });
-    expect(state.phase).toBe("active");
+    result = reduceShiftJumpGesture(result.state, {
+      type: "shiftUp",
+      now: 1100,
+    });
+    expect(result.toggle).toBe(true);
+    expect(result.forceOff).toBe(false);
+    expect(result.state.phase).toBe("idle");
+    expect(result.state.lastShiftReleaseAt).toBe(1100);
   });
 
-  it("treats a quick Shift tap as idle and records release time", () => {
-    let state = createShiftHoldState();
-    state = reduceShiftHold(state, {
+  it("does not toggle on a long press", () => {
+    let state = createShiftJumpGestureState();
+    state = reduceShiftJumpGesture(state, {
       type: "shiftDown",
       now: 1000,
       blocked: false,
+    }).state;
+    const result = reduceShiftJumpGesture(state, {
+      type: "shiftUp",
+      now: 1000 + SHIFT_HOLD_HINT_THRESHOLD_MS,
     });
-    state = reduceShiftHold(state, { type: "shiftUp", now: 1100 });
-
-    expect(state.phase).toBe("idle");
-    expect(state.lastShiftReleaseAt).toBe(1100);
-    expect(state.pendingStartedAt).toBeNull();
+    expect(result.toggle).toBe(false);
+    expect(result.forceOff).toBe(false);
+    expect(result.state.lastShiftReleaseAt).toBeNull();
   });
 
-  it("cancels pending on chord key so Shift+J never flashes hints", () => {
-    let state = createShiftHoldState();
-    state = reduceShiftHold(state, {
+  it("cancels armed on chord key so Shift+J never toggles", () => {
+    let state = createShiftJumpGestureState();
+    state = reduceShiftJumpGesture(state, {
       type: "shiftDown",
       now: 1000,
       blocked: false,
-    });
-    state = reduceShiftHold(state, { type: "chordKeyDown" });
+    }).state;
+    state = reduceShiftJumpGesture(state, { type: "chordKeyDown" }).state;
     expect(state.phase).toBe("idle");
 
-    state = reduceShiftHold(state, { type: "thresholdReached" });
-    expect(state.phase).toBe("idle");
+    const result = reduceShiftJumpGesture(state, {
+      type: "shiftUp",
+      now: 1100,
+    });
+    expect(result.toggle).toBe(false);
   });
 
-  it("does not start pending when blocked (editable / app lock)", () => {
-    let state = createShiftHoldState();
-    state = reduceShiftHold(state, {
+  it("does not arm when blocked (editable / app lock)", () => {
+    const result = reduceShiftJumpGesture(createShiftJumpGestureState(), {
       type: "shiftDown",
       now: 1000,
       blocked: true,
     });
-    expect(state.phase).toBe("idle");
+    expect(result.state.phase).toBe("idle");
+    expect(result.toggle).toBe(false);
   });
 
-  it("dismisses active hints on Shift release without stamping a tap", () => {
-    let state = createShiftHoldState();
-    state = reduceShiftHold(state, {
+  it("forceOff on the second quick tap (Shift-Shift)", () => {
+    let state = createShiftJumpGestureState();
+    state = reduceShiftJumpGesture(state, {
       type: "shiftDown",
       now: 1000,
       blocked: false,
+    }).state;
+    state = reduceShiftJumpGesture(state, {
+      type: "shiftUp",
+      now: 1050,
+    }).state;
+    expect(state.lastShiftReleaseAt).toBe(1050);
+
+    state = reduceShiftJumpGesture(state, {
+      type: "shiftDown",
+      now: 1100,
+      blocked: false,
+    }).state;
+    const result = reduceShiftJumpGesture(state, {
+      type: "shiftUp",
+      now: 1150,
     });
-    state = reduceShiftHold(state, { type: "thresholdReached" });
-    state = reduceShiftHold(state, { type: "shiftUp", now: 1300 });
-    expect(state.phase).toBe("idle");
-    expect(state.lastShiftReleaseAt).toBeNull();
+    expect(result.toggle).toBe(false);
+    expect(result.forceOff).toBe(true);
+    expect(result.state.lastShiftReleaseAt).toBeNull();
   });
 });
 
 describe("hold vs double-tap coordination", () => {
   it("records release times so a future SHIFT-SHIFT detector can use them", () => {
-    let state = createShiftHoldState();
-    state = reduceShiftHold(state, {
+    let state = createShiftJumpGestureState();
+    state = reduceShiftJumpGesture(state, {
       type: "shiftDown",
       now: 1000,
       blocked: false,
-    });
-    state = reduceShiftHold(state, { type: "shiftUp", now: 1050 });
+    }).state;
+    state = reduceShiftJumpGesture(state, {
+      type: "shiftUp",
+      now: 1050,
+    }).state;
     expect(
       isShiftDoubleTapCandidate({
         lastShiftReleaseAt: state.lastShiftReleaseAt,
@@ -90,20 +118,9 @@ describe("hold vs double-tap coordination", () => {
         maxGapMs: SHIFT_DOUBLE_TAP_MAX_GAP_MS,
       }),
     ).toBe(true);
-
-    // A completed hold also releases, but pending never became active on a
-    // double-tap path: two quick taps stay idle.
-    state = reduceShiftHold(state, {
-      type: "shiftDown",
-      now: 1150,
-      blocked: false,
-    });
-    state = reduceShiftHold(state, { type: "shiftUp", now: 1200 });
-    expect(state.phase).toBe("idle");
-    expect(state.lastShiftReleaseAt).toBe(1200);
   });
 
-  it("does not treat a long hold release as a double-tap candidate gap start only", () => {
+  it("does not treat a long hold release as a double-tap candidate", () => {
     expect(SHIFT_HOLD_HINT_THRESHOLD_MS).toBeGreaterThan(100);
     expect(
       isShiftDoubleTapCandidate({

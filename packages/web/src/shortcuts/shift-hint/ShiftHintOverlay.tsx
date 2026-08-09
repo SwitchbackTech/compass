@@ -5,8 +5,8 @@ import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { type ActiveShiftHint } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
 
 /**
- * Fixed-position keycap chips anchored to visible event cards while SHIFT is
- * held. Portaled so overflow-hidden cards do not clip the hints.
+ * Fixed-position keycap chips anchored to event cards while event-jump mode
+ * is on. Portaled so overflow-hidden cards do not clip the hints.
  */
 export function ShiftHintOverlay({ hints }: { hints: ActiveShiftHint[] }) {
   const [, setLayoutTick] = useState(0);
@@ -49,13 +49,20 @@ export function ShiftHintOverlay({ hints }: { hints: ActiveShiftHint[] }) {
           return null;
         }
 
+        const label = hint.hint.toUpperCase();
+        // Longer labels (SU1, F10) need more room than the old AA chips.
+        const chipWidth = Math.max(22, 10 + label.length * 8);
+
         return (
           <span
             key={`${hint.eventId}:${hint.hint}`}
             className="absolute"
-            style={{ top: rect.top + 4, left: rect.right - 22 }}
+            style={{
+              top: rect.top + 4,
+              left: Math.max(4, rect.right - chipWidth),
+            }}
           >
-            <ShortcutHint>{hint.hint.toUpperCase()}</ShortcutHint>
+            <ShortcutHint>{label}</ShortcutHint>
           </span>
         );
       })}

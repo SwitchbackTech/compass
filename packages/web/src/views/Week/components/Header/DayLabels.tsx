@@ -1,8 +1,13 @@
 import cn from "classnames";
 import { type FC } from "react";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
 import { EVENT_WIDTH_MINIMUM } from "@web/grid/grid.constants";
+import {
+  selectEventJumpActiveDayKeys,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 
 interface Props {
   today: Dayjs;
@@ -17,6 +22,7 @@ export const DayLabels: FC<Props> = ({
   week,
   weekDays,
 }) => {
+  const activeDayKeys = useEventJumpStore(selectEventJumpActiveDayKeys);
   const getColor = (day: Dayjs) => {
     const isCurrentWeek = today.week() === week;
     const isToday = isCurrentWeek && today.format("DD") === day.format("DD");
@@ -51,12 +57,18 @@ export const DayLabels: FC<Props> = ({
         {weekDays.map((day) => {
           const dayNumber = getDayNumber(day);
           const { isToday, color } = getColor(day);
+          const dayKey = day.format(YEAR_MONTH_DAY_FORMAT);
+          const isJumpDay = activeDayKeys.includes(dayKey);
 
           return (
             <div
-              className="flex items-end justify-center gap-1"
+              className={cn(
+                "flex items-end justify-center gap-1 rounded-sm px-1 transition-colors duration-150 motion-reduce:transition-none",
+                isJumpDay && "bg-accent/15 text-accent",
+              )}
+              data-jump-day={isJumpDay ? "true" : undefined}
               key={getWeekDayLabel(day)}
-              style={{ color }}
+              style={isJumpDay ? undefined : { color }}
               title={getWeekDayLabel(day)}
             >
               <span

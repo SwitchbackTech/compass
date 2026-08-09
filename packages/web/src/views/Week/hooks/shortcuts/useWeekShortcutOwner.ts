@@ -10,12 +10,9 @@ import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
-import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { useFocusSidebarShortcut } from "@web/components/Sidebar/useFocusSidebarShortcut";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
-import { useRecurrenceScopeOpportunityStore } from "@web/events/recurrence/recurrence-scope-opportunity.store";
 import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
-import { getFirstEventOnWeekdayColumn } from "@web/grid/shortcuts/focus-adjacent-grid-event";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
 import {
@@ -58,7 +55,10 @@ export const useWeekShortcutOwner = ({
   weekDays,
   util,
   scrollUtil,
-}: ShortcutProps): { shiftHints: ActiveShiftHint[] } => {
+}: ShortcutProps): {
+  shiftHints: ActiveShiftHint[];
+  activeDayKeys: string[];
+} => {
   const { data: calendars = [], isPending: isCalendarsPending } =
     useCalendarsQuery();
   const defaultTargetCalendarId =
@@ -177,33 +177,6 @@ export const useWeekShortcutOwner = ({
     listVisible: listVisibleWeekGridEventTargets,
   };
 
-  const focusWeekdayColumn = useCallback(
-    (columnIndex: number, keyboardEvent: KeyboardEvent) => {
-      // Recurrence toast owns digits 1/2 while ready; don't steal them.
-      const opportunity =
-        useRecurrenceScopeOpportunityStore.getState().opportunity;
-      if (opportunity?.status === "ready") return false;
-
-      if (isEventFormOpen()) return false;
-      if (isEditableKeyboardTarget(keyboardEvent)) return false;
-      if (!getFocusedWeekGridEventTarget()) return false;
-
-      const target = getFirstEventOnWeekdayColumn({
-        allDayEvents,
-        columnIndex,
-        timedEvents,
-        visible: listVisibleWeekGridEventTargets(),
-        weekDays,
-      });
-      if (!target) return false;
-
-      target.element.scrollIntoView({ block: "nearest" });
-      focusWeekGridEventTarget(target);
-      return true;
-    },
-    [allDayEvents, timedEvents, weekDays],
-  );
-
   useGridEventEditShortcuts({
     allDayEvents,
     timedEvents,
@@ -227,15 +200,15 @@ export const useWeekShortcutOwner = ({
     onCreateAllDayDraft: emitCreateAllDayDraft,
     onCreateTimedDraft: emitCreateTimedDraft,
     onFocusCalendar: focusFirstCalendarEvent,
-    onFocusWeekdayColumn: focusWeekdayColumn,
   });
 
-  const shiftHints = useShiftHoldEventHints({
+  const { hints: shiftHints, activeDayKeys } = useShiftHoldEventHints({
     allDayEvents,
     focus: focusWeekGridEventTarget,
     listVisible: listVisibleWeekGridEventTargets,
+    mode: "week",
     timedEvents,
   });
 
-  return { shiftHints };
+  return { shiftHints, activeDayKeys };
 };

@@ -92,10 +92,11 @@ export function useDayEventNudgeShortcuts({
     timedEvents,
   });
 
-  const shiftHints = useShiftHoldEventHints({
+  const { hints: shiftHints } = useShiftHoldEventHints({
     allDayEvents,
     focus: focusDayGridEventTarget,
     listVisible: listVisibleDayGridEventTargets,
+    mode: "day",
     timedEvents,
   });
 

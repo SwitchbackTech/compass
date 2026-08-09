@@ -4,6 +4,7 @@ import {
   type ReactNode,
   type RefCallback,
 } from "react";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
   ID_ALLDAY_COLUMNS,
   ID_GRID_ALLDAY_ROW,
@@ -18,6 +19,10 @@ import {
   GRID_TIME_STEP,
 } from "@web/grid/grid.constants";
 import { type GridVisibleDate } from "@web/grid/types/grid.types";
+import {
+  selectEventJumpActiveDayKeys,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
 
 interface AllDayRowProps {
   allDayColumnsRef: RefCallback<HTMLDivElement>;
@@ -56,45 +61,56 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
   rowsCount = 0,
   rowId = ID_GRID_ALLDAY_ROW,
   visibleDates,
-}) => (
-  <section
-    className="relative flex w-full shrink-0 items-start bg-background"
-    aria-label="All-day events"
-    id={rowId}
-    ref={allDayRowRef}
-    onMouseDown={onMouseDown}
-    style={{
-      height: `calc(${getAllDayRowHeight(gridOffsetTopPx)} * 2 + ${rowsCount * 2 || 1} * ${getAllDayRowHeight(gridOffsetTopPx)})`,
-      minHeight: `${getAllDayRowMinHeightPx(rowsCount)}px`,
-    }}
-  >
-    <div
-      className="absolute top-0 left-[var(--calendar-grid-margin-left)] grid h-full w-[calc(100%_-_var(--calendar-grid-margin-left))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))] before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-0.5 before:bg-border before:content-['']"
-      id={columnsId}
-      ref={allDayColumnsRef}
-      style={
-        {
-          "--calendar-column-count": visibleDates.length,
-          "--calendar-column-min-width": `${EVENT_WIDTH_MINIMUM}px`,
-          "--calendar-grid-margin-left": `${GRID_MARGIN_LEFT}px`,
-        } as CSSVariables
-      }
+}) => {
+  const activeDayKeys = useEventJumpStore(selectEventJumpActiveDayKeys);
+
+  return (
+    <section
+      className="relative flex w-full shrink-0 items-start bg-background"
+      aria-label="All-day events"
+      id={rowId}
+      ref={allDayRowRef}
+      onMouseDown={onMouseDown}
+      style={{
+        height: `calc(${getAllDayRowHeight(gridOffsetTopPx)} * 2 + ${rowsCount * 2 || 1} * ${getAllDayRowHeight(gridOffsetTopPx)})`,
+        minHeight: `${getAllDayRowMinHeightPx(rowsCount)}px`,
+      }}
     >
-      <table className="contents">
-        <thead className="contents">
-          <tr className="contents">
-            {visibleDates.map(({ date, key, surfaceLabel }) => (
-              <th
-                className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l"
-                aria-label={surfaceLabel ?? date.format("dddd, MMMM D, YYYY")}
-                key={key}
-                scope="col"
-              />
-            ))}
-          </tr>
-        </thead>
-      </table>
-    </div>
-    {eventsLayer}
-  </section>
-);
+      <div
+        className="absolute top-0 left-[var(--calendar-grid-margin-left)] grid h-full w-[calc(100%_-_var(--calendar-grid-margin-left))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))] before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-0.5 before:bg-border before:content-['']"
+        id={columnsId}
+        ref={allDayColumnsRef}
+        style={
+          {
+            "--calendar-column-count": visibleDates.length,
+            "--calendar-column-min-width": `${EVENT_WIDTH_MINIMUM}px`,
+            "--calendar-grid-margin-left": `${GRID_MARGIN_LEFT}px`,
+          } as CSSVariables
+        }
+      >
+        <table className="contents">
+          <thead className="contents">
+            <tr className="contents">
+              {visibleDates.map(({ date, key, surfaceLabel }) => {
+                const dayKey = date.format(YEAR_MONTH_DAY_FORMAT);
+                const isJumpDay = activeDayKeys.includes(dayKey);
+                return (
+                  <th
+                    className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l transition-colors duration-150 data-[jump-day=true]:bg-accent/10 motion-reduce:transition-none"
+                    data-jump-day={isJumpDay ? "true" : undefined}
+                    aria-label={
+                      surfaceLabel ?? date.format("dddd, MMMM D, YYYY")
+                    }
+                    key={key}
+                    scope="col"
+                  />
+                );
+              })}
+            </tr>
+          </thead>
+        </table>
+      </div>
+      {eventsLayer}
+    </section>
+  );
+};
