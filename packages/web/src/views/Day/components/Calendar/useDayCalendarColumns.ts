@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import { useConnectedAccountEmails } from "@web/calendars/useDefaultTargetCalendar";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { isAllDayEventOnDay } from "./dayAllDayRows.util";
 import { getDayViewCalendars } from "./dayCalendarColumns.util";
@@ -16,9 +17,10 @@ export const useDayCalendarColumns = ({
   timedEvents: GridEvent[];
 }) => {
   const { data: calendars = [] } = useCalendarsQuery();
+  const hasConnectedAccount = useConnectedAccountEmails().length > 0;
   const displayedCalendars = useMemo(
-    () => getDayViewCalendars(calendars),
-    [calendars],
+    () => getDayViewCalendars(calendars, { hasConnectedAccount }),
+    [calendars, hasConnectedAccount],
   );
   const calendarColumnIndexById = useMemo(
     () =>
@@ -79,6 +81,7 @@ export const useDayCalendarColumns = ({
     displayedCalendars,
     displayedTimedEvents,
     getCalendarColumnIndex,
+    isDisplayedEvent,
     visibleDates,
   };
 };

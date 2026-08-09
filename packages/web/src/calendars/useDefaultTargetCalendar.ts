@@ -14,7 +14,7 @@ import { useDefaultCalendarId } from "@web/calendars/default-calendar.store";
 /**
  * The calendar a new event should land on: the user's chosen default when
  * it is still usable, else the primary calendar of the oldest-connected
- * account, else the local calendar.
+ * account, else the local calendar while disconnected.
  *
  * Wraps getDefaultTargetCalendar with the two reactive inputs every caller
  * needs - the stored preference and the connected accounts in connection

@@ -195,8 +195,9 @@ const isWritableGoogleCalendar = (
 /**
  * Where a new event lands: the user's chosen default if it is still usable,
  * else the primary calendar of the oldest-connected account, else the local
- * calendar (offline/anonymous mode, or a Google account with no primary the
- * user can write to).
+ * calendar while disconnected (anonymous / no Google account). Once any
+ * account is connected, local is never the create target - matching the
+ * writable picker and day-view column filter.
  */
 export function getDefaultTargetCalendar(
   calendars: Calendar[],
@@ -204,15 +205,21 @@ export function getDefaultTargetCalendar(
 ): Calendar | undefined {
   const { preferredCalendarId, accountEmailOrder = [] } = options;
   const reconnectRequiredEmails = toEmailSet(options.reconnectRequiredEmails);
+  // Same connection gate as getWritableCalendars / sidebar LCV3: once any
+  // account is connected, new events belong on a provider calendar. A stale
+  // local preference (or local fallback) would otherwise open drafts that day
+  // view no longer has a column for.
+  const hasConnectedAccount = accountEmailOrder.length > 0;
 
   const preferred = preferredCalendarId
     ? calendars.find((calendar) => calendar.id === preferredCalendarId)
     : undefined;
-  // The local calendar is a valid explicit choice even though it is not a
-  // writable *Google* calendar.
+  // The local calendar is a valid explicit choice while disconnected, even
+  // though it is not a writable *Google* calendar.
   if (
     preferred?.capabilities.canWrite &&
-    !calendarNeedsReconnect(preferred, reconnectRequiredEmails)
+    !calendarNeedsReconnect(preferred, reconnectRequiredEmails) &&
+    (!hasConnectedAccount || preferred.provider !== "local")
   ) {
     return preferred;
   }
@@ -228,5 +235,9 @@ export function getDefaultTargetCalendar(
     )
     .find(Boolean);
 
-  return byConnectionOrder ?? primaries[0] ?? getLocalCalendar(calendars);
+  return (
+    byConnectionOrder ??
+    primaries[0] ??
+    (hasConnectedAccount ? undefined : getLocalCalendar(calendars))
+  );
 }

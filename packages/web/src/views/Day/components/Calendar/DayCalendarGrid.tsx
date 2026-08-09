@@ -101,6 +101,7 @@ export function DayCalendarGrid() {
     displayedCalendars,
     displayedTimedEvents,
     getCalendarColumnIndex,
+    isDisplayedEvent,
     visibleDates,
   } = useDayCalendarColumns({ allDayEvents, dateInView, timedEvents });
   const { gridRefs, measurements } = useGridMeasurements({
@@ -146,12 +147,13 @@ export function DayCalendarGrid() {
         events: displayedAllDayEvents,
         isAllDay: true,
         visibleDates,
-      });
+      }).filter(isDisplayedEvent);
       return assignDayAllDayEventRows(withDraft, getCalendarColumnIndex);
     }, [
       displayedAllDayEvents,
       getCalendarColumnIndex,
       gridDraft,
+      isDisplayedEvent,
       visibleDates,
     ]);
 
@@ -357,6 +359,7 @@ export function DayCalendarGrid() {
         <DayCalendarTimedEventsLayer
           events={displayedTimedEvents}
           getCalendarColumnIndex={getCalendarColumnIndex}
+          isDisplayedEvent={isDisplayedEvent}
           draft={gridDraft}
           measurements={measurements}
           onOpenEvent={openEventFormForEvent}
@@ -370,6 +373,7 @@ export function DayCalendarGrid() {
       displayedTimedEvents,
       gridDraft,
       getCalendarColumnIndex,
+      isDisplayedEvent,
       measurements,
       openEventFormForEvent,
       visibleDates,
