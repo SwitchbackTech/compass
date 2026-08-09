@@ -543,7 +543,7 @@ function buildSchedulers(
       windowMs: -FAILED_JOB_REQUEUE_COOLDOWN_MS,
       run: async (before) => {
         const result = await requeueFailedJobs(
-          { jobs },
+          { jobs, resources },
           before,
           () => new Date(),
           FAILED_JOB_MAX_REQUEUES,
@@ -551,6 +551,27 @@ function buildSchedulers(
         if (result.requeued > 0) {
           logger.info(
             `Sync self-heal sweep requeued ${result.requeued} failed job(s)`,
+          );
+        }
+        // Exhausted jobs whose connection already carries a durable provider
+        // refusal are cleared automatically — retrying cannot help, and the
+        // failed coalescing key would otherwise block rediscovery forever
+        // (2026-08-09: notACalendarUser calendarListSync self-heal storm).
+        if (result.clearedDurable > 0) {
+          logger.warn(
+            `Sync self-heal sweep cleared ${result.clearedDurable} exhausted job(s) blocked by durable provider read failure`,
+            {
+              clearedJobs: result.clearedJobs.map((job) => ({
+                id: job.id,
+                coalescingKey: job.coalescingKey,
+                connectionId: job.connectionId,
+                tenantId: job.tenantId,
+                principalId: job.principalId,
+                failureClass: job.failureClass,
+                requeuedCount: job.requeuedCount,
+                updatedAt: job.updatedAt.toISOString(),
+              })),
+            },
           );
         }
         if (result.exhausted > 0) {
@@ -570,7 +591,7 @@ function buildSchedulers(
             },
           );
         }
-        return result.requeued;
+        return result.requeued + result.clearedDurable;
       },
     },
     {
