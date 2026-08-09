@@ -43,7 +43,9 @@ bun run cli manage-failed-jobs requeue --id <SyncJobId> --apply
 Prefer dry-run (omit `--apply`) before writing. Clear is the usual unblock when
 the underlying condition is durable (for example Google `notACalendarUser`);
 also fix or disconnect the Google account so daily calendar-list rediscovery
-does not recreate the same ladder.
+does not recreate the same ladder. The self-heal sweep also auto-clears
+exhausted jobs whose connection already has a durable `lastReadFailureAt`
+marker, so operator clear is mainly for exhausted rows without that marker.
 
 ## Sync Database Backup / Restore
 
