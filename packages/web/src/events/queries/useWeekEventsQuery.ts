@@ -44,11 +44,3 @@ export function useWeekEventViewModel(args: WeekEventsQueryArgs) {
   const viewModel = useCalendarEventViewModel(query.data);
   return { ...query, ...viewModel };
 }
-
-/**
- * Read-only week-events loading state. Subscribes to the same cache entry as
- * {@link useWeekEventsQuery} (shared key → no extra fetch).
- */
-export function useWeekEventsQueryStatus(args: WeekEventsQueryArgs) {
-  return useWeekEventsQuery(args);
-}

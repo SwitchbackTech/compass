@@ -30,6 +30,7 @@ import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
 import { useAllDayDraftCreation } from "@web/grid/hooks/useAllDayDraftCreation";
 import { useGridCoordinates } from "@web/grid/hooks/useGridCoordinates";
 import { useGridMeasurements } from "@web/grid/hooks/useGridMeasurements";
+import { withAllDayColumnTints } from "@web/grid/utils/allDayColumnTint.util";
 import { ShiftHintOverlay } from "@web/shortcuts/shift-hint/ShiftHintOverlay";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
@@ -156,6 +157,11 @@ export function DayCalendarGrid() {
       isDisplayedEvent,
       visibleDates,
     ]);
+
+  const tintedVisibleDates = useMemo(
+    () => withAllDayColumnTints(visibleDates, renderedAllDayEvents, "calendar"),
+    [renderedAllDayEvents, visibleDates],
+  );
 
   const calendarColumnKeys = useMemo(
     () => displayedCalendars.map((calendar) => calendar.id),
@@ -409,7 +415,7 @@ export function DayCalendarGrid() {
           onTimedMouseDown={handleTimedMouseDown}
           timedEventsLayer={timedEventsLayer}
           today={today}
-          visibleDates={visibleDates}
+          visibleDates={tintedVisibleDates}
         />
       </DayInteractionCoordinator>
       {contextMenu}

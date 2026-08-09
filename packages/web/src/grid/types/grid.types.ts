@@ -10,6 +10,8 @@ export interface GridVisibleDate {
   date: Dayjs;
   key: string;
   surfaceLabel?: string;
+  /** Resolved event fill hex for subtle all-day column wash */
+  allDayTintColor?: string;
 }
 
 export interface GridMeasurement {

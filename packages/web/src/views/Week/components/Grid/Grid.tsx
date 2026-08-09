@@ -1,9 +1,12 @@
-import { type FC } from "react";
+import { type FC, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
-import { useWeekEventsQueryStatus } from "@web/events/queries/useWeekEventsQuery";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
+import { positionAllDayDraftEvent } from "@web/grid/layout/all-day-draft.position";
+import { withAllDayColumnTints } from "@web/grid/utils/allDayColumnTint.util";
 import { AllDayRow } from "@web/views/Week/components/Grid/AllDayRow/AllDayRow";
 import { EdgeNavigationIndicators } from "@web/views/Week/components/Grid/MainGrid/EdgeNavigationIndicators/EdgeNavigationIndicators";
 import { MainGrid } from "@web/views/Week/components/Grid/MainGrid/MainGrid";
@@ -35,13 +38,14 @@ export const Grid: FC<Props> = ({
   // Subscribes to the same cache entry the event layers read, so this reports
   // their load without issuing a second fetch.
   const {
+    allDayEvents,
     isPending,
     isFetching,
     isError: isErrorEvents,
     isSuccess,
     data,
     refetch,
-  } = useWeekEventsQueryStatus({
+  } = useWeekEventViewModel({
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
@@ -57,10 +61,28 @@ export const Grid: FC<Props> = ({
 
   useDragEdgeNavigation(mainGridRef, weekProps);
 
-  const visibleDates = weekProps.component.weekDays.map((date) => ({
-    date,
-    key: date.format(YEAR_MONTH_DAY_FORMAT),
-  }));
+  const gridDraft = useDraftStore(selectGridDraft);
+  // Include the live all-day draft so create/edit chips tint columns before save.
+  const allDayEventsForTint = useMemo(
+    () =>
+      positionAllDayDraftEvent({ draft: gridDraft, events: allDayEvents })
+        .events,
+    [allDayEvents, gridDraft],
+  );
+
+  const weekDays = weekProps.component.weekDays;
+  const visibleDates = useMemo(
+    () =>
+      withAllDayColumnTints(
+        weekDays.map((date) => ({
+          date,
+          key: date.format(YEAR_MONTH_DAY_FORMAT),
+        })),
+        allDayEventsForTint,
+        "date",
+      ),
+    [allDayEventsForTint, weekDays],
+  );
 
   return (
     <AllDayRow

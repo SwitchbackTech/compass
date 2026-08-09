@@ -19,6 +19,7 @@ import {
   GRID_TIME_STEP,
 } from "@web/grid/grid.constants";
 import { type GridVisibleDate } from "@web/grid/types/grid.types";
+import { allDayColumnTintStyle } from "@web/grid/utils/allDayColumnTint.util";
 import {
   selectEventJumpActiveDayKeys,
   useEventJumpStore,
@@ -91,21 +92,29 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
         <table className="contents">
           <thead className="contents">
             <tr className="contents">
-              {visibleDates.map(({ date, key, surfaceLabel }) => {
-                const dayKey = date.format(YEAR_MONTH_DAY_FORMAT);
-                const isJumpDay = activeDayKeys.includes(dayKey);
-                return (
-                  <th
-                    className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l transition-colors duration-150 data-[jump-day=true]:bg-accent/10 motion-reduce:transition-none"
-                    data-jump-day={isJumpDay ? "true" : undefined}
-                    aria-label={
-                      surfaceLabel ?? date.format("dddd, MMMM D, YYYY")
-                    }
-                    key={key}
-                    scope="col"
-                  />
-                );
-              })}
+              {visibleDates.map(
+                ({ date, key, surfaceLabel, allDayTintColor }) => {
+                  const dayKey = date.format(YEAR_MONTH_DAY_FORMAT);
+                  const isJumpDay = activeDayKeys.includes(dayKey);
+                  const tintStyle = allDayColumnTintStyle(
+                    allDayTintColor,
+                    isJumpDay,
+                  );
+                  return (
+                    <th
+                      className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l transition-colors duration-150 data-[jump-day=true]:bg-accent/10 motion-reduce:transition-none"
+                      data-all-day-tint={tintStyle ? "true" : undefined}
+                      data-jump-day={isJumpDay ? "true" : undefined}
+                      aria-label={
+                        surfaceLabel ?? date.format("dddd, MMMM D, YYYY")
+                      }
+                      key={key}
+                      scope="col"
+                      style={tintStyle}
+                    />
+                  );
+                },
+              )}
             </tr>
           </thead>
         </table>
