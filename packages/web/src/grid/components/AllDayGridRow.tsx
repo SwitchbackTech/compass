@@ -19,7 +19,7 @@ import {
   GRID_TIME_STEP,
 } from "@web/grid/grid.constants";
 import { type GridVisibleDate } from "@web/grid/types/grid.types";
-import { allDayColumnTintBackground } from "@web/grid/utils/allDayColumnTint.util";
+import { allDayColumnTintStyle } from "@web/grid/utils/allDayColumnTint.util";
 import {
   selectEventJumpActiveDayKeys,
   useEventJumpStore,
@@ -96,27 +96,21 @@ export const AllDayGridRow: FC<AllDayRowProps> = ({
                 ({ date, key, surfaceLabel, allDayTintColor }) => {
                   const dayKey = date.format(YEAR_MONTH_DAY_FORMAT);
                   const isJumpDay = activeDayKeys.includes(dayKey);
-                  const showAllDayTint =
-                    allDayTintColor !== undefined && !isJumpDay;
+                  const tintStyle = allDayColumnTintStyle(
+                    allDayTintColor,
+                    isJumpDay,
+                  );
                   return (
                     <th
                       className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l transition-colors duration-150 data-[jump-day=true]:bg-accent/10 motion-reduce:transition-none"
-                      data-all-day-tint={showAllDayTint ? "true" : undefined}
+                      data-all-day-tint={tintStyle ? "true" : undefined}
                       data-jump-day={isJumpDay ? "true" : undefined}
                       aria-label={
                         surfaceLabel ?? date.format("dddd, MMMM D, YYYY")
                       }
                       key={key}
                       scope="col"
-                      style={
-                        showAllDayTint
-                          ? ({
-                              "--column-all-day-tint": allDayTintColor,
-                              backgroundColor:
-                                allDayColumnTintBackground(allDayTintColor),
-                            } as CSSVariables)
-                          : undefined
-                      }
+                      style={tintStyle}
                     />
                   );
                 },

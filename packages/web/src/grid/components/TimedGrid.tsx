@@ -28,7 +28,7 @@ import {
   TIMED_VISIBLE_HOURS,
 } from "@web/grid/grid.constants";
 import { type GridVisibleDate } from "@web/grid/types/grid.types";
-import { allDayColumnTintBackground } from "@web/grid/utils/allDayColumnTint.util";
+import { allDayColumnTintStyle } from "@web/grid/utils/allDayColumnTint.util";
 import {
   selectEventJumpActiveDayKeys,
   useEventJumpStore,
@@ -98,14 +98,14 @@ export const TimedGrid: FC<TimedGridProps> = ({
                 ({ date, key, surfaceLabel, allDayTintColor }) => {
                   const dayKey = date.format(YEAR_MONTH_DAY_FORMAT);
                   const isJumpDay = activeDayKeys.includes(dayKey);
-                  // Jump-day wash wins; otherwise the all-day tint replaces
-                  // the default/past fill via inline backgroundColor.
-                  const showAllDayTint =
-                    allDayTintColor !== undefined && !isJumpDay;
+                  const tintStyle = allDayColumnTintStyle(
+                    allDayTintColor,
+                    isJumpDay,
+                  );
                   return (
                     <th
                       className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-border border-l transition-colors duration-150 data-[past=true]:data-[jump-day=true]:bg-accent/10 data-[jump-day=true]:bg-accent/10 data-[past=true]:bg-surface motion-reduce:transition-none"
-                      data-all-day-tint={showAllDayTint ? "true" : undefined}
+                      data-all-day-tint={tintStyle ? "true" : undefined}
                       data-jump-day={isJumpDay ? "true" : undefined}
                       data-past={date.isBefore(today, "day")}
                       aria-label={
@@ -113,15 +113,7 @@ export const TimedGrid: FC<TimedGridProps> = ({
                       }
                       key={key}
                       scope="col"
-                      style={
-                        showAllDayTint
-                          ? ({
-                              "--column-all-day-tint": allDayTintColor,
-                              backgroundColor:
-                                allDayColumnTintBackground(allDayTintColor),
-                            } as CSSVariables)
-                          : undefined
-                      }
+                      style={tintStyle}
                     />
                   );
                 },

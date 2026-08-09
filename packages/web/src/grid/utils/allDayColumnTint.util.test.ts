@@ -9,6 +9,7 @@ import {
   ALL_DAY_COLUMN_TINT_PERCENT,
   type AllDayColumnTintEvent,
   allDayColumnTintBackground,
+  allDayColumnTintStyle,
   withAllDayColumnTints,
 } from "@web/grid/utils/allDayColumnTint.util";
 import { describe, expect, it } from "bun:test";
@@ -38,6 +39,20 @@ describe("allDayColumnTintBackground", () => {
     expect(allDayColumnTintBackground("#0B8043")).toBe(
       `color-mix(in srgb, #0B8043 ${ALL_DAY_COLUMN_TINT_PERCENT}%, transparent)`,
     );
+  });
+});
+
+describe("allDayColumnTintStyle", () => {
+  it("returns the CSS variable and wash when a tint is active", () => {
+    expect(allDayColumnTintStyle("#0B8043", false)).toEqual({
+      "--column-all-day-tint": "#0B8043",
+      backgroundColor: allDayColumnTintBackground("#0B8043"),
+    });
+  });
+
+  it("returns undefined when jump-day wins or no tint is set", () => {
+    expect(allDayColumnTintStyle("#0B8043", true)).toBeUndefined();
+    expect(allDayColumnTintStyle(undefined, false)).toBeUndefined();
   });
 });
 
