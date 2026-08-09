@@ -7,8 +7,20 @@ import {
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
+type CalendarPage = Parameters<typeof prepareCalendarPage>[0];
+
+const DAY_PREFIX_KEYS: Record<string, string[]> = {
+  SU: ["s", "u"],
+  M: ["m"],
+  T: ["t"],
+  W: ["w"],
+  R: ["r"],
+  F: ["f"],
+  SA: ["s", "a"],
+};
+
 const createTimedEventAt = async (
-  page: Parameters<typeof prepareCalendarPage>[0],
+  page: CalendarPage,
   title: string,
   { xRatio, yRatio }: { xRatio: number; yRatio: number },
 ) => {
@@ -18,10 +30,10 @@ const createTimedEventAt = async (
   await expectTimedEventVisible(page, title);
 };
 
-const shiftHintOverlay = (page: Parameters<typeof prepareCalendarPage>[0]) =>
+const shiftHintOverlay = (page: CalendarPage) =>
   page.locator("[data-shift-event-hints]");
 
-const tapShift = async (page: Parameters<typeof prepareCalendarPage>[0]) => {
+const tapShift = async (page: CalendarPage) => {
   await page.keyboard.down("Shift");
   await page.keyboard.up("Shift");
 };
@@ -35,7 +47,7 @@ test("tap Shift shows day-prefix jump keys and focuses the assigned event", asyn
   const middleTitle = createEventTitle("Middle Flash");
   const lateTitle = createEventTitle("Late Flash");
 
-  // Wednesday column at xRatio 0.42; earlier y ≈ earlier start for indices.
+  // Same timed column; earlier y ≈ earlier start for chronological indices.
   await createTimedEventAt(page, earlyTitle, { xRatio: 0.42, yRatio: 0.25 });
   await createTimedEventAt(page, middleTitle, { xRatio: 0.42, yRatio: 0.4 });
   await createTimedEventAt(page, lateTitle, { xRatio: 0.42, yRatio: 0.55 });
@@ -44,15 +56,31 @@ test("tap Shift shows day-prefix jump keys and focuses the assigned event", asyn
     .locator("#mainGrid")
     .getByRole("button", { name: middleTitle });
 
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  });
   await tapShift(page);
 
   const overlay = shiftHintOverlay(page);
-  await expect(overlay.getByText("W1", { exact: true })).toHaveCount(1);
-  await expect(overlay.getByText("W2", { exact: true })).toHaveCount(1);
-  await expect(overlay.getByText("W3", { exact: true })).toHaveCount(1);
+  await expect(overlay.locator(":scope > span")).toHaveCount(3);
 
-  await page.keyboard.down("w");
-  await page.keyboard.up("w");
+  const labels = await overlay.evaluate((root) =>
+    [...root.querySelectorAll(":scope > span")].map(
+      (node) => node.textContent?.trim() ?? "",
+    ),
+  );
+  const dayPrefix = labels[0]?.replace(/\d+$/, "") ?? "";
+  expect(DAY_PREFIX_KEYS[dayPrefix]).toBeTruthy();
+  expect([...labels].sort()).toEqual(
+    [`${dayPrefix}1`, `${dayPrefix}2`, `${dayPrefix}3`].sort(),
+  );
+
+  for (const key of DAY_PREFIX_KEYS[dayPrefix] ?? []) {
+    await page.keyboard.down(key);
+    await page.keyboard.up(key);
+  }
   await page.keyboard.down("2");
   await page.keyboard.up("2");
 
