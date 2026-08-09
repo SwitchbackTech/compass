@@ -1,3 +1,4 @@
+import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import {
   EVENT_COLOR_SLOT_HEX,
@@ -11,6 +12,8 @@ import {
   withAllDayColumnTints,
 } from "@web/grid/utils/allDayColumnTint.util";
 import { describe, expect, it } from "bun:test";
+
+const calendarId = (value: string) => value as CalendarId;
 
 const monday = dayjs("2026-08-10");
 const tuesday = dayjs("2026-08-11");
@@ -167,7 +170,7 @@ describe("withAllDayColumnTints (calendar / day)", () => {
         event({
           startDate: "2026-08-10",
           endDate: "2026-08-11",
-          calendarId: "cal-b",
+          calendarId: calendarId("cal-b"),
           color: "plum",
         }),
       ],
@@ -202,14 +205,14 @@ describe("withAllDayColumnTints (calendar / day)", () => {
         event({
           startDate: "2026-08-10",
           endDate: "2026-08-11",
-          calendarId: "cal-a",
+          calendarId: calendarId("cal-a"),
           color: "orange",
           row: 2,
         }),
         event({
           startDate: "2026-08-10",
           endDate: "2026-08-11",
-          calendarId: "cal-a",
+          calendarId: calendarId("cal-a"),
           color: "slate",
           row: 1,
         }),
