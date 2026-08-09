@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "@core/util/date/dayjs";
+import { ALL_DAY_COLUMN_TINT_PERCENT } from "@web/grid/utils/allDayColumnTint.util";
 import { TimedGrid } from "./TimedGrid";
 import { describe, expect, it } from "bun:test";
 
@@ -31,5 +32,35 @@ describe("TimedGrid", () => {
 
     await user.tab();
     expect(grid).toHaveFocus();
+  });
+
+  it("applies the all-day tint CSS variable and wash on the day column", () => {
+    const tint = "#0B8043";
+    render(
+      <TimedGrid
+        eventsLayer={null}
+        onMouseDown={() => {}}
+        timedColumnsRef={() => {}}
+        timedGridRef={() => {}}
+        today={today}
+        visibleDates={[
+          {
+            date: today,
+            key: "today",
+            allDayTintColor: tint,
+            surfaceLabel: "Tinted day",
+          },
+        ]}
+      />,
+    );
+
+    const column = screen.getByRole("columnheader", { name: "Tinted day" });
+    expect(column.getAttribute("data-all-day-tint")).toBe("true");
+    expect(column.style.getPropertyValue("--column-all-day-tint")).toBe(tint);
+    // jsdom may normalize the hex inside color-mix to rgb(...).
+    expect(column.style.backgroundColor).toContain("color-mix(in srgb,");
+    expect(column.style.backgroundColor).toContain(
+      `${ALL_DAY_COLUMN_TINT_PERCENT}%`,
+    );
   });
 });

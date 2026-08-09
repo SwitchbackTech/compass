@@ -1,9 +1,13 @@
-import { type FC } from "react";
+import { type FC, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
-import { useWeekEventsQueryStatus } from "@web/events/queries/useWeekEventsQuery";
+import {
+  useWeekEventsQueryStatus,
+  useWeekEventViewModel,
+} from "@web/events/queries/useWeekEventsQuery";
 import { EventGrid, isEventGridLoading } from "@web/grid/components/EventGrid";
+import { withAllDayColumnTints } from "@web/grid/utils/allDayColumnTint.util";
 import { AllDayRow } from "@web/views/Week/components/Grid/AllDayRow/AllDayRow";
 import { EdgeNavigationIndicators } from "@web/views/Week/components/Grid/MainGrid/EdgeNavigationIndicators/EdgeNavigationIndicators";
 import { MainGrid } from "@web/views/Week/components/Grid/MainGrid/MainGrid";
@@ -45,6 +49,10 @@ export const Grid: FC<Props> = ({
     startOfView: weekProps.query.startOfView,
     endOfView: weekProps.query.endOfView,
   });
+  const { allDayEvents } = useWeekEventViewModel({
+    startOfView: weekProps.query.startOfView,
+    endOfView: weekProps.query.endOfView,
+  });
   const googleState = useGoogleUiState();
   const isLoadingEvents = isEventGridLoading(
     isPending,
@@ -57,10 +65,19 @@ export const Grid: FC<Props> = ({
 
   useDragEdgeNavigation(mainGridRef, weekProps);
 
-  const visibleDates = weekProps.component.weekDays.map((date) => ({
-    date,
-    key: date.format(YEAR_MONTH_DAY_FORMAT),
-  }));
+  const weekDays = weekProps.component.weekDays;
+  const visibleDates = useMemo(
+    () =>
+      withAllDayColumnTints(
+        weekDays.map((date) => ({
+          date,
+          key: date.format(YEAR_MONTH_DAY_FORMAT),
+        })),
+        allDayEvents,
+        "date",
+      ),
+    [allDayEvents, weekDays],
+  );
 
   return (
     <AllDayRow
