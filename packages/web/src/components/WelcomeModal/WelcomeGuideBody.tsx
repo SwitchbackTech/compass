@@ -25,11 +25,12 @@ export function WelcomeGuideBody() {
     <>
       <div className="flex flex-col gap-2">
         <h2 className="font-bold text-2xl text-text leading-snug">
-          Compass Calendar helps you manage your time, simply.
+          The best place to manage your schedule at the keyboard.
         </h2>
         <p className="text-text-muted">
-          A small, but mighty calendar app. Built for busy minimalists who get
-          things done.
+          Move fast, stay focused, and never reach for the mouse. Even
+          scheduling itself is quicker from the keyboard than any other
+          calendar.
         </p>
       </div>
 

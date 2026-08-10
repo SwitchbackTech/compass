@@ -2,7 +2,7 @@ export const FAQ_ITEMS = [
   {
     question: "Who is Compass for?",
     answer:
-      "Compass is for busy minimalists who value focus, speed, and independent software. If that's you, Compass will help you do more with less.",
+      "Compass is for busy minimalists who'd rather fly through their calendar at the keyboard than hunt for it with a mouse. If that's you, Compass will help you do more with less.",
   },
   {
     question: "Can I try it without handing over my email?",
@@ -12,6 +12,6 @@ export const FAQ_ITEMS = [
   {
     question: "How is Compass different?",
     answer:
-      "We're simpler, faster, open-source...er. We remind you of your mortality (/life).",
+      "Every action, including scheduling itself, is faster from the keyboard than any other calendar. We're simpler, faster, open-source...er. We remind you of your mortality (/life).",
   },
 ];

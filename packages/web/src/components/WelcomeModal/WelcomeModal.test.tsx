@@ -66,13 +66,11 @@ describe("WelcomeModal", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Compass Calendar helps you manage your time, simply.",
+        name: "The best place to manage your schedule at the keyboard.",
       }),
     ).toBeTruthy();
     expect(
-      screen.getByText(
-        /A small, but mighty calendar app\. Built for busy minimalists/,
-      ),
+      screen.getByText(/Move fast, stay focused, and never reach for/),
     ).toBeTruthy();
     expect(screen.getByRole("img", { name: /pixel pirate/i })).toBeTruthy();
     expect(screen.getByText("No signup required")).toBeTruthy();
@@ -170,7 +168,7 @@ describe("WelcomeModal", () => {
     expect(answer).toHaveAttribute("aria-hidden", "false");
     expect(answer).toHaveAttribute("data-state", "open");
     expect(
-      screen.getByText(/Compass is for busy minimalists who value focus/),
+      screen.getByText(/Compass is for busy minimalists who'd rather fly/),
     ).toBeTruthy();
 
     await user.click(questionButton);
