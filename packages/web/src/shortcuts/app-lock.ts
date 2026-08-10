@@ -30,6 +30,10 @@ export function clearAppLockReasons() {
   syncAppLockedDataset();
 }
 
+export function isAppLocked(): boolean {
+  return document.body.dataset.appLocked === "true";
+}
+
 export function useAppLockReason(reason: string, locked: boolean) {
   useEffect(() => {
     setAppLockReason(reason, locked);

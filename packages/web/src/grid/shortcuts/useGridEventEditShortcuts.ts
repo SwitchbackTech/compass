@@ -24,6 +24,7 @@ import { findEventInCache } from "@web/events/queries/event.query.cache";
 import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
 import {
   type FocusableGridEventTarget,
+  findCalendarEventForTarget,
   type GridEventShortcutTarget,
   getChronologicallyAdjacentTarget,
   getSpatiallyAdjacentTarget,
@@ -100,18 +101,16 @@ export function useGridEventEditShortcuts({
   const { delete: deleteEvent } = useEventMutations(dependencies);
   const updateEvent = useUpdateEvent(dependencies);
 
-  const findCalendarEventForTarget = (target: GridEventShortcutTarget) => {
-    const events = target.eventType === "all-day" ? allDayEvents : timedEvents;
-    return events.find((candidate) => candidate._id === target.eventId) ?? null;
-  };
-
   // Focused only (no hover/first-visible fallback): edit actions must
   // demand an explicit target.
   const getFocusedMutableCalendarEvent = () => {
     const target = targeting.getFocused();
     if (!target) return null;
 
-    const event = findCalendarEventForTarget(target);
+    const event = findCalendarEventForTarget(target, {
+      allDayEvents,
+      timedEvents,
+    });
     if (!event) return null;
 
     if (isGridEventInteractionReadOnly(calendarLookup, event)) {

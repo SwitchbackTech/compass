@@ -3,6 +3,7 @@ import {
   type EventFormFocusField,
   isEditableKeyboardTarget,
 } from "@web/common/utils/form/form.util";
+import { isAppLocked } from "@web/shortcuts/app-lock";
 
 /** Leader → field map for the `e` edit sequences. */
 export const EDIT_SEQUENCE_FIELDS = {
@@ -21,8 +22,6 @@ const LEADER_KEY = "e";
 
 const hasModifier = (event: KeyboardEvent) =>
   event.metaKey || event.ctrlKey || event.altKey || event.shiftKey;
-
-const isAppLocked = () => document.body.dataset.appLocked === "true";
 
 /**
  * Arms on bare `e`, then fires a mapped second key within a short window.

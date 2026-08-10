@@ -3,6 +3,7 @@ import {
   type RegisterableHotkey,
   useHotkey,
 } from "@tanstack/react-hotkeys";
+import { isAppLocked } from "@web/shortcuts/app-lock";
 
 export interface UseAppShortcutOptions {
   enabled?: boolean;
@@ -42,7 +43,7 @@ export function useAppShortcut(
   useHotkey(
     hotkey,
     (event) => {
-      if (!ignoreAppLock && document.body.dataset.appLocked === "true") {
+      if (!ignoreAppLock && isAppLocked()) {
         return;
       }
 
