@@ -72,8 +72,12 @@ export function useSaveEventForm() {
 
       if (parsed.mode === "edit") {
         clearFieldErrors();
-        replace({ id: parsed.eventId, input: parsed.input });
-        closeEventForm();
+        // Same as create: keep the draft mounted until the optimistic replace
+        // exists so the grid never paints a frame with the pre-edit color.
+        replace(
+          { id: parsed.eventId, input: parsed.input },
+          { onOptimisticApplied: closeEventForm },
+        );
       }
     },
     [

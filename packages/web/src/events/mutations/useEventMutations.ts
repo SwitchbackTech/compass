@@ -169,7 +169,15 @@ function mergeReplaceContent(
   input: ReplaceEventInput["content"],
 ): Event["content"] {
   if (existing.kind !== "details") return input;
-  return { ...existing, ...input };
+  const merged = { ...existing, ...input };
+  // Slot writes (including null clear) supersede a provider custom hex on the
+  // optimistic card. Palette resolution prefers colorHex over color, so keeping
+  // the old hex would leave the prior fill until settle/refetch.
+  if (input.kind === "details" && input.color !== undefined) {
+    const { colorHex: _cleared, ...withoutHex } = merged;
+    return withoutHex;
+  }
+  return merged;
 }
 
 function mergeReplaceInput(existing: Event, input: ReplaceEventInput): Event {
@@ -217,6 +225,7 @@ type ReplaceVariables = {
   writeKey: EventId;
   originalOverride?: Event;
   opportunityId?: number;
+  callbacks?: EventMutationCallbacks;
 };
 type DeleteVariables = {
   id: EventId;
@@ -732,8 +741,10 @@ export function useEventMutations(
             source,
           });
         }
+        // callbacks rides in variables so onMutate can run onOptimisticApplied
+        // in the same task as the cache write (same pattern as create above).
         replaceMutation.mutate(
-          { ...payload, writeKey, opportunityId },
+          { ...payload, writeKey, opportunityId, callbacks },
           callbacks,
         );
       },

@@ -1310,6 +1310,88 @@ describe("useEventMutations", () => {
     });
     context.pending.resolve();
   });
+
+  test("runs replace onOptimisticApplied after the optimistic cache write", async () => {
+    const context = setup();
+    const original = event({
+      content: {
+        kind: "details",
+        title: "Original",
+        description: "",
+        color: "blue",
+      },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(original));
+
+    const onOptimisticApplied = mock(() => {});
+    let colorAtCallback: unknown;
+    onOptimisticApplied.mockImplementation(() => {
+      colorAtCallback = (
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id].content as { color?: string }
+      ).color;
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(original.id, {
+          content: {
+            kind: "details",
+            title: "Original",
+            description: "",
+            location: "",
+            color: "coral",
+          },
+        }),
+        { onOptimisticApplied },
+      ),
+    );
+
+    await waitFor(() => {
+      expect(onOptimisticApplied).toHaveBeenCalledTimes(1);
+    });
+    expect(colorAtCallback).toBe("coral");
+
+    context.pending.resolve();
+  });
+
+  test("clears colorHex on optimistic replace when a slot color is written", async () => {
+    const context = setup();
+    const original = event({
+      content: {
+        kind: "details",
+        title: "Original",
+        description: "",
+        color: "blue",
+        colorHex: "#009688",
+      },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(original));
+
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(original.id, {
+          content: {
+            kind: "details",
+            title: "Original",
+            description: "",
+            location: "",
+            color: "coral",
+          },
+        }),
+      ),
+    );
+
+    await waitFor(() => {
+      const content =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id].content;
+      expect(content).toMatchObject({ kind: "details", color: "coral" });
+      expect(content).not.toHaveProperty("colorHex");
+    });
+
+    context.pending.resolve();
+  });
 });
 
 describe("undo history recording", () => {
