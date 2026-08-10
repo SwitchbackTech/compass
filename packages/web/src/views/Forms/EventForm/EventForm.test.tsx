@@ -92,7 +92,11 @@ mock.module("@web/views/Forms/EventForm/SaveSection", () => ({
 
 const { EventForm } = require("./EventForm") as typeof import("./EventForm");
 
-function dispatchModKey(target: HTMLElement, key: string) {
+function dispatchModKey(
+  target: HTMLElement,
+  key: string,
+  { shift = false }: { shift?: boolean } = {},
+) {
   const modifierKey = resolveModifier("Mod");
   const isControl = modifierKey === "Control";
 
@@ -104,8 +108,20 @@ function dispatchModKey(target: HTMLElement, key: string) {
       ctrlKey: isControl,
       key,
       metaKey: !isControl,
+      shiftKey: shift,
     }),
   );
+}
+
+function dispatchKey(target: HTMLElement, key: string) {
+  const event = new KeyboardEvent("keydown", {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    key,
+  });
+  target.dispatchEvent(event);
+  return event;
 }
 
 function dispatchArrowDown(target: HTMLElement) {
@@ -327,6 +343,123 @@ describe("EventForm", () => {
       expect(onDuplicate).toHaveBeenCalledTimes(1);
     });
     expect(onDuplicate).toHaveBeenCalledWith(draft);
+  });
+
+  it("jumps focus to the location field with Mod+E then L from the title field", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    dispatchModKey(titleField, "e");
+    const followEvent = dispatchKey(titleField, "l");
+
+    expect(followEvent.defaultPrevented).toBe(true);
+    expect(screen.getByRole("textbox", { name: "Location" })).toHaveFocus();
+  });
+
+  it("jumps focus to the description field with Mod+E then D from the location field", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft({ description: "Plan the launch" })}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const locationField = screen.getByRole("textbox", { name: "Location" });
+    act(() => locationField.focus());
+
+    dispatchModKey(locationField, "e");
+    dispatchKey(locationField, "d");
+
+    expect(screen.getByRole("textbox", { name: "Description" })).toHaveFocus();
+  });
+
+  it("jumps focus out of the TipTap description editor to the title field with Mod+E then T", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft({ description: "Plan the launch" })}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const descriptionField = screen.getByRole("textbox", {
+      name: "Description",
+    });
+    act(() => descriptionField.focus());
+
+    dispatchModKey(descriptionField, "e");
+    dispatchKey(descriptionField, "t");
+
+    expect(screen.getByPlaceholderText("Title")).toHaveFocus();
+  });
+
+  it("does not crash jumping to the calendar field on an edit draft, where the picker isn't rendered", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    dispatchModKey(titleField, "e");
+    expect(() => dispatchKey(titleField, "c")).not.toThrow();
+    expect(titleField).toHaveFocus();
+  });
+
+  it("does not jump focus when a bare letter is typed without the Mod+E leader", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    const event = dispatchKey(titleField, "l");
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(titleField).toHaveFocus();
   });
 
   it("closes a draft event immediately when deleting from the menu", async () => {

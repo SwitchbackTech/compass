@@ -147,6 +147,9 @@ describe("form.util", () => {
       form.setAttribute("name", ID_EVENT_FORM);
       const title = document.createElement("input");
       title.name = "Event Title";
+      const location = document.createElement("input");
+      location.id = "event-form-location";
+      location.name = "Event Location";
       const description = document.createElement("div");
       description.id = "event-form-description";
       description.setAttribute("contenteditable", "true");
@@ -162,9 +165,17 @@ describe("form.util", () => {
       recurrence.appendChild(repeat);
       const calendar = document.createElement("button");
       calendar.id = "event-form-calendar";
-      form.append(title, description, start, end, recurrence, calendar);
+      form.append(
+        title,
+        location,
+        description,
+        start,
+        end,
+        recurrence,
+        calendar,
+      );
       document.body.appendChild(form);
-      return { title, description, start, end, repeat, calendar };
+      return { title, location, description, start, end, repeat, calendar };
     };
 
     it("focuses each shipped form field", () => {
@@ -172,6 +183,9 @@ describe("form.util", () => {
 
       expect(focusEventFormField("title")).toBe(true);
       expect(document.activeElement).toBe(fields.title);
+
+      expect(focusEventFormField("location")).toBe(true);
+      expect(document.activeElement).toBe(fields.location);
 
       expect(focusEventFormField("description")).toBe(true);
       expect(document.activeElement).toBe(fields.description);
@@ -203,6 +217,26 @@ describe("form.util", () => {
       expect(document.activeElement).toBe(start);
       expect(focusEventFormField("end")).toBe(true);
       expect(document.activeElement).toBe(end);
+    });
+
+    it("falls back to the location input's name when no id is present", () => {
+      const form = document.createElement("form");
+      form.setAttribute("name", ID_EVENT_FORM);
+      const location = document.createElement("input");
+      location.name = "Event Location";
+      form.append(location);
+      document.body.appendChild(form);
+
+      expect(focusEventFormField("location")).toBe(true);
+      expect(document.activeElement).toBe(location);
+    });
+
+    it("returns false when a field is absent from the form", () => {
+      const form = document.createElement("form");
+      form.setAttribute("name", ID_EVENT_FORM);
+      document.body.appendChild(form);
+
+      expect(focusEventFormField("location")).toBe(false);
     });
 
     it("keeps focusEventFormTitle as a title helper", () => {

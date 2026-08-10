@@ -116,6 +116,7 @@ describe("useEditSequenceShortcut", () => {
 
     const cases = [
       ["t", "title"],
+      ["l", "location"],
       ["d", "description"],
       ["s", "start"],
       ["e", "end"],

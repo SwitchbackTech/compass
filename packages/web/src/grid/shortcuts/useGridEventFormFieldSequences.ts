@@ -28,8 +28,8 @@ const focusFieldAfterPaint = (field: EventFormFocusField) => {
 };
 
 /**
- * `e` then `t`/`d`/`s`/`e`/`r`/`c`: open the focused event's form (if needed)
- * and move caret/focus to the matching field. Shared by Day and Week.
+ * `e` then `t`/`l`/`d`/`s`/`e`/`r`/`c`: open the focused event's form (if
+ * needed) and move caret/focus to the matching field. Shared by Day and Week.
  */
 export function useGridEventFormFieldSequences({
   allDayEvents = [],

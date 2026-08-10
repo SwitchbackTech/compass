@@ -1,43 +1,28 @@
-import { useEffect, useRef } from "react";
-import {
-  type EventFormFocusField,
-  isEditableKeyboardTarget,
-} from "@web/common/utils/form/form.util";
+import { resolveModifier } from "@tanstack/react-hotkeys";
+import { useEffect } from "react";
+import { focusEventFormField } from "@web/common/utils/form/form.util";
 import { isAppLocked } from "@web/shortcuts/app-lock";
-
-/** Leader → field map for the `e` edit sequences. */
-export const EDIT_SEQUENCE_FIELDS = {
-  t: "title",
-  l: "location",
-  d: "description",
-  s: "start",
-  e: "end",
-  r: "recurrence",
-  c: "calendar",
-} as const satisfies Record<string, EventFormFocusField>;
-
-export type EditSequenceSecondKey = keyof typeof EDIT_SEQUENCE_FIELDS;
+import {
+  EDIT_SEQUENCE_FIELDS,
+  type EditSequenceSecondKey,
+} from "@web/shortcuts/useEditSequenceShortcut";
 
 const ARM_WINDOW_MS = 600;
-const LEADER_KEY = "e";
 
 const hasModifier = (event: KeyboardEvent) =>
   event.metaKey || event.ctrlKey || event.altKey || event.shiftKey;
 
 /**
- * Arms on bare `e`, then fires a mapped second key within a short window.
- * Capture-phase listeners suppress the follow key's keyup so existing keyup
- * shortcuts (e.g. `t` → today, `d` → day view) do not also run.
+ * Mod+E arms, then a bare `t`/`l`/`d`/`s`/`e`/`r`/`c` jumps focus directly to
+ * the matching form field - the same letters and field mapping as the grid's
+ * `e`-then-letter sequence (EDIT_SEQUENCE_FIELDS), so there's one "e means
+ * edit a field" mental model. Unlike the grid sequence, this one fires while
+ * focus is already inside a form input or the TipTap description - that's
+ * the point, so it does not bail on editable targets.
  */
-export function useEditSequenceShortcut({
-  onSequence,
-}: {
-  onSequence: (field: EventFormFocusField) => void;
-}) {
-  const onSequenceRef = useRef(onSequence);
-  onSequenceRef.current = onSequence;
-
+export function useEventFormFieldJumpShortcuts() {
   useEffect(() => {
+    const isMac = resolveModifier("Mod") === "Meta";
     let armedUntil = 0;
     let armTimeoutId: ReturnType<typeof setTimeout> | null = null;
     const suppressKeyUp = new Set<string>();
@@ -61,46 +46,52 @@ export function useEditSequenceShortcut({
 
     const isArmed = () => armedUntil > Date.now();
 
+    const isLeaderKeydown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== "e") return false;
+      if (event.shiftKey || event.altKey) return false;
+      return isMac
+        ? event.metaKey && !event.ctrlKey
+        : event.ctrlKey && !event.metaKey;
+    };
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
       if (isAppLocked()) {
         disarm();
         return;
       }
-      if (isEditableKeyboardTarget(event)) {
-        disarm();
+
+      if (isLeaderKeydown(event)) {
+        event.preventDefault();
+        event.stopPropagation();
+        arm();
         return;
       }
+
+      if (!isArmed()) return;
+
       if (hasModifier(event)) {
         disarm();
         return;
       }
 
       const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      const field =
+        key in EDIT_SEQUENCE_FIELDS
+          ? EDIT_SEQUENCE_FIELDS[key as EditSequenceSecondKey]
+          : null;
 
-      if (isArmed()) {
-        const field =
-          key in EDIT_SEQUENCE_FIELDS
-            ? EDIT_SEQUENCE_FIELDS[key as EditSequenceSecondKey]
-            : null;
-
-        if (field) {
-          event.preventDefault();
-          event.stopPropagation();
-          suppressKeyUp.add(key);
-          disarm();
-          onSequenceRef.current(field);
-          return;
-        }
-
-        // Unknown second key: disarm silently and let the key through.
+      if (field) {
+        event.preventDefault();
+        event.stopPropagation();
+        suppressKeyUp.add(key);
         disarm();
+        focusEventFormField(field);
         return;
       }
 
-      if (key === LEADER_KEY) {
-        arm();
-      }
+      // Unknown second key: disarm silently and let the key through.
+      disarm();
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
