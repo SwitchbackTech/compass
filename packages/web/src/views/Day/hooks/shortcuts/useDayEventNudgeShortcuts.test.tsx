@@ -24,6 +24,10 @@ import {
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
+import {
+  initialEdgeFocusState,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
 import { dayEventRegistry } from "@web/views/Day/interaction/registry/day-event.registry";
 import { useDayEventNudgeShortcuts } from "./useDayEventNudgeShortcuts";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -184,12 +188,14 @@ const getDeleteMutation = (
 beforeEach(() => {
   HotkeyManager.resetInstance();
   draftActions.discard();
+  useEdgeFocusStore.setState(initialEdgeFocusState, true);
 });
 
 afterEach(() => {
   cleanup();
   dayEventRegistry.clear();
   draftActions.discard();
+  useEdgeFocusStore.setState(initialEdgeFocusState, true);
   document.body.innerHTML = "";
 });
 
@@ -502,5 +508,153 @@ describe("useDayEventNudgeShortcuts", () => {
 
     expect(useDraftStore.getState().status?.isFormOpen).toBeFalsy();
     expect(useDraftStore.getState().gridDraft).toBeNull();
+  });
+
+  it("cycles edge focus with Tab: whole event -> start -> end -> whole event", () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    renderEditShortcuts();
+
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState()).toMatchObject({
+      eventId: TIMED_EVENT_ID,
+      edge: "startDate",
+    });
+
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState().edge).toBe("endDate");
+
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState().edge).toBeNull();
+  });
+
+  it("lets Tab leave the card natively past the end edge instead of trapping focus", () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    renderEditShortcuts();
+
+    pressKey("Tab");
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState().edge).toBe("endDate");
+
+    const thirdTab = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      key: "Tab",
+    });
+    document.dispatchEvent(thirdTab);
+
+    expect(thirdTab.defaultPrevented).toBe(false);
+    expect(useEdgeFocusStore.getState().edge).toBeNull();
+  });
+
+  it("cycles edge focus backward with Shift+Tab", () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    renderEditShortcuts();
+
+    pressKey("Tab", shiftKey);
+    expect(useEdgeFocusStore.getState().edge).toBe("endDate");
+
+    pressKey("Tab", shiftKey);
+    expect(useEdgeFocusStore.getState().edge).toBe("startDate");
+  });
+
+  it("does not cycle edge focus with Tab when no event is focused", () => {
+    renderEditShortcuts();
+
+    pressKey("Tab");
+
+    expect(useEdgeFocusStore.getState().eventId).toBeNull();
+  });
+
+  it("moves only the start edge with Shift+ArrowUp when the start edge is focused", async () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const { queryClient } = renderEditShortcuts();
+    pressKey("Tab");
+
+    pressKey("ArrowUp", shiftKey);
+
+    await waitFor(() => {
+      expect(getEditMutation(queryClient)).toBeDefined();
+    });
+    const { input } = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string; end: string } };
+    };
+    expect(input.schedule.start).toBe(
+      offsetString(dayjs(timedEvent.startDate).subtract(15, "minutes")),
+    );
+    expect(input.schedule.end).toBe(offsetString(dayjs(timedEvent.endDate)));
+    expect(useEdgeFocusStore.getState().edge).toBe("startDate");
+  });
+
+  it("moves only the end edge with Shift+ArrowDown when the end edge is focused", async () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const { queryClient } = renderEditShortcuts();
+    pressKey("Tab");
+    pressKey("Tab");
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      expect(getEditMutation(queryClient)).toBeDefined();
+    });
+    const { input } = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string; end: string } };
+    };
+    expect(input.schedule.start).toBe(
+      offsetString(dayjs(timedEvent.startDate)),
+    );
+    expect(input.schedule.end).toBe(
+      offsetString(dayjs(timedEvent.endDate).add(15, "minutes")),
+    );
+    expect(useEdgeFocusStore.getState().edge).toBe("endDate");
+  });
+
+  it("flips the focused edge from start to end past the minimum duration", async () => {
+    const shortEvent: GridEvent = {
+      ...timedEvent,
+      endDate: "2026-05-20T09:15:00.000",
+    };
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    renderEditShortcuts({ timedEvents: [shortEvent] });
+    pressKey("Tab");
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      expect(useEdgeFocusStore.getState().edge).toBe("endDate");
+    });
+    expect(useEdgeFocusStore.getState().eventId).toBe(TIMED_EVENT_ID);
+  });
+
+  it("resets edge focus with Escape", () => {
+    focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    renderEditShortcuts();
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState().edge).toBe("startDate");
+
+    pressKey("Escape");
+
+    expect(useEdgeFocusStore.getState().edge).toBeNull();
+  });
+
+  it("resets edge focus when a different event is focused", () => {
+    const laterEvent: GridEvent = {
+      ...timedEvent,
+      _id: "cccccccccccccccccccccccc",
+      startDate: "2026-05-20T11:00:00.000",
+      endDate: "2026-05-20T12:00:00.000",
+      title: "Later event",
+    };
+    const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const later = focusCalendarTarget(laterEvent._id!, "timed");
+    earlier.focus();
+    renderEditShortcuts({ timedEvents: [timedEvent, laterEvent] });
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState().eventId).toBe(TIMED_EVENT_ID);
+
+    act(() => {
+      later.focus();
+    });
+
+    expect(useEdgeFocusStore.getState().eventId).toBeNull();
   });
 });

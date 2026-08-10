@@ -4,6 +4,12 @@ import { getSidebarSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/us
 import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
 import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
+import { EdgeFocusIndicator } from "@web/grid/shortcuts/EdgeFocusIndicator";
+import {
+  selectEdgeFocusActive,
+  selectEdgeFocusAnnouncement,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
 import { settingsActions } from "@web/settings/settings.store";
 import { KeyboardOnlyIndicator } from "@web/shortcuts/keyboard-only/KeyboardOnlyIndicator";
 import {
@@ -33,6 +39,9 @@ export const SidebarStatusBar: FC = () => {
   const isEventJump = useEventJumpStore(selectEventJumpActive);
   const eventJumpAnnouncement = useEventJumpStore(selectEventJumpAnnouncement);
   const showEventJump = isEventJump || Boolean(eventJumpAnnouncement);
+  const isEdgeFocus = useEdgeFocusStore(selectEdgeFocusActive);
+  const edgeFocusAnnouncement = useEdgeFocusStore(selectEdgeFocusAnnouncement);
+  const showEdgeFocus = isEdgeFocus || Boolean(edgeFocusAnnouncement);
   const isSaving = useHasPendingEventMutations();
   // The unscoped hook's `connection` is the primary connection (the one
   // whose own state matches the aggregate) - without it, an account's
@@ -63,6 +72,10 @@ export const SidebarStatusBar: FC = () => {
       ) : showEventJump ? (
         <div className="flex h-full min-w-0 flex-1 items-center">
           <EventJumpIndicator />
+        </div>
+      ) : showEdgeFocus ? (
+        <div className="flex h-full min-w-0 flex-1 items-center">
+          <EdgeFocusIndicator />
         </div>
       ) : (
         <button

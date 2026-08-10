@@ -19,6 +19,10 @@ import {
   calendarAccentStyle,
 } from "@web/grid/components/calendar-accent.util";
 import { EVENT_RESIZE_HANDLE_ATTRIBUTE } from "@web/grid/interaction/dom";
+import {
+  selectEdgeForEvent,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
 import { type EventPosition } from "@web/grid/types/grid.types";
 import { EventRepeatIcon } from "./EventRepeatIcon";
 
@@ -111,9 +115,17 @@ const AllDayEventCardBase = (
   // Fill stays a flat neutral color; the accent + this suffix are the only
   // calendar signal, and the name (never color alone) is what makes it
   // accessible (A9).
-  const accessibleLabel = calendarIdentity
-    ? `${baseAccessibleLabel}${calendarAccentAccessibleSuffix(calendarIdentity)}`
-    : baseAccessibleLabel;
+  const focusedEdge = useEdgeFocusStore(selectEdgeForEvent(event._id));
+  const edgeFocusSuffix =
+    focusedEdge === "startDate"
+      ? ", editing start date"
+      : focusedEdge === "endDate"
+        ? ", editing end date"
+        : "";
+  const accessibleLabel =
+    (calendarIdentity
+      ? `${baseAccessibleLabel}${calendarAccentAccessibleSuffix(calendarIdentity)}`
+      : baseAccessibleLabel) + edgeFocusSuffix;
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: All-day events are draggable/resizable blocks, not native buttons.
@@ -155,6 +167,17 @@ const AllDayEventCardBase = (
           aria-hidden="true"
           className="absolute inset-y-0 left-0 w-[3px]"
           style={calendarAccentStyle(calendarIdentity)}
+        />
+      )}
+      {focusedEdge && (
+        <div
+          aria-hidden="true"
+          className={cn(
+            "absolute inset-y-0 w-[3px] rounded-full bg-accent",
+            focusedEdge === "startDate" ? "left-0" : "right-0",
+          )}
+          data-edge-focus={focusedEdge}
+          style={{ zIndex: ZIndex.LAYER_4 }}
         />
       )}
       <div

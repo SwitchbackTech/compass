@@ -23,6 +23,10 @@ import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { useDraftStore } from "@web/events/stores/draft.store";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
+import {
+  initialEdgeFocusState,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/week-event.registry";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -64,6 +68,22 @@ const leftmostEvent = createMockEvent({
     start: "2026-05-18T09:00:00.000Z",
     end: "2026-05-18T10:00:00.000Z",
     timeZone: "UTC",
+  }),
+});
+const LEFTMOST_ALL_DAY_EVENT_ID = EventIdSchema.parse(
+  "eeeeeeeeeeeeeeeeeeeeeeee",
+);
+const leftmostAllDayEvent = createMockEvent({
+  id: LEFTMOST_ALL_DAY_EVENT_ID,
+  content: {
+    kind: "details",
+    title: "Leftmost all-day event",
+    description: "",
+  },
+  schedule: EventScheduleSchema.parse({
+    kind: "allDay",
+    start: "2026-05-18",
+    end: "2026-05-19",
   }),
 });
 
@@ -136,6 +156,7 @@ const getEditMutation = (queryClient: QueryClient) =>
 beforeEach(() => {
   HotkeyManager.resetInstance();
   repositionDraftByKeyboard = mock();
+  useEdgeFocusStore.setState(initialEdgeFocusState, true);
 });
 
 afterEach(() => {
@@ -144,6 +165,7 @@ afterEach(() => {
   pendingEventIds = [];
   weekEventRegistry.clear();
   useViewStore.setState(initialViewState);
+  useEdgeFocusStore.setState(initialEdgeFocusState, true);
 });
 
 const addCalendarTarget = (
@@ -655,6 +677,89 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
     pressKey("ArrowRight", shiftKey);
 
     expect(getEditMutation(queryClient)).toBeUndefined();
+  });
+});
+
+describe("useWeekShortcutOwner edge focus", () => {
+  it("cycles edge focus with Tab and moves only the focused edge", async () => {
+    const button = addCalendarTarget();
+    button.focus();
+    const { queryClient } = renderShortcuts();
+
+    pressKey("Tab");
+    expect(useEdgeFocusStore.getState()).toMatchObject({
+      eventId: EVENT_1_ID,
+      edge: "startDate",
+    });
+
+    pressKey("ArrowUp", shiftKey);
+
+    await waitFor(() => {
+      expect(getEditMutation(queryClient)).toBeDefined();
+    });
+    const { input } = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string; end: string } };
+    };
+    expect(input.schedule.start).toBe(
+      offsetString(dayjs("2026-05-20T09:00:00.000Z").subtract(15, "minutes")),
+    );
+    expect(input.schedule.end).toBe(
+      offsetString(dayjs("2026-05-20T10:00:00.000Z")),
+    );
+  });
+
+  it("refuses an all-day start-edge move that would leave the visible week", () => {
+    const button = addCalendarTarget(LEFTMOST_ALL_DAY_EVENT_ID, "all-day");
+    button.focus();
+    const { queryClient } = renderShortcuts({
+      extraEvents: [leftmostAllDayEvent],
+    });
+
+    pressKey("Tab");
+    pressKey("ArrowLeft", shiftKey);
+
+    expect(getEditMutation(queryClient)).toBeUndefined();
+  });
+
+  it("allows an all-day end-edge move into the visible week's last day", async () => {
+    // weekDays run 2026-05-18..2026-05-24; this event's last occupied day is
+    // 05-23 (exclusive endDate 05-24), so extending into 05-24 is in bounds -
+    // regression test for an off-by-one that compared the exclusive endDate
+    // directly against the inclusive week boundary.
+    const RIGHTMOST_ALL_DAY_EVENT_ID = EventIdSchema.parse(
+      "ffffffffffffffffffffffff",
+    );
+    const rightmostAllDayEvent = createMockEvent({
+      id: RIGHTMOST_ALL_DAY_EVENT_ID,
+      content: {
+        kind: "details",
+        title: "Rightmost all-day event",
+        description: "",
+      },
+      schedule: EventScheduleSchema.parse({
+        kind: "allDay",
+        start: "2026-05-22",
+        end: "2026-05-24",
+      }),
+    });
+    const button = addCalendarTarget(RIGHTMOST_ALL_DAY_EVENT_ID, "all-day");
+    button.focus();
+    const { queryClient } = renderShortcuts({
+      extraEvents: [rightmostAllDayEvent],
+    });
+
+    pressKey("Tab");
+    pressKey("Tab");
+    pressKey("ArrowRight", shiftKey);
+
+    await waitFor(() => {
+      expect(getEditMutation(queryClient)).toBeDefined();
+    });
+    const { input } = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string; end: string } };
+    };
+    expect(input.schedule.start).toBe("2026-05-22");
+    expect(input.schedule.end).toBe("2026-05-25");
   });
 });
 
