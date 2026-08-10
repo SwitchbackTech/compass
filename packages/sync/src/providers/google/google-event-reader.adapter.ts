@@ -144,16 +144,44 @@ export class GoogleEventReaderAdapter implements ProviderEventReader {
   }
 }
 
+// Reasons Google's 403 can carry for a quota/rate problem rather than a
+// genuine permission refusal - status alone cannot tell them apart. Same set
+// as the discovery (google-calendar.adapter.ts) and watch/writer
+// (google-notifications.adapter.ts, google-event-writer.adapter.ts) paths.
+const TRANSIENT_REASONS = [
+  "rateLimitExceeded",
+  "userRateLimitExceeded",
+  "quotaExceeded",
+  "dailyLimitExceeded",
+  "backendError",
+  "internalError",
+];
+
 // Map a Google events.list failure to a read-error reason. An expired syncToken
-// (410 Gone) forces a full re-import; a rate limit or server/network error is
-// retryable; anything else is an unrecoverable read failure.
+// (410 Gone) forces a full re-import. Retryable: a rate limit or server/network
+// error, a quota-shaped 403, or a 401 - the token that was valid when
+// getValidAccessToken minted it can expire mid-job on a long-running import or
+// repair, and the NEXT attempt mints a fresh one (calendar-import.service.ts /
+// calendar-repair.service.ts each fetch it once at the top of the job).
+// Anything else is an unrecoverable read failure.
 function classifyReadError(
   error: unknown,
 ): "cursorExpired" | "transient" | "readFailed" {
   const status = httpStatus(error);
   if (status === 410) return "cursorExpired";
-  if (status === 429 || status === undefined || status >= 500) {
+  if (
+    status === 401 ||
+    status === 429 ||
+    status === undefined ||
+    status >= 500
+  ) {
     return "transient";
+  }
+  if (status === 403) {
+    const reason = googleErrorReason(error);
+    if (reason !== undefined && TRANSIENT_REASONS.includes(reason)) {
+      return "transient";
+    }
   }
   return "readFailed";
 }

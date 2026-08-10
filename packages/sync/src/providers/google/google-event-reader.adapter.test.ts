@@ -232,6 +232,58 @@ describe("GoogleEventReaderAdapter", () => {
     }
   });
 
+  it("maps a 401 to transient (the token can expire mid-job on a long import/repair; the next attempt mints a fresh one)", async () => {
+    const api = new FakeEventListApi([], { response: { status: 401 } });
+    const { adapter } = adapterWith(api);
+
+    await expect(
+      adapter.listEventPage({
+        accessToken: "tok",
+        calendarId: "primary@google.com",
+      }),
+    ).rejects.toMatchObject({ reason: "transient" });
+  });
+
+  it("maps a quota-shaped 403 to transient, like discovery/watch/write already do", async () => {
+    for (const reason of [
+      "rateLimitExceeded",
+      "userRateLimitExceeded",
+      "quotaExceeded",
+      "dailyLimitExceeded",
+    ]) {
+      const api = new FakeEventListApi([], {
+        response: {
+          status: 403,
+          data: { error: { errors: [{ reason }] } },
+        },
+      });
+      const { adapter } = adapterWith(api);
+      await expect(
+        adapter.listEventPage({
+          accessToken: "tok",
+          calendarId: "primary@google.com",
+        }),
+      ).rejects.toMatchObject({ reason: "transient" });
+    }
+  });
+
+  it("maps a permission-refusal 403 (no quota reason) to readFailed", async () => {
+    const api = new FakeEventListApi([], {
+      response: {
+        status: 403,
+        data: { error: { errors: [{ reason: "forbidden" }] } },
+      },
+    });
+    const { adapter } = adapterWith(api);
+
+    await expect(
+      adapter.listEventPage({
+        accessToken: "tok",
+        calendarId: "primary@google.com",
+      }),
+    ).rejects.toMatchObject({ reason: "readFailed" });
+  });
+
   it("maps a networkless failure to transient", async () => {
     const api = new FakeEventListApi([], new Error("socket hang up"));
     const { adapter } = adapterWith(api);
