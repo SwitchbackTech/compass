@@ -22,6 +22,28 @@ export interface Schema_User {
    *  every (re)connect, distinct from `lastLoggedInAt`'s sign-in moment.
    *  Used to tell an active user apart from an abandoned account (A40). */
   lastSeenAt?: Date;
+  /**
+   * Trial/subscription state. Optional and absent for every user who
+   * existed before this field shipped -- treat absence as "none" (never
+   * started a trial), matching the established incremental-field pattern
+   * for this schema. No backfill: a required field here would need every
+   * existing document migrated at deploy time.
+   *
+   * NOTE: this only records that a trial started, when it ends, and (once
+   * wired) live Stripe subscription state. It does not yet reflect actual
+   * payment collection -- see keyboard-education/03-monetization-trial-checkout.md.
+   */
+  billing?: Schema_UserBilling;
+}
+
+export type BillingSubscriptionStatus = "none" | "trialing" | "expired";
+
+export interface Schema_UserBilling {
+  subscriptionStatus: BillingSubscriptionStatus;
+  trialStartedAt?: Date;
+  trialEndsAt?: Date;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }
 
 /**

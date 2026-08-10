@@ -1,21 +1,26 @@
-import { type FC, useContext, useEffect, useRef } from "react";
+import { type FC, useContext, useEffect, useRef, useState } from "react";
+import { BillingApi } from "@web/api/billing.api";
 import { SessionContext } from "@web/auth/compass/session/session.context";
 import { track } from "@web/auth/posthog/track";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import { getToast } from "@web/common/utils/toast/toast.port";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { postOnboardingFlowActions } from "@web/components/PostOnboardingFlow/post-onboarding-flow.store";
 
 /**
  * "Ready to try it for real?" — the last step of the connect/trial flow.
- * Billing does not exist yet (see keyboard-education/03), so accepting for
- * an anonymous user opens signup; an already-authenticated user (arrived via
- * Connect Google, which signs up on its own) gets a coming-soon toast in
- * place of real checkout until 03 ships.
+ * Records a real, durable trial start server-side (see
+ * keyboard-education/03), but there is no payment collection or Stripe
+ * integration yet — accepting for an anonymous user opens signup first;
+ * an authenticated user (arrived via Connect Google, which signs up on its
+ * own) gets the trial recorded directly with no card step.
  */
 export const TrialCTA: FC = () => {
   const { authenticated } = useContext(SessionContext);
   const { openModal } = useAuthModal();
   const shownRef = useRef(false);
+  const [isStarting, setIsStarting] = useState(false);
 
   useEffect(() => {
     if (!shownRef.current) {
@@ -24,13 +29,24 @@ export const TrialCTA: FC = () => {
     }
   }, []);
 
-  const onStartTrial = () => {
-    track("trial_started");
+  const onStartTrial = async () => {
     if (!authenticated) {
       openModal("signUp");
       return;
     }
-    postOnboardingFlowActions.dismissTrial();
+    if (isStarting) return;
+
+    setIsStarting(true);
+    try {
+      const status = await BillingApi.startTrial();
+      track("trial_started", { subscriptionStatus: status.subscriptionStatus });
+      getToast().info("Your free trial has started");
+      postOnboardingFlowActions.dismissTrial();
+    } catch {
+      showErrorToast("We couldn't start your trial. Please try again.");
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   return (
@@ -54,10 +70,11 @@ export const TrialCTA: FC = () => {
           </button>
           <button
             className="c-button c-button-primary rounded-full px-4 py-1.5 text-xs"
+            disabled={isStarting}
             onClick={onStartTrial}
             type="button"
           >
-            Start free trial
+            {isStarting ? "Starting…" : "Start free trial"}
           </button>
         </div>
       </div>
