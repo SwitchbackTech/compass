@@ -29,6 +29,7 @@ import { useDayEventNudgeShortcuts } from "./useDayEventNudgeShortcuts";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const TIMED_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
+const LATER_TIMED_EVENT_ID = "cccccccccccccccccccccccc";
 const ALL_DAY_EVENT_ID = "bbbbbbbbbbbbbbbbbbbbbbbb";
 
 const timedEvent: GridEvent = {
@@ -40,6 +41,14 @@ const timedEvent: GridEvent = {
   startDate: "2026-05-20T09:00:00.000",
   title: "Timed event",
   user: "user-1",
+};
+
+const laterTimedEvent: GridEvent = {
+  ...timedEvent,
+  _id: LATER_TIMED_EVENT_ID,
+  startDate: "2026-05-20T11:00:00.000",
+  endDate: "2026-05-20T12:00:00.000",
+  title: "Later event",
 };
 
 const allDayEvent: GridEvent = {
@@ -320,16 +329,9 @@ describe("useDayEventNudgeShortcuts", () => {
 
   it("focuses the chronologically next event with ArrowDown", () => {
     const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    const laterEvent: GridEvent = {
-      ...timedEvent,
-      _id: "cccccccccccccccccccccccc",
-      startDate: "2026-05-20T11:00:00.000",
-      endDate: "2026-05-20T12:00:00.000",
-      title: "Later event",
-    };
-    const later = focusCalendarTarget(laterEvent._id!, "timed");
+    const later = focusCalendarTarget(LATER_TIMED_EVENT_ID, "timed");
     earlier.focus();
-    renderEditShortcuts({ timedEvents: [timedEvent, laterEvent] });
+    renderEditShortcuts({ timedEvents: [timedEvent, laterTimedEvent] });
 
     pressKey("ArrowDown");
 
@@ -338,19 +340,12 @@ describe("useDayEventNudgeShortcuts", () => {
 
   it("focuses the chronologically next event with ArrowRight", () => {
     const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    const laterEvent: GridEvent = {
-      ...timedEvent,
-      _id: "cccccccccccccccccccccccc",
-      startDate: "2026-05-20T11:00:00.000",
-      endDate: "2026-05-20T12:00:00.000",
-      title: "Later event",
-    };
-    const later = focusCalendarTarget(laterEvent._id!, "timed");
+    const later = focusCalendarTarget(LATER_TIMED_EVENT_ID, "timed");
     earlier.focus();
     const navigateToDate = mock(() => {});
     renderEditShortcuts({
       navigateToDate,
-      timedEvents: [timedEvent, laterEvent],
+      timedEvents: [timedEvent, laterTimedEvent],
     });
 
     pressKey("ArrowRight");
@@ -361,19 +356,12 @@ describe("useDayEventNudgeShortcuts", () => {
 
   it("focuses the chronologically previous event with ArrowLeft", () => {
     const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    const laterEvent: GridEvent = {
-      ...timedEvent,
-      _id: "cccccccccccccccccccccccc",
-      startDate: "2026-05-20T11:00:00.000",
-      endDate: "2026-05-20T12:00:00.000",
-      title: "Later event",
-    };
-    const later = focusCalendarTarget(laterEvent._id!, "timed");
+    const later = focusCalendarTarget(LATER_TIMED_EVENT_ID, "timed");
     later.focus();
     const navigateToDate = mock(() => {});
     renderEditShortcuts({
       navigateToDate,
-      timedEvents: [timedEvent, laterEvent],
+      timedEvents: [timedEvent, laterTimedEvent],
     });
 
     pressKey("ArrowLeft");
@@ -383,19 +371,12 @@ describe("useDayEventNudgeShortcuts", () => {
   });
 
   it("does not change focus with ArrowRight when nothing is focused", () => {
-    const laterEvent: GridEvent = {
-      ...timedEvent,
-      _id: "cccccccccccccccccccccccc",
-      startDate: "2026-05-20T11:00:00.000",
-      endDate: "2026-05-20T12:00:00.000",
-      title: "Later event",
-    };
     focusCalendarTarget(TIMED_EVENT_ID, "timed").blur();
-    focusCalendarTarget(laterEvent._id!, "timed").blur();
+    focusCalendarTarget(LATER_TIMED_EVENT_ID, "timed").blur();
     const navigateToDate = mock(() => {});
     renderEditShortcuts({
       navigateToDate,
-      timedEvents: [timedEvent, laterEvent],
+      timedEvents: [timedEvent, laterTimedEvent],
     });
 
     pressKey("ArrowRight");
