@@ -16,6 +16,7 @@ import { createCompassQueryClient } from "@web/api/query-client";
 import { ID_EVENT_FORM, ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
+import { createTimedDraft } from "@web/common/utils/draft/draft.util";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
   createGridEventDraft,
@@ -114,10 +115,12 @@ const focusCalendarTarget = (
 const renderEditShortcuts = ({
   allDayEvents = [],
   navigateToDate,
+  placeTimedDraft,
   timedEvents = [timedEvent],
 }: {
   allDayEvents?: GridEvent[];
   navigateToDate?: (date: Dayjs) => void;
+  placeTimedDraft?: () => void;
   timedEvents?: GridEvent[];
 } = {}) => {
   const queryClient = createCompassQueryClient();
@@ -156,6 +159,7 @@ const renderEditShortcuts = ({
         allDayEvents,
         dependencies,
         navigateToDate,
+        placeTimedDraft,
         timedEvents,
       }),
     {
@@ -295,6 +299,65 @@ describe("useDayEventNudgeShortcuts", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(getEditMutation(queryClient)).toBeUndefined();
+  });
+
+  it("places a keyboardPlace timed draft when Shift+Arrow is pressed with no focus", () => {
+    const placeTimedDraft = mock(() => {
+      createTimedDraft(true, dayjs("2026-05-20T00:00:00.000"), "keyboardPlace");
+    });
+    renderEditShortcuts({ placeTimedDraft });
+
+    pressKey("ArrowDown", shiftKey);
+
+    expect(placeTimedDraft).toHaveBeenCalled();
+    const { status } = useDraftStore.getState();
+    expect(status?.activity).toBe("keyboardPlace");
+    expect(status?.isFormOpen).toBe(false);
+  });
+
+  it("repositions a keyboardPlace draft with a later Shift+Arrow", () => {
+    const placeTimedDraft = mock(() => {
+      createTimedDraft(
+        false,
+        dayjs("2026-05-20T00:00:00.000"),
+        "keyboardPlace",
+      );
+    });
+    renderEditShortcuts({ placeTimedDraft });
+
+    pressKey("ArrowDown", shiftKey);
+
+    const placedStart =
+      useDraftStore.getState().gridDraft?.values.schedule.start;
+    expect(placedStart).toBeDefined();
+
+    pressKey("ArrowDown", shiftKey);
+
+    expect(
+      dayjs(useDraftStore.getState().gridDraft?.values.schedule.start).format(),
+    ).toBe(dayjs(placedStart).add(15, "minutes").format());
+    expect(useDraftStore.getState().status?.isFormOpen).toBe(false);
+    expect(placeTimedDraft).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not place a draft when Shift+Arrow is pressed while the form is open", () => {
+    const placeTimedDraft = mock(() => {});
+    const draft = createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T09:00:00.000"),
+        new Date("2026-05-20T10:00:00.000"),
+      ),
+    );
+    draftActions.startGridDraft({ activity: "keyboardPlace", draft });
+    draftActions.setFormOpen(true);
+    renderEditShortcuts({ placeTimedDraft });
+
+    pressKey("ArrowDown", shiftKey);
+
+    expect(placeTimedDraft).not.toHaveBeenCalled();
+    expect(
+      dayjs(useDraftStore.getState().gridDraft?.values.schedule.start).format(),
+    ).toBe(dayjs("2026-05-20T09:00:00.000").format());
   });
 
   it("deletes the focused timed calendar event with Delete", () => {

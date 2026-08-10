@@ -7,7 +7,7 @@ import {
 import { Categories_Event } from "@web/common/types/web.event.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
-import { useDraftStore } from "@web/events/stores/draft.store";
+import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { assembleDefaultEvent } from "../event/event.util";
 import {
   createAlldayDraft,
@@ -41,6 +41,10 @@ describe("assembleDefaultEvent", () => {
 });
 
 describe("shortcut draft creation", () => {
+  afterEach(() => {
+    draftActions.discard();
+  });
+
   it("creates a one-day all-day draft on today when today is inside the visible week", async () => {
     setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
 
@@ -112,6 +116,27 @@ describe("shortcut draft creation", () => {
     expect(useDraftStore.getState().gridDraft?.values.calendarId).toBe(
       calendarId,
     );
+  });
+
+  it("creates a keyboardPlace timed draft with the form closed", async () => {
+    setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
+
+    await createTimedDraft(
+      true,
+      dayjs("2026-05-20T00:00:00.000Z"),
+      "keyboardPlace",
+    );
+
+    const { gridDraft, status } = useDraftStore.getState();
+
+    expect(status?.activity).toBe("keyboardPlace");
+    expect(status?.isFormOpen).toBe(false);
+    expect(status?.eventType).toBe(Categories_Event.TIMED);
+    expectSameTime(
+      gridDraft?.values.schedule.start,
+      "2026-05-20T10:15:00.000Z",
+    );
+    expectSameTime(gridDraft?.values.schedule.end, "2026-05-20T11:15:00.000Z");
   });
 
   it("stores a provided calendarId on all-day shortcut drafts", async () => {

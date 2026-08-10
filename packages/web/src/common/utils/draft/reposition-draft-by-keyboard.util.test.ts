@@ -60,4 +60,23 @@ describe("repositionDraftByKeyboard", () => {
       }),
     ).toBeNull();
   });
+
+  it("moves a keyboardPlace timed draft by 15 minutes with ArrowDown", () => {
+    const draft = createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T09:00:00.000"),
+        new Date("2026-05-20T10:00:00.000"),
+      ),
+    );
+
+    const next = repositionDraftByKeyboard({
+      activity: "keyboardPlace",
+      draft,
+      key: "ArrowDown",
+    });
+
+    expect(dayjs(next?.values.schedule.start).format()).toBe(
+      dayjs("2026-05-20T09:15:00.000").format(),
+    );
+  });
 });

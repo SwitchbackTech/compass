@@ -28,7 +28,11 @@ import {
 } from "@web/events/mutations/useEventMutations";
 import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
-import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
+import {
+  draftActions,
+  isEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import {
   edgeFocusActions,
   useEdgeFocusStore,
@@ -82,6 +86,7 @@ export function useGridEventEditShortcuts({
   allDayEvents = [],
   dayBoundary,
   dependencies = {},
+  placeTimedDraft,
   repositionDraftByKey,
   targeting,
   timedEvents,
@@ -89,6 +94,11 @@ export function useGridEventEditShortcuts({
   allDayEvents?: GridEvent[];
   dayBoundary: GridEventEditDayBoundary;
   dependencies?: EventMutationDependencies;
+  /**
+   * Shift+Arrow place-create when nothing is focused and no draft can move.
+   * Seeds a timed draft at the same default as `c`, form closed.
+   */
+  placeTimedDraft?: () => void;
   /**
    * View-owned draft move. Return true when the draft moved so the shared
    * hook can preventDefault. Day may also navigate here on day-cross.
@@ -232,50 +242,67 @@ export function useGridEventEditShortcuts({
     if (isEventFormOpen()) return;
 
     const event = getFocusedMutableCalendarEvent();
-    if (!event?._id) return;
+    if (event?._id) {
+      const edgeFocus = useEdgeFocusStore.getState();
+      if (edgeFocus.eventId === event._id && edgeFocus.edge) {
+        moveFocusedEventEdge(keyboardEvent, event, edgeFocus.edge);
+        return;
+      }
 
-    const edgeFocus = useEdgeFocusStore.getState();
-    if (edgeFocus.eventId === event._id && edgeFocus.edge) {
-      moveFocusedEventEdge(keyboardEvent, event, edgeFocus.edge);
+      const movement = getArrowKeyMovement(
+        keyboardEvent.key,
+        Boolean(event.isAllDay),
+      );
+      if (!movement) return;
+
+      if (dayBoundary.kind === "clamp") {
+        const start = dayjs(event.startDate);
+        const { weekDays } = dayBoundary;
+        if (movement.days === -1 && !start.isAfter(weekDays[0], "day")) {
+          return;
+        }
+        if (
+          movement.days === 1 &&
+          !start.isBefore(weekDays[weekDays.length - 1], "day")
+        ) {
+          return;
+        }
+      }
+
+      const previousStart = dayjs(event.startDate).startOf("day");
+
+      nudgeEventFromKeyboard({
+        event,
+        keyboardEvent,
+        onNudge: (nudgedEvent) => {
+          updateEvent({ event: nudgedEvent }, true);
+          if (dayBoundary.kind === "follow") {
+            const nextStart = dayjs(nudgedEvent.startDate).startOf("day");
+            if (!nextStart.isSame(previousStart, "day")) {
+              dayBoundary.onCrossed(nextStart);
+            }
+          }
+        },
+        afterNudge: () => draftActions.discard(),
+      });
       return;
     }
 
-    const movement = getArrowKeyMovement(
-      keyboardEvent.key,
-      Boolean(event.isAllDay),
-    );
-    if (!movement) return;
-
-    if (dayBoundary.kind === "clamp") {
-      const start = dayjs(event.startDate);
-      const { weekDays } = dayBoundary;
-      if (movement.days === -1 && !start.isAfter(weekDays[0], "day")) {
-        return;
-      }
-      if (
-        movement.days === 1 &&
-        !start.isBefore(weekDays[weekDays.length - 1], "day")
-      ) {
-        return;
-      }
+    // No focused mutable saved event: reposition a form-closed draft, or
+    // place one when the grid is idle. Do not place over an existing draft
+    // (failed clamp/midnight move) or while a read-only/draft card is focused.
+    const didMoveDraft = repositionDraftByKey(keyboardEvent.key);
+    if (didMoveDraft) {
+      keyboardEvent.preventDefault();
+      keyboardEvent.stopPropagation();
+      return;
     }
 
-    const previousStart = dayjs(event.startDate).startOf("day");
+    if (targeting.getFocused() || useDraftStore.getState().gridDraft) {
+      return;
+    }
 
-    nudgeEventFromKeyboard({
-      event,
-      keyboardEvent,
-      onNudge: (nudgedEvent) => {
-        updateEvent({ event: nudgedEvent }, true);
-        if (dayBoundary.kind === "follow") {
-          const nextStart = dayjs(nudgedEvent.startDate).startOf("day");
-          if (!nextStart.isSame(previousStart, "day")) {
-            dayBoundary.onCrossed(nextStart);
-          }
-        }
-      },
-      afterNudge: () => draftActions.discard(),
-    });
+    placeTimedDraft?.();
   };
 
   const cycleEdgeFocus = (keyboardEvent: KeyboardEvent) => {

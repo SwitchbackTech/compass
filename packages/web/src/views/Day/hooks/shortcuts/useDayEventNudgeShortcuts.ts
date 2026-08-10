@@ -26,12 +26,15 @@ export function useDayEventNudgeShortcuts({
   allDayEvents = [],
   dependencies = {},
   navigateToDate,
+  placeTimedDraft,
   timedEvents,
 }: {
   allDayEvents?: GridEvent[];
   dependencies?: EventMutationDependencies;
   /** Follow draft Left/Right moves so the draft stays on screen. */
   navigateToDate?: (date: Dayjs) => void;
+  /** Shift+Arrow place-create when nothing is focused and no draft can move. */
+  placeTimedDraft?: () => void;
   timedEvents: GridEvent[];
 }): { shiftHints: ActiveShiftHint[] } {
   const targeting = {
@@ -48,6 +51,7 @@ export function useDayEventNudgeShortcuts({
       kind: "follow",
       onCrossed: (date) => navigateToDate?.(date),
     },
+    placeTimedDraft,
     targeting,
     repositionDraftByKey: (key) => {
       const { gridDraft, status } = useDraftStore.getState();

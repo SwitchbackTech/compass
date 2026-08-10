@@ -20,7 +20,10 @@ import {
 } from "@web/common/utils/draft/draft.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import { createGridEventDraftFromGridEvent } from "@web/events/grid-event-draft.adapter";
+import {
+  createGridEventDraftFromGridEvent,
+  getGridDraftId,
+} from "@web/events/grid-event-draft.adapter";
 import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import {
   draftActions,
@@ -116,11 +119,6 @@ export function DayCalendarGrid() {
     gridRefs.mainGridRef,
     visibleDates,
   );
-  const { shiftHints } = useDayEventNudgeShortcuts({
-    allDayEvents: displayedAllDayEvents,
-    navigateToDate,
-    timedEvents: displayedTimedEvents,
-  });
   const gridDraft = useDraftStore(selectGridDraft);
   // Strip height must include the all-day draft: layer rendering used to
   // re-stack with the draft while EventGrid still sized from saved events only.
@@ -176,6 +174,14 @@ export function DayCalendarGrid() {
         return;
       }
 
+      const currentDraft = useDraftStore.getState().gridDraft;
+      if (currentDraft && getGridDraftId(currentDraft) === event._id) {
+        // Form-closed place-create (and other live drafts): open details
+        // without reseeding the draft from the card.
+        draftActions.setFormOpen(true);
+        return;
+      }
+
       const sourceEvent = dayEvents.find(
         (candidate) => candidate.id === event._id,
       );
@@ -219,7 +225,7 @@ export function DayCalendarGrid() {
     dateCalcs.getDateStrByXY(clientX, 0, YEAR_MONTH_DAY_FORMAT);
 
   const openShortcutDraft = useCallback(
-    (createDraft: () => void) => {
+    (createDraft: () => void, openForm = true) => {
       if (gridDraft) {
         return;
       }
@@ -230,7 +236,9 @@ export function DayCalendarGrid() {
       }
 
       createDraft();
-      draftActions.setFormOpen(true);
+      if (openForm) {
+        draftActions.setFormOpen(true);
+      }
     },
     [defaultTargetCalendarId, gridDraft, isCalendarsPending],
   );
@@ -260,6 +268,29 @@ export function DayCalendarGrid() {
       ),
     [dateInView, defaultTargetCalendarId, openShortcutDraft],
   );
+
+  // Form stays closed so Shift+Arrow can keep repositioning; Enter opens it.
+  // Existing-draft / focus guards also live in useGridEventEditShortcuts.
+  const placeTimedDraftFromShortcut = useCallback(
+    () =>
+      openShortcutDraft(
+        () =>
+          createTimedDraft(
+            dateInView.isSame(dayjs(), "day"),
+            dateInView,
+            "keyboardPlace",
+            defaultTargetCalendarId,
+          ),
+        false,
+      ),
+    [dateInView, defaultTargetCalendarId, openShortcutDraft],
+  );
+  const { shiftHints } = useDayEventNudgeShortcuts({
+    allDayEvents: displayedAllDayEvents,
+    navigateToDate,
+    placeTimedDraft: placeTimedDraftFromShortcut,
+    timedEvents: displayedTimedEvents,
+  });
 
   // onViewCommand returns its own unsubscribe and emitViewCommand reads the
   // listener set at emit time, so re-subscribing when the handler identity

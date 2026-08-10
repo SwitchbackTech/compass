@@ -126,6 +126,16 @@ describe("shortcuts.data", () => {
           label: "Create all-day event",
         },
       );
+      expect(stripMetadata(findCreate("day")?.shortcuts ?? [])).toContainEqual({
+        keys: ["Shift", "Arrow keys"],
+        label: "Place timed draft on grid",
+      });
+      expect(stripMetadata(findCreate("week")?.shortcuts ?? [])).toContainEqual(
+        {
+          keys: ["Shift", "Arrow keys"],
+          label: "Place timed draft on grid",
+        },
+      );
     });
 
     it("lists u/i focus shortcuts per view", () => {

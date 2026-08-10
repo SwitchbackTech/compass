@@ -15,7 +15,8 @@ const canRepositionDraftByKeyboard = (
 ) =>
   activity === "createShortcut" ||
   activity === "gridClick" ||
-  activity === "keyboardEdit";
+  activity === "keyboardEdit" ||
+  activity === "keyboardPlace";
 
 /**
  * Moves a draft by one arrow step. Returns the updated draft when the move

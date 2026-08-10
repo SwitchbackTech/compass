@@ -23,9 +23,11 @@ import {
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
+import { createTimedDraft } from "@web/common/utils/draft/draft.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   createGridEventDraft,
+  getGridDraftId,
   gridEventDraftToSchemaEvent,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
@@ -552,6 +554,35 @@ describe("DayCalendarGrid", () => {
       expect(getDraft()?._id).toBe(event._id ?? undefined);
     });
     expect(getIsFormOpen()).toBe(true);
+  });
+
+  it("opens the form when Enter is pressed on a form-closed keyboardPlace draft", async () => {
+    createTimedDraft(false, dayjs("2026-05-20T00:00:00.000"), "keyboardPlace");
+    const draft = getGridDraft();
+    expect(draft).not.toBeNull();
+    if (!draft) return;
+    draft.values.title = "Placed draft";
+    draftActions.setGridDraft(draft);
+    expect(getIsFormOpen()).toBe(false);
+
+    const { user } = renderDayCalendarGrid();
+    const card = screen.getByRole("button", {
+      name: /timed event: placed draft/i,
+    });
+    const draftId = getGridDraftId(getGridDraft()!);
+    expect(draftId).toBeDefined();
+    expect(card.getAttribute("data-day-interaction-event-id")).toBe(
+      draftId ?? null,
+    );
+
+    card.focus();
+    expect(document.activeElement).toBe(card);
+    await user.keyboard("{Enter}");
+
+    await waitFor(() => {
+      expect(getIsFormOpen()).toBe(true);
+    });
+    expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
   });
 
   it("opens the event form from a Day card pointer interaction", async () => {

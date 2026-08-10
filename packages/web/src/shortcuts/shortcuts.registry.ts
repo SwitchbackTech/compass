@@ -108,6 +108,12 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Create all-day event",
     section: "create",
   },
+  {
+    id: "create-place-timed",
+    keys: ["Shift", "Arrow keys"],
+    label: "Place timed draft on grid",
+    section: "create",
+  },
 
   // Focus
   {

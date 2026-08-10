@@ -1,10 +1,12 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Origin } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
+import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { DECK_MIN_WIDTH } from "@web/grid/grid.constants";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -124,6 +126,7 @@ const renderGridDraft = ({
 
 afterEach(() => {
   document.body.innerHTML = "";
+  draftActions.discard();
 });
 
 describe("GridDraft", () => {
@@ -207,5 +210,19 @@ describe("GridDraft", () => {
     expect(
       screen.getAllByRole("button", { name: /Timed event: Planning/ }),
     ).toHaveLength(3);
+  });
+
+  it("opens the form when Enter is pressed on a form-closed draft", async () => {
+    const draft = createDraft();
+    draftActions.startGridDraft({ activity: "keyboardPlace", draft });
+    expect(useDraftStore.getState().status?.isFormOpen).toBe(false);
+
+    renderGridDraft({ draft });
+    const user = userEvent.setup();
+    const card = screen.getByRole("button", { name: /Timed event: Planning/ });
+    card.focus();
+    await user.keyboard("{Enter}");
+
+    expect(useDraftStore.getState().status?.isFormOpen).toBe(true);
   });
 });
