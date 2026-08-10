@@ -26,7 +26,28 @@ test("Start Now runs the interactive tour happy path", async ({ page }) => {
 
   const title = createEventTitle("Tour Event");
   await fillTitleAndSaveEventForm(page, title);
+  await expect(card).toContainText("Move between events");
+
+  await page.keyboard.press("ArrowRight");
+  await expect(card).toContainText("Jump straight to a field");
+
+  // E then T is the edit sequence; it acts on whichever event has DOM
+  // focus. There is only one event on the calendar, so the ArrowRight
+  // above (there being no adjacent event to move to) may not have kept
+  // focus on it -- refocus it explicitly, mirroring
+  // e2e/timed/edit-sequence-title.spec.ts.
+  const eventButton = page
+    .locator("#mainGrid")
+    .getByRole("button", { name: title });
+  await eventButton.focus();
+
+  await page.keyboard.press("e");
+  await page.keyboard.press("t");
   await expect(card).toContainText("Open the command palette");
+
+  // Close the form the edit sequence opened before testing the palette
+  // shortcut, so Escape here closes the form rather than the palette.
+  await page.keyboard.press("Escape");
 
   // Linux CI uses Ctrl; macOS local runs use Meta. Press both modifiers' chord
   // via ControlOrMeta through Playwright's platform-aware ControlOrMeta token.
@@ -38,9 +59,9 @@ test("Start Now runs the interactive tour happy path", async ({ page }) => {
 
   // Shift+/ opens the legend (same as ? on US keyboards) once the calendar has focus.
   await page.keyboard.press("Shift+/");
-  await expect(card).toContainText("You are ready");
+  await expect(card).toContainText("That's the basics");
 
-  await card.getByRole("button", { name: "Finish" }).click();
+  await card.getByRole("button", { name: "I'm done" }).click();
   await expect(card).toHaveCount(0);
 
   await page.reload({ waitUntil: "domcontentloaded" });

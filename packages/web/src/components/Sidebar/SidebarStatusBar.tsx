@@ -25,6 +25,12 @@ import {
   selectEventJumpAnnouncement,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { ShortcutTipIndicator } from "@web/shortcuts/tips/ShortcutTipIndicator";
+import {
+  selectActiveShortcutTipId,
+  useShortcutTipsStore,
+} from "@web/shortcuts/tips/shortcut-tips.store";
+import { useShortcutTipTrigger } from "@web/shortcuts/tips/useShortcutTipTrigger";
 import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
 
 /**
@@ -39,6 +45,8 @@ import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
  * the meaning; `title` is the safety net if anything still overflows.
  */
 export const SidebarStatusBar: FC = () => {
+  useShortcutTipTrigger();
+  const activeTipId = useShortcutTipsStore(selectActiveShortcutTipId);
   const isKeyboardOnly = useKeyboardOnlyStore(selectKeyboardOnlyActive);
   const isEventJump = useEventJumpStore(selectEventJumpActive);
   const eventJumpAnnouncement = useEventJumpStore(selectEventJumpAnnouncement);
@@ -85,6 +93,10 @@ export const SidebarStatusBar: FC = () => {
       ) : showEdgeFocus ? (
         <div className="flex h-full min-w-0 flex-1 items-center">
           <EdgeFocusIndicator />
+        </div>
+      ) : !status && activeTipId ? (
+        <div className="flex h-full min-w-0 flex-1 items-center">
+          <ShortcutTipIndicator />
         </div>
       ) : (
         <button

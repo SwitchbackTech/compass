@@ -15,11 +15,20 @@ describe("onboarding tour steps", () => {
     }
   });
 
-  it("orders steps create → save → palette → shortcuts → done", () => {
+  it("orders basics create → save → moveFocus → editSequence → palette → shortcuts → fork", () => {
     expect(getNextOnboardingStepId("create")).toBe("save");
-    expect(getNextOnboardingStepId("save")).toBe("palette");
+    expect(getNextOnboardingStepId("save")).toBe("moveFocus");
+    expect(getNextOnboardingStepId("moveFocus")).toBe("editSequence");
+    expect(getNextOnboardingStepId("editSequence")).toBe("palette");
     expect(getNextOnboardingStepId("palette")).toBe("shortcuts");
-    expect(getNextOnboardingStepId("shortcuts")).toBe("done");
+    expect(getNextOnboardingStepId("shortcuts")).toBe("fork");
+  });
+
+  it("orders advanced fork → targetEvent → nudge → undo → done", () => {
+    expect(getNextOnboardingStepId("fork")).toBe("targetEvent");
+    expect(getNextOnboardingStepId("targetEvent")).toBe("nudge");
+    expect(getNextOnboardingStepId("nudge")).toBe("undo");
+    expect(getNextOnboardingStepId("undo")).toBe("done");
     expect(getNextOnboardingStepId("done")).toBeNull();
   });
 

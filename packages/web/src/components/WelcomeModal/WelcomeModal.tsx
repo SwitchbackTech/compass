@@ -69,7 +69,9 @@ export function WelcomeModal() {
   const handOffToAuth = (cta: "log_in" | "sign_up") => {
     skipFocusRestoreRef.current = true;
     markWelcomeSeen();
-    onboardingTourActions.markSkippedWithoutStarting();
+    onboardingTourActions.markSkippedWithoutStarting({
+      pendingSignup: cta === "sign_up",
+    });
     track("welcome_modal_dismissed", { cta });
     if (cta === "sign_up") {
       track("signup_started", { source: "welcome_modal" });

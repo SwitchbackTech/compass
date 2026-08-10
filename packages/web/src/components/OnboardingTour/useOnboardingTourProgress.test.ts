@@ -127,8 +127,8 @@ describe("useOnboardingTourProgress palette step", () => {
     });
 
     await waitFor(() => {
-      // Palette advance + shortcuts already-open cascade lands on done.
-      expect(useOnboardingTourStore.getState().stepId).toBe("done");
+      // Palette advance + shortcuts already-open cascade lands on fork.
+      expect(useOnboardingTourStore.getState().stepId).toBe("fork");
     });
   });
 

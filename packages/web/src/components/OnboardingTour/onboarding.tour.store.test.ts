@@ -21,11 +21,47 @@ describe("onboardingTourActions", () => {
     onboardingTourActions.advance();
     expect(useOnboardingTourStore.getState().stepId).toBe("save");
     onboardingTourActions.advance();
+    expect(useOnboardingTourStore.getState().stepId).toBe("moveFocus");
+    onboardingTourActions.advance();
+    expect(useOnboardingTourStore.getState().stepId).toBe("editSequence");
+    onboardingTourActions.advance();
     expect(useOnboardingTourStore.getState().stepId).toBe("palette");
     onboardingTourActions.advance();
     expect(useOnboardingTourStore.getState().stepId).toBe("shortcuts");
     onboardingTourActions.advance();
+    expect(useOnboardingTourStore.getState().stepId).toBe("fork");
+    onboardingTourActions.advance();
+    expect(useOnboardingTourStore.getState().stepId).toBe("targetEvent");
+    onboardingTourActions.advance();
+    expect(useOnboardingTourStore.getState().stepId).toBe("nudge");
+    onboardingTourActions.advance();
+    expect(useOnboardingTourStore.getState().stepId).toBe("undo");
+    onboardingTourActions.advance();
     expect(useOnboardingTourStore.getState().stepId).toBe("done");
+  });
+
+  it("skip at the fork ends the tour without entering the advanced segment", () => {
+    onboardingTourActions.start();
+    useOnboardingTourStore.setState({ stepId: "fork" });
+    onboardingTourActions.skip();
+    expect(useOnboardingTourStore.getState().isActive).toBe(false);
+    expect(useOnboardingTourStore.getState().stepId).toBe("create");
+  });
+
+  it("defers the seen flag when heading into signup, then redeems it once", () => {
+    onboardingTourActions.markSkippedWithoutStarting({ pendingSignup: true });
+    expect(
+      persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_ONBOARDING_TOUR),
+    ).not.toBe("true");
+
+    onboardingTourActions.offerAfterSignupIfPending();
+    expect(useOnboardingTourStore.getState().isActive).toBe(true);
+    expect(useOnboardingTourStore.getState().stepId).toBe("create");
+
+    // Second redemption attempt is a no-op: the pending flag was consumed.
+    useOnboardingTourStore.setState(initialOnboardingTourState);
+    onboardingTourActions.offerAfterSignupIfPending();
+    expect(useOnboardingTourStore.getState().isActive).toBe(false);
   });
 
   it("finish and skip persist the seen flag and clear active state", () => {

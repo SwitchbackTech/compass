@@ -5,6 +5,15 @@ type StorageKey =
   | "compass.onboarding.has-seen-anonymous-save-toast"
   | "compass.onboarding.has-dismissed-demo-events-banner"
   | "compass.onboarding.has-dismissed-tasks-removal-notice"
+  // Set when a new user hands off to signup/login from the welcome modal
+  // before starting the tour; consumed once, right after signup completes,
+  // to offer the tour instead of silently burning it forever.
+  | "compass.onboarding.has-pending-tour-offer"
+  // Persists which stage of the post-tour connect/trial flow a user is on,
+  // so a full-page OAuth redirect can resume on the right stage. "done"
+  // means completed or dismissed; absent means never triggered.
+  | "compass.onboarding.post-tour-stage"
+  | "compass.shortcuts.tips-muted"
   | "compass.sidebar.width"
   | "compass.theme"
   | "compass.life.preferences"
@@ -29,6 +38,9 @@ export const STORAGE_KEYS: Record<
   | "HAS_SEEN_ANONYMOUS_SAVE_TOAST"
   | "HAS_DISMISSED_DEMO_EVENTS_BANNER"
   | "HAS_DISMISSED_TASKS_REMOVAL_NOTICE"
+  | "HAS_PENDING_TOUR_OFFER"
+  | "POST_TOUR_STAGE"
+  | "SHORTCUT_TIPS_MUTED"
   | "LIFE_PREFERENCES"
   | "SIDEBAR_WIDTH"
   | "SIDEBAR_OPEN"
@@ -48,6 +60,9 @@ export const STORAGE_KEYS: Record<
     "compass.onboarding.has-dismissed-demo-events-banner",
   HAS_DISMISSED_TASKS_REMOVAL_NOTICE:
     "compass.onboarding.has-dismissed-tasks-removal-notice",
+  HAS_PENDING_TOUR_OFFER: "compass.onboarding.has-pending-tour-offer",
+  POST_TOUR_STAGE: "compass.onboarding.post-tour-stage",
+  SHORTCUT_TIPS_MUTED: "compass.shortcuts.tips-muted",
   LIFE_PREFERENCES: "compass.life.preferences",
   SIDEBAR_WIDTH: "compass.sidebar.width",
   SIDEBAR_OPEN: "compass.view.sidebar-open",

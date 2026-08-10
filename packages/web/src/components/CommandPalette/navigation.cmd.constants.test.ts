@@ -36,9 +36,9 @@ describe("getNavigationCommandItems", () => {
       onShowWelcomeGuide: () => {},
     }).map((item) => item.label);
 
-    expect(labels).toContain("Restart onboarding tour");
+    expect(labels).toContain("Practice shortcuts");
     expect(labels).toContain("Show welcome guide");
-    expect(labels.indexOf("Restart onboarding tour")).toBeLessThan(
+    expect(labels.indexOf("Practice shortcuts")).toBeLessThan(
       labels.indexOf("Show welcome guide"),
     );
   });

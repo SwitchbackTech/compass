@@ -85,10 +85,58 @@ export function useOnboardingTourProgress() {
       return;
     }
 
+    // The E-then-T sequence reopens the form; enough to count as the lesson.
+    if (stepId === "editSequence" && isFormOpen) {
+      onboardingTourActions.advance();
+      return;
+    }
+
     if (stepId === "shortcuts" && isShortcutsOpen) {
       onboardingTourActions.advance();
     }
   }, [isActive, stepId, isFormOpen, isSaving, isShortcutsOpen]);
+
+  // Lessons taught by a single keypress: encouragement-based, like the rest
+  // of this hook — pressing the key is enough to count as the lesson, we do
+  // not verify the resulting focus/nudge/undo actually landed.
+  useEffect(() => {
+    if (!isActive) return;
+    if (
+      stepId !== "moveFocus" &&
+      stepId !== "targetEvent" &&
+      stepId !== "nudge" &&
+      stepId !== "undo"
+    ) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      const mod = event.metaKey || event.ctrlKey;
+      if (
+        stepId === "moveFocus" &&
+        !event.shiftKey &&
+        !mod &&
+        event.key.startsWith("Arrow")
+      ) {
+        onboardingTourActions.advance();
+      } else if (stepId === "targetEvent" && event.key === "Shift") {
+        onboardingTourActions.advance();
+      } else if (
+        stepId === "nudge" &&
+        event.shiftKey &&
+        event.key.startsWith("Arrow")
+      ) {
+        onboardingTourActions.advance();
+      } else if (stepId === "undo" && mod && event.key.toLowerCase() === "z") {
+        onboardingTourActions.advance();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isActive, stepId]);
 
   // ESC skips the tour when nothing higher owns Escape. Capture + stand down
   // for app lock / form / floating layers so we never trap the user.
