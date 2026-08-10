@@ -477,16 +477,13 @@ export function patchGridDraftRecurrence(
 
   // The two branches look identical, but each is required to keep
   // GridEventDraft's discriminated union narrowed (see
-  // replaceGridDraftSchedule above) - `recurrence` can structurally carry
-  // "preserve" here (from the ruleUnchanged passthrough on an edit draft),
-  // which isn't assignable to a create draft's NewEventRecurrenceDraft.
+  // replaceGridDraftSchedule above).
   if (draft.kind === "create") {
     return {
       ...draft,
       values: {
         ...draft.values,
-        recurrence:
-          recurrence.kind === "preserve" ? { kind: "single" } : recurrence,
+        recurrence,
       },
     };
   }
