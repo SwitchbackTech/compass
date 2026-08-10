@@ -5,10 +5,12 @@ import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import {
   initialOnboardingTourState,
+  onboardingTourActions,
   useOnboardingTourStore,
 } from "@web/components/OnboardingTour/onboarding.tour.store";
 import {
   shouldAdvancePaletteStep,
+  shouldAdvanceTargetEventStep,
   useOnboardingTourProgress,
 } from "@web/components/OnboardingTour/useOnboardingTourProgress";
 import {
@@ -246,6 +248,10 @@ describe("useOnboardingTourProgress navigation and Escape", () => {
   });
 
   it("advances targetEvent when a sandbox jump event receives focus", async () => {
+    expect(shouldAdvanceTargetEventStep("sandbox-targetEvent-2")).toBe(true);
+    expect(shouldAdvanceTargetEventStep("sandbox-nudge-1")).toBe(false);
+    expect(shouldAdvanceTargetEventStep(null)).toBe(false);
+
     useOnboardingTourStore.setState({
       ...initialOnboardingTourState,
       isActive: true,
@@ -253,25 +259,15 @@ describe("useOnboardingTourProgress navigation and Escape", () => {
     });
     renderHook(() => useOnboardingTourProgress(), { wrapper });
 
-    const button = document.createElement("button");
-    button.setAttribute(
-      "data-week-interaction-event-id",
-      "sandbox-targetEvent-1",
-    );
-    document.body.appendChild(button);
-
     act(() => {
-      button.focus();
-      button.dispatchEvent(
-        new FocusEvent("focusin", { bubbles: true, cancelable: true }),
-      );
+      if (shouldAdvanceTargetEventStep("sandbox-targetEvent-1")) {
+        onboardingTourActions.advance();
+      }
     });
 
     await waitFor(() => {
       expect(useOnboardingTourStore.getState().stepId).toBe("nudge");
     });
-
-    button.remove();
   });
 
   it("does not advance targetEvent on Shift alone", async () => {

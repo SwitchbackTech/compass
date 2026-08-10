@@ -44,6 +44,11 @@ export function shouldAdvancePaletteStep({
   return paletteOpened && (!isPaletteOpen || isShortcutsOpen);
 }
 
+/** targetEvent completes once a sandbox jump event is focused. */
+export function shouldAdvanceTargetEventStep(eventId: string | null): boolean {
+  return Boolean(eventId && isTargetEventSandboxId(eventId));
+}
+
 /**
  * Advances tour steps when the user performs the prompted action.
  * Does not take the app lock; coachmarks stay out of the modal Escape stack
@@ -149,18 +154,33 @@ export function useOnboardingTourProgress() {
   useEffect(() => {
     if (!isActive || stepId !== "targetEvent") return;
 
-    const onFocusIn = (event: FocusEvent) => {
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
-      const eventId = getCalendarEventIdFromElement(target);
-      if (eventId && isTargetEventSandboxId(eventId)) {
+    const tryAdvanceFromActiveElement = () => {
+      const active = document.activeElement;
+      if (!(active instanceof HTMLElement)) return;
+      const eventId = getCalendarEventIdFromElement(active);
+      if (shouldAdvanceTargetEventStep(eventId)) {
         onboardingTourActions.advance();
       }
     };
 
+    const onFocusIn = () => {
+      tryAdvanceFromActiveElement();
+    };
+
+    // Jump focuses on keydown; some test envs do not bubble focusin reliably,
+    // so also re-check after a printable keyup (the letter that completes jump).
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key.length === 1) {
+        tryAdvanceFromActiveElement();
+      }
+    };
+
     document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("keyup", onKeyUp);
+    tryAdvanceFromActiveElement();
     return () => {
       document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("keyup", onKeyUp);
     };
   }, [isActive, stepId]);
 
