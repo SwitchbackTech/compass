@@ -51,11 +51,6 @@ export type GridEventEditDayBoundary =
       kind: "follow";
       /** Day view: navigate so a day-crossing nudge stays on screen. */
       onCrossed: (date: Dayjs) => void;
-      /**
-       * Day view: ArrowLeft/Right page the visible day and focus that day's
-       * first event after the route settles (when provided).
-       */
-      onFocusPageDay?: (direction: "previous" | "next") => void;
     }
   | {
       kind: "clamp";
@@ -220,36 +215,15 @@ export function useGridEventEditShortcuts({
     if (isEventFormOpen()) return;
     if (!isArrowKey(keyboardEvent.key)) return;
 
-    // Day view: Left/Right page the calendar day, then focus its first event.
-    // Require a focused grid event (same as Up/Down) so sidebar focus and
-    // idle grid don't steal the day under the user.
-    if (
-      dayBoundary.kind === "follow" &&
-      (keyboardEvent.key === "ArrowLeft" ||
-        keyboardEvent.key === "ArrowRight") &&
-      dayBoundary.onFocusPageDay
-    ) {
-      if (isFocusInSidebar() || !targeting.getFocused()) return;
-
-      keyboardEvent.preventDefault();
-      keyboardEvent.stopPropagation();
-      dayBoundary.onFocusPageDay(
-        keyboardEvent.key === "ArrowLeft" ? "previous" : "next",
-      );
-      return;
-    }
-
+    // Day view: all four arrows move chronological focus. Period changes stay
+    // on j/k (same split as week view: arrows focus, j/k navigate).
     if (dayBoundary.kind === "follow") {
-      if (
-        keyboardEvent.key !== "ArrowUp" &&
-        keyboardEvent.key !== "ArrowDown"
-      ) {
-        return;
-      }
-
       const adjacent = getChronologicallyAdjacentTarget({
         allDayEvents,
-        direction: keyboardEvent.key === "ArrowUp" ? "previous" : "next",
+        direction:
+          keyboardEvent.key === "ArrowUp" || keyboardEvent.key === "ArrowLeft"
+            ? "previous"
+            : "next",
         focused: targeting.getFocused(),
         timedEvents,
         visible: targeting.listVisible(),

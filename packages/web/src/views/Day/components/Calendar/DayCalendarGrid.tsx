@@ -37,7 +37,6 @@ import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayEventNudgeShortcuts } from "@web/views/Day/hooks/shortcuts/useDayEventNudgeShortcuts";
 import { DayInteractionCoordinator } from "@web/views/Day/interaction/DayInteractionCoordinator";
-import { consumePendingFocusFirstDayCalendarEvent } from "@web/views/Day/interaction/day-event.focus";
 import { DayCalendarBusyPeriodsLayer } from "./DayCalendarBusyPeriods";
 import { DayCalendarColumnHeaders } from "./DayCalendarColumnHeaders";
 import { useDayCalendarContextMenu } from "./DayCalendarContextMenu";
@@ -68,8 +67,7 @@ const isDayInteractionMotionActive = () => false;
 
 export function DayCalendarGrid() {
   const dateInView = useDateInView();
-  const { navigateToDate, navigateToNextDay, navigateToPreviousDay } =
-    useDateNavigation();
+  const { navigateToDate } = useDateNavigation();
   const today = useMemo(() => dayjs(), []);
   const { data: calendars = [], isPending: isCalendarsPending } =
     useCalendarsQuery();
@@ -117,23 +115,8 @@ export function DayCalendarGrid() {
   const { shiftHints } = useDayEventNudgeShortcuts({
     allDayEvents: displayedAllDayEvents,
     navigateToDate,
-    navigateToNextDay,
-    navigateToPreviousDay,
     timedEvents: displayedTimedEvents,
   });
-  // ArrowLeft/Right page the day asynchronously; focus the first event once
-  // the destination day's targets are registered.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run after day navigation and event paint so pending focus can find new targets.
-  useEffect(() => {
-    consumePendingFocusFirstDayCalendarEvent({
-      allowEmpty: !isLoadingEvents,
-    });
-  }, [
-    dateInView,
-    displayedAllDayEvents,
-    displayedTimedEvents,
-    isLoadingEvents,
-  ]);
   const gridDraft = useDraftStore(selectGridDraft);
   // Strip height must include the all-day draft: layer rendering used to
   // re-stack with the draft while EventGrid still sized from saved events only.

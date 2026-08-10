@@ -338,14 +338,9 @@ export const filterShortcutsByContext = (
       label = view === "week" ? "Focus next event on day" : "Focus next event";
     } else if (shortcut.id === "edit-focus-left") {
       label =
-        view === "day"
-          ? "Previous day and focus first event"
-          : "Focus event on previous day";
+        view === "day" ? "Focus previous event" : "Focus event on previous day";
     } else if (shortcut.id === "edit-focus-right") {
-      label =
-        view === "day"
-          ? "Next day and focus first event"
-          : "Focus event on next day";
+      label = view === "day" ? "Focus next event" : "Focus event on next day";
     }
 
     return { ...shortcut, label };
