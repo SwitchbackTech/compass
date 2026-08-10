@@ -1,5 +1,5 @@
 import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
-import { type Event } from "@core/types/event.contracts";
+import { type Event, type EventSchedule } from "@core/types/event.contracts";
 import {
   type CreateEventInput,
   type EventListQuery,
@@ -31,12 +31,14 @@ import { type EventRepository } from "./event.repository.types";
  * such an id are applied to the series record, mirroring the backend's plans:
  * exclude the date ("this" delete), truncate the rules with UNTIL
  * ("thisAndFollowing"), or rewrite/delete the whole record ("all"). Series-
- * wide edits don't clean up previously stored occurrence overrides — those
- * keep their edited state until deleted individually.
+ * wide edits also drop previously stored occurrence overrides for that series
+ * so a prior "this" edit cannot resurrect after promote.
  */
 function nowDateTime() {
   return DateTimeSchema.parse(new Date().toISOString());
 }
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // RRULE UNTIL is inclusive, so truncating "everything at/after `beforeStart`"
 // means UNTIL = one second before its instant. Always emits the full UTC
@@ -85,6 +87,69 @@ function resolveRecurrence(
   return fallback;
 }
 
+// Apply an occurrence edit's schedule delta onto the series base. The client
+// sends the occurrence's absolute schedule; rebasing DTSTART to that absolute
+// value would shift the whole series by the occurrence's offset from the
+// master. Infer the pre-edit occurrence end from the master's duration so a
+// duration change on the occurrence still propagates.
+function shiftSeriesScheduleByOccurrenceEdit(
+  base: EventSchedule,
+  occurrenceStart: string,
+  edited: EventSchedule,
+): EventSchedule {
+  if (base.kind !== edited.kind) {
+    return edited;
+  }
+
+  if (base.kind === "timed" && edited.kind === "timed") {
+    const originalStart = dayjs(occurrenceStart);
+    const originalEnd = originalStart.add(
+      dayjs(base.end).diff(base.start),
+      "millisecond",
+    );
+    const startDelta = dayjs(edited.start).diff(originalStart);
+    const endDelta = dayjs(edited.end).diff(originalEnd);
+    if (
+      startDelta === 0 &&
+      endDelta === 0 &&
+      base.timeZone === edited.timeZone
+    ) {
+      return base;
+    }
+    return {
+      kind: "timed",
+      start: DateTimeSchema.parse(
+        dayjs(base.start).add(startDelta, "millisecond").format(),
+      ),
+      end: DateTimeSchema.parse(
+        dayjs(base.end).add(endDelta, "millisecond").format(),
+      ),
+      timeZone: edited.timeZone,
+    };
+  }
+
+  // allDay: occurrence ids embed midnight-Z; schedules use YYYY-MM-DD.
+  const originalStart = dayjs(occurrenceStart).utc().format("YYYY-MM-DD");
+  const baseDurationDays = dayjs(base.end).diff(base.start, "day");
+  const originalEnd = dayjs(originalStart)
+    .add(baseDurationDays, "day")
+    .format("YYYY-MM-DD");
+  const startDeltaDays = Math.round(
+    dayjs(edited.start).diff(dayjs(originalStart)) / MS_PER_DAY,
+  );
+  const endDeltaDays = Math.round(
+    dayjs(edited.end).diff(dayjs(originalEnd)) / MS_PER_DAY,
+  );
+  if (startDeltaDays === 0 && endDeltaDays === 0) {
+    return base;
+  }
+  return {
+    kind: "allDay",
+    start: dayjs(base.start).add(startDeltaDays, "day").format("YYYY-MM-DD"),
+    end: dayjs(base.end).add(endDeltaDays, "day").format("YYYY-MM-DD"),
+  } as EventSchedule;
+}
+
 // A series record's recurrence is guaranteed `kind === "series"` by the
 // `findSeriesRecord` check below; narrowing the return type here means
 // every call site can read `.rules` directly instead of re-deriving the
@@ -128,6 +193,44 @@ export class LocalEventRepository implements EventRepository {
     return { record: record as SeriesRecord, occurrenceStart: parsed.start };
   }
 
+  /** Drop stored `${seriesId}::*` overrides so series-wide edits stick. */
+  private async deleteSeriesOccurrenceOverrides(
+    seriesId: string,
+    options?: { atOrAfter?: string },
+  ): Promise<void> {
+    const prefix = `${seriesId}::`;
+    const records = await this.store.getAllEvents();
+    await Promise.all(
+      records
+        .filter((record) => {
+          if (!record.id.startsWith(prefix)) return false;
+          if (!options?.atOrAfter) return true;
+          const parsed = parseLocalOccurrenceId(record.id);
+          return (
+            parsed !== null &&
+            !dayjs(parsed.start).isBefore(dayjs(options.atOrAfter))
+          );
+        })
+        .map((record) => this.store.deleteEvent(record.id as EventId)),
+    );
+  }
+
+  // Mirror backend synthesizeReplaceEvent: preserve on a composed occurrence
+  // id of a live series keeps occurrence linkage, never demotes to single.
+  private async recurrenceFallbackForReplace(
+    id: EventId,
+    existing: Event["recurrence"] | undefined,
+  ): Promise<Event["recurrence"]> {
+    const parsed = parseLocalOccurrenceId(id);
+    if (parsed) {
+      const series = await this.findRecordById(parsed.seriesId);
+      if (series?.event.recurrence.kind === "series") {
+        return { kind: "occurrence", seriesId: parsed.seriesId };
+      }
+    }
+    return existing ?? { kind: "single" };
+  }
+
   async create(input: CreateEventInput): Promise<Event> {
     const id = input.id ?? (createObjectIdString() as EventId);
     const now = nowDateTime();
@@ -164,6 +267,10 @@ export class LocalEventRepository implements EventRepository {
     // back to the local calendar when the input carries no calendarId.
     const existingRecord = await this.findRecordById(id);
     const existing = existingRecord?.event;
+    const recurrenceFallback = await this.recurrenceFallbackForReplace(
+      id,
+      existing?.recurrence,
+    );
 
     const event: Event = {
       id,
@@ -173,10 +280,7 @@ export class LocalEventRepository implements EventRepository {
         getLocalCalendarSentinelId(),
       content: input.content,
       schedule: input.schedule,
-      recurrence: resolveRecurrence(
-        input.recurrence,
-        existing?.recurrence ?? { kind: "single" },
-      ),
+      recurrence: resolveRecurrence(input.recurrence, recurrenceFallback),
       createdAt: existing?.createdAt ?? nowDateTime(),
       updatedAt: nowDateTime(),
     };
@@ -207,12 +311,33 @@ export class LocalEventRepository implements EventRepository {
       record.event.recurrence,
     );
 
+    // Prior scope-"this" overrides would otherwise win over expansion after
+    // settle and undo the series-wide shift for those instances.
+    if (splits) {
+      await this.deleteSeriesOccurrenceOverrides(record.id, {
+        atOrAfter: occurrenceStart,
+      });
+    } else {
+      await this.deleteSeriesOccurrenceOverrides(record.id);
+    }
+
     if (!splits) {
+      // Scope "all" (and thisAndFollowing on the first occurrence): apply the
+      // occurrence edit as a delta onto the series base, not as an absolute
+      // rebase of DTSTART to the occurrence's new schedule.
+      const schedule =
+        input.scope === "all"
+          ? shiftSeriesScheduleByOccurrenceEdit(
+              record.event.schedule,
+              occurrenceStart,
+              input.schedule,
+            )
+          : input.schedule;
       const event: Event = {
         ...record.event,
         calendarId: input.calendarId ?? record.event.calendarId,
         content: input.content,
-        schedule: input.schedule,
+        schedule,
         recurrence,
         updatedAt: nowDateTime(),
       };
@@ -230,6 +355,8 @@ export class LocalEventRepository implements EventRepository {
     };
     await this.store.putEvent({ ...record, event: truncated });
 
+    // Remainder DTSTART is the edited occurrence schedule (absolute) — that
+    // is the correct start for the new series leg.
     const id = composeLocalOccurrenceId(record.id, occurrenceStart);
     const event: Event = {
       id,
@@ -262,11 +389,15 @@ export class LocalEventRepository implements EventRepository {
       (scope === "thisAndFollowing" &&
         !dayjs(occurrenceStart).isAfter(record.event.schedule.start));
     if (coversWholeSeries) {
+      await this.deleteSeriesOccurrenceOverrides(record.id);
       await this.store.deleteEvent(record.id);
       return;
     }
 
     if (scope === "thisAndFollowing") {
+      await this.deleteSeriesOccurrenceOverrides(record.id, {
+        atOrAfter: occurrenceStart,
+      });
       await this.store.putEvent({
         ...record,
         event: {

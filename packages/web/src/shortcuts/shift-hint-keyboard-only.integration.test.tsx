@@ -18,9 +18,18 @@ import {
   eventJumpActions,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { SHIFT_DOUBLE_TAP_MAX_GAP_MS } from "@web/shortcuts/shift-hint/shift-hold-detector";
 import { useShiftHoldEventHints } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
 import { resetSharedShiftTapGesture } from "@web/shortcuts/shift-tap-gesture";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+
+const waitPastDoubleTapWindow = async () => {
+  await act(async () => {
+    await new Promise((resolve) =>
+      setTimeout(resolve, SHIFT_DOUBLE_TAP_MAX_GAP_MS + 10),
+    );
+  });
+};
 
 const dispatch = (
   type: "keydown" | "keyup",
@@ -108,5 +117,25 @@ describe("shift-hint + keyboard-only integration", () => {
 
     expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+  });
+
+  it("Shift press still activates jump while keyboard-only is already on", async () => {
+    const { result } = mountBoth();
+
+    act(() => {
+      tapShift();
+      tapShift();
+    });
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+
+    await waitPastDoubleTapWindow();
+    act(() => {
+      tapShift();
+    });
+
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(result.current.hints.length).toBeGreaterThan(0);
   });
 });

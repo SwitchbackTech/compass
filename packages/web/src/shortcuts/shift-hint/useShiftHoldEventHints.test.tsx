@@ -213,6 +213,27 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints).toEqual([]);
   });
 
+  it("deactivates an already-on jump mode when Shift+Arrow chords", async () => {
+    const { result } = mountHints();
+
+    act(() => {
+      tapShift();
+    });
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(result.current.hints).toHaveLength(3);
+
+    await waitPastDoubleTapWindow();
+    act(() => {
+      dispatch("keydown", "Shift");
+      dispatch("keydown", "ArrowRight", { shiftKey: true });
+      dispatch("keyup", "ArrowRight", { shiftKey: true });
+      dispatch("keyup", "Shift");
+    });
+
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(result.current.hints).toEqual([]);
+  });
+
   it("stays inert while app-locked", () => {
     setAppLockReason("test-modal", true);
     const { result } = mountHints();
@@ -225,7 +246,7 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints).toEqual([]);
   });
 
-  it("does not activate while keyboard-only mode is on", () => {
+  it("activates while keyboard-only mode is on", () => {
     keyboardOnlyActions.enter();
     const { result } = mountHints();
 
@@ -233,7 +254,8 @@ describe("useShiftHoldEventHints", () => {
       tapShift();
     });
 
-    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(result.current.hints.length).toBeGreaterThan(0);
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
   });
 

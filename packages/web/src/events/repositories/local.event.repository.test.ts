@@ -1,5 +1,6 @@
 import {
   type CalendarId,
+  DateOnlySchema,
   DateTimeSchema,
   type EventId,
   TimeZoneSchema,
@@ -8,6 +9,7 @@ import { decodeOccurrenceId } from "@core/util/occurrence-id";
 import { createMockLocalEventRecord } from "@web/__tests__/utils/factories/event.factory";
 import { type OfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { LocalEventRepository } from "@web/events/repositories/local.event.repository";
+import { type LocalEventRecord } from "@web/events/types/local-event.record";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const putEvent = mock();
@@ -325,9 +327,17 @@ describe("LocalEventRepository", () => {
   it("replace scope all through an occurrence rewrites the series record", async () => {
     const record = seriesRecord();
     getAllEvents.mockResolvedValue([record]);
+    // Content-only edit of a middle occurrence: schedule matches that
+    // occurrence's original slot so the series DTSTART delta is zero.
+    const occurrenceSchedule = {
+      kind: "timed" as const,
+      start: DateTimeSchema.parse("2026-05-06T09:00:00.000Z"),
+      end: DateTimeSchema.parse("2026-05-06T10:00:00.000Z"),
+      timeZone: TimeZoneSchema.parse("UTC"),
+    };
 
     const result = await repository.replace(
-      `${record.id}::2026-05-06T09:00:00Z` as EventId,
+      `${record.id}::2026-05-06T09:00:00.000Z` as EventId,
       {
         content: {
           kind: "details",
@@ -335,7 +345,7 @@ describe("LocalEventRepository", () => {
           description: "",
           location: "",
         },
-        schedule: record.event.schedule,
+        schedule: occurrenceSchedule,
         recurrence: {
           kind: "series",
           rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] as never,
@@ -349,9 +359,291 @@ describe("LocalEventRepository", () => {
       id: record.id,
       event: {
         content: { title: "Renamed series" },
+        schedule: record.event.schedule,
         recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
       },
     });
+  });
+
+  it("replace scope all shifts the series by the occurrence delta and drops overrides", async () => {
+    const record = seriesRecord();
+    const occurrenceStart = "2026-05-06T09:00:00.000Z";
+    const occurrenceId = `${record.id}::${occurrenceStart}` as EventId;
+    const override = {
+      version: 2 as const,
+      id: occurrenceId,
+      event: {
+        ...record.event,
+        id: occurrenceId,
+        schedule: {
+          kind: "timed" as const,
+          start: DateTimeSchema.parse("2026-05-07T09:00:00.000Z"),
+          end: DateTimeSchema.parse("2026-05-07T10:00:00.000Z"),
+          timeZone: TimeZoneSchema.parse("UTC"),
+        },
+        recurrence: {
+          kind: "occurrence" as const,
+          seriesId: record.id,
+        },
+      },
+      isDemo: false,
+    };
+    getAllEvents.mockResolvedValue([record, override]);
+
+    await repository.replace(occurrenceId, {
+      content: {
+        kind: "details",
+        title: "Moved series",
+        description: "",
+        location: "",
+      },
+      schedule: override.event.schedule,
+      recurrence: { kind: "preserve" },
+      scope: "all",
+    });
+
+    expect(deleteEvent).toHaveBeenCalledWith(occurrenceId);
+    expect(putEvent.mock.calls[0][0]).toMatchObject({
+      id: record.id,
+      event: {
+        content: { title: "Moved series" },
+        schedule: {
+          kind: "timed",
+          start: "2026-05-05T09:00:00+00:00",
+          end: "2026-05-05T10:00:00+00:00",
+        },
+      },
+    });
+  });
+
+  it("replace scope this preserve on an expanded occurrence keeps occurrence linkage", async () => {
+    const record = seriesRecord();
+    getAllEvents.mockResolvedValue([record]);
+    const occurrenceStart = "2026-05-06T09:00:00.000Z";
+    const occurrenceId = `${record.id}::${occurrenceStart}` as EventId;
+    const moved = {
+      kind: "timed" as const,
+      start: DateTimeSchema.parse("2026-05-07T09:00:00.000Z"),
+      end: DateTimeSchema.parse("2026-05-07T10:00:00.000Z"),
+      timeZone: TimeZoneSchema.parse("UTC"),
+    };
+
+    const result = await repository.replace(occurrenceId, {
+      content: {
+        kind: "details",
+        title: "Nudged",
+        description: "",
+        location: "",
+      },
+      schedule: moved,
+      recurrence: { kind: "preserve" },
+      scope: "this",
+    });
+
+    expect(result.recurrence).toEqual({
+      kind: "occurrence",
+      seriesId: record.id,
+    });
+    expect(putEvent.mock.calls[0][0].event.recurrence).toEqual({
+      kind: "occurrence",
+      seriesId: record.id,
+    });
+  });
+
+  it("undo restore after occurrence nudge keeps occurrence linkage and original schedule", async () => {
+    const record = seriesRecord();
+    const occurrenceStart = "2026-05-06T09:00:00.000Z";
+    const occurrenceId = `${record.id}::${occurrenceStart}` as EventId;
+    const originalSchedule = {
+      kind: "timed" as const,
+      start: DateTimeSchema.parse("2026-05-06T09:00:00.000Z"),
+      end: DateTimeSchema.parse("2026-05-06T10:00:00.000Z"),
+      timeZone: TimeZoneSchema.parse("UTC"),
+    };
+    const movedSchedule = {
+      kind: "timed" as const,
+      start: DateTimeSchema.parse("2026-05-07T09:00:00.000Z"),
+      end: DateTimeSchema.parse("2026-05-07T10:00:00.000Z"),
+      timeZone: TimeZoneSchema.parse("UTC"),
+    };
+
+    let stored: LocalEventRecord[] = [record];
+    getAllEvents.mockImplementation(async () => stored);
+    putEvent.mockImplementation(async (next: LocalEventRecord) => {
+      stored = [
+        ...stored.filter((candidate) => candidate.id !== next.id),
+        next,
+      ];
+    });
+
+    await repository.replace(occurrenceId, {
+      content: {
+        kind: "details",
+        title: "Nudged",
+        description: "",
+        location: "",
+      },
+      schedule: movedSchedule,
+      recurrence: { kind: "preserve" },
+      scope: "this",
+    });
+    expect(
+      stored.find((entry) => entry.id === occurrenceId)?.event.recurrence,
+    ).toEqual({
+      kind: "occurrence",
+      seriesId: record.id,
+    });
+
+    const restored = await repository.replace(occurrenceId, {
+      content: {
+        kind: "details",
+        title: "Nudged",
+        description: "",
+        location: "",
+      },
+      schedule: originalSchedule,
+      recurrence: { kind: "preserve" },
+      scope: "this",
+      restore: true,
+    });
+
+    expect(restored.recurrence).toEqual({
+      kind: "occurrence",
+      seriesId: record.id,
+    });
+    expect(restored.schedule).toMatchObject({
+      start: "2026-05-06T09:00:00.000Z",
+      end: "2026-05-06T10:00:00.000Z",
+    });
+  });
+
+  it("replace scope all on an all-day middle occurrence applies a day delta", async () => {
+    const record = createMockLocalEventRecord({
+      schedule: {
+        kind: "allDay",
+        start: DateOnlySchema.parse("2026-05-04"),
+        end: DateOnlySchema.parse("2026-05-05"),
+      },
+      recurrence: {
+        kind: "series",
+        rules: ["RRULE:FREQ=DAILY;COUNT=10"] as never,
+      },
+    });
+    const occurrenceStart = "2026-05-06T00:00:00.000Z";
+    const occurrenceId = `${record.id}::${occurrenceStart}` as EventId;
+    getAllEvents.mockResolvedValue([record]);
+
+    await repository.replace(occurrenceId, {
+      content: {
+        kind: "details",
+        title: "All-day moved",
+        description: "",
+        location: "",
+      },
+      schedule: {
+        kind: "allDay",
+        start: DateOnlySchema.parse("2026-05-07"),
+        end: DateOnlySchema.parse("2026-05-08"),
+      },
+      recurrence: { kind: "preserve" },
+      scope: "all",
+    });
+
+    expect(putEvent.mock.calls[0][0]).toMatchObject({
+      id: record.id,
+      event: {
+        schedule: {
+          kind: "allDay",
+          start: "2026-05-05",
+          end: "2026-05-06",
+        },
+      },
+    });
+  });
+
+  it("nudge then promote all leaves siblings at original-plus-delta after list", async () => {
+    const record = createMockLocalEventRecord({
+      schedule: {
+        kind: "allDay",
+        start: DateOnlySchema.parse("2026-05-04"),
+        end: DateOnlySchema.parse("2026-05-05"),
+      },
+      recurrence: {
+        kind: "series",
+        rules: ["RRULE:FREQ=DAILY;COUNT=5"] as never,
+      },
+    });
+    // Stable in-memory store so list() after promote sees the writes.
+    let stored: LocalEventRecord[] = [record];
+    getAllEvents.mockImplementation(async () => stored);
+    putEvent.mockImplementation(async (next: LocalEventRecord) => {
+      stored = [
+        ...stored.filter((candidate) => candidate.id !== next.id),
+        next,
+      ];
+    });
+    deleteEvent.mockImplementation(async (id: EventId) => {
+      stored = stored.filter((candidate) => candidate.id !== id);
+    });
+
+    const before = await repository.list(rangeQuery as never);
+    const target = before.find(
+      (event) =>
+        event.recurrence.kind === "occurrence" &&
+        event.schedule.kind === "allDay" &&
+        event.schedule.start === "2026-05-06",
+    );
+    expect(target).toBeDefined();
+
+    await repository.replace(target!.id, {
+      content: {
+        kind: "details",
+        title: "Nudged day",
+        description: "",
+        location: "",
+      },
+      schedule: {
+        kind: "allDay",
+        start: DateOnlySchema.parse("2026-05-07"),
+        end: DateOnlySchema.parse("2026-05-08"),
+      },
+      recurrence: { kind: "preserve" },
+      scope: "this",
+    });
+
+    await repository.replace(target!.id, {
+      content: {
+        kind: "details",
+        title: "Nudged day",
+        description: "",
+        location: "",
+      },
+      schedule: {
+        kind: "allDay",
+        start: DateOnlySchema.parse("2026-05-07"),
+        end: DateOnlySchema.parse("2026-05-08"),
+      },
+      recurrence: { kind: "preserve" },
+      scope: "all",
+    });
+
+    const after = await repository.list(rangeQuery as never);
+    const instanceStarts = after
+      .filter((event) => event.recurrence.kind === "occurrence")
+      .map((event) =>
+        event.schedule.kind === "allDay" ? event.schedule.start : null,
+      )
+      .filter(Boolean)
+      .sort();
+
+    expect(instanceStarts).toEqual([
+      "2026-05-05",
+      "2026-05-06",
+      "2026-05-07",
+      "2026-05-08",
+      "2026-05-09",
+    ]);
+    expect(stored.some((entry) => entry.id.includes("::"))).toBe(false);
   });
 
   it("replace scope thisAndFollowing splits the series", async () => {
