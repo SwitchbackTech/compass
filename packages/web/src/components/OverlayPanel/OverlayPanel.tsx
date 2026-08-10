@@ -1,8 +1,8 @@
 import classNames from "classnames";
 import {
   type ButtonHTMLAttributes,
+  forwardRef,
   type ReactNode,
-  type Ref,
   type RefObject,
   useEffect,
   useId,
@@ -237,32 +237,38 @@ export const OverlayPanelActions = ({
 interface OverlayPanelActionButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "destructive";
-  ref?: Ref<HTMLButtonElement>;
 }
 
-export const OverlayPanelActionButton = ({
-  children,
-  className,
-  type = "button",
-  variant = "secondary",
+export const OverlayPanelActionButton = forwardRef<
+  HTMLButtonElement,
+  OverlayPanelActionButtonProps
+>(function OverlayPanelActionButton(
+  {
+    children,
+    className,
+    type = "button",
+    variant = "secondary",
+    ...buttonProps
+  },
   ref,
-  ...buttonProps
-}: OverlayPanelActionButtonProps) => (
-  <button
-    ref={ref}
-    className={classNames(
-      "h-11 rounded px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel disabled:pointer-events-none disabled:opacity-50",
-      variant === "primary" &&
-        "bg-accent text-on-accent transition hover:brightness-110",
-      variant === "destructive" &&
-        "bg-error text-on-accent transition hover:brightness-110",
-      variant === "secondary" &&
-        "border border-border bg-surface-overlay text-text transition-colors hover:bg-surface-panel",
-      className,
-    )}
-    type={type}
-    {...buttonProps}
-  >
-    {children}
-  </button>
-);
+) {
+  return (
+    <button
+      ref={ref}
+      className={classNames(
+        "h-11 rounded px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel disabled:pointer-events-none disabled:opacity-50",
+        variant === "primary" &&
+          "bg-accent text-on-accent transition hover:brightness-110",
+        variant === "destructive" &&
+          "bg-error text-on-accent transition hover:brightness-110",
+        variant === "secondary" &&
+          "border border-border bg-surface-overlay text-text transition-colors hover:bg-surface-panel",
+        className,
+      )}
+      type={type}
+      {...buttonProps}
+    >
+      {children}
+    </button>
+  );
+});
