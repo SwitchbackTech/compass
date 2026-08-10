@@ -42,7 +42,10 @@ export const EndsOnDate = ({
               minDate={miniDate.toDate()}
               onCalendarClose={() => setOpen(false)}
               onChange={() => null}
-              onSelect={(date) => setUntil(date)}
+              onSelect={(date) => {
+                setUntil(date);
+                setOpen(false);
+              }}
               selected={until}
               title="Select recurrence end date"
               view="grid"
