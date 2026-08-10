@@ -324,12 +324,14 @@ export function useGridEventEditShortcuts({
 
   // Edge focus tracks a specific event's DOM element, which React replaces
   // after every committed nudge (refocusEventElement restores focus to the
-  // new element within a few frames). Settling on focusin+focusout+setTimeout
-  // means that brief focus-to-body gap never reads as "focus left the event"
-  // and resets the mode mid-nudge.
+  // new element within a few frames). A focusin landing on a *different*
+  // event is unambiguous and resets immediately. A focusin/focusout landing
+  // on nothing (the brief focus-to-body gap mid-remount) is ambiguous, so
+  // that case alone waits a tick for refocusEventElement to restore focus
+  // before treating it as "focus left the event".
   useEffect(() => {
     let timer = 0;
-    const sync = () => {
+    const checkAfterDelay = () => {
       window.clearTimeout(timer);
       timer = window.setTimeout(() => {
         const { eventId } = useEdgeFocusStore.getState();
@@ -338,6 +340,20 @@ export function useGridEventEditShortcuts({
           edgeFocusActions.reset();
         }
       }, 0);
+    };
+    const sync = () => {
+      const { eventId } = useEdgeFocusStore.getState();
+      if (!eventId) return;
+
+      const focused = targetingRef.current.getFocused();
+      if (!focused) {
+        checkAfterDelay();
+        return;
+      }
+      if (focused.eventId !== eventId) {
+        window.clearTimeout(timer);
+        edgeFocusActions.reset();
+      }
     };
 
     document.addEventListener("focusin", sync);

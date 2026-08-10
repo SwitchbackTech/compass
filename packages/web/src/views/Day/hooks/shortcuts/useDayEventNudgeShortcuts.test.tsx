@@ -622,7 +622,7 @@ describe("useDayEventNudgeShortcuts", () => {
     expect(useEdgeFocusStore.getState().edge).toBeNull();
   });
 
-  it("resets edge focus when a different event is focused", async () => {
+  it("resets edge focus when a different event is focused", () => {
     const laterEvent: GridEvent = {
       ...timedEvent,
       _id: "cccccccccccccccccccccccc",
@@ -641,8 +641,6 @@ describe("useDayEventNudgeShortcuts", () => {
       later.focus();
     });
 
-    await waitFor(() => {
-      expect(useEdgeFocusStore.getState().eventId).toBeNull();
-    });
+    expect(useEdgeFocusStore.getState().eventId).toBeNull();
   });
 });
