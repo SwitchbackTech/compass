@@ -445,6 +445,7 @@ describe("GoogleEventWriter", () => {
     await writer.patchEvent({ ...basePatch, content: content() });
 
     expect(api.calls.insert[0].requestBody.colorId).toBe("7");
+    expect(api.calls.patch).toHaveLength(1);
     expect(api.calls.patch[0].requestBody).not.toHaveProperty("colorId");
   });
 
@@ -457,7 +458,34 @@ describe("GoogleEventWriter", () => {
       content: content({ color: null }),
     });
 
+    expect(api.calls.patch).toHaveLength(1);
     expect(api.calls.patch[0].requestBody.colorId).toBeNull();
+    expect(api.calls.patch[0]).not.toHaveProperty("eventLabelVersion");
+  });
+
+  it("clears eventLabelId under v1 before writing a slot colorId", async () => {
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    await writer.patchEvent({
+      ...basePatch,
+      expectedVersion: '"etag-v1"',
+      content: content({ color: "coral" }),
+    });
+
+    expect(api.calls.patch).toHaveLength(2);
+    expect(api.calls.patch[0]).toMatchObject({
+      requestBody: { eventLabelId: "" },
+      sendUpdates: "none",
+      eventLabelVersion: 1,
+      ifMatch: '"etag-v1"',
+    });
+    expect(api.calls.patch[1]).toMatchObject({
+      requestBody: { colorId: "4" },
+      ifMatch: '"v2"',
+    });
+    expect(api.calls.patch[1]).not.toHaveProperty("eventLabelVersion");
+    expect(api.calls.patch[1].requestBody).not.toHaveProperty("eventLabelId");
   });
 
   it("maps each invitation intent straight to sendUpdates", async () => {

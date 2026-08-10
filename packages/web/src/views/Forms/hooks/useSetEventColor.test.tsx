@@ -109,6 +109,39 @@ describe("useSetEventColor", () => {
     expect(useDraftStore.getState()).toEqual(initialDraftState);
   });
 
+  it("rewrites the same slot when a provider colorHex is still winning the palette", async () => {
+    const existing = createMockEvent({
+      content: {
+        kind: "details",
+        title: "Labeled",
+        description: "",
+        color: "coral",
+        colorHex: "#009688",
+      },
+      schedule: {
+        kind: "allDay",
+        start: "2026-07-02" as never,
+        end: "2026-07-03" as never,
+      },
+    });
+    const { queryClient, Wrapper } = createWrapper([existing]);
+    const { result } = renderHook(() => useSetEventColor(existing.id), {
+      wrapper: Wrapper,
+    });
+
+    act(() => {
+      result.current("coral");
+    });
+
+    await waitFor(() => {
+      const content =
+        queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[existing.id]?.content;
+      expect(content).toMatchObject({ color: "coral" });
+      expect(content).not.toHaveProperty("colorHex");
+    });
+  });
+
   it("updates a right-click draft that still held the old color", async () => {
     const existing = createMockEvent({
       content: {

@@ -151,8 +151,9 @@ export const WeekInteractionCoordinator: FC<Props> = ({
       return;
     }
 
-    updateEvent({ event: result.event }, true);
-    draftActions.discard();
+    updateEvent({ event: result.event }, true, {
+      onOptimisticApplied: () => draftActions.discard(),
+    });
   };
 
   runtimeRef.current = {
