@@ -5,11 +5,13 @@ import {
   ID_GRID_EVENTS_TIMED,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
+import { focusCalendarEventElement } from "@web/common/utils/event/event.util";
 import { getElemById, getMinuteHeight } from "@web/common/utils/grid/grid.util";
 import { roundToNext } from "@web/common/utils/round/round.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraft,
+  getGridDraftId,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
@@ -23,7 +25,7 @@ const VISIBLE_START_MARGIN_MIN = 30;
 export const createTimedDraft = (
   isCurrentWeek: boolean,
   startOfView: Dayjs,
-  activity: "createShortcut",
+  activity: "createShortcut" | "keyboardPlace",
   calendarId: CalendarId | null = null,
 ) => {
   const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
@@ -34,6 +36,15 @@ export const createTimedDraft = (
   );
 
   draftActions.startGridDraft({ activity, draft });
+
+  // Place-create keeps the form closed; focus the draft card so further
+  // Shift+Arrow / Enter operate on the grid event rather than the title.
+  if (activity === "keyboardPlace") {
+    const draftId = getGridDraftId(draft);
+    if (draftId) {
+      focusCalendarEventElement(draftId);
+    }
+  }
 };
 
 export const createAlldayDraft = (

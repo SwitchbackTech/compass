@@ -554,6 +554,26 @@ describe("DayCalendarGrid", () => {
     expect(getIsFormOpen()).toBe(true);
   });
 
+  it("opens the form when Enter is pressed on a form-closed keyboardPlace draft", async () => {
+    const draft = createGridEventDraft(
+      timedGridSchedule(
+        new Date("2026-05-20T10:00:00.000"),
+        new Date("2026-05-20T11:00:00.000"),
+      ),
+    );
+    draft.values.title = "Placed draft";
+    draftActions.startGridDraft({ activity: "keyboardPlace", draft });
+    expect(getIsFormOpen()).toBe(false);
+
+    const { user } = renderDayCalendarGrid();
+    const card = screen.getByRole("button", { name: /placed draft/i });
+    card.focus();
+    await user.keyboard("{Enter}");
+
+    expect(getIsFormOpen()).toBe(true);
+    expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+  });
+
   it("opens the event form from a Day card pointer interaction", async () => {
     const event = createTimedEvent({
       _id: "pointer-open",

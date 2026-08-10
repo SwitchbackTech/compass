@@ -20,7 +20,10 @@ import {
 } from "@web/common/utils/draft/draft.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
-import { createGridEventDraftFromGridEvent } from "@web/events/grid-event-draft.adapter";
+import {
+  createGridEventDraftFromGridEvent,
+  getGridDraftId,
+} from "@web/events/grid-event-draft.adapter";
 import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import {
   draftActions,
@@ -116,9 +119,28 @@ export function DayCalendarGrid() {
     gridRefs.mainGridRef,
     visibleDates,
   );
+  const placeTimedDraftFromShortcut = useCallback(() => {
+    // Same guards as openShortcutDraft / Week place: no sticky null calendar
+    // while calendars load, and don't replace an existing draft (Shift+Arrow
+    // repositions that draft instead via useGridEventEditShortcuts).
+    if (useDraftStore.getState().gridDraft) {
+      return;
+    }
+    if (isCalendarsPending && !defaultTargetCalendarId) {
+      return;
+    }
+
+    createTimedDraft(
+      dateInView.isSame(dayjs(), "day"),
+      dateInView,
+      "keyboardPlace",
+      defaultTargetCalendarId,
+    );
+  }, [dateInView, defaultTargetCalendarId, isCalendarsPending]);
   const { shiftHints } = useDayEventNudgeShortcuts({
     allDayEvents: displayedAllDayEvents,
     navigateToDate,
+    placeTimedDraft: placeTimedDraftFromShortcut,
     timedEvents: displayedTimedEvents,
   });
   const gridDraft = useDraftStore(selectGridDraft);
@@ -173,6 +195,14 @@ export function DayCalendarGrid() {
   const openEventFormForEvent = useCallback(
     (event: GridEvent) => {
       if (!event._id) {
+        return;
+      }
+
+      const currentDraft = useDraftStore.getState().gridDraft;
+      if (currentDraft && getGridDraftId(currentDraft) === event._id) {
+        // Form-closed place-create (and other live drafts): open details
+        // without reseeding the draft from the card.
+        draftActions.setFormOpen(true);
         return;
       }
 

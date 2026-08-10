@@ -8,6 +8,8 @@ import {
 import { focusEventFormTitle } from "@web/common/utils/form/form.util";
 import { gridEventDraftToGridEvent } from "@web/events/grid-event-draft.adapter";
 import {
+  draftActions,
+  isEventFormOpen,
   selectDraftActivity,
   useDraftStore,
 } from "@web/events/stores/draft.store";
@@ -33,6 +35,14 @@ interface Props {
 }
 
 const handleGridDraftClick = () => {};
+
+const openDraftFormOrFocusTitle = () => {
+  if (!isEventFormOpen()) {
+    draftActions.setFormOpen(true);
+    return;
+  }
+  focusEventFormTitle();
+};
 
 export const GridDraft: FC<Props> = ({
   activeAllDayDraftEvent = null,
@@ -137,7 +147,7 @@ export const GridDraft: FC<Props> = ({
           isPlaceholder={false}
           key={`draft-${draftAsGridEvent._id}`}
           measurements={measurements}
-          onKeyDown={focusEventFormTitle}
+          onKeyDown={openDraftFormOrFocusTitle}
           onMouseDown={
             isMultiDayTimedDraft
               ? undefined
@@ -164,7 +174,7 @@ export const GridDraft: FC<Props> = ({
             e.preventDefault();
             onMouseDown(e, event);
           }}
-          onEventKeyDown={focusEventFormTitle}
+          onEventKeyDown={openDraftFormOrFocusTitle}
           onScalerMouseDown={handleScalerMouseDown}
           weekProps={weekProps}
         />

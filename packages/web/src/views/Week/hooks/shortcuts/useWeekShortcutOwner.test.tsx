@@ -21,7 +21,7 @@ import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
-import { useDraftStore } from "@web/events/stores/draft.store";
+import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
 import {
   initialEdgeFocusState,
@@ -157,6 +157,7 @@ beforeEach(() => {
   HotkeyManager.resetInstance();
   repositionDraftByKeyboard = mock();
   useEdgeFocusStore.setState(initialEdgeFocusState, true);
+  draftActions.discard();
 });
 
 afterEach(() => {
@@ -166,6 +167,7 @@ afterEach(() => {
   weekEventRegistry.clear();
   useViewStore.setState(initialViewState);
   useEdgeFocusStore.setState(initialEdgeFocusState, true);
+  draftActions.discard();
 });
 
 const addCalendarTarget = (
@@ -677,6 +679,37 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
     pressKey("ArrowRight", shiftKey);
 
     expect(getEditMutation(queryClient)).toBeUndefined();
+  });
+
+  it("places a keyboardPlace timed draft when Shift+Arrow is pressed with no focus", async () => {
+    renderShortcuts();
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      const { gridDraft, status } = useDraftStore.getState();
+      expect(status?.activity).toBe("keyboardPlace");
+      expect(status?.isFormOpen).toBe(false);
+      expect(gridDraft?.values.calendarId).toBe(writableCalendar.id);
+    });
+  });
+
+  it("repositions a keyboardPlace draft with a later Shift+Arrow", async () => {
+    repositionDraftByKeyboard = mock(() =>
+      Boolean(useDraftStore.getState().gridDraft),
+    );
+    renderShortcuts();
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+    });
+
+    pressKey("ArrowDown", shiftKey);
+
+    expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowDown");
+    expect(useDraftStore.getState().status?.isFormOpen).toBe(false);
   });
 });
 

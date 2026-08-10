@@ -128,6 +128,19 @@ export const useWeekShortcutOwner = ({
     );
   }, [defaultTargetCalendarId, isCalendarsPending, isCurrentWeek, startOfView]);
 
+  const placeTimedDraftEvent = useCallback(() => {
+    if (isCalendarsPending && !defaultTargetCalendarId) {
+      return;
+    }
+
+    void createTimedDraft(
+      isCurrentWeek,
+      startOfView,
+      "keyboardPlace",
+      defaultTargetCalendarId,
+    );
+  }, [defaultTargetCalendarId, isCalendarsPending, isCurrentWeek, startOfView]);
+
   // The command palette's create-event rows (event.cmd.constants.ts) can only
   // reach this view through the bus; the "C"/"A" keys below call the create
   // functions directly. Resubscribes when the create handlers change (week in
@@ -168,6 +181,7 @@ export const useWeekShortcutOwner = ({
     timedEvents,
     dayBoundary: { kind: "clamp", weekDays },
     targeting,
+    placeTimedDraft: placeTimedDraftEvent,
     repositionDraftByKey: repositionDraftByKeyboard,
   });
 
