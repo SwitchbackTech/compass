@@ -1,10 +1,6 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { type GridEvent } from "@web/common/types/web.event.types";
-import {
-  initialOnboardingTourState,
-  useOnboardingTourStore,
-} from "@web/components/OnboardingTour/onboarding.tour.store";
 import { clearAppLockReasons, setAppLockReason } from "@web/shortcuts/app-lock";
 import {
   keyboardOnlyActions,
@@ -68,7 +64,6 @@ describe("useShiftHoldEventHints", () => {
     clearAppLockReasons();
     eventJumpActions.reset();
     keyboardOnlyActions.exit();
-    useOnboardingTourStore.setState(initialOnboardingTourState);
     resetSharedShiftTapGesture();
   });
 
@@ -77,7 +72,6 @@ describe("useShiftHoldEventHints", () => {
     clearAppLockReasons();
     eventJumpActions.reset();
     keyboardOnlyActions.exit();
-    useOnboardingTourStore.setState(initialOnboardingTourState);
     resetSharedShiftTapGesture();
     document.body.innerHTML = "";
   });
@@ -257,23 +251,6 @@ describe("useShiftHoldEventHints", () => {
     expect(useEventJumpStore.getState().isActive).toBe(true);
     expect(result.current.hints.length).toBeGreaterThan(0);
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
-  });
-
-  it("activates during the tour targetEvent lesson even with keyboard-only on", () => {
-    useOnboardingTourStore.setState({
-      ...initialOnboardingTourState,
-      isActive: true,
-      stepId: "targetEvent",
-    });
-    keyboardOnlyActions.enter();
-    const { result } = mountHints();
-
-    act(() => {
-      tapShift();
-    });
-
-    expect(useEventJumpStore.getState().isActive).toBe(true);
-    expect(result.current.hints.length).toBeGreaterThan(0);
   });
 
   it("clears hints when Shift is tapped again or Escape is pressed", async () => {

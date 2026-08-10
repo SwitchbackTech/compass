@@ -321,18 +321,12 @@ export class LocalEventRepository implements EventRepository {
 
     // Prior scope-"this" overrides would otherwise win over expansion after
     // settle and undo the series-wide shift for those instances.
-    if (splits) {
-      await this.deleteSeriesOccurrenceOverrides(record.id, {
-        atOrAfter: occurrenceStart,
-      });
-    } else {
-      await this.deleteSeriesOccurrenceOverrides(record.id);
-    }
+    await this.deleteSeriesOccurrenceOverrides(
+      record.id,
+      splits ? { atOrAfter: occurrenceStart } : undefined,
+    );
 
     if (!splits) {
-      // Scope "all" (and thisAndFollowing on the first occurrence): apply the
-      // occurrence edit as a delta onto the series base, not as an absolute
-      // rebase of DTSTART to the occurrence's new schedule.
       const schedule =
         input.scope === "all"
           ? shiftSeriesScheduleByOccurrenceEdit(
@@ -363,8 +357,6 @@ export class LocalEventRepository implements EventRepository {
     };
     await this.store.putEvent({ ...record, event: truncated });
 
-    // Remainder DTSTART is the edited occurrence schedule (absolute) — that
-    // is the correct start for the new series leg.
     const id = composeLocalOccurrenceId(record.id, occurrenceStart);
     const event: Event = {
       id,
