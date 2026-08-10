@@ -101,14 +101,10 @@ const focusCalendarTarget = (
 const renderEditShortcuts = ({
   allDayEvents = [],
   navigateToDate,
-  navigateToNextDay,
-  navigateToPreviousDay,
   timedEvents = [timedEvent],
 }: {
   allDayEvents?: GridEvent[];
   navigateToDate?: (date: Dayjs) => void;
-  navigateToNextDay?: () => void;
-  navigateToPreviousDay?: () => void;
   timedEvents?: GridEvent[];
 } = {}) => {
   const queryClient = createCompassQueryClient();
@@ -147,8 +143,6 @@ const renderEditShortcuts = ({
         allDayEvents,
         dependencies,
         navigateToDate,
-        navigateToNextDay,
-        navigateToPreviousDay,
         timedEvents,
       }),
     {
@@ -342,33 +336,72 @@ describe("useDayEventNudgeShortcuts", () => {
     expect(document.activeElement).toBe(later);
   });
 
-  it("pages to the next day with ArrowRight when a grid event is focused", () => {
-    focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    const navigateToNextDay = mock(() => {});
-    renderEditShortcuts({ navigateToNextDay });
+  it("focuses the chronologically next event with ArrowRight", () => {
+    const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const laterEvent: GridEvent = {
+      ...timedEvent,
+      _id: "cccccccccccccccccccccccc",
+      startDate: "2026-05-20T11:00:00.000",
+      endDate: "2026-05-20T12:00:00.000",
+      title: "Later event",
+    };
+    const later = focusCalendarTarget(laterEvent._id!, "timed");
+    earlier.focus();
+    const navigateToDate = mock(() => {});
+    renderEditShortcuts({
+      navigateToDate,
+      timedEvents: [timedEvent, laterEvent],
+    });
 
     pressKey("ArrowRight");
 
-    expect(navigateToNextDay).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(later);
+    expect(navigateToDate).not.toHaveBeenCalled();
   });
 
-  it("pages to the previous day with ArrowLeft when a grid event is focused", () => {
-    focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    const navigateToPreviousDay = mock(() => {});
-    renderEditShortcuts({ navigateToPreviousDay });
+  it("focuses the chronologically previous event with ArrowLeft", () => {
+    const earlier = focusCalendarTarget(TIMED_EVENT_ID, "timed");
+    const laterEvent: GridEvent = {
+      ...timedEvent,
+      _id: "cccccccccccccccccccccccc",
+      startDate: "2026-05-20T11:00:00.000",
+      endDate: "2026-05-20T12:00:00.000",
+      title: "Later event",
+    };
+    const later = focusCalendarTarget(laterEvent._id!, "timed");
+    later.focus();
+    const navigateToDate = mock(() => {});
+    renderEditShortcuts({
+      navigateToDate,
+      timedEvents: [timedEvent, laterEvent],
+    });
 
     pressKey("ArrowLeft");
 
-    expect(navigateToPreviousDay).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(earlier);
+    expect(navigateToDate).not.toHaveBeenCalled();
   });
 
-  it("does not page the day with ArrowRight when nothing is focused", () => {
-    const navigateToNextDay = mock(() => {});
-    renderEditShortcuts({ navigateToNextDay });
+  it("does not change focus with ArrowRight when nothing is focused", () => {
+    const laterEvent: GridEvent = {
+      ...timedEvent,
+      _id: "cccccccccccccccccccccccc",
+      startDate: "2026-05-20T11:00:00.000",
+      endDate: "2026-05-20T12:00:00.000",
+      title: "Later event",
+    };
+    focusCalendarTarget(TIMED_EVENT_ID, "timed").blur();
+    focusCalendarTarget(laterEvent._id!, "timed").blur();
+    const navigateToDate = mock(() => {});
+    renderEditShortcuts({
+      navigateToDate,
+      timedEvents: [timedEvent, laterEvent],
+    });
 
     pressKey("ArrowRight");
 
-    expect(navigateToNextDay).not.toHaveBeenCalled();
+    expect(navigateToDate).not.toHaveBeenCalled();
+    expect(document.activeElement).not.toBeInstanceOf(HTMLButtonElement);
   });
 
   it("does not delete a grid event when Delete is pressed inside an open event form", () => {
