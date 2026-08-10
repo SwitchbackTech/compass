@@ -29,6 +29,7 @@ export const OnboardingTour: FC = () => {
   const step = steps.find((entry) => entry.id === stepId) ?? steps[0];
   const stepIndex = ONBOARDING_TOUR_STEP_IDS.indexOf(stepId);
   const isDone = stepId === "done";
+  const isFork = stepId === "fork";
 
   return (
     <section
@@ -53,29 +54,50 @@ export const OnboardingTour: FC = () => {
           </p>
         ) : null}
         <div className="mt-4 flex items-center justify-between gap-3">
-          <button
-            className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:text-text"
-            onClick={onboardingTourActions.skip}
-            type="button"
-          >
-            Skip tour
-          </button>
-          {isDone ? (
-            <button
-              className="c-button c-button-primary rounded-full px-4 py-1.5 text-xs"
-              onClick={onboardingTourActions.finish}
-              type="button"
-            >
-              Finish
-            </button>
+          {isFork ? (
+            <>
+              <button
+                className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:text-text"
+                onClick={onboardingTourActions.skip}
+                type="button"
+              >
+                I'm done
+              </button>
+              <button
+                className="c-button c-button-primary rounded-full px-4 py-1.5 text-xs"
+                onClick={onboardingTourActions.advance}
+                type="button"
+              >
+                Keep going
+              </button>
+            </>
           ) : (
-            <button
-              className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:text-text"
-              onClick={onboardingTourActions.advance}
-              type="button"
-            >
-              Next
-            </button>
+            <>
+              <button
+                className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:text-text"
+                onClick={onboardingTourActions.skip}
+                type="button"
+              >
+                Skip tour
+              </button>
+              {isDone ? (
+                <button
+                  className="c-button c-button-primary rounded-full px-4 py-1.5 text-xs"
+                  onClick={onboardingTourActions.finish}
+                  type="button"
+                >
+                  Finish
+                </button>
+              ) : (
+                <button
+                  className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:text-text"
+                  onClick={onboardingTourActions.advance}
+                  type="button"
+                >
+                  Next
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

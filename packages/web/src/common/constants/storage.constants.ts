@@ -5,6 +5,10 @@ type StorageKey =
   | "compass.onboarding.has-seen-anonymous-save-toast"
   | "compass.onboarding.has-dismissed-demo-events-banner"
   | "compass.onboarding.has-dismissed-tasks-removal-notice"
+  // Set when a new user hands off to signup/login from the welcome modal
+  // before starting the tour; consumed once, right after signup completes,
+  // to offer the tour instead of silently burning it forever.
+  | "compass.onboarding.has-pending-tour-offer"
   | "compass.sidebar.width"
   | "compass.theme"
   | "compass.life.preferences"
@@ -29,6 +33,7 @@ export const STORAGE_KEYS: Record<
   | "HAS_SEEN_ANONYMOUS_SAVE_TOAST"
   | "HAS_DISMISSED_DEMO_EVENTS_BANNER"
   | "HAS_DISMISSED_TASKS_REMOVAL_NOTICE"
+  | "HAS_PENDING_TOUR_OFFER"
   | "LIFE_PREFERENCES"
   | "SIDEBAR_WIDTH"
   | "SIDEBAR_OPEN"
@@ -48,6 +53,7 @@ export const STORAGE_KEYS: Record<
     "compass.onboarding.has-dismissed-demo-events-banner",
   HAS_DISMISSED_TASKS_REMOVAL_NOTICE:
     "compass.onboarding.has-dismissed-tasks-removal-notice",
+  HAS_PENDING_TOUR_OFFER: "compass.onboarding.has-pending-tour-offer",
   LIFE_PREFERENCES: "compass.life.preferences",
   SIDEBAR_WIDTH: "compass.sidebar.width",
   SIDEBAR_OPEN: "compass.view.sidebar-open",

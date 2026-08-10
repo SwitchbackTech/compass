@@ -7,7 +7,22 @@ export type ProductEvent =
   | "signup_completed"
   | "login_completed"
   | "event_created"
-  | "calendar_connected";
+  | "calendar_connected"
+  | "onboarding_game_started"
+  | "onboarding_task_completed"
+  | "onboarding_segment_reached"
+  | "onboarding_game_skipped"
+  | "onboarding_game_finished"
+  | "onboarding_game_replayed"
+  | "connect_cta_shown"
+  | "connect_cta_accepted"
+  | "connect_cta_skipped"
+  | "trial_cta_shown"
+  | "trial_started"
+  | "trial_converted"
+  | "trial_expired"
+  | "shortcut_tip_shown"
+  | "shortcut_tip_acted_on";
 
 /**
  * Fire-and-forget capture for the small set of product-activation events.

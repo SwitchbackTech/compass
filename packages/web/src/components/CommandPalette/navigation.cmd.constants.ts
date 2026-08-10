@@ -142,9 +142,19 @@ export const getNavigationCommandItems = ({
   if (onShowOnboardingTour) {
     calendarItems.push({
       id: "show-onboarding-tour",
-      label: "Restart onboarding tour",
+      label: "Practice shortcuts",
       icon: CompassIcon,
-      keywords: ["onboarding", "tour", "intro", "help", "tutorial", "coach"],
+      keywords: [
+        "onboarding",
+        "tour",
+        "intro",
+        "help",
+        "tutorial",
+        "coach",
+        "sandbox",
+        "practice",
+        "shortcuts",
+      ],
       onClick: onShowOnboardingTour,
     });
   }
