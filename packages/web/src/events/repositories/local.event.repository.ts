@@ -201,7 +201,9 @@ export class LocalEventRepository implements EventRepository {
     return { record: record as SeriesRecord, occurrenceStart: parsed.start };
   }
 
-  /** Drop stored `${seriesId}::*` overrides so series-wide edits stick. */
+  /** Drop stored `${seriesId}::*` occurrence overrides so series-wide edits
+   * stick. Skips nested series records minted by thisAndFollowing splits —
+   * those share the same id prefix but are independent series bases. */
   private async deleteSeriesOccurrenceOverrides(
     seriesId: string,
     options?: { atOrAfter?: string },
@@ -212,6 +214,9 @@ export class LocalEventRepository implements EventRepository {
       records
         .filter((record) => {
           if (!record.id.startsWith(prefix)) return false;
+          // Remainder legs from thisAndFollowing are real series records at a
+          // composed id; never treat them as disposable occurrence overrides.
+          if (record.event.recurrence.kind === "series") return false;
           if (!options?.atOrAfter) return true;
           const parsed = parseLocalOccurrenceId(record.id);
           return (

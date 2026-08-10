@@ -691,4 +691,77 @@ describe("LocalEventRepository", () => {
       },
     });
   });
+
+  it("series-wide replace does not delete a thisAndFollowing remainder series", async () => {
+    const head = seriesRecord();
+    const remainderId = `${head.id}::2026-05-06T09:00:00.000Z` as EventId;
+    const remainder: LocalEventRecord = {
+      version: 2,
+      id: remainderId,
+      isDemo: false,
+      event: {
+        ...head.event,
+        id: remainderId,
+        schedule: {
+          kind: "timed",
+          start: DateTimeSchema.parse("2026-05-06T11:00:00.000Z"),
+          end: DateTimeSchema.parse("2026-05-06T12:00:00.000Z"),
+          timeZone: TimeZoneSchema.parse("UTC"),
+        },
+        recurrence: {
+          kind: "series",
+          rules: ["RRULE:FREQ=DAILY;COUNT=4"] as never,
+        },
+      },
+    };
+    const overrideId = `${head.id}::2026-05-05T09:00:00.000Z` as EventId;
+    const override: LocalEventRecord = {
+      version: 2,
+      id: overrideId,
+      isDemo: false,
+      event: {
+        ...head.event,
+        id: overrideId,
+        content: {
+          kind: "details",
+          title: "Override",
+          description: "",
+        },
+        recurrence: { kind: "occurrence", seriesId: head.id },
+      },
+    };
+
+    let stored: LocalEventRecord[] = [head, remainder, override];
+    getAllEvents.mockImplementation(async () => stored);
+    putEvent.mockImplementation(async (next: LocalEventRecord) => {
+      stored = [
+        ...stored.filter((candidate) => candidate.id !== next.id),
+        next,
+      ];
+    });
+    deleteEvent.mockImplementation(async (id: EventId) => {
+      stored = stored.filter((candidate) => candidate.id !== id);
+    });
+
+    await repository.replace(
+      `${head.id}::2026-05-04T09:00:00.000Z` as EventId,
+      {
+        content: {
+          kind: "details",
+          title: "Head renamed",
+          description: "",
+          location: "",
+        },
+        schedule: head.event.schedule,
+        recurrence: { kind: "preserve" },
+        scope: "all",
+      },
+    );
+
+    expect(stored.some((entry) => entry.id === remainderId)).toBe(true);
+    expect(stored.some((entry) => entry.id === overrideId)).toBe(false);
+    expect(
+      stored.find((entry) => entry.id === head.id)?.event.content,
+    ).toMatchObject({ title: "Head renamed" });
+  });
 });
