@@ -1,6 +1,6 @@
 import classNames from "classnames";
 import type React from "react";
-import { useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import * as ReactDatePickerModule from "react-datepicker";
 import { type ReactDatePickerProps } from "react-datepicker";
 import dayjs from "@core/util/date/dayjs";
@@ -62,9 +62,37 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     ...props
   } = datePickerProps;
   const layerId = useId();
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const onCalendarCloseRef = useRef(datePickerProps.onCalendarClose);
+  onCalendarCloseRef.current = datePickerProps.onCalendarClose;
   // Sidebar month grid stays mounted and visible; only transient grid popovers
   // own Escape (same carve-out the old DOM probe encoded via Month picker).
   useFloatingLayer(`datePicker:${layerId}`, view === "grid" && isOpen);
+  // EventForm (and similar shells) stop mousedown bubbling so grid clicks
+  // underneath don't fire. That also blocks react-datepicker's document
+  // bubble-phase outside-click listener. Capture-phase closes grid popovers
+  // even when a parent calls stopPropagation.
+  useEffect(() => {
+    if (view !== "grid" || !isOpen) return;
+
+    const onMouseDownCapture = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+      if (calendarRef.current?.contains(target)) return;
+
+      const input = document.querySelector(
+        `[data-datepicker-input="${CSS.escape(layerId)}"]`,
+      );
+      if (input?.contains(target)) return;
+
+      onCalendarCloseRef.current?.();
+    };
+
+    document.addEventListener("mousedown", onMouseDownCapture, true);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDownCapture, true);
+    };
+  }, [isOpen, layerId, view]);
   const isDarkTheme = useThemeStore(selectTheme) === "dark-abyss";
   const resolvedBgColor =
     bgColor ?? (isDarkTheme ? colors.background : lightColors.background);
@@ -98,6 +126,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
       })}
       calendarContainer={({ children, className }) => (
         <div
+          ref={calendarRef}
           className={classNames("c-date-picker", className)}
           data-dark={usesThemeText}
           data-view={view}
@@ -114,6 +143,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
             "w-28 transition-colors duration-300",
             inputClassName,
           )}
+          data-datepicker-input={layerId}
           style={{
             backgroundColor: inputColor,
             color: inputColor ? theme.getContrastText(inputColor) : undefined,
@@ -128,7 +158,8 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
       {...props}
       // Close the picker when the user clicks away (react-datepicker has no
       // onCalendarClose for outside-clicks). onCalendarOpen/onCalendarClose/
-      // onSelect flow straight through {...props}.
+      // onSelect flow straight through {...props}. Kept as a fallback for
+      // contexts where bubble-phase delivery still reaches document.
       onClickOutside={() => {
         datePickerProps.onCalendarClose?.();
       }}
