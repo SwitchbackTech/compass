@@ -5,6 +5,7 @@ import {
   useKeyboardOnlyStore,
 } from "@web/shortcuts/keyboard-only/keyboard-only.store";
 import { useKeyboardOnlyMode } from "@web/shortcuts/keyboard-only/useKeyboardOnlyMode";
+import { resetSharedShiftTapGesture } from "@web/shortcuts/shift-tap-gesture";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 const dispatchKey = (
@@ -32,12 +33,14 @@ describe("useKeyboardOnlyMode", () => {
   beforeEach(() => {
     useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
     clearAppLockReasons();
+    resetSharedShiftTapGesture();
     document.body.innerHTML = `<div id="root"></div>`;
   });
 
   afterEach(() => {
     useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
     clearAppLockReasons();
+    resetSharedShiftTapGesture();
     document.body.innerHTML = "";
   });
 

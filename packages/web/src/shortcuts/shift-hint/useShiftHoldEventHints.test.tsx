@@ -12,6 +12,7 @@ import {
 } from "@web/shortcuts/shift-hint/event-jump.store";
 import { SHIFT_DOUBLE_TAP_MAX_GAP_MS } from "@web/shortcuts/shift-hint/shift-hold-detector";
 import { useShiftHoldEventHints } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
+import { resetSharedShiftTapGesture } from "@web/shortcuts/shift-tap-gesture";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const EVENT_A = EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa");
@@ -39,7 +40,8 @@ const tapShift = () => {
   dispatch("keyup", "Shift");
 };
 
-const flushActivate = async () => {
+/** Past the double-tap window, so the next tap is treated as fresh. */
+const waitPastDoubleTapWindow = async () => {
   await act(async () => {
     await Bun.sleep(SHIFT_DOUBLE_TAP_MAX_GAP_MS + 5);
   });
@@ -59,6 +61,7 @@ describe("useShiftHoldEventHints", () => {
     clearAppLockReasons();
     eventJumpActions.reset();
     keyboardOnlyActions.exit();
+    resetSharedShiftTapGesture();
   });
 
   afterEach(() => {
@@ -66,6 +69,7 @@ describe("useShiftHoldEventHints", () => {
     clearAppLockReasons();
     eventJumpActions.reset();
     keyboardOnlyActions.exit();
+    resetSharedShiftTapGesture();
     document.body.innerHTML = "";
   });
 
@@ -113,15 +117,12 @@ describe("useShiftHoldEventHints", () => {
     return { focus, result, elements };
   };
 
-  it("toggles hints on a quick Shift tap and focuses via day prefix", async () => {
+  it("toggles hints on a quick Shift tap and focuses via day prefix", () => {
     const { focus, result, elements } = mountHints();
 
     act(() => {
       tapShift();
     });
-    expect(useEventJumpStore.getState().isActive).toBe(false);
-
-    await flushActivate();
 
     expect(useEventJumpStore.getState().isActive).toBe(true);
     expect(result.current.hints.map((hint) => hint.hint)).toEqual([
@@ -151,7 +152,7 @@ describe("useShiftHoldEventHints", () => {
     expect(useEventJumpStore.getState().isActive).toBe(true);
   });
 
-  it("does not toggle on a quick Shift chord (Shift+J)", async () => {
+  it("does not toggle on a quick Shift chord (Shift+J)", () => {
     const { result } = mountHints();
 
     act(() => {
@@ -161,32 +162,29 @@ describe("useShiftHoldEventHints", () => {
       dispatch("keyup", "Shift");
     });
 
-    await flushActivate();
     expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(result.current.hints).toEqual([]);
   });
 
-  it("stays inert while app-locked", async () => {
+  it("stays inert while app-locked", () => {
     setAppLockReason("test-modal", true);
     const { result } = mountHints();
 
     act(() => {
       tapShift();
     });
-    await flushActivate();
 
     expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(result.current.hints).toEqual([]);
   });
 
-  it("does not activate while keyboard-only mode is on", async () => {
+  it("does not activate while keyboard-only mode is on", () => {
     keyboardOnlyActions.enter();
     const { result } = mountHints();
 
     act(() => {
       tapShift();
     });
-    await flushActivate();
 
     expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
@@ -198,27 +196,22 @@ describe("useShiftHoldEventHints", () => {
     act(() => {
       tapShift();
     });
-    await flushActivate();
     expect(result.current.hints).toHaveLength(3);
 
-    // Wait past the double-tap window so the next Shift is a toggle-off.
-    await act(async () => {
-      await Bun.sleep(SHIFT_DOUBLE_TAP_MAX_GAP_MS + 5);
-    });
+    // Wait past the double-tap window so the next Shift is a toggle-off,
+    // not a double-tap that hands off to keyboard-only instead.
+    await waitPastDoubleTapWindow();
     act(() => {
       tapShift();
     });
     expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(result.current.hints).toEqual([]);
 
-    // Wait so re-entry is a fresh tap, not Shift-Shift forceOff.
-    await act(async () => {
-      await Bun.sleep(SHIFT_DOUBLE_TAP_MAX_GAP_MS + 5);
-    });
+    // Wait so re-entry is a fresh tap, not Shift-Shift double-tap.
+    await waitPastDoubleTapWindow();
     act(() => {
       tapShift();
     });
-    await flushActivate();
     expect(useEventJumpStore.getState().isActive).toBe(true);
 
     act(() => {
@@ -228,14 +221,11 @@ describe("useShiftHoldEventHints", () => {
     expect(result.current.hints).toEqual([]);
   });
 
-  it("keeps mode on when arrows are pressed after selecting a day", async () => {
+  it("keeps mode on when arrows are pressed after selecting a day", () => {
     const { focus, result } = mountHints();
 
     act(() => {
       tapShift();
-    });
-    await flushActivate();
-    act(() => {
       dispatch("keydown", "w");
     });
     expect(focus).toHaveBeenCalled();
@@ -247,14 +237,13 @@ describe("useShiftHoldEventHints", () => {
     expect(useEventJumpStore.getState().isActive).toBe(true);
   });
 
-  it("cancels deferred activate on Shift-Shift without flashing jump", async () => {
-    const { result } = mountHints();
+  it("cancels the just-activated hints on a following Shift-Shift", () => {
+    mountHints();
 
     act(() => {
       tapShift();
       tapShift();
     });
-    await flushActivate();
 
     expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(useEventJumpStore.getState().announcement).toBe("");
