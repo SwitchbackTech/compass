@@ -1,4 +1,5 @@
 import { XIcon } from "@phosphor-icons/react";
+import { useRef } from "react";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
@@ -16,6 +17,8 @@ export function DiscardUnsavedChangesDialog({
   onCancel,
   onDiscard,
 }: DiscardUnsavedChangesDialogProps) {
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+
   if (!isOpen) return null;
 
   return (
@@ -32,11 +35,13 @@ export function DiscardUnsavedChangesDialog({
         </button>
       }
       onDismiss={onCancel}
+      onShiftEscape={onDiscard}
+      initialFocusRef={cancelButtonRef}
       align="start"
       variant="modal"
     >
       <OverlayPanelActions align="end">
-        <OverlayPanelActionButton onClick={onCancel}>
+        <OverlayPanelActionButton ref={cancelButtonRef} onClick={onCancel}>
           Cancel
         </OverlayPanelActionButton>
         <OverlayPanelActionButton variant="primary" onClick={onDiscard}>

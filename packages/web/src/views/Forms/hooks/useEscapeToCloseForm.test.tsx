@@ -51,4 +51,24 @@ describe("useEscapeToCloseForm", () => {
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("closes on Shift+Escape without prompting", () => {
+    const onClose = mock(() => {});
+    const { result } = renderHook(() => useEscapeToCloseForm(onClose));
+
+    pressKey("Escape", { keyDownInit: { shiftKey: true } });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(result.current.isConfirmOpen).toBe(false);
+  });
+
+  it("stands Shift+Escape down while a floating layer is open", () => {
+    const onClose = mock(() => {});
+    setFloatingLayerReason("actionsMenu:test", true);
+    renderHook(() => useEscapeToCloseForm(onClose));
+
+    pressKey("Escape", { keyDownInit: { shiftKey: true } });
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

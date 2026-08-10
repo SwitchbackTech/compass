@@ -1,6 +1,7 @@
 import classNames from "classnames";
 import {
   type ButtonHTMLAttributes,
+  forwardRef,
   type ReactNode,
   type RefObject,
   useEffect,
@@ -31,6 +32,10 @@ interface Props {
   children?: ReactNode;
   /** Called when clicking the backdrop or pressing Escape */
   onDismiss?: () => void;
+  /** Called when pressing Shift+Escape; falls back to onDismiss when omitted. */
+  onShiftEscape?: () => void;
+  /** Focus this element on open instead of the first focusable in the panel. */
+  initialFocusRef?: RefObject<HTMLElement | null>;
   /** Overrides the element that receives focus when the dialog closes. */
   restoreFocus?: () => void;
   /**
@@ -60,6 +65,8 @@ export const OverlayPanel = ({
   message,
   children,
   onDismiss,
+  onShiftEscape,
+  initialFocusRef,
   restoreFocus,
   skipFocusRestoreRef,
   role = "dialog",
@@ -82,7 +89,8 @@ export const OverlayPanel = ({
     if (!panel) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const [firstFocusable] = getFocusableElements(panel);
-    (firstFocusable ?? panel).focus();
+    const initialFocus = initialFocusRef?.current ?? firstFocusable ?? panel;
+    initialFocus.focus();
     return () => {
       // Read at unmount so callers can suppress restore for dialog handoffs.
       if (skipFocusRestoreRef?.current) return;
@@ -92,7 +100,7 @@ export const OverlayPanel = ({
       if (restoreFocus) restoreFocus();
       else previouslyFocused?.focus?.();
     };
-  }, [restoreFocus, role, skipFocusRestoreRef]);
+  }, [initialFocusRef, restoreFocus, role, skipFocusRestoreRef]);
 
   const backdropClasses = classNames(
     "fixed inset-0 flex items-center justify-center bg-background/85 backdrop-blur-sm",
@@ -128,11 +136,19 @@ export const OverlayPanel = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (onDismiss && e.key === "Escape") {
-      e.preventDefault();
-      e.stopPropagation();
-      onDismiss();
-      return;
+    if (e.key === "Escape") {
+      if (e.shiftKey && onShiftEscape) {
+        e.preventDefault();
+        e.stopPropagation();
+        onShiftEscape();
+        return;
+      }
+      if (onDismiss) {
+        e.preventDefault();
+        e.stopPropagation();
+        onDismiss();
+        return;
+      }
     }
     if (e.key !== "Tab" || !panelRef.current) return;
     const focusables = getFocusableElements(panelRef.current);
@@ -223,27 +239,36 @@ interface OverlayPanelActionButtonProps
   variant?: "primary" | "secondary" | "destructive";
 }
 
-export const OverlayPanelActionButton = ({
-  children,
-  className,
-  type = "button",
-  variant = "secondary",
-  ...buttonProps
-}: OverlayPanelActionButtonProps) => (
-  <button
-    className={classNames(
-      "h-11 rounded px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel disabled:pointer-events-none disabled:opacity-50",
-      variant === "primary" &&
-        "bg-accent text-on-accent transition hover:brightness-110",
-      variant === "destructive" &&
-        "bg-error text-on-accent transition hover:brightness-110",
-      variant === "secondary" &&
-        "border border-border bg-surface-overlay text-text transition-colors hover:bg-surface-panel",
-      className,
-    )}
-    type={type}
-    {...buttonProps}
-  >
-    {children}
-  </button>
-);
+export const OverlayPanelActionButton = forwardRef<
+  HTMLButtonElement,
+  OverlayPanelActionButtonProps
+>(function OverlayPanelActionButton(
+  {
+    children,
+    className,
+    type = "button",
+    variant = "secondary",
+    ...buttonProps
+  },
+  ref,
+) {
+  return (
+    <button
+      ref={ref}
+      className={classNames(
+        "h-11 rounded px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel disabled:pointer-events-none disabled:opacity-50",
+        variant === "primary" &&
+          "bg-accent text-on-accent transition hover:brightness-110",
+        variant === "destructive" &&
+          "bg-error text-on-accent transition hover:brightness-110",
+        variant === "secondary" &&
+          "border border-border bg-surface-overlay text-text transition-colors hover:bg-surface-panel",
+        className,
+      )}
+      type={type}
+      {...buttonProps}
+    >
+      {children}
+    </button>
+  );
+});

@@ -128,4 +128,60 @@ describe("OverlayPanel", () => {
     expect(outside).toHaveFocus();
     outside.remove();
   });
+
+  it("focuses initialFocusRef instead of the first focusable", () => {
+    const initialFocusRef = { current: null as HTMLButtonElement | null };
+    render(
+      <OverlayPanel
+        title="Confirm"
+        onDismiss={() => {}}
+        initialFocusRef={initialFocusRef}
+      >
+        <button type="button">First</button>
+        <button
+          type="button"
+          ref={(node) => {
+            initialFocusRef.current = node;
+          }}
+        >
+          Preferred
+        </button>
+      </OverlayPanel>,
+    );
+
+    expect(screen.getByRole("button", { name: "Preferred" })).toHaveFocus();
+  });
+
+  it("calls onShiftEscape for Shift+Escape and onDismiss for Escape", async () => {
+    const user = userEvent.setup();
+    let dismissed = 0;
+    let shifted = 0;
+    const onDismiss = () => {
+      dismissed += 1;
+    };
+    const onShiftEscape = () => {
+      shifted += 1;
+    };
+
+    render(
+      <OverlayPanel
+        title="Confirm"
+        onDismiss={onDismiss}
+        onShiftEscape={onShiftEscape}
+      >
+        <button type="button">Inside</button>
+      </OverlayPanel>,
+    );
+
+    const inside = screen.getByRole("button", { name: "Inside" });
+    inside.focus();
+
+    await user.keyboard("{Escape}");
+    expect(dismissed).toBe(1);
+    expect(shifted).toBe(0);
+
+    await user.keyboard("{Shift>}{Escape}{/Shift}");
+    expect(shifted).toBe(1);
+    expect(dismissed).toBe(1);
+  });
 });

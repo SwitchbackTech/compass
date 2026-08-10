@@ -7,6 +7,7 @@ import { shouldConfirmDiscardUnsavedChanges } from "@web/views/Forms/hooks/shoul
 /**
  * Escape closes the event-details form. Dirty edits of a persisted event
  * confirm first; create drafts and unchanged edits discard immediately.
+ * Shift+Escape always discards without prompting.
  * Nested floating layers (menus, listboxes, date pickers) register via
  * `useFloatingLayer` so Escape closes them first.
  */
@@ -26,6 +27,18 @@ export const useEscapeToCloseForm = (onClose: () => void) => {
         return;
       }
 
+      onClose();
+    },
+    { ignoreInputs: false },
+  );
+
+  useAppShortcut(
+    "Shift+Escape",
+    (keyboardEvent) => {
+      if (isFloatingLayerOpen()) return;
+
+      keyboardEvent.preventDefault();
+      setIsConfirmOpen(false);
       onClose();
     },
     { ignoreInputs: false },
