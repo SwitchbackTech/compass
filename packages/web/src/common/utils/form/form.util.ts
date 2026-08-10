@@ -4,6 +4,7 @@ const EVENT_FORM_SELECTOR = `form[name="${ID_EVENT_FORM}"]`;
 
 export type EventFormFocusField =
   | "title"
+  | "location"
   | "description"
   | "start"
   | "end"
@@ -33,6 +34,11 @@ export const focusEventFormField = (field: EventFormFocusField): boolean => {
     case "title":
       return focusFirstMatch([
         `${EVENT_FORM_SELECTOR} input[name="Event Title"]`,
+      ]);
+    case "location":
+      return focusFirstMatch([
+        `${EVENT_FORM_SELECTOR} #event-form-location`,
+        `${EVENT_FORM_SELECTOR} input[name="Event Location"]`,
       ]);
     case "description":
       return focusFirstMatch([`#event-form-description`]);

@@ -64,6 +64,7 @@ import {
 } from "@web/views/Forms/EventForm/types";
 import { EventFormShell } from "@web/views/Forms/EventFormShell";
 import { useEscapeToCloseForm } from "@web/views/Forms/hooks/useEscapeToCloseForm";
+import { useEventFormFieldJumpShortcuts } from "@web/views/Forms/hooks/useEventFormFieldJumpShortcuts";
 
 const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
   enabled: true,
@@ -71,6 +72,7 @@ const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
 } as const;
 
 const EVENT_FORM_TITLE_ID = "event-form-title";
+const EVENT_FORM_LOCATION_ID = "event-form-location";
 const EVENT_FORM_DESCRIPTION_ID = "event-form-description";
 const EVENT_FORM_CALENDAR_ID = "event-form-calendar";
 const EVENT_FORM_SCHEDULE_ID = "event-form-schedule";
@@ -659,6 +661,8 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
+    useEventFormFieldJumpShortcuts();
+
     const { isConfirmOpen, onCancelConfirm, onDiscardConfirm } =
       useEscapeToCloseForm(onClose);
 
@@ -839,6 +843,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                     />
                   )}
                   <Focusable
+                    id={EVENT_FORM_LOCATION_ID}
                     Component="input"
                     className={classNames(
                       INPUT_RESET_CLASSNAME,

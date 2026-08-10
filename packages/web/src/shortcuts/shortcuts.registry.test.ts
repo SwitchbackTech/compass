@@ -107,11 +107,42 @@ describe("shortcuts.registry", () => {
       }).map((shortcut) => shortcut.id);
 
       expect(focused).toContain("edit-focus-title");
+      expect(focused).toContain("edit-focus-location");
       expect(focused).toContain("edit-focus-description");
       expect(focused).toContain("edit-focus-start");
       expect(focused).toContain("edit-focus-end");
       expect(focused).toContain("edit-focus-recurrence");
       expect(focused).toContain("edit-focus-calendar");
+    });
+
+    it("excludes form-jump shortcuts when the form is closed and includes them when open", () => {
+      const formJumpIds = [
+        "form-jump-title",
+        "form-jump-location",
+        "form-jump-description",
+        "form-jump-start",
+        "form-jump-end",
+        "form-jump-recurrence",
+        "form-jump-calendar",
+      ];
+
+      const closed = filterShortcutsByContext({
+        view: "day",
+        isViewingCurrentPeriod: true,
+        isFormOpen: false,
+      }).map((shortcut) => shortcut.id);
+      for (const id of formJumpIds) {
+        expect(closed).not.toContain(id);
+      }
+
+      const open = filterShortcutsByContext({
+        view: "day",
+        isViewingCurrentPeriod: true,
+        isFormOpen: true,
+      }).map((shortcut) => shortcut.id);
+      for (const id of formJumpIds) {
+        expect(open).toContain(id);
+      }
     });
   });
 

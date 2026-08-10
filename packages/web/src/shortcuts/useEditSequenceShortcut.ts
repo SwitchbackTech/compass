@@ -8,6 +8,7 @@ import { isAppLocked } from "@web/shortcuts/app-lock";
 /** Leader → field map for the `e` edit sequences. */
 export const EDIT_SEQUENCE_FIELDS = {
   t: "title",
+  l: "location",
   d: "description",
   s: "start",
   e: "end",
