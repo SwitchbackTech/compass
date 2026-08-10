@@ -331,19 +331,19 @@ After deleting or moving an event, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux
 
 ### UX
 
-Tapping `Shift` toggles event-jump mode (activation waits briefly so Shift-Shift can still enter keyboard-only without a jump flash). Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event; a following digit focuses that index. `Esc` or another Shift tap exits. Quick chords such as Shift+J or Shift+Arrow do not toggle the mode.
+Pressing `Shift` shows event-jump chips immediately; releasing a quick tap keeps the mode on. Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event; a following digit focuses that index. `Esc` or another Shift tap exits. Long holds and quick chords such as Shift+J or Shift+Arrow cancel the press so jump mode does not stay on. A following Shift-Shift still enters keyboard-only without leaving jump chips up.
 
 ### Steps
 
 1. Navigate to `/week` with timed events on at least two different days.
-2. Tap `Shift` once (do not hold for a chord).
+2. Press `Shift` once (do not hold for a chord); chips should appear on key down.
 3. Press the day letter on a chip (for example `W` for Wednesday), then optionally a digit (`2`) or use arrow keys.
 4. Press `Esc` (or tap `Shift` again) to exit.
 5. Repeat with a fast Shift+J chord and confirm jump mode does not activate.
 
 ### Expected Results
 
-- Chips appear on events after a Shift tap and stay until Esc / another Shift tap.
+- Chips appear on events as soon as Shift is pressed and stay after a quick release until Esc / another Shift tap.
 - A day letter highlights that column and focuses the first event; digits refine to `Wn`.
 - Arrow keys keep jump mode on so letter-then-arrows works.
 - Fast Shift+J / Shift+Arrow do not toggle jump mode.
@@ -391,4 +391,4 @@ If time is limited, run these checks before shipping shortcut-related changes:
 12. With a focused event and no draft open, ArrowUp/ArrowDown move focus to the previous/next event chronologically.
 13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.
 14. With a focused event, `E` then `T` opens the form with the title focused; bare `E` alone does nothing.
-15. Tapping Shift toggles event jump chips; a day letter + digit focuses that event; fast Shift+J does not toggle the mode.
+15. Pressing Shift shows event jump chips immediately; a day letter + digit focuses that event; fast Shift+J does not leave the mode on.

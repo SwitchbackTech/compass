@@ -10,7 +10,10 @@ import {
   eventJumpActions,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
-import { SHIFT_DOUBLE_TAP_MAX_GAP_MS } from "@web/shortcuts/shift-hint/shift-hold-detector";
+import {
+  SHIFT_DOUBLE_TAP_MAX_GAP_MS,
+  SHIFT_TAP_MAX_HOLD_MS,
+} from "@web/shortcuts/shift-hint/shift-hold-detector";
 import { useShiftHoldEventHints } from "@web/shortcuts/shift-hint/useShiftHoldEventHints";
 import { resetSharedShiftTapGesture } from "@web/shortcuts/shift-tap-gesture";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -150,6 +153,44 @@ describe("useShiftHoldEventHints", () => {
       expect.objectContaining({ eventId: EVENT_B, element: elements[1] }),
     );
     expect(useEventJumpStore.getState().isActive).toBe(true);
+  });
+
+  it("shows hints on Shift keydown before release", () => {
+    const { result } = mountHints();
+
+    act(() => {
+      dispatch("keydown", "Shift");
+    });
+
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(result.current.hints).toHaveLength(3);
+
+    act(() => {
+      dispatch("keyup", "Shift");
+    });
+
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(result.current.hints).toHaveLength(3);
+  });
+
+  it("cancels optimistic hints when Shift is held past the tap threshold", async () => {
+    const { result } = mountHints();
+
+    act(() => {
+      dispatch("keydown", "Shift");
+    });
+    expect(result.current.hints).toHaveLength(3);
+
+    await act(async () => {
+      await Bun.sleep(SHIFT_TAP_MAX_HOLD_MS + 20);
+    });
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(result.current.hints).toEqual([]);
+
+    act(() => {
+      dispatch("keyup", "Shift");
+    });
+    expect(useEventJumpStore.getState().isActive).toBe(false);
   });
 
   it("does not toggle on a quick Shift chord (Shift+J)", () => {
