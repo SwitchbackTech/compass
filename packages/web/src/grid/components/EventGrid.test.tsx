@@ -235,10 +235,12 @@ describe("EventGrid", () => {
       />,
     );
 
-    const status = screen.getByRole("status", { name: "Looking for events" });
-    expect(status).toHaveClass("pointer-events-none");
+    const status = screen.getByRole("status");
+    expect(status).toHaveClass("sr-only");
+    expect(status).toHaveTextContent("Looking for events");
     expect(
       screen.getByRole("img", {
+        hidden: true,
         name: "Pixel pirate scouting with binoculars",
       }),
     ).toBeInTheDocument();
@@ -293,9 +295,7 @@ describe("EventGrid", () => {
       />,
     );
 
-    expect(
-      screen.queryByRole("status", { name: "Looking for events" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Looking for events")).not.toBeInTheDocument();
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Couldn't load events.",
     );

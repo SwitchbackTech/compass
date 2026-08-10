@@ -91,15 +91,18 @@ export const EventGrid: FC<EventGridProps> = ({
       />
     )}
     {isImportingEmpty && !isLoadingEvents && !isErrorEvents && (
-      <div
-        aria-label="Looking for events"
-        aria-live="polite"
-        className="pointer-events-none absolute inset-0 flex items-center justify-center px-4"
-        role="status"
-        style={{ zIndex: ZIndex.MAX }}
-      >
-        <PixelPirateScouting className="h-16 w-16" />
-      </div>
+      <>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 flex items-center justify-center px-4"
+          style={{ zIndex: ZIndex.MAX }}
+        >
+          <PixelPirateScouting className="h-16 w-16" />
+        </div>
+        <span aria-live="polite" className="sr-only" role="status">
+          Looking for events
+        </span>
+      </>
     )}
     {isErrorEvents && !isLoadingEvents && (
       <div
