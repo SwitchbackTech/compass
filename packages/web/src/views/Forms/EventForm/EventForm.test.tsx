@@ -92,7 +92,11 @@ mock.module("@web/views/Forms/EventForm/SaveSection", () => ({
 
 const { EventForm } = require("./EventForm") as typeof import("./EventForm");
 
-function dispatchModKey(target: HTMLElement, key: string) {
+function dispatchModKey(
+  target: HTMLElement,
+  key: string,
+  { shift = false }: { shift?: boolean } = {},
+) {
   const modifierKey = resolveModifier("Mod");
   const isControl = modifierKey === "Control";
 
@@ -104,23 +108,7 @@ function dispatchModKey(target: HTMLElement, key: string) {
       ctrlKey: isControl,
       key,
       metaKey: !isControl,
-    }),
-  );
-}
-
-function dispatchModShiftKey(target: HTMLElement, key: string) {
-  const modifierKey = resolveModifier("Mod");
-  const isControl = modifierKey === "Control";
-
-  target.dispatchEvent(
-    new KeyboardEvent("keydown", {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      ctrlKey: isControl,
-      key,
-      metaKey: !isControl,
-      shiftKey: true,
+      shiftKey: shift,
     }),
   );
 }
@@ -363,7 +351,7 @@ describe("EventForm", () => {
     const titleField = screen.getByPlaceholderText("Title");
     act(() => titleField.focus());
 
-    dispatchModShiftKey(titleField, "l");
+    dispatchModKey(titleField, "l", { shift: true });
 
     expect(screen.getByRole("textbox", { name: "Location" })).toHaveFocus();
   });
@@ -385,7 +373,7 @@ describe("EventForm", () => {
     const locationField = screen.getByRole("textbox", { name: "Location" });
     act(() => locationField.focus());
 
-    dispatchModShiftKey(locationField, "d");
+    dispatchModKey(locationField, "d", { shift: true });
 
     expect(screen.getByRole("textbox", { name: "Description" })).toHaveFocus();
   });
@@ -407,7 +395,9 @@ describe("EventForm", () => {
     const titleField = screen.getByPlaceholderText("Title");
     act(() => titleField.focus());
 
-    expect(() => dispatchModShiftKey(titleField, "c")).not.toThrow();
+    expect(() =>
+      dispatchModKey(titleField, "c", { shift: true }),
+    ).not.toThrow();
     expect(titleField).toHaveFocus();
   });
 

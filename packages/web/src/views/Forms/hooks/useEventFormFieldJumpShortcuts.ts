@@ -1,26 +1,13 @@
-import {
-  type EventFormFocusField,
-  focusEventFormField,
-} from "@web/common/utils/form/form.util";
+import { focusEventFormField } from "@web/common/utils/form/form.util";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 /**
- * Mod+Shift+letter → field map for jumping focus directly to a form field
- * while typing anywhere in the event form (title, location, TipTap
- * description). All chosen letters are page-interceptable browser bindings
+ * Mod+Shift+letter → jump focus directly to a form field while typing
+ * anywhere in the event form (title, location, TipTap description). All
+ * chosen letters are page-interceptable browser bindings
  * (reopen-closed-tab/devtools/reload/bookmark), suppressed here via
  * preventDefault + stopPropagation.
  */
-export const EVENT_FORM_FIELD_JUMP_SHORTCUTS = {
-  "Mod+Shift+I": "title",
-  "Mod+Shift+L": "location",
-  "Mod+Shift+D": "description",
-  "Mod+Shift+S": "start",
-  "Mod+Shift+E": "end",
-  "Mod+Shift+R": "recurrence",
-  "Mod+Shift+C": "calendar",
-} as const satisfies Record<string, EventFormFocusField>;
-
 const JUMP_HOTKEY_OPTIONS = {
   enabled: true,
   ignoreInputs: false,
