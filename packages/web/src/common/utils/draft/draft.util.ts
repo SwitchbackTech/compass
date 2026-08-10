@@ -12,7 +12,6 @@ import { roundToNext } from "@web/common/utils/round/round.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraft,
-  getGridDraftId,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
@@ -30,11 +29,12 @@ export const createTimedDraft = (
   calendarId: CalendarId | null = null,
 ) => {
   const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
+  // Stable grid identity so place-create can focus the card and Enter can
+  // open the live draft without reseeding.
+  const clientId = EventIdSchema.parse(createObjectIdString());
   const draft = createGridEventDraft(
     timedGridSchedule(new Date(startDate), new Date(endDate)),
-    // Stable grid identity so place-create can focus the card and Enter can
-    // open the live draft without reseeding.
-    EventIdSchema.parse(createObjectIdString()),
+    clientId,
     calendarId,
   );
 
@@ -43,10 +43,7 @@ export const createTimedDraft = (
   // Place-create keeps the form closed; focus the draft card so further
   // Shift+Arrow / Enter operate on the grid event rather than the title.
   if (activity === "keyboardPlace") {
-    const draftId = getGridDraftId(draft);
-    if (draftId) {
-      focusCalendarEventElement(draftId);
-    }
+    focusCalendarEventElement(clientId);
   }
 };
 

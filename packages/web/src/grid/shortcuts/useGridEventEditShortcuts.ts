@@ -241,7 +241,6 @@ export function useGridEventEditShortcuts({
   const moveFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
     if (isEventFormOpen()) return;
 
-    const focusedTarget = targeting.getFocused();
     const event = getFocusedMutableCalendarEvent();
     if (event?._id) {
       const edgeFocus = useEdgeFocusStore.getState();
@@ -299,7 +298,7 @@ export function useGridEventEditShortcuts({
       return;
     }
 
-    if (focusedTarget || useDraftStore.getState().gridDraft) {
+    if (targeting.getFocused() || useDraftStore.getState().gridDraft) {
       return;
     }
 

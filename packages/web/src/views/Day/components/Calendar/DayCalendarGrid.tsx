@@ -119,30 +119,6 @@ export function DayCalendarGrid() {
     gridRefs.mainGridRef,
     visibleDates,
   );
-  const placeTimedDraftFromShortcut = useCallback(() => {
-    // Same guards as openShortcutDraft / Week place: no sticky null calendar
-    // while calendars load, and don't replace an existing draft (Shift+Arrow
-    // repositions that draft instead via useGridEventEditShortcuts).
-    if (useDraftStore.getState().gridDraft) {
-      return;
-    }
-    if (isCalendarsPending && !defaultTargetCalendarId) {
-      return;
-    }
-
-    createTimedDraft(
-      dateInView.isSame(dayjs(), "day"),
-      dateInView,
-      "keyboardPlace",
-      defaultTargetCalendarId,
-    );
-  }, [dateInView, defaultTargetCalendarId, isCalendarsPending]);
-  const { shiftHints } = useDayEventNudgeShortcuts({
-    allDayEvents: displayedAllDayEvents,
-    navigateToDate,
-    placeTimedDraft: placeTimedDraftFromShortcut,
-    timedEvents: displayedTimedEvents,
-  });
   const gridDraft = useDraftStore(selectGridDraft);
   // Strip height must include the all-day draft: layer rendering used to
   // re-stack with the draft while EventGrid still sized from saved events only.
@@ -249,7 +225,7 @@ export function DayCalendarGrid() {
     dateCalcs.getDateStrByXY(clientX, 0, YEAR_MONTH_DAY_FORMAT);
 
   const openShortcutDraft = useCallback(
-    (createDraft: () => void) => {
+    (createDraft: () => void, openForm = true) => {
       if (gridDraft) {
         return;
       }
@@ -260,7 +236,9 @@ export function DayCalendarGrid() {
       }
 
       createDraft();
-      draftActions.setFormOpen(true);
+      if (openForm) {
+        draftActions.setFormOpen(true);
+      }
     },
     [defaultTargetCalendarId, gridDraft, isCalendarsPending],
   );
@@ -290,6 +268,29 @@ export function DayCalendarGrid() {
       ),
     [dateInView, defaultTargetCalendarId, openShortcutDraft],
   );
+
+  // Form stays closed so Shift+Arrow can keep repositioning; Enter opens it.
+  // Existing-draft / focus guards also live in useGridEventEditShortcuts.
+  const placeTimedDraftFromShortcut = useCallback(
+    () =>
+      openShortcutDraft(
+        () =>
+          createTimedDraft(
+            dateInView.isSame(dayjs(), "day"),
+            dateInView,
+            "keyboardPlace",
+            defaultTargetCalendarId,
+          ),
+        false,
+      ),
+    [dateInView, defaultTargetCalendarId, openShortcutDraft],
+  );
+  const { shiftHints } = useDayEventNudgeShortcuts({
+    allDayEvents: displayedAllDayEvents,
+    navigateToDate,
+    placeTimedDraft: placeTimedDraftFromShortcut,
+    timedEvents: displayedTimedEvents,
+  });
 
   // onViewCommand returns its own unsubscribe and emitViewCommand reads the
   // listener set at emit time, so re-subscribing when the handler identity
