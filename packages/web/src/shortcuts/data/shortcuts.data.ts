@@ -30,13 +30,5 @@ export const getShortcutMenuSections = (
     isFormOpen,
   });
 
-  const sections = getShortcutsBySection(filteredShortcuts);
-
-  return Object.entries(sections)
-    .map(([, section]) => ({
-      id: section.title.toLowerCase(),
-      title: section.title,
-      shortcuts: section.shortcuts,
-    }))
-    .filter((section) => section.shortcuts.length > 0);
+  return getShortcutsBySection(filteredShortcuts);
 };

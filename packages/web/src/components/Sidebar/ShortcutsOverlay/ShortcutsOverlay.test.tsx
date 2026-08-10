@@ -14,6 +14,7 @@ import { ShortcutsOverlay } from "./ShortcutsOverlay";
 
 const sections = [
   {
+    id: "navigate",
     title: "Day",
     shortcuts: [
       {
@@ -26,6 +27,7 @@ const sections = [
     ],
   },
   {
+    id: "empty",
     title: "Empty",
     shortcuts: [],
   },

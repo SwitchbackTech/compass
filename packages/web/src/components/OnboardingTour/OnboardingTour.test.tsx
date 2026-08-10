@@ -24,7 +24,6 @@ describe("OnboardingTour", () => {
   beforeEach(() => {
     useOnboardingTourStore.setState(initialOnboardingTourState);
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_ONBOARDING_TOUR, "");
-    persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_CMD_PALETTE_HINT, "");
   });
 
   it("uses a thick liquid-glass surface so copy stays readable over events", () => {

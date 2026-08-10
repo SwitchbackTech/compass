@@ -1,17 +1,13 @@
 import { dayEventRegistry } from "@web/views/Day/interaction/registry/day-event.registry";
 import {
-  clearHoveredDayGridEventTarget,
   focusDayGridEventTarget,
   getFirstVisibleDayGridEventTarget,
   getFocusedDayGridEventTarget,
-  getHoveredDayGridEventTarget,
   listVisibleDayGridEventTargets,
-  setHoveredDayGridEventTarget,
 } from "./day-event.targeting";
 import { afterEach, describe, expect, it } from "bun:test";
 
 afterEach(() => {
-  clearHoveredDayGridEventTarget();
   dayEventRegistry.clear();
   document.body.innerHTML = "";
 });
@@ -58,17 +54,6 @@ describe("dayGridEventTargeting", () => {
       element: focused,
       eventId: "focused",
       eventType: "all-day",
-    });
-  });
-
-  it("uses the hovered calendar event when nothing is focused", () => {
-    const hovered = addEventButton({ eventId: "hovered" });
-    setHoveredDayGridEventTarget(hovered);
-
-    expect(getHoveredDayGridEventTarget()).toMatchObject({
-      element: hovered,
-      eventId: "hovered",
-      eventType: "timed",
     });
   });
 

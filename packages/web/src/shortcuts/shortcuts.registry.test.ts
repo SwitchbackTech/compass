@@ -116,38 +116,41 @@ describe("shortcuts.registry", () => {
   });
 
   describe("getShortcutsBySection", () => {
-    it("groups shortcuts by section", () => {
+    it("groups non-empty sections by id, in display order, with shortcuts", () => {
       const shortcuts = filterShortcutsByContext({
         view: "day",
         isViewingCurrentPeriod: true,
       });
 
       const sections = getShortcutsBySection(shortcuts);
+      const byId = Object.fromEntries(
+        sections.map((section) => [section.id, section]),
+      );
 
-      expect(sections.navigate).toBeDefined();
-      expect(sections.create).toBeDefined();
-      expect(sections.focus).toBeDefined();
-      expect(sections.edit).toBeDefined();
-      expect(sections.other).toBeDefined();
-
-      expect(sections.navigate.shortcuts.length).toBeGreaterThan(0);
-      expect(sections.create.shortcuts.length).toBeGreaterThan(0);
-      expect(sections.edit.shortcuts.length).toBeGreaterThan(0);
+      expect(byId.navigate.shortcuts.length).toBeGreaterThan(0);
+      expect(byId.create.shortcuts.length).toBeGreaterThan(0);
+      expect(byId.edit.shortcuts.length).toBeGreaterThan(0);
+      expect(sections.every((section) => section.shortcuts.length > 0)).toBe(
+        true,
+      );
     });
 
-    it("creates section title for each group", () => {
+    it("sets a display title for each section", () => {
       const shortcuts = filterShortcutsByContext({
         view: "day",
         isViewingCurrentPeriod: true,
       });
 
-      const sections = getShortcutsBySection(shortcuts);
+      const byId = Object.fromEntries(
+        getShortcutsBySection(shortcuts).map((section) => [
+          section.id,
+          section,
+        ]),
+      );
 
-      expect(sections.navigate.title).toBe("Navigate");
-      expect(sections.create.title).toBe("Create");
-      expect(sections.focus.title).toBe("Focus");
-      expect(sections.edit.title).toBe("Edit");
-      expect(sections.other.title).toBe("Other");
+      expect(byId.navigate.title).toBe("Navigate");
+      expect(byId.create.title).toBe("Create");
+      expect(byId.edit.title).toBe("Edit");
     });
   });
 });

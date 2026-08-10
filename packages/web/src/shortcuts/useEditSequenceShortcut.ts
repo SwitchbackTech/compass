@@ -30,18 +30,14 @@ const isAppLocked = () => document.body.dataset.appLocked === "true";
  * shortcuts (e.g. `t` → today, `d` → day view) do not also run.
  */
 export function useEditSequenceShortcut({
-  enabled = true,
   onSequence,
 }: {
-  enabled?: boolean;
   onSequence: (field: EventFormFocusField) => void;
 }) {
   const onSequenceRef = useRef(onSequence);
   onSequenceRef.current = onSequence;
 
   useEffect(() => {
-    if (!enabled) return;
-
     let armedUntil = 0;
     let armTimeoutId: ReturnType<typeof setTimeout> | null = null;
     const suppressKeyUp = new Set<string>();
@@ -125,5 +121,5 @@ export function useEditSequenceShortcut({
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keyup", onKeyUp, true);
     };
-  }, [enabled]);
+  }, []);
 }

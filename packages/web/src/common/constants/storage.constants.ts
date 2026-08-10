@@ -1,7 +1,6 @@
 type StorageKey =
   | "compass.auth"
   | "compass.onboarding.has-seen-welcome"
-  | "compass.onboarding.has-seen-cmd-palette-hint"
   | "compass.onboarding.has-seen-onboarding-tour"
   | "compass.onboarding.has-seen-anonymous-save-toast"
   | "compass.onboarding.has-dismissed-demo-events-banner"
@@ -26,7 +25,6 @@ type StorageKey =
 export const STORAGE_KEYS: Record<
   | "AUTH"
   | "HAS_SEEN_WELCOME"
-  | "HAS_SEEN_CMD_PALETTE_HINT"
   | "HAS_SEEN_ONBOARDING_TOUR"
   | "HAS_SEEN_ANONYMOUS_SAVE_TOAST"
   | "HAS_DISMISSED_DEMO_EVENTS_BANNER"
@@ -43,7 +41,6 @@ export const STORAGE_KEYS: Record<
 > = {
   AUTH: "compass.auth",
   HAS_SEEN_WELCOME: "compass.onboarding.has-seen-welcome",
-  HAS_SEEN_CMD_PALETTE_HINT: "compass.onboarding.has-seen-cmd-palette-hint",
   HAS_SEEN_ONBOARDING_TOUR: "compass.onboarding.has-seen-onboarding-tour",
   HAS_SEEN_ANONYMOUS_SAVE_TOAST:
     "compass.onboarding.has-seen-anonymous-save-toast",

@@ -19,10 +19,6 @@ import {
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
-import {
-  clearHoveredWeekGridEventTarget,
-  setHoveredWeekGridEventTarget,
-} from "@web/views/Week/interaction/targeting/week-event.targeting";
 
 interface Props {
   calendarIdentity?: CalendarCardIdentity | null;
@@ -111,7 +107,6 @@ const GridEventBase = (
     const highlight = `inset 0 1px 0 rgba(255,255,255,${isFocused ? 0.1 : 0.07})`;
     return `${ring}, ${drop}, ${highlight}`;
   })();
-  const shouldTrackCalendarHover = !isPlaceholder && Boolean(event._id);
   const handleEventMouseDown = (
     selectedEvent: GridEventEntity,
     e: MouseEvent,
@@ -145,14 +140,6 @@ const GridEventBase = (
       motionMode={motionMode}
       onEventKeyDown={onEventKeyDown}
       onEventMouseDown={handleEventMouseDown}
-      onMouseEnter={(e: MouseEvent<HTMLDivElement>) => {
-        if (!shouldTrackCalendarHover) return;
-
-        setHoveredWeekGridEventTarget(e.currentTarget);
-      }}
-      onMouseLeave={(e: MouseEvent<HTMLDivElement>) => {
-        clearHoveredWeekGridEventTarget(e.currentTarget);
-      }}
       onScalerMouseDown={onScalerMouseDown}
       position={{ ...position, zIndex }}
       ref={ref}

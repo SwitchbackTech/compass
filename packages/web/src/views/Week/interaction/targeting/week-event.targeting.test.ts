@@ -1,17 +1,13 @@
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/week-event.registry";
 import {
-  clearHoveredWeekGridEventTarget,
   focusWeekGridEventTarget,
   getFirstVisibleWeekGridEventTarget,
   getFocusedWeekGridEventTarget,
-  getHoveredWeekGridEventTarget,
   listVisibleWeekGridEventTargets,
-  setHoveredWeekGridEventTarget,
 } from "./week-event.targeting";
 import { afterEach, describe, expect, it } from "bun:test";
 
 afterEach(() => {
-  clearHoveredWeekGridEventTarget();
   weekEventRegistry.clear();
   document.body.innerHTML = "";
 });
@@ -58,17 +54,6 @@ describe("weekGridEventTargeting", () => {
       element: focused,
       eventId: "focused",
       eventType: "all-day",
-    });
-  });
-
-  it("uses the hovered calendar event when nothing is focused", () => {
-    const hovered = addEventButton({ eventId: "hovered" });
-    setHoveredWeekGridEventTarget(hovered);
-
-    expect(getHoveredWeekGridEventTarget()).toMatchObject({
-      element: hovered,
-      eventId: "hovered",
-      eventType: "timed",
     });
   });
 

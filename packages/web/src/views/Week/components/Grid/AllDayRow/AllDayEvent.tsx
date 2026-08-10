@@ -6,10 +6,6 @@ import { AllDayEventCard } from "@web/grid/components/AllDayEventCard";
 import { getAllDayEventPosition } from "@web/grid/layout/event.position";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import {
-  clearHoveredWeekGridEventTarget,
-  setHoveredWeekGridEventTarget,
-} from "@web/views/Week/interaction/targeting/week-event.targeting";
 
 interface Props {
   calendarIdentity?: CalendarCardIdentity | null;
@@ -53,7 +49,6 @@ const AllDayEventBase = (
     visibleDates,
   });
 
-  const shouldTrackCalendarHover = !isPlaceholder && Boolean(event._id);
   const handleEventMouseDown = (e: MouseEvent, selectedEvent: GridEvent) => {
     // Always stop bubble so the all-day row's create-draft handler cannot
     // overwrite a card click (including read-only open).
@@ -71,14 +66,6 @@ const AllDayEventBase = (
       isPlaceholder={isPlaceholder}
       onEventKeyDown={onKeyDown}
       onEventMouseDown={handleEventMouseDown}
-      onMouseEnter={(e: MouseEvent<HTMLDivElement>) => {
-        if (!shouldTrackCalendarHover) return;
-
-        setHoveredWeekGridEventTarget(e.currentTarget);
-      }}
-      onMouseLeave={(e: MouseEvent<HTMLDivElement>) => {
-        clearHoveredWeekGridEventTarget(e.currentTarget);
-      }}
       onScalerMouseDown={onScalerMouseDown}
       position={position}
       ref={ref}

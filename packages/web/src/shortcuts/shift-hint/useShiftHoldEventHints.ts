@@ -40,8 +40,6 @@ export type ActiveShiftHint = DayJumpAssignment & {
 
 export type EventJumpHintsResult = {
   hints: ActiveShiftHint[];
-  isActive: boolean;
-  activeDayKeys: string[];
 };
 
 const isAppLocked = () => document.body.dataset.appLocked === "true";
@@ -128,14 +126,12 @@ const buildDayJumpAssignments = (
  */
 export function useShiftHoldEventHints({
   allDayEvents = [],
-  enabled = true,
   focus,
   listVisible,
   mode = "week",
   timedEvents,
 }: {
   allDayEvents?: GridEvent[];
-  enabled?: boolean;
   focus: (target: ShiftHintFocusTarget) => void;
   listVisible: () => ShiftHintFocusTarget[];
   mode?: DayJumpLabelMode;
@@ -143,7 +139,6 @@ export function useShiftHoldEventHints({
 }): EventJumpHintsResult {
   const [hints, setHints] = useState<ActiveShiftHint[]>([]);
   const isActive = useEventJumpStore((state) => state.isActive);
-  const activeDayKeys = useEventJumpStore((state) => state.activeDayKeys);
 
   const gestureRef = useRef<ShiftJumpGestureState>(
     createShiftJumpGestureState(),
@@ -173,23 +168,6 @@ export function useShiftHoldEventHints({
   isActiveRef.current = isActive;
 
   useEffect(() => {
-    if (!enabled) {
-      if (pendingActivateTimerRef.current !== null) {
-        clearTimeout(pendingActivateTimerRef.current);
-        pendingActivateTimerRef.current = null;
-      }
-      if (ambiguousCommitTimerRef.current !== null) {
-        clearTimeout(ambiguousCommitTimerRef.current);
-        ambiguousCommitTimerRef.current = null;
-      }
-      gestureRef.current = createShiftJumpGestureState();
-      bufferRef.current = "";
-      assignmentsRef.current = [];
-      setHints([]);
-      eventJumpActions.reset();
-      return;
-    }
-
     const clearAmbiguousCommitTimer = () => {
       if (ambiguousCommitTimerRef.current !== null) {
         clearTimeout(ambiguousCommitTimerRef.current);
@@ -483,7 +461,7 @@ export function useShiftHoldEventHints({
         eventJumpActions.reset();
       }
     };
-  }, [enabled]);
+  }, []);
 
   // Rebuild chips when the event set changes while mode is on. Uses refs for
   // listVisible so an inline callback identity does not loop setState.
@@ -492,7 +470,7 @@ export function useShiftHoldEventHints({
     .join(",");
 
   useEffect(() => {
-    if (!enabled || !isActive) return;
+    if (!isActive) return;
     // Read eventIdsKey so the effect re-runs when the visible event id set changes.
     void eventIdsKey;
 
@@ -507,7 +485,7 @@ export function useShiftHoldEventHints({
       ? filterHintsByPrefix(assignments, bufferRef.current)
       : assignments;
     setHints(toActiveHints(source, visibleById));
-  }, [enabled, eventIdsKey, isActive]);
+  }, [eventIdsKey, isActive]);
 
-  return { hints, isActive, activeDayKeys };
+  return { hints };
 }

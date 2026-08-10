@@ -13,8 +13,6 @@ export const createGridEventTargeting = <TType extends string>({
   registry: EventRegistry<TType>;
   targetSelector: string;
 }) => {
-  let hoveredEventElement: HTMLElement | null = null;
-
   const toTarget = (element: Element | null): GridEventTarget<TType> | null => {
     if (!(element instanceof HTMLElement)) return null;
 
@@ -43,11 +41,6 @@ export const createGridEventTargeting = <TType extends string>({
   }
 
   return {
-    clearHoveredGridEventTarget: (element?: HTMLElement): void => {
-      if (!element || hoveredEventElement === element) {
-        hoveredEventElement = null;
-      }
-    },
     focusGridEventTarget: (target: GridEventTarget<TType>): void => {
       target.element.focus();
     },
@@ -57,11 +50,6 @@ export const createGridEventTargeting = <TType extends string>({
     listVisibleGridEventTargets: listVisible,
     getFocusedGridEventTarget: (): GridEventTarget<TType> | null =>
       toTarget(document.activeElement),
-    getHoveredGridEventTarget: (): GridEventTarget<TType> | null =>
-      toTarget(hoveredEventElement),
-    setHoveredGridEventTarget: (element: HTMLElement | null): void => {
-      hoveredEventElement = element;
-    },
   };
 };
 

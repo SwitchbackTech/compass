@@ -401,25 +401,25 @@ export const filterShortcutsByContext = (
   });
 };
 
+const SECTION_TITLES: Record<string, string> = {
+  navigate: "Navigate",
+  create: "Create",
+  focus: "Focus",
+  edit: "Edit",
+  other: "Other",
+};
+
 /**
- * Get shortcuts grouped by section. Used for the legend overlay.
+ * Get shortcuts grouped by section, in display order. Used for the legend
+ * overlay.
  */
 export const getShortcutsBySection = (
   shortcuts: Shortcut[],
-): Record<string, { title: string; shortcuts: Shortcut[] }> => {
-  const sections: Record<string, { title: string; shortcuts: Shortcut[] }> = {
-    navigate: { title: "Navigate", shortcuts: [] },
-    create: { title: "Create", shortcuts: [] },
-    focus: { title: "Focus", shortcuts: [] },
-    edit: { title: "Edit", shortcuts: [] },
-    other: { title: "Other", shortcuts: [] },
-  };
-
-  shortcuts.forEach((shortcut) => {
-    if (sections[shortcut.section]) {
-      sections[shortcut.section].shortcuts.push(shortcut);
-    }
-  });
-
-  return sections;
-};
+): { id: string; title: string; shortcuts: Shortcut[] }[] =>
+  Object.entries(SECTION_TITLES)
+    .map(([id, title]) => ({
+      id,
+      title,
+      shortcuts: shortcuts.filter((shortcut) => shortcut.section === id),
+    }))
+    .filter((section) => section.shortcuts.length > 0);

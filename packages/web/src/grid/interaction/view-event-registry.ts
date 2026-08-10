@@ -1,4 +1,3 @@
-import { type ForwardedRef } from "react";
 import {
   createEventRegistry,
   type EventRegistry,
@@ -105,22 +104,17 @@ export const createViewInteractionRegistry = (viewName: string) => {
   const useRegistrationRef = ({
     eventId,
     eventType,
-    forwardedRef,
     isEnabled,
-    registry: registryOverride = registry,
   }: {
     eventId: string | undefined;
     eventType: ViewInteractionEventType;
-    forwardedRef?: ForwardedRef<HTMLDivElement>;
     isEnabled: boolean;
-    registry?: ViewEventRegistry;
   }) =>
     useEventRegistrationRef({
       eventId,
       eventType,
-      forwardedRef,
       isEnabled,
-      registry: registryOverride,
+      registry,
     });
 
   return {

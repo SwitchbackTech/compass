@@ -57,7 +57,6 @@ export const useWeekShortcutOwner = ({
   scrollUtil,
 }: ShortcutProps): {
   shiftHints: ActiveShiftHint[];
-  activeDayKeys: string[];
 } => {
   const { data: calendars = [], isPending: isCalendarsPending } =
     useCalendarsQuery();
@@ -202,7 +201,7 @@ export const useWeekShortcutOwner = ({
     onFocusCalendar: focusFirstCalendarEvent,
   });
 
-  const { hints: shiftHints, activeDayKeys } = useShiftHoldEventHints({
+  const { hints: shiftHints } = useShiftHoldEventHints({
     allDayEvents,
     focus: focusWeekGridEventTarget,
     listVisible: listVisibleWeekGridEventTargets,
@@ -210,5 +209,5 @@ export const useWeekShortcutOwner = ({
     timedEvents,
   });
 
-  return { shiftHints, activeDayKeys };
+  return { shiftHints };
 };

@@ -22,17 +22,8 @@ const weekGridEventTargeting =
     targetSelector: TARGET_SELECTOR,
   });
 
-export const setHoveredWeekGridEventTarget =
-  weekGridEventTargeting.setHoveredGridEventTarget;
-
-export const clearHoveredWeekGridEventTarget =
-  weekGridEventTargeting.clearHoveredGridEventTarget;
-
 export const getFocusedWeekGridEventTarget =
   weekGridEventTargeting.getFocusedGridEventTarget;
-
-export const getHoveredWeekGridEventTarget =
-  weekGridEventTargeting.getHoveredGridEventTarget;
 
 export const getFirstVisibleWeekGridEventTarget =
   weekGridEventTargeting.getFirstVisibleGridEventTarget;

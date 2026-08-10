@@ -2,7 +2,7 @@ import { z } from "zod/v4";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { subscribeToStorageKey } from "@web/common/utils/external-store.util";
-import { clearGoogleRevokedState } from "../../google/state/google.auth.state";
+import { clearAllGoogleReconnectRequired } from "../../google/state/google.reconnect.state";
 
 export const AuthStateSchema = z.object({
   hasAuthenticated: z.boolean().default(false),
@@ -91,7 +91,8 @@ export function updateAuthState(updates: Partial<AuthState>): void {
  * Marks that the user has authenticated at least once.
  * Once set, the app prefers RemoteEventRepository when the backend is available.
  * This prevents the UX issue where events disappear after login due to cleared IndexedDB.
- * Also clears any revoked state since user is re-authenticating.
+ * Also clears any per-account reconnect-required overrides since the user is
+ * re-authenticating.
  */
 export function markUserAsAuthenticated(lastKnownEmail?: string): void {
   if (typeof window === "undefined") return;
@@ -100,7 +101,7 @@ export function markUserAsAuthenticated(lastKnownEmail?: string): void {
     hasAuthenticated: true,
     ...(lastKnownEmail ? { lastKnownEmail } : {}),
   });
-  clearGoogleRevokedState();
+  clearAllGoogleReconnectRequired();
 }
 
 /**

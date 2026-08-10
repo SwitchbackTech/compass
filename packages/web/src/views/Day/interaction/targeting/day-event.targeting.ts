@@ -22,17 +22,8 @@ const dayGridEventTargeting = createGridEventTargeting<DayInteractionEventType>(
   },
 );
 
-export const setHoveredDayGridEventTarget =
-  dayGridEventTargeting.setHoveredGridEventTarget;
-
-export const clearHoveredDayGridEventTarget =
-  dayGridEventTargeting.clearHoveredGridEventTarget;
-
 export const getFocusedDayGridEventTarget =
   dayGridEventTargeting.getFocusedGridEventTarget;
-
-export const getHoveredDayGridEventTarget =
-  dayGridEventTargeting.getHoveredGridEventTarget;
 
 export const getFirstVisibleDayGridEventTarget =
   dayGridEventTargeting.getFirstVisibleGridEventTarget;

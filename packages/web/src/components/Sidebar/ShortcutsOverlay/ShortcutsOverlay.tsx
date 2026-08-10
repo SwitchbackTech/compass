@@ -138,7 +138,7 @@ export function ShortcutsOverlay({ sections, viewLabel }: Props) {
           <div className="overflow-y-auto">
             {visibleSections.map((section, index) => (
               <ShortcutSection
-                key={section.id ?? section.title}
+                key={section.id}
                 isFirst={index === 0}
                 title={section.title}
                 shortcuts={section.shortcuts}

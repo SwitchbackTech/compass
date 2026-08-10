@@ -45,7 +45,6 @@ export function useNavigationShortcuts() {
       ignoreInputs: false,
       preventDefault: false,
       stopPropagation: false,
-      conflictBehavior: "allow",
     },
   );
 

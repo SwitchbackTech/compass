@@ -20,10 +20,6 @@ import {
   getDayInteractionTargetAttributes,
   useDayEventRegistrationRef,
 } from "@web/views/Day/interaction/registry/day-event.registry";
-import {
-  clearHoveredDayGridEventTarget,
-  setHoveredDayGridEventTarget,
-} from "@web/views/Day/interaction/targeting/day-event.targeting";
 
 interface DayEventCardProps {
   calendarIdentity?: CalendarCardIdentity | null;
@@ -99,14 +95,6 @@ export const DayAllDayCalendarEvent = ({
       isPlaceholder={isPlaceholder}
       onEventKeyDown={onOpenEvent}
       onEventMouseDown={onEventMouseDown}
-      onMouseEnter={(mouseEvent) => {
-        if (!isRegisteredForDragResize) return;
-
-        setHoveredDayGridEventTarget(mouseEvent.currentTarget);
-      }}
-      onMouseLeave={(mouseEvent) => {
-        clearHoveredDayGridEventTarget(mouseEvent.currentTarget);
-      }}
       position={{
         ...position,
         zIndex: isActiveDraft
@@ -197,14 +185,6 @@ export const DayTimedCalendarEvent = ({
       onEventKeyDown={onOpenEvent}
       onEventMouseDown={onEventMouseDown}
       onFocus={isDeck ? () => setIsFocused(true) : undefined}
-      onMouseEnter={(mouseEvent) => {
-        if (!isRegisteredForDragResize) return;
-
-        setHoveredDayGridEventTarget(mouseEvent.currentTarget);
-      }}
-      onMouseLeave={(mouseEvent) => {
-        clearHoveredDayGridEventTarget(mouseEvent.currentTarget);
-      }}
       position={{ ...position, zIndex }}
       ref={registrationRef}
     />
