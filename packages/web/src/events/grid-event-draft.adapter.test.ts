@@ -306,6 +306,20 @@ test("a patch that echoes the hydrated rule unchanged keeps the draft's recurren
   });
 });
 
+test("a patch with semantically equal INTERVAL=1 drift keeps preserve", () => {
+  const draft = editGridEventDraft(occurrenceEvent);
+  if (!draft) throw new Error("Expected scheduled event draft");
+
+  // SERIES_RULES omit INTERVAL; the form rebuild re-emits INTERVAL=1.
+  const updated = patchGridDraftRecurrence(
+    draft,
+    ["RRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,TU,WE"],
+    SERIES_RULES,
+  );
+
+  expect(updated.values.recurrence).toEqual({ kind: "preserve" });
+});
+
 test("a patch with a genuinely different rule converts the draft to an explicit series edit", () => {
   const draft = editGridEventDraft(occurrenceEvent);
   if (!draft) throw new Error("Expected scheduled event draft");

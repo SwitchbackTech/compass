@@ -1,4 +1,5 @@
-import fastDeepEqual from "fast-deep-equal/react";
+import { ObjectId } from "bson";
+import { type Weekday } from "rrule";
 import { Origin } from "@core/constants/core.constants";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
@@ -10,6 +11,7 @@ import {
 } from "@core/types/event-color.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
@@ -341,6 +343,85 @@ export function resolveDraftRecurrenceRules(
   return Array.isArray(rule) ? [...rule] : [];
 }
 
+export function scheduleDatesFromDraft(draft: GridEventDraft) {
+  const { schedule } = draft.values;
+
+  if (schedule.kind === "allDay") {
+    return {
+      startDate: dayjs(schedule.start).toYearMonthDayString(),
+      endDate: dayjs(schedule.end).toYearMonthDayString(),
+    };
+  }
+
+  return {
+    startDate:
+      dayjs(schedule.start).format() || dayjs().toRFC3339OffsetString(),
+    endDate:
+      dayjs(schedule.end).format() ||
+      dayjs().add(1, "hour").toRFC3339OffsetString(),
+  };
+}
+
+const weekdayNumber = (day: number | Weekday): number =>
+  typeof day === "number" ? day : day.weekday;
+
+const sortedByweekday = (
+  byweekday: Array<number | Weekday> | null | undefined,
+): number[] => (byweekday ?? []).map(weekdayNumber).sort((a, b) => a - b);
+
+const normalizedCount = (count: number | null | undefined): number | null =>
+  count == null || count === 0 ? null : count;
+
+const untilEqual = (a: Date | null | undefined, b: Date | null | undefined) => {
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  return dayjs(a).isSame(b);
+};
+
+// Pattern-only RRULE equality for open-for-edit / patch: ignore serialization
+// drift (INTERVAL=1, WKST defaults, param/BYDAY order) and never treat the
+// occurrence's clicked dtstart as a recurrence edit.
+export function recurrenceRulesSemanticallyEqual(
+  a: readonly string[],
+  b: readonly string[],
+  dates: { startDate: string; endDate: string },
+): boolean {
+  if (a.length === 0 && b.length === 0) return true;
+  if (a.length === 0 || b.length === 0) return false;
+
+  const shell = {
+    _id: new ObjectId(),
+    startDate: dates.startDate,
+    endDate: dates.endDate,
+  };
+  const optsA = new CompassEventRRule({
+    ...shell,
+    recurrence: { rule: [...a] },
+  }).options;
+  const optsB = new CompassEventRRule({
+    ...shell,
+    recurrence: { rule: [...b] },
+  }).options;
+
+  return (
+    optsA.freq === optsB.freq &&
+    (optsA.interval ?? 1) === (optsB.interval ?? 1) &&
+    byweekdayEqual(optsA.byweekday, optsB.byweekday) &&
+    normalizedCount(optsA.count) === normalizedCount(optsB.count) &&
+    untilEqual(optsA.until, optsB.until)
+  );
+}
+
+function byweekdayEqual(
+  a: Array<number | Weekday> | null | undefined,
+  b: Array<number | Weekday> | null | undefined,
+): boolean {
+  const left = sortedByweekday(a);
+  const right = sortedByweekday(b);
+  if (left.length !== right.length) return false;
+  return left.every((value, index) => value === right[index]);
+}
+
 // The draft renders its own recurrence preview separately (Draft.tsx's
 // getRecurringDraftPreviews), but the *saved* sibling occurrences of the
 // series being edited still come through the normal week query and render
@@ -371,7 +452,11 @@ export function patchGridDraftRecurrence(
   seriesRules?: readonly string[],
 ): GridEventDraft {
   const currentRules = resolveDraftRecurrenceRules(draft, seriesRules);
-  const ruleUnchanged = fastDeepEqual(currentRules, [...nextRules]);
+  const ruleUnchanged = recurrenceRulesSemanticallyEqual(
+    currentRules,
+    nextRules,
+    scheduleDatesFromDraft(draft),
+  );
   // Only useRecurrence calls this, and only with an explicit user edit (a
   // weekday/frequency/until change, or the Repeat toggle turned off) - a
   // draft that hasn't touched recurrence never reaches here, so it keeps
