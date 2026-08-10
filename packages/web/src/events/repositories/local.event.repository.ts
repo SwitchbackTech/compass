@@ -1,4 +1,8 @@
-import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
+import {
+  DateOnlySchema,
+  DateTimeSchema,
+  type EventId,
+} from "@core/types/domain-primitives";
 import { type Event, type EventSchedule } from "@core/types/event.contracts";
 import {
   type CreateEventInput,
@@ -145,9 +149,13 @@ function shiftSeriesScheduleByOccurrenceEdit(
   }
   return {
     kind: "allDay",
-    start: dayjs(base.start).add(startDeltaDays, "day").format("YYYY-MM-DD"),
-    end: dayjs(base.end).add(endDeltaDays, "day").format("YYYY-MM-DD"),
-  } as EventSchedule;
+    start: DateOnlySchema.parse(
+      dayjs(base.start).add(startDeltaDays, "day").format("YYYY-MM-DD"),
+    ),
+    end: DateOnlySchema.parse(
+      dayjs(base.end).add(endDeltaDays, "day").format("YYYY-MM-DD"),
+    ),
+  };
 }
 
 // A series record's recurrence is guaranteed `kind === "series"` by the

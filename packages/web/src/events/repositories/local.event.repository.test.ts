@@ -637,11 +637,11 @@ describe("LocalEventRepository", () => {
       .sort();
 
     expect(instanceStarts).toEqual([
-      "2026-05-05",
-      "2026-05-06",
-      "2026-05-07",
-      "2026-05-08",
-      "2026-05-09",
+      DateOnlySchema.parse("2026-05-05"),
+      DateOnlySchema.parse("2026-05-06"),
+      DateOnlySchema.parse("2026-05-07"),
+      DateOnlySchema.parse("2026-05-08"),
+      DateOnlySchema.parse("2026-05-09"),
     ]);
     expect(stored.some((entry) => entry.id.includes("::"))).toBe(false);
   });
