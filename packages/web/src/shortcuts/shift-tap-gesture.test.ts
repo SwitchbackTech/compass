@@ -1,4 +1,5 @@
 import { clearAppLockReasons } from "@web/shortcuts/app-lock";
+import { SHIFT_TAP_MAX_HOLD_MS } from "@web/shortcuts/shift-hint/shift-hold-detector";
 import {
   resetSharedShiftTapGesture,
   subscribeToShiftTapGesture,
@@ -37,7 +38,7 @@ describe("shift-tap-gesture", () => {
     resetSharedShiftTapGesture();
   });
 
-  it("notifies every subscriber of a single tap", () => {
+  it("notifies every subscriber of press then single tap", () => {
     const events: string[] = [];
     const unsubscribeA = subscribeToShiftTapGesture((event) =>
       events.push(`a:${event.type}`),
@@ -48,7 +49,12 @@ describe("shift-tap-gesture", () => {
 
     tapShift();
 
-    expect(events).toEqual(["a:singleTap", "b:singleTap"]);
+    expect(events).toEqual([
+      "a:press",
+      "b:press",
+      "a:singleTap",
+      "b:singleTap",
+    ]);
 
     unsubscribeA();
     unsubscribeB();
@@ -63,12 +69,12 @@ describe("shift-tap-gesture", () => {
     tapShift();
     tapShift();
 
-    expect(events).toEqual(["singleTap", "doubleTap"]);
+    expect(events).toEqual(["press", "singleTap", "doubleTap"]);
 
     unsubscribe();
   });
 
-  it("never toggles on a Shift chord", () => {
+  it("cancels an optimistic press on a Shift chord", () => {
     const events: string[] = [];
     const unsubscribe = subscribeToShiftTapGesture((event) =>
       events.push(event.type),
@@ -79,7 +85,22 @@ describe("shift-tap-gesture", () => {
     dispatch("keyup", "j", { shiftKey: true });
     dispatch("keyup", "Shift");
 
-    expect(events).toEqual([]);
+    expect(events).toEqual(["press", "cancel"]);
+
+    unsubscribe();
+  });
+
+  it("cancels an optimistic press once the hold threshold elapses", async () => {
+    const events: string[] = [];
+    const unsubscribe = subscribeToShiftTapGesture((event) =>
+      events.push(event.type),
+    );
+
+    dispatch("keydown", "Shift");
+    await Bun.sleep(SHIFT_TAP_MAX_HOLD_MS + 20);
+    dispatch("keyup", "Shift");
+
+    expect(events).toEqual(["press", "cancel"]);
 
     unsubscribe();
   });
