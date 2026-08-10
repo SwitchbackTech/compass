@@ -11,7 +11,6 @@
  * and turns hints back off).
  */
 
-import { useEffect, useRef } from "react";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { isAppLocked } from "@web/shortcuts/app-lock";
 import {
@@ -114,27 +113,4 @@ export function subscribeToShiftTapGesture(
  */
 export function resetSharedShiftTapGesture(): void {
   gestureState = createShiftJumpGestureState();
-}
-
-export function useSharedShiftTapGesture({
-  onSingleTap,
-  onDoubleTap,
-}: {
-  onSingleTap?: () => void;
-  onDoubleTap?: () => void;
-}): void {
-  const onSingleTapRef = useRef(onSingleTap);
-  const onDoubleTapRef = useRef(onDoubleTap);
-  onSingleTapRef.current = onSingleTap;
-  onDoubleTapRef.current = onDoubleTap;
-
-  useEffect(() => {
-    return subscribeToShiftTapGesture((event) => {
-      if (event.type === "singleTap") {
-        onSingleTapRef.current?.();
-      } else {
-        onDoubleTapRef.current?.();
-      }
-    });
-  }, []);
 }
