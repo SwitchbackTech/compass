@@ -1,6 +1,9 @@
 import { type FC } from "react";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { getSidebarSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
+import {
+  getSidebarSyncStatus,
+  SSE_DEGRADED_STATUS,
+} from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
 import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
@@ -22,6 +25,7 @@ import {
   selectEventJumpAnnouncement,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
+import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
 
 /**
  * Pinned status bar at the bottom of the sidebar, just above the actions bar.
@@ -51,15 +55,20 @@ export const SidebarStatusBar: FC = () => {
   // established and should stay quiet.
   const { connection, isConnecting, state } = useConnectGoogle();
   const refreshSnapshot = useGoogleSyncRefreshSnapshot();
+  const sseDegraded = useSseDegraded();
+  const syncStatus = getSidebarSyncStatus({
+    connection,
+    isConnecting,
+    state,
+    refreshGaveUp: refreshSnapshot.gaveUp,
+    refreshInFlight: refreshSnapshot.isRefreshing,
+  });
+  // sseDegraded only fills in when sync itself has nothing to say (a silent
+  // "healthy" null) - a real reconnect/attention/importing status is always
+  // more useful and must not be preempted by the live-updates warning.
   const status = isSaving
     ? { variant: "syncing" as const, text: "Saving changes…" }
-    : getSidebarSyncStatus({
-        connection,
-        isConnecting,
-        state,
-        refreshGaveUp: refreshSnapshot.gaveUp,
-        refreshInFlight: refreshSnapshot.isRefreshing,
-      });
+    : (syncStatus ?? (sseDegraded ? SSE_DEGRADED_STATUS : null));
 
   const text = status?.text ?? "";
 

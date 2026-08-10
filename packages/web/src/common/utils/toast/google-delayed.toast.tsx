@@ -52,3 +52,10 @@ export function showGoogleDelayedToast(): Id {
     },
   );
 }
+
+// The toast is CRITICAL severity (autoClose: false, closeOnClick: false) so
+// it never disappears on its own - without this, it can sit on screen after
+// the connection is healthy again, contradicting its own "delayed" copy.
+export function dismissGoogleDelayedToast(): void {
+  getToast().dismiss(GOOGLE_DELAYED_TOAST_ID);
+}

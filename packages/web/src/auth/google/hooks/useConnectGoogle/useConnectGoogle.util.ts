@@ -39,6 +39,15 @@ const CONNECTED_STATUS: SyncStatus = {
   text: "Calendar connected",
 };
 
+// Shown instead of CONNECTED_STATUS (never over a reconnect/attention/syncing
+// status - those already say something more urgent) when the live SSE stream
+// has been down long enough that "connected" and its freshness timestamp can
+// no longer be trusted. See useSseDegraded / sse.client.ts.
+export const SSE_DEGRADED_STATUS: SyncStatus = {
+  variant: "warning",
+  text: "Reconnecting live updates…",
+};
+
 // Plain backlog under this age stays silent in the sidebar and reads as
 // connected in Settings. Matches the short provider-error delay band so a
 // freshly clicked Refresh does not invent its own warning.

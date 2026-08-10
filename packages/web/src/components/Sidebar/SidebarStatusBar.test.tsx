@@ -46,8 +46,18 @@ mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
 // later/parallel suites (LifeView hung under CI). The real coordinator
 // starts idle, which is what these cases need.
 
+let isSseDegraded = false;
+let isSseDegradedMocked = true;
+const actualUseSseDegraded = (await import("@web/sse/hooks/useSseDegraded"))
+  .useSseDegraded;
+mock.module("@web/sse/hooks/useSseDegraded", () => ({
+  useSseDegraded: () =>
+    isSseDegradedMocked ? isSseDegraded : actualUseSseDegraded(),
+}));
+
 afterAll(() => {
   isConnectGoogleMocked = false;
+  isSseDegradedMocked = false;
 });
 
 const statusBarModuleUrl = new URL(
@@ -63,6 +73,7 @@ describe("SidebarStatusBar", () => {
     googleState = "HEALTHY";
     isConnecting = false;
     connection = null;
+    isSseDegraded = false;
   });
 
   it("shows 'Saving changes…' when a mutation is pending", () => {
@@ -211,5 +222,45 @@ describe("SidebarStatusBar", () => {
     render(<SidebarStatusBar />, { wrapper });
 
     expect(screen.getByRole("status").textContent).toBe("");
+  });
+
+  it("shows a live-updates warning when SSE is degraded and sync is otherwise silent", () => {
+    googleState = "HEALTHY";
+    isSseDegraded = true;
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Reconnecting live updates…",
+    );
+  });
+
+  it("does not let the live-updates warning preempt a real sync problem", () => {
+    googleState = "ATTENTION";
+    isSseDegraded = true;
+    connection = createMockConnection("ahab@pequod.com", {
+      state: "delayed",
+      stateReason: "workOverdue",
+      connectionState: "ATTENTION",
+    });
+    const { wrapper } = createStoreWrapper();
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Calendar updates are delayed",
+    );
+    expect(screen.queryByText("Reconnecting live updates…")).toBeNull();
+  });
+
+  it("prefers 'Saving changes…' over the live-updates warning when both are true", () => {
+    isSseDegraded = true;
+    const { queryClient, wrapper } = createStoreWrapper();
+    seedPendingEventMutations(queryClient, ["event-1"]);
+
+    render(<SidebarStatusBar />, { wrapper });
+
+    expect(screen.getByRole("status")).toHaveTextContent("Saving changes…");
   });
 });

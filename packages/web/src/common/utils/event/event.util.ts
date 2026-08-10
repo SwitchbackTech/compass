@@ -12,7 +12,10 @@ import { type ApiError } from "@web/api/api.types";
 import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 import { getUserId } from "@web/auth/compass/session/session.util";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
-import { GENERIC_ERROR_TOAST_ID } from "@web/common/constants/toast.constants";
+import {
+  EVENT_SAVE_UNAVAILABLE_TOAST_ID,
+  GENERIC_ERROR_TOAST_ID,
+} from "@web/common/constants/toast.constants";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Categories_Event,
@@ -219,6 +222,16 @@ const showCatchallToast = (message: string) =>
 
 export const handleError = (error: Error) => {
   if (isBackendUnavailableError(error)) {
+    // No HTTP response reached us at all (offline, DNS, dropped connection)
+    // or a 502/503/504 - the optimistic edit is about to roll back with
+    // nothing else on screen to explain why. The BackendDownView full-page
+    // gate only covers a SUSTAINED outage (and only for authenticated users);
+    // this covers the single failed save, including a transient blip that
+    // never trips the page-level gate at all.
+    showErrorToast(
+      "Couldn't save - check your connection. Your change was not applied.",
+      { toastId: EVENT_SAVE_UNAVAILABLE_TOAST_ID },
+    );
     return;
   }
 
