@@ -5,12 +5,14 @@ import {
   DateOnlySchema,
   DateTimeSchema,
   type EventId,
+  EventIdSchema,
 } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import {
   type CreateEventInput,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
+import { composeOccurrenceId } from "@core/util/occurrence-id";
 import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { afterAll, afterEach, describe, expect, mock, test } from "bun:test";
 
@@ -43,6 +45,7 @@ import {
   recurrenceScopeOpportunityActions,
   useRecurrenceScopeOpportunityStore,
 } from "@web/events/recurrence/recurrence-scope-opportunity.store";
+import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import {
   runHistoryRestore,
@@ -51,11 +54,14 @@ import {
 import { useEventMutations } from "./useEventMutations";
 import { useHasPendingEventMutations } from "./useEventPending";
 
-const calendarKey = eventQueryKeys.week({
-  source: "local",
-  start: "2026-07-01T00:00:00.000Z",
-  end: "2026-07-08T00:00:00.000Z",
-});
+const calendarKeyFor = (source: EventRepositorySource) =>
+  eventQueryKeys.week({
+    source,
+    start: "2026-07-01T00:00:00.000Z",
+    end: "2026-07-08T00:00:00.000Z",
+  });
+
+const calendarKey = calendarKeyFor("local");
 
 const dayKey = eventQueryKeys.day({
   source: "local",
@@ -70,6 +76,12 @@ const timedSchedule = (start: string, end: string) => ({
   timeZone: "UTC" as never,
 });
 
+const allDaySchedule = (start: string, end: string) => ({
+  kind: "allDay" as const,
+  start: DateOnlySchema.parse(start),
+  end: DateOnlySchema.parse(end),
+});
+
 const event = (overrides: Partial<Event> = {}): Event =>
   createMockEvent({
     content: { kind: "details", title: "Original", description: "" },
@@ -82,6 +94,28 @@ const event = (overrides: Partial<Event> = {}): Event =>
 
 const occurrence = (seriesId: EventId, overrides: Partial<Event> = {}): Event =>
   event({ recurrence: { kind: "occurrence", seriesId }, ...overrides });
+
+const composedOccurrence = (
+  seriesId: EventId,
+  recurrenceId: string,
+  overrides: Partial<Event> = {},
+): Event =>
+  occurrence(seriesId, {
+    id: EventIdSchema.parse(
+      composeOccurrenceId({ eventId: seriesId, recurrenceId }),
+    ),
+    ...overrides,
+  });
+
+const seriesMaster = (
+  seriesId: EventId,
+  overrides: Partial<Event> = {},
+): Event =>
+  event({
+    id: seriesId,
+    recurrence: { kind: "series", rules: ["RRULE:FREQ=DAILY;COUNT=5"] },
+    ...overrides,
+  });
 
 const normalized = (...events: Event[]): NormalizedEventQueryData => ({
   ids: events.map(({ id }) => id),
@@ -122,7 +156,7 @@ const pendingControl = () => {
   };
 };
 
-const setup = () => {
+const setup = (source: EventRepositorySource = "local") => {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
   });
@@ -153,7 +187,7 @@ const setup = () => {
   const hook = renderHook(
     () => ({
       mutations: useEventMutations({
-        source: "local",
+        source,
         repository,
         markWrite: async () => markedWrites.push("marked"),
         reportError: (error) => errors.push(error),
@@ -162,7 +196,7 @@ const setup = () => {
     }),
     { wrapper },
   );
-  return { calls, errors, hook, markedWrites, pending, queryClient };
+  return { calls, errors, hook, markedWrites, pending, queryClient, source };
 };
 
 const replacePayload = (
@@ -312,6 +346,195 @@ describe("useEventMutations", () => {
           id: first.id,
           input: expect.objectContaining({ scope: "all" }),
         }),
+      });
+    });
+    context.pending.resolve();
+  });
+
+  test("remote promote all rebases a middle timed occurrence onto the series master", async () => {
+    const context = setup("remote");
+    const remoteKey = calendarKeyFor("remote");
+    const seriesId = EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa");
+    const master = seriesMaster(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-01T16:00:00.000Z",
+        "2026-07-01T17:00:00.000Z",
+      ),
+    });
+    const middle = composedOccurrence(seriesId, "2026-07-03T16:00:00.000Z", {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    const moved = timedSchedule(
+      "2026-07-04T16:00:00.000Z",
+      "2026-07-04T17:00:00.000Z",
+    );
+    context.queryClient.setQueryData(remoteKey, normalized(master, middle));
+
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(middle.id, {
+          content: {
+            kind: "details",
+            title: "Nudged",
+            description: "",
+            location: "",
+          },
+          schedule: moved,
+        }),
+      ),
+    );
+    const opportunity =
+      useRecurrenceScopeOpportunityStore.getState().opportunity;
+    if (!opportunity || opportunity.kind !== "replace") {
+      throw new Error("Expected a recurrence edit opportunity");
+    }
+
+    act(() =>
+      context.hook.result.current.mutations.promoteRecurring(
+        opportunity,
+        "all",
+      ),
+    );
+
+    await waitFor(() => expect(context.calls).toHaveLength(1));
+    act(() => context.pending.resolveNext());
+    await waitFor(() => {
+      expect(context.calls).toContainEqual({
+        method: "replace",
+        value: {
+          id: middle.id,
+          input: expect.objectContaining({
+            scope: "all",
+            schedule: timedSchedule(
+              "2026-07-02T16:00:00+00:00",
+              "2026-07-02T17:00:00+00:00",
+            ),
+          }),
+        },
+      });
+    });
+    context.pending.resolve();
+  });
+
+  test("remote promote all rebases a middle all-day occurrence onto the series master", async () => {
+    const context = setup("remote");
+    const remoteKey = calendarKeyFor("remote");
+    const seriesId = EventIdSchema.parse("bbbbbbbbbbbbbbbbbbbbbbbb");
+    const master = seriesMaster(seriesId, {
+      schedule: allDaySchedule("2026-07-01", "2026-07-02"),
+    });
+    const middle = composedOccurrence(seriesId, "2026-07-03T00:00:00.000Z", {
+      schedule: allDaySchedule("2026-07-03", "2026-07-04"),
+    });
+    const moved = allDaySchedule("2026-07-04", "2026-07-05");
+    context.queryClient.setQueryData(remoteKey, normalized(master, middle));
+
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(middle.id, {
+          content: {
+            kind: "details",
+            title: "All-day nudged",
+            description: "",
+            location: "",
+          },
+          schedule: moved,
+        }),
+      ),
+    );
+    const opportunity =
+      useRecurrenceScopeOpportunityStore.getState().opportunity;
+    if (!opportunity || opportunity.kind !== "replace") {
+      throw new Error("Expected a recurrence edit opportunity");
+    }
+
+    act(() =>
+      context.hook.result.current.mutations.promoteRecurring(
+        opportunity,
+        "all",
+      ),
+    );
+
+    await waitFor(() => expect(context.calls).toHaveLength(1));
+    act(() => context.pending.resolveNext());
+    await waitFor(() => {
+      expect(context.calls).toContainEqual({
+        method: "replace",
+        value: {
+          id: middle.id,
+          input: expect.objectContaining({
+            scope: "all",
+            schedule: allDaySchedule("2026-07-02", "2026-07-03"),
+          }),
+        },
+      });
+    });
+    context.pending.resolve();
+  });
+
+  test("remote promote thisAndFollowing keeps the occurrence absolute schedule", async () => {
+    const context = setup("remote");
+    const remoteKey = calendarKeyFor("remote");
+    const seriesId = EventIdSchema.parse("cccccccccccccccccccccccc");
+    const master = seriesMaster(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-01T16:00:00.000Z",
+        "2026-07-01T17:00:00.000Z",
+      ),
+    });
+    const middle = composedOccurrence(seriesId, "2026-07-03T16:00:00.000Z", {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    const moved = timedSchedule(
+      "2026-07-04T16:00:00.000Z",
+      "2026-07-04T17:00:00.000Z",
+    );
+    context.queryClient.setQueryData(remoteKey, normalized(master, middle));
+
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(middle.id, {
+          content: {
+            kind: "details",
+            title: "Split nudge",
+            description: "",
+            location: "",
+          },
+          schedule: moved,
+        }),
+      ),
+    );
+    const opportunity =
+      useRecurrenceScopeOpportunityStore.getState().opportunity;
+    if (!opportunity || opportunity.kind !== "replace") {
+      throw new Error("Expected a recurrence edit opportunity");
+    }
+
+    act(() =>
+      context.hook.result.current.mutations.promoteRecurring(
+        opportunity,
+        "thisAndFollowing",
+      ),
+    );
+
+    await waitFor(() => expect(context.calls).toHaveLength(1));
+    act(() => context.pending.resolveNext());
+    await waitFor(() => {
+      expect(context.calls).toContainEqual({
+        method: "replace",
+        value: {
+          id: middle.id,
+          input: expect.objectContaining({
+            scope: "thisAndFollowing",
+            schedule: moved,
+          }),
+        },
       });
     });
     context.pending.resolve();

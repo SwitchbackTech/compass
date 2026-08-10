@@ -5,13 +5,19 @@ import {
 } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
-import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
+import {
+  DateTimeSchema,
+  type EventId,
+  EventIdSchema,
+} from "@core/types/domain-primitives";
 import { type Event, type EventRecurrence } from "@core/types/event.contracts";
 import {
   type CreateEventInput,
   type RecurrenceScope,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
+import { shiftSeriesScheduleByOccurrenceEdit } from "@core/util/event/shift-series-schedule-by-occurrence-edit";
+import { decodeOccurrenceId } from "@core/util/occurrence-id";
 import { isCalendarReconnectRequired } from "@web/auth/google/state/google.reconnect.calendar";
 import { track } from "@web/auth/posthog/track";
 import {
@@ -141,6 +147,36 @@ function seriesIdOf(event: Event | null | undefined): EventId | null {
   if (event?.recurrence.kind === "occurrence") return event.recurrence.seriesId;
   if (event?.recurrence.kind === "series") return event.id;
   return null;
+}
+
+// Remote/sync treat scope-"all" schedule as the series master. The client
+// still sends an occurrence's absolute schedule (same shape local IndexedDB
+// rebases in replaceSeries), so rebase onto the cached master before submit.
+// thisAndFollowing keeps the absolute schedule as remainder DTSTART.
+// Local source skips this — LocalEventRepository already applies the delta.
+function resolveRemoteReplaceSchedule(
+  queryClient: ReturnType<typeof useQueryClient>,
+  source: EventRepositorySource,
+  id: EventId,
+  input: ReplaceEventInput,
+): ReplaceEventInput {
+  if (source !== "remote" || input.scope !== "all") return input;
+
+  const parts = decodeOccurrenceId(id);
+  if (!parts) return input;
+
+  const seriesId = EventIdSchema.parse(parts.eventId);
+  const master = findEventInCache(queryClient, seriesId, source);
+  if (master?.recurrence.kind !== "series") return input;
+
+  return {
+    ...input,
+    schedule: shiftSeriesScheduleByOccurrenceEdit(
+      master.schedule,
+      parts.recurrenceId,
+      input.schedule,
+    ),
+  };
 }
 
 // A create's optimistic insert needs a full Event before the server response
@@ -525,15 +561,23 @@ export function useEventMutations(
     buildMutation<ReplaceVariables>(
       "replace",
       async (variables) => {
+        const input = resolveRemoteReplaceSchedule(
+          queryClient,
+          source,
+          variables.id,
+          variables.input,
+        );
         await writeAfterPreceding(
           variables.writeKey,
+          // Must be the exact variables object mutate registered — a spread
+          // clone cannot identify this mutation in the serialization queue.
           variables,
           precedingCreateOk,
           // Same wire-boundary strip as create, see its comment above.
           () =>
             repository.replace(variables.id, {
-              ...variables.input,
-              content: editableContent(variables.input.content),
+              ...input,
+              content: editableContent(input.content),
             }),
           // A promotion replays the saved occurrence mutation at a broader
           // scope. It must reach the repository even if a later narrow edit
