@@ -261,7 +261,9 @@ export function useOnboardingTourProgress() {
   }, [isActive, stepId]);
 
   // ESC skips the tour unless the current lesson is mid-overlay dismiss
-  // (palette / shortcuts). Capture so we win over the form Escape handler.
+  // (palette / shortcuts), or a leftover form is still open on the palette
+  // step after E-then-T. Capture so we win over unrelated lower handlers;
+  // create/save still exit the tour even with the form open.
   useEffect(() => {
     if (!isActive) return;
 
@@ -270,16 +272,14 @@ export function useOnboardingTourProgress() {
       if (event.defaultPrevented) return;
 
       const { stepId: currentStep } = useOnboardingTourStore.getState();
-      if (
-        currentStep === "palette" &&
-        selectIsCmdPaletteOpen(useSettingsStore.getState())
-      ) {
+      const paletteOpen = selectIsCmdPaletteOpen(useSettingsStore.getState());
+      const shortcutsOpen = selectIsShortcutsOpen(useViewStore.getState());
+      const formOpen = selectIsEventFormOpen(useDraftStore.getState());
+
+      if (currentStep === "palette" && (paletteOpen || formOpen)) {
         return;
       }
-      if (
-        currentStep === "shortcuts" &&
-        selectIsShortcutsOpen(useViewStore.getState())
-      ) {
+      if (currentStep === "shortcuts" && shortcutsOpen) {
         return;
       }
 

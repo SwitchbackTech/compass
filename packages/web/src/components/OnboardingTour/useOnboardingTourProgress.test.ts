@@ -191,6 +191,33 @@ describe("useOnboardingTourProgress navigation and Escape", () => {
     });
   });
 
+  it("lets Escape close a leftover form during the palette lesson", async () => {
+    const { draftActions, initialDraftState, useDraftStore } = await import(
+      "@web/events/stores/draft.store"
+    );
+
+    useDraftStore.setState({
+      ...initialDraftState,
+      gridDraft: { id: "draft" } as never,
+      status: {
+        activity: "keyboardEdit",
+        eventType: "timed",
+        isDrafting: true,
+        isFormOpen: true,
+      } as never,
+    });
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    act(() => {
+      dispatchKey("Escape");
+    });
+
+    expect(useOnboardingTourStore.getState().isActive).toBe(true);
+    expect(useOnboardingTourStore.getState().stepId).toBe("palette");
+
+    draftActions.discard();
+  });
+
   it("lets Escape close the open palette during the palette lesson", async () => {
     renderHook(() => useOnboardingTourProgress(), { wrapper });
 
