@@ -31,7 +31,16 @@ test("Start Now runs the interactive tour happy path", async ({ page }) => {
   await page.keyboard.press("ArrowRight");
   await expect(card).toContainText("Jump straight to a field");
 
-  // E then T is the edit sequence; it reopens the form on the title field.
+  // E then T is the edit sequence; it acts on whichever event has DOM
+  // focus. There is only one event on the calendar, so the ArrowRight
+  // above (there being no adjacent event to move to) may not have kept
+  // focus on it -- refocus it explicitly, mirroring
+  // e2e/timed/edit-sequence-title.spec.ts.
+  const eventButton = page
+    .locator("#mainGrid")
+    .getByRole("button", { name: title });
+  await eventButton.focus();
+
   await page.keyboard.press("e");
   await page.keyboard.press("t");
   await expect(card).toContainText("Open the command palette");
