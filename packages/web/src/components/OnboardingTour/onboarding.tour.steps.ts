@@ -1,11 +1,11 @@
 import { getModifierKeyLabel } from "@web/shortcuts/shortcut.util";
 
-export type OnboardingTourStepId =
-  | "create"
-  | "save"
-  | "palette"
-  | "shortcuts"
-  | "done";
+/** Single source of truth for step order; the type and id list below derive from it. */
+const STEP_IDS = ["create", "save", "palette", "shortcuts", "done"] as const;
+
+export type OnboardingTourStepId = (typeof STEP_IDS)[number];
+
+export const ONBOARDING_TOUR_STEP_IDS: OnboardingTourStepId[] = [...STEP_IDS];
 
 export type OnboardingTourStep = {
   id: OnboardingTourStepId;
@@ -15,48 +15,40 @@ export type OnboardingTourStep = {
   shortcutHint?: string;
 };
 
-export const ONBOARDING_TOUR_STEP_IDS: OnboardingTourStepId[] = [
-  "create",
-  "save",
-  "palette",
-  "shortcuts",
-  "done",
-];
-
 export function getOnboardingTourSteps(): OnboardingTourStep[] {
   const mod = getModifierKeyLabel();
-  return [
-    {
-      id: "create",
+  const content: Record<
+    OnboardingTourStepId,
+    Omit<OnboardingTourStep, "id">
+  > = {
+    create: {
       title: "Create with the keyboard",
       body: "Press C to start a timed event. You can also click the grid, but the keys are faster.",
       shortcutHint: "C",
     },
-    {
-      id: "save",
+    save: {
       title: "Name it and save",
       body: "Type a title, then press Enter to save. Changes show up instantly.",
       shortcutHint: "Enter",
     },
-    {
-      id: "palette",
+    palette: {
       title: "Open the command palette",
       body: `Press ${mod}+K for commands. Browse or search, then close with Escape.`,
       shortcutHint: `${mod}+K`,
     },
-    {
-      id: "shortcuts",
+    shortcuts: {
       title: "Browse every shortcut",
       body: "Press ? from the calendar to open the shortcut legend. Search it anytime you forget a key.",
       shortcutHint: "?",
     },
-    {
-      id: "done",
+    done: {
       title: "You are ready",
       body: "You can do anything with the keyboard. Try Shift Shift to practice; clicks stay off until you exit. Sample events are already on your calendar. Reopen this tour from the command palette anytime.",
       shortcutHint: "Shift Shift",
     },
-  ];
+  };
+
+  return STEP_IDS.map((id) => ({ id, ...content[id] }));
 }
 
 export function getNextOnboardingStepId(
