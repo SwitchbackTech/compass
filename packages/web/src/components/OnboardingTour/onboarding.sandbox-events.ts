@@ -30,15 +30,18 @@ export function isSandboxStep(stepId: OnboardingTourStepId): boolean {
 const sandboxEventId = (suffix: string) =>
   EventIdSchema.parse(`sandbox-${suffix}`);
 
+const SANDBOX_FOCUS_EVENT_IDS: Partial<Record<OnboardingTourStepId, string>> = {
+  editSequence: sandboxEventId("editSequence-1"),
+  moveFocus: sandboxEventId("moveFocus-1"),
+  nudge: sandboxEventId("nudge-1"),
+  targetEvent: sandboxEventId("targetEvent-1"),
+};
+
 /** Primary practice event to auto-focus when a sandbox step starts. */
 export function getSandboxFocusEventId(
   stepId: OnboardingTourStepId,
 ): string | undefined {
-  if (stepId === "editSequence") return sandboxEventId("editSequence-1");
-  if (stepId === "nudge") return sandboxEventId("nudge-1");
-  if (stepId === "targetEvent") return sandboxEventId("targetEvent-1");
-  if (stepId === "moveFocus") return sandboxEventId("moveFocus-1");
-  return undefined;
+  return SANDBOX_FOCUS_EVENT_IDS[stepId];
 }
 
 /** True when a focused calendar event id belongs to the targetEvent lesson. */

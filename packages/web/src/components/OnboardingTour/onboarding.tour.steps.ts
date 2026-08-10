@@ -19,7 +19,8 @@ const STEP_IDS = [
 
 export type OnboardingTourStepId = (typeof STEP_IDS)[number];
 
-export const ONBOARDING_TOUR_STEP_IDS: OnboardingTourStepId[] = [...STEP_IDS];
+export const ONBOARDING_TOUR_STEP_IDS: readonly OnboardingTourStepId[] =
+  STEP_IDS;
 
 export type OnboardingTourStep = {
   id: OnboardingTourStepId;
@@ -99,17 +100,17 @@ export function getOnboardingTourSteps(): OnboardingTourStep[] {
 export function getNextOnboardingStepId(
   current: OnboardingTourStepId,
 ): OnboardingTourStepId | null {
-  const index = ONBOARDING_TOUR_STEP_IDS.indexOf(current);
-  if (index < 0 || index >= ONBOARDING_TOUR_STEP_IDS.length - 1) return null;
-  return ONBOARDING_TOUR_STEP_IDS[index + 1] ?? null;
+  const index = STEP_IDS.indexOf(current);
+  if (index < 0) return null;
+  return STEP_IDS[index + 1] ?? null;
 }
 
 export function getPreviousOnboardingStepId(
   current: OnboardingTourStepId,
 ): OnboardingTourStepId | null {
-  const index = ONBOARDING_TOUR_STEP_IDS.indexOf(current);
+  const index = STEP_IDS.indexOf(current);
   if (index <= 0) return null;
-  return ONBOARDING_TOUR_STEP_IDS[index - 1] ?? null;
+  return STEP_IDS[index - 1] ?? null;
 }
 
 /** Steps where arrow keys teach a lesson, so tour Previous/Next arrows stand down. */

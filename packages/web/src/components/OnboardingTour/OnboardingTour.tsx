@@ -15,6 +15,13 @@ import { useOnboardingSandboxKeyboardOnly } from "@web/components/OnboardingTour
 import { useOnboardingTourProgress } from "@web/components/OnboardingTour/useOnboardingTourProgress";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 
+const TOUR_TEXT_BUTTON_CLASS =
+  "c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text";
+const TOUR_PRIMARY_BUTTON_CLASS =
+  "c-button c-button-primary rounded-full px-4 py-1.5 text-xs";
+const TOUR_SECONDARY_BUTTON_CLASS =
+  "c-button c-button-secondary rounded-full px-4 py-1.5 text-xs";
+
 /**
  * Hand-rolled coachmark card for the Start Now tour. Not an app-lock modal:
  * keyboard shortcuts underneath must keep working so each step can advance
@@ -60,14 +67,14 @@ export const OnboardingTour: FC = () => {
           {isFork ? (
             <>
               <button
-                className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
+                className={TOUR_TEXT_BUTTON_CLASS}
                 onClick={onboardingTourActions.skip}
                 type="button"
               >
                 I'm done
               </button>
               <button
-                className="c-button c-button-primary rounded-full px-4 py-1.5 text-xs"
+                className={TOUR_PRIMARY_BUTTON_CLASS}
                 onClick={onboardingTourActions.advance}
                 type="button"
               >
@@ -77,7 +84,7 @@ export const OnboardingTour: FC = () => {
           ) : (
             <>
               <button
-                className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
+                className={TOUR_TEXT_BUTTON_CLASS}
                 onClick={onboardingTourActions.skip}
                 type="button"
               >
@@ -86,7 +93,7 @@ export const OnboardingTour: FC = () => {
               <div className="flex items-center gap-2">
                 {canGoPrevious ? (
                   <button
-                    className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
+                    className={TOUR_TEXT_BUTTON_CLASS}
                     onClick={onboardingTourActions.retreat}
                     type="button"
                   >
@@ -95,7 +102,7 @@ export const OnboardingTour: FC = () => {
                 ) : null}
                 {isDone ? (
                   <button
-                    className="c-button c-button-primary rounded-full px-4 py-1.5 text-xs"
+                    className={TOUR_PRIMARY_BUTTON_CLASS}
                     onClick={onboardingTourActions.finish}
                     type="button"
                   >
@@ -103,7 +110,7 @@ export const OnboardingTour: FC = () => {
                   </button>
                 ) : (
                   <button
-                    className="c-button c-button-secondary rounded-full px-4 py-1.5 text-xs"
+                    className={TOUR_SECONDARY_BUTTON_CLASS}
                     onClick={onboardingTourActions.advance}
                     type="button"
                   >

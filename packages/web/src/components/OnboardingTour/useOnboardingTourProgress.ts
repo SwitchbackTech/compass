@@ -163,10 +163,6 @@ export function useOnboardingTourProgress() {
       }
     };
 
-    const onFocusIn = () => {
-      tryAdvanceFromActiveElement();
-    };
-
     // Jump focuses on keydown; some test envs do not bubble focusin reliably,
     // so also re-check after a printable keyup (the letter that completes jump).
     const onKeyUp = (event: KeyboardEvent) => {
@@ -175,11 +171,11 @@ export function useOnboardingTourProgress() {
       }
     };
 
-    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusin", tryAdvanceFromActiveElement);
     document.addEventListener("keyup", onKeyUp);
     tryAdvanceFromActiveElement();
     return () => {
-      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusin", tryAdvanceFromActiveElement);
       document.removeEventListener("keyup", onKeyUp);
     };
   }, [isActive, stepId]);
