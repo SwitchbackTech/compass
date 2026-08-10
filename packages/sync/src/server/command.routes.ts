@@ -1,5 +1,6 @@
 import { type Express, type RequestHandler } from "express";
 import { Status } from "@core/errors/status.codes";
+import { Logger } from "@core/logger/winston.logger";
 import {
   CommandSubmitRequestSchema,
   type CommandSubmitResponse,
@@ -14,6 +15,7 @@ import {
 } from "@sync/domain/cloud-command.service";
 import { type ProviderAuthAdapter } from "@sync/providers/provider-auth.port";
 import { type ProviderEventWriter } from "@sync/providers/provider-event-writer.port";
+import { redactedCause } from "@sync/safety/redact-error";
 import {
   ensureConnected,
   internalRateLimit,
@@ -25,6 +27,8 @@ import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { syncRepositories } from "@sync/storage/sync-repositories";
 
 export const COMMANDS_PATH = "/internal/commands";
+
+const logger = Logger("sync:command.routes");
 
 export interface CommandApiDeps {
   authMiddleware: RequestHandler;
@@ -167,6 +171,7 @@ export function registerCommandRoutes(
             .json({ error: "provider_write_unavailable" });
           return;
         }
+        logger.error("Failed to submit command", redactedCause(error));
         respondInternalError(res);
       }
     },

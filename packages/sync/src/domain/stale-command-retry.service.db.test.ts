@@ -240,6 +240,72 @@ describe("retryStaleCommands", () => {
     expect(writer.deleteCalls).toHaveLength(0);
   });
 
+  // Reproduces the 2026-07-31 failure class (one unparseable job doc froze
+  // calendar sync fleet-wide for 23h) for THIS sweep: listStaleNonterminal
+  // sorts oldest-updatedAt-first, so a command whose retry throws something
+  // unexpected (not ProviderWriteUnavailableError) must not abort the batch -
+  // every stale command behind it still needs its own attempt.
+  it("keeps retrying later commands after an earlier one throws unexpectedly", async () => {
+    const poisoned = await seedStuckDelete();
+    const healthy = await seedStuckDelete();
+    const writer = new FakeDeleteWriter();
+    // listStaleNonterminal sorts oldest-updatedAt-first, so `poisoned` (seeded
+    // first) is guaranteed to be attempted before `healthy` - throw only on
+    // that first delete call to simulate the poisoned command specifically.
+    const originalDeleteEvent = writer.deleteEvent.bind(writer);
+    let calls = 0;
+    writer.deleteEvent = async (input) => {
+      calls++;
+      if (calls === 1) throw new Error("unexpected: malformed row");
+      return originalDeleteEvent(input);
+    };
+
+    const onRetryErrorCalls: Array<{ error: unknown; commandId: string }> = [];
+
+    const result = await retryStaleCommands(
+      {
+        commands,
+        events,
+        calendars,
+        occurrences,
+        markers,
+        execution: "active",
+        provider: { writer, custody: tokenSource() },
+        onRetryError: (error, commandId) =>
+          onRetryErrorCalls.push({ error, commandId }),
+      },
+      before(),
+      now,
+    );
+
+    expect(result).toEqual({ attempted: 2, stillStale: 1 });
+    expect(onRetryErrorCalls).toHaveLength(1);
+    expect(onRetryErrorCalls[0]?.commandId).toBe(poisoned.command._id);
+
+    const poisonedStored = await commands.findById(
+      poisoned.tenantId,
+      poisoned.principalId,
+      poisoned.command._id,
+    );
+    expect(poisonedStored?.outcome.state).toBe("pending");
+
+    // The healthy command, seeded after the poisoned one and so sorted
+    // behind it, still got its own attempt and converged.
+    const healthyStored = await commands.findById(
+      healthy.tenantId,
+      healthy.principalId,
+      healthy.command._id,
+    );
+    expect(healthyStored?.outcome.state).toBe("confirmed");
+    expect(
+      await events.findById(
+        healthy.tenantId,
+        healthy.principalId,
+        healthy.event._id,
+      ),
+    ).toBeNull();
+  });
+
   // Reproduces the exact data-loss scenario independent review flagged:
   // update A->B gets stuck pending (transient failure), the user edits again
   // B->C and that one succeeds, then the sweep later finds the stale A->B
