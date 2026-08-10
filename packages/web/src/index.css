@@ -151,6 +151,7 @@
   --animate-sync-text-wave: syncTextWave 2.4s linear infinite;
   --animate-sync-icon-wave: syncIconWave 2.4s linear infinite;
   --animate-loader-spin: loaderSpin 1.1s linear infinite;
+  --animate-pirate-scout: pirateScout 2.2s ease-in-out infinite;
 
   @keyframes loaderSpin {
     from {
@@ -176,6 +177,23 @@
     }
     to {
       mask-position: -50% 0;
+    }
+  }
+
+  /* Pan left/right with a light bob — reads even in a short flash. */
+  @keyframes pirateScout {
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+    25% {
+      transform: translate(-6.25%, -6.25%);
+    }
+    50% {
+      transform: translate(0, 0);
+    }
+    75% {
+      transform: translate(6.25%, -6.25%);
     }
   }
 }
@@ -319,6 +337,14 @@
   @media (prefers-reduced-motion: reduce) {
     animation: none;
     mask: none;
+  }
+}
+
+@utility c-pirate-scout {
+  animation: var(--animate-pirate-scout);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
   }
 }
 

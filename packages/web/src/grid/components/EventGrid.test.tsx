@@ -216,6 +216,91 @@ describe("EventGrid", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows a scouting pirate when the visible range is empty during import", () => {
+    render(
+      <EventGrid
+        allDayEventsLayer={<div />}
+        gridRefs={createGridRefs()}
+        isImportingEmpty
+        onAllDayMouseDown={mock()}
+        onTimedMouseDown={mock()}
+        timedEventsLayer={<div />}
+        today={dayjs("2026-05-20T00:00:00.000")}
+        visibleDates={[
+          {
+            date: dayjs("2026-05-20T00:00:00.000"),
+            key: "date-0",
+          },
+        ]}
+      />,
+    );
+
+    const status = screen.getByRole("status", { name: "Looking for events" });
+    expect(status).toHaveClass("pointer-events-none");
+    expect(
+      screen.getByRole("img", {
+        name: "Pixel pirate scouting with binoculars",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Importing from Google/i),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides the scouting pirate while events are loading or in error", () => {
+    const { rerender } = render(
+      <EventGrid
+        allDayEventsLayer={<div />}
+        gridRefs={createGridRefs()}
+        isImportingEmpty
+        isLoadingEvents
+        onAllDayMouseDown={mock()}
+        onTimedMouseDown={mock()}
+        timedEventsLayer={<div />}
+        today={dayjs("2026-05-20T00:00:00.000")}
+        visibleDates={[
+          {
+            date: dayjs("2026-05-20T00:00:00.000"),
+            key: "date-0",
+          },
+        ]}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("status", { name: "Looking for events" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("status", { name: "Loading events" }),
+    ).toBeInTheDocument();
+
+    rerender(
+      <EventGrid
+        allDayEventsLayer={<div />}
+        gridRefs={createGridRefs()}
+        isErrorEvents
+        isImportingEmpty
+        onAllDayMouseDown={mock()}
+        onTimedMouseDown={mock()}
+        timedEventsLayer={<div />}
+        today={dayjs("2026-05-20T00:00:00.000")}
+        visibleDates={[
+          {
+            date: dayjs("2026-05-20T00:00:00.000"),
+            key: "date-0",
+          },
+        ]}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("status", { name: "Looking for events" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Couldn't load events.",
+    );
+  });
+
   it("shows the loader for first load and for retry after error", () => {
     expect(isEventGridLoading(true, false, false)).toBe(true);
     expect(isEventGridLoading(false, true, true)).toBe(true);

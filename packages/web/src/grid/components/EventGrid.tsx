@@ -6,6 +6,7 @@ import {
 import { type Dayjs } from "@core/util/date/dayjs";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader/AbsoluteOverflowLoader";
+import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
 import {
   type GridRefs,
   type GridVisibleDate,
@@ -24,7 +25,7 @@ export interface EventGridProps {
   isErrorEvents?: boolean;
   /**
    * Google import is in progress and the visible range has no events yet —
-   * show expectation-setting copy instead of a blank grid (non-blocking).
+   * show a non-blocking scouting indicator instead of a blank grid.
    */
   isImportingEmpty?: boolean;
   onRetryEvents?: () => void;
@@ -91,14 +92,13 @@ export const EventGrid: FC<EventGridProps> = ({
     )}
     {isImportingEmpty && !isLoadingEvents && !isErrorEvents && (
       <div
+        aria-label="Looking for events"
         aria-live="polite"
         className="pointer-events-none absolute inset-0 flex items-center justify-center px-4"
         role="status"
         style={{ zIndex: ZIndex.MAX }}
       >
-        <p className="max-w-sm text-center text-sm text-text-muted">
-          Importing from Google. Larger calendars can take a few minutes.
-        </p>
+        <PixelPirateScouting className="h-16 w-16" />
       </div>
     )}
     {isErrorEvents && !isLoadingEvents && (
