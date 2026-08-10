@@ -3,7 +3,9 @@ import dayjs from "@core/util/date/dayjs";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   buildSandboxEventData,
+  getSandboxFocusEventId,
   isSandboxStep,
+  isTargetEventSandboxId,
   mergeSandboxEventData,
 } from "@web/components/OnboardingTour/onboarding.sandbox-events";
 import { describe, expect, it } from "bun:test";
@@ -20,6 +22,23 @@ describe("isSandboxStep", () => {
     expect(isSandboxStep("create")).toBe(false);
     expect(isSandboxStep("fork")).toBe(false);
     expect(isSandboxStep("done")).toBe(false);
+  });
+});
+
+describe("getSandboxFocusEventId", () => {
+  it("returns the primary practice event for focusable sandbox steps", () => {
+    expect(getSandboxFocusEventId("editSequence")).toBe(
+      "sandbox-editSequence-1",
+    );
+    expect(getSandboxFocusEventId("nudge")).toBe("sandbox-nudge-1");
+    expect(getSandboxFocusEventId("create")).toBeUndefined();
+  });
+});
+
+describe("isTargetEventSandboxId", () => {
+  it("matches only targetEvent sandbox ids", () => {
+    expect(isTargetEventSandboxId("sandbox-targetEvent-1")).toBe(true);
+    expect(isTargetEventSandboxId("sandbox-nudge-1")).toBe(false);
   });
 });
 

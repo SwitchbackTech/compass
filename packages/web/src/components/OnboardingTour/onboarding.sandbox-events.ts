@@ -30,6 +30,22 @@ export function isSandboxStep(stepId: OnboardingTourStepId): boolean {
 const sandboxEventId = (suffix: string) =>
   EventIdSchema.parse(`sandbox-${suffix}`);
 
+/** Primary practice event to auto-focus when a sandbox step starts. */
+export function getSandboxFocusEventId(
+  stepId: OnboardingTourStepId,
+): string | undefined {
+  if (stepId === "editSequence") return sandboxEventId("editSequence-1");
+  if (stepId === "nudge") return sandboxEventId("nudge-1");
+  if (stepId === "targetEvent") return sandboxEventId("targetEvent-1");
+  if (stepId === "moveFocus") return sandboxEventId("moveFocus-1");
+  return undefined;
+}
+
+/** True when a focused calendar event id belongs to the targetEvent lesson. */
+export function isTargetEventSandboxId(eventId: string): boolean {
+  return eventId.startsWith("sandbox-targetEvent-");
+}
+
 /** 15-minute-aligned timed event at `hour:minute` on the anchor's day. */
 function buildEvent(
   idSuffix: string,

@@ -145,3 +145,147 @@ describe("useOnboardingTourProgress palette step", () => {
     expect(useOnboardingTourStore.getState().stepId).toBe("palette");
   });
 });
+
+describe("useOnboardingTourProgress navigation and Escape", () => {
+  beforeEach(() => {
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "palette",
+    });
+    useSettingsStore.setState(initialSettingsState);
+    useViewStore.setState(initialViewState);
+    persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_ONBOARDING_TOUR, "");
+  });
+
+  const wrapper = ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: new QueryClient() }, children);
+
+  const dispatchKey = (key: string, init: KeyboardEventInit = {}) => {
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key,
+        bubbles: true,
+        cancelable: true,
+        ...init,
+      }),
+    );
+  };
+
+  it("skips the tour on Escape when no lesson overlay owns it", async () => {
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "create",
+    });
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    act(() => {
+      dispatchKey("Escape");
+    });
+
+    await waitFor(() => {
+      expect(useOnboardingTourStore.getState().isActive).toBe(false);
+    });
+  });
+
+  it("lets Escape close the open palette during the palette lesson", async () => {
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    act(() => {
+      settingsActions.openCmdPalette();
+    });
+    act(() => {
+      dispatchKey("Escape");
+    });
+
+    expect(useOnboardingTourStore.getState().isActive).toBe(true);
+    expect(useOnboardingTourStore.getState().stepId).toBe("palette");
+  });
+
+  it("advances and retreats with ArrowRight and ArrowLeft outside arrow lessons", async () => {
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "shortcuts",
+    });
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    act(() => {
+      dispatchKey("ArrowRight");
+    });
+    await waitFor(() => {
+      expect(useOnboardingTourStore.getState().stepId).toBe("fork");
+    });
+
+    act(() => {
+      dispatchKey("ArrowLeft");
+    });
+    await waitFor(() => {
+      expect(useOnboardingTourStore.getState().stepId).toBe("shortcuts");
+    });
+  });
+
+  it("does not use ArrowRight as Next on moveFocus", async () => {
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "moveFocus",
+    });
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    act(() => {
+      dispatchKey("ArrowRight");
+    });
+
+    // Lesson handler advances once; nav arrows are disabled so we do not skip
+    // past editSequence in the same press.
+    await waitFor(() => {
+      expect(useOnboardingTourStore.getState().stepId).toBe("editSequence");
+    });
+  });
+
+  it("advances targetEvent when a sandbox jump event receives focus", async () => {
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "targetEvent",
+    });
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    const button = document.createElement("button");
+    button.setAttribute(
+      "data-week-interaction-event-id",
+      "sandbox-targetEvent-1",
+    );
+    document.body.appendChild(button);
+
+    act(() => {
+      button.focus();
+      button.dispatchEvent(
+        new FocusEvent("focusin", { bubbles: true, cancelable: true }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(useOnboardingTourStore.getState().stepId).toBe("nudge");
+    });
+
+    button.remove();
+  });
+
+  it("does not advance targetEvent on Shift alone", async () => {
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "targetEvent",
+    });
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    act(() => {
+      dispatchKey("Shift");
+    });
+
+    expect(useOnboardingTourStore.getState().stepId).toBe("targetEvent");
+  });
+});

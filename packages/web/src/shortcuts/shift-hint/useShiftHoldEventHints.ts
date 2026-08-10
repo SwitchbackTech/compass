@@ -3,6 +3,11 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
+import {
+  selectOnboardingTourActive,
+  selectOnboardingTourStepId,
+  useOnboardingTourStore,
+} from "@web/components/OnboardingTour/onboarding.tour.store";
 import { isAppLocked } from "@web/shortcuts/app-lock";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import {
@@ -202,7 +207,18 @@ export function useShiftHoldEventHints({
 
     const activate = () => {
       if (isAppLocked()) return;
-      if (selectKeyboardOnlyActive(useKeyboardOnlyStore.getState())) return;
+      // Keyboard-only normally owns Shift (Shift-Shift cancel). The tour's
+      // targetEvent lesson still needs jump hints while sandbox KO is on.
+      const tour = useOnboardingTourStore.getState();
+      const tourAllowsHints =
+        selectOnboardingTourActive(tour) &&
+        selectOnboardingTourStepId(tour) === "targetEvent";
+      if (
+        !tourAllowsHints &&
+        selectKeyboardOnlyActive(useKeyboardOnlyStore.getState())
+      ) {
+        return;
+      }
       const assignments = rebuildAssignments();
       if (assignments.length === 0) return;
       isActiveRef.current = true;

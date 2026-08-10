@@ -1,5 +1,15 @@
 import { useEffect, useRef } from "react";
 import {
+  focusCalendarEventElement,
+  getCalendarEventIdFromElement,
+} from "@web/common/utils/event/event.util";
+import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
+import {
+  getSandboxFocusEventId,
+  isTargetEventSandboxId,
+} from "@web/components/OnboardingTour/onboarding.sandbox-events";
+import { ONBOARDING_ARROW_LESSON_STEP_IDS } from "@web/components/OnboardingTour/onboarding.tour.steps";
+import {
   onboardingTourActions,
   selectOnboardingTourActive,
   selectOnboardingTourStepId,
@@ -18,7 +28,6 @@ import {
   selectIsCmdPaletteOpen,
   useSettingsStore,
 } from "@web/settings/settings.store";
-import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 
 /** Palette step completes after open→close, or if shortcuts open from inside it. */
 export function shouldAdvancePaletteStep({
@@ -48,6 +57,31 @@ export function useOnboardingTourProgress() {
   const isPaletteOpen = useSettingsStore(selectIsCmdPaletteOpen);
   const isShortcutsOpen = useViewStore(selectIsShortcutsOpen);
   const paletteOpenedRef = useRef(false);
+  /** Tracks whether Shift is currently held, for nudge bleed-through guard. */
+  const shiftPressedRef = useRef(false);
+  /** Shift must be released after entering nudge before Shift+Arrow counts. */
+  const nudgeShiftArmedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isActive) {
+      shiftPressedRef.current = false;
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Shift") shiftPressedRef.current = true;
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "Shift") shiftPressedRef.current = false;
+    };
+
+    document.addEventListener("keydown", onKeyDown, true);
+    document.addEventListener("keyup", onKeyUp, true);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown, true);
+      document.removeEventListener("keyup", onKeyUp, true);
+    };
+  }, [isActive]);
 
   useEffect(() => {
     if (!isActive || stepId !== "palette") {
@@ -96,18 +130,53 @@ export function useOnboardingTourProgress() {
     }
   }, [isActive, stepId, isFormOpen, isSaving, isShortcutsOpen]);
 
+  // Auto-focus the practice event when a sandbox lesson needs a starting focus.
+  useEffect(() => {
+    if (!isActive) return;
+    if (
+      stepId !== "editSequence" &&
+      stepId !== "nudge" &&
+      stepId !== "moveFocus"
+    ) {
+      return;
+    }
+    const eventId = getSandboxFocusEventId(stepId);
+    if (!eventId) return;
+    focusCalendarEventElement(eventId);
+  }, [isActive, stepId]);
+
+  // targetEvent completes when a sandbox jump target receives focus.
+  useEffect(() => {
+    if (!isActive || stepId !== "targetEvent") return;
+
+    const onFocusIn = (event: FocusEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const eventId = getCalendarEventIdFromElement(target);
+      if (eventId && isTargetEventSandboxId(eventId)) {
+        onboardingTourActions.advance();
+      }
+    };
+
+    document.addEventListener("focusin", onFocusIn);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+    };
+  }, [isActive, stepId]);
+
   // Lessons taught by a single keypress: encouragement-based, like the rest
   // of this hook — pressing the key is enough to count as the lesson, we do
   // not verify the resulting focus/nudge/undo actually landed.
   useEffect(() => {
     if (!isActive) return;
-    if (
-      stepId !== "moveFocus" &&
-      stepId !== "targetEvent" &&
-      stepId !== "nudge" &&
-      stepId !== "undo"
-    ) {
+    if (stepId !== "moveFocus" && stepId !== "nudge" && stepId !== "undo") {
       return;
+    }
+
+    // If Shift is still held from targetEvent, wait for release; otherwise
+    // arm immediately so Next-button entry can complete Shift+Arrow once.
+    if (stepId === "nudge") {
+      nudgeShiftArmedRef.current = !shiftPressedRef.current;
     }
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -119,10 +188,9 @@ export function useOnboardingTourProgress() {
         event.key.startsWith("Arrow")
       ) {
         onboardingTourActions.advance();
-      } else if (stepId === "targetEvent" && event.key === "Shift") {
-        onboardingTourActions.advance();
       } else if (
         stepId === "nudge" &&
+        nudgeShiftArmedRef.current &&
         event.shiftKey &&
         event.key.startsWith("Arrow")
       ) {
@@ -132,21 +200,72 @@ export function useOnboardingTourProgress() {
       }
     };
 
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (stepId !== "nudge") return;
+      if (event.key === "Shift") {
+        nudgeShiftArmedRef.current = true;
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("keyup", onKeyUp);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("keyup", onKeyUp);
+    };
+  }, [isActive, stepId]);
+
+  // ArrowLeft / ArrowRight move Previous / Next when arrows are not the lesson
+  // and focus is not inside an editable field.
+  useEffect(() => {
+    if (!isActive) return;
+    if (ONBOARDING_ARROW_LESSON_STEP_IDS.has(stepId)) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+        return;
+      }
+      if (isEditableKeyboardTarget(event)) return;
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        onboardingTourActions.advance();
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        onboardingTourActions.retreat();
+      }
+    };
+
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [isActive, stepId]);
 
-  // ESC skips the tour when nothing higher owns Escape. Capture + stand down
-  // for app lock / form / floating layers so we never trap the user.
+  // ESC skips the tour unless the current lesson is mid-overlay dismiss
+  // (palette / shortcuts). Capture so we win over the form Escape handler.
   useEffect(() => {
     if (!isActive) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       if (event.defaultPrevented) return;
-      if (isHigherEscapeOwner()) return;
+
+      const { stepId: currentStep } = useOnboardingTourStore.getState();
+      if (
+        currentStep === "palette" &&
+        selectIsCmdPaletteOpen(useSettingsStore.getState())
+      ) {
+        return;
+      }
+      if (
+        currentStep === "shortcuts" &&
+        selectIsShortcutsOpen(useViewStore.getState())
+      ) {
+        return;
+      }
 
       event.preventDefault();
       event.stopPropagation();

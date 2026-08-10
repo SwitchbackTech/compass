@@ -1,6 +1,7 @@
 import {
   getNextOnboardingStepId,
   getOnboardingTourSteps,
+  getPreviousOnboardingStepId,
 } from "@web/components/OnboardingTour/onboarding.tour.steps";
 import { describe, expect, it } from "bun:test";
 
@@ -10,7 +11,10 @@ describe("onboarding tour steps", () => {
       expect(step.title).not.toContain("—");
       expect(step.body).not.toContain("—");
       if (step.shortcutHint) {
-        expect(step.shortcutHint).not.toContain("—");
+        const hint = Array.isArray(step.shortcutHint)
+          ? step.shortcutHint.join(" ")
+          : step.shortcutHint;
+        expect(hint).not.toContain("—");
       }
     }
   });
@@ -32,6 +36,45 @@ describe("onboarding tour steps", () => {
     expect(getNextOnboardingStepId("done")).toBeNull();
   });
 
+  it("retreats one step at a time", () => {
+    expect(getPreviousOnboardingStepId("create")).toBeNull();
+    expect(getPreviousOnboardingStepId("save")).toBe("create");
+    expect(getPreviousOnboardingStepId("nudge")).toBe("targetEvent");
+  });
+
+  it("trims unnecessary create/save copy", () => {
+    const steps = getOnboardingTourSteps();
+    const create = steps.find((step) => step.id === "create");
+    const save = steps.find((step) => step.id === "save");
+
+    expect(create?.body).not.toMatch(/click the grid/i);
+    expect(save?.body).not.toMatch(/instantly/i);
+  });
+
+  it("renders multi-key hints as separate keycap tokens", () => {
+    const steps = getOnboardingTourSteps();
+    expect(
+      steps.find((step) => step.id === "editSequence")?.shortcutHint,
+    ).toEqual(["E", "T"]);
+    expect(steps.find((step) => step.id === "palette")?.shortcutHint).toEqual([
+      "Mod",
+      "K",
+    ]);
+    expect(steps.find((step) => step.id === "undo")?.shortcutHint).toEqual([
+      "Mod",
+      "Z",
+    ]);
+    expect(steps.find((step) => step.id === "moveFocus")?.shortcutHint).toEqual(
+      ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"],
+    );
+  });
+
+  it("keeps the fork non-questioning", () => {
+    const fork = getOnboardingTourSteps().find((step) => step.id === "fork");
+    expect(fork?.body).not.toMatch(/\?/);
+    expect(fork?.body).toMatch(/skip anytime/i);
+  });
+
   it("keeps palette and shortcuts lessons non-contradictory", () => {
     const steps = getOnboardingTourSteps();
     const palette = steps.find((step) => step.id === "palette");
@@ -50,6 +93,6 @@ describe("onboarding tour steps", () => {
     expect(done?.body).toMatch(/Shift Shift/i);
     expect(done?.body).toMatch(/clicks/i);
     expect(done?.body).toMatch(/command palette/i);
-    expect(done?.shortcutHint).toBe("Shift Shift");
+    expect(done?.shortcutHint).toEqual(["Shift", "Shift"]);
   });
 });

@@ -91,6 +91,40 @@ describe("useKeyboardOnlyMode", () => {
     expect(clicked).toBe(true);
   });
 
+  it("allows clicks inside the onboarding tour card while keyboard-only is on", () => {
+    renderHook(() => useKeyboardOnlyMode());
+
+    act(() => {
+      tapShift();
+      tapShift();
+    });
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+
+    const tour = document.createElement("div");
+    tour.setAttribute("data-onboarding-tour", "");
+    const button = document.createElement("button");
+    button.textContent = "Next";
+    tour.appendChild(button);
+    document.body.appendChild(tour);
+
+    let clicked = false;
+    button.addEventListener("click", () => {
+      clicked = true;
+    });
+
+    act(() => {
+      button.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, cancelable: true }),
+      );
+      button.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      );
+    });
+
+    expect(clicked).toBe(true);
+    expect(useKeyboardOnlyStore.getState().blockedClickPulse).toBe(0);
+  });
+
   it("exits on a second SHIFT-SHIFT", () => {
     renderHook(() => useKeyboardOnlyMode());
 

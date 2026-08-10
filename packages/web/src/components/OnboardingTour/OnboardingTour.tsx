@@ -2,6 +2,7 @@ import { type FC } from "react";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
 import {
   getOnboardingTourSteps,
+  getPreviousOnboardingStepId,
   ONBOARDING_TOUR_STEP_IDS,
 } from "@web/components/OnboardingTour/onboarding.tour.steps";
 import {
@@ -12,6 +13,7 @@ import {
 } from "@web/components/OnboardingTour/onboarding.tour.store";
 import { useOnboardingSandboxKeyboardOnly } from "@web/components/OnboardingTour/useOnboardingSandboxKeyboardOnly";
 import { useOnboardingTourProgress } from "@web/components/OnboardingTour/useOnboardingTourProgress";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 
 /**
  * Hand-rolled coachmark card for the Start Now tour. Not an app-lock modal:
@@ -32,6 +34,7 @@ export const OnboardingTour: FC = () => {
   const stepIndex = ONBOARDING_TOUR_STEP_IDS.indexOf(stepId);
   const isDone = stepId === "done";
   const isFork = stepId === "fork";
+  const canGoPrevious = getPreviousOnboardingStepId(stepId) !== null;
 
   return (
     <section
@@ -50,16 +53,14 @@ export const OnboardingTour: FC = () => {
         <p className="text-sm text-text-muted">{step.body}</p>
         {step.shortcutHint ? (
           <p className="mt-3">
-            <kbd className="rounded-md border border-border bg-surface px-2 py-1 font-mono text-text text-xs">
-              {step.shortcutHint}
-            </kbd>
+            <ShortcutKeys keys={step.shortcutHint} />
           </p>
         ) : null}
         <div className="mt-4 flex items-center justify-between gap-3">
           {isFork ? (
             <>
               <button
-                className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:text-text"
+                className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
                 onClick={onboardingTourActions.skip}
                 type="button"
               >
@@ -76,29 +77,40 @@ export const OnboardingTour: FC = () => {
           ) : (
             <>
               <button
-                className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:text-text"
+                className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
                 onClick={onboardingTourActions.skip}
                 type="button"
               >
                 Skip tour
               </button>
-              {isDone ? (
-                <button
-                  className="c-button c-button-primary rounded-full px-4 py-1.5 text-xs"
-                  onClick={onboardingTourActions.finish}
-                  type="button"
-                >
-                  Finish
-                </button>
-              ) : (
-                <button
-                  className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:text-text"
-                  onClick={onboardingTourActions.advance}
-                  type="button"
-                >
-                  Next
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {canGoPrevious ? (
+                  <button
+                    className="c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text"
+                    onClick={onboardingTourActions.retreat}
+                    type="button"
+                  >
+                    Previous
+                  </button>
+                ) : null}
+                {isDone ? (
+                  <button
+                    className="c-button c-button-primary rounded-full px-4 py-1.5 text-xs"
+                    onClick={onboardingTourActions.finish}
+                    type="button"
+                  >
+                    Finish
+                  </button>
+                ) : (
+                  <button
+                    className="c-button c-button-secondary rounded-full px-4 py-1.5 text-xs"
+                    onClick={onboardingTourActions.advance}
+                    type="button"
+                  >
+                    Next
+                  </button>
+                )}
+              </div>
             </>
           )}
         </div>
