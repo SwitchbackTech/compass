@@ -37,6 +37,13 @@ export function useKeyboardOnlyMode() {
     if (!isActive) return;
 
     const blockPointer = (event: Event) => {
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest("[data-onboarding-tour]")
+      ) {
+        return;
+      }
       event.preventDefault();
       event.stopPropagation();
       // Pulse once per gesture (pointerdown), not again on click/mousedown.

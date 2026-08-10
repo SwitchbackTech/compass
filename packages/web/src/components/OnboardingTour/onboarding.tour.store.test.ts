@@ -85,6 +85,18 @@ describe("onboardingTourActions", () => {
     ).toBe("true");
   });
 
+  it("retreats to the previous step and no-ops on the first", () => {
+    onboardingTourActions.start();
+    onboardingTourActions.advance();
+    expect(useOnboardingTourStore.getState().stepId).toBe("save");
+
+    onboardingTourActions.retreat();
+    expect(useOnboardingTourStore.getState().stepId).toBe("create");
+
+    onboardingTourActions.retreat();
+    expect(useOnboardingTourStore.getState().stepId).toBe("create");
+  });
+
   it("restart works even after the tour was marked seen", () => {
     onboardingTourActions.markSkippedWithoutStarting();
     onboardingTourActions.restart();

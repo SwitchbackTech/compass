@@ -1,5 +1,3 @@
-import { getModifierKeyLabel } from "@web/shortcuts/shortcut.util";
-
 /**
  * Single source of truth for step order. "fork" is not a lesson: it's the
  * exit ramp between the basics (required-feeling) and advanced (extra
@@ -21,46 +19,49 @@ const STEP_IDS = [
 
 export type OnboardingTourStepId = (typeof STEP_IDS)[number];
 
-export const ONBOARDING_TOUR_STEP_IDS: OnboardingTourStepId[] = [...STEP_IDS];
+export const ONBOARDING_TOUR_STEP_IDS: readonly OnboardingTourStepId[] =
+  STEP_IDS;
 
 export type OnboardingTourStep = {
   id: OnboardingTourStepId;
   title: string;
   body: string;
-  /** Shown as a kbd hint under the body when set. */
-  shortcutHint?: string;
+  /**
+   * Keycap hint under the body. A string is one key; an array is one keycap
+   * per entry (separate strokes or chords), rendered via ShortcutKeys.
+   */
+  shortcutHint?: string | string[];
 };
 
 export function getOnboardingTourSteps(): OnboardingTourStep[] {
-  const mod = getModifierKeyLabel();
   const content: Record<
     OnboardingTourStepId,
     Omit<OnboardingTourStep, "id">
   > = {
     create: {
       title: "Create with the keyboard",
-      body: "Press C to start a timed event. You can also click the grid, but the keys are faster.",
+      body: "Press C to start a timed event.",
       shortcutHint: "C",
     },
     save: {
       title: "Name it and save",
-      body: "Type a title, then press Enter to save. Changes show up instantly.",
+      body: "Type a title, then press Enter to save.",
       shortcutHint: "Enter",
     },
     moveFocus: {
       title: "Move between events",
       body: "Press an arrow key to move focus from event to event without touching the mouse.",
-      shortcutHint: "Arrow keys",
+      shortcutHint: ["ArrowLeft", "ArrowUp", "ArrowDown", "ArrowRight"],
     },
     editSequence: {
       title: "Jump straight to a field",
-      body: "Press E, then T, to jump straight into an event's title. Every field has its own letter.",
-      shortcutHint: "E then T",
+      body: "Press E, then T, to open the practice event and jump straight into its title. Every field has its own letter.",
+      shortcutHint: ["E", "T"],
     },
     palette: {
       title: "Open the command palette",
-      body: `Press ${mod}+K for commands. Browse or search, then close with Escape.`,
-      shortcutHint: `${mod}+K`,
+      body: "Open the command palette for commands. Browse or search, then close with Escape.",
+      shortcutHint: ["Mod", "K"],
     },
     shortcuts: {
       title: "Browse every shortcut",
@@ -69,7 +70,7 @@ export function getOnboardingTourSteps(): OnboardingTourStep[] {
     },
     fork: {
       title: "That's the basics",
-      body: "You know enough to fly. Want a few extra-credit moves for rescheduling fast, or are you good for now?",
+      body: "A few extra-credit moves for rescheduling fast are next. Skip anytime if you want.",
     },
     targetEvent: {
       title: "Jump to any event",
@@ -79,17 +80,17 @@ export function getOnboardingTourSteps(): OnboardingTourStep[] {
     nudge: {
       title: "Nudge into the perfect slot",
       body: "With an event focused, hold Shift and press an arrow key to slide it a few minutes at a time.",
-      shortcutHint: "Shift + Arrow",
+      shortcutHint: ["Shift", "ArrowRight"],
     },
     undo: {
       title: "Never stress about a mistake",
-      body: `Made a change you didn't mean? Press ${mod}+Z to undo it, ${mod}+Shift+Z to redo.`,
-      shortcutHint: `${mod}+Z`,
+      body: "Made a change you didn't mean? Undo it, or add Shift to redo.",
+      shortcutHint: ["Mod", "Z"],
     },
     done: {
       title: "You are ready",
       body: "You can do anything with the keyboard. Try Shift Shift to practice; clicks stay off until you exit. Sample events are already on your calendar. Reopen this tour from the command palette anytime.",
-      shortcutHint: "Shift Shift",
+      shortcutHint: ["Shift", "Shift"],
     },
   };
 
@@ -99,7 +100,19 @@ export function getOnboardingTourSteps(): OnboardingTourStep[] {
 export function getNextOnboardingStepId(
   current: OnboardingTourStepId,
 ): OnboardingTourStepId | null {
-  const index = ONBOARDING_TOUR_STEP_IDS.indexOf(current);
-  if (index < 0 || index >= ONBOARDING_TOUR_STEP_IDS.length - 1) return null;
-  return ONBOARDING_TOUR_STEP_IDS[index + 1] ?? null;
+  const index = STEP_IDS.indexOf(current);
+  if (index < 0) return null;
+  return STEP_IDS[index + 1] ?? null;
 }
+
+export function getPreviousOnboardingStepId(
+  current: OnboardingTourStepId,
+): OnboardingTourStepId | null {
+  const index = STEP_IDS.indexOf(current);
+  if (index <= 0) return null;
+  return STEP_IDS[index - 1] ?? null;
+}
+
+/** Steps where arrow keys teach a lesson, so tour Previous/Next arrows stand down. */
+export const ONBOARDING_ARROW_LESSON_STEP_IDS: ReadonlySet<OnboardingTourStepId> =
+  new Set(["moveFocus", "nudge"]);

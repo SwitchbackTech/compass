@@ -54,8 +54,8 @@ export function ShortcutKeys({ keys, title, className }: Props) {
       title={title}
       className={classNames("inline-flex items-center gap-1", className)}
     >
-      {cleaned.map((key) => (
-        <ShortcutHint key={key} variant="keycap">
+      {cleaned.map((key, index) => (
+        <ShortcutHint key={`${key}-${index}`} variant="keycap">
           <ShortCutLabel k={normalizeKeyToken(key)} />
         </ShortcutHint>
       ))}

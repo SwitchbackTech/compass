@@ -38,4 +38,21 @@ describe("OnboardingTour", () => {
     expect(card).toHaveClass("backdrop-saturate-150");
     expect(card).not.toHaveClass("bg-surface-overlay");
   });
+
+  it("renders a styled Next button with hover and focus affordances", () => {
+    onboardingTourActions.start();
+    renderTour(<OnboardingTour />);
+
+    const next = screen.getByRole("button", { name: "Next" });
+    expect(next).toHaveClass("c-button");
+    expect(next).toHaveClass("c-button-secondary");
+  });
+
+  it("shows Previous after the first step", () => {
+    onboardingTourActions.start();
+    onboardingTourActions.advance();
+    renderTour(<OnboardingTour />);
+
+    expect(screen.getByRole("button", { name: "Previous" })).toBeTruthy();
+  });
 });

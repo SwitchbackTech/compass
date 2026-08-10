@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { track } from "@web/auth/posthog/track";
 import {
   getNextOnboardingStepId,
+  getPreviousOnboardingStepId,
   type OnboardingTourStepId,
 } from "@web/components/OnboardingTour/onboarding.tour.steps";
 import {
@@ -10,6 +11,7 @@ import {
   markOnboardingTourSeen,
   markTourOfferPending,
 } from "@web/components/OnboardingTour/onboarding.tour.storage";
+import { draftActions } from "@web/events/stores/draft.store";
 
 export type OnboardingTourState = {
   isActive: boolean;
@@ -27,6 +29,7 @@ export const useOnboardingTourStore = create<OnboardingTourState>()(() => ({
 
 /** Shared by finish/skip: mark the tour seen and clear active state. */
 const endTour = () => {
+  draftActions.discard();
   markOnboardingTourSeen();
   useOnboardingTourStore.setState({ ...initialOnboardingTourState });
 };
@@ -56,6 +59,14 @@ export const onboardingTourActions = {
       track("onboarding_segment_reached", { segment: "advanced" });
     }
     useOnboardingTourStore.setState({ stepId: next });
+  },
+  /** Step back one lesson; no-op on the first step. */
+  retreat: () => {
+    const { isActive, stepId } = useOnboardingTourStore.getState();
+    if (!isActive) return;
+    const previous = getPreviousOnboardingStepId(stepId);
+    if (!previous) return;
+    useOnboardingTourStore.setState({ stepId: previous });
   },
   /** Reached the last step. */
   finish: () => {
