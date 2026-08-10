@@ -3,6 +3,7 @@ import { type EventColorSlot } from "@core/types/event-color.contracts";
 import {
   editGridEventDraft,
   parseGridEventDraft,
+  patchGridDraftFields,
 } from "@web/events/grid-event-draft.adapter";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { useEventById } from "@web/events/queries/useEventById";
@@ -10,7 +11,8 @@ import { draftActions } from "@web/events/stores/draft.store";
 
 /**
  * Immediately replaces an event's color tag (or clears it with null), then
- * discards any right-click / grid draft. Used by the event context menu.
+ * discards any right-click / grid draft once the optimistic cache write lands.
+ * Used by the event context menu.
  */
 export function useSetEventColor(_id: string) {
   const existingEvent = useEventById(_id);
@@ -32,14 +34,21 @@ export function useSetEventColor(_id: string) {
       const draft = editGridEventDraft(existingEvent);
       if (!draft || draft.kind !== "edit") return;
 
-      const parsed = parseGridEventDraft({
-        ...draft,
-        values: { ...draft.values, color },
-      });
-      if (parsed.ok && parsed.mode === "edit") {
-        replace({ id: parsed.eventId, input: parsed.input });
+      const patchedDraft = patchGridDraftFields(draft, { color });
+      const parsed = parseGridEventDraft(patchedDraft);
+      if (!parsed.ok || parsed.mode !== "edit") {
+        draftActions.discard();
+        return;
       }
-      draftActions.discard();
+
+      // Paint the new color on the draft card before replace's async onMutate
+      // finishes cancelQueries + optimistic cache write (Day may have no draft
+      // yet; Week's right-click draft still holds the old color).
+      draftActions.setGridDraft(patchedDraft);
+      replace(
+        { id: parsed.eventId, input: parsed.input },
+        { onOptimisticApplied: () => draftActions.discard() },
+      );
     },
     [existingEvent, replace],
   );
