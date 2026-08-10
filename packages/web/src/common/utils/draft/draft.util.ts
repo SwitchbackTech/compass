@@ -1,4 +1,4 @@
-import { type CalendarId } from "@core/types/domain-primitives";
+import { type CalendarId, EventIdSchema } from "@core/types/domain-primitives";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   ID_GRID_EVENTS_ALLDAY,
@@ -7,6 +7,7 @@ import {
 } from "@web/common/constants/web.constants";
 import { focusCalendarEventElement } from "@web/common/utils/event/event.util";
 import { getElemById, getMinuteHeight } from "@web/common/utils/grid/grid.util";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { roundToNext } from "@web/common/utils/round/round.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
@@ -31,7 +32,9 @@ export const createTimedDraft = (
   const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
   const draft = createGridEventDraft(
     timedGridSchedule(new Date(startDate), new Date(endDate)),
-    undefined,
+    // Stable grid identity so place-create can focus the card and Enter can
+    // open the live draft without reseeding.
+    EventIdSchema.parse(createObjectIdString()),
     calendarId,
   );
 
