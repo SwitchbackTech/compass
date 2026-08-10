@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
@@ -6,6 +6,10 @@ import { createTestToastPort } from "@web/__tests__/helpers/web-test-seams";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
 import { AuthApi } from "@web/api/auth.api";
+import {
+  markAccountReconnectRequired,
+  resetGoogleReconnectRequiredForTests,
+} from "@web/auth/google/state/google.reconnect.state";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
@@ -84,6 +88,7 @@ afterAll(() => {
 
 afterEach(() => {
   mockOpenLogoutConfirmation.mockClear();
+  resetGoogleReconnectRequiredForTests();
 });
 
 const settingsModalUrl = new URL(
@@ -153,6 +158,25 @@ describe("SettingsModal", () => {
     expect(screen.getByText("ahab@pequod.com")).toBeInTheDocument();
     expect(screen.getByText("ahab@gmail.com")).toBeInTheDocument();
     expect(screen.getByText("Calendar connected")).toBeInTheDocument();
+    expect(screen.getByText("Calendar needs reconnecting")).toBeInTheDocument();
+  });
+
+  it("reflects a live reconnect-required marking without waiting for metadata to refetch", () => {
+    renderSettings({ connections: [connection()] });
+
+    expect(screen.getByText("Calendar connected")).toBeInTheDocument();
+
+    // A live 410 marks the session-local override ahead of the next metadata
+    // refetch; the connection's own connectionState is still "HEALTHY" here.
+    // AccountsSection's own useConnectGoogle() call subscribes to the
+    // reconnect-required version and re-renders the tree beneath it, so
+    // AccountRow picks up the override on its next render even without
+    // subscribing itself - this guards that behavior against a refactor that
+    // removes AccountsSection's own subscription.
+    act(() => {
+      markAccountReconnectRequired({ connectionId: "connection-1" });
+    });
+
     expect(screen.getByText("Calendar needs reconnecting")).toBeInTheDocument();
   });
 
