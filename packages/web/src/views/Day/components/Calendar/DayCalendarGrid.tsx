@@ -8,6 +8,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
+import { shouldShowContextualLoadError } from "@web/api/util/api.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { isFirstImportInProgress } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
@@ -80,6 +81,7 @@ export function DayCalendarGrid() {
     useDefaultTargetCalendar(calendars)?.id ?? null;
   const {
     allDayEvents,
+    error: eventsError,
     events: dayEvents,
     isError: isErrorEvents,
     isFetching,
@@ -87,9 +89,15 @@ export function DayCalendarGrid() {
     refetch,
     timedEvents,
   } = useDayEventViewModel(dayEventQueryRange(dateInView));
+  // Session expiry already surfaces SessionExpiredToast — don't also show
+  // "Couldn't load events" / Retry for the same failure.
+  const showEventsLoadError = shouldShowContextualLoadError(
+    isErrorEvents,
+    eventsError,
+  );
   const isLoadingEvents = isEventGridLoading(
     isPending,
-    isErrorEvents,
+    showEventsLoadError,
     isFetching,
   );
   const { connection, state: googleState } = useConnectGoogle();
@@ -97,7 +105,7 @@ export function DayCalendarGrid() {
   // first-ever import apart from routine catch-up on an established account.
   const isImportingEmpty =
     !isPending &&
-    !isErrorEvents &&
+    !showEventsLoadError &&
     dayEvents.length === 0 &&
     googleState === "IMPORTING" &&
     isFirstImportInProgress(connection);
@@ -425,7 +433,7 @@ export function DayCalendarGrid() {
           allDayEventsLayer={allDayEventsLayer}
           allDayRowsCount={allDayRowsCount}
           gridRefs={gridRefs}
-          isErrorEvents={isErrorEvents}
+          isErrorEvents={showEventsLoadError}
           isImportingEmpty={isImportingEmpty}
           isLoadingEvents={isLoadingEvents}
           onAllDayMouseDown={handleAllDayMouseDown}

@@ -9,6 +9,7 @@ import { EventMutationErrorSchema } from "@core/types/event-command.contracts";
 import { type WithId } from "@core/types/type.utils";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type ApiError } from "@web/api/api.types";
+import { getErrorStatus, isSessionLevelError } from "@web/api/util/api.util";
 import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 import { getUserId } from "@web/auth/compass/session/session.util";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
@@ -237,13 +238,10 @@ export const handleError = (error: Error) => {
 
   // Prefer the structured status on ApiError; fall back to the trailing
   // status digits in the message for errors that only carry text.
-  const code =
-    (error as ApiError).response?.status ??
-    parseInt(error.message.slice(-3), 10);
+  const code = getErrorStatus(error) ?? Number.NaN;
 
-  // GONE/UNAUTHORIZED are session-level failures — the api interceptor signs
-  // the user out, which has its own messaging, so nothing more is shown here.
-  if (code === Status.GONE || code === Status.UNAUTHORIZED) {
+  // Session recovery already owns the toast — do not stack a second message.
+  if (isSessionLevelError(error)) {
     return;
   }
   // NOT_FOUND is not a session failure (e.g. syncing onto a calendar the

@@ -12,9 +12,12 @@ import {
 import {
   createApiError as buildApiError,
   getApiErrorCode,
+  getErrorStatus,
   handleErrorResponse,
+  isSessionLevelError,
   parseApiError,
   parseGoogleConnectError,
+  shouldShowContextualLoadError,
 } from "./api.util";
 import { describe, expect, it, mock, spyOn } from "bun:test";
 
@@ -63,6 +66,77 @@ describe("createApiError", () => {
 
     expect(error.message).toBe("Request failed for DELETE /event/abc");
     expect(error.response).toBeUndefined();
+  });
+});
+
+describe("getErrorStatus", () => {
+  it("reads the structured ApiError response status", () => {
+    const error = createApiError({ status: Status.UNAUTHORIZED });
+    expect(getErrorStatus(error)).toBe(Status.UNAUTHORIZED);
+  });
+
+  it("falls back to trailing message digits when there is no response", () => {
+    const error = new Error("Request failed with status 500");
+    expect(getErrorStatus(error)).toBe(500);
+  });
+
+  it("returns undefined for unrelated values", () => {
+    expect(getErrorStatus(undefined)).toBeUndefined();
+    expect(getErrorStatus("nope")).toBeUndefined();
+    expect(getErrorStatus(new Error("no status here"))).toBeUndefined();
+  });
+});
+
+describe("isSessionLevelError", () => {
+  it.each([
+    Status.UNAUTHORIZED,
+    Status.GONE,
+  ])("is true for session status %s", (status) => {
+    expect(isSessionLevelError(createApiError({ status }))).toBe(true);
+  });
+
+  it("is false for other HTTP failures", () => {
+    expect(
+      isSessionLevelError(createApiError({ status: Status.INTERNAL_SERVER })),
+    ).toBe(false);
+    expect(
+      isSessionLevelError(createApiError({ status: Status.NOT_FOUND })),
+    ).toBe(false);
+  });
+});
+
+describe("shouldShowContextualLoadError", () => {
+  it("shows local Retry UI for ordinary load failures", () => {
+    expect(
+      shouldShowContextualLoadError(
+        true,
+        createApiError({ status: Status.INTERNAL_SERVER }),
+      ),
+    ).toBe(true);
+  });
+
+  it("hides local Retry UI when session recovery already owns the toast", () => {
+    expect(
+      shouldShowContextualLoadError(
+        true,
+        createApiError({ status: Status.UNAUTHORIZED }),
+      ),
+    ).toBe(false);
+    expect(
+      shouldShowContextualLoadError(
+        true,
+        createApiError({ status: Status.GONE }),
+      ),
+    ).toBe(false);
+  });
+
+  it("is false when the query is not in error", () => {
+    expect(
+      shouldShowContextualLoadError(
+        false,
+        createApiError({ status: Status.UNAUTHORIZED }),
+      ),
+    ).toBe(false);
   });
 });
 

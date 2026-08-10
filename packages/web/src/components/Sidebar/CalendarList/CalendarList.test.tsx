@@ -1,5 +1,6 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Status } from "@core/errors/status.codes";
 import {
   type Calendar,
   getCalendarCapabilities,
@@ -15,6 +16,8 @@ import { createMockConnection as makeConnection } from "@web/__tests__/utils/fac
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type ApiRequestConfig } from "@web/api/api.types";
 import { BaseApi } from "@web/api/base/base.api";
+import { createApiError } from "@web/api/util/api.util";
+import { session } from "@web/auth/compass/session/Session";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { isCalendarHidden } from "@web/calendars/calendar-visibility.storage";
@@ -678,5 +681,46 @@ describe("CalendarList", () => {
     await waitFor(() => {
       expect(screen.getByText("Work")).toBeInTheDocument();
     });
+  });
+
+  it("does not show the calendars load error for a session-level failure", async () => {
+    // Session recovery already owns the signed-out toast; Retry would keep
+    // failing while remote source stays selected. Stay quiet rather than
+    // inventing an empty-list story ("Connect Google…" / "No calendars yet.").
+    window.history.pushState({}, "", "/week");
+    const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
+    BaseApi.defaults.adapter = async (
+      config: ApiRequestConfig & { body?: unknown },
+    ) => {
+      throw createApiError(config, {
+        config,
+        data: {},
+        headers: new Headers(),
+        status: Status.UNAUTHORIZED,
+        statusText: "Unauthorized",
+      });
+    };
+    mockUseSession.mockReturnValue({
+      authenticated: true,
+      setAuthenticated: () => {},
+    });
+    const { wrapper } = createStoreWrapper();
+    render(<CalendarList />, { wrapper });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("Calendars")).toBeInTheDocument();
+      expect(
+        screen.queryByText(/couldn.t load calendars/i),
+      ).not.toBeInTheDocument();
+    });
+    expect(
+      screen.queryByRole("button", { name: "Retry" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/connect google to see your calendars/i),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/no calendars yet/i)).not.toBeInTheDocument();
+
+    signOutSpy.mockRestore();
   });
 });
