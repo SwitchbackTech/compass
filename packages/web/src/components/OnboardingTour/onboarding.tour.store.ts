@@ -22,6 +22,12 @@ export const useOnboardingTourStore = create<OnboardingTourState>()(() => ({
   ...initialOnboardingTourState,
 }));
 
+/** Shared by finish/skip: mark the tour seen and clear active state. */
+const endTour = () => {
+  markOnboardingTourSeen();
+  useOnboardingTourStore.setState({ ...initialOnboardingTourState });
+};
+
 export const onboardingTourActions = {
   /** Start Now: begin the interactive tour when it has not been finished. */
   start: () => {
@@ -42,14 +48,10 @@ export const onboardingTourActions = {
     }
     useOnboardingTourStore.setState({ stepId: next });
   },
-  finish: () => {
-    markOnboardingTourSeen();
-    useOnboardingTourStore.setState({ ...initialOnboardingTourState });
-  },
-  skip: () => {
-    markOnboardingTourSeen();
-    useOnboardingTourStore.setState({ ...initialOnboardingTourState });
-  },
+  /** Reached the last step. */
+  finish: endTour,
+  /** User dismissed the tour early (Skip button or Escape). */
+  skip: endTour,
   /** Welcome backdrop/auth dismiss: never trap; mark seen without starting. */
   markSkippedWithoutStarting: () => {
     markOnboardingTourSeen();
