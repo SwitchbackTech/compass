@@ -251,6 +251,18 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Move event 15 min later",
     section: "edit",
   },
+  {
+    id: "edit-cycle-edge",
+    keys: ["Tab"],
+    label: "Cycle start/end edge focus",
+    section: "edit",
+  },
+  {
+    id: "edit-move-edge",
+    keys: ["Shift", "Arrow keys"],
+    label: "Move only the focused edge",
+    section: "edit",
+  },
 
   // Other
   {

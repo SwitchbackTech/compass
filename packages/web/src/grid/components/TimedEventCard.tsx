@@ -38,6 +38,10 @@ import {
   EVENT_RESIZE_HANDLE_ATTRIBUTE,
   EVENT_TIME_LABEL_ATTRIBUTE,
 } from "@web/grid/interaction/dom";
+import {
+  selectEdgeForEvent,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
 import { type EventPosition } from "@web/grid/types/grid.types";
 import { EventRepeatIcon } from "./EventRepeatIcon";
 
@@ -186,6 +190,7 @@ const TimedEventCardBase = (
   } as CSSProperties;
 
   const isCompactEvent = position.height <= COMPACT_EVENT_MAX_HEIGHT;
+  const focusedEdge = useEdgeFocusStore(selectEdgeForEvent(event._id));
 
   const titleStyle: CSSProperties = {
     fontSize: isCompactEvent
@@ -238,9 +243,16 @@ const TimedEventCardBase = (
   // Fill stays a flat neutral color; the accent + this suffix are the only
   // calendar signal, and the name (never color alone) is what makes it
   // accessible (A9).
-  const accessibleLabel = calendarIdentity
-    ? `${samplePrefix}${baseAccessibleLabel}${calendarAccentAccessibleSuffix(calendarIdentity)}`
-    : `${samplePrefix}${baseAccessibleLabel}`;
+  const edgeFocusSuffix =
+    focusedEdge === "startDate"
+      ? ", editing start time"
+      : focusedEdge === "endDate"
+        ? ", editing end time"
+        : "";
+  const accessibleLabel =
+    (calendarIdentity
+      ? `${samplePrefix}${baseAccessibleLabel}${calendarAccentAccessibleSuffix(calendarIdentity)}`
+      : `${samplePrefix}${baseAccessibleLabel}`) + edgeFocusSuffix;
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
@@ -289,6 +301,17 @@ const TimedEventCardBase = (
           aria-hidden="true"
           className="absolute inset-y-0 left-0 w-[3px]"
           style={calendarAccentStyle(calendarIdentity)}
+        />
+      )}
+      {focusedEdge && (
+        <div
+          aria-hidden="true"
+          className={cn(
+            "absolute inset-x-0 h-[3px] rounded-full bg-accent",
+            focusedEdge === "startDate" ? "top-0" : "bottom-0",
+          )}
+          data-edge-focus={focusedEdge}
+          style={{ zIndex: ZIndex.LAYER_4 }}
         />
       )}
       <div
