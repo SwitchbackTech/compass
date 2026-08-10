@@ -20,6 +20,14 @@ export type NormalizedEvents = {
    * `otherAccount` the same way demoEventIds becomes `isDemo`.
    */
   crossAccountDuplicates?: ReadonlyMap<EventId, CrossAccountDuplicate>;
+  /**
+   * Ephemeral onboarding-sandbox event ids (see
+   * OnboardingTour/onboarding.sandbox-events.ts) - joined onto GridEvent as
+   * `isSandboxReadOnly` the same way demoEventIds becomes `isDemo`. Absent
+   * for real query data; only set by the sandbox merge in
+   * useWeekEventsQuery/useDayEventsQuery.
+   */
+  sandboxReadOnlyEventIds?: readonly EventId[];
 };
 
 export type OptimisticEvent = {
