@@ -246,7 +246,7 @@ export type EventMutations = {
   replace: (
     payload: { id: EventId; input: ReplaceEventInput },
     callbacks?: EventMutationCallbacks,
-  ) => void;
+  ) => boolean;
   delete: (payload: { id: EventId; scope: RecurrenceScope }) => void;
   promoteRecurring: (
     opportunity: RecurrenceScopeOpportunity,
@@ -697,20 +697,20 @@ export function useEventMutations(
       replace: (
         payload: { id: EventId; input: ReplaceEventInput },
         callbacks?: EventMutationCallbacks,
-      ) => {
+      ): boolean => {
         const original = findEventInCache(queryClient, payload.id, source);
         if (isTargetReadOnly(original)) {
           console.warn(
             `[useEventMutations] blocked replace on read-only event ${payload.id}`,
           );
-          return;
+          return false;
         }
         if (
           blockReconnectRequiredCalendar(
             payload.input.calendarId ?? original?.calendarId,
           )
         ) {
-          return;
+          return false;
         }
         const writeKey = seriesWriteKey(
           original,
@@ -746,6 +746,7 @@ export function useEventMutations(
           { ...payload, writeKey, opportunityId, callbacks },
           callbacks,
         );
+        return true;
       },
       delete: (payload: { id: EventId; scope: RecurrenceScope }) => {
         const original = findEventInCache(queryClient, payload.id, source);

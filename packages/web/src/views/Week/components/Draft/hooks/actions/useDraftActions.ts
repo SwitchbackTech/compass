@@ -190,12 +190,17 @@ export const useDraftActions = (
           });
 
           if (parsed.ok && parsed.mode === "edit") {
-            mutations.replace(
+            const started = mutations.replace(
               { id: parsed.eventId, input: parsed.input },
               isFormOpenBeforeDragging
                 ? undefined
                 : { onOptimisticApplied: discard },
             );
+            if (!started && !isFormOpenBeforeDragging) {
+              discard();
+            }
+          } else if (!isFormOpenBeforeDragging) {
+            discard();
           }
 
           if (isFormOpenBeforeDragging) {

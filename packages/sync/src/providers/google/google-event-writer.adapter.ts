@@ -42,6 +42,10 @@ export interface GoogleEventsApi {
     requestBody: gSchema$Event;
     sendUpdates: string;
     ifMatch: string | null;
+    // Required to write eventLabelId. Under version 1, colorId is ignored —
+    // callers that both clear a label and set a slot color must use two
+    // patches (label clear at v1, then colorId at the default v0).
+    eventLabelVersion?: 1;
   }): Promise<gSchema$Event>;
   delete(params: {
     calendarId: string;
@@ -84,9 +88,23 @@ const defaultApiFactory: GoogleEventsApiFactory = (accessToken) => {
       });
       return data;
     },
-    async patch({ calendarId, eventId, requestBody, sendUpdates, ifMatch }) {
+    async patch({
+      calendarId,
+      eventId,
+      requestBody,
+      sendUpdates,
+      ifMatch,
+      eventLabelVersion,
+    }) {
       const { data } = await gcal.events.patch(
-        { calendarId, eventId, requestBody, sendUpdates },
+        {
+          calendarId,
+          eventId,
+          requestBody,
+          sendUpdates,
+          // Installed @googleapis/calendar types predate event labels.
+          ...(eventLabelVersion !== undefined ? { eventLabelVersion } : {}),
+        } as calendar_v3.Params$Resource$Events$Patch,
         ifMatchOptions(ifMatch),
       );
       return data;
@@ -161,6 +179,22 @@ export class GoogleEventWriter implements ProviderEventWriter {
   async patchEvent(input: ProviderPatchInput): Promise<ProviderWriteResult> {
     const api = this.#makeApi(input.accessToken);
     try {
+      let ifMatch = input.expectedVersion;
+      // A slot color must also clear any custom event label. Labels supersede
+      // colorId on read and rehydrate as Compass colorHex. Google only accepts
+      // eventLabelId writes under eventLabelVersion=1, and that version ignores
+      // colorId — so clear the label first, then write colorId at default v0.
+      if (typeof input.content.color === "string") {
+        const cleared = await api.patch({
+          calendarId: input.calendarId,
+          eventId: input.providerEventId,
+          requestBody: { eventLabelId: "" },
+          sendUpdates: "none",
+          ifMatch,
+          eventLabelVersion: 1,
+        });
+        if (cleared.etag) ifMatch = cleared.etag;
+      }
       const patched = await api.patch({
         calendarId: input.calendarId,
         eventId: input.providerEventId,
@@ -170,7 +204,7 @@ export class GoogleEventWriter implements ProviderEventWriter {
           input.recurrence,
         ),
         sendUpdates: toSendUpdates(input.invitation),
-        ifMatch: input.expectedVersion,
+        ifMatch,
       });
       return toResult(patched);
     } catch (error) {

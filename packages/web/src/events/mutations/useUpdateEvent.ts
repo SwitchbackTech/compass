@@ -48,20 +48,28 @@ export function useUpdateEvent(dependencies: EventMutationDependencies = {}) {
       },
       saveImmediate = true,
       callbacks?: EventMutationCallbacks,
-    ) => {
+    ): boolean => {
       const { event, shouldRemove, applyTo } = payload;
 
-      if (!event._id) return;
+      // Callers pass onOptimisticApplied to tear down covering drafts. When
+      // the mutation never starts (blocked/no-op), still run it so drafts do
+      // not stick — same teardown, without an optimistic cache write.
+      const finishWithoutMutation = () => {
+        callbacks?.onOptimisticApplied?.();
+        return false;
+      };
 
-      if (!saveImmediate) return;
+      if (!event._id) return finishWithoutMutation();
+
+      if (!saveImmediate) return finishWithoutMutation();
 
       if (shouldRemove) {
         removeEventFromQueries(queryClient, event._id);
-        return;
+        return finishWithoutMutation();
       }
 
       const sourceEvent = findEventInCache(queryClient, event._id);
-      if (!sourceEvent) return;
+      if (!sourceEvent) return finishWithoutMutation();
 
       // A differing calendarId means the drag dropped the event on another
       // calendar's column (Day view). Guard here so a blocked move reverts
@@ -73,7 +81,7 @@ export function useUpdateEvent(dependencies: EventMutationDependencies = {}) {
       if (nextCalendarId) {
         if (sourceEvent.recurrence.kind !== "single") {
           showErrorToast("Repeating events can't move to another calendar.");
-          return;
+          return finishWithoutMutation();
         }
         const lookup = buildCalendarLookup(
           queryClient.getQueryData<Calendar[]>(calendarQueryKeys.all),
@@ -81,7 +89,7 @@ export function useUpdateEvent(dependencies: EventMutationDependencies = {}) {
         if (isEventReadOnly(lookup, nextCalendarId, false)) {
           const name = lookup.get(nextCalendarId)?.name ?? "that calendar";
           showErrorToast(`You can't move events to ${name}.`);
-          return;
+          return finishWithoutMutation();
         }
       }
 
@@ -89,7 +97,9 @@ export function useUpdateEvent(dependencies: EventMutationDependencies = {}) {
         sourceEvent,
         toRecurrenceScope(applyTo),
       );
-      if (!sourceDraft || sourceDraft.kind !== "edit") return;
+      if (!sourceDraft || sourceDraft.kind !== "edit") {
+        return finishWithoutMutation();
+      }
 
       const patchedDraft = {
         ...sourceDraft,
@@ -114,21 +124,25 @@ export function useUpdateEvent(dependencies: EventMutationDependencies = {}) {
         !nextCalendarId &&
         fastDeepEqual(patchedDraft.values, sourceDraft.values)
       ) {
-        return;
+        return finishWithoutMutation();
       }
 
       const parsed = parseGridEventDraft(patchedDraft);
-      if (parsed.ok && parsed.mode === "edit") {
-        replace(
-          {
-            id: parsed.eventId,
-            input: nextCalendarId
-              ? { ...parsed.input, calendarId: nextCalendarId }
-              : parsed.input,
-          },
-          callbacks,
-        );
+      if (!(parsed.ok && parsed.mode === "edit")) {
+        return finishWithoutMutation();
       }
+
+      const started = replace(
+        {
+          id: parsed.eventId,
+          input: nextCalendarId
+            ? { ...parsed.input, calendarId: nextCalendarId }
+            : parsed.input,
+        },
+        callbacks,
+      );
+      if (!started) return finishWithoutMutation();
+      return true;
     },
     [replace, queryClient],
   );
