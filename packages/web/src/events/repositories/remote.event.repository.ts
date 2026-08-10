@@ -6,6 +6,7 @@ import {
   type RecurrenceScope,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
+import { decodeOccurrenceId } from "@core/util/occurrence-id";
 import {
   isBackendUnavailableError,
   markBackendUnavailable,
@@ -51,10 +52,24 @@ export class RemoteEventRepository implements EventRepository {
   }
 
   async replace(id: EventId, input: ReplaceEventInput): Promise<Event> {
-    return this.withLocalFallback(
-      () => this.api.replace(id, input),
-      () => this.localRepository.replace(id, input),
-    );
+    try {
+      return await this.api.replace(id, input);
+    } catch (error) {
+      if (!isBackendUnavailableError(error)) {
+        throw error;
+      }
+
+      markBackendUnavailable();
+      // Signed-in mutationFn may already have rebased scope-"all" onto the
+      // series master. Local replaceSeries applies that delta again, so
+      // falling through would corrupt DTSTART. Prefer failing closed: the
+      // cloud series is the source of truth for this path.
+      if (input.scope === "all" && decodeOccurrenceId(String(id))) {
+        throw error;
+      }
+
+      return this.localRepository.replace(id, input);
+    }
   }
 
   async delete(id: EventId, scope: RecurrenceScope): Promise<void> {

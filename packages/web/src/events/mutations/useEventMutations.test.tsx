@@ -373,7 +373,15 @@ describe("useEventMutations", () => {
         method: "replace",
         value: expect.objectContaining({
           id: first.id,
-          input: expect.objectContaining({ scope: "all" }),
+          input: expect.objectContaining({
+            scope: "all",
+            // Local source must keep the occurrence-absolute schedule so
+            // LocalEventRepository.replaceSeries can apply the delta once.
+            schedule: timedSchedule(
+              "2026-07-02T16:00:00.000Z",
+              "2026-07-02T17:00:00.000Z",
+            ),
+          }),
         }),
       });
     });
@@ -513,6 +521,67 @@ describe("useEventMutations", () => {
       scope: "thisAndFollowing",
       schedule: moved,
     });
+  });
+
+  test("remote scope-all rules edit rebases from the pre-optimistic master snapshot", async () => {
+    const context = setup("remote");
+    const seriesId = EventIdSchema.parse("dddddddddddddddddddddddd");
+    const master = seriesMaster(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-01T16:00:00.000Z",
+        "2026-07-01T17:00:00.000Z",
+      ),
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=DAILY;COUNT=5"] },
+    });
+    const middle = composedOccurrence(seriesId, "2026-07-03T16:00:00.000Z", {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
+    });
+    const moved = timedSchedule(
+      "2026-07-04T16:00:00.000Z",
+      "2026-07-04T17:00:00.000Z",
+    );
+    context.queryClient.setQueryData(
+      calendarKeyFor("remote"),
+      normalized(master, middle),
+    );
+
+    // Direct scope-all with new rules: optimistic projection rewrites the
+    // cached master with the occurrence absolute schedule before mutationFn.
+    // Rebase must still use the snapshotted pre-optimistic master.
+    act(() =>
+      context.hook.result.current.mutations.replace(
+        replacePayload(middle.id, {
+          content: {
+            kind: "details",
+            title: "Rules + nudge",
+            description: "",
+            location: "",
+          },
+          schedule: moved,
+          recurrence: { kind: "series", rules: ["RRULE:FREQ=DAILY;COUNT=3"] },
+          scope: "all",
+        }),
+      ),
+    );
+
+    await waitFor(() => expect(context.calls).toHaveLength(1));
+    expect(context.calls[0]).toEqual({
+      method: "replace",
+      value: {
+        id: middle.id,
+        input: expect.objectContaining({
+          scope: "all",
+          schedule: timedSchedule(
+            "2026-07-02T16:00:00+00:00",
+            "2026-07-02T17:00:00+00:00",
+          ),
+        }),
+      },
+    });
+    context.pending.resolve();
   });
 
   test("optimistically patches recurring instances across day and week caches", async () => {

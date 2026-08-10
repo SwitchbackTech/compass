@@ -10,7 +10,11 @@ import {
   type EventId,
   EventIdSchema,
 } from "@core/types/domain-primitives";
-import { type Event, type EventRecurrence } from "@core/types/event.contracts";
+import {
+  type Event,
+  type EventRecurrence,
+  type EventSchedule,
+} from "@core/types/event.contracts";
 import {
   type CreateEventInput,
   type RecurrenceScope,
@@ -151,28 +155,42 @@ function seriesIdOf(event: Event | null | undefined): EventId | null {
 
 // Remote/sync treat scope-"all" schedule as the series master. The client
 // still sends an occurrence's absolute schedule (same shape local IndexedDB
-// rebases in replaceSeries), so rebase onto the cached master before submit.
-// thisAndFollowing keeps the absolute schedule as remainder DTSTART.
+// rebases in replaceSeries), so rebase onto a pre-optimistic master snapshot
+// before submit. Snapshotting matters: optimistic rules edits can rewrite the
+// cached series row with the occurrence's absolute schedule before mutationFn
+// runs. thisAndFollowing keeps the absolute schedule as remainder DTSTART.
 // Local source skips this — LocalEventRepository already applies the delta.
-function resolveRemoteReplaceSchedule(
+function snapshotSeriesMasterSchedule(
   queryClient: ReturnType<typeof useQueryClient>,
   source: EventRepositorySource,
   id: EventId,
+): EventSchedule | undefined {
+  const parts = decodeOccurrenceId(id);
+  if (!parts) return undefined;
+  const master = findEventInCache(
+    queryClient,
+    EventIdSchema.parse(parts.eventId),
+    source,
+  );
+  return master?.recurrence.kind === "series" ? master.schedule : undefined;
+}
+
+function resolveRemoteReplaceSchedule(
+  source: EventRepositorySource,
+  id: EventId,
   input: ReplaceEventInput,
+  seriesMasterSchedule: EventSchedule | undefined,
 ): ReplaceEventInput {
   if (source !== "remote" || input.scope !== "all") return input;
 
   const parts = decodeOccurrenceId(id);
   if (!parts) return input;
-
-  const seriesId = EventIdSchema.parse(parts.eventId);
-  const master = findEventInCache(queryClient, seriesId, source);
-  if (master?.recurrence.kind !== "series") return input;
+  if (!seriesMasterSchedule) return input;
 
   return {
     ...input,
     schedule: shiftSeriesScheduleByOccurrenceEdit(
-      master.schedule,
+      seriesMasterSchedule,
       parts.recurrenceId,
       input.schedule,
     ),
@@ -259,6 +277,10 @@ type ReplaceVariables = {
   input: ReplaceEventInput;
   writeKey: EventId;
   originalOverride?: Event;
+  // Captured before optimistic cache writes so remote scope-all rebasing
+  // cannot read a master row that projectSeriesRulesChange already polluted
+  // with the occurrence's absolute schedule.
+  seriesMasterSchedule?: EventSchedule;
   opportunityId?: number;
   callbacks?: EventMutationCallbacks;
 };
@@ -562,10 +584,10 @@ export function useEventMutations(
       "replace",
       async (variables) => {
         const input = resolveRemoteReplaceSchedule(
-          queryClient,
           source,
           variables.id,
           variables.input,
+          variables.seriesMasterSchedule,
         );
         await writeAfterPreceding(
           variables.writeKey,
@@ -790,7 +812,16 @@ export function useEventMutations(
         // callbacks rides in variables so onMutate can run onOptimisticApplied
         // in the same task as the cache write (same pattern as create above).
         replaceMutation.mutate(
-          { ...payload, writeKey, opportunityId, callbacks },
+          {
+            ...payload,
+            writeKey,
+            opportunityId,
+            callbacks,
+            seriesMasterSchedule:
+              source === "remote" && payload.input.scope === "all"
+                ? snapshotSeriesMasterSchedule(queryClient, source, payload.id)
+                : undefined,
+          },
           callbacks,
         );
         return true;
@@ -855,15 +886,20 @@ export function useEventMutations(
           recurrenceScopeOpportunityActions.complete(opportunity.id);
         };
         if (opportunity.kind === "replace") {
+          const id = opportunity.original.id as EventId;
           replaceMutation.mutate(
             {
-              id: opportunity.original.id as EventId,
+              id,
               input: { ...opportunity.input, scope },
               // Serialize behind the narrow write for this occurrence. The
               // optimistic projection still uses originalOverride so a
               // deleted/overridden cache entry cannot lose the promotion.
-              writeKey: opportunity.original.id as EventId,
+              writeKey: id,
               originalOverride: opportunity.original,
+              seriesMasterSchedule:
+                source === "remote" && scope === "all"
+                  ? snapshotSeriesMasterSchedule(queryClient, source, id)
+                  : undefined,
             },
             { onSuccess, onSettled },
           );
