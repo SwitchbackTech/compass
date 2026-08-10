@@ -52,6 +52,36 @@ export class EventRepository {
     options?: UpsertByProviderIdentityOptions,
   ): Promise<EventRecord> {
     const now = new Date();
+    // A prior scope-"this" command may have left a series-keyed exception
+    // (often a null-provider tombstone) at this canonical recurrenceId.
+    // Adopt or drop it before the provider-identity upsert, or the insert
+    // collides series_exception_identity — the dual of the E11000 that
+    // upsertException converges the other direction.
+    if (input.recurrence.kind === "exception") {
+      await this.#reconcileSeriesExceptionBeforeProviderUpsert(input);
+    }
+
+    try {
+      return await this.#upsertByProviderIdentityOnce(input, options, now);
+    } catch (error) {
+      if (
+        !isDuplicateKeyError(error) ||
+        input.recurrence.kind !== "exception"
+      ) {
+        throw error;
+      }
+      // Concurrent command upsert won the series key between reconcile and
+      // insert. Reconcile again and retry once.
+      await this.#reconcileSeriesExceptionBeforeProviderUpsert(input);
+      return this.#upsertByProviderIdentityOnce(input, options, now);
+    }
+  }
+
+  async #upsertByProviderIdentityOnce(
+    input: ProviderEventUpsert,
+    options: UpsertByProviderIdentityOptions | undefined,
+    now: Date,
+  ): Promise<EventRecord> {
     const filter = {
       connectionId: input.connectionId,
       calendarId: input.calendarId,
@@ -169,6 +199,59 @@ export class EventRepository {
     );
     if (!result) throw new Error("Upsert did not return an event record");
     return EventRecordSchema.parse(result);
+  }
+
+  // Stamp provider identity onto a series-keyed exception that lacks it (or
+  // drop a divergent series-keyed duplicate) so the provider-identity upsert
+  // that follows updates one document instead of colliding
+  // series_exception_identity.
+  async #reconcileSeriesExceptionBeforeProviderUpsert(
+    input: ProviderEventUpsert,
+  ): Promise<void> {
+    if (input.recurrence.kind !== "exception") return;
+
+    const bySeries = await this.collection.findOne({
+      tenantId: input.tenantId,
+      principalId: input.principalId,
+      "recurrence.kind": "exception",
+      "recurrence.seriesId": input.recurrence.seriesId,
+      "recurrence.recurrenceId": input.recurrence.recurrenceId,
+    });
+    if (!bySeries) return;
+
+    const byProvider = await this.collection.findOne({
+      connectionId: input.connectionId,
+      calendarId: input.calendarId,
+      providerEventId: {
+        $eq: input.providerEventId,
+        $type: "string" as const,
+      },
+    });
+
+    if (!byProvider) {
+      await this.collection.updateOne(
+        {
+          _id: bySeries._id,
+          tenantId: input.tenantId,
+          principalId: input.principalId,
+        },
+        {
+          $set: {
+            connectionId: input.connectionId,
+            providerEventId: input.providerEventId,
+          },
+        },
+      );
+      return;
+    }
+
+    if (bySeries._id !== byProvider._id) {
+      await this.collection.deleteOne({
+        _id: bySeries._id,
+        tenantId: input.tenantId,
+        principalId: input.principalId,
+      });
+    }
   }
 
   // Full write of a Compass (or already-identified) event by its _id. Used for
