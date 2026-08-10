@@ -10,6 +10,7 @@ import {
   createGridEventDraft,
   editGridEventDraft,
   resolveDraftRecurrenceRules,
+  suppressedSeriesIdForDraft,
 } from "@web/events/grid-event-draft.adapter";
 import { useRecurrence } from "./useRecurrence";
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
@@ -212,6 +213,59 @@ describe("useRecurrence hook", () => {
     rerender({ setDraftProp: nextSetDraft });
 
     expect(nextSetDraft).not.toHaveBeenCalled();
+  });
+
+  // Regression: opening a later weekday occurrence of a Google-style series
+  // (BYDAY without INTERVAL=1) used to rewrite the rule on mount, flip
+  // preserve→series, suppress earlier siblings, and leave only the clicked
+  // day + forward previews visible.
+  it("does not rewrite a preserve occurrence draft whose series omits INTERVAL=1", () => {
+    const seriesRules = ["RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"];
+    const source = createMockEvent({
+      schedule: SCHEDULE,
+      recurrence: {
+        kind: "occurrence",
+        seriesId: EventIdSchema.parse("0123456789abcdefaaaaaaaa"),
+      },
+    });
+    const editedDraft = editGridEventDraft(source);
+    if (!editedDraft) throw new Error("expected edit draft");
+
+    expect(editedDraft.values.recurrence).toEqual({ kind: "preserve" });
+    expect(suppressedSeriesIdForDraft(editedDraft)).toBeNull();
+
+    let draft: GridEventDraft = editedDraft;
+    let setDraftCalls = 0;
+    const setDraft: Dispatch<SetStateAction<GridEventDraft | null>> = (
+      updater,
+    ) => {
+      setDraftCalls++;
+      const next = typeof updater === "function" ? updater(draft) : updater;
+      if (next) draft = next;
+    };
+
+    const { result, rerender } = renderHook(() =>
+      useRecurrence(draft, { setDraft }, seriesRules),
+    );
+
+    expect(result.current.hasRecurrence).toBe(true);
+    expect(result.current.freq).toBe(Frequency.WEEKLY);
+    expect(result.current.weekDays).toEqual([
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+    ]);
+    expect(setDraftCalls).toBe(0);
+    expect(draft.values.recurrence).toEqual({ kind: "preserve" });
+    expect(suppressedSeriesIdForDraft(draft)).toBeNull();
+
+    rerender();
+
+    expect(setDraftCalls).toBe(0);
+    expect(draft.values.recurrence).toEqual({ kind: "preserve" });
+    expect(suppressedSeriesIdForDraft(draft)).toBeNull();
   });
 
   // Regression for React error #185 (max update depth exceeded): a timed

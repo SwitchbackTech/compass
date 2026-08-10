@@ -56,8 +56,17 @@ const WEEKDAY_MAP: Record<
   {} as Record<number | string | keyof typeof WEEKDAY_RRULE_MAP, Weekday>,
 );
 
+// Strip RRULE defaults the rrule library re-emits on rebuild (INTERVAL=1,
+// WKST) so open-for-edit doesn't treat serialization drift as a real edit.
+// Without this, Google-style rules like FREQ=WEEKLY;BYDAY=MO..FR flip the
+// draft from preserve→series and hide earlier sibling instances.
 const normalizeRecurrenceRule = (rule: string[] | null | undefined): string[] =>
-  (rule ?? []).map((entry) => entry.replace(/;WKST=[A-Z]{2}/, ""));
+  (rule ?? []).map((entry) =>
+    entry
+      .replace(/;INTERVAL=1(?=;|$)/g, "")
+      .replace(/:INTERVAL=1;/g, ":")
+      .replace(/;WKST=[A-Z]{2}/g, ""),
+  );
 
 const weekdayKeyFromByweekday = (
   day: number | Weekday,
