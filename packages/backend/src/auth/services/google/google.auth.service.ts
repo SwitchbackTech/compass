@@ -249,7 +249,16 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
 
       const refreshToken = oAuthTokens.refresh_token;
       if (!refreshToken) {
-        throw new Error("Refresh token expected for new user sign-up");
+        // Google omits a refresh token when this browser already consented
+        // once before (e.g. an earlier signup attempt reached Google's
+        // consent screen but failed after, before Compass finished linking).
+        // A typed, client-visible code (not a bare Error) so the web client
+        // can retry with prompt=consent instead of leaving the user stuck
+        // retrying the exact same silent-refusal forever.
+        throw error(
+          AuthError.GoogleRefreshTokenMissing,
+          "Refresh token expected for new user sign-up",
+        );
       }
 
       const persisted = await googleAuthService.googleSignup(

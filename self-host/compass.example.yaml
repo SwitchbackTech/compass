@@ -52,6 +52,9 @@ sync:
   mongoUri: mongodb://compass:REPLACE_WITH_MONGO_PASSWORD@mongo:27017/compass_sync?authSource=admin&replicaSet=rs0
   internalAuthToken: REPLACE_WITH_SYNC_INTERNAL_AUTH_TOKEN # any string; must match the value the API uses
   callbackBaseUrl: REPLACE_WITH_YOUR_WEB_URL # public base URL for provider OAuth/webhook callbacks; needs a real domain for Google to deliver push notifications, localhost works for OAuth only
+  # postConnectRedirectUrl not needed here: this topology's callbackBaseUrl IS
+  # the web app's own public URL (routed to sync via /sync/*), so the default
+  # fallback already lands the browser back on the calendar after connect.
   serviceUrl: http://sync:3010 # base URL the API uses to reach this service
   cloudMutationMode: enabled # enabled (default) | maintenance — maintenance rejects cloud edits / connect with typed MAINTENANCE
   execution: active

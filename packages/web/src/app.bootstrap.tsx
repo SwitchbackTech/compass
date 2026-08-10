@@ -2,8 +2,11 @@ import "react-datepicker/dist/react-datepicker.css";
 import { createRoot } from "react-dom/client";
 import "react-toastify/dist/ReactToastify.css";
 import { sessionInit } from "@web/auth/compass/session/SessionProvider";
+import {
+  readGoogleConnectStatus,
+  showGoogleConnectStatusToast,
+} from "@web/auth/google/authorization/google-connect-status.util";
 import { configureGoogleRevocationApiHandler } from "@web/auth/google/util/google-revocation-api.config";
-import { track } from "@web/auth/posthog/track";
 import {
   initializeDatabaseWithErrorHandling,
   showDbInitErrorToast,
@@ -16,13 +19,7 @@ export async function bootstrapApp(): Promise<void> {
 
   // Read before the router mounts: validateAuthSearch strips unrecognized
   // query params (like these) on the first navigation.
-  const connectParams = new URLSearchParams(window.location.search);
-  if (
-    connectParams.get("provider") === "google" &&
-    connectParams.get("status") === "connected"
-  ) {
-    track("calendar_connected");
-  }
+  const connectStatus = readGoogleConnectStatus();
 
   const container = document.getElementById("root");
   if (!container) {
@@ -39,9 +36,12 @@ export async function bootstrapApp(): Promise<void> {
 
   root.render(<App />);
 
-  // Show error toast after app renders (so toast container is available)
+  // Show toasts after app renders (so the toast container is available)
   if (dbInitError) {
     console.error(dbInitError);
     showDbInitErrorToast(dbInitError);
+  }
+  if (connectStatus) {
+    showGoogleConnectStatusToast(connectStatus);
   }
 }

@@ -658,6 +658,21 @@ export function registerConnectionRoutes(
       return redirect("error");
     }
 
+    // Google grants a SUBSET of the requested scopes when the user unchecks
+    // one on the consent screen (e.g. leaves the calendar box unticked).
+    // Unlike the signup path (complete-google-authorization.ts, which checks
+    // client-side before ever reaching here), this route previously linked
+    // the connection anyway - discovery would then 403 and durably fail the
+    // resource, surfacing as "Couldn't update your calendar" with no mention
+    // of the actual cause. Catch it here, before any connection is created.
+    if (
+      !googleCapabilitiesFromScopes(authorization.grantedScopes).includes(
+        "readEvents",
+      )
+    ) {
+      return redirect("missingScopes");
+    }
+
     try {
       // authAdapter is non-null here (gated above); pass it so the helper needs
       // no assertion.

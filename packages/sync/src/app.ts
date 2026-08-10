@@ -87,6 +87,17 @@ export function createSyncService(
   const readiness = new ReadinessRegistry();
   const shutdown = new ShutdownCoordinator();
 
+  // Unset POST_CONNECT_REDIRECT_URL silently falls back to this service's own
+  // CALLBACK_BASE_URL (an API host, not the web app) - every OAuth connect
+  // and reconnect would drop the browser there instead of back on the
+  // calendar. Only worth warning about in active mode: passive never
+  // completes an OAuth round-trip.
+  if (config.EXECUTION === "active" && !config.POST_CONNECT_REDIRECT_URL) {
+    logger.warn(
+      "sync.postConnectRedirectUrl is not set - Google connect/reconnect will redirect users to this service's own URL instead of the web app. Set it to the web app's origin.",
+    );
+  }
+
   // The internal connection API mounts only when storage is provided. Its
   // routes read the connected db per request, so the app is still built before
   // Mongo connects (liveness-first startup).
