@@ -9,7 +9,11 @@ import {
 } from "@web/common/utils/draft/draft.util";
 import { useFocusSidebarShortcut } from "@web/components/Sidebar/useFocusSidebarShortcut";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
-import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
+import {
+  draftActions,
+  isEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { useGridEventEditShortcuts } from "@web/grid/shortcuts/useGridEventEditShortcuts";
 import { useGridEventFormFieldSequences } from "@web/grid/shortcuts/useGridEventFormFieldSequences";
 import {
@@ -129,6 +133,11 @@ export const useWeekShortcutOwner = ({
   }, [defaultTargetCalendarId, isCalendarsPending, isCurrentWeek, startOfView]);
 
   const placeTimedDraftEvent = useCallback(() => {
+    // Same guard as Day: reposition owns further Shift+Arrow once a draft
+    // exists; do not wipe a clamped/unmoved draft back to the default time.
+    if (useDraftStore.getState().gridDraft) {
+      return;
+    }
     if (isCalendarsPending && !defaultTargetCalendarId) {
       return;
     }

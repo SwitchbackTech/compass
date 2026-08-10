@@ -570,7 +570,10 @@ describe("DayCalendarGrid", () => {
       name: /timed event: placed draft/i,
     });
     const draftId = getGridDraftId(getGridDraft()!);
-    expect(card.getAttribute("data-day-interaction-event-id")).toBe(draftId);
+    expect(draftId).toBeDefined();
+    expect(card.getAttribute("data-day-interaction-event-id")).toBe(
+      draftId ?? null,
+    );
 
     card.focus();
     expect(document.activeElement).toBe(card);

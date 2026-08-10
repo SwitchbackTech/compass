@@ -20,6 +20,7 @@ import { ID_EVENT_FORM, ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { emitViewCommand } from "@web/common/utils/dom/view-command-bus";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { getGridDraftId } from "@web/events/grid-event-draft.adapter";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
@@ -597,6 +598,8 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
       await Promise.resolve();
     });
     expect(getEditMutation(queryClient)).toBeUndefined();
+    // Read-only focus must not fall through into place-create either.
+    expect(useDraftStore.getState().gridDraft).toBeNull();
   });
 
   it("moves the focused timed event by 15 minutes with Shift+ArrowUp and Shift+ArrowDown", async () => {
@@ -710,6 +713,23 @@ describe("useWeekShortcutOwner shift+arrow event moves", () => {
 
     expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowDown");
     expect(useDraftStore.getState().status?.isFormOpen).toBe(false);
+  });
+
+  it("does not reseed a keyboardPlace draft when Shift+Arrow cannot move it", async () => {
+    repositionDraftByKeyboard = mock(() => false);
+    renderShortcuts();
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
+    });
+    const placedId = getGridDraftId(useDraftStore.getState().gridDraft!);
+
+    pressKey("ArrowDown", shiftKey);
+
+    expect(getGridDraftId(useDraftStore.getState().gridDraft!)).toBe(placedId);
+    expect(useDraftStore.getState().status?.activity).toBe("keyboardPlace");
   });
 });
 

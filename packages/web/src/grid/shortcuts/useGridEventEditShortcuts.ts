@@ -28,7 +28,11 @@ import {
 } from "@web/events/mutations/useEventMutations";
 import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
-import { draftActions, isEventFormOpen } from "@web/events/stores/draft.store";
+import {
+  draftActions,
+  isEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import {
   edgeFocusActions,
   useEdgeFocusStore,
@@ -237,6 +241,7 @@ export function useGridEventEditShortcuts({
   const moveFocusedCalendarEvent = (keyboardEvent: KeyboardEvent) => {
     if (isEventFormOpen()) return;
 
+    const focusedTarget = targeting.getFocused();
     const event = getFocusedMutableCalendarEvent();
     if (event?._id) {
       const edgeFocus = useEdgeFocusStore.getState();
@@ -284,11 +289,17 @@ export function useGridEventEditShortcuts({
       return;
     }
 
-    // No focused saved event: reposition a form-closed draft, or place one.
+    // No focused mutable saved event: reposition a form-closed draft, or
+    // place one when the grid is idle. Do not place over an existing draft
+    // (failed clamp/midnight move) or while a read-only/draft card is focused.
     const didMoveDraft = repositionDraftByKey(keyboardEvent.key);
     if (didMoveDraft) {
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();
+      return;
+    }
+
+    if (focusedTarget || useDraftStore.getState().gridDraft) {
       return;
     }
 
