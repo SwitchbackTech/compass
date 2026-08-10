@@ -8,7 +8,8 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
-import { useGoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useGoogleUiState";
+import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import { isFirstImportInProgress } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -88,12 +89,15 @@ export function DayCalendarGrid() {
     isErrorEvents,
     isFetching,
   );
-  const googleState = useGoogleUiState();
+  const { connection, state: googleState } = useConnectGoogle();
+  // See Grid.tsx's Week-view equivalent: googleState alone can't tell a
+  // first-ever import apart from routine catch-up on an established account.
   const isImportingEmpty =
     !isPending &&
     !isErrorEvents &&
     dayEvents.length === 0 &&
-    googleState === "IMPORTING";
+    googleState === "IMPORTING" &&
+    isFirstImportInProgress(connection);
   const {
     calendarColumnIndexById,
     displayedAllDayEvents,
