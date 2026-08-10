@@ -74,6 +74,17 @@ export function registerNotificationRoutes(
         now,
       );
 
+      // Never reveal the verdict to the caller (response stays 200 either
+      // way), but a rejection is still worth a quiet log line - a fleet-wide
+      // channel/resource desync (e.g. every callback suddenly unknownChannel)
+      // would otherwise be invisible until reconcile's 15-min fallback masks
+      // the symptom.
+      if (verdict.status === "rejected") {
+        logger.warn(
+          `Rejected notification for channel ${notification.channelId}: ${verdict.reason}`,
+        );
+      }
+
       // Only an authentic change schedules work. Coalescing on the resource
       // collapses duplicate deliveries of the same change into one job.
       if (verdict.status === "process" && resource) {

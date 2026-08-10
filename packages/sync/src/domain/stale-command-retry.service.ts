@@ -8,6 +8,10 @@ import { type CommandRepository } from "@sync/storage/repositories/command.repos
 
 export interface StaleCommandRetryDeps extends CloudCommandDeps {
   commands: CommandRepository;
+  // Called once per command that threw something other than
+  // ProviderWriteUnavailableError. The sweep keeps going; the caller decides
+  // how loud to be.
+  onRetryError?: (error: unknown, commandId: string) => void;
 }
 
 export interface StaleCommandRetryResult {
@@ -39,6 +43,14 @@ const RETRYABLE_KINDS: readonly SyncCommandInput["kind"][] = [
 // newer edit would be silent data loss. A GLOBAL scan across owners (system
 // liveness, not a user request) - mirrors failed-job-requeue.service.ts's
 // sweep shape.
+//
+// Each command is retried independently: one that throws something
+// unexpected is reported and skipped, never allowed to abandon the rest of
+// the batch. listStaleNonterminal sorts oldest-updatedAt-first, so a single
+// doomed command would otherwise sort to the front and block this sweep for
+// EVERY tenant on every cycle, forever - the same class of failure
+// enqueueForResources was hardened against (2026-07-31: one unparseable job
+// doc froze calendar sync fleet-wide for 23h).
 export async function retryStaleCommands(
   deps: StaleCommandRetryDeps,
   before: Date,
@@ -67,7 +79,10 @@ export async function retryStaleCommands(
         stillStale++;
         continue;
       }
-      throw error;
+      // Anything else is unexpected (a malformed row, a bug) - report it and
+      // move on rather than losing every command behind this one, forever.
+      deps.onRetryError?.(error, command._id);
+      stillStale++;
     }
   }
 

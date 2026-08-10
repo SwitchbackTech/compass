@@ -617,6 +617,11 @@ function buildSchedulers(
               writer: eventWriter,
               custody: new CredentialCustody(repos.credentials, authAdapter),
             },
+            onRetryError: (error, commandId) =>
+              logger.error(
+                `Sync stale-command sweep could not retry command ${commandId}; skipping it and continuing`,
+                error,
+              ),
           },
           before,
           () => new Date(),
