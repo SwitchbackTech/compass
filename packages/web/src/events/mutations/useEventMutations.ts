@@ -5,13 +5,23 @@ import {
 } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
-import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
-import { type Event, type EventRecurrence } from "@core/types/event.contracts";
+import {
+  DateTimeSchema,
+  type EventId,
+  EventIdSchema,
+} from "@core/types/domain-primitives";
+import {
+  type Event,
+  type EventRecurrence,
+  type EventSchedule,
+} from "@core/types/event.contracts";
 import {
   type CreateEventInput,
   type RecurrenceScope,
   type ReplaceEventInput,
 } from "@core/types/event-command.contracts";
+import { shiftSeriesScheduleByOccurrenceEdit } from "@core/util/event/shift-series-schedule-by-occurrence-edit";
+import { decodeOccurrenceId } from "@core/util/occurrence-id";
 import { isCalendarReconnectRequired } from "@web/auth/google/state/google.reconnect.calendar";
 import { track } from "@web/auth/posthog/track";
 import {
@@ -143,6 +153,50 @@ function seriesIdOf(event: Event | null | undefined): EventId | null {
   return null;
 }
 
+// Remote/sync treat scope-"all" schedule as the series master. The client
+// still sends an occurrence's absolute schedule (same shape local IndexedDB
+// rebases in replaceSeries), so rebase onto a pre-optimistic master snapshot
+// before submit. Snapshotting matters: optimistic rules edits can rewrite the
+// cached series row with the occurrence's absolute schedule before mutationFn
+// runs. thisAndFollowing keeps the absolute schedule as remainder DTSTART.
+// Local source skips this — LocalEventRepository already applies the delta.
+function snapshotSeriesMasterSchedule(
+  queryClient: ReturnType<typeof useQueryClient>,
+  source: EventRepositorySource,
+  id: EventId,
+): EventSchedule | undefined {
+  const parts = decodeOccurrenceId(id);
+  if (!parts) return undefined;
+  const master = findEventInCache(
+    queryClient,
+    EventIdSchema.parse(parts.eventId),
+    source,
+  );
+  return master?.recurrence.kind === "series" ? master.schedule : undefined;
+}
+
+function resolveRemoteReplaceSchedule(
+  source: EventRepositorySource,
+  id: EventId,
+  input: ReplaceEventInput,
+  seriesMasterSchedule: EventSchedule | undefined,
+): ReplaceEventInput {
+  if (source !== "remote" || input.scope !== "all") return input;
+
+  const parts = decodeOccurrenceId(id);
+  if (!parts) return input;
+  if (!seriesMasterSchedule) return input;
+
+  return {
+    ...input,
+    schedule: shiftSeriesScheduleByOccurrenceEdit(
+      seriesMasterSchedule,
+      parts.recurrenceId,
+      input.schedule,
+    ),
+  };
+}
+
 // A create's optimistic insert needs a full Event before the server response
 // lands; recurrence is a strict subset of EditableRecurrence ("single" |
 // "series"), so it's assignable as-is.
@@ -223,6 +277,10 @@ type ReplaceVariables = {
   input: ReplaceEventInput;
   writeKey: EventId;
   originalOverride?: Event;
+  // Captured before optimistic cache writes so remote scope-all rebasing
+  // cannot read a master row that projectSeriesRulesChange already polluted
+  // with the occurrence's absolute schedule.
+  seriesMasterSchedule?: EventSchedule;
   opportunityId?: number;
   callbacks?: EventMutationCallbacks;
 };
@@ -525,15 +583,23 @@ export function useEventMutations(
     buildMutation<ReplaceVariables>(
       "replace",
       async (variables) => {
+        const input = resolveRemoteReplaceSchedule(
+          source,
+          variables.id,
+          variables.input,
+          variables.seriesMasterSchedule,
+        );
         await writeAfterPreceding(
           variables.writeKey,
+          // Must be the exact variables object mutate registered — a spread
+          // clone cannot identify this mutation in the serialization queue.
           variables,
           precedingCreateOk,
           // Same wire-boundary strip as create, see its comment above.
           () =>
             repository.replace(variables.id, {
-              ...variables.input,
-              content: editableContent(variables.input.content),
+              ...input,
+              content: editableContent(input.content),
             }),
           // A promotion replays the saved occurrence mutation at a broader
           // scope. It must reach the repository even if a later narrow edit
@@ -746,7 +812,16 @@ export function useEventMutations(
         // callbacks rides in variables so onMutate can run onOptimisticApplied
         // in the same task as the cache write (same pattern as create above).
         replaceMutation.mutate(
-          { ...payload, writeKey, opportunityId, callbacks },
+          {
+            ...payload,
+            writeKey,
+            opportunityId,
+            callbacks,
+            seriesMasterSchedule:
+              source === "remote" && payload.input.scope === "all"
+                ? snapshotSeriesMasterSchedule(queryClient, source, payload.id)
+                : undefined,
+          },
           callbacks,
         );
         return true;
@@ -811,15 +886,20 @@ export function useEventMutations(
           recurrenceScopeOpportunityActions.complete(opportunity.id);
         };
         if (opportunity.kind === "replace") {
+          const id = opportunity.original.id as EventId;
           replaceMutation.mutate(
             {
-              id: opportunity.original.id as EventId,
+              id,
               input: { ...opportunity.input, scope },
               // Serialize behind the narrow write for this occurrence. The
               // optimistic projection still uses originalOverride so a
               // deleted/overridden cache entry cannot lose the promotion.
-              writeKey: opportunity.original.id as EventId,
+              writeKey: id,
               originalOverride: opportunity.original,
+              seriesMasterSchedule:
+                source === "remote" && scope === "all"
+                  ? snapshotSeriesMasterSchedule(queryClient, source, id)
+                  : undefined,
             },
             { onSuccess, onSettled },
           );

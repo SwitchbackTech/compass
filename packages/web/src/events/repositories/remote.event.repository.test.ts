@@ -126,4 +126,53 @@ describe("RemoteEventRepository", () => {
       expect(api.delete).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe("replace", () => {
+    const baseInput = {
+      content: {
+        kind: "details" as const,
+        title: "Updated",
+        description: "",
+        location: "",
+      },
+      schedule: createMockEvent().schedule,
+      recurrence: { kind: "preserve" as const },
+      scope: "this" as const,
+    };
+
+    it("calls EventApi.replace with the event id and input", async () => {
+      const event = createMockEvent();
+      api.replace.mockResolvedValue(event);
+
+      const result = await repository.replace(event.id, baseInput);
+
+      expect(api.replace).toHaveBeenCalledWith(event.id, baseInput);
+      expect(result).toEqual(event);
+    });
+
+    it("falls back to the local repository when the backend is unavailable", async () => {
+      const event = createMockEvent();
+      api.replace.mockRejectedValue(createBackendUnavailableError());
+      localRepository.replace.mockResolvedValue(event);
+
+      await repository.replace(event.id, baseInput);
+
+      expect(localRepository.replace).toHaveBeenCalledWith(event.id, baseInput);
+      expect(isBackendUnavailable()).toBe(true);
+    });
+
+    it("does not fall back for scope-all occurrence replaces when the backend is unavailable", async () => {
+      const occurrenceId =
+        "aaaaaaaaaaaaaaaaaaaaaaaa::2026-07-03T16:00:00.000Z" as EventId;
+      const input = { ...baseInput, scope: "all" as const };
+      const unavailable = createBackendUnavailableError();
+      api.replace.mockRejectedValue(unavailable);
+
+      await expect(repository.replace(occurrenceId, input)).rejects.toBe(
+        unavailable,
+      );
+      expect(localRepository.replace).not.toHaveBeenCalled();
+      expect(isBackendUnavailable()).toBe(true);
+    });
+  });
 });
