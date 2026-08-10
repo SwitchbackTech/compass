@@ -10,7 +10,10 @@ import {
   findPrimaryGoogleSyncConnectionFromMetadata,
   userMetadataActions,
 } from "@web/auth/state/user-metadata.store";
-import { showGoogleDelayedToast } from "@web/common/utils/toast/google-delayed.toast";
+import {
+  dismissGoogleDelayedToast,
+  showGoogleDelayedToast,
+} from "@web/common/utils/toast/google-delayed.toast";
 import {
   clearGoogleReconnectToastGate,
   dismissGoogleReconnectToast,
@@ -60,12 +63,17 @@ export const applyUserMetadataSideEffects = (metadata: UserMetadata): void => {
     clearGoogleReconnectToastGate();
   }
 
-  if (
-    metadata.google?.connectionState === "ATTENTION" &&
-    !hasShownDelayedToastThisLoad
-  ) {
-    hasShownDelayedToastThisLoad = true;
-    showGoogleDelayedToast();
+  if (metadata.google?.connectionState === "ATTENTION") {
+    if (!hasShownDelayedToastThisLoad) {
+      hasShownDelayedToastThisLoad = true;
+      showGoogleDelayedToast();
+    }
+  } else if (hasShownDelayedToastThisLoad) {
+    // Recovered: a CRITICAL toast (autoClose: false) never closes on its
+    // own, so leaving it up would contradict its own "delayed" copy once
+    // the connection is healthy again.
+    hasShownDelayedToastThisLoad = false;
+    dismissGoogleDelayedToast();
   }
 };
 

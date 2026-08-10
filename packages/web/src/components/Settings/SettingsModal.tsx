@@ -8,6 +8,7 @@ import {
   formatLastSyncedLabel,
   getGoogleSyncStatus,
   googleSyncSupportMailto,
+  SSE_DEGRADED_STATUS,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useDisconnectGoogleAccount } from "@web/auth/google/hooks/useDisconnectGoogleAccount";
 import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
@@ -47,6 +48,7 @@ import {
   useSettingsStore,
 } from "@web/settings/settings.store";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
+import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
 
 const OUTLINE_BUTTON_CLASSNAME =
   "c-focus-ring shrink-0 rounded border border-border bg-surface-overlay px-2 py-1 text-xs text-text transition-colors hover:bg-surface-panel disabled:pointer-events-none disabled:opacity-60";
@@ -310,7 +312,8 @@ const AccountRow: FC<AccountRowProps> = ({
 }) => {
   const accountEmail = connection.accountEmail ?? "Unknown account";
   const refreshSnapshot = useGoogleSyncRefreshSnapshot();
-  const status = getGoogleSyncStatus(
+  const sseDegraded = useSseDegraded();
+  const syncStatus = getGoogleSyncStatus(
     connection.connectionState ?? "NOT_CONNECTED",
     connection,
     Date.now(),
@@ -319,7 +322,19 @@ const AccountRow: FC<AccountRowProps> = ({
       refreshInFlight: refreshSnapshot.isRefreshing,
     },
   );
-  const lastSyncedLabel = formatLastSyncedLabel(connection.lastSyncedAt);
+  // Only override an otherwise-healthy "Calendar connected" - a real
+  // reconnect/attention/importing status already says something more
+  // important and must not be preempted by the live-updates warning.
+  const isOtherwiseHealthy = syncStatus?.variant === "healthy";
+  const status =
+    isOtherwiseHealthy && sseDegraded ? SSE_DEGRADED_STATUS : syncStatus;
+  // The "Updated N minutes ago" freshness claim is exactly the thing that
+  // goes silently stale on a dead SSE stream - suppress it rather than
+  // presenting last-known data as current.
+  const lastSyncedLabel =
+    isOtherwiseHealthy && sseDegraded
+      ? null
+      : formatLastSyncedLabel(connection.lastSyncedAt);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const disconnectButtonRef = useRef<HTMLButtonElement>(null);
   const wasConfirmingRef = useRef(isConfirming);

@@ -5,6 +5,7 @@ import {
 } from "@core/types/server-message.contracts";
 import { getPosthogClient } from "@web/auth/posthog/posthog.bootstrap";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { createExternalStore } from "@web/common/utils/external-store.util";
 
 // The backend publishes one `message` SSE event per B10; its JSON `data` is a
 // ServerMessageSchema member. This module is the single parse point: every
@@ -38,6 +39,21 @@ let hasReportedDegraded = false;
 
 const DEGRADED_AFTER_MS = 15_000;
 
+// Whether the live stream has been down long enough that displayed data can
+// no longer be trusted as fresh. Previously this was analytics-only
+// (sse_connection_degraded, PostHog) with no UI representation at all: a tab
+// with a dead stream kept showing "Calendar connected" and a "Updated N
+// minutes ago" timestamp that both silently stopped being true.
+const sseDegradedStore = createExternalStore(false);
+
+export function isSseDegraded(): boolean {
+  return sseDegradedStore.get();
+}
+
+export function subscribeSseDegraded(onChange: () => void): () => void {
+  return sseDegradedStore.subscribe(onChange);
+}
+
 function clearDegradedTimer() {
   if (degradedTimer !== null) {
     clearTimeout(degradedTimer);
@@ -46,6 +62,7 @@ function clearDegradedTimer() {
 }
 
 function reportSseDegraded() {
+  sseDegradedStore.set(true);
   if (hasReportedDegraded) return;
   hasReportedDegraded = true;
   getPosthogClient()?.capture("sse_connection_degraded", {
@@ -93,6 +110,7 @@ export const openStream = (): EventSource => {
   openHandler = () => {
     clearDegradedTimer();
     hasReportedDegraded = false;
+    sseDegradedStore.set(false);
     for (const listener of reopenListeners) {
       listener();
     }
@@ -109,6 +127,7 @@ export const openStream = (): EventSource => {
 
 export const closeStream = (): void => {
   clearDegradedTimer();
+  sseDegradedStore.set(false);
   if (es && forwardingHandler) {
     es.removeEventListener(SSE_MESSAGE_EVENT, forwardingHandler);
   }
