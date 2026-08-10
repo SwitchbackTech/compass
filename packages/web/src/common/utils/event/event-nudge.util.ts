@@ -29,6 +29,31 @@ export const getArrowKeyMovement = (
   }
 };
 
+// Mirrors CROSS_ROW_TIMED_DURATION_MIN (grid/interaction/math/cross-row.drag.ts),
+// the duration invented when a mouse drag converts an all-day event into the
+// timed grid. Kept as a local constant to avoid a common-utils -> grid/interaction
+// dependency for one shared number.
+const CONVERTED_TIMED_DURATION_MIN = 60;
+
+/**
+ * All-day -> timed via Shift+ArrowDown. Mirrors the drag conversion: start of
+ * day plus a caller-supplied visible start minute, fixed duration. A
+ * multi-day span collapses onto its start day - the keyboard has no drop
+ * column to say otherwise.
+ */
+export const convertAllDayToTimedDates = (
+  event: Pick<CompassEvent, "startDate">,
+  startMinute: number,
+): { startDate: string; endDate: string } => {
+  const start = dayjs(event.startDate)
+    .startOf("day")
+    .add(startMinute, "minute");
+  return {
+    startDate: start.format(),
+    endDate: start.add(CONVERTED_TIMED_DURATION_MIN, "minute").format(),
+  };
+};
+
 export const isTimedEventInsideOneDay = (start: Dayjs, end: Dayjs) => {
   const midnightAfterStart = start.add(1, "day").startOf("day");
 

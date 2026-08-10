@@ -32,7 +32,7 @@ export const EventJumpIndicator: FC = () => {
     ? announcement
     : announcement && announcement !== "Event jump on"
       ? `Jump · ${announcement} · Esc`
-      : "Event jump · Esc or Shift";
+      : "Event jump · Esc";
 
   return (
     <span

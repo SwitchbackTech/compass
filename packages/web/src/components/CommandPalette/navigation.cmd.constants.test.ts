@@ -25,7 +25,7 @@ describe("getNavigationCommandItems", () => {
       "Go to Week",
       "Go to Life",
       "Show shortcuts",
-      "Toggle keyboard-only mode",
+      "Toggle Hardcore Mode",
     ]);
   });
 
@@ -52,7 +52,7 @@ describe("getNavigationCommandItems", () => {
       "Go to Day",
       "Go to Week",
       "Go to Life",
-      "Toggle keyboard-only mode",
+      "Toggle Hardcore Mode",
     ]);
   });
 
@@ -77,11 +77,7 @@ describe("getNavigationCommandItems", () => {
       onNavigateToView: () => {},
     }).map((item) => item.label);
 
-    expect(labels).toEqual([
-      "Go to Day",
-      "Go to Week",
-      "Toggle keyboard-only mode",
-    ]);
+    expect(labels).toEqual(["Go to Day", "Go to Week", "Toggle Hardcore Mode"]);
   });
 
   it("runs the matching navigation callbacks", () => {
@@ -137,7 +133,7 @@ describe("getNavigationCommandItems", () => {
         onNavigateToView: () => {},
       }).find((entry) => entry.id === "enter-keyboard-only");
 
-      expect(item?.label).toBe("Toggle keyboard-only mode");
+      expect(item?.label).toBe("Toggle Hardcore Mode");
       expect(item?.shortcut).toEqual(["Shift", "Shift"]);
     });
   });

@@ -1,5 +1,6 @@
 import dayjs from "@core/util/date/dayjs";
 import {
+  convertAllDayToTimedDates,
   getArrowKeyMovement,
   isTimedEventFullCalendarDay,
   isTimedEventInsideOneDay,
@@ -39,6 +40,28 @@ describe("getArrowKeyMovement", () => {
     expect(getArrowKeyMovement("ArrowUp", true)).toBeNull();
     expect(getArrowKeyMovement("ArrowDown", true)).toBeNull();
     expect(getArrowKeyMovement("Enter", false)).toBeNull();
+  });
+});
+
+describe("convertAllDayToTimedDates", () => {
+  it("places the event at the given start minute on its start day with a 60-minute duration", () => {
+    const result = convertAllDayToTimedDates(
+      { startDate: "2026-05-20" },
+      9 * 60,
+    );
+
+    expect(result.startDate).toStartWith("2026-05-20T09:00:00");
+    expect(result.endDate).toStartWith("2026-05-20T10:00:00");
+  });
+
+  it("only reads the event's start day, so a multi-day span collapses onto it", () => {
+    const result = convertAllDayToTimedDates(
+      { startDate: "2026-05-20" },
+      13 * 60 + 30,
+    );
+
+    expect(result.startDate).toStartWith("2026-05-20T13:30:00");
+    expect(result.endDate).toStartWith("2026-05-20T14:30:00");
   });
 });
 
