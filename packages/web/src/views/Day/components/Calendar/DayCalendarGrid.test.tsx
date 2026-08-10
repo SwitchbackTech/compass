@@ -325,7 +325,7 @@ describe("DayCalendarGrid", () => {
     expect(within(timedGrid).getAllByRole("columnheader")).toHaveLength(1);
   });
 
-  it("renders enabled calendars as separate event columns", () => {
+  it("renders enabled calendars as separate event columns", async () => {
     const primary = makeCalendar("Primary", { isPrimary: true });
     const projects = makeCalendar("Projects");
     const hidden = makeCalendar("Hidden");
@@ -372,17 +372,23 @@ describe("DayCalendarGrid", () => {
     expect(within(headers).getByText("Projects")).toBeInTheDocument();
     expect(within(headers).queryByText("Hidden")).not.toBeInTheDocument();
 
-    const primaryEvent = screen.getByRole("button", {
-      name: /primary event/i,
+    // Column widths settle after measurement/layout; wait so a transient
+    // single-column paint cannot flake the equal-width assertion in CI.
+    await waitFor(() => {
+      const primaryEvent = screen.getByRole("button", {
+        name: /primary event/i,
+      });
+      const projectEvent = screen.getByRole("button", {
+        name: /project event/i,
+      });
+      expect(
+        screen.queryByRole("button", { name: /hidden event/i }),
+      ).toBeNull();
+      expect(parseFloat(projectEvent.style.left)).toBeGreaterThan(
+        parseFloat(primaryEvent.style.left),
+      );
+      expect(primaryEvent.style.width).toBe(projectEvent.style.width);
     });
-    const projectEvent = screen.getByRole("button", {
-      name: /project event/i,
-    });
-    expect(screen.queryByRole("button", { name: /hidden event/i })).toBeNull();
-    expect(parseFloat(projectEvent.style.left)).toBeGreaterThan(
-      parseFloat(primaryEvent.style.left),
-    );
-    expect(primaryEvent.style.width).toBe(projectEvent.style.width);
   });
 
   it("falls back to the primary calendar when every calendar is disabled", () => {
