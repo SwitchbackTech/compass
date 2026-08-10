@@ -1323,9 +1323,8 @@ describe("useEventMutations", () => {
     });
     context.queryClient.setQueryData(calendarKey, normalized(original));
 
-    const onOptimisticApplied = mock(() => {});
     let colorAtCallback: unknown;
-    onOptimisticApplied.mockImplementation(() => {
+    const onOptimisticApplied = mock(() => {
       colorAtCallback = (
         context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
           ?.entities[original.id].content as { color?: string }

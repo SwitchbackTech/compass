@@ -138,9 +138,8 @@ describe("useSetEventColor", () => {
       result.current("mint");
     });
 
+    // Draft keeps the new color until onOptimisticApplied discards it.
     expect(useDraftStore.getState().gridDraft?.values.color).toBe("mint");
-    // Still drafting until optimistic apply discards — not a sync discard.
-    expect(useDraftStore.getState()).not.toEqual(initialDraftState);
 
     await waitFor(() => {
       expect(useDraftStore.getState()).toEqual(initialDraftState);

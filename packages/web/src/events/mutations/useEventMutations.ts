@@ -169,15 +169,14 @@ function mergeReplaceContent(
   input: ReplaceEventInput["content"],
 ): Event["content"] {
   if (existing.kind !== "details") return input;
-  const merged = { ...existing, ...input };
   // Slot writes (including null clear) supersede a provider custom hex on the
   // optimistic card. Palette resolution prefers colorHex over color, so keeping
   // the old hex would leave the prior fill until settle/refetch.
   if (input.kind === "details" && input.color !== undefined) {
-    const { colorHex: _cleared, ...withoutHex } = merged;
-    return withoutHex;
+    const { colorHex: _cleared, ...withoutHex } = existing;
+    return { ...withoutHex, ...input };
   }
-  return merged;
+  return { ...existing, ...input };
 }
 
 function mergeReplaceInput(existing: Event, input: ReplaceEventInput): Event {
