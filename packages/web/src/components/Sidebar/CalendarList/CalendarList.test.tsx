@@ -685,7 +685,8 @@ describe("CalendarList", () => {
 
   it("does not show the calendars load error for a session-level failure", async () => {
     // Session recovery already owns the signed-out toast; Retry would keep
-    // failing while remote source stays selected.
+    // failing while remote source stays selected. Stay quiet rather than
+    // inventing an empty-list story ("Connect Google…" / "No calendars yet.").
     window.history.pushState({}, "", "/week");
     const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
     BaseApi.defaults.adapter = async (
@@ -707,16 +708,18 @@ describe("CalendarList", () => {
     render(<CalendarList />, { wrapper });
 
     await waitFor(() => {
+      expect(screen.getByLabelText("Calendars")).toBeInTheDocument();
       expect(
-        screen.getByText(/connect google to see your calendars/i),
-      ).toBeInTheDocument();
+        screen.queryByText(/couldn.t load calendars/i),
+      ).not.toBeInTheDocument();
     });
-    expect(
-      screen.queryByText(/couldn.t load calendars/i),
-    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Retry" }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/connect google to see your calendars/i),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/no calendars yet/i)).not.toBeInTheDocument();
 
     signOutSpy.mockRestore();
   });
