@@ -18,6 +18,7 @@ import {
   resetEmailPasswordPort,
 } from "@web/auth/compass/hooks/emailpassword.port";
 import { registerUseCompleteAuthenticationForTests } from "@web/auth/compass/hooks/useCompleteAuthentication.registry";
+import { markGoogleAuthNeedsConsentRetry } from "@web/auth/google/authorization/google-authorization.storage";
 import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
   resetGoogleAvailabilityForTests,
@@ -29,6 +30,10 @@ import { useAuthModal, validateAuthSearch } from "./hooks/useAuthModal";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockGoogleLogin = mock();
+const mockUseStartGoogleAuthorization = mock(() => ({
+  loading: false,
+  startGoogleAuthorization: mockGoogleLogin,
+}));
 const mockCompleteAuthentication = mock().mockResolvedValue(undefined);
 let mockEmailPassword = createTestEmailPasswordPort();
 
@@ -118,14 +123,12 @@ const renderWithDayRedirectRoute = async (initialRoute: string) => {
 
 function installAuthModalTestSeams() {
   mockGoogleLogin.mockClear();
+  mockUseStartGoogleAuthorization.mockClear();
   mockCompleteAuthentication.mockClear();
   mockCompleteAuthentication.mockResolvedValue(undefined);
   mockEmailPassword = createTestEmailPasswordPort();
 
-  registerUseStartGoogleAuthorizationForTests(() => ({
-    loading: false,
-    startGoogleAuthorization: mockGoogleLogin,
-  }));
+  registerUseStartGoogleAuthorizationForTests(mockUseStartGoogleAuthorization);
   registerUseCompleteAuthenticationForTests(() => mockCompleteAuthentication);
   registerEmailPasswordPort(mockEmailPassword);
   resetGoogleAvailabilityForTests();
@@ -134,6 +137,7 @@ function installAuthModalTestSeams() {
 
 describe("AuthModal", () => {
   beforeEach(() => {
+    sessionStorage.clear();
     installAuthModalTestSeams();
   });
 
@@ -234,6 +238,26 @@ describe("AuthModal", () => {
       await waitFor(() => {
         expect(router.state.location.searchStr).toBe("");
       });
+    });
+  });
+
+  describe("Google retry after a withheld refresh token", () => {
+    it("does not force prompt=consent on a normal mount", async () => {
+      await renderWithProviders(<ModalTrigger />);
+
+      expect(mockUseStartGoogleAuthorization).toHaveBeenCalledWith(
+        expect.objectContaining({ prompt: undefined }),
+      );
+    });
+
+    it("forces prompt=consent once, after Google withheld a refresh token on the prior attempt", async () => {
+      markGoogleAuthNeedsConsentRetry();
+
+      await renderWithProviders(<ModalTrigger />);
+
+      expect(mockUseStartGoogleAuthorization).toHaveBeenCalledWith(
+        expect.objectContaining({ prompt: "consent" }),
+      );
     });
   });
 

@@ -150,9 +150,12 @@ describe("googleAuthService", () => {
 
       mockDetermineGoogleAuthMode().mockResolvedValue(decision);
 
-      await expect(googleAuthService.handleGoogleAuth(success)).rejects.toThrow(
-        "Refresh token expected for new user sign-up",
-      );
+      await expect(
+        googleAuthService.handleGoogleAuth(success),
+      ).rejects.toMatchObject({
+        result: "Refresh token expected for new user sign-up",
+        code: "GOOGLE_REFRESH_TOKEN_MISSING",
+      });
     });
 
     it("routes SIGNIN to repairGoogleConnection", async () => {

@@ -7,6 +7,7 @@ interface AuthErrors {
   GoogleConnectEmailMismatch: ErrorMetadata;
   GoogleNotConfigured: ErrorMetadata;
   GoogleRedirectUriMismatch: ErrorMetadata;
+  GoogleRefreshTokenMissing: ErrorMetadata;
   InadequatePermissions: ErrorMetadata;
   NoGAuthAccessToken: ErrorMetadata;
   SyncConnectionUnavailable: ErrorMetadata;
@@ -40,6 +41,13 @@ export const AuthError: AuthErrors = {
   GoogleRedirectUriMismatch: {
     description: "Google redirect URI does not match this Compass instance",
     status: Status.BAD_REQUEST,
+    isOperational: true,
+  },
+  GoogleRefreshTokenMissing: {
+    code: "GOOGLE_REFRESH_TOKEN_MISSING",
+    description:
+      "Google did not grant a fresh authorization. Please try again.",
+    status: Status.CONFLICT,
     isOperational: true,
   },
   InadequatePermissions: {

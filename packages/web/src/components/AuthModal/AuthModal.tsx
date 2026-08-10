@@ -1,6 +1,7 @@
 import { DotIcon } from "@phosphor-icons/react";
 import { useSearch } from "@tanstack/react-router";
 import { type FC, useCallback, useEffect, useRef, useState } from "react";
+import { consumeGoogleAuthNeedsConsentRetry } from "@web/auth/google/authorization/google-authorization.storage";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import { useIsGoogleAvailable } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
 import {
@@ -43,9 +44,15 @@ export const AuthModal: FC = () => {
   const handleGoogleAuthStart = useCallback(() => {
     dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
   }, []);
+  // Consumed once per fresh mount (i.e. once per return from a failed
+  // attempt): Google withholds a refresh token on a repeat consent, so a
+  // signup that failed after Google-side consent but before Compass finished
+  // linking would otherwise fail the exact same way on every retry, forever.
+  const [needsConsentRetry] = useState(consumeGoogleAuthNeedsConsentRetry);
   const googleAuth = useStartGoogleAuthorization({
     intent: "signIn",
     onStart: handleGoogleAuthStart,
+    prompt: needsConsentRetry ? "consent" : undefined,
   });
   const {
     loading: isGoogleAuthLoading,

@@ -1,6 +1,7 @@
 import { completeGoogleAuthorization } from "./complete-google-authorization";
 import { GOOGLE_AUTH_SCOPES_REQUIRED } from "./google-authorization.constants";
 import {
+  consumeGoogleAuthNeedsConsentRetry,
   readGoogleAuthorizationIntent,
   writeGoogleAuthorizationIntent,
 } from "./google-authorization.storage";
@@ -88,6 +89,43 @@ describe("completeGoogleAuthorization", () => {
     expect(deps.authApi.loginOrSignup).not.toHaveBeenCalled();
     expect(deps.completeAuthentication).not.toHaveBeenCalled();
     expect(readGoogleAuthorizationIntent("state-3")).toBeNull();
+  });
+
+  it("marks the next attempt for a forced consent retry when Google withheld a refresh token", async () => {
+    const deps = makeDeps();
+    deps.authApi.loginOrSignup = mock(async () => {
+      throw Object.assign(new Error("Conflict"), {
+        response: {
+          data: {
+            code: "GOOGLE_REFRESH_TOKEN_MISSING",
+            message:
+              "Google did not grant a fresh authorization. Please try again.",
+          },
+        },
+      });
+    });
+    writeGoogleAuthorizationIntent("state-4", {
+      intent: "signIn",
+      returnPath: "/week",
+      createdAt: Date.now(),
+    });
+
+    expect(consumeGoogleAuthNeedsConsentRetry()).toBe(false);
+
+    await expect(
+      completeGoogleAuthorization({
+        ...deps,
+        search: callbackSearch("state-4"),
+      }),
+    ).resolves.toEqual({
+      status: "failed",
+      message: "Google did not grant a fresh authorization. Please try again.",
+      returnPath: "/week",
+    });
+
+    // Read-and-clear: true exactly once, for the next attempt only.
+    expect(consumeGoogleAuthNeedsConsentRetry()).toBe(true);
+    expect(consumeGoogleAuthNeedsConsentRetry()).toBe(false);
   });
 
   it("rejects callbacks without a saved intent", async () => {

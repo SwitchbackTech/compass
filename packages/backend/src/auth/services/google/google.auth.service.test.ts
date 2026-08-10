@@ -158,9 +158,12 @@ describe("handleGoogleAuth", () => {
         makeDecision({ authMode: "SIGNUP" }),
       );
 
-      await expect(googleAuthService.handleGoogleAuth(success)).rejects.toThrow(
-        "Refresh token expected for new user sign-up",
-      );
+      await expect(
+        googleAuthService.handleGoogleAuth(success),
+      ).rejects.toMatchObject({
+        result: "Refresh token expected for new user sign-up",
+        code: "GOOGLE_REFRESH_TOKEN_MISSING",
+      });
 
       expect(googleAuthService.googleSignup).not.toHaveBeenCalled();
       expect(adoptCalls).toHaveLength(0);

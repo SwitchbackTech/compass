@@ -742,6 +742,34 @@ describe("GET /sync/google", () => {
     expect(adapter.exchanges).toHaveLength(0);
   });
 
+  // Unlike the signup path (checked client-side before it ever reaches here),
+  // this callback used to link the connection regardless of what scopes
+  // Google actually granted - discovery would then 403 and the user would see
+  // a generic "couldn't update your calendar" with no mention of the real
+  // cause (leaving the calendar box unchecked on Google's consent screen).
+  it("redirects with missingScopes and links nothing when calendar access was not granted", async () => {
+    const tenantId = objectId();
+    const principalId = objectId();
+    adapter.exchangeResult = {
+      ...adapter.exchangeResult,
+      // Only identity was granted - both calendar scopes withheld.
+      grantedScopes: ["https://www.googleapis.com/auth/userinfo.email"],
+    };
+    await startService(activeConfig(), adapter);
+
+    const res = await hitCallback(
+      `code=auth-code&state=${encodeURIComponent(validState(tenantId, principalId))}`,
+    );
+
+    expect(statusOf(res)).toBe("missingScopes");
+    expect(
+      await connections.listByPrincipal(
+        tenantId as TenantId,
+        principalId as PrincipalId,
+      ),
+    ).toHaveLength(0);
+  });
+
   // Reconnect: the state names a specific connection. The account Google
   // returns must match it, or a wrong-account consent would silently spawn a
   // second connection and leave the broken one stuck.

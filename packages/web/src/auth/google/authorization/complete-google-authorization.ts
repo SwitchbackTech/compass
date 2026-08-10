@@ -1,5 +1,6 @@
 import {
   type GoogleAuthCodeRequest,
+  type GoogleConnectErrorResponse,
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
 import { type ApiError } from "@web/api/api.types";
@@ -11,6 +12,7 @@ import {
 } from "./google-authorization.constants";
 import {
   clearGoogleAuthorizationIntent,
+  markGoogleAuthNeedsConsentRetry,
   readGoogleAuthorizationIntent,
 } from "./google-authorization.storage";
 import {
@@ -65,11 +67,13 @@ const getApiError = (error: unknown): ApiError | undefined => {
   return error as ApiError;
 };
 
-const parseGoogleConnectErrorMessage = (error: unknown): string | undefined => {
+const parseGoogleConnectError = (
+  error: unknown,
+): GoogleConnectErrorResponse | undefined => {
   const data = getApiError(error)?.response?.data;
   const parsed = GoogleConnectErrorResponseSchema.safeParse(data);
 
-  return parsed.success ? parsed.data.message : undefined;
+  return parsed.success ? parsed.data : undefined;
 };
 
 export async function completeGoogleAuthorization({
@@ -126,10 +130,19 @@ export async function completeGoogleAuthorization({
       isNewUser: result.createdNewRecipeUser,
     };
   } catch (error) {
-    const parsedMessage = parseGoogleConnectErrorMessage(error);
+    const parsedError = parseGoogleConnectError(error);
 
-    if (parsedMessage) {
-      return fail(parsedMessage, returnPath);
+    if (parsedError?.code === "GOOGLE_REFRESH_TOKEN_MISSING") {
+      // This browser already consented once before (e.g. an earlier attempt
+      // failed after Google-side consent but before Compass finished
+      // linking) - Google silently withholds the refresh token on a repeat
+      // consent. Mark it so the NEXT attempt forces prompt=consent, or it
+      // fails the exact same way forever.
+      markGoogleAuthNeedsConsentRetry();
+    }
+
+    if (parsedError?.message) {
+      return fail(parsedError.message, returnPath);
     }
 
     return fail(GOOGLE_AUTHORIZATION_ERROR_MESSAGE, returnPath);
