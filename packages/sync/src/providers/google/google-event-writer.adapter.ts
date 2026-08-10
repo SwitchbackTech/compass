@@ -33,13 +33,13 @@ import { redactedCause } from "@sync/safety/redact-error";
 export interface GoogleEventsApi {
   insert(params: {
     calendarId: string;
-    requestBody: calendar_v3.Schema$Event;
+    requestBody: gSchema$Event;
     sendUpdates: string;
   }): Promise<gSchema$Event>;
   patch(params: {
     calendarId: string;
     eventId: string;
-    requestBody: calendar_v3.Schema$Event;
+    requestBody: gSchema$Event;
     sendUpdates: string;
     ifMatch: string | null;
   }): Promise<gSchema$Event>;
@@ -126,7 +126,7 @@ export class GoogleEventWriter implements ProviderEventWriter {
 
   async createEvent(input: ProviderCreateInput): Promise<ProviderWriteResult> {
     const api = this.#makeApi(input.accessToken);
-    const requestBody: calendar_v3.Schema$Event = {
+    const requestBody: gSchema$Event = {
       id: input.providerEventId,
       ...toGoogleBody(input.content, input.schedule, input.recurrence),
     };
@@ -271,7 +271,7 @@ function toGoogleBody(
   content: SyncEventContent,
   schedule: EventSchedule,
   recurrence: ProviderWriteRecurrence,
-): calendar_v3.Schema$Event {
+): gSchema$Event {
   return {
     summary: content.title,
     description: content.description,

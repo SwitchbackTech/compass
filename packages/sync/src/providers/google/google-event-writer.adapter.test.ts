@@ -445,7 +445,9 @@ describe("GoogleEventWriter", () => {
     await writer.patchEvent({ ...basePatch, content: content() });
 
     expect(api.calls.insert[0].requestBody.colorId).toBe("7");
+    expect(api.calls.insert[0].requestBody.eventLabelId).toBe("");
     expect(api.calls.patch[0].requestBody).not.toHaveProperty("colorId");
+    expect(api.calls.patch[0].requestBody).not.toHaveProperty("eventLabelId");
   });
 
   it("clears Google colorId when content.color is null", async () => {
@@ -458,6 +460,20 @@ describe("GoogleEventWriter", () => {
     });
 
     expect(api.calls.patch[0].requestBody.colorId).toBeNull();
+    expect(api.calls.patch[0].requestBody).not.toHaveProperty("eventLabelId");
+  });
+
+  it("clears eventLabelId when patching a slot color onto a labeled event", async () => {
+    const api = new FakeEventsApi();
+    const { writer } = writerWith(api);
+
+    await writer.patchEvent({
+      ...basePatch,
+      content: content({ color: "coral" }),
+    });
+
+    expect(api.calls.patch[0].requestBody.colorId).toBe("4");
+    expect(api.calls.patch[0].requestBody.eventLabelId).toBe("");
   });
 
   it("maps each invitation intent straight to sendUpdates", async () => {

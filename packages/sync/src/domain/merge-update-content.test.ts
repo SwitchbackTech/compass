@@ -80,6 +80,128 @@ describe("mergeUpdateContent", () => {
     });
   });
 
+  it("drops colorHex when a slot color is applied", () => {
+    const existing = {
+      title: "Labeled",
+      description: "",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+      colorHex: "#009688",
+    };
+
+    expect(
+      mergeUpdateContent(existing, {
+        title: "Labeled",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+        color: "blue",
+      }),
+    ).toEqual({
+      title: "Labeled",
+      description: "",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+      color: "blue",
+    });
+  });
+
+  it("drops colorHex when clearing a prior slot color", () => {
+    const existing = {
+      title: "Slotted",
+      description: "",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+      color: "blue" as const,
+      colorHex: "#009688",
+    };
+
+    expect(
+      mergeUpdateContent(existing, {
+        title: "Slotted",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+        color: null,
+      }),
+    ).toEqual({
+      title: "Slotted",
+      description: "",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+    });
+  });
+
+  it("keeps colorHex when drafts send null color on a hex-only event", () => {
+    const existing = {
+      title: "Labeled",
+      description: "",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+      colorHex: "#009688",
+    };
+
+    expect(
+      mergeUpdateContent(existing, {
+        title: "Labeled",
+        description: "edited",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+        color: null,
+      }),
+    ).toEqual({
+      title: "Labeled",
+      description: "edited",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+      colorHex: "#009688",
+    });
+  });
+
+  it("preserves colorHex when color is omitted", () => {
+    const existing = {
+      title: "Labeled",
+      description: "",
+      location: null,
+      organizer: null,
+      attendees: [],
+      conference: null,
+      colorHex: "#009688",
+    };
+
+    expect(
+      mergeUpdateContent(existing, {
+        title: "Renamed",
+        description: "",
+        location: null,
+        organizer: null,
+        attendees: [],
+        conference: null,
+      }),
+    ).toEqual({
+      ...existing,
+      title: "Renamed",
+    });
+  });
+
   it("clears an existing color when the command sends null", () => {
     const existing = {
       title: "Old",

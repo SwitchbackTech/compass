@@ -19,6 +19,7 @@ import {
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import {
+  type EventMutationCallbacks,
   type EventMutationDependencies,
   useEventMutations,
 } from "@web/events/mutations/useEventMutations";
@@ -46,6 +47,7 @@ export function useUpdateEvent(dependencies: EventMutationDependencies = {}) {
         applyTo?: RecurringEventUpdateScope;
       },
       saveImmediate = true,
+      callbacks?: EventMutationCallbacks,
     ) => {
       const { event, shouldRemove, applyTo } = payload;
 
@@ -117,12 +119,15 @@ export function useUpdateEvent(dependencies: EventMutationDependencies = {}) {
 
       const parsed = parseGridEventDraft(patchedDraft);
       if (parsed.ok && parsed.mode === "edit") {
-        replace({
-          id: parsed.eventId,
-          input: nextCalendarId
-            ? { ...parsed.input, calendarId: nextCalendarId }
-            : parsed.input,
-        });
+        replace(
+          {
+            id: parsed.eventId,
+            input: nextCalendarId
+              ? { ...parsed.input, calendarId: nextCalendarId }
+              : parsed.input,
+          },
+          callbacks,
+        );
       }
     },
     [replace, queryClient],

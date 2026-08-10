@@ -22,11 +22,12 @@ export function useSetEventColor(_id: string) {
     (color: EventColorSlot | null) => {
       if (!existingEvent) return;
 
-      const currentColor =
-        existingEvent.content.kind === "details"
-          ? (existingEvent.content.color ?? null)
-          : null;
-      if (currentColor === color) {
+      const details =
+        existingEvent.content.kind === "details" ? existingEvent.content : null;
+      const currentColor = details?.color ?? null;
+      // Same slot (or default) is a no-op unless a provider hex is still
+      // winning the palette — then this write clears it via replace merge.
+      if (currentColor === color && details?.colorHex === undefined) {
         draftActions.discard();
         return;
       }

@@ -227,14 +227,15 @@ export function useGridEventEditShortcuts({
       event,
       keyboardEvent,
       onNudge: (nudgedEvent, nextEdge) => {
-        updateEvent({ event: nudgedEvent }, true);
+        updateEvent({ event: nudgedEvent }, true, {
+          onOptimisticApplied: () => draftActions.discard(),
+        });
         edgeFocusActions.setEdge(
           event._id!,
           nextEdge,
           describeEdgeDate(nudgedEvent, nextEdge),
         );
       },
-      afterNudge: () => draftActions.discard(),
     });
   };
 
@@ -275,7 +276,9 @@ export function useGridEventEditShortcuts({
         event,
         keyboardEvent,
         onNudge: (nudgedEvent) => {
-          updateEvent({ event: nudgedEvent }, true);
+          updateEvent({ event: nudgedEvent }, true, {
+            onOptimisticApplied: () => draftActions.discard(),
+          });
           if (dayBoundary.kind === "follow") {
             const nextStart = dayjs(nudgedEvent.startDate).startOf("day");
             if (!nextStart.isSame(previousStart, "day")) {
@@ -283,7 +286,6 @@ export function useGridEventEditShortcuts({
             }
           }
         },
-        afterNudge: () => draftActions.discard(),
       });
       return;
     }

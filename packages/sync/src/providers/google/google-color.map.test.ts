@@ -25,7 +25,10 @@ describe("google-color.map", () => {
   });
 
   it("builds Google colorId body fields for set, clear, and omit", () => {
-    expect(googleColorIdFields("blue")).toEqual({ colorId: "7" });
+    expect(googleColorIdFields("blue")).toEqual({
+      colorId: "7",
+      eventLabelId: "",
+    });
     expect(googleColorIdFields(null)).toEqual({ colorId: null });
     expect(googleColorIdFields(undefined)).toEqual({});
   });

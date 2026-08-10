@@ -35,10 +35,22 @@ export function slotToGoogleColorId(slot: EventColorSlot): string {
 
 // Fields for a Google create/patch body: a slot sets colorId, null clears it,
 // undefined leaves Google's existing color untouched (omit the key).
+//
+// Setting a slot also clears eventLabelId: Google custom labels supersede
+// colorId on read and rehydrate as Compass colorHex. Leaving the label in
+// place would resurrect the old hex fill after the next provider pull.
+// Clearing color (null) only touches colorId — drafts often send null for
+// "no slot" without intending to wipe a label-only color.
 export function googleColorIdFields(
   color: EventColorSlot | null | undefined,
-): { colorId: string | null } | Record<string, never> {
+):
+  | { colorId: string; eventLabelId: string }
+  | { colorId: null }
+  | Record<string, never> {
   if (color === undefined) return {};
   if (color === null) return { colorId: null };
-  return { colorId: slotToGoogleColorId(color) };
+  return {
+    colorId: slotToGoogleColorId(color),
+    eventLabelId: "",
+  };
 }
