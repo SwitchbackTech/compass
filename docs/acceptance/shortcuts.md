@@ -13,11 +13,13 @@ Use this guide to validate:
 - navigating between views with the keyboard (D, W)
 - navigating between days in Day view (J, K, T)
 - navigating between weeks in Week view (J, K, T)
-- opening and using the command palette (Cmd+K)
+- opening and using the command palette (Cmd+K), including undo/redo rows
 - creating events with keyboard shortcuts (C, A in both Day and Week view)
 - editing events with the same keys in Day and Week (Delete, Shift+arrows, draft arrows)
+- spatially focusing events with arrow keys
+- toggling event-jump chips (Shift tap) and keyboard-only mode (Shift-Shift)
 - toggling the sidebar (])
-- undoing with the keyboard (Cmd+Z / Ctrl+Z)
+- undoing / redoing with the keyboard (Cmd+Z / Cmd+Shift+Z)
 - confirming that shortcuts do not fire while typing in inputs
 
 Do not use this guide to validate:
@@ -47,18 +49,21 @@ Helpful notes:
 | `W`                         | Global    | Navigate to Week view             |
 | `Cmd+K` / `Ctrl+K`          | Global    | Open command palette              |
 | `]`                         | Global    | Toggle sidebar                    |
+| `?`                         | Global    | Toggle shortcuts legend           |
 | `Cmd+Z` / `Ctrl+Z`          | Global    | Undo last event action            |
 | `Cmd+Shift+Z` / `Ctrl+Shift+Z` | Global | Redo last undone event action     |
+| `Shift` `Shift`             | Global    | Toggle keyboard-only mode         |
 | `J`                         | Day view  | Previous day                      |
 | `K`                         | Day view  | Next day                          |
 | `T`                         | Day view  | Go to today                       |
 | `I`                         | Day view  | Focus sidebar                     |
 | `U`                         | Day view  | Focus first calendar event        |
-| `Shift`                     | Day view  | Toggle event jump keys                 |
+| `Shift`                     | Day view  | Toggle event jump keys            |
 | `C`                         | Day view  | Create timed event                |
 | `A`                         | Day view  | Create all-day event              |
 | `Delete`                    | Day view  | Delete focused event              |
-| `ArrowUp` / `ArrowDown`     | Day view  | Focus previous/next event         |
+| `ArrowUp` / `ArrowDown`     | Day view  | Focus previous/next event spatially                     |
+| `ArrowLeft` / `ArrowRight`  | Day / Week | Focus nearest event on previous/next column/day (skip empty) |
 | `Arrow keys`                | Day view  | Move open draft event             |
 | `Enter`                     | Day view  | Open focused event                |
 | `E` then `T`                | Day view  | Edit focused event title          |
@@ -78,9 +83,9 @@ Helpful notes:
 | `A`                         | Week view | Create all-day event              |
 | `I`                         | Week view | Focus sidebar                     |
 | `U`                         | Week view | Focus first calendar event        |
-| `Shift`                     | Week view | Toggle event jump keys                 |
+| `Shift`                     | Week view | Toggle event jump keys            |
 | `Delete`                    | Week view | Delete focused event              |
-| `ArrowUp` / `ArrowDown`     | Week view | Focus previous/next event         |
+| `ArrowUp` / `ArrowDown`     | Week view | Focus previous/next event on the same day |
 | `Arrow keys`                | Week view | Move open draft event             |
 | `Enter`                     | Week view | Open focused event                |
 | `E` then `T`                | Week view | Edit focused event title          |
@@ -179,10 +184,11 @@ Pressing Cmd+K opens the command palette from any view, including while a text i
 ### Expected Results
 
 - The command palette opens immediately.
-- Items include: Create Event, Create All-Day Event, Go to Today, Log Out.
+- Items include: Create event, Create all-day event, Go to Today, Undo last change, Redo last change, Restart onboarding tour, Log Out.
+- Undo / Redo rows show their keycaps and stay disabled when there is no history.
 - Google Calendar connection status and actions appear in the sidebar, not the command palette.
 - Typing filters the list.
-- Selecting "Create Event" opens the event creation form.
+- Selecting "Create event" opens the event creation form.
 - Pressing Escape closes the palette without taking action.
 - Cmd+K works even when a text input elsewhere has focus.
 
@@ -351,7 +357,32 @@ Tapping `Shift` toggles event-jump mode (activation waits briefly so Shift-Shift
 
 ---
 
-## Scenario 13: Shortcuts Do Not Fire While Typing In Inputs
+## Scenario 13: Shift-Shift Enters Keyboard-Only Mode
+
+### UX
+
+Two quick `Shift` taps toggle keyboard-only mode. While active, pointer clicks are blocked (scroll and hover still work) so the user practices keyboard navigation. A persistent indicator shows how to exit. Mode is not persisted across refresh.
+
+### Steps
+
+1. Navigate to `/week` with at least one event visible.
+2. Tap `Shift` twice quickly (not a held chord).
+3. Try clicking an event with the mouse.
+4. Use `U` / arrows / `Enter` to open an event with the keyboard.
+5. Press `Esc` (with no modal/form open) or tap `Shift` `Shift` again.
+
+### Expected Results
+
+- A “Keyboard only” indicator appears after the double tap.
+- Clicks do not open events or focus controls; the indicator may pulse on a blocked click.
+- Keyboard shortcuts continue to work.
+- If a modal, floating layer, or event form is open, `Esc` dismisses that owner first; a later `Esc` exits keyboard-only mode.
+- Exiting clears the indicator. Reloading the page also clears the mode.
+- A single Shift tap still toggles event-jump chips; a following quick second Shift cancels jump mode and enters keyboard-only instead.
+
+---
+
+## Scenario 14: Shortcuts Do Not Fire While Typing In Inputs
 
 ### UX
 
@@ -380,7 +411,7 @@ If time is limited, run these checks before shipping shortcut-related changes:
 1. `D`, `W` navigate to the correct views from any starting view.
 2. `J` and `K` navigate days in Day view and weeks in Week view.
 3. `T` returns to today from any offset in both Day and Week view.
-4. Cmd+K opens the command palette; Escape closes it without action.
+4. Cmd+K opens the command palette; Escape closes it without action; Undo/Redo rows are present.
 5. `C` opens a timed event form and `A` an all-day event form, in both Day and Week view.
 6. `]` toggles the sidebar in both Week and Day view.
 7. Delete removes a focused event in Day and Week view and shows an undo toast.
@@ -388,7 +419,8 @@ If time is limited, run these checks before shipping shortcut-related changes:
 9. No shortcuts fire inside a focused text input except Cmd+K.
 10. Shift+ArrowLeft/Right move a focused event by one day in both Day and Week view.
 11. Arrow keys reposition an open draft in both Day and Week view.
-12. With a focused event and no draft open, ArrowUp/ArrowDown move focus to the previous/next event chronologically.
+12. With a focused event and no draft open, ArrowUp/ArrowDown stay on the same day; ArrowLeft/Right jump to the time-nearest event on the previous/next non-empty day.
 13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.
 14. With a focused event, `E` then `T` opens the form with the title focused; bare `E` alone does nothing.
 15. Tapping Shift toggles event jump chips; a day letter + digit focuses that event; fast Shift+J does not toggle the mode.
+16. Shift-Shift enters keyboard-only mode (clicks blocked, indicator visible); Esc or another Shift-Shift exits.

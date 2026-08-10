@@ -15,6 +15,8 @@ Internal documentation for engineers and agents working in the Compass repo.
 - Event shape or recurrence behavior: [Event Domain Model](./architecture/event-domain-model.md), [Common Change Recipes](./development/common-change-recipes.md#change-recurring-event-behavior)
 - Event caching, reads, or optimistic writes: [Event Caching](./frontend/event-caching.md)
 - Dragging/resizing events on the week grid: [Week Drag Interaction](./frontend/week-drag-interaction.md)
+- Keyboard shortcuts, event jump, or keyboard-only mode: [Shortcuts](./acceptance/shortcuts.md), [Feature File Map](./development/feature-file-map.md#keyboard-shortcuts)
+- Onboarding tour after Start Now: [Feature File Map](./development/feature-file-map.md#onboarding-tour), [Frontend Runtime Flow](./frontend/frontend-runtime-flow.md#welcome-and-onboarding-tour)
 - Breakpoints, sidebar collapse, or layout at different viewport sizes: [Responsive Layout](./frontend/responsive-layout.md)
 - Local-first or storage behavior: [Offline Storage And Migrations](./features/offline-storage-and-migrations.md)
 - Backend routes and API behavior: [Backend Route Map](./backend/README.md), [Backend Request Flow](./backend/backend-request-flow.md), [Backend Error Handling](./backend/backend-error-handling.md)

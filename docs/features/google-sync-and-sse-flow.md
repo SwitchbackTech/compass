@@ -200,6 +200,29 @@ remember to click **Refresh calendar**.
 4. User initiates re-consent via the OAuth flow (proxied to Sync).
 5. Sync completes the OAuth exchange; the backend's next metadata fetch/change-feed poll picks up the reconnected state.
 
+## Failed Job Self-Heal (Sync Operator Path)
+
+Sync workers mark a job `failed` after its per-attempt retry ladder is spent.
+Nothing else requeues that row unless the **failed-job self-heal** sweep runs
+(`failedJobRequeue` in `packages/sync/src/app.ts`, logic in
+`packages/sync/src/domain/failed-job-requeue.service.ts`):
+
+1. After a ~30 minute cooldown, the sweep requeues cooled-down failed jobs with
+   a fresh attempt budget (up to `FAILED_JOB_MAX_REQUEUES`, currently 3).
+2. Jobs that keep failing past that budget are **exhausted** and need an
+   operator — see [manage-failed-jobs](../development/cli.md#manage-exhausted-sync-jobs).
+3. Exhausted jobs whose connection already has a durable provider read-failure
+   marker (`lastReadFailureAt`, for example Google `notACalendarUser`) are
+   **auto-cleared** so their coalescing key no longer blocks rediscovery /
+   reconnect enqueue. Health already surfaces those provider errors; keeping
+   the failed row only adds log noise.
+
+Watch sync logs for:
+
+- `Sync self-heal sweep requeued N failed job(s)`
+- `Sync self-heal sweep cleared N exhausted job(s) blocked by durable provider read failure`
+- `Sync self-heal sweep: N failed job(s) exhausted their requeue budget and need operator attention`
+
 ## Rules Of Thumb For Changes
 
 - New realtime behavior usually needs changes in `core`

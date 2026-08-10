@@ -69,6 +69,36 @@ consistent.
 2. Verify auth-state implications in `packages/web/src/auth/compass/session/SessionProvider.tsx` and auth-state helpers.
 3. Test both never-authenticated and previously-authenticated behavior.
 
+## Add Or Change A Keyboard Shortcut
+
+1. Add or update the entry in `packages/web/src/shortcuts/shortcuts.registry.ts`
+   (id, keys, label, section, optional `when`). The `?` legend and overlay
+   sections read from this registry — do not hard-code a second label list.
+2. Register the key in the owning hook:
+   - global / shell: `packages/web/src/shortcuts/useGlobalShortcuts.ts`
+   - week: `packages/web/src/views/Week/hooks/shortcuts/useWeekViewShortcuts.ts`
+     (+ behavior in `useWeekShortcutOwner.ts`)
+   - day: `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
+   - shared grid edit/focus: `packages/web/src/grid/shortcuts/`
+3. If the shortcut shares Shift with event-jump or keyboard-only mode, go through
+   `packages/web/src/shortcuts/shift-tap-gesture.ts` instead of a private
+   keydown listener — single-tap vs Shift-Shift coexistence depends on one bus.
+4. Respect `app-lock`, `escape-ownership`, and “do not fire while typing in
+   inputs” (use the existing `useAppShortcut` helpers; do not attach bare
+   `window` listeners for new app shortcuts).
+5. Add or update registry/data tests and the owning hook tests. Update
+   [Shortcuts acceptance](../acceptance/shortcuts.md) when user-visible
+   behavior changes.
+
+Common pitfalls:
+
+- **Legend-only change** — updating the registry without a handler (or the
+  reverse) ships a lie in the `?` overlay.
+- **Private Shift listeners** — bypassing `shift-tap-gesture` reintroduces
+  jump-mode flashes on Shift-Shift or blocks keyboard-only entry.
+- **App-lock blind spots** — shortcuts that fire while Auth/Settings/Welcome
+  own the UI feel broken; follow the helpers that already gate on lock state.
+
 ## Change A Shared Hotkey Dialog (Day + Week)
 
 Use this for overlays mounted in both `WeekView` and `DayViewContent` (for example Dedication).

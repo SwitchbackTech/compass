@@ -52,6 +52,40 @@ Important behavior:
 
 This is the shell for the main desktop app experience.
 
+## Welcome And Onboarding Tour
+
+Files:
+
+- `packages/web/src/components/RootShell/RootShell.tsx`
+- `packages/web/src/components/WelcomeModal/WelcomeModal.tsx`
+- `packages/web/src/components/OnboardingTour/`
+
+`RootShell` mounts the welcome modal, onboarding tour, global navigation /
+calendar-shell shortcuts, and keyboard-only mode.
+
+Welcome → tour contract:
+
+- **Start Now** starts the interactive tour when
+  `compass.onboarding.has-seen-onboarding-tour` is not yet set
+- backdrop dismiss / Escape / Log In / Sign Up mark the tour skipped without
+  starting it (same seen flag) so the coachmarks do not appear later by surprise
+- the tour is **not** an app-lock modal: shortcuts underneath stay live so each
+  step advances when the user performs the hinted action (`C`, save, Cmd+K /
+  Escape, `?`)
+- step order and copy live in `onboarding.tour.steps.ts` (single source of truth)
+- users can reopen it anytime from the command palette (“Restart onboarding tour”)
+
+Keyboard-only mode (`Shift` `Shift`, also mounted from `RootShell`):
+
+- blocks pointer clicks while active; scroll and hover remain
+- exits via Escape when nothing higher owns Escape, another Shift-Shift, or refresh
+- shares the Shift-tap gesture bus with event-jump chips so a second quick Shift
+  cancels jump mode and enters keyboard-only instead
+
+See [Shortcuts](../acceptance/shortcuts.md) for acceptance coverage and
+[Feature File Map](../development/feature-file-map.md#keyboard-shortcuts) for
+file pointers.
+
 ## Session Runtime
 
 File:
