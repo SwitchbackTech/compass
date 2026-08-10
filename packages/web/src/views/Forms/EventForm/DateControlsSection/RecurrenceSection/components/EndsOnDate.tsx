@@ -30,17 +30,16 @@ export const EndsOnDate = ({
           borderBottomStyle: "solid",
         }}
       >
-        <TooltipWrapper
-          description="Select recurrence end date"
-          onClick={() => setOpen(true)}
-        >
+        <TooltipWrapper description="Select recurrence end date">
           <div id="portal">
             <DatePicker
               calendarClassName="recurrenceUntilDatePicker"
               isOpen={open}
               minDate={miniDate.toDate()}
               onCalendarClose={() => setOpen(false)}
+              onCalendarOpen={() => setOpen(true)}
               onChange={() => null}
+              onInputClick={() => setOpen(true)}
               onSelect={(date) => {
                 setUntil(date);
                 setOpen(false);

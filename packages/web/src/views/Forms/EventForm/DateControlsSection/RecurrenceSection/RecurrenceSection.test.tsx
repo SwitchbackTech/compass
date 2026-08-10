@@ -198,6 +198,19 @@ describe("RecurrenceSection", () => {
     expect(screen.queryAllByLabelText(/Choose .*2026/i)).toHaveLength(0);
   });
 
+  // Regression: opening via TooltipTrigger onClick re-opened the popover when a
+  // day click bubbled from the local portal; open only via the input path.
+  it("closes the Ends on picker after selecting a day", async () => {
+    const user = userEvent.setup();
+    renderRecurrenceSection({ initialDraft: recurringDraft() });
+
+    await user.click(await screen.findByRole("textbox"));
+    const [day] = await screen.findAllByLabelText(/^Choose /);
+    await user.click(day);
+
+    expect(screen.queryAllByLabelText(/^Choose /)).toHaveLength(0);
+  });
+
   it("turning off Repeat on an existing recurring event clears the controls", async () => {
     // Guards against the toggle being a no-op on an edit draft: clearing
     // recurrence used to resolve to "preserve", which read the source
