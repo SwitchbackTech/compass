@@ -44,6 +44,17 @@ export const postOnboardingFlowActions = {
   dismissTrial: () => {
     setStage("done");
   },
+  /**
+   * Resolves a stale "connect"/"trial" stage once the user is authenticated
+   * by any path (not just accepting the Connect Google CTA), so a returning
+   * established user is never shown these CTAs again.
+   */
+  resolveOnAuth: () => {
+    const { stage } = usePostOnboardingFlowStore.getState();
+    if (stage === "connect" || stage === "trial") {
+      setStage("done");
+    }
+  },
 };
 
 export const selectPostOnboardingStage = (state: PostOnboardingFlowState) =>

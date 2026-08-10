@@ -45,4 +45,27 @@ describe("postOnboardingFlowActions", () => {
       "done",
     );
   });
+
+  it("resolveOnAuth clears a stale connect/trial stage left by a non-Google login", () => {
+    usePostOnboardingFlowStore.setState({ stage: "connect" });
+    postOnboardingFlowActions.resolveOnAuth();
+    expect(usePostOnboardingFlowStore.getState().stage).toBe("done");
+    expect(persistentBrowserStore.get(STORAGE_KEYS.POST_TOUR_STAGE)).toBe(
+      "done",
+    );
+
+    usePostOnboardingFlowStore.setState({ stage: "trial" });
+    postOnboardingFlowActions.resolveOnAuth();
+    expect(usePostOnboardingFlowStore.getState().stage).toBe("done");
+  });
+
+  it("resolveOnAuth is a no-op when there is nothing to resolve", () => {
+    usePostOnboardingFlowStore.setState({ stage: null });
+    postOnboardingFlowActions.resolveOnAuth();
+    expect(usePostOnboardingFlowStore.getState().stage).toBeNull();
+
+    usePostOnboardingFlowStore.setState({ stage: "done" });
+    postOnboardingFlowActions.resolveOnAuth();
+    expect(usePostOnboardingFlowStore.getState().stage).toBe("done");
+  });
 });

@@ -22,4 +22,16 @@ export function usePostOnboardingFlowTrigger() {
     }
     wasTourActive.current = isTourActive;
   }, [isTourActive, authenticated]);
+
+  // A user can become authenticated by a path other than accepting the
+  // Connect Google CTA (e.g. email/password login, or Google auth from
+  // elsewhere in the app), leaving a stale "connect"/"trial" stage in
+  // localStorage. Resolve it so an established, possibly already-paying
+  // user is never shown these CTAs on a later load. PostOnboardingFlow also
+  // gates its own render on `authenticated` as defense in depth.
+  useEffect(() => {
+    if (authenticated) {
+      postOnboardingFlowActions.resolveOnAuth();
+    }
+  }, [authenticated]);
 }
