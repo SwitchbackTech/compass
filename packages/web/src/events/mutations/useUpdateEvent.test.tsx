@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
+import { Origin } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type GridEvent } from "@web/common/types/web.event.types";
@@ -39,7 +40,7 @@ function toGridEvent(event: Event): GridEvent {
     startDate: event.schedule.start,
     endDate: event.schedule.end,
     isAllDay: false,
-    origin: event.origin ?? ("compass" as never),
+    origin: Origin.COMPASS,
     position: gridEventDefaultPosition,
     user: "user-1",
   };
