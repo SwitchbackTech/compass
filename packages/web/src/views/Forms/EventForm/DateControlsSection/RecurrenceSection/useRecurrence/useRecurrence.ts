@@ -139,8 +139,8 @@ export const useRecurrence = (
   // back into a new CompassEventRRule's `options.until` below without
   // drifting it on every render (the bug this guards against: seeding from
   // the still-floating `options.until` would double-float on round-trip and
-  // never converge, since the deep-equal guard in the effect below would
-  // never pass).
+  // never converge, since the semantic-equality guard in the effect below
+  // would never pass).
   const [freq, setFreq] = useState<Frequency>(options.freq);
   const [interval, setInterval] = useState<number>(options.interval);
   const [until, setUntilState] = useState<Date | null>(() => parsed.until);
