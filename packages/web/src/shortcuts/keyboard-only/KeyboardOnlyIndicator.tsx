@@ -30,7 +30,7 @@ export const KeyboardOnlyIndicator: FC = () => {
       data-keyboard-only-indicator=""
       role="status"
     >
-      Keyboard only · Esc or Shift Shift
+      Hardcore Mode · Esc
     </span>
   );
 };

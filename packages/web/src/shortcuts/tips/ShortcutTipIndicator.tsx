@@ -1,7 +1,10 @@
 import { type FC } from "react";
 import { track } from "@web/auth/posthog/track";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import {
   getShortcutTips,
+  getTipPlainText,
+  type ShortcutTip,
   type ShortcutTipId,
 } from "@web/shortcuts/tips/shortcut-tips.data";
 import {
@@ -10,10 +13,8 @@ import {
   useShortcutTipsStore,
 } from "@web/shortcuts/tips/shortcut-tips.store";
 
-const getTipText = (id: ShortcutTipId | null): string | null =>
-  id === null
-    ? null
-    : (getShortcutTips().find((tip) => tip.id === id)?.text ?? null);
+const getTip = (id: ShortcutTipId | null): ShortcutTip | null =>
+  id === null ? null : (getShortcutTips().find((tip) => tip.id === id) ?? null);
 
 /**
  * Quiet, single-line rotation in the sidebar status bar. Pure display: the
@@ -22,9 +23,11 @@ const getTipText = (id: ShortcutTipId | null): string | null =>
  */
 export const ShortcutTipIndicator: FC = () => {
   const activeTipId = useShortcutTipsStore(selectActiveShortcutTipId);
-  const text = getTipText(activeTipId);
+  const tip = getTip(activeTipId);
 
-  if (!text || !activeTipId) return null;
+  if (!tip || !activeTipId) return null;
+
+  const plainText = getTipPlainText(tip);
 
   const onMute = () => {
     track("shortcut_tip_acted_on", { tip: activeTipId, action: "muted" });
@@ -33,14 +36,25 @@ export const ShortcutTipIndicator: FC = () => {
 
   return (
     <button
-      aria-label={`${text}. Click to hide these tips.`}
+      aria-label={`${plainText}. Click to hide these tips.`}
       className="c-focus-ring truncate text-left text-text-muted text-xs opacity-80 hover:opacity-100"
       onClick={onMute}
       title="Click to hide shortcut tips"
       type="button"
     >
       <span aria-live="polite" role="status">
-        {text}
+        <span className="sr-only">{plainText}</span>
+        <span aria-hidden className="inline-flex items-center gap-1">
+          {tip.parts.map((part, i) =>
+            typeof part === "string" ? (
+              // biome-ignore lint/suspicious/noArrayIndexKey: parts are a fixed, order-stable literal per tip
+              <span key={i}>{part}</span>
+            ) : (
+              // biome-ignore lint/suspicious/noArrayIndexKey: parts are a fixed, order-stable literal per tip
+              <ShortcutHint key={i}>{part.key}</ShortcutHint>
+            ),
+          )}
+        </span>
       </span>
     </button>
   );

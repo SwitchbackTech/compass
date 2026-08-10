@@ -124,10 +124,17 @@ export const getNavigationCommandItems = ({
 
   calendarItems.push({
     id: "enter-keyboard-only",
-    label: "Toggle keyboard-only mode",
+    label: "Toggle Hardcore Mode",
     icon: KeyboardIcon,
     shortcut: ["Shift", "Shift"],
-    keywords: ["keyboard", "clicks", "pointer", "mouseless", "hotkeys"],
+    keywords: [
+      "keyboard",
+      "hardcore",
+      "clicks",
+      "pointer",
+      "mouseless",
+      "hotkeys",
+    ],
     // Defer so the palette closes before click-blocking installs.
     onClick: () =>
       queueMicrotask(() => {

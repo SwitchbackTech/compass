@@ -279,6 +279,43 @@ describe("useDayEventNudgeShortcuts", () => {
     expect(input.schedule.end).toBe("2026-05-20");
   });
 
+  it("converts a focused all-day event to timed with Shift+ArrowDown", async () => {
+    focusCalendarTarget(ALL_DAY_EVENT_ID, "all-day");
+    const { queryClient } = renderEditShortcuts({
+      allDayEvents: [allDayEvent],
+      timedEvents: [],
+    });
+
+    pressKey("ArrowDown", shiftKey);
+
+    await waitFor(() => {
+      expect(getEditMutation(queryClient)).toBeDefined();
+    });
+    const { input } = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string; end: string } };
+    };
+    expect(input.schedule.start).toBe(
+      offsetString(dayjs("2026-05-20T09:00:00.000")),
+    );
+    expect(input.schedule.end).toBe(
+      offsetString(dayjs("2026-05-20T10:00:00.000")),
+    );
+  });
+
+  it("does not convert an edge-focused all-day event with Shift+ArrowDown", async () => {
+    focusCalendarTarget(ALL_DAY_EVENT_ID, "all-day");
+    const { queryClient } = renderEditShortcuts({
+      allDayEvents: [allDayEvent],
+      timedEvents: [],
+    });
+    pressKey("Tab");
+
+    pressKey("ArrowDown", shiftKey);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(getEditMutation(queryClient)).toBeUndefined();
+  });
+
   it("does not move all-day events with Shift+ArrowUp", async () => {
     focusCalendarTarget(ALL_DAY_EVENT_ID, "all-day");
     const { queryClient } = renderEditShortcuts({

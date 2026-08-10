@@ -25,12 +25,10 @@ export function WelcomeGuideBody() {
     <>
       <div className="flex flex-col gap-2">
         <h2 className="font-bold text-2xl text-text leading-snug">
-          The best place to manage your schedule at the keyboard.
+          The keyboard-first calendar
         </h2>
         <p className="text-text-muted">
-          Move fast, stay focused, and never reach for the mouse. Even
-          scheduling itself is quicker from the keyboard than any other
-          calendar.
+          Rediscover the joy of shortcuts as you build your perfect schedule.
         </p>
       </div>
 

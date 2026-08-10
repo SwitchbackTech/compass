@@ -8,7 +8,10 @@ import {
 } from "@web/calendars/useCalendarLookup";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
+import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
+import { refocusEventElement } from "@web/common/utils/event/event.util";
 import {
+  convertAllDayToTimedDates,
   type EventEdge,
   getArrowKeyMovement,
 } from "@web/common/utils/event/event-nudge.util";
@@ -46,6 +49,9 @@ import {
 } from "@web/grid/shortcuts/focus-adjacent-grid-event";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
+
+// Fallback when the grid can't be measured, matching EventForm's all-day->timed toggle.
+const DEFAULT_TIMED_START_MINUTE = 9 * 60;
 
 const DRAFT_MOVEMENT_HOTKEY_OPTIONS = {
   ignoreInputs: false,
@@ -247,6 +253,19 @@ export function useGridEventEditShortcuts({
       const edgeFocus = useEdgeFocusStore.getState();
       if (edgeFocus.eventId === event._id && edgeFocus.edge) {
         moveFocusedEventEdge(keyboardEvent, event, edgeFocus.edge);
+        return;
+      }
+
+      if (event.isAllDay && keyboardEvent.key === "ArrowDown") {
+        if (!event._id) return;
+        keyboardEvent.preventDefault();
+        const startMinute =
+          getVisibleGridStartMinute() ?? DEFAULT_TIMED_START_MINUTE;
+        const dates = convertAllDayToTimedDates(event, startMinute);
+        updateEvent({ event: { ...event, ...dates, isAllDay: false } }, true, {
+          onOptimisticApplied: () => draftActions.discard(),
+        });
+        refocusEventElement(event._id);
         return;
       }
 

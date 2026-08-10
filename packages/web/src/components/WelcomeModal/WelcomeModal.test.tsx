@@ -66,12 +66,10 @@ describe("WelcomeModal", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "The best place to manage your schedule at the keyboard.",
+        name: "The keyboard-first calendar",
       }),
     ).toBeTruthy();
-    expect(
-      screen.getByText(/Move fast, stay focused, and never reach for/),
-    ).toBeTruthy();
+    expect(screen.getByText(/Rediscover the joy of shortcuts/)).toBeTruthy();
     expect(screen.getByRole("img", { name: /pixel pirate/i })).toBeTruthy();
     expect(screen.getByText("No signup required")).toBeTruthy();
   });
@@ -176,6 +174,45 @@ describe("WelcomeModal", () => {
     expect(questionButton).toHaveAttribute("aria-expanded", "false");
     expect(answer).toHaveAttribute("aria-hidden", "true");
     expect(answer).toHaveAttribute("data-state", "closed");
+  });
+
+  it("opens sign up with the U shortcut", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("u");
+
+    expect(mockOpenModal).toHaveBeenCalledWith("signUp");
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
+  });
+
+  it("opens log in with the I shortcut", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("i");
+
+    expect(mockOpenModal).toHaveBeenCalledWith("login");
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
+  });
+
+  it("dismisses with the S shortcut", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("s");
+
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
+  });
+
+  it("ignores the shortcut keys when a modifier is held", async () => {
+    const user = userEvent.setup();
+    render(<WelcomeModal />);
+
+    await user.keyboard("{Meta>}u{/Meta}");
+
+    expect(mockOpenModal).not.toHaveBeenCalled();
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBeNull();
   });
 
   it("focuses the first control and keeps Tab inside the dialog", async () => {

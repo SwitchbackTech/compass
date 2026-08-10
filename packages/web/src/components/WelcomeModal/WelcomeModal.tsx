@@ -12,6 +12,7 @@ import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { onboardingTourActions } from "@web/components/OnboardingTour/onboarding.tour.store";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
@@ -66,6 +67,21 @@ export function WelcomeModal() {
     beginDismiss(() => setIsOpen(false));
   };
 
+  const handleShortcutKey = (e: React.KeyboardEvent) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const key = e.key.toLowerCase();
+    if (key === "u") {
+      e.preventDefault();
+      handOffToAuth("sign_up");
+    } else if (key === "i") {
+      e.preventDefault();
+      handOffToAuth("log_in");
+    } else if (key === "s") {
+      e.preventDefault();
+      dismiss("start_now");
+    }
+  };
+
   const handOffToAuth = (cta: "log_in" | "sign_up") => {
     skipFocusRestoreRef.current = true;
     markWelcomeSeen();
@@ -89,7 +105,8 @@ export function WelcomeModal() {
       skipFocusRestoreRef={skipFocusRestoreRef}
       widthClassName="w-120"
     >
-      <div className="flex w-full flex-col gap-6">
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: keydown here is a modal-scoped shortcut layer, not an interactive element in its own right */}
+      <div className="flex w-full flex-col gap-6" onKeyDown={handleShortcutKey}>
         {/* Top row: pirate top-left, auth pills top-right */}
         <div className="flex items-center justify-between">
           <div className="group relative flex items-center">
@@ -108,16 +125,18 @@ export function WelcomeModal() {
             <button
               type="button"
               onClick={() => handOffToAuth("sign_up")}
-              className="rounded-3xl bg-accent px-4 py-1.5 text-on-accent text-xs transition-all hover:brightness-110"
+              className="inline-flex items-center rounded-3xl bg-accent px-4 py-1.5 text-on-accent text-xs transition-all hover:brightness-110"
             >
               Sign up
+              <ShortcutHint className="ml-2">U</ShortcutHint>
             </button>
             <button
               type="button"
               onClick={() => handOffToAuth("log_in")}
-              className="rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
+              className="inline-flex items-center rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
             >
               Log in
+              <ShortcutHint className="ml-2">I</ShortcutHint>
             </button>
           </div>
         </div>
@@ -129,9 +148,10 @@ export function WelcomeModal() {
           <button
             type="button"
             onClick={() => dismiss("start_now")}
-            className="c-button c-button-primary c-button-elevated rounded-full px-10"
+            className="c-button c-button-primary c-button-elevated inline-flex items-center rounded-full px-10"
           >
             Start Now
+            <ShortcutHint className="ml-2">S</ShortcutHint>
           </button>
         </div>
 

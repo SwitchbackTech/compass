@@ -366,7 +366,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   {
     id: "other-keyboard-only",
     keys: ["Shift", "Shift"],
-    label: "Toggle keyboard-only mode",
+    label: "Toggle Hardcore Mode",
     section: "other",
   },
 ];
