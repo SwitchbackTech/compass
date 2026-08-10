@@ -2,10 +2,7 @@ import { useCallback, useEffect } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
-import {
-  emitViewCommand,
-  onViewCommand,
-} from "@web/common/utils/dom/view-command-bus";
+import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
   createAlldayDraft,
   createTimedDraft,
@@ -131,19 +128,9 @@ export const useWeekShortcutOwner = ({
     );
   }, [defaultTargetCalendarId, isCalendarsPending, isCurrentWeek, startOfView]);
 
-  const emitCreateAllDayDraft = useCallback(
-    () => emitViewCommand("CREATE_ALLDAY_DRAFT"),
-    [],
-  );
-  const emitCreateTimedDraft = useCallback(
-    () => emitViewCommand("CREATE_TIMED_DRAFT"),
-    [],
-  );
-
-  // The "C"/"A" keys and the command palette's create-event rows
-  // (event.cmd.constants.ts) both just emit these commands; this effect is
-  // the one place that turns them into a draft, so every trigger runs
-  // identical code. Resubscribes when the create handlers change (week in
+  // The command palette's create-event rows (event.cmd.constants.ts) can only
+  // reach this view through the bus; the "C"/"A" keys below call the create
+  // functions directly. Resubscribes when the create handlers change (week in
   // view or default target calendar).
   useEffect(() => {
     const unsubscribeCreateAllDayDraft = onViewCommand(
@@ -196,8 +183,8 @@ export const useWeekShortcutOwner = ({
     onShiftViewBackward: shiftViewBackward,
     onShiftViewForward: shiftViewForward,
     onGoToToday: toToday,
-    onCreateAllDayDraft: emitCreateAllDayDraft,
-    onCreateTimedDraft: emitCreateTimedDraft,
+    onCreateAllDayDraft: createAllDayDraftEvent,
+    onCreateTimedDraft: createTimedDraftEvent,
     onFocusCalendar: focusFirstCalendarEvent,
   });
 
