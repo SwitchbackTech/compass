@@ -50,6 +50,38 @@ export const isApiError = (error: unknown): error is ApiError => {
 };
 
 /**
+ * Prefer the structured status on ApiError; fall back to the trailing status
+ * digits in the message for errors that only carry text (same convention as
+ * {@link createApiError}).
+ */
+export const getErrorStatus = (error: unknown): number | undefined => {
+  if (isApiError(error) && typeof error.response?.status === "number") {
+    return error.response.status;
+  }
+  if (error instanceof Error) {
+    const parsed = parseInt(error.message.slice(-3), 10);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  }
+  return undefined;
+};
+
+/**
+ * GONE/UNAUTHORIZED are session-level failures — the API interceptor signs the
+ * user out and shows SessionExpiredToast, so callers must not add a second
+ * recovery UI (load-error overlays, mutation toasts, etc.).
+ */
+export const isSessionLevelError = (error: unknown): boolean => {
+  const status = getErrorStatus(error);
+  return status === Status.UNAUTHORIZED || status === Status.GONE;
+};
+
+/** True when a fetch failed for a reason that still needs a local Retry UI. */
+export const shouldShowContextualLoadError = (
+  isError: boolean,
+  error: unknown,
+): boolean => isError && !isSessionLevelError(error);
+
+/**
  * Extracts the error code from an API error's response data.
  * Returns undefined when the response has no object body with a string `code` property.
  */

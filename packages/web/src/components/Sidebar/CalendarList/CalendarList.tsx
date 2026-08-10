@@ -1,5 +1,6 @@
 import { type FC, useMemo } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
+import { shouldShowContextualLoadError } from "@web/api/util/api.util";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
@@ -26,7 +27,7 @@ export const CalendarList: FC = () => {
   const { authenticated } = useSession();
   const { email } = useUser();
   const { isAvailable, state } = useConnectGoogle();
-  const { data, isPending, isError, refetch } = useCalendarsQuery();
+  const { data, error, isPending, isError, refetch } = useCalendarsQuery();
   const { toggleCalendarVisibility, failureAnnouncement } =
     useCalendarVisibility();
   const connections = useUserMetadataStore(selectGoogleSyncConnections);
@@ -35,6 +36,9 @@ export const CalendarList: FC = () => {
 
   const hasConnectedAccount = accountEmailOrder.length > 0;
   const isAnonymous = !email;
+  // Session expiry already surfaces SessionExpiredToast — don't also show
+  // "Couldn't load calendars" / Retry for the same failure.
+  const showCalendarsLoadError = shouldShowContextualLoadError(isError, error);
 
   // Re-groups on every calendar-visibility/collapse toggle otherwise, since
   // those live in sibling external stores this component also subscribes to.
@@ -91,7 +95,7 @@ export const CalendarList: FC = () => {
           heading with no way to tell them apart. */}
       {groups.length === 0 && !isAnonymous && <CalendarListHeader />}
 
-      {isPending ? null : isError ? (
+      {isPending ? null : showCalendarsLoadError ? (
         <div className="flex items-center justify-between gap-2 text-xs">
           <p className="text-error">Couldn't load calendars.</p>
           <button

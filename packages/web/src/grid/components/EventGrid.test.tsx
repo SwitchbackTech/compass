@@ -157,6 +157,34 @@ describe("EventGrid", () => {
     expect(onRetryEvents).toHaveBeenCalledTimes(1);
   });
 
+  it("does not show the load overlay when callers suppress session-level errors", () => {
+    // Week/Day pass shouldShowContextualLoadError(...) so SessionExpiredToast
+    // remains the only recovery CTA after 401/410.
+    render(
+      <EventGrid
+        allDayEventsLayer={<div />}
+        gridRefs={createGridRefs()}
+        isErrorEvents={false}
+        onAllDayMouseDown={mock()}
+        onRetryEvents={mock()}
+        onTimedMouseDown={mock()}
+        timedEventsLayer={<div />}
+        today={dayjs("2026-05-20T00:00:00.000")}
+        visibleDates={[
+          {
+            date: dayjs("2026-05-20T00:00:00.000"),
+            key: "date-0",
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Retry" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("hides the error overlay while events are loading", () => {
     render(
       <EventGrid

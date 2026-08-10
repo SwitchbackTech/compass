@@ -1,6 +1,7 @@
 import { type FC, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { shouldShowContextualLoadError } from "@web/api/util/api.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { isFirstImportInProgress } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
@@ -40,6 +41,7 @@ export const Grid: FC<Props> = ({
   // their load without issuing a second fetch.
   const {
     allDayEvents,
+    error: eventsError,
     isPending,
     isFetching,
     isError: isErrorEvents,
@@ -51,9 +53,15 @@ export const Grid: FC<Props> = ({
     endOfView: weekProps.query.endOfView,
   });
   const { connection, state: googleState } = useConnectGoogle();
+  // Session expiry already surfaces SessionExpiredToast — don't also show
+  // "Couldn't load events" / Retry for the same failure.
+  const showEventsLoadError = shouldShowContextualLoadError(
+    isErrorEvents,
+    eventsError,
+  );
   const isLoadingEvents = isEventGridLoading(
     isPending,
-    isErrorEvents,
+    showEventsLoadError,
     isFetching,
   );
   const hasVisibleEvents = (data?.ids?.length ?? 0) > 0;
@@ -128,7 +136,7 @@ export const Grid: FC<Props> = ({
                 allDayGridOffsetTopPx={GRID_Y_START}
                 allDayRowsCount={allDayRowsCount}
                 gridRefs={gridRefs}
-                isErrorEvents={isErrorEvents}
+                isErrorEvents={showEventsLoadError}
                 isImportingEmpty={isImportingEmpty}
                 isLoadingEvents={isLoadingEvents}
                 onAllDayMouseDown={onAllDayMouseDown}
