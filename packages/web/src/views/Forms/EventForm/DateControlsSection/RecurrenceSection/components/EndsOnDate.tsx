@@ -1,4 +1,3 @@
-import type React from "react";
 import { useMemo, useState } from "react";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";

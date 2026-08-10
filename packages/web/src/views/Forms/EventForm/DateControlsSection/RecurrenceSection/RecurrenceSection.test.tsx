@@ -189,11 +189,13 @@ describe("RecurrenceSection", () => {
     });
 
     await user.click(await screen.findByRole("textbox"));
-    expect(await screen.findByLabelText(/Choose .*2026/i)).toBeInTheDocument();
+    expect(
+      (await screen.findAllByLabelText(/Choose .*2026/i)).length,
+    ).toBeGreaterThan(0);
 
     await user.click(screen.getByRole("button", { name: "Outside" }));
 
-    expect(screen.queryByLabelText(/Choose .*2026/i)).not.toBeInTheDocument();
+    expect(screen.queryAllByLabelText(/Choose .*2026/i)).toHaveLength(0);
   });
 
   it("turning off Repeat on an existing recurring event clears the controls", async () => {
