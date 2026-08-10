@@ -221,6 +221,44 @@ const replacePayload = (
   },
 });
 
+type MutationTestContext = ReturnType<typeof setup>;
+
+const replaceAndGetOpportunity = (
+  context: MutationTestContext,
+  id: EventId,
+  overrides: Partial<ReplaceEventInput> = {},
+) => {
+  act(() =>
+    context.hook.result.current.mutations.replace(
+      replacePayload(id, overrides),
+    ),
+  );
+  const opportunity = useRecurrenceScopeOpportunityStore.getState().opportunity;
+  if (!opportunity || opportunity.kind !== "replace") {
+    throw new Error("Expected a recurrence edit opportunity");
+  }
+  return opportunity;
+};
+
+const expectPromotedReplaceCall = async (
+  context: MutationTestContext,
+  id: EventId,
+  expected: Partial<ReplaceEventInput>,
+) => {
+  await waitFor(() => expect(context.calls).toHaveLength(1));
+  act(() => context.pending.resolveNext());
+  await waitFor(() => {
+    expect(context.calls).toContainEqual({
+      method: "replace",
+      value: {
+        id,
+        input: expect.objectContaining(expected),
+      },
+    });
+  });
+  context.pending.resolve();
+};
+
 describe("useEventMutations", () => {
   afterEach(() => {
     recurrenceScopeOpportunityActions.reset();
@@ -300,23 +338,14 @@ describe("useEventMutations", () => {
     });
     context.queryClient.setQueryData(calendarKey, normalized(first, second));
 
-    act(() =>
-      context.hook.result.current.mutations.replace(
-        replacePayload(first.id, {
-          content: {
-            kind: "details",
-            title: "First narrow edit",
-            description: "",
-            location: "",
-          },
-        }),
-      ),
-    );
-    const opportunity =
-      useRecurrenceScopeOpportunityStore.getState().opportunity;
-    if (!opportunity || opportunity.kind !== "replace") {
-      throw new Error("Expected a recurrence edit opportunity");
-    }
+    const opportunity = replaceAndGetOpportunity(context, first.id, {
+      content: {
+        kind: "details",
+        title: "First narrow edit",
+        description: "",
+        location: "",
+      },
+    });
 
     act(() =>
       context.hook.result.current.mutations.promoteRecurring(
@@ -353,7 +382,6 @@ describe("useEventMutations", () => {
 
   test("remote promote all rebases a middle timed occurrence onto the series master", async () => {
     const context = setup("remote");
-    const remoteKey = calendarKeyFor("remote");
     const seriesId = EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa");
     const master = seriesMaster(seriesId, {
       schedule: timedSchedule(
@@ -371,26 +399,20 @@ describe("useEventMutations", () => {
       "2026-07-04T16:00:00.000Z",
       "2026-07-04T17:00:00.000Z",
     );
-    context.queryClient.setQueryData(remoteKey, normalized(master, middle));
-
-    act(() =>
-      context.hook.result.current.mutations.replace(
-        replacePayload(middle.id, {
-          content: {
-            kind: "details",
-            title: "Nudged",
-            description: "",
-            location: "",
-          },
-          schedule: moved,
-        }),
-      ),
+    context.queryClient.setQueryData(
+      calendarKeyFor("remote"),
+      normalized(master, middle),
     );
-    const opportunity =
-      useRecurrenceScopeOpportunityStore.getState().opportunity;
-    if (!opportunity || opportunity.kind !== "replace") {
-      throw new Error("Expected a recurrence edit opportunity");
-    }
+
+    const opportunity = replaceAndGetOpportunity(context, middle.id, {
+      content: {
+        kind: "details",
+        title: "Nudged",
+        description: "",
+        location: "",
+      },
+      schedule: moved,
+    });
 
     act(() =>
       context.hook.result.current.mutations.promoteRecurring(
@@ -399,29 +421,17 @@ describe("useEventMutations", () => {
       ),
     );
 
-    await waitFor(() => expect(context.calls).toHaveLength(1));
-    act(() => context.pending.resolveNext());
-    await waitFor(() => {
-      expect(context.calls).toContainEqual({
-        method: "replace",
-        value: {
-          id: middle.id,
-          input: expect.objectContaining({
-            scope: "all",
-            schedule: timedSchedule(
-              "2026-07-02T16:00:00+00:00",
-              "2026-07-02T17:00:00+00:00",
-            ),
-          }),
-        },
-      });
+    await expectPromotedReplaceCall(context, middle.id, {
+      scope: "all",
+      schedule: timedSchedule(
+        "2026-07-02T16:00:00+00:00",
+        "2026-07-02T17:00:00+00:00",
+      ),
     });
-    context.pending.resolve();
   });
 
   test("remote promote all rebases a middle all-day occurrence onto the series master", async () => {
     const context = setup("remote");
-    const remoteKey = calendarKeyFor("remote");
     const seriesId = EventIdSchema.parse("bbbbbbbbbbbbbbbbbbbbbbbb");
     const master = seriesMaster(seriesId, {
       schedule: allDaySchedule("2026-07-01", "2026-07-02"),
@@ -430,26 +440,20 @@ describe("useEventMutations", () => {
       schedule: allDaySchedule("2026-07-03", "2026-07-04"),
     });
     const moved = allDaySchedule("2026-07-04", "2026-07-05");
-    context.queryClient.setQueryData(remoteKey, normalized(master, middle));
-
-    act(() =>
-      context.hook.result.current.mutations.replace(
-        replacePayload(middle.id, {
-          content: {
-            kind: "details",
-            title: "All-day nudged",
-            description: "",
-            location: "",
-          },
-          schedule: moved,
-        }),
-      ),
+    context.queryClient.setQueryData(
+      calendarKeyFor("remote"),
+      normalized(master, middle),
     );
-    const opportunity =
-      useRecurrenceScopeOpportunityStore.getState().opportunity;
-    if (!opportunity || opportunity.kind !== "replace") {
-      throw new Error("Expected a recurrence edit opportunity");
-    }
+
+    const opportunity = replaceAndGetOpportunity(context, middle.id, {
+      content: {
+        kind: "details",
+        title: "All-day nudged",
+        description: "",
+        location: "",
+      },
+      schedule: moved,
+    });
 
     act(() =>
       context.hook.result.current.mutations.promoteRecurring(
@@ -458,26 +462,14 @@ describe("useEventMutations", () => {
       ),
     );
 
-    await waitFor(() => expect(context.calls).toHaveLength(1));
-    act(() => context.pending.resolveNext());
-    await waitFor(() => {
-      expect(context.calls).toContainEqual({
-        method: "replace",
-        value: {
-          id: middle.id,
-          input: expect.objectContaining({
-            scope: "all",
-            schedule: allDaySchedule("2026-07-02", "2026-07-03"),
-          }),
-        },
-      });
+    await expectPromotedReplaceCall(context, middle.id, {
+      scope: "all",
+      schedule: allDaySchedule("2026-07-02", "2026-07-03"),
     });
-    context.pending.resolve();
   });
 
   test("remote promote thisAndFollowing keeps the occurrence absolute schedule", async () => {
     const context = setup("remote");
-    const remoteKey = calendarKeyFor("remote");
     const seriesId = EventIdSchema.parse("cccccccccccccccccccccccc");
     const master = seriesMaster(seriesId, {
       schedule: timedSchedule(
@@ -495,26 +487,20 @@ describe("useEventMutations", () => {
       "2026-07-04T16:00:00.000Z",
       "2026-07-04T17:00:00.000Z",
     );
-    context.queryClient.setQueryData(remoteKey, normalized(master, middle));
-
-    act(() =>
-      context.hook.result.current.mutations.replace(
-        replacePayload(middle.id, {
-          content: {
-            kind: "details",
-            title: "Split nudge",
-            description: "",
-            location: "",
-          },
-          schedule: moved,
-        }),
-      ),
+    context.queryClient.setQueryData(
+      calendarKeyFor("remote"),
+      normalized(master, middle),
     );
-    const opportunity =
-      useRecurrenceScopeOpportunityStore.getState().opportunity;
-    if (!opportunity || opportunity.kind !== "replace") {
-      throw new Error("Expected a recurrence edit opportunity");
-    }
+
+    const opportunity = replaceAndGetOpportunity(context, middle.id, {
+      content: {
+        kind: "details",
+        title: "Split nudge",
+        description: "",
+        location: "",
+      },
+      schedule: moved,
+    });
 
     act(() =>
       context.hook.result.current.mutations.promoteRecurring(
@@ -523,21 +509,10 @@ describe("useEventMutations", () => {
       ),
     );
 
-    await waitFor(() => expect(context.calls).toHaveLength(1));
-    act(() => context.pending.resolveNext());
-    await waitFor(() => {
-      expect(context.calls).toContainEqual({
-        method: "replace",
-        value: {
-          id: middle.id,
-          input: expect.objectContaining({
-            scope: "thisAndFollowing",
-            schedule: moved,
-          }),
-        },
-      });
+    await expectPromotedReplaceCall(context, middle.id, {
+      scope: "thisAndFollowing",
+      schedule: moved,
     });
-    context.pending.resolve();
   });
 
   test("optimistically patches recurring instances across day and week caches", async () => {

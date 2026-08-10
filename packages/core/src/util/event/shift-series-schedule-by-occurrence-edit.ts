@@ -2,8 +2,6 @@ import { DateOnlySchema, DateTimeSchema } from "@core/types/domain-primitives";
 import { type EventSchedule } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
 /**
  * Apply an occurrence edit's schedule delta onto the series base.
  *
@@ -58,12 +56,8 @@ export function shiftSeriesScheduleByOccurrenceEdit(
   const originalEnd = dayjs(originalStart)
     .add(baseDurationDays, "day")
     .format("YYYY-MM-DD");
-  const startDeltaDays = Math.round(
-    dayjs(edited.start).diff(dayjs(originalStart)) / MS_PER_DAY,
-  );
-  const endDeltaDays = Math.round(
-    dayjs(edited.end).diff(dayjs(originalEnd)) / MS_PER_DAY,
-  );
+  const startDeltaDays = dayjs(edited.start).diff(dayjs(originalStart), "day");
+  const endDeltaDays = dayjs(edited.end).diff(dayjs(originalEnd), "day");
   if (startDeltaDays === 0 && endDeltaDays === 0) {
     return base;
   }
