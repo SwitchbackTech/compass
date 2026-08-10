@@ -113,6 +113,17 @@ function dispatchModKey(
   );
 }
 
+function dispatchKey(target: HTMLElement, key: string) {
+  const event = new KeyboardEvent("keydown", {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    key,
+  });
+  target.dispatchEvent(event);
+  return event;
+}
+
 function dispatchArrowDown(target: HTMLElement) {
   const event = new KeyboardEvent("keydown", {
     bubbles: true,
@@ -334,7 +345,7 @@ describe("EventForm", () => {
     expect(onDuplicate).toHaveBeenCalledWith(draft);
   });
 
-  it("jumps focus to the location field with Mod+Shift+L from the title field", () => {
+  it("jumps focus to the location field with Mod+E then L from the title field", () => {
     renderWithStore(
       <EventForm
         draft={createEditDraft()}
@@ -351,12 +362,14 @@ describe("EventForm", () => {
     const titleField = screen.getByPlaceholderText("Title");
     act(() => titleField.focus());
 
-    dispatchModKey(titleField, "l", { shift: true });
+    dispatchModKey(titleField, "e");
+    const followEvent = dispatchKey(titleField, "l");
 
+    expect(followEvent.defaultPrevented).toBe(true);
     expect(screen.getByRole("textbox", { name: "Location" })).toHaveFocus();
   });
 
-  it("jumps focus to the description field with Mod+Shift+D from the location field", () => {
+  it("jumps focus to the description field with Mod+E then D from the location field", () => {
     renderWithStore(
       <EventForm
         draft={createEditDraft({ description: "Plan the launch" })}
@@ -373,12 +386,13 @@ describe("EventForm", () => {
     const locationField = screen.getByRole("textbox", { name: "Location" });
     act(() => locationField.focus());
 
-    dispatchModKey(locationField, "d", { shift: true });
+    dispatchModKey(locationField, "e");
+    dispatchKey(locationField, "d");
 
     expect(screen.getByRole("textbox", { name: "Description" })).toHaveFocus();
   });
 
-  it("jumps focus out of the TipTap description editor to the title field with Mod+Shift+H", () => {
+  it("jumps focus out of the TipTap description editor to the title field with Mod+E then T", () => {
     renderWithStore(
       <EventForm
         draft={createEditDraft({ description: "Plan the launch" })}
@@ -397,7 +411,8 @@ describe("EventForm", () => {
     });
     act(() => descriptionField.focus());
 
-    dispatchModKey(descriptionField, "h", { shift: true });
+    dispatchModKey(descriptionField, "e");
+    dispatchKey(descriptionField, "t");
 
     expect(screen.getByPlaceholderText("Title")).toHaveFocus();
   });
@@ -419,9 +434,31 @@ describe("EventForm", () => {
     const titleField = screen.getByPlaceholderText("Title");
     act(() => titleField.focus());
 
-    expect(() =>
-      dispatchModKey(titleField, "k", { shift: true }),
-    ).not.toThrow();
+    dispatchModKey(titleField, "e");
+    expect(() => dispatchKey(titleField, "c")).not.toThrow();
+    expect(titleField).toHaveFocus();
+  });
+
+  it("does not jump focus when a bare letter is typed without the Mod+E leader", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    const event = dispatchKey(titleField, "l");
+
+    expect(event.defaultPrevented).toBe(false);
     expect(titleField).toHaveFocus();
   });
 
