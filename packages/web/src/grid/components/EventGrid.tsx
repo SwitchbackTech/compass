@@ -97,7 +97,7 @@ export const EventGrid: FC<EventGridProps> = ({
         style={{ zIndex: ZIndex.MAX }}
       >
         <p className="max-w-sm text-center text-sm text-text-muted">
-          Importing from Google — events usually appear within a minute.
+          Importing from Google. Larger calendars can take a few minutes.
         </p>
       </div>
     )}

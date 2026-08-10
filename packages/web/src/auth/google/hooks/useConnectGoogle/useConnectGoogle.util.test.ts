@@ -1,9 +1,11 @@
+import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
 import {
   formatLastSyncedLabel,
   formatLastUpdatedClause,
   getGoogleConnectionConfig,
   getGoogleSyncStatus,
   getSidebarSyncStatus,
+  isFirstImportInProgress,
 } from "./useConnectGoogle.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -368,7 +370,7 @@ describe("getSidebarSyncStatus", () => {
     });
   });
 
-  it("shows Calendar needs reconnecting for actionRequired", () => {
+  it("names the account for actionRequired, so multiple accounts don't collapse into one anonymous warning", () => {
     expect(
       getSidebarSyncStatus({
         connection: {
@@ -386,8 +388,99 @@ describe("getSidebarSyncStatus", () => {
       }),
     ).toEqual({
       variant: "error",
+      text: "a@example.com needs reconnecting",
+    });
+  });
+
+  it("falls back to the generic reconnect text with no account email to name", () => {
+    expect(
+      getSidebarSyncStatus({
+        connection: {
+          id: "c1",
+          state: "actionRequired",
+          stateReason: "authorizationRevoked",
+          lastSyncedAt: null,
+          lastHealthyAt: null,
+          accountEmail: null,
+          connectionState: "RECONNECT_REQUIRED",
+        },
+        isConnecting: false,
+        state: "RECONNECT_REQUIRED",
+        nowMs,
+      }),
+    ).toEqual({
+      variant: "error",
       text: "Calendar needs reconnecting",
     });
+  });
+});
+
+describe("isFirstImportInProgress", () => {
+  const makeConnection = (
+    overrides: Partial<GoogleSyncConnectionSummary> = {},
+  ): GoogleSyncConnectionSummary => ({
+    id: "c1",
+    state: "importing",
+    stateReason: null,
+    lastSyncedAt: null,
+    lastHealthyAt: null,
+    accountEmail: "a@example.com",
+    connectionState: "IMPORTING",
+    ...overrides,
+  });
+
+  it("returns false with no connection", () => {
+    expect(isFirstImportInProgress(null)).toBe(false);
+    expect(isFirstImportInProgress(undefined)).toBe(false);
+  });
+
+  it.each([
+    "connecting",
+    "importing",
+    "catchingUp",
+  ] as const)("returns true for a never-healthy connection in state %s", (state) => {
+    expect(
+      isFirstImportInProgress(makeConnection({ state, lastHealthyAt: null })),
+    ).toBe(true);
+  });
+
+  it("returns false once the connection has ever gone healthy, even mid-catchingUp", () => {
+    // This is the exact bug it fixes: an established account's ROUTINE
+    // catch-up collapses to the same aggregate IMPORTING state as a brand-new
+    // account's first import - lastHealthyAt is the only signal that tells
+    // them apart.
+    expect(
+      isFirstImportInProgress(
+        makeConnection({
+          state: "catchingUp",
+          lastHealthyAt: "2026-07-24T11:45:00.000Z",
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for a healthy connection", () => {
+    expect(
+      isFirstImportInProgress(
+        makeConnection({
+          state: "healthy",
+          lastHealthyAt: "2026-07-24T11:45:00.000Z",
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for a delayed/reconnect-needed state, even if never healthy", () => {
+    expect(
+      isFirstImportInProgress(
+        makeConnection({ state: "delayed", lastHealthyAt: null }),
+      ),
+    ).toBe(false);
+    expect(
+      isFirstImportInProgress(
+        makeConnection({ state: "actionRequired", lastHealthyAt: null }),
+      ),
+    ).toBe(false);
   });
 });
 

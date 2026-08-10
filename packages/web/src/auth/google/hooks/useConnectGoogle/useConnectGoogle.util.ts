@@ -16,6 +16,17 @@ const RECONNECT_STATUS: SyncStatus = {
   text: "Calendar needs reconnecting",
 };
 
+// Settings lists every account as its own row (email visible right above this
+// text), so a generic message there is unambiguous. The sidebar's status bar
+// collapses every account into one line with no account context at all - with
+// multiple accounts connected, "Calendar needs reconnecting" doesn't say
+// which one, and the user has to open Settings just to find out. Named only
+// in getSidebarSyncStatus's own reconnect returns, below.
+const reconnectStatusFor = (accountEmail?: string | null): SyncStatus =>
+  accountEmail
+    ? { variant: "error", text: `${accountEmail} needs reconnecting` }
+    : RECONNECT_STATUS;
+
 /** Sync disconnected / product reconnect / session override after a live 410. */
 export const connectionHasReconnectRequired = (
   connection?: GoogleSyncConnectionSummary | null,
@@ -304,6 +315,27 @@ export const getGoogleSyncStatus = (
 };
 
 /**
+ * Whether this connection's FIRST-EVER import is still running, as opposed to
+ * a routine incremental catch-up on an already-established account. Both
+ * collapse to the same aggregate "IMPORTING" product state, so a caller that
+ * only checks that (e.g. the grid's empty-week overlay, before this was
+ * introduced) shows first-import copy ("Importing from Google…") to a
+ * long-established user during ordinary background catch-up. lastHealthyAt is
+ * the one signal that distinguishes them: it is set once, the first time the
+ * connection ever finishes healthy, and never cleared.
+ */
+export const isFirstImportInProgress = (
+  connection?: GoogleSyncConnectionSummary | null,
+): boolean =>
+  Boolean(
+    connection &&
+      !connection.lastHealthyAt &&
+      (connection.state === "connecting" ||
+        connection.state === "importing" ||
+        connection.state === "catchingUp"),
+  );
+
+/**
  * The sidebar's take on one account's status. Two rules the sidebar applies
  * that Settings doesn't: a connect/reconnect that has been clicked but hasn't
  * round-tripped yet wins over the (still pre-click) connection summary, and a
@@ -335,7 +367,7 @@ export const getSidebarSyncStatus = ({
   }
 
   if (connectionNeedsReconnect(state, connection)) {
-    return RECONNECT_STATUS;
+    return reconnectStatusFor(connection?.accountEmail);
   }
 
   if (
@@ -376,7 +408,7 @@ export const getSidebarSyncStatus = ({
         };
       case "actionRequired":
       case "disconnected":
-        return RECONNECT_STATUS;
+        return reconnectStatusFor(connection.accountEmail);
       case "connecting":
       case "importing":
         return connection.lastHealthyAt
