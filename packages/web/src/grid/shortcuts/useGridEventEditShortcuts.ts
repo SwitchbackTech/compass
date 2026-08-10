@@ -294,7 +294,6 @@ export function useGridEventEditShortcuts({
   });
   useAppShortcut("Mod+D", duplicateFocusedCalendarEvent, {
     ignoreInputs: false,
-    conflictBehavior: "allow",
   });
   useAppShortcut(
     "ArrowUp",

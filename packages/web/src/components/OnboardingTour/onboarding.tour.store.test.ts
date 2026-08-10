@@ -11,7 +11,6 @@ describe("onboardingTourActions", () => {
   beforeEach(() => {
     useOnboardingTourStore.setState(initialOnboardingTourState);
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_ONBOARDING_TOUR, "");
-    persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_CMD_PALETTE_HINT, "");
   });
 
   it("starts the tour and advances through steps", () => {
@@ -35,9 +34,6 @@ describe("onboardingTourActions", () => {
     expect(useOnboardingTourStore.getState().isActive).toBe(false);
     expect(
       persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_ONBOARDING_TOUR),
-    ).toBe("true");
-    expect(
-      persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_CMD_PALETTE_HINT),
     ).toBe("true");
 
     useOnboardingTourStore.setState(initialOnboardingTourState);

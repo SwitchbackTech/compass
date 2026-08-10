@@ -119,11 +119,11 @@ describe("useShiftHoldEventHints", () => {
     act(() => {
       tapShift();
     });
-    expect(result.current.isActive).toBe(false);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
 
     await flushActivate();
 
-    expect(result.current.isActive).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
     expect(result.current.hints.map((hint) => hint.hint)).toEqual([
       "w1",
       "w2",
@@ -138,8 +138,8 @@ describe("useShiftHoldEventHints", () => {
     expect(focus).toHaveBeenCalledWith(
       expect.objectContaining({ eventId: EVENT_A, element: elements[0] }),
     );
-    expect(result.current.activeDayKeys).toEqual(["2026-08-05"]);
-    expect(result.current.isActive).toBe(true);
+    expect(useEventJumpStore.getState().activeDayKeys).toEqual(["2026-08-05"]);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
 
     act(() => {
       dispatch("keydown", "2");
@@ -148,7 +148,7 @@ describe("useShiftHoldEventHints", () => {
     expect(focus).toHaveBeenCalledWith(
       expect.objectContaining({ eventId: EVENT_B, element: elements[1] }),
     );
-    expect(result.current.isActive).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
   });
 
   it("does not toggle on a quick Shift chord (Shift+J)", async () => {
@@ -162,7 +162,7 @@ describe("useShiftHoldEventHints", () => {
     });
 
     await flushActivate();
-    expect(result.current.isActive).toBe(false);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(result.current.hints).toEqual([]);
   });
 
@@ -175,7 +175,7 @@ describe("useShiftHoldEventHints", () => {
     });
     await flushActivate();
 
-    expect(result.current.isActive).toBe(false);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(result.current.hints).toEqual([]);
   });
 
@@ -188,7 +188,7 @@ describe("useShiftHoldEventHints", () => {
     });
     await flushActivate();
 
-    expect(result.current.isActive).toBe(false);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
   });
 
@@ -208,7 +208,7 @@ describe("useShiftHoldEventHints", () => {
     act(() => {
       tapShift();
     });
-    expect(result.current.isActive).toBe(false);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(result.current.hints).toEqual([]);
 
     // Wait so re-entry is a fresh tap, not Shift-Shift forceOff.
@@ -219,12 +219,12 @@ describe("useShiftHoldEventHints", () => {
       tapShift();
     });
     await flushActivate();
-    expect(result.current.isActive).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
 
     act(() => {
       dispatch("keydown", "Escape");
     });
-    expect(result.current.isActive).toBe(false);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(result.current.hints).toEqual([]);
   });
 
@@ -239,12 +239,12 @@ describe("useShiftHoldEventHints", () => {
       dispatch("keydown", "w");
     });
     expect(focus).toHaveBeenCalled();
-    expect(result.current.isActive).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
 
     act(() => {
       dispatch("keydown", "ArrowDown");
     });
-    expect(result.current.isActive).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
   });
 
   it("cancels deferred activate on Shift-Shift without flashing jump", async () => {
@@ -256,7 +256,7 @@ describe("useShiftHoldEventHints", () => {
     });
     await flushActivate();
 
-    expect(result.current.isActive).toBe(false);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
     expect(useEventJumpStore.getState().announcement).toBe("");
   });
 });

@@ -1,7 +1,4 @@
-import {
-  useAppShortcut,
-  useAppShortcutUp,
-} from "@web/shortcuts/useAppShortcut";
+import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 
 interface KeyboardShortcutsConfig {
   // Event management
@@ -56,12 +53,5 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
 
   useAppShortcutUp("A", () => {
     onCreateAllDayEvent?.();
-  });
-
-  // No handler body: this registration exists only for blurOnTrigger, which
-  // blurs the focused element on Escape regardless of the callback.
-  useAppShortcut("Escape", () => {}, {
-    ignoreInputs: false,
-    blurOnTrigger: true,
   });
 }

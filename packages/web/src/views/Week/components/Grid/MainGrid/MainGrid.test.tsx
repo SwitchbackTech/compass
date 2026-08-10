@@ -45,10 +45,6 @@ import {
   weekEventRegistry,
 } from "@web/views/Week/interaction/registry/week-event.registry";
 import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/motion.state";
-import {
-  clearHoveredWeekGridEventTarget,
-  getHoveredWeekGridEventTarget,
-} from "@web/views/Week/interaction/targeting/week-event.targeting";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 import { Categories_Event } from "@web/common/types/web.event.types";
@@ -107,7 +103,6 @@ const { MainGrid } = await import("./MainGrid");
 const { MainGridEvents } = await import("./MainGridEvents");
 
 afterEach(() => {
-  clearHoveredWeekGridEventTarget();
   cleanup();
   setWeekInteractionMotionActive(false);
   weekEventRegistry.clear();
@@ -622,34 +617,6 @@ describe("Week calendar accessibility", () => {
       WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
       event._id,
     );
-  });
-
-  it("marks hovered saved timed events as targeting candidates", () => {
-    const event = createSavedEvent({
-      title: "Hover target",
-    });
-    seedGrid([event]);
-
-    render(
-      <Provider>
-        <MainGridEvents
-          measurements={measurements}
-          weekProps={createWeekProps()}
-        />
-      </Provider>,
-    );
-
-    const eventButton = screen.getByRole("button", { name: /hover target/i });
-
-    fireEvent.mouseEnter(eventButton);
-    expect(getHoveredWeekGridEventTarget()).toMatchObject({
-      element: eventButton,
-      eventId: event._id,
-      eventType: "timed",
-    });
-
-    fireEvent.mouseLeave(eventButton);
-    expect(getHoveredWeekGridEventTarget()).toBeNull();
   });
 
   it("gives all-day events an all-day accessible name and target type", () => {

@@ -3,7 +3,6 @@ import {
   createDayEventRegistry,
   DAY_INTERACTION_EVENT_ID_ATTRIBUTE,
   DAY_INTERACTION_EVENT_TYPE_ATTRIBUTE,
-  type DayEventRegistry,
   type DayInteractionEventType,
   dayEventRegistry,
   getDayInteractionTargetAttributes,
@@ -15,18 +14,15 @@ const RegistrationHarness = ({
   eventId = "event-1",
   eventType = "timed",
   isEnabled = true,
-  registry = dayEventRegistry,
 }: {
   eventId?: string;
   eventType?: DayInteractionEventType;
   isEnabled?: boolean;
-  registry?: DayEventRegistry;
 }) => {
   const ref = useDayEventRegistrationRef({
     eventId,
     eventType,
     isEnabled,
-    registry,
   });
 
   return (
@@ -83,17 +79,14 @@ describe("dayEventRegistry", () => {
   });
 
   it("unregisters the old element when a render swaps event ids", () => {
-    const registry = createDayEventRegistry();
-    const { rerender } = render(
-      <RegistrationHarness eventId="event-1" registry={registry} />,
-    );
+    const { rerender } = render(<RegistrationHarness eventId="event-1" />);
 
-    expect(registry.resolve("event-1", "timed")).toBeTruthy();
+    expect(dayEventRegistry.resolve("event-1", "timed")).toBeTruthy();
 
-    rerender(<RegistrationHarness eventId="event-2" registry={registry} />);
+    rerender(<RegistrationHarness eventId="event-2" />);
 
-    expect(registry.resolve("event-1", "timed")).toBeNull();
-    expect(registry.resolve("event-2", "timed")).toBeTruthy();
+    expect(dayEventRegistry.resolve("event-1", "timed")).toBeNull();
+    expect(dayEventRegistry.resolve("event-2", "timed")).toBeTruthy();
   });
 
   it("rejects stale or mismatched registrations", () => {

@@ -10,6 +10,4 @@ export function hasSeenOnboardingTour(): boolean {
 
 export function markOnboardingTourSeen(): void {
   persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_ONBOARDING_TOUR, "true");
-  // Tour replaces the old one-shot palette toast; never show both.
-  persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_CMD_PALETTE_HINT, "true");
 }

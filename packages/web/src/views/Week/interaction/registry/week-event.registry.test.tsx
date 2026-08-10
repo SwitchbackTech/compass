@@ -18,7 +18,6 @@ import {
   useWeekEventRegistrationRef,
   WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
   WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
-  type WeekEventRegistry,
   type WeekInteractionEventType,
   weekEventRegistry,
 } from "./week-event.registry";
@@ -127,18 +126,15 @@ const RegistrationHarness = ({
   eventId = "event-1",
   eventType = "timed",
   isEnabled = true,
-  registry = weekEventRegistry,
 }: {
   eventId?: string;
   eventType?: WeekInteractionEventType;
   isEnabled?: boolean;
-  registry?: WeekEventRegistry;
 }) => {
   const ref = useWeekEventRegistrationRef({
     eventId,
     eventType,
     isEnabled,
-    registry,
   });
 
   return (
@@ -291,17 +287,14 @@ describe("weekEventRegistry", () => {
   });
 
   it("unregisters the old element when a render swaps event ids", () => {
-    const registry = createWeekEventRegistry();
-    const { rerender } = render(
-      <RegistrationHarness eventId="event-1" registry={registry} />,
-    );
+    const { rerender } = render(<RegistrationHarness eventId="event-1" />);
 
-    expect(registry.resolve("event-1", "timed")).toBeTruthy();
+    expect(weekEventRegistry.resolve("event-1", "timed")).toBeTruthy();
 
-    rerender(<RegistrationHarness eventId="event-2" registry={registry} />);
+    rerender(<RegistrationHarness eventId="event-2" />);
 
-    expect(registry.resolve("event-1", "timed")).toBeNull();
-    expect(registry.resolve("event-2", "timed")).toBeTruthy();
+    expect(weekEventRegistry.resolve("event-1", "timed")).toBeNull();
+    expect(weekEventRegistry.resolve("event-2", "timed")).toBeTruthy();
   });
 
   it("rejects stale or mismatched registrations", () => {

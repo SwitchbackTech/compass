@@ -25,10 +25,6 @@ import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { dayEventRegistry } from "@web/views/Day/interaction/registry/day-event.registry";
-import {
-  clearHoveredDayGridEventTarget,
-  setHoveredDayGridEventTarget,
-} from "@web/views/Day/interaction/targeting/day-event.targeting";
 import { useDayEventNudgeShortcuts } from "./useDayEventNudgeShortcuts";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -190,7 +186,6 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   dayEventRegistry.clear();
-  clearHoveredDayGridEventTarget();
   draftActions.discard();
   document.body.innerHTML = "";
 });
@@ -304,10 +299,9 @@ describe("useDayEventNudgeShortcuts", () => {
     ).toBe(TIMED_EVENT_ID);
   });
 
-  it("does not delete a hovered calendar event with Delete when nothing is focused", () => {
+  it("does not delete a calendar event with Delete when nothing is focused", () => {
     const button = focusCalendarTarget(TIMED_EVENT_ID, "timed");
     button.blur();
-    setHoveredDayGridEventTarget(button);
     const { queryClient } = renderEditShortcuts();
 
     pressKey("Delete");
