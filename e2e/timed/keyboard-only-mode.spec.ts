@@ -41,8 +41,8 @@ test("SHIFT-SHIFT enters keyboard-only mode; clicks are inert until Escape", asy
   await tapShift(page);
   await tapShift(page);
 
-  await expect(keyboardOnlyIndicator(page)).toContainText("Keyboard only");
-  await expect(keyboardOnlyIndicator(page)).toContainText("Esc or Shift Shift");
+  await expect(keyboardOnlyIndicator(page)).toContainText("Hardcore Mode");
+  await expect(keyboardOnlyIndicator(page)).toContainText("Esc");
 
   // Shortcuts overlay stays mounted with role=dialog even when closed, so
   // assert the event form did not open rather than dialog count.
