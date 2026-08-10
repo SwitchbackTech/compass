@@ -353,6 +353,7 @@ export function useShiftHoldEventHints({
     };
 
     const onBlur = () => {
+      openedByPressRef.current = false;
       if (isActiveRef.current) deactivate();
     };
 
@@ -388,8 +389,10 @@ export function useShiftHoldEventHints({
         }
         return;
       }
-      openedByPressRef.current = false;
-      if (isActiveRef.current) deactivate(false);
+      if (event.type === "doubleTap") {
+        openedByPressRef.current = false;
+        if (isActiveRef.current) deactivate(false);
+      }
     });
 
     document.addEventListener("keydown", onKeyDown, true);
