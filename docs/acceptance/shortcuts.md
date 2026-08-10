@@ -178,7 +178,7 @@ Pressing Cmd+K opens the command palette from any view, including while a text i
 2. Press Cmd+K (or Ctrl+K on Windows).
 3. Observe the palette contents.
 4. Use the search/filter to type "event".
-5. Select "Create Event" from the palette.
+5. Select "Create event" from the palette.
 6. Press Cmd+K again and then Escape.
 
 ### Expected Results
