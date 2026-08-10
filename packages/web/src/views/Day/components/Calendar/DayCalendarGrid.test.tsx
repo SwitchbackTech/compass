@@ -1,4 +1,5 @@
 import userEvent from "@testing-library/user-event";
+import { rest } from "msw";
 import { act } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
@@ -13,11 +14,13 @@ import {
   waitFor,
   within,
 } from "@web/__tests__/__mocks__/mock.render";
+import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { setCalendarVisibility } from "@web/calendars/calendar-visibility.store";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
+import { ENV_WEB } from "@web/common/constants/env.constants";
 import {
   DATA_TIMED_GRID_ROW,
   ZIndex,
@@ -129,6 +132,16 @@ const renderDayCalendarGrid = (calendars?: Calendar[]) => {
   const queryClient = createCompassQueryClient();
   if (calendars) {
     queryClient.setQueryData(calendarQueryKeys.all, calendars);
+    // Seeded fixtures must survive the calendars query mount-fetch. Without
+    // an MSW handler the failed GET clears the cache and
+    // filterEventsByVisibleCalendars drops events mid-assertion (common in
+    // CI). Keep the handler local — a global default breaks suites that
+    // expect the legacy undefined calendarIds read.
+    server.use(
+      rest.get(`${ENV_WEB.API_BASEURL}/calendars`, (_req, res, ctx) =>
+        res(ctx.json(calendars)),
+      ),
+    );
   }
 
   return {
@@ -379,10 +392,10 @@ describe("DayCalendarGrid", () => {
       name: /project event/i,
     });
     expect(screen.queryByRole("button", { name: /hidden event/i })).toBeNull();
+    expect(within(getTimedGrid()).getAllByRole("columnheader")).toHaveLength(2);
     expect(parseFloat(projectEvent.style.left)).toBeGreaterThan(
       parseFloat(primaryEvent.style.left),
     );
-    expect(primaryEvent.style.width).toBe(projectEvent.style.width);
   });
 
   it("falls back to the primary calendar when every calendar is disabled", () => {

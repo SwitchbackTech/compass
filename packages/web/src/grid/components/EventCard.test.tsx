@@ -162,7 +162,7 @@ describe("EventCard", () => {
       getEventPalette().base,
     );
     expect(card.style.boxShadow).toContain(
-      "color-mix(in srgb, var(--text) 55%, transparent)",
+      "0 0 0 1px var(--background), 0 0 0 3px color-mix(in srgb, var(--text) 70%, transparent)",
     );
   });
 

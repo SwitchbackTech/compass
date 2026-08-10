@@ -537,8 +537,11 @@ export function useEventMutations(
             }),
           // A promotion replays the saved occurrence mutation at a broader
           // scope. It must reach the repository even if a later narrow edit
-          // shares its occurrence write key.
-          { coalesce: !variables.originalOverride },
+          // shares its occurrence write key. Undo/redo restores must also
+          // always persist — coalescing would drop the replay.
+          {
+            coalesce: !variables.originalOverride && !variables.input.restore,
+          },
         );
       },
       ({ id, input, originalOverride }) => {

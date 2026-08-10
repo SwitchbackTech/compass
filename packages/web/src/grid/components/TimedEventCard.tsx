@@ -149,9 +149,10 @@ const TimedEventCardBase = (
     ? brighten(baseColor, 14)
     : darken(baseColor, 5);
   // Ring color follows --text so it contrasts with the page in both themes;
-  // a fixed white ring vanished on the light theme's paper background.
+  // a fixed white ring vanished on the light theme's paper background. Pair
+  // with a background halo so the ring stays visible on dark default fills.
   const selectedBoxShadow =
-    "0 0 0 1px color-mix(in srgb, var(--text) 55%, transparent)";
+    "0 0 0 1px var(--background), 0 0 0 3px color-mix(in srgb, var(--text) 70%, transparent)";
 
   const bgColor = (() => {
     if (isDraft) return baseColor;
@@ -263,7 +264,7 @@ const TimedEventCardBase = (
       role="button"
       tabIndex={0}
       className={cn(
-        "absolute min-h-2.5 select-none overflow-hidden rounded-xs pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+        "absolute min-h-2.5 select-none overflow-hidden rounded-xs pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-background",
         "bg-(--event-bg) hover:bg-(--event-hover-bg)",
         "hover:cursor-pointer",
         event.isDemo &&
