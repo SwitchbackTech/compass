@@ -166,6 +166,81 @@ describe("SidebarEventDetails", () => {
     );
   });
 
+  it("discards a dirty existing event on Shift+Escape without prompting", async () => {
+    const existingEvent = createMockEvent({
+      id: EventIdSchema.parse(EXISTING_EVENT_ID),
+      content: {
+        kind: "details",
+        title: "Existing Event",
+        description: "",
+      },
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-05-20T14:00:00.000Z",
+        end: "2026-05-20T15:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
+    const draft = editGridEventDraft(existingEvent);
+    if (!draft) throw new Error("expected an edit draft");
+    draft.values.title = "Changed title";
+    draftActions.startGridDraft({ activity: "keyboardEdit", draft });
+    draftActions.setFormOpen(true);
+
+    render(<SidebarEventDetails />);
+
+    const titleField = await screen.findByDisplayValue("Changed title");
+    fireEvent.keyDown(titleField, { key: "Escape", shiftKey: true });
+
+    await waitFor(() =>
+      expect(useDraftStore.getState().status?.isFormOpen).toBe(false),
+    );
+    expect(
+      screen.queryByRole("dialog", { name: "Discard unsaved changes?" }),
+    ).toBeNull();
+  });
+
+  it("discards from the confirm dialog on Shift+Escape", async () => {
+    const existingEvent = createMockEvent({
+      id: EventIdSchema.parse(EXISTING_EVENT_ID),
+      content: {
+        kind: "details",
+        title: "Existing Event",
+        description: "",
+      },
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-05-20T14:00:00.000Z",
+        end: "2026-05-20T15:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
+    const draft = editGridEventDraft(existingEvent);
+    if (!draft) throw new Error("expected an edit draft");
+    draft.values.title = "Changed title";
+    draftActions.startGridDraft({ activity: "keyboardEdit", draft });
+    draftActions.setFormOpen(true);
+
+    render(<SidebarEventDetails />);
+
+    const titleField = await screen.findByDisplayValue("Changed title");
+    fireEvent.keyDown(titleField, { key: "Escape" });
+
+    const dialog = await screen.findByRole("dialog", {
+      name: "Discard unsaved changes?",
+    });
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+
+    fireEvent.keyDown(dialog, { key: "Escape", shiftKey: true });
+
+    await waitFor(() =>
+      expect(useDraftStore.getState().status?.isFormOpen).toBe(false),
+    );
+    expect(
+      screen.queryByRole("dialog", { name: "Discard unsaved changes?" }),
+    ).toBeNull();
+  });
+
   it("deletes an already-saved event on Delete instead of just closing the form", async () => {
     const existingEvent = createMockEvent({
       id: EventIdSchema.parse(EXISTING_EVENT_ID),
