@@ -7,7 +7,7 @@
  * Shift-Shift candidate: force jump mode off so keyboard-only can win.
  */
 
-export const SHIFT_HOLD_HINT_THRESHOLD_MS = 200;
+export const SHIFT_TAP_MAX_HOLD_MS = 200;
 
 /** Max gap between two quick Shift taps to enter keyboard-only mode. */
 export const SHIFT_DOUBLE_TAP_MAX_GAP_MS = 400;
@@ -86,7 +86,7 @@ export function reduceShiftJumpGesture(
 
       const heldMs = event.now - state.armedAt;
       // Long press: not a tap (also keeps Shift-Shift keyboard-only clean).
-      if (heldMs >= SHIFT_HOLD_HINT_THRESHOLD_MS) {
+      if (heldMs >= SHIFT_TAP_MAX_HOLD_MS) {
         return {
           state: {
             phase: "idle",

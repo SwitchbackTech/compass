@@ -21,13 +21,7 @@ import {
   eventJumpActions,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
-import {
-  createShiftJumpGestureState,
-  isShiftKey,
-  reduceShiftJumpGesture,
-  SHIFT_DOUBLE_TAP_MAX_GAP_MS,
-  type ShiftJumpGestureState,
-} from "@web/shortcuts/shift-hint/shift-hold-detector";
+import { subscribeToShiftTapGesture } from "@web/shortcuts/shift-tap-gesture";
 
 export type ShiftHintFocusTarget = {
   eventId: string;
@@ -139,18 +133,12 @@ export function useShiftHoldEventHints({
   const [hints, setHints] = useState<ActiveShiftHint[]>([]);
   const isActive = useEventJumpStore((state) => state.isActive);
 
-  const gestureRef = useRef<ShiftJumpGestureState>(
-    createShiftJumpGestureState(),
-  );
   const isActiveRef = useRef(false);
   const bufferRef = useRef("");
   const assignmentsRef = useRef<DayJumpAssignment[]>([]);
   const visibleByIdRef = useRef<Map<string, ShiftHintFocusTarget>>(new Map());
   const suppressKeyUpRef = useRef(new Set<string>());
   const ambiguousCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const pendingActivateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
   const focusRef = useRef(focus);
@@ -171,13 +159,6 @@ export function useShiftHoldEventHints({
       if (ambiguousCommitTimerRef.current !== null) {
         clearTimeout(ambiguousCommitTimerRef.current);
         ambiguousCommitTimerRef.current = null;
-      }
-    };
-
-    const clearPendingActivateTimer = () => {
-      if (pendingActivateTimerRef.current !== null) {
-        clearTimeout(pendingActivateTimerRef.current);
-        pendingActivateTimerRef.current = null;
       }
     };
 
@@ -218,6 +199,7 @@ export function useShiftHoldEventHints({
     };
 
     const activate = () => {
+      if (isAppLocked()) return;
       if (selectKeyboardOnlyActive(useKeyboardOnlyStore.getState())) return;
       const assignments = rebuildAssignments();
       if (assignments.length === 0) return;
@@ -228,22 +210,7 @@ export function useShiftHoldEventHints({
       setHints(toActiveHints(assignments, visibleByIdRef.current));
     };
 
-    const scheduleActivate = () => {
-      clearPendingActivateTimer();
-      // Defer past the Shift-Shift window so keyboard-only can win without a
-      // jump-mode flash on the first tap.
-      // Wait just past the double-tap window so a second Shift is forceOff
-      // (keyboard-only) rather than racing this activate.
-      pendingActivateTimerRef.current = setTimeout(() => {
-        pendingActivateTimerRef.current = null;
-        if (isActiveRef.current) return;
-        if (isAppLocked()) return;
-        activate();
-      }, SHIFT_DOUBLE_TAP_MAX_GAP_MS + 1);
-    };
-
     const deactivate = (announceOff = true) => {
-      clearPendingActivateTimer();
       isActiveRef.current = false;
       bufferRef.current = "";
       clearHints();
@@ -292,28 +259,6 @@ export function useShiftHoldEventHints({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
-
-      if (isShiftKey(event)) {
-        if (event.repeat) return;
-        const blocked = isAppLocked() || isEditableKeyboardTarget(event);
-        const result = reduceShiftJumpGesture(gestureRef.current, {
-          type: "shiftDown",
-          now: Date.now(),
-          blocked,
-        });
-        gestureRef.current = result.state;
-        return;
-      }
-
-      if (gestureRef.current.phase === "armed") {
-        // Chord while Shift is down (Shift+J, Shift+Arrow, …): never toggle.
-        const result = reduceShiftJumpGesture(gestureRef.current, {
-          type: "chordKeyDown",
-        });
-        gestureRef.current = result.state;
-        return;
-      }
-
       if (!isActiveRef.current) return;
       if (isAppLocked() || isEditableKeyboardTarget(event)) {
         deactivate();
@@ -398,40 +343,6 @@ export function useShiftHoldEventHints({
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      if (isShiftKey(event)) {
-        if (event.shiftKey) return;
-
-        const { state, toggle, forceOff } = reduceShiftJumpGesture(
-          gestureRef.current,
-          {
-            type: "shiftUp",
-            now: Date.now(),
-          },
-        );
-        gestureRef.current = state;
-
-        if (forceOff) {
-          // Cancel a deferred first-tap activate; silence if jump already on.
-          clearPendingActivateTimer();
-          if (isActiveRef.current) deactivate(false);
-          return;
-        }
-
-        if (!toggle) return;
-        if (isAppLocked() || isEditableKeyboardTarget(event)) return;
-
-        if (isActiveRef.current) {
-          deactivate();
-        } else if (pendingActivateTimerRef.current !== null) {
-          // Second intentional tap after deferral window started but before
-          // activate fired: treat as cancel (also covers slow double intent).
-          clearPendingActivateTimer();
-        } else {
-          scheduleActivate();
-        }
-        return;
-      }
-
       const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
       if (!suppressKeyUpRef.current.has(key)) return;
       suppressKeyUpRef.current.delete(key);
@@ -440,10 +351,22 @@ export function useShiftHoldEventHints({
     };
 
     const onBlur = () => {
-      gestureRef.current = createShiftJumpGestureState();
-      clearPendingActivateTimer();
       if (isActiveRef.current) deactivate();
     };
+
+    // Single tap toggles hints on/off; a following second tap (double tap)
+    // cancels whatever the first tap just did, so keyboard-only mode can win.
+    const unsubscribeShiftGesture = subscribeToShiftTapGesture((event) => {
+      if (event.type === "singleTap") {
+        if (isActiveRef.current) {
+          deactivate();
+        } else {
+          activate();
+        }
+        return;
+      }
+      if (isActiveRef.current) deactivate(false);
+    });
 
     document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("keyup", onKeyUp, true);
@@ -451,8 +374,8 @@ export function useShiftHoldEventHints({
 
     return () => {
       clearAmbiguousCommitTimer();
-      clearPendingActivateTimer();
       suppressKeyUpRef.current.clear();
+      unsubscribeShiftGesture();
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keyup", onKeyUp, true);
       window.removeEventListener("blur", onBlur);

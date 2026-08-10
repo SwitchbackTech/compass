@@ -3,7 +3,7 @@ import {
   isShiftDoubleTapCandidate,
   reduceShiftJumpGesture,
   SHIFT_DOUBLE_TAP_MAX_GAP_MS,
-  SHIFT_HOLD_HINT_THRESHOLD_MS,
+  SHIFT_TAP_MAX_HOLD_MS,
 } from "@web/shortcuts/shift-hint/shift-hold-detector";
 import { describe, expect, it } from "bun:test";
 
@@ -37,7 +37,7 @@ describe("reduceShiftJumpGesture", () => {
     }).state;
     const result = reduceShiftJumpGesture(state, {
       type: "shiftUp",
-      now: 1000 + SHIFT_HOLD_HINT_THRESHOLD_MS,
+      now: 1000 + SHIFT_TAP_MAX_HOLD_MS,
     });
     expect(result.toggle).toBe(false);
     expect(result.forceOff).toBe(false);
@@ -121,7 +121,7 @@ describe("hold vs double-tap coordination", () => {
   });
 
   it("does not treat a long hold release as a double-tap candidate", () => {
-    expect(SHIFT_HOLD_HINT_THRESHOLD_MS).toBeGreaterThan(100);
+    expect(SHIFT_TAP_MAX_HOLD_MS).toBeGreaterThan(100);
     expect(
       isShiftDoubleTapCandidate({
         lastShiftReleaseAt: 1000,
