@@ -319,10 +319,10 @@ export const getGoogleSyncStatus = (
  * a routine incremental catch-up on an already-established account. Both
  * collapse to the same aggregate "IMPORTING" product state, so a caller that
  * only checks that (e.g. the grid's empty-week overlay, before this was
- * introduced) shows first-import copy ("Importing from Google…") to a
- * long-established user during ordinary background catch-up. lastHealthyAt is
- * the one signal that distinguishes them: it is set once, the first time the
- * connection ever finishes healthy, and never cleared.
+ * introduced) would treat ordinary background catch-up like a brand-new
+ * first import. lastHealthyAt is the one signal that distinguishes them: it
+ * is set once, the first time the connection ever finishes healthy, and
+ * never cleared.
  */
 export const isFirstImportInProgress = (
   connection?: GoogleSyncConnectionSummary | null,

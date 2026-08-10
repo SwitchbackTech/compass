@@ -61,8 +61,8 @@ export const Grid: FC<Props> = ({
   // already-established account's routine catch-up - both collapse to the
   // same aggregate IMPORTING state. Without isFirstImportInProgress, an
   // established user viewing a genuinely empty week during ordinary
-  // background catch-up would see "Importing from Google…" as if this were
-  // a brand-new account.
+  // background catch-up would see the empty-import scouting overlay as if
+  // this were a brand-new account.
   const isImportingEmpty =
     isSuccess &&
     !hasVisibleEvents &&
