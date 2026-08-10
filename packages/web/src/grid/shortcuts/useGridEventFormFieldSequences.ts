@@ -11,7 +11,10 @@ import {
   isEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { type GridEventShortcutTarget } from "@web/grid/shortcuts/focus-adjacent-grid-event";
+import {
+  findCalendarEventForTarget,
+  type GridEventShortcutTarget,
+} from "@web/grid/shortcuts/focus-adjacent-grid-event";
 import { useEditSequenceShortcut } from "@web/shortcuts/useEditSequenceShortcut";
 
 const focusFieldAfterPaint = (field: EventFormFocusField) => {
@@ -41,11 +44,6 @@ export function useGridEventFormFieldSequences({
 }) {
   const queryClient = useQueryClient();
 
-  const findCalendarEventForTarget = (target: GridEventShortcutTarget) => {
-    const events = target.eventType === "all-day" ? allDayEvents : timedEvents;
-    return events.find((candidate) => candidate._id === target.eventId) ?? null;
-  };
-
   const draftAlreadyOpenForEvent = (eventId: string) => {
     if (!isEventFormOpen()) return false;
     const draft = useDraftStore.getState().gridDraft;
@@ -60,7 +58,10 @@ export function useGridEventFormFieldSequences({
     const target = targeting.getFocused();
     if (!target) return;
 
-    const gridEvent = findCalendarEventForTarget(target);
+    const gridEvent = findCalendarEventForTarget(target, {
+      allDayEvents,
+      timedEvents,
+    });
     if (!gridEvent?._id) return;
 
     if (!draftAlreadyOpenForEvent(gridEvent._id)) {

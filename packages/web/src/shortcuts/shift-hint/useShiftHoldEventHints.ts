@@ -3,6 +3,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
+import { isAppLocked } from "@web/shortcuts/app-lock";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import {
   selectKeyboardOnlyActive,
@@ -41,8 +42,6 @@ export type ActiveShiftHint = DayJumpAssignment & {
 export type EventJumpHintsResult = {
   hints: ActiveShiftHint[];
 };
-
-const isAppLocked = () => document.body.dataset.appLocked === "true";
 
 const DAY_NAME_BY_PREFIX: Record<string, string> = {
   su: "Sunday",

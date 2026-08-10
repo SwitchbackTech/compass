@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
+import { isAppLocked } from "@web/shortcuts/app-lock";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import {
   keyboardOnlyActions,
@@ -11,8 +12,6 @@ import {
   reduceKeyboardOnlyDetector,
 } from "@web/shortcuts/keyboard-only/keyboard-only-detector";
 import { isShiftKey } from "@web/shortcuts/shift-hint/shift-hold-detector";
-
-const isAppLocked = () => document.body.dataset.appLocked === "true";
 
 /**
  * SHIFT-SHIFT (two quick taps) toggles keyboard-only mode. Clicks are inert;

@@ -10,6 +10,17 @@ export type FocusableGridEventTarget = GridEventShortcutTarget & {
   element: HTMLElement;
 };
 
+export const findCalendarEventForTarget = (
+  target: GridEventShortcutTarget,
+  {
+    allDayEvents,
+    timedEvents,
+  }: { allDayEvents: GridEvent[]; timedEvents: GridEvent[] },
+): GridEvent | null => {
+  const events = target.eventType === "all-day" ? allDayEvents : timedEvents;
+  return events.find((candidate) => candidate._id === target.eventId) ?? null;
+};
+
 type TargetSchedule = {
   dayKey: string;
   /** Absolute start for chronological ordering within a day. */
