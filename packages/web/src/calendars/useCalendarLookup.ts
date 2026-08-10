@@ -109,13 +109,18 @@ export function resolveCalendarCardIdentity(
 /**
  * Grid-only content flags that force read-only treatment regardless of
  * calendar write capability (passed as the `isBusy` argument to
- * {@link isEventReadOnly}).
+ * {@link isEventReadOnly}). isSandboxReadOnly covers ephemeral onboarding
+ * sandbox events (see OnboardingTour/onboarding.sandbox-events.ts), which
+ * have nothing real for a write to persist to.
  */
 export const isGridEventContentReadOnly = (event: {
   isBusy?: boolean;
   isTimedMultiDayDisplay?: boolean;
+  isSandboxReadOnly?: boolean;
 }): boolean =>
-  (event.isBusy ?? false) || (event.isTimedMultiDayDisplay ?? false);
+  (event.isBusy ?? false) ||
+  (event.isTimedMultiDayDisplay ?? false) ||
+  (event.isSandboxReadOnly ?? false);
 
 /**
  * An event is read-only (inspectable but never mutable) when either:
@@ -163,6 +168,7 @@ export function isGridEventInteractionReadOnly(
     calendarId?: CalendarId | null;
     isBusy?: boolean;
     isTimedMultiDayDisplay?: boolean;
+    isSandboxReadOnly?: boolean;
   },
 ): boolean {
   return isEventReadOnly(

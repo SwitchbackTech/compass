@@ -88,7 +88,9 @@ export function DayCalendarGrid() {
     isPending,
     refetch,
     timedEvents,
-  } = useDayEventViewModel(dayEventQueryRange(dateInView));
+  } = useDayEventViewModel(dayEventQueryRange(dateInView), {
+    includeSandboxEvents: true,
+  });
   // Session expiry already surfaces SessionExpiredToast — don't also show
   // "Couldn't load events" / Retry for the same failure.
   const showEventsLoadError = shouldShowContextualLoadError(

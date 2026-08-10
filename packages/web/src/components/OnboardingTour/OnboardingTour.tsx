@@ -10,6 +10,7 @@ import {
   selectOnboardingTourStepId,
   useOnboardingTourStore,
 } from "@web/components/OnboardingTour/onboarding.tour.store";
+import { useOnboardingSandboxKeyboardOnly } from "@web/components/OnboardingTour/useOnboardingSandboxKeyboardOnly";
 import { useOnboardingTourProgress } from "@web/components/OnboardingTour/useOnboardingTourProgress";
 
 /**
@@ -19,6 +20,7 @@ import { useOnboardingTourProgress } from "@web/components/OnboardingTour/useOnb
  */
 export const OnboardingTour: FC = () => {
   useOnboardingTourProgress();
+  useOnboardingSandboxKeyboardOnly();
 
   const isActive = useOnboardingTourStore(selectOnboardingTourActive);
   const stepId = useOnboardingTourStore(selectOnboardingTourStepId);

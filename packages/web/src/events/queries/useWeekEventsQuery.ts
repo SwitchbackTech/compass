@@ -1,6 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
+import { mergeSandboxEventData } from "@web/components/OnboardingTour/onboarding.sandbox-events";
+import { useOnboardingSandboxEventData } from "@web/components/OnboardingTour/useOnboardingSandboxEvents";
 import { deriveOverlappingEventQueryData } from "@web/events/queries/event.query.cache";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
@@ -41,6 +43,9 @@ export function useWeekEventsQuery({
 
 export function useWeekEventViewModel(args: WeekEventsQueryArgs) {
   const query = useWeekEventsQuery(args);
-  const viewModel = useCalendarEventViewModel(query.data);
+  const sandboxData = useOnboardingSandboxEventData(args.startOfView);
+  const viewModel = useCalendarEventViewModel(
+    mergeSandboxEventData(query.data, sandboxData),
+  );
   return { ...query, ...viewModel };
 }
