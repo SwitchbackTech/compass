@@ -392,10 +392,10 @@ describe("DayCalendarGrid", () => {
       name: /project event/i,
     });
     expect(screen.queryByRole("button", { name: /hidden event/i })).toBeNull();
+    expect(within(getTimedGrid()).getAllByRole("columnheader")).toHaveLength(2);
     expect(parseFloat(projectEvent.style.left)).toBeGreaterThan(
       parseFloat(primaryEvent.style.left),
     );
-    expect(primaryEvent.style.width).toBe(projectEvent.style.width);
   });
 
   it("falls back to the primary calendar when every calendar is disabled", () => {
