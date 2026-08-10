@@ -23,13 +23,6 @@ export type OnboardingTourStepId = (typeof STEP_IDS)[number];
 
 export const ONBOARDING_TOUR_STEP_IDS: OnboardingTourStepId[] = [...STEP_IDS];
 
-/** Steps at or before "fork" count as the required-feeling basics segment. */
-export const ONBOARDING_BASICS_STEP_IDS: OnboardingTourStepId[] =
-  ONBOARDING_TOUR_STEP_IDS.slice(
-    0,
-    ONBOARDING_TOUR_STEP_IDS.indexOf("fork") + 1,
-  );
-
 export type OnboardingTourStep = {
   id: OnboardingTourStepId;
   title: string;
