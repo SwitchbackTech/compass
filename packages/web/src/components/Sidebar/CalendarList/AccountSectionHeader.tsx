@@ -2,13 +2,12 @@ import { CaretDownIcon } from "@phosphor-icons/react";
 import classNames from "classnames";
 import { type FC } from "react";
 import { type GoogleSyncConnectionSummary } from "@core/types/user.types";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { getSidebarSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import {
   accountCalendarListId,
   toggleAccountCollapsed,
   useCollapsedAccountKeys,
 } from "@web/calendars/collapsed-accounts.store";
+import { useAccountHeaderStatus } from "./useAccountHeaderStatus";
 /**
  * Heading for one connected account's calendars: the account email (also the
  * collapse toggle for its calendar rows, see CalendarList.tsx), that
@@ -25,20 +24,15 @@ export const AccountSectionHeader: FC<{
   accountEmail: string;
   connection: GoogleSyncConnectionSummary | undefined;
 }> = ({ accountEmail, connection }) => {
-  const { commandAction, isAvailable, isConnecting, isRefreshing, state } =
-    useConnectGoogle({ connection });
-  const syncStatus = getSidebarSyncStatus({ connection, isConnecting, state });
+  const {
+    actionLabel,
+    commandAction,
+    isAvailable,
+    isConnecting,
+    isRefreshing,
+    syncStatus,
+  } = useAccountHeaderStatus(connection);
   const isCollapsed = useCollapsedAccountKeys().has(accountEmail);
-  const actionLabel =
-    commandAction == null
-      ? null
-      : isConnecting
-        ? state === "RECONNECT_REQUIRED"
-          ? "Reconnecting…"
-          : "Connecting…"
-        : isRefreshing
-          ? "Catching up…"
-          : commandAction.label;
 
   return (
     <div className="mb-1.5">

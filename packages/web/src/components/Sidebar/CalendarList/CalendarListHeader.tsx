@@ -1,12 +1,11 @@
 import classNames from "classnames";
 import { type FC, useMemo } from "react";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { getSidebarSyncStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import {
   selectGoogleSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
+import { useAccountHeaderStatus } from "./useAccountHeaderStatus";
 
 const HEADING_CLASSNAME =
   "flex min-w-0 flex-1 font-semibold text-sm leading-none";
@@ -42,23 +41,14 @@ const CalendarListHeaderContent: FC<{ email: string }> = ({ email }) => {
     () => connections.find((c) => c.accountEmail === email) ?? null,
     [connections, email],
   );
-  const { commandAction, isAvailable, isConnecting, isRefreshing, state } =
-    useConnectGoogle({ connection: ownConnection });
-  const syncStatus = getSidebarSyncStatus({
-    connection: ownConnection,
+  const {
+    actionLabel,
+    commandAction,
+    isAvailable,
     isConnecting,
-    state,
-  });
-  const actionLabel =
-    commandAction == null
-      ? null
-      : isConnecting
-        ? state === "RECONNECT_REQUIRED"
-          ? "Reconnecting…"
-          : "Connecting…"
-        : isRefreshing
-          ? "Catching up…"
-          : commandAction.label;
+    isRefreshing,
+    syncStatus,
+  } = useAccountHeaderStatus(ownConnection);
 
   return (
     <>
