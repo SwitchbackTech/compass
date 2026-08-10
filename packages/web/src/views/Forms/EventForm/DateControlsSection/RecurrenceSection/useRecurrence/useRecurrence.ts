@@ -62,7 +62,10 @@ const WEEKDAY_MAP: Record<
 // draft from preserve→series and hide earlier sibling instances.
 const normalizeRecurrenceRule = (rule: string[] | null | undefined): string[] =>
   (rule ?? []).map((entry) =>
-    entry.replace(/;INTERVAL=1(?=;|$)/, "").replace(/;WKST=[A-Z]{2}/, ""),
+    entry
+      .replace(/;INTERVAL=1(?=;|$)/g, "")
+      .replace(/:INTERVAL=1;/g, ":")
+      .replace(/;WKST=[A-Z]{2}/g, ""),
   );
 
 const weekdayKeyFromByweekday = (

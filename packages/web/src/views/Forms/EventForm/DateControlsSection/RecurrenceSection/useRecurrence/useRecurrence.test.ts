@@ -228,21 +228,24 @@ describe("useRecurrence hook", () => {
         seriesId: EventIdSchema.parse("0123456789abcdefaaaaaaaa"),
       },
     });
-    const draft = editGridEventDraft(source);
-    if (!draft) throw new Error("expected edit draft");
+    const editedDraft = editGridEventDraft(source);
+    if (!editedDraft) throw new Error("expected edit draft");
 
-    expect(draft.values.recurrence).toEqual({ kind: "preserve" });
-    expect(suppressedSeriesIdForDraft(draft)).toBeNull();
+    expect(editedDraft.values.recurrence).toEqual({ kind: "preserve" });
+    expect(suppressedSeriesIdForDraft(editedDraft)).toBeNull();
 
-    const setDraft = mock();
-    const nextSetDraft = mock();
+    let draft: GridEventDraft = editedDraft;
+    let setDraftCalls = 0;
+    const setDraft: Dispatch<SetStateAction<GridEventDraft | null>> = (
+      updater,
+    ) => {
+      setDraftCalls++;
+      const next = typeof updater === "function" ? updater(draft) : updater;
+      if (next) draft = next;
+    };
 
-    const { result, rerender } = renderHook(
-      ({ setDraftProp }) =>
-        useRecurrence(draft, { setDraft: setDraftProp }, seriesRules),
-      {
-        initialProps: { setDraftProp: setDraft },
-      },
+    const { result, rerender } = renderHook(() =>
+      useRecurrence(draft, { setDraft }, seriesRules),
     );
 
     expect(result.current.hasRecurrence).toBe(true);
@@ -254,12 +257,14 @@ describe("useRecurrence hook", () => {
       "thursday",
       "friday",
     ]);
-    expect(setDraft).not.toHaveBeenCalled();
+    expect(setDraftCalls).toBe(0);
+    expect(draft.values.recurrence).toEqual({ kind: "preserve" });
     expect(suppressedSeriesIdForDraft(draft)).toBeNull();
 
-    rerender({ setDraftProp: nextSetDraft });
+    rerender();
 
-    expect(nextSetDraft).not.toHaveBeenCalled();
+    expect(setDraftCalls).toBe(0);
+    expect(draft.values.recurrence).toEqual({ kind: "preserve" });
     expect(suppressedSeriesIdForDraft(draft)).toBeNull();
   });
 
