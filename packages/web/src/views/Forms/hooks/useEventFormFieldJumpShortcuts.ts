@@ -3,10 +3,10 @@ import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 /**
  * Mod+Shift+letter → jump focus directly to a form field while typing
- * anywhere in the event form (title, location, TipTap description). All
- * chosen letters are page-interceptable browser bindings
- * (reopen-closed-tab/devtools/reload/bookmark), suppressed here via
- * preventDefault + stopPropagation.
+ * anywhere in the event form (title, location, TipTap description).
+ * Letters avoid OS/browser-chrome shortcuts (reload, DevTools, inspect
+ * element, reopen-closed-tab, etc.) that fire before page JS ever sees the
+ * keydown and so can't be suppressed by preventDefault/stopPropagation.
  */
 const JUMP_HOTKEY_OPTIONS = {
   enabled: true,
@@ -17,7 +17,7 @@ const JUMP_HOTKEY_OPTIONS = {
 
 export function useEventFormFieldJumpShortcuts() {
   useAppShortcut(
-    "Mod+Shift+I",
+    "Mod+Shift+H",
     () => focusEventFormField("title"),
     JUMP_HOTKEY_OPTIONS,
   );
@@ -42,12 +42,12 @@ export function useEventFormFieldJumpShortcuts() {
     JUMP_HOTKEY_OPTIONS,
   );
   useAppShortcut(
-    "Mod+Shift+R",
+    "Mod+Shift+X",
     () => focusEventFormField("recurrence"),
     JUMP_HOTKEY_OPTIONS,
   );
   useAppShortcut(
-    "Mod+Shift+C",
+    "Mod+Shift+K",
     () => focusEventFormField("calendar"),
     JUMP_HOTKEY_OPTIONS,
   );

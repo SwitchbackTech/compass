@@ -378,6 +378,30 @@ describe("EventForm", () => {
     expect(screen.getByRole("textbox", { name: "Description" })).toHaveFocus();
   });
 
+  it("jumps focus out of the TipTap description editor to the title field with Mod+Shift+H", () => {
+    renderWithStore(
+      <EventForm
+        draft={createEditDraft({ description: "Plan the launch" })}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setDraft={mock()}
+      />,
+    );
+
+    const descriptionField = screen.getByRole("textbox", {
+      name: "Description",
+    });
+    act(() => descriptionField.focus());
+
+    dispatchModKey(descriptionField, "h", { shift: true });
+
+    expect(screen.getByPlaceholderText("Title")).toHaveFocus();
+  });
+
   it("does not crash jumping to the calendar field on an edit draft, where the picker isn't rendered", () => {
     renderWithStore(
       <EventForm
@@ -396,7 +420,7 @@ describe("EventForm", () => {
     act(() => titleField.focus());
 
     expect(() =>
-      dispatchModKey(titleField, "c", { shift: true }),
+      dispatchModKey(titleField, "k", { shift: true }),
     ).not.toThrow();
     expect(titleField).toHaveFocus();
   });

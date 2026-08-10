@@ -206,7 +206,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "form-jump-title",
-    keys: ["Mod", "Shift", "I"],
+    keys: ["Mod", "Shift", "H"],
     label: "Jump to title",
     section: "edit",
     when: { isFormOpen: true },
@@ -241,14 +241,14 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "form-jump-recurrence",
-    keys: ["Mod", "Shift", "R"],
+    keys: ["Mod", "Shift", "X"],
     label: "Jump to recurrence",
     section: "edit",
     when: { isFormOpen: true },
   },
   {
     id: "form-jump-calendar",
-    keys: ["Mod", "Shift", "C"],
+    keys: ["Mod", "Shift", "K"],
     label: "Jump to calendar",
     section: "edit",
     when: { isFormOpen: true },
