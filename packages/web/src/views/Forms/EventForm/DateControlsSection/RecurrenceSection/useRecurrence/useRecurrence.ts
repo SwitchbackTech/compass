@@ -16,6 +16,7 @@ import {
   recurrenceRulesSemanticallyEqual,
   resolveDraftRecurrenceRules,
   scheduleDatesFromDraft,
+  sortedByweekday,
 } from "@web/events/grid-event-draft.adapter";
 import {
   type FrequencyValues,
@@ -74,10 +75,7 @@ const recurrencePatternSeedKey = (
   },
   until: Date | null,
 ) => {
-  const byweekday = (options.byweekday ?? [])
-    .map((day) => (typeof day === "number" ? day : day.weekday))
-    .sort((a, b) => a - b)
-    .join(",");
+  const byweekday = sortedByweekday(options.byweekday).join(",");
   const untilKey = until ? dayjs(until).valueOf() : "";
   return `${hasRecurrence}:${options.freq}:${options.interval ?? 1}:${byweekday}:${options.count ?? ""}:${untilKey}`;
 };

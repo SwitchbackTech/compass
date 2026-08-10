@@ -264,8 +264,9 @@ describe("useRecurrence hook", () => {
   // preserve→series, suppress earlier siblings, and leave only the clicked
   // day + forward previews visible.
   it("does not rewrite a preserve occurrence draft whose series omits INTERVAL=1", () => {
-    const { draft, setDraftCalls, result, rerender, assertUntouched } =
-      mountPreserveOccurrence(["RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"]);
+    const { result, rerender, assertUntouched } = mountPreserveOccurrence([
+      "RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+    ]);
 
     expect(result.current.hasRecurrence).toBe(true);
     expect(result.current.freq).toBe(Frequency.WEEKLY);
@@ -280,8 +281,6 @@ describe("useRecurrence hook", () => {
 
     rerender();
     assertUntouched();
-    expect(setDraftCalls()).toBe(0);
-    expect(draft().values.recurrence).toEqual({ kind: "preserve" });
   });
 
   it("does not rewrite when series RRULE params are reordered", () => {

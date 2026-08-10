@@ -365,7 +365,7 @@ export function scheduleDatesFromDraft(draft: GridEventDraft) {
 const weekdayNumber = (day: number | Weekday): number =>
   typeof day === "number" ? day : day.weekday;
 
-const sortedByweekday = (
+export const sortedByweekday = (
   byweekday: Array<number | Weekday> | null | undefined,
 ): number[] => (byweekday ?? []).map(weekdayNumber).sort((a, b) => a - b);
 
@@ -381,6 +381,10 @@ const untilEqual = (a: Date | null | undefined, b: Date | null | undefined) => {
 // Pattern-only RRULE equality for open-for-edit / patch: ignore serialization
 // drift (INTERVAL=1, WKST defaults, param/BYDAY order) and never treat the
 // occurrence's clicked dtstart as a recurrence edit.
+// Whitelist matches RecurrenceSection's editable surface (freq/interval/
+// weekdays/until/count). Fields the form cannot edit today (bymonthday,
+// bysetpos, nth-weekday) are intentionally ignored — extend this list if
+// the UI gains those controls, or edits to them will not flip preserve→series.
 export function recurrenceRulesSemanticallyEqual(
   a: readonly string[],
   b: readonly string[],
@@ -464,9 +468,10 @@ export function patchGridDraftRecurrence(
   // always an explicit clear, on both create and edit drafts: "single",
   // never "preserve" (which for an edit draft would just resolve back to
   // the source event's original rules, making the Repeat toggle a no-op).
-  const recurrence = ruleUnchanged
-    ? draft.values.recurrence
-    : nextRules.length > 0
+  if (ruleUnchanged) return draft;
+
+  const recurrence =
+    nextRules.length > 0
       ? { kind: "series" as const, rules: [...nextRules] }
       : ({ kind: "single" } as const);
 
