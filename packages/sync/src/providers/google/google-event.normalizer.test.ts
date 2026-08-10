@@ -148,8 +148,8 @@ describe("normalizeGoogleEvent", () => {
       throw new Error("expected instance");
 
     expect(read.recurrence.seriesProviderId).toBe("15chil19v5nskedvmo93ei4nl8");
-    expect(Date.parse(read.recurrence.recurrenceId)).toBe(
-      Date.parse("2025-09-07T02:30:00+01:00"),
+    expect(read.recurrence.recurrenceId).toBe(
+      new Date("2025-09-07T02:30:00+01:00").toISOString(),
     );
   });
 
@@ -160,9 +160,10 @@ describe("normalizeGoogleEvent", () => {
       "tlf9q8uk5vjl2i2868q36dpi28_20130508T220000Z",
     );
     expect(read.series?.seriesProviderId).toBe("tlf9q8uk5vjl2i2868q36dpi28");
-    // originalStartTime has no timeZone: the id must be a deterministic,
-    // host-independent UTC string, not one derived from the host's zone.
-    expect(read.series?.recurrenceId).toBe("2013-05-08T22:00:00+00:00");
+    // originalStartTime has no timeZone: the id must be Compass's canonical
+    // UTC recurrenceId (Date#toISOString), not an offset string — otherwise a
+    // later scope-"this" command keyed on the projected form misses the row.
+    expect(read.series?.recurrenceId).toBe("2013-05-08T22:00:00.000Z");
   });
 
   it("maps a cancelled standalone event to a cancellation with no series", () => {

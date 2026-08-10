@@ -82,7 +82,7 @@ function cancellationSeries(
   if (!item.recurringEventId || !item.originalStartTime) return null;
   return {
     seriesProviderId: item.recurringEventId,
-    recurrenceId: toOffsetIso(item.originalStartTime),
+    recurrenceId: toCanonicalRecurrenceId(item.originalStartTime),
   };
 }
 
@@ -249,10 +249,24 @@ function mapRecurrence(item: gSchema$Event): ProviderEventRecurrence {
     return {
       kind: "instance",
       seriesProviderId: item.recurringEventId,
-      recurrenceId: toOffsetIso(item.originalStartTime),
+      // Canonical UTC form — must match Compass projection / command
+      // recurrenceIds (Date#toISOString). An offset string for the same
+      // instant would miss series_exception_identity and collide
+      // provider_event_identity when a scope-"this" write upserts.
+      recurrenceId: toCanonicalRecurrenceId(item.originalStartTime),
     };
   }
   return { kind: "single" };
+}
+
+// Recurrence identity as Compass mints it everywhere else: UTC ISO with
+// milliseconds (Date#toISOString). Schedule start/end keep offset form via
+// toOffsetIso so the wall-clock zone stays visible; only the identity key
+// must be byte-identical across import, projection, and command paths.
+function toCanonicalRecurrenceId(
+  eventDateTime: calendar_v3.Schema$EventDateTime,
+): string {
+  return new Date(toOffsetIso(eventDateTime)).toISOString();
 }
 
 // A Google event date-time as a deterministic RFC3339 offset string, never
