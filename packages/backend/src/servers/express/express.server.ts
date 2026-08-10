@@ -5,6 +5,7 @@ import {
   middleware as supertokensMiddleware,
 } from "supertokens-node/framework/express";
 import { AuthRoutes } from "@backend/auth/auth.routes.config";
+import { BillingRoutes } from "@backend/billing/billing.routes.config";
 import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
 import { type CommonRoutesConfig } from "@backend/common/common.routes.config";
 import corsWhitelist from "@backend/common/middleware/cors.middleware";
@@ -41,6 +42,7 @@ export const initExpressServer = () => {
   routes.push(new ConfigRoutes(app));
   routes.push(new AuthRoutes(app));
   routes.push(new UserRoutes(app));
+  routes.push(new BillingRoutes(app));
   routes.push(new EventRoutes(app));
   routes.push(new EventsRoutes(app));
   routes.push(new CalendarRoutes(app));
