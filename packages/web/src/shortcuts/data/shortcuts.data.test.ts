@@ -149,22 +149,22 @@ describe("shortcuts.data", () => {
       expect(stripMetadata(findFocus("day")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["Shift"], label: "Toggle event jump keys" },
+        { keys: ["s"], label: "Toggle event jump keys" },
       ]);
       expect(stripMetadata(findFocus("week")?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["Shift"], label: "Toggle event jump keys" },
+        { keys: ["s"], label: "Toggle event jump keys" },
       ]);
       expect(stripMetadata(findFocus("week", true)?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["Shift"], label: "Toggle event jump keys" },
+        { keys: ["s"], label: "Toggle event jump keys" },
       ]);
       expect(stripMetadata(findFocus("day", true)?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["Shift"], label: "Toggle event jump keys" },
+        { keys: ["s"], label: "Toggle event jump keys" },
       ]);
     });
 
@@ -277,7 +277,7 @@ describe("shortcuts.data", () => {
         label: "Undo last change",
       });
       expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({
-        keys: ["Shift", "Shift"],
+        keys: ["h"],
         label: "Toggle Hardcore Mode",
       });
       expect(stripMetadata(other?.shortcuts ?? [])).toContainEqual({

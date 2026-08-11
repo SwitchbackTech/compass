@@ -33,7 +33,15 @@ import {
 } from "@web/grid/shortcuts/edge-focus.store";
 import { dayEventRegistry } from "@web/views/Day/interaction/registry/day-event.registry";
 import { useDayEventNudgeShortcuts } from "./useDayEventNudgeShortcuts";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+} from "bun:test";
 
 const TIMED_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
 const LATER_TIMED_EVENT_ID = "cccccccccccccccccccccccc";
@@ -203,6 +211,9 @@ const getCreateMutation = (
     .find((mutation) => mutation.options.mutationKey?.[2] === "create");
 
 beforeEach(() => {
+  // Pin midday so keyboardPlace drafts (seeded from dayjs().hour()) do not
+  // land near midnight and reject the next 15-minute Shift+Arrow move.
+  setSystemTime(new Date("2026-05-20T12:00:00.000Z"));
   HotkeyManager.resetInstance();
   draftActions.discard();
   useEdgeFocusStore.setState(initialEdgeFocusState, true);
@@ -214,6 +225,7 @@ afterEach(() => {
   draftActions.discard();
   useEdgeFocusStore.setState(initialEdgeFocusState, true);
   document.body.innerHTML = "";
+  setSystemTime();
 });
 
 describe("useDayEventNudgeShortcuts", () => {

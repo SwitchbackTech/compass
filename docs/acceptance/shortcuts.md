@@ -54,7 +54,8 @@ Helpful notes:
 | `T`                         | Day view  | Go to today                       |
 | `I`                         | Day view  | Focus sidebar                     |
 | `U`                         | Day view  | Focus first calendar event        |
-| `Shift`                     | Day view  | Toggle event jump keys                 |
+| `S`                         | Day view  | Toggle event jump keys                 |
+| `H`                         | Day view  | Toggle Hardcore Mode                   |
 | `C`                         | Day view  | Create timed event                |
 | `A`                         | Day view  | Create all-day event              |
 | `Delete`                    | Day view  | Delete focused event              |
@@ -78,7 +79,8 @@ Helpful notes:
 | `A`                         | Week view | Create all-day event              |
 | `I`                         | Week view | Focus sidebar                     |
 | `U`                         | Week view | Focus first calendar event        |
-| `Shift`                     | Week view | Toggle event jump keys                 |
+| `S`                         | Week view | Toggle event jump keys                 |
+| `H`                         | Week view | Toggle Hardcore Mode                   |
 | `Delete`                    | Week view | Delete focused event              |
 | `ArrowUp` / `ArrowDown`     | Week view | Focus previous/next event         |
 | `Arrow keys`                | Week view | Move open draft event             |
@@ -327,27 +329,29 @@ After deleting or moving an event, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux
 
 ---
 
-## Scenario 12: Tap Shift To Jump Focus To An Event By Day Prefix
+## Scenario 12: Tap S To Jump Focus To An Event By Day Prefix
 
 ### UX
 
-Pressing `Shift` shows event-jump chips immediately; releasing a quick tap keeps the mode on. Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event; a following digit focuses that index. `Esc` or another Shift tap exits. Long holds and quick chords such as Shift+J or Shift+Arrow cancel the press so jump mode does not stay on. A following Shift-Shift still enters keyboard-only without leaving jump chips up.
+Pressing `S` shows event-jump chips. Week view chips use day prefixes (`SU`/`M`/`T`/`W`/`R`/`F`/`SA`) plus a per-day index (`W4`, `SU1`). Day view uses numeric chips (`1`, `2`, …). Pressing a day letter highlights that column and focuses its first event; a following digit focuses that index. `Esc` exits (in day view a second `S` also toggles off). Bare Shift and Shift+Tab do not show jump chips. Press `H` to toggle Hardcore Mode independently.
 
 ### Steps
 
 1. Navigate to `/week` with timed events on at least two different days.
-2. Press `Shift` once (do not hold for a chord); chips should appear on key down.
+2. Press `S` once; chips should appear.
 3. Press the day letter on a chip (for example `W` for Wednesday), then optionally a digit (`2`) or use arrow keys.
-4. Press `Esc` (or tap `Shift` again) to exit.
-5. Repeat with a fast Shift+J chord and confirm jump mode does not activate.
+4. Press `Esc` to exit.
+5. Press Shift alone or Shift+Tab and confirm jump mode does not activate.
+6. Press `H` and confirm Hardcore Mode enters.
 
 ### Expected Results
 
-- Chips appear on events as soon as Shift is pressed and stay after a quick release until Esc / another Shift tap.
+- Chips appear on events when `S` is pressed and stay until Esc.
 - A day letter highlights that column and focuses the first event; digits refine to `Wn`.
 - Arrow keys keep jump mode on so letter-then-arrows works.
-- Fast Shift+J / Shift+Arrow do not toggle jump mode.
-- While a modal holds the app lock, or focus is in an editable field, Shift does not toggle jump mode.
+- Shift alone / Shift+Tab / Shift+J do not toggle jump mode.
+- While a modal holds the app lock, or focus is in an editable field, `S` does not toggle jump mode.
+- `H` toggles Hardcore Mode; Esc exits it.
 
 ---
 
@@ -391,4 +395,4 @@ If time is limited, run these checks before shipping shortcut-related changes:
 12. With a focused event and no draft open, ArrowUp/ArrowDown move focus to the previous/next event chronologically.
 13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.
 14. With a focused event, `E` then `T` opens the form with the title focused; bare `E` alone does nothing.
-15. Pressing Shift shows event jump chips immediately; a day letter + digit focuses that event; fast Shift+J does not leave the mode on.
+15. Pressing `S` shows event jump chips; a day letter + digit focuses that event; Shift+Tab does not show chips. `H` toggles Hardcore Mode.

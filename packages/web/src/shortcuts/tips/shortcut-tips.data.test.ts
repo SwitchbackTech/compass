@@ -17,7 +17,7 @@ describe("getTipPlainText", () => {
       "Hold Shift and press an arrow to move this event",
     );
     expect(plainTextById["target-event"]).toBe(
-      "Tap Shift to jump to any visible event",
+      "Tap S to jump to any visible event",
     );
     expect(plainTextById["edge-cycle"]).toBe(
       "Press Tab to move between start and end",

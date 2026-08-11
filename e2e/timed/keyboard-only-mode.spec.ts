@@ -12,11 +12,6 @@ type CalendarPage = Parameters<typeof prepareCalendarPage>[0];
 const keyboardOnlyIndicator = (page: CalendarPage) =>
   page.locator("[data-keyboard-only-indicator]");
 
-const tapShift = async (page: CalendarPage) => {
-  await page.keyboard.down("Shift");
-  await page.keyboard.up("Shift");
-};
-
 const createTimedEventOnGrid = async (page: CalendarPage, label: string) => {
   const title = createEventTitle(label);
   const { x, y } = await getMainGridPoint(page, {
@@ -29,7 +24,7 @@ const createTimedEventOnGrid = async (page: CalendarPage, label: string) => {
   return page.locator("#mainGrid").getByRole("button", { name: title });
 };
 
-test("SHIFT-SHIFT enters keyboard-only mode; clicks are inert until Escape", async ({
+test("h enters keyboard-only mode; clicks are inert until Escape", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
@@ -38,8 +33,7 @@ test("SHIFT-SHIFT enters keyboard-only mode; clicks are inert until Escape", asy
     "Keyboard Only Target",
   );
 
-  await tapShift(page);
-  await tapShift(page);
+  await page.keyboard.press("h");
 
   await expect(keyboardOnlyIndicator(page)).toContainText("Hardcore Mode");
   await expect(keyboardOnlyIndicator(page)).toContainText("Esc");
@@ -58,28 +52,24 @@ test("SHIFT-SHIFT enters keyboard-only mode; clicks are inert until Escape", asy
   await expect(page.getByLabel("Title")).toBeVisible();
 });
 
-test("SHIFT-SHIFT exits keyboard-only mode and restores clicks", async ({
-  page,
-}) => {
+test("h exits keyboard-only mode and restores clicks", async ({ page }) => {
   await prepareCalendarPage(page);
   const eventButton = await createTimedEventOnGrid(
     page,
     "Keyboard Only Toggle Exit",
   );
 
-  await tapShift(page);
-  await tapShift(page);
+  await page.keyboard.press("h");
   await expect(keyboardOnlyIndicator(page)).toBeVisible();
 
-  await tapShift(page);
-  await tapShift(page);
+  await page.keyboard.press("h");
   await expect(keyboardOnlyIndicator(page)).toHaveCount(0);
 
   await eventButton.click();
   await expect(page.getByLabel("Title")).toBeVisible();
 });
 
-test("hold Shift does not enter keyboard-only or event jump", async ({
+test("Shift alone does not enter keyboard-only or event jump", async ({
   page,
 }) => {
   await prepareCalendarPage(page);

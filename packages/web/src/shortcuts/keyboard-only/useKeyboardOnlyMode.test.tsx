@@ -5,8 +5,15 @@ import {
   useKeyboardOnlyStore,
 } from "@web/shortcuts/keyboard-only/keyboard-only.store";
 import { useKeyboardOnlyMode } from "@web/shortcuts/keyboard-only/useKeyboardOnlyMode";
-import { resetSharedShiftTapGesture } from "@web/shortcuts/shift-tap-gesture";
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import {
+  eventJumpActions,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
+import {
+  resetEditSequenceArm,
+  useEditSequenceShortcut,
+} from "@web/shortcuts/useEditSequenceShortcut";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const dispatchKey = (
   type: "keydown" | "keyup",
@@ -15,7 +22,6 @@ const dispatchKey = (
 ) => {
   const event = new KeyboardEvent(type, {
     key,
-    code: key === "Shift" ? "ShiftLeft" : key,
     bubbles: true,
     cancelable: true,
     ...init,
@@ -24,32 +30,33 @@ const dispatchKey = (
   return event;
 };
 
-const tapShift = () => {
-  dispatchKey("keydown", "Shift");
-  dispatchKey("keyup", "Shift", { shiftKey: false });
+const pressH = () => {
+  dispatchKey("keydown", "h");
+  dispatchKey("keyup", "h");
 };
 
 describe("useKeyboardOnlyMode", () => {
   beforeEach(() => {
     useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
+    eventJumpActions.reset();
+    resetEditSequenceArm();
     clearAppLockReasons();
-    resetSharedShiftTapGesture();
     document.body.innerHTML = `<div id="root"></div>`;
   });
 
   afterEach(() => {
     useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
+    eventJumpActions.reset();
+    resetEditSequenceArm();
     clearAppLockReasons();
-    resetSharedShiftTapGesture();
     document.body.innerHTML = "";
   });
 
-  it("enters on SHIFT-SHIFT and suppresses clicks until Escape", () => {
+  it("enters on h and suppresses clicks until Escape", () => {
     renderHook(() => useKeyboardOnlyMode());
 
     act(() => {
-      tapShift();
-      tapShift();
+      pressH();
     });
 
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
@@ -95,8 +102,7 @@ describe("useKeyboardOnlyMode", () => {
     renderHook(() => useKeyboardOnlyMode());
 
     act(() => {
-      tapShift();
-      tapShift();
+      pressH();
     });
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
 
@@ -125,18 +131,16 @@ describe("useKeyboardOnlyMode", () => {
     expect(useKeyboardOnlyStore.getState().blockedClickPulse).toBe(0);
   });
 
-  it("exits on a second SHIFT-SHIFT", () => {
+  it("exits on a second h", () => {
     renderHook(() => useKeyboardOnlyMode());
 
     act(() => {
-      tapShift();
-      tapShift();
+      pressH();
     });
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
 
     act(() => {
-      tapShift();
-      tapShift();
+      pressH();
     });
     expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
   });
@@ -146,10 +150,52 @@ describe("useKeyboardOnlyMode", () => {
     renderHook(() => useKeyboardOnlyMode());
 
     act(() => {
-      tapShift();
-      tapShift();
+      pressH();
     });
 
     expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
+  });
+
+  it("does not enter on Shift-Shift", () => {
+    renderHook(() => useKeyboardOnlyMode());
+
+    act(() => {
+      dispatchKey("keydown", "Shift");
+      dispatchKey("keyup", "Shift");
+      dispatchKey("keydown", "Shift");
+      dispatchKey("keyup", "Shift");
+    });
+
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
+  });
+
+  it("does not steal h while the e edit sequence is armed", () => {
+    const onSequence = mock(() => {});
+    // Match production mount order: Hardcore (RootShell) before edit sequences.
+    renderHook(() => useKeyboardOnlyMode());
+    renderHook(() => useEditSequenceShortcut({ onSequence }));
+
+    act(() => {
+      dispatchKey("keydown", "e");
+      dispatchKey("keydown", "h");
+    });
+
+    // While armed, Hardcore yields so the edit sequence can disarm on the
+    // unknown follow key without entering keyboard-only.
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
+    expect(onSequence).not.toHaveBeenCalled();
+  });
+
+  it("clears event jump when entering hardcore", () => {
+    renderHook(() => useKeyboardOnlyMode());
+    eventJumpActions.setActive(true);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+
+    act(() => {
+      pressH();
+    });
+
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
   });
 });

@@ -62,7 +62,7 @@ describe("shortcuts.registry", () => {
       expect(ids).toContain("edit-save");
     });
 
-    it("lists Shift event jump toggle in day and week focus sections", () => {
+    it("lists s event jump toggle in day and week focus sections", () => {
       for (const view of ["day", "week"] as const) {
         const shortcuts = filterShortcutsByContext({
           view,
@@ -80,7 +80,7 @@ describe("shortcuts.registry", () => {
       expect(life).not.toContain("focus-shift-hold");
     });
 
-    it("lists SHIFT-SHIFT keyboard-only mode in every view's other section", () => {
+    it("lists h keyboard-only mode in every view's other section", () => {
       for (const view of ["day", "week", "life"] as const) {
         const ids = filterShortcutsByContext({
           view,

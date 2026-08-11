@@ -130,7 +130,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "focus-shift-hold",
-    keys: ["Shift"],
+    keys: ["s"],
     label: "Toggle event jump keys",
     section: "focus",
   },
@@ -365,7 +365,7 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
   },
   {
     id: "other-keyboard-only",
-    keys: ["Shift", "Shift"],
+    keys: ["h"],
     label: "Toggle Hardcore Mode",
     section: "other",
   },

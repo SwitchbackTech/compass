@@ -109,10 +109,10 @@ describe("onboarding tour steps", () => {
     );
 
     expect(hardcore?.title).toMatch(/Graduate/i);
-    expect(hardcore?.body).toMatch(/Shift twice/i);
+    expect(hardcore?.body).toMatch(/Press H/i);
     expect(hardcore?.body).toMatch(/keyboard-only/i);
     expect(hardcore?.body).toMatch(/clicks/i);
     expect(hardcore?.body).toMatch(/command palette/i);
-    expect(hardcore?.shortcutHint).toEqual(["Shift", "Shift"]);
+    expect(hardcore?.shortcutHint).toBe("H");
   });
 });

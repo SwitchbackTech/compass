@@ -39,7 +39,7 @@ export function getShortcutTips(): ShortcutTip[] {
     },
     {
       id: "target-event",
-      parts: ["Tap ", { key: "Shift" }, " to jump to any visible event"],
+      parts: ["Tap ", { key: "S" }, " to jump to any visible event"],
     },
     {
       id: "edge-cycle",

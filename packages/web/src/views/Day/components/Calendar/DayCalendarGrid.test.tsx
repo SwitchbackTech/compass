@@ -313,6 +313,9 @@ const setDraftEvent = (event: CompassEvent) => {
 
 beforeEach(() => {
   seededEvents = [];
+  // Pin midday so keyboardPlace drafts seeded from the current hour stay
+  // inside a single calendar day (overnight drafts hit save/map edge cases).
+  setSystemTime(new Date("2026-05-20T12:00:00.000Z"));
 });
 
 afterEach(() => {

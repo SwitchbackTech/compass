@@ -42,7 +42,7 @@ test("Start Now runs the interactive tour happy path", async ({ page }) => {
   await expect(card).toContainText("Jump to Dentist");
 
   // Act 2: targetEvent, move, resizeEdge, placeDraft, undo. The exact
-  // Shift-hold jump key is covered by e2e/timed/shift-hold-event-hints.spec.ts;
+  // event-jump key is covered by e2e/timed/shift-hold-event-hints.spec.ts;
   // here we drive the mission's actual completion signal (Dentist focused),
   // same as a jump would leave it.
   const dentistButton = page
@@ -69,17 +69,11 @@ test("Start Now runs the interactive tour happy path", async ({ page }) => {
   await expect(card).toContainText("Graduate to Hardcore Mode");
 
   // Act 3: hardcore graduation, the tour's finale.
-  await page.keyboard.down("Shift");
-  await page.keyboard.up("Shift");
-  await page.keyboard.down("Shift");
-  await page.keyboard.up("Shift");
+  await page.keyboard.press("h");
   await expect(card).toHaveCount(0);
 
   // Leave Hardcore Mode so it doesn't affect other assertions/reload below.
-  await page.keyboard.down("Shift");
-  await page.keyboard.up("Shift");
-  await page.keyboard.down("Shift");
-  await page.keyboard.up("Shift");
+  await page.keyboard.press("h");
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("[data-onboarding-tour]")).toHaveCount(0);
