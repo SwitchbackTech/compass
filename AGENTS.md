@@ -126,15 +126,22 @@ everything runs through Bun, so that mismatch is not a blocker.
   chromium`. Axe "incomplete" results are logged, not failures (see
   `docs/development/testing-playbook.md`).
 - Backend: run `bash .cursor/bootstrap-backend.sh` once to write a working
-  `compass.yaml` and install/start a single-node MongoDB replica set, then
-  `bun run dev:backend` (serves http://localhost:3000/api). The script is
-  idempotent and reads `SUPERTOKENS_URI`, `SUPERTOKENS_KEY`, `GOOGLE_CLIENT_ID`,
-  and `GOOGLE_CLIENT_SECRET` from the environment when set (otherwise dummy
-  local auth values, Google disabled). Non-obvious: the backend uses
-  transactions, so Mongo must be a replica set and `mongo.uri` must include
-  `replicaSet=...` — a standalone `mongod` will not work. `GET /api/health`
-  returning `200 {"status":"ok"}` confirms the backend is up and Mongo is
-  reachable.
+ `compass.yaml` and install/start a single-node MongoDB replica set, then
+ `bun run dev:backend` (serves http://localhost:3000/api). The script is
+ idempotent and reads `SUPERTOKENS_URI`, `SUPERTOKENS_KEY`, `GOOGLE_CLIENT_ID`,
+ `GOOGLE_CLIENT_SECRET`, `SYNC_MONGO_URI`, and `SYNC_INTERNAL_AUTH_TOKEN` from
+ the environment when set (otherwise dummy local values, Google disabled). The
+ required `sync.*` config block is filled with local defaults — `sync.mongoUri`
+ points at an isolated `compass_sync` database on the same local replica set.
+ Non-obvious: the backend uses transactions, so Mongo must be a replica set and
+ both `mongo.uri` and `sync.mongoUri` must include `replicaSet=...` — a
+ standalone `mongod` will not work. `GET /api/health` returning
+ `200 {"status":"ok"}` confirms the backend is up and Mongo is reachable.
+- The Sync service (`bun run dev:sync`) is a separate, optional process. When it
+ is not running, the backend logs recurring
+ `app:sse.sync-change-feed: Sync global change-feed poll failed: unavailable`
+ warnings — these are expected and harmless for core event CRUD work; only start
+ `dev:sync` when working on Google sync/SSE.
 - Auth/login and real Google Calendar sync are gated on external services not
   provisioned by default: a SuperTokens instance and Google OAuth. Provide them
   as environment secrets so `bootstrap-backend.sh` wires them into
