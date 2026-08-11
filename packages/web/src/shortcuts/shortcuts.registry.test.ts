@@ -62,7 +62,7 @@ describe("shortcuts.registry", () => {
       expect(ids).toContain("edit-save");
     });
 
-    it("lists Shift event jump toggle in day and week focus sections", () => {
+    it("lists s event jump toggle in day and week focus sections", () => {
       for (const view of ["day", "week"] as const) {
         const shortcuts = filterShortcutsByContext({
           view,
