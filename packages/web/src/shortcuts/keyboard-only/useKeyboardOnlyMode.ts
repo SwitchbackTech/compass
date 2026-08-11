@@ -1,17 +1,15 @@
 import { useEffect } from "react";
+import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
+import { isAppLocked } from "@web/shortcuts/app-lock";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import {
   keyboardOnlyActions,
   useKeyboardOnlyStore,
 } from "@web/shortcuts/keyboard-only/keyboard-only.store";
-import {
-  resetSharedShiftTapGesture,
-  subscribeToShiftTapGesture,
-} from "@web/shortcuts/shift-tap-gesture";
 
 /**
- * SHIFT-SHIFT (two quick taps) toggles keyboard-only mode. Clicks are inert;
- * ESC, SHIFT-SHIFT again, or refresh exits. Mode is not persisted.
+ * Bare `h` toggles keyboard-only (Hardcore) mode. Clicks are inert; ESC, `h`
+ * again, or refresh exits. Mode is not persisted.
  *
  * ESC stands down while app lock, floating layers, or the event form own Escape
  * so those dismiss first; a later ESC exits this mode.
@@ -20,14 +18,27 @@ export function useKeyboardOnlyMode() {
   const isActive = useKeyboardOnlyStore((state) => state.isActive);
 
   useEffect(() => {
-    return subscribeToShiftTapGesture((event) => {
-      if (event.type !== "doubleTap") return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if (event.key.length !== 1 || event.key.toLowerCase() !== "h") return;
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+        return;
+      }
+      if (isAppLocked() || isEditableKeyboardTarget(event)) return;
+
+      event.preventDefault();
+      event.stopPropagation();
       if (useKeyboardOnlyStore.getState().isActive) {
         keyboardOnlyActions.exit();
       } else {
         keyboardOnlyActions.enter();
       }
-    });
+    };
+
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown, true);
+    };
   }, []);
 
   // Click suppression while active. Window capture runs before React's
@@ -77,7 +88,6 @@ export function useKeyboardOnlyMode() {
       event.preventDefault();
       event.stopPropagation();
       keyboardOnlyActions.exit();
-      resetSharedShiftTapGesture();
     };
 
     document.addEventListener("keydown", onKeyDown, true);

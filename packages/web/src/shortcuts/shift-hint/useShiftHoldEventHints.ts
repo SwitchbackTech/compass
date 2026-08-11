@@ -17,7 +17,7 @@ import {
   eventJumpActions,
   useEventJumpStore,
 } from "@web/shortcuts/shift-hint/event-jump.store";
-import { subscribeToShiftTapGesture } from "@web/shortcuts/shift-tap-gesture";
+import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 
 export type ShiftHintFocusTarget = {
   eventId: string;
@@ -107,11 +107,18 @@ const buildDayJumpAssignments = (
   };
 };
 
+const isBareLetter = (event: KeyboardEvent, letter: string) =>
+  event.key.length === 1 &&
+  event.key.toLowerCase() === letter &&
+  !event.metaKey &&
+  !event.ctrlKey &&
+  !event.altKey &&
+  !event.shiftKey;
+
 /**
- * Press Shift to show day-prefix jump labels immediately; release confirms.
- * Esc or another Shift tap exits. Day letters (and digits after a day) win
- * over global shortcuts while active. Shift+chords and long holds cancel the
- * optimistic press; Shift-Shift forces off so keyboard-only mode can enter.
+ * Press `s` to show day-prefix jump labels. Esc exits. Day letters (and digits
+ * after a day) win over global shortcuts while active. In day view, a second
+ * `s` toggles off; in week view `s` keeps Sunday/Saturday prefix meaning.
  */
 export function useShiftHoldEventHints({
   allDayEvents = [],
@@ -134,8 +141,6 @@ export function useShiftHoldEventHints({
   const assignmentsRef = useRef<DayJumpAssignment[]>([]);
   const visibleByIdRef = useRef<Map<string, ShiftHintFocusTarget>>(new Map());
   const suppressKeyUpRef = useRef(new Set<string>());
-  /** True when the current Shift press opened jump mode before keyup. */
-  const openedByPressRef = useRef(false);
   const ambiguousCommitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -256,7 +261,21 @@ export function useShiftHoldEventHints({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
-      if (!isActiveRef.current) return;
+
+      if (!isActiveRef.current) {
+        if (!isBareLetter(event, "s")) return;
+        if (isAppLocked() || isEditableKeyboardTarget(event)) return;
+        if (isEditSequenceArmed()) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        activate();
+        if (isActiveRef.current) {
+          suppressKeyUpRef.current.add("s");
+        }
+        return;
+      }
+
       if (isAppLocked() || isEditableKeyboardTarget(event)) {
         deactivate();
         return;
@@ -299,6 +318,10 @@ export function useShiftHoldEventHints({
       if (!match) {
         clearAmbiguousCommitTimer();
         stripDigitBuffer();
+        // Day view has no letter prefixes; a second `s` toggles off.
+        if (modeRef.current === "day" && key === "s") {
+          deactivate();
+        }
         return;
       }
 
@@ -348,50 +371,8 @@ export function useShiftHoldEventHints({
     };
 
     const onBlur = () => {
-      openedByPressRef.current = false;
       if (isActiveRef.current) deactivate();
     };
-
-    // Press shows hints before release; quick release confirms (or toggles
-    // off when mode was already on). Chord / hold-timeout cancel an
-    // optimistic press. Double tap cancels and hands off to keyboard-only.
-    const unsubscribeShiftGesture = subscribeToShiftTapGesture((event) => {
-      if (event.type === "press") {
-        if (isActiveRef.current) {
-          openedByPressRef.current = false;
-          return;
-        }
-        activate();
-        openedByPressRef.current = isActiveRef.current;
-        return;
-      }
-      if (event.type === "cancel") {
-        // Always clear jump on chord/hold cancel so an already-on jump mode
-        // cannot swallow follow-up keys (e.g. recurrence toast 1/2 after
-        // Shift+Arrow). openedByPress only mattered for optimistic press.
-        openedByPressRef.current = false;
-        if (isActiveRef.current) {
-          deactivate(false);
-        }
-        return;
-      }
-      if (event.type === "singleTap") {
-        if (openedByPressRef.current) {
-          openedByPressRef.current = false;
-          return;
-        }
-        if (isActiveRef.current) {
-          deactivate();
-        } else {
-          activate();
-        }
-        return;
-      }
-      if (event.type === "doubleTap") {
-        openedByPressRef.current = false;
-        if (isActiveRef.current) deactivate(false);
-      }
-    });
 
     document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("keyup", onKeyUp, true);
@@ -400,8 +381,6 @@ export function useShiftHoldEventHints({
     return () => {
       clearAmbiguousCommitTimer();
       suppressKeyUpRef.current.clear();
-      openedByPressRef.current = false;
-      unsubscribeShiftGesture();
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keyup", onKeyUp, true);
       window.removeEventListener("blur", onBlur);

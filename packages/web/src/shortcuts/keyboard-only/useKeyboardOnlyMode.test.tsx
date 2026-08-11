@@ -5,7 +5,6 @@ import {
   useKeyboardOnlyStore,
 } from "@web/shortcuts/keyboard-only/keyboard-only.store";
 import { useKeyboardOnlyMode } from "@web/shortcuts/keyboard-only/useKeyboardOnlyMode";
-import { resetSharedShiftTapGesture } from "@web/shortcuts/shift-tap-gesture";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 const dispatchKey = (
@@ -15,7 +14,6 @@ const dispatchKey = (
 ) => {
   const event = new KeyboardEvent(type, {
     key,
-    code: key === "Shift" ? "ShiftLeft" : key,
     bubbles: true,
     cancelable: true,
     ...init,
@@ -24,32 +22,29 @@ const dispatchKey = (
   return event;
 };
 
-const tapShift = () => {
-  dispatchKey("keydown", "Shift");
-  dispatchKey("keyup", "Shift", { shiftKey: false });
+const pressH = () => {
+  dispatchKey("keydown", "h");
+  dispatchKey("keyup", "h");
 };
 
 describe("useKeyboardOnlyMode", () => {
   beforeEach(() => {
     useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
     clearAppLockReasons();
-    resetSharedShiftTapGesture();
     document.body.innerHTML = `<div id="root"></div>`;
   });
 
   afterEach(() => {
     useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
     clearAppLockReasons();
-    resetSharedShiftTapGesture();
     document.body.innerHTML = "";
   });
 
-  it("enters on SHIFT-SHIFT and suppresses clicks until Escape", () => {
+  it("enters on h and suppresses clicks until Escape", () => {
     renderHook(() => useKeyboardOnlyMode());
 
     act(() => {
-      tapShift();
-      tapShift();
+      pressH();
     });
 
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
@@ -95,8 +90,7 @@ describe("useKeyboardOnlyMode", () => {
     renderHook(() => useKeyboardOnlyMode());
 
     act(() => {
-      tapShift();
-      tapShift();
+      pressH();
     });
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
 
@@ -125,18 +119,16 @@ describe("useKeyboardOnlyMode", () => {
     expect(useKeyboardOnlyStore.getState().blockedClickPulse).toBe(0);
   });
 
-  it("exits on a second SHIFT-SHIFT", () => {
+  it("exits on a second h", () => {
     renderHook(() => useKeyboardOnlyMode());
 
     act(() => {
-      tapShift();
-      tapShift();
+      pressH();
     });
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
 
     act(() => {
-      tapShift();
-      tapShift();
+      pressH();
     });
     expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
   });
@@ -146,8 +138,20 @@ describe("useKeyboardOnlyMode", () => {
     renderHook(() => useKeyboardOnlyMode());
 
     act(() => {
-      tapShift();
-      tapShift();
+      pressH();
+    });
+
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
+  });
+
+  it("does not enter on Shift-Shift", () => {
+    renderHook(() => useKeyboardOnlyMode());
+
+    act(() => {
+      dispatchKey("keydown", "Shift");
+      dispatchKey("keyup", "Shift");
+      dispatchKey("keydown", "Shift");
+      dispatchKey("keyup", "Shift");
     });
 
     expect(useKeyboardOnlyStore.getState().isActive).toBe(false);

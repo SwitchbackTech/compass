@@ -128,13 +128,13 @@ describe("getNavigationCommandItems", () => {
       expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
     });
 
-    it("advertises Shift Shift as the shortcut", () => {
+    it("advertises h as the shortcut", () => {
       const item = getNavigationCommandItems({
         onNavigateToView: () => {},
       }).find((entry) => entry.id === "enter-keyboard-only");
 
       expect(item?.label).toBe("Toggle Hardcore Mode");
-      expect(item?.shortcut).toEqual(["Shift", "Shift"]);
+      expect(item?.shortcut).toEqual(["h"]);
     });
   });
 });

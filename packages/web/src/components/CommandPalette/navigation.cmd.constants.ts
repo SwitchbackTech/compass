@@ -126,7 +126,7 @@ export const getNavigationCommandItems = ({
     id: "enter-keyboard-only",
     label: "Toggle Hardcore Mode",
     icon: KeyboardIcon,
-    shortcut: ["Shift", "Shift"],
+    shortcut: ["h"],
     keywords: [
       "keyboard",
       "hardcore",

@@ -36,7 +36,7 @@ export const eventJumpActions = {
       false,
       { type: "setActive" },
     ),
-  /** Exit without announcing (e.g. Shift-Shift handing off to keyboard-only). */
+  /** Exit without announcing (e.g. silent teardown while another mode takes over). */
   silenceOff: () =>
     useEventJumpStore.setState(
       { isActive: false, activeDayKeys: [], announcement: "" },

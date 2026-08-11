@@ -21,6 +21,16 @@ export type EditSequenceSecondKey = keyof typeof EDIT_SEQUENCE_FIELDS;
 const ARM_WINDOW_MS = 600;
 const LEADER_KEY = "e";
 
+/** Shared so other letter shortcuts (e.g. event-jump `s`) can yield to `e`… sequences. */
+let editSequenceArmedUntil = 0;
+
+export const isEditSequenceArmed = () => editSequenceArmedUntil > Date.now();
+
+/** Test helper: clear the shared arm window. */
+export const resetEditSequenceArm = () => {
+  editSequenceArmedUntil = 0;
+};
+
 const hasModifier = (event: KeyboardEvent) =>
   event.metaKey || event.ctrlKey || event.altKey || event.shiftKey;
 
@@ -38,12 +48,11 @@ export function useEditSequenceShortcut({
   onSequenceRef.current = onSequence;
 
   useEffect(() => {
-    let armedUntil = 0;
     let armTimeoutId: ReturnType<typeof setTimeout> | null = null;
     const suppressKeyUp = new Set<string>();
 
     const disarm = () => {
-      armedUntil = 0;
+      editSequenceArmedUntil = 0;
       if (armTimeoutId !== null) {
         clearTimeout(armTimeoutId);
         armTimeoutId = null;
@@ -52,14 +61,12 @@ export function useEditSequenceShortcut({
 
     const arm = () => {
       disarm();
-      armedUntil = Date.now() + ARM_WINDOW_MS;
+      editSequenceArmedUntil = Date.now() + ARM_WINDOW_MS;
       armTimeoutId = setTimeout(() => {
-        armedUntil = 0;
+        editSequenceArmedUntil = 0;
         armTimeoutId = null;
       }, ARM_WINDOW_MS);
     };
-
-    const isArmed = () => armedUntil > Date.now();
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
@@ -78,7 +85,7 @@ export function useEditSequenceShortcut({
 
       const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
 
-      if (isArmed()) {
+      if (isEditSequenceArmed()) {
         const field =
           key in EDIT_SEQUENCE_FIELDS
             ? EDIT_SEQUENCE_FIELDS[key as EditSequenceSecondKey]

@@ -33,12 +33,7 @@ const createTimedEventAt = async (
 const shiftHintOverlay = (page: CalendarPage) =>
   page.locator("[data-shift-event-hints]");
 
-const tapShift = async (page: CalendarPage) => {
-  await page.keyboard.down("Shift");
-  await page.keyboard.up("Shift");
-};
-
-test("tap Shift shows day-prefix jump keys and focuses the assigned event", async ({
+test("tap s shows day-prefix jump keys and focuses the assigned event", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
@@ -61,7 +56,7 @@ test("tap Shift shows day-prefix jump keys and focuses the assigned event", asyn
       document.activeElement.blur();
     }
   });
-  await tapShift(page);
+  await page.keyboard.press("s");
 
   const overlay = shiftHintOverlay(page);
   await expect(overlay.locator(":scope > span")).toHaveCount(3);
@@ -93,10 +88,23 @@ test("tap Shift shows day-prefix jump keys and focuses the assigned event", asyn
   await expect(shiftHintOverlay(page)).toHaveCount(0);
 });
 
-test("fast Shift+J does not toggle event jump keys", async ({ page }) => {
+test("Shift+Tab does not toggle event jump keys", async ({ page }) => {
   await prepareCalendarPage(page);
 
   const title = createEventTitle("Chord Quiet");
+  await createTimedEventAt(page, title, { xRatio: 0.42, yRatio: 0.35 });
+
+  await page.keyboard.down("Shift");
+  await page.keyboard.press("Tab");
+  await page.keyboard.up("Shift");
+
+  await expect(shiftHintOverlay(page)).toHaveCount(0);
+});
+
+test("fast Shift+J does not toggle event jump keys", async ({ page }) => {
+  await prepareCalendarPage(page);
+
+  const title = createEventTitle("Chord Quiet J");
   await createTimedEventAt(page, title, { xRatio: 0.42, yRatio: 0.35 });
 
   await page.keyboard.down("Shift");

@@ -65,8 +65,8 @@ export function getOnboardingTourSteps(): OnboardingTourStep[] {
     },
     targetEvent: {
       title: "Jump to Dentist",
-      body: "Tap Shift once to flash a key over every visible event, then press Dentist's key to jump straight to it. Great when there are a few on the same day.",
-      shortcutHint: "Shift",
+      body: "Tap S to flash a key over every visible event, then press Dentist's key to jump straight to it. Great when there are a few on the same day.",
+      shortcutHint: "S",
     },
     move: {
       title: "Move Dentist out of the overlap",
@@ -90,8 +90,8 @@ export function getOnboardingTourSteps(): OnboardingTourStep[] {
     },
     hardcore: {
       title: "Graduate to Hardcore Mode",
-      body: "Press Shift twice to go keyboard-only, clicks stay off until you exit. Sample events are already on your calendar. Reopen this tour from the command palette anytime.",
-      shortcutHint: ["Shift", "Shift"],
+      body: "Press H to go keyboard-only, clicks stay off until you exit. Sample events are already on your calendar. Reopen this tour from the command palette anytime.",
+      shortcutHint: "H",
     },
   };
 
