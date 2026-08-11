@@ -128,7 +128,7 @@ export function editGridEventDraft(
 export function duplicateGridEventDraft(
   event: Event,
   calendars: Calendar[],
-): GridEventDraft | null {
+): Extract<GridEventDraft, { kind: "create" }> | null {
   const schedule = gridScheduleFromEvent(event);
   if (!schedule) return null;
 

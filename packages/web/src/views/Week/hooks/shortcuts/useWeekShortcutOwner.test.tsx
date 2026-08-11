@@ -383,17 +383,26 @@ describe("useWeekShortcutOwner calendar event targeting", () => {
   it("duplicates the focused calendar event with Mod+D", () => {
     const button = addCalendarTarget();
     button.focus();
-    renderShortcuts();
+    const { queryClient } = renderShortcuts();
 
     pressKey("d", {
       keyDownInit: { ctrlKey: true },
       keyUpInit: { ctrlKey: true },
     });
 
+    const created = queryClient
+      .getMutationCache()
+      .getAll()
+      .find((mutation) => mutation.options.mutationKey?.[2] === "create");
+    const { input } = created?.state.variables as {
+      input: { calendarId: string; content: { title: string } };
+    };
+    expect(input.calendarId).toBe(editableEvent.calendarId);
+    expect(input.content.title).toBe("Editable event");
+
     const state = useDraftStore.getState();
-    expect(state.status?.isFormOpen).toBe(true);
-    expect(state.gridDraft?.kind).toBe("create");
-    expect(state.gridDraft?.values.title).toBe("Editable event");
+    expect(state.status?.isFormOpen).toBe(false);
+    expect(state.gridDraft).toBeNull();
   });
 
   it("keeps ArrowDown on the same day when a later event exists that day", () => {
