@@ -41,6 +41,7 @@ import { redactedCause } from "@sync/safety/redact-error";
 import { NOTIFICATIONS_PATH } from "@sync/server/notification.routes";
 import { buildSyncApp } from "@sync/server/sync.server";
 import { buildServiceIdentity } from "@sync/service-identity";
+import { type JobRecord } from "@sync/storage/contracts/job.contracts";
 import { SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { syncRepositories } from "@sync/storage/sync-repositories";
 import { emitHealthSnapshot } from "@sync/telemetry/health-snapshot.service";
@@ -408,7 +409,16 @@ function buildSchedulers(
   const repos = syncRepositories(mongo);
   const resources = repos.syncResources;
   const jobs = repos.jobs;
-  const buildDrain = (): SyncScheduler => {
+  // Long-running kinds excluded from a reserved lane. initialImport and
+  // repair are the two that can run for minutes on a large calendar; every
+  // other kind is quick, so a reserved lane still drains the whole rest of
+  // the queue, just never adopts one of these two.
+  const RESERVED_LANE_EXCLUDED_KINDS: JobRecord["kind"][] = [
+    "initialImport",
+    "repair",
+  ];
+
+  const buildDrain = (reservedForPulls: boolean): SyncScheduler => {
     const owner = randomUUID();
     const worker = new SyncJobWorker(
       {
@@ -465,6 +475,9 @@ function buildSchedulers(
             }),
           });
         },
+        excludeKinds: reservedForPulls
+          ? RESERVED_LANE_EXCLUDED_KINDS
+          : undefined,
       },
     );
     return new SyncScheduler(
@@ -475,7 +488,13 @@ function buildSchedulers(
       },
     );
   };
-  const drains = Array.from({ length: config.MAX_CONCURRENCY }, buildDrain);
+  // Of the MAX_CONCURRENCY drains, the first RESERVED_PULL_LANES never claim
+  // initialImport/repair — reserved so webhook/reconcile pulls always have a
+  // lane free even when every other drain is busy on a long import (S40-
+  // style starvation, 2026-07-29). The rest claim everything, unchanged.
+  const drains = Array.from({ length: config.MAX_CONCURRENCY }, (_, index) =>
+    buildDrain(index < config.RESERVED_PULL_LANES),
+  );
 
   // Shared per-resource enqueue-failure logging for the resource sweeps below.
   const onEnqueueError =

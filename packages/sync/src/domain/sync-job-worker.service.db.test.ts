@@ -235,6 +235,26 @@ describe("SyncJobWorker", () => {
     expect(outcome).toBe("idle");
   });
 
+  it("passes excludeKinds through to claimDueJob, leaving an excluded due job untouched", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, null);
+    const job = await enqueue(resource, "initialImport");
+    const reservedWorker = new SyncJobWorker(deps(new FakeReader([])), OWNER, {
+      now,
+      excludeKinds: ["initialImport"],
+    });
+
+    const outcome = await reservedWorker.runOnce();
+
+    expect(outcome).toBe("idle");
+    const after = await jobs.findById(
+      resource.tenantId,
+      resource.principalId,
+      job._id,
+    );
+    expect(after?.state).toBe("pending");
+  });
+
   it("completes an applied incremental pull, removing the job", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");

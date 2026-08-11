@@ -26,6 +26,14 @@ describe("Sync service configuration", () => {
       const config = parseSyncConfig(compassConfigWithSync());
       expect(config.PORT).toBe(3010);
       expect(config.MAX_CONCURRENCY).toBe(4);
+      expect(config.RESERVED_PULL_LANES).toBe(1);
+    });
+
+    it("coerces a yaml numeric string reservedPullLanes to a number", () => {
+      const config = parseSyncConfig(
+        compassConfigWithSync({ reservedPullLanes: "2" }),
+      );
+      expect(config.RESERVED_PULL_LANES).toBe(2);
     });
 
     it("accepts an explicit active execution mode", () => {
@@ -150,6 +158,29 @@ describe("Sync service configuration", () => {
       expect(() =>
         parseSyncConfig(compassConfigWithSync({ maxConcurrency: 2.5 })),
       ).toThrow();
+    });
+
+    it("rejects reservedPullLanes equal to maxConcurrency", () => {
+      expect(() =>
+        parseSyncConfig(
+          compassConfigWithSync({ maxConcurrency: 2, reservedPullLanes: 2 }),
+        ),
+      ).toThrow(/reservedPullLanes.*maxConcurrency/i);
+    });
+
+    it("rejects reservedPullLanes greater than maxConcurrency", () => {
+      expect(() =>
+        parseSyncConfig(
+          compassConfigWithSync({ maxConcurrency: 2, reservedPullLanes: 3 }),
+        ),
+      ).toThrow();
+    });
+
+    it("accepts reservedPullLanes strictly below maxConcurrency", () => {
+      const config = parseSyncConfig(
+        compassConfigWithSync({ maxConcurrency: 2, reservedPullLanes: 1 }),
+      );
+      expect(config.RESERVED_PULL_LANES).toBe(1);
     });
   });
 

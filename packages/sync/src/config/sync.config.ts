@@ -13,6 +13,7 @@ import { NodeEnv } from "@core/constants/core.constants";
 
 const SYNC_PORT_DEFAULT = 3010;
 const SYNC_MAX_CONCURRENCY_DEFAULT = 4;
+const SYNC_RESERVED_PULL_LANES_DEFAULT = 1;
 
 export const SyncExecutionModeSchema = z.enum(["passive", "active"]);
 export type SyncExecutionMode = z.infer<typeof SyncExecutionModeSchema>;
@@ -25,38 +26,54 @@ const BooleanFromInput = z
   .union([z.boolean(), z.enum(["true", "false"])])
   .transform((value) => value === true || value === "true");
 
-export const SyncConfigSchema = z.strictObject({
-  NODE_ENV: z.enum(NodeEnv),
-  PORT: PositiveIntFromInput.default(SYNC_PORT_DEFAULT),
-  // Isolated `compass_sync` database URI — never the backend's mongo.uri.
-  MONGO_URI: z.string().trim().min(1),
-  // Shared secret authenticating trusted Compass API -> Sync requests.
-  INTERNAL_AUTH_TOKEN: z.string().trim().min(1),
-  // Public base URL provider OAuth redirects and webhooks resolve against
-  // (e.g. https://staging.compasscalendar.com). Must be a valid URL.
-  CALLBACK_BASE_URL: z.url(),
-  // Where the OAuth callback redirects the browser after connecting. Optional;
-  // the callback falls back to CALLBACK_BASE_URL when it is unset.
-  POST_CONNECT_REDIRECT_URL: z.url().optional(),
-  EXECUTION: SyncExecutionModeSchema.default("passive"),
-  MAX_CONCURRENCY: PositiveIntFromInput.default(SYNC_MAX_CONCURRENCY_DEFAULT),
-  // On when a scoped `compass_sync` database user exists (managed cloud), so
-  // startup verifies it cannot read the API database. Off for a single-database
-  // self-host with no scoped user. Defaults off — enable it deliberately.
-  ENFORCE_LEAST_PRIVILEGE: BooleanFromInput.default(false),
-  // The Compass API's database — the one Sync's least-privilege user must NOT
-  // be able to read. Only consulted when ENFORCE_LEAST_PRIVILEGE is on.
-  COMPASS_API_DATABASE: z.string().trim().min(1).default("prod_calendar"),
-  // Google OAuth client, shared with the Compass API's `google` config section.
-  // Optional: a passive deployment without provider credentials still starts;
-  // the Google adapter refuses to construct when either is absent.
-  GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
-  GOOGLE_CLIENT_SECRET: z.string().trim().min(1).optional(),
-  // Optional PostHog credentials for sanitized sync_health_snapshot events.
-  // When absent, the health emitter no-ops (local/dev without analytics).
-  POSTHOG_KEY: z.string().trim().min(1).optional(),
-  POSTHOG_HOST: z.url().optional(),
-});
+export const SyncConfigSchema = z
+  .strictObject({
+    NODE_ENV: z.enum(NodeEnv),
+    PORT: PositiveIntFromInput.default(SYNC_PORT_DEFAULT),
+    // Isolated `compass_sync` database URI — never the backend's mongo.uri.
+    MONGO_URI: z.string().trim().min(1),
+    // Shared secret authenticating trusted Compass API -> Sync requests.
+    INTERNAL_AUTH_TOKEN: z.string().trim().min(1),
+    // Public base URL provider OAuth redirects and webhooks resolve against
+    // (e.g. https://staging.compasscalendar.com). Must be a valid URL.
+    CALLBACK_BASE_URL: z.url(),
+    // Where the OAuth callback redirects the browser after connecting. Optional;
+    // the callback falls back to CALLBACK_BASE_URL when it is unset.
+    POST_CONNECT_REDIRECT_URL: z.url().optional(),
+    EXECUTION: SyncExecutionModeSchema.default("passive"),
+    MAX_CONCURRENCY: PositiveIntFromInput.default(SYNC_MAX_CONCURRENCY_DEFAULT),
+    // How many of MAX_CONCURRENCY's drains never claim initialImport/repair —
+    // reserved for webhook/reconcile pulls, so a wave of long-running imports
+    // (e.g. launch-day signups) can never head-of-line block them behind a
+    // single sequential drain loop (2026-07-29 incident). Must stay below
+    // MAX_CONCURRENCY, checked below, or every drain would be reserved and
+    // imports would never run at all.
+    RESERVED_PULL_LANES: z.coerce
+      .number()
+      .int()
+      .nonnegative()
+      .default(SYNC_RESERVED_PULL_LANES_DEFAULT),
+    // On when a scoped `compass_sync` database user exists (managed cloud), so
+    // startup verifies it cannot read the API database. Off for a single-database
+    // self-host with no scoped user. Defaults off — enable it deliberately.
+    ENFORCE_LEAST_PRIVILEGE: BooleanFromInput.default(false),
+    // The Compass API's database — the one Sync's least-privilege user must NOT
+    // be able to read. Only consulted when ENFORCE_LEAST_PRIVILEGE is on.
+    COMPASS_API_DATABASE: z.string().trim().min(1).default("prod_calendar"),
+    // Google OAuth client, shared with the Compass API's `google` config section.
+    // Optional: a passive deployment without provider credentials still starts;
+    // the Google adapter refuses to construct when either is absent.
+    GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
+    GOOGLE_CLIENT_SECRET: z.string().trim().min(1).optional(),
+    // Optional PostHog credentials for sanitized sync_health_snapshot events.
+    // When absent, the health emitter no-ops (local/dev without analytics).
+    POSTHOG_KEY: z.string().trim().min(1).optional(),
+    POSTHOG_HOST: z.url().optional(),
+  })
+  .refine((cfg) => cfg.RESERVED_PULL_LANES < cfg.MAX_CONCURRENCY, {
+    message: "sync.reservedPullLanes must be less than sync.maxConcurrency",
+    path: ["RESERVED_PULL_LANES"],
+  });
 export type SyncConfig = z.infer<typeof SyncConfigSchema>;
 
 export function parseSyncConfig(config: CompassConfig): SyncConfig {
@@ -75,6 +92,7 @@ export function parseSyncConfig(config: CompassConfig): SyncConfig {
     POST_CONNECT_REDIRECT_URL: config.sync.postConnectRedirectUrl || undefined,
     EXECUTION: config.sync.execution,
     MAX_CONCURRENCY: config.sync.maxConcurrency,
+    RESERVED_PULL_LANES: config.sync.reservedPullLanes,
     ENFORCE_LEAST_PRIVILEGE: config.sync.enforceLeastPrivilege,
     COMPASS_API_DATABASE: config.sync.compassApiDatabase,
     // Empty-string (unfilled deploy placeholder) or null coerces to absent.

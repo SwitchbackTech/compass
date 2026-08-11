@@ -59,6 +59,7 @@ sync:
   cloudMutationMode: enabled # enabled (default) | maintenance — maintenance rejects cloud edits / connect with typed MAINTENANCE
   execution: active
   maxConcurrency: 4
+  # reservedPullLanes: 1 # of maxConcurrency, how many drains never claim initialImport/repair — keeps pulls from starving behind a wave of long imports. Must stay < maxConcurrency.
   enforceLeastPrivilege: false # true only where a scoped compass_sync database user exists (managed cloud)
   compassApiDatabase: prod_calendar # API database the least-privilege check must be denied access to
 # Public OAuth/webhook paths (via Caddy → sync): /sync/google, /sync/notifications/google

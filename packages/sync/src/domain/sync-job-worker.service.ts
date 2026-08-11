@@ -53,6 +53,11 @@ export interface SyncJobWorkerOptions {
   // alerting on, since the job is now wedged until an operator or a manual
   // refresh revives it.
   onFail?: (job: JobRecord) => void;
+  // Reserve this worker away from the given job kinds — see
+  // JobRepository.claimDueJob. Used to keep a subset of drains claiming only
+  // quick jobs (pulls), so a long initialImport/repair elsewhere can never
+  // head-of-line block them.
+  excludeKinds?: JobRecord["kind"][];
 }
 
 const DEFAULT_LEASE_MS = 5 * 60_000;
@@ -110,6 +115,7 @@ export class SyncJobWorker {
   readonly #onError: (error: unknown, job: JobRecord) => void;
   readonly #onDrop: (job: JobRecord, reason: string) => void;
   readonly #onFail: (job: JobRecord) => void;
+  readonly #excludeKinds?: JobRecord["kind"][];
 
   constructor(
     deps: SyncJobWorkerDeps,
@@ -132,6 +138,7 @@ export class SyncJobWorker {
     this.#onError = options.onError ?? (() => {});
     this.#onDrop = options.onDrop ?? (() => {});
     this.#onFail = options.onFail ?? (() => {});
+    this.#excludeKinds = options.excludeKinds;
   }
 
   // Claim and process at most one due job. Returns "idle" when nothing is due.
@@ -140,6 +147,7 @@ export class SyncJobWorker {
       this.#owner,
       this.#now(),
       this.#leaseMs,
+      this.#excludeKinds,
     );
     if (!job) return "idle";
     await this.#process(job);
