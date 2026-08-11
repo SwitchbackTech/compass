@@ -34,7 +34,3 @@ export function getTrialDaysLeft(): number {
   const elapsedDays = Math.floor((Date.now() - startedMs) / MS_PER_DAY);
   return Math.max(0, TRIAL_LENGTH_DAYS - elapsedDays);
 }
-
-export function isTrialExpired(): boolean {
-  return getTrialDaysLeft() <= 0;
-}
