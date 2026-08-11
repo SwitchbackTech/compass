@@ -110,6 +110,21 @@ export async function dispatchSyncJob(
       };
     }
 
+    // The provider rejected the cached access token (401). Invalidate it so
+    // the retry that the worker's generic catch schedules mints a fresh token
+    // instead of replaying the same rejected one — otherwise every attempt in
+    // the retry ladder fails the same way and the job dead-letters even though
+    // a fresh token would have worked. If the refresh itself then fails with
+    // authorizationRevoked, that surfaces as ProviderAuthError on the next
+    // attempt and is handled by the branch above.
+    if (
+      error instanceof ProviderEventReadError &&
+      error.reason === "authExpired"
+    ) {
+      await deps.custody.invalidateAccessToken(job.connectionId);
+      throw error;
+    }
+
     // A DURABLE read rejection: Google answered with a 4xx that is not 410
     // (cursor expired) or 429 (rate limited) — a calendar deleted out from under
     // us, access revoked for it, or a permanently rejected id. Retrying cannot

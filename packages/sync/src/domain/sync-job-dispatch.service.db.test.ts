@@ -97,6 +97,7 @@ class FakeReader implements ProviderEventReader {
 const tokenSource = {
   getValidAccessToken: async () => "access-token",
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 };
 
 // A notification adapter that records watch calls and returns a fixed channel,
@@ -442,6 +443,7 @@ describe("dispatchSyncJob", () => {
       discardRevoked: async (connectionId) => {
         discarded.push(connectionId);
       },
+      invalidateAccessToken: async () => {},
     };
 
     const outcome = await dispatchSyncJob(
@@ -472,6 +474,7 @@ describe("dispatchSyncJob", () => {
       discardRevoked: async (connectionId) => {
         discarded.push(connectionId);
       },
+      invalidateAccessToken: async () => {},
     };
 
     await expect(
@@ -482,6 +485,31 @@ describe("dispatchSyncJob", () => {
       ),
     ).rejects.toThrow(ProviderAuthError);
     expect(discarded).toEqual([]);
+  });
+
+  it("invalidates the cached access token and rethrows on a rejected 401 read", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const reader = new FakeReader(
+      [],
+      new ProviderEventReadError("authExpired", "Google rejected the token"),
+    );
+    const invalidated: string[] = [];
+    const authExpiredCustody: SyncJobDispatchDeps["custody"] = {
+      ...tokenSource,
+      invalidateAccessToken: async (connectionId) => {
+        invalidated.push(connectionId);
+      },
+    };
+
+    await expect(
+      dispatchSyncJob(
+        deps(reader, authExpiredCustody),
+        jobFor(resource, "incrementalPull"),
+        now,
+      ),
+    ).rejects.toThrow(ProviderEventReadError);
+    expect(invalidated).toEqual([calendar.connectionId]);
   });
 
   it("drops a job whose resource no longer exists", async () => {

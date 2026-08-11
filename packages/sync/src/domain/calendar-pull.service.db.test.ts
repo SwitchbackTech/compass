@@ -98,6 +98,7 @@ const page = (
 const tokenSource = {
   getValidAccessToken: async () => "access-token",
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 };
 
 describe("pullCalendarChanges", () => {

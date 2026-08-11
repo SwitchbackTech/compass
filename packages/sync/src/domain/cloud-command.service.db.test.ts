@@ -113,6 +113,7 @@ const provider = (writer: ProviderEventWriter) => ({
   custody: {
     getValidAccessToken: async () => "access-token",
     discardRevoked: async () => {},
+    invalidateAccessToken: async () => {},
   },
 });
 

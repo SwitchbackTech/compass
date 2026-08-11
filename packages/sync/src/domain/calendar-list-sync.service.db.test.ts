@@ -68,6 +68,7 @@ class FakeDiscovery implements ProviderCalendarAdapter {
 const custody = {
   getValidAccessToken: async () => "access-token",
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 };
 
 describe("syncCalendarList", () => {

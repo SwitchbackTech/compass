@@ -55,6 +55,7 @@ class FakeReader implements ProviderEventReader {
 const tokenSource: AccessTokenSource = {
   getValidAccessToken: async () => "access-token",
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 };
 
 const schedule = {
@@ -478,6 +479,7 @@ describe("importCalendarEvents", () => {
         throw new Error("token fetch failed");
       },
       discardRevoked: async () => {},
+      invalidateAccessToken: async () => {},
     };
 
     await expect(
