@@ -25,19 +25,19 @@ describe("onboardingTourActions", () => {
     onboardingTourActions.advance();
     expect(useOnboardingTourStore.getState().stepId).toBe("editSequence");
     onboardingTourActions.advance();
-    expect(useOnboardingTourStore.getState().stepId).toBe("palette");
-    onboardingTourActions.advance();
-    expect(useOnboardingTourStore.getState().stepId).toBe("shortcuts");
-    onboardingTourActions.advance();
     expect(useOnboardingTourStore.getState().stepId).toBe("fork");
     onboardingTourActions.advance();
     expect(useOnboardingTourStore.getState().stepId).toBe("targetEvent");
     onboardingTourActions.advance();
-    expect(useOnboardingTourStore.getState().stepId).toBe("nudge");
+    expect(useOnboardingTourStore.getState().stepId).toBe("move");
+    onboardingTourActions.advance();
+    expect(useOnboardingTourStore.getState().stepId).toBe("resizeEdge");
+    onboardingTourActions.advance();
+    expect(useOnboardingTourStore.getState().stepId).toBe("placeDraft");
     onboardingTourActions.advance();
     expect(useOnboardingTourStore.getState().stepId).toBe("undo");
     onboardingTourActions.advance();
-    expect(useOnboardingTourStore.getState().stepId).toBe("done");
+    expect(useOnboardingTourStore.getState().stepId).toBe("hardcore");
   });
 
   it("skip at the fork ends the tour without entering the advanced segment", () => {

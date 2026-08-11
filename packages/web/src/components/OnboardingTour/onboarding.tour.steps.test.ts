@@ -19,27 +19,37 @@ describe("onboarding tour steps", () => {
     }
   });
 
-  it("orders basics create → save → moveFocus → editSequence → palette → shortcuts → fork", () => {
+  it("keeps 'move' language, never reintroducing 'nudge'", () => {
+    for (const step of getOnboardingTourSteps()) {
+      expect(step.title.toLowerCase()).not.toContain("nudge");
+      expect(step.body.toLowerCase()).not.toContain("nudge");
+    }
+  });
+
+  it("orders Act 1 create → save → moveFocus → editSequence → fork", () => {
     expect(getNextOnboardingStepId("create")).toBe("save");
     expect(getNextOnboardingStepId("save")).toBe("moveFocus");
     expect(getNextOnboardingStepId("moveFocus")).toBe("editSequence");
-    expect(getNextOnboardingStepId("editSequence")).toBe("palette");
-    expect(getNextOnboardingStepId("palette")).toBe("shortcuts");
-    expect(getNextOnboardingStepId("shortcuts")).toBe("fork");
+    expect(getNextOnboardingStepId("editSequence")).toBe("fork");
   });
 
-  it("orders advanced fork → targetEvent → nudge → undo → done", () => {
+  it("orders Act 2 fork → targetEvent → move → resizeEdge → placeDraft → undo", () => {
     expect(getNextOnboardingStepId("fork")).toBe("targetEvent");
-    expect(getNextOnboardingStepId("targetEvent")).toBe("nudge");
-    expect(getNextOnboardingStepId("nudge")).toBe("undo");
-    expect(getNextOnboardingStepId("undo")).toBe("done");
-    expect(getNextOnboardingStepId("done")).toBeNull();
+    expect(getNextOnboardingStepId("targetEvent")).toBe("move");
+    expect(getNextOnboardingStepId("move")).toBe("resizeEdge");
+    expect(getNextOnboardingStepId("resizeEdge")).toBe("placeDraft");
+    expect(getNextOnboardingStepId("placeDraft")).toBe("undo");
+  });
+
+  it("orders Act 3: undo → hardcore, the graduation finale", () => {
+    expect(getNextOnboardingStepId("undo")).toBe("hardcore");
+    expect(getNextOnboardingStepId("hardcore")).toBeNull();
   });
 
   it("retreats one step at a time", () => {
     expect(getPreviousOnboardingStepId("create")).toBeNull();
     expect(getPreviousOnboardingStepId("save")).toBe("create");
-    expect(getPreviousOnboardingStepId("nudge")).toBe("targetEvent");
+    expect(getPreviousOnboardingStepId("move")).toBe("targetEvent");
   });
 
   it("trims unnecessary create/save copy", () => {
@@ -56,10 +66,6 @@ describe("onboarding tour steps", () => {
     expect(
       steps.find((step) => step.id === "editSequence")?.shortcutHint,
     ).toEqual(["E", "T"]);
-    expect(steps.find((step) => step.id === "palette")?.shortcutHint).toEqual([
-      "Mod",
-      "K",
-    ]);
     expect(steps.find((step) => step.id === "undo")?.shortcutHint).toEqual([
       "Mod",
       "Z",
@@ -75,25 +81,38 @@ describe("onboarding tour steps", () => {
     expect(fork?.body).toMatch(/skip anytime/i);
   });
 
-  it("keeps palette and shortcuts lessons non-contradictory", () => {
+  it("names the capstone mission target directly, not abstractly", () => {
     const steps = getOnboardingTourSteps();
-    const palette = steps.find((step) => step.id === "palette");
-    const shortcuts = steps.find((step) => step.id === "shortcuts");
+    const targetEvent = steps.find((step) => step.id === "targetEvent");
+    const move = steps.find((step) => step.id === "move");
+    const resizeEdge = steps.find((step) => step.id === "resizeEdge");
 
-    expect(palette?.body).toMatch(/close with Escape/i);
-    expect(palette?.body).not.toMatch(/Show keyboard shortcuts/i);
-    expect(shortcuts?.body).toMatch(/from the calendar/i);
-    expect(shortcuts?.shortcutHint).toBe("?");
+    expect(targetEvent?.title).toMatch(/Dentist/);
+    expect(targetEvent?.body).toMatch(/Dentist/);
+    expect(move?.title).toMatch(/Dentist/);
+    expect(move?.body).toMatch(/overlap/i);
+    expect(resizeEdge?.body).toMatch(/Tab/);
+    expect(resizeEdge?.body).toMatch(/start time stays put/i);
   });
 
-  it("points the finale at Hardcore Mode practice", () => {
-    const done = getOnboardingTourSteps().find((step) => step.id === "done");
+  it("teaches placing a new draft via Shift+Arrow on empty focus", () => {
+    const placeDraft = getOnboardingTourSteps().find(
+      (step) => step.id === "placeDraft",
+    );
+    expect(placeDraft?.body).toMatch(/nothing focused/i);
+    expect(placeDraft?.shortcutHint).toEqual(["Shift", "ArrowRight"]);
+  });
 
-    expect(done?.body).toMatch(/anything with the keyboard/i);
-    expect(done?.body).toMatch(/Shift Shift/i);
-    expect(done?.body).toMatch(/Hardcore Mode/i);
-    expect(done?.body).toMatch(/clicks/i);
-    expect(done?.body).toMatch(/command palette/i);
-    expect(done?.shortcutHint).toEqual(["Shift", "Shift"]);
+  it("points the finale at Hardcore Mode as the graduation mission", () => {
+    const hardcore = getOnboardingTourSteps().find(
+      (step) => step.id === "hardcore",
+    );
+
+    expect(hardcore?.title).toMatch(/Graduate/i);
+    expect(hardcore?.body).toMatch(/Shift twice/i);
+    expect(hardcore?.body).toMatch(/keyboard-only/i);
+    expect(hardcore?.body).toMatch(/clicks/i);
+    expect(hardcore?.body).toMatch(/command palette/i);
+    expect(hardcore?.shortcutHint).toEqual(["Shift", "Shift"]);
   });
 });

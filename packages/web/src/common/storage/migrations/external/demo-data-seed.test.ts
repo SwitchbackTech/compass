@@ -5,7 +5,7 @@ import { EventSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { createMockOfflineDataStore } from "@web/__tests__/utils/storage/mock-offline-data-store.util";
 import { type LocalEventRecord } from "@web/events/types/local-event.record";
-import { demoDataSeedMigration } from "./demo-data-seed";
+import { DEMO_EVENT_IDS, demoDataSeedMigration } from "./demo-data-seed";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 describe("demoDataSeedMigration", () => {
@@ -33,8 +33,46 @@ describe("demoDataSeedMigration", () => {
     expect(store.putEvents).toHaveBeenCalled();
 
     const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
-    expect(eventsCall).toHaveLength(7);
+    // 7 today (unchanged) + 11 nearby-day events (2 + 3 + 3 + 3 across ±1/±2).
+    expect(eventsCall).toHaveLength(18);
     expect(eventsCall.every((record) => record.isDemo)).toBe(true);
+  });
+
+  it("seeds tomorrow's Dentist/Team sync overlap at stable, targetable ids", async () => {
+    const store = createMockOfflineDataStore();
+
+    await demoDataSeedMigration.migrate(store);
+
+    const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
+    const dentist = eventsCall.find(
+      (record) => record.id === DEMO_EVENT_IDS.dentist,
+    );
+    const teamSync = eventsCall.find(
+      (record) => record.id === DEMO_EVENT_IDS.teamSync,
+    );
+    const morningStandup = eventsCall.find(
+      (record) => record.id === DEMO_EVENT_IDS.morningStandup,
+    );
+
+    expect(dentist?.event.content).toMatchObject({ title: "Dentist" });
+    expect(teamSync?.event.content).toMatchObject({ title: "Team sync" });
+    expect(morningStandup?.event.content).toMatchObject({
+      title: "Morning standup",
+    });
+
+    if (
+      dentist?.event.schedule.kind !== "timed" ||
+      teamSync?.event.schedule.kind !== "timed"
+    ) {
+      throw new Error("expected timed schedules");
+    }
+    // Dentist (14:30-15:30) overlaps Team sync (14:00-15:00).
+    expect(dentist.event.schedule.start < teamSync.event.schedule.end).toBe(
+      true,
+    );
+    expect(teamSync.event.schedule.start < dentist.event.schedule.end).toBe(
+      true,
+    );
   });
 
   it("skips seeding when events already exist", async () => {

@@ -14,6 +14,7 @@ export type ProductEvent =
   | "onboarding_game_skipped"
   | "onboarding_game_finished"
   | "onboarding_game_replayed"
+  | "onboarding_step_assist_used"
   | "connect_cta_shown"
   | "connect_cta_accepted"
   | "connect_cta_skipped"

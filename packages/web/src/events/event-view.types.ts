@@ -1,10 +1,5 @@
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
-import {
-  type BusyPeriod,
-  type Event,
-  type EventContent,
-  type EventRecurrence,
-} from "@core/types/event.contracts";
+import { type BusyPeriod, type Event } from "@core/types/event.contracts";
 import { type CrossAccountDuplicate } from "@web/common/types/web.event.types";
 
 export type EventEntityMap = Record<EventId, Event>;
@@ -20,14 +15,6 @@ export type NormalizedEvents = {
    * `otherAccount` the same way demoEventIds becomes `isDemo`.
    */
   crossAccountDuplicates?: ReadonlyMap<EventId, CrossAccountDuplicate>;
-  /**
-   * Ephemeral onboarding-sandbox event ids (see
-   * OnboardingTour/onboarding.sandbox-events.ts) - joined onto GridEvent as
-   * `isSandboxReadOnly` the same way demoEventIds becomes `isDemo`. Absent
-   * for real query data; only set by the sandbox merge in
-   * useWeekEventsQuery/useDayEventsQuery.
-   */
-  sandboxReadOnlyEventIds?: readonly EventId[];
 };
 
 export type OptimisticEvent = {

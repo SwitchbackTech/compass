@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { type ReactNode } from "react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
@@ -39,13 +39,20 @@ describe("OnboardingTour", () => {
     expect(card).not.toHaveClass("bg-surface-overlay");
   });
 
-  it("renders a styled Next button with hover and focus affordances", () => {
+  it("hides the advance button on a fresh verified step, revealing 'Show me' after repeated attempts", () => {
     onboardingTourActions.start();
     renderTour(<OnboardingTour />);
 
-    const next = screen.getByRole("button", { name: "Next" });
-    expect(next).toHaveClass("c-button");
-    expect(next).toHaveClass("c-button-secondary");
+    expect(screen.queryByRole("button", { name: "Show me" })).toBeNull();
+
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "x" }));
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "x" }));
+    });
+
+    const showMe = screen.getByRole("button", { name: "Show me" });
+    expect(showMe).toHaveClass("c-button");
+    expect(showMe).toHaveClass("c-button-primary");
   });
 
   it("shows Previous after the first step", () => {
