@@ -257,8 +257,11 @@ const _addTimesToDates = (dt: SelectedDates, timeZone: string) => {
     .format();
 
   const end = getDayjsByTimeValue(dt.endTime.value);
+  // Use endDate (not startDate) so overnight / multi-day timed drafts keep
+  // their real end calendar day. Applying the end clock time onto startDate
+  // made 11:30 PM → 12:30 AM parse as inverted and blocked Save.
   const endDate = dayjs
-    .tz(dt.startDate, timeZone)
+    .tz(dt.endDate, timeZone)
     .hour(end.hour())
     .minute(end.minute())
     .second(0)
