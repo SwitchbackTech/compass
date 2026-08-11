@@ -581,6 +581,74 @@ describe("useUndoRedo", () => {
     expect(context.hook.result.current.undoRedo.canRedo).toBe(false);
   });
 
+  // Regression: a demo-seeded event (or any Event built outside the normal
+  // create mutation) has no `color` key at all, while the cache's live copy
+  // picks one up as an explicit `color: null` once it passes through a
+  // mutation's optimistic merge. Comparing the two shapes directly used to
+  // read as "the event changed since this entry was recorded" and silently
+  // decline the redo — even though nothing about the event actually changed.
+  test("does not decline a redo when only the presence of a null `color` key differs", async () => {
+    const context = setup();
+    const original = event(); // content has no `color` key, like a demo seed.
+    context.queryClient.setQueryData(calendarKey, normalized(original));
+
+    act(() =>
+      context.hook.result.current.mutations.replace({
+        id: original.id,
+        input: {
+          content: original.content as {
+            kind: "details";
+            title: string;
+            description: string;
+            location: string;
+          },
+          schedule: {
+            kind: "timed",
+            start: "2026-07-03T16:00:00.000Z" as never,
+            end: "2026-07-03T17:00:00.000Z" as never,
+            timeZone: "UTC" as never,
+          },
+          recurrence: { kind: "preserve" },
+          scope: "this",
+        },
+      }),
+    );
+    await waitFor(() => {
+      expect(context.hook.result.current.undoRedo.canUndo).toBe(true);
+    });
+
+    act(() => context.hook.result.current.undoRedo.undo());
+    await waitFor(() => {
+      expect(context.hook.result.current.undoRedo.canRedo).toBe(true);
+    });
+
+    // Simulate what a real optimistic merge leaves behind: the same content
+    // and schedule the undo just restored, but with an explicit `color: null`
+    // the original snapshot never had.
+    const current =
+      context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+        ?.entities[original.id];
+    context.queryClient.setQueryData(
+      calendarKey,
+      normalized({
+        ...(current as Event),
+        content: { ...(current as Event).content, color: null } as never,
+      }),
+    );
+
+    act(() => context.hook.result.current.undoRedo.redo());
+
+    await waitFor(() => {
+      const schedule =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id].schedule;
+      expect(schedule?.kind === "timed" && schedule.start).toBe(
+        "2026-07-03T16:00:00.000Z",
+      );
+    });
+    expect(context.hook.result.current.undoRedo.canUndo).toBe(true);
+  });
+
   test("undoes a series create with a scope-all delete", async () => {
     const context = setup();
     const created = event({

@@ -21,6 +21,7 @@ test("Start Now runs the interactive tour happy path", async ({ page }) => {
   const card = page.locator("[data-onboarding-tour]");
   await expect(card).toContainText("Create with the keyboard");
 
+  // Act 1: create, save, moveFocus, editSequence.
   await page.keyboard.press("c");
   await expect(card).toContainText("Name it and save");
 
@@ -28,41 +29,57 @@ test("Start Now runs the interactive tour happy path", async ({ page }) => {
   await fillTitleAndSaveEventForm(page, title);
   await expect(card).toContainText("Move between events");
 
-  await page.keyboard.press("ArrowRight");
+  // moveFocus auto-focuses today's seeded Morning standup event; today has
+  // several other seeded events, so an arrow key has somewhere real to go.
+  await page.keyboard.press("ArrowDown");
   await expect(card).toContainText("Jump straight to a field");
-
-  // E then T is the edit sequence; it acts on whichever event has DOM
-  // focus. There is only one event on the calendar, so the ArrowRight
-  // above (there being no adjacent event to move to) may not have kept
-  // focus on it -- refocus it explicitly, mirroring
-  // e2e/timed/edit-sequence-title.spec.ts.
-  const eventButton = page
-    .locator("#mainGrid")
-    .getByRole("button", { name: title });
-  await eventButton.focus();
 
   await page.keyboard.press("e");
   await page.keyboard.press("t");
-  await expect(card).toContainText("Open the command palette");
-
-  // Close the form the edit sequence opened before testing the palette
-  // shortcut, so Escape here closes the form rather than the palette.
-  await page.keyboard.press("Escape");
-
-  // Linux CI uses Ctrl; macOS local runs use Meta. Press both modifiers' chord
-  // via ControlOrMeta through Playwright's platform-aware ControlOrMeta token.
-  await page.keyboard.press("ControlOrMeta+k");
-  // Palette stays open with search focused; the tour must not advance to "?" yet.
-  await expect(card).toContainText("Open the command palette");
-  await page.keyboard.press("Escape");
-  await expect(card).toContainText("Browse every shortcut");
-
-  // Shift+/ opens the legend (same as ? on US keyboards) once the calendar has focus.
-  await page.keyboard.press("Shift+/");
   await expect(card).toContainText("That's the basics");
 
-  await card.getByRole("button", { name: "I'm done" }).click();
+  await card.getByRole("button", { name: "Keep going" }).click();
+  await expect(card).toContainText("Jump to Dentist");
+
+  // Act 2: targetEvent, move, resizeEdge, placeDraft, undo. The exact
+  // Shift-hold jump key is covered by e2e/timed/shift-hold-event-hints.spec.ts;
+  // here we drive the mission's actual completion signal (Dentist focused),
+  // same as a jump would leave it.
+  const dentistButton = page
+    .locator("#mainGrid")
+    .getByRole("button", { name: /Dentist/ });
+  await dentistButton.focus();
+  await expect(card).toContainText("Move Dentist out of the overlap");
+
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect(card).toContainText("Give Dentist more time");
+
+  // A single Tab reaches the end edge (the step seeds edge focus to start).
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Shift+ArrowDown");
+  await expect(card).toContainText("Place a new event on the grid");
+
+  // The step blurs focus on entry, so nothing is focused for the place-draft
+  // Shift+Arrow to move.
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect(card).toContainText("Never stress about a mistake");
+
+  await page.keyboard.press("ControlOrMeta+z");
+  await page.keyboard.press("ControlOrMeta+Shift+z");
+  await expect(card).toContainText("Graduate to Hardcore Mode");
+
+  // Act 3: hardcore graduation, the tour's finale.
+  await page.keyboard.down("Shift");
+  await page.keyboard.up("Shift");
+  await page.keyboard.down("Shift");
+  await page.keyboard.up("Shift");
   await expect(card).toHaveCount(0);
+
+  // Leave Hardcore Mode so it doesn't affect other assertions/reload below.
+  await page.keyboard.down("Shift");
+  await page.keyboard.up("Shift");
+  await page.keyboard.down("Shift");
+  await page.keyboard.up("Shift");
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.locator("[data-onboarding-tour]")).toHaveCount(0);

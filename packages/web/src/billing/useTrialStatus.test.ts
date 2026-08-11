@@ -1,8 +1,9 @@
 import { renderHook } from "@testing-library/react";
+import * as authStateUtil from "@web/auth/compass/state/auth.state.util";
 import { useTrialStatus } from "@web/billing/useTrialStatus";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
-import { beforeEach, describe, expect, it } from "bun:test";
+import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const daysAgo = (days: number) =>
   new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
@@ -46,16 +47,25 @@ describe("useTrialStatus", () => {
   // tried Compass anonymously, signed up, and kept the same browser still has
   // a stale trial.started-at; gating on the context alone flashed "your trial
   // has ended" at them on every load.
+  //
+  // hasUserEverAuthenticated is spied directly rather than driven through
+  // real localStorage state: several other test files in this suite
+  // mock.module the whole auth.state.util module with a bare `hasAuthenticated`
+  // stub and no restoration, which leaks process-wide across bun test files -
+  // spying on this file's own resolved binding sidesteps that ordering-
+  // dependent pollution instead of adding to it.
   it("never gates a user who has authenticated before, despite a stale expired clock", () => {
     persistentBrowserStore.set(STORAGE_KEYS.TRIAL_STARTED_AT, daysAgo(30));
-    localStorage.setItem(
-      STORAGE_KEYS.AUTH,
-      JSON.stringify({ hasAuthenticated: true }),
-    );
+    const hasUserEverAuthenticatedSpy = spyOn(
+      authStateUtil,
+      "hasUserEverAuthenticated",
+    ).mockReturnValue(true);
 
     const { result } = renderHook(() => useTrialStatus());
 
     expect(result.current.isExpired).toBe(false);
     expect(result.current.isAnonymousTrial).toBe(false);
+
+    hasUserEverAuthenticatedSpy.mockRestore();
   });
 });

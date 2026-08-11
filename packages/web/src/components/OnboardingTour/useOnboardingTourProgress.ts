@@ -36,6 +36,7 @@ import {
   selectKeyboardOnlyActive,
   useKeyboardOnlyStore,
 } from "@web/shortcuts/keyboard-only/keyboard-only.store";
+import { resetSharedShiftTapGesture } from "@web/shortcuts/shift-tap-gesture";
 
 const TITLE_FIELD_SELECTOR = `form[name="${ID_EVENT_FORM}"] input[name="Event Title"]`;
 
@@ -135,7 +136,11 @@ export function useOnboardingTourProgress() {
   }, [isActive, stepId]);
 
   // editSequence: require the title field itself to be focused, not just
-  // "some form is open" (upgrade over the old form-open-only check).
+  // "some form is open" (upgrade over the old form-open-only check). Closes
+  // the practice form once verified - Act 2's grid shortcuts (move,
+  // resizeEdge, placeDraft) all stand down while any form is open, so a
+  // form left over from this step would silently block every mission after
+  // it until the stuck-fallback bailed the user out.
   useEffect(() => {
     if (!isActive || stepId !== "editSequence") return;
 
@@ -145,6 +150,7 @@ export function useOnboardingTourProgress() {
         active instanceof HTMLElement &&
         active.matches(TITLE_FIELD_SELECTOR)
       ) {
+        draftActions.discard();
         onboardingTourActions.advance();
       }
     };
@@ -249,10 +255,15 @@ export function useOnboardingTourProgress() {
   }, [isActive, stepId, draftActivity, gridDraft]);
 
   // undo: two phases against real event state, not keydowns - wait for
-  // Dentist's schedule to change (undo), then to change again (redo).
+  // Dentist's schedule to change (undo), then to change again (redo). Also
+  // resets the shared Shift-tap gesture: Act 2's several prior Shift+Arrow
+  // missions can leave it mid-cycle, and an in-flight arm treats the very
+  // next non-arrow keydown as a (failed) day-jump letter and swallows it -
+  // which is exactly what Mod+Shift+Z's "Z" looks like to that listener.
   // biome-ignore lint/correctness/useExhaustiveDependencies: capture the schedule once, on step entry - dentistEvent updating mid-step must not reset the snapshot we diff against.
   useEffect(() => {
     if (!isActive || stepId !== "undo") return;
+    resetSharedShiftTapGesture();
     enterDentistMission(dentistEvent, scheduleAtEntryRef);
     undoPhaseRef.current = "pending-undo";
   }, [isActive, stepId]);
