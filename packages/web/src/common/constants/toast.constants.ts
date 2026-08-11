@@ -14,7 +14,6 @@ export const GOOGLE_REFRESH_ALREADY_IN_FLIGHT_TOAST_ID: Id =
   "google-refresh-already-in-flight";
 export const GOOGLE_DELAYED_TOAST_ID: Id = "google-delayed";
 export const ACCOUNT_DISCONNECTED_TOAST_ID: Id = "account-disconnected";
-export const SUBSCRIBE_TO_UPDATES_TOAST_ID: Id = "subscribe-to-updates";
 export const EXPORT_MY_DATA_TOAST_ID: Id = "export-my-data";
 export const LOGGED_OUT_TOAST_ID: Id = "logged-out";
 export const EVENT_SAVE_UNAVAILABLE_TOAST_ID: Id = "event-save-unavailable";
