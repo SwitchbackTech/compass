@@ -10,9 +10,11 @@ import {
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
+import { createMockCalendar } from "@web/__tests__/utils/factories/calendar.factory";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { createCompassQueryClient } from "@web/api/query-client";
+import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { ID_EVENT_FORM, ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
@@ -136,6 +138,9 @@ const renderEditShortcuts = ({
     }),
     toNormalizedEventQueryData(contracts),
   );
+  queryClient.setQueryData(calendarQueryKeys.all, [
+    createMockCalendar({ id: timedEventContract.calendarId }),
+  ]);
   const repository: EventRepository = {
     list: async () => [],
     create: async () => timedEventContract,
@@ -188,6 +193,14 @@ const getDeleteMutation = (
     .getMutationCache()
     .getAll()
     .find((mutation) => mutation.options.mutationKey?.[2] === "delete");
+
+const getCreateMutation = (
+  queryClient: ReturnType<typeof createCompassQueryClient>,
+) =>
+  queryClient
+    .getMutationCache()
+    .getAll()
+    .find((mutation) => mutation.options.mutationKey?.[2] === "create");
 
 beforeEach(() => {
   HotkeyManager.resetInstance();
@@ -420,17 +433,22 @@ describe("useDayEventNudgeShortcuts", () => {
 
   it("duplicates the focused calendar event with Mod+D", () => {
     focusCalendarTarget(TIMED_EVENT_ID, "timed");
-    renderEditShortcuts();
+    const { queryClient } = renderEditShortcuts();
 
     pressKey("d", {
       keyDownInit: { ctrlKey: true },
       keyUpInit: { ctrlKey: true },
     });
 
+    const { input } = getCreateMutation(queryClient)?.state.variables as {
+      input: { calendarId: string; content: { title: string } };
+    };
+    expect(input.calendarId).toBe(timedEventContract.calendarId);
+    expect(input.content.title).toBe("Timed event");
+
     const state = useDraftStore.getState();
-    expect(state.status?.isFormOpen).toBe(true);
-    expect(state.gridDraft?.kind).toBe("create");
-    expect(state.gridDraft?.values.title).toBe("Timed event");
+    expect(state.status?.isFormOpen).toBe(false);
+    expect(state.gridDraft).toBeNull();
   });
 
   it("focuses the chronologically next event with ArrowDown", () => {

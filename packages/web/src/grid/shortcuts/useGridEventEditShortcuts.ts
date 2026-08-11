@@ -6,6 +6,7 @@ import {
   isGridEventInteractionReadOnly,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
+import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getVisibleGridStartMinute } from "@web/common/utils/draft/draft.util";
@@ -25,6 +26,7 @@ import {
   isEventFormKeyboardTarget,
 } from "@web/common/utils/form/form.util";
 import { duplicateGridEventDraft } from "@web/events/grid-event-draft.adapter";
+import { commitDuplicateEvent } from "@web/events/mutations/duplicate-event";
 import {
   type EventMutationDependencies,
   useEventMutations,
@@ -119,8 +121,10 @@ export function useGridEventEditShortcuts({
 }) {
   const calendarLookup = useCalendarLookup();
   const { data: calendars } = useCalendarsQuery();
+  const defaultCalendar = useDefaultTargetCalendar(calendars ?? []);
   const queryClient = useQueryClient();
-  const { delete: deleteEvent } = useEventMutations(dependencies);
+  const { create: createEvent, delete: deleteEvent } =
+    useEventMutations(dependencies);
   const updateEvent = useUpdateEvent(dependencies);
 
   // Focused only (no hover/first-visible fallback): edit actions must
@@ -176,11 +180,23 @@ export function useGridEventEditShortcuts({
     const sourceEvent = findEventInCache(queryClient, gridEvent._id);
     if (!sourceEvent) return;
 
-    const duplicate = duplicateGridEventDraft(sourceEvent, calendars ?? []);
-    if (!duplicate) return;
+    const committed = commitDuplicateEvent({
+      source: sourceEvent,
+      calendars: calendars ?? [],
+      defaultCalendarId: defaultCalendar?.id,
+      create: createEvent,
+    });
 
     keyboardEvent.preventDefault();
     keyboardEvent.stopPropagation();
+
+    if (committed) return;
+
+    // No writable calendar could be resolved for the copy - fall back to
+    // the create-draft form so the user can pick one.
+    const duplicate = duplicateGridEventDraft(sourceEvent, calendars ?? []);
+    if (!duplicate) return;
+
     draftActions.startGridDraft({ activity: "gridClick", draft: duplicate });
     draftActions.setFormOpen(true);
   };
