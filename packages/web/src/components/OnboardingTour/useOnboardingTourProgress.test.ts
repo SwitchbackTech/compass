@@ -279,7 +279,18 @@ describe("useOnboardingTourProgress mission verification", () => {
     });
     expect(useOnboardingTourStore.getState().stepId).toBe("undo");
 
-    // Phase 2: the reapply.
+    // A manual re-edit that changes the schedule again, but not back to the
+    // exact pre-undo value, must not be mistaken for a real redo.
+    act(() => {
+      seedDentist(
+        queryClient,
+        "2026-05-05T18:00:00.000-05:00",
+        "2026-05-05T19:00:00.000-05:00",
+      );
+    });
+    expect(useOnboardingTourStore.getState().stepId).toBe("undo");
+
+    // Phase 2: the reapply - restores exactly the pre-undo schedule.
     act(() => {
       seedDentist(
         queryClient,

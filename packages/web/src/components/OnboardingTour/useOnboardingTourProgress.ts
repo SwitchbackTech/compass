@@ -99,7 +99,6 @@ export function useOnboardingTourProgress() {
   const scheduleAtEntryRef = useRef<TimedSchedule | null>(null);
   /** undo has two phases: wait for a revert, then wait for a reapply. */
   const undoPhaseRef = useRef<"pending-undo" | "pending-redo">("pending-undo");
-  const undoAfterRevertRef = useRef<TimedSchedule | null>(null);
 
   // create / save / editSequence: unchanged encouragement-based checks.
   useEffect(() => {
@@ -255,7 +254,6 @@ export function useOnboardingTourProgress() {
   useEffect(() => {
     if (!isActive || stepId !== "undo") return;
     enterDentistMission(dentistEvent, scheduleAtEntryRef);
-    undoAfterRevertRef.current = null;
     undoPhaseRef.current = "pending-undo";
   }, [isActive, stepId]);
 
@@ -267,13 +265,15 @@ export function useOnboardingTourProgress() {
 
     if (undoPhaseRef.current === "pending-undo") {
       if (!sameSchedule(current, entry)) {
-        undoAfterRevertRef.current = current;
         undoPhaseRef.current = "pending-redo";
       }
       return;
     }
 
-    if (!sameSchedule(current, undoAfterRevertRef.current)) {
+    // Redo must restore exactly the schedule captured at step entry - not
+    // merely "changed again" - or a manual re-edit of Dentist (rather than
+    // pressing redo) would be misread as a successful redo.
+    if (sameSchedule(current, entry)) {
       onboardingTourActions.advance();
     }
   }, [isActive, stepId, dentistEvent]);

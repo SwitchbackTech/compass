@@ -85,7 +85,7 @@ export function getOnboardingTourSteps(): OnboardingTourStep[] {
     },
     undo: {
       title: "Never stress about a mistake",
-      body: "Undo your changes to Dentist, then redo them.",
+      body: "Undo your changes to Dentist with Mod+Z, then bring them back with Mod+Shift+Z.",
       shortcutHint: ["Mod", "Z"],
     },
     hardcore: {
