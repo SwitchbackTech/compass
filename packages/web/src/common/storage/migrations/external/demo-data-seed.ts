@@ -86,11 +86,8 @@ function generateDemoData() {
   const today = now.toYearMonthDayString();
   const timeZone = getBrowserTimeZone();
 
-  // Helper for creating timed events today (clone to avoid mutating now).
-  // 15-minute-aligned, consistent with event creation in the app.
-  const todayAt = (h: number, m = 0) =>
-    now.clone().hour(h).minute(m).second(0).millisecond(0).format();
-
+  // Helper for creating timed events on today +/- offsetDays (clone to avoid
+  // mutating now). 15-minute-aligned, consistent with event creation in the app.
   const dayAt = (offsetDays: number, h: number, m = 0) =>
     now
       .clone()
@@ -100,6 +97,8 @@ function generateDemoData() {
       .second(0)
       .millisecond(0)
       .format();
+
+  const todayAt = (h: number, m = 0) => dayAt(0, h, m);
 
   const timedOn = (
     offsetDays: number,

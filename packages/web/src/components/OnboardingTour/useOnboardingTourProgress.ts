@@ -7,7 +7,10 @@ import {
   getCalendarEventIdFromElement,
 } from "@web/common/utils/event/event.util";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
-import { ONBOARDING_ARROW_LESSON_STEP_IDS } from "@web/components/OnboardingTour/onboarding.tour.steps";
+import {
+  ONBOARDING_ARROW_LESSON_STEP_IDS,
+  type OnboardingTourStepId,
+} from "@web/components/OnboardingTour/onboarding.tour.steps";
 import {
   onboardingTourActions,
   selectIsConfirmingTourSkip,
@@ -51,6 +54,21 @@ const timedScheduleOf = (event: Event | null): TimedSchedule | null => {
 const sameSchedule = (a: TimedSchedule | null, b: TimedSchedule | null) =>
   a !== null && b !== null && a.start === b.start && a.end === b.end;
 
+/** Shared by move/resizeEdge/undo: focus Dentist and snapshot its schedule. */
+const enterDentistMission = (
+  dentistEvent: Event | null,
+  scheduleAtEntryRef: { current: TimedSchedule | null },
+) => {
+  focusCalendarEventElement(DEMO_EVENT_IDS.dentist);
+  scheduleAtEntryRef.current = timedScheduleOf(dentistEvent);
+};
+
+const STEPS_NEEDING_DENTIST: ReadonlySet<OnboardingTourStepId> = new Set([
+  "move",
+  "resizeEdge",
+  "undo",
+]);
+
 /**
  * Advances tour steps when the user performs the prompted action.
  * Does not take the app lock; coachmarks stay out of the modal Escape stack
@@ -64,7 +82,14 @@ export function useOnboardingTourProgress() {
   const isSaving = useHasPendingEventMutations();
   const draftActivity = useDraftStore(selectDraftActivity);
   const gridDraft = useDraftStore(selectGridDraft);
-  const dentistEvent = useEventById(DEMO_EVENT_IDS.dentist);
+  // Only the move/resizeEdge/undo missions read Dentist's live schedule;
+  // gating the id keeps the (always-mounted) tour hook from running a full
+  // query-cache scan on every render outside those three steps.
+  const dentistEvent = useEventById(
+    isActive && STEPS_NEEDING_DENTIST.has(stepId)
+      ? DEMO_EVENT_IDS.dentist
+      : undefined,
+  );
   const dentistEdge = useEdgeFocusStore(
     selectEdgeForEvent(DEMO_EVENT_IDS.dentist),
   );
@@ -169,8 +194,7 @@ export function useOnboardingTourProgress() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: capture the schedule once, on step entry - dentistEvent updating mid-step must not reset the snapshot we diff against.
   useEffect(() => {
     if (!isActive || (stepId !== "move" && stepId !== "resizeEdge")) return;
-    focusCalendarEventElement(DEMO_EVENT_IDS.dentist);
-    scheduleAtEntryRef.current = timedScheduleOf(dentistEvent);
+    enterDentistMission(dentistEvent, scheduleAtEntryRef);
     if (stepId === "resizeEdge") {
       edgeFocusActions.setEdge(
         DEMO_EVENT_IDS.dentist,
@@ -230,8 +254,7 @@ export function useOnboardingTourProgress() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: capture the schedule once, on step entry - dentistEvent updating mid-step must not reset the snapshot we diff against.
   useEffect(() => {
     if (!isActive || stepId !== "undo") return;
-    focusCalendarEventElement(DEMO_EVENT_IDS.dentist);
-    scheduleAtEntryRef.current = timedScheduleOf(dentistEvent);
+    enterDentistMission(dentistEvent, scheduleAtEntryRef);
     undoAfterRevertRef.current = null;
     undoPhaseRef.current = "pending-undo";
   }, [isActive, stepId]);
