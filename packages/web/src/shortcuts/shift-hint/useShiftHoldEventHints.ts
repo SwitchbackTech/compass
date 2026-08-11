@@ -293,6 +293,8 @@ export function useShiftHoldEventHints({
       if (key.length !== 1) return;
 
       // Swallow j/k and other unmatched printable shortcuts while jump is on.
+      // Leave bare `h` alone so Hardcore can toggle (child listeners register
+      // before RootShell, so jump would otherwise mark the event prevented).
       const match = matchDayJumpKeystroke({
         assignments: assignmentsRef.current,
         key,
@@ -300,19 +302,23 @@ export function useShiftHoldEventHints({
         mode: modeRef.current,
       });
 
-      event.preventDefault();
-      event.stopPropagation();
-      suppressKeyUpRef.current.add(key);
-
       if (!match) {
         clearAmbiguousCommitTimer();
         stripDigitBuffer();
+        if (key === "h") return;
+        event.preventDefault();
+        event.stopPropagation();
+        suppressKeyUpRef.current.add(key);
         // Day view has no letter prefixes; a second `s` toggles off.
         if (modeRef.current === "day" && key === "s") {
           deactivate();
         }
         return;
       }
+
+      event.preventDefault();
+      event.stopPropagation();
+      suppressKeyUpRef.current.add(key);
 
       if (match.kind === "prefix") {
         bufferRef.current = match.buffer;

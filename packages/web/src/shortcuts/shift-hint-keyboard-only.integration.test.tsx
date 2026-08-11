@@ -58,14 +58,17 @@ const mountBoth = () => {
     timedFixture(EVENT_ID, "2026-08-05T09:00:00.000Z"),
   ];
 
-  renderHook(() => useKeyboardOnlyMode());
-  return renderHook(() =>
+  // Match production effect order: view (child) listeners register before
+  // RootShell Hardcore, so jump is first on the capture path.
+  const jump = renderHook(() =>
     useShiftHoldEventHints({
       focus: () => {},
       listVisible: () => [{ eventId: EVENT_ID, eventType: "timed", element }],
       timedEvents,
     }),
   );
+  renderHook(() => useKeyboardOnlyMode());
+  return jump;
 };
 
 describe("event-jump + keyboard-only integration", () => {
