@@ -2,17 +2,9 @@ import { type Request, type Response } from "express";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
-import {
-  type EmailUpdatesResponse,
-  EmailUpdatesResponseSchema,
-} from "@core/types/email/email.types";
 import { zObjectId } from "@core/types/type.utils";
 import { type UserMetadata, type UserProfile } from "@core/types/user.types";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import { UserError } from "@backend/common/errors/user/user.errors";
 import { type SReqBody } from "@backend/common/types/express.types";
-import EmailService from "@backend/email/email.service";
-import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
@@ -20,12 +12,6 @@ import { type Summary_Delete } from "@backend/user/types/user.types";
 const logger = Logger("app:user.controller");
 
 class UserController {
-  private getCurrentUser = async (userId: string) => {
-    const user = await findCompassUserBy("_id", userId);
-    if (!user) throw error(UserError.UserNotFound, "User not found");
-    return user;
-  };
-
   getProfile = async (
     req: Request<never, UserProfile, never, never>,
     res: Response<UserProfile>,
@@ -114,44 +100,6 @@ class UserController {
       });
 
       res.status(Status.OK).json(metadata);
-    } catch (e) {
-      if (e instanceof BaseError) {
-        res.status(e.statusCode).send();
-        return;
-      }
-      res.status(Status.INTERNAL_SERVER).send();
-    }
-  };
-
-  getEmailUpdates = async (
-    req: Request<never, EmailUpdatesResponse, never, never>,
-    res: Response<EmailUpdatesResponse>,
-  ) => {
-    try {
-      const userId = zObjectId.parse(req.session?.getUserId()).toString();
-      const user = await this.getCurrentUser(userId);
-      const status = await EmailService.getEmailUpdatesStatus(user.email);
-
-      res.status(Status.OK).json(EmailUpdatesResponseSchema.parse({ status }));
-    } catch (e) {
-      if (e instanceof BaseError) {
-        res.status(e.statusCode).send();
-        return;
-      }
-      res.status(Status.INTERNAL_SERVER).send();
-    }
-  };
-
-  subscribeToEmailUpdates = async (
-    req: Request<never, EmailUpdatesResponse, never, never>,
-    res: Response<EmailUpdatesResponse>,
-  ) => {
-    try {
-      const userId = zObjectId.parse(req.session?.getUserId()).toString();
-      const user = await this.getCurrentUser(userId);
-      const status = await EmailService.subscribeToEmailUpdates(user);
-
-      res.status(Status.OK).json(EmailUpdatesResponseSchema.parse({ status }));
     } catch (e) {
       if (e instanceof BaseError) {
         res.status(e.statusCode).send();

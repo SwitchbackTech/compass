@@ -1,5 +1,4 @@
 import { BaseError } from "@core/errors/errors.base";
-import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { type ErrorMetadata } from "@backend/common/types/error.types";
 
@@ -19,19 +18,6 @@ export const error = (cause: ErrorMetadata, result: string) => {
     cause.isOperational,
     cause.code,
   );
-};
-
-export const genericError = (
-  e: unknown,
-  result: string,
-  status = Status.INTERNAL_SERVER,
-  isOperational = true,
-) => {
-  const _e = e as Error;
-  const name = _e.name || "GenericName";
-  const description = `${name}: ${_e.message || "GenericMsg"}`;
-  const cause = { description, isOperational, status };
-  return error(cause, result);
 };
 
 /**

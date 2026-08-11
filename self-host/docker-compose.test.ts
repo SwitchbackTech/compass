@@ -567,24 +567,6 @@ describe("staging deploy workflow", () => {
     );
   });
 
-  it("writes Kit email config whenever the deployment has a secret", () => {
-    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
-
-    expect(workflow).toContain(
-      "KIT_API_SECRET: $".concat("{{ secrets.KIT_API_SECRET }}"),
-    );
-    expect(workflow).toContain(
-      'if [ "$'.concat('{{ inputs.environment }}" = "production" ]; then'),
-    );
-    expect(workflow).toContain("Production deploy requires KIT_API_SECRET");
-    expect(workflow).toContain('if [ -n "$KIT_API_SECRET" ]; then');
-    expect(workflow).toContain("'email:'");
-    expect(workflow).toContain(
-      'kitApiSecret: \\"$'.concat('{KIT_API_SECRET}\\"'),
-    );
-    expect(workflow).not.toContain("kitUserTagId");
-  });
-
   it("runs deploy health checks after each staging deploy", () => {
     const workflow = readRepoFile(".github/workflows/deploy-staging.yml");
 

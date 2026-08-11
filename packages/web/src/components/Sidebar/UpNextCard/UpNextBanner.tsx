@@ -32,7 +32,7 @@ export const UpNextBanner: FC = () => {
     window.open(conferenceUrl, "_blank", "noopener,noreferrer");
 
   // Keeps the banner mounted for one fade-out beat instead of yanking it
-  // instantly, matching ReleaseNotesPrompt's dismiss pattern.
+  // instantly.
   const dismiss = () => {
     beginDismiss(() => setDismissedId(upNext?._id));
   };

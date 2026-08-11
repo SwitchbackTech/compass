@@ -20,7 +20,6 @@ import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmd
 import { useDemoEventsCmdItems } from "@web/components/CommandPalette/hooks/useDemoEventsCmdItems";
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
 import { useShowAccountsCmdItems } from "@web/components/CommandPalette/hooks/useShowAccountsCmdItems";
-import { useSubscribeCmdItems } from "@web/components/CommandPalette/hooks/useSubscribeCmdItems";
 import { useThemeCmdItems } from "@web/components/CommandPalette/hooks/useThemeCmdItems";
 import { getMoreCommandPaletteSections } from "@web/components/CommandPalette/more.cmd.constants";
 import {
@@ -291,7 +290,6 @@ export const CommandPalette = ({
   const open = useSettingsStore(selectIsCmdPaletteOpen);
   useAppLockReason("commandPalette", open);
   const navigate = useNavigate();
-  const subscribeCmdItems = useSubscribeCmdItems(open);
   const demoEventsCmdItems = useDemoEventsCmdItems();
   const authCmdItems = useAuthCmdItems();
   const showAccountsCmdItems = useShowAccountsCmdItems();
@@ -350,12 +348,7 @@ export const CommandPalette = ({
     {
       id: "settings",
       heading: "Settings",
-      items: [
-        ...subscribeCmdItems,
-        ...authCmdItems,
-        ...showAccountsCmdItems,
-        ...logoutCmdItems,
-      ],
+      items: [...authCmdItems, ...showAccountsCmdItems, ...logoutCmdItems],
     },
     ...getMoreCommandPaletteSections(currentView),
   ];

@@ -71,12 +71,6 @@ export const globalHandlers = [
   rest.post(`${ENV_WEB.API_BASEURL}/user/metadata`, (req, res, ctx) => {
     return res(ctx.status(Status.OK), ctx.json(req.json()));
   }),
-  rest.get(`${ENV_WEB.API_BASEURL}/user/email-updates`, (_req, res, ctx) => {
-    return res(ctx.status(Status.OK), ctx.json({ status: "unavailable" }));
-  }),
-  rest.put(`${ENV_WEB.API_BASEURL}/user/email-updates`, (_req, res, ctx) => {
-    return res(ctx.status(Status.OK), ctx.json({ status: "subscribed" }));
-  }),
   rest.post(`${ENV_WEB.API_BASEURL}/signinup`, (_req, res, ctx) => {
     return res(ctx.json({ isNewUser: true }));
   }),

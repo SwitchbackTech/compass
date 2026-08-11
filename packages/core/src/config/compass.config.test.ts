@@ -95,7 +95,7 @@ posthog:
       "compass.yaml",
     );
 
-    expect(config.email?.kitApiSecret).toBeUndefined();
+    expect(config.email).toBeNull();
     expect(config.posthog?.key).toBeUndefined();
   });
 

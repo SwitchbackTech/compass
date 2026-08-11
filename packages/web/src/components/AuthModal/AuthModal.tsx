@@ -204,6 +204,12 @@ export const AuthModal: FC = () => {
             />
           </>
         ) : null}
+        {currentView === "signUp" ? (
+          <p className="text-center text-text-muted text-xs">
+            Signing up also gets you occasional product emails. Unsubscribe
+            anytime.
+          </p>
+        ) : null}
         {/* Privacy & Terms links */}
         <div className="flex items-center justify-center text-center text-text-muted text-xs">
           <a

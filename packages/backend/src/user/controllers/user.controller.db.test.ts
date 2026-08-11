@@ -13,7 +13,6 @@ import compassAuthService from "@backend/auth/services/compass/compass.auth.serv
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import mongoService from "@backend/common/services/mongo.service";
-import EmailService from "@backend/email/email.service";
 import {
   afterAll,
   beforeAll,
@@ -139,40 +138,6 @@ describe("UserController", () => {
       );
 
       expect(response.error).toEqual(UserError.UserNotFound);
-    });
-  });
-
-  describe("email updates", () => {
-    it("returns the active Kit subscription state for the session user", async () => {
-      const { user } = await UtilDriver.setupTestUser();
-      const getStatus = spyOn(
-        EmailService,
-        "getEmailUpdatesStatus",
-      ).mockResolvedValue("subscribed");
-
-      const response = await userDriver.getEmailUpdates({
-        userId: user._id.toString(),
-      });
-
-      expect(response.body).toEqual({ status: "subscribed" });
-      expect(getStatus).toHaveBeenCalledWith(user.email);
-    });
-
-    it("subscribes the session user without writing user metadata", async () => {
-      const { user } = await UtilDriver.setupTestUser();
-      const subscribe = spyOn(
-        EmailService,
-        "subscribeToEmailUpdates",
-      ).mockResolvedValue("subscribed");
-
-      const response = await userDriver.subscribeToEmailUpdates({
-        userId: user._id.toString(),
-      });
-
-      expect(response.body).toEqual({ status: "subscribed" });
-      expect(subscribe).toHaveBeenCalledWith(
-        expect.objectContaining({ _id: user._id }),
-      );
     });
   });
 });

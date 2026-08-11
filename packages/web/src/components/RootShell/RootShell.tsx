@@ -5,11 +5,6 @@ import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { OnboardingTour } from "@web/components/OnboardingTour/OnboardingTour";
 import { PostOnboardingFlow } from "@web/components/PostOnboardingFlow/PostOnboardingFlow";
-import { ReleaseNotesPrompt } from "@web/components/ReleaseNotesPrompt/ReleaseNotesPrompt";
-import {
-  selectReleaseNotesPromptOpen,
-  useReleaseNotesPromptStore,
-} from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
 import { WelcomeGuideModal } from "@web/components/WelcomeModal/WelcomeGuideModal";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
 import {
@@ -29,9 +24,6 @@ import {
  * available on every matched route, including 404s.
  */
 export function RootShell() {
-  const isReleaseNotesPromptOpen = useReleaseNotesPromptStore(
-    selectReleaseNotesPromptOpen,
-  );
   const isWelcomeGuideOpen = useWelcomeGuideStore(selectWelcomeGuideOpen);
   const { isExpired: isTrialExpired } = useTrialStatus();
   useNavigationShortcuts();
@@ -60,7 +52,6 @@ export function RootShell() {
       <OnboardingTour />
       <PostOnboardingFlow />
       {isWelcomeGuideOpen && <WelcomeGuideModal />}
-      {isReleaseNotesPromptOpen && <ReleaseNotesPrompt />}
     </AuthModalProvider>
   );
 }

@@ -14,7 +14,6 @@ import { resetCollapsedAccountsStoreForTests } from "@web/calendars/collapsed-ac
 import { resetDefaultCalendarStoreForTests } from "@web/calendars/default-calendar.store";
 import { resetRecentCommandsStoreForTests } from "@web/components/CommandPalette/recent-commands.store";
 import { useFeedbackStore } from "@web/components/Feedback/feedback.store";
-import { useReleaseNotesPromptStore } from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
 import { useWelcomeGuideStore } from "@web/components/WelcomeModal/welcome.guide.store";
 import { recurrenceScopeOpportunityActions } from "@web/events/recurrence/recurrence-scope-opportunity.store";
 import { resetEventRepositorySourceForTests } from "@web/events/repositories/event.repository.source.store";
@@ -63,11 +62,6 @@ const storeResets: StoreReset[] = [
   // is active) - order-dependent, so it only surfaces on some runners.
   () => setWeekInteractionMotionActive(false),
   () => useFeedbackStore.setState(useFeedbackStore.getInitialState(), true),
-  () =>
-    useReleaseNotesPromptStore.setState(
-      useReleaseNotesPromptStore.getInitialState(),
-      true,
-    ),
   () =>
     useWelcomeGuideStore.setState(useWelcomeGuideStore.getInitialState(), true),
   () => useThemeStore.setState(useThemeStore.getInitialState(), true),

@@ -96,6 +96,5 @@ database and must not share the backend's database user/data.
 
 | key | Required | Description |
 |---|---|---|
-| `email.kitApiSecret` | No | Kit.com API secret key. |
 | `posthog.key` | No | PostHog project key injected into the web bundle. |
 | `posthog.host` | No | PostHog host injected into the web bundle. |
