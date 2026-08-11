@@ -5,7 +5,15 @@ import {
   useKeyboardOnlyStore,
 } from "@web/shortcuts/keyboard-only/keyboard-only.store";
 import { useKeyboardOnlyMode } from "@web/shortcuts/keyboard-only/useKeyboardOnlyMode";
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import {
+  eventJumpActions,
+  useEventJumpStore,
+} from "@web/shortcuts/shift-hint/event-jump.store";
+import {
+  resetEditSequenceArm,
+  useEditSequenceShortcut,
+} from "@web/shortcuts/useEditSequenceShortcut";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const dispatchKey = (
   type: "keydown" | "keyup",
@@ -30,12 +38,16 @@ const pressH = () => {
 describe("useKeyboardOnlyMode", () => {
   beforeEach(() => {
     useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
+    eventJumpActions.reset();
+    resetEditSequenceArm();
     clearAppLockReasons();
     document.body.innerHTML = `<div id="root"></div>`;
   });
 
   afterEach(() => {
     useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
+    eventJumpActions.reset();
+    resetEditSequenceArm();
     clearAppLockReasons();
     document.body.innerHTML = "";
   });
@@ -155,5 +167,35 @@ describe("useKeyboardOnlyMode", () => {
     });
 
     expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
+  });
+
+  it("does not steal h while the e edit sequence is armed", () => {
+    const onSequence = mock(() => {});
+    // Match production mount order: Hardcore (RootShell) before edit sequences.
+    renderHook(() => useKeyboardOnlyMode());
+    renderHook(() => useEditSequenceShortcut({ onSequence }));
+
+    act(() => {
+      dispatchKey("keydown", "e");
+      dispatchKey("keydown", "h");
+    });
+
+    // While armed, Hardcore yields so the edit sequence can disarm on the
+    // unknown follow key without entering keyboard-only.
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(false);
+    expect(onSequence).not.toHaveBeenCalled();
+  });
+
+  it("clears event jump when entering hardcore", () => {
+    renderHook(() => useKeyboardOnlyMode());
+    eventJumpActions.setActive(true);
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+
+    act(() => {
+      pressH();
+    });
+
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
   });
 });

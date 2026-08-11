@@ -7,6 +7,8 @@ import {
   keyboardOnlyActions,
   useKeyboardOnlyStore,
 } from "@web/shortcuts/keyboard-only/keyboard-only.store";
+import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
+import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 
 /**
  * Bare `h` toggles keyboard-only (Hardcore) mode. Clicks are inert; ESC, `h`
@@ -34,12 +36,16 @@ export function useKeyboardOnlyMode() {
 
       if (!isBareLetterKey(event, "h")) return;
       if (isAppLocked() || isEditableKeyboardTarget(event)) return;
+      // Yield to an armed `e`… edit sequence (same as event-jump `s`).
+      if (isEditSequenceArmed()) return;
 
       event.preventDefault();
       event.stopPropagation();
       if (useKeyboardOnlyStore.getState().isActive) {
         keyboardOnlyActions.exit();
       } else {
+        // Clear jump chips so Hardcore does not leave a second Esc owner.
+        eventJumpActions.reset();
         keyboardOnlyActions.enter();
       }
     };

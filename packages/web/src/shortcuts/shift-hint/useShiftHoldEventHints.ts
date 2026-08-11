@@ -386,7 +386,15 @@ export function useShiftHoldEventHints({
     .join(",");
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive) {
+      // External reset (e.g. Hardcore `h`) clears the store without going
+      // through deactivate(); drop local chips/buffer to match.
+      bufferRef.current = "";
+      assignmentsRef.current = [];
+      visibleByIdRef.current = new Map();
+      setHints([]);
+      return;
+    }
     void eventIdsKey;
 
     const { assignments, visibleById } = buildDayJumpAssignments(

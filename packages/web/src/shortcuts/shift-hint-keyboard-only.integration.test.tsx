@@ -121,4 +121,22 @@ describe("event-jump + keyboard-only integration", () => {
     expect(useEventJumpStore.getState().isActive).toBe(true);
     expect(result.current.hints.length).toBeGreaterThan(0);
   });
+
+  it("h clears active jump chips when entering hardcore", () => {
+    const { result } = mountBoth();
+
+    act(() => {
+      press("s");
+    });
+    expect(useEventJumpStore.getState().isActive).toBe(true);
+    expect(result.current.hints.length).toBeGreaterThan(0);
+
+    act(() => {
+      press("h");
+    });
+
+    expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
+    expect(useEventJumpStore.getState().isActive).toBe(false);
+    expect(result.current.hints).toEqual([]);
+  });
 });

@@ -9,7 +9,7 @@ import { keyboardOnlyActions } from "@web/shortcuts/keyboard-only/keyboard-only.
 
 /**
  * Mission steps that target a real grid event: mouse clicks disable for
- * these on top of the existing double-Shift gesture in useKeyboardOnlyMode.ts,
+ * these on top of the existing `h` Hardcore toggle in useKeyboardOnlyMode.ts,
  * so the keyboard is the only way through. `undo`/`hardcore` don't touch a
  * grid event directly and stay mouse-permissive; `create`/`save` are the
  * very first lesson and stay permissive too.
