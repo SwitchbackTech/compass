@@ -10,7 +10,6 @@ import {
 } from "@web/auth/compass/schemas/auth.schemas";
 import { track } from "@web/auth/posthog/track";
 import { onboardingTourActions } from "@web/components/OnboardingTour/onboarding.tour.store";
-import { releaseNotesPromptActions } from "@web/components/ReleaseNotesPrompt/release-notes-prompt.store";
 import { getAuthSubmitErrorMessage } from "./useAuthFormHandlers.util";
 import { type AuthView } from "./useAuthModal";
 
@@ -77,7 +76,6 @@ export function useAuthFormHandlers({
             });
             track("signup_completed", { method: "email" });
             closeModal();
-            releaseNotesPromptActions.scheduleOpen();
             onboardingTourActions.offerAfterSignupIfPending();
             return;
           case "FIELD_ERROR":

@@ -85,7 +85,6 @@ jobs:
           COMPASS_SYNC_TOKEN: ${{ secrets.COMPASS_SYNC_TOKEN }}
           GCAL_NOTIFICATION_TOKEN: ${{ secrets.GCAL_NOTIFICATION_TOKEN }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          KIT_API_SECRET: ${{ secrets.KIT_API_SECRET }}
           MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
           MONGO_REPLICA_SET_KEY: ${{ secrets.MONGO_REPLICA_SET_KEY }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
@@ -105,10 +104,6 @@ jobs:
           # (2026-08-01).
           if [ "${{ inputs.environment }}" = "production" ]; then
             NODE_ENV="production"
-            if [ -z "$KIT_API_SECRET" ]; then
-              echo "Production deploy requires KIT_API_SECRET." >&2
-              exit 1
-            fi
           else
             NODE_ENV="staging"
           fi
@@ -185,11 +180,6 @@ jobs:
                 'posthog:' \
                 "  key: \"${POSTHOG_KEY}\"" \
                 "  host: \"${POSTHOG_HOST}\""
-            fi
-            if [ -n "$KIT_API_SECRET" ]; then
-              printf '%s\n' \
-                'email:' \
-                "  kitApiSecret: \"${KIT_API_SECRET}\""
             fi
             printf '%s\n' \
               'sync:' \

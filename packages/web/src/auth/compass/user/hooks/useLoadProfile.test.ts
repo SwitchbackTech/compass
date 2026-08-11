@@ -37,8 +37,7 @@ mock.module("@web/auth/compass/state/auth.state.util", () => ({
 // UserApi is captured up front and a flag (flipped off in afterAll) decides
 // which implementation runs on each call. Without this, this file's partial
 // UserApi shape (getProfile only) would permanently shadow the real module
-// for other files' UserApi methods (e.g. useSubscribeCmdItems.test.ts's
-// updateMetadata).
+// for other files' UserApi methods (e.g. another suite's updateMetadata).
 const actualUserApi = (await import("@web/api/user.api")).UserApi;
 let isUserApiMocked = true;
 

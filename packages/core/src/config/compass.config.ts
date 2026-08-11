@@ -46,14 +46,10 @@ const CompassConfigSchema = z
         clientSecret: optionalString,
       })
       .nullish(),
-    email: z
-      .object({
-        kitApiSecret: optionalString,
-        // Retained solely so existing config files remain valid after tags
-        // stopped being part of Compass's email subscription flow.
-        kitUserTagId: z.union([z.string(), z.number()]).optional(),
-      })
-      .nullish(),
+    // Accepted but ignored. Compass no longer sends email; the list is
+    // managed outside the app. Retained so existing config files stay valid
+    // on upgrade.
+    email: z.unknown().optional(),
     posthog: z
       .object({
         key: optionalString,

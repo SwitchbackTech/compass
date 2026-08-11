@@ -37,9 +37,6 @@ supertokens:
 #   clientId: REPLACE_WITH_GOOGLE_CLIENT_ID # e.g. your-id.apps.googleusercontent.com
 #   clientSecret: REPLACE_WITH_GOOGLE_CLIENT_SECRET
 
-# email:
-#   kitApiSecret: REPLACE_WITH_KIT_API_SECRET
-
 # posthog:
 #   key: REPLACE_WITH_POSTHOG_KEY
 #   host: REPLACE_WITH_POSTHOG_HOST
