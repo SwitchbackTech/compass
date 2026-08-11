@@ -1,7 +1,4 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import dayjs from "@core/util/date/dayjs";
-import { mergeSandboxEventData } from "@web/components/OnboardingTour/onboarding.sandbox-events";
-import { useOnboardingSandboxEventData } from "@web/components/OnboardingTour/useOnboardingSandboxEvents";
 import { deriveOverlappingEventQueryData } from "@web/events/queries/event.query.cache";
 import { dayEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
@@ -29,23 +26,8 @@ export function useDayEventsQuery({ startDate, endDate }: DayEventsQueryArgs) {
   return { ...query, calendarIds };
 }
 
-/**
- * `includeSandboxEvents` defaults false: this hook also backs the sidebar's
- * Up Next card (useUpNextEvent.ts), which queries "today" independent of
- * whichever view the tour actually has open - opt in only from the day
- * grid itself so a sandbox lesson's practice events never leak into a
- * component the tour isn't pointing at.
- */
-export function useDayEventViewModel(
-  args: DayEventsQueryArgs,
-  options: { includeSandboxEvents?: boolean } = {},
-) {
+export function useDayEventViewModel(args: DayEventsQueryArgs) {
   const query = useDayEventsQuery(args);
-  const sandboxData = useOnboardingSandboxEventData(
-    options.includeSandboxEvents ? dayjs(args.startDate) : undefined,
-  );
-  const viewModel = useCalendarEventViewModel(
-    mergeSandboxEventData(query.data, sandboxData),
-  );
+  const viewModel = useCalendarEventViewModel(query.data);
   return { ...query, ...viewModel };
 }

@@ -28,31 +28,19 @@ describe("PostOnboardingFlow", () => {
     persistentBrowserStore.set(STORAGE_KEYS.POST_TOUR_STAGE, "");
   });
 
-  it("renders the trial CTA for an anonymous user with a pending trial stage", () => {
-    usePostOnboardingFlowStore.setState({ stage: "trial" });
-    renderFlow(<PostOnboardingFlow />, false);
-
-    expect(
-      screen.getByRole("region", { name: "Start your trial" }),
-    ).toBeInTheDocument();
-  });
-
-  it("never renders for an authenticated user, even with a stale connect/trial stage", () => {
-    // Simulates a user who reached "connect"/"trial" anonymously, then
-    // authenticated by a path other than the Connect Google CTA, leaving a
-    // stale stage in localStorage/the store from a prior session.
-    usePostOnboardingFlowStore.setState({ stage: "trial" });
+  it("never renders for an authenticated user, even with a stale connect stage", () => {
+    // Simulates a user who reached "connect" anonymously, then authenticated
+    // by a path other than the Connect Google CTA, leaving a stale stage in
+    // localStorage/the store from a prior session.
+    usePostOnboardingFlowStore.setState({ stage: "connect" });
     renderFlow(<PostOnboardingFlow />, true);
 
-    expect(
-      screen.queryByRole("region", { name: "Start your trial" }),
-    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("region", { name: "Connect Google Calendar" }),
     ).not.toBeInTheDocument();
   });
 
-  it("resolves a stale connect/trial stage to done once authenticated becomes true", () => {
+  it("resolves a stale connect stage to done once authenticated becomes true", () => {
     usePostOnboardingFlowStore.setState({ stage: "connect" });
     renderFlow(<PostOnboardingFlow />, true);
 

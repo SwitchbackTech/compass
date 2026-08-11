@@ -1,162 +1,338 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
+import { EventIdSchema } from "@core/types/domain-primitives";
+import { EventScheduleSchema } from "@core/types/event.contracts";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
+import { DEMO_EVENT_IDS } from "@web/common/storage/migrations/external/demo-data-seed";
 import {
   initialOnboardingTourState,
-  onboardingTourActions,
   useOnboardingTourStore,
 } from "@web/components/OnboardingTour/onboarding.tour.store";
 import {
-  shouldAdvancePaletteStep,
   shouldAdvanceTargetEventStep,
   useOnboardingTourProgress,
 } from "@web/components/OnboardingTour/useOnboardingTourProgress";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import {
-  initialViewState,
-  useViewStore,
-  viewActions,
-} from "@web/events/stores/view.store";
+  initialDraftState,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import {
-  initialSettingsState,
-  settingsActions,
-  useSettingsStore,
-} from "@web/settings/settings.store";
-import { beforeEach, describe, expect, it } from "bun:test";
+  edgeFocusActions,
+  initialEdgeFocusState,
+  useEdgeFocusStore,
+} from "@web/grid/shortcuts/edge-focus.store";
+import {
+  initialKeyboardOnlyState,
+  useKeyboardOnlyStore,
+} from "@web/shortcuts/keyboard-only/keyboard-only.store";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
-describe("shouldAdvancePaletteStep", () => {
-  it("does not advance when the palette has only opened", () => {
-    expect(
-      shouldAdvancePaletteStep({
-        paletteOpened: true,
-        isPaletteOpen: true,
-        isShortcutsOpen: false,
-      }),
-    ).toBe(false);
+// Every test in this file renders useOnboardingTourProgress, which attaches
+// document-level keydown/focusin listeners for as long as it stays mounted.
+// Without an explicit unmount, a leaked listener from one test can react to
+// key/focus events dispatched by a later test and desync shared global
+// stores (tour/draft/edge-focus/keyboard-only) - a prior version of this
+// file hung on exactly that cross-test pollution.
+afterEach(cleanup);
+
+const DENTIST_WEEK_KEY = eventQueryKeys.week({
+  source: "local",
+  start: "2026-05-01T00:00:00.000Z",
+  end: "2026-05-08T00:00:00.000Z",
+});
+
+const dentistEvent = (start: string, end: string) =>
+  createMockEvent({
+    id: EventIdSchema.parse(DEMO_EVENT_IDS.dentist),
+    schedule: EventScheduleSchema.parse({
+      kind: "timed",
+      start,
+      end,
+      timeZone: "America/Chicago",
+    }),
   });
 
-  it("advances after the palette was opened and then closed", () => {
-    expect(
-      shouldAdvancePaletteStep({
-        paletteOpened: true,
-        isPaletteOpen: false,
-        isShortcutsOpen: false,
-      }),
-    ).toBe(true);
+const seedDentist = (
+  client: QueryClient,
+  start = "2026-05-05T14:30:00.000-05:00",
+  end = "2026-05-05T15:30:00.000-05:00",
+) => {
+  const event = dentistEvent(start, end);
+  client.setQueryData(DENTIST_WEEK_KEY, {
+    ids: [event.id],
+    entities: { [event.id]: event },
   });
+  return event;
+};
 
-  it("does not advance before the palette has ever opened", () => {
-    expect(
-      shouldAdvancePaletteStep({
-        paletteOpened: false,
-        isPaletteOpen: false,
-        isShortcutsOpen: false,
-      }),
-    ).toBe(false);
-  });
-
-  it("advances when shortcuts open from inside the palette", () => {
-    expect(
-      shouldAdvancePaletteStep({
-        paletteOpened: true,
-        isPaletteOpen: true,
-        isShortcutsOpen: true,
-      }),
-    ).toBe(true);
-  });
-
-  it("does not advance on shortcuts alone before the palette opened", () => {
-    expect(
-      shouldAdvancePaletteStep({
-        paletteOpened: false,
-        isPaletteOpen: false,
-        isShortcutsOpen: true,
-      }),
-    ).toBe(false);
+describe("shouldAdvanceTargetEventStep", () => {
+  it("advances only for the Dentist demo event, named directly in the mission", () => {
+    expect(shouldAdvanceTargetEventStep(DEMO_EVENT_IDS.dentist)).toBe(true);
+    expect(shouldAdvanceTargetEventStep(DEMO_EVENT_IDS.teamSync)).toBe(false);
+    expect(shouldAdvanceTargetEventStep(DEMO_EVENT_IDS.morningStandup)).toBe(
+      false,
+    );
+    expect(shouldAdvanceTargetEventStep(null)).toBe(false);
   });
 });
 
-describe("useOnboardingTourProgress palette step", () => {
+describe("useOnboardingTourProgress mission verification", () => {
+  let queryClient: QueryClient;
+
   beforeEach(() => {
-    useOnboardingTourStore.setState({
-      ...initialOnboardingTourState,
-      isActive: true,
-      stepId: "palette",
-    });
-    useSettingsStore.setState(initialSettingsState);
-    useViewStore.setState(initialViewState);
+    queryClient = new QueryClient();
+    useOnboardingTourStore.setState(initialOnboardingTourState);
+    useDraftStore.setState(initialDraftState);
+    useEdgeFocusStore.setState(initialEdgeFocusState);
+    useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_ONBOARDING_TOUR, "");
   });
 
   const wrapper = ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: new QueryClient() }, children);
+    createElement(QueryClientProvider, { client: queryClient }, children);
 
-  it("stays on palette while the command palette is open", async () => {
+  const dispatchKey = (key: string, init: KeyboardEventInit = {}) => {
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key,
+        bubbles: true,
+        cancelable: true,
+        ...init,
+      }),
+    );
+  };
+
+  it("targetEvent: advances only when the Dentist event itself receives focus", async () => {
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "targetEvent",
+    });
     renderHook(() => useOnboardingTourProgress(), { wrapper });
 
-    act(() => {
-      settingsActions.openCmdPalette();
-    });
+    const decoy = document.createElement("div");
+    decoy.setAttribute(
+      "data-week-interaction-event-id",
+      DEMO_EVENT_IDS.teamSync,
+    );
+    decoy.tabIndex = 0;
+    document.body.appendChild(decoy);
+    decoy.focus();
+    expect(useOnboardingTourStore.getState().stepId).toBe("targetEvent");
+    decoy.remove();
+
+    const dentist = document.createElement("div");
+    dentist.setAttribute(
+      "data-week-interaction-event-id",
+      DEMO_EVENT_IDS.dentist,
+    );
+    dentist.tabIndex = 0;
+    document.body.appendChild(dentist);
+    dentist.focus();
 
     await waitFor(() => {
-      expect(useSettingsStore.getState().isCmdPaletteOpen).toBe(true);
+      expect(useOnboardingTourStore.getState().stepId).toBe("move");
     });
-    expect(useOnboardingTourStore.getState().stepId).toBe("palette");
+    dentist.remove();
   });
 
-  it("advances to shortcuts after the palette opens then closes", async () => {
+  it("move: advances only once Dentist's start time actually changes", async () => {
+    seedDentist(queryClient);
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "move",
+    });
     renderHook(() => useOnboardingTourProgress(), { wrapper });
 
+    // A re-render with the same schedule must not count as a move.
     act(() => {
-      settingsActions.openCmdPalette();
+      seedDentist(queryClient);
     });
+    expect(useOnboardingTourStore.getState().stepId).toBe("move");
+
     act(() => {
-      settingsActions.closeCmdPalette();
+      seedDentist(
+        queryClient,
+        "2026-05-05T16:00:00.000-05:00",
+        "2026-05-05T17:00:00.000-05:00",
+      );
     });
 
     await waitFor(() => {
-      expect(useOnboardingTourStore.getState().stepId).toBe("shortcuts");
+      expect(useOnboardingTourStore.getState().stepId).toBe("resizeEdge");
     });
   });
 
-  it("skips ahead when shortcuts open from the palette", async () => {
+  it("resizeEdge: a single real Tab (as the card promises) reaches the end edge", async () => {
+    seedDentist(queryClient);
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "resizeEdge",
+    });
     renderHook(() => useOnboardingTourProgress(), { wrapper });
 
+    // The step must seed edge focus to startDate on entry - EDGE_CYCLE is
+    // [null, startDate, endDate], and nothing before this step touches edge
+    // focus, so without a startDate seed a single real Tab cycle would land
+    // on startDate, contradicting the card's single-Tab copy/shortcutHint.
+    expect(useEdgeFocusStore.getState().edge).toBe("startDate");
+
     act(() => {
-      settingsActions.openCmdPalette();
-      viewActions.toggleShortcuts();
+      edgeFocusActions.cycle(DEMO_EVENT_IDS.dentist, "forward");
+    });
+    expect(useEdgeFocusStore.getState().edge).toBe("endDate");
+  });
+
+  it("resizeEdge: requires the end edge focused AND only the end time to move", async () => {
+    seedDentist(queryClient);
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "resizeEdge",
+    });
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    // End time moving before the user Tabs off startDate (the step's seeded
+    // edge) must not count as a resize.
+    expect(useEdgeFocusStore.getState().edge).toBe("startDate");
+    act(() => {
+      seedDentist(
+        queryClient,
+        "2026-05-05T14:30:00.000-05:00",
+        "2026-05-05T16:00:00.000-05:00",
+      );
+    });
+    expect(useOnboardingTourStore.getState().stepId).toBe("resizeEdge");
+
+    act(() => {
+      // A single real Tab cycle from the step's seeded startDate.
+      edgeFocusActions.cycle(DEMO_EVENT_IDS.dentist, "forward");
+      seedDentist(
+        queryClient,
+        "2026-05-05T14:30:00.000-05:00",
+        "2026-05-05T17:00:00.000-05:00",
+      );
     });
 
     await waitFor(() => {
-      // Palette advance + shortcuts already-open cascade lands on fork.
-      expect(useOnboardingTourStore.getState().stepId).toBe("fork");
+      expect(useOnboardingTourStore.getState().stepId).toBe("placeDraft");
     });
   });
 
-  it("does not skip the palette lesson when shortcuts open alone", async () => {
+  it("placeDraft: advances once a Shift+Arrow keyboard-placed draft lands, and discards it", async () => {
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "placeDraft",
+    });
     renderHook(() => useOnboardingTourProgress(), { wrapper });
 
     act(() => {
-      viewActions.toggleShortcuts();
+      useDraftStore.setState({
+        gridDraft: { clientId: "draft-1" } as never,
+        status: {
+          activity: "keyboardPlace",
+          isDrafting: true,
+          isFormOpen: false,
+        },
+      });
     });
 
     await waitFor(() => {
-      expect(useViewStore.getState().shortcuts.isOpen).toBe(true);
+      expect(useOnboardingTourStore.getState().stepId).toBe("undo");
     });
-    expect(useOnboardingTourStore.getState().stepId).toBe("palette");
+    expect(useDraftStore.getState().gridDraft).toBeNull();
+  });
+
+  it("undo: requires a revert then a reapply of Dentist's schedule, not just Mod+Z keydowns", async () => {
+    seedDentist(
+      queryClient,
+      "2026-05-05T16:00:00.000-05:00",
+      "2026-05-05T17:00:00.000-05:00",
+    );
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "undo",
+    });
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    // Pressing the key alone, with no state change, must not advance.
+    act(() => {
+      dispatchKey("z", { metaKey: true });
+    });
+    expect(useOnboardingTourStore.getState().stepId).toBe("undo");
+
+    // Phase 1: the revert.
+    act(() => {
+      seedDentist(
+        queryClient,
+        "2026-05-05T14:30:00.000-05:00",
+        "2026-05-05T15:30:00.000-05:00",
+      );
+    });
+    expect(useOnboardingTourStore.getState().stepId).toBe("undo");
+
+    // A manual re-edit that changes the schedule again, but not back to the
+    // exact pre-undo value, must not be mistaken for a real redo.
+    act(() => {
+      seedDentist(
+        queryClient,
+        "2026-05-05T18:00:00.000-05:00",
+        "2026-05-05T19:00:00.000-05:00",
+      );
+    });
+    expect(useOnboardingTourStore.getState().stepId).toBe("undo");
+
+    // Phase 2: the reapply - restores exactly the pre-undo schedule.
+    act(() => {
+      seedDentist(
+        queryClient,
+        "2026-05-05T16:00:00.000-05:00",
+        "2026-05-05T17:00:00.000-05:00",
+      );
+    });
+
+    await waitFor(() => {
+      expect(useOnboardingTourStore.getState().stepId).toBe("hardcore");
+    });
+  });
+
+  it("hardcore: advances (and finishes the tour) once Hardcore Mode is actually active", async () => {
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "hardcore",
+    });
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    expect(useOnboardingTourStore.getState().isActive).toBe(true);
+
+    act(() => {
+      useKeyboardOnlyStore.setState({ isActive: true });
+    });
+
+    await waitFor(() => {
+      expect(useOnboardingTourStore.getState().isActive).toBe(false);
+    });
+    expect(
+      persistentBrowserStore.get(STORAGE_KEYS.HAS_SEEN_ONBOARDING_TOUR),
+    ).toBe("true");
   });
 });
 
 describe("useOnboardingTourProgress navigation and Escape", () => {
   beforeEach(() => {
-    useOnboardingTourStore.setState({
-      ...initialOnboardingTourState,
-      isActive: true,
-      stepId: "palette",
-    });
-    useSettingsStore.setState(initialSettingsState);
-    useViewStore.setState(initialViewState);
+    useOnboardingTourStore.setState(initialOnboardingTourState);
+    useDraftStore.setState(initialDraftState);
+    useEdgeFocusStore.setState(initialEdgeFocusState);
+    useKeyboardOnlyStore.setState(initialKeyboardOnlyState);
     persistentBrowserStore.set(STORAGE_KEYS.HAS_SEEN_ONBOARDING_TOUR, "");
   });
 
@@ -174,7 +350,7 @@ describe("useOnboardingTourProgress navigation and Escape", () => {
     );
   };
 
-  it("skips the tour on Escape when no lesson overlay owns it", async () => {
+  it("shows a skip confirm on Escape instead of skipping immediately", async () => {
     useOnboardingTourStore.setState({
       ...initialOnboardingTourState,
       isActive: true,
@@ -187,56 +363,51 @@ describe("useOnboardingTourProgress navigation and Escape", () => {
     });
 
     await waitFor(() => {
+      expect(useOnboardingTourStore.getState().isConfirmingSkip).toBe(true);
+    });
+    expect(useOnboardingTourStore.getState().isActive).toBe(true);
+  });
+
+  it("skips the tour when Enter confirms the skip", async () => {
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "create",
+      isConfirmingSkip: true,
+    });
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    act(() => {
+      dispatchKey("Enter");
+    });
+
+    await waitFor(() => {
       expect(useOnboardingTourStore.getState().isActive).toBe(false);
     });
   });
 
-  it("lets Escape close a leftover form during the palette lesson", async () => {
-    const { draftActions, initialDraftState, useDraftStore } = await import(
-      "@web/events/stores/draft.store"
-    );
-
-    useDraftStore.setState({
-      ...initialDraftState,
-      gridDraft: { id: "draft" } as never,
-      status: {
-        activity: "keyboardEdit",
-        eventType: "timed",
-        isDrafting: true,
-        isFormOpen: true,
-      } as never,
+  it("cancels the skip confirm and keeps the tour going on any other key", async () => {
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "create",
+      isConfirmingSkip: true,
     });
     renderHook(() => useOnboardingTourProgress(), { wrapper });
 
     act(() => {
-      dispatchKey("Escape");
+      dispatchKey("a");
     });
 
+    expect(useOnboardingTourStore.getState().isConfirmingSkip).toBe(false);
     expect(useOnboardingTourStore.getState().isActive).toBe(true);
-    expect(useOnboardingTourStore.getState().stepId).toBe("palette");
-
-    draftActions.discard();
-  });
-
-  it("lets Escape close the open palette during the palette lesson", async () => {
-    renderHook(() => useOnboardingTourProgress(), { wrapper });
-
-    act(() => {
-      settingsActions.openCmdPalette();
-    });
-    act(() => {
-      dispatchKey("Escape");
-    });
-
-    expect(useOnboardingTourStore.getState().isActive).toBe(true);
-    expect(useOnboardingTourStore.getState().stepId).toBe("palette");
   });
 
   it("advances and retreats with ArrowRight and ArrowLeft outside arrow lessons", async () => {
     useOnboardingTourStore.setState({
       ...initialOnboardingTourState,
       isActive: true,
-      stepId: "shortcuts",
+      stepId: "undo",
     });
     renderHook(() => useOnboardingTourProgress(), { wrapper });
 
@@ -244,14 +415,14 @@ describe("useOnboardingTourProgress navigation and Escape", () => {
       dispatchKey("ArrowRight");
     });
     await waitFor(() => {
-      expect(useOnboardingTourStore.getState().stepId).toBe("fork");
+      expect(useOnboardingTourStore.getState().stepId).toBe("hardcore");
     });
 
     act(() => {
       dispatchKey("ArrowLeft");
     });
     await waitFor(() => {
-      expect(useOnboardingTourStore.getState().stepId).toBe("shortcuts");
+      expect(useOnboardingTourStore.getState().stepId).toBe("undo");
     });
   });
 
@@ -267,48 +438,8 @@ describe("useOnboardingTourProgress navigation and Escape", () => {
       dispatchKey("ArrowRight");
     });
 
-    // Lesson handler advances once; nav arrows are disabled so we do not skip
-    // past editSequence in the same press.
-    await waitFor(() => {
-      expect(useOnboardingTourStore.getState().stepId).toBe("editSequence");
-    });
-  });
-
-  it("advances targetEvent when a sandbox jump event receives focus", async () => {
-    expect(shouldAdvanceTargetEventStep("sandbox-targetEvent-2")).toBe(true);
-    expect(shouldAdvanceTargetEventStep("sandbox-nudge-1")).toBe(false);
-    expect(shouldAdvanceTargetEventStep(null)).toBe(false);
-
-    useOnboardingTourStore.setState({
-      ...initialOnboardingTourState,
-      isActive: true,
-      stepId: "targetEvent",
-    });
-    renderHook(() => useOnboardingTourProgress(), { wrapper });
-
-    act(() => {
-      if (shouldAdvanceTargetEventStep("sandbox-targetEvent-1")) {
-        onboardingTourActions.advance();
-      }
-    });
-
-    await waitFor(() => {
-      expect(useOnboardingTourStore.getState().stepId).toBe("nudge");
-    });
-  });
-
-  it("does not advance targetEvent on Shift alone", async () => {
-    useOnboardingTourStore.setState({
-      ...initialOnboardingTourState,
-      isActive: true,
-      stepId: "targetEvent",
-    });
-    renderHook(() => useOnboardingTourProgress(), { wrapper });
-
-    act(() => {
-      dispatchKey("Shift");
-    });
-
-    expect(useOnboardingTourStore.getState().stepId).toBe("targetEvent");
+    // Arrow-lesson steps disable nav arrows entirely; a plain ArrowRight
+    // keydown with nothing focused must not fake-complete the lesson.
+    expect(useOnboardingTourStore.getState().stepId).toBe("moveFocus");
   });
 });

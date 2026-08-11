@@ -1,4 +1,6 @@
 import { Outlet } from "@tanstack/react-router";
+import { TrialGateModal } from "@web/billing/TrialGateModal";
+import { useTrialStatus } from "@web/billing/useTrialStatus";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { OnboardingTour } from "@web/components/OnboardingTour/OnboardingTour";
@@ -31,9 +33,24 @@ export function RootShell() {
     selectReleaseNotesPromptOpen,
   );
   const isWelcomeGuideOpen = useWelcomeGuideStore(selectWelcomeGuideOpen);
+  const { isExpired: isTrialExpired } = useTrialStatus();
   useNavigationShortcuts();
   useCalendarShellShortcuts();
   useKeyboardOnlyMode();
+
+  // An expired trial owns the whole screen. The onboarding cards sit at
+  // Z_INDEX_TOOLTIP (above Z_INDEX_MODAL), so leaving them mounted would let
+  // a gated user click straight through the gate and keep touring. AuthModal
+  // stays because the gate's only ways forward are sign up and log in.
+  if (isTrialExpired) {
+    return (
+      <AuthModalProvider>
+        <Outlet />
+        <TrialGateModal />
+        <AuthModal />
+      </AuthModalProvider>
+    );
+  }
 
   return (
     <AuthModalProvider>

@@ -27,7 +27,7 @@ export const BUSY_EVENT_TITLE = "Busy";
 // crossAccountDuplicates -> otherAccount).
 type EventAnnotations = Pick<
   NormalizedEventQueryData,
-  "demoEventIds" | "crossAccountDuplicates" | "sandboxReadOnlyEventIds"
+  "demoEventIds" | "crossAccountDuplicates"
 >;
 
 type EventToGridEventOptions = EventAnnotations & {
@@ -50,7 +50,6 @@ const eventToGridEvent = (
   {
     demoEventIds,
     crossAccountDuplicates,
-    sandboxReadOnlyEventIds,
     scheduleOverride,
   }: EventToGridEventOptions = {},
 ): GridEvent => {
@@ -81,7 +80,6 @@ const eventToGridEvent = (
     calendarId: event.calendarId,
     isBusy,
     isDemo: Boolean(demoEventIds?.includes(event.id)),
-    isSandboxReadOnly: Boolean(sandboxReadOnlyEventIds?.includes(event.id)),
     ...(crossAccountDuplicates?.has(event.id)
       ? { otherAccount: crossAccountDuplicates.get(event.id) }
       : {}),
@@ -210,7 +208,6 @@ const computeCalendarEventViewModel = (
   const annotations: EventAnnotations = {
     demoEventIds,
     crossAccountDuplicates: data?.crossAccountDuplicates,
-    sandboxReadOnlyEventIds: data?.sandboxReadOnlyEventIds,
   };
   const timedEvents = timedEventsFrom(events, annotations);
   const allDayEvents = allDayEventsFrom(events, annotations);

@@ -56,16 +56,23 @@ const showUndoDeclinedToast = () =>
   showStatusToast(UNDO_DECLINED_TOAST_ID, "Can't undo — event changed since");
 
 // A snapshot recorded before this event was ever replayed may omit `location`
-// entirely (an older local record, or any Event built without it) — replaying
-// it always fills the key in (replaySnapshot below), since the editable-
-// content contract requires a definite string. Comparing raw JSON.stringify
-// output would then read "gained a location key" as an external change.
-// Normalizing both sides the same way (via the same detailsLocation default
-// replaySnapshot/undoDelete/redo use below) keeps the comparison about the
-// actual value, not whether the key happened to be present.
+// or `color` entirely (an older local record, a demo-seeded event built
+// outside the normal create mutation, or any Event built without them) —
+// replaying always fills `location` in (replaySnapshot below), since the
+// editable-content contract requires a definite string, and the rest of the
+// app treats a missing `color` the same as `color: null` (see
+// grid-event-draft.adapter.ts's `color: event.content.color ?? null`).
+// Comparing raw JSON.stringify output would then read "gained a location/
+// color key" as an external change. Normalizing both sides the same way
+// keeps the comparison about the actual value, not whether the key happened
+// to be present.
 const normalizedDetailsContent = (content: Event["content"]) =>
   content.kind === "details"
-    ? { ...content, location: detailsLocation(content) }
+    ? {
+        ...content,
+        location: detailsLocation(content),
+        color: content.color ?? null,
+      }
     : content;
 
 // Whether `current` still matches the state an undo/redo entry expects to

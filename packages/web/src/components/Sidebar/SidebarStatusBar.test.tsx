@@ -85,14 +85,17 @@ describe("SidebarStatusBar", () => {
     expect(screen.getByText("Saving changes…")).toBeInTheDocument();
   });
 
-  it("reserves space for the status line when idle", () => {
+  it("reserves space for the status line when idle, showing the anonymous trial chip", () => {
     const { wrapper } = createStoreWrapper();
 
     render(<SidebarStatusBar />, { wrapper });
 
-    const status = screen.getByRole("status");
-    expect(status).toBeInTheDocument();
-    expect(status.textContent).toBe("");
+    // No SessionContext.Provider means these tests render as anonymous, so
+    // an idle bar falls back to the trial countdown chip rather than blank
+    // space — there is no truly empty state for an anonymous user anymore.
+    expect(
+      screen.getByRole("button", { name: /Trial: \d+ days? left/ }),
+    ).toBeInTheDocument();
   });
 
   it("renders exactly one save status region, regardless of account count", () => {
@@ -134,8 +137,8 @@ describe("SidebarStatusBar", () => {
 
     render(<SidebarStatusBar />, { wrapper });
 
-    expect(screen.getByRole("status").textContent).toBe("");
     expect(screen.queryByText("Adding your calendar…")).toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
   });
 
   it("shows Syncing in the background when catch-up is more than two minutes behind", () => {
@@ -221,7 +224,7 @@ describe("SidebarStatusBar", () => {
 
     render(<SidebarStatusBar />, { wrapper });
 
-    expect(screen.getByRole("status").textContent).toBe("");
+    expect(screen.queryByRole("status")).toBeNull();
   });
 
   it("shows a live-updates warning when SSE is degraded and sync is otherwise silent", () => {

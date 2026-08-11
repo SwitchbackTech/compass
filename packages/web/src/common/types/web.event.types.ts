@@ -81,11 +81,6 @@ const GridEventSchema = WebEventSchema.extend({
   // The meeting also exists on this other connected account; this card is the
   // surviving copy of a cross-account merge. Joined like isDemo above.
   otherAccount: CrossAccountDuplicateSchema.optional(),
-  // Ephemeral onboarding-sandbox event (see OnboardingTour/onboarding.sandbox-events.ts):
-  // forces read-only alongside isBusy/isTimedMultiDayDisplay in
-  // isGridEventContentReadOnly, since a fake event has nothing to persist a
-  // write to. Joined like isDemo above.
-  isSandboxReadOnly: z.boolean().optional(),
   // Read-only, provider-sourced. Joined like calendarId/color above.
   location: z.string().nullable().optional(),
   organizer: OrganizerSchema.nullable().optional(),

@@ -35,23 +35,20 @@ export const postOnboardingFlowActions = {
   /** Google OAuth is a full navigation; persist the next stage first. */
   acceptConnect: () => {
     track("connect_cta_accepted");
-    setStage("trial");
+    setStage("done");
   },
   skipConnect: () => {
     track("connect_cta_skipped");
-    setStage("trial");
-  },
-  dismissTrial: () => {
     setStage("done");
   },
   /**
-   * Resolves a stale "connect"/"trial" stage once the user is authenticated
-   * by any path (not just accepting the Connect Google CTA), so a returning
-   * established user is never shown these CTAs again.
+   * Resolves a stale "connect" stage once the user is authenticated by any
+   * path (not just accepting the Connect Google CTA), so a returning
+   * established user is never shown the CTA again.
    */
   resolveOnAuth: () => {
     const { stage } = usePostOnboardingFlowStore.getState();
-    if (stage === "connect" || stage === "trial") {
+    if (stage === "connect") {
       setStage("done");
     }
   },
