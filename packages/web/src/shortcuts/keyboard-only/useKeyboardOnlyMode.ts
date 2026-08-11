@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { isAppLocked } from "@web/shortcuts/app-lock";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
+import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
 import {
   keyboardOnlyActions,
   useKeyboardOnlyStore,
@@ -20,10 +21,18 @@ export function useKeyboardOnlyMode() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
-      if (event.key.length !== 1 || event.key.toLowerCase() !== "h") return;
-      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+
+      if (event.key === "Escape") {
+        if (!useKeyboardOnlyStore.getState().isActive) return;
+        if (isHigherEscapeOwner()) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        keyboardOnlyActions.exit();
         return;
       }
+
+      if (!isBareLetterKey(event, "h")) return;
       if (isAppLocked() || isEditableKeyboardTarget(event)) return;
 
       event.preventDefault();
@@ -73,26 +82,6 @@ export function useKeyboardOnlyMode() {
       window.removeEventListener("mousedown", blockPointer, true);
       window.removeEventListener("click", blockPointer, true);
       window.removeEventListener("auxclick", blockPointer, true);
-    };
-  }, [isActive]);
-
-  // ESC exits when nothing higher owns Escape.
-  useEffect(() => {
-    if (!isActive) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      if (event.defaultPrevented) return;
-      if (isHigherEscapeOwner()) return;
-
-      event.preventDefault();
-      event.stopPropagation();
-      keyboardOnlyActions.exit();
-    };
-
-    document.addEventListener("keydown", onKeyDown, true);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown, true);
     };
   }, [isActive]);
 }

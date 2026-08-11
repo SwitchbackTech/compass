@@ -36,13 +36,6 @@ export const eventJumpActions = {
       false,
       { type: "setActive" },
     ),
-  /** Exit without announcing (e.g. silent teardown while another mode takes over). */
-  silenceOff: () =>
-    useEventJumpStore.setState(
-      { isActive: false, activeDayKeys: [], announcement: "" },
-      false,
-      { type: "silenceOff" },
-    ),
   /** Clear a lingering exit announcement after the live region has spoken. */
   clearAnnouncement: () =>
     useEventJumpStore.setState({ announcement: "" }, false, {

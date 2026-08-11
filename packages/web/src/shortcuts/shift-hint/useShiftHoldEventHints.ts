@@ -5,6 +5,7 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { isAppLocked } from "@web/shortcuts/app-lock";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
+import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
 import {
   assignDayJumpKeys,
   type DayJumpAssignment,
@@ -107,14 +108,6 @@ const buildDayJumpAssignments = (
   };
 };
 
-const isBareLetter = (event: KeyboardEvent, letter: string) =>
-  event.key.length === 1 &&
-  event.key.toLowerCase() === letter &&
-  !event.metaKey &&
-  !event.ctrlKey &&
-  !event.altKey &&
-  !event.shiftKey;
-
 /**
  * Press `s` to show day-prefix jump labels. Esc exits. Day letters (and digits
  * after a day) win over global shortcuts while active. In day view, a second
@@ -212,15 +205,11 @@ export function useShiftHoldEventHints({
       setHints(toActiveHints(assignments, visibleByIdRef.current));
     };
 
-    const deactivate = (announceOff = true) => {
+    const deactivate = () => {
       isActiveRef.current = false;
       bufferRef.current = "";
       clearHints();
-      if (announceOff) {
-        eventJumpActions.setActive(false);
-      } else {
-        eventJumpActions.silenceOff();
-      }
+      eventJumpActions.setActive(false);
     };
 
     const focusEvent = (eventId: string) => {
@@ -263,7 +252,7 @@ export function useShiftHoldEventHints({
       if (event.defaultPrevented) return;
 
       if (!isActiveRef.current) {
-        if (!isBareLetter(event, "s")) return;
+        if (!isBareLetterKey(event, "s")) return;
         if (isAppLocked() || isEditableKeyboardTarget(event)) return;
         if (isEditSequenceArmed()) return;
 
@@ -398,7 +387,6 @@ export function useShiftHoldEventHints({
 
   useEffect(() => {
     if (!isActive) return;
-    // Read eventIdsKey so the effect re-runs when the visible event id set changes.
     void eventIdsKey;
 
     const { assignments, visibleById } = buildDayJumpAssignments(
