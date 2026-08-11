@@ -1,7 +1,9 @@
 import { startOtelLogs, stopOtelLogs } from "@core/logger/otel-logs";
 import { Logger } from "@core/logger/winston.logger";
 import {
+  SYNC_JOB_TERMINAL_FAILURE_EVENT,
   SYNC_RECONCILE_SWEEP_EVENT,
+  SyncJobTerminalFailureEventSchema,
   SyncReconcileSweepEventSchema,
 } from "@core/types/sync/health.contracts";
 import {
@@ -440,6 +442,29 @@ function buildSchedulers(
           ),
         onDrop: (job, reason) =>
           logger.warn(`Sync job ${job.kind} (${job._id}) dropped: ${reason}`),
+        // A terminal failure is invisible otherwise: the job sits state:"failed"
+        // holding its coalescing key with nothing paging anyone. Alertable so an
+        // operator can set a PostHog alert on this event over launch weekend.
+        onFail: (job) => {
+          logger.error(
+            `Sync job ${job.kind} (${job._id}) exhausted retries and failed for resource ${
+              job.resourceId ?? "none (connection-wide)"
+            } on connection ${job.connectionId}`,
+          );
+          void captureSafely(posthog, {
+            event: SYNC_JOB_TERMINAL_FAILURE_EVENT,
+            // One service-level distinct id — never a user id (R-SEC-04).
+            distinctId: "compass-sync",
+            properties: SyncJobTerminalFailureEventSchema.parse({
+              environment: identity.environment,
+              service: "compass-sync",
+              jobKind: job.kind,
+              connectionId: job.connectionId,
+              resourceId: job.resourceId,
+              attempt: job.attempt,
+            }),
+          });
+        },
       },
     );
     return new SyncScheduler(

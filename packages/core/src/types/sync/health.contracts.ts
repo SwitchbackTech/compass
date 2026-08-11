@@ -81,3 +81,23 @@ export type SyncReconcileSweepEvent = z.infer<
 >;
 
 export const SYNC_RECONCILE_SWEEP_EVENT = "sync_reconcile_sweep" as const;
+
+// Emitted once per job that exhausts its retries and settles into a terminal
+// failure (state:"failed"). Without this, a dead-lettered job is invisible —
+// it sits holding its coalescing key, so nothing re-enqueues it, and nothing
+// pages anyone either. Sanitized: job kind and provider ids only, never
+// tokens or provider error content.
+export const SyncJobTerminalFailureEventSchema = z.strictObject({
+  environment: z.string().min(1),
+  service: z.literal("compass-sync"),
+  jobKind: z.string().min(1),
+  connectionId: z.string().min(1),
+  resourceId: z.string().nullable(),
+  attempt: z.number().int().nonnegative(),
+});
+export type SyncJobTerminalFailureEvent = z.infer<
+  typeof SyncJobTerminalFailureEventSchema
+>;
+
+export const SYNC_JOB_TERMINAL_FAILURE_EVENT =
+  "sync_job_terminal_failure" as const;

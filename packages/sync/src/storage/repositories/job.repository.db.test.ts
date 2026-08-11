@@ -507,6 +507,82 @@ describe("JobRepository", () => {
       });
     });
 
+    it("requeueFailedByConnection revives every failed job kind for the connection", async () => {
+      const connectionId = objectId() as JobEnqueue["connectionId"];
+      const tenantId = objectId() as JobEnqueue["tenantId"];
+      const principalId = objectId() as JobEnqueue["principalId"];
+      const pull = await seedFailed({
+        tenantId,
+        principalId,
+        connectionId,
+        kind: "incrementalPull",
+        coalescingKey: `incrementalPull:${objectId()}`,
+      });
+      const repairJob = await seedFailed({
+        tenantId,
+        principalId,
+        connectionId,
+        kind: "repair",
+        coalescingKey: `repair:${objectId()}`,
+      });
+      // A different connection's failed job must not be touched.
+      const otherConnectionId = objectId() as JobEnqueue["connectionId"];
+      const otherJob = await seedFailed({
+        tenantId,
+        principalId,
+        connectionId: otherConnectionId,
+        kind: "incrementalPull",
+        coalescingKey: `incrementalPull:${objectId()}`,
+      });
+
+      const revivedCount = await repo.requeueFailedByConnection(
+        tenantId,
+        principalId,
+        connectionId,
+        NOW,
+      );
+
+      expect(revivedCount).toBe(2);
+      for (const id of [pull, repairJob]) {
+        const revived = await repo.findByIdUnscoped(id);
+        expect(revived?.state).toBe("pending");
+        expect(revived?.attempt).toBe(0);
+        expect(revived?.leaseOwner).toBeNull();
+        expect(revived?.failureClass).toBeNull();
+        expect(revived?.runAfter).toEqual(NOW);
+      }
+      expect(await repo.findByIdUnscoped(otherJob)).toMatchObject({
+        state: "failed",
+      });
+    });
+
+    it("requeueFailedByConnection leaves pending/claimed jobs alone", async () => {
+      const connectionId = objectId() as JobEnqueue["connectionId"];
+      const tenantId = objectId() as JobEnqueue["tenantId"];
+      const principalId = objectId() as JobEnqueue["principalId"];
+      const pending = await repo.enqueue(
+        enqueue({
+          tenantId,
+          principalId,
+          connectionId,
+          runAfter: past(60 * 60_000),
+          coalescingKey: `repair:${objectId()}`,
+        }),
+      );
+
+      const revivedCount = await repo.requeueFailedByConnection(
+        tenantId,
+        principalId,
+        connectionId,
+        NOW,
+      );
+
+      expect(revivedCount).toBe(0);
+      expect(
+        await repo.findById(tenantId, principalId, pending._id),
+      ).toMatchObject({ state: "pending" });
+    });
+
     it("requeue resets a failed job to pending with a fresh attempt budget", async () => {
       const id = await seedFailed({ runAfter: past(60 * 60_000) });
       expect(await repo.requeue(id, NOW)).toBe(true);

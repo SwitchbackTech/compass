@@ -345,6 +345,44 @@ describe("SyncJobWorker", () => {
     expect(after?.leaseOwner).toBeNull();
   });
 
+  it("does not call onFail while a transient failure still has retries left", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    await enqueue(resource, "incrementalPull");
+    const failed: JobRecord[] = [];
+    const worker = new SyncJobWorker(
+      deps(
+        new FakeReader([], new ProviderEventReadError("transient", "flaky")),
+      ),
+      OWNER,
+      { now, maxAttempts: 5, onFail: (j) => failed.push(j) },
+    );
+
+    await worker.runOnce();
+
+    expect(failed).toHaveLength(0);
+  });
+
+  it("calls onFail exactly once, with the job, on the exhausting attempt", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const job = await enqueue(resource, "incrementalPull");
+    const failed: JobRecord[] = [];
+    // maxAttempts: 1 means the first (attempt 1) transient failure is terminal.
+    const worker = new SyncJobWorker(
+      deps(
+        new FakeReader([], new ProviderEventReadError("transient", "flaky")),
+      ),
+      OWNER,
+      { now, maxAttempts: 1, onFail: (j) => failed.push(j) },
+    );
+
+    await worker.runOnce();
+
+    expect(failed).toHaveLength(1);
+    expect(failed[0]?._id).toEqual(job._id);
+  });
+
   it("keeps a failed job's coalescing key so enqueue does not replace it", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");

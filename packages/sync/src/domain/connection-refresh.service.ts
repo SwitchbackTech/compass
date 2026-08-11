@@ -49,6 +49,23 @@ export async function refreshPrincipalCalendars(
     inFlight: 0,
   };
 
+  // Revive every failed job (of any kind) for each connection this refresh
+  // touches, not just the incrementalPull rows enqueueUrgent below revives via
+  // coalescing key. Otherwise a wedged calendarListSync/initialImport/repair/
+  // subscriptionMaintain row stays stuck even after the user asks to refresh.
+  const connectionIds = [...new Set(resources.map((r) => r.connectionId))];
+  const revivedCounts = await Promise.all(
+    connectionIds.map((connectionId) =>
+      deps.jobs.requeueFailedByConnection(
+        tenantId,
+        principalId,
+        connectionId,
+        runAfter,
+      ),
+    ),
+  );
+  tally.requeuedFailed += revivedCounts.reduce((sum, n) => sum + n, 0);
+
   const outcomes = await Promise.all(
     resources.map(async (resource) => {
       const enqueue: JobEnqueue = {

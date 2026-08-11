@@ -486,6 +486,37 @@ export class JobRepository {
     });
   }
 
+  // Revive every failed job for a connection, of any kind — not just the
+  // incrementalPull rows enqueueUrgent's coalescing-key revive already
+  // covers. A manual refresh is the user's explicit signal that the
+  // connection should try again, so a wedged calendarListSync/initialImport/
+  // repair/subscriptionMaintain row should not stay stuck holding its
+  // coalescing key just because it isn't the kind refresh happens to
+  // re-enqueue. Leaves requeuedCount alone, matching enqueueUrgent's revive
+  // arm: that counter is the self-heal sweep's own budget, not a human's.
+  async requeueFailedByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+    now: Date,
+  ): Promise<number> {
+    const result = await this.collection.updateMany(
+      { tenantId, principalId, connectionId, state: "failed" },
+      {
+        $set: {
+          state: "pending",
+          runAfter: now,
+          attempt: 0,
+          leaseOwner: null,
+          leaseExpiresAt: null,
+          failureClass: null,
+        },
+        $currentDate: { updatedAt: true },
+      },
+    );
+    return result.modifiedCount;
+  }
+
   // Operator tooling only — looks up by id without tenant/principal scope.
   // Prefer findById(tenantId, principalId, id) for request-path reads.
   async findByIdUnscoped(id: SyncJobId): Promise<JobRecord | null> {
