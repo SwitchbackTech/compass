@@ -6,5 +6,6 @@
  * small diff instead of a re-implementation.
  */
 export const BILLING_DEFAULTS = {
-  TRIAL_LENGTH_DAYS: 14,
+  // Aligned with the client-side anonymous trial clock (packages/web/src/billing/trial.storage.ts).
+  TRIAL_LENGTH_DAYS: 7,
 } as const;

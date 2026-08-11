@@ -103,6 +103,7 @@ describe("onboardingTourActions", () => {
     expect(useOnboardingTourStore.getState()).toEqual({
       isActive: true,
       stepId: "create",
+      isConfirmingSkip: false,
     });
   });
 });

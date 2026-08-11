@@ -1,5 +1,6 @@
 import { type FC } from "react";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
+import { OnboardingTourResumeCard } from "@web/components/OnboardingTour/OnboardingTourResumeCard";
 import {
   getOnboardingTourSteps,
   getPreviousOnboardingStepId,
@@ -7,6 +8,7 @@ import {
 } from "@web/components/OnboardingTour/onboarding.tour.steps";
 import {
   onboardingTourActions,
+  selectIsConfirmingTourSkip,
   selectOnboardingTourActive,
   selectOnboardingTourStepId,
   useOnboardingTourStore,
@@ -33,8 +35,9 @@ export const OnboardingTour: FC = () => {
 
   const isActive = useOnboardingTourStore(selectOnboardingTourActive);
   const stepId = useOnboardingTourStore(selectOnboardingTourStepId);
+  const isConfirmingSkip = useOnboardingTourStore(selectIsConfirmingTourSkip);
 
-  if (!isActive) return null;
+  if (!isActive) return <OnboardingTourResumeCard />;
 
   const steps = getOnboardingTourSteps();
   const step = steps.find((entry) => entry.id === stepId) ?? steps[0];
@@ -51,76 +54,103 @@ export const OnboardingTour: FC = () => {
       style={{ zIndex: Z_INDEX_TOOLTIP }}
     >
       <div className="pointer-events-auto w-full max-w-md rounded-xl border border-border bg-surface/95 px-5 py-4 text-text shadow-xl backdrop-blur-2xl backdrop-saturate-150">
-        <div className="mb-1 flex items-center justify-between gap-3">
-          <p className="font-medium text-sm">{step.title}</p>
-          <p className="shrink-0 text-text-muted text-xs">
-            {stepIndex + 1} / {ONBOARDING_TOUR_STEP_IDS.length}
-          </p>
-        </div>
-        <p className="text-sm text-text-muted">{step.body}</p>
-        {step.shortcutHint ? (
-          <p className="mt-3">
-            <ShortcutKeys keys={step.shortcutHint} />
-          </p>
-        ) : null}
-        <div className="mt-4 flex items-center justify-between gap-3">
-          {isFork ? (
-            <>
+        {isConfirmingSkip ? (
+          <>
+            <p className="font-medium text-sm">Skip the tour?</p>
+            <p className="mt-1 text-sm text-text-muted">
+              Enter to skip, any other key to keep going.
+            </p>
+            <div className="mt-4 flex items-center justify-end gap-2">
               <button
                 className={TOUR_TEXT_BUTTON_CLASS}
-                onClick={onboardingTourActions.skip}
-                type="button"
-              >
-                I'm done
-              </button>
-              <button
-                className={TOUR_PRIMARY_BUTTON_CLASS}
-                onClick={onboardingTourActions.advance}
+                onClick={onboardingTourActions.cancelSkipConfirm}
                 type="button"
               >
                 Keep going
               </button>
-            </>
-          ) : (
-            <>
               <button
-                className={TOUR_TEXT_BUTTON_CLASS}
+                className={TOUR_PRIMARY_BUTTON_CLASS}
                 onClick={onboardingTourActions.skip}
                 type="button"
               >
                 Skip tour
               </button>
-              <div className="flex items-center gap-2">
-                {canGoPrevious ? (
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mb-1 flex items-center justify-between gap-3">
+              <p className="font-medium text-sm">{step.title}</p>
+              <p className="shrink-0 text-text-muted text-xs">
+                {stepIndex + 1} / {ONBOARDING_TOUR_STEP_IDS.length}
+              </p>
+            </div>
+            <p className="text-sm text-text-muted">{step.body}</p>
+            {step.shortcutHint ? (
+              <p className="mt-3">
+                <ShortcutKeys keys={step.shortcutHint} />
+              </p>
+            ) : null}
+            <div className="mt-4 flex items-center justify-between gap-3">
+              {isFork ? (
+                <>
                   <button
                     className={TOUR_TEXT_BUTTON_CLASS}
-                    onClick={onboardingTourActions.retreat}
+                    onClick={onboardingTourActions.skip}
                     type="button"
                   >
-                    Previous
+                    I'm done
                   </button>
-                ) : null}
-                {isDone ? (
                   <button
                     className={TOUR_PRIMARY_BUTTON_CLASS}
-                    onClick={onboardingTourActions.finish}
-                    type="button"
-                  >
-                    Finish
-                  </button>
-                ) : (
-                  <button
-                    className={TOUR_SECONDARY_BUTTON_CLASS}
                     onClick={onboardingTourActions.advance}
                     type="button"
                   >
-                    Next
+                    Keep going
                   </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+                </>
+              ) : (
+                <>
+                  <button
+                    className={TOUR_TEXT_BUTTON_CLASS}
+                    onClick={onboardingTourActions.skip}
+                    type="button"
+                  >
+                    Skip tour
+                  </button>
+                  <div className="flex items-center gap-2">
+                    {canGoPrevious ? (
+                      <button
+                        className={TOUR_TEXT_BUTTON_CLASS}
+                        onClick={onboardingTourActions.retreat}
+                        type="button"
+                      >
+                        Previous
+                      </button>
+                    ) : null}
+                    {isDone ? (
+                      <button
+                        className={TOUR_PRIMARY_BUTTON_CLASS}
+                        onClick={onboardingTourActions.finish}
+                        type="button"
+                      >
+                        Finish
+                      </button>
+                    ) : (
+                      <button
+                        className={TOUR_SECONDARY_BUTTON_CLASS}
+                        onClick={onboardingTourActions.advance}
+                        type="button"
+                      >
+                        Next
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </section>
   );

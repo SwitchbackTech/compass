@@ -166,7 +166,7 @@ describe("WelcomeModal", () => {
     expect(answer).toHaveAttribute("aria-hidden", "false");
     expect(answer).toHaveAttribute("data-state", "open");
     expect(
-      screen.getByText(/Compass is for busy minimalists who'd rather fly/),
+      screen.getByText(/Compass is for busy professionals who live at/),
     ).toBeTruthy();
 
     await user.click(questionButton);

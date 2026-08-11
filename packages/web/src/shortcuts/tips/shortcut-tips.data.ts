@@ -34,7 +34,7 @@ export function getShortcutTips(): ShortcutTip[] {
       parts: [
         "Hold ",
         { key: "Shift" },
-        " and press an arrow to nudge this event",
+        " and press an arrow to move this event",
       ],
     },
     {

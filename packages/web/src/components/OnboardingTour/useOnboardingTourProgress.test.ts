@@ -174,7 +174,7 @@ describe("useOnboardingTourProgress navigation and Escape", () => {
     );
   };
 
-  it("skips the tour on Escape when no lesson overlay owns it", async () => {
+  it("shows a skip confirm on Escape instead of skipping immediately", async () => {
     useOnboardingTourStore.setState({
       ...initialOnboardingTourState,
       isActive: true,
@@ -187,8 +187,44 @@ describe("useOnboardingTourProgress navigation and Escape", () => {
     });
 
     await waitFor(() => {
+      expect(useOnboardingTourStore.getState().isConfirmingSkip).toBe(true);
+    });
+    expect(useOnboardingTourStore.getState().isActive).toBe(true);
+  });
+
+  it("skips the tour when Enter confirms the skip", async () => {
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "create",
+      isConfirmingSkip: true,
+    });
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    act(() => {
+      dispatchKey("Enter");
+    });
+
+    await waitFor(() => {
       expect(useOnboardingTourStore.getState().isActive).toBe(false);
     });
+  });
+
+  it("cancels the skip confirm and keeps the tour going on any other key", async () => {
+    useOnboardingTourStore.setState({
+      ...initialOnboardingTourState,
+      isActive: true,
+      stepId: "create",
+      isConfirmingSkip: true,
+    });
+    renderHook(() => useOnboardingTourProgress(), { wrapper });
+
+    act(() => {
+      dispatchKey("a");
+    });
+
+    expect(useOnboardingTourStore.getState().isConfirmingSkip).toBe(false);
+    expect(useOnboardingTourStore.getState().isActive).toBe(true);
   });
 
   it("lets Escape close a leftover form during the palette lesson", async () => {

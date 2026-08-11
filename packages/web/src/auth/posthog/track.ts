@@ -17,10 +17,11 @@ export type ProductEvent =
   | "connect_cta_shown"
   | "connect_cta_accepted"
   | "connect_cta_skipped"
-  | "trial_cta_shown"
   | "trial_started"
   | "trial_converted"
   | "trial_expired"
+  | "trial_gate_shown"
+  | "trial_gate_cta_clicked"
   | "shortcut_tip_shown"
   | "shortcut_tip_acted_on";
 

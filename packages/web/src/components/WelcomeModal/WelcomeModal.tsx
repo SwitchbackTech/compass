@@ -57,12 +57,9 @@ export function WelcomeModal() {
   const dismiss = (cta: "start_now" | "dismissed" = "dismissed") => {
     if (closing) return;
     markWelcomeSeen();
-    if (cta === "start_now") {
-      onboardingTourActions.start();
-    } else {
-      // Backdrop / Escape: never trap; mark the tour skipped.
-      onboardingTourActions.markSkippedWithoutStarting();
-    }
+    // Backdrop / Escape never traps the user in this modal, but it also
+    // never dead-ends into a blank calendar: both paths start the tour.
+    onboardingTourActions.start(cta === "start_now" ? "start_now" : "escape");
     track("welcome_modal_dismissed", { cta });
     beginDismiss(() => setIsOpen(false));
   };
@@ -125,18 +122,22 @@ export function WelcomeModal() {
             <button
               type="button"
               onClick={() => handOffToAuth("sign_up")}
-              className="inline-flex items-center rounded-3xl bg-accent px-4 py-1.5 text-on-accent text-xs transition-all hover:brightness-110"
+              className="group inline-flex items-center rounded-3xl bg-accent px-4 py-1.5 text-on-accent text-xs transition-all hover:brightness-110"
             >
               Sign up
-              <ShortcutHint className="ml-2">U</ShortcutHint>
+              <ShortcutHint className="ml-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+                U
+              </ShortcutHint>
             </button>
             <button
               type="button"
               onClick={() => handOffToAuth("log_in")}
-              className="inline-flex items-center rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
+              className="group inline-flex items-center rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
             >
               Log in
-              <ShortcutHint className="ml-2">I</ShortcutHint>
+              <ShortcutHint className="ml-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+                I
+              </ShortcutHint>
             </button>
           </div>
         </div>
@@ -148,10 +149,12 @@ export function WelcomeModal() {
           <button
             type="button"
             onClick={() => dismiss("start_now")}
-            className="c-button c-button-primary c-button-elevated inline-flex items-center rounded-full px-10"
+            className="group c-button c-button-primary c-button-elevated inline-flex items-center rounded-full px-10"
           >
             Start Now
-            <ShortcutHint className="ml-2">S</ShortcutHint>
+            <ShortcutHint className="ml-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+              S
+            </ShortcutHint>
           </button>
         </div>
 

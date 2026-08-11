@@ -1,10 +1,12 @@
-import { type FC } from "react";
+import { type FC, useContext } from "react";
+import { SessionContext } from "@web/auth/compass/session/session.context";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import {
   getSidebarSyncStatus,
   SSE_DEGRADED_STATUS,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
+import { TrialCountdownChip } from "@web/billing/TrialCountdownChip";
 import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 import { EdgeFocusIndicator } from "@web/grid/shortcuts/EdgeFocusIndicator";
@@ -45,6 +47,7 @@ import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
  * the meaning; `title` is the safety net if anything still overflows.
  */
 export const SidebarStatusBar: FC = () => {
+  const { authenticated } = useContext(SessionContext);
   useShortcutTipTrigger();
   const activeTipId = useShortcutTipsStore(selectActiveShortcutTipId);
   const isKeyboardOnly = useKeyboardOnlyStore(selectKeyboardOnlyActive);
@@ -97,6 +100,10 @@ export const SidebarStatusBar: FC = () => {
       ) : !status && activeTipId ? (
         <div className="flex h-full min-w-0 flex-1 items-center">
           <ShortcutTipIndicator />
+        </div>
+      ) : !status && !authenticated ? (
+        <div className="flex h-full min-w-0 flex-1 items-center">
+          <TrialCountdownChip />
         </div>
       ) : (
         <button

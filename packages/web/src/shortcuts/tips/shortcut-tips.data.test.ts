@@ -14,7 +14,7 @@ describe("getTipPlainText", () => {
       "Press E then T to jump to the title",
     );
     expect(plainTextById.nudge).toBe(
-      "Hold Shift and press an arrow to nudge this event",
+      "Hold Shift and press an arrow to move this event",
     );
     expect(plainTextById["target-event"]).toBe(
       "Tap Shift to jump to any visible event",

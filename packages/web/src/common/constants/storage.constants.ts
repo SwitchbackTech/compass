@@ -13,6 +13,11 @@ type StorageKey =
   // so a full-page OAuth redirect can resume on the right stage. "done"
   // means completed or dismissed; absent means never triggered.
   | "compass.onboarding.post-tour-stage"
+  // Step id of an unfinished tour, so an abandoned session (closed tab,
+  // navigated away) can be resumed instead of silently lost. Cleared on
+  // finish or skip.
+  | "compass.onboarding.tour-progress"
+  | "compass.trial.started-at"
   | "compass.shortcuts.tips-muted"
   | "compass.sidebar.width"
   | "compass.theme"
@@ -40,6 +45,8 @@ export const STORAGE_KEYS: Record<
   | "HAS_DISMISSED_TASKS_REMOVAL_NOTICE"
   | "HAS_PENDING_TOUR_OFFER"
   | "POST_TOUR_STAGE"
+  | "TOUR_PROGRESS"
+  | "TRIAL_STARTED_AT"
   | "SHORTCUT_TIPS_MUTED"
   | "LIFE_PREFERENCES"
   | "SIDEBAR_WIDTH"
@@ -62,6 +69,8 @@ export const STORAGE_KEYS: Record<
     "compass.onboarding.has-dismissed-tasks-removal-notice",
   HAS_PENDING_TOUR_OFFER: "compass.onboarding.has-pending-tour-offer",
   POST_TOUR_STAGE: "compass.onboarding.post-tour-stage",
+  TOUR_PROGRESS: "compass.onboarding.tour-progress",
+  TRIAL_STARTED_AT: "compass.trial.started-at",
   SHORTCUT_TIPS_MUTED: "compass.shortcuts.tips-muted",
   LIFE_PREFERENCES: "compass.life.preferences",
   SIDEBAR_WIDTH: "compass.sidebar.width",

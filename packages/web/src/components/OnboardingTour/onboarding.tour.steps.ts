@@ -78,7 +78,7 @@ export function getOnboardingTourSteps(): OnboardingTourStep[] {
       shortcutHint: "Shift",
     },
     nudge: {
-      title: "Nudge into the perfect slot",
+      title: "Move into the perfect slot",
       body: "With an event focused, hold Shift and press an arrow key to slide it a few minutes at a time.",
       shortcutHint: ["Shift", "ArrowRight"],
     },

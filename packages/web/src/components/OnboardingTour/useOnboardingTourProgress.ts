@@ -11,6 +11,7 @@ import {
 import { ONBOARDING_ARROW_LESSON_STEP_IDS } from "@web/components/OnboardingTour/onboarding.tour.steps";
 import {
   onboardingTourActions,
+  selectIsConfirmingTourSkip,
   selectOnboardingTourActive,
   selectOnboardingTourStepId,
   useOnboardingTourStore,
@@ -57,6 +58,7 @@ export function shouldAdvanceTargetEventStep(eventId: string | null): boolean {
 export function useOnboardingTourProgress() {
   const isActive = useOnboardingTourStore(selectOnboardingTourActive);
   const stepId = useOnboardingTourStore(selectOnboardingTourStepId);
+  const isConfirmingSkip = useOnboardingTourStore(selectIsConfirmingTourSkip);
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const isSaving = useHasPendingEventMutations();
   const isPaletteOpen = useSettingsStore(selectIsCmdPaletteOpen);
@@ -184,7 +186,7 @@ export function useOnboardingTourProgress() {
   // of this hook — pressing the key is enough to count as the lesson, we do
   // not verify the resulting focus/nudge/undo actually landed.
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || isConfirmingSkip) return;
     if (stepId !== "moveFocus" && stepId !== "nudge" && stepId !== "undo") {
       return;
     }
@@ -229,12 +231,12 @@ export function useOnboardingTourProgress() {
       document.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("keyup", onKeyUp);
     };
-  }, [isActive, stepId]);
+  }, [isActive, stepId, isConfirmingSkip]);
 
   // ArrowLeft / ArrowRight move Previous / Next when arrows are not the lesson
   // and focus is not inside an editable field.
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || isConfirmingSkip) return;
     if (ONBOARDING_ARROW_LESSON_STEP_IDS.has(stepId)) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -258,16 +260,34 @@ export function useOnboardingTourProgress() {
     return () => {
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [isActive, stepId]);
+  }, [isActive, stepId, isConfirmingSkip]);
 
-  // ESC skips the tour unless the current lesson is mid-overlay dismiss
-  // (palette / shortcuts), or a leftover form is still open on the palette
-  // step after E-then-T. Capture so we win over unrelated lower handlers;
-  // create/save still exit the tour even with the form open.
+  // Escape never traps: first press shows an inline "skip the tour?" confirm
+  // (unless the current lesson is mid-overlay dismiss on palette/shortcuts,
+  // or a leftover form is open on the palette step after E-then-T — those
+  // still exit their own overlay first). While confirming, Enter skips and
+  // any other key cancels the confirm and lets the keypress fall through, so
+  // pressing the actual lesson key still counts. Capture so this wins over
+  // unrelated lower handlers.
   useEffect(() => {
     if (!isActive) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
+      const { isConfirmingSkip: confirming } =
+        useOnboardingTourStore.getState();
+
+      if (confirming) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          event.stopPropagation();
+          onboardingTourActions.skip();
+        } else {
+          // Any other key (including a second Escape) means "keep going".
+          onboardingTourActions.cancelSkipConfirm();
+        }
+        return;
+      }
+
       if (event.key !== "Escape") return;
       if (event.defaultPrevented) return;
 
@@ -285,7 +305,7 @@ export function useOnboardingTourProgress() {
 
       event.preventDefault();
       event.stopPropagation();
-      onboardingTourActions.skip();
+      onboardingTourActions.requestSkipConfirm();
     };
 
     document.addEventListener("keydown", onKeyDown, true);
