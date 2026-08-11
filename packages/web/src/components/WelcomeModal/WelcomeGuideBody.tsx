@@ -28,8 +28,8 @@ export function WelcomeGuideBody() {
           The keyboard-first calendar
         </h2>
         <p className="text-text-muted">
-          Rediscover the joy of shortcuts as you build your perfect schedule.
-          No mouse required.
+          Rediscover the joy of shortcuts as you build your perfect schedule. No
+          mouse required.
         </p>
       </div>
 
