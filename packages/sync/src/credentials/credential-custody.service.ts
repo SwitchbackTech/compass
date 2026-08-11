@@ -71,6 +71,14 @@ export class CredentialCustody {
     await this.credentials.deleteByConnection(connectionId);
   }
 
+  // Clear a cached access token the provider just rejected (401), so the next
+  // getValidAccessToken call is forced to refresh instead of replaying the
+  // same dead token. Without this, every retry of a job that hit a stale
+  // cached token reuses it, burning the whole retry ladder for nothing.
+  async invalidateAccessToken(connectionId: ConnectionId): Promise<void> {
+    await this.credentials.clearCachedAccessToken(connectionId);
+  }
+
   async #resolveAccessToken(connectionId: ConnectionId): Promise<string> {
     const credential = await this.credentials.findByConnection(connectionId);
     if (!credential) {

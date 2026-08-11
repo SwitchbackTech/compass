@@ -158,23 +158,20 @@ const TRANSIENT_REASONS = [
 ];
 
 // Map a Google events.list failure to a read-error reason. An expired syncToken
-// (410 Gone) forces a full re-import. Retryable: a rate limit or server/network
-// error, a quota-shaped 403, or a 401 - the token that was valid when
-// getValidAccessToken minted it can expire mid-job on a long-running import or
-// repair, and the NEXT attempt mints a fresh one (calendar-import.service.ts /
-// calendar-repair.service.ts each fetch it once at the top of the job).
-// Anything else is an unrecoverable read failure.
+// (410 Gone) forces a full re-import. A 401 means the access token was rejected
+// - it may have expired mid-job on a long-running import or repair, or the
+// cached token may simply be stale - so the caller must invalidate the cached
+// token before retrying; otherwise every retry replays the same rejected
+// token, burns the retry ladder, and dead-letters the job. Also retryable: a
+// rate limit or server/network error, or a quota-shaped 403. Anything else is
+// an unrecoverable read failure.
 function classifyReadError(
   error: unknown,
-): "cursorExpired" | "transient" | "readFailed" {
+): "cursorExpired" | "authExpired" | "transient" | "readFailed" {
   const status = httpStatus(error);
   if (status === 410) return "cursorExpired";
-  if (
-    status === 401 ||
-    status === 429 ||
-    status === undefined ||
-    status >= 500
-  ) {
+  if (status === 401) return "authExpired";
+  if (status === 429 || status === undefined || status >= 500) {
     return "transient";
   }
   if (status === 403) {

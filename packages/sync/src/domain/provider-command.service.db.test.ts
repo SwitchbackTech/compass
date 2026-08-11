@@ -83,12 +83,14 @@ class FakeWriter implements ProviderEventWriter {
 const tokenSource = (token = "access-token"): AccessTokenSource => ({
   getValidAccessToken: async () => token,
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 });
 const failingTokenSource = (error: unknown): AccessTokenSource => ({
   getValidAccessToken: async () => {
     throw error;
   },
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 });
 
 // Minimal auth adapter for CredentialCustody in the revoked-grant cases.

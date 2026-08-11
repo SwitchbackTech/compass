@@ -52,6 +52,7 @@ class FakeDeleteWriter implements ProviderEventWriter {
 const tokenSource = () => ({
   getValidAccessToken: async () => "access-token",
   discardRevoked: async () => {},
+  invalidateAccessToken: async () => {},
 });
 
 describe("retryStaleCommands", () => {

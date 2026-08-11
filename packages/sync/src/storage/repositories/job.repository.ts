@@ -230,10 +230,16 @@ export class JobRepository {
   // restart burst). Sort is `{runAfter:1}` so oldest-due wins within a rung.
   // findOneAndUpdate stays atomic per arm, so two workers still never both
   // win the same job. Returns null when no job is due.
+  // excludeKinds reserves this lane away from the given job kinds — a light
+  // lane that claims only quick jobs, so a long initialImport/repair claimed
+  // by another lane can never head-of-line block it. Applied to all three
+  // claim arms, including the expired-lease reclaim arm, so a light lane
+  // never adopts a stalled long-running job either.
   async claimDueJob(
     owner: string,
     now: Date,
     leaseDurationMs: number,
+    excludeKinds?: JobRecord["kind"][],
   ): Promise<JobRecord | null> {
     const leaseExpiresAt = new Date(now.getTime() + leaseDurationMs);
     const claimUpdate = {
@@ -245,6 +251,10 @@ export class JobRepository {
       sort: { runAfter: 1 as const },
       returnDocument: "after" as const,
     };
+    const kindFilter =
+      excludeKinds && excludeKinds.length > 0
+        ? { kind: { $nin: excludeKinds } }
+        : {};
 
     for (const filter of [
       { state: "claimed" as const, leaseExpiresAt: { $lt: now } },
@@ -256,7 +266,7 @@ export class JobRepository {
       { state: "pending" as const, runAfter: { $lte: now } },
     ]) {
       const claimed = await this.collection.findOneAndUpdate(
-        filter,
+        { ...filter, ...kindFilter },
         claimUpdate,
         claimOpts,
       );
@@ -484,6 +494,37 @@ export class JobRepository {
       connectionId,
       ...exhaustedFailedFilter(maxRequeues),
     });
+  }
+
+  // Revive every failed job for a connection, of any kind — not just the
+  // incrementalPull rows enqueueUrgent's coalescing-key revive already
+  // covers. A manual refresh is the user's explicit signal that the
+  // connection should try again, so a wedged calendarListSync/initialImport/
+  // repair/subscriptionMaintain row should not stay stuck holding its
+  // coalescing key just because it isn't the kind refresh happens to
+  // re-enqueue. Leaves requeuedCount alone, matching enqueueUrgent's revive
+  // arm: that counter is the self-heal sweep's own budget, not a human's.
+  async requeueFailedByConnection(
+    tenantId: TenantId,
+    principalId: PrincipalId,
+    connectionId: ConnectionId,
+    now: Date,
+  ): Promise<number> {
+    const result = await this.collection.updateMany(
+      { tenantId, principalId, connectionId, state: "failed" },
+      {
+        $set: {
+          state: "pending",
+          runAfter: now,
+          attempt: 0,
+          leaseOwner: null,
+          leaseExpiresAt: null,
+          failureClass: null,
+        },
+        $currentDate: { updatedAt: true },
+      },
+    );
+    return result.modifiedCount;
   }
 
   // Operator tooling only — looks up by id without tenant/principal scope.

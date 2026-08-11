@@ -232,7 +232,7 @@ describe("GoogleEventReaderAdapter", () => {
     }
   });
 
-  it("maps a 401 to transient (the token can expire mid-job on a long import/repair; the next attempt mints a fresh one)", async () => {
+  it("maps a 401 to authExpired (the caller must invalidate the cached token before retrying)", async () => {
     const api = new FakeEventListApi([], { response: { status: 401 } });
     const { adapter } = adapterWith(api);
 
@@ -241,7 +241,7 @@ describe("GoogleEventReaderAdapter", () => {
         accessToken: "tok",
         calendarId: "primary@google.com",
       }),
-    ).rejects.toMatchObject({ reason: "transient" });
+    ).rejects.toMatchObject({ reason: "authExpired" });
   });
 
   it("maps a quota-shaped 403 to transient, like discovery/watch/write already do", async () => {

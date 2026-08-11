@@ -47,6 +47,17 @@ export interface SyncJobWorkerOptions {
   // invisible drop path made a mass credential problem look like a dead sweep
   // (2026-07-29) — surface them.
   onDrop?: (job: JobRecord, reason: string) => void;
+  // Called when a job exhausts its retries and settles into a terminal
+  // failure (before the fail() write). Unlike onError (fires every attempt),
+  // this fires exactly once, on the exhausting attempt — the signal worth
+  // alerting on, since the job is now wedged until an operator or a manual
+  // refresh revives it.
+  onFail?: (job: JobRecord) => void;
+  // Reserve this worker away from the given job kinds — see
+  // JobRepository.claimDueJob. Used to keep a subset of drains claiming only
+  // quick jobs (pulls), so a long initialImport/repair elsewhere can never
+  // head-of-line block them.
+  excludeKinds?: JobRecord["kind"][];
 }
 
 const DEFAULT_LEASE_MS = 5 * 60_000;
@@ -103,6 +114,8 @@ export class SyncJobWorker {
   readonly #now: () => Date;
   readonly #onError: (error: unknown, job: JobRecord) => void;
   readonly #onDrop: (job: JobRecord, reason: string) => void;
+  readonly #onFail: (job: JobRecord) => void;
+  readonly #excludeKinds?: JobRecord["kind"][];
 
   constructor(
     deps: SyncJobWorkerDeps,
@@ -124,6 +137,8 @@ export class SyncJobWorker {
     this.#now = options.now ?? (() => new Date());
     this.#onError = options.onError ?? (() => {});
     this.#onDrop = options.onDrop ?? (() => {});
+    this.#onFail = options.onFail ?? (() => {});
+    this.#excludeKinds = options.excludeKinds;
   }
 
   // Claim and process at most one due job. Returns "idle" when nothing is due.
@@ -132,6 +147,7 @@ export class SyncJobWorker {
       this.#owner,
       this.#now(),
       this.#leaseMs,
+      this.#excludeKinds,
     );
     if (!job) return "idle";
     await this.#process(job);
@@ -224,6 +240,7 @@ export class SyncJobWorker {
   // be unlimited retries by another name).
   async #settleFailure(job: JobRecord): Promise<void> {
     if (job.attempt >= this.#maxAttempts) {
+      this.#onFail(job);
       await this.#deps.jobs.fail(job._id, this.#owner);
       return;
     }

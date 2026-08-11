@@ -113,6 +113,30 @@ describe("CredentialCustody", () => {
     expect(adapter.refreshCalls).toBe(0);
   });
 
+  it("refreshes on the next call after invalidateAccessToken clears the cache", async () => {
+    const connectionId = objectId() as ConnectionId;
+    const adapter = new FakeAdapter({
+      refreshed: {
+        accessToken: "reminted-token",
+        expiresAt: new Date("2026-01-01T01:00:00Z"),
+        grantedScopes: [],
+      },
+    });
+    const custody = new CredentialCustody(repo, adapter, fixedNow);
+    await custody.store(baseCredential(connectionId));
+    await repo.cacheAccessToken(
+      connectionId,
+      "rejected-token",
+      new Date("2026-01-01T01:00:00Z"), // still unexpired by clock skew alone
+    );
+
+    await custody.invalidateAccessToken(connectionId);
+    const token = await custody.getValidAccessToken(connectionId);
+
+    expect(token).toBe("reminted-token");
+    expect(adapter.refreshCalls).toBe(1);
+  });
+
   it("refreshes when the cached token is within the expiry skew window", async () => {
     const connectionId = objectId() as ConnectionId;
     const adapter = new FakeAdapter({

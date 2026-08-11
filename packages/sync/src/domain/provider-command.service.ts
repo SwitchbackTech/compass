@@ -56,6 +56,7 @@ import { type SyncResourceRepository } from "@sync/storage/repositories/sync-res
 export interface AccessTokenSource {
   getValidAccessToken(connectionId: ConnectionId): Promise<string>;
   discardRevoked(connectionId: ConnectionId): Promise<void>;
+  invalidateAccessToken(connectionId: ConnectionId): Promise<void>;
 }
 
 export interface ProviderMutationDeps {

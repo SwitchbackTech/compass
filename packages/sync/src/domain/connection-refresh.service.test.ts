@@ -27,12 +27,13 @@ describe("refreshPrincipalCalendars", () => {
       },
     ];
 
+    const requeueFailedByConnection = mock(async () => 0);
     const tally = await refreshPrincipalCalendars(
       {
         resources: {
           listEventsByPrincipal: mock(async () => resources),
         } as never,
-        jobs: { enqueueUrgent } as never,
+        jobs: { enqueueUrgent, requeueFailedByConnection } as never,
       },
       "t1" as TenantId,
       "p1" as PrincipalId,
@@ -46,6 +47,8 @@ describe("refreshPrincipalCalendars", () => {
       requeuedFailed: 0,
       inFlight: 0,
     });
+    // One call per distinct connection touched, not per resource.
+    expect(requeueFailedByConnection).toHaveBeenCalledTimes(1);
     expect(enqueueUrgent).toHaveBeenCalledTimes(2);
     expect(enqueueUrgent.mock.calls[0]?.[0]).toMatchObject({
       kind: "incrementalPull",
@@ -74,22 +77,25 @@ describe("refreshPrincipalCalendars", () => {
       connectionId: "c1",
     }));
 
+    const requeueFailedByConnection = mock(async () => 2);
     const tally = await refreshPrincipalCalendars(
       {
         resources: {
           listEventsByPrincipal: mock(async () => resources),
         } as never,
-        jobs: { enqueueUrgent } as never,
+        jobs: { enqueueUrgent, requeueFailedByConnection } as never,
       },
       "t1" as TenantId,
       "p1" as PrincipalId,
     );
 
+    // The 2 revived-by-connection non-incrementalPull jobs fold into the same
+    // requeuedFailed tally as the enqueueUrgent-outcome "requeuedFailed": 1.
     expect(tally).toEqual({
       resources: 4,
       created: 1,
       boosted: 1,
-      requeuedFailed: 1,
+      requeuedFailed: 3,
       inFlight: 1,
     });
   });
