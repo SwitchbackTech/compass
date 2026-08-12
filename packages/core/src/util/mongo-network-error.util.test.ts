@@ -4,8 +4,8 @@ import {
 } from "./mongo-network-error.util";
 import { describe, expect, it, mock } from "bun:test";
 
-function namedError(name: string, message: string): Error {
-  const error = new Error(message);
+function namedError(name: string, message: string, cause?: Error): Error {
+  const error = new Error(message, cause ? { cause } : undefined);
   error.name = name;
   return error;
 }
@@ -25,11 +25,6 @@ describe("isTransientMongoNetworkError", () => {
         namedError("MongoNetworkError", "getaddrinfo ESERVFAIL"),
       ),
     ).toBe(true);
-    expect(
-      isTransientMongoNetworkError(
-        namedError("MongoServerSelectionError", "Server selection timed out"),
-      ),
-    ).toBe(true);
   });
 
   it("matches DNS and socket blip messages even without a driver name", () => {
@@ -39,6 +34,28 @@ describe("isTransientMongoNetworkError", () => {
     expect(isTransientMongoNetworkError(new Error("read ECONNRESET"))).toBe(
       true,
     );
+  });
+
+  it("matches server selection only when the cause/message is a network blip", () => {
+    expect(
+      isTransientMongoNetworkError(
+        namedError(
+          "MongoServerSelectionError",
+          "Server selection timed out after 30000 ms",
+          namedError("MongoNetworkError", "getaddrinfo ESERVFAIL"),
+        ),
+      ),
+    ).toBe(true);
+
+    // Durable selection failures (allowlist / no primary / etc.) must still page.
+    expect(
+      isTransientMongoNetworkError(
+        namedError(
+          "MongoServerSelectionError",
+          "Server selection timed out after 30000 ms",
+        ),
+      ),
+    ).toBe(false);
   });
 
   it("rejects unrelated failures", () => {
