@@ -1,3 +1,4 @@
+import { EDIT_SEQUENCE_FIELDS } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
 import { type Shortcut } from "@web/shortcuts/global.shortcut.types";
 
 /**
@@ -142,51 +143,17 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Open focused event",
     section: "edit",
   },
-  // Listed unconditionally: the legend is a reference, and gating these on live
-  // DOM focus made them vanish the moment the legend took focus to open.
-  // In-the-moment discovery is the which-key menu's job instead.
-  {
-    id: "edit-focus-title",
-    keys: ["e", "t"],
-    label: "Edit title",
+  // Generated from the behavioral source of truth, so the legend cannot drift
+  // from what the keys actually do. Listed unconditionally: the legend is a
+  // reference, and gating these on live DOM focus made them vanish the moment
+  // the legend took focus to open. In-the-moment discovery is the which-key
+  // menu's job instead.
+  ...EDIT_SEQUENCE_FIELDS.map(({ field, key, label }) => ({
+    id: `edit-focus-${field}`,
+    keys: ["e", key],
+    label: `Edit ${label.toLowerCase()}`,
     section: "edit",
-  },
-  {
-    id: "edit-focus-location",
-    keys: ["e", "l"],
-    label: "Edit location",
-    section: "edit",
-  },
-  {
-    id: "edit-focus-description",
-    keys: ["e", "d"],
-    label: "Edit description",
-    section: "edit",
-  },
-  {
-    id: "edit-focus-start",
-    keys: ["e", "s"],
-    label: "Edit start time",
-    section: "edit",
-  },
-  {
-    id: "edit-focus-end",
-    keys: ["e", "e"],
-    label: "Edit end time",
-    section: "edit",
-  },
-  {
-    id: "edit-focus-recurrence",
-    keys: ["e", "r"],
-    label: "Edit recurrence",
-    section: "edit",
-  },
-  {
-    id: "edit-focus-calendar",
-    keys: ["e", "c"],
-    label: "Edit calendar",
-    section: "edit",
-  },
+  })),
   {
     id: "edit-delete",
     keys: ["Delete"],

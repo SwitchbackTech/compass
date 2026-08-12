@@ -6,36 +6,14 @@ import {
 } from "@web/common/utils/form/form.util";
 import { isAppLocked } from "@web/shortcuts/app-lock";
 import {
+  EDIT_SEQUENCE_FIELD_BY_KEY,
+  type EditSequenceSecondKey,
+} from "@web/shortcuts/edit-sequence/edit-sequence.fields";
+import {
   editSequenceActions,
   useEditSequenceStore,
 } from "@web/shortcuts/edit-sequence/edit-sequence.store";
-
-/** Leader → field map for the `e` edit sequences. */
-export const EDIT_SEQUENCE_FIELDS = {
-  t: "title",
-  l: "location",
-  d: "description",
-  s: "start",
-  e: "end",
-  r: "recurrence",
-  c: "calendar",
-} as const satisfies Record<string, EventFormFocusField>;
-
-export type EditSequenceSecondKey = keyof typeof EDIT_SEQUENCE_FIELDS;
-
-/** Human-readable second-key menu, in the order the which-key panel lists them. */
-export const EDIT_SEQUENCE_OPTIONS: {
-  key: EditSequenceSecondKey;
-  label: string;
-}[] = [
-  { key: "t", label: "Title" },
-  { key: "l", label: "Location" },
-  { key: "d", label: "Description" },
-  { key: "s", label: "Start" },
-  { key: "e", label: "End" },
-  { key: "r", label: "Repeat" },
-  { key: "c", label: "Calendar" },
-];
+import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
 
 /**
  * How long the leader stays silent. A second key inside this window fires with
@@ -54,8 +32,12 @@ export const resetEditSequenceArm = () => {
   editSequenceActions.disarm();
 };
 
+/** Any modifier at all, used to reject chords as the *second* key. */
 const hasModifier = (event: KeyboardEvent) =>
   event.metaKey || event.ctrlKey || event.altKey || event.shiftKey;
+
+const normalizeKey = (event: KeyboardEvent) =>
+  event.key.length === 1 ? event.key.toLowerCase() : event.key;
 
 /**
  * The single owner of both edit leaders.
@@ -94,9 +76,7 @@ export function useEditSequenceShortcut({
         clearTimeout(menuTimeoutId);
         menuTimeoutId = null;
       }
-      if (isEditSequenceArmed()) {
-        editSequenceActions.disarm();
-      }
+      editSequenceActions.disarm();
     };
 
     const arm = () => {
@@ -139,11 +119,10 @@ export function useEditSequenceShortcut({
           return;
         }
 
-        const key =
-          event.key.length === 1 ? event.key.toLowerCase() : event.key;
+        const key = normalizeKey(event);
         const field =
-          key in EDIT_SEQUENCE_FIELDS
-            ? EDIT_SEQUENCE_FIELDS[key as EditSequenceSecondKey]
+          key in EDIT_SEQUENCE_FIELD_BY_KEY
+            ? EDIT_SEQUENCE_FIELD_BY_KEY[key as EditSequenceSecondKey]
             : null;
 
         if (field) {
@@ -162,16 +141,16 @@ export function useEditSequenceShortcut({
 
       // Mod+E works anywhere, including inside the form's inputs. Bare `e` only
       // outside them, or it would eat the letter you meant to type.
-      const isLeader = isModLeader(event)
-        ? true
-        : !hasModifier(event) &&
-          event.key.toLowerCase() === LEADER_KEY &&
-          !isEditableKeyboardTarget(event);
+      const isMod = isModLeader(event);
+      const isLeader =
+        isMod ||
+        (isBareLetterKey(event, LEADER_KEY) &&
+          !isEditableKeyboardTarget(event));
 
       if (!isLeader) return;
       if (canArmRef.current && !canArmRef.current()) return;
 
-      if (isModLeader(event)) {
+      if (isMod) {
         event.preventDefault();
         event.stopPropagation();
       }
@@ -179,7 +158,7 @@ export function useEditSequenceShortcut({
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
-      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      const key = normalizeKey(event);
       if (!suppressKeyUp.has(key)) return;
 
       suppressKeyUp.delete(key);
