@@ -6,6 +6,7 @@ import {
   selectEditSequenceMenuVisible,
   useEditSequenceStore,
 } from "@web/shortcuts/edit-sequence/edit-sequence.store";
+import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
 import {
   isEditSequenceArmed,
   resetEditSequenceArm,
@@ -29,11 +30,13 @@ describe("useEditSequenceShortcut", () => {
   beforeEach(() => {
     clearAppLockReasons();
     resetEditSequenceArm();
+    eventJumpActions.reset();
   });
 
   afterEach(() => {
     clearAppLockReasons();
     resetEditSequenceArm();
+    eventJumpActions.reset();
     document.body.innerHTML = "";
   });
 
@@ -230,6 +233,21 @@ describe("useEditSequenceShortcut", () => {
       pressKey("e");
       pressKey("t");
 
+      expect(onSequence).not.toHaveBeenCalled();
+    });
+
+    it("yields to event jump mode instead of arming underneath it", () => {
+      // Event jump already stands down for an armed sequence; without the
+      // mirror check a stray `e` would arm under the jump hints and swallow
+      // the next day letter.
+      const onSequence = mock(() => {});
+      eventJumpActions.setActive(true);
+      renderHook(() => useEditSequenceShortcut({ onSequence }));
+
+      pressKey("e");
+      expect(isEditSequenceArmed()).toBe(false);
+
+      pressKey("t");
       expect(onSequence).not.toHaveBeenCalled();
     });
 

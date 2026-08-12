@@ -14,6 +14,7 @@ import {
   useEditSequenceStore,
 } from "@web/shortcuts/edit-sequence/edit-sequence.store";
 import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
+import { isEventJumpActive } from "@web/shortcuts/shift-hint/event-jump.store";
 
 /**
  * How long the leader stays silent. A second key inside this window fires with
@@ -148,6 +149,10 @@ export function useEditSequenceShortcut({
           !isEditableKeyboardTarget(event));
 
       if (!isLeader) return;
+      // Event jump owns the letter keys while it is on, and it already stands
+      // down for an armed sequence. Yield back, or a stray `e` would arm
+      // underneath the jump hints and steal the next day letter.
+      if (isEventJumpActive()) return;
       if (canArmRef.current && !canArmRef.current()) return;
 
       if (isMod) {

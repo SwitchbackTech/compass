@@ -56,6 +56,10 @@ export const eventJumpActions = {
 
 export const selectEventJumpActive = (state: EventJumpState) => state.isActive;
 
+/** Imperative read for plain event handlers outside React, mirroring
+ * `isEditSequenceArmed` so the two keyboard modes can yield to each other. */
+export const isEventJumpActive = () => useEventJumpStore.getState().isActive;
+
 export const selectEventJumpActiveDayKeys = (state: EventJumpState) =>
   state.activeDayKeys;
 
