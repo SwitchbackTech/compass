@@ -122,22 +122,18 @@ export function WelcomeModal() {
             <button
               type="button"
               onClick={() => handOffToAuth("sign_up")}
-              className="group inline-flex items-center rounded-3xl bg-accent px-4 py-1.5 text-on-accent text-xs transition-all hover:brightness-110"
+              className="inline-flex items-center rounded-3xl bg-accent px-4 py-1.5 text-on-accent text-xs transition-all hover:brightness-110"
             >
               Sign up
-              <ShortcutHint className="ml-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
-                U
-              </ShortcutHint>
+              <ShortcutHint className="ml-2">U</ShortcutHint>
             </button>
             <button
               type="button"
               onClick={() => handOffToAuth("log_in")}
-              className="group inline-flex items-center rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
+              className="inline-flex items-center rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
             >
               Log in
-              <ShortcutHint className="ml-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
-                I
-              </ShortcutHint>
+              <ShortcutHint className="ml-2">I</ShortcutHint>
             </button>
           </div>
         </div>
@@ -149,12 +145,10 @@ export function WelcomeModal() {
           <button
             type="button"
             onClick={() => dismiss("start_now")}
-            className="group c-button c-button-primary c-button-elevated inline-flex items-center rounded-full px-10"
+            className="c-button c-button-primary c-button-elevated inline-flex items-center rounded-full px-10"
           >
             Start Now
-            <ShortcutHint className="ml-2 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
-              S
-            </ShortcutHint>
+            <ShortcutHint className="ml-2">S</ShortcutHint>
           </button>
         </div>
 
