@@ -1,4 +1,9 @@
 import { type FC } from "react";
+import {
+  HOURS_AM_FORMAT,
+  HOURS_AM_SHORT_FORMAT,
+} from "@core/constants/date.constants";
+import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { useEventPalette } from "@web/common/styles/theme.util";
 import {
@@ -14,17 +19,13 @@ const DAY_LABELS = ["Mon", "Tue", "Wed"];
 const GRID_START_MIN = SHOWCASE_GRID_START_HOUR * 60;
 const TOTAL_MIN = (SHOWCASE_GRID_END_HOUR - SHOWCASE_GRID_START_HOUR) * 60;
 
-const formatHour = (hour: number) => {
-  const h12 = hour % 12 === 0 ? 12 : hour % 12;
-  return `${h12} ${hour < 12 ? "AM" : "PM"}`;
-};
+// Same format constants the real grid uses, so the first calendar a new
+// user sees reads exactly like the one they graduate into.
+const formatHour = (hour: number) =>
+  dayjs().startOf("day").add(hour, "hour").format(HOURS_AM_SHORT_FORMAT);
 
-const formatTime = (minutes: number) => {
-  const hour = Math.floor(minutes / 60);
-  const minute = minutes % 60;
-  const h12 = hour % 12 === 0 ? 12 : hour % 12;
-  return `${h12}:${String(minute).padStart(2, "0")}`;
-};
+const formatTime = (minutes: number) =>
+  dayjs().startOf("day").add(minutes, "minute").format(HOURS_AM_FORMAT);
 
 const PracticeBlock: FC<{
   block: PracticeEventBlock;
@@ -39,11 +40,12 @@ const PracticeBlock: FC<{
   const top = ((block.startMin - GRID_START_MIN) / TOTAL_MIN) * 100;
   const height = ((block.endMin - block.startMin) / TOTAL_MIN) * 100;
 
+  // Accent bar, like the real grid's focused-edge indicator.
   const edgeShadow =
     isFocused && state.edge === "start"
-      ? "inset 0 3px 0 0 var(--text)"
+      ? "inset 0 3px 0 0 var(--accent)"
       : isFocused && state.edge === "end"
-        ? "inset 0 -3px 0 0 var(--text)"
+        ? "inset 0 -3px 0 0 var(--accent)"
         : "";
   const focusShadow = isFocused
     ? "0 0 0 1px var(--background), 0 0 0 3px color-mix(in srgb, var(--text) 70%, transparent)"

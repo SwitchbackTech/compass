@@ -59,7 +59,7 @@ const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
   },
   eventJump: {
     title: "Jump to any event",
-    body: "Tap S to flash a key over every event, then press one to jump straight to it.",
+    body: "Tap S to flash a key over every event, then type its key to jump straight to it.",
     keycaps: KEYMAP.eventJump.keycaps,
   },
   moveEvent: {
@@ -92,10 +92,6 @@ const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
     body: "Now you're ready to steer the real vessel. Sample events are waiting on your calendar, and you can replay this practice anytime from the command palette.",
   },
 };
-
-export function getShowcaseSteps(): ShowcaseStep[] {
-  return STEP_IDS.map((id) => ({ id, ...STEP_CONTENT[id] }));
-}
 
 export function getShowcaseStep(id: ShowcaseStepId): ShowcaseStep {
   return { id, ...STEP_CONTENT[id] };

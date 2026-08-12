@@ -14,6 +14,14 @@ import { resetCollapsedAccountsStoreForTests } from "@web/calendars/collapsed-ac
 import { resetDefaultCalendarStoreForTests } from "@web/calendars/default-calendar.store";
 import { resetRecentCommandsStoreForTests } from "@web/components/CommandPalette/recent-commands.store";
 import { useFeedbackStore } from "@web/components/Feedback/feedback.store";
+import {
+  initialChecklistState,
+  useChecklistStore,
+} from "@web/components/OnboardingChecklist/checklist.store";
+import {
+  initialShortcutShowcaseState,
+  useShortcutShowcaseStore,
+} from "@web/components/ShortcutShowcase/showcase.store";
 import { useWelcomeGuideStore } from "@web/components/WelcomeModal/welcome.guide.store";
 import { recurrenceScopeOpportunityActions } from "@web/events/recurrence/recurrence-scope-opportunity.store";
 import { resetEventRepositorySourceForTests } from "@web/events/repositories/event.repository.source.store";
@@ -62,6 +70,8 @@ const storeResets: StoreReset[] = [
   // is active) - order-dependent, so it only surfaces on some runners.
   () => setWeekInteractionMotionActive(false),
   () => useFeedbackStore.setState(useFeedbackStore.getInitialState(), true),
+  () => useShortcutShowcaseStore.setState(initialShortcutShowcaseState, true),
+  () => useChecklistStore.setState(initialChecklistState, true),
   () =>
     useWelcomeGuideStore.setState(useWelcomeGuideStore.getInitialState(), true),
   () => useThemeStore.setState(useThemeStore.getInitialState(), true),

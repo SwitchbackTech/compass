@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
@@ -50,7 +51,8 @@ describe("ShortcutShowcase", () => {
     expect(isAppLocked()).toBe(false);
   });
 
-  it("advances through every lesson by doing, and graduates on Enter", () => {
+  it("advances through every lesson by doing, and graduates on Enter", async () => {
+    const user = userEvent.setup();
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.start());
 
@@ -59,9 +61,10 @@ describe("ShortcutShowcase", () => {
     expect(currentStepId()).toBe("save");
 
     // save: type a title into the editor, Enter commits.
-    const titleInput = screen.getByLabelText("Event title");
-    fireEvent.change(titleInput, { target: { value: "Coffee with Alex" } });
-    fireEvent.keyDown(titleInput, { key: "Enter" });
+    await user.type(
+      screen.getByLabelText("Event title"),
+      "Coffee with Alex{Enter}",
+    );
     expect(currentStepId()).toBe("moveFocus");
     expect(screen.getByText("Coffee with Alex")).toBeTruthy();
 
@@ -74,9 +77,10 @@ describe("ShortcutShowcase", () => {
     pressKey("t");
     expect(currentStepId()).toBe("eventJump");
 
-    // eventJump: S flashes chips, a chip letter jumps.
+    // eventJump: S flashes the real day-prefix chips; typing one jumps.
     pressKey("s");
-    pressKey("j");
+    pressKey("t");
+    pressKey("1");
     expect(currentStepId()).toBe("moveEvent");
 
     // moveEvent: Shift+Arrow slides the focused block.
@@ -125,12 +129,18 @@ describe("ShortcutShowcase", () => {
     expect(screen.queryByText("Skip the shortcuts?")).toBeNull();
     expect(currentStepId()).toBe("save");
 
+    // C opened the title editor, so this Escape only closes the editor.
+    pressKey("Escape");
+    expect(screen.queryByLabelText("Event title")).toBeNull();
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+
     // The confirm already ran once this entry: Escape now skips directly.
     pressKey("Escape");
     expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 
-  it("Previous restores the prior step's board so it can be redone", () => {
+  it("Previous restores the prior step's board so it can be redone", async () => {
+    const user = userEvent.setup();
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.start());
 
@@ -138,11 +148,33 @@ describe("ShortcutShowcase", () => {
     expect(currentStepId()).toBe("save");
     expect(screen.getByLabelText("Event title")).toBeTruthy();
 
-    fireEvent.click(screen.getByText("Previous"));
+    await user.click(screen.getByRole("button", { name: "Previous" }));
     expect(currentStepId()).toBe("create");
     // The board rewound with the step: the draft is gone, C works again.
     expect(screen.queryByLabelText("Event title")).toBeNull();
     pressKey("c");
     expect(currentStepId()).toBe("save");
+  });
+
+  it("Escape inside the title editor closes the editor, not the showcase", async () => {
+    const user = userEvent.setup();
+    render(<ShortcutShowcase />);
+    act(() => shortcutShowcaseActions.start());
+
+    // Burn the one skip confirm, then keep practicing.
+    pressKey("Escape");
+    pressKey("c");
+    expect(currentStepId()).toBe("save");
+
+    await user.type(screen.getByLabelText("Event title"), "Standup prep");
+    pressKey("Escape");
+    // Editor committed and closed; the showcase is still running.
+    expect(screen.queryByLabelText("Event title")).toBeNull();
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+    expect(screen.getByText("Standup prep")).toBeTruthy();
+
+    // With no editor open, Escape now skips directly (confirm already seen).
+    pressKey("Escape");
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
   });
 });

@@ -6,26 +6,7 @@ import { KEYMAP } from "@web/shortcuts/keymap";
  * detection is deliberately loose (any qualifying action counts, on any
  * event): the checklist encourages, it does not examine.
  */
-const ITEM_IDS = [
-  "jumpToEvent",
-  "moveEvent",
-  "resizeEdge",
-  "placeDraft",
-  "undo",
-  "signUp",
-] as const;
-
-export type ChecklistItemId = (typeof ITEM_IDS)[number];
-
-export const CHECKLIST_ITEM_IDS: readonly ChecklistItemId[] = ITEM_IDS;
-
-export type ChecklistItem = {
-  id: ChecklistItemId;
-  label: string;
-  keycaps?: readonly string[];
-};
-
-export const CHECKLIST_ITEMS: readonly ChecklistItem[] = [
+export const CHECKLIST_ITEMS = [
   {
     id: "jumpToEvent",
     label: "Jump to an event",
@@ -48,4 +29,16 @@ export const CHECKLIST_ITEMS: readonly ChecklistItem[] = [
   },
   { id: "undo", label: "Undo a change", keycaps: KEYMAP.undo.keycaps },
   { id: "signUp", label: "Sign up to keep your calendar" },
-];
+] as const satisfies readonly {
+  id: string;
+  label: string;
+  keycaps?: readonly string[];
+}[];
+
+export type ChecklistItem = (typeof CHECKLIST_ITEMS)[number];
+
+export type ChecklistItemId = ChecklistItem["id"];
+
+/** Derived from the display list so the two can never disagree. */
+export const CHECKLIST_ITEM_IDS: readonly ChecklistItemId[] =
+  CHECKLIST_ITEMS.map((item) => item.id);

@@ -2,6 +2,7 @@ import { CheckCircleIcon, CircleIcon } from "@phosphor-icons/react";
 import { type FC, useEffect } from "react";
 import { track } from "@web/auth/posthog/track";
 import { Z_INDEX_TOOLTIP } from "@web/common/constants/web.constants";
+import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { CHECKLIST_ITEMS } from "@web/components/OnboardingChecklist/checklist.items";
 import {
@@ -70,6 +71,7 @@ const ChecklistCard: FC = () => {
             <ul className="flex flex-col gap-1.5">
               {CHECKLIST_ITEMS.map((item) => {
                 const isComplete = Boolean(completed[item.id]);
+                const keycaps = "keycaps" in item ? item.keycaps : undefined;
                 const row = (
                   <>
                     {isComplete ? (
@@ -93,11 +95,8 @@ const ChecklistCard: FC = () => {
                     >
                       {item.label}
                     </span>
-                    {item.keycaps && !isComplete && (
-                      <ShortcutKeys
-                        className="ml-auto"
-                        keys={[...item.keycaps]}
-                      />
+                    {keycaps && !isComplete && (
+                      <ShortcutKeys className="ml-auto" keys={[...keycaps]} />
                     )}
                   </>
                 );
@@ -145,7 +144,13 @@ const ChecklistCard: FC = () => {
 export const OnboardingChecklist: FC = () => {
   const isShowcaseActive = useShortcutShowcaseStore(selectShowcaseActive);
   const isDone = useChecklistStore(selectChecklistDone);
-  const isLive = !isDone && !isShowcaseActive && hasSeenShortcutShowcase();
+  // Without storage (private mode), progress and dismissal can never
+  // persist, so the card would haunt every reload; better to not show it.
+  const isLive =
+    !isDone &&
+    !isShowcaseActive &&
+    persistentBrowserStore.isAvailable() &&
+    hasSeenShortcutShowcase();
   useChecklistDetection(isLive);
   if (!isLive) return null;
   return <ChecklistCard />;

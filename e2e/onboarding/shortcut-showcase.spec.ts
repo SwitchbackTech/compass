@@ -1,14 +1,10 @@
 import { expect, test } from "@playwright/test";
-import {
-  createEventTitle,
-  fillTitleAndSaveEventForm,
-} from "../utils/event-test-utils";
 
-// Empty storage so Welcome + Start Now launch the interactive tour.
+// Empty storage so Welcome + Start Now launch the Shortcut Showcase.
 test.use({ storageState: { cookies: [], origins: [] } });
 test.use({ viewport: { width: 1600, height: 900 } });
 
-test("Start Now runs the interactive tour happy path", async ({ page }) => {
+test("Start Now runs the Shortcut Showcase happy path", async ({ page }) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
 
   const welcomeDialog = page.getByRole("dialog", {
@@ -18,68 +14,68 @@ test("Start Now runs the interactive tour happy path", async ({ page }) => {
   await welcomeDialog.getByRole("button", { name: "Start Now" }).click();
   await expect(welcomeDialog).toBeHidden();
 
-  const card = page.locator("[data-onboarding-tour]");
-  await expect(card).toContainText("Create with the keyboard");
+  const showcase = page.getByRole("region", { name: "Shortcut practice" });
+  await expect(showcase).toContainText("Create with the keyboard");
 
-  // Act 1: create, save, moveFocus, editSequence.
   await page.keyboard.press("c");
-  await expect(card).toContainText("Name it and save");
+  await expect(showcase).toContainText("Name it and save");
 
-  const title = createEventTitle("Tour Event");
-  await fillTitleAndSaveEventForm(page, title);
-  await expect(card).toContainText("Move between events");
+  // The practice title editor autofocuses; Enter commits it.
+  await page.keyboard.type("Practice Event");
+  await page.keyboard.press("Enter");
+  await expect(showcase).toContainText("Move between events");
+  await expect(showcase).toContainText("Practice Event");
 
-  // moveFocus auto-focuses today's seeded Morning standup event; today has
-  // several other seeded events, so an arrow key has somewhere real to go.
-  await page.keyboard.press("ArrowDown");
-  await expect(card).toContainText("Jump straight to a field");
+  // The saved draft sits on the middle day; ArrowLeft lands on Monday.
+  await page.keyboard.press("ArrowLeft");
+  await expect(showcase).toContainText("Jump straight to a field");
 
   await page.keyboard.press("e");
   await page.keyboard.press("t");
-  await expect(card).toContainText("That's the basics");
+  await expect(showcase).toContainText("Jump to any event");
 
-  await card.getByRole("button", { name: "Keep going" }).click();
-  await expect(card).toContainText("Jump to Dentist");
+  // S flashes the real day-prefix chips; t1 is Tuesday's first block.
+  await page.keyboard.press("s");
+  await page.keyboard.press("t");
+  await page.keyboard.press("1");
+  await expect(showcase).toContainText("Reschedule in a keystroke");
 
-  // Act 2: targetEvent, move, resizeEdge, placeDraft, undo. The exact
-  // event-jump key is covered by e2e/timed/shift-hold-event-hints.spec.ts;
-  // here we drive the mission's actual completion signal (Dentist focused),
-  // same as a jump would leave it.
-  const dentistButton = page
-    .locator("#mainGrid")
-    .getByRole("button", { name: /Dentist/ });
-  await dentistButton.focus();
-  await expect(card).toContainText("Move Dentist out of the overlap");
+  await page.keyboard.press("Shift+ArrowDown");
+  await expect(showcase).toContainText("Stretch the end time");
 
-  await page.keyboard.press("Shift+ArrowRight");
-  await expect(card).toContainText("Give Dentist more time");
-
-  // A single Tab reaches the end edge (the step seeds edge focus to start).
+  // The step seeds edge focus to start, so one Tab reaches the end edge.
   await page.keyboard.press("Tab");
   await page.keyboard.press("Shift+ArrowDown");
-  await expect(card).toContainText("Place a new event on the grid");
+  await expect(showcase).toContainText("Place a block anywhere");
 
-  // The step blurs focus on entry, so nothing is focused for the place-draft
-  // Shift+Arrow to move.
+  // The step clears focus on entry, so Shift+Arrow drops a fresh block.
   await page.keyboard.press("Shift+ArrowRight");
-  await expect(card).toContainText("Never stress about a mistake");
+  await expect(showcase).toContainText("Never stress a mistake");
 
   await page.keyboard.press("ControlOrMeta+z");
   await page.keyboard.press("ControlOrMeta+Shift+z");
-  await expect(card).toContainText("Graduate to Hardcore Mode");
+  await expect(showcase).toContainText("Try Hardcore Mode");
 
-  // Act 3: hardcore graduation, the tour's finale.
   await page.keyboard.press("h");
-  await expect(card).toHaveCount(0);
+  await expect(showcase).toContainText("young cap'n");
 
-  // Leave Hardcore Mode so it doesn't affect other assertions/reload below.
-  await page.keyboard.press("h");
+  await page.keyboard.press("Enter");
+  await expect(showcase).toHaveCount(0);
+
+  // Graduation lands on the real calendar: seeded events + the checklist.
+  await expect(
+    page.getByRole("complementary", { name: "Shortcut practice checklist" }),
+  ).toBeVisible();
 
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.locator("[data-onboarding-tour]")).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "Shortcut practice" }),
+  ).toHaveCount(0);
 });
 
-test("Skip tour from Start Now never auto-replays", async ({ page }) => {
+test("Skipping the showcase confirms once and never auto-replays", async ({
+  page,
+}) => {
   await page.goto("/week", { waitUntil: "domcontentloaded" });
 
   const welcomeDialog = page.getByRole("dialog", {
@@ -87,12 +83,22 @@ test("Skip tour from Start Now never auto-replays", async ({ page }) => {
   });
   await welcomeDialog.getByRole("button", { name: "Start Now" }).click();
 
-  const card = page.locator("[data-onboarding-tour]");
-  await expect(card).toBeVisible();
-  await card.getByRole("button", { name: "Skip tour" }).click();
-  await expect(card).toHaveCount(0);
+  const showcase = page.getByRole("region", { name: "Shortcut practice" });
+  await expect(showcase).toContainText("Create with the keyboard");
+
+  await page.keyboard.press("Escape");
+  await expect(showcase).toContainText("Skip the shortcuts?");
+  await showcase.getByRole("button", { name: "Skip anyway" }).click();
+  await expect(showcase).toHaveCount(0);
+
+  // Skipping still reveals the practice checklist in the real app.
+  await expect(
+    page.getByRole("complementary", { name: "Shortcut practice checklist" }),
+  ).toBeVisible();
 
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(page.locator("[data-onboarding-tour]")).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "Shortcut practice" }),
+  ).toHaveCount(0);
   await expect(welcomeDialog).toBeHidden();
 });

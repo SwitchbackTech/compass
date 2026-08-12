@@ -4,7 +4,7 @@ import {
   createDraft,
   cycleEdge,
   initialPracticeState,
-  jumpToChipLetter,
+  jumpToChipHint,
   moveFocus,
   moveFocusedEvent,
   openTitleEditor,
@@ -88,13 +88,16 @@ describe("practice state transitions", () => {
     expect(sync?.endMin).toBe(11 * 60 + 15);
   });
 
-  it("assigns jump chips and jumps focus by letter", () => {
+  it("assigns the real day-prefix jump hints and jumps focus by hint", () => {
     const withChips = toggleJumpChips(initialPracticeState);
-    expect(withChips.jumpChips).not.toBeNull();
-    const letter = withChips.jumpChips?.["practice-gym"];
-    expect(letter).toBeTruthy();
+    // Same labeling scheme the real S flow shows: day prefix + index.
+    expect(withChips.jumpChips).toEqual({
+      "practice-breakfast": "m1",
+      "practice-team-sync": "t1",
+      "practice-gym": "w1",
+    });
 
-    const jumped = jumpToChipLetter(withChips, letter ?? "");
+    const jumped = jumpToChipHint(withChips, "w1");
     expect(jumped.focusedId).toBe("practice-gym");
     expect(jumped.jumpChips).toBeNull();
   });

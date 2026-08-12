@@ -72,20 +72,24 @@ describe("shortcutShowcaseActions", () => {
     expect(useShortcutShowcaseStore.getState().stepIndex).toBe(0);
   });
 
-  it("shows the skip confirm once, then remembers it for this entry", () => {
+  it("confirms the first skip request, then skips directly after that", () => {
     shortcutShowcaseActions.start();
     shortcutShowcaseActions.requestSkipConfirm();
     expect(useShortcutShowcaseStore.getState().isConfirmingSkip).toBe(true);
-    expect(useShortcutShowcaseStore.getState().hasShownSkipConfirm).toBe(true);
 
     shortcutShowcaseActions.cancelSkipConfirm();
     expect(useShortcutShowcaseStore.getState().isConfirmingSkip).toBe(false);
-    expect(useShortcutShowcaseStore.getState().hasShownSkipConfirm).toBe(true);
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
+
+    // The confirm already ran once this entry: the next request skips.
+    shortcutShowcaseActions.requestSkipConfirm();
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(false);
 
     // A fresh entry resets the once-per-entry memory.
-    shortcutShowcaseActions.skip();
     shortcutShowcaseActions.replay();
-    expect(useShortcutShowcaseStore.getState().hasShownSkipConfirm).toBe(false);
+    shortcutShowcaseActions.requestSkipConfirm();
+    expect(useShortcutShowcaseStore.getState().isConfirmingSkip).toBe(true);
+    expect(useShortcutShowcaseStore.getState().isActive).toBe(true);
   });
 
   it("blocks advance and back while the skip confirm is showing", () => {

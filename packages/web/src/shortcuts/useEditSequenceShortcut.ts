@@ -19,7 +19,8 @@ export const EDIT_SEQUENCE_FIELDS = {
 
 export type EditSequenceSecondKey = keyof typeof EDIT_SEQUENCE_FIELDS;
 
-const ARM_WINDOW_MS = 600;
+/** Shared with the Shortcut Showcase so practice teaches the real cadence. */
+export const ARM_WINDOW_MS = 600;
 const LEADER_KEY = KEYMAP.editTitle.sequence.leader;
 
 /** Shared so other letter shortcuts (e.g. event-jump `s`) can yield to `e`… sequences. */

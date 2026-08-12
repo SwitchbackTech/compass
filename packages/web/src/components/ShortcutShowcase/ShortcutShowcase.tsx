@@ -8,8 +8,9 @@ import {
   commitTitle,
   createDraft,
   cycleEdge,
+  focusFallback,
   initialPracticeState,
-  jumpToChipLetter,
+  jumpToChipHint,
   moveFocus,
   moveFocusedEvent,
   openTitleEditor,
@@ -33,22 +34,22 @@ import {
   selectShowcaseConfirmingSkip,
   selectShowcaseStepIndex,
   shortcutShowcaseActions,
+  stepIdAt,
   useShortcutShowcaseStore,
 } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
+import { ARM_WINDOW_MS } from "@web/shortcuts/useEditSequenceShortcut";
 
 const TEXT_BUTTON_CLASS =
   "c-focus-ring rounded-md px-2 py-1 text-text-muted text-xs hover:bg-surface-overlay hover:text-text";
 const PRIMARY_BUTTON_CLASS =
   "c-button c-button-primary rounded-full px-4 py-1.5 text-xs";
 
-const EDIT_SEQUENCE_ARM_MS = 600;
 const ASSIST_IDLE_MS = 15_000;
 const ASSIST_ATTEMPT_THRESHOLD = 2;
-const FALLBACK_FOCUS_ID = "practice-team-sync";
 
 const ARROW_DIRECTIONS: Record<string, PracticeDirection> = {
   ArrowUp: "up",
@@ -56,9 +57,6 @@ const ARROW_DIRECTIONS: Record<string, PracticeDirection> = {
   ArrowLeft: "left",
   ArrowRight: "right",
 };
-
-const focusFallback = (state: PracticeState): PracticeState =>
-  state.focusedId ? state : { ...state, focusedId: FALLBACK_FOCUS_ID };
 
 /** "Show me" fallback, ported from the retired tour's assist hook. */
 function useShowcaseAssist(stepId: ShowcaseStepId): boolean {
@@ -108,7 +106,7 @@ const ShowcaseTakeover: FC = () => {
   const isConfirmingSkip = useShortcutShowcaseStore(
     selectShowcaseConfirmingSkip,
   );
-  const stepId = SHOWCASE_STEP_IDS[stepIndex] ?? "create";
+  const stepId = stepIdAt(stepIndex);
   const step = getShowcaseStep(stepId);
   const isAssistVisible = useShowcaseAssist(stepId);
 
@@ -132,16 +130,15 @@ const ShowcaseTakeover: FC = () => {
   const entrySnapshotsRef = useRef<Record<number, PracticeState>>({});
   const editSequenceArmedUntilRef = useRef(0);
   const undoDoneRef = useRef(false);
+  // Typed-so-far jump key while the S chips are showing ("t" awaiting "t1").
+  const jumpBufferRef = useRef("");
 
   const advance = shortcutShowcaseActions.advance;
 
   const handleTitleCommit = useCallback(
     (title: string) => {
       apply((state) => commitTitle(state, title));
-      if (
-        SHOWCASE_STEP_IDS[useShortcutShowcaseStore.getState().stepIndex] ===
-        "save"
-      ) {
+      if (stepIdAt(useShortcutShowcaseStore.getState().stepIndex) === "save") {
         advance();
       }
     },
@@ -156,13 +153,12 @@ const ShowcaseTakeover: FC = () => {
     undoDoneRef.current = false;
 
     // A still-open editor from a previous step would swallow lesson keys.
+    // The editor input is uncontrolled, so read the typed text off the DOM.
     if (practiceRef.current.editor && stepId !== "save") {
-      apply((state) =>
-        commitTitle(
-          state,
-          state.events.find((e) => e.id === state.editor?.eventId)?.title ?? "",
-        ),
+      const input = document.querySelector<HTMLInputElement>(
+        "[data-practice-title-input]",
       );
+      apply((state) => commitTitle(state, input?.value ?? ""));
     }
 
     if (stepId === "moveFocus" || stepId === "editTitle") {
@@ -187,19 +183,11 @@ const ShowcaseTakeover: FC = () => {
     shortcutShowcaseActions.back();
   };
 
-  const requestSkip = () => {
-    if (useShortcutShowcaseStore.getState().hasShownSkipConfirm) {
-      shortcutShowcaseActions.skip();
-      return;
-    }
-    shortcutShowcaseActions.requestSkipConfirm();
-  };
-
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const store = useShortcutShowcaseStore.getState();
       if (!store.isActive) return;
-      const currentStepId = SHOWCASE_STEP_IDS[store.stepIndex] ?? "create";
+      const currentStepId = stepIdAt(store.stepIndex);
 
       if (store.isConfirmingSkip) {
         if (event.key === "Enter") {
@@ -225,11 +213,18 @@ const ShowcaseTakeover: FC = () => {
       if (event.key === "Escape") {
         event.preventDefault();
         event.stopPropagation();
-        if (store.hasShownSkipConfirm) {
-          shortcutShowcaseActions.skip();
-        } else {
-          shortcutShowcaseActions.requestSkipConfirm();
+        // Escape inside the title editor closes the editor, never the
+        // showcase; a reflexive Escape after the confirm was seen would
+        // otherwise end the whole practice with no prompt. The editor input
+        // is uncontrolled, so the typed text lives in the DOM, not in state.
+        if (practiceRef.current.editor) {
+          const input = document.querySelector<HTMLInputElement>(
+            "[data-practice-title-input]",
+          );
+          apply((state) => commitTitle(state, input?.value ?? ""));
+          return;
         }
+        shortcutShowcaseActions.requestSkipConfirm();
         return;
       }
 
@@ -245,7 +240,7 @@ const ShowcaseTakeover: FC = () => {
         practiceRef.current.focusedId &&
         !practiceRef.current.editor
       ) {
-        editSequenceArmedUntilRef.current = Date.now() + EDIT_SEQUENCE_ARM_MS;
+        editSequenceArmedUntilRef.current = Date.now() + ARM_WINDOW_MS;
         event.preventDefault();
         return;
       }
@@ -260,25 +255,50 @@ const ShowcaseTakeover: FC = () => {
         return;
       }
 
-      // Jump chips are a letter-capture mode while visible.
+      // A second S closes the chips (matching the real toggle), unless S
+      // could still start a hint (never true for the Mon-Wed practice days).
       if (
         practiceRef.current.jumpChips &&
-        /^[a-z]$/i.test(event.key) &&
+        jumpBufferRef.current === "" &&
+        isBareLetterKey(event, KEYMAP.eventJump.bareLetter) &&
+        !Object.values(practiceRef.current.jumpChips).some((hint) =>
+          hint.startsWith(KEYMAP.eventJump.bareLetter),
+        )
+      ) {
+        event.preventDefault();
+        apply(toggleJumpChips);
+        return;
+      }
+
+      // Jump chips are a key-capture mode while visible: hints are the real
+      // day-prefix labels ("m1", "t2"), so collect typed characters until
+      // they exactly match one, keep collecting while a prefix still can,
+      // and reset on a dead end.
+      if (
+        practiceRef.current.jumpChips &&
+        /^[a-z0-9]$/i.test(event.key) &&
         !event.metaKey &&
         !event.ctrlKey &&
         !event.altKey
       ) {
-        const before = practiceRef.current;
-        const next = apply((state) => jumpToChipLetter(state, event.key));
-        if (next !== before) {
-          event.preventDefault();
+        event.preventDefault();
+        const hints = Object.values(practiceRef.current.jumpChips);
+        const typed = jumpBufferRef.current + event.key.toLowerCase();
+        if (hints.includes(typed)) {
+          jumpBufferRef.current = "";
+          apply((state) => jumpToChipHint(state, typed));
           if (currentStepId === "eventJump") advance();
-          return;
+        } else if (hints.some((hint) => hint.startsWith(typed))) {
+          jumpBufferRef.current = typed;
+        } else {
+          jumpBufferRef.current = "";
         }
+        return;
       }
 
       if (isBareLetterKey(event, KEYMAP.eventJump.bareLetter)) {
         event.preventDefault();
+        jumpBufferRef.current = "";
         apply(toggleJumpChips);
         return;
       }
@@ -382,7 +402,7 @@ const ShowcaseTakeover: FC = () => {
           const entries = Object.entries(withChips.jumpChips ?? {});
           const target =
             entries.find(([id]) => id !== withChips.focusedId) ?? entries[0];
-          return target ? jumpToChipLetter(withChips, target[1]) : withChips;
+          return target ? jumpToChipHint(withChips, target[1]) : withChips;
         });
         break;
       case "moveEvent":
@@ -416,7 +436,7 @@ const ShowcaseTakeover: FC = () => {
     <section
       aria-label="Shortcut practice"
       className="fixed inset-0 flex items-center justify-center bg-background"
-      data-shortcut-showcase=""
+      data-onboarding-ui=""
       style={{ zIndex: Z_INDEX_MODAL }}
     >
       <div className="flex h-[80vh] max-h-160 w-full max-w-5xl gap-8 px-8">
@@ -496,7 +516,7 @@ const ShowcaseTakeover: FC = () => {
                   <button
                     type="button"
                     className={TEXT_BUTTON_CLASS}
-                    onClick={requestSkip}
+                    onClick={shortcutShowcaseActions.requestSkipConfirm}
                   >
                     Skip
                   </button>

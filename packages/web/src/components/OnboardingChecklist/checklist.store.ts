@@ -17,15 +17,16 @@ export type ChecklistState = {
   isDone: boolean;
   /** All items just completed; the card celebrates before finalizing. */
   isCelebrating: boolean;
-  hasTrackedShown: boolean;
 };
 
 export const initialChecklistState: ChecklistState = {
   completed: {},
   isDone: false,
   isCelebrating: false,
-  hasTrackedShown: false,
 };
+
+/** Analytics-only once-per-session guard; nothing renders from it. */
+let hasTrackedShown = false;
 
 export const useChecklistStore = create<ChecklistState>()(() => ({
   ...initialChecklistState,
@@ -65,8 +66,8 @@ export const checklistActions = {
   },
   /** First visible render this session. */
   trackShownOnce: () => {
-    if (useChecklistStore.getState().hasTrackedShown) return;
-    useChecklistStore.setState({ hasTrackedShown: true });
+    if (hasTrackedShown) return;
+    hasTrackedShown = true;
     track("checklist_shown");
   },
 };

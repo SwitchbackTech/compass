@@ -28,7 +28,7 @@ export const useShortcutShowcaseStore = create<ShortcutShowcaseState>()(() => ({
   ...initialShortcutShowcaseState,
 }));
 
-const stepIdAt = (index: number) =>
+export const stepIdAt = (index: number) =>
   SHOWCASE_STEP_IDS[index] ?? SHOWCASE_STEP_IDS[0];
 
 /** Shared by finish/skip: mark seen so it never auto-launches again. */
@@ -37,9 +37,9 @@ const endShowcase = () => {
   useShortcutShowcaseStore.setState({ ...initialShortcutShowcaseState });
 };
 
-export type ShowcaseEntry = "start_now" | "escape" | "post_signup" | "palette";
-
-const activate = (entry: ShowcaseEntry) => {
+const activate = (
+  entry: "start_now" | "escape" | "post_signup" | "palette",
+) => {
   useShortcutShowcaseStore.setState({
     ...initialShortcutShowcaseState,
     isActive: true,
@@ -85,10 +85,18 @@ export const shortcutShowcaseActions = {
     track("shortcut_showcase_skipped", { step: stepIdAt(stepIndex) });
     endShowcase();
   },
-  /** Escape/Skip, first time this entry: show the keyboard-first confirm. */
+  /**
+   * Escape or the Skip button. First time this entry: show the
+   * keyboard-first confirm. Once the user has seen it, skip directly.
+   */
   requestSkipConfirm: () => {
-    const { isActive } = useShortcutShowcaseStore.getState();
+    const { isActive, hasShownSkipConfirm } =
+      useShortcutShowcaseStore.getState();
     if (!isActive) return;
+    if (hasShownSkipConfirm) {
+      shortcutShowcaseActions.skip();
+      return;
+    }
     useShortcutShowcaseStore.setState({
       isConfirmingSkip: true,
       hasShownSkipConfirm: true,
@@ -124,7 +132,3 @@ export const selectShowcaseStepIndex = (state: ShortcutShowcaseState) =>
 
 export const selectShowcaseConfirmingSkip = (state: ShortcutShowcaseState) =>
   state.isConfirmingSkip;
-
-export const selectShowcaseHasShownSkipConfirm = (
-  state: ShortcutShowcaseState,
-) => state.hasShownSkipConfirm;

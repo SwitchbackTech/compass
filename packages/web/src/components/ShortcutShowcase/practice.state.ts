@@ -1,4 +1,6 @@
 import { type EventColorSlot } from "@core/types/event-color.contracts";
+import { clamp } from "@web/grid/interaction/math/snap";
+import { assignDayJumpKeys } from "@web/shortcuts/shift-hint/assign-shift-hint-keys";
 
 /**
  * Ephemeral state for the Shortcut Showcase's practice calendar. Nothing here
@@ -42,9 +44,7 @@ const GRID_END_MIN = SHOWCASE_GRID_END_HOUR * 60;
 const NUDGE_MIN = 15;
 const MIN_DURATION_MIN = 15;
 
-const JUMP_LETTERS = ["j", "k", "l", "n", "m", "o", "p"];
-
-export const PRACTICE_DRAFT_ID = "practice-draft";
+const PRACTICE_DRAFT_ID = "practice-draft";
 export const PRACTICE_PLACED_ID = "practice-placed";
 
 export const initialPracticeState: PracticeState = {
@@ -83,9 +83,6 @@ export const initialPracticeState: PracticeState = {
 };
 
 export type PracticeDirection = "up" | "down" | "left" | "right";
-
-const clamp = (value: number, min: number, max: number) =>
-  Math.min(Math.max(value, min), max);
 
 /** Snapshot events into `past` before a committed change; redo dies here. */
 const withHistory = (
@@ -243,29 +240,49 @@ export const resizeFocusedEdge = (
   return withHistory(state, events);
 };
 
+/**
+ * Chips use the real event-jump labeler so practice keys match what the S
+ * flow shows in the actual calendar (day prefix + index: "m1", "t2"). The
+ * practice days are Mon/Tue/Wed, so weekday = dayIndex + 1.
+ */
 export const toggleJumpChips = (state: PracticeState): PracticeState => {
   if (state.jumpChips) return { ...state, jumpChips: null };
-  const ordered = [...state.events].sort(
-    (a, b) => a.dayIndex - b.dayIndex || a.startMin - b.startMin,
+  const assignments = assignDayJumpKeys(
+    state.events.map((event) => ({
+      eventId: event.id,
+      startMs: event.startMin,
+      eventType: "timed" as const,
+      dayKey: `day-${event.dayIndex}`,
+      weekday: event.dayIndex + 1,
+    })),
+    "week",
   );
   const chips: Record<string, string> = {};
-  ordered.forEach((event, index) => {
-    const letter = JUMP_LETTERS[index];
-    if (letter) chips[event.id] = letter;
-  });
+  for (const assignment of assignments) {
+    chips[assignment.eventId] = assignment.hint;
+  }
   return { ...state, jumpChips: chips };
 };
 
-export const jumpToChipLetter = (
+export const jumpToChipHint = (
   state: PracticeState,
-  letter: string,
+  hint: string,
 ): PracticeState => {
   if (!state.jumpChips) return state;
   const match = Object.entries(state.jumpChips).find(
-    ([, chipLetter]) => chipLetter === letter.toLowerCase(),
+    ([, chipHint]) => chipHint === hint.toLowerCase(),
   );
   if (!match) return state;
   return { ...state, focusedId: match[0], jumpChips: null, edge: null };
+};
+
+/** Focus the chronologically first block when nothing is focused. */
+export const focusFallback = (state: PracticeState): PracticeState => {
+  if (state.focusedId) return state;
+  const first = [...state.events].sort(
+    (a, b) => a.dayIndex - b.dayIndex || a.startMin - b.startMin,
+  )[0];
+  return first ? { ...state, focusedId: first.id } : state;
 };
 
 export const clearFocus = (state: PracticeState): PracticeState => ({

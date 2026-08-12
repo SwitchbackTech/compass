@@ -28,14 +28,22 @@ export function markShowcaseOfferPending(): void {
   persistentBrowserStore.set(STORAGE_KEYS.HAS_PENDING_SHOWCASE_OFFER, "true");
 }
 
+/**
+ * A signup that straddles the tour-to-showcase deploy wrote the retired
+ * tour's pending key; honor it once so those users still get onboarded.
+ */
+const LEGACY_PENDING_OFFER_KEY =
+  "compass.onboarding.has-pending-tour-offer" as (typeof STORAGE_KEYS)["HAS_PENDING_SHOWCASE_OFFER"];
+
 /** Consumed once, right after signup completes, to offer the showcase then. */
 export function consumePendingShowcaseOffer(): boolean {
   if (!persistentBrowserStore.isAvailable()) return false;
   const pending =
     persistentBrowserStore.get(STORAGE_KEYS.HAS_PENDING_SHOWCASE_OFFER) ===
-    "true";
+      "true" || persistentBrowserStore.get(LEGACY_PENDING_OFFER_KEY) === "true";
   if (pending) {
     persistentBrowserStore.remove(STORAGE_KEYS.HAS_PENDING_SHOWCASE_OFFER);
+    persistentBrowserStore.remove(LEGACY_PENDING_OFFER_KEY);
   }
   return pending;
 }
