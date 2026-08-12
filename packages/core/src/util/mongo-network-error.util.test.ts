@@ -56,6 +56,11 @@ describe("isTransientMongoNetworkError", () => {
         ),
       ),
     ).toBe(false);
+    expect(
+      isTransientMongoNetworkError(
+        namedError("MongoServerSelectionError", "connection timed out"),
+      ),
+    ).toBe(false);
   });
 
   it("rejects unrelated failures", () => {

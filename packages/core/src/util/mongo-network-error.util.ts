@@ -17,7 +17,6 @@ const TRANSIENT_MONGO_MESSAGE_PATTERNS = [
   /getaddrinfo\s+(ESERVFAIL|ENOTFOUND|EAI_AGAIN)/i,
   /\b(ECONNRESET|ETIMEDOUT|ECONNREFUSED)\b/i,
   /server monitor timeout/i,
-  /connection.*(closed|reset|timed?\s*out)/i,
   /no connection available/i,
   /pool.*cleared/i,
 ];
