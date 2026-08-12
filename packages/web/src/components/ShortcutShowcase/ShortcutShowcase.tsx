@@ -1,4 +1,11 @@
-import { type FC, useCallback, useEffect, useRef, useState } from "react";
+import {
+  type FC,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { track } from "@web/auth/posthog/track";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
@@ -147,8 +154,12 @@ const ShowcaseTakeover: FC = () => {
 
   // Step-entry effects: snapshot for Back, then stage the board so the
   // taught keystroke lands (mirrors the tour's enterDentistMission trick).
+  // Layout, not passive: a step advances from inside a keydown handler, so a
+  // passive effect would run after the browser is free to deliver the next
+  // keystroke. The lesson key would then land in a title editor this effect
+  // has not closed yet (silently appending to the title instead of teaching).
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs per step change by design
-  useEffect(() => {
+  useLayoutEffect(() => {
     entrySnapshotsRef.current[stepIndex] ??= practiceRef.current;
     undoDoneRef.current = false;
 
