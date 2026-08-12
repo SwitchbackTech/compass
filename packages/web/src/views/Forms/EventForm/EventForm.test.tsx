@@ -437,7 +437,7 @@ describe("EventForm", () => {
     expect(screen.getByPlaceholderText("Title")).toHaveFocus();
   });
 
-  it("does not crash jumping to the calendar field on an edit draft, where the picker isn't rendered", () => {
+  it("does not crash jumping to the account field on an edit draft, where the picker isn't rendered", () => {
     renderWithStore(
       <WithEditLeader>
         <EventForm
@@ -457,8 +457,35 @@ describe("EventForm", () => {
     act(() => titleField.focus());
 
     dispatchModKey(titleField, "e");
-    expect(() => dispatchKey(titleField, "c")).not.toThrow();
+    expect(() => dispatchKey(titleField, "a")).not.toThrow();
     expect(titleField).toHaveFocus();
+  });
+
+  it("jumps focus to the color picker with Mod+E then C from the title field", () => {
+    renderWithStore(
+      <WithEditLeader>
+        <EventForm
+          draft={createEditDraft()}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setDraft={mock()}
+        />
+      </WithEditLeader>,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    act(() => titleField.focus());
+
+    dispatchModKey(titleField, "e");
+    dispatchKey(titleField, "c");
+
+    expect(
+      screen.getByRole("radio", { name: "Calendar default" }),
+    ).toHaveFocus();
   });
 
   it("does not jump focus when a bare letter is typed without the Mod+E leader", () => {

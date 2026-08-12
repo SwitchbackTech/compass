@@ -399,5 +399,5 @@ If time is limited, run these checks before shipping shortcut-related changes:
 11. Arrow keys reposition an open draft in both Day and Week view.
 12. With a focused event and no draft open, ArrowUp/ArrowDown move focus to the previous/next event chronologically.
 13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.
-14. With a focused event, `E` then `T` opens the form with the title focused; bare `E` alone does nothing.
+14. With a focused event, `E` then `T` opens the form with the title focused; `E` then `A` / `C` jump to account / color; bare `E` alone does nothing.
 15. Pressing `S` shows event jump chips; a day letter + digit focuses that event; Shift+Tab does not show chips. `H` toggles Hardcore Mode.
