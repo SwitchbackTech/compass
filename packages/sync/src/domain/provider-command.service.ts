@@ -350,12 +350,7 @@ export async function executeProviderUpdate(
   );
   if (!fetchResult.ok) {
     if (fetchResult.stop.kind === "pending") return command;
-    return failCommand(
-      deps,
-      command,
-      fetchResult.stop.reason,
-      connectionId,
-    );
+    return failCommand(deps, command, fetchResult.stop.reason, connectionId);
   }
   const current =
     fetchResult.value?.kind === "event" ? fetchResult.value : null;
@@ -397,12 +392,7 @@ export async function executeProviderUpdate(
   );
   if (!patchResult.ok) {
     if (patchResult.stop.kind === "pending") return command;
-    return failCommand(
-      deps,
-      command,
-      patchResult.stop.reason,
-      connectionId,
-    );
+    return failCommand(deps, command, patchResult.stop.reason, connectionId);
   }
   const result = patchResult.value;
 
@@ -516,12 +506,7 @@ export async function executeProviderSeriesUpdate(
   );
   if (!fetchResult.ok) {
     if (fetchResult.stop.kind === "pending") return command;
-    return failCommand(
-      deps,
-      command,
-      fetchResult.stop.reason,
-      connectionId,
-    );
+    return failCommand(deps, command, fetchResult.stop.reason, connectionId);
   }
   const current =
     fetchResult.value?.kind === "event" ? fetchResult.value : null;
@@ -563,12 +548,7 @@ export async function executeProviderSeriesUpdate(
   );
   if (!patchResult.ok) {
     if (patchResult.stop.kind === "pending") return command;
-    return failCommand(
-      deps,
-      command,
-      patchResult.stop.reason,
-      connectionId,
-    );
+    return failCommand(deps, command, patchResult.stop.reason, connectionId);
   }
   const result = patchResult.value;
 
@@ -1096,12 +1076,7 @@ export async function executeProviderSeriesFollowingDelete(
   );
   if (!fetchResult.ok) {
     if (fetchResult.stop.kind === "pending") return command;
-    return failCommand(
-      deps,
-      command,
-      fetchResult.stop.reason,
-      connectionId,
-    );
+    return failCommand(deps, command, fetchResult.stop.reason, connectionId);
   }
   const current =
     fetchResult.value?.kind === "event" ? fetchResult.value : null;
@@ -1254,12 +1229,7 @@ export async function executeProviderSeriesFollowingUpdate(
   );
   if (!fetchResult.ok) {
     if (fetchResult.stop.kind === "pending") return command;
-    return failCommand(
-      deps,
-      command,
-      fetchResult.stop.reason,
-      connectionId,
-    );
+    return failCommand(deps, command, fetchResult.stop.reason, connectionId);
   }
   const current =
     fetchResult.value?.kind === "event" ? fetchResult.value : null;
