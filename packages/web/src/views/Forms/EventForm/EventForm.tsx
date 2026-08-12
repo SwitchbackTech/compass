@@ -65,7 +65,6 @@ import {
 } from "@web/views/Forms/EventForm/types";
 import { EventFormShell } from "@web/views/Forms/EventFormShell";
 import { useEscapeToCloseForm } from "@web/views/Forms/hooks/useEscapeToCloseForm";
-import { useEventFormFieldJumpShortcuts } from "@web/views/Forms/hooks/useEventFormFieldJumpShortcuts";
 
 const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
   enabled: true,
@@ -661,8 +660,6 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
       },
       EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
-
-    useEventFormFieldJumpShortcuts();
 
     const { isConfirmOpen, onCancelConfirm, onDiscardConfirm } =
       useEscapeToCloseForm(onClose);

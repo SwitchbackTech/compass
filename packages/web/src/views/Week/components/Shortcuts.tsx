@@ -1,3 +1,4 @@
+import { EditSequenceMenu } from "@web/shortcuts/edit-sequence/EditSequenceMenu";
 import { ShiftHintOverlay } from "@web/shortcuts/shift-hint/ShiftHintOverlay";
 import {
   type ShortcutProps,
@@ -11,12 +12,14 @@ export function Shortcuts({
   children: React.ReactNode;
   shortcutsProps: ShortcutProps;
 }) {
-  const { shiftHints } = useWeekShortcutOwner(shortcutsProps);
+  const { getEditSequenceAnchor, shiftHints } =
+    useWeekShortcutOwner(shortcutsProps);
 
   return (
     <>
       {children}
       <ShiftHintOverlay hints={shiftHints} />
+      <EditSequenceMenu getAnchor={getEditSequenceAnchor} />
     </>
   );
 }

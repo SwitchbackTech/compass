@@ -22,7 +22,6 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
-import { useIsGridEventFocused } from "@web/grid/shortcuts/useIsGridEventFocused";
 import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
 import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
 import { Header } from "@web/views/Day/components/Header/Header";
@@ -31,7 +30,6 @@ import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
 import { focusFirstDayCalendarEvent } from "@web/views/Day/interaction/day-event.focus";
-import { getFocusedDayGridEventTarget } from "@web/views/Day/interaction/targeting/day-event.targeting";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 
 export const DayViewContent = memo(() => {
@@ -61,16 +59,14 @@ export const DayViewContent = memo(() => {
   useFocusSidebarShortcut();
   useSidebarShortcuts();
 
-  const eventFocused = useIsGridEventFocused(getFocusedDayGridEventTarget);
   const shortcutSections = useMemo(
     () =>
       getShortcutMenuSections({
         view: "day",
         isViewingCurrentPeriod: isViewingToday,
-        eventFocused,
         isFormOpen: isEventDetailsOpen,
       }),
-    [eventFocused, isEventDetailsOpen, isViewingToday],
+    [isEventDetailsOpen, isViewingToday],
   );
 
   const handleGoToToday = useCallback(() => {

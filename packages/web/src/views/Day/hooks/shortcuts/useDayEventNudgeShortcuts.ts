@@ -36,7 +36,10 @@ export function useDayEventNudgeShortcuts({
   /** Shift+Arrow place-create when nothing is focused and no draft can move. */
   placeTimedDraft?: () => void;
   timedEvents: GridEvent[];
-}): { shiftHints: ActiveShiftHint[] } {
+}): {
+  getEditSequenceAnchor: () => HTMLElement | null;
+  shiftHints: ActiveShiftHint[];
+} {
   const targeting = {
     focus: focusDayGridEventTarget,
     getFocused: getFocusedDayGridEventTarget,
@@ -76,11 +79,12 @@ export function useDayEventNudgeShortcuts({
     },
   });
 
-  useGridEventFormFieldSequences({
-    allDayEvents,
-    targeting,
-    timedEvents,
-  });
+  const { getMenuAnchor: getEditSequenceAnchor } =
+    useGridEventFormFieldSequences({
+      allDayEvents,
+      targeting,
+      timedEvents,
+    });
 
   const { hints: shiftHints } = useShiftHoldEventHints({
     allDayEvents,
@@ -90,5 +94,5 @@ export function useDayEventNudgeShortcuts({
     timedEvents,
   });
 
-  return { shiftHints };
+  return { getEditSequenceAnchor, shiftHints };
 }

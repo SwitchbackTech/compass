@@ -53,6 +53,7 @@ export const useWeekShortcutOwner = ({
   util,
   scrollUtil,
 }: ShortcutProps): {
+  getEditSequenceAnchor: () => HTMLElement | null;
   shiftHints: ActiveShiftHint[];
 } => {
   const { data: calendars = [], isPending: isCalendarsPending } =
@@ -187,11 +188,12 @@ export const useWeekShortcutOwner = ({
     repositionDraftByKey: repositionDraftByKeyboard,
   });
 
-  useGridEventFormFieldSequences({
-    allDayEvents,
-    targeting,
-    timedEvents,
-  });
+  const { getMenuAnchor: getEditSequenceAnchor } =
+    useGridEventFormFieldSequences({
+      allDayEvents,
+      targeting,
+      timedEvents,
+    });
 
   useWeekViewShortcuts({
     onPreviousWeek: goToPreviousWeek,
@@ -212,5 +214,5 @@ export const useWeekShortcutOwner = ({
     timedEvents,
   });
 
-  return { shiftHints };
+  return { getEditSequenceAnchor, shiftHints };
 };

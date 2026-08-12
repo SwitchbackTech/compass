@@ -36,6 +36,7 @@ import { useAllDayDraftCreation } from "@web/grid/hooks/useAllDayDraftCreation";
 import { useGridCoordinates } from "@web/grid/hooks/useGridCoordinates";
 import { useGridMeasurements } from "@web/grid/hooks/useGridMeasurements";
 import { withAllDayColumnTints } from "@web/grid/utils/allDayColumnTint.util";
+import { EditSequenceMenu } from "@web/shortcuts/edit-sequence/EditSequenceMenu";
 import { ShiftHintOverlay } from "@web/shortcuts/shift-hint/ShiftHintOverlay";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
@@ -293,7 +294,7 @@ export function DayCalendarGrid() {
       ),
     [dateInView, defaultTargetCalendarId, openShortcutDraft],
   );
-  const { shiftHints } = useDayEventNudgeShortcuts({
+  const { getEditSequenceAnchor, shiftHints } = useDayEventNudgeShortcuts({
     allDayEvents: displayedAllDayEvents,
     navigateToDate,
     placeTimedDraft: placeTimedDraftFromShortcut,
@@ -446,6 +447,7 @@ export function DayCalendarGrid() {
       </DayInteractionCoordinator>
       {contextMenu}
       <ShiftHintOverlay hints={shiftHints} />
+      <EditSequenceMenu getAnchor={getEditSequenceAnchor} />
     </section>
   );
 }

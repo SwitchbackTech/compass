@@ -1,7 +1,7 @@
 import { getShowcaseStep } from "@web/components/ShortcutShowcase/showcase.steps";
+import { EDIT_SEQUENCE_FIELD_BY_KEY } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
 import { KEYMAP } from "@web/shortcuts/keymap";
 import { SHORTCUTS_REGISTRY } from "@web/shortcuts/shortcuts.registry";
-import { EDIT_SEQUENCE_FIELDS } from "@web/shortcuts/useEditSequenceShortcut";
 import { describe, expect, it } from "bun:test";
 
 const registryKeys = (id: string): string[] => {
@@ -87,7 +87,7 @@ describe("keymap ↔ showcase hint parity", () => {
 
 describe("keymap ↔ edit-sequence engine parity", () => {
   it("maps the taught second key to the title field", () => {
-    expect(EDIT_SEQUENCE_FIELDS[KEYMAP.editTitle.sequence.second]).toBe(
+    expect(EDIT_SEQUENCE_FIELD_BY_KEY[KEYMAP.editTitle.sequence.second]).toBe(
       "title",
     );
   });

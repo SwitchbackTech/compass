@@ -10,7 +10,6 @@ interface ShortcutMenuConfig {
   view: ShortcutMenuView;
   /** Day: viewing today. Week: viewing the current week. Drives the "t" label. */
   isViewingCurrentPeriod: boolean;
-  eventFocused?: boolean;
   isFormOpen?: boolean;
 }
 
@@ -21,12 +20,11 @@ interface ShortcutMenuConfig {
 export const getShortcutMenuSections = (
   config: ShortcutMenuConfig,
 ): ShortcutOverlaySection[] => {
-  const { view, isViewingCurrentPeriod, eventFocused, isFormOpen } = config;
+  const { view, isViewingCurrentPeriod, isFormOpen } = config;
 
   const filteredShortcuts = filterShortcutsByContext({
     view,
     isViewingCurrentPeriod,
-    eventFocused,
     isFormOpen,
   });
 
