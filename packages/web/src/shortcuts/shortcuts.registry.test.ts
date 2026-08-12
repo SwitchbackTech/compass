@@ -105,6 +105,7 @@ describe("shortcuts.registry", () => {
       expect(ids).toContain("edit-focus-end");
       expect(ids).toContain("edit-focus-recurrence");
       expect(ids).toContain("edit-focus-calendar");
+      expect(ids).toContain("edit-focus-color");
     });
 
     it("excludes the in-form leader row when the form is closed and includes it when open", () => {

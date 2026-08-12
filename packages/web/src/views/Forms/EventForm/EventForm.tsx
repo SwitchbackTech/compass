@@ -75,6 +75,7 @@ const EVENT_FORM_TITLE_ID = "event-form-title";
 const EVENT_FORM_LOCATION_ID = "event-form-location";
 const EVENT_FORM_DESCRIPTION_ID = "event-form-description";
 const EVENT_FORM_CALENDAR_ID = "event-form-calendar";
+const EVENT_FORM_COLOR_ID = "event-form-color";
 const EVENT_FORM_SCHEDULE_ID = "event-form-schedule";
 const EVENT_FORM_RECURRENCE_ID = "event-form-recurrence";
 
@@ -817,6 +818,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
                   </p>
                 )}
                 <EventColorPicker
+                  id={EVENT_FORM_COLOR_ID}
                   value={color}
                   onChange={(next) => patchDraftFields({ color: next })}
                 />

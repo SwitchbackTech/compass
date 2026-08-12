@@ -15,7 +15,10 @@ export const EDIT_SEQUENCE_FIELDS = [
   { key: "s", field: "start", label: "Start time" },
   { key: "e", field: "end", label: "End time" },
   { key: "r", field: "recurrence", label: "Recurrence" },
-  { key: "c", field: "calendar", label: "Calendar" },
+  // `a` = account: the calendar picker chooses which calendar/account hosts
+  // the event. `c` = color, so the letter matches the field name users reach for.
+  { key: "a", field: "calendar", label: "Account" },
+  { key: "c", field: "color", label: "Color" },
 ] as const satisfies readonly {
   key: string;
   field: EventFormFocusField;
