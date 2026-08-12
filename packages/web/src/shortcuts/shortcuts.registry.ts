@@ -142,54 +142,50 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     label: "Open focused event",
     section: "edit",
   },
+  // Listed unconditionally: the legend is a reference, and gating these on live
+  // DOM focus made them vanish the moment the legend took focus to open.
+  // In-the-moment discovery is the which-key menu's job instead.
   {
     id: "edit-focus-title",
     keys: ["e", "t"],
     label: "Edit title",
     section: "edit",
-    when: { eventFocused: true },
   },
   {
     id: "edit-focus-location",
     keys: ["e", "l"],
     label: "Edit location",
     section: "edit",
-    when: { eventFocused: true },
   },
   {
     id: "edit-focus-description",
     keys: ["e", "d"],
     label: "Edit description",
     section: "edit",
-    when: { eventFocused: true },
   },
   {
     id: "edit-focus-start",
     keys: ["e", "s"],
     label: "Edit start time",
     section: "edit",
-    when: { eventFocused: true },
   },
   {
     id: "edit-focus-end",
     keys: ["e", "e"],
     label: "Edit end time",
     section: "edit",
-    when: { eventFocused: true },
   },
   {
     id: "edit-focus-recurrence",
     keys: ["e", "r"],
     label: "Edit recurrence",
     section: "edit",
-    when: { eventFocused: true },
   },
   {
     id: "edit-focus-calendar",
     keys: ["e", "c"],
     label: "Edit calendar",
     section: "edit",
-    when: { eventFocused: true },
   },
   {
     id: "edit-delete",
@@ -210,52 +206,12 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
     section: "edit",
     when: { isFormOpen: true },
   },
+  // One row instead of seven duplicates of the rows above: `Mod+E` is the same
+  // leader, for when the caret is already in a field and a bare `e` would type.
   {
-    id: "form-jump-title",
-    keys: ["Mod+E", "T"],
-    label: "Jump to title",
-    section: "edit",
-    when: { isFormOpen: true },
-  },
-  {
-    id: "form-jump-location",
-    keys: ["Mod+E", "L"],
-    label: "Jump to location",
-    section: "edit",
-    when: { isFormOpen: true },
-  },
-  {
-    id: "form-jump-description",
-    keys: ["Mod+E", "D"],
-    label: "Jump to description",
-    section: "edit",
-    when: { isFormOpen: true },
-  },
-  {
-    id: "form-jump-start",
-    keys: ["Mod+E", "S"],
-    label: "Jump to start time",
-    section: "edit",
-    when: { isFormOpen: true },
-  },
-  {
-    id: "form-jump-end",
-    keys: ["Mod+E", "E"],
-    label: "Jump to end time",
-    section: "edit",
-    when: { isFormOpen: true },
-  },
-  {
-    id: "form-jump-recurrence",
-    keys: ["Mod+E", "R"],
-    label: "Jump to recurrence",
-    section: "edit",
-    when: { isFormOpen: true },
-  },
-  {
-    id: "form-jump-calendar",
-    keys: ["Mod+E", "C"],
-    label: "Jump to calendar",
+    id: "edit-field-leader-in-form",
+    keys: ["Mod+E"],
+    label: "Same field jumps while typing",
     section: "edit",
     when: { isFormOpen: true },
   },
@@ -374,7 +330,6 @@ export const SHORTCUTS_REGISTRY: Shortcut[] = [
 interface FilterOptions {
   view: "day" | "week" | "life";
   isViewingCurrentPeriod: boolean;
-  eventFocused?: boolean;
   isFormOpen?: boolean;
 }
 
@@ -385,7 +340,7 @@ interface FilterOptions {
 export const filterShortcutsByContext = (
   options: FilterOptions,
 ): Shortcut[] => {
-  const { view, isViewingCurrentPeriod, eventFocused, isFormOpen } = options;
+  const { view, isViewingCurrentPeriod, isFormOpen } = options;
 
   return SHORTCUTS_REGISTRY.map((shortcut) => {
     // Adjust labels based on view context
@@ -459,9 +414,6 @@ export const filterShortcutsByContext = (
     }
 
     // Filter by context predicates
-    if (shortcut.when?.eventFocused && !eventFocused) {
-      return false;
-    }
     if (shortcut.when?.isFormOpen && !isFormOpen) {
       return false;
     }

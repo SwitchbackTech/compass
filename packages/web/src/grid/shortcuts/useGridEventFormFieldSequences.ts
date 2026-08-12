@@ -3,6 +3,7 @@ import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   type EventFormFocusField,
   focusEventFormField,
+  getEventFormElement,
 } from "@web/common/utils/form/form.util";
 import { createGridEventDraftFromGridEvent } from "@web/events/grid-event-draft.adapter";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
@@ -12,8 +13,8 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import {
+  type FocusableGridEventTarget,
   findCalendarEventForTarget,
-  type GridEventShortcutTarget,
 } from "@web/grid/shortcuts/focus-adjacent-grid-event";
 import { useEditSequenceShortcut } from "@web/shortcuts/useEditSequenceShortcut";
 
@@ -28,8 +29,13 @@ const focusFieldAfterPaint = (field: EventFormFocusField) => {
 };
 
 /**
- * `e` then `t`/`l`/`d`/`s`/`e`/`r`/`c`: open the focused event's form (if
- * needed) and move caret/focus to the matching field. Shared by Day and Week.
+ * `e` (or `Mod+E` while typing) then `t`/`l`/`d`/`s`/`e`/`r`/`c`: open the
+ * focused event's form (if needed) and move caret/focus to the matching field.
+ * Shared by Day and Week.
+ *
+ * Returns the anchor resolver for the which-key menu: the focused card while
+ * the sequence starts from the grid, else the docked form, which is where the
+ * caret is for the `Mod+E` path.
  */
 export function useGridEventFormFieldSequences({
   allDayEvents = [],
@@ -38,7 +44,7 @@ export function useGridEventFormFieldSequences({
 }: {
   allDayEvents?: GridEvent[];
   targeting: {
-    getFocused: () => GridEventShortcutTarget | null;
+    getFocused: () => FocusableGridEventTarget | null;
   };
   timedEvents: GridEvent[];
 }) {
@@ -56,7 +62,15 @@ export function useGridEventFormFieldSequences({
 
   const openFocusedEventFormField = (field: EventFormFocusField) => {
     const target = targeting.getFocused();
-    if (!target) return;
+
+    // Started from inside the open form (Mod+E): no card is focused, so jump
+    // straight to the field rather than trying to reopen anything.
+    if (!target) {
+      if (isEventFormOpen()) {
+        focusEventFormField(field);
+      }
+      return;
+    }
 
     const gridEvent = findCalendarEventForTarget(target, {
       allDayEvents,
@@ -78,7 +92,18 @@ export function useGridEventFormFieldSequences({
     focusEventFormField(field);
   };
 
+  // Plain functions, not useCallback: `targeting` is rebuilt every render by
+  // the owners, so memoizing on it would be a lie. The hook reads both through
+  // refs, and the menu only calls the anchor getter during render.
+  const canArm = () => targeting.getFocused() !== null || isEventFormOpen();
+
+  const getMenuAnchor = () =>
+    targeting.getFocused()?.element ?? getEventFormElement();
+
   useEditSequenceShortcut({
+    canArm,
     onSequence: openFocusedEventFormField,
   });
+
+  return { getMenuAnchor };
 }

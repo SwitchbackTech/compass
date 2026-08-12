@@ -1,9 +1,14 @@
+import { resolveModifier } from "@tanstack/react-hotkeys";
 import { useEffect, useRef } from "react";
 import {
   type EventFormFocusField,
   isEditableKeyboardTarget,
 } from "@web/common/utils/form/form.util";
 import { isAppLocked } from "@web/shortcuts/app-lock";
+import {
+  editSequenceActions,
+  useEditSequenceStore,
+} from "@web/shortcuts/edit-sequence/edit-sequence.store";
 
 /** Leader → field map for the `e` edit sequences. */
 export const EDIT_SEQUENCE_FIELDS = {
@@ -18,54 +23,99 @@ export const EDIT_SEQUENCE_FIELDS = {
 
 export type EditSequenceSecondKey = keyof typeof EDIT_SEQUENCE_FIELDS;
 
+/** Human-readable second-key menu, in the order the which-key panel lists them. */
+export const EDIT_SEQUENCE_OPTIONS: {
+  key: EditSequenceSecondKey;
+  label: string;
+}[] = [
+  { key: "t", label: "Title" },
+  { key: "l", label: "Location" },
+  { key: "d", label: "Description" },
+  { key: "s", label: "Start" },
+  { key: "e", label: "End" },
+  { key: "r", label: "Repeat" },
+  { key: "c", label: "Calendar" },
+];
+
+/**
+ * How long the leader stays silent. A second key inside this window fires with
+ * no UI at all (muscle memory); past it the which-key menu opens and the
+ * sequence stays armed until the user picks or cancels.
+ */
 const ARM_WINDOW_MS = 600;
 const LEADER_KEY = "e";
 
 /** Shared so other letter shortcuts (e.g. event-jump `s`) can yield to `e`… sequences. */
-let editSequenceArmedUntil = 0;
+export const isEditSequenceArmed = () =>
+  useEditSequenceStore.getState().isArmed;
 
-export const isEditSequenceArmed = () => editSequenceArmedUntil > Date.now();
-
-/** Test helper: clear the shared arm window. */
+/** Test helper: clear the shared arm state. */
 export const resetEditSequenceArm = () => {
-  editSequenceArmedUntil = 0;
+  editSequenceActions.disarm();
 };
 
 const hasModifier = (event: KeyboardEvent) =>
   event.metaKey || event.ctrlKey || event.altKey || event.shiftKey;
 
 /**
- * Arms on bare `e`, then fires a mapped second key within a short window.
+ * The single owner of both edit leaders.
+ *
+ * Bare `e` is the grid fast path and bails on editable targets, so typing "e"
+ * in the title does nothing. `Mod+E` is the same leader for use while the caret
+ * is already inside the form, so it deliberately does not bail on editable
+ * targets. Both land in the same arm/dispatch path, which is why this is one
+ * listener rather than two: a second listener claiming `Mod+E` would fire the
+ * sequence twice.
+ *
  * Capture-phase listeners suppress the follow key's keyup so existing keyup
  * shortcuts (e.g. `t` → today, `d` → day view) do not also run.
  */
 export function useEditSequenceShortcut({
+  canArm,
   onSequence,
 }: {
+  /** Gate arming on there being something to edit, so a stray `e` does not
+   * swallow the next keystroke. */
+  canArm?: () => boolean;
   onSequence: (field: EventFormFocusField) => void;
 }) {
   const onSequenceRef = useRef(onSequence);
   onSequenceRef.current = onSequence;
+  const canArmRef = useRef(canArm);
+  canArmRef.current = canArm;
 
   useEffect(() => {
-    let armTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    const isMac = resolveModifier("Mod") === "Meta";
+    let menuTimeoutId: ReturnType<typeof setTimeout> | null = null;
     const suppressKeyUp = new Set<string>();
 
     const disarm = () => {
-      editSequenceArmedUntil = 0;
-      if (armTimeoutId !== null) {
-        clearTimeout(armTimeoutId);
-        armTimeoutId = null;
+      if (menuTimeoutId !== null) {
+        clearTimeout(menuTimeoutId);
+        menuTimeoutId = null;
+      }
+      if (isEditSequenceArmed()) {
+        editSequenceActions.disarm();
       }
     };
 
     const arm = () => {
       disarm();
-      editSequenceArmedUntil = Date.now() + ARM_WINDOW_MS;
-      armTimeoutId = setTimeout(() => {
-        editSequenceArmedUntil = 0;
-        armTimeoutId = null;
+      editSequenceActions.arm();
+      menuTimeoutId = setTimeout(() => {
+        menuTimeoutId = null;
+        if (isEditSequenceArmed()) {
+          editSequenceActions.showMenu();
+        }
       }, ARM_WINDOW_MS);
+    };
+
+    const isModLeader = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== LEADER_KEY) return false;
+      if (event.shiftKey || event.altKey) return false;
+      return isMac
+        ? event.metaKey && !event.ctrlKey
+        : event.ctrlKey && !event.metaKey;
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -74,18 +124,23 @@ export function useEditSequenceShortcut({
         disarm();
         return;
       }
-      if (isEditableKeyboardTarget(event)) {
-        disarm();
-        return;
-      }
-      if (hasModifier(event)) {
-        disarm();
-        return;
-      }
-
-      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
 
       if (isEditSequenceArmed()) {
+        if (event.key === "Escape") {
+          disarm();
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+
+        // The second key must be bare; a chord means the user moved on.
+        if (hasModifier(event)) {
+          disarm();
+          return;
+        }
+
+        const key =
+          event.key.length === 1 ? event.key.toLowerCase() : event.key;
         const field =
           key in EDIT_SEQUENCE_FIELDS
             ? EDIT_SEQUENCE_FIELDS[key as EditSequenceSecondKey]
@@ -105,9 +160,22 @@ export function useEditSequenceShortcut({
         return;
       }
 
-      if (key === LEADER_KEY) {
-        arm();
+      // Mod+E works anywhere, including inside the form's inputs. Bare `e` only
+      // outside them, or it would eat the letter you meant to type.
+      const isLeader = isModLeader(event)
+        ? true
+        : !hasModifier(event) &&
+          event.key.toLowerCase() === LEADER_KEY &&
+          !isEditableKeyboardTarget(event);
+
+      if (!isLeader) return;
+      if (canArmRef.current && !canArmRef.current()) return;
+
+      if (isModLeader(event)) {
+        event.preventDefault();
+        event.stopPropagation();
       }
+      arm();
     };
 
     const onKeyUp = (event: KeyboardEvent) => {
@@ -119,14 +187,23 @@ export function useEditSequenceShortcut({
       event.stopPropagation();
     };
 
+    // Clicking or tabbing away abandons the sequence rather than leaving a
+    // menu pinned to an event the user is no longer looking at.
+    const onPointerDown = () => disarm();
+    const onWindowBlur = () => disarm();
+
     document.addEventListener("keydown", onKeyDown, true);
     document.addEventListener("keyup", onKeyUp, true);
+    document.addEventListener("pointerdown", onPointerDown, true);
+    window.addEventListener("blur", onWindowBlur);
 
     return () => {
       disarm();
       suppressKeyUp.clear();
       document.removeEventListener("keydown", onKeyDown, true);
       document.removeEventListener("keyup", onKeyUp, true);
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      window.removeEventListener("blur", onWindowBlur);
     };
   }, []);
 }

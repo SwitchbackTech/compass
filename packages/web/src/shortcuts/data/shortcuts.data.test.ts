@@ -139,11 +139,10 @@ describe("shortcuts.data", () => {
     });
 
     it("lists u/i focus shortcuts per view", () => {
-      const findFocus = (view: "day" | "week", eventFocused = false) =>
+      const findFocus = (view: "day" | "week") =>
         getShortcutMenuSections({
           view,
           isViewingCurrentPeriod: true,
-          eventFocused,
         }).find((section) => section.id === "focus");
 
       expect(stripMetadata(findFocus("day")?.shortcuts ?? [])).toEqual([
@@ -152,16 +151,6 @@ describe("shortcuts.data", () => {
         { keys: ["s"], label: "Toggle event jump keys" },
       ]);
       expect(stripMetadata(findFocus("week")?.shortcuts ?? [])).toEqual([
-        { keys: ["i"], label: "Focus sidebar" },
-        { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["s"], label: "Toggle event jump keys" },
-      ]);
-      expect(stripMetadata(findFocus("week", true)?.shortcuts ?? [])).toEqual([
-        { keys: ["i"], label: "Focus sidebar" },
-        { keys: ["u"], label: "Focus calendar event" },
-        { keys: ["s"], label: "Toggle event jump keys" },
-      ]);
-      expect(stripMetadata(findFocus("day", true)?.shortcuts ?? [])).toEqual([
         { keys: ["i"], label: "Focus sidebar" },
         { keys: ["u"], label: "Focus calendar event" },
         { keys: ["s"], label: "Toggle event jump keys" },
@@ -214,24 +203,13 @@ describe("shortcuts.data", () => {
       }
     });
 
-    it("lists e-then-field edit sequences only when an event is focused", () => {
+    it("lists e-then-field edit sequences with nothing focused", () => {
       for (const view of ["day", "week"] as const) {
-        const idleEdit = getShortcutMenuSections({
+        const edit = getShortcutMenuSections({
           view,
           isViewingCurrentPeriod: true,
-          eventFocused: false,
         }).find((section) => section.id === "edit");
-        expect(stripMetadata(idleEdit?.shortcuts ?? [])).not.toContainEqual({
-          keys: ["e", "t"],
-          label: "Edit title",
-        });
-
-        const focusedEdit = getShortcutMenuSections({
-          view,
-          isViewingCurrentPeriod: true,
-          eventFocused: true,
-        }).find((section) => section.id === "edit");
-        const shortcuts = stripMetadata(focusedEdit?.shortcuts ?? []);
+        const shortcuts = stripMetadata(edit?.shortcuts ?? []);
 
         expect(shortcuts).toContainEqual({
           keys: ["e", "t"],

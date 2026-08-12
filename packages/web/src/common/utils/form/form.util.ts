@@ -14,6 +14,10 @@ export type EventFormFocusField =
 const queryEventFormElement = <T extends Element>(selector: string): T | null =>
   document.querySelector<T>(selector);
 
+/** The docked event form itself, used as a positioning anchor. */
+export const getEventFormElement = (): HTMLElement | null =>
+  queryEventFormElement<HTMLElement>(EVENT_FORM_SELECTOR);
+
 const focusFirstMatch = (selectors: string[]) => {
   for (const selector of selectors) {
     const element = queryEventFormElement<HTMLElement>(selector);

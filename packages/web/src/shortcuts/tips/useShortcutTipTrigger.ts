@@ -40,11 +40,11 @@ export function useShortcutTipTrigger() {
     if (!activeTipId) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
-      const mod = event.metaKey || event.ctrlKey;
+      // Either leader counts: bare `e` on the grid, Mod+E while typing.
       if (
         activeTipId === "edit-sequence" &&
         !event.shiftKey &&
-        !mod &&
+        !event.altKey &&
         event.key.toLowerCase() === "e"
       ) {
         shortcutTipsActions.actedOn("edit-sequence");

@@ -90,59 +90,37 @@ describe("shortcuts.registry", () => {
       }
     });
 
-    it("hides event-focused edit sequences until an event is focused", () => {
-      const idle = filterShortcutsByContext({
+    it("lists the edit sequences with nothing focused, so the legend can show them", () => {
+      // Regression: these were gated on live DOM focus, which the legend itself
+      // stole when it focused its search input, making them unreachable.
+      const ids = filterShortcutsByContext({
         view: "day",
         isViewingCurrentPeriod: true,
-        eventFocused: false,
       }).map((shortcut) => shortcut.id);
 
-      expect(idle).not.toContain("edit-focus-title");
-      expect(idle).not.toContain("edit-focus-description");
-
-      const focused = filterShortcutsByContext({
-        view: "day",
-        isViewingCurrentPeriod: true,
-        eventFocused: true,
-      }).map((shortcut) => shortcut.id);
-
-      expect(focused).toContain("edit-focus-title");
-      expect(focused).toContain("edit-focus-location");
-      expect(focused).toContain("edit-focus-description");
-      expect(focused).toContain("edit-focus-start");
-      expect(focused).toContain("edit-focus-end");
-      expect(focused).toContain("edit-focus-recurrence");
-      expect(focused).toContain("edit-focus-calendar");
+      expect(ids).toContain("edit-focus-title");
+      expect(ids).toContain("edit-focus-location");
+      expect(ids).toContain("edit-focus-description");
+      expect(ids).toContain("edit-focus-start");
+      expect(ids).toContain("edit-focus-end");
+      expect(ids).toContain("edit-focus-recurrence");
+      expect(ids).toContain("edit-focus-calendar");
     });
 
-    it("excludes form-jump shortcuts when the form is closed and includes them when open", () => {
-      const formJumpIds = [
-        "form-jump-title",
-        "form-jump-location",
-        "form-jump-description",
-        "form-jump-start",
-        "form-jump-end",
-        "form-jump-recurrence",
-        "form-jump-calendar",
-      ];
-
+    it("excludes the in-form leader row when the form is closed and includes it when open", () => {
       const closed = filterShortcutsByContext({
         view: "day",
         isViewingCurrentPeriod: true,
         isFormOpen: false,
       }).map((shortcut) => shortcut.id);
-      for (const id of formJumpIds) {
-        expect(closed).not.toContain(id);
-      }
+      expect(closed).not.toContain("edit-field-leader-in-form");
 
       const open = filterShortcutsByContext({
         view: "day",
         isViewingCurrentPeriod: true,
         isFormOpen: true,
       }).map((shortcut) => shortcut.id);
-      for (const id of formJumpIds) {
-        expect(open).toContain(id);
-      }
+      expect(open).toContain("edit-field-leader-in-form");
     });
   });
 
