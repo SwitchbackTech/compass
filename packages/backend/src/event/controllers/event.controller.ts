@@ -204,14 +204,14 @@ const submitCommandOrThrow = async (
   }
   // Backstop for invariant 1 ("every write resolves definitively"): a
   // command that is still pending/applying/reconciling has NOT actually
-  // applied anywhere. Nothing re-dispatches a stranded pending command (see
-  // ProviderWriteUnavailableError's docblock in cloud-command.service.ts), so
-  // returning success here would let the caller believe the write landed
-  // while it silently never did — the client optimistically applies the
-  // change, then a later refetch reverts it with no error ever shown. Every
-  // known path that could leave a command non-terminal already throws
-  // explicitly instead (ProviderWriteUnavailableError, failCloud); this is
-  // the safety net for any path that doesn't, today or in the future.
+  // applied anywhere. Sync's stale-command retry sweep revisits
+  // create/update/delete after the stale window, but this request must not
+  // report success while the command is still non-terminal — the client
+  // would optimistically apply the change, then a later refetch could
+  // revert it with no error ever shown. Every known path that could leave a
+  // command non-terminal already throws explicitly instead
+  // (ProviderWriteUnavailableError, failCloud); this is the safety net for
+  // any path that doesn't, today or in the future.
   if (outcome.state !== "confirmed") {
     throw eventMutationError(
       "PROVIDER_FAILURE",

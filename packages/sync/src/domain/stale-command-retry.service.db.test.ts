@@ -12,15 +12,18 @@ import { submitCloudCommand } from "@sync/domain/cloud-command.service";
 import { retryStaleCommands } from "@sync/domain/stale-command-retry.service";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
+  type ProviderCreateInput,
   type ProviderDeleteInput,
   type ProviderEventWriter,
   ProviderWriteError,
+  type ProviderWriteResult,
 } from "@sync/providers/provider-event-writer.port";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
 import { DeletionMarkerRepository } from "@sync/storage/repositories/deletion-marker.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 import { type SyncMongoService } from "@sync/storage/sync-mongo.service";
 import { beforeEach, describe, expect, it } from "bun:test";
 
@@ -49,6 +52,33 @@ class FakeDeleteWriter implements ProviderEventWriter {
   }
 }
 
+class FakeCreateWriter implements ProviderEventWriter {
+  readonly provider = "google" as const;
+  createError: Error | null = null;
+  createCalls: ProviderCreateInput[] = [];
+  result: ProviderWriteResult = {
+    providerEventId: "g-created-1",
+    providerVersion: "etag-created",
+  };
+  async createEvent(input: ProviderCreateInput): Promise<ProviderWriteResult> {
+    this.createCalls.push(input);
+    if (this.createError) throw this.createError;
+    return this.result;
+  }
+  async deleteEvent(): Promise<never> {
+    throw new Error("unused");
+  }
+  async patchEvent(): Promise<never> {
+    throw new Error("unused");
+  }
+  async fetchEvent(): Promise<ProviderEvent | null> {
+    return null;
+  }
+  async fetchInstanceAt(): Promise<ProviderEvent | null> {
+    return null;
+  }
+}
+
 const tokenSource = () => ({
   getValidAccessToken: async () => "access-token",
   discardRevoked: async () => {},
@@ -62,6 +92,7 @@ describe("retryStaleCommands", () => {
   let occurrences: EventOccurrenceRepository;
   let calendars: ProviderCalendarRepository;
   let markers: DeletionMarkerRepository;
+  let resources: SyncResourceRepository;
 
   const now = () => new Date("2026-07-10T00:00:00.000Z");
   // CommandRepository.submit() stamps createdAt/updatedAt with the real wall
@@ -76,6 +107,17 @@ describe("retryStaleCommands", () => {
     end: "2026-07-14T10:00:00-06:00",
     timeZone: "America/Denver",
   };
+
+  const baseDeps = (writer: ProviderEventWriter) => ({
+    commands,
+    events,
+    calendars,
+    occurrences,
+    resources,
+    markers,
+    execution: "active" as const,
+    provider: { writer, custody: tokenSource() },
+  });
 
   // Seed a provider-linked event stuck deletionPending, plus its still-pending
   // delete command - the state a transient provider failure leaves behind
@@ -135,6 +177,44 @@ describe("retryStaleCommands", () => {
     return { tenantId, principalId, calendar, event, command };
   };
 
+  // Seed a still-pending create against a provider calendar — the state a
+  // transient Google blip leaves behind (executeProviderCreate returns the
+  // command unchanged; no event row yet).
+  const seedStuckCreate = async () => {
+    const tenantId = objectId() as TenantId;
+    const principalId = objectId() as PrincipalId;
+    const connectionId = objectId() as ConnectionId;
+    const calendar = await seedProviderCalendar(calendars, {
+      tenantId,
+      principalId,
+      connectionId,
+    });
+    const eventId = objectId() as EventId;
+    const { record: command } = await commands.submit({
+      tenantId,
+      principalId,
+      idempotencyKey: `idem-${objectId()}` as IdempotencyKey,
+      eventId,
+      input: {
+        kind: "create",
+        calendarId: calendar._id,
+        invitation: "none",
+        content: {
+          title: "New",
+          description: "",
+          location: null,
+          organizer: null,
+          attendees: [],
+          conference: null,
+        },
+        schedule,
+        recurrence: { kind: "single" },
+      } as never,
+      expectedVersion: null,
+    });
+    return { tenantId, principalId, calendar, eventId, command };
+  };
+
   beforeEach(() => {
     mongo = storage.mongo();
     commands = new CommandRepository(mongo.db);
@@ -142,6 +222,7 @@ describe("retryStaleCommands", () => {
     occurrences = new EventOccurrenceRepository(mongo.db, mongo.client);
     calendars = new ProviderCalendarRepository(mongo.db);
     markers = new DeletionMarkerRepository(mongo.db);
+    resources = new SyncResourceRepository(mongo.db);
   });
 
   it("finishes a delete that failed transiently on the first attempt", async () => {
@@ -149,19 +230,7 @@ describe("retryStaleCommands", () => {
     expect(command.outcome.state).toBe("pending");
     const writer = new FakeDeleteWriter();
 
-    const result = await retryStaleCommands(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        markers,
-        execution: "active",
-        provider: { writer, custody: tokenSource() },
-      },
-      before(),
-      now,
-    );
+    const result = await retryStaleCommands(baseDeps(writer), before(), now);
 
     expect(result).toEqual({ attempted: 1, stillStale: 0 });
     expect(writer.deleteCalls).toHaveLength(1);
@@ -170,24 +239,39 @@ describe("retryStaleCommands", () => {
     expect(await events.findById(tenantId, principalId, event._id)).toBeNull();
   });
 
+  it("finishes a create that failed transiently on the first attempt", async () => {
+    const { tenantId, principalId, eventId, command } = await seedStuckCreate();
+    expect(command.outcome.state).toBe("pending");
+    const writer = new FakeCreateWriter();
+
+    const result = await retryStaleCommands(baseDeps(writer), before(), now);
+
+    expect(result).toEqual({ attempted: 1, stillStale: 0 });
+    expect(writer.createCalls).toHaveLength(1);
+    const stored = await commands.findById(tenantId, principalId, command._id);
+    expect(stored?.outcome.state).toBe("confirmed");
+    const event = await events.findById(tenantId, principalId, eventId);
+    expect(event?.providerEventId).toBe("g-created-1");
+  });
+
+  it("leaves a create pending and reports it still stale on a repeated transient failure", async () => {
+    const { tenantId, principalId, command } = await seedStuckCreate();
+    const writer = new FakeCreateWriter();
+    writer.createError = new ProviderWriteError("transient", "blip again");
+
+    const result = await retryStaleCommands(baseDeps(writer), before(), now);
+
+    expect(result).toEqual({ attempted: 1, stillStale: 1 });
+    const stored = await commands.findById(tenantId, principalId, command._id);
+    expect(stored?.outcome.state).toBe("pending");
+  });
+
   it("leaves the command pending and reports it still stale on a repeated transient failure", async () => {
     const { tenantId, principalId, command } = await seedStuckDelete();
     const writer = new FakeDeleteWriter();
     writer.deleteError = new ProviderWriteError("transient", "blip again");
 
-    const result = await retryStaleCommands(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        markers,
-        execution: "active",
-        provider: { writer, custody: tokenSource() },
-      },
-      before(),
-      now,
-    );
+    const result = await retryStaleCommands(baseDeps(writer), before(), now);
 
     expect(result).toEqual({ attempted: 1, stillStale: 1 });
     const stored = await commands.findById(tenantId, principalId, command._id);
@@ -199,15 +283,7 @@ describe("retryStaleCommands", () => {
     const writer = new FakeDeleteWriter();
 
     const result = await retryStaleCommands(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        markers,
-        execution: "active",
-        provider: { writer, custody: tokenSource() },
-      },
+      baseDeps(writer),
       // Cutoff before the command's updatedAt: not stale yet.
       notYetStale(),
       now,
@@ -223,15 +299,10 @@ describe("retryStaleCommands", () => {
 
     const result = await retryStaleCommands(
       {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        markers,
+        ...baseDeps(writer),
         // Provider work unavailable: dispatchProviderDelete throws
         // ProviderWriteUnavailableError before ever calling the writer.
         execution: "passive",
-        provider: { writer, custody: tokenSource() },
       },
       before(),
       now,
@@ -265,13 +336,7 @@ describe("retryStaleCommands", () => {
 
     const result = await retryStaleCommands(
       {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        markers,
-        execution: "active",
-        provider: { writer, custody: tokenSource() },
+        ...baseDeps(writer),
         onRetryError: (error, commandId) =>
           onRetryErrorCalls.push({ error, commandId }),
       },
@@ -380,15 +445,7 @@ describe("retryStaleCommands", () => {
 
     // The user's follow-up edit B->C is submitted and applied normally.
     const { command: laterCommand } = await submitCloudCommand(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        markers,
-        execution: "active",
-        provider: { writer: new FakeDeleteWriter(), custody: tokenSource() },
-      },
+      baseDeps(new FakeDeleteWriter()),
       updateTo("C"),
       now,
     );
@@ -398,15 +455,7 @@ describe("retryStaleCommands", () => {
     ).toBe("C");
 
     const result = await retryStaleCommands(
-      {
-        commands,
-        events,
-        calendars,
-        occurrences,
-        markers,
-        execution: "active",
-        provider: { writer: new FakeDeleteWriter(), custody: tokenSource() },
-      },
+      baseDeps(new FakeDeleteWriter()),
       before(),
       now,
     );
