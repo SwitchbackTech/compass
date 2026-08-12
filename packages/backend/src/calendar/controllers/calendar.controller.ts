@@ -15,6 +15,7 @@ import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { syncCalendarsToBrowser } from "@backend/common/services/sync-service/calendar-list.translation";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
+import { throwSyncProxyFailure } from "@backend/common/services/sync-service/sync-proxy-error";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import { type Res_Promise } from "@backend/common/types/express.types";
 
@@ -76,14 +77,14 @@ const listCalendarsFromSync = async (
     client.listConnections(principal),
   ]);
   if (!calendarsResult.ok) {
-    throw error(
-      GenericError.NotSure,
+    throwSyncProxyFailure(
+      calendarsResult.error.kind,
       `Failed to list calendars from sync (${calendarsResult.error.kind})`,
     );
   }
   if (!connectionsResult.ok) {
-    throw error(
-      GenericError.NotSure,
+    throwSyncProxyFailure(
+      connectionsResult.error.kind,
       `Failed to list connections from sync (${connectionsResult.error.kind})`,
     );
   }
@@ -124,8 +125,8 @@ const getAvailabilityFromSync = async (
         purpose: "display",
       });
       if (!result.ok) {
-        throw error(
-          GenericError.NotSure,
+        throwSyncProxyFailure(
+          result.error.kind,
           `Failed to query availability from sync (${result.error.kind})`,
         );
       }

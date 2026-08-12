@@ -4,6 +4,7 @@ import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { zObjectId } from "@core/types/type.utils";
 import { type UserMetadata, type UserProfile } from "@core/types/user.types";
+import { toClientErrorPayload } from "@backend/common/errors/handlers/error.handler";
 import { type SReqBody } from "@backend/common/types/express.types";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -11,10 +12,22 @@ import { type Summary_Delete } from "@backend/user/types/user.types";
 
 const logger = Logger("app:user.controller");
 
+const sendUserError = (res: Response, e: unknown) => {
+  if (e instanceof BaseError) {
+    res.status(e.statusCode).json(toClientErrorPayload(e));
+    return;
+  }
+  const message = e instanceof Error ? e.message : "Unexpected error";
+  res.status(Status.INTERNAL_SERVER).json({
+    code: "INTERNAL_ERROR",
+    message,
+  });
+};
+
 class UserController {
   getProfile = async (
     req: Request<never, UserProfile, never, never>,
-    res: Response<UserProfile>,
+    res: Response,
   ) => {
     try {
       const user = zObjectId.parse(req.session?.getUserId());
@@ -22,16 +35,12 @@ class UserController {
 
       res.status(Status.OK).json(profile);
     } catch (e) {
-      if (e instanceof BaseError) {
-        res.status(e.statusCode).send();
-        return;
-      }
-      res.status(Status.INTERNAL_SERVER).send();
+      sendUserError(res, e);
     }
   };
   deleteAccount = async (
     req: Request<never, Summary_Delete, never, never>,
-    res: Response<Summary_Delete>,
+    res: Response,
   ) => {
     try {
       // Session-derived only: a user may never delete anyone but themselves.
@@ -59,17 +68,13 @@ class UserController {
 
       res.status(Status.OK).json(summary);
     } catch (e) {
-      if (e instanceof BaseError) {
-        res.status(e.statusCode).send();
-        return;
-      }
-      res.status(Status.INTERNAL_SERVER).send();
+      sendUserError(res, e);
     }
   };
 
   getMetadata = async (
     req: Request<never, UserMetadata, never, never>,
-    res: Response<UserMetadata>,
+    res: Response,
   ) => {
     try {
       const user = zObjectId.parse(req.session?.getUserId());
@@ -79,18 +84,11 @@ class UserController {
 
       res.status(Status.OK).json(metadata);
     } catch (e) {
-      if (e instanceof BaseError) {
-        res.status(e.statusCode).send();
-        return;
-      }
-      res.status(Status.INTERNAL_SERVER).send();
+      sendUserError(res, e);
     }
   };
 
-  updateMetadata = async (
-    req: SReqBody<UserMetadata>,
-    res: Response<UserMetadata>,
-  ) => {
+  updateMetadata = async (req: SReqBody<UserMetadata>, res: Response) => {
     try {
       const user = zObjectId.parse(req.session?.getUserId());
 
@@ -101,11 +99,7 @@ class UserController {
 
       res.status(Status.OK).json(metadata);
     } catch (e) {
-      if (e instanceof BaseError) {
-        res.status(e.statusCode).send();
-        return;
-      }
-      res.status(Status.INTERNAL_SERVER).send();
+      sendUserError(res, e);
     }
   };
 }

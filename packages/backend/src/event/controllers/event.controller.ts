@@ -21,8 +21,6 @@ import {
   SyncEventCalendarIdSchema,
 } from "@core/types/sync/event.contracts";
 import calendarService from "@backend/calendar/services/calendar.service";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
 import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import {
   toCreateSubmitRequest,
@@ -31,6 +29,7 @@ import {
 } from "@backend/common/services/sync-service/event-command.translation";
 import { syncEventInstanceToBrowser } from "@backend/common/services/sync-service/event-list.translation";
 import { toSyncPrincipal } from "@backend/common/services/sync-service/sync-principal";
+import { throwSyncCommandSubmitFailure } from "@backend/common/services/sync-service/sync-proxy-error";
 import { type SyncServiceClient } from "@backend/common/services/sync-service/sync-service.client";
 import { getSyncServiceClient } from "@backend/common/services/sync-service/sync-service.factory";
 import {
@@ -193,19 +192,7 @@ const submitCommandOrThrow = async (
     // Timeout/unavailable can mean Sync already accepted (or finished) the
     // mutation — especially provider deletes, which run inline. Do not fall
     // back to legacy; surface a retryable provider failure instead.
-    if (
-      result.error.kind === "timeout" ||
-      result.error.kind === "unavailable"
-    ) {
-      throw eventMutationError(
-        "PROVIDER_FAILURE",
-        `Sync command ${result.error.kind}; the mutation may already be applied`,
-      );
-    }
-    throw error(
-      GenericError.NotSure,
-      `Failed to submit command to sync (${result.error.kind})`,
-    );
+    throwSyncCommandSubmitFailure(result.error.kind, result.error.kind);
   }
 
   const { outcome } = result.value.command;
@@ -338,6 +325,15 @@ class EventController {
   deleteAllByUser = async (req: SessionRequest, res: Response) => {
     try {
       const userToRemove = req.params["userId"] as string;
+      const sessionUserId = req.session?.getUserId();
+      // Defense in depth: even while verifyIsDev gates this route, never let
+      // a session wipe another user's events.
+      if (!sessionUserId || sessionUserId !== userToRemove) {
+        throw eventMutationError(
+          "INVALID_INPUT",
+          "Cannot delete events for another user",
+        );
+      }
       const result = await eventService.deleteAllByUser(userToRemove);
 
       res.status(Status.OK).json(result);
