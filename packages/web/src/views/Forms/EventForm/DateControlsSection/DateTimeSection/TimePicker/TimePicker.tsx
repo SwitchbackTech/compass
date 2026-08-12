@@ -6,6 +6,7 @@ import { type SelectOption } from "@web/common/types/component.types";
 import { type TimeOption } from "@web/common/types/util.types";
 import { parseUserTime } from "@web/common/utils/datetime/web.date.util";
 import { useFloatingLayer } from "@web/shortcuts/floating-layer";
+import { resolveTimePickerSelection } from "./resolveTimePickerSelection";
 
 export interface Props extends Omit<RSProps, "onChange" | "value"> {
   isMenuOpen: boolean;
@@ -48,6 +49,9 @@ export const TimePicker = ({
   const layerId = useId();
   useFloatingLayer(`timePicker:${layerId}`, isMenuOpen);
 
+  const { value: selectValue, options: selectOptions } =
+    resolveTimePickerSelection(value, options);
+
   const cancelScrollToSelected = () => {
     if (scrollRafRef.current !== null) {
       cancelAnimationFrame(scrollRafRef.current);
@@ -85,7 +89,7 @@ export const TimePicker = ({
         className={selectClassName}
         classNamePrefix={TIMEPICKER}
         styles={timePickerTextStyles}
-        value={value}
+        value={selectValue}
         maxMenuHeight={4 * 41}
         blurInputOnSelect
         menuIsOpen={isMenuOpen}
@@ -120,13 +124,15 @@ export const TimePicker = ({
           setIsMenuOpen(false);
         }}
         openMenuOnFocus={true}
-        options={options}
+        options={selectOptions}
         tabSelectsValue={false}
         isValidNewOption={(inputValue) => {
           const parsed = parseUserTime(inputValue, value?.value);
           if (!parsed) return false;
           // Don't show create row if the parsed time is already in options
-          if (options?.some((o) => (o as TimeOption).value === parsed.value)) {
+          if (
+            selectOptions?.some((o) => (o as TimeOption).value === parsed.value)
+          ) {
             return false;
           }
           return true;
