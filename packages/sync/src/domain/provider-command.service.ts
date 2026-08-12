@@ -33,7 +33,6 @@ import {
   remainderMasterId,
   reprojectMaster,
 } from "@sync/domain/series-exception";
-import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
   type ProviderEventWriter,
@@ -50,14 +49,13 @@ import { type EventRepository } from "@sync/storage/repositories/event.repositor
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
-// The slice of credential custody the executor needs — a valid access token for
-// a connection, plus discard of a provider-invalidated grant. Narrow so tests
-// pass a plain fake; CredentialCustody satisfies it structurally.
-export interface AccessTokenSource {
-  getValidAccessToken(connectionId: ConnectionId): Promise<string>;
-  discardRevoked(connectionId: ConnectionId): Promise<void>;
-  invalidateAccessToken(connectionId: ConnectionId): Promise<void>;
-}
+export type { AccessTokenSource } from "@sync/domain/provider-write-ladder";
+
+import {
+  type AccessTokenSource,
+  resolveAccessToken,
+  runProviderWrite,
+} from "@sync/domain/provider-write-ladder";
 
 export interface ProviderMutationDeps {
   commands: CommandRepository;
@@ -96,29 +94,28 @@ export async function executeProviderCreate(
   }
   const { input } = command;
 
-  let accessToken: string;
-  try {
-    accessToken = await deps.custody.getValidAccessToken(calendar.connectionId);
-  } catch (error) {
+  const tokenResult = await resolveAccessToken(
+    deps.custody,
+    calendar.connectionId,
+  );
+  if (!tokenResult.ok) {
     // A transient refresh failure is retryable, so leave the command pending; a
     // revoked or missing credential is terminal.
-    if (
-      error instanceof ProviderAuthError &&
-      error.reason === "refreshFailed"
-    ) {
-      return command;
-    }
+    if (tokenResult.stop.kind === "pending") return command;
     return failCommand(
       deps,
       command,
-      "authorizationRevoked",
+      tokenResult.stop.reason,
       calendar.connectionId,
     );
   }
+  const { accessToken } = tokenResult;
 
-  let result: ProviderWriteResult;
-  try {
-    result = await deps.writer.createEvent({
+  // Transient failures are safe to retry — the deterministic id keeps the
+  // eventual retry idempotent. Every other reason is terminal and maps
+  // straight to a command failure class.
+  const writeResult = await runProviderWrite(() =>
+    deps.writer.createEvent({
       accessToken,
       calendarId: calendar.providerCalendarId,
       providerEventId: command.eventId,
@@ -126,17 +123,18 @@ export async function executeProviderCreate(
       schedule: input.schedule,
       recurrence: toProviderWriteRecurrence(input.recurrence),
       invitation: input.invitation,
-    });
-  } catch (error) {
-    if (error instanceof ProviderWriteError) {
-      // Transient failures are safe to retry — the deterministic id keeps the
-      // eventual retry idempotent. Every other reason is terminal and maps
-      // straight to a command failure class.
-      if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason, calendar.connectionId);
-    }
-    throw error;
+    }),
+  );
+  if (!writeResult.ok) {
+    if (writeResult.stop.kind === "pending") return command;
+    return failCommand(
+      deps,
+      command,
+      writeResult.stop.reason,
+      calendar.connectionId,
+    );
   }
+  const result = writeResult.value;
 
   // Commit the provider identity to the canonical event and project its
   // occurrences, then confirm. Both run before confirmation, so a crash leaves
@@ -330,18 +328,12 @@ export async function executeProviderUpdate(
   const providerEventId = event.providerEventId;
   const connectionId = event.connectionId;
 
-  let accessToken: string;
-  try {
-    accessToken = await deps.custody.getValidAccessToken(connectionId);
-  } catch (error) {
-    if (
-      error instanceof ProviderAuthError &&
-      error.reason === "refreshFailed"
-    ) {
-      return command;
-    }
-    return failCommand(deps, command, "authorizationRevoked", connectionId);
+  const tokenResult = await resolveAccessToken(deps.custody, connectionId);
+  if (!tokenResult.ok) {
+    if (tokenResult.stop.kind === "pending") return command;
+    return failCommand(deps, command, tokenResult.stop.reason, connectionId);
   }
+  const { accessToken } = tokenResult;
 
   const location = {
     accessToken,
@@ -351,19 +343,22 @@ export async function executeProviderUpdate(
 
   // Fetch current provider state to detect a replay (our edit already landed)
   // and to learn the version to commit.
-  let current: ProviderEvent | null;
-  try {
-    const read = await deps.writer.fetchEvent(location);
-    // A cancellation read means the event no longer exists as a content event —
-    // there is nothing to update.
-    current = read?.kind === "event" ? read : null;
-  } catch (error) {
-    if (error instanceof ProviderWriteError) {
-      if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason, connectionId);
-    }
-    throw error;
+  // A cancellation read means the event no longer exists as a content event —
+  // there is nothing to update.
+  const fetchResult = await runProviderWrite(() =>
+    deps.writer.fetchEvent(location),
+  );
+  if (!fetchResult.ok) {
+    if (fetchResult.stop.kind === "pending") return command;
+    return failCommand(
+      deps,
+      command,
+      fetchResult.stop.reason,
+      connectionId,
+    );
   }
+  const current =
+    fetchResult.value?.kind === "event" ? fetchResult.value : null;
   if (!current) {
     return failCommand(deps, command, "permanentProviderError", connectionId);
   }
@@ -390,23 +385,26 @@ export async function executeProviderUpdate(
     );
   }
 
-  let result: ProviderWriteResult;
-  try {
-    result = await deps.writer.patchEvent({
+  const patchResult = await runProviderWrite(() =>
+    deps.writer.patchEvent({
       ...location,
       expectedVersion: command.expectedVersion,
       content,
       schedule: input.schedule,
       recurrence: intendedRecurrence,
       invitation: input.invitation,
-    });
-  } catch (error) {
-    if (error instanceof ProviderWriteError) {
-      if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason, connectionId);
-    }
-    throw error;
+    }),
+  );
+  if (!patchResult.ok) {
+    if (patchResult.stop.kind === "pending") return command;
+    return failCommand(
+      deps,
+      command,
+      patchResult.stop.reason,
+      connectionId,
+    );
   }
+  const result = patchResult.value;
 
   return commitProviderUpdate(
     deps,
@@ -498,18 +496,12 @@ export async function executeProviderSeriesUpdate(
   const providerEventId = master.providerEventId;
   const intendedRecurrence = intendedSeriesRecurrence(input.recurrence, master);
 
-  let accessToken: string;
-  try {
-    accessToken = await deps.custody.getValidAccessToken(connectionId);
-  } catch (error) {
-    if (
-      error instanceof ProviderAuthError &&
-      error.reason === "refreshFailed"
-    ) {
-      return command;
-    }
-    return failCommand(deps, command, "authorizationRevoked", connectionId);
+  const tokenResult = await resolveAccessToken(deps.custody, connectionId);
+  if (!tokenResult.ok) {
+    if (tokenResult.stop.kind === "pending") return command;
+    return failCommand(deps, command, tokenResult.stop.reason, connectionId);
   }
+  const { accessToken } = tokenResult;
 
   const location = {
     accessToken,
@@ -519,17 +511,20 @@ export async function executeProviderSeriesUpdate(
 
   // Fetch the master's current provider state to detect a replay and learn the
   // version to commit. A cancellation read means the series no longer exists.
-  let current: ProviderEvent | null;
-  try {
-    const read = await deps.writer.fetchEvent(location);
-    current = read?.kind === "event" ? read : null;
-  } catch (error) {
-    if (error instanceof ProviderWriteError) {
-      if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason, connectionId);
-    }
-    throw error;
+  const fetchResult = await runProviderWrite(() =>
+    deps.writer.fetchEvent(location),
+  );
+  if (!fetchResult.ok) {
+    if (fetchResult.stop.kind === "pending") return command;
+    return failCommand(
+      deps,
+      command,
+      fetchResult.stop.reason,
+      connectionId,
+    );
   }
+  const current =
+    fetchResult.value?.kind === "event" ? fetchResult.value : null;
   if (!current) {
     return failCommand(deps, command, "permanentProviderError", connectionId);
   }
@@ -556,23 +551,26 @@ export async function executeProviderSeriesUpdate(
     );
   }
 
-  let result: ProviderWriteResult;
-  try {
-    result = await deps.writer.patchEvent({
+  const patchResult = await runProviderWrite(() =>
+    deps.writer.patchEvent({
       ...location,
       expectedVersion: command.expectedVersion,
       content,
       schedule: input.schedule,
       recurrence: intendedRecurrence,
       invitation: input.invitation,
-    });
-  } catch (error) {
-    if (error instanceof ProviderWriteError) {
-      if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason, connectionId);
-    }
-    throw error;
+    }),
+  );
+  if (!patchResult.ok) {
+    if (patchResult.stop.kind === "pending") return command;
+    return failCommand(
+      deps,
+      command,
+      patchResult.stop.reason,
+      connectionId,
+    );
   }
+  const result = patchResult.value;
 
   return commitProviderSeriesUpdate(
     deps,
@@ -787,18 +785,12 @@ export async function executeProviderOccurrenceUpdate(
   const connectionId = master.connectionId;
   const seriesProviderEventId = master.providerEventId;
 
-  let accessToken: string;
-  try {
-    accessToken = await deps.custody.getValidAccessToken(connectionId);
-  } catch (error) {
-    if (
-      error instanceof ProviderAuthError &&
-      error.reason === "refreshFailed"
-    ) {
-      return command;
-    }
-    return failCommand(deps, command, "authorizationRevoked", connectionId);
+  const tokenResult = await resolveAccessToken(deps.custody, connectionId);
+  if (!tokenResult.ok) {
+    if (tokenResult.stop.kind === "pending") return command;
+    return failCommand(deps, command, tokenResult.stop.reason, connectionId);
   }
+  const { accessToken } = tokenResult;
 
   let instance: ProviderEvent | null;
   try {
@@ -964,18 +956,12 @@ export async function executeProviderOccurrenceDelete(
   const connectionId = master.connectionId;
   const seriesProviderEventId = master.providerEventId;
 
-  let accessToken: string;
-  try {
-    accessToken = await deps.custody.getValidAccessToken(connectionId);
-  } catch (error) {
-    if (
-      error instanceof ProviderAuthError &&
-      error.reason === "refreshFailed"
-    ) {
-      return command;
-    }
-    return failCommand(deps, command, "authorizationRevoked", connectionId);
+  const tokenResult = await resolveAccessToken(deps.custody, connectionId);
+  if (!tokenResult.ok) {
+    if (tokenResult.stop.kind === "pending") return command;
+    return failCommand(deps, command, tokenResult.stop.reason, connectionId);
   }
+  const { accessToken } = tokenResult;
 
   let instance: ProviderEvent | null;
   try {
@@ -1090,18 +1076,12 @@ export async function executeProviderSeriesFollowingDelete(
     return executeProviderDelete(deps, command, master, calendar, now);
   }
 
-  let accessToken: string;
-  try {
-    accessToken = await deps.custody.getValidAccessToken(connectionId);
-  } catch (error) {
-    if (
-      error instanceof ProviderAuthError &&
-      error.reason === "refreshFailed"
-    ) {
-      return command;
-    }
-    return failCommand(deps, command, "authorizationRevoked", connectionId);
+  const tokenResult = await resolveAccessToken(deps.custody, connectionId);
+  if (!tokenResult.ok) {
+    if (tokenResult.stop.kind === "pending") return command;
+    return failCommand(deps, command, tokenResult.stop.reason, connectionId);
   }
+  const { accessToken } = tokenResult;
 
   await deleteFollowingExceptions(deps, command, master._id, splitAt);
   const truncatedRules = truncateRulesBefore(master.recurrence.rules, splitAt);
@@ -1111,17 +1091,20 @@ export async function executeProviderSeriesFollowingDelete(
     providerEventId,
   };
 
-  let current: ProviderEvent | null;
-  try {
-    const read = await deps.writer.fetchEvent(location);
-    current = read?.kind === "event" ? read : null;
-  } catch (error) {
-    if (error instanceof ProviderWriteError) {
-      if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason, connectionId);
-    }
-    throw error;
+  const fetchResult = await runProviderWrite(() =>
+    deps.writer.fetchEvent(location),
+  );
+  if (!fetchResult.ok) {
+    if (fetchResult.stop.kind === "pending") return command;
+    return failCommand(
+      deps,
+      command,
+      fetchResult.stop.reason,
+      connectionId,
+    );
   }
+  const current =
+    fetchResult.value?.kind === "event" ? fetchResult.value : null;
   if (!current) {
     return failCommand(deps, command, "permanentProviderError", connectionId);
   }
@@ -1248,18 +1231,12 @@ export async function executeProviderSeriesFollowingUpdate(
     return executeProviderSeriesUpdate(deps, command, master, calendar, now);
   }
 
-  let accessToken: string;
-  try {
-    accessToken = await deps.custody.getValidAccessToken(connectionId);
-  } catch (error) {
-    if (
-      error instanceof ProviderAuthError &&
-      error.reason === "refreshFailed"
-    ) {
-      return command;
-    }
-    return failCommand(deps, command, "authorizationRevoked", connectionId);
+  const tokenResult = await resolveAccessToken(deps.custody, connectionId);
+  if (!tokenResult.ok) {
+    if (tokenResult.stop.kind === "pending") return command;
+    return failCommand(deps, command, tokenResult.stop.reason, connectionId);
   }
+  const { accessToken } = tokenResult;
 
   // Truncate the original master first — same ordering as the cloud path:
   // the worst transient state between this step and the remainder create
@@ -1272,17 +1249,20 @@ export async function executeProviderSeriesFollowingUpdate(
     providerEventId,
   };
 
-  let current: ProviderEvent | null;
-  try {
-    const read = await deps.writer.fetchEvent(originalLocation);
-    current = read?.kind === "event" ? read : null;
-  } catch (error) {
-    if (error instanceof ProviderWriteError) {
-      if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason, connectionId);
-    }
-    throw error;
+  const fetchResult = await runProviderWrite(() =>
+    deps.writer.fetchEvent(originalLocation),
+  );
+  if (!fetchResult.ok) {
+    if (fetchResult.stop.kind === "pending") return command;
+    return failCommand(
+      deps,
+      command,
+      fetchResult.stop.reason,
+      connectionId,
+    );
   }
+  const current =
+    fetchResult.value?.kind === "event" ? fetchResult.value : null;
   if (!current) {
     return failCommand(deps, command, "permanentProviderError", connectionId);
   }
@@ -1577,28 +1557,25 @@ export async function executeProviderDelete(
     return confirmDeletion(deps, command);
   }
 
-  let accessToken: string;
-  try {
-    accessToken = await deps.custody.getValidAccessToken(connectionId);
-  } catch (error) {
-    if (
-      error instanceof ProviderAuthError &&
-      error.reason === "refreshFailed"
-    ) {
-      return command;
-    }
+  const tokenResult = await resolveAccessToken(deps.custody, connectionId);
+  if (!tokenResult.ok) {
+    if (tokenResult.stop.kind === "pending") return command;
     return revertAndFail(
       deps,
       command,
       event,
-      "authorizationRevoked",
+      tokenResult.stop.reason,
       connectionId,
       now,
     );
   }
+  const { accessToken } = tokenResult;
 
-  try {
-    await deps.writer.deleteEvent({
+  // Transient: keep the event deletionPending (visibly deleting) and retry.
+  // Terminal: the delete failed, so restore the event to active rather than
+  // leaving it stuck showing "deleting".
+  const deleteResult = await runProviderWrite(() =>
+    deps.writer.deleteEvent({
       accessToken,
       calendarId: calendar.providerCalendarId,
       providerEventId,
@@ -1606,23 +1583,18 @@ export async function executeProviderDelete(
       // unrelated external change never blocks it.
       expectedVersion: null,
       invitation: input.invitation,
-    });
-  } catch (error) {
-    if (error instanceof ProviderWriteError) {
-      // Transient: keep the event deletionPending (visibly deleting) and retry.
-      if (error.reason === "transient") return command;
-      // Terminal: the delete failed, so restore the event to active rather than
-      // leaving it stuck showing "deleting".
-      return revertAndFail(
-        deps,
-        command,
-        event,
-        error.reason,
-        connectionId,
-        now,
-      );
-    }
-    throw error;
+    }),
+  );
+  if (!deleteResult.ok) {
+    if (deleteResult.stop.kind === "pending") return command;
+    return revertAndFail(
+      deps,
+      command,
+      event,
+      deleteResult.stop.reason,
+      connectionId,
+      now,
+    );
   }
 
   // The provider confirmed the deletion. Write the content-free tombstone first
