@@ -8,7 +8,6 @@ import {
 } from "react";
 import { track } from "@web/auth/posthog/track";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
-import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { PracticeCalendar } from "@web/components/ShortcutShowcase/PracticeCalendar";
 import {
   clearFocus,
@@ -34,7 +33,7 @@ import {
 import {
   getShowcaseStep,
   SHOWCASE_STEP_IDS,
-  type ShowcaseStepId,
+  STRETCH_KEYCAPS,
 } from "@web/components/ShortcutShowcase/showcase.steps";
 import {
   selectShowcaseActive,
@@ -55,52 +54,12 @@ const TEXT_BUTTON_CLASS =
 const PRIMARY_BUTTON_CLASS =
   "c-button c-button-primary rounded-full px-4 py-1.5 text-xs";
 
-const ASSIST_IDLE_MS = 15_000;
-const ASSIST_ATTEMPT_THRESHOLD = 2;
-
 const ARROW_DIRECTIONS: Record<string, PracticeDirection> = {
   ArrowUp: "up",
   ArrowDown: "down",
   ArrowLeft: "left",
   ArrowRight: "right",
 };
-
-/** "Show me" fallback, ported from the retired tour's assist hook. */
-function useShowcaseAssist(stepId: ShowcaseStepId): boolean {
-  const [isVisible, setIsVisible] = useState(false);
-  const attemptsRef = useRef(0);
-  const revealedRef = useRef(false);
-
-  useEffect(() => {
-    setIsVisible(false);
-    attemptsRef.current = 0;
-    revealedRef.current = false;
-    if (stepId === "graduation") return;
-
-    const reveal = () => {
-      if (revealedRef.current) return;
-      revealedRef.current = true;
-      setIsVisible(true);
-      track("shortcut_showcase_assist_shown", { step: stepId });
-    };
-
-    const idleTimer = window.setTimeout(reveal, ASSIST_IDLE_MS);
-    const onKeyDown = (event: KeyboardEvent) => {
-      // Typing a title is progress, not a failed attempt at the shortcut.
-      if (isEditableKeyboardTarget(event)) return;
-      attemptsRef.current += 1;
-      if (attemptsRef.current >= ASSIST_ATTEMPT_THRESHOLD) reveal();
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.clearTimeout(idleTimer);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [stepId]);
-
-  return isVisible;
-}
 
 /**
  * Full-screen practice arena shown before a new user ever sees the real
@@ -115,7 +74,6 @@ const ShowcaseTakeover: FC = () => {
   );
   const stepId = stepIdAt(stepIndex);
   const step = getShowcaseStep(stepId);
-  const isAssistVisible = useShowcaseAssist(stepId);
 
   // The takeover owns the keyboard: silence every real app handler
   // (useAppShortcut, the e-sequence, bare-letter s/h) while it is up.
@@ -390,7 +348,9 @@ const ShowcaseTakeover: FC = () => {
     return () => document.removeEventListener("keydown", onKeyDown, true);
   }, [apply]);
 
-  const showMe = () => {
+  // Performs the lesson's action on the practice board, then moves on.
+  const doItForMe = () => {
+    track("shortcut_showcase_assist_used", { step: stepId });
     switch (stepId) {
       case "create":
         apply(createDraft);
@@ -434,14 +394,15 @@ const ShowcaseTakeover: FC = () => {
       case "hardcore":
         apply((state) => (state.hardcoreOn ? state : toggleHardcore(state)));
         break;
-      case "graduation":
-        shortcutShowcaseActions.finish();
-        return;
     }
     advance();
   };
 
   const progressPercent = ((stepIndex + 1) / SHOWCASE_STEP_IDS.length) * 100;
+  // The stretch lesson teaches Tab first, then the chord, so it hints one
+  // press at a time rather than showing all three keys at once.
+  const isStretchPhase = stepId === "resizeEdge" && practice.edge === "end";
+  const keycaps = isStretchPhase ? STRETCH_KEYCAPS : step.keycaps;
 
   return (
     <section
@@ -493,7 +454,7 @@ const ShowcaseTakeover: FC = () => {
               </div>
               <h2 className="font-semibold text-lg text-text">{step.title}</h2>
               <p className="text-sm text-text-muted">{step.body}</p>
-              {step.keycaps && <ShortcutKeys keys={[...step.keycaps]} />}
+              {keycaps && <ShortcutKeys keys={[...keycaps]} />}
               <div className="flex items-center gap-2 pt-2">
                 {stepId === "graduation" ? (
                   <button
@@ -504,15 +465,13 @@ const ShowcaseTakeover: FC = () => {
                     Enter Compass
                   </button>
                 ) : (
-                  isAssistVisible && (
-                    <button
-                      type="button"
-                      className={PRIMARY_BUTTON_CLASS}
-                      onClick={showMe}
-                    >
-                      Show me
-                    </button>
-                  )
+                  <button
+                    type="button"
+                    className={PRIMARY_BUTTON_CLASS}
+                    onClick={doItForMe}
+                  >
+                    Do it for me
+                  </button>
                 )}
                 {stepIndex > 0 && stepId !== "graduation" && (
                   <button

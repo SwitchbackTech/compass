@@ -24,7 +24,7 @@ export const CHECKLIST_ITEMS = [
   },
   {
     id: "placeDraft",
-    label: "Drop a new event on the grid",
+    label: "Place a new event on the grid",
     keycaps: KEYMAP.moveEvent.keycaps,
   },
   { id: "undo", label: "Undo a change", keycaps: KEYMAP.undo.keycaps },

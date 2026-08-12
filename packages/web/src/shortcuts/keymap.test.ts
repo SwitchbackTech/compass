@@ -77,6 +77,9 @@ describe("keymap ↔ showcase hint parity", () => {
     expect(getShowcaseStep("editTitle").keycaps).toBe(KEYMAP.editTitle.keycaps);
     expect(getShowcaseStep("eventJump").keycaps).toBe(KEYMAP.eventJump.keycaps);
     expect(getShowcaseStep("moveEvent").keycaps).toBe(KEYMAP.moveEvent.keycaps);
+    expect(getShowcaseStep("resizeEdge").keycaps).toBe(
+      KEYMAP.edgeFocus.keycaps,
+    );
     expect(getShowcaseStep("placeDraft").keycaps).toBe(
       KEYMAP.moveEvent.keycaps,
     );
