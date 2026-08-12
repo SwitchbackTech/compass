@@ -5,8 +5,8 @@ import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAu
 import { completeGoogleAuthorization } from "@web/auth/google/authorization/complete-google-authorization";
 import { track } from "@web/auth/posthog/track";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
-import { onboardingTourActions } from "@web/components/OnboardingTour/onboarding.tour.store";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
+import { shortcutShowcaseActions } from "@web/components/ShortcutShowcase/showcase.store";
 
 type CompleteAuthentication = ReturnType<typeof useCompleteAuthentication>;
 
@@ -31,7 +31,7 @@ export async function completeGoogleAuthCallback({
     showErrorToast(result.message);
   } else if (result.isNewUser) {
     track("signup_completed", { method: "google" });
-    onboardingTourActions.offerAfterSignupIfPending();
+    shortcutShowcaseActions.offerAfterSignupIfPending();
   } else {
     track("login_completed", { method: "google" });
   }

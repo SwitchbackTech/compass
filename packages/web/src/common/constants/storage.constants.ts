@@ -1,22 +1,21 @@
 type StorageKey =
   | "compass.auth"
   | "compass.onboarding.has-seen-welcome"
-  | "compass.onboarding.has-seen-onboarding-tour"
   | "compass.onboarding.has-seen-anonymous-save-toast"
   | "compass.onboarding.has-dismissed-demo-events-banner"
   | "compass.onboarding.has-dismissed-tasks-removal-notice"
-  // Set when a new user hands off to signup/login from the welcome modal
-  // before starting the tour; consumed once, right after signup completes,
-  // to offer the tour instead of silently burning it forever.
-  | "compass.onboarding.has-pending-tour-offer"
-  // Persists which stage of the post-tour connect/trial flow a user is on,
-  // so a full-page OAuth redirect can resume on the right stage. "done"
-  // means completed or dismissed; absent means never triggered.
-  | "compass.onboarding.post-tour-stage"
-  // Step id of an unfinished tour, so an abandoned session (closed tab,
-  // navigated away) can be resumed instead of silently lost. Cleared on
-  // finish or skip.
-  | "compass.onboarding.tour-progress"
+  // Set when the user finishes or skips the Shortcut Showcase, so it never
+  // auto-launches twice (palette replay ignores it).
+  | "compass.onboarding.has-seen-shortcut-showcase"
+  // Set when a welcome-modal exit hands off to signup before the showcase;
+  // consumed once, right after signup completes, to offer it then.
+  | "compass.onboarding.has-pending-showcase-offer"
+  // JSON map of completed checklist item ids, written the moment each is
+  // detected so credit is retroactive no matter when the card is noticed.
+  | "compass.onboarding.checklist-progress"
+  // "completed" | "dismissed": the checklist's terminal state. Absent means
+  // it is still live (or never shown).
+  | "compass.onboarding.checklist-done"
   | "compass.trial.started-at"
   | "compass.shortcuts.tips-muted"
   | "compass.sidebar.width"
@@ -39,13 +38,13 @@ type StorageKey =
 export const STORAGE_KEYS: Record<
   | "AUTH"
   | "HAS_SEEN_WELCOME"
-  | "HAS_SEEN_ONBOARDING_TOUR"
   | "HAS_SEEN_ANONYMOUS_SAVE_TOAST"
   | "HAS_DISMISSED_DEMO_EVENTS_BANNER"
   | "HAS_DISMISSED_TASKS_REMOVAL_NOTICE"
-  | "HAS_PENDING_TOUR_OFFER"
-  | "POST_TOUR_STAGE"
-  | "TOUR_PROGRESS"
+  | "HAS_SEEN_SHORTCUT_SHOWCASE"
+  | "HAS_PENDING_SHOWCASE_OFFER"
+  | "CHECKLIST_PROGRESS"
+  | "CHECKLIST_DONE"
   | "TRIAL_STARTED_AT"
   | "SHORTCUT_TIPS_MUTED"
   | "LIFE_PREFERENCES"
@@ -60,16 +59,16 @@ export const STORAGE_KEYS: Record<
 > = {
   AUTH: "compass.auth",
   HAS_SEEN_WELCOME: "compass.onboarding.has-seen-welcome",
-  HAS_SEEN_ONBOARDING_TOUR: "compass.onboarding.has-seen-onboarding-tour",
   HAS_SEEN_ANONYMOUS_SAVE_TOAST:
     "compass.onboarding.has-seen-anonymous-save-toast",
   HAS_DISMISSED_DEMO_EVENTS_BANNER:
     "compass.onboarding.has-dismissed-demo-events-banner",
   HAS_DISMISSED_TASKS_REMOVAL_NOTICE:
     "compass.onboarding.has-dismissed-tasks-removal-notice",
-  HAS_PENDING_TOUR_OFFER: "compass.onboarding.has-pending-tour-offer",
-  POST_TOUR_STAGE: "compass.onboarding.post-tour-stage",
-  TOUR_PROGRESS: "compass.onboarding.tour-progress",
+  HAS_SEEN_SHORTCUT_SHOWCASE: "compass.onboarding.has-seen-shortcut-showcase",
+  HAS_PENDING_SHOWCASE_OFFER: "compass.onboarding.has-pending-showcase-offer",
+  CHECKLIST_PROGRESS: "compass.onboarding.checklist-progress",
+  CHECKLIST_DONE: "compass.onboarding.checklist-done",
   TRIAL_STARTED_AT: "compass.trial.started-at",
   SHORTCUT_TIPS_MUTED: "compass.shortcuts.tips-muted",
   LIFE_PREFERENCES: "compass.life.preferences",

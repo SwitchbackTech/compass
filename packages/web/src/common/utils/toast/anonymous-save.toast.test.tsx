@@ -3,10 +3,9 @@ import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { maybeShowAnonymousSaveToast } from "@web/common/utils/toast/anonymous-save.toast";
 import { registerToastPort } from "@web/common/utils/toast/toast.port";
 import {
-  initialOnboardingTourState,
-  useOnboardingTourStore,
-} from "@web/components/OnboardingTour/onboarding.tour.store";
-import { usePostOnboardingFlowStore } from "@web/components/PostOnboardingFlow/post-onboarding-flow.store";
+  initialShortcutShowcaseState,
+  useShortcutShowcaseStore,
+} from "@web/components/ShortcutShowcase/showcase.store";
 import { beforeEach, describe, expect, it } from "bun:test";
 
 describe("maybeShowAnonymousSaveToast", () => {
@@ -18,10 +17,9 @@ describe("maybeShowAnonymousSaveToast", () => {
     mocks.toast.mockClear();
     mocks.update.mockClear();
     registerToastPort(port);
-    // These stores are module-level singletons shared across the whole test
-    // run; a suite that leaves the tour "active" would otherwise leak in.
-    useOnboardingTourStore.setState(initialOnboardingTourState);
-    usePostOnboardingFlowStore.setState({ stage: null });
+    // This store is a module-level singleton shared across the whole test
+    // run; a suite that leaves the showcase active would otherwise leak in.
+    useShortcutShowcaseStore.setState(initialShortcutShowcaseState);
   });
 
   it("shows after an anonymous calendar write", () => {

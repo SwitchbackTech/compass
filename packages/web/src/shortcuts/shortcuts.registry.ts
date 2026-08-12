@@ -1,9 +1,13 @@
 import { type Shortcut } from "@web/shortcuts/global.shortcut.types";
 
 /**
- * Shortcut registry: single source of truth for all keyboard shortcuts.
- * Each shortcut has an id, section, label, and optional context predicate.
- * The context predicate determines visibility based on app state.
+ * Shortcut registry: the display source for the `?` legend overlay. Each
+ * shortcut has an id, section, label, and optional context predicate; the
+ * predicate determines visibility based on app state.
+ *
+ * Runtime bindings live at the handler sites; the subset taught by the
+ * Shortcut Showcase binds through `keymap.ts`, and `keymap.test.ts` keeps
+ * those rows and this registry from drifting apart.
  */
 export const SHORTCUTS_REGISTRY: Shortcut[] = [
   // Navigate - Up Next

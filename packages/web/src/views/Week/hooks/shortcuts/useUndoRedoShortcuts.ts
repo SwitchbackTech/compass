@@ -1,5 +1,6 @@
 import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { useUndoRedo } from "@web/events/mutations/useUndoRedo";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 /**
@@ -16,7 +17,7 @@ export function useUndoRedoShortcuts(
   const { undo, redo } = useUndoRedo(dependencies);
 
   useAppShortcut(
-    "Mod+Z",
+    KEYMAP.undo.hotkey,
     (event) => {
       // Never undo on a shifted press, regardless of how the hotkey
       // library matches Mod+Z vs Mod+Shift+Z.
@@ -26,5 +27,5 @@ export function useUndoRedoShortcuts(
     { ignoreInputs: true },
   );
 
-  useAppShortcut("Mod+Shift+Z", () => redo(), { ignoreInputs: true });
+  useAppShortcut(KEYMAP.redo.hotkey, () => redo(), { ignoreInputs: true });
 }

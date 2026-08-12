@@ -4,6 +4,7 @@ import {
   isEditableKeyboardTarget,
 } from "@web/common/utils/form/form.util";
 import { isAppLocked } from "@web/shortcuts/app-lock";
+import { KEYMAP } from "@web/shortcuts/keymap";
 
 /** Leader → field map for the `e` edit sequences. */
 export const EDIT_SEQUENCE_FIELDS = {
@@ -18,8 +19,9 @@ export const EDIT_SEQUENCE_FIELDS = {
 
 export type EditSequenceSecondKey = keyof typeof EDIT_SEQUENCE_FIELDS;
 
-const ARM_WINDOW_MS = 600;
-const LEADER_KEY = "e";
+/** Shared with the Shortcut Showcase so practice teaches the real cadence. */
+export const ARM_WINDOW_MS = 600;
+const LEADER_KEY = KEYMAP.editTitle.sequence.leader;
 
 /** Shared so other letter shortcuts (e.g. event-jump `s`) can yield to `e`… sequences. */
 let editSequenceArmedUntil = 0;

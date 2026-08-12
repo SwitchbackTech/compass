@@ -3,8 +3,8 @@ import { TrialGateModal } from "@web/billing/TrialGateModal";
 import { useTrialStatus } from "@web/billing/useTrialStatus";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
-import { OnboardingTour } from "@web/components/OnboardingTour/OnboardingTour";
-import { PostOnboardingFlow } from "@web/components/PostOnboardingFlow/PostOnboardingFlow";
+import { OnboardingChecklist } from "@web/components/OnboardingChecklist/OnboardingChecklist";
+import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
 import { WelcomeGuideModal } from "@web/components/WelcomeModal/WelcomeGuideModal";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
 import {
@@ -49,8 +49,8 @@ export function RootShell() {
       <Outlet />
       <AuthModal />
       <WelcomeModal />
-      <OnboardingTour />
-      <PostOnboardingFlow />
+      <ShortcutShowcase />
+      <OnboardingChecklist />
       {isWelcomeGuideOpen && <WelcomeGuideModal />}
     </AuthModalProvider>
   );

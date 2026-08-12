@@ -30,7 +30,7 @@ import {
   recordRecentCommand,
   useRecentCommandIds,
 } from "@web/components/CommandPalette/recent-commands.store";
-import { onboardingTourActions } from "@web/components/OnboardingTour/onboarding.tour.store";
+import { shortcutShowcaseActions } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { useUndoRedo } from "@web/events/mutations/useUndoRedo";
@@ -308,7 +308,7 @@ export const CommandPalette = ({
         onNavigateToView: (viewName) =>
           navigate({ to: getNavigationViewRoute(viewName) }),
         onShowShortcuts,
-        onShowOnboardingTour: () => onboardingTourActions.restart(),
+        onPracticeShortcuts: () => shortcutShowcaseActions.replay(),
         onShowWelcomeGuide,
       }),
     },
