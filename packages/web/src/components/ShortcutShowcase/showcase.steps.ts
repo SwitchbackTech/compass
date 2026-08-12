@@ -1,4 +1,8 @@
+import { detectPlatform } from "@tanstack/react-hotkeys";
 import { KEYMAP } from "@web/shortcuts/keymap";
+
+// Prose has no keycap chips to expand "Mod" into, so spell the real key out.
+const MOD_KEY = detectPlatform() === "mac" ? "Cmd" : "Ctrl";
 
 /**
  * Single source of truth for showcase step order. Every shortcut concept the
@@ -33,8 +37,7 @@ export type ShowcaseStep = {
 
 /**
  * Keycaps reference KEYMAP so a remap updates the hints automatically;
- * keymap.test.ts pins the 1:1 cases. Direction-specific arrows in combined
- * hints stay literal because they demonstrate one direction of a family.
+ * keymap.test.ts pins the 1:1 cases.
  */
 const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
   create: {
@@ -68,18 +71,20 @@ const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
     keycaps: KEYMAP.moveEvent.keycaps,
   },
   resizeEdge: {
+    // Two phases: the hint swaps to Shift+Arrow once the end edge has focus,
+    // so the keycaps here only cover the first press.
     title: "Stretch the end time",
-    body: "Press Tab to focus the event's end time, then hold Shift and press an arrow to stretch it. The start stays put.",
-    keycaps: [...KEYMAP.edgeFocus.keycaps, "Shift", "ArrowDown"],
+    body: "Press Tab to focus the event's end time, then hold Shift and press the up or down arrow to stretch it. The start stays put.",
+    keycaps: KEYMAP.edgeFocus.keycaps,
   },
   placeDraft: {
     title: "Place a block anywhere",
-    body: "With nothing focused, hold Shift and press an arrow key to drop a new block right on the grid.",
+    body: "With nothing focused, hold Shift and press an arrow key to place a new block right on the grid.",
     keycaps: KEYMAP.moveEvent.keycaps,
   },
   undoRedo: {
     title: "Never stress a mistake",
-    body: "Press Mod+Z to undo your last change, then Mod+Shift+Z to bring it back.",
+    body: `Press ${MOD_KEY}+Z to undo your last change, then ${MOD_KEY}+Shift+Z to bring it back.`,
     keycaps: KEYMAP.undo.keycaps,
   },
   hardcore: {

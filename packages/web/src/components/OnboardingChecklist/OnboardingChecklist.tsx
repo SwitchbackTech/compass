@@ -62,7 +62,7 @@ const ChecklistCard: FC = () => {
           <>
             <div className="mb-2 flex items-center justify-between">
               <span className="font-semibold text-sm">
-                Practice on real events
+                Practice on sample events
               </span>
               <span className="text-text-muted text-xs">
                 {doneCount}/{CHECKLIST_ITEMS.length}
@@ -103,15 +103,17 @@ const ChecklistCard: FC = () => {
                 return (
                   <li key={item.id} className="flex items-center gap-2">
                     {item.id === "signUp" && !isComplete ? (
+                      // The exit of the flow, so it reads as a real CTA
+                      // rather than one more thing to check off.
                       <button
                         type="button"
-                        className="c-focus-ring flex w-full items-center gap-2 rounded-md text-left hover:bg-surface-overlay"
+                        className="c-focus-ring mt-1 inline-flex w-full items-center justify-center rounded-3xl bg-accent px-4 py-1.5 font-medium text-on-accent text-xs transition-all hover:brightness-110"
                         onClick={() => {
                           track("signup_started", { source: "checklist" });
                           openModal("signUp");
                         }}
                       >
-                        {row}
+                        {item.label}
                       </button>
                     ) : (
                       row

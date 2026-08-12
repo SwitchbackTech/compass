@@ -13,7 +13,7 @@ export type ProductEvent =
   | "shortcut_showcase_step_redone"
   | "shortcut_showcase_skipped"
   | "shortcut_showcase_finished"
-  | "shortcut_showcase_assist_shown"
+  | "shortcut_showcase_assist_used"
   | "checklist_shown"
   | "checklist_item_completed"
   | "checklist_dismissed"

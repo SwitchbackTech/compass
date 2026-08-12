@@ -116,6 +116,56 @@ describe("ShortcutShowcase", () => {
     ).toBe("true");
   });
 
+  it("offers 'Do it for me' from the first step, and swaps it out at graduation", async () => {
+    const user = userEvent.setup();
+    render(<ShortcutShowcase />);
+    act(() => shortcutShowcaseActions.start());
+
+    // No idle wait or failed attempt required: the way out is always offered.
+    await user.click(screen.getByRole("button", { name: "Do it for me" }));
+    expect(currentStepId()).toBe("save");
+
+    act(() =>
+      useShortcutShowcaseStore.setState({
+        stepIndex: SHOWCASE_STEP_IDS.indexOf("graduation"),
+      }),
+    );
+    expect(screen.queryByRole("button", { name: "Do it for me" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Enter Compass" })).toBeTruthy();
+  });
+
+  it("shows the stretch hint one phase at a time: Tab, then Shift+Arrow", async () => {
+    const user = userEvent.setup();
+    render(<ShortcutShowcase />);
+    act(() =>
+      useShortcutShowcaseStore.setState({
+        isActive: true,
+        stepIndex: SHOWCASE_STEP_IDS.indexOf("resizeEdge"),
+      }),
+    );
+
+    // Phase one: only the key that moves focus onto the end time.
+    expect(screen.getByTestId("tab-icon")).toBeTruthy();
+    expect(screen.queryByTestId("shift-icon")).toBeNull();
+    expect(screen.queryByTestId("arrowdown-icon")).toBeNull();
+
+    pressKey("Tab");
+
+    // Phase two: the end edge has focus, so the chord replaces Tab.
+    expect(screen.queryByTestId("tab-icon")).toBeNull();
+    expect(screen.getByTestId("shift-icon")).toBeTruthy();
+    expect(screen.getByTestId("arrowdown-icon")).toBeTruthy();
+
+    // Leaving and returning re-seeds the start edge, so the lesson restarts
+    // at phase one rather than stranding the user on the chord.
+    pressKey("ArrowDown", { shiftKey: true });
+    expect(currentStepId()).toBe("placeDraft");
+    await user.click(screen.getByRole("button", { name: "Previous" }));
+    expect(currentStepId()).toBe("resizeEdge");
+    expect(screen.getByTestId("tab-icon")).toBeTruthy();
+    expect(screen.queryByTestId("shift-icon")).toBeNull();
+  });
+
   it("Escape confirms once, lesson keys fall through, second Escape skips", () => {
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.start());
