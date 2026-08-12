@@ -1,3 +1,5 @@
+import { expandModInShortcutDisplay } from "@web/shortcuts/shortcut.util";
+
 export type ShortcutTipId =
   | "edit-sequence"
   | "nudge"
@@ -14,14 +16,21 @@ export type ShortcutTip = {
   parts: ShortcutTipPart[];
 };
 
+const spokenKey = (token: string): string => {
+  const expanded = expandModInShortcutDisplay(token);
+  if (expanded === "Meta") return "Cmd";
+  if (expanded === "Control") return "Ctrl";
+  return expanded;
+};
+
+const partPlainText = (part: ShortcutTipPart): string => {
+  if (typeof part === "string") return part;
+  const keys = "keys" in part ? part.keys : [part.key];
+  return keys.map(spokenKey).join("+");
+};
+
 export const getPartsPlainText = (parts: readonly ShortcutTipPart[]): string =>
-  parts
-    .map((part) => {
-      if (typeof part === "string") return part;
-      if ("keys" in part) return part.keys.join("+");
-      return part.key;
-    })
-    .join("");
+  parts.map(partPlainText).join("");
 
 export const getTipPlainText = (tip: ShortcutTip): string =>
   getPartsPlainText(tip.parts);

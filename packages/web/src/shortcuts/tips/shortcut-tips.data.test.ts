@@ -1,3 +1,4 @@
+import { expandModInShortcutDisplay } from "@web/shortcuts/shortcut.util";
 import {
   getPartsPlainText,
   getShortcutTips,
@@ -25,7 +26,8 @@ describe("getTipPlainText", () => {
     );
   });
 
-  it("joins a chord's keys with + for the accessible sentence", () => {
+  it("joins a chord's keys with + and speaks Mod as Cmd or Ctrl", () => {
+    const mod = expandModInShortcutDisplay("Mod") === "Meta" ? "Cmd" : "Ctrl";
     expect(
       getPartsPlainText([
         "Press ",
@@ -33,6 +35,6 @@ describe("getTipPlainText", () => {
         " then ",
         { keys: ["Mod", "Shift", "Z"] },
       ]),
-    ).toBe("Press Mod+Z then Mod+Shift+Z");
+    ).toBe(`Press ${mod}+Z then ${mod}+Shift+Z`);
   });
 });
