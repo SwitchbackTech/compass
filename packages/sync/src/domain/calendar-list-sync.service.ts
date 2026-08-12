@@ -1,5 +1,5 @@
 import { type ProviderCalendarSourceId } from "@core/types/sync/identity.contracts";
-import { type AccessTokenSource } from "@sync/domain/provider-command.service";
+import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import {
   type ProviderCalendarAdapter,
   ProviderCalendarError,

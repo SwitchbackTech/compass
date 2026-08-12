@@ -1,7 +1,7 @@
 import { toColorLabelMap } from "@sync/domain/color-label-map";
 import { syncHorizon } from "@sync/domain/horizon";
-import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
+import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import {
   type EventWindow,
   type ProviderEventReader,

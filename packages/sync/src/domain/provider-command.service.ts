@@ -25,6 +25,11 @@ import {
   stripRuleBounds,
   truncateRulesBefore,
 } from "@sync/domain/occurrence-projection";
+import {
+  type AccessTokenSource,
+  resolveAccessToken,
+  runProviderWrite,
+} from "@sync/domain/provider-write-ladder";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import {
   deleteFollowingExceptions,
@@ -36,7 +41,6 @@ import {
 import { type ProviderEvent } from "@sync/providers/provider-event.port";
 import {
   type ProviderEventWriter,
-  ProviderWriteError,
   type ProviderWriteRecurrence,
   type ProviderWriteResult,
 } from "@sync/providers/provider-event-writer.port";
@@ -48,14 +52,6 @@ import { type DeletionMarkerRepository } from "@sync/storage/repositories/deleti
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
-
-export type { AccessTokenSource } from "@sync/domain/provider-write-ladder";
-
-import {
-  type AccessTokenSource,
-  resolveAccessToken,
-  runProviderWrite,
-} from "@sync/domain/provider-write-ladder";
 
 export interface ProviderMutationDeps {
   commands: CommandRepository;
@@ -203,39 +199,31 @@ async function resolveFailedOverrideAlign(
     connectionId: ConnectionId;
   },
   providerEventId: string,
-  patchError: ProviderWriteError,
+  reason: SyncCommandFailureReason,
 ): Promise<CommandRecord | null> {
-  if (patchError.reason === "transient") return command;
-  if (patchError.reason !== "permanentProviderError") {
-    return failCommand(deps, command, patchError.reason, provider.connectionId);
+  if (reason !== "permanentProviderError") {
+    return failCommand(deps, command, reason, provider.connectionId);
   }
-  try {
-    const read = await deps.writer.fetchEvent({
+  const fetchResult = await runProviderWrite(() =>
+    deps.writer.fetchEvent({
       accessToken: provider.accessToken,
       calendarId: provider.calendarId,
       providerEventId: providerEventId as ProviderEventId,
-    });
-    if (read?.kind === "event") {
-      return failCommand(
-        deps,
-        command,
-        patchError.reason,
-        provider.connectionId,
-      );
-    }
-    return null;
-  } catch (fetchError) {
-    if (fetchError instanceof ProviderWriteError) {
-      if (fetchError.reason === "transient") return command;
-      return failCommand(
-        deps,
-        command,
-        fetchError.reason,
-        provider.connectionId,
-      );
-    }
-    throw fetchError;
+    }),
+  );
+  if (!fetchResult.ok) {
+    if (fetchResult.stop.kind === "pending") return command;
+    return failCommand(
+      deps,
+      command,
+      fetchResult.stop.reason,
+      provider.connectionId,
+    );
   }
+  if (fetchResult.value?.kind === "event") {
+    return failCommand(deps, command, reason, provider.connectionId);
+  }
+  return null;
 }
 
 // Build the canonical event for a provider-linked create: same shape as a cloud
@@ -619,42 +607,41 @@ async function commitProviderSeriesUpdate(
   // Align or remove discarded overrides at Google first, then clear local
   // copies. Kept cancelled tombstones are not touched at the provider.
   for (const exception of discarded) {
-    if (exception.providerEventId) {
-      try {
+    const exceptionProviderEventId = exception.providerEventId;
+    if (exceptionProviderEventId) {
+      const alignResult = await runProviderWrite(() =>
+        convertsToSingle
+          ? deps.writer.deleteEvent({
+              accessToken: provider.accessToken,
+              calendarId: provider.calendarId,
+              providerEventId: exceptionProviderEventId,
+              expectedVersion: null,
+              invitation: input.invitation,
+            })
+          : deps.writer.patchEvent({
+              // Revert the override into the edited series without cancelling
+              // the occurrence. Delete would mark the instance cancelled at Google.
+              accessToken: provider.accessToken,
+              calendarId: provider.calendarId,
+              providerEventId: exceptionProviderEventId,
+              expectedVersion: null,
+              content,
+              schedule: occurrenceScheduleAfterSeriesEdit(
+                master.schedule,
+                input.schedule,
+                exceptionInstant(exception),
+              ),
+              recurrence: { kind: "instance" },
+              invitation: input.invitation,
+            }),
+      );
+      if (!alignResult.ok) {
+        if (alignResult.stop.kind === "pending") return command;
         if (convertsToSingle) {
-          await deps.writer.deleteEvent({
-            accessToken: provider.accessToken,
-            calendarId: provider.calendarId,
-            providerEventId: exception.providerEventId,
-            expectedVersion: null,
-            invitation: input.invitation,
-          });
-        } else {
-          // Revert the override into the edited series without cancelling the
-          // occurrence. Delete would mark the instance cancelled at Google.
-          await deps.writer.patchEvent({
-            accessToken: provider.accessToken,
-            calendarId: provider.calendarId,
-            providerEventId: exception.providerEventId,
-            expectedVersion: null,
-            content,
-            schedule: occurrenceScheduleAfterSeriesEdit(
-              master.schedule,
-              input.schedule,
-              exceptionInstant(exception),
-            ),
-            recurrence: { kind: "instance" },
-            invitation: input.invitation,
-          });
-        }
-      } catch (error) {
-        if (!(error instanceof ProviderWriteError)) throw error;
-        if (convertsToSingle) {
-          if (error.reason === "transient") return command;
           return failCommand(
             deps,
             command,
-            error.reason,
+            alignResult.stop.reason,
             provider.connectionId,
           );
         }
@@ -662,8 +649,8 @@ async function commitProviderSeriesUpdate(
           deps,
           command,
           provider,
-          exception.providerEventId,
-          error,
+          exceptionProviderEventId,
+          alignResult.stop.reason,
         );
         if (stop) return stop;
       }
@@ -772,23 +759,28 @@ export async function executeProviderOccurrenceUpdate(
   }
   const { accessToken } = tokenResult;
 
-  let instance: ProviderEvent | null;
-  try {
-    const read = await deps.writer.fetchInstanceAt({
+  const fetchInstanceResult = await runProviderWrite(() =>
+    deps.writer.fetchInstanceAt({
       accessToken,
       calendarId: calendar.providerCalendarId,
       seriesProviderEventId,
       originalStartAt: recurrenceId,
       scheduleKind: master.schedule.kind,
-    });
-    instance = read?.kind === "event" ? read : null;
-  } catch (error) {
-    if (error instanceof ProviderWriteError) {
-      if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason, connectionId);
-    }
-    throw error;
+    }),
+  );
+  if (!fetchInstanceResult.ok) {
+    if (fetchInstanceResult.stop.kind === "pending") return command;
+    return failCommand(
+      deps,
+      command,
+      fetchInstanceResult.stop.reason,
+      connectionId,
+    );
   }
+  const instance =
+    fetchInstanceResult.value?.kind === "event"
+      ? fetchInstanceResult.value
+      : null;
   // No live instance to override: never materialized at that instant, or
   // already cancelled at the provider (see the deferred-gap note above).
   if (!instance) {
@@ -824,23 +816,21 @@ export async function executeProviderOccurrenceUpdate(
     );
   }
 
-  let result: ProviderWriteResult;
-  try {
-    result = await deps.writer.patchEvent({
+  const patchResult = await runProviderWrite(() =>
+    deps.writer.patchEvent({
       ...location,
       expectedVersion: command.expectedVersion,
       content,
       schedule: input.schedule,
       recurrence: { kind: "instance" },
       invitation: input.invitation,
-    });
-  } catch (error) {
-    if (error instanceof ProviderWriteError) {
-      if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason, connectionId);
-    }
-    throw error;
+    }),
+  );
+  if (!patchResult.ok) {
+    if (patchResult.stop.kind === "pending") return command;
+    return failCommand(deps, command, patchResult.stop.reason, connectionId);
   }
+  const result = patchResult.value;
 
   return commitProviderOccurrenceUpdate(
     deps,
@@ -943,27 +933,32 @@ export async function executeProviderOccurrenceDelete(
   }
   const { accessToken } = tokenResult;
 
-  let instance: ProviderEvent | null;
-  try {
-    const read = await deps.writer.fetchInstanceAt({
+  const fetchInstanceResult = await runProviderWrite(() =>
+    deps.writer.fetchInstanceAt({
       accessToken,
       calendarId: calendar.providerCalendarId,
       seriesProviderEventId,
       originalStartAt: recurrenceId,
       scheduleKind: master.schedule.kind,
-    });
-    instance = read?.kind === "event" ? read : null;
-  } catch (error) {
-    if (error instanceof ProviderWriteError) {
-      if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason, connectionId);
-    }
-    throw error;
+    }),
+  );
+  if (!fetchInstanceResult.ok) {
+    if (fetchInstanceResult.stop.kind === "pending") return command;
+    return failCommand(
+      deps,
+      command,
+      fetchInstanceResult.stop.reason,
+      connectionId,
+    );
   }
+  const instance =
+    fetchInstanceResult.value?.kind === "event"
+      ? fetchInstanceResult.value
+      : null;
 
   if (instance) {
-    try {
-      await deps.writer.deleteEvent({
+    const deleteResult = await runProviderWrite(() =>
+      deps.writer.deleteEvent({
         accessToken,
         calendarId: calendar.providerCalendarId,
         providerEventId: instance.providerEventId,
@@ -971,13 +966,11 @@ export async function executeProviderOccurrenceDelete(
         // one instance is not conditioned on its version.
         expectedVersion: null,
         invitation: input.invitation,
-      });
-    } catch (error) {
-      if (error instanceof ProviderWriteError) {
-        if (error.reason === "transient") return command;
-        return failCommand(deps, command, error.reason, connectionId);
-      }
-      throw error;
+      }),
+    );
+    if (!deleteResult.ok) {
+      if (deleteResult.stop.kind === "pending") return command;
+      return failCommand(deps, command, deleteResult.stop.reason, connectionId);
     }
   }
 
@@ -1106,23 +1099,21 @@ export async function executeProviderSeriesFollowingDelete(
     );
   }
 
-  let result: ProviderWriteResult;
-  try {
-    result = await deps.writer.patchEvent({
+  const patchResult = await runProviderWrite(() =>
+    deps.writer.patchEvent({
       ...location,
       expectedVersion: command.expectedVersion,
       content: master.content,
       schedule: master.schedule,
       recurrence: truncateRecurrence,
       invitation: input.invitation,
-    });
-  } catch (error) {
-    if (error instanceof ProviderWriteError) {
-      if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason, connectionId);
-    }
-    throw error;
+    }),
+  );
+  if (!patchResult.ok) {
+    if (patchResult.stop.kind === "pending") return command;
+    return failCommand(deps, command, patchResult.stop.reason, connectionId);
   }
+  const result = patchResult.value;
 
   return commitProviderSeriesFollowingDelete(
     deps,
@@ -1252,24 +1243,26 @@ export async function executeProviderSeriesFollowingUpdate(
   ) {
     originalVersion = current.providerVersion;
   } else {
-    let truncateResult: ProviderWriteResult;
-    try {
-      truncateResult = await deps.writer.patchEvent({
+    const truncateResult = await runProviderWrite(() =>
+      deps.writer.patchEvent({
         ...originalLocation,
         expectedVersion: command.expectedVersion,
         content: master.content,
         schedule: master.schedule,
         recurrence: truncateRecurrence,
         invitation: input.invitation,
-      });
-    } catch (error) {
-      if (error instanceof ProviderWriteError) {
-        if (error.reason === "transient") return command;
-        return failCommand(deps, command, error.reason, connectionId);
-      }
-      throw error;
+      }),
+    );
+    if (!truncateResult.ok) {
+      if (truncateResult.stop.kind === "pending") return command;
+      return failCommand(
+        deps,
+        command,
+        truncateResult.stop.reason,
+        connectionId,
+      );
     }
-    originalVersion = truncateResult.providerVersion;
+    originalVersion = truncateResult.value.providerVersion;
   }
 
   const truncated: EventRecord = {
@@ -1300,9 +1293,8 @@ export async function executeProviderSeriesFollowingUpdate(
   );
   const remainderContent = mergeUpdateContent(master.content, input.content);
 
-  let createResult: ProviderWriteResult;
-  try {
-    createResult = await deps.writer.createEvent({
+  const createResultAttempt = await runProviderWrite(() =>
+    deps.writer.createEvent({
       accessToken,
       calendarId: calendar.providerCalendarId,
       providerEventId: remainderId,
@@ -1310,14 +1302,18 @@ export async function executeProviderSeriesFollowingUpdate(
       schedule: input.schedule,
       recurrence: remainderRecurrence,
       invitation: input.invitation,
-    });
-  } catch (error) {
-    if (error instanceof ProviderWriteError) {
-      if (error.reason === "transient") return command;
-      return failCommand(deps, command, error.reason, connectionId);
-    }
-    throw error;
+    }),
+  );
+  if (!createResultAttempt.ok) {
+    if (createResultAttempt.stop.kind === "pending") return command;
+    return failCommand(
+      deps,
+      command,
+      createResultAttempt.stop.reason,
+      connectionId,
+    );
   }
+  const createResult = createResultAttempt.value;
 
   const remainder: EventRecord = {
     ...master,

@@ -12,7 +12,6 @@ import { setupSyncStorage } from "@sync/__tests__/helpers/storage";
 import { CredentialCustody } from "@sync/credentials/credential-custody.service";
 import { truncateRulesBefore } from "@sync/domain/occurrence-projection";
 import {
-  type AccessTokenSource,
   executeProviderCreate,
   executeProviderDelete,
   executeProviderOccurrenceDelete,
@@ -22,6 +21,7 @@ import {
   executeProviderSeriesUpdate,
   executeProviderUpdate,
 } from "@sync/domain/provider-command.service";
+import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import { reprojectOccurrences } from "@sync/domain/reproject";
 import {
   type ProviderAuthAdapter,

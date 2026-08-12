@@ -3,20 +3,16 @@ import { type ConnectionId } from "@core/types/sync/identity.contracts";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import { ProviderWriteError } from "@sync/providers/provider-event-writer.port";
 
-// The slice of credential custody the executor needs — a valid access token for
-// a connection, plus discard of a provider-invalidated grant. Narrow so tests
-// pass a plain fake; CredentialCustody satisfies it structurally.
+// Narrow custody slice so tests can pass a plain fake; CredentialCustody
+// satisfies it structurally.
 export interface AccessTokenSource {
   getValidAccessToken(connectionId: ConnectionId): Promise<string>;
   discardRevoked(connectionId: ConnectionId): Promise<void>;
   invalidateAccessToken(connectionId: ConnectionId): Promise<void>;
 }
 
-/**
- * Shared classification for the auth + provider-write ladders duplicated across
- * provider-command executors. Callers decide how to turn a stop into a command
- * outcome (failCommand vs revertAndFail vs return pending).
- */
+// Callers decide how to turn a stop into a command outcome (failCommand vs
+// revertAndFail vs return pending).
 export type ProviderWriteStop =
   | { kind: "pending" }
   | { kind: "failed"; reason: SyncCommandFailureReason };
@@ -29,10 +25,7 @@ export type ProviderWriteAttempt<T> =
   | { ok: true; value: T }
   | { ok: false; stop: ProviderWriteStop };
 
-/**
- * Resolve a valid access token. Transient refresh failures leave the command
- * pending; revoked/missing credentials are terminal authorizationRevoked.
- */
+// Transient refresh → pending; revoked/missing → authorizationRevoked.
 export async function resolveAccessToken(
   custody: AccessTokenSource,
   connectionId: ConnectionId,
@@ -54,11 +47,7 @@ export async function resolveAccessToken(
   }
 }
 
-/**
- * Run a provider write/read that throws ProviderWriteError. Transient → pending;
- * other ProviderWriteError reasons → failed with that reason; anything else
- * rethrows (programmer / unexpected).
- */
+// Transient ProviderWriteError → pending; other reasons → failed; else rethrow.
 export async function runProviderWrite<T>(
   attempt: () => Promise<T>,
 ): Promise<ProviderWriteAttempt<T>> {

@@ -2,7 +2,7 @@ import { importCalendarEvents } from "@sync/domain/calendar-import.service";
 import { syncCalendarList } from "@sync/domain/calendar-list-sync.service";
 import { pullCalendarChanges } from "@sync/domain/calendar-pull.service";
 import { repairCalendar } from "@sync/domain/calendar-repair.service";
-import { type AccessTokenSource } from "@sync/domain/provider-command.service";
+import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
 import {
