@@ -467,7 +467,7 @@ describe("EventCard", () => {
           startDate: "2099-01-15T09:00:00.000Z",
           endDate: "2099-01-15T10:00:00.000Z",
         })}
-        focusColor="#9e9e9e"
+        focusColor="#616161"
         motionMode="idle"
         position={position}
       />,
@@ -476,7 +476,7 @@ describe("EventCard", () => {
     const card = screen.getByRole("button", {
       name: "Timed event: Planning block, 9 - 10 AM",
     });
-    expect(card.style.getPropertyValue("--event-focus-color")).toBe("#9e9e9e");
+    expect(card.style.getPropertyValue("--event-focus-color")).toBe("#616161");
     expect(card.className).not.toContain("ring-accent");
     expect(card.className).toContain(
       "focus-visible:outline-(--event-focus-color)",
@@ -531,7 +531,7 @@ describe("EventCard", () => {
       <TimedEventCard
         displayMode="saved"
         event={event}
-        focusColor="#9e9e9e"
+        focusColor="#616161"
         motionMode="idle"
         position={{ ...position, height: COMPACT_EVENT_MAX_HEIGHT }}
       />,
@@ -541,7 +541,7 @@ describe("EventCard", () => {
     const card = screen.getByRole("button", { name: /Do drops/ });
     expect(card).toHaveAttribute("data-edge-focus", "startDate");
     // Outside shadow, not an inset accent bar covering the title.
-    expect(card.style.boxShadow).toContain("0 -3px 0 0 #9e9e9e");
+    expect(card.style.boxShadow).toContain("0 -3px 0 0 #616161");
     expect(card.querySelector("[data-edge-focus]")).toBeNull();
   });
 
