@@ -165,6 +165,16 @@ describe("form.util", () => {
       recurrence.appendChild(repeat);
       const calendar = document.createElement("button");
       calendar.id = "event-form-calendar";
+      const color = document.createElement("fieldset");
+      color.id = "event-form-color";
+      const colorSelected = document.createElement("input");
+      colorSelected.type = "radio";
+      colorSelected.name = "event-color";
+      colorSelected.checked = true;
+      const colorOther = document.createElement("input");
+      colorOther.type = "radio";
+      colorOther.name = "event-color";
+      color.append(colorSelected, colorOther);
       form.append(
         title,
         location,
@@ -173,9 +183,19 @@ describe("form.util", () => {
         end,
         recurrence,
         calendar,
+        color,
       );
       document.body.appendChild(form);
-      return { title, location, description, start, end, repeat, calendar };
+      return {
+        title,
+        location,
+        description,
+        start,
+        end,
+        repeat,
+        calendar,
+        colorSelected,
+      };
     };
 
     it("focuses each shipped form field", () => {
@@ -201,6 +221,9 @@ describe("form.util", () => {
 
       expect(focusEventFormField("calendar")).toBe(true);
       expect(document.activeElement).toBe(fields.calendar);
+
+      expect(focusEventFormField("color")).toBe(true);
+      expect(document.activeElement).toBe(fields.colorSelected);
     });
 
     it("falls back to start/end date inputs when time pickers are absent", () => {

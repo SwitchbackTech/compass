@@ -70,7 +70,8 @@ Helpful notes:
 | `E` then `S`                | Day view  | Edit focused event start time     |
 | `E` then `E`                | Day view  | Edit focused event end time       |
 | `E` then `R`                | Day view  | Edit focused event recurrence     |
-| `E` then `C`                | Day view  | Edit focused event calendar       |
+| `E` then `A`                | Day view  | Edit focused event account        |
+| `E` then `C`                | Day view  | Edit focused event color          |
 | `Cmd+D` / `Ctrl+D`          | Day view  | Duplicate focused event           |
 | `Shift+ArrowLeft`           | Day view  | Move focused event to previous day |
 | `Shift+ArrowRight`          | Day view  | Move focused event to next day    |
@@ -93,7 +94,8 @@ Helpful notes:
 | `E` then `S`                | Week view | Edit focused event start time     |
 | `E` then `E`                | Week view | Edit focused event end time       |
 | `E` then `R`                | Week view | Edit focused event recurrence     |
-| `E` then `C`                | Week view | Edit focused event calendar       |
+| `E` then `A`                | Week view | Edit focused event account        |
+| `E` then `C`                | Week view | Edit focused event color          |
 | `Cmd+D` / `Ctrl+D`          | Week view | Duplicate focused event           |
 | `Shift+ArrowLeft`           | Week view | Move focused event to previous day |
 | `Shift+ArrowRight`          | Week view | Move focused event to next day    |
@@ -294,7 +296,7 @@ Pressing Delete while an event is focused in the Day or Week grid deletes it —
 
 ### UX
 
-With a grid event focused and no form field being typed in, pressing `E` then `T` within a short window opens that event's form (if needed) and places the caret in the title. The same `E`-prefix pattern targets description (`D`), start (`S`), end (`E`), recurrence (`R`), and calendar (`C`).
+With a grid event focused and no form field being typed in, pressing `E` then `T` within a short window opens that event's form (if needed) and places the caret in the title. The same `E`-prefix pattern targets description (`D`), start (`S`), end (`E`), recurrence (`R`), account (`A`), and color (`C`).
 
 ### Steps
 
@@ -397,5 +399,5 @@ If time is limited, run these checks before shipping shortcut-related changes:
 11. Arrow keys reposition an open draft in both Day and Week view.
 12. With a focused event and no draft open, ArrowUp/ArrowDown move focus to the previous/next event chronologically.
 13. Cmd+D / Ctrl+D duplicates a focused event in Day and Week view.
-14. With a focused event, `E` then `T` opens the form with the title focused; bare `E` alone does nothing.
+14. With a focused event, `E` then `T` opens the form with the title focused; `E` then `A` / `C` jump to account / color; bare `E` alone does nothing.
 15. Pressing `S` shows event jump chips; a day letter + digit focuses that event; Shift+Tab does not show chips. `H` toggles Hardcore Mode.

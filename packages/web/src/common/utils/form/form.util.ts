@@ -9,7 +9,8 @@ export type EventFormFocusField =
   | "start"
   | "end"
   | "recurrence"
-  | "calendar";
+  | "calendar"
+  | "color";
 
 const queryEventFormElement = <T extends Element>(selector: string): T | null =>
   document.querySelector<T>(selector);
@@ -64,6 +65,12 @@ export const focusEventFormField = (field: EventFormFocusField): boolean => {
       ]);
     case "calendar":
       return focusFirstMatch([`#event-form-calendar`]);
+    case "color":
+      // Prefer the selected swatch so arrow keys move from the current color.
+      return focusFirstMatch([
+        `#event-form-color input[type="radio"]:checked`,
+        `#event-form-color input[type="radio"]`,
+      ]);
   }
 };
 

@@ -73,7 +73,8 @@ describe("useEditSequenceShortcut", () => {
         ["s", "start"],
         ["e", "end"],
         ["r", "recurrence"],
-        ["c", "calendar"],
+        ["a", "calendar"],
+        ["c", "color"],
       ] as const;
 
       for (const [second, field] of cases) {

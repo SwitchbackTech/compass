@@ -29,7 +29,7 @@ const focusFieldAfterPaint = (field: EventFormFocusField) => {
 };
 
 /**
- * `e` (or `Mod+E` while typing) then `t`/`l`/`d`/`s`/`e`/`r`/`c`: open the
+ * `e` (or `Mod+E` while typing) then `t`/`l`/`d`/`s`/`e`/`r`/`a`/`c`: open the
  * focused event's form (if needed) and move caret/focus to the matching field.
  * Shared by Day and Week.
  *

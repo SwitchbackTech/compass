@@ -232,8 +232,12 @@ describe("shortcuts.data", () => {
           label: "Edit recurrence",
         });
         expect(shortcuts).toContainEqual({
+          keys: ["e", "a"],
+          label: "Edit account",
+        });
+        expect(shortcuts).toContainEqual({
           keys: ["e", "c"],
-          label: "Edit calendar",
+          label: "Edit color",
         });
       }
     });
