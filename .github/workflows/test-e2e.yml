@@ -8,13 +8,27 @@ on:
       - ".gitignore"
       - "**/*.md"
       - "docs/**"
+  # Merge commits are never tested as merged, and nothing re-runs afterward,
+  # so a red e2e used to land on main and hide until the next PR opened.
+  # Scoped to main on purpose: a full Playwright run per feature-branch
+  # commit costs real minutes and adds no signal the PR run does not have.
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - ".gitignore"
+      - "**/*.md"
+      - "docs/**"
 
 permissions:
   contents: read
 
 concurrency:
   group: e2e-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Superseding a PR push is fine, but two merges landing close together must
+  # not cancel the first main run: a cancelled run reads as "not red" and
+  # would recreate the blind spot this trigger exists to close.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   e2e:
