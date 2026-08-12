@@ -1,6 +1,6 @@
 import { getShowcaseStep } from "@web/components/ShortcutShowcase/showcase.steps";
-import { KEYMAP } from "@web/shortcuts/keymap";
 import { EDIT_SEQUENCE_FIELD_BY_KEY } from "@web/shortcuts/edit-sequence/edit-sequence.fields";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import { SHORTCUTS_REGISTRY } from "@web/shortcuts/shortcuts.registry";
 import { describe, expect, it } from "bun:test";
 
