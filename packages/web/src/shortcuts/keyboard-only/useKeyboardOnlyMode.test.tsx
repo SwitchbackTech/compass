@@ -98,7 +98,7 @@ describe("useKeyboardOnlyMode", () => {
     expect(clicked).toBe(true);
   });
 
-  it("allows clicks inside the onboarding tour card while keyboard-only is on", () => {
+  it("allows clicks inside onboarding UI while keyboard-only is on", () => {
     renderHook(() => useKeyboardOnlyMode());
 
     act(() => {
@@ -107,7 +107,7 @@ describe("useKeyboardOnlyMode", () => {
     expect(useKeyboardOnlyStore.getState().isActive).toBe(true);
 
     const tour = document.createElement("div");
-    tour.setAttribute("data-onboarding-tour", "");
+    tour.setAttribute("data-onboarding-ui", "");
     const button = document.createElement("button");
     button.textContent = "Next";
     tour.appendChild(button);

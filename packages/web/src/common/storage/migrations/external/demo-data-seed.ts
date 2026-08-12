@@ -9,6 +9,7 @@ import {
   type Conference,
   type Organizer,
 } from "@core/types/event-attendance.contracts";
+import { type EventColorSlot } from "@core/types/event-color.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
@@ -36,8 +37,10 @@ function createEventRecord(overrides: {
   organizer?: Organizer;
   attendees?: Attendee[];
   conference?: Conference;
-  /** Stable id override for events the guided tour targets by id. */
+  /** Stable id override for events onboarding references by id. */
   id?: string;
+  /** Color tag, so the seed doubles as a tour of the color system. */
+  color?: EventColorSlot;
 }): LocalEventRecord {
   const id = EventIdSchema.parse(overrides.id ?? createObjectIdString());
   const content: EventContent = {
@@ -48,6 +51,7 @@ function createEventRecord(overrides: {
     organizer: overrides.organizer,
     attendees: overrides.attendees,
     conference: overrides.conference,
+    color: overrides.color,
   };
   const now = DateTimeSchema.parse(new Date().toISOString());
 
@@ -65,14 +69,14 @@ function createEventRecord(overrides: {
 }
 
 /**
- * Stable ids for the demo events the guided tour targets by id (jump/move/
- * resize/undo missions need a fixed reference, not whatever random id a
- * fresh seed happens to generate).
+ * Stable ids for landmark demo events, kept fixed so tests (and any future
+ * onboarding surface) can reference them instead of whatever random id a
+ * fresh seed happens to generate.
  */
 export const DEMO_EVENT_IDS = {
-  /** Today, 9:00-9:30 - the tour's moveFocus-step focus anchor. */
+  /** Today, 9:00-9:30. */
   morningStandup: "demo-morning-standup",
-  /** Tomorrow, 14:30-15:30 - overlaps Team sync; the tour's capstone target. */
+  /** Tomorrow, 14:30-15:30 - overlaps Team sync, an obvious conflict. */
   dentist: "demo-dentist",
   /** Tomorrow, 14:00-15:00 - overlaps Dentist. */
   teamSync: "demo-team-sync",
@@ -107,10 +111,11 @@ function generateDemoData() {
     startMinute: number,
     endHour: number,
     endMinute: number,
-    id?: string,
+    options?: { id?: string; color?: EventColorSlot },
   ) =>
     createEventRecord({
-      id,
+      id: options?.id,
+      color: options?.color,
       title,
       schedule: {
         kind: "timed",
@@ -178,6 +183,7 @@ function generateDemoData() {
     createEventRecord({
       title: "Exercise",
       description: "I'm sorry for what I said during burpees.",
+      color: "green",
       // Showcases the location → Google Maps link.
       location: "Fitness First Gym, 123 Main St",
       schedule: {
@@ -236,22 +242,27 @@ function generateDemoData() {
   // Gives arrow-focus and week navigation real targets on every nearby day.
   // Tomorrow's Team sync / Dentist overlap is the guided tour's capstone
   // mission target - titles make the conflict obvious at a glance.
+  // Work stays blue, health/movement green, focus time slate; the rest keeps
+  // the calendar default so the palette reads as a feature, not noise.
   const nearbyEvents: LocalEventRecord[] = [
     // Today - 2
-    timedOn(-2, "Design review", 10, 0, 11, 0),
-    timedOn(-2, "1:1 with Avery", 15, 0, 15, 30),
+    timedOn(-2, "Design review", 10, 0, 11, 0, { color: "blue" }),
+    timedOn(-2, "1:1 with Avery", 15, 0, 15, 30, { color: "blue" }),
     // Today - 1
-    timedOn(-1, "Gym", 7, 0, 7, 45),
+    timedOn(-1, "Gym", 7, 0, 7, 45, { color: "green" }),
     timedOn(-1, "Lunch with Sam", 12, 0, 13, 0),
-    timedOn(-1, "Focus block", 14, 0, 16, 0),
+    timedOn(-1, "Focus block", 14, 0, 16, 0, { color: "slate" }),
     // Today + 1 (tomorrow) - deliberate overlap
-    timedOn(1, "Design review", 10, 0, 11, 0),
-    timedOn(1, "Team sync", 14, 0, 15, 0, DEMO_EVENT_IDS.teamSync),
-    timedOn(1, "Dentist", 14, 30, 15, 30, DEMO_EVENT_IDS.dentist),
+    timedOn(1, "Design review", 10, 0, 11, 0, { color: "blue" }),
+    timedOn(1, "Team sync", 14, 0, 15, 0, {
+      id: DEMO_EVENT_IDS.teamSync,
+      color: "blue",
+    }),
+    timedOn(1, "Dentist", 14, 30, 15, 30, { id: DEMO_EVENT_IDS.dentist }),
     // Today + 2
-    timedOn(2, "1:1 with Avery", 11, 0, 11, 30),
-    timedOn(2, "Focus block", 13, 0, 15, 0),
-    timedOn(2, "Gym", 17, 0, 17, 45),
+    timedOn(2, "1:1 with Avery", 11, 0, 11, 30, { color: "blue" }),
+    timedOn(2, "Focus block", 13, 0, 15, 0, { color: "slate" }),
+    timedOn(2, "Gym", 17, 0, 17, 45, { color: "green" }),
   ];
 
   return {

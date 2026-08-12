@@ -16,7 +16,7 @@ export const getTipPlainText = (tip: ShortcutTip): string =>
     .map((part) => (typeof part === "string" ? part : part.key))
     .join("");
 
-/** Small fixed rotation; content mirrors the onboarding tour's advanced lessons. */
+/** Small fixed rotation; content mirrors the shortcut showcase's later lessons. */
 export function getShortcutTips(): ShortcutTip[] {
   return [
     {

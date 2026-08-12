@@ -6,6 +6,7 @@ import { isEditableKeyboardTarget } from "@web/common/utils/form/form.util";
 import { isAppLocked } from "@web/shortcuts/app-lock";
 import { isHigherEscapeOwner } from "@web/shortcuts/escape-ownership";
 import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import {
   assignDayJumpKeys,
   type DayJumpAssignment,
@@ -252,7 +253,7 @@ export function useShiftHoldEventHints({
       if (event.defaultPrevented) return;
 
       if (!isActiveRef.current) {
-        if (!isBareLetterKey(event, "s")) return;
+        if (!isBareLetterKey(event, KEYMAP.eventJump.bareLetter)) return;
         if (isAppLocked() || isEditableKeyboardTarget(event)) return;
         if (isEditSequenceArmed()) return;
 

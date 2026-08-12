@@ -9,7 +9,7 @@ import {
   type SignUpFormData,
 } from "@web/auth/compass/schemas/auth.schemas";
 import { track } from "@web/auth/posthog/track";
-import { onboardingTourActions } from "@web/components/OnboardingTour/onboarding.tour.store";
+import { shortcutShowcaseActions } from "@web/components/ShortcutShowcase/showcase.store";
 import { getAuthSubmitErrorMessage } from "./useAuthFormHandlers.util";
 import { type AuthView } from "./useAuthModal";
 
@@ -76,7 +76,7 @@ export function useAuthFormHandlers({
             });
             track("signup_completed", { method: "email" });
             closeModal();
-            onboardingTourActions.offerAfterSignupIfPending();
+            shortcutShowcaseActions.offerAfterSignupIfPending();
             return;
           case "FIELD_ERROR":
             setSubmitError(response.formFields[0]?.error ?? "Sign up failed");

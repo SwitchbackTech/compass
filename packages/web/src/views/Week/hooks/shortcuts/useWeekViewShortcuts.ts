@@ -1,3 +1,4 @@
+import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 
 export interface WeekViewShortcutsConfig {
@@ -45,7 +46,7 @@ export function useWeekViewShortcuts(config: WeekViewShortcutsConfig) {
   useAppShortcutUp("A", () => {
     onCreateAllDayDraft?.();
   });
-  useAppShortcutUp("C", () => {
+  useAppShortcutUp(KEYMAP.createEvent.hotkey, () => {
     onCreateTimedDraft?.();
   });
   useAppShortcutUp("U", () => {

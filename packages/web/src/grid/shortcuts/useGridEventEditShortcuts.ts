@@ -49,6 +49,7 @@ import {
   getChronologicallyAdjacentTarget,
   getSpatiallyAdjacentTarget,
 } from "@web/grid/shortcuts/focus-adjacent-grid-event";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
 
@@ -492,30 +493,34 @@ export function useGridEventEditShortcuts({
     ignoreInputs: false,
   });
   useAppShortcut(
-    "ArrowUp",
+    KEYMAP.moveFocus.hotkeys.up,
     moveDraftOrFocusAdjacent,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
   useAppShortcut(
-    "ArrowDown",
+    KEYMAP.moveFocus.hotkeys.down,
     moveDraftOrFocusAdjacent,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
   useAppShortcut(
-    "ArrowLeft",
+    KEYMAP.moveFocus.hotkeys.left,
     moveDraftOrFocusAdjacent,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
   useAppShortcut(
-    "ArrowRight",
+    KEYMAP.moveFocus.hotkeys.right,
     moveDraftOrFocusAdjacent,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
-  useAppShortcut("Shift+ArrowUp", moveFocusedCalendarEvent);
-  useAppShortcut("Shift+ArrowDown", moveFocusedCalendarEvent);
-  useAppShortcut("Shift+ArrowLeft", moveFocusedCalendarEvent);
-  useAppShortcut("Shift+ArrowRight", moveFocusedCalendarEvent);
-  useAppShortcut("Tab", cycleEdgeFocus, DRAFT_MOVEMENT_HOTKEY_OPTIONS);
+  useAppShortcut(KEYMAP.moveEvent.hotkeys.up, moveFocusedCalendarEvent);
+  useAppShortcut(KEYMAP.moveEvent.hotkeys.down, moveFocusedCalendarEvent);
+  useAppShortcut(KEYMAP.moveEvent.hotkeys.left, moveFocusedCalendarEvent);
+  useAppShortcut(KEYMAP.moveEvent.hotkeys.right, moveFocusedCalendarEvent);
+  useAppShortcut(
+    KEYMAP.edgeFocus.hotkey,
+    cycleEdgeFocus,
+    DRAFT_MOVEMENT_HOTKEY_OPTIONS,
+  );
   useAppShortcut("Shift+Tab", cycleEdgeFocus, DRAFT_MOVEMENT_HOTKEY_OPTIONS);
   useAppShortcut("Escape", clearEdgeFocus, DRAFT_MOVEMENT_HOTKEY_OPTIONS);
 }

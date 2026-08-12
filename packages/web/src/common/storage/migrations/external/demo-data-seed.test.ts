@@ -75,6 +75,31 @@ describe("demoDataSeedMigration", () => {
     );
   });
 
+  it("colors work blue, movement green, focus slate, and leaves the rest default", async () => {
+    const store = createMockOfflineDataStore();
+
+    await demoDataSeedMigration.migrate(store);
+
+    const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
+    const colorsByTitle = new Map<string, (string | undefined)[]>();
+    for (const { event } of eventsCall) {
+      if (event.content.kind !== "details") continue;
+      const list = colorsByTitle.get(event.content.title) ?? [];
+      list.push(event.content.color ?? undefined);
+      colorsByTitle.set(event.content.title, list);
+    }
+
+    expect(colorsByTitle.get("Gym")).toEqual(["green", "green"]);
+    expect(colorsByTitle.get("Exercise")).toEqual(["green"]);
+    expect(colorsByTitle.get("Team sync")).toEqual(["blue"]);
+    expect(colorsByTitle.get("1:1 with Avery")).toEqual(["blue", "blue"]);
+    expect(colorsByTitle.get("Design review")).toEqual(["blue", "blue"]);
+    expect(colorsByTitle.get("Focus block")).toEqual(["slate", "slate"]);
+    expect(colorsByTitle.get("Dentist")).toEqual([undefined]);
+    expect(colorsByTitle.get("Lunch with Sam")).toEqual([undefined]);
+    expect(colorsByTitle.get("Morning standup")).toEqual([undefined]);
+  });
+
   it("skips seeding when events already exist", async () => {
     const store = createMockOfflineDataStore();
     store.getAllEvents.mockResolvedValue([{ id: "existing" }]);

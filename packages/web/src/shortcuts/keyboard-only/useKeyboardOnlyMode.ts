@@ -7,6 +7,7 @@ import {
   keyboardOnlyActions,
   useKeyboardOnlyStore,
 } from "@web/shortcuts/keyboard-only/keyboard-only.store";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import { eventJumpActions } from "@web/shortcuts/shift-hint/event-jump.store";
 import { isEditSequenceArmed } from "@web/shortcuts/useEditSequenceShortcut";
 
@@ -34,7 +35,7 @@ export function useKeyboardOnlyMode() {
         return;
       }
 
-      if (!isBareLetterKey(event, "h")) return;
+      if (!isBareLetterKey(event, KEYMAP.hardcore.bareLetter)) return;
       if (isAppLocked() || isEditableKeyboardTarget(event)) return;
       // Yield to an armed `e`… edit sequence (same as event-jump `s`).
       if (isEditSequenceArmed()) return;
@@ -64,10 +65,7 @@ export function useKeyboardOnlyMode() {
 
     const blockPointer = (event: Event) => {
       const target = event.target;
-      if (
-        target instanceof Element &&
-        target.closest("[data-onboarding-tour]")
-      ) {
+      if (target instanceof Element && target.closest("[data-onboarding-ui]")) {
         return;
       }
       event.preventDefault();
