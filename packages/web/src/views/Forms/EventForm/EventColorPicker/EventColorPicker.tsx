@@ -16,7 +16,6 @@ export interface EventColorPickerProps {
   /** Radio group name; defaults to `event-color`. Pass a distinct value when
    * more than one picker can mount at once (e.g. form + context menu). */
   name?: string;
-  /** Fieldset id for keyboard focus (edit-sequence `e` then `c`). */
   id?: string;
 }
 

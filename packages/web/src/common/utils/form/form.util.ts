@@ -68,8 +68,8 @@ export const focusEventFormField = (field: EventFormFocusField): boolean => {
     case "color":
       // Prefer the selected swatch so arrow keys move from the current color.
       return focusFirstMatch([
-        `${EVENT_FORM_SELECTOR} #event-form-color input[type="radio"]:checked`,
-        `${EVENT_FORM_SELECTOR} #event-form-color input[type="radio"]`,
+        `#event-form-color input[type="radio"]:checked`,
+        `#event-form-color input[type="radio"]`,
       ]);
   }
 };
