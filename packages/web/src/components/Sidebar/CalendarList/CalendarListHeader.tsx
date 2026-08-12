@@ -11,7 +11,7 @@ const HEADING_CLASSNAME =
   "flex min-w-0 flex-1 font-semibold text-sm leading-none";
 
 const CONNECT_GOOGLE_BUTTON_CLASSNAME =
-  "c-focus-ring mb-2 w-full rounded-xs bg-accent px-2 py-1.5 text-left font-medium text-on-accent text-xs hover:brightness-110 disabled:pointer-events-none disabled:opacity-60";
+  "c-button-compact c-button-primary mb-2 w-full rounded-xs px-2 py-1.5 text-left text-xs";
 
 /**
  * The heading shown before any account section exists for a signed-in user:

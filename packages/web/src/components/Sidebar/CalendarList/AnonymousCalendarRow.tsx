@@ -16,7 +16,7 @@ import {
 const ANONYMOUS_SAVE_MESSAGE = "Sign up to save your changes across browsers";
 
 const TOOLTIP_ACTION_BUTTON_CLASSNAME =
-  "c-focus-ring self-start rounded-xs bg-accent px-2 py-1 font-medium text-s text-on-accent hover:brightness-110";
+  "c-button-compact c-button-primary self-start rounded-xs px-2 py-1 text-s";
 
 interface AnonymousCalendarRowProps {
   calendar: Calendar;

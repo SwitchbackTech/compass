@@ -1,4 +1,5 @@
 import {
+  getPartsPlainText,
   getShortcutTips,
   getTipPlainText,
 } from "@web/shortcuts/tips/shortcut-tips.data";
@@ -22,5 +23,16 @@ describe("getTipPlainText", () => {
     expect(plainTextById["edge-cycle"]).toBe(
       "Press Tab to move between start and end",
     );
+  });
+
+  it("joins a chord's keys with + for the accessible sentence", () => {
+    expect(
+      getPartsPlainText([
+        "Press ",
+        { keys: ["Mod", "Z"] },
+        " then ",
+        { keys: ["Mod", "Shift", "Z"] },
+      ]),
+    ).toBe("Press Mod+Z then Mod+Shift+Z");
   });
 });

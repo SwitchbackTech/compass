@@ -122,7 +122,7 @@ export function WelcomeModal() {
             <button
               type="button"
               onClick={() => handOffToAuth("sign_up")}
-              className="inline-flex items-center rounded-3xl bg-accent px-4 py-1.5 text-on-accent text-xs transition-all hover:brightness-110"
+              className="c-button-compact c-button-primary rounded-3xl px-4 py-1.5 text-xs"
             >
               Sign up
               <ShortcutHint className="ml-2">U</ShortcutHint>
@@ -130,7 +130,7 @@ export function WelcomeModal() {
             <button
               type="button"
               onClick={() => handOffToAuth("log_in")}
-              className="inline-flex items-center rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
+              className="c-button-compact c-button-secondary rounded-3xl px-4 py-1.5 text-xs"
             >
               Log in
               <ShortcutHint className="ml-2">I</ShortcutHint>

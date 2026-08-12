@@ -47,6 +47,7 @@ import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
 import { KEYMAP } from "@web/shortcuts/keymap";
+import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
 import { ARM_WINDOW_MS } from "@web/shortcuts/useEditSequenceShortcut";
 
 const TEXT_BUTTON_CLASS =
@@ -453,7 +454,13 @@ const ShowcaseTakeover: FC = () => {
                 </div>
               </div>
               <h2 className="font-semibold text-lg text-text">{step.title}</h2>
-              <p className="text-sm text-text-muted">{step.body}</p>
+              <p className="text-sm text-text-muted">
+                {typeof step.body === "string" ? (
+                  step.body
+                ) : (
+                  <ShortcutTipParts parts={step.body} />
+                )}
+              </p>
               {keycaps && <ShortcutKeys keys={[...keycaps]} />}
               <div className="flex items-center gap-2 pt-2">
                 {stepId === "graduation" ? (

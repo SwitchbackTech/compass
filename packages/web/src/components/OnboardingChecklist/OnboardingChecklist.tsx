@@ -79,7 +79,7 @@ const ChecklistCard: FC = () => {
                     <li key={item.id} className="mt-1">
                       <button
                         type="button"
-                        className="c-focus-ring inline-flex w-full items-center justify-center rounded-3xl bg-accent px-4 py-1.5 font-medium text-on-accent text-xs transition-all hover:brightness-110"
+                        className="c-button-compact c-button-primary w-full justify-center rounded-3xl px-4 py-1.5 text-xs"
                         onClick={() => {
                           track("signup_started", { source: "checklist" });
                           openModal("signUp");

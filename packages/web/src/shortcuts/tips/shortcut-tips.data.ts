@@ -4,17 +4,27 @@ export type ShortcutTipId =
   | "target-event"
   | "edge-cycle";
 
-export type ShortcutTipPart = string | { key: string };
+export type ShortcutTipPart =
+  | string
+  | { key: string }
+  | { keys: readonly string[] };
 
 export type ShortcutTip = {
   id: ShortcutTipId;
   parts: ShortcutTipPart[];
 };
 
-export const getTipPlainText = (tip: ShortcutTip): string =>
-  tip.parts
-    .map((part) => (typeof part === "string" ? part : part.key))
+export const getPartsPlainText = (parts: readonly ShortcutTipPart[]): string =>
+  parts
+    .map((part) => {
+      if (typeof part === "string") return part;
+      if ("keys" in part) return part.keys.join("+");
+      return part.key;
+    })
     .join("");
+
+export const getTipPlainText = (tip: ShortcutTip): string =>
+  getPartsPlainText(tip.parts);
 
 /** Small fixed rotation; content mirrors the shortcut showcase's later lessons. */
 export function getShortcutTips(): ShortcutTip[] {
