@@ -609,32 +609,34 @@ async function commitProviderSeriesUpdate(
   for (const exception of discarded) {
     const exceptionProviderEventId = exception.providerEventId;
     if (exceptionProviderEventId) {
-      const alignResult = await runProviderWrite(() =>
-        convertsToSingle
-          ? deps.writer.deleteEvent({
-              accessToken: provider.accessToken,
-              calendarId: provider.calendarId,
-              providerEventId: exceptionProviderEventId,
-              expectedVersion: null,
-              invitation: input.invitation,
-            })
-          : deps.writer.patchEvent({
-              // Revert the override into the edited series without cancelling
-              // the occurrence. Delete would mark the instance cancelled at Google.
-              accessToken: provider.accessToken,
-              calendarId: provider.calendarId,
-              providerEventId: exceptionProviderEventId,
-              expectedVersion: null,
-              content,
-              schedule: occurrenceScheduleAfterSeriesEdit(
-                master.schedule,
-                input.schedule,
-                exceptionInstant(exception),
-              ),
-              recurrence: { kind: "instance" },
-              invitation: input.invitation,
-            }),
-      );
+      const alignResult = await runProviderWrite(async () => {
+        if (convertsToSingle) {
+          await deps.writer.deleteEvent({
+            accessToken: provider.accessToken,
+            calendarId: provider.calendarId,
+            providerEventId: exceptionProviderEventId,
+            expectedVersion: null,
+            invitation: input.invitation,
+          });
+          return;
+        }
+        await deps.writer.patchEvent({
+          // Revert the override into the edited series without cancelling
+          // the occurrence. Delete would mark the instance cancelled at Google.
+          accessToken: provider.accessToken,
+          calendarId: provider.calendarId,
+          providerEventId: exceptionProviderEventId,
+          expectedVersion: null,
+          content,
+          schedule: occurrenceScheduleAfterSeriesEdit(
+            master.schedule,
+            input.schedule,
+            exceptionInstant(exception),
+          ),
+          recurrence: { kind: "instance" },
+          invitation: input.invitation,
+        });
+      });
       if (!alignResult.ok) {
         if (alignResult.stop.kind === "pending") return command;
         if (convertsToSingle) {

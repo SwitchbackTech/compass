@@ -255,18 +255,20 @@ async function applyCloudCreate(
   if (command.input.kind !== "create") {
     throw new Error("applyCloudCreate requires a create command");
   }
-  // Idempotent: a crash after the event write but before confirm leaves the
-  // command pending with the event already present — confirm without rewriting.
-  const existing = await deps.events.findById(
+  // Idempotent: a crash after the event write (or after put but before
+  // occurrence projection) leaves the command pending with the event already
+  // present. Always reproject before confirm so a retry never confirms a
+  // create that is invisible to range/busy reads.
+  let record = await deps.events.findById(
     command.tenantId,
     command.principalId,
     command.eventId,
   );
-  if (!existing) {
-    const record = buildCloudEventRecord(command, now());
+  if (!record) {
+    record = buildCloudEventRecord(command, now());
     await deps.events.put(record);
-    await reprojectOccurrences(deps.occurrences, record, now);
   }
+  await reprojectOccurrences(deps.occurrences, record, now);
   return confirmCloud(deps, command);
 }
 
