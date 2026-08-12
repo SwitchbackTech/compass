@@ -192,7 +192,7 @@ const submitCommandOrThrow = async (
     // Timeout/unavailable can mean Sync already accepted (or finished) the
     // mutation — especially provider deletes, which run inline. Do not fall
     // back to legacy; surface a retryable provider failure instead.
-    throwSyncCommandSubmitFailure(result.error.kind, result.error.kind);
+    throwSyncCommandSubmitFailure(result.error.kind);
   }
 
   const { outcome } = result.value.command;

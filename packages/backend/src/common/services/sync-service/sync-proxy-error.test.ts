@@ -55,7 +55,7 @@ describe("sync-proxy-error", () => {
 
   it("maps command submit timeout to retryable PROVIDER_FAILURE", () => {
     try {
-      throwSyncCommandSubmitFailure("timeout", "timeout");
+      throwSyncCommandSubmitFailure("timeout");
       throw new Error("expected throw");
     } catch (e) {
       expect(e).toBeInstanceOf(EventMutationException);
