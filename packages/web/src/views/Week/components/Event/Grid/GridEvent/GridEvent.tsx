@@ -25,6 +25,7 @@ interface Props {
   deckLayout?: TimedDeckLayout | null;
   displayMode: GridEventDisplayMode;
   event: GridEventEntity;
+  focusColor?: string | null;
   interactionAttributes?: Record<string, string | undefined>;
   measurements: Measurements_Grid;
   motionMode?: GridEventMotionMode;
@@ -47,6 +48,7 @@ const GridEventBase = (
     deckLayout = null,
     displayMode,
     event: _event,
+    focusColor = null,
     interactionAttributes,
     measurements,
     motionMode = "idle",
@@ -135,6 +137,7 @@ const GridEventBase = (
       calendarIdentity={calendarIdentity}
       displayMode={displayMode}
       event={event}
+      focusColor={focusColor}
       onFocus={isDeck ? () => setIsFocused(true) : undefined}
       interactionAttributes={interactionAttributes}
       motionMode={motionMode}
@@ -154,6 +157,7 @@ export const GridEventMemo = memo(GridEvent, (prev, next) => {
     prev.displayMode === next.displayMode &&
     prev.deckLayout === next.deckLayout &&
     prev.event === next.event &&
+    prev.focusColor === next.focusColor &&
     prev.interactionAttributes === next.interactionAttributes &&
     prev.measurements === next.measurements &&
     prev.motionMode === next.motionMode &&

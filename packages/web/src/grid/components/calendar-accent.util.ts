@@ -33,3 +33,28 @@ export function calendarAccentAccessibleSuffix(
     ? `${calendarSuffix}, also on ${identity.otherAccount.accountEmail}`
     : calendarSuffix;
 }
+
+/**
+ * CSS color for event focus chrome. Falls back to `--text` (same family as
+ * the selected ring) so cards never introduce a third theme-accent color.
+ */
+export function eventFocusColor(focusColor: string | null | undefined): string {
+  return focusColor ?? "var(--text)";
+}
+
+/**
+ * Outer box-shadow line for start/end edge focus. Drawn outside the card so
+ * short-event titles stay readable (unlike an inset accent bar).
+ */
+export function eventEdgeFocusShadow(
+  edge: "startDate" | "endDate",
+  axis: "horizontal" | "vertical",
+  color: string,
+): string {
+  if (axis === "vertical") {
+    // Timed cards: start = top, end = bottom.
+    return edge === "startDate" ? `0 -3px 0 0 ${color}` : `0 3px 0 0 ${color}`;
+  }
+  // All-day cards: start = left, end = right.
+  return edge === "startDate" ? `-3px 0 0 0 ${color}` : `3px 0 0 0 ${color}`;
+}

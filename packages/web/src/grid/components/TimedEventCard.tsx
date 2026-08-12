@@ -20,6 +20,8 @@ import { getLineClamp } from "@web/common/utils/grid/grid.util";
 import {
   calendarAccentAccessibleSuffix,
   calendarAccentStyle,
+  eventEdgeFocusShadow,
+  eventFocusColor,
 } from "@web/grid/components/calendar-accent.util";
 import {
   COMPACT_EVENT_MAX_HEIGHT,
@@ -60,6 +62,8 @@ interface TimedEventCardProps {
   calendarIdentity?: CalendarCardIdentity | null;
   displayMode: "draft" | "placeholder" | "saved";
   event: GridEvent;
+  /** Calendar backgroundColor for focus chrome; null falls back to --text. */
+  focusColor?: string | null;
   interactionAttributes?: Record<string, string | undefined>;
   isSelected?: boolean;
   motionMode: "dragging" | "idle" | "resizing";
@@ -83,6 +87,7 @@ const TimedEventCardBase = (
     calendarIdentity = null,
     displayMode,
     event,
+    focusColor = null,
     interactionAttributes,
     isSelected = false,
     motionMode,
@@ -153,6 +158,13 @@ const TimedEventCardBase = (
   // with a background halo so the ring stays visible on dark default fills.
   const selectedBoxShadow =
     "0 0 0 1px var(--background), 0 0 0 3px color-mix(in srgb, var(--text) 70%, transparent)";
+  const focusedEdge = useEdgeFocusStore(selectEdgeForEvent(event._id));
+  const focusColorCss = eventFocusColor(focusColor);
+  // Edge focus paints outside the card (box-shadow) so short titles stay
+  // readable — an inset accent bar used to cover the top of compact events.
+  const edgeFocusShadow = focusedEdge
+    ? eventEdgeFocusShadow(focusedEdge, "vertical", focusColorCss)
+    : undefined;
 
   const bgColor = (() => {
     if (isDraft) return baseColor;
@@ -160,11 +172,10 @@ const TimedEventCardBase = (
     if (isInPast) return pastColor;
     return baseColor;
   })();
-  const eventBoxShadow = isSelected
-    ? boxShadow
-      ? `${selectedBoxShadow}, ${boxShadow}`
-      : selectedBoxShadow
-    : boxShadow;
+  const eventBoxShadow =
+    [isSelected ? selectedBoxShadow : null, boxShadow, edgeFocusShadow]
+      .filter(Boolean)
+      .join(", ") || undefined;
 
   // isInPast is excluded here (falls through to bgColor, i.e. pastColor) so
   // a past event stays dimmed on hover instead of snapping to full brightness.
@@ -180,6 +191,7 @@ const TimedEventCardBase = (
   const eventStyle = {
     "--event-bg": bgColor,
     "--event-hover-bg": hoverBgColor,
+    "--event-focus-color": focusColorCss,
     height: position.height || 0,
     left: position.left,
     opacity: isPlaceholder ? 0.5 : undefined,
@@ -191,7 +203,6 @@ const TimedEventCardBase = (
   } as CSSProperties;
 
   const isCompactEvent = position.height <= COMPACT_EVENT_MAX_HEIGHT;
-  const focusedEdge = useEdgeFocusStore(selectEdgeForEvent(event._id));
 
   const titleStyle: CSSProperties = {
     fontSize: isCompactEvent
@@ -260,13 +271,19 @@ const TimedEventCardBase = (
     <div
       {...interactionAttributes}
       aria-label={accessibleLabel}
+      data-edge-focus={focusedEdge ?? undefined}
       ref={ref}
       role="button"
       tabIndex={0}
       className={cn(
-        "absolute min-h-2.5 select-none overflow-hidden rounded-xs pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+        "absolute min-h-2.5 select-none overflow-hidden rounded-xs pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
         "bg-(--event-bg) hover:bg-(--event-hover-bg)",
         "hover:cursor-pointer",
+        // Outside outline (not an accent ring) so short titles stay readable.
+        // Suppress while an edge is focused — only the outer edge line shows.
+        focusedEdge
+          ? "focus-visible:outline-none"
+          : "focus-visible:outline-(--event-focus-color) focus-visible:outline-2 focus-visible:outline-offset-2",
         event.isDemo &&
           "outline outline-dashed outline-1 outline-text-muted/50",
       )}
@@ -302,17 +319,6 @@ const TimedEventCardBase = (
           aria-hidden="true"
           className="absolute inset-y-0 left-0 w-[3px]"
           style={calendarAccentStyle(calendarIdentity)}
-        />
-      )}
-      {focusedEdge && (
-        <div
-          aria-hidden="true"
-          className={cn(
-            "absolute inset-x-0 h-[3px] rounded-full bg-accent",
-            focusedEdge === "startDate" ? "top-0" : "bottom-0",
-          )}
-          data-edge-focus={focusedEdge}
-          style={{ zIndex: ZIndex.LAYER_4 }}
         />
       )}
       <div

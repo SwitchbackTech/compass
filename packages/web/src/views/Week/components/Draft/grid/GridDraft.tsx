@@ -1,4 +1,8 @@
 import { type FC, type MouseEvent } from "react";
+import {
+  resolveCalendarFocusColor,
+  useCalendarLookup,
+} from "@web/calendars/useCalendarLookup";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type GridEvent as GridEventEntity } from "@web/common/types/web.event.types";
 import {
@@ -97,12 +101,17 @@ export const GridDraft: FC<Props> = ({
     handleGridDraftClick,
     isMultiDayTimedDraft ? () => {} : handleDrag,
   );
+  const calendarLookup = useCalendarLookup();
 
   if (!draft || !draftAsGridEvent) return null;
 
   const allDayDraftEvent = rendersInAllDayRow
     ? (activeAllDayDraftEvent ?? draftToAllDayRowGridEvent(draft))
     : draftAsGridEvent;
+  const draftFocusColor = resolveCalendarFocusColor(
+    calendarLookup,
+    allDayDraftEvent,
+  );
 
   const draftEventType = rendersInAllDayRow ? "all-day" : "timed";
   // `data-grid-event-surface` lets post-close focus restore skip this portal
@@ -126,6 +135,7 @@ export const GridDraft: FC<Props> = ({
         <GridEvent
           displayMode="draft"
           event={preview}
+          focusColor={resolveCalendarFocusColor(calendarLookup, preview)}
           interactionAttributes={
             preview._id
               ? getWeekInteractionTargetAttributes({
@@ -143,6 +153,7 @@ export const GridDraft: FC<Props> = ({
       {rendersInAllDayRow ? (
         <AllDayEventMemo
           event={allDayDraftEvent}
+          focusColor={draftFocusColor}
           interactionAttributes={draftInteractionAttributes}
           isPlaceholder={false}
           key={`draft-${draftAsGridEvent._id}`}
@@ -166,6 +177,7 @@ export const GridDraft: FC<Props> = ({
           deckLayout={deckLayout}
           displayMode="draft"
           event={draftAsGridEvent}
+          focusColor={draftFocusColor}
           interactionAttributes={draftInteractionAttributes}
           key={`draft-${draftAsGridEvent._id}`}
           measurements={measurements}
