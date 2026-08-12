@@ -80,7 +80,12 @@ export function useEditSequenceShortcut({
         clearTimeout(menuTimeoutId);
         menuTimeoutId = null;
       }
-      editSequenceActions.disarm();
+      // Cheap guard: this runs from a capture-phase pointerdown on every click
+      // in the grid, and an unguarded write would put a store update (and a
+      // devtools entry) on that path for no reason.
+      if (isEditSequenceArmed()) {
+        editSequenceActions.disarm();
+      }
     };
 
     const arm = () => {
