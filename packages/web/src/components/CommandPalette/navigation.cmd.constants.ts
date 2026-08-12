@@ -25,7 +25,7 @@ interface GetNavigationCommandItemsArgs {
   onGoToToday?: () => void;
   onNavigateToView: (viewName: CommandPaletteViewName) => void;
   onShowShortcuts?: () => void;
-  onShowOnboardingTour?: () => void;
+  onPracticeShortcuts?: () => void;
   onShowWelcomeGuide?: () => void;
 }
 
@@ -72,7 +72,7 @@ export const getNavigationCommandItems = ({
   onGoToToday,
   onNavigateToView,
   onShowShortcuts,
-  onShowOnboardingTour,
+  onPracticeShortcuts,
   onShowWelcomeGuide,
 }: GetNavigationCommandItemsArgs): CommandItem[] => {
   const calendarItems: CommandItem[] = [];
@@ -146,9 +146,9 @@ export const getNavigationCommandItems = ({
       }),
   });
 
-  if (onShowOnboardingTour) {
+  if (onPracticeShortcuts) {
     calendarItems.push({
-      id: "show-onboarding-tour",
+      id: "practice-shortcuts",
       label: "Practice shortcuts",
       icon: CompassIcon,
       keywords: [
@@ -162,7 +162,7 @@ export const getNavigationCommandItems = ({
         "practice",
         "shortcuts",
       ],
-      onClick: onShowOnboardingTour,
+      onClick: onPracticeShortcuts,
     });
   }
 

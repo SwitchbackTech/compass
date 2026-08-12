@@ -33,7 +33,7 @@ export function useShortcutTipTrigger() {
     }
   }, [eventFocused, isFormOpen]);
 
-  // Encouragement-based, like the onboarding tour's advance triggers: the
+  // Encouragement-based, like the shortcut showcase's advance detection: the
   // matching keypress counts as "acted on" without verifying the resulting
   // action landed.
   useEffect(() => {

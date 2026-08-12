@@ -3,6 +3,7 @@ import {
   type CalendarCardIdentity,
   isGridEventInteractionReadOnly,
   resolveCalendarCardIdentity,
+  resolveCalendarFocusColor,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
@@ -95,6 +96,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
           calendarLookup,
           item.event,
         ),
+        focusColor: resolveCalendarFocusColor(calendarLookup, item.event),
         // Read-only (unwritable calendar or busy content) events never
         // attach interaction attributes/registration below, so the drag/
         // resize engine can't find them as a target - blocked before any
@@ -111,7 +113,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     <div id={ID_GRID_EVENTS_TIMED}>
       {!isLoadingWeekView &&
         timedEventItemsWithIdentity.map(
-          ({ deckLayout, event, calendarIdentity, isReadOnly }) => {
+          ({ deckLayout, event, calendarIdentity, focusColor, isReadOnly }) => {
             const isPlaceholder = event._id === draftId;
             const eventForDisplay = mergeGridEventWithDraftOverlay(
               event,
@@ -123,12 +125,16 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
             const identityForDisplay = isPlaceholder
               ? resolveCalendarCardIdentity(calendarLookup, eventForDisplay)
               : calendarIdentity;
+            const focusColorForDisplay = isPlaceholder
+              ? resolveCalendarFocusColor(calendarLookup, eventForDisplay)
+              : focusColor;
 
             return (
               <MainGridEventItem
                 calendarIdentity={identityForDisplay}
                 deckLayout={deckLayout}
                 event={eventForDisplay}
+                focusColor={focusColorForDisplay}
                 isPlaceholder={isPlaceholder}
                 isReadOnly={isReadOnly}
                 key={`initial-${event._id}`}
@@ -148,6 +154,7 @@ interface MainGridEventItemProps {
   calendarIdentity: CalendarCardIdentity | null;
   deckLayout: TimedDeckLayout | null;
   event: GridEvent;
+  focusColor: string | null;
   isPlaceholder: boolean;
   isReadOnly: boolean;
   measurements: Measurements_Grid;
@@ -160,6 +167,7 @@ const MainGridEventItem = ({
   calendarIdentity,
   deckLayout,
   event,
+  focusColor,
   isPlaceholder,
   isReadOnly,
   measurements,
@@ -205,6 +213,7 @@ const MainGridEventItem = ({
       deckLayout={deckLayout}
       displayMode={isPlaceholder ? "placeholder" : "saved"}
       event={event}
+      focusColor={focusColor}
       interactionAttributes={interactionAttributes}
       measurements={measurements}
       onEventKeyDown={isReadOnly ? onOpenReadOnlyDetails : onEventKeyDown}

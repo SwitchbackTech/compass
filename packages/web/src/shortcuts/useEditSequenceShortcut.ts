@@ -14,15 +14,18 @@ import {
   useEditSequenceStore,
 } from "@web/shortcuts/edit-sequence/edit-sequence.store";
 import { isBareLetterKey } from "@web/shortcuts/is-bare-letter-key";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import { isEventJumpActive } from "@web/shortcuts/shift-hint/event-jump.store";
 
 /**
  * How long the leader stays silent. A second key inside this window fires with
  * no UI at all (muscle memory); past it the which-key menu opens and the
  * sequence stays armed until the user picks or cancels.
+ *
+ * Exported so the Shortcut Showcase practises the real cadence.
  */
-const ARM_WINDOW_MS = 600;
-const LEADER_KEY = "e";
+export const ARM_WINDOW_MS = 600;
+const LEADER_KEY = KEYMAP.editTitle.sequence.leader;
 
 /** Shared so other letter shortcuts (e.g. event-jump `s`) can yield to `e`… sequences. */
 export const isEditSequenceArmed = () =>

@@ -10,8 +10,8 @@ import { MODAL_DISMISS_MS } from "@web/common/constants/motion.constants";
 import { SOCIAL_LINKS } from "@web/common/constants/social.constants";
 import { useDismissTransition } from "@web/common/hooks/useDismissTransition";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
-import { onboardingTourActions } from "@web/components/OnboardingTour/onboarding.tour.store";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
+import { shortcutShowcaseActions } from "@web/components/ShortcutShowcase/showcase.store";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import { PixelPirate } from "./PixelPirate";
 import { WelcomeGuideBody } from "./WelcomeGuideBody";
@@ -58,8 +58,8 @@ export function WelcomeModal() {
     if (closing) return;
     markWelcomeSeen();
     // Backdrop / Escape never traps the user in this modal, but it also
-    // never dead-ends into a blank calendar: both paths start the tour.
-    onboardingTourActions.start(cta === "start_now" ? "start_now" : "escape");
+    // never dead-ends into a blank calendar: both paths start the showcase.
+    shortcutShowcaseActions.start(cta === "start_now" ? "start_now" : "escape");
     track("welcome_modal_dismissed", { cta });
     beginDismiss(() => setIsOpen(false));
   };
@@ -82,7 +82,7 @@ export function WelcomeModal() {
   const handOffToAuth = (cta: "log_in" | "sign_up") => {
     skipFocusRestoreRef.current = true;
     markWelcomeSeen();
-    onboardingTourActions.markSkippedWithoutStarting({
+    shortcutShowcaseActions.markSkippedWithoutStarting({
       pendingSignup: cta === "sign_up",
     });
     track("welcome_modal_dismissed", { cta });

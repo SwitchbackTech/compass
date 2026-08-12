@@ -1,3 +1,4 @@
+import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 
 interface KeyboardShortcutsConfig {
@@ -47,7 +48,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onFocusCalendar?.();
   });
 
-  useAppShortcutUp("C", () => {
+  useAppShortcutUp(KEYMAP.createEvent.hotkey, () => {
     onCreateTimedEvent?.();
   });
 

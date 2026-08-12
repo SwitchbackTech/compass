@@ -10,6 +10,7 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 interface Props {
   calendarIdentity?: CalendarCardIdentity | null;
   event: GridEvent;
+  focusColor?: string | null;
   interactionAttributes?: Record<string, string | undefined>;
   isPlaceholder: boolean;
   measurements: Measurements_Grid;
@@ -27,6 +28,7 @@ const AllDayEventBase = (
   {
     calendarIdentity = null,
     event,
+    focusColor = null,
     interactionAttributes,
     isPlaceholder,
     measurements,
@@ -62,6 +64,7 @@ const AllDayEventBase = (
     <AllDayEventCard
       calendarIdentity={calendarIdentity}
       event={event}
+      focusColor={focusColor}
       interactionAttributes={interactionAttributes}
       isPlaceholder={isPlaceholder}
       onEventKeyDown={onKeyDown}
@@ -79,6 +82,7 @@ export const AllDayEventMemo = memo(AllDayEvent, (prev, next) => {
   return (
     prev.calendarIdentity === next.calendarIdentity &&
     prev.event === next.event &&
+    prev.focusColor === next.focusColor &&
     prev.interactionAttributes === next.interactionAttributes &&
     prev.isPlaceholder === next.isPlaceholder &&
     prev.measurements === next.measurements &&

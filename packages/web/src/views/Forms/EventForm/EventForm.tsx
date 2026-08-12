@@ -47,6 +47,7 @@ import {
 } from "@web/events/grid-event-draft.adapter";
 import { BUSY_EVENT_TITLE } from "@web/events/queries/event.view-model";
 import { useEventById } from "@web/events/queries/useEventById";
+import { KEYMAP } from "@web/shortcuts/keymap";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
@@ -616,7 +617,7 @@ export const EventForm: React.FC<GridEventFormProps> = memo(
     // TanStack applies those before the callback, so an early return for
     // TipTap/buttons would otherwise swallow native Enter (newline / click).
     useAppShortcut(
-      "Enter",
+      KEYMAP.saveDraft.hotkey,
       (keyboardEvent) => {
         if (isDraft) {
           return;

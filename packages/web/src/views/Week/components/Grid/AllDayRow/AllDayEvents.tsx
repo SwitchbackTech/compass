@@ -3,6 +3,7 @@ import {
   type CalendarCardIdentity,
   isGridEventInteractionReadOnly,
   resolveCalendarCardIdentity,
+  resolveCalendarFocusColor,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
@@ -71,6 +72,7 @@ export const AllDayEvents = ({
       visibleAllDayEvents.map((event) => ({
         event,
         calendarIdentity: resolveCalendarCardIdentity(calendarLookup, event),
+        focusColor: resolveCalendarFocusColor(calendarLookup, event),
         // Read-only (unwritable calendar or busy content) events never
         // attach interaction attributes/registration below, so the drag/
         // resize engine can't find them as a target - blocked before any
@@ -90,7 +92,7 @@ export const AllDayEvents = ({
     >
       {!isLoadingWeekView &&
         visibleAllDayEventsWithIdentity.map(
-          ({ event, calendarIdentity, isReadOnly }) => {
+          ({ event, calendarIdentity, focusColor, isReadOnly }) => {
             const isPlaceholder = event._id === draftId;
             // Never overlay timed draft dates onto a multi-day timed display
             // bar — that would replace YYYY-MM-DD span dates with datetimes.
@@ -103,11 +105,15 @@ export const AllDayEvents = ({
             const identityForDisplay = isPlaceholder
               ? resolveCalendarCardIdentity(calendarLookup, eventForDisplay)
               : calendarIdentity;
+            const focusColorForDisplay = isPlaceholder
+              ? resolveCalendarFocusColor(calendarLookup, eventForDisplay)
+              : focusColor;
 
             return (
               <AllDayEventItem
                 calendarIdentity={identityForDisplay}
                 event={eventForDisplay}
+                focusColor={focusColorForDisplay}
                 isPlaceholder={isPlaceholder}
                 isReadOnly={isReadOnly}
                 key={event._id}
@@ -126,6 +132,7 @@ export const AllDayEvents = ({
 interface AllDayEventItemProps {
   calendarIdentity: CalendarCardIdentity | null;
   event: GridEvent;
+  focusColor: string | null;
   isPlaceholder: boolean;
   isReadOnly: boolean;
   measurements: Measurements_Grid;
@@ -137,6 +144,7 @@ interface AllDayEventItemProps {
 const AllDayEventItem = ({
   calendarIdentity,
   event,
+  focusColor,
   isPlaceholder,
   isReadOnly,
   measurements,
@@ -180,6 +188,7 @@ const AllDayEventItem = ({
     <AllDayEventMemo
       calendarIdentity={calendarIdentity}
       event={event}
+      focusColor={focusColor}
       interactionAttributes={interactionAttributes}
       isPlaceholder={isPlaceholder}
       measurements={measurements}

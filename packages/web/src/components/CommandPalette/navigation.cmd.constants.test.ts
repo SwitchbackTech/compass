@@ -29,10 +29,10 @@ describe("getNavigationCommandItems", () => {
     ]);
   });
 
-  it("lists the onboarding tour restart next to the welcome guide", () => {
+  it("lists the shortcut practice replay next to the welcome guide", () => {
     const labels = getNavigationCommandItems({
       ...noopHandlers,
-      onShowOnboardingTour: () => {},
+      onPracticeShortcuts: () => {},
       onShowWelcomeGuide: () => {},
     }).map((item) => item.label);
 
