@@ -1,6 +1,10 @@
 import { type Request, type Response } from "express";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
+import {
+  isTransientMongoNetworkError,
+  withTransientMongoRetry,
+} from "@core/util/mongo-network-error.util";
 import mongoService from "@backend/common/services/mongo.service";
 
 interface HealthResponse {
@@ -9,6 +13,12 @@ interface HealthResponse {
 }
 
 const logger = Logger("app:health.controller");
+
+// Ride out brief Atlas/DNS blips without failing the probe on the first
+// interrupted ping. Keep the budget short so load balancers still see a
+// timely answer when Mongo stays down.
+const HEALTH_PING_ATTEMPTS = 3;
+const HEALTH_PING_DELAY_MS = 200;
 
 class HealthController {
   /**
@@ -26,14 +36,24 @@ class HealthController {
     const timestamp = new Date().toISOString();
 
     try {
-      await mongoService.db.admin().ping();
+      await withTransientMongoRetry(() => mongoService.db.admin().ping(), {
+        attempts: HEALTH_PING_ATTEMPTS,
+        delayMs: HEALTH_PING_DELAY_MS,
+      });
 
       res.status(Status.OK).json({
         status: "ok",
         timestamp,
       });
     } catch (error) {
-      logger.error("Database connectivity check failed", error);
+      // Transient network blips are expected on managed Mongo; warn so they
+      // stay in logs/OTel without opening a PostHog exception alert.
+      // Persistent or unexpected failures still page as errors.
+      if (isTransientMongoNetworkError(error)) {
+        logger.warn("Database connectivity check failed", error);
+      } else {
+        logger.error("Database connectivity check failed", error);
+      }
       res.status(Status.INTERNAL_SERVER).json({
         status: "error",
         timestamp,

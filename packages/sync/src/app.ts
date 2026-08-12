@@ -7,6 +7,10 @@ import {
   SyncReconcileSweepEventSchema,
 } from "@core/types/sync/health.contracts";
 import {
+  isTransientMongoNetworkError,
+  withTransientMongoRetry,
+} from "@core/util/mongo-network-error.util";
+import {
   createInternalAuthMiddleware,
   createInternalServiceAuthMiddleware,
 } from "@sync/auth/internal-auth";
@@ -340,18 +344,30 @@ function buildHealthSnapshotSweep(
     {
       // SweepScheduler always passes `before`; health ignore it and use now.
       sweep: async () => {
-        await emitHealthSnapshot({
-          deps: { mongo, identity },
-          client,
-        });
+        // A single Atlas/DNS blip must not skip the whole 5-minute gauge.
+        await withTransientMongoRetry(
+          () =>
+            emitHealthSnapshot({
+              deps: { mongo, identity },
+              client,
+            }),
+          { attempts: 3, delayMs: 250 },
+        );
         return 1;
       },
     },
     {
       intervalMs: HEALTH_SNAPSHOT_INTERVAL_MS,
       jitterRatio: 0.05,
-      onError: (error) =>
-        logger.error("Sync health snapshot emit failed", error),
+      onError: (error) => {
+        // Transient Mongo network failures are expected blips; warn so they
+        // stay visible without opening a PostHog exception alert.
+        if (isTransientMongoNetworkError(error)) {
+          logger.warn("Sync health snapshot emit failed", error);
+          return;
+        }
+        logger.error("Sync health snapshot emit failed", error);
+      },
     },
   );
 }
