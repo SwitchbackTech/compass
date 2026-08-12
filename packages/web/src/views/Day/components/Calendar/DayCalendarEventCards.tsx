@@ -25,6 +25,7 @@ interface DayEventCardProps {
   calendarIdentity?: CalendarCardIdentity | null;
   columnIndex: number;
   event: GridEvent;
+  focusColor?: string | null;
   isActiveDraft: boolean;
   isPlaceholder: boolean;
   isReadOnly: boolean;
@@ -41,6 +42,7 @@ export const DayAllDayCalendarEvent = ({
   calendarIdentity = null,
   columnIndex,
   event,
+  focusColor = null,
   isActiveDraft,
   isPlaceholder,
   isReadOnly,
@@ -91,6 +93,7 @@ export const DayAllDayCalendarEvent = ({
     <AllDayEventCard
       calendarIdentity={calendarIdentity}
       event={event}
+      focusColor={focusColor}
       interactionAttributes={interactionAttributes}
       isPlaceholder={isPlaceholder}
       onEventKeyDown={onOpenEvent}
@@ -111,6 +114,7 @@ export const DayTimedCalendarEvent = ({
   columnIndex,
   deckLayout,
   event,
+  focusColor = null,
   isActiveDraft,
   isPlaceholder,
   isReadOnly,
@@ -178,6 +182,7 @@ export const DayTimedCalendarEvent = ({
       calendarIdentity={calendarIdentity}
       displayMode={isPlaceholder ? "placeholder" : "saved"}
       event={event}
+      focusColor={focusColor}
       interactionAttributes={interactionAttributes}
       isSelected={isActiveDraft}
       motionMode="idle"
