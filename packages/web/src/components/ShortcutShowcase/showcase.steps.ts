@@ -36,6 +36,14 @@ export type ShowcaseStep = {
 };
 
 /**
+ * Second half of the resizeEdge lesson, swapped in once the end edge has
+ * focus so the row never reads as one three-key press. Stretching reuses the
+ * Shift+Arrow family bound by KEYMAP.moveEvent; the arrow stays literal
+ * because it demonstrates one direction, and only up/down stretch.
+ */
+export const STRETCH_KEYCAPS: readonly string[] = ["Shift", "ArrowDown"];
+
+/**
  * Keycaps reference KEYMAP so a remap updates the hints automatically;
  * keymap.test.ts pins the 1:1 cases.
  */

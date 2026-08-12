@@ -3,7 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { ShortcutShowcase } from "@web/components/ShortcutShowcase/ShortcutShowcase";
-import { SHOWCASE_STEP_IDS } from "@web/components/ShortcutShowcase/showcase.steps";
+import {
+  SHOWCASE_STEP_IDS,
+  type ShowcaseStepId,
+} from "@web/components/ShortcutShowcase/showcase.steps";
 import {
   initialShortcutShowcaseState,
   shortcutShowcaseActions,
@@ -22,6 +25,16 @@ const pressKey = (key: string, init: KeyboardEventInit = {}) => {
 
 const currentStepId = () =>
   SHOWCASE_STEP_IDS[useShortcutShowcaseStore.getState().stepIndex];
+
+/** Jumps straight to a lesson; there is no store action for an arbitrary step. */
+const showStep = (id: ShowcaseStepId) => {
+  act(() =>
+    useShortcutShowcaseStore.setState({
+      isActive: true,
+      stepIndex: SHOWCASE_STEP_IDS.indexOf(id),
+    }),
+  );
+};
 
 describe("ShortcutShowcase", () => {
   beforeEach(() => {
@@ -125,11 +138,7 @@ describe("ShortcutShowcase", () => {
     await user.click(screen.getByRole("button", { name: "Do it for me" }));
     expect(currentStepId()).toBe("save");
 
-    act(() =>
-      useShortcutShowcaseStore.setState({
-        stepIndex: SHOWCASE_STEP_IDS.indexOf("graduation"),
-      }),
-    );
+    showStep("graduation");
     expect(screen.queryByRole("button", { name: "Do it for me" })).toBeNull();
     expect(screen.getByRole("button", { name: "Enter Compass" })).toBeTruthy();
   });
@@ -137,12 +146,7 @@ describe("ShortcutShowcase", () => {
   it("shows the stretch hint one phase at a time: Tab, then Shift+Arrow", async () => {
     const user = userEvent.setup();
     render(<ShortcutShowcase />);
-    act(() =>
-      useShortcutShowcaseStore.setState({
-        isActive: true,
-        stepIndex: SHOWCASE_STEP_IDS.indexOf("resizeEdge"),
-      }),
-    );
+    showStep("resizeEdge");
 
     // Phase one: only the key that moves focus onto the end time.
     expect(screen.getByTestId("tab-icon")).toBeTruthy();

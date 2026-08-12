@@ -33,6 +33,7 @@ import {
 import {
   getShowcaseStep,
   SHOWCASE_STEP_IDS,
+  STRETCH_KEYCAPS,
 } from "@web/components/ShortcutShowcase/showcase.steps";
 import {
   selectShowcaseActive,
@@ -393,14 +394,15 @@ const ShowcaseTakeover: FC = () => {
       case "hardcore":
         apply((state) => (state.hardcoreOn ? state : toggleHardcore(state)));
         break;
-      case "graduation":
-        // Unreachable: graduation renders "Enter Compass" instead.
-        return;
     }
     advance();
   };
 
   const progressPercent = ((stepIndex + 1) / SHOWCASE_STEP_IDS.length) * 100;
+  // The stretch lesson teaches Tab first, then the chord, so it hints one
+  // press at a time rather than showing all three keys at once.
+  const isStretchPhase = stepId === "resizeEdge" && practice.edge === "end";
+  const keycaps = isStretchPhase ? STRETCH_KEYCAPS : step.keycaps;
 
   return (
     <section
@@ -452,17 +454,7 @@ const ShowcaseTakeover: FC = () => {
               </div>
               <h2 className="font-semibold text-lg text-text">{step.title}</h2>
               <p className="text-sm text-text-muted">{step.body}</p>
-              {step.keycaps && (
-                <ShortcutKeys
-                  keys={
-                    // Tab first, then the stretch chord once the end edge has
-                    // focus, so the row never reads as one three-key press.
-                    stepId === "resizeEdge" && practice.edge === "end"
-                      ? ["Shift", "ArrowDown"]
-                      : [...step.keycaps]
-                  }
-                />
-              )}
+              {keycaps && <ShortcutKeys keys={[...keycaps]} />}
               <div className="flex items-center gap-2 pt-2">
                 {stepId === "graduation" ? (
                   <button
