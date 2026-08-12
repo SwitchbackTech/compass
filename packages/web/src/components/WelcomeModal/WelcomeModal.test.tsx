@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createContext } from "react";
 import { type CompassSession } from "@web/auth/compass/session/session.types";
@@ -174,6 +174,19 @@ describe("WelcomeModal", () => {
     expect(questionButton).toHaveAttribute("aria-expanded", "false");
     expect(answer).toHaveAttribute("aria-hidden", "true");
     expect(answer).toHaveAttribute("data-state", "closed");
+  });
+
+  it("shows shortcut keycaps on auth and start actions without hover", () => {
+    render(<WelcomeModal />);
+
+    for (const [name, key] of [
+      ["Sign up", "U"],
+      ["Log in", "I"],
+      ["Start Now", "S"],
+    ] as const) {
+      const hint = within(screen.getByRole("button", { name })).getByText(key);
+      expect(hint.className).not.toMatch(/opacity-0/);
+    }
   });
 
   it("opens sign up with the U shortcut", async () => {
