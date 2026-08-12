@@ -22,6 +22,7 @@ import {
   calendarAccentStyle,
   eventEdgeFocusShadow,
   eventFocusColor,
+  eventFocusOutlineClass,
 } from "@web/grid/components/calendar-accent.util";
 import {
   COMPACT_EVENT_MAX_HEIGHT,
@@ -279,11 +280,7 @@ const TimedEventCardBase = (
         "absolute min-h-2.5 select-none overflow-hidden rounded-xs pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)]",
         "bg-(--event-bg) hover:bg-(--event-hover-bg)",
         "hover:cursor-pointer",
-        // Outside outline (not an accent ring) so short titles stay readable.
-        // Suppress while an edge is focused — only the outer edge line shows.
-        focusedEdge
-          ? "focus-visible:outline-none"
-          : "focus-visible:outline-(--event-focus-color) focus-visible:outline-2 focus-visible:outline-offset-2",
+        eventFocusOutlineClass(focusedEdge),
         event.isDemo &&
           "outline outline-dashed outline-1 outline-text-muted/50",
       )}

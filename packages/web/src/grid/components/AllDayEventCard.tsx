@@ -19,6 +19,7 @@ import {
   calendarAccentStyle,
   eventEdgeFocusShadow,
   eventFocusColor,
+  eventFocusOutlineClass,
 } from "@web/grid/components/calendar-accent.util";
 import { EVENT_RESIZE_HANDLE_ATTRIBUTE } from "@web/grid/interaction/dom";
 import {
@@ -155,11 +156,7 @@ const AllDayEventCardBase = (
           "outline outline-dashed outline-1 outline-text-muted/50":
             event.isDemo,
         },
-        // Outside outline (not an accent ring) so titles stay readable.
-        // Suppress while an edge is focused — only the outer edge line shows.
-        focusedEdge
-          ? "focus-visible:outline-none"
-          : "focus-visible:outline-(--event-focus-color) focus-visible:outline-2 focus-visible:outline-offset-2",
+        eventFocusOutlineClass(focusedEdge),
       )}
       style={eventStyle}
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {

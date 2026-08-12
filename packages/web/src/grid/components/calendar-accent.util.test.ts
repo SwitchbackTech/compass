@@ -3,6 +3,7 @@ import {
   calendarAccentStyle,
   eventEdgeFocusShadow,
   eventFocusColor,
+  eventFocusOutlineClass,
 } from "./calendar-accent.util";
 import { describe, expect, it } from "bun:test";
 
@@ -57,13 +58,34 @@ describe("calendarAccentAccessibleSuffix", () => {
 });
 
 describe("eventFocusColor", () => {
-  it("uses the calendar color when present", () => {
-    expect(eventFocusColor("#9e9e9e")).toBe("#9e9e9e");
+  it("uses the calendar color when it contrasts with the page", () => {
+    expect(eventFocusColor("#616161")).toBe("#616161");
   });
 
   it("falls back to --text when no calendar color is available", () => {
     expect(eventFocusColor(null)).toBe("var(--text)");
     expect(eventFocusColor(undefined)).toBe("var(--text)");
+  });
+
+  it("falls back to --text for near-white or low-contrast calendar colors", () => {
+    // Local/anonymous calendar uses #ffffff — invisible on the light page.
+    expect(eventFocusColor("#ffffff")).toBe("var(--text)");
+    // Common Google gray fails 3:1 on light paper.
+    expect(eventFocusColor("#9e9e9e")).toBe("var(--text)");
+  });
+});
+
+describe("eventFocusOutlineClass", () => {
+  it("suppresses the whole-card outline while an edge is focused", () => {
+    expect(eventFocusOutlineClass("startDate")).toBe(
+      "focus-visible:outline-none",
+    );
+  });
+
+  it("uses the calendar focus color outline when no edge is focused", () => {
+    expect(eventFocusOutlineClass(null)).toBe(
+      "focus-visible:outline-(--event-focus-color) focus-visible:outline-2 focus-visible:outline-offset-2",
+    );
   });
 });
 

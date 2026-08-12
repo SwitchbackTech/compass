@@ -1,4 +1,5 @@
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
+import { readability } from "@web/common/styles/color.utils";
 
 /**
  * The accent fill for a card's identity strip: this calendar's color, or a
@@ -34,12 +35,36 @@ export function calendarAccentAccessibleSuffix(
     : calendarSuffix;
 }
 
+// Light-theme page paper (`--background` under `.theme-light-beach`). Calendar
+// colors that fail 3:1 here (local #fff, pale pastels) vanish as outside focus
+// chrome on light mode.
+const LIGHT_PAGE_PAPER = "#f3eee2";
+const MIN_FOCUS_CONTRAST = 3;
+
 /**
- * CSS color for event focus chrome. Falls back to `--text` (same family as
- * the selected ring) so cards never introduce a third theme-accent color.
+ * CSS color for event focus chrome. Falls back to `--text` when no calendar
+ * color is available, or when that color is too light to read against the
+ * page (same family as the selected ring) so cards never introduce a third
+ * theme-accent color and never lose a visible focus indicator.
  */
 export function eventFocusColor(focusColor: string | null | undefined): string {
-  return focusColor ?? "var(--text)";
+  if (!focusColor) return "var(--text)";
+  if (readability(focusColor, LIGHT_PAGE_PAPER) < MIN_FOCUS_CONTRAST) {
+    return "var(--text)";
+  }
+  return focusColor;
+}
+
+/**
+ * Whole-card focus outline classes. Suppressed while an edge is focused so
+ * only the outer edge line shows (short titles stay readable).
+ */
+export function eventFocusOutlineClass(
+  focusedEdge: "startDate" | "endDate" | null,
+): string {
+  return focusedEdge
+    ? "focus-visible:outline-none"
+    : "focus-visible:outline-(--event-focus-color) focus-visible:outline-2 focus-visible:outline-offset-2";
 }
 
 /**
