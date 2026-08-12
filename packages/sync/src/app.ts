@@ -345,13 +345,11 @@ function buildHealthSnapshotSweep(
       // SweepScheduler always passes `before`; health ignore it and use now.
       sweep: async () => {
         // A single Atlas/DNS blip must not skip the whole 5-minute gauge.
-        await withTransientMongoRetry(
-          () =>
-            emitHealthSnapshot({
-              deps: { mongo, identity },
-              client,
-            }),
-          { attempts: 3, delayMs: 250 },
+        await withTransientMongoRetry(() =>
+          emitHealthSnapshot({
+            deps: { mongo, identity },
+            client,
+          }),
         );
         return 1;
       },

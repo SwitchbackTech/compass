@@ -11,42 +11,21 @@ const TRANSIENT_MONGO_ERROR_NAMES = new Set([
 ]);
 
 const TRANSIENT_MONGO_MESSAGE_PATTERNS = [
-  /getaddrinfo\s+ESERVFAIL/i,
-  /getaddrinfo\s+ENOTFOUND/i,
-  /getaddrinfo\s+EAI_AGAIN/i,
-  /\bECONNRESET\b/i,
-  /\bETIMEDOUT\b/i,
-  /\bECONNREFUSED\b/i,
+  /getaddrinfo\s+(ESERVFAIL|ENOTFOUND|EAI_AGAIN)/i,
+  /\b(ECONNRESET|ETIMEDOUT|ECONNREFUSED)\b/i,
   /server monitor timeout/i,
-  /interrupted due to server monitor timeout/i,
   /connection.*(closed|reset|timed?\s*out)/i,
   /server selection timed?\s*out/i,
   /no connection available/i,
   /pool.*cleared/i,
 ];
 
-function errorName(error: unknown): string | undefined {
-  if (!(error instanceof Error)) return undefined;
-  return error.name;
-}
-
-function errorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === "string") return error;
-  return "";
-}
-
 export function isTransientMongoNetworkError(error: unknown): boolean {
-  const name = errorName(error);
-  if (name !== undefined && TRANSIENT_MONGO_ERROR_NAMES.has(name)) {
-    return true;
-  }
-
-  const message = errorMessage(error);
-  if (message.length === 0) return false;
-
+  if (!(error instanceof Error)) return false;
+  if (TRANSIENT_MONGO_ERROR_NAMES.has(error.name)) return true;
+  if (error.message.length === 0) return false;
   return TRANSIENT_MONGO_MESSAGE_PATTERNS.some((pattern) =>
-    pattern.test(message),
+    pattern.test(error.message),
   );
 }
 
@@ -64,18 +43,16 @@ export async function withTransientMongoRetry<T>(
     options.sleep ??
     ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
 
-  let lastError: unknown;
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+  let attempt = 0;
+  while (true) {
+    attempt += 1;
     try {
       return await operation();
     } catch (error) {
-      lastError = error;
-      const canRetry =
-        attempt < attempts && isTransientMongoNetworkError(error);
-      if (!canRetry) throw error;
+      if (attempt >= attempts || !isTransientMongoNetworkError(error)) {
+        throw error;
+      }
       await sleep(delayMs * attempt);
     }
   }
-
-  throw lastError;
 }
