@@ -50,9 +50,10 @@ import { type ProviderCalendarRepository } from "@sync/storage/repositories/prov
 import { type SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 // A provider-targeted write arrived while provider work is unavailable
-// (execution is passive, or no provider is configured). Nothing re-dispatches a
-// pending command, so accepting it would strand the write permanently while the
-// caller believes it succeeded. Callers surface this as a retryable 503.
+// (execution is passive, or no provider is configured). Accepting it as
+// pending without a self-heal path would strand the write while the caller
+// believes it succeeded — so the request is refused. The stale-command retry
+// sweep revisits create/update/delete once provider work is available again.
 //
 // Production hit exactly that on 2026-07-29: routing was flipped to Sync while
 // the sync process was still passive, and creates returned 200 with the event
@@ -169,47 +170,14 @@ export async function submitCloudCommand(
 
   // A create whose target calendar is a connected provider calendar must go to
   // the provider, not be confirmed as a local cloud event. Execute it now when
-  // provider work is enabled; otherwise leave it pending for a later execution.
-  // A calendar id that resolves to no provider calendar is a Compass cloud
-  // calendar, so it is applied locally below.
-  const providerCalendar = await deps.calendars.findById(
-    command.tenantId,
-    command.principalId,
-    command.input.calendarId as ProviderCalendarId,
-  );
-  if (providerCalendar) {
-    if (deps.execution === "active" && deps.provider) {
-      return finish(
-        await executeProviderCreate(
-          {
-            commands: deps.commands,
-            events: deps.events,
-            occurrences: deps.occurrences,
-            resources: deps.resources,
-            writer: deps.provider.writer,
-            custody: deps.provider.custody,
-          },
-          command,
-          providerCalendar,
-          now,
-        ),
-      );
-    }
-    // Nothing else ever picks this command up: no scheduled work re-dispatches
-    // a pending command, so returning it here would strand the write forever
-    // while the caller sees success. Refuse instead, so the caller can retry
-    // once provider work is enabled.
-    throw new ProviderWriteUnavailableError();
-  }
-
-  const record = buildCloudEventRecord(command, now());
-  await deps.events.put(record);
-  await reprojectOccurrences(deps.occurrences, record, now);
-  return finish(await confirmCloud(deps, command));
+  // provider work is enabled; otherwise refuse (stale-command sweep retries
+  // once execution is active). A calendar id that resolves to no provider
+  // calendar is a Compass cloud calendar, so it is applied locally.
+  return finish(await applyCloudCreateOrProvider(deps, command, now));
 }
 
-// Re-run an already-submitted, still-nonterminal update/delete command
-// through the same routing applyCloudMutation used the first time (dedupe by
+// Re-run an already-submitted, still-nonterminal create/update/delete command
+// through the same routing the original request used (dedupe by
 // idempotencyKey does not apply here — the command already exists). For the
 // stale-command retry sweep: a transient provider failure mid-execute leaves
 // the command exactly as it was (see provider-command.service.ts's per-kind
@@ -239,7 +207,69 @@ export async function retryCloudMutation(
   if (superseded) {
     return failCloud(deps, command, "versionConflict");
   }
+  if (command.input.kind === "create") {
+    return applyCloudCreateOrProvider(deps, command, now);
+  }
   return applyCloudMutation(deps, command, now);
+}
+
+async function applyCloudCreateOrProvider(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (command.input.kind !== "create") {
+    throw new Error("applyCloudCreateOrProvider requires a create command");
+  }
+  const providerCalendar = await deps.calendars.findById(
+    command.tenantId,
+    command.principalId,
+    command.input.calendarId as ProviderCalendarId,
+  );
+  if (providerCalendar) {
+    if (deps.execution === "active" && deps.provider) {
+      return executeProviderCreate(
+        {
+          commands: deps.commands,
+          events: deps.events,
+          occurrences: deps.occurrences,
+          resources: deps.resources,
+          writer: deps.provider.writer,
+          custody: deps.provider.custody,
+        },
+        command,
+        providerCalendar,
+        now,
+      );
+    }
+    throw new ProviderWriteUnavailableError();
+  }
+  return applyCloudCreate(deps, command, now);
+}
+
+async function applyCloudCreate(
+  deps: CloudCommandDeps,
+  command: CommandRecord,
+  now: () => Date,
+): Promise<CommandRecord> {
+  if (command.input.kind !== "create") {
+    throw new Error("applyCloudCreate requires a create command");
+  }
+  // Idempotent: a crash after the event write (or after put but before
+  // occurrence projection) leaves the command pending with the event already
+  // present. Always reproject before confirm so a retry never confirms a
+  // create that is invisible to range/busy reads.
+  let record = await deps.events.findById(
+    command.tenantId,
+    command.principalId,
+    command.eventId,
+  );
+  if (!record) {
+    record = buildCloudEventRecord(command, now());
+    await deps.events.put(record);
+  }
+  await reprojectOccurrences(deps.occurrences, record, now);
+  return confirmCloud(deps, command);
 }
 
 // Apply a cloud-only update or delete to an existing event. Only single,

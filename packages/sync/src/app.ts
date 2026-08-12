@@ -650,11 +650,10 @@ function buildSchedulers(
       },
     },
     {
-      // Self-heal sweep for the OTHER kind of stuck work: a cloud-targeted
-      // update/delete command that hit a transient provider failure
-      // mid-execute. Those run inline from the HTTP request (not as a job),
-      // and nothing else ever revisits a command left nonterminal that way -
-      // see stale-command-retry.service.ts. Looks BACK, like
+      // Self-heal sweep for stuck inline cloud commands (create/update/delete)
+      // that hit a transient provider failure mid-execute. Those run inline from
+      // the HTTP request (not as a job); this sweep revisits them after the
+      // stale window — see stale-command-retry.service.ts. Looks BACK, like
       // reconcile/failedJobRequeue.
       name: "staleCommandRetry",
       windowMs: -STALE_COMMAND_RETRY_AFTER_MS,

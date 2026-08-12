@@ -114,9 +114,11 @@ export const toEventMutationError = (
     };
   }
 
+  // Programmer bugs and unexpected throws are not provider outages — never
+  // advertise them as retryable or clients will hammer the same broken path.
   const message = e instanceof Error ? e.message : "Unexpected error";
   return {
     status: Status.INTERNAL_SERVER,
-    body: { code: "PROVIDER_FAILURE", message, retryable: true },
+    body: { code: "PROVIDER_FAILURE", message, retryable: false },
   };
 };

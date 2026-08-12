@@ -5,7 +5,7 @@ import {
   type CalendarImportDeps,
   importCalendarEvents,
 } from "@sync/domain/calendar-import.service";
-import { type AccessTokenSource } from "@sync/domain/provider-command.service";
+import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import {
   type ProviderEvent,
   type ProviderEventRead,

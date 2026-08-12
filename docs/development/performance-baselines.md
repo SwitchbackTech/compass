@@ -9,20 +9,20 @@ performance now, with its own test suite.
 
 ## Native parallel test suite timings (Bun 1.3.14)
 
-Recorded on 2026-07-22 after removing the Jest compat shim and switching to
-`bun test --parallel` with package preloads (`test-mongo-env.ts` for
-mongo-backed packages). **Web is an exception:** `test:web` runs sequentially
-in one process (MSW/jsdom + `--isolate` constraint — see
-`docs/development/testing-playbook.md#web-native-parallel-future--blocked`).
-Local macOS, mongodb-memory-server.
+Recorded on 2026-08-12 on the cloud agent VM after launch-hardening work
+(stale create retry, provider-write ladder extract, USER collection cleanup,
+SSE `waitForNoEvent`). Use `bun test:sync:fast` / `bun test:backend:fast` for
+Mongo-free iteration; full suites remain the durability gate.
 
 | Script | Tests | Time |
 | --- | --- | --- |
-| `bun run test:core` | 496 / 496 | ~0.5s |
-| `bun run test:web` | 1319 / 1319 | ~14–17s (sequential, one process) |
-| `bun run test:backend:fast` | 353 / 353 | ~3s |
-| `bun run test:sync` | 505 / 505 | ~31s |
-| `bun run test:scripts` | 40 / 40 | ~2s |
+| `bun run test:core` | (see package) | ~0.5s |
+| `bun run test:web` | (sequential; see testing-playbook) | ~14–17s |
+| `bun run test:backend:fast` | 248 / 248 | ~1.6s |
+| `bun run test:backend` | 303 / 304 (1 skip) | ~3.4s |
+| `bun run test:sync:fast` | 321 / 321 | ~0.6s |
+| `bun run test:sync` | 893 / 893 | ~13–14s |
+| `bun run test:scripts` | (see package) | ~2s |
 
 ## Regression rule
 

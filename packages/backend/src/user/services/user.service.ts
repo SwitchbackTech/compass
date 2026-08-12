@@ -177,26 +177,33 @@ class UserService {
       await supertokensUserCleanupService.resolveByExternalUserId(userId);
     const session = await mongoService.startSession();
 
-    await session.withTransaction(async (session) => {
-      const user = await mongoService.user.findOne({ _id }, { session });
+    try {
+      await session.withTransaction(async (session) => {
+        const user = await mongoService.user.findOne({ _id }, { session });
 
-      if (!user) {
-        logger.warn(`User(${userId}) not found while deleting compass data`);
-      }
+        if (!user) {
+          logger.warn(`User(${userId}) not found while deleting compass data`);
+        }
 
-      // Events first: they are reachable only through the calendars that own
-      // them, so deleting the calendars first would leave nothing to find them
-      // by.
-      const events = await eventService.deleteAllByUser(userId, session);
-      summary.events = events.deletedCount;
+        // Events first: they are reachable only through the calendars that own
+        // them, so deleting the calendars first would leave nothing to find them
+        // by.
+        const events = await eventService.deleteAllByUser(userId, session);
+        summary.events = events.deletedCount;
 
-      const calendars = await calendarService.deleteAllByUser(userId, session);
-      summary.calendars = calendars.deletedCount;
+        const calendars = await calendarService.deleteAllByUser(
+          userId,
+          session,
+        );
+        summary.calendars = calendars.deletedCount;
 
-      // delete user
-      const userDel = await mongoService.user.deleteOne({ _id }, { session });
-      summary.user = userDel.deletedCount;
-    });
+        // delete user
+        const userDel = await mongoService.user.deleteOne({ _id }, { session });
+        summary.user = userDel.deletedCount;
+      });
+    } finally {
+      await session.endSession();
+    }
 
     const { sessionsRevoked } =
       await compassAuthService.revokeSessionsByUser(userId);

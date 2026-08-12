@@ -1,4 +1,4 @@
-import { type AccessTokenSource } from "@sync/domain/provider-command.service";
+import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import {
   type ProviderNotificationAdapter,
   ProviderNotificationError,

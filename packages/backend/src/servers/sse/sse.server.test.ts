@@ -102,9 +102,6 @@ describe("SSE Server", () => {
         streamA.waitForEvent("userMetadataChanged", 2000),
       ).resolves.toBeDefined();
 
-      // Register a second listener on tab A BEFORE tab B connects.
-      const spuriousReplay = streamA.waitForEvent("userMetadataChanged", 300);
-
       // Tab B opens for the same user — should only replay to tab B.
       const streamB = baseDriver.openSSEStream({ userId });
       await expect(
@@ -112,7 +109,9 @@ describe("SSE Server", () => {
       ).resolves.toBeDefined();
 
       // Tab A must NOT receive a second userMetadataChanged.
-      await expect(spuriousReplay).rejects.toThrow("Timeout");
+      await expect(
+        streamA.waitForNoEvent("userMetadataChanged"),
+      ).resolves.toBeUndefined();
 
       streamA.close();
       streamB.close();
@@ -125,8 +124,6 @@ describe("SSE Server", () => {
       const stream = baseDriver.openSSEStream({ userId });
       await stream.waitForEvent("userMetadataChanged", 2000);
 
-      const eventPromise = stream.waitForEvent("eventsChanged", 300);
-
       const { sseServer } = await import("./sse.server");
       sseServer.publishEventsChanged(otherUserId, {
         calendarId: new ObjectId().toHexString() as CalendarId,
@@ -134,7 +131,9 @@ describe("SSE Server", () => {
         reason: "reconciled",
       });
 
-      await expect(eventPromise).rejects.toThrow("Timeout");
+      await expect(
+        stream.waitForNoEvent("eventsChanged"),
+      ).resolves.toBeUndefined();
 
       stream.close();
     });

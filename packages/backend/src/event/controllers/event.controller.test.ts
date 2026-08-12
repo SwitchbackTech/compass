@@ -387,4 +387,29 @@ describe("EventController", () => {
       retryable: true,
     });
   });
+
+  it("rejects delete-all when the session user does not match :userId", async () => {
+    const deleteSpy = spyOn(
+      (await import("@backend/event/services/event.service")).default,
+      "deleteAllByUser",
+    );
+    const { res, json } = jsonRes();
+    const sessionUser = objectId();
+    const otherUser = objectId();
+
+    await eventController.deleteAllByUser(
+      sessionReq(sessionUser, { params: { userId: otherUser } }),
+      res,
+    );
+
+    expect(deleteSpy).not.toHaveBeenCalled();
+    expect((res.status as ReturnType<typeof mock>).mock.calls[0]?.[0]).toBe(
+      Status.BAD_REQUEST,
+    );
+    expect(json).toHaveBeenCalledWith({
+      code: "INVALID_INPUT",
+      message: "Cannot delete events for another user",
+      retryable: false,
+    });
+  });
 });

@@ -39,21 +39,12 @@ class BillingService {
   /**
    * Starts a trial once per user; a second call is a no-op that just
    * returns the existing state, so retried/duplicate CTA clicks can never
-   * push the trial window out further.
+   * push the trial window out further. Uses a conditional update so two
+   * concurrent POSTs cannot both write a new trialStartedAt.
    */
   startTrial = async (userId: string): Promise<BillingStatusResponse> => {
-    const user = await mongoService.user.findOne({
-      _id: mongoService.objectId(userId),
-    });
-    if (!user) {
-      throw new Error("User not found");
-    }
-
+    const _id = mongoService.objectId(userId);
     const now = new Date();
-
-    if (user.billing?.trialStartedAt) {
-      return deriveBillingStatus(user.billing, now);
-    }
 
     const trialEndsAt = new Date(now);
     trialEndsAt.setDate(
@@ -66,12 +57,28 @@ class BillingService {
       trialEndsAt,
     };
 
-    await mongoService.user.updateOne(
-      { _id: mongoService.objectId(userId) },
+    const result = await mongoService.user.findOneAndUpdate(
+      {
+        _id,
+        $or: [
+          { "billing.trialStartedAt": { $exists: false } },
+          { "billing.trialStartedAt": null },
+        ],
+      },
       { $set: { billing } },
+      { returnDocument: "after" },
     );
 
-    return deriveBillingStatus(billing, now);
+    if (result) {
+      return deriveBillingStatus(result.billing, now);
+    }
+
+    const user = await mongoService.user.findOne({ _id });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    return deriveBillingStatus(user.billing, now);
   };
 
   getStatus = async (userId: string): Promise<BillingStatusResponse> => {

@@ -23,19 +23,22 @@ export interface StaleCommandRetryResult {
 }
 
 // The kinds executed inline and synchronously from the command HTTP request
-// (see cloud-command.service.ts's applyCloudMutation): a transient provider
-// failure mid-execute there returns the command unchanged, and no job or
-// worker ever revisits it. Without this sweep, an event can sit visibly
-// "deleting" or reflecting a half-applied update forever after one blip.
+// (see cloud-command.service.ts's applyCloudMutation / create path): a
+// transient provider failure mid-execute there returns the command unchanged,
+// and no job worker revisits it. Without this sweep, an event can sit visibly
+// "creating"/"deleting" or reflecting a half-applied update forever after one
+// blip.
 const RETRYABLE_KINDS: readonly SyncCommandInput["kind"][] = [
+  "create",
   "update",
   "delete",
 ];
 
 // The self-heal sweep for commands stuck nonterminal (pending/applying/
 // reconciling) past the stale window. Re-runs the exact same routing logic
-// the original request used (retryCloudMutation -> applyCloudMutation), so a
-// command that recovers converges exactly as it would have inline.
+// the original request used (retryCloudMutation -> applyCloudMutation /
+// create path), so a command that recovers converges exactly as it would
+// have inline.
 // retryCloudMutation itself refuses to reapply a command superseded by a
 // later one for the same event (failing it as versionConflict instead) - a
 // stale command that just sat pending for the retry window is not

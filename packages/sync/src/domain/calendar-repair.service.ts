@@ -1,6 +1,6 @@
 import { toColorLabelMap } from "@sync/domain/color-label-map";
-import { type AccessTokenSource } from "@sync/domain/provider-command.service";
 import { ProviderPageApplier } from "@sync/domain/provider-page-applier";
+import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import { type ProviderEventReader } from "@sync/providers/provider-event-reader.port";
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";

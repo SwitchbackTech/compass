@@ -122,25 +122,27 @@ async function googleSignup(
 ) {
   const session = await mongoService.startSession();
 
-  const user = await session.withTransaction(async (transactionSession) => {
-    const cUser = await userService.upsertUserFromAuth(
-      {
-        userId,
-        email: gUser.email ?? "",
-        name: gUser.name || undefined,
-        locale: gUser.locale || undefined,
-        google: {
-          googleId: gUser.sub ?? "",
-          picture: gUser.picture || "not provided",
+  try {
+    return await session.withTransaction(async (transactionSession) => {
+      const cUser = await userService.upsertUserFromAuth(
+        {
+          userId,
+          email: gUser.email ?? "",
+          name: gUser.name || undefined,
+          locale: gUser.locale || undefined,
+          google: {
+            googleId: gUser.sub ?? "",
+            picture: gUser.picture || "not provided",
+          },
         },
-      },
-      transactionSession,
-    );
+        transactionSession,
+      );
 
-    return { cUserId: cUser.user.userId, refreshToken };
-  });
-
-  return user;
+      return { cUserId: cUser.user.userId, refreshToken };
+    });
+  } finally {
+    await session.endSession();
+  }
 }
 
 async function repairGoogleConnection(
