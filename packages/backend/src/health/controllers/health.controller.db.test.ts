@@ -106,6 +106,57 @@ describe("HealthController", () => {
       }
     });
 
+    it("should recover from a transient Mongo network blip on ping", async () => {
+      const transient = new Error(
+        "Connection to host:27017 interrupted due to server monitor timeout",
+      );
+      transient.name = "PoolClearedOnNetworkError";
+
+      const pingSpy = spyOn(
+        Object.getPrototypeOf(mongoService.db.admin()),
+        "ping",
+      )
+        .mockImplementationOnce(() => Promise.reject(transient))
+        .mockImplementation(() => Promise.resolve({ ok: 1 }));
+
+      try {
+        const response = await baseDriver
+          .getServer()
+          .get("/api/health")
+          .expect(Status.OK);
+
+        expect(response.body.status).toBe("ok");
+        expect(pingSpy).toHaveBeenCalledTimes(2);
+      } finally {
+        pingSpy.mockRestore();
+      }
+    });
+
+    it("should return 500 after transient Mongo blips exhaust retries", async () => {
+      const transient = new Error("getaddrinfo ESERVFAIL");
+      transient.name = "MongoNetworkError";
+
+      const pingSpy = spyOn(
+        Object.getPrototypeOf(mongoService.db.admin()),
+        "ping",
+      ).mockImplementation(() => Promise.reject(transient));
+
+      try {
+        const response = await baseDriver
+          .getServer()
+          .get("/api/health")
+          .expect(Status.INTERNAL_SERVER);
+
+        expect(response.body).toEqual({
+          status: "error",
+          timestamp: expect.any(String),
+        });
+        expect(pingSpy.mock.calls.length).toBeGreaterThanOrEqual(3);
+      } finally {
+        pingSpy.mockRestore();
+      }
+    });
+
     it("should return consistent response structure", async () => {
       const response = await baseDriver
         .getServer()

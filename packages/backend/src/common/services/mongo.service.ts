@@ -11,6 +11,7 @@ import {
 import { NodeEnv } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { type Schema_User } from "@core/types/user.types";
+import { isTransientMongoNetworkError } from "@core/util/mongo-network-error.util";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { Collections } from "@backend/common/constants/collections";
 import { CONFIG } from "@backend/common/constants/config.constants";
@@ -69,6 +70,12 @@ class MongoService {
   }
 
   private onError(error: Error): void {
+    // Client "error" events include brief Atlas/DNS blips; warn those so they
+    // do not open PostHog exception alerts. Unexpected client errors still page.
+    if (isTransientMongoNetworkError(error)) {
+      logger.warn(error.message, error);
+      return;
+    }
     logger.error(error.message, error);
   }
 
