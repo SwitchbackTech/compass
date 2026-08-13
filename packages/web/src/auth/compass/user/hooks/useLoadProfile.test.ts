@@ -16,7 +16,7 @@ import {
 
 const getLastKnownEmail = mock(() => "person@example.com");
 const markUserAsAuthenticated = mock();
-const hasUserEverAuthenticated = mock(() => true);
+const hasUserEverAuthenticated = mock(() => false);
 const getProfile = mock();
 
 const mockProfile: UserProfile = {
@@ -82,13 +82,14 @@ describe("useLoadProfile", () => {
   beforeEach(() => {
     getLastKnownEmail.mockClear().mockReturnValue("person@example.com");
     markUserAsAuthenticated.mockClear();
-    hasUserEverAuthenticated.mockClear().mockReturnValue(true);
+    hasUserEverAuthenticated.mockClear().mockReturnValue(false);
     getProfile.mockClear();
     consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
+    hasUserEverAuthenticated.mockReturnValue(false);
   });
 
   it("does not log backend-unavailable profile failures in frontend-only mode", async () => {
@@ -171,6 +172,7 @@ describe("useLoadProfile", () => {
   });
 
   it("shows a signed-out toast when a returning visitor's profile request is unauthorized", async () => {
+    hasUserEverAuthenticated.mockReturnValue(true);
     const error = Object.assign(new Error("Request failed with status 401"), {
       response: { status: Status.UNAUTHORIZED },
     });
