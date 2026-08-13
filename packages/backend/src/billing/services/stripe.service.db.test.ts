@@ -1,4 +1,4 @@
-import type Stripe from "stripe";
+import Stripe from "stripe";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -73,8 +73,15 @@ describe("StripeService", () => {
     expect(sessionArgs.subscription_data.trial_period_days).toBe(7);
     expect(sessionArgs.line_items[0]?.price).toBe("price_test");
     expect(
+      (sessionArgs as { payment_method_collection?: string })
+        .payment_method_collection,
+    ).toBe("always");
+    expect(
       (sessionArgs as { payment_method_types?: unknown }).payment_method_types,
     ).toBeUndefined();
+    expect(sessionsCreate.mock.calls[0]?.[1]).toEqual({
+      idempotencyKey: `compass-checkout-v2-${userId.toString()}`,
+    });
 
     const stored = await mongoService.user.findOne({ _id: userId });
     expect(stored?.billing?.stripeCustomerId).toBe("cus_1");
@@ -246,6 +253,43 @@ describe("StripeService", () => {
     expect(portalCreate.mock.calls[0]?.[0]).toEqual({
       customer: "cus_portal",
       return_url: "http://localhost:9080",
+    });
+  });
+
+  it("maps a Stripe invalid-request error to BillingHttpError", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = mongoService.objectId();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "pay@example.com",
+      name: "Pay User",
+      firstName: "Pay",
+      lastName: "User",
+      locale: "en",
+    });
+
+    const stripeError = new Stripe.errors.StripeInvalidRequestError({
+      message: "No such price: 'price_test'",
+      type: "invalid_request_error",
+      statusCode: 400,
+    });
+    setStripeClientForTests({
+      customers: {
+        create: mock(() => Promise.resolve({ id: "cus_1" })),
+      },
+      checkout: {
+        sessions: {
+          create: mock(() => Promise.reject(stripeError)),
+        },
+      },
+    } as unknown as Stripe);
+
+    await expect(
+      stripeService.createCheckoutSession(userId.toString()),
+    ).rejects.toMatchObject({
+      name: "BillingHttpError",
+      status: 400,
+      clientMessage: "Couldn't start billing. Please try again in a moment.",
     });
   });
 });

@@ -38,7 +38,7 @@ export const createApiError = (
   return error;
 };
 
-const getApiErrorData = (error: ApiError): unknown => {
+export const getApiErrorData = (error: ApiError): unknown => {
   return error?.response?.data;
 };
 
@@ -91,6 +91,15 @@ export const getApiErrorCode = (error: ApiError): string | undefined => {
   if (!data || typeof data !== "object" || !("code" in data)) return undefined;
   const code = (data as { code?: unknown }).code;
   return typeof code === "string" ? code : undefined;
+};
+
+/** Safe `error` string from a JSON `{ error: string }` API body, if present. */
+export const getApiErrorMessage = (error: unknown): string | undefined => {
+  if (!isApiError(error)) return undefined;
+  const data = getApiErrorData(error);
+  if (!data || typeof data !== "object" || !("error" in data)) return undefined;
+  const message = (data as { error?: unknown }).error;
+  return typeof message === "string" && message.trim() ? message : undefined;
 };
 
 export const parseApiError = <T>(

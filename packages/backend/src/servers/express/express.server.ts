@@ -25,6 +25,9 @@ import { UserRoutes } from "@backend/user/user.routes.config";
 export const initExpressServer = () => {
   /* Express Configuration */
   const app: Application = express();
+  // Caddy terminates TLS and proxies `/api/*` with X-Forwarded-For. One hop
+  // of trust keeps express-rate-limit from treating every visitor as Caddy.
+  app.set("trust proxy", 1);
 
   initSupertokens();
 

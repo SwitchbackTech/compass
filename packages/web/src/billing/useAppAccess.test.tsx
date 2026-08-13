@@ -179,4 +179,27 @@ describe("useAppAccess", () => {
       });
     });
   });
+
+  it("does not fetch billing status after sign-out when hasAuthenticated is still set", async () => {
+    persistentBrowserStore.set(
+      STORAGE_KEYS.AUTH,
+      JSON.stringify({ hasAuthenticated: true }),
+    );
+    stubConfig(true);
+    let billingHits = 0;
+    server.use(
+      rest.get(`${ENV_WEB.API_BASEURL}/billing/status`, (_req, res, ctx) => {
+        billingHits += 1;
+        return res(ctx.status(401));
+      }),
+    );
+
+    const { result } = renderHook(() => useAppAccess(), {
+      wrapper: createWrapper(false),
+    });
+    await waitFor(() => {
+      expect(result.current).toEqual({ kind: "open" });
+    });
+    expect(billingHits).toBe(0);
+  });
 });

@@ -53,5 +53,5 @@ export function getStripePriceId(): string {
   if (!priceId) {
     throw new Error("STRIPE_PRICE_ID is not configured");
   }
-  return priceId;
+  return priceId.trim();
 }

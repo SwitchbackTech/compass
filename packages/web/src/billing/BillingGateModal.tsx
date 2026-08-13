@@ -1,10 +1,15 @@
 import { type FC, useEffect, useRef, useState } from "react";
 import { BILLING_PLAN } from "@core/constants/billing.constants";
 import { BillingApi } from "@web/api/billing.api";
+import {
+  getApiErrorMessage,
+  isSessionLevelError,
+} from "@web/api/util/api.util";
 import { useLogout } from "@web/auth/compass/hooks/useLogout";
 import { track } from "@web/auth/posthog/track";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { runExportMyData } from "@web/common/storage/offline-data/export-user-data.util";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { PixelPirateScouting } from "@web/components/WelcomeModal/PixelPirateScouting";
 import { useAppLockReason } from "@web/shortcuts/app-lock";
 
@@ -49,6 +54,15 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
           ? await BillingApi.createCheckoutSession()
           : await BillingApi.createPortalSession();
       window.location.assign(url);
+    } catch (error) {
+      if (!isSessionLevelError(error)) {
+        const fromApi = getApiErrorMessage(error);
+        showErrorToast(
+          fromApi && fromApi !== "Internal server error"
+            ? fromApi
+            : "Couldn't start checkout. Please try again.",
+        );
+      }
     } finally {
       setIsRedirecting(false);
     }
