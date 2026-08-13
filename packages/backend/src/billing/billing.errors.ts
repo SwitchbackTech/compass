@@ -21,7 +21,6 @@ const BILLING_CLIENT_MESSAGE =
   "Couldn't start billing. Please try again in a moment.";
 
 export function wrapStripeFailure(e: unknown): never {
-  if (e instanceof BillingHttpError) throw e;
   if (e instanceof Stripe.errors.StripeError) {
     const stripeStatus = e.statusCode ?? 0;
     const status =

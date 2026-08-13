@@ -38,7 +38,7 @@ export const createApiError = (
   return error;
 };
 
-export const getApiErrorData = (error: ApiError): unknown => {
+const getApiErrorData = (error: ApiError): unknown => {
   return error?.response?.data;
 };
 
