@@ -89,14 +89,16 @@ export const BillingGateModal: FC<BillingGateModalProps> = ({ status }) => {
           >
             {isAwaitingCheckout ? "Start trial" : "Subscribe"}
           </button>
-          <button
-            className="c-button c-button-secondary rounded-full px-6 py-2"
-            disabled={isRedirecting}
-            onClick={() => void redirectTo("portal")}
-            type="button"
-          >
-            Manage billing
-          </button>
+          {isAwaitingCheckout ? null : (
+            <button
+              className="c-button c-button-secondary rounded-full px-6 py-2"
+              disabled={isRedirecting}
+              onClick={() => void redirectTo("portal")}
+              type="button"
+            >
+              Manage billing
+            </button>
+          )}
         </div>
         <button
           className="c-focus-ring text-text-muted text-xs underline-offset-4 hover:text-text hover:underline"

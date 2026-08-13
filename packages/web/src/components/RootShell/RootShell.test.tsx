@@ -55,6 +55,9 @@ describe("RootShell billing gates", () => {
       screen.getByRole("dialog", { name: "Start your 7-day trial" }),
     ).toBeInTheDocument();
     expect(
+      screen.queryByRole("button", { name: "Manage billing" }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.queryByRole("dialog", { name: "Your free trial has ended" }),
     ).not.toBeInTheDocument();
   });

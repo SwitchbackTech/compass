@@ -29,12 +29,14 @@ class StripeService {
     }
 
     const liveStatus = user.billing?.subscriptionStatus;
-    const hasLiveSubscription =
+    const hasOpenStripeSubscription =
       Boolean(user.billing?.stripeSubscriptionId) &&
+      Boolean(user.billing?.stripeCustomerId) &&
       (liveStatus === "trialing" ||
         liveStatus === "active" ||
-        liveStatus === "past_due");
-    if (hasLiveSubscription) {
+        liveStatus === "past_due" ||
+        liveStatus === "awaiting_checkout");
+    if (hasOpenStripeSubscription) {
       return this.createPortalSession(userId);
     }
 
@@ -57,20 +59,23 @@ class StripeService {
       );
     }
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      client_reference_id: userId,
-      line_items: [{ price: getStripePriceId(), quantity: 1 }],
-      subscription_data: {
-        ...(grantTrial
-          ? { trial_period_days: BILLING_PLAN.TRIAL_LENGTH_DAYS }
-          : {}),
-        metadata: { compassUserId: userId },
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: "subscription",
+        customer: customerId,
+        client_reference_id: userId,
+        line_items: [{ price: getStripePriceId(), quantity: 1 }],
+        subscription_data: {
+          ...(grantTrial
+            ? { trial_period_days: BILLING_PLAN.TRIAL_LENGTH_DAYS }
+            : {}),
+          metadata: { compassUserId: userId },
+        },
+        success_url: checkoutReturnUrl("success"),
+        cancel_url: checkoutReturnUrl("cancel"),
       },
-      success_url: checkoutReturnUrl("success"),
-      cancel_url: checkoutReturnUrl("cancel"),
-    });
+      grantTrial ? { idempotencyKey: `compass-checkout-${userId}` } : undefined,
+    );
 
     if (!session.url) {
       throw new Error("Stripe Checkout did not return a URL");

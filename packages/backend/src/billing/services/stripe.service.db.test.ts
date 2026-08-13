@@ -114,6 +114,42 @@ describe("StripeService", () => {
     expect(sessionArgs.customer).toBe("cus_existing");
   });
 
+  it("sends an incomplete Checkout (awaiting_checkout with a subscription id) to the portal", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = mongoService.objectId();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "incomplete@example.com",
+      name: "Incomplete User",
+      firstName: "Incomplete",
+      lastName: "User",
+      locale: "en",
+      billing: {
+        subscriptionStatus: "awaiting_checkout",
+        stripeCustomerId: "cus_incomplete",
+        stripeSubscriptionId: "sub_incomplete",
+      },
+    });
+
+    const sessionsCreate = mock(() =>
+      Promise.resolve({ url: "https://checkout.stripe.com/c/session_5" }),
+    );
+    const portalCreate = mock(() =>
+      Promise.resolve({
+        url: "https://billing.stripe.com/p/session_incomplete",
+      }),
+    );
+    setStripeClientForTests({
+      checkout: { sessions: { create: sessionsCreate } },
+      billingPortal: { sessions: { create: portalCreate } },
+    } as unknown as Stripe);
+
+    const result = await stripeService.createCheckoutSession(userId.toString());
+
+    expect(result.url).toBe("https://billing.stripe.com/p/session_incomplete");
+    expect(sessionsCreate).not.toHaveBeenCalled();
+  });
+
   it("omits trial_period_days when the user already had a Stripe subscription", async () => {
     using _env = mockEnv(stripeConfigured);
     const userId = mongoService.objectId();
