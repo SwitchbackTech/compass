@@ -1,7 +1,17 @@
+import {
+  BACKEND_PORT_BASE,
+  type DevPorts,
+  isPortFree,
+  siblingConfigPaths,
+  WEB_PORT_BASE,
+} from "@scripts/commands/dev-ports-shared";
+import {
+  ensureSyncConfigFile,
+  readSiblingSyncPorts,
+} from "@scripts/commands/ensure-sync-config";
 import { parse, parseDocument } from "yaml";
 import { execSync } from "node:child_process";
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
-import { createServer } from "node:net";
 import path from "node:path";
 
 /**
@@ -19,15 +29,15 @@ import path from "node:path";
  * are running. If dev:web and dev:backend preflight simultaneously in a fresh
  * worktree, both compute the same answer from the same sibling claims; the
  * double write is harmless.
+ *
+ * Once mongo.uri is present, this also completes a missing sync: block via
+ * ensure-sync-config.ts — see that file for what's derived and why. Its
+ * candidate port range overlaps this file's BACKEND_PORT_BASE range, so
+ * findNextPorts here and findNextSyncPort there each exclude the other's
+ * claims.
  */
 
-export const WEB_PORT_BASE = 9080;
-export const BACKEND_PORT_BASE = 3000;
-
-export interface DevPorts {
-  web: number;
-  backend: number;
-}
+export { BACKEND_PORT_BASE, type DevPorts, WEB_PORT_BASE };
 
 // Which dev server is launching, so the port-in-use warning only covers the
 // service that's actually about to bind. Port reassignment stays pair-based.
@@ -89,33 +99,6 @@ export function reassignPorts(yamlText: string, next: DevPorts): string | null {
   return doc.toString();
 }
 
-function isPortFree(port: number): Promise<boolean> {
-  return new Promise((resolve) => {
-    const tester = createServer();
-    tester.unref();
-    tester.once("error", () => resolve(false));
-    tester.once("listening", () => tester.close(() => resolve(true)));
-    tester.listen({ port, host: "0.0.0.0" });
-  });
-}
-
-function listWorktreePaths(): string[] {
-  const output = execSync("git worktree list --porcelain", {
-    encoding: "utf8",
-  });
-  return output
-    .split("\n")
-    .filter((line) => line.startsWith("worktree "))
-    .map((line) => line.slice("worktree ".length));
-}
-
-function siblingConfigPaths(root: string): string[] {
-  return listWorktreePaths()
-    .filter((worktree) => path.resolve(worktree) !== path.resolve(root))
-    .map((worktree) => path.join(worktree, "compass.yaml"))
-    .filter(existsSync);
-}
-
 function readSiblingPorts(root: string): DevPorts[] {
   return siblingConfigPaths(root)
     .map((file) => readPorts(readFileSync(file, "utf8")))
@@ -140,14 +123,21 @@ function isPortsClaimed(ports: DevPorts, claimed: DevPorts[]): boolean {
 
 // Smallest offset whose web/backend pair is unclaimed by any sibling
 // worktree's compass.yaml and actually free on the OS, or null if none of
-// the first 50 offsets work out.
-async function findNextPorts(claimed: DevPorts[]): Promise<DevPorts | null> {
+// the first 50 offsets work out. claimedSyncPorts excludes candidates that
+// collide with a sync port some worktree already has assigned — the two
+// ranges overlap (see the module doc), so this is the reverse half of the
+// same guard ensureSyncConfigFile applies for backend ports.
+async function findNextPorts(
+  claimed: DevPorts[],
+  claimedSyncPorts: number[] = [],
+): Promise<DevPorts | null> {
   for (let offset = 1; offset <= 50; offset++) {
     const candidate: DevPorts = {
       web: WEB_PORT_BASE + offset,
       backend: BACKEND_PORT_BASE + offset,
     };
     if (isPortsClaimed(candidate, claimed)) continue;
+    if (claimedSyncPorts.includes(candidate.backend)) continue;
     if (
       (await isPortFree(candidate.web)) &&
       (await isPortFree(candidate.backend))
@@ -215,10 +205,12 @@ async function main(scope?: Scope): Promise<void> {
   const claimed = readSiblingPorts(root);
   if (!isPortsClaimed(current, claimed)) {
     warnIfPortsHeld(current, scope);
+    await ensureSyncConfigFile(root, configPath, claimed);
     return;
   }
 
-  const next = await findNextPorts(claimed);
+  const claimedSyncPorts = readSiblingSyncPorts(root);
+  const next = await findNextPorts(claimed, claimedSyncPorts);
   if (!next) {
     throw new Error("[dev-ports] no free port pair found within 50 offsets");
   }
@@ -229,6 +221,7 @@ async function main(scope?: Scope): Promise<void> {
       "[dev-ports] compass.yaml uses custom URLs — manage ports manually",
     );
     warnIfPortsHeld(current, scope);
+    await ensureSyncConfigFile(root, configPath, claimed);
     return;
   }
 
@@ -237,6 +230,7 @@ async function main(scope?: Scope): Promise<void> {
     `[dev-ports] ports ${current.web}/${current.backend} are claimed by ` +
       `another worktree — reassigned to web ${next.web}, backend ${next.backend}`,
   );
+  await ensureSyncConfigFile(root, configPath, claimed);
 }
 
 if (require.main === module) {
