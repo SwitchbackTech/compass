@@ -15,8 +15,10 @@ import {
   within,
 } from "@web/__tests__/__mocks__/mock.render";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
+import { createMockConnection } from "@web/__tests__/utils/factories/calendar.factory";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
+import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { setCalendarVisibility } from "@web/calendars/calendar-visibility.store";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
@@ -948,6 +950,45 @@ describe("DayCalendarGrid", () => {
     expect(canCreateDraftOnCalendar(holidays, showError)).toBeFalse();
     expect(showError).toHaveBeenCalledWith(
       "You can't edit the Holidays calendar.",
+    );
+  });
+
+  it("does not create on the local column once a Google account is connected", async () => {
+    const local = makeCalendar("Compass", {
+      id: getLocalCalendarSentinelId(),
+      provider: "local",
+    });
+    const google = makeCalendar("Primary", { isPrimary: true });
+    userMetadataActions.set({
+      google: {
+        connectionState: "HEALTHY",
+        connections: [createMockConnection("ahab@pequod.com")],
+      },
+    });
+    const { user } = renderDayCalendarGrid([local, google]);
+
+    await user.pointer([
+      {
+        coords: { clientX: 90, clientY: 120 },
+        keys: "[MouseLeft>]",
+        target: getTimedSlot(3),
+      },
+      {
+        coords: { clientX: 90, clientY: 120 },
+        keys: "[/MouseLeft]",
+        target: getTimedSlot(3),
+      },
+    ]);
+
+    expect(getDraft()).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Event form" })).toBeNull();
+
+    const showError = mock();
+    expect(
+      canCreateDraftOnCalendar(local, showError, new Set([google.id])),
+    ).toBeFalse();
+    expect(showError).toHaveBeenCalledWith(
+      "You can't edit the Compass calendar.",
     );
   });
 

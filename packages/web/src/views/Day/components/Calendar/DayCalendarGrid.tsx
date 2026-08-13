@@ -12,7 +12,11 @@ import { shouldShowContextualLoadError } from "@web/api/util/api.util";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { isFirstImportInProgress } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { useDefaultTargetCalendar } from "@web/calendars/useDefaultTargetCalendar";
+import { getWritableCalendars } from "@web/calendars/calendar.util";
+import {
+  useConnectedAccountEmails,
+  useDefaultTargetCalendar,
+} from "@web/calendars/useDefaultTargetCalendar";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
@@ -62,8 +66,13 @@ import { useDayTimedDraftCreation } from "./useDayTimedDraftCreation";
 export const canCreateDraftOnCalendar = (
   calendar: Calendar | null,
   showError: (message: string) => unknown = showErrorToast,
+  writableCalendarIds?: ReadonlySet<string>,
 ): boolean => {
-  if (!calendar || calendar.capabilities.canWrite) return true;
+  if (!calendar) return true;
+  const canWrite = writableCalendarIds
+    ? writableCalendarIds.has(calendar.id)
+    : calendar.capabilities.canWrite;
+  if (canWrite) return true;
 
   showError(`You can't edit the ${calendar.name} calendar.`);
   return false;
@@ -80,6 +89,13 @@ export function DayCalendarGrid() {
   // Seed shortcuts with the form's default create target, not day-column order.
   const defaultTargetCalendarId =
     useDefaultTargetCalendar(calendars)?.id ?? null;
+  const accountEmailOrder = useConnectedAccountEmails();
+  const writableCalendarIds = useMemo(() => {
+    const writable = getWritableCalendars(calendars, {
+      hasConnectedAccount: accountEmailOrder.length > 0,
+    });
+    return new Set(writable.map((calendar) => calendar.id));
+  }, [accountEmailOrder.length, calendars]);
   const {
     allDayEvents,
     error: eventsError,
@@ -336,7 +352,9 @@ export function DayCalendarGrid() {
     ) => {
       const calendar = getCalendarAtX(event.clientX);
 
-      if (!canCreateDraftOnCalendar(calendar)) {
+      if (
+        !canCreateDraftOnCalendar(calendar, showErrorToast, writableCalendarIds)
+      ) {
         event.preventDefault();
         event.stopPropagation();
         return;
@@ -344,7 +362,7 @@ export function DayCalendarGrid() {
 
       createDraft(event, calendar?.id ?? null);
     },
-    [getCalendarAtX],
+    [getCalendarAtX, writableCalendarIds],
   );
   const handleAllDayMouseDown = useCallback(
     (event: ReactMouseEvent<HTMLElement>) => {
