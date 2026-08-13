@@ -1,6 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { Status } from "@core/errors/status.codes";
 import { type UserProfile } from "@core/types/user.types";
 import { type UseLoadProfileResult } from "@web/auth/compass/user/hooks/useLoadProfile";
+import * as errorToast from "@web/common/utils/toast/error-toast.util";
 import {
   afterAll,
   afterEach,
@@ -14,6 +16,7 @@ import {
 
 const getLastKnownEmail = mock(() => "person@example.com");
 const markUserAsAuthenticated = mock();
+const hasUserEverAuthenticated = mock(() => true);
 const getProfile = mock();
 
 const mockProfile: UserProfile = {
@@ -30,6 +33,7 @@ const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
   getLastKnownEmail,
+  hasUserEverAuthenticated,
   markUserAsAuthenticated,
 }));
 
@@ -78,6 +82,7 @@ describe("useLoadProfile", () => {
   beforeEach(() => {
     getLastKnownEmail.mockClear().mockReturnValue("person@example.com");
     markUserAsAuthenticated.mockClear();
+    hasUserEverAuthenticated.mockClear().mockReturnValue(true);
     getProfile.mockClear();
     consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
   });
@@ -142,5 +147,45 @@ describe("useLoadProfile", () => {
     expect(result.current.email).toBeNull();
     expect(result.current.profile).toBeNull();
     expect(markUserAsAuthenticated).not.toHaveBeenCalled();
+  });
+
+  it("does not show a signed-out toast when a first-time visitor's profile request is unauthorized", async () => {
+    hasUserEverAuthenticated.mockReturnValue(false);
+    const error = Object.assign(new Error("Request failed with status 401"), {
+      response: { status: Status.UNAUTHORIZED },
+    });
+    getProfile.mockRejectedValue(error);
+    const showSessionExpiredToast = spyOn(
+      errorToast,
+      "showSessionExpiredToast",
+    ).mockReturnValue("toast-id");
+    const { useLoadProfile } = await importHook();
+
+    renderHook(() => useLoadProfile(true));
+
+    await waitFor(() => {
+      expect(getProfile).toHaveBeenCalledTimes(1);
+    });
+    expect(showSessionExpiredToast).not.toHaveBeenCalled();
+    showSessionExpiredToast.mockRestore();
+  });
+
+  it("shows a signed-out toast when a returning visitor's profile request is unauthorized", async () => {
+    const error = Object.assign(new Error("Request failed with status 401"), {
+      response: { status: Status.UNAUTHORIZED },
+    });
+    getProfile.mockRejectedValue(error);
+    const showSessionExpiredToast = spyOn(
+      errorToast,
+      "showSessionExpiredToast",
+    ).mockReturnValue("toast-id");
+    const { useLoadProfile } = await importHook();
+
+    renderHook(() => useLoadProfile(true));
+
+    await waitFor(() => {
+      expect(showSessionExpiredToast).toHaveBeenCalledTimes(1);
+    });
+    showSessionExpiredToast.mockRestore();
   });
 });

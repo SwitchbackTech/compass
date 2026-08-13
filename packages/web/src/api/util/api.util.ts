@@ -5,6 +5,7 @@ import {
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
 import { session } from "@web/auth/compass/session/Session";
+import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { DEFAULT_CALENDAR_ROUTE } from "@web/common/constants/routes";
 import {
@@ -205,17 +206,26 @@ export const handleErrorResponse = async (
     throw error;
   }
 
-  const isAuthEndpoint = requestUrl?.includes("/signinup");
+  const isAuthEndpoint =
+    requestUrl?.includes("/signinup") ||
+    requestUrl?.includes("/session/refresh") ||
+    requestUrl?.includes("/signout");
 
   // A 404 on a data endpoint means a resource is missing (e.g. syncing a
   // just-created event onto a calendar the server hasn't provisioned yet),
   // not that the session is invalid - so it must never force a sign-out.
-  // Only genuine session-level failures (GONE/UNAUTHORIZED) do.
+  // Only genuine session-level failures (GONE/UNAUTHORIZED) do, and only
+  // for browsers that have actually signed in before. A first-time visitor
+  // can still receive 401s (SuperTokens refresh on the first API call,
+  // a protected route hit without a session) — that is "not signed in",
+  // not "you have been signed out".
   if (
     !isAuthEndpoint &&
     (status === Status.GONE || status === Status.UNAUTHORIZED)
   ) {
-    await signOut(status);
+    if (hasUserEverAuthenticated()) {
+      await signOut(status);
+    }
   } else if (!isAuthEndpoint) {
     console.error(error);
   }

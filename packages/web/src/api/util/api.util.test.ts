@@ -4,6 +4,8 @@ import {
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
 import { session } from "@web/auth/compass/session/Session";
+import { markUserAsAuthenticated } from "@web/auth/compass/state/auth.state.util";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
   type ApiError,
   type ApiRequestConfig,
@@ -328,10 +330,28 @@ describe("handleErrorResponse", () => {
     signOutSpy.mockRestore();
   });
 
+  it("does not treat a 401 as sign-out for a first-time visitor", async () => {
+    window.history.pushState({}, "", "/week");
+    window.localStorage.removeItem(STORAGE_KEYS.AUTH);
+    const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
+    const error = createApiError(
+      { status: Status.UNAUTHORIZED },
+      { url: "/event" },
+    );
+
+    await expect(
+      handleErrorResponse(error, { onGoogleRevoked: undefined }),
+    ).rejects.toBe(error);
+
+    expect(signOutSpy).not.toHaveBeenCalled();
+    signOutSpy.mockRestore();
+  });
+
   it("still signs the user out on an unauthorized data-endpoint response", async () => {
     // Already on the calendar route, so signOut skips the (jsdom-unsupported)
     // navigation and we can assert purely on the sign-out call.
     window.history.pushState({}, "", "/week");
+    markUserAsAuthenticated("person@example.com");
     const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
     const error = createApiError(
       { status: Status.UNAUTHORIZED },
@@ -351,6 +371,7 @@ describe("handleErrorResponse", () => {
     // every route that actually needed it the "you've been signed out" message
     // was destroyed before it could be read. Routing in-app keeps it alive.
     window.history.pushState({}, "", "/day/2026-07-31");
+    markUserAsAuthenticated("person@example.com");
     const navigate = mock((_options: { to: string }) => Promise.resolve());
     mock.module("@web/routers", () => ({ router: { navigate } }));
     const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
