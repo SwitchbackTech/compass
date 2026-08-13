@@ -78,18 +78,25 @@ class FakeReader implements ProviderEventReader {
   readonly provider = "google" as const;
   #pages: ProviderEventPage[];
   #error: ProviderEventReadError | null;
+  #errorOnce: boolean;
 
   constructor(
     pages: ProviderEventPage[],
     error: ProviderEventReadError | null = null,
+    errorOnce = false,
   ) {
     this.#pages = [...pages];
     this.#error = error;
+    this.#errorOnce = errorOnce;
   }
   async listEventPage(
     _input: ProviderEventReadInput,
   ): Promise<ProviderEventPage> {
-    if (this.#error) throw this.#error;
+    if (this.#error) {
+      const error = this.#error;
+      if (this.#errorOnce) this.#error = null;
+      throw error;
+    }
     const next = this.#pages.shift();
     if (!next) throw new Error("FakeReader: no page scripted");
     return next;
@@ -507,29 +514,69 @@ describe("dispatchSyncJob", () => {
     expect(discarded).toEqual([]);
   });
 
-  it("invalidates the cached access token and rethrows on a rejected 401 read", async () => {
+  it("remints the access token in-process and completes a pull after a one-off 401", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const reader = new FakeReader(
+      [page([], "cursor-1")],
+      new ProviderEventReadError("authExpired", "Google rejected the token"),
+      true,
+    );
+    const invalidated: string[] = [];
+    let minted = 0;
+    const authExpiredCustody: SyncJobDispatchDeps["custody"] = {
+      getValidAccessToken: async () => {
+        minted += 1;
+        return minted === 1 ? "stale-token" : "fresh-token";
+      },
+      discardRevoked: async () => {},
+      invalidateAccessToken: async (connectionId) => {
+        invalidated.push(connectionId);
+      },
+    };
+
+    const outcome = await dispatchSyncJob(
+      deps(reader, authExpiredCustody),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+    expect(invalidated).toEqual([calendar.connectionId]);
+    expect(minted).toBe(2);
+  });
+
+  it("drops a pull when a freshly minted token is still rejected with 401", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");
     const reader = new FakeReader(
       [],
       new ProviderEventReadError("authExpired", "Google rejected the token"),
     );
+    const discarded: string[] = [];
     const invalidated: string[] = [];
     const authExpiredCustody: SyncJobDispatchDeps["custody"] = {
       ...tokenSource,
+      discardRevoked: async (connectionId) => {
+        discarded.push(connectionId);
+      },
       invalidateAccessToken: async (connectionId) => {
         invalidated.push(connectionId);
       },
     };
 
-    await expect(
-      dispatchSyncJob(
-        deps(reader, authExpiredCustody),
-        jobFor(resource, "incrementalPull"),
-        now,
-      ),
-    ).rejects.toThrow(ProviderEventReadError);
+    const outcome = await dispatchSyncJob(
+      deps(reader, authExpiredCustody),
+      jobFor(resource, "incrementalPull"),
+      now,
+    );
+
+    expect(outcome.result).toBe("drop");
+    if (outcome.result === "drop") {
+      expect(outcome.reason).toContain("authorizationRevoked");
+    }
     expect(invalidated).toEqual([calendar.connectionId]);
+    expect(discarded).toEqual([calendar.connectionId]);
   });
 
   it("drops a job whose resource no longer exists", async () => {

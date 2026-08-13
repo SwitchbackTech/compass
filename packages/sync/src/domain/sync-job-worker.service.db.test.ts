@@ -665,6 +665,44 @@ describe("SyncJobWorker", () => {
     expect(requeued.state).toBe("pending");
   });
 
+  it("drops a persistent events.list 401 instead of burning the retry ladder", async () => {
+    const calendar = await seedCalendar();
+    const resource = await seedResource(calendar, "cursor-0");
+    const job = await enqueue(resource, "incrementalPull");
+    const drops: string[] = [];
+    const errors: Error[] = [];
+    const w = new SyncJobWorker(
+      deps(
+        new FakeReader(
+          [],
+          new ProviderEventReadError(
+            "authExpired",
+            "Google rejected the token",
+          ),
+        ),
+      ),
+      OWNER,
+      {
+        now,
+        onDrop: (_job, reason) => drops.push(reason),
+        onError: (error) => {
+          if (error instanceof Error) errors.push(error);
+        },
+      },
+    );
+
+    await w.runOnce();
+
+    expect(
+      await jobs.findById(resource.tenantId, resource.principalId, job._id),
+    ).toBeNull();
+    expect(drops).toHaveLength(1);
+    expect(drops[0]).toContain("authorizationRevoked");
+    // Must not log "Sync job engine failed" — that fingerprint reopened the
+    // PostHog incident when 401s were retried as transient.
+    expect(errors).toEqual([]);
+  });
+
   it("settles a durably-rejected read instead of burning the retry ladder", async () => {
     const calendar = await seedCalendar();
     const resource = await seedResource(calendar, "cursor-0");

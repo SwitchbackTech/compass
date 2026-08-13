@@ -161,10 +161,11 @@ const TRANSIENT_REASONS = [
 // (410 Gone) forces a full re-import. A 401 means the access token was rejected
 // - it may have expired mid-job on a long-running import or repair, or the
 // cached token may simply be stale - so the caller must invalidate the cached
-// token before retrying; otherwise every retry replays the same rejected
-// token, burns the retry ladder, and dead-letters the job. Also retryable: a
-// rate limit or server/network error, or a quota-shaped 403. Anything else is
-// an unrecoverable read failure.
+// token and retry the same page with a fresh one in-process; otherwise every
+// job retry replays the same rejected token, burns the retry ladder, and
+// dead-letters the job (and logs a PostHog "Sync job engine failed" on each
+// attempt). Also retryable: a rate limit or server/network error, or a
+// quota-shaped 403. Anything else is an unrecoverable read failure.
 function classifyReadError(
   error: unknown,
 ): "cursorExpired" | "authExpired" | "transient" | "readFailed" {
