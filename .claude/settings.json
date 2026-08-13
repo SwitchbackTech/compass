@@ -30,7 +30,6 @@
       "Bash(gh run:*)",
       "Bash(gh api:*)",
       "Edit(compass.yaml)",
-      "Edit(**/compass.yaml)",
       "mcp__Claude_Preview__preview_start",
       "mcp__Claude_Preview__preview_stop",
       "mcp__Claude_Preview__preview_list",
