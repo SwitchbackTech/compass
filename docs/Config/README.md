@@ -98,3 +98,6 @@ database and must not share the backend's database user/data.
 |---|---|---|
 | `posthog.key` | No | PostHog project key injected into the web bundle. |
 | `posthog.host` | No | PostHog host injected into the web bundle. |
+| `stripe.secretKey` | No | Stripe secret (restricted `rk_test_...` on staging). All three Stripe keys are required together; omit the whole `stripe:` block on self-host. |
+| `stripe.webhookSecret` | No | Stripe webhook signing secret. |
+| `stripe.priceId` | No | Stripe Price id for the $8/month plan. |

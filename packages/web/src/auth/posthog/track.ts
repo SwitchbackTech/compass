@@ -23,6 +23,8 @@ export type ProductEvent =
   | "trial_expired"
   | "trial_gate_shown"
   | "trial_gate_cta_clicked"
+  | "billing_gate_shown"
+  | "billing_gate_cta_clicked"
   | "shortcut_tip_shown"
   | "shortcut_tip_acted_on";
 

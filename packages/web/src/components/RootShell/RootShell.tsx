@@ -1,6 +1,9 @@
 import { Outlet } from "@tanstack/react-router";
+import { BillingGateModal } from "@web/billing/BillingGateModal";
+import { BillingPastDueBanner } from "@web/billing/BillingPastDueBanner";
+import { useCheckoutReturn } from "@web/billing/billing.query";
 import { TrialGateModal } from "@web/billing/TrialGateModal";
-import { useTrialStatus } from "@web/billing/useTrialStatus";
+import { useAppAccess } from "@web/billing/useAppAccess";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { OnboardingChecklist } from "@web/components/OnboardingChecklist/OnboardingChecklist";
@@ -25,16 +28,21 @@ import {
  */
 export function RootShell() {
   const isWelcomeGuideOpen = useWelcomeGuideStore(selectWelcomeGuideOpen);
-  const { isExpired: isTrialExpired } = useTrialStatus();
+  const access = useAppAccess();
+  useCheckoutReturn();
   useNavigationShortcuts();
   useCalendarShellShortcuts();
   useKeyboardOnlyMode();
+
+  const showTrialGate = access.kind === "anonymous-trial" && access.isExpired;
+  const showBillingGate = access.kind === "server" && access.isReadOnly;
+  const showPastDue = access.kind === "server" && access.status === "past_due";
 
   // An expired trial owns the whole screen. The onboarding cards sit at
   // Z_INDEX_TOOLTIP (above Z_INDEX_MODAL), so leaving them mounted would let
   // a gated user click straight through the gate and keep touring. AuthModal
   // stays because the gate's only ways forward are sign up and log in.
-  if (isTrialExpired) {
+  if (showTrialGate) {
     return (
       <AuthModalProvider>
         <Outlet />
@@ -44,8 +52,19 @@ export function RootShell() {
     );
   }
 
+  if (showBillingGate) {
+    return (
+      <AuthModalProvider>
+        <Outlet />
+        <BillingGateModal status={access.status} />
+        <AuthModal />
+      </AuthModalProvider>
+    );
+  }
+
   return (
     <AuthModalProvider>
+      {showPastDue && <BillingPastDueBanner />}
       <Outlet />
       <AuthModal />
       <WelcomeModal />

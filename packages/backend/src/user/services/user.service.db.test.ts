@@ -182,6 +182,49 @@ describe("UserService", () => {
       expect(storedUser?.google).toBeUndefined();
     });
 
+    it("starts a fresh signup in awaiting_checkout", async () => {
+      const userId = mongoService.objectId().toString();
+
+      await userService.upsertUserFromAuth({
+        userId,
+        email: "new-billing@example.com",
+        name: "New Billing",
+      });
+
+      const storedUser = await mongoService.user.findOne({
+        _id: mongoService.objectId(userId),
+      });
+      expect(storedUser?.billing?.subscriptionStatus).toBe("awaiting_checkout");
+    });
+
+    it("does not overwrite billing on a returning user", async () => {
+      const userId = mongoService.objectId();
+      await mongoService.user.insertOne({
+        _id: userId,
+        email: "returning@example.com",
+        name: "Returning",
+        firstName: "Returning",
+        lastName: "User",
+        locale: "en",
+        billing: {
+          subscriptionStatus: "active",
+          stripeCustomerId: "cus_keep",
+        },
+      });
+
+      await userService.upsertUserFromAuth({
+        userId: userId.toString(),
+        email: "returning@example.com",
+        name: "Returning",
+      });
+
+      const storedUser = await mongoService.user.findOne({ _id: userId });
+      expect(storedUser?.billing).toEqual({
+        subscriptionStatus: "active",
+        stripeCustomerId: "cus_keep",
+      });
+    });
+
     // Only Google discovery creates calendars, so without this a
     // password-only account owns none and every write fails
     // CALENDAR_NOT_FOUND.

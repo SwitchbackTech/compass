@@ -97,6 +97,14 @@ the full picture.
 - User metadata service: `packages/backend/src/user/services/user-metadata.service.ts`
 - Mobile waitlist gate (web-only external link): `packages/web/src/components/MobileGate/MobileGate.tsx`
 
+## Billing And Trial
+
+- Shared plan/price copy: `packages/core/src/constants/billing.constants.ts`
+- Anonymous trial clock: `packages/web/src/billing/trial.storage.ts`, `packages/web/src/billing/useTrialStatus.ts`
+- Server access + paid gate: `packages/web/src/billing/useAppAccess.ts`, `packages/web/src/billing/BillingGateModal.tsx`
+- Backend billing: `packages/backend/src/billing`
+- Overview: [Billing And Trial](../features/billing.md)
+
 ## Environment And Infra
 
 - Backend config parsing: `packages/backend/src/common/constants/config.constants.ts`

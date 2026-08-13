@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BILLING_PLAN } from "@core/constants/billing.constants";
 
 export const AppConfigSchema = z.object({
   google: z.object({
@@ -16,6 +17,22 @@ export const AppConfigSchema = z.object({
     .default({
       cloudMutationMode: "enabled",
       execution: "passive",
+    }),
+  /**
+   * Hosted billing. `isConfigured: false` is the self-host escape hatch:
+   * the web must not render a paid gate, and the backend must not enforce
+   * read-only. Defaults keep old `/api/config` payloads parseable.
+   */
+  billing: z
+    .object({
+      isConfigured: z.boolean(),
+      priceDisplay: z.string(),
+      trialLengthDays: z.number(),
+    })
+    .default({
+      isConfigured: false,
+      priceDisplay: BILLING_PLAN.PRICE_DISPLAY,
+      trialLengthDays: BILLING_PLAN.TRIAL_LENGTH_DAYS,
     }),
 });
 

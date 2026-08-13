@@ -41,6 +41,12 @@ supertokens:
 #   key: REPLACE_WITH_POSTHOG_KEY
 #   host: REPLACE_WITH_POSTHOG_HOST
 
+# stripe:
+#   secretKey: REPLACE_WITH_STRIPE_SECRET_KEY # restricted rk_test_... for staging
+#   webhookSecret: REPLACE_WITH_STRIPE_WEBHOOK_SECRET
+#   priceId: REPLACE_WITH_STRIPE_PRICE_ID
+# Omit the whole block for self-host. All three values are required together.
+
 # Compass Sync service — required. The backend exits at startup without
 # serviceUrl/internalAuthToken, and self-host runs Sync by default. mongoUri
 # MUST point at an isolated database/user that cannot read the backend's

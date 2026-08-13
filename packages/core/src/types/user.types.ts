@@ -26,17 +26,32 @@ export interface Schema_User {
    * Trial/subscription state. Optional and absent for every user who
    * existed before this field shipped -- treat absence as "none" (never
    * started a trial), matching the established incremental-field pattern
-   * for this schema. No backfill: a required field here would need every
-   * existing document migrated at deploy time.
-   *
-   * NOTE: this only records that a trial started, when it ends, and (once
-   * wired) live Stripe subscription state. It does not yet reflect actual
-   * payment collection -- see keyboard-education/03-monetization-trial-checkout.md.
+   * for this schema.
    */
   billing?: Schema_UserBilling;
 }
 
-export type BillingSubscriptionStatus = "none" | "trialing" | "expired";
+/**
+ * Total subscription union. Adding a member without updating
+ * `WRITE_ACCESS_BY_STATUS` is a compile error.
+ *
+ * - `none` — legacy row, pre-backfill. writable.
+ * - `awaiting_checkout` — account exists, no Stripe subscription. read-only.
+ * - `trialing` — in trial. writable. Legacy rows without a Stripe
+ *   subscription id self-expire locally; Stripe-backed trials do not.
+ * - `active` — paid. writable.
+ * - `past_due` — dunning window. writable + banner.
+ * - `canceled` — subscription canceled. read-only.
+ * - `expired` — trial or unpaid ended. read-only.
+ */
+export type BillingSubscriptionStatus =
+  | "none"
+  | "awaiting_checkout"
+  | "trialing"
+  | "active"
+  | "past_due"
+  | "canceled"
+  | "expired";
 
 export interface Schema_UserBilling {
   subscriptionStatus: BillingSubscriptionStatus;
@@ -44,6 +59,11 @@ export interface Schema_UserBilling {
   trialEndsAt?: Date;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  stripePriceId?: string;
+  currentPeriodEnd?: Date;
+  cancelAtPeriodEnd?: boolean;
+  lastStripeEventAt?: Date;
+  backfilledAt?: Date;
 }
 
 /**

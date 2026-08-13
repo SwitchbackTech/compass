@@ -141,7 +141,10 @@ class UserService {
       { _id: userId },
       {
         $set: updatableUser,
-        $setOnInsert: { signedUpAt: nextSignedUpAt },
+        $setOnInsert: {
+          signedUpAt: nextSignedUpAt,
+          "billing.subscriptionStatus": "awaiting_checkout",
+        },
       },
       { upsert: true, session },
     );

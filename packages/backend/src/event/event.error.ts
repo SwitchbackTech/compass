@@ -26,6 +26,7 @@ const STATUS_BY_CODE: Record<EventMutationErrorCode, Status> = {
   MAINTENANCE: Status.SERVICE_UNAVAILABLE,
   MOVE_UNSUPPORTED: Status.BAD_REQUEST,
   INVALID_INPUT: Status.BAD_REQUEST,
+  BILLING_REQUIRED: Status.FORBIDDEN,
 };
 
 const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
@@ -41,6 +42,7 @@ const RETRYABLE_BY_CODE: Record<EventMutationErrorCode, boolean> = {
   MAINTENANCE: true,
   MOVE_UNSUPPORTED: false,
   INVALID_INPUT: false,
+  BILLING_REQUIRED: false,
 };
 
 export class EventMutationException extends BaseError {

@@ -1,5 +1,6 @@
 import { CliValidator } from "@scripts/cli.validator";
 import { runAuditConnectionIdentity } from "@scripts/commands/audit-connection-identity";
+import { runBackfillBilling } from "@scripts/commands/backfill-billing";
 import { runManageFailedJobs } from "@scripts/commands/manage-failed-jobs";
 import { runPurgeUser } from "@scripts/commands/purge-user";
 import { Command } from "commander";
@@ -24,6 +25,9 @@ export default class CompassCLI {
       case cmd === "purge-user":
         await runPurgeUser();
         break;
+      case cmd === "backfill-billing":
+        await runBackfillBilling();
+        break;
       case cmd === "audit-connection-identity":
         await runAuditConnectionIdentity();
         break;
@@ -43,6 +47,14 @@ export default class CompassCLI {
       .allowUnknownOption(true)
       .description(
         "delete every Compass row for one email, across the API db, Sync db, and SuperTokens (--apply to write)",
+      );
+
+    program
+      .command("backfill-billing")
+      .helpOption(false)
+      .allowUnknownOption(true)
+      .description(
+        "place existing accounts without billing status onto a 7-day trial (--apply to write)",
       );
 
     program

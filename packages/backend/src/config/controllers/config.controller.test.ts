@@ -37,9 +37,15 @@ describe("ConfigController.get sync cutover posture", () => {
     CONFIG.SYNC_CLOUD_MUTATION_MODE = "maintenance";
     CONFIG.SYNC_EXECUTION = "passive";
 
-    expect(invokeGet().sync).toEqual({
+    const config = invokeGet();
+    expect(config.sync).toEqual({
       cloudMutationMode: "maintenance",
       execution: "passive",
+    });
+    expect(config.billing).toEqual({
+      isConfigured: false,
+      priceDisplay: "$8/month",
+      trialLengthDays: 7,
     });
   });
 });
