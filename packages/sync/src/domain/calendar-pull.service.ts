@@ -89,7 +89,7 @@ export async function pullCalendarChanges(
     return { status: "notImported", resource };
   }
 
-  const accessToken = await deps.custody.getValidAccessToken(
+  let accessToken = await deps.custody.getValidAccessToken(
     calendar.connectionId,
   );
 

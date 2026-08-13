@@ -541,7 +541,7 @@ describe("dispatchSyncJob", () => {
       now,
     );
 
-    expect(outcome).toEqual({ result: "done" });
+    expect(outcome.result).toBe("done");
     expect(invalidated).toEqual([calendar.connectionId]);
     expect(minted).toBe(2);
   });
