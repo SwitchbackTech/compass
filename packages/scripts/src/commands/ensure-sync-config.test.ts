@@ -35,12 +35,14 @@ describe("readSyncPort", () => {
     expect(readSyncPort("sync:\n  port: 3011\n")).toBe(3011);
   });
 
-  it("falls back to the base when unset", () => {
-    expect(readSyncPort("web:\n  port: 9080\n")).toBe(3010);
+  it("returns null when no sync.port is configured, not a default guess", () => {
+    // A worktree with no sync: block yet must not read as claiming
+    // SYNC_PORT_BASE to every other worktree's conflict check.
+    expect(readSyncPort("web:\n  port: 9080\n")).toBeNull();
   });
 
-  it("falls back to the base for malformed yaml", () => {
-    expect(readSyncPort("{{ not yaml")).toBe(3010);
+  it("returns null for malformed yaml", () => {
+    expect(readSyncPort("{{ not yaml")).toBeNull();
   });
 });
 

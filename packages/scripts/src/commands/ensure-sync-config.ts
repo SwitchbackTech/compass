@@ -31,12 +31,17 @@ import { readFileSync, writeFileSync } from "node:fs";
 export const SYNC_PORT_BASE = 3010;
 const SYNC_DATABASE_NAME = "compass_sync";
 
-export function readSyncPort(yamlText: string): number {
+// null means no sync.port is actually configured — distinct from "configured
+// to SYNC_PORT_BASE", so an unconfigured sibling (the common case; sync: is
+// nullish until mongo.uri is present) doesn't falsely read as claiming the
+// default port to every other worktree's conflict check.
+export function readSyncPort(yamlText: string): number | null {
   try {
     const config = parse(yamlText) as { sync?: { port?: string | number } };
-    return Number(config?.sync?.port) || SYNC_PORT_BASE;
+    const port = Number(config?.sync?.port);
+    return port > 0 ? port : null;
   } catch {
-    return SYNC_PORT_BASE;
+    return null;
   }
 }
 
@@ -93,9 +98,9 @@ export function ensureSyncConfig(
 }
 
 export function readSiblingSyncPorts(root: string): number[] {
-  return siblingConfigPaths(root).map((file) =>
-    readSyncPort(readFileSync(file, "utf8")),
-  );
+  return siblingConfigPaths(root)
+    .map((file) => readSyncPort(readFileSync(file, "utf8")))
+    .filter((port): port is number => port !== null);
 }
 
 // Unlike dev-ports.ts's findNextPorts, this searches from the base itself
