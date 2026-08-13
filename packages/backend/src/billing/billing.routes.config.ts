@@ -36,11 +36,6 @@ export class BillingRoutes extends CommonRoutesConfig {
       .get(billingController.getStatus);
 
     this.app
-      .route(`/api/billing/trial/start`)
-      .all(verifySession())
-      .post(sessionWriteLimiter, billingController.startTrial);
-
-    this.app
       .route(`/api/billing/checkout/session`)
       .all(verifySession())
       .post(sessionWriteLimiter, billingController.createCheckoutSession);

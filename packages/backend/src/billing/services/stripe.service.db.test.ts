@@ -114,6 +114,74 @@ describe("StripeService", () => {
     expect(sessionArgs.customer).toBe("cus_existing");
   });
 
+  it("omits trial_period_days when the user already had a Stripe subscription", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = mongoService.objectId();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "expired@example.com",
+      name: "Expired User",
+      firstName: "Expired",
+      lastName: "User",
+      locale: "en",
+      billing: {
+        subscriptionStatus: "expired",
+        stripeCustomerId: "cus_expired",
+        stripeSubscriptionId: "sub_old",
+      },
+    });
+
+    const sessionsCreate = mock(() =>
+      Promise.resolve({ url: "https://checkout.stripe.com/c/session_3" }),
+    );
+    setStripeClientForTests({
+      customers: { create: mock() },
+      checkout: { sessions: { create: sessionsCreate } },
+    } as unknown as Stripe);
+
+    await stripeService.createCheckoutSession(userId.toString());
+
+    const sessionArgs = sessionsCreate.mock.calls[0]?.[0] as {
+      subscription_data: { trial_period_days?: number };
+    };
+    expect(sessionArgs.subscription_data.trial_period_days).toBeUndefined();
+  });
+
+  it("sends a live subscriber to the Billing Portal instead of a second Checkout", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = mongoService.objectId();
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "live@example.com",
+      name: "Live User",
+      firstName: "Live",
+      lastName: "User",
+      locale: "en",
+      billing: {
+        subscriptionStatus: "active",
+        stripeCustomerId: "cus_live",
+        stripeSubscriptionId: "sub_live",
+      },
+    });
+
+    const sessionsCreate = mock(() =>
+      Promise.resolve({ url: "https://checkout.stripe.com/c/session_4" }),
+    );
+    const portalCreate = mock(() =>
+      Promise.resolve({ url: "https://billing.stripe.com/p/session_live" }),
+    );
+    setStripeClientForTests({
+      checkout: { sessions: { create: sessionsCreate } },
+      billingPortal: { sessions: { create: portalCreate } },
+    } as unknown as Stripe);
+
+    const result = await stripeService.createCheckoutSession(userId.toString());
+
+    expect(result.url).toBe("https://billing.stripe.com/p/session_live");
+    expect(sessionsCreate).not.toHaveBeenCalled();
+    expect(portalCreate).toHaveBeenCalled();
+  });
+
   it("creates a billing portal session for an existing customer", async () => {
     using _env = mockEnv(stripeConfigured);
     const userId = mongoService.objectId();

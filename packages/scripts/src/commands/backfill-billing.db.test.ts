@@ -1,4 +1,5 @@
 import { backfillBilling } from "@scripts/commands/backfill-billing/backfill";
+import { BILLING_PLAN } from "@core/constants/billing.constants";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -90,5 +91,25 @@ describe("backfill-billing (db)", () => {
       sleep: async () => undefined,
     });
     expect(second.modified).toBe(0);
+  });
+
+  it("includes accounts signed up after an old cutoff when using the default far-future cutoff", async () => {
+    await mongoService.user.insertOne({
+      email: "today@example.com",
+      name: "Today",
+      firstName: "Today",
+      lastName: "User",
+      locale: "en",
+      signedUpAt: NOW,
+    });
+
+    const report = await backfillBilling(mongoService.user, {
+      dryRun: true,
+      cutoff: new Date(BILLING_PLAN.BACKFILL_CUTOFF),
+      batchSize: 500,
+      now: NOW,
+    });
+
+    expect(report.matched).toBe(1);
   });
 });

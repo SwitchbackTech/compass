@@ -28,8 +28,19 @@ class StripeService {
       throw new Error("User not found");
     }
 
+    const liveStatus = user.billing?.subscriptionStatus;
+    const hasLiveSubscription =
+      Boolean(user.billing?.stripeSubscriptionId) &&
+      (liveStatus === "trialing" ||
+        liveStatus === "active" ||
+        liveStatus === "past_due");
+    if (hasLiveSubscription) {
+      return this.createPortalSession(userId);
+    }
+
     const stripe = getStripeClient();
     let customerId = user.billing?.stripeCustomerId;
+    const grantTrial = !user.billing?.stripeSubscriptionId;
 
     if (!customerId) {
       const customer = await stripe.customers.create(
@@ -52,7 +63,9 @@ class StripeService {
       client_reference_id: userId,
       line_items: [{ price: getStripePriceId(), quantity: 1 }],
       subscription_data: {
-        trial_period_days: BILLING_PLAN.TRIAL_LENGTH_DAYS,
+        ...(grantTrial
+          ? { trial_period_days: BILLING_PLAN.TRIAL_LENGTH_DAYS }
+          : {}),
         metadata: { compassUserId: userId },
       },
       success_url: checkoutReturnUrl("success"),

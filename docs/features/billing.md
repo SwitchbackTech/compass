@@ -15,12 +15,17 @@ writes stay open.
 - **Signed up, no card yet:** `awaiting_checkout`, read-only, `BillingGateModal`
   with Subscribe (Stripe Checkout).
 - **Trialing / active / past_due:** writable. `past_due` also shows a banner.
-- **Expired / canceled:** read-only until they subscribe again.
+- **Expired / canceled:** read-only until they subscribe again. A later
+  Checkout does not grant another trial.
+
+There is no `POST /api/billing/trial/start`. A trial only begins through
+Stripe Checkout (`trial_period_days` on the first subscription).
 
 Existing accounts are not grandfathered. `bun run cli backfill-billing` places
-rows without `billing.subscriptionStatus` onto a 7-day trial. Those rows have
-no Stripe subscription id, so they self-expire locally when `trialEndsAt`
-passes.
+rows without `billing.subscriptionStatus` onto a 7-day trial. The default
+`BACKFILL_CUTOFF` is far in the future so every such row is included; set it
+to a past instant to grandfather newer signups. Those rows have no Stripe
+subscription id, so they self-expire locally when `trialEndsAt` passes.
 
 ## Staging
 

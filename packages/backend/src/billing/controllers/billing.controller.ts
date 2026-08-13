@@ -36,19 +36,6 @@ class BillingController {
     }
   };
 
-  startTrial = async (
-    req: Request<never, BillingStatusResponse, never, never>,
-    res: Response<BillingStatusResponse | { error: string }>,
-  ) => {
-    try {
-      const userId = zObjectId.parse(req.session?.getUserId());
-      const status = await billingService.startTrial(userId.toString());
-      res.status(Status.OK).json(status);
-    } catch (e) {
-      sendBillingError(res, e);
-    }
-  };
-
   createCheckoutSession = async (
     req: Request<never, BillingCheckoutResponse, never, never>,
     res: Response<BillingCheckoutResponse | { error: string }>,

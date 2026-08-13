@@ -229,4 +229,42 @@ describe("Stripe webhook", () => {
     const stored = await mongoService.user.findOne({ _id: userId });
     expect(stored?.billing?.subscriptionStatus).toBe("active");
   });
+
+  it("applies a same-second event so retrieve() can take a later subscription state", async () => {
+    using _env = mockEnv(stripeConfigured);
+    const userId = mongoService.objectId();
+    const created = new Date("2026-08-12T00:00:00.000Z");
+    await mongoService.user.insertOne({
+      _id: userId,
+      email: "same@example.com",
+      name: "Same",
+      firstName: "Same",
+      lastName: "User",
+      locale: "en",
+      billing: {
+        subscriptionStatus: "active",
+        stripeSubscriptionId: "sub_1",
+        stripeCustomerId: "cus_1",
+        lastStripeEventAt: created,
+      },
+    });
+
+    setStripeClientForTests({
+      subscriptions: {
+        retrieve: mock(() =>
+          Promise.resolve(subscription({ status: "canceled" })),
+        ),
+      },
+    } as unknown as Stripe);
+
+    await processStripeEvent({
+      id: "evt_same_second_1",
+      type: "customer.subscription.deleted",
+      created: Math.floor(created.getTime() / 1000),
+      data: { object: { id: "sub_1" } },
+    } as unknown as Stripe.Event);
+
+    const stored = await mongoService.user.findOne({ _id: userId });
+    expect(stored?.billing?.subscriptionStatus).toBe("canceled");
+  });
 });

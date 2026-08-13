@@ -77,7 +77,7 @@ async function applySubscription(
     {
       _id: mongoService.objectId(userId),
       $or: [
-        { "billing.lastStripeEventAt": { $lt: eventCreatedAt } },
+        { "billing.lastStripeEventAt": { $lte: eventCreatedAt } },
         { "billing.lastStripeEventAt": { $exists: false } },
       ],
     },

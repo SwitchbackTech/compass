@@ -49,12 +49,8 @@ export const deriveBillingStatus = (
 
 class BillingService {
   /**
-   * Starts a trial once per user; a second call is a no-op that just
-   * returns the existing state, so retried/duplicate CTA clicks can never
-   * push the trial window out further. Uses a conditional update so two
-   * concurrent POSTs cannot both write a new trialStartedAt.
-   *
    * Field-level `$set` so existing Stripe ids are never clobbered.
+   * Not exposed over HTTP — a trial starts only via Stripe Checkout.
    */
   startTrial = async (userId: string): Promise<BillingStatusResponse> => {
     const _id = mongoService.objectId(userId);
