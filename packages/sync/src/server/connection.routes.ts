@@ -584,7 +584,11 @@ export function registerConnectionRoutes(
       try {
         const repos = syncRepositories(deps.mongo);
         const tally = await refreshPrincipalCalendars(
-          { resources: repos.syncResources, jobs: repos.jobs },
+          {
+            resources: repos.syncResources,
+            jobs: repos.jobs,
+            connections: repos.connections,
+          },
           auth.tenantId,
           auth.principalId,
           () => new Date((deps.now ?? Date.now)()),
@@ -819,8 +823,6 @@ async function linkConnection(
     capabilities: googleCapabilitiesFromScopes(authorization.grantedScopes),
     state: derived.state,
     stateReason: derived.reason,
-    lastSyncedAt: null,
-    lastHealthyAt: null,
   });
 
   try {

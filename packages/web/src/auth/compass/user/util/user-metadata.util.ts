@@ -23,6 +23,7 @@ import {
 
 let refreshUserMetadataRequest: Promise<void> | null = null;
 let hasShownDelayedToastThisLoad = false;
+let metadataFetchEpoch = 0;
 
 /**
  * Keep session reconnect overrides and sticky toasts congruent with the latest
@@ -85,16 +86,19 @@ export const refreshUserMetadata = async (options?: {
       return refreshUserMetadataRequest;
     }
 
-    // The in-flight request predates whatever invalidated the metadata (e.g.
-    // a Google revocation prune), so its response is stale. Let it settle,
-    // then fetch fresh.
+    // Concurrent force calls chain onto one trailing fetch: each waits for
+    // the in-flight request, then `refreshUserMetadata()` without force joins
+    // whichever fetch the first waiter already started. A burst of SSE
+    // signals cannot stampede.
     return refreshUserMetadataRequest.then(() => refreshUserMetadata());
   }
 
   userMetadataActions.setLoading();
+  const epoch = ++metadataFetchEpoch;
 
   refreshUserMetadataRequest = UserApi.getMetadata()
     .then((metadata) => {
+      if (epoch !== metadataFetchEpoch) return;
       userMetadataActions.set(metadata);
       applyUserMetadataSideEffects(metadata);
     })

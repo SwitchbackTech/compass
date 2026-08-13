@@ -20,7 +20,9 @@ export type GcalSSEDependencies = {
   handleGoogleRevoked: () => void;
   invalidateEventQueries: () => void;
   onServerMessage: OnServerMessage;
-  refreshUserMetadata: () => Promise<unknown> | unknown;
+  refreshUserMetadata: (options?: {
+    force?: boolean;
+  }) => Promise<unknown> | unknown;
   setUserMetadata: (metadata: UserMetadata) => void;
   showErrorToast: (
     message: string | undefined,
@@ -43,7 +45,7 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
       }
 
       if (message.sync.status === "healthy") {
-        void dependencies.refreshUserMetadata();
+        void dependencies.refreshUserMetadata({ force: true });
         return;
       }
 
@@ -55,7 +57,7 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
         return;
       }
 
-      void dependencies.refreshUserMetadata();
+      void dependencies.refreshUserMetadata({ force: true });
 
       if (message.sync.code === "WATCH_REPAIR_FAILED") {
         dependencies.showErrorToast(
@@ -68,14 +70,14 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
     }, []);
 
     const onImportCompleted = useCallback((_message: ImportResultMessage) => {
-      void dependencies.refreshUserMetadata();
+      void dependencies.refreshUserMetadata({ force: true });
       dependencies.invalidateEventQueries();
     }, []);
 
     // Sync connection/calendar invalidations arrive as calendarsChanged. Refetch
     // metadata so IMPORTING → HEALTHY (or RECONNECT/ATTENTION) reaches the UI.
     const onCalendarsChanged = useCallback(() => {
-      void dependencies.refreshUserMetadata();
+      void dependencies.refreshUserMetadata({ force: true });
     }, []);
 
     const onUserMetadataChanged = useCallback(

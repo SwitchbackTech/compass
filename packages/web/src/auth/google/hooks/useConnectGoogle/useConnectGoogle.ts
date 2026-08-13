@@ -36,6 +36,12 @@ export interface UseConnectGoogleOptions {
    * the precedence-winning one. Omit for the aggregate (whole-user) view.
    */
   connection?: GoogleSyncConnectionSummary | null;
+  /**
+   * Always start a new-account OAuth round-trip (`{}`), even when some other
+   * account is `RECONNECT_REQUIRED`. Settings "Add account" must never bind
+   * to a reconnect.
+   */
+  newAccount?: boolean;
 }
 
 export const useConnectGoogle = (
@@ -124,9 +130,10 @@ export const useConnectGoogle = (
       // from metadata so the wrong account cannot spawn a second.
       try {
         const beginRequest =
-          state === "RECONNECT_REQUIRED" && syncConnection?.id
-            ? { connectionId: syncConnection.id as ConnectionId }
-            : {};
+          options?.newAccount ||
+          !(state === "RECONNECT_REQUIRED" && syncConnection?.id)
+            ? {}
+            : { connectionId: syncConnection.id as ConnectionId };
         const { authorizationUrl } =
           await AuthApi.beginGoogleConnection(beginRequest);
         window.location.assign(authorizationUrl);
@@ -140,7 +147,7 @@ export const useConnectGoogle = (
     };
 
     void start();
-  }, [state, stopConnecting, syncConnection?.id]);
+  }, [options?.newAccount, state, stopConnecting, syncConnection?.id]);
 
   const onRefreshGoogle = useCallback(
     (options?: { silent?: boolean }) => {

@@ -441,6 +441,7 @@ function buildSchedulers(
         resources,
         calendars: repos.calendars,
         connections: repos.connections,
+        credentials: repos.credentials,
         discovery: new GoogleCalendarAdapter(),
         commands: repos.commands,
         jobs,

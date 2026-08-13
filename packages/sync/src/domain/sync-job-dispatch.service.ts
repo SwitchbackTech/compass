@@ -2,6 +2,7 @@ import { importCalendarEvents } from "@sync/domain/calendar-import.service";
 import { syncCalendarList } from "@sync/domain/calendar-list-sync.service";
 import { pullCalendarChanges } from "@sync/domain/calendar-pull.service";
 import { repairCalendar } from "@sync/domain/calendar-repair.service";
+import { refreshConnectionState } from "@sync/domain/connection-state-refresh.service";
 import { type AccessTokenSource } from "@sync/domain/provider-write-ladder";
 import { maintainSubscription } from "@sync/domain/subscription-maintenance.service";
 import { ProviderAuthError } from "@sync/providers/provider-auth.port";
@@ -22,6 +23,7 @@ import {
 import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-calendar.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { type CommandRepository } from "@sync/storage/repositories/command.repository";
+import { type CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { type EventRepository } from "@sync/storage/repositories/event.repository";
 import { type EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { type InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
@@ -38,6 +40,7 @@ export interface SyncJobDispatchDeps {
   // syncCalendarList resolves the connection a calendarListSync job targets,
   // discovers its calendars, and enqueues an initial import per active calendar.
   connections: ProviderConnectionRepository;
+  credentials: CredentialRepository;
   discovery: ProviderCalendarAdapter;
   jobs: JobRepository;
   // pullCalendarChanges consults pending commands before deleting an event.
@@ -334,6 +337,7 @@ async function runSyncJob(
           "ready",
         );
         await appendCalendarInvalidation(deps, calendar, now());
+        await refreshConnectionStateAfterBootstrap(deps, job);
         return { result: "done" };
       }
       if (pull.status === "notImported") {
@@ -394,6 +398,7 @@ async function runSyncJob(
           "ready",
         );
         await appendCalendarInvalidation(deps, calendar, now());
+        await refreshConnectionStateAfterBootstrap(deps, job);
         return { result: "done" };
       }
       if (subscription.status !== "authRevoked") {
@@ -466,6 +471,31 @@ function bootstrapCatchupFollowup(
 
 function needsBootstrapCompletion(resource: SyncResourceRecord): boolean {
   return resource.bootstrapState !== "ready";
+}
+
+// Push derived connection state after bootstrap evidence changes. At dispatch
+// time the current job is still claimed, so derivation lands on catchingUp
+// (still a change from importing → invalidation fires → client refetches →
+// the read-path refresh after the job settles lands healthy). Never fail the
+// job: state refresh is observational, not part of the provider work.
+async function refreshConnectionStateAfterBootstrap(
+  deps: SyncJobDispatchDeps,
+  job: JobRecord,
+): Promise<void> {
+  try {
+    const connection = await deps.connections.findById(
+      job.tenantId,
+      job.principalId,
+      job.connectionId,
+    );
+    if (!connection) return;
+    await refreshConnectionState(deps, connection);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    deps.log?.warn(
+      `Failed to refresh connection state after bootstrap for connection ${job.connectionId}: ${detail}`,
+    );
+  }
 }
 
 async function appendCalendarInvalidation(

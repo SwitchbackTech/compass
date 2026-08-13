@@ -2,6 +2,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { act, useContext } from "react";
 import { session } from "@web/auth/compass/session/Session";
 import { DEFAULT_AUTH_STATE } from "@web/auth/compass/state/auth.state.util";
+import * as userMetadataUtil from "@web/auth/compass/user/util/user-metadata.util";
 import {
   initialUserMetadataState,
   userMetadataActions,
@@ -18,8 +19,13 @@ import {
   spyOn,
 } from "bun:test";
 
-// Create mocks at module level
-const refreshUserMetadata = mock().mockResolvedValue(undefined);
+// spyOn (restorable) rather than mock.module: mock.module leaks process-wide
+// and would replace refreshUserMetadata with a no-op for later files that
+// exercise the real coalescing/fetch path.
+const refreshUserMetadata = spyOn(
+  userMetadataUtil,
+  "refreshUserMetadata",
+).mockResolvedValue(undefined);
 // SSEProvider.test.tsx has its own dedicated test importing the real module —
 // mock.module leaks process-wide across files, so spy on the real module's
 // exports (restorable) instead of mock.module'ing the whole path.
@@ -44,10 +50,6 @@ const subscribeToAuthState = mock();
 const updateAuthState = mock();
 const doesSessionExist = spyOn(session, "doesSessionExist");
 
-mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
-  refreshUserMetadata,
-}));
-
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
   clearAnonymousCalendarChangeSignUpPrompt,
   clearAuthenticationState,
@@ -68,6 +70,7 @@ const { SessionProvider, sessionInit } =
 
 describe("SessionProvider sessionInit", () => {
   afterAll(() => {
+    refreshUserMetadata.mockRestore();
     openStream.mockRestore();
     closeStream.mockRestore();
     getStream.mockRestore();

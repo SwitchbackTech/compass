@@ -212,15 +212,17 @@ const DefaultCalendarPicker: FC<DefaultCalendarPickerProps> = ({
         onChange={(e) => setDefaultCalendarId(e.target.value as CalendarId)}
         value={value}
       >
-        {groups.map((group) => (
-          <optgroup key={group.accountEmail} label={group.accountEmail}>
-            {group.calendars.map((calendar) => (
-              <option key={calendar.id} value={calendar.id}>
-                {calendar.name}
-              </option>
-            ))}
-          </optgroup>
-        ))}
+        {groups
+          .filter((group) => group.calendars.length > 0)
+          .map((group) => (
+            <optgroup key={group.accountEmail} label={group.accountEmail}>
+              {group.calendars.map((calendar) => (
+                <option key={calendar.id} value={calendar.id}>
+                  {calendar.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
         {ungrouped.map((calendar) => (
           <option key={calendar.id} value={calendar.id}>
             {calendar.name}
@@ -244,7 +246,9 @@ const AccountsSection: FC<AccountsSectionProps> = ({
   resolvedDefault,
   setConfirmingId,
 }) => {
-  const { connect, isAvailable, isConnecting } = useConnectGoogle();
+  const { connect, isAvailable, isConnecting } = useConnectGoogle({
+    newAccount: true,
+  });
   const { disconnect, disconnectingId } = useDisconnectGoogleAccount();
 
   return (

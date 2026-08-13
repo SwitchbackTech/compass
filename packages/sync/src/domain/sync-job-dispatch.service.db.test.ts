@@ -27,11 +27,13 @@ import { type ProviderCalendarRecord } from "@sync/storage/contracts/provider-ca
 import { type ProviderConnectionRecord } from "@sync/storage/contracts/provider-connection.contracts";
 import { type SyncResourceRecord } from "@sync/storage/contracts/sync-resource.contracts";
 import { CommandRepository } from "@sync/storage/repositories/command.repository";
+import { CredentialRepository } from "@sync/storage/repositories/credential.repository";
 import { EventRepository } from "@sync/storage/repositories/event.repository";
 import { EventOccurrenceRepository } from "@sync/storage/repositories/event-occurrence.repository";
 import { InvalidationRepository } from "@sync/storage/repositories/invalidation.repository";
 import { JobRepository } from "@sync/storage/repositories/job.repository";
 import { ProviderCalendarRepository } from "@sync/storage/repositories/provider-calendar.repository";
+import { ProviderConnectionRepository } from "@sync/storage/repositories/provider-connection.repository";
 import { SyncResourceRepository } from "@sync/storage/repositories/sync-resource.repository";
 
 const objectId = () => faker.database.mongodbObjectId();
@@ -151,6 +153,7 @@ describe("dispatchSyncJob", () => {
   let commands: CommandRepository;
   let jobs: JobRepository;
   let invalidations: InvalidationRepository;
+  let credentials: CredentialRepository;
   // Dispatch resolves the connection for a calendarListSync job; a test sets what
   // findById returns without seeding a full connection record.
   let stubbedConnection: ProviderConnectionRecord | null;
@@ -163,11 +166,27 @@ describe("dispatchSyncJob", () => {
     commands = new CommandRepository(storage.db());
     jobs = new JobRepository(storage.db());
     invalidations = new InvalidationRepository(storage.db());
+    credentials = new CredentialRepository(storage.db());
     stubbedConnection = null;
   });
 
   const connections = {
     findById: async () => stubbedConnection,
+    updateDerivedState: async (
+      tenantId: ProviderConnectionRecord["tenantId"],
+      principalId: ProviderConnectionRecord["principalId"],
+      id: ProviderConnectionRecord["_id"],
+      fields: {
+        state: ProviderConnectionRecord["state"];
+        stateReason: ProviderConnectionRecord["stateReason"];
+        lastSyncedAt: Date | null;
+        lastHealthyAt: Date | null;
+      },
+      at?: Date,
+    ) => {
+      const real = new ProviderConnectionRepository(storage.db());
+      return real.updateDerivedState(tenantId, principalId, id, fields, at);
+    },
   } as unknown as SyncJobDispatchDeps["connections"];
 
   const deps = (
@@ -181,6 +200,7 @@ describe("dispatchSyncJob", () => {
     resources,
     calendars,
     connections,
+    credentials,
     discovery: discoveryOverride,
     jobs,
     commands,
@@ -729,6 +749,135 @@ describe("dispatchSyncJob", () => {
     );
     expect(saved?.bootstrapState).toBe("ready");
     expect(saved?.subscriptionId).toBeNull();
+  });
+
+  async function seedConnectedCalendar() {
+    const realConnections = new ProviderConnectionRepository(storage.db());
+    const connection = await realConnections.upsertByProviderAccount({
+      tenantId: objectId(),
+      principalId: objectId(),
+      provider: "google",
+      account: {
+        providerAccountId: "acct-1",
+        email: "user@example.com",
+        displayName: "User",
+      },
+      capabilities: ["readEvents", "readBusy", "writeEvents"],
+      state: "importing",
+      stateReason: null,
+    });
+    await credentials.store({
+      connectionId: connection._id,
+      provider: "google",
+      refreshToken: "refresh",
+      scopes: ["https://www.googleapis.com/auth/calendar.events"],
+    });
+    const calendar = await seedProviderCalendar(calendars, {
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+    });
+    const listResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      "list-cursor",
+      now(),
+    );
+    stubbedConnection = connection;
+    return { connection, calendar };
+  }
+
+  async function connectionInvalidations(principalId: string) {
+    const feed = await storage
+      .db()
+      .collection(SYNC_COLLECTIONS.invalidations)
+      .find({ principalId })
+      .toArray();
+    return feed.filter(
+      (row) =>
+        (row.invalidation as { kind?: string } | undefined)?.kind ===
+        "connection",
+    );
+  }
+
+  it("appends a connection invalidation when bootstrapCatchup completes", async () => {
+    const { connection, calendar } = await seedConnectedCalendar();
+    const resource = await seedResource(calendar, "cursor-1");
+
+    const outcome = await dispatchSyncJob(
+      deps(new FakeReader([page([], "cursor-2")])),
+      jobFor(resource, "bootstrapCatchup"),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+    expect(await connectionInvalidations(connection.principalId)).toHaveLength(
+      1,
+    );
+  });
+
+  it("appends a connection invalidation when subscriptionMaintain completes unsupported", async () => {
+    const { connection, calendar } = await seedConnectedCalendar();
+    const resource = await ensureEventsResource(resources, calendar, {
+      cursor: "cursor-1",
+      bootstrapState: "watching",
+      now,
+    });
+    const refusing = {
+      ...notifications,
+      watchEvents: async () => {
+        throw new ProviderNotificationError(
+          "watchUnsupported",
+          "push not supported for this calendar",
+        );
+      },
+    };
+
+    const outcome = await dispatchSyncJob(
+      deps(new FakeReader([]), tokenSource, refusing),
+      jobFor(resource, "subscriptionMaintain"),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+    expect(await connectionInvalidations(connection.principalId)).toHaveLength(
+      1,
+    );
+  });
+
+  it("does not fail the job when connection-state refresh throws", async () => {
+    const { calendar } = await seedConnectedCalendar();
+    const resource = await seedResource(calendar, "cursor-1");
+    const warnings: string[] = [];
+    const failingDeps: SyncJobDispatchDeps = {
+      ...deps(new FakeReader([page([], "cursor-2")])),
+      connections: {
+        findById: async () => stubbedConnection,
+        updateDerivedState: async () => {
+          throw new Error("derived-state write failed");
+        },
+      } as unknown as SyncJobDispatchDeps["connections"],
+      log: { warn: (message) => warnings.push(message) },
+    };
+
+    const outcome = await dispatchSyncJob(
+      failingDeps,
+      jobFor(resource, "bootstrapCatchup"),
+      now,
+    );
+
+    expect(outcome).toEqual({ result: "done" });
+    expect(warnings.some((message) => message.includes("derived-state"))).toBe(
+      true,
+    );
   });
 
   const calendarListJob = (

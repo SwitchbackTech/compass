@@ -95,8 +95,6 @@ const seedConnection = (
     capabilities: ["readEvents"],
     state: "healthy",
     stateReason: null,
-    lastSyncedAt: null,
-    lastHealthyAt: null,
   });
 
 describe("DELETE /internal/principal", () => {

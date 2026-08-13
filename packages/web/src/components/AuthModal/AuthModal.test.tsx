@@ -37,6 +37,20 @@ const mockUseStartGoogleAuthorization = mock(() => ({
 const mockCompleteAuthentication = mock().mockResolvedValue(undefined);
 let mockEmailPassword = createTestEmailPasswordPort();
 
+// mock.module is process-wide. Capture the real hook and flip the flag off in
+// afterAll so later files do not inherit this file's unauthenticated default.
+const actualUseSession = (await import("@web/auth/compass/session/useSession"))
+  .useSession;
+let isSessionMocked = true;
+const mockUseSession = mock(() => ({
+  authenticated: false,
+  userId: undefined as string | undefined,
+}));
+mock.module("@web/auth/compass/session/useSession", () => ({
+  useSession: (...args: Parameters<typeof actualUseSession>) =>
+    isSessionMocked ? mockUseSession(...args) : actualUseSession(...args),
+}));
+
 const { redirectToToday, loadTodayData } = await import("@web/routers/loaders");
 const { ROOT_ROUTES } = await import("@web/common/constants/routes");
 
@@ -133,6 +147,10 @@ function installAuthModalTestSeams() {
   registerEmailPasswordPort(mockEmailPassword);
   resetGoogleAvailabilityForTests();
   setGoogleAvailabilityForTests("available");
+  mockUseSession.mockReset().mockReturnValue({
+    authenticated: false,
+    userId: undefined,
+  });
 }
 
 describe("AuthModal", () => {
@@ -859,6 +877,23 @@ describe("URL Parameter Support", () => {
     });
   });
 
+  it("ignores ?auth= while a session already exists", async () => {
+    mockUseSession.mockReturnValue({
+      authenticated: true,
+      userId: "user-1",
+    });
+    const { router } = await renderWithProviders(<div />, "/?auth=login");
+
+    expect(
+      screen.queryByRole("heading", { name: /hey, welcome back/i }),
+    ).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(router.state.location.search).not.toEqual(
+        expect.objectContaining({ auth: "login" }),
+      );
+    });
+  });
+
   it("opens sign up modal when ?auth=signup is present", async () => {
     await renderWithProviders(<div />, "/?auth=signup");
 
@@ -1046,4 +1081,8 @@ describe("URL Parameter Support", () => {
       ).toBeInTheDocument();
     });
   });
+});
+
+afterAll(() => {
+  isSessionMocked = false;
 });

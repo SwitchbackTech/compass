@@ -139,8 +139,6 @@ const seedConnection = (
     capabilities: ["readEvents"],
     state: "healthy",
     stateReason: null,
-    lastSyncedAt: null,
-    lastHealthyAt: null,
   });
 
 // Sign like the trusted Compass API would, so the request clears internal auth.
@@ -794,6 +792,19 @@ describe("GET /sync/google", () => {
       principalId,
       "reauth@example.com",
     );
+    const healthyAt = new Date("2026-07-01T00:00:00.000Z");
+    await connections.updateDerivedState(
+      existing.tenantId,
+      existing.principalId,
+      existing._id,
+      {
+        state: "healthy",
+        stateReason: null,
+        lastSyncedAt: healthyAt,
+        lastHealthyAt: healthyAt,
+      },
+      healthyAt,
+    );
     // Google returns the same account the connection is tied to.
     adapter.exchangeResult = {
       ...adapter.exchangeResult,
@@ -817,6 +828,7 @@ describe("GET /sync/google", () => {
     );
     expect(all).toHaveLength(1);
     expect(all[0]._id).toBe(existing._id);
+    expect(all[0].lastHealthyAt).toEqual(healthyAt);
   });
 
   it("refuses and links nothing when reconnect consents with a different account", async () => {

@@ -93,8 +93,6 @@ describe("POST /internal/availability/busy", () => {
       capabilities: ["readEvents"],
       state,
       stateReason: null,
-      lastSyncedAt: new Date(),
-      lastHealthyAt: new Date(),
     });
     return c._id;
   };

@@ -1,5 +1,12 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { createContext, useCallback, useContext, useMemo } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+} from "react";
+import { useSession } from "@web/auth/compass/session/useSession";
 
 export type AuthView =
   | "login"
@@ -81,6 +88,7 @@ function getViewFromParam(param: string | undefined): AuthView | null {
 export function useAuthModalState(): AuthModalContextValue {
   const { auth } = useSearch({ from: "__root__" });
   const navigate = useNavigate();
+  const { authenticated } = useSession();
   const view = getViewFromParam(auth);
 
   const setAuthView = useCallback(
@@ -100,14 +108,23 @@ export function useAuthModalState(): AuthModalContextValue {
     [navigate, view],
   );
 
+  useEffect(() => {
+    if (!authenticated || !auth) return;
+    navigate({
+      to: ".",
+      replace: true,
+      search: (prev) => ({ ...prev, auth: undefined }),
+    });
+  }, [authenticated, auth, navigate]);
+
   return useMemo(
     () => ({
-      isOpen: view !== null,
+      isOpen: view !== null && !authenticated,
       currentView: view ?? "login",
       openModal: (nextView: AuthView = "login") => setAuthView(nextView),
       closeModal: () => setAuthView(null),
       setView: (nextView: AuthView) => setAuthView(nextView),
     }),
-    [view, setAuthView],
+    [authenticated, view, setAuthView],
   );
 }

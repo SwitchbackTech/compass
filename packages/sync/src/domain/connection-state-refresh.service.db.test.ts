@@ -47,8 +47,6 @@ describe("refreshConnectionState", () => {
       capabilities: ["readEvents", "readBusy", "writeEvents"],
       state: "importing",
       stateReason: null,
-      lastSyncedAt: null,
-      lastHealthyAt: null,
     });
     await credentials.store({
       connectionId: connection._id,
@@ -422,6 +420,92 @@ describe("refreshConnectionState", () => {
     );
     expect(after.state).toBe("delayed");
     expect(after.stateReason).toBe("workOverdue");
+  });
+
+  it("reports delayed when an active calendar has no events resource and is past the stall window", async () => {
+    const connection = await seedImportingConnection();
+    await calendars.upsertByProviderCalendar({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      providerCalendarId: "primary@example.com" as ProviderCalendarSourceId,
+      displayName: "Primary",
+      color: null,
+      active: true,
+      primary: true,
+      accessRole: "owner",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: true,
+        canReadBusy: true,
+        canInviteAttendees: true,
+      },
+    });
+    const listResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      "list-cursor",
+      new Date(),
+    );
+
+    const stillFresh = await refreshConnectionState(deps(), connection);
+    expect(stillFresh.state).toBe("importing");
+
+    const wellPastOverdue = () =>
+      new Date(Date.now() + BOOTSTRAP_STALLED_AFTER_MS);
+    const after = await refreshConnectionState(
+      deps(),
+      connection,
+      wellPastOverdue,
+    );
+    expect(after.state).toBe("delayed");
+    expect(after.stateReason).toBe("workOverdue");
+  });
+
+  it("keeps importing when an active calendar has no events resource and is still young", async () => {
+    const connection = await seedImportingConnection();
+    await calendars.upsertByProviderCalendar({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      providerCalendarId: "primary@example.com" as ProviderCalendarSourceId,
+      displayName: "Primary",
+      color: null,
+      active: true,
+      primary: true,
+      accessRole: "owner",
+      capabilities: {
+        canReadEvents: true,
+        canWriteEvents: true,
+        canReadBusy: true,
+        canInviteAttendees: true,
+      },
+    });
+    const listResource = await resources.ensure({
+      tenantId: connection.tenantId,
+      principalId: connection.principalId,
+      connectionId: connection._id,
+      resourceKind: "calendarList",
+      calendarId: null,
+    });
+    await resources.advanceCursor(
+      connection.tenantId,
+      connection.principalId,
+      listResource._id,
+      "list-cursor",
+      new Date(),
+    );
+
+    const after = await refreshConnectionState(deps(), connection);
+    expect(after.state).toBe("importing");
   });
 
   it("reports catchingUp while a user-requested pull is queued", async () => {

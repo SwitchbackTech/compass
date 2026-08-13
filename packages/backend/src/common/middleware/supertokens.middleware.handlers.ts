@@ -125,7 +125,9 @@ export async function handleGoogleSignInUp(
     success,
   );
 
-  await googleAuthService.handleGoogleAuth(remapped.success);
+  await googleAuthService.handleGoogleAuth(remapped.success, {
+    hasExistingSession: Boolean(input.session),
+  });
 
   return remapped.response;
 }

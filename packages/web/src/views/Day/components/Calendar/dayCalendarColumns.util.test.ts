@@ -27,7 +27,7 @@ function makeCalendar(overrides: Partial<Calendar>): Calendar {
 }
 
 describe("getDayViewCalendars", () => {
-  it("keeps the local calendar when no account is connected", () => {
+  it("keeps the local calendar when it is active and visible", () => {
     const local = makeCalendar({ provider: "local", name: "Compass" });
     const google = makeCalendar({
       provider: "google",
@@ -38,20 +38,7 @@ describe("getDayViewCalendars", () => {
     expect(getDayViewCalendars([local, google])).toEqual([local, google]);
   });
 
-  it("drops the local calendar once an account is connected", () => {
-    const local = makeCalendar({ provider: "local", name: "Compass" });
-    const google = makeCalendar({
-      provider: "google",
-      id: "507f1f77bcf86cd799439012" as Calendar["id"],
-      name: "primary",
-    });
-
-    expect(
-      getDayViewCalendars([local, google], { hasConnectedAccount: true }),
-    ).toEqual([google]);
-  });
-
-  it("falls back to the primary among remaining calendars when none are visible", () => {
+  it("falls back to the primary calendar when none are visible", () => {
     const local = makeCalendar({
       provider: "local",
       name: "Compass",
@@ -72,22 +59,22 @@ describe("getDayViewCalendars", () => {
     });
 
     expect(
-      getDayViewCalendars([local, secondaryGoogle, primaryGoogle], {
-        hasConnectedAccount: true,
-      }),
+      getDayViewCalendars([local, secondaryGoogle, primaryGoogle]),
     ).toEqual([primaryGoogle]);
   });
 
-  it("does not fall back to the local calendar when an account is connected", () => {
+  it("includes a visible local column alongside Google calendars", () => {
     const local = makeCalendar({
       provider: "local",
       name: "Compass",
       isPrimary: true,
-      isVisible: false,
+    });
+    const google = makeCalendar({
+      provider: "google",
+      id: "507f1f77bcf86cd799439012" as Calendar["id"],
+      name: "primary",
     });
 
-    expect(getDayViewCalendars([local], { hasConnectedAccount: true })).toEqual(
-      [],
-    );
+    expect(getDayViewCalendars([local, google])).toEqual([local, google]);
   });
 });
