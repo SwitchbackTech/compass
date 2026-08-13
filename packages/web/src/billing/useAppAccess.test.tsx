@@ -34,7 +34,7 @@ const stubConfig = (isConfigured: boolean) => {
           google: { isConfigured: false },
           billing: {
             isConfigured,
-            priceDisplay: "$8/month",
+            priceDisplay: "$7.99/month",
             trialLengthDays: 7,
           },
         }),

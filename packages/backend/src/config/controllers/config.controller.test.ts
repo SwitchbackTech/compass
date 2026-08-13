@@ -44,7 +44,7 @@ describe("ConfigController.get sync cutover posture", () => {
     });
     expect(config.billing).toEqual({
       isConfigured: false,
-      priceDisplay: "$8/month",
+      priceDisplay: "$7.99/month",
       trialLengthDays: 7,
     });
   });
