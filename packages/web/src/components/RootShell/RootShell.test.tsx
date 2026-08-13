@@ -3,17 +3,25 @@ import { render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
 import { type AppAccess } from "@web/billing/useAppAccess";
 import { RootShell } from "@web/components/RootShell/RootShell";
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, afterEach, describe, expect, it, mock } from "bun:test";
 
+const actualUseAppAccess = (await import("@web/billing/useAppAccess"))
+  .useAppAccess;
+let isAppAccessMocked = true;
 let access: AppAccess = { kind: "open" };
 
 mock.module("@web/billing/useAppAccess", () => ({
-  useAppAccess: () => access,
+  useAppAccess: (...args: Parameters<typeof actualUseAppAccess>) =>
+    isAppAccessMocked ? access : actualUseAppAccess(...args),
 }));
 
 describe("RootShell billing gates", () => {
   afterEach(() => {
     access = { kind: "open" };
+  });
+
+  afterAll(() => {
+    isAppAccessMocked = false;
   });
 
   const renderShell = async () => {

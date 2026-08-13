@@ -3,22 +3,26 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { rest } from "msw";
 import { type PropsWithChildren } from "react";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
-import * as authStateUtil from "@web/auth/compass/state/auth.state.util";
+import { SessionContext } from "@web/auth/compass/session/session.context";
 import { useAppAccess } from "@web/billing/useAppAccess";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
-import { beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 const daysAgo = (days: number) =>
   new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-const createWrapper = () => {
+const createWrapper = (authenticated = false) => {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return ({ children }: PropsWithChildren) => (
-    <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    <SessionContext.Provider
+      value={{ authenticated, setAuthenticated: () => {} }}
+    >
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    </SessionContext.Provider>
   );
 };
 
@@ -88,10 +92,6 @@ describe("useAppAccess", () => {
   });
 
   it("fails open while authenticated billing status is loading", () => {
-    const hasUserEverAuthenticatedSpy = spyOn(
-      authStateUtil,
-      "hasUserEverAuthenticated",
-    ).mockReturnValue(true);
     stubConfig(true);
     server.use(
       rest.get(`${ENV_WEB.API_BASEURL}/billing/status`, (_req, res, ctx) =>
@@ -107,17 +107,12 @@ describe("useAppAccess", () => {
     );
 
     const { result } = renderHook(() => useAppAccess(), {
-      wrapper: createWrapper(),
+      wrapper: createWrapper(true),
     });
     expect(result.current).toEqual({ kind: "open" });
-    hasUserEverAuthenticatedSpy.mockRestore();
   });
 
   it("fails open when billing status fetch fails", async () => {
-    const hasUserEverAuthenticatedSpy = spyOn(
-      authStateUtil,
-      "hasUserEverAuthenticated",
-    ).mockReturnValue(true);
     stubConfig(true);
     server.use(
       rest.get(`${ENV_WEB.API_BASEURL}/billing/status`, (_req, res, ctx) =>
@@ -126,35 +121,25 @@ describe("useAppAccess", () => {
     );
 
     const { result } = renderHook(() => useAppAccess(), {
-      wrapper: createWrapper(),
+      wrapper: createWrapper(true),
     });
     await waitFor(() => {
       expect(result.current).toEqual({ kind: "open" });
     });
-    hasUserEverAuthenticatedSpy.mockRestore();
   });
 
   it("fails open when Stripe is unconfigured", async () => {
-    const hasUserEverAuthenticatedSpy = spyOn(
-      authStateUtil,
-      "hasUserEverAuthenticated",
-    ).mockReturnValue(true);
     stubConfig(false);
 
     const { result } = renderHook(() => useAppAccess(), {
-      wrapper: createWrapper(),
+      wrapper: createWrapper(true),
     });
     await waitFor(() => {
       expect(result.current).toEqual({ kind: "open" });
     });
-    hasUserEverAuthenticatedSpy.mockRestore();
   });
 
   it("returns server active status", async () => {
-    const hasUserEverAuthenticatedSpy = spyOn(
-      authStateUtil,
-      "hasUserEverAuthenticated",
-    ).mockReturnValue(true);
     stubConfig(true);
     stubBilling({
       subscriptionStatus: "active",
@@ -163,7 +148,7 @@ describe("useAppAccess", () => {
     });
 
     const { result } = renderHook(() => useAppAccess(), {
-      wrapper: createWrapper(),
+      wrapper: createWrapper(true),
     });
     await waitFor(() => {
       expect(result.current).toEqual({
@@ -173,14 +158,9 @@ describe("useAppAccess", () => {
         trialEndsAt: null,
       });
     });
-    hasUserEverAuthenticatedSpy.mockRestore();
   });
 
   it("returns server awaiting_checkout as read-only", async () => {
-    const hasUserEverAuthenticatedSpy = spyOn(
-      authStateUtil,
-      "hasUserEverAuthenticated",
-    ).mockReturnValue(true);
     stubConfig(true);
     stubBilling({
       subscriptionStatus: "awaiting_checkout",
@@ -189,7 +169,7 @@ describe("useAppAccess", () => {
     });
 
     const { result } = renderHook(() => useAppAccess(), {
-      wrapper: createWrapper(),
+      wrapper: createWrapper(true),
     });
     await waitFor(() => {
       expect(result.current).toMatchObject({
@@ -198,6 +178,5 @@ describe("useAppAccess", () => {
         isReadOnly: true,
       });
     });
-    hasUserEverAuthenticatedSpy.mockRestore();
   });
 });
