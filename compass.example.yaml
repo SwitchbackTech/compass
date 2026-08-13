@@ -42,7 +42,7 @@ supertokens:
 #   host: REPLACE_WITH_POSTHOG_HOST
 
 # stripe:
-#   secretKey: REPLACE_WITH_STRIPE_SECRET_KEY # restricted rk_test_... for staging
+#   secretKey: REPLACE_WITH_STRIPE_SECRET_KEY # sk_test_... is fine for staging
 #   webhookSecret: REPLACE_WITH_STRIPE_WEBHOOK_SECRET
 #   priceId: REPLACE_WITH_STRIPE_PRICE_ID
 # Omit the whole block for self-host. All three values are required together.

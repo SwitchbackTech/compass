@@ -1,6 +1,6 @@
 # Billing And Trial
 
-Hosted Compass uses Stripe Checkout (subscription mode, 7-day trial, $8/month)
+Hosted Compass uses Stripe Checkout (subscription mode, 7-day trial, $7.99/month)
 and the Stripe Billing Portal. There is no Stripe.js and no publishable key in
 the web bundle.
 
@@ -29,10 +29,19 @@ subscription id, so they self-expire locally when `trialEndsAt` passes.
 
 ## Staging
 
-Set `STRIPE_SECRET_KEY` (restricted `rk_test_...`), `STRIPE_WEBHOOK_SECRET`,
-and `STRIPE_PRICE_ID` on the `staging-cloud` GitHub Environment. Config-only
-deploys need `./compass restart`. Confirm `/api/config` shows
+Set `STRIPE_SECRET_KEY` (`sk_test_...` is fine), `STRIPE_WEBHOOK_SECRET`,
+and `STRIPE_PRICE_ID` on the `staging-cloud` GitHub Environment, then
+**re-run Deploy staging** so `~/compass/compass.yaml` is rewritten. A restart
+on old yaml will not pick up new secrets. Confirm `/api/config` shows
 `billing.isConfigured: true`.
+
+The webhook endpoint (`https://staging.compasscalendar.com/api/billing/webhook/stripe`)
+must subscribe to Checkout and Subscriptions snapshot events, not Accounts v2:
+
+- `checkout.session.completed`
+- `customer.subscription.created`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
 
 `staging-selfhosted` must not get those secrets — it is the live regression
 that self-host stays writable.

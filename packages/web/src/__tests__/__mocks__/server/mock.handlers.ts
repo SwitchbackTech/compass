@@ -85,7 +85,7 @@ export const globalHandlers = [
         google: { isConfigured: false },
         billing: {
           isConfigured: false,
-          priceDisplay: "$8/month",
+          priceDisplay: "$7.99/month",
           trialLengthDays: 7,
         },
       }),
