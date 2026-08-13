@@ -18,7 +18,6 @@ import {
   resetEmailPasswordPort,
 } from "@web/auth/compass/hooks/emailpassword.port";
 import { registerUseCompleteAuthenticationForTests } from "@web/auth/compass/hooks/useCompleteAuthentication.registry";
-import { SessionContext } from "@web/auth/compass/session/session.context";
 import { markGoogleAuthNeedsConsentRetry } from "@web/auth/google/authorization/google-authorization.storage";
 import { registerUseStartGoogleAuthorizationForTests } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
@@ -37,6 +36,20 @@ const mockUseStartGoogleAuthorization = mock(() => ({
 }));
 const mockCompleteAuthentication = mock().mockResolvedValue(undefined);
 let mockEmailPassword = createTestEmailPasswordPort();
+
+// mock.module is process-wide. Capture the real hook and flip the flag off in
+// afterAll so later files do not inherit this file's unauthenticated default.
+const actualUseSession = (await import("@web/auth/compass/session/useSession"))
+  .useSession;
+const isSessionMocked = true;
+const mockUseSession = mock(() => ({
+  authenticated: false,
+  userId: undefined as string | undefined,
+}));
+mock.module("@web/auth/compass/session/useSession", () => ({
+  useSession: (...args: Parameters<typeof actualUseSession>) =>
+    isSessionMocked ? mockUseSession(...args) : actualUseSession(...args),
+}));
 
 const { redirectToToday, loadTodayData } = await import("@web/routers/loaders");
 const { ROOT_ROUTES } = await import("@web/common/constants/routes");
@@ -134,6 +147,10 @@ function installAuthModalTestSeams() {
   registerEmailPasswordPort(mockEmailPassword);
   resetGoogleAvailabilityForTests();
   setGoogleAvailabilityForTests("available");
+  mockUseSession.mockReset().mockReturnValue({
+    authenticated: false,
+    userId: undefined,
+  });
 }
 
 describe("AuthModal", () => {
@@ -861,18 +878,11 @@ describe("URL Parameter Support", () => {
   });
 
   it("ignores ?auth= while a session already exists", async () => {
-    const router = createTestRouter(
-      <SessionContext.Provider
-        value={{ authenticated: true, setAuthenticated: () => {} }}
-      >
-        <AuthModalProvider>
-          <AuthModal />
-        </AuthModalProvider>
-      </SessionContext.Provider>,
-      { initialEntries: ["/?auth=login"] },
-    );
-    render(<RouterProvider router={router} />);
-    await waitForRouterIdle(router);
+    mockUseSession.mockReturnValue({
+      authenticated: true,
+      userId: "user-1",
+    });
+    const { router } = await renderWithProviders(<div />, "/?auth=login");
 
     expect(
       screen.queryByRole("heading", { name: /hey, welcome back/i }),
@@ -1071,4 +1081,8 @@ describe("URL Parameter Support", () => {
       ).toBeInTheDocument();
     });
   });
+});
+
+afterAll(() => {
+  isSessionMocked = false;
 });
