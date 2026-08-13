@@ -83,8 +83,17 @@ describe("keymap ↔ showcase hint parity", () => {
     expect(getShowcaseStep("placeDraft").keycaps).toBe(
       KEYMAP.moveEvent.keycaps,
     );
-    expect(getShowcaseStep("undoRedo").keycaps).toBe(KEYMAP.undo.keycaps);
     expect(getShowcaseStep("hardcore").keycaps).toBe(KEYMAP.hardcore.keycaps);
+
+    const undoRedoBody = getShowcaseStep("undoRedo").body;
+    expect(Array.isArray(undoRedoBody)).toBe(true);
+    const undoRedoChords = (
+      undoRedoBody as readonly { keys?: readonly string[] }[]
+    )
+      .filter((part) => typeof part !== "string" && "keys" in part)
+      .map((part) => part.keys);
+    expect(undoRedoChords[0]).toBe(KEYMAP.undo.keycaps);
+    expect(undoRedoChords[1]).toBe(KEYMAP.redo.keycaps);
   });
 });
 

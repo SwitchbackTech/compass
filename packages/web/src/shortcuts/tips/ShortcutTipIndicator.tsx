@@ -1,6 +1,6 @@
 import { type FC } from "react";
 import { track } from "@web/auth/posthog/track";
-import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { ShortcutTipParts } from "@web/shortcuts/tips/ShortcutTipParts";
 import {
   getShortcutTips,
   getTipPlainText,
@@ -43,18 +43,7 @@ export const ShortcutTipIndicator: FC = () => {
       type="button"
     >
       <span aria-live="polite" role="status">
-        <span className="sr-only">{plainText}</span>
-        <span aria-hidden className="inline-flex items-center gap-1">
-          {tip.parts.map((part, i) =>
-            typeof part === "string" ? (
-              // biome-ignore lint/suspicious/noArrayIndexKey: parts are a fixed, order-stable literal per tip
-              <span key={i}>{part}</span>
-            ) : (
-              // biome-ignore lint/suspicious/noArrayIndexKey: parts are a fixed, order-stable literal per tip
-              <ShortcutHint key={i}>{part.key}</ShortcutHint>
-            ),
-          )}
-        </span>
+        <ShortcutTipParts parts={tip.parts} />
       </span>
     </button>
   );

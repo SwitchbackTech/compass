@@ -1,8 +1,5 @@
-import { detectPlatform } from "@tanstack/react-hotkeys";
 import { KEYMAP } from "@web/shortcuts/keymap";
-
-// Prose has no keycap chips to expand "Mod" into, so spell the real key out.
-const MOD_KEY = detectPlatform() === "mac" ? "Cmd" : "Ctrl";
+import { type ShortcutTipPart } from "@web/shortcuts/tips/shortcut-tips.data";
 
 /**
  * Single source of truth for showcase step order. Every shortcut concept the
@@ -30,7 +27,12 @@ export const SHOWCASE_STEP_IDS: readonly ShowcaseStepId[] = STEP_IDS;
 export type ShowcaseStep = {
   id: ShowcaseStepId;
   title: string;
-  body: string;
+  /**
+   * Plain copy, or the same parts model as shortcut tips so a step can put
+   * real keycap chips in the sentence. Only undoRedo needs that; converting
+   * every body would duplicate the chip row already rendered from `keycaps`.
+   */
+  body: string | readonly ShortcutTipPart[];
   /** One keycap per entry, rendered via ShortcutKeys. */
   keycaps?: readonly string[];
 };
@@ -92,8 +94,15 @@ const STEP_CONTENT: Record<ShowcaseStepId, Omit<ShowcaseStep, "id">> = {
   },
   undoRedo: {
     title: "Never stress a mistake",
-    body: `Press ${MOD_KEY}+Z to undo your last change, then ${MOD_KEY}+Shift+Z to bring it back.`,
-    keycaps: KEYMAP.undo.keycaps,
+    // Chips live in the sentence so both chords render; a second keycap row
+    // would duplicate undo and still hide redo.
+    body: [
+      "Press ",
+      { keys: KEYMAP.undo.keycaps },
+      " to undo your last change, then ",
+      { keys: KEYMAP.redo.keycaps },
+      " to bring it back.",
+    ],
   },
   hardcore: {
     title: "Try Hardcore Mode",

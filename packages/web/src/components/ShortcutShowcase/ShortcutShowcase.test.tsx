@@ -170,6 +170,16 @@ describe("ShortcutShowcase", () => {
     expect(screen.queryByTestId("shift-icon")).toBeNull();
   });
 
+  it("puts undo and redo chips in the undoRedo sentence, not a duplicate row", () => {
+    render(<ShortcutShowcase />);
+    showStep("undoRedo");
+
+    expect(screen.getByText("to undo your last change, then")).toBeTruthy();
+    expect(screen.getByText("to bring it back.")).toBeTruthy();
+    expect(screen.getAllByTestId("z-icon")).toHaveLength(2);
+    expect(screen.getByTestId("shift-icon")).toBeTruthy();
+  });
+
   it("Escape confirms once, lesson keys fall through, second Escape skips", () => {
     render(<ShortcutShowcase />);
     act(() => shortcutShowcaseActions.start());

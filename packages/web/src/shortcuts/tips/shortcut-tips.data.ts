@@ -1,20 +1,39 @@
+import { expandModInShortcutDisplay } from "@web/shortcuts/shortcut.util";
+
 export type ShortcutTipId =
   | "edit-sequence"
   | "nudge"
   | "target-event"
   | "edge-cycle";
 
-export type ShortcutTipPart = string | { key: string };
+export type ShortcutTipPart =
+  | string
+  | { key: string }
+  | { keys: readonly string[] };
 
 export type ShortcutTip = {
   id: ShortcutTipId;
   parts: ShortcutTipPart[];
 };
 
+const spokenKey = (token: string): string => {
+  const expanded = expandModInShortcutDisplay(token);
+  if (expanded === "Meta") return "Cmd";
+  if (expanded === "Control") return "Ctrl";
+  return expanded;
+};
+
+const partPlainText = (part: ShortcutTipPart): string => {
+  if (typeof part === "string") return part;
+  const keys = "keys" in part ? part.keys : [part.key];
+  return keys.map(spokenKey).join("+");
+};
+
+export const getPartsPlainText = (parts: readonly ShortcutTipPart[]): string =>
+  parts.map(partPlainText).join("");
+
 export const getTipPlainText = (tip: ShortcutTip): string =>
-  tip.parts
-    .map((part) => (typeof part === "string" ? part : part.key))
-    .join("");
+  getPartsPlainText(tip.parts);
 
 /** Small fixed rotation; content mirrors the shortcut showcase's later lessons. */
 export function getShortcutTips(): ShortcutTip[] {
