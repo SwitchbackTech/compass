@@ -36,7 +36,9 @@ Start each long-running service once and reuse an existing healthy process.
 
 ## 2. Install dependencies
 
-If dependencies are absent or the lockfile changed:
+Run this unconditionally at the start of any session in a fresh worktree,
+before running `type-check` or any `dev:*` command — do not wait for a
+failure to prompt it:
 
 ```bash
 bun install
@@ -65,6 +67,17 @@ In worktrees, `bun run dev:web` and `bun run dev:backend` execute
 `bun run dev:ports`. It may copy the gitignored config from the main checkout
 or allocate the next free web/backend port pair. Trust the served URL printed
 by the current process rather than assuming `9080`/`3000`.
+
+Once `mongo.uri` is present (the worktree can already run `dev:backend` for
+the main app), `dev:ports` also fills in a missing `sync:` block on its own —
+`internalAuthToken` is generated locally (it's a shared secret two
+locally-run processes compare to themselves, never an external value),
+`serviceUrl`/`callbackBaseUrl` are derived from an assigned local port, and
+`mongoUri` is derived from `mongo.uri` itself (same host/credentials, an
+isolated database name). Nothing needs to be fetched or invented by hand for
+this case. If `dev:backend` still fails after that with a Zod error naming
+`sync.*` fields, `mongo.uri` itself is likely absent or unrecognizable —
+check that first rather than trying to hand-author the `sync:` block.
 
 ## 4. Verify health
 
@@ -96,12 +109,19 @@ until these prerequisites are satisfied.
 
 ## Troubleshoot in order
 
-1. Confirm the current process and printed ports.
-2. Confirm `compass.yaml` exists without revealing it.
-3. Probe `/api/health`.
-4. Confirm web `API_BASEURL` targets the current backend.
-5. Distinguish OAuth redirect failures from webhook delivery failures.
-6. Read `docs/development/troubleshoot.md` and the relevant feature flow.
+1. `type-check`/`dev:*` failing with dozens of `Cannot find module` errors
+   means dependencies were never installed, not a real regression — run
+   `bun install` (step 2) and re-check before investigating further.
+2. Confirm the current process and printed ports.
+3. Confirm `compass.yaml` exists without revealing it.
+4. Probe `/api/health`.
+5. Confirm web `API_BASEURL` targets the current backend.
+6. Distinguish OAuth redirect failures from webhook delivery failures.
+7. Read `docs/development/troubleshoot.md` and the relevant feature flow.
+
+Note for Claude Code sessions: this file is not invocable as a `/local-dev-bootstrap`
+slash command — `.agents/skills/*` isn't registered with the Skill tool. Read
+and follow this file directly instead of assuming the command exists.
 
 ## Report
 

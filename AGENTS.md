@@ -98,6 +98,20 @@ of truth:
 - Commits: conventional, lower-case, present tense, for example
   `fix(web): handle disconnected google state`.
 
+## Claude Code worktree specific instructions
+
+At the start of any session in a fresh worktree — before assuming a
+`type-check`/`dev:*` failure reflects a real code problem — read and follow
+`.agents/skills/local-dev-bootstrap/SKILL.md` directly (it is not invocable
+as a `/local-dev-bootstrap` slash command; `.agents/skills/*` isn't
+registered with the Skill tool). It covers, in order: installing
+dependencies unconditionally first (a fresh worktree with no `node_modules`
+makes `type-check` fail with dozens of misleading `Cannot find module`
+errors), trusting the port `dev:ports` actually prints rather than
+`.claude/launch.json`'s declared 9080/3000, and how `dev:ports` fills in a
+missing `sync:` block on its own once `mongo.uri` is present — no manual
+config authoring or asking the user for values needed.
+
 ## Cursor Cloud specific instructions
 
 Bun (`bun@1.3.14`) is the runtime and package manager. The environment is
