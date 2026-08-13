@@ -26,9 +26,9 @@ export const useTransientSyncPolling = () => {
 
   useEffect(() => {
     if (!anyTransient) return;
-    const id = window.setInterval(() => {
+    const id = setInterval(() => {
       void refreshUserMetadata({ force: true });
     }, TRANSIENT_POLL_MS);
-    return () => window.clearInterval(id);
+    return () => clearInterval(id);
   }, [anyTransient]);
 };

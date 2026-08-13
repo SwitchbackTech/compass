@@ -1,24 +1,9 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
+import * as userMetadataUtil from "@web/auth/compass/user/util/user-metadata.util";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
-
-const mockRefreshUserMetadata = mock().mockResolvedValue(undefined);
-
-mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
-  refreshUserMetadata: mockRefreshUserMetadata,
-}));
-
-const { useTransientSyncPolling } =
-  require("./useTransientSyncPolling") as typeof import("./useTransientSyncPolling");
+import { useTransientSyncPolling } from "./useTransientSyncPolling";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const TRANSIENT_POLL_MS = 20_000;
 
@@ -26,27 +11,34 @@ describe("useTransientSyncPolling", () => {
   let intervalCallback: (() => void) | undefined;
   let setIntervalSpy: ReturnType<typeof spyOn>;
   let clearIntervalSpy: ReturnType<typeof spyOn>;
+  let refreshSpy: ReturnType<typeof spyOn>;
 
   beforeEach(() => {
     intervalCallback = undefined;
-    mockRefreshUserMetadata.mockClear();
-    setIntervalSpy = spyOn(window, "setInterval").mockImplementation(((
+    refreshSpy = spyOn(
+      userMetadataUtil,
+      "refreshUserMetadata",
+    ).mockResolvedValue(undefined);
+    setIntervalSpy = spyOn(globalThis, "setInterval").mockImplementation(((
       callback: TimerHandler,
     ) => {
       if (typeof callback === "function") {
         intervalCallback = () => callback();
       }
-      return 1;
-    }) as typeof window.setInterval);
+      return 1 as unknown as ReturnType<typeof setInterval>;
+    }) as unknown as typeof setInterval);
     clearIntervalSpy = spyOn(globalThis, "clearInterval").mockImplementation(
       () => {},
     );
   });
 
   afterEach(() => {
+    refreshSpy.mockRestore();
     setIntervalSpy.mockRestore();
     clearIntervalSpy.mockRestore();
-    userMetadataActions.clear();
+    act(() => {
+      userMetadataActions.clear();
+    });
   });
 
   it("polls metadata while a connection is importing and stops when it settles", () => {
@@ -77,7 +69,7 @@ describe("useTransientSyncPolling", () => {
     act(() => {
       intervalCallback?.();
     });
-    expect(mockRefreshUserMetadata).toHaveBeenCalledWith({ force: true });
+    expect(refreshSpy).toHaveBeenCalledWith({ force: true });
 
     act(() => {
       userMetadataActions.set({
@@ -100,6 +92,7 @@ describe("useTransientSyncPolling", () => {
     hook.rerender();
 
     expect(clearIntervalSpy).toHaveBeenCalled();
+    hook.unmount();
   });
 
   it("does not poll when no connection is transient", () => {
@@ -120,8 +113,9 @@ describe("useTransientSyncPolling", () => {
       },
     });
 
-    renderHook(() => useTransientSyncPolling());
+    const { unmount } = renderHook(() => useTransientSyncPolling());
 
     expect(setIntervalSpy).not.toHaveBeenCalled();
+    unmount();
   });
 });
