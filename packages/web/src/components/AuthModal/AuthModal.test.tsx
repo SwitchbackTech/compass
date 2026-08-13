@@ -41,7 +41,7 @@ let mockEmailPassword = createTestEmailPasswordPort();
 // afterAll so later files do not inherit this file's unauthenticated default.
 const actualUseSession = (await import("@web/auth/compass/session/useSession"))
   .useSession;
-const isSessionMocked = true;
+let isSessionMocked = true;
 const mockUseSession = mock(() => ({
   authenticated: false,
   userId: undefined as string | undefined,
