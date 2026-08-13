@@ -56,6 +56,16 @@ const CompassConfigSchema = z
         host: optionalString,
       })
       .nullish(),
+    // Hosted Stripe billing. All-three-or-none is enforced when this is
+    // mapped into backend CONFIG (see config.constants superRefine). Omit
+    // the whole block for self-host — billing enforcement then stays off.
+    stripe: z
+      .object({
+        secretKey: optionalString,
+        webhookSecret: optionalString,
+        priceId: optionalString,
+      })
+      .nullish(),
     // Compass Sync service configuration. Every deployment runs Sync (self-host
     // included) and delegates provider-connection and event routes to it — there
     // is no more legacy-vs-sync choice to make. The block itself stays optional

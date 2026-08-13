@@ -37,6 +37,7 @@ const PARAM_TO_VIEW = Object.fromEntries(
 export interface AuthSearch {
   auth?: string;
   token?: string;
+  checkout?: string;
 }
 
 export function validateAuthSearch(
@@ -45,6 +46,7 @@ export function validateAuthSearch(
   return {
     auth: typeof search.auth === "string" ? search.auth : undefined,
     token: typeof search.token === "string" ? search.token : undefined,
+    checkout: typeof search.checkout === "string" ? search.checkout : undefined,
   };
 }
 

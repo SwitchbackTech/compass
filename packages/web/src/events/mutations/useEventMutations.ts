@@ -22,12 +22,14 @@ import {
 } from "@core/types/event-command.contracts";
 import { shiftSeriesScheduleByOccurrenceEdit } from "@core/util/event/shift-series-schedule-by-occurrence-edit";
 import { decodeOccurrenceId } from "@core/util/occurrence-id";
+import { getApiErrorCode, isApiError } from "@web/api/util/api.util";
 import { isCalendarReconnectRequired } from "@web/auth/google/state/google.reconnect.calendar";
 import { track } from "@web/auth/posthog/track";
 import {
   selectGoogleSyncConnections,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
+import { billingQueryKeys } from "@web/billing/billing.query";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   buildCalendarLookup,
@@ -455,6 +457,11 @@ export function useEventMutations(
       variables: Variables,
       context: EventMutationContext | undefined,
     ) => {
+      if (isApiError(error) && getApiErrorCode(error) === "BILLING_REQUIRED") {
+        void queryClient.invalidateQueries({
+          queryKey: billingQueryKeys.status,
+        });
+      }
       reportError(error);
       const opportunityId = (variables as { opportunityId?: number })
         .opportunityId;

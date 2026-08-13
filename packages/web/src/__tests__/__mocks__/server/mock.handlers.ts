@@ -68,6 +68,29 @@ export const globalHandlers = [
   rest.get(`${ENV_WEB.API_BASEURL}/user/metadata`, (_req, res, ctx) => {
     return res(ctx.status(Status.OK), ctx.json({}));
   }),
+  rest.get(`${ENV_WEB.API_BASEURL}/billing/status`, (_req, res, ctx) => {
+    return res(
+      ctx.status(Status.OK),
+      ctx.json({
+        subscriptionStatus: "active",
+        trialEndsAt: null,
+        isReadOnly: false,
+      }),
+    );
+  }),
+  rest.get(`${ENV_WEB.API_BASEURL}/config`, (_req, res, ctx) => {
+    return res(
+      ctx.status(Status.OK),
+      ctx.json({
+        google: { isConfigured: false },
+        billing: {
+          isConfigured: false,
+          priceDisplay: "$8/month",
+          trialLengthDays: 7,
+        },
+      }),
+    );
+  }),
   rest.post(`${ENV_WEB.API_BASEURL}/user/metadata`, (req, res, ctx) => {
     return res(ctx.status(Status.OK), ctx.json(req.json()));
   }),

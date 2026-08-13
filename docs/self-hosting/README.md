@@ -6,6 +6,8 @@ Start with [Run Compass on a server](./server-guide.md). It walks through a smal
 
 If you only want to run Compass on your own computer, use the normal local development flow with Bun instead of the self-host installer.
 
+Self-host does not require Stripe. Omit the `stripe:` block so billing stays off and every account remains writable. Hosted Compass uses a 7-day trial then $8/month; see [Billing And Trial](../features/billing.md).
+
 ## Compass architecture
 
 When you self-host Compass on a server, you get a stack of small services. Only the public website and API are reachable from your browser. The databases stay private inside Docker.

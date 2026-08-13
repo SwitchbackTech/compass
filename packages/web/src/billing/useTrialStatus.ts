@@ -9,8 +9,8 @@ import {
 } from "@web/billing/trial.storage";
 
 export type TrialStatus = {
-  /** Always false for authenticated users in v1 — no payment product exists
-   * yet to gate them against; server billing status governs once Stripe lands. */
+  /** Always false for authenticated / previously-authenticated users —
+   *  server billing status governs them via `useAppAccess`. */
   isExpired: boolean;
   daysLeft: number;
   /** True only while the browser-local clock governs, i.e. a visitor who has
@@ -21,7 +21,9 @@ export type TrialStatus = {
 
 /**
  * Anonymous users run on the browser-local trial clock; signed-in users are
- * never gated in v1 (see 06-trial-spec.md in compass-calendar-internal).
+ * never gated here. `useAppAccess` is the production entry for combining this
+ * clock with server billing. This hook stays for the anonymous clock and its
+ * existing tests.
  *
  * `authenticated` starts false and only flips true once the async SuperTokens
  * check resolves, so it cannot be the sole guard: the common path is to try

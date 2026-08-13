@@ -42,6 +42,12 @@ supertokens:
 #   webhookUrl: REPLACE_WITH_GOOGLE_WEBHOOK_URL # e.g. https://cal.yourdomain.com/api
 #   notificationToken: REPLACE_WITH_NOTIFICATION_TOKEN
 
+# stripe:
+#   secretKey: REPLACE_WITH_STRIPE_SECRET_KEY
+#   webhookSecret: REPLACE_WITH_STRIPE_WEBHOOK_SECRET
+#   priceId: REPLACE_WITH_STRIPE_PRICE_ID
+# Omit this block on self-host. Compass stays fully writable without Stripe.
+
 # Compass Sync service — self-host runs the same architecture as Compass
 # Cloud: this is required, not optional. It uses the SAME bundled mongo as
 # `mongo:` above, isolated to its own `compass_sync` database — no separate

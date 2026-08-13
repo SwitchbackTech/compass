@@ -7,6 +7,7 @@ import {
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useGoogleSyncRefreshSnapshot } from "@web/auth/google/state/google.sync.refresh";
 import { TrialCountdownChip } from "@web/billing/TrialCountdownChip";
+import { useAppAccess } from "@web/billing/useAppAccess";
 import { SYNC_STATUS_VARIANT_CLASSNAME } from "@web/calendars/sync-status.types";
 import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 import { EdgeFocusIndicator } from "@web/grid/shortcuts/EdgeFocusIndicator";
@@ -48,6 +49,7 @@ import { useSseDegraded } from "@web/sse/hooks/useSseDegraded";
  */
 export const SidebarStatusBar: FC = () => {
   const { authenticated } = useContext(SessionContext);
+  const access = useAppAccess();
   useShortcutTipTrigger();
   const activeTipId = useShortcutTipsStore(selectActiveShortcutTipId);
   const isKeyboardOnly = useKeyboardOnlyStore(selectKeyboardOnlyActive);
@@ -101,7 +103,9 @@ export const SidebarStatusBar: FC = () => {
         <div className="flex h-full min-w-0 flex-1 items-center">
           <ShortcutTipIndicator />
         </div>
-      ) : !status && !authenticated ? (
+      ) : !status &&
+        (!authenticated ||
+          (access.kind === "server" && access.status === "trialing")) ? (
         <div className="flex h-full min-w-0 flex-1 items-center">
           <TrialCountdownChip />
         </div>

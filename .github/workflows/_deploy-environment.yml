@@ -94,6 +94,9 @@ jobs:
           SUPERTOKENS_KEY: ${{ secrets.SUPERTOKENS_KEY }}
           SUPERTOKENS_POSTGRES_PASSWORD: ${{ secrets.SUPERTOKENS_POSTGRES_PASSWORD }}
           SUPERTOKENS_URI: ${{ secrets.SUPERTOKENS_URI }}
+          STRIPE_SECRET_KEY: ${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && secrets.STRIPE_SECRET_KEY || '' }}
+          STRIPE_WEBHOOK_SECRET: ${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && secrets.STRIPE_WEBHOOK_SECRET || '' }}
+          STRIPE_PRICE_ID: ${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && secrets.STRIPE_PRICE_ID || '' }}
         run: |
           echo "Deploying Compass ${RELEASE_TAG} (image version: ${IMAGE_VERSION}) to ${{ inputs.environment }}"
           # Only "production" ever runs the production runtime.nodeEnv; every
@@ -180,6 +183,13 @@ jobs:
                 'posthog:' \
                 "  key: \"${POSTHOG_KEY}\"" \
                 "  host: \"${POSTHOG_HOST}\""
+            fi
+            if [ -n "$STRIPE_SECRET_KEY" ] && [ -n "$STRIPE_WEBHOOK_SECRET" ] && [ -n "$STRIPE_PRICE_ID" ]; then
+              printf '%s\n' \
+                'stripe:' \
+                "  secretKey: \"${STRIPE_SECRET_KEY}\"" \
+                "  webhookSecret: \"${STRIPE_WEBHOOK_SECRET}\"" \
+                "  priceId: \"${STRIPE_PRICE_ID}\""
             fi
             printf '%s\n' \
               'sync:' \

@@ -26,6 +26,11 @@ describe("GET /api/config", () => {
           cloudMutationMode: "enabled",
           execution: "passive",
         },
+        billing: {
+          isConfigured: false,
+          priceDisplay: "$8/month",
+          trialLengthDays: 7,
+        },
       });
     } finally {
       CONFIG.GOOGLE_CLIENT_ID = originalClientId;
@@ -52,6 +57,11 @@ describe("GET /api/config", () => {
         sync: {
           cloudMutationMode: "enabled",
           execution: "passive",
+        },
+        billing: {
+          isConfigured: false,
+          priceDisplay: "$8/month",
+          trialLengthDays: 7,
         },
       });
     } finally {

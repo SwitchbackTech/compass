@@ -20,6 +20,7 @@ import {
   type SyncEventCalendarId,
   SyncEventCalendarIdSchema,
 } from "@core/types/sync/event.contracts";
+import { assertBillingAllowsWrites } from "@backend/billing/billing.guard";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { assertCloudMutationsAllowed } from "@backend/common/services/sync-service/cloud-mutation-mode";
 import {
@@ -281,6 +282,7 @@ class EventController {
     try {
       assertCloudMutationsAllowed();
       const userId = req.session?.getUserId() as string;
+      await assertBillingAllowsWrites(userId);
       const input = CreateEventInputSchema.parse(req.body);
       const event = await createFromSync(userId, input);
 
@@ -294,6 +296,7 @@ class EventController {
     try {
       assertCloudMutationsAllowed();
       const userId = req.session?.getUserId() as string;
+      await assertBillingAllowsWrites(userId);
       const eventId = req.params["id"] as string;
       const input = ReplaceEventInputSchema.parse(req.body);
       const event = await replaceFromSync(userId, eventId, input);
@@ -308,6 +311,7 @@ class EventController {
     try {
       assertCloudMutationsAllowed();
       const userId = req.session?.getUserId() as string;
+      await assertBillingAllowsWrites(userId);
       const eventId = req.params["id"] as string;
       const scopeParam = req.query["scope"];
       const input = DeleteEventInputSchema.parse({
