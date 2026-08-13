@@ -1,16 +1,9 @@
-import { useContext, useEffect, useState } from "react";
 import { type BillingSubscriptionStatus } from "@core/types/user.types";
-import { SessionContext } from "@web/auth/compass/session/session.context";
-import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
-import { track } from "@web/auth/posthog/track";
 import {
   useAppConfigQuery,
   useBillingStatusQuery,
 } from "@web/billing/billing.query";
-import {
-  ensureTrialStarted,
-  getTrialDaysLeft,
-} from "@web/billing/trial.storage";
+import { useTrialStatus } from "@web/billing/useTrialStatus";
 
 export type AppAccess =
   | {
@@ -34,35 +27,17 @@ export type AppAccess =
  * unconfigured-Stripe state never locks a paying user out of their calendar.
  */
 export function useAppAccess(): AppAccess {
-  const { authenticated } = useContext(SessionContext);
-  const isGateExempt = authenticated || hasUserEverAuthenticated();
-  const [daysLeft, setDaysLeft] = useState(() => getTrialDaysLeft());
+  const trial = useTrialStatus();
   const configQuery = useAppConfigQuery();
   const billingEnabled =
-    isGateExempt && configQuery.data?.billing.isConfigured === true;
+    !trial.isAnonymousTrial && configQuery.data?.billing.isConfigured === true;
   const billingQuery = useBillingStatusQuery(billingEnabled);
 
-  useEffect(() => {
-    if (ensureTrialStarted()) {
-      track("trial_started");
-    }
-    if (isGateExempt) return;
-
-    const recompute = () => setDaysLeft(getTrialDaysLeft());
-    recompute();
-    document.addEventListener("visibilitychange", recompute);
-    window.addEventListener("focus", recompute);
-    return () => {
-      document.removeEventListener("visibilitychange", recompute);
-      window.removeEventListener("focus", recompute);
-    };
-  }, [isGateExempt]);
-
-  if (!isGateExempt) {
+  if (trial.isAnonymousTrial) {
     return {
       kind: "anonymous-trial",
-      isExpired: daysLeft <= 0,
-      daysLeft,
+      isExpired: trial.isExpired,
+      daysLeft: trial.daysLeft,
     };
   }
 
