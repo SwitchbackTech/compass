@@ -5,6 +5,7 @@ import { UserApi } from "@web/api/user.api";
 import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 import {
   getLastKnownEmail,
+  hasUserEverAuthenticated,
   markUserAsAuthenticated,
 } from "@web/auth/compass/state/auth.state.util";
 import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
@@ -55,7 +56,9 @@ export function useLoadProfile(
           status === Status.UNAUTHORIZED || status === Status.FORBIDDEN;
 
         if (isUnauthorized) {
-          showSessionExpiredToast();
+          if (hasUserEverAuthenticated()) {
+            showSessionExpiredToast();
+          }
           return;
         }
 
